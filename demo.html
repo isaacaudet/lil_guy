@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lil_guy — deterministic pixel art avatars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0c0c14;
+      --bg-warm: #100e18;
+      --surface: #14141f;
+      --surface-raised: #1c1c2e;
+      --border: #2a2a3d;
+      --border-dashed: #333350;
+      --text: #e8e8f0;
+      --text-muted: #8888a0;
+      --text-dim: #555570;
+      --accent: #f0a060;
+      --accent-soft: rgba(240, 160, 96, 0.12);
+      --accent-glow: rgba(240, 160, 96, 0.06);
+      --green: #80c8a0;
+      --blue: #7ec8e3;
+      --pink: #e87090;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'DM Sans', system-ui, sans-serif;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8f7f4;
+      --bg-warm: #f5f3f0;
+      --surface: #ffffff;
+      --surface-raised: #f0efe8;
+      --border: #e0ddd5;
+      --border-dashed: #d0cdc5;
+      --text: #1a1a2e;
+      --text-muted: #6b6b80;
+      --text-dim: #9999aa;
+      --accent: #d08040;
+      --accent-soft: rgba(208, 128, 64, 0.10);
+      --accent-glow: rgba(208, 128, 64, 0.04);
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100dvh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ---- Floating background blobs ---- */
+    #bg-floaters {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .floater {
+      position: absolute;
+      opacity: 0;
+      animation: floatIn 1.2s ease-out forwards, wobble 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatIn {
+      to { opacity: 0.5; }
+    }
+
+    @keyframes wobble {
+      0% { transform: translateY(0) rotate(0deg) scale(1); }
+      33% { transform: translateY(-12px) rotate(2deg) scale(1.02); }
+      66% { transform: translateY(-6px) rotate(-1.5deg) scale(0.98); }
+      100% { transform: translateY(-18px) rotate(3deg) scale(1.01); }
+    }
+
+    [data-theme="light"] .floater { animation: floatIn 1.2s ease-out forwards, wobble 12s ease-in-out infinite alternate; }
+
+    /* ---- Layout ---- */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* ---- Theme Toggle ---- */
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      transition: border-color 0.15s;
+    }
+
+    .theme-toggle:hover { border-color: var(--accent); }
+
+    /* ---- Hero ---- */
+    .hero {
+      text-align: center;
+      padding: 3rem 0 4rem;
+    }
+
+    .hero-title {
+      font-family: var(--mono);
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-byline {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-tagline {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+      text-wrap: pretty;
+    }
+
+    .hero-avatars {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-avatars svg {
+      border-radius: 50%;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+    }
+
+    .hero-avatars svg:hover {
+      transform: scale(1.15) rotate(-3deg);
+    }
+
+    /* ---- Playground ---- */
+    .playground {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .playground-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: lowercase;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .playground-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-family: var(--mono);
+      font-size: 1rem;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s ease-out;
+    }
+
+    .playground-input:focus { border-color: var(--accent); }
+    .playground-input::placeholder { color: var(--text-dim); }
+
+    .playground-controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .control-btn {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+      letter-spacing: 0.02em;
+    }
+
+    .control-btn:hover { border-color: var(--text-dim); color: var(--text-muted); }
+    .control-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    .control-sep {
+      width: 1px;
+      background: var(--border);
+      margin: 0 0.25rem;
+      align-self: stretch;
+    }
+
+    .playground-preview {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      min-height: 120px;
+      flex-wrap: wrap;
+    }
+
+    .preview-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .preview-item svg {
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .preview-item svg:hover {
+      transform: scale(1.08);
+    }
+
+    .preview-size-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+    }
+
+    /* ---- Section ---- */
+    .section {
+      margin-bottom: 3.5rem;
+    }
+
+    .section-title {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: lowercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ---- Feature Grid ---- */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+    }
+
+    .feature-value {
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .feature-value.accent { color: var(--accent); }
+    .feature-value.green { color: var(--green); }
+    .feature-value.blue { color: var(--blue); }
+    .feature-value.pink { color: var(--pink); }
+
+    .feature-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    /* ---- Install Tabs ---- */
+    .install-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .install-tab {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .install-tab:hover { color: var(--text-muted); }
+    .install-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .install-cmd {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      padding: 1rem 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .copy-btn {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+    /* ---- Code Block ---- */
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.8;
+      color: var(--text-dim);
+      overflow-x: auto;
+      white-space: pre;
+      margin-bottom: 1rem;
+    }
+
+    .code-block:last-child { margin-bottom: 0; }
+    .code-block .kw { color: var(--accent); }
+    .code-block .str { color: var(--green); }
+    .code-block .cmt { color: var(--text-dim); opacity: 0.6; }
+    .code-block .fn { color: var(--blue); }
+    .code-block .tag { color: var(--pink); }
+
+    .code-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ---- Avatar Grid ---- */
+    .avatar-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .avatar-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .avatar-card svg {
+      display: block;
+      border-radius: 50%;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+    }
+
+    .avatar-card svg:hover {
+      transform: scale(1.1) rotate(-2deg);
+    }
+
+    .avatar-label {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      color: var(--text-dim);
+      max-width: 70px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---- Palette Strip ---- */
+    .palette-strip {
+      display: flex;
+      gap: 1.25rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .palette-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .palette-card svg {
+      border-radius: 8px;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .palette-card svg:hover {
+      transform: scale(1.08);
+    }
+
+    .palette-name {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      color: var(--text-dim);
+    }
+
+    /* ---- Props Demo ---- */
+    .props-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .prop-demo {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .prop-name {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .prop-preview {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .prop-desc {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ---- Sizes Row ---- */
+    .sizes-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.25rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ---- Footer ---- */
+    .footer {
+      text-align: center;
+      padding: 2.5rem 0 0;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover { text-decoration: underline; }
+
+    .footer-uses {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 600px) {
+      .page { padding: 2rem 1rem 3rem; }
+      .playground { padding: 1.25rem; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .props-grid { grid-template-columns: 1fr; }
+      .hero { padding: 2rem 0 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" title="Toggle theme">&#127769;</button>
+
+<div id="bg-floaters"></div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <header class="hero">
+    <h1 class="hero-title">lil guy</h1>
+    <p class="hero-byline">deterministic pixel art avatars</p>
+    <p class="hero-tagline">
+      type any string &mdash; email, username, uuid &mdash; and get the same adorable blob character every time. zero dependencies. works everywhere.
+    </p>
+    <div class="hero-avatars" id="heroAvatars"></div>
+  </header>
+
+  <!-- Playground -->
+  <div class="playground">
+    <div class="playground-label">try it &mdash; type anything</div>
+    <input
+      type="text"
+      id="input"
+      class="playground-input"
+      value="alice@example.com"
+      placeholder="email, username, uuid, anything..."
+      spellcheck="false"
+      autocomplete="off"
+    >
+    <div class="playground-controls">
+      <button class="control-btn active" data-shape="round">circle</button>
+      <button class="control-btn" data-shape="square">square</button>
+      <span class="control-sep"></span>
+      <button class="control-btn active" data-variant="transparent">flat</button>
+      <button class="control-btn" data-variant="gradient">gradient</button>
+      <button class="control-btn" data-variant="solid">solid</button>
+    </div>
+    <div class="playground-preview" id="preview"></div>
+  </div>
+
+  <!-- Why -->
+  <section class="section">
+    <h2 class="section-title">why lil_guy?</h2>
+    <div class="feature-grid" id="featureGrid"></div>
+  </section>
+
+  <!-- Install -->
+  <section class="section">
+    <h2 class="section-title">install</h2>
+    <div class="install-tabs" id="installTabs"></div>
+    <div class="install-cmd">
+      <span id="installCmd">npm install lil_guy</span>
+      <button class="copy-btn" id="copyBtn">copy</button>
+    </div>
+  </section>
+
+  <!-- Code Examples -->
+  <section class="section">
+    <h2 class="section-title">usage</h2>
+    <div id="codeExamples"></div>
+  </section>
+
+  <!-- Props Reference -->
+  <section class="section">
+    <h2 class="section-title">props</h2>
+    <div class="props-grid" id="propsGrid"></div>
+  </section>
+
+  <!-- Palette Showcase -->
+  <section class="section">
+    <h2 class="section-title">12 color palettes</h2>
+    <div class="palette-strip" id="palettes"></div>
+  </section>
+
+  <!-- Gallery -->
+  <section class="section">
+    <h2 class="section-title">gallery</h2>
+    <div class="avatar-grid" id="gallery"></div>
+  </section>
+
+  <!-- Sizes -->
+  <section class="section">
+    <h2 class="section-title">pixel perfect at any size</h2>
+    <div class="sizes-row" id="sizes"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-uses" id="footerUses"></div>
+    <span id="footerText"></span>
+  </footer>
+
+</div>
+
+<script src="dist/lil-guy.js?v=3"></script>
+<script>
+(function() {
+  var toSvgString = LilGuy.toSvgString;
+  var palettes = LilGuy.palettes;
+  var hashFn = LilGuy.hash;
+
+  // ---- Helpers ----
+  function parseSvg(svgStr) {
+    var doc = new DOMParser().parseFromString(svgStr, 'image/svg+xml');
+    return document.importNode(doc.documentElement, true);
+  }
+
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function(k) {
+        if (k === 'className') node.className = attrs[k];
+        else if (k === 'textContent') node.textContent = attrs[k];
+        else node.setAttribute(k, attrs[k]);
+      });
+    }
+    if (children) {
+      children.forEach(function(c) {
+        if (typeof c === 'string') node.appendChild(document.createTextNode(c));
+        else if (c) node.appendChild(c);
+      });
+    }
+    return node;
+  }
+
+  // ---- Theme Toggle ----
+  var themeBtn = document.getElementById('themeToggle');
+  var currentTheme = localStorage.getItem('lil-guy-theme') || 'dark';
+
+  function applyTheme(t) {
+    if (t === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      themeBtn.textContent = '\u2600\uFE0F';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      themeBtn.textContent = '\uD83C\uDF19';
+    }
+    currentTheme = t;
+    localStorage.setItem('lil-guy-theme', t);
+  }
+
+  applyTheme(currentTheme);
+  themeBtn.addEventListener('click', function() {
+    applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---- Background Floaters ----
+  var floaterNames = [
+    'float-a','float-b','float-c','float-d','float-e',
+    'float-f','float-g','float-h','float-i','float-j',
+    'float-k','float-l','float-m','float-n','float-o',
+    'float-p','float-q','float-r','float-s','float-t',
+    'float-u','float-v','float-w','float-x','float-y',
+    'float-z','float-aa','float-bb','float-cc','float-dd',
+  ];
+  var bgEl = document.getElementById('bg-floaters');
+  floaterNames.forEach(function(name, i) {
+    var size = 28 + (hashFn(name) % 36);
+    var x = (hashFn(name + 'x') % 88) + 4;
+    var y = (hashFn(name + 'y') % 82) + 6;
+    var delay = (i * 0.12).toFixed(2);
+    var wobbleDur = (10 + (hashFn(name + 'w') % 12)).toFixed(0);
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'floater';
+    wrapper.style.cssText = 'left:' + x + '%;top:' + y + '%;animation-delay:' + delay + 's,' + delay + 's;animation-duration:1.2s,' + wobbleDur + 's;';
+    wrapper.appendChild(parseSvg(toSvgString(name, { size: size, square: true })));
+    bgEl.appendChild(wrapper);
+  });
+
+  // ---- Hero Avatars ----
+  var heroNames = ['clawd','pixel','blob','dot','fuzzy','nugget','pip'];
+  var heroEl = document.getElementById('heroAvatars');
+  heroNames.forEach(function(name) {
+    heroEl.appendChild(parseSvg(toSvgString(name, { size: 48 })));
+  });
+
+  // ---- Playground ----
+  var inputEl = document.getElementById('input');
+  var previewEl = document.getElementById('preview');
+  var isSquare = false;
+  var currentVariant = 'transparent';
+
+  document.querySelectorAll('[data-shape]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      isSquare = btn.dataset.shape === 'square';
+      document.querySelectorAll('[data-shape]').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      updatePreview();
+    });
+  });
+
+  document.querySelectorAll('[data-variant]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentVariant = btn.dataset.variant;
+      document.querySelectorAll('[data-variant]').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      updatePreview();
+    });
+  });
+
+  function updatePreview() {
+    var val = inputEl.value || 'anonymous';
+    previewEl.replaceChildren();
+    [32, 48, 64, 80].forEach(function(s) {
+      var item = document.createElement('div');
+      item.className = 'preview-item';
+
+      if (currentVariant !== 'transparent') {
+        var config = LilGuy.resolve(val);
+        var palette = LilGuy.getPalette(config.palette);
+        var bg = palette.colors[3];
+
+        var container = document.createElement('div');
+        container.style.cssText = 'width:' + s + 'px;height:' + s + 'px;display:flex;align-items:center;justify-content:center;overflow:hidden;' +
+          (isSquare ? 'border-radius:4px;' : 'border-radius:50%;') +
+          'background:' + (currentVariant === 'gradient' ?
+            'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 60%), ' + bg : bg) + ';';
+
+        var svg = parseSvg(toSvgString(val, { size: s, square: true }));
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        container.appendChild(svg);
+        item.appendChild(container);
+      } else {
+        item.appendChild(parseSvg(toSvgString(val, { size: s, square: isSquare })));
+      }
+
+      var label = document.createElement('span');
+      label.className = 'preview-size-label';
+      label.textContent = s + 'px';
+      item.appendChild(label);
+      previewEl.appendChild(item);
+    });
+  }
+
+  inputEl.addEventListener('input', updatePreview);
+  updatePreview();
+
+  // ---- Feature Grid ----
+  var featureEl = document.getElementById('featureGrid');
+  var features = [
+    { value: '0', cls: 'accent', label: 'dependencies. pure typescript, no runtime bloat.' },
+    { value: '5kb', cls: 'green', label: 'gzipped. smaller than most icons.' },
+    { value: '2.9M', cls: 'blue', label: 'unique blob combinations from the hash.' },
+    { value: 'SSR', cls: 'pink', label: 'compatible. works in node, edge, browser.' },
+  ];
+  features.forEach(function(f) {
+    var card = el('div', { className: 'feature-card' }, [
+      el('div', { className: 'feature-value ' + f.cls, textContent: f.value }),
+      el('div', { className: 'feature-label', textContent: f.label }),
+    ]);
+    featureEl.appendChild(card);
+  });
+
+  // ---- Install Tabs ----
+  var cmds = {
+    npm: 'npm install lil_guy',
+    bun: 'bun add lil_guy',
+    pnpm: 'pnpm add lil_guy',
+    yarn: 'yarn add lil_guy',
+  };
+  var tabsEl = document.getElementById('installTabs');
+  var cmdEl = document.getElementById('installCmd');
+  var copyBtnEl = document.getElementById('copyBtn');
+
+  ['npm', 'bun', 'pnpm', 'yarn'].forEach(function(pm, i) {
+    var tab = el('button', { className: 'install-tab' + (i === 0 ? ' active' : ''), textContent: pm });
+    tab.dataset.pm = pm;
+    tab.addEventListener('click', function() {
+      tabsEl.querySelectorAll('.install-tab').forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      cmdEl.textContent = cmds[pm];
+    });
+    tabsEl.appendChild(tab);
+  });
+
+  copyBtnEl.addEventListener('click', function() {
+    navigator.clipboard.writeText(cmdEl.textContent).then(function() {
+      copyBtnEl.textContent = 'copied!';
+      copyBtnEl.classList.add('copied');
+      setTimeout(function() {
+        copyBtnEl.textContent = 'copy';
+        copyBtnEl.classList.remove('copied');
+      }, 2000);
+    });
+  });
+
+  // ---- Code Examples ----
+  var codeEl = document.getElementById('codeExamples');
+
+  function makeCodeBlock(labelText, lines) {
+    var label = el('div', { className: 'code-label', textContent: labelText });
+    var block = document.createElement('div');
+    block.className = 'code-block';
+    lines.forEach(function(parts, i) {
+      parts.forEach(function(part) {
+        if (part.cls) {
+          var span = document.createElement('span');
+          span.className = part.cls;
+          span.textContent = part.t;
+          block.appendChild(span);
+        } else {
+          block.appendChild(document.createTextNode(part.t));
+        }
+      });
+      if (i < lines.length - 1) block.appendChild(document.createTextNode('\n'));
+    });
+    codeEl.appendChild(label);
+    codeEl.appendChild(block);
+  }
+
+  makeCodeBlock('react component', [
+    [{cls:'kw',t:'import'},{t:' { '},{cls:'fn',t:'LilGuy'},{t:' } '},{cls:'kw',t:'from'},{t:' '},{cls:'str',t:"'lil_guy'"},{t:';'}],
+    [],
+    [{cls:'cmt',t:'// simple'}],
+    [{t:'<'},{cls:'tag',t:'LilGuy'},{t:' name='},{cls:'str',t:'"alice@example.com"'},{t:' />'}],
+    [],
+    [{cls:'cmt',t:'// with options'}],
+    [{t:'<'},{cls:'tag',t:'LilGuy'}],
+    [{t:'  name='},{cls:'str',t:'"alice"'}],
+    [{t:'  size={'},{t:'64'},{t:'}'}],
+    [{t:'  shape='},{cls:'str',t:'"square"'}],
+    [{t:'  variant='},{cls:'str',t:'"gradient"'}],
+    [{t:'  intensity3d='},{cls:'str',t:'"dramatic"'}],
+    [{t:'  enableBlink'}],
+    [{t:'/>'}],
+  ]);
+
+  makeCodeBlock('headless \u2014 no react needed', [
+    [{cls:'kw',t:'import'},{t:' { '},{cls:'fn',t:'toSvgString'},{t:', '},{cls:'fn',t:'toPng'},{t:' } '},{cls:'kw',t:'from'},{t:' '},{cls:'str',t:"'lil_guy'"},{t:';'}],
+    [],
+    [{cls:'cmt',t:'// generate svg string'}],
+    [{cls:'kw',t:'const'},{t:' svg = '},{cls:'fn',t:'toSvgString'},{t:'('},{cls:'str',t:'"alice@example.com"'},{t:');'}],
+    [],
+    [{cls:'cmt',t:'// generate png data url (browser only)'}],
+    [{cls:'kw',t:'const'},{t:' png = '},{cls:'kw',t:'await'},{t:' '},{cls:'fn',t:'toPng'},{t:'('},{cls:'str',t:'"alice"'},{t:', { size: 256 });'}],
+  ]);
+
+  makeCodeBlock('next.js api route', [
+    [{cls:'cmt',t:'// app/api/avatar/route.ts'}],
+    [{cls:'kw',t:'import'},{t:' { '},{cls:'fn',t:'toLilGuyHandler'},{t:' } '},{cls:'kw',t:'from'},{t:' '},{cls:'str',t:"'lil_guy/next'"},{t:';'}],
+    [],
+    [{cls:'kw',t:'export const'},{t:' { GET } = '},{cls:'fn',t:'toLilGuyHandler'},{t:'();'}],
+    [{cls:'cmt',t:'// GET /api/avatar?name=alice&size=200'}],
+  ]);
+
+  // ---- Props Demos ----
+  var propsEl = document.getElementById('propsGrid');
+
+  function makePropDemo(nameText, descText, renderFn) {
+    var card = el('div', { className: 'prop-demo' });
+    card.appendChild(el('div', { className: 'prop-name', textContent: nameText }));
+    var previewRow = el('div', { className: 'prop-preview' });
+    renderFn(previewRow);
+    card.appendChild(previewRow);
+    card.appendChild(el('div', { className: 'prop-desc', textContent: descText }));
+    propsEl.appendChild(card);
+  }
+
+  makePropDemo('shape', 'circle or square', function(c) {
+    c.appendChild(parseSvg(toSvgString('shape-demo', { size: 48 })));
+    c.appendChild(parseSvg(toSvgString('shape-demo', { size: 48, square: true })));
+  });
+
+  makePropDemo('variant', 'transparent, solid, or gradient background', function(c) {
+    var config = LilGuy.resolve('variant-demo');
+    var palette = LilGuy.getPalette(config.palette);
+    var bg = palette.colors[3];
+    c.appendChild(parseSvg(toSvgString('variant-demo', { size: 40 })));
+    ['solid','gradient'].forEach(function(v) {
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'width:40px;height:40px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:' +
+        (v === 'gradient' ? 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 60%), ' + bg : bg) + ';';
+      var svg = parseSvg(toSvgString('variant-demo', { size: 40, square: true }));
+      svg.style.width = '100%';
+      svg.style.height = '100%';
+      wrap.appendChild(svg);
+      c.appendChild(wrap);
+    });
+  });
+
+  makePropDemo('parts', 'pin specific parts, hash the rest', function(c) {
+    c.appendChild(parseSvg(toSvgString('parts-demo', { size: 40, parts: { eyes: 0 } })));
+    c.appendChild(parseSvg(toSvgString('parts-demo', { size: 40, parts: { eyes: 2 } })));
+    c.appendChild(parseSvg(toSvgString('parts-demo', { size: 40, parts: { eyes: 4 } })));
+  });
+
+  makePropDemo('palette', 'override the color palette', function(c) {
+    [0, 3, 7, 9].forEach(function(i) {
+      c.appendChild(parseSvg(toSvgString('palette-demo', { size: 36, palette: palettes[i] })));
+    });
+  });
+
+  // ---- Palettes ----
+  var palettesEl = document.getElementById('palettes');
+  palettes.forEach(function(p) {
+    var card = el('div', { className: 'palette-card' });
+    card.appendChild(parseSvg(toSvgString('palette-show', {
+      size: 56,
+      palette: p,
+      square: true,
+      parts: { head: 0, eyes: 1, mouth: 0, hair: 2, body: 0, accessory: 0 },
+    })));
+    card.appendChild(el('span', { className: 'palette-name', textContent: p.name.toLowerCase() }));
+    palettesEl.appendChild(card);
+  });
+
+  // ---- Gallery ----
+  var galleryNames = [
+    'alice@example.com', 'bob@corp.io', 'charlie', 'diana_prince',
+    'eve.smith@gmail.com', 'frank-ocean', 'grace.hopper', 'henry42',
+    'iris_2024', 'jack.sparrow', 'karen@startup.co', 'liam.neeson',
+    'mia.wallace', 'noah_ark', 'olivia.pope', 'peter.parker',
+    'quinn@devtools.sh', 'rachel.green', 'sam_bridges', 'tina.fey',
+    'clawd', 'pixel-buddy', 'blob-master', 'code-monkey',
+    'user-12345', 'test@dev.io', 'luna-lovegood', 'max.power',
+    'zen.garden', 'ruby.rails', 'go-gopher', 'rust-crab',
+    'swift-bird', 'kotlin.jet', 'elixir.drop', 'haskell.curry',
+    'ada.lovelace', 'turing.alan', 'knuth.don', 'dijkstra',
+    'linus.torvalds', 'guido.python', 'matz.ruby', 'rich.hickey',
+    'jose.valim', 'evan.you', 'dan.abramov', 'tj.holowaychuk',
+    'sindre.sorhus', 'substack', 'wes.bos', 'sarah.drasner',
+  ];
+  var galleryEl = document.getElementById('gallery');
+  galleryNames.forEach(function(name) {
+    var card = el('div', { className: 'avatar-card' });
+    card.appendChild(parseSvg(toSvgString(name, { size: 64 })));
+    card.appendChild(el('span', { className: 'avatar-label', textContent: name.split('@')[0] }));
+    galleryEl.appendChild(card);
+  });
+
+  // ---- Sizes ----
+  var sizesEl = document.getElementById('sizes');
+  [16, 24, 32, 48, 64, 96, 128].forEach(function(s) {
+    var item = el('div', { className: 'preview-item' });
+    item.appendChild(parseSvg(toSvgString('size-demo', { size: s, square: true })));
+    item.appendChild(el('span', { className: 'preview-size-label', textContent: String(s) }));
+    sizesEl.appendChild(item);
+  });
+
+  // ---- Footer ----
+  document.getElementById('footerUses').textContent = 'avatars \u00B7 profiles \u00B7 placeholders \u00B7 chat \u00B7 commits \u00B7 fun';
+  var footerSpan = document.getElementById('footerText');
+  footerSpan.appendChild(document.createTextNode('forked with love from '));
+  var fhLink = el('a', { href: 'https://facehash.dev', target: '_blank', rel: 'noopener', textContent: 'facehash' });
+  footerSpan.appendChild(fhLink);
+  footerSpan.appendChild(document.createTextNode(' \u2014 MIT license'));
+  footerSpan.appendChild(document.createElement('br'));
+  var ghLink = el('a', { href: 'https://github.com/isaacaudet/cossistant', target: '_blank', rel: 'noopener', textContent: 'github' });
+  footerSpan.appendChild(ghLink);
+
+})();
+</script>
+</body>
+</html>
