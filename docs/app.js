@@ -248,33 +248,58 @@
 
   const drift = document.getElementById('drift');
   const driftCtx = drift.getContext('2d');
-  const DRIFT_CELL = 74, DRIFT_SPEED = 0.0075;   // cells per ms
+
+  const TIDE_CELL = 230;      // px between guys — few and large
+  const TIDE_DRIFT = 9;       // px/s, the current
+  const TIDE_ANGLE = -0.26;   // radians — rightward, and very slightly up
+  const TIDE_SWELL = 0.07;    // bob, as a share of a cell
+  const TIDE_SIZE = 0.58;     // how much of a cell a guy fills
+
   let driftRunning = false;
 
+  /**
+   * A slow tide of guys behind the maker.
+   *
+   * The whole field slides one way forever, and each guy rides a swell on top
+   * of that — the phase of the swell moves through the field rather than
+   * ticking in place, so neighbours rise a moment apart and it reads as water
+   * rather than a row of bobbing corks. Two periods, a long one for the lift
+   * and a longer one for the sway, so the motion never quite repeats.
+   */
   function driftFrame(now) {
     if (!driftRunning) return;
+
     const w = drift.clientWidth, h = drift.clientHeight;
-    const dpr2 = Math.min(window.devicePixelRatio || 1, 2);
-    if (drift.width !== Math.round(w * dpr2)) {
-      drift.width = Math.round(w * dpr2);
-      drift.height = Math.round(h * dpr2);
+    const scale = Math.min(window.devicePixelRatio || 1, 2);
+    if (drift.width !== Math.round(w * scale)) {
+      drift.width = Math.round(w * scale);
+      drift.height = Math.round(h * scale);
     }
-    driftCtx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
+    driftCtx.setTransform(scale, 0, 0, scale, 0, 0);
     driftCtx.imageSmoothingEnabled = false;
     driftCtx.clearRect(0, 0, w, h);
 
-    const offset = now * DRIFT_SPEED;
-    const cols = Math.ceil(w / DRIFT_CELL) + 2;
-    const rows = Math.ceil(h / DRIFT_CELL) + 2;
-    for (let j = 0; j < rows; j++) {
-      // Alternate rows slide opposite ways, which reads as a field rather
-      // than a sheet being dragged.
-      const dir = j % 2 ? -1 : 1;
-      const shift = ((offset * dir) % cols + cols) % cols;
-      for (let i = 0; i < cols; i++) {
-        const x = ((i - shift) * DRIFT_CELL) % (cols * DRIFT_CELL);
-        const px = x < -DRIFT_CELL ? x + cols * DRIFT_CELL : x;
-        drawSprite(driftCtx, spriteFor(`drift ${i},${j}`), Math.round(px), Math.round(j * DRIFT_CELL - DRIFT_CELL), DRIFT_CELL - 12);
+    const t = now / 1000;
+    const ox = Math.cos(TIDE_ANGLE) * TIDE_DRIFT * t;
+    const oy = Math.sin(TIDE_ANGLE) * TIDE_DRIFT * t;
+    const swell = TIDE_CELL * TIDE_SWELL;
+    const size = Math.round(TIDE_CELL * TIDE_SIZE);
+
+    const i0 = Math.floor(-ox / TIDE_CELL) - 1;
+    const j0 = Math.floor(-oy / TIDE_CELL) - 1;
+    const cols = Math.ceil(w / TIDE_CELL) + 2;
+    const rows = Math.ceil(h / TIDE_CELL) + 2;
+
+    for (let dj = 0; dj < rows; dj++) {
+      const j = j0 + dj;
+      for (let di = 0; di < cols; di++) {
+        const i = i0 + di;
+        const lift = Math.sin(t * 0.42 + i * 0.85 + j * 0.35) * swell;
+        const sway = Math.cos(t * 0.27 + j * 0.62) * swell * 0.55;
+        drawSprite(driftCtx, spriteFor(`tide ${i},${j}`),
+          Math.round(i * TIDE_CELL + ox + sway),
+          Math.round(j * TIDE_CELL + oy + lift),
+          size);
       }
     }
     requestAnimationFrame(driftFrame);
