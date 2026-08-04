@@ -37,7 +37,7 @@ Pass any string — an email, username, wallet address — and get back a cute, 
 
 Works everywhere: React component with 3D hover + blink animation, headless SVG/PNG generation, Next.js image API route, or plain `<script>` tag.
 
-**[Make yours →](https://isaacaudet.github.io/lil_guy/)** — type anything, get your guy, save him as a PNG with or without his name. Behind it is the gallery: an endless plane where each cell's coordinates *are* the seed, so there is no list and no edge. The lattice is a spring mesh, so it stretches behind your hand and rings down when you let go.
+**[Make yours →](https://isaacaudet.github.io/lil_guy/)** — type anything, get your guy, save him as a PNG with or without his name, and claim him to your wall: the word stays in your browser and is never shown, only the character it makes. Behind it is the gallery: an endless plane where each cell's coordinates *are* the seed, so there is no list and no edge. Order it by colour to walk the spectrum, or leave it scattered. The lattice is a spring mesh, so it stretches behind your hand and rings down when you let go.
 
 ## Install
 

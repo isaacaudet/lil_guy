@@ -162,6 +162,124 @@
     }, 'image/png');
   }
 
+  /* ---------------------------------------------------------------- claims
+   *
+   * A claim keeps the word in this browser and never shows it again. The guy
+   * is derived from it, and deriving the word back out of a 16x16 picture is
+   * not a thing you can do — so the wall can be public about the character
+   * while the word that made him stays yours.
+   */
+
+  const STORE = 'lil_guy.claims.v1';
+
+  function claims() {
+    try { return JSON.parse(localStorage.getItem(STORE) || '[]'); }
+    catch { return []; }
+  }
+
+  function addClaim(seed, who) {
+    const all = claims().filter(c => c.seed !== seed);
+    all.unshift({ seed, who, at: Date.now() });
+    localStorage.setItem(STORE, JSON.stringify(all.slice(0, 400)));
+  }
+
+  const claimBtn = document.getElementById('claim');
+  const claimForm = document.getElementById('claimForm');
+  const claimName = document.getElementById('claimName');
+
+  claimBtn.addEventListener('click', () => {
+    claimForm.hidden = !claimForm.hidden;
+    if (!claimForm.hidden) claimName.focus();
+  });
+
+  claimForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const who = claimName.value.trim();
+    if (!who) { claimName.focus(); return; }
+    addClaim(seedOf(), who);
+    claimForm.hidden = true;
+    claimName.value = '';
+    claimBtn.textContent = 'claimed';
+    setTimeout(() => { claimBtn.textContent = 'claim'; }, 1600);
+  });
+
+  /* ------------------------------------------------------------------ wall */
+
+  const wallGrid = document.getElementById('wallGrid');
+  const wallCount = document.getElementById('wallCount');
+
+  function drawWall() {
+    const all = claims();
+    wallGrid.innerHTML = '';
+    wallCount.textContent = all.length
+      ? `${all.length} claimed \u00b7 kept in this browser`
+      : '';
+    if (!all.length) {
+      const empty = document.createElement('p');
+      empty.id = 'wallEmpty';
+      empty.textContent = 'nothing pinned up yet — claim a word and he lands here';
+      wallGrid.appendChild(empty);
+      return;
+    }
+    for (const c of all) {
+      const cell = document.createElement('div');
+      cell.className = 'pin';
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 128;
+      paint(c.seed);
+      const src = document.createElement('canvas');
+      src.width = src.height = ART;
+      src.getContext('2d').putImageData(tile, 0, 0);
+      const cx = cv.getContext('2d');
+      cx.imageSmoothingEnabled = false;
+      cx.drawImage(src, 0, 0, 128, 128);
+      const who = document.createElement('span');
+      who.textContent = c.who;
+      cell.append(cv, who);
+      wallGrid.appendChild(cell);
+    }
+  }
+
+  /* --------------------------------------------------------- drifting field
+   *
+   * A slow field of guys behind the maker, dim enough to sit under the one you
+   * are making. It is the same atlas, so it costs a few hundred blits.
+   */
+
+  const drift = document.getElementById('drift');
+  const driftCtx = drift.getContext('2d');
+  const DRIFT_CELL = 74, DRIFT_SPEED = 0.0075;   // cells per ms
+  let driftRunning = false;
+
+  function driftFrame(now) {
+    if (!driftRunning) return;
+    const w = drift.clientWidth, h = drift.clientHeight;
+    const dpr2 = Math.min(window.devicePixelRatio || 1, 2);
+    if (drift.width !== Math.round(w * dpr2)) {
+      drift.width = Math.round(w * dpr2);
+      drift.height = Math.round(h * dpr2);
+    }
+    driftCtx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
+    driftCtx.imageSmoothingEnabled = false;
+    driftCtx.clearRect(0, 0, w, h);
+
+    const offset = now * DRIFT_SPEED;
+    const cols = Math.ceil(w / DRIFT_CELL) + 2;
+    const rows = Math.ceil(h / DRIFT_CELL) + 2;
+    for (let j = 0; j < rows; j++) {
+      // Alternate rows slide opposite ways, which reads as a field rather
+      // than a sheet being dragged.
+      const dir = j % 2 ? -1 : 1;
+      const shift = ((offset * dir) % cols + cols) % cols;
+      for (let i = 0; i < cols; i++) {
+        const x = ((i - shift) * DRIFT_CELL) % (cols * DRIFT_CELL);
+        const px = x < -DRIFT_CELL ? x + cols * DRIFT_CELL : x;
+        drawSprite(driftCtx, spriteFor(`drift ${i},${j}`), Math.round(px), Math.round(j * DRIFT_CELL - DRIFT_CELL), DRIFT_CELL - 12);
+      }
+    }
+    requestAnimationFrame(driftFrame);
+  }
+
   nameField.addEventListener('input', drawStage);
   document.getElementById('savePlain').addEventListener('click', () => save(false));
   document.getElementById('saveNamed').addEventListener('click', () => save(true));
@@ -206,7 +324,63 @@
   let grabbed = null;                  // lattice cell pinned under the finger
 
   const clamp = s => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
-  const seedAt = (i, j) => `${i},${j}`;
+  /**
+   * Two ways to lay the plane out.
+   *
+   * Scattered, a cell's coordinates are its seed, so the plane is endless and
+   * costs nothing. Ordered by colour, each row is one palette and the rows run
+   * the spectrum, which needs a pool of seeds sorted into palettes first: you
+   * cannot ask the hash for a particular colour, you can only look at what it
+   * gives you. The pool is built a slice at a time so switching mode never
+   * blocks, and the plane stays scattered until it is ready.
+   */
+  const PER_PALETTE = 220;
+  const pool = { ready: false, building: false, order: null, buckets: null, made: 0 };
+
+  function hueOf(hex) {
+    const [r, g, b] = rgb(hex).map(v => v / 255);
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (d === 0) return -1;
+    const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return h * 60;
+  }
+
+  function buildPool(slice) {
+    if (!pool.buckets) {
+      pool.buckets = L.palettes.map(() => []);
+      pool.order = L.palettes
+        .map((p, i) => ({ i, h: hueOf(p.colors[1]) }))
+        .sort((a, b) => a.h - b.h)
+        .map(p => p.i);
+    }
+    const target = L.palettes.length * PER_PALETTE;
+    const end = Math.min(target, pool.made + slice);
+    for (; pool.made < end; pool.made++) {
+      const seed = `hue ${pool.made}`;
+      pool.buckets[L.resolve(seed).palette].push(seed);
+    }
+    // Uniform palette weights, so a bucket short of the target only means the
+    // roll was uneven; every one of them fills long before the pool does.
+    pool.ready = pool.buckets.every(b => b.length > 8);
+    return pool.made >= target;
+  }
+
+  let ordered = false;
+
+  /** Mixes two integers into a well-spread value — no lattice patterning. */
+  function mixHash(i, j) {
+    let x = (Math.imul(i, 0x27d4eb2d) ^ Math.imul(j, 0x165667b1)) >>> 0;
+    x = Math.imul(x ^ (x >>> 15), 0x2545f491) >>> 0;
+    return (x ^ (x >>> 13)) >>> 0;
+  }
+
+  function seedAt(i, j) {
+    if (!ordered || !pool.ready) return `${i},${j}`;
+    const bands = pool.order.length;
+    const band = ((j % bands) + bands) % bands;
+    const bucket = pool.buckets[pool.order[band]];
+    return bucket[mixHash(i, j) % bucket.length];
+  }
   const toWorldX = sx => cam.x + (sx - width / 2) / cam.scale;
   const toWorldY = sy => cam.y + (sy - height / 2) / cam.scale;
 
@@ -394,7 +568,18 @@
       // throw starts with a warm buffer in every direction.
       if (!idleHandle) {
         const idle = window.requestIdleCallback || (fn => setTimeout(() => fn({ timeRemaining: () => 8 }), 60));
-        idleHandle = idle(d => { idleHandle = 0; prefetch(performance.now() + Math.min(10, d.timeRemaining())); });
+        idleHandle = idle(d => {
+          idleHandle = 0;
+          const budgetMs = Math.min(10, d.timeRemaining());
+          if (ordered && pool.made < L.palettes.length * PER_PALETTE) {
+            const before = pool.ready;
+            buildPool(700);
+            if (pool.ready !== before) { sprites.clear(); owner.fill(null); }
+            run();
+            return;
+          }
+          prefetch(performance.now() + budgetMs);
+        });
       }
     }
   }
@@ -574,6 +759,17 @@
     run();
   });
 
+  const modeLink = document.getElementById('mode');
+  modeLink.addEventListener('click', e => {
+    e.preventDefault();
+    ordered = !ordered;
+    modeLink.textContent = ordered ? 'scatter them \u2192' : 'order by colour \u2192';
+    if (ordered && !pool.ready) buildPool(600);
+    sprites.clear();
+    owner.fill(null);
+    run();
+  });
+
   function readout() {
     const sx = pointer ? pointer.x : width / 2;
     const sy = pointer ? pointer.y : height / 2;
@@ -596,11 +792,21 @@
   }
 
   function route() {
-    const gallery = location.hash === '#gallery';
-    document.getElementById('maker').classList.toggle('on', !gallery);
-    galleryView.classList.toggle('on', gallery);
-    if (gallery) { resize(); }
-    else { drawStage(); setTimeout(() => nameField.focus({ preventScroll: true }), 60); }
+    const where = location.hash === '#gallery' ? 'gallery'
+      : location.hash === '#wall' ? 'wall' : 'maker';
+
+    document.getElementById('maker').classList.toggle('on', where === 'maker');
+    galleryView.classList.toggle('on', where === 'gallery');
+    document.getElementById('wallView').classList.toggle('on', where === 'wall');
+
+    driftRunning = where === 'maker';
+    if (where === 'gallery') resize();
+    if (where === 'wall') drawWall();
+    if (where === 'maker') {
+      drawStage();
+      requestAnimationFrame(driftFrame);
+      setTimeout(() => nameField.focus({ preventScroll: true }), 60);
+    }
   }
 
   addEventListener('resize', () => { if (location.hash === '#gallery') resize(); });
