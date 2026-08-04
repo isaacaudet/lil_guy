@@ -5,59 +5,98 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <title>lil_guy</title>
-<meta name="description" content="An endless plane of deterministic pixel characters.">
+<meta name="description" content="Type anything, get a lil guy. Deterministic pixel characters.">
 <style>
   *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%;overflow:hidden;background:#0b0b0d}
+  html,body{height:100%;overflow:hidden;background:#08080a}
   body{
     font:400 11px/1.7 ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
-    color:#fff; -webkit-font-smoothing:antialiased;
-    overscroll-behavior:none; touch-action:none;
-    -webkit-tap-highlight-color:transparent;
+    color:#fff;-webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;touch-action:none;-webkit-tap-highlight-color:transparent;
   }
-  canvas{
-    position:fixed;inset:0;display:block;
-    cursor:grab; touch-action:none;
-  }
-  canvas.drag{cursor:grabbing}
+  ::selection{background:rgba(255,255,255,.16)}
 
-  /* the only chrome */
-  #hud{
-    position:fixed;left:max(22px,env(safe-area-inset-left));
-    bottom:max(20px,env(safe-area-inset-bottom));
-    pointer-events:none; user-select:none;
-    letter-spacing:.02em;
-  }
-  #hud b{
-    display:block;font-weight:600;font-size:13px;letter-spacing:-.01em;
-    color:rgba(255,255,255,.92);margin-bottom:2px;
-  }
-  #hud b i{font-style:normal;color:rgba(255,255,255,.3)}
-  #hud p{color:rgba(255,255,255,.3)}
-  #hint{transition:opacity .5s ease}
-  #hud.touched #hint{opacity:0}
-  #hud #seed{color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
-  #hud a{color:rgba(255,255,255,.3);text-decoration:none;pointer-events:auto}
-  #hud a:hover{color:rgba(255,255,255,.7)}
+  .view{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity .34s ease}
+  .view.on{opacity:1;pointer-events:auto}
 
-  /* light falloff at the edges, so the plane reads as endless */
+  /* ---------------------------------------------------------------- maker */
+  #maker{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+  #stage{
+    width:min(40vh,320px);height:min(40vh,320px);
+    image-rendering:pixelated;display:block;
+  }
+  #name{
+    width:min(78vw,420px);margin-top:6px;
+    background:none;border:0;border-bottom:1px solid rgba(255,255,255,.13);
+    color:#fff;font-family:inherit;font-size:15px;line-height:1.6;
+    text-align:center;letter-spacing:.01em;
+    padding:0 4px 10px;
+  }
+  #name::placeholder{color:rgba(255,255,255,.22)}
+  #name:focus{outline:none;border-bottom-color:rgba(255,255,255,.4)}
+
+  .acts{display:flex;gap:26px;margin-top:22px}
+  .acts button{
+    background:none;border:0;padding:4px 0;cursor:pointer;
+    color:rgba(255,255,255,.34);font:inherit;letter-spacing:.06em;
+    transition:color .18s ease;
+  }
+  .acts button:hover,.acts button:focus-visible{color:rgba(255,255,255,.88);outline:none}
+
+  /* --------------------------------------------------------------- plane */
+  #plane{position:absolute;inset:0;display:block;cursor:grab;touch-action:none}
+  #plane.drag{cursor:grabbing}
   #veil{
-    position:fixed;inset:0;pointer-events:none;
+    position:absolute;inset:0;pointer-events:none;
     background:
-      linear-gradient(to top right,rgba(7,7,9,.94) 0%,rgba(7,7,9,.72) 12%,rgba(7,7,9,0) 34%),
+      linear-gradient(to top right,rgba(7,7,9,.94) 0%,rgba(7,7,9,.7) 12%,rgba(7,7,9,0) 34%),
       radial-gradient(125% 95% at 50% 45%,transparent 38%,rgba(6,6,8,.6) 100%);
   }
+
+  /* ----------------------------------------------------------------- hud */
+  .hud{
+    position:fixed;left:max(22px,env(safe-area-inset-left));
+    bottom:max(20px,env(safe-area-inset-bottom));
+    user-select:none;letter-spacing:.02em;z-index:3;
+  }
+  .hud b{display:block;font-weight:600;font-size:13px;letter-spacing:-.01em;color:rgba(255,255,255,.92);margin-bottom:2px}
+  .hud b i{font-style:normal;color:rgba(255,255,255,.28)}
+  .hud p{color:rgba(255,255,255,.3)}
+  .hud a{color:rgba(255,255,255,.34);text-decoration:none;transition:color .18s ease}
+  .hud a:hover{color:rgba(255,255,255,.85)}
+  #seed{color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
+  #hint{transition:opacity .5s ease}
+  #galleryView.touched #hint{opacity:0}
 </style>
 </head>
 <body>
-<canvas id="plane"></canvas>
-<div id="veil"></div>
-<div id="hud">
-  <b>lil<i>_</i>guy</b>
-  <p id="seed">&nbsp;</p>
-  <p id="hint">drag to wander · pinch or scroll to zoom</p>
-  <p><a href="https://github.com/isaacaudet/lil_guy">github.com/isaacaudet/lil_guy</a></p>
-</div>
+
+<section id="maker" class="view">
+  <canvas id="stage" width="512" height="512"></canvas>
+  <input id="name" type="text" placeholder="type your name" spellcheck="false"
+         autocomplete="off" autocapitalize="off" autocorrect="off">
+  <div class="acts">
+    <button id="savePlain">save png</button>
+    <button id="saveNamed">save png with name</button>
+  </div>
+  <div class="hud">
+    <b>lil<i>_</i>guy</b>
+    <p><a href="#gallery">gallery →</a></p>
+    <p><a href="https://github.com/isaacaudet/lil_guy">github.com/isaacaudet/lil_guy</a></p>
+  </div>
+</section>
+
+<section id="galleryView" class="view">
+  <canvas id="plane"></canvas>
+  <div id="veil"></div>
+  <div class="hud">
+    <b>lil<i>_</i>guy</b>
+    <p id="seed">&nbsp;</p>
+    <p id="hint">drag to wander · pinch or scroll to zoom</p>
+    <p><a href="#">← make your own</a></p>
+  </div>
+</section>
+
 <script src="./lil-guy.js"></script>
 <script src="./app.js"></script>
 </body>

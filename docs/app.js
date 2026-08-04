@@ -1,59 +1,44 @@
 /**
- * An endless plane of lil guys.
+ * lil_guy — a maker and an endless plane.
  *
- * There is no list. Every cell on the integer lattice is itself the seed —
- * `"12,-7"` — so the grid has no edges and nothing is precomputed: pull in any
- * direction and the characters under you are hashed into existence as they
- * arrive.
+ * Two ideas do most of the work here.
  *
- * The feel is the point, so the motion is modelled rather than approximated.
- * Velocity comes from a short sample window rather than the last event, so a
- * flick reads the throw and not the twitch at the end of it. The glide and the
- * zoom both settle on exponential decay against real elapsed time, so they
- * behave the same at 60Hz and at 120Hz. And zoom eases toward a target while
- * holding the point under the cursor fixed, which is what makes a wheel tick
- * feel pulled rather than applied.
+ * Guys live in one texture atlas rather than one canvas each. A canvas per
+ * sprite cost 0.20ms to build, against 0.05ms for the art itself: three
+ * quarters of the time went on allocating elements. Writing 16x16 tiles into a
+ * single atlas costs 0.066ms, so the same frame budget produces three times as
+ * many characters, and the plane can keep ahead of a fast throw.
+ *
+ * The lattice is a spring mesh, not a rigid grid. Every cell is tied to its
+ * rest position and to its four neighbours, and carries mass. Dragging the
+ * plane accelerates the lattice; the guys resist, so the field stretches
+ * behind your hand, the strain travels outward through the couplings, and it
+ * rings down when you let go. The cell you grabbed is pinned to your finger,
+ * which is what gives the stretch somewhere to pull against.
  */
 (() => {
   const L = window.LilGuy;
   const ART = L.GRID_SIZE;
 
-  const canvas = document.getElementById('plane');
-  const ctx = canvas.getContext('2d', { alpha: false });
-  const seedText = document.getElementById('seed');
+  /* ================================================================ atlas */
 
-  const BG = '#0b0b0d';
-  const MIN_SCALE = 40;      // px per cell — zoomed out, a swarm
-  const MAX_SCALE = 900;     // one guy filling most of the screen
-  const START_SCALE = 210;
-  const MARGIN = 0.13;       // share of each cell left as air
+  const PAD = 1;                       // transparent gutter, so tiles cannot bleed
+  const PITCH = ART + PAD * 2;
+  const COLS = 96, ROWS = 96;
+  const SLOTS = COLS * ROWS;
 
-  const GLIDE_TAU = 340;     // ms — how long a flick keeps running
-  const ZOOM_TAU = 70;       // ms — how quickly zoom settles on its target
-  const STOP = 0.014;        // px/ms — below this the glide is over
-  const FADE = 220;          // ms — a guy fading up as he is drawn
-  const BUDGET = 7;          // ms per frame spent making new guys
+  const atlas = document.createElement('canvas');
+  atlas.width = COLS * PITCH;
+  atlas.height = ROWS * PITCH;
+  const atlasCtx = atlas.getContext('2d');
+  const tile = atlasCtx.createImageData(ART, ART);
 
-  /** World coordinates at the centre of the screen, and pixels per cell. */
-  const cam = { x: 0.5, y: 0.5, scale: START_SCALE, target: START_SCALE };
-  const vel = { x: 0, y: 0 };   // world units per ms
-  let anchor = null;            // { wx, wy, sx, sy } — held fixed while zooming
+  const sprites = new Map();           // seed → { slot, born, seen }
+  const owner = new Array(SLOTS).fill(null);
+  let nextSlot = 0;
+  let frameId = 0;
 
-  let width = 0, height = 0, dpr = 1;
-  let pointer = null;
-
-  // The hint has done its job the moment you touch the plane.
-  const hud = document.getElementById('hud');
-  const touched = () => hud.classList.add('touched');
-
-  const clamp = s => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
-
-  /* ------------------------------------------------------------------ art */
-
-  const sprites = new Map();
-  const CACHE_CAP = 3000;
   const rgbCache = new Map();
-
   function rgb(hex) {
     let v = rgbCache.get(hex);
     if (!v) {
@@ -63,19 +48,13 @@
     return v;
   }
 
-  function spriteFor(seed) {
-    let s = sprites.get(seed);
-    if (s) return s;
-
+  /** Paints a guy into `tile` and returns his palette. */
+  function paint(seed) {
     const cfg = L.resolve(seed);
     const grid = L.compose(cfg);
     const pal = L.shadePalette(L.getPalette(cfg.palette), cfg.shade);
-
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = ART;
-    const c = cv.getContext('2d');
-    const img = c.createImageData(ART, ART);
-    const d = img.data;
+    const d = tile.data;
+    d.fill(0);
     for (let y = 0, p = 0; y < ART; y++) {
       for (let x = 0; x < ART; x++, p += 4) {
         const hex = L.resolveColor(pal, grid[y][x]);
@@ -84,51 +63,273 @@
         d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
       }
     }
-    c.putImageData(img, 0, 0);
+    return pal;
+  }
 
-    if (sprites.size >= CACHE_CAP) sprites.delete(sprites.keys().next().value);
-    s = { cv, born: performance.now() };
+  function spriteFor(seed) {
+    let s = sprites.get(seed);
+    if (s) { s.seen = frameId; return s; }
+
+    paint(seed);
+    // Never recycle a slot whose guy is on screen right now. Without this the
+    // ring of prefetched guys evicts the ones being drawn, and the two chase
+    // each other in a circle: everything is regenerated every frame and the
+    // plane stays empty however much budget it is given.
+    let slot = nextSlot, tries = 0;
+    while (tries++ < SLOTS) {
+      const held = owner[slot];
+      if (!held || sprites.get(held).seen < frameId - 1) break;
+      slot = (slot + 1) % SLOTS;
+    }
+    nextSlot = (slot + 1) % SLOTS;
+    if (owner[slot]) sprites.delete(owner[slot]);
+    owner[slot] = seed;
+
+    atlasCtx.putImageData(tile, (slot % COLS) * PITCH + PAD, ((slot / COLS) | 0) * PITCH + PAD);
+    s = { slot, born: performance.now(), seen: frameId };
     sprites.set(seed, s);
     return s;
   }
 
-  /* --------------------------------------------------------------- camera */
+  const drawSprite = (ctx, s, x, y, size) => ctx.drawImage(
+    atlas,
+    (s.slot % COLS) * PITCH + PAD, ((s.slot / COLS) | 0) * PITCH + PAD, ART, ART,
+    x, y, size, size
+  );
 
+  /* ================================================================ maker */
+
+  const stage = document.getElementById('stage');
+  const stageCtx = stage.getContext('2d');
+  const nameField = document.getElementById('name');
+  const DEFAULT_SEED = 'lil_guy';
+
+  const seedOf = () => nameField.value.trim() || DEFAULT_SEED;
+
+  const STAGE_SCALE = stage.width / ART;
+
+  function drawStage() {
+    paint(seedOf());
+    const src = document.createElement('canvas');
+    src.width = src.height = ART;
+    src.getContext('2d').putImageData(tile, 0, 0);
+    stageCtx.clearRect(0, 0, stage.width, stage.height);
+    stageCtx.imageSmoothingEnabled = false;
+    stageCtx.drawImage(src, 0, 0, stage.width, stage.height);
+  }
+
+  /** A guy at any size, nearest-neighbour, on whatever background is asked for. */
+  function render(seed, scale, background) {
+    const pal = paint(seed);
+    const src = document.createElement('canvas');
+    src.width = src.height = ART;
+    src.getContext('2d').putImageData(tile, 0, 0);
+
+    const size = ART * scale;
+    const label = background ? Math.round(size * 0.2) : 0;
+    const out = document.createElement('canvas');
+    out.width = size;
+    out.height = size + label;
+    const c = out.getContext('2d');
+    if (background) {
+      c.fillStyle = background;
+      c.fillRect(0, 0, out.width, out.height);
+    }
+    c.imageSmoothingEnabled = false;
+    c.drawImage(src, 0, 0, size, size);
+    return { canvas: out, ctx: c, size, label, pal };
+  }
+
+  function save(withName) {
+    const seed = seedOf();
+    // Plain is transparent, for use as an avatar. Named gets the site's black
+    // behind it, because a caption on transparency is unreadable half the time.
+    const { canvas, ctx: c, size, label } = render(seed, 64, withName ? '#08080a' : null);
+    if (withName) {
+      c.fillStyle = 'rgba(255,255,255,.86)';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.font = `600 ${Math.round(size * 0.062)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+      c.fillText(seed, size / 2, size + label / 2 - size * 0.01);
+    }
+    canvas.toBlob(blob => {
+      const slug = seed.replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'lil_guy';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `lil_guy-${slug}${withName ? '-named' : ''}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  }
+
+  nameField.addEventListener('input', drawStage);
+  document.getElementById('savePlain').addEventListener('click', () => save(false));
+  document.getElementById('saveNamed').addEventListener('click', () => save(true));
+
+  /* ================================================================ plane */
+
+  const canvas = document.getElementById('plane');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const seedText = document.getElementById('seed');
+  const galleryView = document.getElementById('galleryView');
+
+  const BG = '#08080a';
+  const MIN_SCALE = 40, MAX_SCALE = 900, START_SCALE = 210;
+  const MARGIN = 0.13;
+
+  const GLIDE_TAU = 340;   // ms — how long a throw keeps running
+  const ZOOM_TAU = 70;     // ms — how quickly zoom settles
+  const STOP = 0.05;       // px/ms — below this the glide is over
+  const FADE = 200;        // ms — a guy fading up as he lands
+  // Making guys you can see comes first, and a hard throw across the zoomed
+  // out plane replaces the whole screen several times over — so the budget
+  // opens up when there is a backlog. A 20ms frame is a far better trade than
+  // a screen with holes in it; it closes back to 6ms the moment you catch up.
+  const BUDGET_MIN = 6, BUDGET_MAX = 20;
+  const AHEAD = 4;         // ms/frame making guys you are about to see
+  const RING = 2;          // cells of prefetch beyond the screen edge
+  const LOOKAHEAD = 260;   // ms of travel to prefetch toward
+
+  // Mesh — a lattice of masses on springs. K is the pull back to rest, C the
+  // resistance, N the coupling that carries strain between neighbours, DRIVE
+  // how strongly the guys resist the lattice being yanked about.
+  const K = 90, C = 5.6, N = 150, DRIVE = 0.3, MAX_FLEX = 0.45;
+  const SUBSTEP = 0.008;   // s — fixed integration step
+
+  const cam = { x: 0.5, y: 0.5, scale: START_SCALE, target: START_SCALE };
+  const vel = { x: 0, y: 0 };
+  let camPrev = { x: cam.x, y: cam.y };
+  let camVel = { x: 0, y: 0 };
+  let anchor = null;
+  let width = 0, height = 0, dpr = 1;
+  let pointer = null;
+  let grabbed = null;                  // lattice cell pinned under the finger
+
+  const clamp = s => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
   const seedAt = (i, j) => `${i},${j}`;
   const toWorldX = sx => cam.x + (sx - width / 2) / cam.scale;
   const toWorldY = sy => cam.y + (sy - height / 2) / cam.scale;
 
-  /** Puts a world point back under a screen point. */
-  function pin(wx, wy, sx, sy) {
-    cam.x = wx - (sx - width / 2) / cam.scale;
-    cam.y = wy - (sy - height / 2) / cam.scale;
+  /* ------------------------------------------------------------ the mesh */
+
+  let mesh = { i0: 0, j0: 0, w: 0, h: 0, dx: null, dy: null, vx: null, vy: null };
+
+  /** Re-frames the mesh over a new span, carrying displacement across. */
+  function reframe(i0, j0, w, h) {
+    if (mesh.i0 === i0 && mesh.j0 === j0 && mesh.w === w && mesh.h === h) return;
+    const n = w * h;
+    const next = {
+      i0, j0, w, h,
+      dx: new Float32Array(n), dy: new Float32Array(n),
+      vx: new Float32Array(n), vy: new Float32Array(n),
+    };
+    const old = mesh;
+    if (old.dx) {
+      for (let j = 0; j < h; j++) {
+        const oj = j0 + j - old.j0;
+        if (oj < 0 || oj >= old.h) continue;
+        for (let i = 0; i < w; i++) {
+          const oi = i0 + i - old.i0;
+          if (oi < 0 || oi >= old.w) continue;
+          const a = j * w + i, b = oj * old.w + oi;
+          next.dx[a] = old.dx[b]; next.dy[a] = old.dy[b];
+          next.vx[a] = old.vx[b]; next.vy[a] = old.vy[b];
+        }
+      }
+    }
+    mesh = next;
   }
 
-  function zoomTo(next, sx, sy) {
-    const to = clamp(next);
-    if (to === cam.target) return;
-    anchor = { wx: toWorldX(sx), wy: toWorldY(sy), sx, sy };
-    cam.target = to;
-    run();
+  /**
+   * One step of the lattice.
+   *
+   * Each cell is pulled back to its rest position, resisted by damping, and
+   * tugged by its four neighbours; the whole field is driven by how hard the
+   * camera is accelerating. Cells off the edge of the mesh count as at rest,
+   * so strain has something to terminate against.
+   */
+  function stepMesh(h, accelX, accelY) {
+    const { w, h: rows, dx, dy, vx, vy } = mesh;
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < w; i++) {
+        const k = j * w + i;
+        const left = i > 0 ? dx[k - 1] : 0, right = i < w - 1 ? dx[k + 1] : 0;
+        const up = j > 0 ? dx[k - w] : 0, down = j < rows - 1 ? dx[k + w] : 0;
+        const lapX = left + right + up + down - 4 * dx[k];
+
+        const leftY = i > 0 ? dy[k - 1] : 0, rightY = i < w - 1 ? dy[k + 1] : 0;
+        const upY = j > 0 ? dy[k - w] : 0, downY = j < rows - 1 ? dy[k + w] : 0;
+        const lapY = leftY + rightY + upY + downY - 4 * dy[k];
+
+        vx[k] += (-K * dx[k] - C * vx[k] + N * lapX + DRIVE * accelX) * h;
+        vy[k] += (-K * dy[k] - C * vy[k] + N * lapY + DRIVE * accelY) * h;
+        dx[k] += vx[k] * h;
+        dy[k] += vy[k] * h;
+
+        if (!(Math.abs(dx[k]) <= MAX_FLEX)) { dx[k] = Math.sign(dx[k] || 0) * MAX_FLEX; vx[k] = 0; }
+        if (!(Math.abs(dy[k]) <= MAX_FLEX)) { dy[k] = Math.sign(dy[k] || 0) * MAX_FLEX; vy[k] = 0; }
+      }
+    }
+
+    // The cell in your hand does not lag — it is the thing everything else is
+    // straining against.
+    if (grabbed) {
+      const i = grabbed.i - mesh.i0, j = grabbed.j - mesh.j0;
+      if (i >= 0 && i < w && j >= 0 && j < rows) {
+        const k = j * w + i;
+        dx[k] = dy[k] = vx[k] = vy[k] = 0;
+      }
+    }
   }
 
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.imageSmoothingEnabled = false;
-    run();
+  function restMesh() {
+    if (!mesh.dx) return true;
+    let still = true;
+    for (let k = 0; k < mesh.dx.length; k++) {
+      if (Math.abs(mesh.dx[k]) > 1e-4 || Math.abs(mesh.dy[k]) > 1e-4 ||
+          Math.abs(mesh.vx[k]) > 1e-3 || Math.abs(mesh.vy[k]) > 1e-3) { still = false; break; }
+    }
+    return still;
   }
 
-  /* ---------------------------------------------------------------- frame */
+  /* ------------------------------------------------------------ prefetch */
 
-  let running = false;
-  let lastFrame = 0;
+  /**
+   * Builds guys just off the edge of the screen, working toward wherever the
+   * camera is heading. Making them only when they are already visible is what
+   * let a fast throw outrun the art.
+   */
+  function prefetch(deadline) {
+    const s = cam.scale;
+    const halfW = width / (2 * s), halfH = height / (2 * s);
+
+    // Reach toward wherever the camera is heading, but never further than one
+    // extra half-screen. An unbounded lead put the whole prefetch box off the
+    // side of the screen during a hard throw: a thousand guys built per frame
+    // that nobody could see, evicting every one that was actually on screen.
+    const reachX = halfW * 0.4, reachY = halfH * 0.4;
+    const leadX = Math.max(-reachX, Math.min(reachX, vel.x * LOOKAHEAD));
+    const leadY = Math.max(-reachY, Math.min(reachY, vel.y * LOOKAHEAD));
+
+    const i0 = Math.floor(cam.x - halfW - RING + Math.min(0, leadX));
+    const i1 = Math.ceil(cam.x + halfW + RING + Math.max(0, leadX));
+    const j0 = Math.floor(cam.y - halfH - RING + Math.min(0, leadY));
+    const j1 = Math.ceil(cam.y + halfH + RING + Math.max(0, leadY));
+
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const seed = seedAt(i, j);
+        if (sprites.has(seed)) continue;
+        spriteFor(seed);
+        if (performance.now() > deadline) return true;
+      }
+    }
+    return false;
+  }
+
+  /* --------------------------------------------------------------- frame */
+
+  let running = false, lastFrame = 0, idleHandle = 0, budget = 6;
 
   function run() {
     if (running) return;
@@ -138,18 +339,19 @@
   }
 
   function frame(now) {
-    const dt = Math.min(64, now - lastFrame);
+    frameId++;
+    const dt = Math.min(64, Math.max(1, now - lastFrame));
     lastFrame = now;
     let alive = false;
 
     if (Math.abs(cam.target - cam.scale) > 0.15) {
       cam.scale += (cam.target - cam.scale) * (1 - Math.exp(-dt / ZOOM_TAU));
       alive = true;
-    } else {
-      cam.scale = cam.target;
-    }
+    } else cam.scale = cam.target;
+
     if (anchor) {
-      pin(anchor.wx, anchor.wy, anchor.sx, anchor.sy);
+      cam.x = anchor.wx - (anchor.sx - width / 2) / cam.scale;
+      cam.y = anchor.wy - (anchor.sy - height / 2) / cam.scale;
       if (!alive) anchor = null;
     }
 
@@ -157,18 +359,57 @@
       cam.x += vel.x * dt;
       cam.y += vel.y * dt;
       const decay = Math.exp(-dt / GLIDE_TAU);
-      vel.x *= decay;
-      vel.y *= decay;
+      vel.x *= decay; vel.y *= decay;
       if (Math.hypot(vel.x, vel.y) * cam.scale < STOP) vel.x = vel.y = 0;
       else alive = true;
     }
 
-    // The plane moves under a still cursor, so the readout has to follow the
-    // frame rather than the pointer.
+    // Camera acceleration in cells/s², which is what the lattice feels.
+    const secs = dt / 1000;
+    const nowVel = { x: (cam.x - camPrev.x) / secs, y: (cam.y - camPrev.y) / secs };
+    const MAX_ACCEL = 120;   // cells/s²
+    const bound = a => Math.max(-MAX_ACCEL, Math.min(MAX_ACCEL, Number.isFinite(a) ? a : 0));
+    const accelX = bound((nowVel.x - camVel.x) / secs);
+    const accelY = bound((nowVel.y - camVel.y) / secs);
+    camPrev = { x: cam.x, y: cam.y };
+    camVel = nowVel;
+
+    layoutMesh();
+    let left = secs;
+    while (left > 1e-4) {
+      const step = Math.min(SUBSTEP, left);
+      stepMesh(step, accelX, accelY);
+      left -= step;
+    }
+    if (!restMesh()) alive = true;
+
     readout();
-    if (draw(now) || dragging) alive = true;
-    if (alive) requestAnimationFrame(frame);
-    else running = false;
+    if (draw(now)) alive = true;
+    if (dragging) alive = true;
+
+    if (alive) { requestAnimationFrame(frame); }
+    else {
+      running = false;
+      // Standing still is the moment to build the surroundings, so the next
+      // throw starts with a warm buffer in every direction.
+      if (!idleHandle) {
+        const idle = window.requestIdleCallback || (fn => setTimeout(() => fn({ timeRemaining: () => 8 }), 60));
+        idleHandle = idle(d => { idleHandle = 0; prefetch(performance.now() + Math.min(10, d.timeRemaining())); });
+      }
+    }
+  }
+
+  function span() {
+    const s = cam.scale;
+    return {
+      i0: Math.floor(toWorldX(0)) - 1, i1: Math.ceil(toWorldX(width)) + 1,
+      j0: Math.floor(toWorldY(0)) - 1, j1: Math.ceil(toWorldY(height)) + 1,
+    };
+  }
+
+  function layoutMesh() {
+    const { i0, i1, j0, j1 } = span();
+    reframe(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
   }
 
   function draw(now) {
@@ -178,59 +419,70 @@
     const s = cam.scale;
     const inset = s * MARGIN;
     const size = Math.round(s - inset * 2);
+    const { i0, i1, j0, j1 } = span();
 
-    const i0 = Math.floor(toWorldX(0));
-    const i1 = Math.ceil(toWorldX(width));
-    const j0 = Math.floor(toWorldY(0));
-    const j1 = Math.ceil(toWorldY(height));
-
-    const deadline = now + BUDGET;
+    // Two passes on purpose. Writing a tile into the atlas and then reading the
+    // atlas back as a draw source makes the browser synchronise the texture
+    // every time it flips between the two — interleaved, a single guy cost
+    // ~6ms instead of 0.07. Building everything first and drawing second means
+    // one flip per frame.
+    const deadline = performance.now() + budget;
     let pending = false;
-    let fading = false;
-
-    for (let j = j0; j <= j1; j++) {
-      const y = (j - cam.y) * s + height / 2 + inset;
+    for (let j = j0; j <= j1 && !pending; j++) {
       for (let i = i0; i <= i1; i++) {
-        const seed = seedAt(i, j);
-        // A guy not yet made waits for a later frame rather than blowing the
-        // budget. An empty cell for one frame reads as loading; a stutter
-        // reads as broken.
-        if (!sprites.has(seed) && performance.now() > deadline) { pending = true; continue; }
+        if (sprites.has(seedAt(i, j))) continue;
+        if (performance.now() > deadline) { pending = true; break; }
+        spriteFor(seedAt(i, j));
+      }
+    }
+    if (!pending) prefetch(performance.now() + AHEAD);
 
-        const sprite = spriteFor(seed);
+    let fading = false;
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const sprite = sprites.get(seedAt(i, j));
+        if (!sprite) continue;
+        sprite.seen = frameId;
+
         const age = now - sprite.born;
         const alpha = age < FADE ? age / FADE : 1;
         if (alpha < 1) { fading = true; ctx.globalAlpha = alpha; }
 
-        ctx.drawImage(sprite.cv, Math.round((i - cam.x) * s + width / 2 + inset), Math.round(y), size, size);
+        const k = (j - mesh.j0) * mesh.w + (i - mesh.i0);
+        const fx = mesh.dx ? mesh.dx[k] || 0 : 0;
+        const fy = mesh.dy ? mesh.dy[k] || 0 : 0;
+
+        drawSprite(ctx, sprite,
+          Math.round((i + fx - cam.x) * s + width / 2 + inset),
+          Math.round((j + fy - cam.y) * s + height / 2 + inset),
+          size);
         if (alpha < 1) ctx.globalAlpha = 1;
       }
     }
 
+    budget = pending ? Math.min(BUDGET_MAX, budget * 1.6) : BUDGET_MIN;
     return pending || fading;
   }
 
-  /* -------------------------------------------------------------- pointer */
+  /* ------------------------------------------------------------- gesture */
 
   const active = new Map();
-  let dragging = false;
-  let samples = [];
-  let pinch = 0;
+  let dragging = false, samples = [], pinch = 0;
+
+  const touched = () => galleryView.classList.add('touched');
 
   function sample(dx, dy, t) {
     samples.push({ dx, dy, t });
-    // A throw should read the last stretch of the gesture — not the whole
-    // drag, and not only the final jitter.
     while (samples.length > 1 && t - samples[0].t > 90) samples.shift();
   }
 
   function throwVelocity() {
     if (samples.length < 2) return { x: 0, y: 0 };
-    const span = samples[samples.length - 1].t - samples[0].t;
-    if (span <= 0) return { x: 0, y: 0 };
+    const range = samples[samples.length - 1].t - samples[0].t;
+    if (range <= 0) return { x: 0, y: 0 };
     let dx = 0, dy = 0;
     for (const s of samples) { dx += s.dx; dy += s.dy; }
-    return { x: dx / span, y: dy / span };
+    return { x: dx / range, y: dy / range };
   }
 
   const points = () => [...active.values()];
@@ -247,31 +499,29 @@
       anchor = null;
       cam.target = cam.scale;
       samples = [];
+      grabbed = { i: Math.floor(toWorldX(e.clientX)), j: Math.floor(toWorldY(e.clientY)) };
       canvas.classList.add('drag');
       run();
     } else if (active.size === 2) {
       pinch = spread();
+      grabbed = null;
     }
   });
 
   canvas.addEventListener('pointermove', e => {
     pointer = { x: e.clientX, y: e.clientY };
-    readout();
-
     const prev = active.get(e.pointerId);
-    if (!prev) return;
+    if (!prev) { readout(); return; }
     const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
     active.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // Two fingers zoom and pan together, tracking the fingers exactly — a
-    // pinch is direct manipulation, so easing it would feel like lag.
     if (active.size >= 2) {
-      const now = spread();
-      const m = mid();
+      const now = spread(), m = mid();
       if (pinch > 0 && now > 0) {
         const wx = toWorldX(m.x), wy = toWorldY(m.y);
         cam.scale = cam.target = clamp(cam.scale * (now / pinch));
-        pin(wx, wy, m.x, m.y);
+        cam.x = wx - (m.x - width / 2) / cam.scale;
+        cam.y = wy - (m.y - height / 2) / cam.scale;
         anchor = null;
       }
       pinch = now;
@@ -293,35 +543,36 @@
     if (active.size > 0) return;
 
     dragging = false;
+    grabbed = null;
     canvas.classList.remove('drag');
-    // A gesture that ended in a pause should stop, not fling: if the last
-    // sample is stale the finger was already at rest.
     const idle = samples.length ? e.timeStamp - samples[samples.length - 1].t : Infinity;
-    if (idle < 60) {
-      const t = throwVelocity();
-      vel.x = t.x; vel.y = t.y;
-    }
+    if (idle < 60) { const t = throwVelocity(); vel.x = t.x; vel.y = t.y; }
     samples = [];
     run();
   }
 
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
-  canvas.addEventListener('pointerleave', () => { pointer = null; readout(); });
+  canvas.addEventListener('pointerleave', () => { pointer = null; });
 
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
-    // A trackpad pinch arrives as ctrl+wheel with fine deltas, a mouse wheel
-    // arrives coarse. Both zoom, but the pinch needs a gentler constant or it
-    // overshoots on every gesture.
     touched();
     const k = e.ctrlKey ? 0.01 : 0.0022;
-    zoomTo(cam.target * Math.exp(-e.deltaY * k), e.clientX, e.clientY);
+    const to = clamp(cam.target * Math.exp(-e.deltaY * k));
+    if (to === cam.target) return;
+    anchor = { wx: toWorldX(e.clientX), wy: toWorldY(e.clientY), sx: e.clientX, sy: e.clientY };
+    cam.target = to;
+    run();
   }, { passive: false });
 
-  canvas.addEventListener('dblclick', e => zoomTo(cam.target * 2.2, e.clientX, e.clientY));
-
-  /* -------------------------------------------------------------- readout */
+  canvas.addEventListener('dblclick', e => {
+    const to = clamp(cam.target * 2.2);
+    if (to === cam.target) return;
+    anchor = { wx: toWorldX(e.clientX), wy: toWorldY(e.clientY), sx: e.clientX, sy: e.clientY };
+    cam.target = to;
+    run();
+  });
 
   function readout() {
     const sx = pointer ? pointer.x : width / 2;
@@ -329,12 +580,33 @@
     seedText.textContent = `"${seedAt(Math.floor(toWorldX(sx)), Math.floor(toWorldY(sy)))}"`;
   }
 
-  /* ------------------------------------------------------------------- go */
+  /* -------------------------------------------------------------- routing */
 
-  addEventListener('resize', resize);
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    run();
+  }
+
+  function route() {
+    const gallery = location.hash === '#gallery';
+    document.getElementById('maker').classList.toggle('on', !gallery);
+    galleryView.classList.toggle('on', gallery);
+    if (gallery) { resize(); }
+    else { drawStage(); setTimeout(() => nameField.focus({ preventScroll: true }), 60); }
+  }
+
+  addEventListener('resize', () => { if (location.hash === '#gallery') resize(); });
   addEventListener('orientationchange', resize);
-  // Safari's own pinch would zoom the page out from under the canvas.
+  addEventListener('hashchange', route);
   document.addEventListener('gesturestart', e => e.preventDefault());
-  resize();
-  readout();
+
+  route();
 })();

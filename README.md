@@ -37,7 +37,7 @@ Pass any string — an email, username, wallet address — and get back a cute, 
 
 Works everywhere: React component with 3D hover + blink animation, headless SVG/PNG generation, Next.js image API route, or plain `<script>` tag.
 
-**[Wander the plane →](https://isaacaudet.github.io/lil_guy/)** — an endless grid where each cell's coordinates *are* the seed, so there is no list and no edge. Pull in any direction and the characters under you are hashed into existence as they arrive.
+**[Make yours →](https://isaacaudet.github.io/lil_guy/)** — type anything, get your guy, save him as a PNG with or without his name. Behind it is the gallery: an endless plane where each cell's coordinates *are* the seed, so there is no list and no edge. The lattice is a spring mesh, so it stretches behind your hand and rings down when you let go.
 
 ## Install
 
