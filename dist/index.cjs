@@ -1,7 +1,7 @@
 "use strict";
-const require_compose = require('./compose-CY0MUtOi.cjs');
-const react = require_compose.__toESM(require("react"));
-const react_jsx_runtime = require_compose.__toESM(require("react/jsx-runtime"));
+const require_palette = require('./palette-DU2Lef21.cjs');
+const react = require_palette.__toESM(require("react"));
+const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
 
 //#region src/lil-guy.tsx
 const INTENSITY_PRESETS = {
@@ -64,10 +64,23 @@ const SPHERE_POSITIONS = [
 		y: -1
 	}
 ];
+/**
+* Both the blink and the hover tilt stop under `prefers-reduced-motion`. The
+* avatar still renders and still reacts to hover, it just doesn't move —
+* animation a viewer can't switch off is an accessibility problem, and this is
+* the standard way for them to ask.
+*/
 const BLINK_KEYFRAMES = `
-@keyframes lilguy-blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  96% { transform: scaleY(0.05); }
+@media (prefers-reduced-motion: reduce) {
+  [data-lil-guy] * { animation: none !important; transition: none !important; }
+}
+@keyframes lilguy-eyes-open {
+  0%, 93%, 100% { opacity: 1; }
+  95%, 98% { opacity: 0; }
+}
+@keyframes lilguy-eyes-shut {
+  0%, 93%, 100% { opacity: 0; }
+  95%, 98% { opacity: 1; }
 }`;
 let blinkInjected = false;
 function injectBlinkKeyframes() {
@@ -95,32 +108,47 @@ function injectBlinkKeyframes() {
 const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
 	const [isHovered, setIsHovered] = react.useState(false);
 	react.useEffect(() => {
-		if (enableBlink) injectBlinkKeyframes();
-	}, [enableBlink]);
-	const { rects, bgColor, config, hashValue } = react.useMemo(() => {
-		const cfg = require_compose.resolve(name, partOverrides);
-		const palette = customPalette ?? require_compose.getPalette(cfg.palette);
-		const grid = require_compose.compose(cfg);
-		const hv = require_compose.hash(name);
-		const rectElements = [];
-		for (let y = 0; y < require_compose.GRID_SIZE; y++) for (let x = 0; x < require_compose.GRID_SIZE; x++) {
-			const token = grid[y][x];
-			const color = require_compose.resolveColor(palette, token);
-			if (color) rectElements.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
-				"rect",
-				// outfit color as background
-				{
-					x,
-					y,
-					width: 1,
-					height: 1,
-					fill: color
-				},
-				`${x}-${y}`
+		if (enableBlink || interactive) injectBlinkKeyframes();
+	}, [enableBlink, interactive]);
+	const { rects, shutRects, bgColor, config, hashValue } = react.useMemo(() => {
+		const cfg = require_palette.resolve(name, partOverrides);
+		const palette = customPalette ?? require_palette.shadePalette(require_palette.getPalette(cfg.palette), cfg.shade);
+		const grid = require_palette.compose(cfg);
+		const hv = require_palette.hash(name);
+		const toRects = (source, keyPrefix) => {
+			const out = [];
+			for (let y = 0; y < require_palette.GRID_SIZE; y++) for (let x = 0; x < require_palette.GRID_SIZE; x++) {
+				const color = require_palette.resolveColor(palette, source[y][x]);
+				if (color) out.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
+					"rect",
+					// outfit color as background
+					{
+						x,
+						y,
+						width: 1,
+						height: 1,
+						fill: color
+					},
+					`${keyPrefix}${x}-${y}`
 ));
+			}
+			return out;
+		};
+		const shut = grid.map((row) => [...row]);
+		const bare = require_palette.composeBase(cfg);
+		const EYE_TOKENS = new Set([6, 7]);
+		for (let x = 0; x < require_palette.GRID_SIZE; x++) {
+			let lowest = -1;
+			for (let y = 0; y < require_palette.GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
+			if (lowest === -1) continue;
+			for (let y = 0; y < require_palette.GRID_SIZE; y++) {
+				if (!EYE_TOKENS.has(grid[y][x])) continue;
+				shut[y][x] = y === lowest ? 7 : bare[y][x] ?? 0;
+			}
 		}
 		return {
-			rects: rectElements,
+			rects: toRects(grid, ""),
+			shutRects: toRects(shut, "s"),
 			bgColor: palette.colors[3],
 			config: cfg,
 			hashValue: hv
@@ -195,14 +223,12 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					style: {
 						width: "100%",
-						height: "100%",
-						animation: enableBlink ? `lilguy-blink ${blinkDuration}s ease-in-out ${blinkDelay}s infinite` : void 0,
-						transformOrigin: "center 40%"
+						height: "100%"
 					},
-					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 						"aria-hidden": "true",
 						xmlns: "http://www.w3.org/2000/svg",
-						viewBox: `0 0 ${require_compose.GRID_SIZE} ${require_compose.GRID_SIZE}`,
+						viewBox: `0 0 ${require_palette.GRID_SIZE} ${require_palette.GRID_SIZE}`,
 						shapeRendering: "crispEdges",
 						style: {
 							width: "100%",
@@ -211,7 +237,13 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 							transition: interactive ? "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)" : void 0,
 							imageRendering: "pixelated"
 						},
-						children: rects
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("g", {
+							style: { animation: enableBlink ? `lilguy-eyes-open ${blinkDuration}s ease-in-out ${blinkDelay}s infinite` : void 0 },
+							children: rects
+						}), enableBlink ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("g", {
+							style: { animation: `lilguy-eyes-shut ${blinkDuration}s ease-in-out ${blinkDelay}s infinite` },
+							children: shutRects
+						}) : null]
 					})
 				}), onRenderMouth?.()]
 			}),
@@ -440,25 +472,54 @@ AvatarImage.displayName = "AvatarImage";
 //#endregion
 //#region src/render-string.ts
 /**
+* Collapses each row into horizontal runs of one colour.
+*
+* A pixel-per-rect SVG spends most of its bytes repeating coordinates for
+* neighbours that share a colour — these avatars are large flat areas, so
+* merging runs cuts the rect count by well over half.
+*/
+function rowRuns(grid, palette, y) {
+	const runs = [];
+	let start = -1;
+	let current = null;
+	for (let x = 0; x <= require_palette.GRID_SIZE; x++) {
+		const color = x < require_palette.GRID_SIZE ? require_palette.resolveColor(palette, grid[y][x]) : null;
+		if (color === current) continue;
+		if (current !== null) runs.push({
+			x: start,
+			width: x - start,
+			color: current
+		});
+		current = color;
+		start = x;
+	}
+	return runs;
+}
+function escapeText(value) {
+	return value.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;");
+}
+/**
 * Generates a complete SVG string for a lil_guy avatar.
 * Works anywhere — no React or DOM required.
+*
+* Without `title` the SVG is marked decorative, which is right when the avatar
+* sits next to the name it stands for. Pass `title` when it is the only thing
+* identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = require_compose.resolve(input, options.parts);
-	const palette = options.palette ?? require_compose.getPalette(config.palette);
-	const grid = require_compose.compose(config);
+	const config = require_palette.resolve(input, options.parts);
+	const palette = options.palette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade);
+	const grid = require_palette.compose(config);
 	const size = options.size ?? 128;
-	const pixelSize = size / require_compose.GRID_SIZE;
+	const pixelSize = size / require_palette.GRID_SIZE;
 	const rects = [];
-	for (let y = 0; y < require_compose.GRID_SIZE; y++) for (let x = 0; x < require_compose.GRID_SIZE; x++) {
-		const token = grid[y][x];
-		const color = require_compose.resolveColor(palette, token);
-		if (color) rects.push(`<rect x="${x * pixelSize}" y="${y * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="${color}"/>`);
-	}
+	for (let y = 0; y < require_palette.GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
+	const labelled = typeof options.title === "string" && options.title.length > 0;
 	return [
-		`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">`,
+		`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
+		labelled ? `<title>${escapeText(options.title)}</title>` : "",
 		round ? `<defs>${round}</defs>` : "",
 		groupOpen,
 		...rects,
@@ -571,23 +632,27 @@ exports.AvatarImage = AvatarImage
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
-exports.GRID_SIZE = require_compose.GRID_SIZE
+exports.FOOT_STYLES = require_palette.FOOT_STYLES
+exports.GRID_SIZE = require_palette.GRID_SIZE
 exports.LilGuy = LilGuy
-exports.accessories = require_compose.accessories
-exports.bodies = require_compose.bodies
-exports.compose = require_compose.compose
-exports.eyes = require_compose.eyes
+exports.SHADE_COUNT = require_palette.SHADE_COUNT
+exports.accessories = require_palette.accessories
+exports.bodies = require_palette.bodies
+exports.compose = require_palette.compose
+exports.composeBase = require_palette.composeBase
+exports.eyes = require_palette.eyes
 exports.getColor = getColor
-exports.getPalette = require_compose.getPalette
-exports.hair = require_compose.hair
-exports.hash = require_compose.hash
-exports.hashNth = require_compose.hashNth
-exports.heads = require_compose.heads
+exports.getPalette = require_palette.getPalette
+exports.hair = require_palette.hair
+exports.hash = require_palette.hash
+exports.hashNth = require_palette.hashNth
+exports.heads = require_palette.heads
 exports.mergeRefs = mergeRefs
-exports.mouths = require_compose.mouths
-exports.palettes = require_compose.palettes
-exports.resolve = require_compose.resolve
-exports.resolveColor = require_compose.resolveColor
+exports.mouths = require_palette.mouths
+exports.palettes = require_palette.palettes
+exports.resolve = require_palette.resolve
+exports.resolveColor = require_palette.resolveColor
+exports.shadePalette = require_palette.shadePalette
 exports.toPng = toPng
 exports.toSvgString = toSvgString
 exports.useAvatarContext = useAvatarContext

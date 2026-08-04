@@ -1,11 +1,28 @@
-var LilGuy = (function(exports) {
-
 "use strict";
-
-//#region src/types.ts
-const GRID_SIZE = 16;
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
 
 //#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -45196,6 +45213,10 @@ const accessoryPlacements = [
 ];
 
 //#endregion
+//#region src/types.ts
+const GRID_SIZE = 16;
+
+//#endregion
 //#region src/parts/metrics.ts
 function rowExtent(row) {
 	let left = -1;
@@ -46077,157 +46098,118 @@ function shadePalette(palette, shade) {
 }
 
 //#endregion
-//#region src/render-string.ts
-/**
-* Collapses each row into horizontal runs of one colour.
-*
-* A pixel-per-rect SVG spends most of its bytes repeating coordinates for
-* neighbours that share a colour — these avatars are large flat areas, so
-* merging runs cuts the rect count by well over half.
-*/
-function rowRuns(grid, palette, y) {
-	const runs = [];
-	let start = -1;
-	let current = null;
-	for (let x = 0; x <= GRID_SIZE; x++) {
-		const color = x < GRID_SIZE ? resolveColor(palette, grid[y][x]) : null;
-		if (color === current) continue;
-		if (current !== null) runs.push({
-			x: start,
-			width: x - start,
-			color: current
-		});
-		current = color;
-		start = x;
-	}
-	return runs;
-}
-function escapeText(value) {
-	return value.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;");
-}
-/**
-* Generates a complete SVG string for a lil_guy avatar.
-* Works anywhere — no React or DOM required.
-*
-* Without `title` the SVG is marked decorative, which is right when the avatar
-* sits next to the name it stands for. Pass `title` when it is the only thing
-* identifying that person.
-*/
-function toSvgString(input, options = {}) {
-	const config = resolve(input, options.parts);
-	const palette = options.palette ?? shadePalette(getPalette(config.palette), config.shade);
-	const grid = compose(config);
-	const size = options.size ?? 128;
-	const pixelSize = size / GRID_SIZE;
-	const rects = [];
-	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
-	const round$2 = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
-	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
-	const labelled = typeof options.title === "string" && options.title.length > 0;
-	return [
-		`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
-		labelled ? `<title>${escapeText(options.title)}</title>` : "",
-		round$2 ? `<defs>${round$2}</defs>` : "",
-		groupOpen,
-		...rects,
-		"</g>",
-		"</svg>"
-	].join("");
-}
-
-//#endregion
-//#region src/export-png.ts
-/**
-* Renders a lil_guy avatar to a PNG data URL.
-* Browser-only — requires canvas and Image APIs.
-*/
-async function toPng(input, options = {}) {
-	const size = options.size ?? 128;
-	const svg = toSvgString(input, {
-		...options,
-		size
-	});
-	const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-	const url = URL.createObjectURL(blob);
-	try {
-		const img = new Image();
-		img.width = size;
-		img.height = size;
-		await new Promise((resolve$1, reject) => {
-			img.onload = () => resolve$1();
-			img.onerror = reject;
-			img.src = url;
-		});
-		const canvas = document.createElement("canvas");
-		canvas.width = size;
-		canvas.height = size;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) throw new Error("Canvas 2D context not available");
-		ctx.imageSmoothingEnabled = false;
-		ctx.drawImage(img, 0, 0, size, size);
-		return canvas.toDataURL("image/png");
-	} finally {
-		URL.revokeObjectURL(url);
-	}
-}
-
-//#endregion
-//#region src/utils/colors.ts
-/** Default background colors for avatar containers (Tailwind 500 equivalents) */
-const DEFAULT_COLORS = [
-	"#ec4899",
-	"#f59e0b",
-	"#3b82f6",
-	"#f97316",
-	"#10b981"
-];
-/** Light mode variants (Tailwind 100 equivalents) */
-const DEFAULT_COLORS_LIGHT = [
-	"#fce7f3",
-	"#fef3c7",
-	"#dbeafe",
-	"#ffedd5",
-	"#d1fae5"
-];
-/** Dark mode variants (Tailwind 600 equivalents) */
-const DEFAULT_COLORS_DARK = [
-	"#db2777",
-	"#d97706",
-	"#2563eb",
-	"#ea580c",
-	"#059669"
-];
-const FALLBACK_COLOR = "#ec4899";
-/** Get a color from an array by index (wraps around) */
-function getColor(colors, index) {
-	const palette = colors.length > 0 ? colors : DEFAULT_COLORS;
-	return palette[index % palette.length] ?? FALLBACK_COLOR;
-}
-
-//#endregion
-exports.DEFAULT_COLORS = DEFAULT_COLORS
-exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
-exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
-exports.FOOT_STYLES = FOOT_STYLES
-exports.GRID_SIZE = GRID_SIZE
-exports.SHADE_COUNT = SHADE_COUNT
-exports.accessories = accessories
-exports.bodies = bodies
-exports.compose = compose
-exports.composeBase = composeBase
-exports.eyes = eyes
-exports.getColor = getColor
-exports.getPalette = getPalette
-exports.hair = hair
-exports.hash = hash
-exports.hashNth = hashNth
-exports.heads = heads
-exports.mouths = mouths
-exports.palettes = palettes
-exports.resolve = resolve
-exports.resolveColor = resolveColor
-exports.shadePalette = shadePalette
-exports.toPng = toPng
-exports.toSvgString = toSvgString
-return exports;
-})({});
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+//# sourceMappingURL=palette-DU2Lef21.cjs.map

@@ -1,7 +1,7 @@
 "use strict";
-const require_compose = require('../compose-CY0MUtOi.cjs');
-const react_jsx_runtime = require_compose.__toESM(require("react/jsx-runtime"));
-const next_og = require_compose.__toESM(require("next/og"));
+const require_palette = require('../palette-DU2Lef21.cjs');
+const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
+const next_og = require_palette.__toESM(require("next/og"));
 
 //#region src/next/image.tsx
 /**
@@ -9,14 +9,14 @@ const next_og = require_compose.__toESM(require("next/og"));
 * Uses only Satori-compatible CSS (flexbox, no CSS grid, no SVG foreignObject).
 */
 function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides }) {
-	const config = require_compose.resolve(name, partOverrides);
-	const palette = customPalette ?? require_compose.getPalette(config.palette);
-	const grid = require_compose.compose(config);
-	const pixelSize = Math.floor(size / require_compose.GRID_SIZE);
+	const config = require_palette.resolve(name, partOverrides);
+	const palette = customPalette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade);
+	const grid = require_palette.compose(config);
+	const pixelSize = Math.floor(size / require_palette.GRID_SIZE);
 	const pixels = [];
-	for (let y = 0; y < require_compose.GRID_SIZE; y++) for (let x = 0; x < require_compose.GRID_SIZE; x++) {
+	for (let y = 0; y < require_palette.GRID_SIZE; y++) for (let x = 0; x < require_palette.GRID_SIZE; x++) {
 		const token = grid[y][x];
-		const color = require_compose.resolveColor(palette, token);
+		const color = require_palette.resolveColor(palette, token);
 		if (color) pixels.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { style: {
 			position: "absolute",
 			left: x * pixelSize,

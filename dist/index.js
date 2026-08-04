@@ -1,4 +1,4 @@
-import { GRID_SIZE, accessories, bodies, compose, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor } from "./compose-mp44YPTY.js";
+import { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette } from "./palette-BtQPkLJr.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
@@ -67,10 +67,23 @@ const SPHERE_POSITIONS = [
 		y: -1
 	}
 ];
+/**
+* Both the blink and the hover tilt stop under `prefers-reduced-motion`. The
+* avatar still renders and still reacts to hover, it just doesn't move —
+* animation a viewer can't switch off is an accessibility problem, and this is
+* the standard way for them to ask.
+*/
 const BLINK_KEYFRAMES = `
-@keyframes lilguy-blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  96% { transform: scaleY(0.05); }
+@media (prefers-reduced-motion: reduce) {
+  [data-lil-guy] * { animation: none !important; transition: none !important; }
+}
+@keyframes lilguy-eyes-open {
+  0%, 93%, 100% { opacity: 1; }
+  95%, 98% { opacity: 0; }
+}
+@keyframes lilguy-eyes-shut {
+  0%, 93%, 100% { opacity: 0; }
+  95%, 98% { opacity: 1; }
 }`;
 let blinkInjected = false;
 function injectBlinkKeyframes() {
@@ -98,32 +111,47 @@ function injectBlinkKeyframes() {
 const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
 	const [isHovered, setIsHovered] = React$4.useState(false);
 	React$4.useEffect(() => {
-		if (enableBlink) injectBlinkKeyframes();
-	}, [enableBlink]);
-	const { rects, bgColor, config, hashValue } = React$4.useMemo(() => {
+		if (enableBlink || interactive) injectBlinkKeyframes();
+	}, [enableBlink, interactive]);
+	const { rects, shutRects, bgColor, config, hashValue } = React$4.useMemo(() => {
 		const cfg = resolve(name, partOverrides);
-		const palette = customPalette ?? getPalette(cfg.palette);
+		const palette = customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade);
 		const grid = compose(cfg);
 		const hv = hash(name);
-		const rectElements = [];
-		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
-			const token = grid[y][x];
-			const color = resolveColor(palette, token);
-			if (color) rectElements.push(/* @__PURE__ */ jsx(
-				"rect",
-				// outfit color as background
-				{
-					x,
-					y,
-					width: 1,
-					height: 1,
-					fill: color
-				},
-				`${x}-${y}`
+		const toRects = (source, keyPrefix) => {
+			const out = [];
+			for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+				const color = resolveColor(palette, source[y][x]);
+				if (color) out.push(/* @__PURE__ */ jsx(
+					"rect",
+					// outfit color as background
+					{
+						x,
+						y,
+						width: 1,
+						height: 1,
+						fill: color
+					},
+					`${keyPrefix}${x}-${y}`
 ));
+			}
+			return out;
+		};
+		const shut = grid.map((row) => [...row]);
+		const bare = composeBase(cfg);
+		const EYE_TOKENS = new Set([6, 7]);
+		for (let x = 0; x < GRID_SIZE; x++) {
+			let lowest = -1;
+			for (let y = 0; y < GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
+			if (lowest === -1) continue;
+			for (let y = 0; y < GRID_SIZE; y++) {
+				if (!EYE_TOKENS.has(grid[y][x])) continue;
+				shut[y][x] = y === lowest ? 7 : bare[y][x] ?? 0;
+			}
 		}
 		return {
-			rects: rectElements,
+			rects: toRects(grid, ""),
+			shutRects: toRects(shut, "s"),
 			bgColor: palette.colors[3],
 			config: cfg,
 			hashValue: hv
@@ -198,11 +226,9 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 				children: [/* @__PURE__ */ jsx("div", {
 					style: {
 						width: "100%",
-						height: "100%",
-						animation: enableBlink ? `lilguy-blink ${blinkDuration}s ease-in-out ${blinkDelay}s infinite` : void 0,
-						transformOrigin: "center 40%"
+						height: "100%"
 					},
-					children: /* @__PURE__ */ jsx("svg", {
+					children: /* @__PURE__ */ jsxs("svg", {
 						"aria-hidden": "true",
 						xmlns: "http://www.w3.org/2000/svg",
 						viewBox: `0 0 ${GRID_SIZE} ${GRID_SIZE}`,
@@ -214,7 +240,13 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 							transition: interactive ? "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)" : void 0,
 							imageRendering: "pixelated"
 						},
-						children: rects
+						children: [/* @__PURE__ */ jsx("g", {
+							style: { animation: enableBlink ? `lilguy-eyes-open ${blinkDuration}s ease-in-out ${blinkDelay}s infinite` : void 0 },
+							children: rects
+						}), enableBlink ? /* @__PURE__ */ jsx("g", {
+							style: { animation: `lilguy-eyes-shut ${blinkDuration}s ease-in-out ${blinkDelay}s infinite` },
+							children: shutRects
+						}) : null]
 					})
 				}), onRenderMouth?.()]
 			}),
@@ -443,25 +475,54 @@ AvatarImage.displayName = "AvatarImage";
 //#endregion
 //#region src/render-string.ts
 /**
+* Collapses each row into horizontal runs of one colour.
+*
+* A pixel-per-rect SVG spends most of its bytes repeating coordinates for
+* neighbours that share a colour — these avatars are large flat areas, so
+* merging runs cuts the rect count by well over half.
+*/
+function rowRuns(grid, palette, y) {
+	const runs = [];
+	let start = -1;
+	let current = null;
+	for (let x = 0; x <= GRID_SIZE; x++) {
+		const color = x < GRID_SIZE ? resolveColor(palette, grid[y][x]) : null;
+		if (color === current) continue;
+		if (current !== null) runs.push({
+			x: start,
+			width: x - start,
+			color: current
+		});
+		current = color;
+		start = x;
+	}
+	return runs;
+}
+function escapeText(value) {
+	return value.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;");
+}
+/**
 * Generates a complete SVG string for a lil_guy avatar.
 * Works anywhere — no React or DOM required.
+*
+* Without `title` the SVG is marked decorative, which is right when the avatar
+* sits next to the name it stands for. Pass `title` when it is the only thing
+* identifying that person.
 */
 function toSvgString(input, options = {}) {
 	const config = resolve(input, options.parts);
-	const palette = options.palette ?? getPalette(config.palette);
+	const palette = options.palette ?? shadePalette(getPalette(config.palette), config.shade);
 	const grid = compose(config);
 	const size = options.size ?? 128;
 	const pixelSize = size / GRID_SIZE;
 	const rects = [];
-	for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
-		const token = grid[y][x];
-		const color = resolveColor(palette, token);
-		if (color) rects.push(`<rect x="${x * pixelSize}" y="${y * pixelSize}" width="${pixelSize}" height="${pixelSize}" fill="${color}"/>`);
-	}
+	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
+	const labelled = typeof options.title === "string" && options.title.length > 0;
 	return [
-		`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">`,
+		`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
+		labelled ? `<title>${escapeText(options.title)}</title>` : "",
 		round ? `<defs>${round}</defs>` : "",
 		groupOpen,
 		...rects,
@@ -568,5 +629,5 @@ function getColor(colors, index) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, GRID_SIZE, LilGuy, accessories, bodies, compose, eyes, getColor, getPalette, hair, hash, hashNth, heads, mergeRefs, mouths, palettes, resolve, resolveColor, toPng, toSvgString, useAvatarContext, useMergeRefs };
+export { Avatar, AvatarFallback, AvatarImage, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GRID_SIZE, LilGuy, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getColor, getPalette, hair, hash, hashNth, heads, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs };
 //# sourceMappingURL=index.js.map

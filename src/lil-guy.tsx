@@ -1,8 +1,8 @@
 import * as React from "react";
 import { resolve } from "./resolve";
-import { compose } from "./compose";
+import { compose, composeBase } from "./compose";
 import { hash } from "./hash";
-import { getPalette, resolveColor } from "./palette";
+import { getPalette, resolveColor, shadePalette } from "./palette";
 import type { ColorToken, Intensity3D, Palette } from "./types";
 import { GRID_SIZE } from "./types";
 
@@ -29,10 +29,23 @@ const SPHERE_POSITIONS = [
 	{ x: 1, y: -1 },
 ];
 
+/**
+ * Both the blink and the hover tilt stop under `prefers-reduced-motion`. The
+ * avatar still renders and still reacts to hover, it just doesn't move —
+ * animation a viewer can't switch off is an accessibility problem, and this is
+ * the standard way for them to ask.
+ */
 const BLINK_KEYFRAMES = `
-@keyframes lilguy-blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  96% { transform: scaleY(0.05); }
+@media (prefers-reduced-motion: reduce) {
+  [data-lil-guy] * { animation: none !important; transition: none !important; }
+}
+@keyframes lilguy-eyes-open {
+  0%, 93%, 100% { opacity: 1; }
+  95%, 98% { opacity: 0; }
+}
+@keyframes lilguy-eyes-shut {
+  0%, 93%, 100% { opacity: 0; }
+  95%, 98% { opacity: 1; }
 }`;
 
 let blinkInjected = false;
@@ -190,38 +203,58 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 
 		// Inject blink keyframes once
 		React.useEffect(() => {
-			if (enableBlink) injectBlinkKeyframes();
-		}, [enableBlink]);
+			if (enableBlink || interactive) injectBlinkKeyframes();
+		}, [enableBlink, interactive]);
 
 		// Resolve config and compose pixel grid
-		const { rects, bgColor, config, hashValue } = React.useMemo(() => {
+		const { rects, shutRects, bgColor, config, hashValue } = React.useMemo(() => {
 			const cfg = resolve(name, partOverrides);
-			const palette = customPalette ?? getPalette(cfg.palette);
+			const palette = customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade);
 			const grid = compose(cfg);
 			const hv = hash(name);
 
-			const rectElements: React.ReactElement[] = [];
-			for (let y = 0; y < GRID_SIZE; y++) {
-				for (let x = 0; x < GRID_SIZE; x++) {
-					const token = grid[y][x] as ColorToken;
-					const color = resolveColor(palette, token);
-					if (color) {
-						rectElements.push(
-							<rect
-								key={`${x}-${y}`}
-								x={x}
-								y={y}
-								width={1}
-								height={1}
-								fill={color}
-							/>
-						);
+			const toRects = (source: number[][], keyPrefix: string) => {
+				const out: React.ReactElement[] = [];
+				for (let y = 0; y < GRID_SIZE; y++) {
+					for (let x = 0; x < GRID_SIZE; x++) {
+						const color = resolveColor(palette, source[y][x] as ColorToken);
+						if (color) {
+							out.push(
+								<rect
+									key={`${keyPrefix}${x}-${y}`}
+									x={x}
+									y={y}
+									width={1}
+									height={1}
+									fill={color}
+								/>
+							);
+						}
 					}
+				}
+				return out;
+			};
+
+			// Closed-eye frame: drop every eye pixel to the bottom row of that
+			// eye and fill the vacated cells with whatever the body would have
+			// shown. Derived rather than hand-drawn, so it works for all of the
+			// eye parts and for any that get added later.
+			const shut = grid.map(row => [...row]);
+			const bare = composeBase(cfg);
+			const EYE_TOKENS = new Set([6, 7]);
+			for (let x = 0; x < GRID_SIZE; x++) {
+				let lowest = -1;
+				for (let y = 0; y < GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
+				if (lowest === -1) continue;
+				for (let y = 0; y < GRID_SIZE; y++) {
+					if (!EYE_TOKENS.has(grid[y][x])) continue;
+					shut[y][x] = y === lowest ? 7 : (bare[y][x] ?? 0);
 				}
 			}
 
 			return {
-				rects: rectElements,
+				rects: toRects(grid, ''),
+				shutRects: toRects(shut, 's'),
 				bgColor: palette.colors[3], // outfit color as background
 				config: cfg,
 				hashValue: hv,
@@ -329,10 +362,6 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 						style={{
 							width: "100%",
 							height: "100%",
-							animation: enableBlink
-								? `lilguy-blink ${blinkDuration}s ease-in-out ${blinkDelay}s infinite`
-								: undefined,
-							transformOrigin: "center 40%",
 						}}
 					>
 						<svg
@@ -353,7 +382,24 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 								imageRendering: "pixelated",
 							}}
 						>
-							{rects}
+							<g
+								style={{
+									animation: enableBlink
+										? `lilguy-eyes-open ${blinkDuration}s ease-in-out ${blinkDelay}s infinite`
+										: undefined,
+								}}
+							>
+								{rects}
+							</g>
+							{enableBlink ? (
+								<g
+									style={{
+										animation: `lilguy-eyes-shut ${blinkDuration}s ease-in-out ${blinkDelay}s infinite`,
+									}}
+								>
+									{shutRects}
+								</g>
+							) : null}
 						</svg>
 					</div>
 

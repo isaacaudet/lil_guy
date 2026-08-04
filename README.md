@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~2.9 million unique characters. Zero dependencies. 4 KB gzipped.
+  ~390 billion unique characters. Zero dependencies. 6 KB gzipped.
 </p>
 
 <p align="center">
@@ -27,7 +27,8 @@
   <a href="#nextjs">Next.js</a> ·
   <a href="#headless">Headless</a> ·
   <a href="#api">API</a> ·
-  <a href="demo.html">Demo</a>
+  <a href="demo.html">Demo</a> ·
+  <a href="https://isaacaudet.github.io/lil_guy/">Explore</a>
 </p>
 
 ---
@@ -35,6 +36,8 @@
 Pass any string — an email, username, wallet address — and get back a cute, deterministic blob character. Same input always produces the same lil guy.
 
 Works everywhere: React component with 3D hover + blink animation, headless SVG/PNG generation, Next.js image API route, or plain `<script>` tag.
+
+**[Explore the wall →](https://isaacaudet.github.io/lil_guy/)** — up to 200,000 of them at once, sorted into a colour gradient. Hover any one to see how it was built.
 
 ## Install
 
@@ -168,10 +171,18 @@ const color = resolveColor(palette, grid[8][8]); // → "#FFB347"
 | `parts` | `object` | — | Pin specific features by index |
 | `palette` | `Palette` | — | Override color palette |
 | `showInitial` | `boolean` | `false` | Show first letter overlay |
+| `title` | `string` | — | Accessible name. Omit when the avatar sits beside the name it represents — it is then marked decorative |
+
+The blink and the hover tilt both stop under `prefers-reduced-motion`.
 
 ### `toSvgString(input, options?)`
 
-Returns a complete SVG string. No DOM or React needed.
+Returns a complete SVG string. No DOM or React needed. Horizontal runs of one
+colour are merged into a single `<rect>`, which is roughly a third the size of
+one rect per pixel.
+
+Pass `title` to give the SVG an accessible name; without it the SVG is marked
+decorative (`aria-hidden`), which is what you want beside a visible username.
 
 ### `toPng(input, options?)`
 
@@ -184,11 +195,30 @@ Creates a Next.js route handler. Returns `{ GET }`.
 ## How It Works
 
 1. **Hash** — FNV-1a hash of the input string, with independent per-slot hashing for each feature
-2. **Resolve** — Hash selects head shape, eyes, mouth, hair, body pattern, accessory, palette, and rotation from the part library
-3. **Compose** — Layers parts onto a 16×16 grid using a token system (body, feature, pattern, accent, eyes, mouth)
-4. **Render** — Tokens map to palette colors and render as SVG rects
+2. **Resolve** — Hash selects head shape, eyes, mouth, hair, body pattern, accessory, palette, and rotation from the part library. Picks are weighted (`src/parts/weights.ts`) so the set keeps its character as the library grows — a uniform roll over a big library averages out to something bland. Every part still turns up; the odd ones are just rarer
+3. **Compose** — Layers parts onto a 16×16 grid using a token system (body, feature, pattern, accent, eyes, mouth). Each layer is placed relative to the head it landed on: hats are trimmed to the width of the skull they rest on, the face block follows the head's centre, and cheek marks slide in to hug the silhouette. Nothing floats
+4. **Render** — Tokens map to palette colors and render as SVG rects. Each palette's tokens are held clear of its body colour first: the mouth carries the expression and the pattern colour draws the crown of a hat, and several palettes were authored with those within a hair of the blob they sit on
 
-8 heads × 8 eyes × 5 mouths × 8 hair × 8 bodies × 6 accessories × 12 palettes = **~2.9 million** unique characters.
+20 heads × 23 eyes × 20 mouths × 34 toppers × 28 bodies × 29 accessories × 32 palettes = ~8.1 billion drawn combinations, times four modifiers (2 mirror × 3 shade × 4 feet × 2 pattern tone) = **~390 billion** unique characters.
+
+Weighting makes the charming parts common and the odd ones rare, so the *effective* variety — how many equally-likely guys the set behaves like — is about 152 billion. Every combination is still reachable.
+
+### Modifiers
+
+Four axes transform a guy rather than adding drawn art to it, so each one
+multiplies across the whole library. All of them are deterministic, and all of
+them can be pinned through `parts`:
+
+| Modifier | Values | What it does |
+|---|---|---|
+| `flip` | `boolean` | Mirrors the finished character. 53 of the 154 parts are asymmetric, so a mirrored guy reads as a different one |
+| `shade` | `0-2` | Palette tone: soft, as authored, deep. Applied to body/feature/pattern/accent/outline/mouth; the eye white and pupil are left alone so the face keeps its contrast |
+| `feet` | `0-3` | Stance: as drawn, nubs, wide, stilts. `0` keeps whatever the head was drawn with, which is what preserves the ghost's drips |
+| `patternTone` | `0-1` | Draws the body pattern in the pattern colour or the accent colour |
+
+```tsx
+<LilGuy name="alice" parts={{ shade: 2, feet: 3, flip: true }} />
+```
 
 ## License
 

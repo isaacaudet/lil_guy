@@ -11,6 +11,18 @@ export interface Palette {
 
 export type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 
+/**
+ * How a layer is positioned against the head silhouette it lands on.
+ * - `field`  — drawn where authored (patterns that cover the whole guy)
+ * - `face`   — follows the face block (eyes, mouth, eyewear)
+ * - `top`    — rests on the crown of the head (hats, hair)
+ * - `lower`  — hangs off the bottom of the body (belly motifs, bowtie)
+ * - `edge`   — hugs the left/right edge of the silhouette (blush, freckles, the
+ *              side bow), so an off-centre part stays on the head instead of
+ *              drifting off a narrow one
+ */
+export type PartPlacement = "field" | "face" | "top" | "lower" | "edge";
+
 export interface AvatarConfig {
   head: number;
   eyes: number;
@@ -20,6 +32,22 @@ export interface AvatarConfig {
   accessory: number;
   palette: number;
   rotation: number; // index into SPHERE_POSITIONS
+  /**
+   * Mirror the finished character horizontally. Nearly half the part library
+   * is asymmetric — the side bow, the wink, the sash, the monocle — so this is
+   * a different-looking guy rather than a duplicate.
+   */
+  flip: boolean;
+  /**
+   * Tone of the palette: 0 soft, 1 as authored, 2 deep. Applied to the body,
+   * feature, pattern, accent, outline and mouth tokens; the eye white and
+   * pupil are left alone so the face keeps its contrast.
+   */
+  shade: number;
+  /** Index into FOOT_STYLES — 0 keeps whatever the head was drawn with. */
+  feet: number;
+  /** 0 draws body patterns in the pattern colour, 1 in the accent colour. */
+  patternTone: number;
 }
 
 export interface RenderOptions {
@@ -27,6 +55,12 @@ export interface RenderOptions {
   square?: boolean;
   palette?: Palette;
   parts?: Partial<Omit<AvatarConfig, 'palette'>>;
+  /**
+   * Accessible name for the avatar. Omit when the avatar sits beside the name
+   * it represents — it is then marked decorative, which is what a screen
+   * reader wants. Pass it when the avatar is the only identifier.
+   */
+  title?: string;
 }
 
 export const GRID_SIZE = 16;

@@ -1,6 +1,6 @@
 import { resolve } from "../resolve";
 import { compose } from "../compose";
-import { getPalette, resolveColor } from "../palette";
+import { getPalette, resolveColor, shadePalette } from "../palette";
 import type { ColorToken, Palette } from "../types";
 import { GRID_SIZE } from "../types";
 
@@ -28,7 +28,7 @@ export type LilGuyImageProps = {
  */
 export function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides }: LilGuyImageProps) {
 	const config = resolve(name, partOverrides);
-	const palette = customPalette ?? getPalette(config.palette);
+	const palette = customPalette ?? shadePalette(getPalette(config.palette), config.shade);
 	const grid = compose(config);
 	const pixelSize = Math.floor(size / GRID_SIZE);
 

@@ -4,9 +4,9 @@ export { GRID_SIZE } from './types';
 
 export { hash, hashNth } from './hash';
 export { resolve } from './resolve';
-export { compose } from './compose';
+export { compose, composeBase, FOOT_STYLES } from './compose';
 
-export { palettes, getPalette, resolveColor } from './palette';
+export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT } from './palette';
 export { heads, eyes, mouths, hair, bodies, accessories } from './parts';
 
 export { toSvgString } from './render-string';

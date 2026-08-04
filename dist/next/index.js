@@ -1,4 +1,4 @@
-import { GRID_SIZE, compose, getPalette, resolve, resolveColor } from "../compose-mp44YPTY.js";
+import { GRID_SIZE, compose, getPalette, resolve, resolveColor, shadePalette } from "../palette-BtQPkLJr.js";
 import { jsx } from "react/jsx-runtime";
 import { ImageResponse } from "next/og";
 
@@ -9,7 +9,7 @@ import { ImageResponse } from "next/og";
 */
 function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides }) {
 	const config = resolve(name, partOverrides);
-	const palette = customPalette ?? getPalette(config.palette);
+	const palette = customPalette ?? shadePalette(getPalette(config.palette), config.shade);
 	const grid = compose(config);
 	const pixelSize = Math.floor(size / GRID_SIZE);
 	const pixels = [];
