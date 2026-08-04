@@ -22425,6 +22425,24 @@ const bandana = [
 		_$2,
 		_$2,
 		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		4,
 		4,
 		_$2,
@@ -22451,24 +22469,6 @@ const bandana = [
 		4,
 		4,
 		4,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -28561,7 +28561,7 @@ const hairPlacements = [
 	"top",
 	"top",
 	"top",
-	"top",
+	"float",
 	"top",
 	"top",
 	"top",
@@ -45440,6 +45440,37 @@ function mergeTopper(target, source, dy, metrics, keep = 0) {
 	}
 }
 /**
+* Merges a part that hovers above the head rather than resting on it: centred
+* on the skull, its lowest row grazing the top, and never trimmed.
+*
+* Trimming exists so a wide hat cannot hang in the air beside a narrow crown.
+* A halo is not sitting on the crown, so trimming it to the skull's width is
+* meaningless — on the heads that taper to a point it squeezed the ring into a
+* little blob.
+*/
+function mergeFloating(target, source, metrics) {
+	const rows = extentRows(source);
+	const seat = metrics.rows[metrics.top];
+	if (!rows || !seat) return;
+	const dy = Math.max(-rows.first, metrics.top - rows.last);
+	let left = GRID_SIZE, right = -1;
+	for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (source[y][x]) {
+		if (x < left) left = x;
+		if (x > right) right = x;
+	}
+	if (right < 0) return;
+	const dx = Math.round((seat.left + seat.right) / 2 - (left + right) / 2);
+	for (let y = 0; y < GRID_SIZE; y++) {
+		const row = y + dy;
+		if (row < 0 || row >= GRID_SIZE) continue;
+		for (let x = 0; x < GRID_SIZE; x++) {
+			const token = source[y][x];
+			const col = x + dx;
+			if (token && col >= 0 && col < GRID_SIZE) target[row][col] = token;
+		}
+	}
+}
+/**
 * Merges a layer authored against the left and right edges of the reference
 * silhouette, sliding each half sideways to hug the head it lands on. Cheek
 * marks stay on the face instead of hanging off a narrow head.
@@ -45520,7 +45551,8 @@ function compose(config) {
 	const dyLower = metrics.bottom - REFERENCE.bottom;
 	mergeOnSilhouette(grid, eyes[config.eyes], dyFace, head);
 	mergeOnSilhouette(grid, mouths[config.mouth], dyFace, head);
-	if (hairPlacements[config.hair] === "edge") mergeAgainstEdges(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
+	if (hairPlacements[config.hair] === "float") mergeFloating(grid, hair[config.hair], metrics);
+	else if (hairPlacements[config.hair] === "edge") mergeAgainstEdges(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
 	else mergeTopper(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
 	const accessory = accessories[config.accessory];
 	switch (accessoryPlacements[config.accessory]) {
@@ -46227,4 +46259,4 @@ Object.defineProperty(exports, 'shadePalette', {
     return shadePalette;
   }
 });
-//# sourceMappingURL=palette-HcKXBm2J.cjs.map
+//# sourceMappingURL=palette-C9S6jRBa.cjs.map

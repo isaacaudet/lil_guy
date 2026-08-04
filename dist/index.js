@@ -1,4 +1,4 @@
-import { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette } from "./palette-iITYy5V_.js";
+import { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette } from "./palette-B1shCbhb.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";

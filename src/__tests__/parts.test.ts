@@ -120,7 +120,7 @@ describe('placement tables', () => {
     });
 
     it(`${name} placements are all recognised`, () => {
-      const valid = new Set(['field', 'face', 'top', 'lower', 'edge']);
+      const valid = new Set(['field', 'face', 'top', 'lower', 'edge', 'float']);
       const wrong = placements
         .map((p, i) => (valid.has(p) ? null : `${name}[${i}] = ${p}`))
         .filter(Boolean);

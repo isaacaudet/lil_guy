@@ -21,7 +21,7 @@ export type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
  *              side bow), so an off-centre part stays on the head instead of
  *              drifting off a narrow one
  */
-export type PartPlacement = "field" | "face" | "top" | "lower" | "edge";
+export type PartPlacement = "field" | "face" | "top" | "lower" | "edge" | "float";
 
 export interface AvatarConfig {
   head: number;

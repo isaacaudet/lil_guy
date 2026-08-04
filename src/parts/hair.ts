@@ -266,9 +266,9 @@ const sprout: PixelGrid = [
 
 // bandana: Headband with the knot bunched to one side
 const bandana: PixelGrid = [
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
   [_,_,_,_,4,4,_,_,_,_,_,_,_,_,_,_],
   [_,_,_,_,4,4,4,4,4,4,4,4,_,_,_,_],
-  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
   [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
   [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
   [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
@@ -709,7 +709,7 @@ export const hairPlacements: PartPlacement[] = [
   'top',  // sprout
   'top',  // bandana
   'top',  // antlers
-  'top',  // halo
+  'float', // halo — hovers above the head rather than resting on it
   'top',  // beret
   'top',  // wizard
   'top',  // earmuffs
