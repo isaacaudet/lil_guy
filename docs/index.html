@@ -16,6 +16,23 @@
   }
   ::selection{background:rgba(255,255,255,.16)}
 
+  /* Every control gets the same ring. Without one, a keyboard is flying
+     blind: the only feedback was a colour shift on two of the buttons. */
+  :focus-visible{outline:2px solid rgba(255,255,255,.55);outline-offset:3px;border-radius:3px}
+  #plane:focus-visible{outline-offset:-3px}
+
+  /* Nothing here is load-bearing motion, so under a reduced-motion setting it
+     all stops: the tide holds still, the lattice stops springing, a throw
+     stops coasting, and views cut instead of crossfading. */
+  @media (prefers-reduced-motion: reduce) {
+    *,*::before,*::after{
+      animation-duration:.001ms !important;animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;
+    }
+    .view{transition:opacity .001ms,visibility 0s linear .001ms}
+    .view.on{transition:opacity .001ms,visibility 0s}
+  }
+
   .view{
     position:fixed;inset:0;opacity:0;pointer-events:none;visibility:hidden;
     /* Visibility is not a thing you can fade, so it waits for the fade to
@@ -47,7 +64,8 @@
     font-family:inherit;font-size:13px;text-align:center;padding:0 4px 8px;
   }
   #claimName::placeholder{color:rgba(255,255,255,.22)}
-  #claimName:focus{outline:none;border-bottom-color:rgba(255,255,255,.4)}
+  #claimName:focus{border-bottom-color:rgba(255,255,255,.4)}
+  #claimName:focus:not(:focus-visible){outline:none}
   #claimForm button{
     background:none;border:0;cursor:pointer;font:inherit;letter-spacing:.06em;
     color:rgba(255,255,255,.5);transition:color .18s ease;
@@ -79,7 +97,8 @@
     padding:0 4px 10px;
   }
   #name::placeholder{color:rgba(255,255,255,.22)}
-  #name:focus{outline:none;border-bottom-color:rgba(255,255,255,.4)}
+  #name:focus{border-bottom-color:rgba(255,255,255,.4)}
+  #name:focus:not(:focus-visible){outline:none}
 
   .acts{display:flex;gap:26px;margin-top:22px}
   .acts button{
@@ -87,7 +106,7 @@
     color:rgba(255,255,255,.34);font:inherit;letter-spacing:.06em;
     transition:color .18s ease;
   }
-  .acts button:hover,.acts button:focus-visible{color:rgba(255,255,255,.88);outline:none}
+  .acts button:hover,.acts button:focus-visible{color:rgba(255,255,255,.88)}
 
   /* --------------------------------------------------------------- plane */
   #plane{position:absolute;inset:0;display:block;cursor:grab;touch-action:none}
@@ -117,7 +136,8 @@
     color:#fff;font-family:inherit;font-size:12px;padding:0 2px 6px;
   }
   #pickName::placeholder{color:rgba(255,255,255,.24)}
-  #pickName:focus{outline:none;border-bottom-color:rgba(255,255,255,.45)}
+  #pickName:focus{border-bottom-color:rgba(255,255,255,.45)}
+  #pickName:focus:not(:focus-visible){outline:none}
   #pick button{
     background:none;border:0;cursor:pointer;font:inherit;color:rgba(255,255,255,.5);
     letter-spacing:.05em;transition:color .18s ease;padding:0;
@@ -145,8 +165,8 @@
 <body>
 
 <section id="maker" class="view">
-  <canvas id="drift"></canvas>
-  <canvas id="stage" width="512" height="512"></canvas>
+  <canvas id="drift" role="img" aria-label="A slow tide of other lil guys. Click one to make him yours."></canvas>
+  <canvas id="stage" width="512" height="512" role="img" aria-label="Your lil guy"></canvas>
   <input id="name" type="text" placeholder="type your name" spellcheck="false"
          autocomplete="off" autocapitalize="off" autocorrect="off">
   <div class="acts">
@@ -178,10 +198,11 @@
 </section>
 
 <section id="galleryView" class="view">
-  <canvas id="plane"></canvas>
+  <canvas id="plane" tabindex="0" role="application"
+            aria-label="An endless plane of lil guys. Arrow keys move, plus and minus zoom, Enter claims the one in the middle."></canvas>
   <div id="veil"></div>
   <div id="pick" hidden>
-    <canvas id="pickArt" width="128" height="128"></canvas>
+    <canvas id="pickArt" width="128" height="128" role="img" aria-label="The lil guy you picked"></canvas>
     <form id="pickForm">
       <input id="pickName" type="text" placeholder="your name" spellcheck="false"
              autocomplete="off" maxlength="40">

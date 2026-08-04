@@ -20,6 +20,13 @@
   const L = window.LilGuy;
   const ART = L.GRID_SIZE;
 
+  // None of the motion here carries meaning — the tide, the springs and the
+  // coasting are all decoration — so all of it stops when the reader has asked
+  // for less. Read live rather than cached, so changing the setting takes
+  // effect without a reload.
+  const calmQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const calm = () => calmQuery.matches;
+
   /* ================================================================ atlas */
 
   const PAD = 1;                       // transparent gutter, so tiles cannot bleed
@@ -302,7 +309,7 @@
     driftCtx.imageSmoothingEnabled = false;
     driftCtx.clearRect(0, 0, w, h);
 
-    const t = now / 1000;
+    const t = calm() ? 0 : now / 1000;
     tideAt = t;
     const ox = Math.cos(TIDE_ANGLE) * TIDE_DRIFT * t;
     const oy = Math.sin(TIDE_ANGLE) * TIDE_DRIFT * t;
@@ -326,7 +333,7 @@
           size);
       }
     }
-    requestAnimationFrame(driftFrame);
+    if (!calm()) requestAnimationFrame(driftFrame);
   }
 
   // One of the ones drifting past can be picked up: he becomes the guy you
@@ -595,6 +602,7 @@
     lastFrame = now;
     let alive = false;
 
+    if (calm()) cam.scale = cam.target;
     if (Math.abs(cam.target - cam.scale) > 0.15) {
       cam.scale += (cam.target - cam.scale) * (1 - Math.exp(-dt / ZOOM_TAU));
       alive = true;
@@ -626,7 +634,7 @@
     camVel = nowVel;
 
     layoutMesh();
-    let left = secs;
+    let left = calm() ? 0 : secs;
     while (left > 1e-4) {
       const step = Math.min(SUBSTEP, left);
       stepMesh(step, accelX, accelY);
@@ -707,7 +715,7 @@
         sprite.seen = frameId;
 
         const age = now - sprite.born;
-        const alpha = age < FADE ? age / FADE : 1;
+        const alpha = (age < FADE && !calm()) ? age / FADE : 1;
         if (alpha < 1) { fading = true; ctx.globalAlpha = alpha; }
 
         const k = (j - mesh.j0) * mesh.w + (i - mesh.i0);
@@ -809,7 +817,7 @@
     grabbed = null;
     canvas.classList.remove('drag');
     const idle = samples.length ? e.timeStamp - samples[samples.length - 1].t : Infinity;
-    if (idle < 60) { const t = throwVelocity(); vel.x = t.x; vel.y = t.y; }
+    if (idle < 60 && !calm()) { const t = throwVelocity(); vel.x = t.x; vel.y = t.y; }
     samples = [];
     run();
   }
@@ -830,22 +838,52 @@
   canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('pointerleave', () => { pointer = null; });
 
+  /** Zooms toward a target while holding one screen point over its world point. */
+  function zoomAt(to, sx, sy) {
+    const next = clamp(to);
+    if (next === cam.target) return;
+    anchor = { wx: toWorldX(sx), wy: toWorldY(sy), sx, sy };
+    cam.target = next;
+    run();
+  }
+
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     touched();
-    const k = e.ctrlKey ? 0.01 : 0.0022;
-    const to = clamp(cam.target * Math.exp(-e.deltaY * k));
-    if (to === cam.target) return;
-    anchor = { wx: toWorldX(e.clientX), wy: toWorldY(e.clientY), sx: e.clientX, sy: e.clientY };
-    cam.target = to;
-    run();
+    // A trackpad pinch arrives as ctrl+wheel with fine deltas, a mouse wheel
+    // arrives coarse; the pinch needs the gentler constant or it overshoots.
+    zoomAt(cam.target * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0022)), e.clientX, e.clientY);
   }, { passive: false });
 
-  canvas.addEventListener('dblclick', e => {
-    const to = clamp(cam.target * 2.2);
-    if (to === cam.target) return;
-    anchor = { wx: toWorldX(e.clientX), wy: toWorldY(e.clientY), sx: e.clientX, sy: e.clientY };
-    cam.target = to;
+  canvas.addEventListener('dblclick', e => zoomAt(cam.target * 2.2, e.clientX, e.clientY));
+
+  /**
+   * The plane by keyboard. It was reachable only by pointer, which left it
+   * entirely unusable without one.
+   */
+  canvas.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const step = (e.shiftKey ? 260 : 90) / cam.scale;
+    let handled = true;
+    switch (e.key) {
+      case 'ArrowLeft':  cam.x -= step; break;
+      case 'ArrowRight': cam.x += step; break;
+      case 'ArrowUp':    cam.y -= step; break;
+      case 'ArrowDown':  cam.y += step; break;
+      case '+': case '=': zoomAt(cam.target * 1.35, width / 2, height / 2); break;
+      case '-': case '_': zoomAt(cam.target / 1.35, width / 2, height / 2); break;
+      case 'Enter': case ' ': {
+        const i = Math.floor(toWorldX(width / 2)), j = Math.floor(toWorldY(height / 2));
+        poke(i, j);
+        showPick(seedAt(i, j));
+        break;
+      }
+      default: handled = false;
+    }
+    if (!handled) return;
+    e.preventDefault();
+    vel.x = vel.y = 0;
+    touched();
     run();
   });
 
@@ -871,9 +909,20 @@
     pickName.focus({ preventScroll: true });
   }
 
-  function hidePick() { pick.hidden = true; picked = null; }
+  function hidePick(restoreFocus) {
+    if (pick.hidden) return;
+    pick.hidden = true;
+    picked = null;
+    if (restoreFocus) canvas.focus({ preventScroll: true });
+  }
 
-  document.getElementById('pickClose').addEventListener('click', hidePick);
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!pick.hidden) { hidePick(true); return; }
+    if (!claimForm.hidden) { claimForm.hidden = true; claimBtn.focus(); }
+  });
+
+  document.getElementById('pickClose').addEventListener('click', () => hidePick(true));
   pickForm.addEventListener('submit', e => {
     e.preventDefault();
     const who = pickName.value.trim();
@@ -881,12 +930,12 @@
     addClaim(picked, who);
     const done = pickForm.querySelector('button');
     done.textContent = 'claimed';
-    setTimeout(() => { done.textContent = 'claim him'; hidePick(); }, 900);
+    setTimeout(() => { done.textContent = 'claim him'; hidePick(true); }, 900);
   });
 
   /** A small upward kick, so the one you touched bobs on his springs. */
   function poke(i, j) {
-    if (!mesh.vy) return;
+    if (!mesh.vy || calm()) return;
     const k = (j - mesh.j0) * mesh.w + (i - mesh.i0);
     if (k >= 0 && k < mesh.vy.length) { mesh.vy[k] = -2.4; run(); }
   }
@@ -937,7 +986,11 @@
     if (where === 'maker') {
       drawStage();
       requestAnimationFrame(driftFrame);
-      setTimeout(() => nameField.focus({ preventScroll: true }), 60);
+      // Autofocus is a courtesy with a mouse and an ambush on a phone, where
+      // it throws the on-screen keyboard up over the guy you came to see.
+      if (matchMedia('(pointer: fine)').matches) {
+        setTimeout(() => nameField.focus({ preventScroll: true }), 60);
+      }
     }
   }
 
