@@ -217,6 +217,31 @@ describe('nothing floats', () => {
     expect(failures).toEqual([]);
   }, 30_000);
 
+  it('never lets an accessory paint over the mouth', () => {
+    // A scarf reached the mouth on a quarter of all head-and-mouth pairings and
+    // simply erased it; four other chest pieces did the same on forty each.
+    // The outfit is not allowed to take the expression with it.
+    const mouthPixels = (grid: PixelGrid) => {
+      let n = 0;
+      for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (grid[y][x] === 8) n++;
+      return n;
+    };
+    const failures: string[] = [];
+    for (let head = 0; head < heads.length; head++) {
+      for (let mouth = 0; mouth < mouths.length; mouth++) {
+        const bare = mouthPixels(compose({ ...base, head, mouth }));
+        if (bare === 0) continue;
+        for (let accessory = 0; accessory < accessories.length; accessory++) {
+          const worn = mouthPixels(compose({ ...base, head, mouth, accessory }));
+          if (worn < bare) {
+            failures.push(`accessories[${accessory}] eats mouths[${mouth}] on heads[${head}] (${bare} -> ${worn})`);
+          }
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+  }, 30_000);
+
   it('mirrors cleanly — a flipped guy is still one piece', () => {
     const failures = sweep(
       { head: heads.length, hair: hair.length, accessory: accessories.length },

@@ -8,6 +8,7 @@ import { GRID_SIZE } from './types';
 const BODY = 1;
 const PATTERN = 3;
 const ACCENT = 4;
+const MOUTH = 8;
 
 /**
  * Foot styles, as runs of columns measured outwards from the centre seam.
@@ -64,7 +65,13 @@ function faceOffset(metrics: HeadMetrics): number {
  * Merges a source layer onto a target grid.
  * Non-zero pixels in the source overwrite the target, `dy` rows down.
  */
-function mergeLayer(target: PixelGrid, source: PixelGrid, dy = 0): void {
+/**
+ * `keep` names a token the merge will not paint over; 0 means nothing is
+ * protected. It has to be checked as "keep is set AND the cell holds it" —
+ * comparing the cell to `keep` directly protects transparency by default,
+ * which stops every layer from drawing anywhere at all.
+ */
+function mergeLayer(target: PixelGrid, source: PixelGrid, dy = 0, keep = 0): void {
   for (let y = 0; y < GRID_SIZE; y++) {
     const row = y + dy;
     if (row < 0 || row >= GRID_SIZE) continue;
@@ -72,7 +79,7 @@ function mergeLayer(target: PixelGrid, source: PixelGrid, dy = 0): void {
       const token = source[y][x];
       // Truthiness, not `!== 0`: a short part row yields `undefined` here, and
       // `undefined !== 0` would write it straight into the grid as a hole.
-      if (token) target[row][x] = token;
+      if (token && !(keep && target[row][x] === keep)) target[row][x] = token;
     }
   }
 }
@@ -81,13 +88,13 @@ function mergeLayer(target: PixelGrid, source: PixelGrid, dy = 0): void {
  * Merges source pixels onto target only where the head silhouette covers them,
  * so face parts can never drift off into empty space.
  */
-function mergeOnSilhouette(target: PixelGrid, source: PixelGrid, dy: number, head: PixelGrid): void {
+function mergeOnSilhouette(target: PixelGrid, source: PixelGrid, dy: number, head: PixelGrid, keep = 0): void {
   for (let y = 0; y < GRID_SIZE; y++) {
     const row = y + dy;
     if (row < 0 || row >= GRID_SIZE) continue;
     for (let x = 0; x < GRID_SIZE; x++) {
       const token = source[y][x];
-      if (token && head[row][x]) target[row][x] = token;
+      if (token && head[row][x] && !(keep && target[row][x] === keep)) target[row][x] = token;
     }
   }
 }
@@ -142,7 +149,7 @@ function seatOffset(part: PixelGrid, dyTop: number, dyFace: number): number {
  * and trimming the rows above it to exactly that width cut the sides off the
  * ring and left it in two pieces.
  */
-function mergeTopper(target: PixelGrid, source: PixelGrid, dy: number, metrics: HeadMetrics): void {
+function mergeTopper(target: PixelGrid, source: PixelGrid, dy: number, metrics: HeadMetrics, keep = 0): void {
   let lowest = -1;
   for (let y = 0; y < GRID_SIZE; y++) {
     if (source[y].some(v => v !== 0)) lowest = y;
@@ -163,7 +170,7 @@ function mergeTopper(target: PixelGrid, source: PixelGrid, dy: number, metrics: 
     for (let x = seat.left - 1; x <= seat.right + 1; x++) {
       if (x < 0 || x >= GRID_SIZE) continue;
       const token = source[y][x];
-      if (token) target[row][x] = token;
+      if (token && !(keep && target[row][x] === keep)) target[row][x] = token;
     }
   }
 }
@@ -173,7 +180,7 @@ function mergeTopper(target: PixelGrid, source: PixelGrid, dy: number, metrics: 
  * silhouette, sliding each half sideways to hug the head it lands on. Cheek
  * marks stay on the face instead of hanging off a narrow head.
  */
-function mergeAgainstEdges(target: PixelGrid, source: PixelGrid, dy: number, metrics: HeadMetrics): void {
+function mergeAgainstEdges(target: PixelGrid, source: PixelGrid, dy: number, metrics: HeadMetrics, keep = 0): void {
   for (let y = 0; y < GRID_SIZE; y++) {
     const row = y + dy;
     if (row < 0 || row >= GRID_SIZE) continue;
@@ -189,7 +196,7 @@ function mergeAgainstEdges(target: PixelGrid, source: PixelGrid, dy: number, met
       const token = source[y][x];
       if (!token) continue;
       const shifted = x + (x < GRID_SIZE / 2 ? shiftLeft : shiftRight);
-      if (shifted >= 0 && shifted < GRID_SIZE) {
+      if (shifted >= 0 && shifted < GRID_SIZE && !(keep && target[row][shifted] === keep)) {
         target[row][shifted] = token;
       }
     }
@@ -279,22 +286,26 @@ export function compose(config: AvatarConfig): PixelGrid {
     mergeTopper(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
   }
 
+  // Nothing worn is allowed to paint over the mouth. A scarf reached it on a
+  // quarter of all head-and-mouth pairings and simply erased it, and four
+  // other chest pieces did the same on forty each — the guy lost his
+  // expression to his outfit. They part around it instead.
   const accessory = accessories[config.accessory];
   switch (accessoryPlacements[config.accessory]) {
     case 'face':
-      mergeOnSilhouette(grid, accessory, dyFace, head);
+      mergeOnSilhouette(grid, accessory, dyFace, head, MOUTH);
       break;
     case 'edge':
-      mergeAgainstEdges(grid, accessory, dyFace, metrics);
+      mergeAgainstEdges(grid, accessory, dyFace, metrics, MOUTH);
       break;
     case 'top':
-      mergeTopper(grid, accessory, seatOffset(accessory, dyTop, dyFace), metrics);
+      mergeTopper(grid, accessory, seatOffset(accessory, dyTop, dyFace), metrics, MOUTH);
       break;
     case 'lower':
-      mergeLayer(grid, accessory, dyLower);
+      mergeLayer(grid, accessory, dyLower, MOUTH);
       break;
     default:
-      mergeLayer(grid, accessory);
+      mergeLayer(grid, accessory, 0, MOUTH);
   }
 
   // Mirror last, so every layer lands on the side it was authored for and only

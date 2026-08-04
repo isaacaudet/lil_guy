@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -20712,28 +20737,10 @@ const bow = [
 	[
 		_$2,
 		_$2,
-		4,
-		4,
 		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
 		_$2,
 		4,
 		4,
-		4,
-		4,
-		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -20748,10 +20755,28 @@ const bow = [
 	[
 		_$2,
 		_$2,
+		_$2,
+		4,
+		4,
 		4,
 		4,
 		_$2,
 		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		4,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -24464,29 +24489,11 @@ const heartPin = [
 	[
 		_$2,
 		_$2,
-		4,
-		_$2,
-		4,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
 		_$2,
 		_$2,
 		4,
-		4,
-		4,
 		_$2,
-		_$2,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -24501,9 +24508,27 @@ const heartPin = [
 		_$2,
 		_$2,
 		_$2,
+		_$2,
+		4,
+		4,
 		4,
 		_$2,
 		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -24737,27 +24762,9 @@ const starClip = [
 		_$2,
 		_$2,
 		_$2,
-		4,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
 		_$2,
 		_$2,
 		4,
-		4,
-		4,
-		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -24773,9 +24780,27 @@ const starClip = [
 		_$2,
 		_$2,
 		_$2,
+		_$2,
+		4,
+		4,
 		4,
 		_$2,
 		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -42084,14 +42109,14 @@ const mustache = [
 		_,
 		_,
 		_,
+		_,
 		5,
 		5,
 		5,
 		5,
 		5,
 		5,
-		5,
-		5,
+		_,
 		_,
 		_,
 		_,
@@ -45257,6 +45282,7 @@ const REFERENCE = headMetrics[0];
 const BODY = 1;
 const PATTERN = 3;
 const ACCENT = 4;
+const MOUTH = 8;
 /**
 * Foot styles, as runs of columns measured outwards from the centre seam.
 * Index 0 means "leave the head's own feet alone", which is what keeps the
@@ -45320,13 +45346,19 @@ function faceOffset(metrics) {
 * Merges a source layer onto a target grid.
 * Non-zero pixels in the source overwrite the target, `dy` rows down.
 */
-function mergeLayer(target, source, dy = 0) {
+/**
+* `keep` names a token the merge will not paint over; 0 means nothing is
+* protected. It has to be checked as "keep is set AND the cell holds it" —
+* comparing the cell to `keep` directly protects transparency by default,
+* which stops every layer from drawing anywhere at all.
+*/
+function mergeLayer(target, source, dy = 0, keep = 0) {
 	for (let y = 0; y < GRID_SIZE; y++) {
 		const row = y + dy;
 		if (row < 0 || row >= GRID_SIZE) continue;
 		for (let x = 0; x < GRID_SIZE; x++) {
 			const token = source[y][x];
-			if (token) target[row][x] = token;
+			if (token && !(keep && target[row][x] === keep)) target[row][x] = token;
 		}
 	}
 }
@@ -45334,13 +45366,13 @@ function mergeLayer(target, source, dy = 0) {
 * Merges source pixels onto target only where the head silhouette covers them,
 * so face parts can never drift off into empty space.
 */
-function mergeOnSilhouette(target, source, dy, head) {
+function mergeOnSilhouette(target, source, dy, head, keep = 0) {
 	for (let y = 0; y < GRID_SIZE; y++) {
 		const row = y + dy;
 		if (row < 0 || row >= GRID_SIZE) continue;
 		for (let x = 0; x < GRID_SIZE; x++) {
 			const token = source[y][x];
-			if (token && head[row][x]) target[row][x] = token;
+			if (token && head[row][x] && !(keep && target[row][x] === keep)) target[row][x] = token;
 		}
 	}
 }
@@ -45390,7 +45422,7 @@ function seatOffset(part, dyTop, dyFace) {
 * and trimming the rows above it to exactly that width cut the sides off the
 * ring and left it in two pieces.
 */
-function mergeTopper(target, source, dy, metrics) {
+function mergeTopper(target, source, dy, metrics, keep = 0) {
 	let lowest = -1;
 	for (let y = 0; y < GRID_SIZE; y++) if (source[y].some((v) => v !== 0)) lowest = y;
 	if (lowest === -1) return;
@@ -45403,7 +45435,7 @@ function mergeTopper(target, source, dy, metrics) {
 		for (let x = seat.left - 1; x <= seat.right + 1; x++) {
 			if (x < 0 || x >= GRID_SIZE) continue;
 			const token = source[y][x];
-			if (token) target[row][x] = token;
+			if (token && !(keep && target[row][x] === keep)) target[row][x] = token;
 		}
 	}
 }
@@ -45412,7 +45444,7 @@ function mergeTopper(target, source, dy, metrics) {
 * silhouette, sliding each half sideways to hug the head it lands on. Cheek
 * marks stay on the face instead of hanging off a narrow head.
 */
-function mergeAgainstEdges(target, source, dy, metrics) {
+function mergeAgainstEdges(target, source, dy, metrics, keep = 0) {
 	for (let y = 0; y < GRID_SIZE; y++) {
 		const row = y + dy;
 		if (row < 0 || row >= GRID_SIZE) continue;
@@ -45425,7 +45457,7 @@ function mergeAgainstEdges(target, source, dy, metrics) {
 			const token = source[y][x];
 			if (!token) continue;
 			const shifted = x + (x < GRID_SIZE / 2 ? shiftLeft : shiftRight);
-			if (shifted >= 0 && shifted < GRID_SIZE) target[row][shifted] = token;
+			if (shifted >= 0 && shifted < GRID_SIZE && !(keep && target[row][shifted] === keep)) target[row][shifted] = token;
 		}
 	}
 }
@@ -45493,18 +45525,18 @@ function compose(config) {
 	const accessory = accessories[config.accessory];
 	switch (accessoryPlacements[config.accessory]) {
 		case "face":
-			mergeOnSilhouette(grid, accessory, dyFace, head);
+			mergeOnSilhouette(grid, accessory, dyFace, head, MOUTH);
 			break;
 		case "edge":
-			mergeAgainstEdges(grid, accessory, dyFace, metrics);
+			mergeAgainstEdges(grid, accessory, dyFace, metrics, MOUTH);
 			break;
 		case "top":
-			mergeTopper(grid, accessory, seatOffset(accessory, dyTop, dyFace), metrics);
+			mergeTopper(grid, accessory, seatOffset(accessory, dyTop, dyFace), metrics, MOUTH);
 			break;
 		case "lower":
-			mergeLayer(grid, accessory, dyLower);
+			mergeLayer(grid, accessory, dyLower, MOUTH);
 			break;
-		default: mergeLayer(grid, accessory);
+		default: mergeLayer(grid, accessory, 0, MOUTH);
 	}
 	if (config.flip) for (const row of grid) row.reverse();
 	return grid;
@@ -46081,5 +46113,118 @@ function shadePalette(palette, shade) {
 }
 
 //#endregion
-export { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette };
-//# sourceMappingURL=palette-DgNDWRkU.js.map
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+//# sourceMappingURL=palette-HcKXBm2J.cjs.map
