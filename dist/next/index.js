@@ -1,4 +1,4 @@
-import { GRID_SIZE, compose, getPalette, resolve, resolveColor, shadePalette } from "../palette-BtQPkLJr.js";
+import { GRID_SIZE, compose, getPalette, resolve, resolveColor, shadePalette } from "../palette-DgNDWRkU.js";
 import { jsx } from "react/jsx-runtime";
 import { ImageResponse } from "next/og";
 

@@ -1,5 +1,5 @@
 "use strict";
-const require_palette = require('./palette-DU2Lef21.cjs');
+const require_palette = require('./palette-Bud5UeNK.cjs');
 const react = require_palette.__toESM(require("react"));
 const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
 

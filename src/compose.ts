@@ -119,19 +119,28 @@ function maskMergeLayer(target: PixelGrid, source: PixelGrid, maskToken: number)
  * A head that starts a row higher (tall, spire) buried the hat a row deeper
  * than it was drawn for. A topper that leaves its own top row empty can move
  * up to compensate; one that draws on row 0 has nowhere to go and stays put.
+ *
+ * The limit keeps a row of forehead between a topper and the eyes wherever
+ * the art allows it. A full-height hat still comes down to the brow, which is
+ * how a cap is worn; anything shorter is held clear of the face.
  */
 function seatOffset(part: PixelGrid, dyTop: number, dyFace: number): number {
   const rows = extentRows(part);
   if (!rows) return dyTop;
-  const highest = dyFace + FACE_TOP - 1 - rows.last;
+  const highest = dyFace + FACE_TOP - 2 - rows.last;
   return Math.max(-rows.first, Math.min(dyTop, Math.max(0, highest)));
 }
 
 /**
  * Merges a topper so it rests on the crown of the head, trimmed to how wide
  * the skull actually is at the row it sits on — otherwise a wide hat hangs in
- * the air beside a narrow crown. Its lowest row gets one column of slack on
- * each side, which is what lets the cap keep a brim.
+ * the air beside a narrow crown.
+ *
+ * Every row gets one column of slack, not just the lowest. That is what lets a
+ * cap keep its brim, and it is also what a ring or a pair of ears needs: on a
+ * head that tapers to a point (crystal, tri) a halo seats on a four-wide tip,
+ * and trimming the rows above it to exactly that width cut the sides off the
+ * ring and left it in two pieces.
  */
 function mergeTopper(target: PixelGrid, source: PixelGrid, dy: number, metrics: HeadMetrics): void {
   let lowest = -1;
@@ -151,8 +160,7 @@ function mergeTopper(target: PixelGrid, source: PixelGrid, dy: number, metrics: 
   for (let y = 0; y <= lowest; y++) {
     const row = y + dy;
     if (row < 0 || row >= GRID_SIZE) continue;
-    const slack = y === lowest ? 1 : 0;
-    for (let x = seat.left - slack; x <= seat.right + slack; x++) {
+    for (let x = seat.left - 1; x <= seat.right + 1; x++) {
       if (x < 0 || x >= GRID_SIZE) continue;
       const token = source[y][x];
       if (token) target[row][x] = token;

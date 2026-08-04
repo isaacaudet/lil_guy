@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -19504,9 +19529,9 @@ const crown = [
 		4,
 		_$2,
 		4,
-		_$2,
 		4,
 		_$2,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -19524,7 +19549,7 @@ const crown = [
 		4,
 		4,
 		4,
-		_$2,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -19542,7 +19567,7 @@ const crown = [
 		4,
 		4,
 		4,
-		_$2,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -19796,24 +19821,6 @@ const cap = [
 		3,
 		3,
 		3,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		3,
-		3,
-		3,
-		3,
-		3,
-		3,
 		3,
 		_$2,
 		_$2,
@@ -19825,7 +19832,7 @@ const cap = [
 		_$2,
 		_$2,
 		_$2,
-		3,
+		_$2,
 		3,
 		3,
 		3,
@@ -19842,18 +19849,36 @@ const cap = [
 	[
 		_$2,
 		_$2,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
 		_$2,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
 		_$2,
 		_$2
 	],
@@ -21007,8 +21032,8 @@ const flower = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -21877,8 +21902,8 @@ const star$1 = [
 		_$2,
 		_$2,
 		_$2,
-		4,
-		4,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -22167,8 +22192,8 @@ const sprout = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -22400,6 +22425,8 @@ const bandana = [
 		_$2,
 		_$2,
 		_$2,
+		4,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -22408,6 +22435,22 @@ const bandana = [
 		_$2,
 		_$2,
 		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
+		4,
 		_$2,
 		_$2,
 		_$2,
@@ -22436,8 +22479,6 @@ const bandana = [
 		_$2,
 		_$2,
 		_$2,
-		4,
-		4,
 		_$2,
 		_$2,
 		_$2,
@@ -22446,22 +22487,6 @@ const bandana = [
 		_$2,
 		_$2,
 		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
-		4,
 		_$2,
 		_$2,
 		_$2,
@@ -22982,24 +23007,6 @@ const halo = [
 		_$2,
 		_$2,
 		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
 		4,
 		4,
 		4,
@@ -23040,6 +23047,24 @@ const halo = [
 		4,
 		4,
 		4,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -24140,24 +24165,6 @@ const laurel = [
 		_$2,
 		_$2,
 		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
 		2,
 		_$2,
 		_$2,
@@ -24201,6 +24208,24 @@ const laurel = [
 		_$2,
 		2,
 		2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -25067,8 +25092,8 @@ const pompom = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -25357,8 +25382,8 @@ const leafPair = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -26224,14 +26249,14 @@ const catEars = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
-		2,
 		_$2,
 		_$2,
-		2,
-		2,
-		2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -26515,12 +26540,12 @@ const bunnyEars = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
 		_$2,
 		_$2,
-		2,
-		2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -27386,10 +27411,10 @@ const candle = [
 		_$2,
 		_$2,
 		_$2,
-		3,
-		3,
-		3,
-		3,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -27677,8 +27702,8 @@ const topKnot = [
 		_$2,
 		_$2,
 		_$2,
-		2,
-		2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -27929,24 +27954,6 @@ const visor = [
 		_$2,
 		_$2,
 		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
 		3,
 		3,
 		3,
@@ -27973,6 +27980,24 @@ const visor = [
 		4,
 		4,
 		4,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2
@@ -28219,24 +28244,6 @@ const flowerCrown = [
 		_$2,
 		_$2,
 		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2
-	],
-	[
-		_$2,
-		_$2,
-		_$2,
-		_$2,
-		_$2,
 		4,
 		_$2,
 		_$2,
@@ -28262,6 +28269,24 @@ const flowerCrown = [
 		2,
 		2,
 		2,
+		_$2,
+		_$2,
+		_$2,
+		_$2
+	],
+	[
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
+		_$2,
 		_$2,
 		_$2,
 		_$2,
@@ -45368,18 +45393,27 @@ function maskMergeLayer(target, source, maskToken) {
 * A head that starts a row higher (tall, spire) buried the hat a row deeper
 * than it was drawn for. A topper that leaves its own top row empty can move
 * up to compensate; one that draws on row 0 has nowhere to go and stays put.
+*
+* The limit keeps a row of forehead between a topper and the eyes wherever
+* the art allows it. A full-height hat still comes down to the brow, which is
+* how a cap is worn; anything shorter is held clear of the face.
 */
 function seatOffset(part, dyTop, dyFace) {
 	const rows = extentRows(part);
 	if (!rows) return dyTop;
-	const highest = dyFace + FACE_TOP - 1 - rows.last;
+	const highest = dyFace + FACE_TOP - 2 - rows.last;
 	return Math.max(-rows.first, Math.min(dyTop, Math.max(0, highest)));
 }
 /**
 * Merges a topper so it rests on the crown of the head, trimmed to how wide
 * the skull actually is at the row it sits on — otherwise a wide hat hangs in
-* the air beside a narrow crown. Its lowest row gets one column of slack on
-* each side, which is what lets the cap keep a brim.
+* the air beside a narrow crown.
+*
+* Every row gets one column of slack, not just the lowest. That is what lets a
+* cap keep its brim, and it is also what a ring or a pair of ears needs: on a
+* head that tapers to a point (crystal, tri) a halo seats on a four-wide tip,
+* and trimming the rows above it to exactly that width cut the sides off the
+* ring and left it in two pieces.
 */
 function mergeTopper(target, source, dy, metrics) {
 	let lowest = -1;
@@ -45391,8 +45425,7 @@ function mergeTopper(target, source, dy, metrics) {
 	for (let y = 0; y <= lowest; y++) {
 		const row = y + dy;
 		if (row < 0 || row >= GRID_SIZE) continue;
-		const slack = y === lowest ? 1 : 0;
-		for (let x = seat.left - slack; x <= seat.right + slack; x++) {
+		for (let x = seat.left - 1; x <= seat.right + 1; x++) {
 			if (x < 0 || x >= GRID_SIZE) continue;
 			const token = source[y][x];
 			if (token) target[row][x] = token;
@@ -45476,11 +45509,11 @@ function compose(config) {
 	const metrics = headMetrics[config.head];
 	const grid = composeBase(config);
 	const dyFace = faceOffset(metrics);
-	const dyTop = Math.max(0, metrics.crown - REFERENCE.crown);
+	const dyTop = metrics.crown - REFERENCE.crown;
 	const dyLower = metrics.bottom - REFERENCE.bottom;
 	mergeOnSilhouette(grid, eyes[config.eyes], dyFace, head);
 	mergeOnSilhouette(grid, mouths[config.mouth], dyFace, head);
-	if (hairPlacements[config.hair] === "edge") mergeAgainstEdges(grid, hair[config.hair], dyTop, metrics);
+	if (hairPlacements[config.hair] === "edge") mergeAgainstEdges(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
 	else mergeTopper(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
 	const accessory = accessories[config.accessory];
 	switch (accessoryPlacements[config.accessory]) {
@@ -46073,5 +46106,118 @@ function shadePalette(palette, shade) {
 }
 
 //#endregion
-export { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette };
-//# sourceMappingURL=palette-BtQPkLJr.js.map
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+//# sourceMappingURL=palette-Bud5UeNK.cjs.map
