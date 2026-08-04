@@ -32,6 +32,23 @@ describe('golden art', () => {
     expect(toSvgString('alice', { size: 16, square: true })).toMatchSnapshot();
   });
 
+  it('covers every head wearing every topper', () => {
+    // The head sweep below wears no hat, so a hat that moved sideways or sat a
+    // row too low changed nothing any snapshot was watching. This is that gap:
+    // it caught neither the two toppers authored half a pixel left of centre,
+    // nor every topper sitting a row low on the heads with a high crown.
+    const { heads, hair } = require('../parts');
+    const grids: Record<string, string> = {};
+    heads.forEach((_: unknown, head: number) => {
+      hair.forEach((_h: unknown, topper: number) => {
+        grids[`head${head}.hair${topper}`] = compose({
+          head, eyes: 1, mouth: 0, hair: topper, body: 0, accessory: 0, palette: 0, rotation: 0,
+        }).map((row: number[]) => row.map(v => GLYPH[v]).join('')).join('\n');
+      });
+    });
+    expect(grids).toMatchSnapshot();
+  });
+
   it('covers every head with a fixed face', () => {
     const { heads } = require('../parts');
     const grids = heads.map((_: unknown, head: number) =>

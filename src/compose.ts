@@ -256,13 +256,17 @@ export function compose(config: AvatarConfig): PixelGrid {
   const metrics = headMetrics[config.head];
   const grid = composeBase(config);
   const dyFace = faceOffset(metrics);
-  const dyTop = Math.max(0, metrics.crown - REFERENCE.crown);
+  // Raw, not clamped at zero: a head whose crown sits *above* the reference
+  // (tall, spire) needs its hat to come up with it, and clamping here threw
+  // that away before seatOffset could ever act on it — every topper sat a row
+  // low on those heads. seatOffset does the clamping, in both directions.
+  const dyTop = metrics.crown - REFERENCE.crown;
   const dyLower = metrics.bottom - REFERENCE.bottom;
 
   mergeOnSilhouette(grid, eyes[config.eyes], dyFace, head);
   mergeOnSilhouette(grid, mouths[config.mouth], dyFace, head);
   if (hairPlacements[config.hair] === 'edge') {
-    mergeAgainstEdges(grid, hair[config.hair], dyTop, metrics);
+    mergeAgainstEdges(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
   } else {
     mergeTopper(grid, hair[config.hair], seatOffset(hair[config.hair], dyTop, dyFace), metrics);
   }

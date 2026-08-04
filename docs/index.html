@@ -16,8 +16,17 @@
   }
   ::selection{background:rgba(255,255,255,.16)}
 
-  .view{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity .34s ease}
-  .view.on{opacity:1;pointer-events:auto}
+  .view{
+    position:fixed;inset:0;opacity:0;pointer-events:none;visibility:hidden;
+    /* Visibility is not a thing you can fade, so it waits for the fade to
+       finish before hiding, and switches back the instant a view is shown.
+       Without it a faded-out view keeps its links tabbable and clickable. */
+    transition:opacity .34s ease,visibility 0s linear .34s;
+  }
+  .view.on{
+    opacity:1;pointer-events:auto;visibility:visible;
+    transition:opacity .34s ease,visibility 0s;
+  }
 
   /* ---------------------------------------------------------------- maker */
   #drift{position:absolute;inset:0;width:100%;height:100%;opacity:.26;z-index:0;cursor:pointer}
@@ -125,8 +134,9 @@
   .hud b{display:block;font-weight:600;font-size:13px;letter-spacing:-.01em;color:rgba(255,255,255,.92);margin-bottom:2px}
   .hud b i{font-style:normal;color:rgba(255,255,255,.28)}
   .hud p{color:rgba(255,255,255,.3)}
-  .hud a{color:rgba(255,255,255,.34);text-decoration:none;transition:color .18s ease}
-  .hud a:hover{color:rgba(255,255,255,.85)}
+  .hud a,.hud button{color:rgba(255,255,255,.34);text-decoration:none;transition:color .18s ease}
+  .hud a:hover,.hud button:hover{color:rgba(255,255,255,.85)}
+  .hud button{background:none;border:0;padding:0;font:inherit;letter-spacing:inherit;cursor:pointer}
   #seed{color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
   #hint{transition:opacity .5s ease}
   #galleryView.touched #hint{opacity:0}
@@ -183,7 +193,7 @@
     <b>lil<i>_</i>guy</b>
     <p id="seed">&nbsp;</p>
     <p id="hint">drag to wander · pinch or scroll to zoom</p>
-    <p><a href="#" id="mode">order by colour →</a></p>
+    <p><button type="button" id="mode">order by colour →</button></p>
     <p><a href="#">← make your own</a></p>
   </div>
 </section>

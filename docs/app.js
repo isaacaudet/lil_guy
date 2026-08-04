@@ -521,14 +521,26 @@
     }
   }
 
-  function restMesh() {
+  /**
+   * Whether the lattice has stopped moving in any way you could see.
+   *
+   * The threshold has to be in pixels, not cells: a twentieth of a cell is
+   * nothing at all when a guy is 40px wide and most of a pixel when he is 900.
+   * Measured in cells, the mesh went on ringing sub-pixel for the better part
+   * of three seconds after every touch, holding the frame loop open the whole
+   * time for motion nobody could possibly see.
+   */
+  function restMesh(scale) {
     if (!mesh.dx) return true;
-    let still = true;
+    const flex = 0.4 / scale;    // px of displacement that still counts as still
+    const drift = 2 / scale;     // px/s of velocity that still counts as still
     for (let k = 0; k < mesh.dx.length; k++) {
-      if (Math.abs(mesh.dx[k]) > 1e-4 || Math.abs(mesh.dy[k]) > 1e-4 ||
-          Math.abs(mesh.vx[k]) > 1e-3 || Math.abs(mesh.vy[k]) > 1e-3) { still = false; break; }
+      if (Math.abs(mesh.dx[k]) > flex || Math.abs(mesh.dy[k]) > flex ||
+          Math.abs(mesh.vx[k]) > drift || Math.abs(mesh.vy[k]) > drift) return false;
     }
-    return still;
+    // Settle exactly, so nothing is left leaning by a hair.
+    mesh.dx.fill(0); mesh.dy.fill(0); mesh.vx.fill(0); mesh.vy.fill(0);
+    return true;
   }
 
   /* ------------------------------------------------------------ prefetch */
@@ -620,7 +632,7 @@
       stepMesh(step, accelX, accelY);
       left -= step;
     }
-    if (!restMesh()) alive = true;
+    if (!restMesh(cam.scale)) alive = true;
 
     readout();
     if (draw(now)) alive = true;
@@ -880,8 +892,7 @@
   }
 
   const modeLink = document.getElementById('mode');
-  modeLink.addEventListener('click', e => {
-    e.preventDefault();
+  modeLink.addEventListener('click', () => {
     ordered = !ordered;
     modeLink.textContent = ordered ? 'scatter them \u2192' : 'order by colour \u2192';
     if (ordered && !pool.ready) buildPool(600);
