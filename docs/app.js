@@ -256,6 +256,29 @@
   const TIDE_SIZE = 0.58;     // how much of a cell a guy fills
 
   let driftRunning = false;
+  let tideAt = 0;                      // seconds, for hit testing the tide
+
+  /** Which drifting guy is under a point, or null. */
+  function tideUnder(px, py) {
+    const t = tideAt;
+    const ox = Math.cos(TIDE_ANGLE) * TIDE_DRIFT * t;
+    const oy = Math.sin(TIDE_ANGLE) * TIDE_DRIFT * t;
+    const swell = TIDE_CELL * TIDE_SWELL;
+    const size = TIDE_CELL * TIDE_SIZE;
+    const i = Math.round((px - ox) / TIDE_CELL);
+    const j = Math.round((py - oy) / TIDE_CELL);
+    // Only the three-by-three around the guess can contain the point once the
+    // swell has moved everyone off their lattice position.
+    for (let dj = -1; dj <= 1; dj++) {
+      for (let di = -1; di <= 1; di++) {
+        const ci = i + di, cj = j + dj;
+        const x = ci * TIDE_CELL + ox + Math.cos(t * 0.27 + cj * 0.62) * swell * 0.55;
+        const y = cj * TIDE_CELL + oy + Math.sin(t * 0.42 + ci * 0.85 + cj * 0.35) * swell;
+        if (px >= x && px <= x + size && py >= y && py <= y + size) return `tide ${ci},${cj}`;
+      }
+    }
+    return null;
+  }
 
   /**
    * A slow tide of guys behind the maker.
@@ -280,6 +303,7 @@
     driftCtx.clearRect(0, 0, w, h);
 
     const t = now / 1000;
+    tideAt = t;
     const ox = Math.cos(TIDE_ANGLE) * TIDE_DRIFT * t;
     const oy = Math.sin(TIDE_ANGLE) * TIDE_DRIFT * t;
     const swell = TIDE_CELL * TIDE_SWELL;
@@ -304,6 +328,22 @@
     }
     requestAnimationFrame(driftFrame);
   }
+
+  // One of the ones drifting past can be picked up: he becomes the guy you
+  // are making, so the same claim and save sit right underneath him.
+  drift.addEventListener('click', e => {
+    const box = drift.getBoundingClientRect();
+    const x = e.clientX - box.left, y = e.clientY - box.top;
+    // The middle is under the scrim, where a guy may be all but invisible.
+    // Picking one there would read as a click on nothing changing everything.
+    const dx = (x - box.width / 2) / (box.width * 0.42);
+    const dy = (y - box.height * 0.55) / (box.height * 0.5);
+    if (dx * dx + dy * dy < 1) return;
+    const seed = tideUnder(x, y);
+    if (!seed) return;
+    nameField.value = seed;
+    drawStage();
+  });
 
   nameField.addEventListener('input', drawStage);
   document.getElementById('savePlain').addEventListener('click', () => save(false));
@@ -677,7 +717,7 @@
   /* ------------------------------------------------------------- gesture */
 
   const active = new Map();
-  let dragging = false, samples = [], pinch = 0;
+  let dragging = false, samples = [], pinch = 0, press = null;
 
   const touched = () => galleryView.classList.add('touched');
 
@@ -704,6 +744,7 @@
     active.set(e.pointerId, { x: e.clientX, y: e.clientY });
     touched();
     if (active.size === 1) {
+      press = { x: e.clientX, y: e.clientY, t: e.timeStamp };
       dragging = true;
       vel.x = vel.y = 0;
       anchor = null;
@@ -761,6 +802,18 @@
     run();
   }
 
+  // A tap is a press that went nowhere. Anything that travelled was a drag,
+  // and the second click of a double-click belongs to the zoom.
+  canvas.addEventListener('click', e => {
+    if (e.detail !== 1) return;
+    if (!press || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 6) return;
+    if (e.timeStamp - press.t > 600) return;
+    const i = Math.floor(toWorldX(e.clientX));
+    const j = Math.floor(toWorldY(e.clientY));
+    poke(i, j);
+    showPick(seedAt(i, j));
+  });
+
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('pointerleave', () => { pointer = null; });
@@ -783,6 +836,48 @@
     cam.target = to;
     run();
   });
+
+  /* ------------------------------------------------------------- picking */
+
+  const pick = document.getElementById('pick');
+  const pickArt = document.getElementById('pickArt');
+  const pickForm = document.getElementById('pickForm');
+  const pickName = document.getElementById('pickName');
+  let picked = null;
+
+  function showPick(seed) {
+    picked = seed;
+    paint(seed);
+    const src = document.createElement('canvas');
+    src.width = src.height = ART;
+    src.getContext('2d').putImageData(tile, 0, 0);
+    const c = pickArt.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, pickArt.width, pickArt.height);
+    c.drawImage(src, 0, 0, pickArt.width, pickArt.height);
+    pick.hidden = false;
+    pickName.focus({ preventScroll: true });
+  }
+
+  function hidePick() { pick.hidden = true; picked = null; }
+
+  document.getElementById('pickClose').addEventListener('click', hidePick);
+  pickForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const who = pickName.value.trim();
+    if (!who || !picked) { pickName.focus(); return; }
+    addClaim(picked, who);
+    const done = pickForm.querySelector('button');
+    done.textContent = 'claimed';
+    setTimeout(() => { done.textContent = 'claim him'; hidePick(); }, 900);
+  });
+
+  /** A small upward kick, so the one you touched bobs on his springs. */
+  function poke(i, j) {
+    if (!mesh.vy) return;
+    const k = (j - mesh.j0) * mesh.w + (i - mesh.i0);
+    if (k >= 0 && k < mesh.vy.length) { mesh.vy[k] = -2.4; run(); }
+  }
 
   const modeLink = document.getElementById('mode');
   modeLink.addEventListener('click', e => {
@@ -825,6 +920,7 @@
     document.getElementById('wallView').classList.toggle('on', where === 'wall');
 
     driftRunning = where === 'maker';
+    if (where !== 'gallery') hidePick();
     if (where === 'gallery') resize();
     if (where === 'wall') drawWall();
     if (where === 'maker') {

@@ -20,7 +20,7 @@
   .view.on{opacity:1;pointer-events:auto}
 
   /* ---------------------------------------------------------------- maker */
-  #drift{position:absolute;inset:0;width:100%;height:100%;opacity:.26;pointer-events:none;z-index:0}
+  #drift{position:absolute;inset:0;width:100%;height:100%;opacity:.26;z-index:0;cursor:pointer}
   /* Sink the middle of the field so the guy you are making, and the words
      under him, sit on near-black instead of on somebody else's face. */
   #maker::before{
@@ -90,6 +90,32 @@
       radial-gradient(125% 95% at 50% 45%,transparent 38%,rgba(6,6,8,.6) 100%);
   }
 
+  /* ----------------------------------------------------------- picked guy */
+  #pick{
+    position:absolute;right:max(22px,env(safe-area-inset-right));
+    bottom:max(20px,env(safe-area-inset-bottom));z-index:4;
+    display:flex;align-items:center;gap:14px;
+    padding:14px 16px;border-radius:14px;
+    background:rgba(14,14,18,.86);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.07);
+    box-shadow:0 18px 48px rgba(0,0,0,.6);
+  }
+  #pick[hidden]{display:none}
+  #pickArt{width:56px;height:56px;image-rendering:pixelated;display:block}
+  #pickForm{display:flex;align-items:center;gap:12px}
+  #pickName{
+    width:150px;background:none;border:0;border-bottom:1px solid rgba(255,255,255,.14);
+    color:#fff;font-family:inherit;font-size:12px;padding:0 2px 6px;
+  }
+  #pickName::placeholder{color:rgba(255,255,255,.24)}
+  #pickName:focus{outline:none;border-bottom-color:rgba(255,255,255,.45)}
+  #pick button{
+    background:none;border:0;cursor:pointer;font:inherit;color:rgba(255,255,255,.5);
+    letter-spacing:.05em;transition:color .18s ease;padding:0;
+  }
+  #pick button:hover{color:rgba(255,255,255,.92)}
+  #pickClose{font-size:16px;line-height:1;color:rgba(255,255,255,.25)}
+
   /* ----------------------------------------------------------------- hud */
   .hud{
     position:fixed;left:max(22px,env(safe-area-inset-left));
@@ -144,6 +170,15 @@
 <section id="galleryView" class="view">
   <canvas id="plane"></canvas>
   <div id="veil"></div>
+  <div id="pick" hidden>
+    <canvas id="pickArt" width="128" height="128"></canvas>
+    <form id="pickForm">
+      <input id="pickName" type="text" placeholder="your name" spellcheck="false"
+             autocomplete="off" maxlength="40">
+      <button type="submit">claim him</button>
+    </form>
+    <button id="pickClose" type="button" aria-label="dismiss">&times;</button>
+  </div>
   <div class="hud">
     <b>lil<i>_</i>guy</b>
     <p id="seed">&nbsp;</p>
