@@ -1,56 +1,59 @@
 /**
- * The wall.
+ * An endless plane of lil guys.
  *
- * Two things make this feel instant on a set this size. Sorting only needs
- * `resolve` — hashing a string, no drawing — so ordering 200,000 guys by hue
- * costs a fraction of a second. And `compose` only ever runs for cells that
- * are actually on screen, under a time budget per frame, so a fast scroll
- * stays smooth and fills in behind itself rather than stalling.
+ * There is no list. Every cell on the integer lattice is itself the seed —
+ * `"12,-7"` — so the grid has no edges and nothing is precomputed: pull in any
+ * direction and the characters under you are hashed into existence as they
+ * arrive.
+ *
+ * The feel is the point, so the motion is modelled rather than approximated.
+ * Velocity comes from a short sample window rather than the last event, so a
+ * flick reads the throw and not the twitch at the end of it. The glide and the
+ * zoom both settle on exponential decay against real elapsed time, so they
+ * behave the same at 60Hz and at 120Hz. And zoom eases toward a target while
+ * holding the point under the cursor fixed, which is what makes a wheel tick
+ * feel pulled rather than applied.
  */
 (() => {
   const L = window.LilGuy;
-  const GRID = L.GRID_SIZE;
+  const ART = L.GRID_SIZE;
 
-  // Mirrors the part arrays in the library. Labels only — a mismatch is
-  // caught below and degrades to indices rather than lying.
-  const NAMES = {
-    head: ['round','gumdrop','tall','wide','pear','egg','bean','ghost','horned','eared','stack','crystal','cloud','slime','tri','lump','droop','peanut','spire','boulder'],
-    eyes: ['dots','round','happy','sparkle','wink','cross','tiny dots','wide','sleepy','angry','hearts','cyclops','dizzy','side-eye','visor','pleading','starry','big shine','curious','soft bean','doe','content','twinkle'],
-    mouth: ['smile','grin','cat','open','flat','tongue','fang','squiggle','gape','frown','smirk','teeth','oh','beam','tiny','wobble','tiny cat','blep','soft smile','laugh'],
-    hair: ['none','antenna','tuft','crown','cap','beanie','spikes','bow','flower','tophat','propeller','star','sprout','bandana','antlers','halo','beret','wizard','earmuffs','laurel','heart pin','star clip','pompom','leaf pair','party hat','chef toque','cat ears','bunny ears','cowboy','toadstool','candle','top knot','visor','flower crown'],
-    body: ['plain','striped','spotted','heart','belly','zigzag','two-tone','star','checker','splotch','sprinkles','sash','gradient','patch','big dots','bands','freckle band','collar patch','pebbles','crest','overalls','paw print','crescent','diamond','lightning','stitch seam','flower spot','pocket patch'],
-    accessory: ['none','glasses','sunglasses','blush','freckles','bowtie','monocle','eyepatch','scarf','whiskers','bandaid','tears','earring','headphones','flushed','sweat','crumb','antennae','moustache','beard','necktie','pendant','bib','square frames','button nose','beauty mark','star sticker','heart cheeks','collar bell'],
-  };
-  const SLOTS = [['head', L.heads], ['eyes', L.eyes], ['mouth', L.mouths],
-                 ['hair', L.hair], ['body', L.bodies], ['accessory', L.accessories]];
-  for (const [slot, parts] of SLOTS) {
-    if (NAMES[slot].length !== parts.length) {
-      console.warn(`lil_guy: ${slot} labels are stale (${NAMES[slot].length} vs ${parts.length})`);
-      NAMES[slot] = parts.map((_, i) => `#${i}`);
-    }
-  }
-  const label = (slot, i) => NAMES[slot][i] ?? `#${i}`;
+  const canvas = document.getElementById('plane');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const seedText = document.getElementById('seed');
 
-  const $ = id => document.getElementById(id);
-  const scroll = $('scroll'), spacer = $('spacer'), wall = $('wall');
-  const card = $('card'), pin = $('pin'), stat = $('stat');
-  const ctx = wall.getContext('2d', { alpha: false });
+  const BG = '#0b0b0d';
+  const MIN_SCALE = 40;      // px per cell — zoomed out, a swarm
+  const MAX_SCALE = 900;     // one guy filling most of the screen
+  const START_SCALE = 210;
+  const MARGIN = 0.13;       // share of each cell left as air
 
-  const state = {
-    count: 2500,
-    order: 'hue',
-    cell: 20,
-    gap: 2,
-    guys: [],
-    cols: 1,
-    rows: 1,
-    hover: -1,
-    pinned: null,
-  };
+  const GLIDE_TAU = 340;     // ms — how long a flick keeps running
+  const ZOOM_TAU = 70;       // ms — how quickly zoom settles on its target
+  const STOP = 0.014;        // px/ms — below this the glide is over
+  const FADE = 220;          // ms — a guy fading up as he is drawn
+  const BUDGET = 7;          // ms per frame spent making new guys
 
-  /* ---------- colour ---------- */
+  /** World coordinates at the centre of the screen, and pixels per cell. */
+  const cam = { x: 0.5, y: 0.5, scale: START_SCALE, target: START_SCALE };
+  const vel = { x: 0, y: 0 };   // world units per ms
+  let anchor = null;            // { wx, wy, sx, sy } — held fixed while zooming
 
+  let width = 0, height = 0, dpr = 1;
+  let pointer = null;
+
+  // The hint has done its job the moment you touch the plane.
+  const hud = document.getElementById('hud');
+  const touched = () => hud.classList.add('touched');
+
+  const clamp = s => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
+
+  /* ------------------------------------------------------------------ art */
+
+  const sprites = new Map();
+  const CACHE_CAP = 3000;
   const rgbCache = new Map();
+
   function rgb(hex) {
     let v = rgbCache.get(hex);
     if (!v) {
@@ -59,68 +62,22 @@
     }
     return v;
   }
-  function hueOf(hex) {
-    const [r, g, b] = rgb(hex).map(v => v / 255);
-    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
-    if (d === 0) return { h: -1, l: (mx + mn) / 2 };
-    const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
-    return { h: h * 60, l: (mx + mn) / 2 };
-  }
 
-  /* ---------- the set ---------- */
+  function spriteFor(seed) {
+    let s = sprites.get(seed);
+    if (s) return s;
 
-  // A cheap deterministic shuffle, so "random" is stable across redraws and
-  // across reloads — you can link someone to what you are looking at.
-  function scramble(i) {
-    let x = (i ^ 0x9e3779b9) >>> 0;
-    x = Math.imul(x ^ (x >>> 16), 0x21f0aaad) >>> 0;
-    x = Math.imul(x ^ (x >>> 15), 0x735a2d97) >>> 0;
-    return (x ^ (x >>> 15)) >>> 0;
-  }
+    const cfg = L.resolve(seed);
+    const grid = L.compose(cfg);
+    const pal = L.shadePalette(L.getPalette(cfg.palette), cfg.shade);
 
-  function build() {
-    const guys = new Array(state.count);
-    for (let i = 0; i < state.count; i++) {
-      const name = `lil-guy-${i}`;
-      const cfg = L.resolve(name);
-      const pal = L.getPalette(cfg.palette);
-      const { h, l } = hueOf(pal.colors[1]);
-      guys[i] = { name, cfg, palette: pal, h, l, i };
-    }
-    sort(guys);
-    state.guys = guys;
-    bitmaps.clear();
-    layout();
-  }
-
-  function sort(guys) {
-    const by = {
-      hue: (a, b) => a.h - b.h || a.l - b.l,
-      random: (a, b) => scramble(a.i) - scramble(b.i),
-      head: (a, b) => a.cfg.head - b.cfg.head || a.h - b.h,
-      palette: (a, b) => a.cfg.palette - b.cfg.palette || a.cfg.head - b.cfg.head,
-    }[state.order];
-    guys.sort(by);
-  }
-
-  /* ---------- rasterising ---------- */
-
-  const bitmaps = new Map();
-  const BITMAP_CAP = 20000;
-
-  function bitmapFor(guy) {
-    let cv = bitmaps.get(guy.name);
-    if (cv) return cv;
-
-    const grid = L.compose(guy.cfg);
-    const pal = L.shadePalette(guy.palette, guy.cfg.shade);
-    cv = document.createElement('canvas');
-    cv.width = cv.height = GRID;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = ART;
     const c = cv.getContext('2d');
-    const img = c.createImageData(GRID, GRID);
+    const img = c.createImageData(ART, ART);
     const d = img.data;
-    for (let y = 0, p = 0; y < GRID; y++) {
-      for (let x = 0; x < GRID; x++, p += 4) {
+    for (let y = 0, p = 0; y < ART; y++) {
+      for (let x = 0; x < ART; x++, p += 4) {
         const hex = L.resolveColor(pal, grid[y][x]);
         if (!hex) continue;
         const [r, g, b] = rgb(hex);
@@ -129,214 +86,255 @@
     }
     c.putImageData(img, 0, 0);
 
-    // Plain FIFO eviction. An LRU would be tidier but the access pattern here
-    // is a scrolling window, so oldest-first is already the right guess.
-    if (bitmaps.size >= BITMAP_CAP) {
-      const oldest = bitmaps.keys().next().value;
-      bitmaps.delete(oldest);
-    }
-    bitmaps.set(guy.name, cv);
-    return cv;
+    if (sprites.size >= CACHE_CAP) sprites.delete(sprites.keys().next().value);
+    s = { cv, born: performance.now() };
+    sprites.set(seed, s);
+    return s;
   }
 
-  /* ---------- layout + paint ---------- */
+  /* --------------------------------------------------------------- camera */
 
-  function layout() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = scroll.clientWidth, h = scroll.clientHeight;
-    wall.width = Math.round(w * dpr);
-    wall.height = Math.round(h * dpr);
-    wall.style.width = w + 'px';
-    wall.style.height = h + 'px';
+  const seedAt = (i, j) => `${i},${j}`;
+  const toWorldX = sx => cam.x + (sx - width / 2) / cam.scale;
+  const toWorldY = sy => cam.y + (sy - height / 2) / cam.scale;
+
+  /** Puts a world point back under a screen point. */
+  function pin(wx, wy, sx, sy) {
+    cam.x = wx - (sx - width / 2) / cam.scale;
+    cam.y = wy - (sy - height / 2) / cam.scale;
+  }
+
+  function zoomTo(next, sx, sy) {
+    const to = clamp(next);
+    if (to === cam.target) return;
+    anchor = { wx: toWorldX(sx), wy: toWorldY(sy), sx, sy };
+    cam.target = to;
+    run();
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
-
-    const step = state.cell + state.gap;
-    state.cols = Math.max(1, Math.floor((w - state.gap) / step));
-    state.rows = Math.ceil(state.guys.length / state.cols);
-    spacer.style.height = (state.rows * step + state.gap) + 'px';
-
-    stat.textContent =
-      `${state.guys.length.toLocaleString()} guys · ${state.cols}×${state.rows.toLocaleString()} · ${state.cell}px`;
-    paint();
+    run();
   }
 
-  let queued = false;
-  function paint() {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => { queued = false; draw(); });
+  /* ---------------------------------------------------------------- frame */
+
+  let running = false;
+  let lastFrame = 0;
+
+  function run() {
+    if (running) return;
+    running = true;
+    lastFrame = performance.now();
+    requestAnimationFrame(frame);
   }
 
-  function draw() {
-    const step = state.cell + state.gap;
-    const top = scroll.scrollTop;
-    const w = wall.width / (Math.min(window.devicePixelRatio || 1, 2));
-    const h = wall.height / (Math.min(window.devicePixelRatio || 1, 2));
+  function frame(now) {
+    const dt = Math.min(64, now - lastFrame);
+    lastFrame = now;
+    let alive = false;
 
-    ctx.fillStyle = '#0a0a0f';
-    ctx.fillRect(0, 0, w, h);
+    if (Math.abs(cam.target - cam.scale) > 0.15) {
+      cam.scale += (cam.target - cam.scale) * (1 - Math.exp(-dt / ZOOM_TAU));
+      alive = true;
+    } else {
+      cam.scale = cam.target;
+    }
+    if (anchor) {
+      pin(anchor.wx, anchor.wy, anchor.sx, anchor.sy);
+      if (!alive) anchor = null;
+    }
 
-    const first = Math.max(0, Math.floor((top - state.gap) / step));
-    const last = Math.min(state.rows - 1, Math.ceil((top + h) / step));
+    if (!dragging && (vel.x || vel.y)) {
+      cam.x += vel.x * dt;
+      cam.y += vel.y * dt;
+      const decay = Math.exp(-dt / GLIDE_TAU);
+      vel.x *= decay;
+      vel.y *= decay;
+      if (Math.hypot(vel.x, vel.y) * cam.scale < STOP) vel.x = vel.y = 0;
+      else alive = true;
+    }
 
-    // Cells already rasterised are free; new ones get a slice of the frame so
-    // a flung scroll never blocks. Whatever misses out is drawn as a ghost and
-    // picked up on the next pass.
-    const deadline = performance.now() + 7;
-    let missed = false;
+    // The plane moves under a still cursor, so the readout has to follow the
+    // frame rather than the pointer.
+    readout();
+    if (draw(now) || dragging) alive = true;
+    if (alive) requestAnimationFrame(frame);
+    else running = false;
+  }
 
-    for (let row = first; row <= last; row++) {
-      const y = state.gap + row * step - top;
-      for (let col = 0; col < state.cols; col++) {
-        const idx = row * state.cols + col;
-        if (idx >= state.guys.length) break;
-        const guy = state.guys[idx];
-        const x = state.gap + col * step;
+  function draw(now) {
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, width, height);
 
-        const ready = bitmaps.has(guy.name);
-        if (!ready && performance.now() > deadline) {
-          ctx.fillStyle = '#14141d';
-          ctx.fillRect(x + state.cell * 0.3, y + state.cell * 0.3, state.cell * 0.4, state.cell * 0.4);
-          missed = true;
-          continue;
-        }
-        ctx.drawImage(bitmapFor(guy), x, y, state.cell, state.cell);
+    const s = cam.scale;
+    const inset = s * MARGIN;
+    const size = Math.round(s - inset * 2);
+
+    const i0 = Math.floor(toWorldX(0));
+    const i1 = Math.ceil(toWorldX(width));
+    const j0 = Math.floor(toWorldY(0));
+    const j1 = Math.ceil(toWorldY(height));
+
+    const deadline = now + BUDGET;
+    let pending = false;
+    let fading = false;
+
+    for (let j = j0; j <= j1; j++) {
+      const y = (j - cam.y) * s + height / 2 + inset;
+      for (let i = i0; i <= i1; i++) {
+        const seed = seedAt(i, j);
+        // A guy not yet made waits for a later frame rather than blowing the
+        // budget. An empty cell for one frame reads as loading; a stutter
+        // reads as broken.
+        if (!sprites.has(seed) && performance.now() > deadline) { pending = true; continue; }
+
+        const sprite = spriteFor(seed);
+        const age = now - sprite.born;
+        const alpha = age < FADE ? age / FADE : 1;
+        if (alpha < 1) { fading = true; ctx.globalAlpha = alpha; }
+
+        ctx.drawImage(sprite.cv, Math.round((i - cam.x) * s + width / 2 + inset), Math.round(y), size, size);
+        if (alpha < 1) ctx.globalAlpha = 1;
       }
     }
 
-    if (state.hover >= first * state.cols && state.hover < (last + 1) * state.cols) {
-      const row = Math.floor(state.hover / state.cols), col = state.hover % state.cols;
-      ctx.strokeStyle = '#f0a060';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(
-        state.gap + col * step - 1.5,
-        state.gap + row * step - top - 1.5,
-        state.cell + 3, state.cell + 3
-      );
-    }
-
-    if (missed) paint();
+    return pending || fading;
   }
 
-  /* ---------- inspecting ---------- */
+  /* -------------------------------------------------------------- pointer */
 
-  function indexAt(clientX, clientY) {
-    const box = scroll.getBoundingClientRect();
-    const step = state.cell + state.gap;
-    const x = clientX - box.left - state.gap;
-    const y = clientY - box.top + scroll.scrollTop - state.gap;
-    if (x < 0 || y < 0) return -1;
-    const col = Math.floor(x / step), row = Math.floor(y / step);
-    if (col >= state.cols || x % step > state.cell || y % step > state.cell) return -1;
-    const idx = row * state.cols + col;
-    return idx < state.guys.length ? idx : -1;
+  const active = new Map();
+  let dragging = false;
+  let samples = [];
+  let pinch = 0;
+
+  function sample(dx, dy, t) {
+    samples.push({ dx, dy, t });
+    // A throw should read the last stretch of the gesture — not the whole
+    // drag, and not only the final jitter.
+    while (samples.length > 1 && t - samples[0].t > 90) samples.shift();
   }
 
-  function facts(guy) {
-    return SLOTS.map(([slot]) => [slot, label(slot, guy.cfg[slot])])
-      .concat([['palette', guy.palette.name]]);
+  function throwVelocity() {
+    if (samples.length < 2) return { x: 0, y: 0 };
+    const span = samples[samples.length - 1].t - samples[0].t;
+    if (span <= 0) return { x: 0, y: 0 };
+    let dx = 0, dy = 0;
+    for (const s of samples) { dx += s.dx; dy += s.dy; }
+    return { x: dx / span, y: dy / span };
   }
 
-  function showCard(guy, clientX, clientY) {
-    const box = scroll.getBoundingClientRect();
-    card.innerHTML =
-      `<div class="nm">${guy.name}</div><dl>` +
-      facts(guy).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') +
-      '</dl>';
-    card.style.left = Math.max(110, Math.min(box.width - 110, clientX - box.left)) + 'px';
-    card.style.top = (clientY - box.top) + 'px';
-    card.classList.add('on');
-  }
+  const points = () => [...active.values()];
+  const spread = () => { const p = points(); return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); };
+  const mid = () => { const p = points(); return { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 }; };
 
-  function showPin(guy) {
-    state.pinned = guy;
-    pin.innerHTML =
-      '<canvas width="16" height="16"></canvas>' +
-      `<div class="nm">${guy.name}</div><dl>` +
-      facts(guy).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') +
-      `<dt>shade</dt><dd>${['soft', 'as drawn', 'deep'][guy.cfg.shade]}</dd>` +
-      `<dt>feet</dt><dd>${['as drawn', 'nubs', 'wide', 'stilts'][guy.cfg.feet]}</dd>` +
-      `<dt>mirrored</dt><dd>${guy.cfg.flip ? 'yes' : 'no'}</dd>` +
-      '</dl><div class="row"><button data-act="copy">copy seed</button>' +
-      '<button data-act="close">close</button></div>';
-    const c = pin.querySelector('canvas').getContext('2d');
-    c.imageSmoothingEnabled = false;
-    c.drawImage(bitmapFor(guy), 0, 0);
-    pin.classList.add('on');
-    location.hash = encodeURIComponent(guy.name);
-  }
-
-  /* ---------- events ---------- */
-
-  scroll.addEventListener('scroll', paint, { passive: true });
-  addEventListener('resize', layout);
-
-  scroll.addEventListener('pointermove', e => {
-    const idx = indexAt(e.clientX, e.clientY);
-    if (idx !== state.hover) { state.hover = idx; paint(); }
-    if (idx < 0) { card.classList.remove('on'); return; }
-    showCard(state.guys[idx], e.clientX, e.clientY);
-  });
-  scroll.addEventListener('pointerleave', () => {
-    state.hover = -1; card.classList.remove('on'); paint();
-  });
-  scroll.addEventListener('click', e => {
-    const idx = indexAt(e.clientX, e.clientY);
-    if (idx >= 0) showPin(state.guys[idx]);
-  });
-
-  pin.addEventListener('click', e => {
-    const act = e.target.dataset && e.target.dataset.act;
-    if (act === 'close') { pin.classList.remove('on'); state.pinned = null; }
-    if (act === 'copy' && state.pinned) {
-      navigator.clipboard.writeText(state.pinned.name);
-      e.target.textContent = 'copied';
-      setTimeout(() => { e.target.textContent = 'copy seed'; }, 1200);
+  canvas.addEventListener('pointerdown', e => {
+    canvas.setPointerCapture(e.pointerId);
+    active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    touched();
+    if (active.size === 1) {
+      dragging = true;
+      vel.x = vel.y = 0;
+      anchor = null;
+      cam.target = cam.scale;
+      samples = [];
+      canvas.classList.add('drag');
+      run();
+    } else if (active.size === 2) {
+      pinch = spread();
     }
   });
 
-  $('order').addEventListener('change', e => {
-    state.order = e.target.value;
-    sort(state.guys);
-    scroll.scrollTop = 0;
-    layout();
+  canvas.addEventListener('pointermove', e => {
+    pointer = { x: e.clientX, y: e.clientY };
+    readout();
+
+    const prev = active.get(e.pointerId);
+    if (!prev) return;
+    const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+    active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // Two fingers zoom and pan together, tracking the fingers exactly — a
+    // pinch is direct manipulation, so easing it would feel like lag.
+    if (active.size >= 2) {
+      const now = spread();
+      const m = mid();
+      if (pinch > 0 && now > 0) {
+        const wx = toWorldX(m.x), wy = toWorldY(m.y);
+        cam.scale = cam.target = clamp(cam.scale * (now / pinch));
+        pin(wx, wy, m.x, m.y);
+        anchor = null;
+      }
+      pinch = now;
+      run();
+      return;
+    }
+
+    if (!dragging) return;
+    cam.x -= dx / cam.scale;
+    cam.y -= dy / cam.scale;
+    sample(-dx / cam.scale, -dy / cam.scale, e.timeStamp);
+    run();
   });
 
-  $('size').addEventListener('input', e => {
-    state.cell = +e.target.value;
-    layout();
-  });
+  function release(e) {
+    if (!active.has(e.pointerId)) return;
+    active.delete(e.pointerId);
+    if (active.size < 2) pinch = 0;
+    if (active.size > 0) return;
 
-  $('count').addEventListener('click', e => {
-    const n = e.target.dataset && e.target.dataset.n;
-    if (!n) return;
-    for (const b of $('count').children) b.setAttribute('aria-pressed', b === e.target);
-    state.count = +n;
-    scroll.scrollTop = 0;
-    build();
-  });
-
-  // Anything you type becomes a guy — that is the whole point of the library,
-  // so the search box makes one rather than filtering the wall.
-  let typing;
-  $('find').addEventListener('input', e => {
-    clearTimeout(typing);
-    const q = e.target.value.trim();
-    typing = setTimeout(() => {
-      if (!q) { pin.classList.remove('on'); return; }
-      const cfg = L.resolve(q);
-      showPin({ name: q, cfg, palette: L.getPalette(cfg.palette) });
-    }, 120);
-  });
-
-  /* ---------- go ---------- */
-
-  build();
-  const seed = decodeURIComponent(location.hash.slice(1));
-  if (seed) {
-    $('find').value = seed;
-    const cfg = L.resolve(seed);
-    showPin({ name: seed, cfg, palette: L.getPalette(cfg.palette) });
+    dragging = false;
+    canvas.classList.remove('drag');
+    // A gesture that ended in a pause should stop, not fling: if the last
+    // sample is stale the finger was already at rest.
+    const idle = samples.length ? e.timeStamp - samples[samples.length - 1].t : Infinity;
+    if (idle < 60) {
+      const t = throwVelocity();
+      vel.x = t.x; vel.y = t.y;
+    }
+    samples = [];
+    run();
   }
+
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', () => { pointer = null; readout(); });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    // A trackpad pinch arrives as ctrl+wheel with fine deltas, a mouse wheel
+    // arrives coarse. Both zoom, but the pinch needs a gentler constant or it
+    // overshoots on every gesture.
+    touched();
+    const k = e.ctrlKey ? 0.01 : 0.0022;
+    zoomTo(cam.target * Math.exp(-e.deltaY * k), e.clientX, e.clientY);
+  }, { passive: false });
+
+  canvas.addEventListener('dblclick', e => zoomTo(cam.target * 2.2, e.clientX, e.clientY));
+
+  /* -------------------------------------------------------------- readout */
+
+  function readout() {
+    const sx = pointer ? pointer.x : width / 2;
+    const sy = pointer ? pointer.y : height / 2;
+    seedText.textContent = `"${seedAt(Math.floor(toWorldX(sx)), Math.floor(toWorldY(sy)))}"`;
+  }
+
+  /* ------------------------------------------------------------------- go */
+
+  addEventListener('resize', resize);
+  addEventListener('orientationchange', resize);
+  // Safari's own pinch would zoom the page out from under the canvas.
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  resize();
+  readout();
 })();

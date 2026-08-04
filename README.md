@@ -37,7 +37,7 @@ Pass any string — an email, username, wallet address — and get back a cute, 
 
 Works everywhere: React component with 3D hover + blink animation, headless SVG/PNG generation, Next.js image API route, or plain `<script>` tag.
 
-**[Explore the wall →](https://isaacaudet.github.io/lil_guy/)** — up to 200,000 of them at once, sorted into a colour gradient. Hover any one to see how it was built.
+**[Wander the plane →](https://isaacaudet.github.io/lil_guy/)** — an endless grid where each cell's coordinates *are* the seed, so there is no list and no edge. Pull in any direction and the characters under you are hashed into existence as they arrive.
 
 ## Install
 
