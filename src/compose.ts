@@ -251,8 +251,6 @@ function applyFeet(grid: PixelGrid, metrics: HeadMetrics, style: number): void {
   const spec = FOOT_STYLES[style];
   if (!spec) return;
 
-  for (let y = metrics.bottom + 1; y < GRID_SIZE; y++) grid[y].fill(0);
-
   const base = metrics.rows[metrics.bottom];
   if (!base) return;
 
@@ -262,7 +260,15 @@ function applyFeet(grid: PixelGrid, metrics: HeadMetrics, style: number): void {
   // Both sides, not just the left: a head with an asymmetric base (bean) has
   // its bottom row off-centre, so a centred foot can clear one edge and
   // overhang the other.
+  //
+  // Every bail belongs above the clear. Clearing first and then finding the
+  // style does not fit leaves the guy standing on nothing, because the drawn
+  // feet are already gone by then — the widest style on a narrow base did
+  // exactly that to one character in five. Bailing before the clear keeps the
+  // feet the head was drawn with, which is the right fallback anyway.
   if (left < base.left || right > base.right) return;
+
+  for (let y = metrics.bottom + 1; y < GRID_SIZE; y++) grid[y].fill(0);
 
   for (let r = 0; r < spec.rows; r++) {
     const row = metrics.bottom + 1 + r;
