@@ -154,13 +154,17 @@ describe('nothing floats', () => {
   });
 
   it('never lets a generated foot stick out past the body it hangs from', () => {
-    // Style 0 is exempt: it is whatever the head was drawn with, and a couple
-    // of the originals flare their feet slightly wider than the last body row
-    // on purpose. This is about the styles compose generates.
+    // Drawn feet are exempt: a couple of the originals flare slightly wider
+    // than the last body row on purpose. So the exemption has to be "these are
+    // the feet the head was drawn with", not "style 0" — a style too wide for
+    // the base falls back to the drawn feet, and so reaches this exemption
+    // under a non-zero style.
     const { FOOT_STYLES } = require('../compose');
     const failures = sweep({ head: heads.length, feet: FOOT_STYLES.length }, (grid, config) => {
       if (config.feet === 0) return null;
       const m = headMetrics[config.head];
+      const asDrawn = JSON.stringify(heads[config.head].slice(m.bottom + 1));
+      if (JSON.stringify(grid.slice(m.bottom + 1)) === asDrawn) return null;
       const base = m.rows[m.bottom]!;
       for (let y = m.bottom + 1; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
@@ -171,6 +175,38 @@ describe('nothing floats', () => {
       }
       return null;
     });
+    expect(failures).toEqual([]);
+  });
+
+  it('leaves every guy standing on feet', () => {
+    // applyFeet cleared the drawn feet before checking whether the requested
+    // style fitted the base, so a style that did not fit left nothing behind
+    // and the guy floated on a flat edge. Every head is drawn with feet, so
+    // every combination has to end up with some.
+    //
+    // Swept over bodies, not accessories: the chin and chest pieces can still
+    // land on the feet of the shortest heads, where there is no room between
+    // the mouth and the floor for them to go. That one needs the art moved,
+    // not the placement code, so it is out of scope for this guard.
+    const { FOOT_STYLES } = require('../compose');
+    const failures = sweep(
+      { head: heads.length, feet: FOOT_STYLES.length, body: bodies.length },
+      grid => {
+        let bottom = -1;
+        for (let y = 0; y < GRID_SIZE; y++) if (grid[y].some(v => v)) bottom = y;
+        if (bottom < 0) return 'nothing drawn at all';
+        // Feet read as separated runs on the last row — a single unbroken run
+        // is a flat edge, which is the symptom this guards.
+        let runs = 0;
+        let inRun = false;
+        for (let x = 0; x < GRID_SIZE; x++) {
+          const on = grid[bottom][x] !== 0;
+          if (on && !inRun) runs++;
+          inRun = on;
+        }
+        return runs >= 2 ? null : 'stands on a flat edge, with no feet';
+      }
+    );
     expect(failures).toEqual([]);
   });
 
