@@ -220,6 +220,46 @@ them can be pinned through `parts`:
 <LilGuy name="alice" parts={{ shade: 2, feet: 3, flip: true }} />
 ```
 
+## v2 (headless, in progress)
+
+`src/v2` is the next library: a 32×32 grid, stable ids for every part, room for
+outfits, held items and backdrops, and animation. It builds next to v1 as
+`dist-headless/headless-v2.js` (`bun run build:headless`), and apps vendor it the
+same way as v1: one ESM file and its `.d.ts`.
+
+**Nobody is redrawn.** 32 is exactly 2× 16, so every v1 part converts by doubling
+each pixel, and v1's parts keep their indices at the front of every v2 array.
+`resolveV2(name)` is v1's `resolve`, so a name only ever rolls over v1 parts; new
+parts reach a guy only when someone picks them. Placement is measured in 16×16
+cells and applied in pixels, so a doubled part lands exactly where v1 put it.
+`src/v2/__tests__/parity.test.ts` holds v2 to v1's grid at 2× for every v1 part
+on every head and for 10,000 names, and to v1's colours for name-drawn guys and
+for customized ones drawn in a raw palette.
+
+**Ids.** Every part has a `PartMeta` (`catalog`, `partById`, `indexOfPart`) with a
+permanent id such as `top.chef-hat`. Saves keep indices; purchases, unlocks and
+entitlements refer to ids. Palettes have ids too, and the eight palettes Amountle
+kept as `EXTRA_PALETTES` now live in the library at 32–39, the indices it already
+saves them under. Arrays are append-only: `src/v2/ids.lock.json` records every
+id, and the tests fail if a locked id moves or a new one is not locked. After
+adding parts, run `bun run ids:lock` and commit the lock.
+
+**Rendering.** `toSvgStringV2(nameOrConfig, { size, square, palette, parts, title, state, backdrop, preview })`.
+Same-colour runs merge into rectangles, which become one `<path>` per colour.
+That keeps a still guy under 1 KB, about a third of v1's SVG. Passing `palette`
+draws with it as given, with no shade or legibility pass. That matches v1, and
+it's how a customized guy is drawn today. `preview` is the tiny (~24px) mode: it
+drops the outline around the silhouette and any backdrop. `tints` on the config
+draws the hat or outfit from another palette.
+
+**Animation.** `state` is `still` (the default, for lists), `idle`, `happy`,
+`sad`, `cheer` or `look`. Each state is a few frame overrides (swap the eyes or
+mouth, close or slide the eyes, raise the arms) plus a whole-character
+translate, so parts need no per-frame art. The SVG is one string with CSS
+keyframes and no script. It stops on its first frame under
+`prefers-reduced-motion`. `animationFrames(config, state)` returns the same
+frames as grids for canvas.
+
 ## License
 
 MIT

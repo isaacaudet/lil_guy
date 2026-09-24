@@ -49,7 +49,7 @@ function isContiguous(row: number[], extent: RowExtent): boolean {
   return true;
 }
 
-function measure(head: PixelGrid): HeadMetrics {
+export function measure(head: PixelGrid): HeadMetrics {
   const rows = head.map(rowExtent);
 
   const top = rows.findIndex(e => e !== null);

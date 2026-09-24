@@ -21,6 +21,8 @@
   "scripts": {
     "build": "tsdown",
     "test": "bun test",
+    "build:headless": "tsdown -c tsdown.headless.config.ts",
+    "ids:lock": "bun scripts/lock-ids.ts",
     "dev": "tsdown --watch"
   },
   "peerDependencies": {
