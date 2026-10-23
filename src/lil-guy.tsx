@@ -111,9 +111,14 @@ export interface LilGuyProps
 		head: number;
 		eyes: number;
 		mouth: number;
+		cheeks: number;
 		hair: number;
 		body: number;
 		accessory: number;
+		arms: number;
+		feet: number;
+		shade: number;
+		flip: boolean;
 	}>;
 
 	/**
@@ -241,21 +246,26 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 			// eye parts and for any that get added later.
 			const shut = grid.map(row => [...row]);
 			const bare = composeBase(cfg);
-			const EYE_TOKENS = new Set([6, 7]);
+			// Only the eyes, not the mouth: both are drawn in the same ink, so
+			// the scan is limited to the rows above the mouth.
+			const EYE = 5, SHINE = 6;
+			const EYE_TOKENS = new Set([EYE, SHINE]);
+			const mouthTop = grid.findIndex(row => row.includes(8));
+			const eyeRows = mouthTop === -1 ? GRID_SIZE : mouthTop;
 			for (let x = 0; x < GRID_SIZE; x++) {
 				let lowest = -1;
-				for (let y = 0; y < GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
+				for (let y = 0; y < eyeRows; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
 				if (lowest === -1) continue;
-				for (let y = 0; y < GRID_SIZE; y++) {
+				for (let y = 0; y < eyeRows; y++) {
 					if (!EYE_TOKENS.has(grid[y][x])) continue;
-					shut[y][x] = y === lowest ? 7 : (bare[y][x] ?? 0);
+					shut[y][x] = y === lowest ? EYE : (bare[y][x] ?? 0);
 				}
 			}
 
 			return {
 				rects: toRects(grid, ''),
 				shutRects: toRects(shut, 's'),
-				bgColor: palette.colors[3], // outfit color as background
+				bgColor: palette.colors[3], // the body highlight: a soft tint of the body colour
 				config: cfg,
 				hashValue: hv,
 			};

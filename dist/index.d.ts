@@ -5,49 +5,54 @@ import * as React$1 from "react";
 import * as React from "react";
 
 //#region src/types.d.ts
+/**
+* A 16x16 grid where each cell is a colour token. Tokens are roles, not
+* colours — "body", "blush", "hat" — and a palette decides what each looks
+* like, so every part works in every colourway.
+*/
+/**
+ * A 16x16 grid where each cell is a colour token. Tokens are roles, not
+ * colours — "body", "blush", "hat" — and a palette decides what each looks
+ * like, so every part works in every colourway.
+ */
 type PixelGrid = number[][];
-type ColorToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+/**
+ *  0 transparent
+ *  1 body          2 body shade     3 body highlight   4 outline
+ *  5 eye           6 white (shine)  7 blush            8 mouth
+ *  9 tongue       10 accent        11 accent shade    12 trim
+ * 13 belly        14 leaf          15 leaf shade      16 gold
+ * 17 gold shade   18 red
+ */
+type ColorToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
 interface Palette {
   name: string;
   colors: Record<Exclude<ColorToken, 0>, string>;
 }
 type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
-/**
- * How a layer is positioned against the head silhouette it lands on.
- * - `field`  — drawn where authored (patterns that cover the whole guy)
- * - `face`   — follows the face block (eyes, mouth, eyewear)
- * - `top`    — rests on the crown of the head (hats, hair)
- * - `lower`  — hangs off the bottom of the body (belly motifs, bowtie)
- * - `edge`   — hugs the left/right edge of the silhouette (blush, freckles, the
- *              side bow), so an off-centre part stays on the head instead of
- *              drifting off a narrow one
- */
-
 interface AvatarConfig {
+  /** Body silhouette. */
   head: number;
   eyes: number;
   mouth: number;
+  /** Blush, freckles or bare cheeks. */
+  cheeks: number;
+  /** Whatever sits on top: ears, a sprout, a hat. */
   hair: number;
+  /** Markings on the body: a belly patch, spots, a heart. */
   body: number;
+  /** Glasses, a bow tie, a scarf. */
   accessory: number;
-  palette: number;
-  rotation: number;
-  /**
-   * Mirror the finished character horizontally. Nearly half the part library
-   * is asymmetric — the side bow, the wink, the sash, the monocle — so this is
-   * a different-looking guy rather than a duplicate.
-   */
-  flip: boolean;
-  /**
-   * Tone of the palette: 0 soft, 1 as authored, 2 deep. Applied to the body,
-   * feature, pattern, accent, outline and mouth tokens; the eye white and
-   * pupil are left alone so the face keeps its contrast.
-   */
-  shade: number;
-  /** Index into FOOT_STYLES — 0 keeps whatever the head was drawn with. */
+  /** Arm pose: none, by the sides, waving, both up. */
+  arms: number;
+  /** Feet: little nubs, wide paws, or tucked away. */
   feet: number;
-  /** 0 draws body patterns in the pattern colour, 1 in the accent colour. */
-  patternTone: number;
+  palette: number;
+  /** Colour tone: 0 pastel, 1 as authored, 2 vivid. */
+  shade: number;
+  /** Mirror the finished character. */
+  flip: boolean;
+  rotation: number;
 }
 interface RenderOptions {
   size?: number;
@@ -106,9 +111,14 @@ interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "chil
     head: number;
     eyes: number;
     mouth: number;
+    cheeks: number;
     hair: number;
     body: number;
     accessory: number;
+    arms: number;
+    feet: number;
+    shade: number;
+    flip: boolean;
   }>;
   /**
    * 3D rotation intensity.
@@ -334,38 +344,35 @@ declare function hashNth(input: string, index: number): number;
  *
  * Each slot is hashed independently so adding or removing variants from one
  * part doesn't cascade into the others, and each pick is weighted (see
- * ./parts/weights) so the set keeps its character as the library grows —
- * a uniform roll over a big library averages out to something bland.
+ * ./parts/weights) so the simple, sweet looks are the common ones.
  */
 declare function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig;
 
 //#endregion
 //#region src/compose.d.ts
 /**
- * Foot styles, as runs of columns measured outwards from the centre seam.
- * Index 0 means "leave the head's own feet alone", which is what keeps the
- * ghost's drips and the tri's stumps intact.
+ * Feet, as columns either side of the centre seam. `null` tucks them away.
  */
 declare const FOOT_STYLES: (null | {
-  inner: number;
-  width: number;
-  rows: number;
+  offsets: number[];
+  token: number;
 })[];
+/** Arm poses. */
+
 /**
- * The head and its body pattern, with no face, topper or accessory on top.
- * Useful when something needs to know what sits underneath a face part — the
- * blink frame fills vacated eye cells from here.
- */
-/**
- * Composes all part layers into a single 16x16 grid of colour tokens.
- *
- * Head first (base body shape), then body patterns masked onto body pixels,
- * then eyes, mouth, hair and accessories on top. Everything above the head is
- * positioned relative to that head's geometry — toppers rest on its crown, the
- * face block follows its centre, cheek marks hug its edges — so the parts stay
- * in register across all eight shapes instead of floating.
+ * The body and its markings, lit, with no face, hat or accessory on it.
+ * The blink frame fills vacated eye cells from here.
  */
 declare function composeBase(config: AvatarConfig): PixelGrid;
+/**
+ * Composes every part into one 16x16 grid of colour tokens.
+ *
+ * The order matters and is the same for every guy: the lit body and its
+ * markings, then whatever sits on top of the head, then anything worn over
+ * the eyes, then the face itself (cheeks, eyes, mouth), then whatever is worn
+ * on the body. Feet and arms are added before the outline, and the outline is
+ * drawn around the finished shape so hats, ears and arms all get one too.
+ */
 declare function compose(config: AvatarConfig): PixelGrid;
 
 //#endregion
@@ -373,33 +380,171 @@ declare function compose(config: AvatarConfig): PixelGrid;
 declare const palettes: Palette[];
 declare function getPalette(index: number): Palette;
 declare function resolveColor(palette: Palette, token: ColorToken): string | null;
-/** How many tones `shadePalette` offers. */
+/** Tones a colourway can be worn in: pastel, as picked, vivid. */
 declare const SHADE_COUNT = 3;
+/**
+ * Re-derives a palette in another tone. The pastel tone lifts the body and
+ * accent towards white; the vivid tone deepens them. It deliberately barely
+ * adds saturation — saturating an already-bright lime turns it acid. Either way
+ * the outline, shading and blush are worked out again from the result, so a
+ * toned palette is as coherent as the original.
+ */
 declare function shadePalette(palette: Palette, shade: number): Palette;
 
 //#endregion
+//#region src/parts/art.d.ts
+/** A small drawing: rows of tokens, not necessarily 16 wide. */
+type Stamp = number[][];
+
+//#endregion
 //#region src/parts/heads.d.ts
-declare const heads: PixelGrid[];
+/**
+ * Body silhouettes. Only the fill is drawn here: the outline, the soft shading
+ * along the bottom and right, the gleam on the upper left, and the feet are
+ * all added by compose, so every shape gets the same finish.
+ *
+ * The rules every shape keeps, so any face and any hat will sit on it:
+ * - symmetric about the seam between columns 7 and 8
+ * - at least ten wide (columns 3–12) across the eye and mouth rows
+ * - column 0, column 15 and row 15 left empty for the outline
+ * - nothing below row 13, which is where the feet go
+ *
+ * `eyes` is the row the bottom of the eyes sits on. Kawaii proportions put
+ * the eyes at or below the middle of the face with a big forehead above.
+ */
+interface Head {
+  name: string;
+  art: Stamp;
+  eyes: number;
+  /** Shapes that float — a ghost, a cloud — have no feet. */
+  feet: boolean;
+}
+declare const heads: Head[];
 
 //#endregion
 //#region src/parts/eyes.d.ts
-declare const eyes: PixelGrid[];
+/**
+ * Eyes, drawn as a pair and centred on the seam. The bottom row of each
+ * drawing sits on the head's eye line, so taller eyes grow upwards into the
+ * forehead rather than down into the mouth.
+ *
+ * Every pair keeps the same spacing — the inner edges four columns apart —
+ * which is the wide-set look that reads as friendly. Any eye with a solid
+ * dark area gets a white catchlight: a flat dark square with no shine is what
+ * made the old set look dead-eyed.
+ */
+interface Eyes {
+  name: string;
+  art: Stamp;
+}
+declare const eyes: Eyes[];
 
 //#endregion
 //#region src/parts/mouths.d.ts
-declare const mouths: PixelGrid[];
+/**
+ * Mouths, centred on the seam, top row one below the eye line. Every one of
+ * them is pleased about something: there are no frowns, no bared teeth and no
+ * flat lines here, so no eyes-and-mouth pairing can come out glum.
+ */
+interface Mouth {
+  name: string;
+  art: Stamp;
+}
+declare const mouths: Mouth[];
+
+//#endregion
+//#region src/parts/canvas.d.ts
+interface RowExtent {
+  left: number;
+  right: number;
+}
+/**
+ * The grid a guy is being drawn on, plus the measurements every part needs to
+ * sit properly on whichever shape it landed on: where the crown is, how wide
+ * each row is, where the eyes go.
+ *
+ * Measurements are taken from the bare silhouette once, before anything is
+ * worn, so a hat cannot change where the next part thinks the head is.
+ */
+declare class Canvas {
+  readonly grid: PixelGrid;
+  /** Per-row span of the bare body, or null for rows it doesn't reach. */
+  readonly rows: (RowExtent | null)[];
+  /** First row of the body. */
+  readonly crown: number;
+  /** Last row of the body (feet excluded). */
+  readonly bottom: number;
+  /** Row the bottom of the eyes sits on. */
+  readonly eyeLine: number;
+  /** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
+  readonly centre: number;
+  private readonly body;
+  constructor(grid: PixelGrid, eyeLine: number);
+  inside(x: number, y: number): boolean;
+  /** Whether the bare silhouette covers this cell. */
+  isBody(x: number, y: number): boolean;
+  get(x: number, y: number): number;
+  set(x: number, y: number, token: number): void;
+  /** First row the bare body covers in this column, or null. */
+  topOf(x: number): number | null;
+  /** First row at least `min` wide — where ears can sit on a pointed head. */
+  shoulder(min?: number): number;
+  /**
+   * Draws a stamp with its top-left at (x, y). `onBody` keeps it to the bare
+   * silhouette, which is what stops a face from hanging off a narrow head.
+   */
+  draw(s: Stamp, x: number, y: number, onBody?: boolean): void;
+  /** Left column that centres a stamp on the body. */
+  centred(s: Stamp): number;
+  /** Repaints every body cell in a row. */
+  paintRow(y: number, token: number): void;
+}
 
 //#endregion
 //#region src/parts/hair.d.ts
-declare const hair: PixelGrid[];
+/**
+ * Whatever sits on top of the head.
+ *
+ * Most are small drawings seated on the crown: the bottom row of the drawing
+ * overlaps the top of the head so it looks attached rather than balanced on
+ * it. Ears and other pairs are drawn once, for the left, and mirrored. Hats
+ * that hug the head are painted onto the head's own top rows, so a beanie
+ * always fits whatever shape it lands on.
+ */
+interface Topper {
+  name: string;
+  draw: (c: Canvas) => void;
+}
+declare const hair: Topper[];
 
 //#endregion
 //#region src/parts/bodies.d.ts
-declare const bodies: PixelGrid[];
+/**
+ * Markings on the body. They are painted before the face, and only onto the
+ * body itself, so the face always draws over them and nothing sticks out past
+ * the outline. They stay quiet on purpose: a busy pattern fights the face,
+ * which is the part that carries the character.
+ */
+interface Marking {
+  name: string;
+  draw: (c: Canvas) => void;
+}
+declare const bodies: Marking[];
 
 //#endregion
 //#region src/parts/accessories.d.ts
-declare const accessories: PixelGrid[];
+/**
+ * Small things a guy wears. Each says when it is drawn: `face` pieces go on
+ * before the eyes, so the eyes always show through a pair of glasses; `body`
+ * pieces go on after the face but never over the mouth, so a scarf can't hide
+ * a smile.
+ */
+interface Accessory {
+  name: string;
+  layer: 'face' | 'body';
+  draw: (c: Canvas) => void;
+}
+declare const accessories: Accessory[];
 
 //#endregion
 //#region src/utils/merge-refs.d.ts

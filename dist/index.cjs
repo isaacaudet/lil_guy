@@ -1,5 +1,5 @@
 "use strict";
-const require_palette = require('./palette-C9S6jRBa.cjs');
+const require_palette = require('./palette-DcPeqSJE.cjs');
 const react = require_palette.__toESM(require("react"));
 const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
 
@@ -121,7 +121,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 				const color = require_palette.resolveColor(palette, source[y][x]);
 				if (color) out.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
 					"rect",
-					// outfit color as background
+					// the body highlight: a soft tint of the body colour
 					{
 						x,
 						y,
@@ -136,14 +136,17 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 		};
 		const shut = grid.map((row) => [...row]);
 		const bare = require_palette.composeBase(cfg);
-		const EYE_TOKENS = new Set([6, 7]);
+		const EYE = 5, SHINE = 6;
+		const EYE_TOKENS = new Set([EYE, SHINE]);
+		const mouthTop = grid.findIndex((row) => row.includes(8));
+		const eyeRows = mouthTop === -1 ? require_palette.GRID_SIZE : mouthTop;
 		for (let x = 0; x < require_palette.GRID_SIZE; x++) {
 			let lowest = -1;
-			for (let y = 0; y < require_palette.GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
+			for (let y = 0; y < eyeRows; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
 			if (lowest === -1) continue;
-			for (let y = 0; y < require_palette.GRID_SIZE; y++) {
+			for (let y = 0; y < eyeRows; y++) {
 				if (!EYE_TOKENS.has(grid[y][x])) continue;
-				shut[y][x] = y === lowest ? 7 : bare[y][x] ?? 0;
+				shut[y][x] = y === lowest ? EYE : bare[y][x] ?? 0;
 			}
 		}
 		return {

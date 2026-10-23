@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~390 billion unique characters. Zero dependencies. 6 KB gzipped.
+  ~40 billion happy little characters. Zero dependencies. ~12 KB gzipped.
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 ---
 
-Pass any string — an email, username, wallet address — and get back a cute, deterministic blob character. Same input always produces the same lil guy.
+Pass any string — an email, username, wallet address — and get back a cute, deterministic blob character. Same input always produces the same lil guy, and every one of them is pleased to see you.
 
 Works everywhere: React component with 3D hover + blink animation, headless SVG/PNG generation, Next.js image API route, or plain `<script>` tag.
 
@@ -149,10 +149,10 @@ For full control, use the pipeline directly:
 ```ts
 import { hash, resolve, compose, getPalette, resolveColor } from "lil_guy";
 
-const config = resolve("alice");     // → { head: 3, eyes: 1, mouth: 2, ... }
+const config = resolve("alice");     // → { head: 5, eyes: 7, mouth: 1, ... }
 const grid = compose(config);        // → 16×16 number[][] of color tokens
 const palette = getPalette(config.palette);
-const color = resolveColor(palette, grid[8][8]); // → "#FFB347"
+const color = resolveColor(palette, grid[8][8]); // → "#A8F0D8"
 ```
 
 ## API
@@ -194,31 +194,64 @@ Creates a Next.js route handler. Returns `{ GET }`.
 
 ## How It Works
 
-1. **Hash** — FNV-1a hash of the input string, with independent per-slot hashing for each feature
-2. **Resolve** — Hash selects head shape, eyes, mouth, hair, body pattern, accessory, palette, and rotation from the part library. Picks are weighted (`src/parts/weights.ts`) so the set keeps its character as the library grows — a uniform roll over a big library averages out to something bland. Every part still turns up; the odd ones are just rarer
-3. **Compose** — Layers parts onto a 16×16 grid using a token system (body, feature, pattern, accent, eyes, mouth). Each layer is placed relative to the head it landed on: hats are trimmed to the width of the skull they rest on, the face block follows the head's centre, and cheek marks slide in to hug the silhouette. Nothing floats
-4. **Render** — Tokens map to palette colors and render as SVG rects. Each palette's tokens are held clear of its body colour first: the mouth carries the expression and the pattern colour draws the crown of a hat, and several palettes were authored with those within a hair of the blob they sit on
+1. **Hash** — FNV-1a hash of the input string, with an independent hash for each slot, so adding a part to one slot never reshuffles the others
+2. **Resolve** — Each hash picks a body shape, eyes, mouth, cheeks, topper, marking, accessory, arms, feet, colourway and tone. Picks are weighted (`src/parts/weights.ts`) so the simplest, sweetest looks are the common ones and the busy ones are a treat to find
+3. **Compose** — The parts are layered onto a 16×16 grid of colour *roles* (body, shade, blush, accent, …). Every shape is lit the same way — a gleam on the upper left, a soft shade along the bottom — and then the whole guy, hat and arms included, gets an outline. Parts measure the head they land on: hats hug its top rows, ears sit on its shoulders, the face follows its eye line
+4. **Render** — Each colourway is three hand-picked colours (body, accent, trim). The outline, shade, gleam, eyes and blush are worked out from the body, so they always belong to it — the outline is a deep version of the body colour rather than black, and the blush is always a pink that shows
 
-20 heads × 23 eyes × 20 mouths × 34 toppers × 28 bodies × 29 accessories × 32 palettes = ~8.1 billion drawn combinations, times four modifiers (2 mirror × 3 shade × 4 feet × 2 pattern tone) = **~390 billion** unique characters.
+### The art
 
-Weighting makes the charming parts common and the odd ones rare, so the *effective* variety — how many equally-likely guys the set behaves like — is about 152 billion. Every combination is still reachable.
+Every part is drawn by hand, as text, one character per pixel, so the
+library can be read and edited like a picture:
 
-### Modifiers
+```ts
+pair('cat ears', [
+  '#..',
+  '#c.',   // # body, c blush
+  '###',
+]),
+```
 
-Four axes transform a guy rather than adding drawn art to it, so each one
-multiplies across the whole library. All of them are deterministic, and all of
-them can be pinned through `parts`:
+A few rules keep every combination likeable:
 
-| Modifier | Values | What it does |
-|---|---|---|
-| `flip` | `boolean` | Mirrors the finished character. 53 of the 154 parts are asymmetric, so a mirrored guy reads as a different one |
-| `shade` | `0-2` | Palette tone: soft, as authored, deep. Applied to body/feature/pattern/accent/outline/mouth; the eye white and pupil are left alone so the face keeps its contrast |
-| `feet` | `0-3` | Stance: as drawn, nubs, wide, stilts. `0` keeps whatever the head was drawn with, which is what preserves the ghost's drips |
-| `patternTone` | `0-1` | Draws the body pattern in the pattern colour or the accent colour |
+- **Faces follow kawaii proportions.** Eyes sit at or below the middle with a big forehead above, set wide apart, with the mouth small and between them
+- **Every mouth is happy.** There are no frowns, flat lines or bared teeth, so no pairing of eyes and mouth can come out glum
+- **Every solid eye has a catchlight.** A flat dark square with no shine is what reads as dead-eyed
+- **Colours are light and clean.** No greys, olives or murky browns
+- **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
+
+13 shapes × 11 eyes × 11 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 32 colourways × 3 tones × 2 (mirrored) = **40,590,950,400** characters. Weighting makes the sweet parts common and the busier ones rare, so the set behaves like about 8.2 billion equally-likely guys.
+
+### Pinning parts
+
+Every slot can be pinned through `parts`, and the rest stays deterministic:
+
+| Slot | Values |
+|---|---|
+| `head` | `0-12` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut |
+| `eyes` | `0-10` |
+| `mouth` | `0-10` |
+| `cheeks` | `0-4` bare, blush, dot, rosy, freckles |
+| `hair` | `0-27` whatever sits on top: ears, a sprout, a hat |
+| `body` | `0-7` markings |
+| `accessory` | `0-7` glasses, scarf, collar, bow tie, … |
+| `arms` | `0-2` none, by the sides, waving |
+| `feet` | `0-4` nubs, tiptoes, wide, socks, tucked |
+| `shade` | `0-2` pastel, as picked, vivid |
+| `flip` | `boolean` mirrors the finished guy |
 
 ```tsx
-<LilGuy name="alice" parts={{ shade: 2, feet: 3, flip: true }} />
+<LilGuy name="alice" parts={{ hair: 1, arms: 2, flip: true }} />
 ```
+
+The parts are exported (`heads`, `eyes`, `mouths`, `cheeks`, `hair`, `bodies`, `accessories`), each with a `name`, so you can list or label them.
+
+### Upgrading from 0.1
+
+0.2 is a redraw: every name maps to a new character. The API is the same
+apart from the config shape — `AvatarConfig` gained `cheeks` and `arms`,
+dropped `patternTone`, and colour tokens now run 0–18 instead of 0–8. If you
+store pinned `parts`, re-pick them against the new library.
 
 ## License
 

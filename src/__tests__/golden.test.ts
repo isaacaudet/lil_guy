@@ -12,7 +12,8 @@ import { toSvgString } from '../render-string';
  * Updating them is expected whenever the art genuinely changes — read the diff
  * and confirm it is what you meant, then paste the new block in.
  */
-const GLYPH = ['.', '#', 'F', 'P', 'A', 'O', 'w', '@', 'm'];
+// The same characters the parts are drawn in, so a snapshot reads like the art.
+const GLYPH = '.#shoewcmtaAxbgGyYr';
 
 function render(input: string): string {
   return compose(resolve(input))
@@ -33,29 +34,16 @@ describe('golden art', () => {
   });
 
   it('covers every head wearing every topper', () => {
-    // The head sweep below wears no hat, so a hat that moved sideways or sat a
-    // row too low changed nothing any snapshot was watching. This is that gap:
-    // it caught neither the two toppers authored half a pixel left of centre,
-    // nor every topper sitting a row low on the heads with a high crown.
     const { heads, hair } = require('../parts');
     const grids: Record<string, string> = {};
-    heads.forEach((_: unknown, head: number) => {
-      hair.forEach((_h: unknown, topper: number) => {
-        grids[`head${head}.hair${topper}`] = compose({
-          head, eyes: 1, mouth: 0, hair: topper, body: 0, accessory: 0, palette: 0, rotation: 0,
+    heads.forEach((head: { name: string }, h: number) => {
+      hair.forEach((topper: { name: string }, t: number) => {
+        grids[`${head.name} + ${topper.name}`] = compose({
+          head: h, eyes: 1, mouth: 0, cheeks: 1, hair: t, body: 0, accessory: 0,
+          arms: 0, feet: 0, palette: 0, shade: 1, flip: false, rotation: 0,
         }).map((row: number[]) => row.map(v => GLYPH[v]).join('')).join('\n');
       });
     });
-    expect(grids).toMatchSnapshot();
-  });
-
-  it('covers every head with a fixed face', () => {
-    const { heads } = require('../parts');
-    const grids = heads.map((_: unknown, head: number) =>
-      compose({ head, eyes: 1, mouth: 0, hair: 0, body: 0, accessory: 0, palette: 0, rotation: 0 })
-        .map((row: number[]) => row.map(v => GLYPH[v]).join(''))
-        .join('\n')
-    );
     expect(grids).toMatchSnapshot();
   });
 });

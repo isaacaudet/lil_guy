@@ -1,4 +1,4 @@
-import { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette } from "./palette-B1shCbhb.js";
+import { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette } from "./palette-BTkR_zup.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
@@ -124,7 +124,7 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 				const color = resolveColor(palette, source[y][x]);
 				if (color) out.push(/* @__PURE__ */ jsx(
 					"rect",
-					// outfit color as background
+					// the body highlight: a soft tint of the body colour
 					{
 						x,
 						y,
@@ -139,14 +139,17 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 		};
 		const shut = grid.map((row) => [...row]);
 		const bare = composeBase(cfg);
-		const EYE_TOKENS = new Set([6, 7]);
+		const EYE = 5, SHINE = 6;
+		const EYE_TOKENS = new Set([EYE, SHINE]);
+		const mouthTop = grid.findIndex((row) => row.includes(8));
+		const eyeRows = mouthTop === -1 ? GRID_SIZE : mouthTop;
 		for (let x = 0; x < GRID_SIZE; x++) {
 			let lowest = -1;
-			for (let y = 0; y < GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
+			for (let y = 0; y < eyeRows; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
 			if (lowest === -1) continue;
-			for (let y = 0; y < GRID_SIZE; y++) {
+			for (let y = 0; y < eyeRows; y++) {
 				if (!EYE_TOKENS.has(grid[y][x])) continue;
-				shut[y][x] = y === lowest ? 7 : bare[y][x] ?? 0;
+				shut[y][x] = y === lowest ? EYE : bare[y][x] ?? 0;
 			}
 		}
 		return {
