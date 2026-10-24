@@ -48,7 +48,9 @@
   /* ------------------------------------------------------------ the band */
   .band { --focus: var(--cream); background: var(--band); color: var(--cream); padding-top: env(safe-area-inset-top, 0px); position: relative; overflow: hidden; }
   .band::after { content: ""; display: block; height: 32px; margin-top: 48px; border-radius: 32px 32px 0 0; background: var(--page); position: relative; z-index: 1; }
-  .band .glow { position: absolute; inset: -20% -10% auto auto; width: 70%; height: 90%; background: radial-gradient(closest-side, rgba(228,174,57,.16), transparent); pointer-events: none; }
+  /* The club's paint (dle-club twitch/backdrop.js) under the band, in big square pixels. */
+  .paint { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; z-index: 0; }
+  .band > .wrap { position: relative; z-index: 2; }
   .site-header { height: 68px; display: flex; align-items: center; gap: 16px; position: relative; z-index: 2; }
   .site-name { display: inline-flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 800; letter-spacing: -.02em; }
   .site-name canvas { width: 32px; height: 32px; image-rendering: pixelated; }
@@ -224,7 +226,8 @@
   .look-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
   /* ------------------------------------------------------------ the drop */
-  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(14, 18, 32, .96); color: var(--cream); padding: 24px 16px; --focus: var(--cream); }
+  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: #0e1220; color: var(--cream); padding: 24px 16px; --focus: var(--cream); }
+  .reveal .paint { opacity: .9; }
   #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 3; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
   .flash.on { animation: flash .5s cubic-bezier(.2,.8,.2,1) 1; }
@@ -290,8 +293,7 @@
   <symbol id="tri" viewBox="0 0 12 12"><path fill="currentColor" d="M2 1.2v9.6c0 .8.9 1.3 1.6.8l7-4.8c.6-.4.6-1.2 0-1.6l-7-4.8C2.9-.1 2 .4 2 1.2z"/></symbol>
 </svg>
 
-<header class="band">
-  <span class="glow"></span>
+<header class="band" id="band">
   <div class="wrap">
     <div class="site-header">
       <span class="site-name"><canvas id="mark-guy" width="16" height="16" aria-hidden="true"></canvas>lil guys</span>
@@ -1464,6 +1466,7 @@ void main() {
     const box = $('gacha'), mc = $('bigmach'), cp = $('cap2'), ct = $('cap-top'), cb = $('cap-bot'), coin = $('coin'), floor = $('g-floor'), leak = $('leak');
     box.hidden = false; cp.hidden = true; coin.hidden = true;
     box.style.setProperty('--grade', GRADE[gr]);
+    dropColour(TABLES[g] || '#5f6a8c', 0.45, 300);
     for (const el of [ct, cb]) { el.style.transform = ''; el.style.opacity = 1; }
     mc.style.opacity = 1;
     const m = addMachine(mc, g);
@@ -1528,7 +1531,7 @@ void main() {
     await wait(120);
 
     // 6. pop: the dome flies off, the candy half drops away, light pours out
-    SFX.pop(gr); flash(0.35 + gr * 0.12);
+    SFX.pop(gr); flash(0.35 + gr * 0.12); if (dropPaint) dropPaint.kick(0.6 + gr * 0.2);
     boom(Math.max(1, gr), ...at(150, 232), [CANDY[g], '#ffffff', GRADE[gr], '#ffe9b0']);
     await tween(560, (e, p) => {
       ct.style.transform = `translate(${-70 * p}px, ${-280 * p + 320 * p * p}px) rotate(${-150 * p}deg)`; ct.style.opacity = 1 - p * p;
@@ -1549,6 +1552,7 @@ void main() {
     front.hidden = true; front.innerHTML = ''; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
+    dropColour('#3a4366', 0.5, 400);
     flip.classList.remove('rise'); void flip.offsetWidth; flip.classList.add('rise');
     SFX.whoosh(0.4, 200, 1800, 0.07);
     await wait(480);
@@ -1569,6 +1573,7 @@ void main() {
     const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
     shout.textContent = shoutText;
     res.classList.add('go');
+    dropColour(GRADE[gr], 0.64, 500); if (dropPaint) dropPaint.kick(0.5 + gr * 0.25);
     if (claimDrop) SFX.claim(); else SFX.stinger(gr);
     shout.classList.add('slam');
     await sleep(90);
@@ -1704,6 +1709,50 @@ void main() {
   $('insp').addEventListener('click', e => { if (e.target === $('insp')) $('insp').close(); });
   $('insp').addEventListener('close', () => renderColl());
 
+  /* ---------------------------------------------- the club's paint: the swirl from dle-club's twitch/backdrop.js,
+   * drawn at half size so its pixels are big. Under the band in today's machine colour, deepened toward the
+   * navy so the type stays readable; under the drop in the game's colour, flooding to the grade's on the flip. */
+  const TABLES = { amountle: '#4f7193', halfsies: '#8a5a6c', stackdle: '#5a6593', puttsies: '#50846e', weighsies: '#8c6a4f', flipsies: '#4f7f86', cutsies: '#86605a', tiltsies: '#5f6a8c', trackdle: '#66708a' };
+  const PAINT_FS = 'precision mediump float;uniform vec2 R;uniform float t;uniform vec3 c1;uniform vec3 c2;uniform vec3 c3;' +
+    'void main(){vec2 sc=vec2(gl_FragCoord.x,R.y-gl_FragCoord.y);float px=max(2.,length(R)/500.);' +
+    'vec2 uv=(floor(sc/px)*px-.5*R)/length(R)-vec2(.12,0.);float l=length(uv);' +
+    'float a=atan(uv.y,uv.x)+t*.1+302.2-6.5*(.3*l+.7);vec2 mid=(R/length(R))/2.;' +
+    'uv=vec2(l*cos(a)+mid.x,l*sin(a)+mid.y)-mid;uv*=30.;float sp=t*2.;vec2 u2=vec2(uv.x+uv.y);' +
+    'for(int i=0;i<5;i++){u2+=sin(max(uv.x,uv.y))+uv;uv+=.5*vec2(cos(5.1123314+.353*u2.y+sp*.131121),sin(u2.x-.113*sp));uv-=cos(uv.x+uv.y)-sin(uv.x*.711-uv.y);}' +
+    'float cm=1.6;float r=min(2.,max(0.,length(uv)*.035*cm));float p1=max(0.,1.-cm*abs(1.-r));float p2=max(0.,1.-cm*abs(r));float p3=1.-min(1.,p1+p2);' +
+    'gl_FragColor=vec4(.3*c1+.7*(c1*p1+c2*p2+c3*p3),1.);}';
+  const mixHex = (a, b, k) => rgb(a).map((v, i) => (v + (rgb(b)[i] - v) * k) / 255);
+  function paintLayer(host) {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'paint'; canvas.setAttribute('aria-hidden', 'true');
+    const g2 = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+    if (!g2) return null;
+    const p = compile(g2, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}', PAINT_FS);
+    if (!p) return null;
+    host.prepend(canvas);
+    const u = Object.fromEntries(['R', 't', 'c1', 'c2', 'c3'].map(n => [n, g2.getUniformLocation(p, n)]));
+    const fit = () => { const b = canvas.getBoundingClientRect(); canvas.width = Math.max(1, Math.ceil(b.width / 2)); canvas.height = Math.max(1, Math.ceil(b.height / 2)); g2.viewport(0, 0, canvas.width, canvas.height); };
+    fit(); new ResizeObserver(fit).observe(canvas);
+    let cur = [0.08, 0.1, 0.18], from = cur, target = cur, easeAt = -1, easeMs = 600, spin = Math.random() * 40, last = performance.now(), kick = 0;
+    return {
+      colour(c, ms = 600) { from = cur; target = c; easeAt = performance.now(); easeMs = ms; },
+      kick(k = 1) { kick = Math.max(kick, k); },
+      draw(time) {
+        const dt = Math.min(0.1, (time - last) / 1000); last = time;
+        if (easeAt >= 0) { const k = Math.min(1, (time - easeAt) / easeMs); cur = from.map((v, i) => v + (target[i] - v) * k); if (k >= 1) easeAt = -1; }
+        kick = Math.max(0, kick - dt * 0.8);
+        spin += dt * (0.6 + 2.5 * kick);
+        g2.uniform2f(u.R, canvas.width, canvas.height); g2.uniform1f(u.t, spin);
+        g2.uniform3fv(u.c1, cur.map(v => Math.min(1, v * 1.3))); g2.uniform3fv(u.c2, cur.map(v => v * 0.9)); g2.uniform3fv(u.c3, cur.map(v => v * 0.7));
+        g2.drawArrays(g2.TRIANGLE_STRIP, 0, 4);
+      },
+    };
+  }
+  const bandPaint = paintLayer($('band')), dropPaint = paintLayer($('reveal'));
+  const bandNavy = () => { const c = getComputedStyle($('band')).backgroundColor.match(/\d+/g).map(Number); return '#' + c.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join(''); };
+  if (bandPaint) bandPaint.colour(mixHex(TABLES[todayGame], bandNavy(), 0.55), 1);
+  const dropColour = (hex, k = 0.5, ms = 600) => { if (dropPaint) dropPaint.colour(mixHex(hex, '#0e1220', k), ms); };
+
   /* ---------------------------------------------- the loop: card shaders, tilt and bob, machines */
   function sway(s, t) {
     if (s.still) { s.art.style.transform = ''; return; }
@@ -1724,6 +1773,8 @@ void main() {
     for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
     for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }
     fireTick();
+    if (bandPaint) bandPaint.draw(now);
+    if (dropPaint && !$('reveal').hidden) dropPaint.draw(now);
   };
   requestAnimationFrame(frame);
 
