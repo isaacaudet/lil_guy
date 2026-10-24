@@ -1,13 +1,29 @@
 import { stamp, type Stamp } from './art';
 
-/** Marks under the eyes. Drawn before the mouth. */
-export interface Cheeks { name: string; art: Stamp }
+/**
+ * Cheeks sit on the row just under the eyes, outside them, and are drawn
+ * before the mouth so a wide grin can cut through them.
+ */
+export interface Cheeks {
+  name: string;
+  art: Stamp;
+}
+
 const cheeks_ = (name: string, rows: string[]): Cheeks => ({ name, art: stamp(rows) });
 
 export const cheeks: Cheeks[] = [
   cheeks_('bare', []),
-  cheeks_('freckles', ['s.s....s.s']),
-  cheeks_('scar', ['.......o..', '........o.']),
-  cheeks_('band-aid', ['.......xx.']),
-  cheeks_('war paint', ['rr......rr']),
+  cheeks_('blush', [
+    'cc......cc',
+  ]),
+  cheeks_('dot', [
+    'c........c',
+  ]),
+  cheeks_('rosy', [
+    'cc......cc',
+    '.c......c.',
+  ]),
+  cheeks_('freckles', [
+    's.s....s.s',
+  ]),
 ];

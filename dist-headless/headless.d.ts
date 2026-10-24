@@ -427,7 +427,16 @@ declare const heads: Head[];
 
 //#endregion
 //#region src/parts/eyes.d.ts
-/** Eyes with attitude: cool, smug, fired up. Bottom row sits on the eye line. */
+/**
+ * Eyes, drawn as a pair and centred on the seam. The bottom row of each
+ * drawing sits on the head's eye line, so taller eyes grow upwards into the
+ * forehead rather than down into the mouth.
+ *
+ * Every pair keeps the same spacing — the inner edges four columns apart —
+ * which is the wide-set look that reads as friendly. Any eye with a solid
+ * dark area gets a white catchlight: a flat dark square with no shine is what
+ * made the old set look dead-eyed.
+ */
 interface Eyes {
   name: string;
   art: Stamp;
@@ -436,7 +445,11 @@ declare const eyes: Eyes[];
 
 //#endregion
 //#region src/parts/mouths.d.ts
-/** Mouths with attitude. Top row one below the eye line. */
+/**
+ * Mouths, centred on the seam, top row one below the eye line. Every one of
+ * them is pleased about something: there are no frowns, no bared teeth and no
+ * flat lines here, so no eyes-and-mouth pairing can come out glum.
+ */
 interface Mouth {
   name: string;
   art: Stamp;
@@ -445,7 +458,10 @@ declare const mouths: Mouth[];
 
 //#endregion
 //#region src/parts/cheeks.d.ts
-/** Marks under the eyes. Drawn before the mouth. */
+/**
+ * Cheeks sit on the row just under the eyes, outside them, and are drawn
+ * before the mouth so a wide grin can cut through them.
+ */
 interface Cheeks {
   name: string;
   art: Stamp;

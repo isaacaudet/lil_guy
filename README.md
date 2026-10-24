@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~22 billion lil guys. Zero dependencies. ~21 KB gzipped.
+  ~80 billion lil guys. Zero dependencies. ~21 KB gzipped.
 </p>
 
 <p align="center">
@@ -214,11 +214,12 @@ pair('cat ears', [
 
 A few rules keep every combination good-looking:
 
-- **Attitude, not baby faces.** Eyes are chill, side-eyed, squinting or fired up, with shades, star eyes and laser eyes as the rare ones; mouths smirk, grin with teeth, stick a tongue out or chew gum. No blush, hearts or lashes
-- **Bold colours.** Punchy, saturated bodies with near-black outlines. On the darkest bodies the eyes and mouth glow cream instead of dark, so they always read
+- **Charm first, with a little attitude.** Most guys have shiny eyes set wide apart and a small pleased mouth; some are chill or side-eyed, smirk, show teeth or stick a tongue out, and a rare few wear shades or have star eyes. No frowns
+- **Every solid eye has a catchlight.** A flat dark square with no shine is what reads as dead-eyed
+- **Clean colours, with depth.** No greys or murky browns; every guy gets the same outline, gleam and shading, and the vivid tone is common
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-13 shapes × 10 eyes × 9 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 24 colourways × 3 tones × 2 (mirrored) = **22,643,712,000** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 3.1 billion equally-likely guys.
+16 shapes × 15 eyes × 13 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 32 colourways × 3 tones × 2 (mirrored) = **80,510,976,000** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 14.4 billion equally-likely guys.
 
 ### Pinning parts
 
@@ -226,16 +227,16 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 
 | Slot | Values |
 |---|---|
-| `head` | `0-12` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut |
-| `eyes` | `0-9` chill, beady, stare, side-eye, squint, wink, fired up, shades, star, laser |
-| `mouth` | `0-8` smirk, flat, toothy, tongue, fang, grin, ooh, gritted, gum |
-| `cheeks` | `0-4` bare, freckles, scar, band-aid, war paint |
+| `head` | `0-15` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean |
+| `eyes` | `0-14` beans, shiny, happy, sparkle, wink, glossy, content, excited, hearts, lashes, glance, chill, side-eye, shades, star |
+| `mouth` | `0-12` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out |
+| `cheeks` | `0-4` bare, blush, dot, rosy, freckles |
 | `hair` | `0-27` whatever sits on top: ears, a sprout, a hat |
 | `body` | `0-7` markings |
 | `accessory` | `0-7` glasses, scarf, collar, bow tie, … |
 | `arms` | `0-2` none, by the sides, waving |
 | `feet` | `0-4` nubs, tiptoes, wide, socks, tucked |
-| `shade` | `0-2` soft, as picked, vivid |
+| `shade` | `0-2` pastel, as picked, vivid |
 | `flip` | `boolean` mirrors the finished guy |
 
 ```tsx

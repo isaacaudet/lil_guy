@@ -258,7 +258,7 @@ export const hair: Topper[] = [
       for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 1, T.LEAF_SHADE);
       const x = Math.floor(c.centre);
       c.set(x, c.crown - 1, T.LEAF);
-      c.set(x - 1, c.crown - 2, T.LEAF);
+      if (c.crown > 2) c.set(x - 1, c.crown - 2, T.LEAF);
     },
   },
 
@@ -271,7 +271,7 @@ export const hair: Topper[] = [
       c.set(r.left - 2, c.crown + 1, T.ACCENT_SHADE);
       c.set(r.left - 1, c.crown + 1, T.ACCENT_SHADE);
       for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.ACCENT);
-      c.set(Math.floor(c.centre), c.crown - 2, T.ACCENT_SHADE);
+      if (c.crown > 2) c.set(Math.floor(c.centre), c.crown - 2, T.ACCENT_SHADE);
     },
   },
 
@@ -299,7 +299,8 @@ export const hair: Topper[] = [
         'xxoaa',
         '..o..',
       ]);
-      c.draw(prop, c.centred(prop), c.crown - 2);
+      // On a tall head there's no room above, so the propeller sits lower.
+      c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
     },
   },
 ];

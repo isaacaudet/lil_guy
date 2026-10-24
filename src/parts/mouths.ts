@@ -1,17 +1,71 @@
 import { stamp, type Stamp } from './art';
 
-/** Mouths with attitude. Top row one below the eye line. */
-export interface Mouth { name: string; art: Stamp }
+/**
+ * Mouths, centred on the seam, top row one below the eye line. Every one of
+ * them is pleased about something: there are no frowns, no bared teeth and no
+ * flat lines here, so no eyes-and-mouth pairing can come out glum.
+ */
+export interface Mouth {
+  name: string;
+  art: Stamp;
+}
+
 const mouth = (name: string, rows: string[]): Mouth => ({ name, art: stamp(rows) });
 
 export const mouths: Mouth[] = [
-  mouth('smirk', ['...m', 'mmm.']),
-  mouth('flat', ['mmmm']),
-  mouth('toothy', ['mwwwwm', '.mmmm.']),
-  mouth('tongue', ['mmmm', '..t.']),
-  mouth('fang', ['mmmm', '.w..']),
-  mouth('grin', ['mmmm', 'mttm', '.mm.']),
-  mouth('ooh', ['mm', 'mm']),
-  mouth('gritted', ['mmmmmm', 'mwmwmm']),
-  mouth('gum', ['mm.cc', '...cc']),
+  mouth('smile', [
+    'm..m',
+    '.mm.',
+  ]),
+  mouth('cat', [
+    'm.mm.m',
+    '.m..m.',
+  ]),
+  mouth('laugh', [
+    'mmmm',
+    'mttm',
+    '.mm.',
+  ]),
+  mouth('beak', [
+    'm.m',
+    '.m.',
+  ]),
+  mouth('blep', [
+    'm..m',
+    '.mm.',
+    '..t.',
+  ]),
+  mouth('grin', [
+    'mmmmmm',
+    '.mttm.',
+  ]),
+  mouth('fang', [
+    'm..m',
+    '.mw.',
+  ]),
+  mouth('smirk', [
+    '...m',
+    'mmm.',
+  ]),
+  mouth('ooh', [
+    '.mm.',
+    'mttm',
+    '.mm.',
+  ]),
+  mouth('tiny', [
+    '.mm.',
+  ]),
+  mouth('wobble', [
+    'm.mm.m',
+    '.m..m.',
+    '..tt..',
+  ]),
+  mouth('toothy', [
+    'mwwwwm',
+    '.mmmm.',
+  ]),
+  mouth('tongue out', [
+    'mmmm',
+    '..t.',
+  ]),
 ];

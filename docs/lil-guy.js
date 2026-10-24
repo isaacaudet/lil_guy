@@ -44,79 +44,91 @@ function hashNth(input, index) {
 * Each array must be the same length as its part array; a test enforces that.
 */
 const headWeights = [
+	3,
+	3,
+	3,
+	3,
+	3,
+	3,
+	3,
+	2,
+	2,
+	3,
+	2,
+	2,
+	2,
 	4,
-	4,
 	3,
-	3,
-	3,
-	3,
-	3,
-	2,
-	2,
-	3,
-	2,
-	2,
-	2
+	3
 ];
 const eyeWeights = [
-	6,
 	5,
 	5,
 	4,
 	4,
+	2,
+	3,
 	3,
 	2,
+	1,
+	2,
+	2,
+	3,
 	2,
 	1,
 	1
 ];
 const mouthWeights = [
-	6,
-	4,
-	4,
-	3,
-	3,
-	3,
-	2,
-	2,
-	1
-];
-const cheekWeights = [
-	12,
-	3,
-	2,
-	2,
-	1
-];
-const hairWeights = [
-	8,
-	3,
-	2,
-	1,
-	2,
-	3,
-	1,
-	2,
-	1,
-	1,
-	1,
-	1,
-	1,
-	3,
-	1,
-	1,
-	4,
-	1,
-	4,
 	5,
+	4,
+	3,
+	3,
+	2,
+	2,
+	2,
+	1,
+	1,
 	3,
 	1,
-	1,
-	1,
-	1,
-	2,
 	2,
 	2
+];
+const cheekWeights = [
+	5,
+	3,
+	2,
+	1,
+	2
+];
+const hairWeights = [
+	9,
+	4,
+	4,
+	2,
+	2,
+	1,
+	2,
+	4,
+	2,
+	2,
+	2,
+	1,
+	1,
+	2,
+	1,
+	2,
+	3,
+	2,
+	2,
+	2,
+	2,
+	1,
+	1,
+	1,
+	1,
+	1,
+	1,
+	1
 ];
 const bodyWeights = [
 	9,
@@ -154,12 +166,12 @@ const footWeights = [
 ];
 /** Pastel, as picked, vivid. */
 const shadeWeights = [
-	2,
+	1,
 	5,
-	2
+	3
 ];
 /** No colourway is more "correct" than another. */
-const paletteWeights = new Array(24).fill(1);
+const paletteWeights = new Array(32).fill(1);
 /**
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
@@ -537,6 +549,60 @@ const heads = [
 		"....########....",
 		"................",
 		"................"
+	]),
+	head("tower", 8, true, [
+		"................",
+		"................",
+		".....######.....",
+		"....########....",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"....########....",
+		"................",
+		"................"
+	]),
+	head("gourd", 9, true, [
+		"................",
+		"................",
+		"......####......",
+		".....######.....",
+		".....######.....",
+		"....########....",
+		"....########....",
+		"...##########...",
+		"..############..",
+		"..############..",
+		"..############..",
+		"..############..",
+		"..############..",
+		"...##########...",
+		"................",
+		"................"
+	]),
+	head("bean", 8, true, [
+		"................",
+		"................",
+		".....######.....",
+		"....########....",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"...##########...",
+		"....########....",
+		"...##########...",
+		"....########....",
+		"................",
+		"................"
 	])
 ];
 
@@ -547,15 +613,41 @@ const eyes_ = (name, rows) => ({
 	art: stamp(rows)
 });
 const eyes = [
-	eyes_("chill", ["ss....ss", "ee....ee"]),
-	eyes_("beady", ["e....e", "e....e"]),
-	eyes_("stare", ["we....we", "ee....ee"]),
-	eyes_("side-eye", ["ss....ss", "we....we"]),
-	eyes_("squint", ["ee....ee"]),
-	eyes_("wink", ["we......", "ee...eee"]),
-	eyes_("fired up", [
-		"o......o",
-		".o....o.",
+	eyes_("beans", ["e....e", "e....e"]),
+	eyes_("shiny", ["we....we", "ee....ee"]),
+	eyes_("happy", [".e....e.", "e.e..e.e"]),
+	eyes_("sparkle", [
+		"we....we",
+		"ee....ee",
+		"ee....ee"
+	]),
+	eyes_("wink", ["we....e.", "ee...e.e"]),
+	eyes_("glossy", [
+		"we....we",
+		"ee....ee",
+		"ew....ew"
+	]),
+	eyes_("content", ["e.e..e.e", ".e....e."]),
+	eyes_("excited", [
+		"e......e",
+		".e....e.",
+		"e......e"
+	]),
+	eyes_("hearts", [
+		"r.r..r.r",
+		"rrr..rrr",
+		".r....r."
+	]),
+	eyes_("lashes", [
+		"e......e",
+		".e....e.",
+		".e....e."
+	]),
+	eyes_("glance", ["ew....ew", "ee....ee"]),
+	eyes_("chill", ["ss....ss", "we....we"]),
+	eyes_("side-eye", [
+		"ss....ss",
+		"ew....ew",
 		"ee....ee"
 	]),
 	eyes_("shades", ["weee..weee", ".ee....ee."]),
@@ -563,8 +655,7 @@ const eyes = [
 		".y....y.",
 		"yyy..yyy",
 		".y....y."
-	]),
-	eyes_("laser", ["rr....rr", "rr....rr"])
+	])
 ];
 
 //#endregion
@@ -574,19 +665,35 @@ const mouth = (name, rows) => ({
 	art: stamp(rows)
 });
 const mouths = [
-	mouth("smirk", ["...m", "mmm."]),
-	mouth("flat", ["mmmm"]),
-	mouth("toothy", ["mwwwwm", ".mmmm."]),
-	mouth("tongue", ["mmmm", "..t."]),
-	mouth("fang", ["mmmm", ".w.."]),
-	mouth("grin", [
+	mouth("smile", ["m..m", ".mm."]),
+	mouth("cat", ["m.mm.m", ".m..m."]),
+	mouth("laugh", [
 		"mmmm",
 		"mttm",
 		".mm."
 	]),
-	mouth("ooh", ["mm", "mm"]),
-	mouth("gritted", ["mmmmmm", "mwmwmm"]),
-	mouth("gum", ["mm.cc", "...cc"])
+	mouth("beak", ["m.m", ".m."]),
+	mouth("blep", [
+		"m..m",
+		".mm.",
+		"..t."
+	]),
+	mouth("grin", ["mmmmmm", ".mttm."]),
+	mouth("fang", ["m..m", ".mw."]),
+	mouth("smirk", ["...m", "mmm."]),
+	mouth("ooh", [
+		".mm.",
+		"mttm",
+		".mm."
+	]),
+	mouth("tiny", [".mm."]),
+	mouth("wobble", [
+		"m.mm.m",
+		".m..m.",
+		"..tt.."
+	]),
+	mouth("toothy", ["mwwwwm", ".mmmm."]),
+	mouth("tongue out", ["mmmm", "..t."])
 ];
 
 //#endregion
@@ -597,10 +704,10 @@ const cheeks_ = (name, rows) => ({
 });
 const cheeks = [
 	cheeks_("bare", []),
-	cheeks_("freckles", ["s.s....s.s"]),
-	cheeks_("scar", [".......o..", "........o."]),
-	cheeks_("band-aid", [".......xx."]),
-	cheeks_("war paint", ["rr......rr"])
+	cheeks_("blush", ["cc......cc"]),
+	cheeks_("dot", ["c........c"]),
+	cheeks_("rosy", ["cc......cc", ".c......c."]),
+	cheeks_("freckles", ["s.s....s.s"])
 ];
 
 //#endregion
@@ -821,7 +928,7 @@ const hair = [
 			for (let x$1 = r.left; x$1 <= r.right; x$1 += 2) c.set(x$1, c.crown + 1, T.LEAF_SHADE);
 			const x = Math.floor(c.centre);
 			c.set(x, c.crown - 1, T.LEAF);
-			c.set(x - 1, c.crown - 2, T.LEAF);
+			if (c.crown > 2) c.set(x - 1, c.crown - 2, T.LEAF);
 		}
 	},
 	{
@@ -833,7 +940,7 @@ const hair = [
 			c.set(r.left - 2, c.crown + 1, T.ACCENT_SHADE);
 			c.set(r.left - 1, c.crown + 1, T.ACCENT_SHADE);
 			for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.ACCENT);
-			c.set(Math.floor(c.centre), c.crown - 2, T.ACCENT_SHADE);
+			if (c.crown > 2) c.set(Math.floor(c.centre), c.crown - 2, T.ACCENT_SHADE);
 		}
 	},
 	{
@@ -856,7 +963,7 @@ const hair = [
 			capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
 			c.paintRow(c.crown + 1, T.TRIM);
 			const prop = stamp(["xxoaa", "..o.."]);
-			c.draw(prop, c.centred(prop), c.crown - 2);
+			c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
 		}
 	}
 ];
@@ -2884,148 +2991,196 @@ function compose(config) {
 //#region src/palette.ts
 const COLOURWAYS = [
 	{
-		name: "Tomato",
-		body: "#E8483D",
-		accent: "#2E3A59",
-		trim: "#F2C230"
+		name: "Peach",
+		body: "#FFB38A",
+		accent: "#7FC8F8",
+		trim: "#FFF3E0"
 	},
 	{
-		name: "Tangerine",
-		body: "#F28A2E",
-		accent: "#2D4F9E",
-		trim: "#FFF1D6"
-	},
-	{
-		name: "Gold",
-		body: "#F2C230",
-		accent: "#C2302B",
-		trim: "#2E3A59"
-	},
-	{
-		name: "Lime",
-		body: "#9ACD32",
-		accent: "#6B2FA3",
+		name: "Bubblegum",
+		body: "#FF9EC7",
+		accent: "#8C7CF0",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Emerald",
-		body: "#2EB872",
-		accent: "#F2C230",
-		trim: "#1E2A3A"
-	},
-	{
-		name: "Teal",
-		body: "#1FAFA6",
-		accent: "#F25C54",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Cyan",
-		body: "#3DB8F5",
-		accent: "#F28A2E",
-		trim: "#1E2A3A"
-	},
-	{
-		name: "Cobalt",
-		body: "#3D6FE0",
-		accent: "#F2C230",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Violet",
-		body: "#8A54E8",
-		accent: "#3DE0B0",
-		trim: "#FFE066"
-	},
-	{
-		name: "Grape",
-		body: "#B04FC9",
-		accent: "#F2C230",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Hot Pink",
-		body: "#EF4F9A",
-		accent: "#2E3A59",
-		trim: "#FFE066"
-	},
-	{
-		name: "Coral",
-		body: "#FF7A66",
-		accent: "#1FAFA6",
+		name: "Butter",
+		body: "#FFE07A",
+		accent: "#FF7F96",
 		trim: "#FFFFFF"
 	},
 	{
 		name: "Mint",
-		body: "#5FE0B0",
-		accent: "#E8483D",
-		trim: "#1E2A3A"
+		body: "#8FE3B8",
+		accent: "#FF8FB1",
+		trim: "#FFF6C8"
 	},
 	{
 		name: "Sky",
-		body: "#6FC2FF",
-		accent: "#E8483D",
+		body: "#8CCBFF",
+		accent: "#FFC857",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Lilac",
+		body: "#C9A7F5",
+		accent: "#FFD166",
+		trim: "#FFF0F6"
+	},
+	{
+		name: "Coral",
+		body: "#FF8E7F",
+		accent: "#5CC8C0",
+		trim: "#FFF6E8"
+	},
+	{
+		name: "Lime",
+		body: "#C6E86E",
+		accent: "#FF8C69",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Aqua",
+		body: "#78DCE8",
+		accent: "#FF7AA8",
+		trim: "#FFF8D6"
+	},
+	{
+		name: "Tangerine",
+		body: "#FFA552",
+		accent: "#6C8CF5",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Strawberry",
+		body: "#FF7A93",
+		accent: "#7FD1AE",
+		trim: "#FFF0F3"
+	},
+	{
+		name: "Periwinkle",
+		body: "#9DAEFF",
+		accent: "#FF9F7A",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Cream",
+		body: "#FFF1D0",
+		accent: "#FF8FAB",
+		trim: "#9AD9F5"
+	},
+	{
+		name: "Cocoa",
+		body: "#C69276",
+		accent: "#FF9FB5",
+		trim: "#FFF1DC"
+	},
+	{
+		name: "Caramel",
+		body: "#E8B074",
+		accent: "#7EC4CF",
+		trim: "#FFF6E6"
+	},
+	{
+		name: "Grape",
+		body: "#A68BF0",
+		accent: "#7FE0C8",
+		trim: "#FFF4C2"
+	},
+	{
+		name: "Teal",
+		body: "#5ED3C3",
+		accent: "#FFB86B",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Snow",
+		body: "#F2F5FA",
+		accent: "#7BB8FF",
+		trim: "#FFB5C8"
+	},
+	{
+		name: "Sage",
+		body: "#A9D6A0",
+		accent: "#F7A072",
+		trim: "#FFF8E7"
+	},
+	{
+		name: "Rose",
+		body: "#F6A6C1",
+		accent: "#6FC2B8",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Honey",
+		body: "#FFC94D",
+		accent: "#E86A8E",
+		trim: "#FFF4D6"
+	},
+	{
+		name: "Seafoam",
+		body: "#A8F0D8",
+		accent: "#9A8CF5",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Blush",
+		body: "#FFC4C4",
+		accent: "#7AA9F0",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Ocean",
+		body: "#6FB4F2",
+		accent: "#FFDD6B",
 		trim: "#FFFFFF"
 	},
 	{
 		name: "Plum",
-		body: "#7A3F9E",
-		accent: "#F28A2E",
-		trim: "#FFE066"
+		body: "#D48BD8",
+		accent: "#FFD36B",
+		trim: "#FFF0FA"
 	},
 	{
-		name: "Rust",
-		body: "#C2602B",
-		accent: "#3DB8F5",
-		trim: "#FFF1D6"
-	},
-	{
-		name: "Slate",
-		body: "#5E7290",
-		accent: "#F2C230",
+		name: "Sunflower",
+		body: "#FFD84A",
+		accent: "#6FA8F0",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Charcoal",
-		body: "#4A4E5E",
-		accent: "#E8483D",
-		trim: "#F2C230"
+		name: "Melon",
+		body: "#B8F28C",
+		accent: "#FF7A8A",
+		trim: "#FFF5E0"
 	},
 	{
-		name: "Bone",
-		body: "#E8DEC8",
-		accent: "#2D4F9E",
-		trim: "#E8483D"
-	},
-	{
-		name: "Sand",
-		body: "#D8B07A",
-		accent: "#2EB872",
+		name: "Lavender",
+		body: "#B8B6F7",
+		accent: "#FF9EBB",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Cherry",
-		body: "#D93250",
-		accent: "#F2C230",
+		name: "Pumpkin",
+		body: "#FF9446",
+		accent: "#7C6BE0",
+		trim: "#FFE9A8"
+	},
+	{
+		name: "Cotton Candy",
+		body: "#A9DCFF",
+		accent: "#FFA3D1",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Olive",
-		body: "#8C9A3A",
-		accent: "#E8483D",
-		trim: "#FFF1D6"
+		name: "Matcha",
+		body: "#9CCB7A",
+		accent: "#E9A2C8",
+		trim: "#FFF7E0"
 	},
 	{
-		name: "Ice",
-		body: "#BDEAF5",
-		accent: "#3D6FE0",
-		trim: "#E8483D"
-	},
-	{
-		name: "Lava",
-		body: "#FF5A1F",
-		accent: "#2E3A59",
-		trim: "#FFE066"
+		name: "Ruby",
+		body: "#F2697E",
+		accent: "#FFD56B",
+		trim: "#FFF3E0"
 	}
 ];
 function hexToRgb(hex$1) {
@@ -3134,15 +3289,14 @@ function derive(name, body, accent, trim) {
 	const outlineHue = towards(h, 285, 25);
 	const outline$1 = fromHsl([
 		outlineHue,
-		.35,
-		.1
+		.42,
+		.3
 	]);
-	const dark = fromHsl([
+	const ink = fromHsl([
 		outlineHue,
 		.38,
-		.08
+		.14
 	]);
-	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : "#FFF1D6";
 	let blush = "#FF8FA8";
 	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
 	let tongue = "#FF6B88";
@@ -3197,7 +3351,7 @@ function shadePalette(palette, shade) {
 		return fromHsl([
 			h,
 			Math.min(.8, s + .04),
-			l > .4 ? l - .08 : l
+			l - .08
 		]);
 	};
 	const c = palette.colors;
