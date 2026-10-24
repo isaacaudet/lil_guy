@@ -69,7 +69,7 @@ declare class Canvas {
  * Items: things a player earns or buys in a DLE Club game and wears
  * everywhere. Each game has
  *
- * - two skins, which turn the guy into one of the game's own objects (a jar,
+ * - three skins, which turn the guy into one of the game's own objects (a jar,
  *   a golf ball, a traffic cone) while keeping his face
  * - three hats, one of them free: every player has it from the start
  * - two frames, the backdrop behind him
@@ -237,6 +237,8 @@ declare function wearOf(scuff: number): {
 };
 /** The famous prints. A Tempered copy with one of these comes out nearly all blue. */
 declare const DEEP_BLUE_PRINTS: number[];
+/** A Tempered copy's tint, from its print. */
+declare function temperTint(print: number): string;
 /** A Nebula copy's look, from its print: three rare ones, otherwise one of four. */
 declare function nebulaPhase(print: number): string;
 /** What makes this copy special beyond its finish, if anything. */
@@ -1003,5 +1005,5 @@ declare function guyOneIn(config: AvatarConfig): number;
 declare function copyOneIn(o: Owned): number;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, LUCKY_ODDS, LilGuy, LilGuyProps, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, LUCKY_ODDS, LilGuy, LilGuyProps, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

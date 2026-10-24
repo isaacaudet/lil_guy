@@ -230,8 +230,16 @@ function cellNoise(...n: number[]): number {
   return (h >>> 0) / 4294967296;
 }
 
-/** Shades a finish colour by how light the item's own colour was there, keeping its form. */
-const shaded = (c: RGB, l: number) => mix(mix(c, [0, 0, 0], 0.45), c, Math.min(1, l * 1.5));
+/**
+ * Shades a finish colour by how light the item's own colour was there: dark
+ * parts go deep, light parts go towards white. The full range keeps the
+ * item's own drawing (a golf ball's dimples, a brick's studs) showing through
+ * the finish instead of flattening it to one colour.
+ */
+const shaded = (c: RGB, l: number) => {
+  const t = Math.max(0, Math.min(1, (l - 0.15) / 0.75));
+  return t < 0.5 ? mix(mix(c, [0, 0, 0], 0.5), c, t * 2) : mix(c, mix(c, [255, 255, 255], 0.6), (t - 0.5) * 2);
+};
 
 const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, original: RGB) => RGB> = {
   'plain': (_x, _y, _l, _p, original) => original,

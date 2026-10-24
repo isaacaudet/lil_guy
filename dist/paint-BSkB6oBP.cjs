@@ -907,6 +907,52 @@ const DEEP_BLUE_PRINTS = [
 	387,
 	955
 ];
+/**
+* Tempered steel's tints, darkest to lightest. The print picks one; the famous
+* Deep Blue prints are the only all-blue ones.
+*/
+const TINTS = {
+	"Steel": [
+		"#3A5FC0",
+		"#86A8E8",
+		"#E2BC5A"
+	],
+	"Rose": [
+		"#B8456F",
+		"#F09AB8",
+		"#F2CF7A"
+	],
+	"Emerald": [
+		"#16806A",
+		"#4FCB9E",
+		"#CFE68A"
+	],
+	"Copper": [
+		"#94401F",
+		"#E0773A",
+		"#F6C978"
+	],
+	"Violet": [
+		"#5A3CB0",
+		"#9F82F0",
+		"#7FC6F2"
+	],
+	"Deep Blue": [
+		"#1B3A9E",
+		"#2F5FD0",
+		"#6F9BF5"
+	]
+};
+/** A Tempered copy's tint, from its print. */
+function temperTint(print) {
+	return DEEP_BLUE_PRINTS.includes(print) ? "Deep Blue" : [
+		"Steel",
+		"Rose",
+		"Emerald",
+		"Copper",
+		"Violet"
+	][print % 5];
+}
 /** A Nebula copy's look, from its print: three rare ones, otherwise one of four. */
 function nebulaPhase(print) {
 	const p = print % 20;
@@ -937,7 +983,7 @@ function nameOf(o) {
 	const base = item?.name ?? o.item;
 	const tally = o.tally !== void 0 ? "Tallied " : "";
 	if (o.finish === "plain") return tally + base;
-	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" && special(o) ? "Deep Blue" : FINISHES[o.finish].name;
+	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
 	return `${tally}${base} | ${look}`;
 }
 /**
@@ -1051,12 +1097,24 @@ function cellNoise(...n) {
 	}
 	return (h >>> 0) / 4294967296;
 }
-/** Shades a finish colour by how light the item's own colour was there, keeping its form. */
-const shaded = (c, l) => mix$1(mix$1(c, [
-	0,
-	0,
-	0
-], .45), c, Math.min(1, l * 1.5));
+/**
+* Shades a finish colour by how light the item's own colour was there: dark
+* parts go deep, light parts go towards white. The full range keeps the
+* item's own drawing (a golf ball's dimples, a brick's studs) showing through
+* the finish instead of flattening it to one colour.
+*/
+const shaded = (c, l) => {
+	const t = Math.max(0, Math.min(1, (l - .15) / .75));
+	return t < .5 ? mix$1(mix$1(c, [
+		0,
+		0,
+		0
+	], .5), c, t * 2) : mix$1(c, mix$1(c, [
+		255,
+		255,
+		255
+	], .6), (t - .5) * 2);
+};
 const PAINT = {
 	"plain": (_x, _y, _l, _p, original) => original,
 	"sunset": (x, y, l, p) => {
@@ -1065,10 +1123,14 @@ const PAINT = {
 		return shaded(c, l);
 	},
 	"tempered": (x, y, l, p) => {
-		const blue = DEEP_BLUE_PRINTS.includes(p) ? .9 : .3 + p % 7 / 25;
-		const r = cellNoise(p, Math.floor((x + 1) / 3), Math.floor((y + 1) / 3), 1) * .55 + (x + y + p) % 14 / 14 * .45;
-		const c = r < blue ? rgb("#2F5FD0") : r < blue + .35 ? rgb("#D1A73A") : rgb("#8E5CC9");
-		return shaded(c, l);
+		const stops = TINTS[temperTint(p)];
+		const band = Math.floor(((x + y + p % 11) % 12 + 12) % 12 / 3);
+		return shaded(rgb(stops[[
+			0,
+			1,
+			2,
+			1
+		][band]]), l);
 	},
 	"nebula": (x, y, l, p) => {
 		const phase = nebulaPhase(p);
@@ -1745,6 +1807,294 @@ const skins = [
 			"...3333333333...",
 			"..411111111112..",
 			".55555555555555.",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "amountle.piggy",
+		game: "amountle",
+		name: "Piggy bank",
+		eyes: 8,
+		limb: 2,
+		colors: [
+			"#FFA3C0",
+			"#E5799C",
+			"#FFC9DA",
+			"#2B2F38",
+			"#F2C230"
+		],
+		outline: "#8C3556",
+		art: grid16("piggy bank", [
+			"................",
+			"................",
+			".......55.......",
+			"...22..44..22...",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"...3111111112...",
+			"...2222222222...",
+			"................",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "halfsies.avocado",
+		game: "halfsies",
+		name: "Avocado half",
+		eyes: 7,
+		colors: [
+			"#DCF0A6",
+			"#BBDB7C",
+			"#3F6B22",
+			"#7A4A2A",
+			"#B07444"
+		],
+		outline: "#2C4A16",
+		art: grid16("avocado", [
+			"................",
+			"................",
+			"......3333......",
+			".....311113.....",
+			"....31111113....",
+			"...3111111113...",
+			"..311111111113..",
+			"..311111111113..",
+			"..311111111113..",
+			"..311111111223..",
+			"..311111111223..",
+			"..311114451223..",
+			"...3115544223...",
+			"....33333333....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "stackdle.brick",
+		game: "stackdle",
+		name: "Building brick",
+		eyes: 8,
+		limb: 2,
+		colors: [
+			"#F05A4E",
+			"#C23B31",
+			"#FF8A80",
+			"#D9463C"
+		],
+		outline: "#6E1A14",
+		art: grid16("building brick", [
+			"................",
+			"................",
+			"...34..34..34...",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..222222222222..",
+			"................",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "flipsies.pancakes",
+		game: "flipsies",
+		name: "Pancake stack",
+		eyes: 9,
+		colors: [
+			"#F4C987",
+			"#CF9450",
+			"#FFE7B0",
+			"#FFF6C9",
+			"#9A4E1C"
+		],
+		outline: "#6B3810",
+		art: grid16("pancakes", [
+			"................",
+			"................",
+			".......44.......",
+			"......4444......",
+			"...5555555555...",
+			"..355555555552..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..222222222222..",
+			"..311111111112..",
+			"..222222222222..",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "puttsies.bag",
+		game: "puttsies",
+		name: "Golf bag",
+		eyes: 8,
+		limb: 2,
+		colors: [
+			"#3A9466",
+			"#256B47",
+			"#5CB585",
+			"#D7DCE4",
+			"#8A93A3",
+			"#FFFFFF"
+		],
+		outline: "#163F2A",
+		art: grid16("golf bag", [
+			"................",
+			"....44.44.44....",
+			".....5..5..5....",
+			".....5..5..5....",
+			"...3111111112...",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..366666666662..",
+			"..311111111112..",
+			"...2222222222...",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "weighsies.anvil",
+		game: "weighsies",
+		name: "Anvil",
+		eyes: 6,
+		colors: [
+			"#9AA2B2",
+			"#6E7688",
+			"#C4CAD6"
+		],
+		outline: "#30343E",
+		art: grid16("anvil", [
+			"................",
+			"................",
+			"................",
+			"....3111111112..",
+			".3311111111112..",
+			"..311111111112..",
+			"...3111111112...",
+			"...3111111112...",
+			".....311112.....",
+			".....311112.....",
+			"....31111112....",
+			"...3111111112...",
+			"...2222222222...",
+			"................",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "cutsies.toast",
+		game: "cutsies",
+		name: "Toast",
+		eyes: 8,
+		colors: [
+			"#F7E0AA",
+			"#E3C07C",
+			"#FFF1CF",
+			"#B77634"
+		],
+		outline: "#5E3410",
+		art: grid16("toast", [
+			"................",
+			"................",
+			"....44444444....",
+			"...4111111114...",
+			"..411111111114..",
+			"..431111111124..",
+			"..431111111124..",
+			"..431111111124..",
+			"..431111111124..",
+			"..431111111124..",
+			"..431111111124..",
+			"..431111111124..",
+			"..422222222224..",
+			"..444444444444..",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "tiltsies.marble",
+		game: "tiltsies",
+		name: "Marble",
+		eyes: 8,
+		colors: [
+			"#9ED8F2",
+			"#68B2DA",
+			"#E9F8FF",
+			"#FF7AA8",
+			"#FFFFFF"
+		],
+		outline: "#245A7A",
+		art: grid16("marble", [
+			"................",
+			"................",
+			"................",
+			".....444111.....",
+			"....35441111....",
+			"...3511111112...",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111142..",
+			"...3111111442...",
+			"....21114422....",
+			".....222222.....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "trackdle.stopwatch",
+		game: "trackdle",
+		name: "Stopwatch",
+		eyes: 9,
+		colors: [
+			"#FFFFFF",
+			"#E3E7EE",
+			"#E5484D",
+			"#2B2F38",
+			"#C9CED8"
+		],
+		outline: "#7A1E22",
+		art: grid16("stopwatch", [
+			"................",
+			".......44.......",
+			"......5555......",
+			".....333333.....",
+			"...3311111133...",
+			"..311111111113..",
+			"..311114411113..",
+			"..311111111113..",
+			"..311111111113..",
+			"..311111111113..",
+			"..311111111123..",
+			"..311111111223..",
+			"...3311112233...",
+			".....333333.....",
 			"................",
 			"................"
 		])
@@ -4542,6 +4892,12 @@ Object.defineProperty(exports, 'tallyMarks', {
     return tallyMarks;
   }
 });
+Object.defineProperty(exports, 'temperTint', {
+  enumerable: true,
+  get: function () {
+    return temperTint;
+  }
+});
 Object.defineProperty(exports, 'wearOf', {
   enumerable: true,
   get: function () {
@@ -4554,4 +4910,4 @@ Object.defineProperty(exports, 'withItems', {
     return withItems;
   }
 });
-//# sourceMappingURL=paint-CPIWnkQJ.cjs.map
+//# sourceMappingURL=paint-BSkB6oBP.cjs.map

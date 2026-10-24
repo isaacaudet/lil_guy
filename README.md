@@ -302,15 +302,15 @@ recognisable everywhere.
 
 | Game | Skins | Hats (first is free) | Frames |
 |---|---|---|---|
-| Amountle | Jar of gems, Crystal | Gem, Gem crown, Big gem | Gem field, Coin pile |
-| Halfsies | Clay pot, Kitchen scale | Half pot, Scale dish, Pot helmet | Kitchen teal, Gingham |
-| Stackdle | Toy block, Triangle | Little block, Tower, Ring | Toy box, Bricks |
-| Flipsies | Water bottle, Bullseye | Bottle cap, Landed bottle, Bullseye beret | Bullseye, Waves |
-| Puttsies | Golf ball, Quilt pillow | Golf visor, Pin flag, Golf tam | Patchwork, Fairway |
-| Weighsies | Cheese wheel, Kettlebell | Cheese wedge, Balance, Dumbbell | Lavender, Ruler |
-| Cutsies | Kiwi, Melon slice | Kiwi slice, Chef hat, Orange half | Kiwi slices, Melon seeds |
-| Tiltsies | Hamster ball, Hamster | Hamster ears, Hamster buddy, Sunflower seed | Toy maze, Spiral |
-| Trackdle | Racer, Traffic cone | Pit cap, Race helmet, Trophy | Checkered flag, Tarmac |
+| Amountle | Jar of gems, Crystal, Piggy bank | Gem, Gem crown, Big gem | Gem field, Coin pile |
+| Halfsies | Clay pot, Kitchen scale, Avocado half | Half pot, Scale dish, Pot helmet | Kitchen teal, Gingham |
+| Stackdle | Toy block, Triangle, Building brick | Little block, Tower, Ring | Toy box, Bricks |
+| Flipsies | Water bottle, Bullseye, Pancake stack | Bottle cap, Landed bottle, Bullseye beret | Bullseye, Waves |
+| Puttsies | Golf ball, Quilt pillow, Golf bag | Golf visor, Pin flag, Golf tam | Patchwork, Fairway |
+| Weighsies | Cheese wheel, Kettlebell, Anvil | Cheese wedge, Balance, Dumbbell | Lavender, Ruler |
+| Cutsies | Kiwi, Melon slice, Toast | Kiwi slice, Chef hat, Orange half | Kiwi slices, Melon seeds |
+| Tiltsies | Hamster ball, Hamster, Marble | Hamster ears, Hamster buddy, Sunflower seed | Toy maze, Spiral |
+| Trackdle | Racer, Traffic cone, Stopwatch | Pit cap, Race helmet, Trophy | Checkered flag, Tarmac |
 
 A **skin** turns the guy into the game's object and keeps his face.
 
@@ -322,7 +322,7 @@ An item is a design. A copy someone owns is the item plus:
 |---|---|
 | **Finish** | Plain (79.22%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Gold (0.9%), Prism (0.5%), Negative (0.2%). Everything but Plain and Tempered only comes Mint in Box or Like New |
 | **Scuff** | 0–1, how worn it is. Mint in Box < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Mint in Box copy keeps a glint |
-| **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered prints 661, 670, 321, 387 and 955 come out almost all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
+| **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered comes in five tints the print picks (Steel, Rose, Emerald, Copper, Violet), and prints 661, 670, 321, 387 and 955 come out all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |
 | **Pins** | up to three, earned and stuck on: a gold star (a perfect day), a flame (a 7-day streak), a heart (100 days played), a bolt (fastest of the day), a crown (top of a board) and a leaf (a first week). The club grants them; they are drawn on the item's own pixels |
 

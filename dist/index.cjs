@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-CPIWnkQJ.cjs');
+const require_paint = require('./paint-BSkB6oBP.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -1533,6 +1533,7 @@ exports.slotOf = require_paint.slotOf
 exports.special = require_paint.special
 exports.starter = require_paint.starter
 exports.tallyMarks = require_paint.tallyMarks
+exports.temperTint = require_paint.temperTint
 exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
 exports.toSvgString = toSvgString
