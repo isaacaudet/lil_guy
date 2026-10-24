@@ -39,7 +39,7 @@ export const cheeks: Cheeks[] = [
   // Deep shade rather than outline: an outline-coloured cell at the edge
   // would cost the body its own outline beside it.
   cheeks_('whiskers', [
-    'dd......dd',
+    'mm......mm',
   ]),
   cheeks_('hearts', [
     'r.r....r.r',
@@ -49,8 +49,8 @@ export const cheeks: Cheeks[] = [
     'ww......ww',
   ]),
   cheeks_('stripes', [
-    'ss......ss',
-    '.ss....ss.',
+    'AA......AA',
+    '.AA....AA.',
   ]),
   cheeks_('stars', [
     '.y......y.',

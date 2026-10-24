@@ -28,10 +28,8 @@ export const headWeights = [
   3, // pill
   2, // chonk
   2, // block
-  2, // peanut
   4, // tower
   3, // gourd
-  3, // bean
   1, // flame
   1, // jellyfish
   1, // octopus
@@ -52,11 +50,9 @@ export const eyeWeights = [
   8, // sparkle
   4, // wink
   6, // glossy
-  6, // content
   4, // excited
   2, // hearts
   4, // lashes
-  4, // glance
   6, // chill
   4, // side-eye
   2, // shades

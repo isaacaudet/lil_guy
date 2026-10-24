@@ -5,6 +5,7 @@ import { resolve } from '../resolve';
 import { compose } from '../compose';
 import { toSvgString } from '../render-string';
 import { T } from '../parts/art';
+import { eyes, hair } from '../parts';
 
 describe('owned copies', () => {
   it('round-trip through their string form', () => {
@@ -126,8 +127,9 @@ describe('rarity', () => {
   });
 
   it('rates a guy with rare traits rarer than a common one', () => {
+    const laser = eyes.findIndex(e => e.name === 'laser'), crown = hair.findIndex(h => h.name === 'crown');
     const plain = resolve('x', { eyes: 1, mouth: 0, hair: 0, cheeks: 0, accessory: 0, body: 0 });
-    const loud = resolve('x', { eyes: 17, mouth: 0, hair: 11, cheeks: 0, accessory: 0, body: 0 });
+    const loud = resolve('x', { eyes: laser, mouth: 0, hair: crown, cheeks: 0, accessory: 0, body: 0 });
     expect(guyOneIn(loud)).toBeGreaterThan(guyOneIn(plain));
   });
 });

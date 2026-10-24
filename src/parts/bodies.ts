@@ -111,8 +111,10 @@ export const bodies: Marking[] = [
       // A second, bigger shine, as if the guy were glazed.
       const r = c.rows[c.crown + 2];
       if (!r) return;
-      onBody(c, r.right - 2, c.crown + 2, T.LIGHT);
+      // A glossy streak down the right side, as if glazed.
+      onBody(c, r.right - 2, c.crown + 2, T.WHITE);
       onBody(c, r.right - 2, c.crown + 3, T.LIGHT);
+      onBody(c, r.right - 1, c.crown + 4, T.LIGHT);
     },
   },
 
@@ -121,7 +123,7 @@ export const bodies: Marking[] = [
     draw: c => {
       for (let y = c.eyeLine + 3; y <= c.bottom; y += 2) {
         const r = c.rows[y];
-        if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.SHADE);
+        if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.ACCENT);
       }
     },
   },
@@ -131,7 +133,7 @@ export const bodies: Marking[] = [
     draw: c => {
       const y = c.eyeLine + 3;
       const r = c.rows[y];
-      if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + (x % 2), T.BELLY);
+      if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + (x % 2), T.ACCENT);
     },
   },
 

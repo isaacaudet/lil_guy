@@ -159,6 +159,12 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
   let tongue = '#FF6B88';
   for (let i = 0; i < 8 && contrast(tongue, body) < 1.4; i++) tongue = shadeOf(tongue, 0.06);
 
+  // Gold parts (a crown, star eyes, a star mark) on a yellow body would vanish,
+  // so there the gold turns to a deep amber that still reads as gold.
+  const goldReads = contrast('#FFD45C', body) >= 1.45;
+  const gold = goldReads ? '#FFD45C' : '#E8901A';
+  const goldShade = goldReads ? '#F0A93A' : '#B3620E';
+
   return {
     name,
     colors: {
@@ -177,8 +183,8 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
       13: mix(body, '#FFFBF0', 0.6),
       14: '#7DD87A',
       15: '#4FAE5C',
-      16: '#FFD45C',
-      17: '#F0A93A',
+      16: gold,
+      17: goldShade,
       18: '#FF6B78',
       19: shadeOf(body, 0.24),
     },
@@ -223,10 +229,14 @@ export function shadePalette(palette: Palette, shade: number): Palette {
  */
 export function luckyPalette(palette: Palette): Palette {
   // Lightness is pushed away from the middle, where neither dark nor cream
-  // eyes would read.
+  // eyes would read. A dark colour turned into the oranges and yellows comes
+  // out brown or olive, so dark ones skip on to jewel tones instead.
   const turn = (hex: string) => {
     const [h, s, l] = toHsl(hex);
-    return fromHsl([h + 150, Math.min(0.85, s + 0.05), l >= 0.45 ? Math.max(l, 0.66) : Math.min(l, 0.3)]);
+    let hue = (h + 150) % 360;
+    const dark = l < 0.45;
+    if (dark && hue >= 10 && hue <= 110) hue += 130;
+    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.min(0.85, s + 0.05), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.max(l, 0.66)]);
   };
   const c = palette.colors;
   return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');

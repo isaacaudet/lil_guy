@@ -75,8 +75,10 @@ export const mouths: Mouth[] = [
     'mmmmmm',
     'mwmwmm',
   ]),
+  // A round pink bubble with a shine, beside a small mouth.
   mouth('bubblegum', [
-    'mm.cc',
-    '...cc',
+    '...cc.',
+    'mm.cwc',
+    '...cc.',
   ]),
 ];

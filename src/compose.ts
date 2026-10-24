@@ -183,6 +183,12 @@ export function compose(config: AvatarConfig): PixelGrid {
   if (hat?.slot === 'hat') {
     hat.draw!(c);
     claim(c.grid, LAYER.hat);
+    // The hat casts a shadow on the head just under it, so it stands off a
+    // body of the same colour (a gold trophy on a yellow guy).
+    for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
+      const t = c.grid[y][x], below = c.grid[y + 1][x];
+      if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
+    }
   } else if (!skin) {
     hair[config.hair].draw(c);
   }

@@ -747,38 +747,41 @@ const hats: Omit<Item, 'slot'>[] = [
   {
     id: 'stackdle.cube', game: 'stackdle', name: 'Little block', free: true, colors: [],
     draw: on([
-      'xxxA',
-      'aaaA',
-      'aaaA',
+      'xxxxA',
+      'aaaaA',
+      'ayaaA',
+      'aaaaA',
     ]),
   },
   {
-    id: 'stackdle.tower', game: 'stackdle', name: 'Tower', 
-    colors: ['#FF8FB1', '#E0628A', '#FFB03B', '#E58A1F'],
+    id: 'stackdle.tower', game: 'stackdle', name: 'Tower',
+    colors: ['#FF8FB1', '#E0628A', '#FFB03B', '#E58A1F', '#6FA8FF', '#4A84E0'],
     draw: on([
-      '.11.',
-      '1..2',
-      '.12.',
-      '.33.',
-      '3334',
+      '.12..',
+      '.12..',
+      '..34.',
+      '..34.',
+      '55556',
     ]),
   },
   // Flipsies
   {
     id: 'flipsies.cap', game: 'flipsies', name: 'Bottle cap', free: true, colors: [],
     draw: on([
-      'xaxa',
-      'aAaA',
+      '.xxxx.',
+      'xaaaax',
+      'aAaAaA',
     ]),
   },
   {
-    id: 'flipsies.landed', game: 'flipsies', name: 'Landed bottle', 
+    id: 'flipsies.landed', game: 'flipsies', name: 'Landed bottle',
     colors: ['#C4E8FB', '#93CDEE', '#3E7BE0', '#FFFFFF'],
     draw: on([
-      '4112',
-      '4112',
-      '.12.',
       '.33.',
+      '.11.',
+      '1112',
+      '4442',
+      '1112',
     ]),
   },
   // Puttsies
@@ -804,7 +807,7 @@ const hats: Omit<Item, 'slot'>[] = [
   // Weighsies
   {
     id: 'weighsies.wedge', game: 'weighsies', name: 'Cheese wedge', free: true,
-    colors: ['#FFC94A', '#E3A52E', '#D98F22'],
+    colors: ['#FFBE3A', '#D9931F', '#B8761A'],
     draw: on([
       '...11',
       '.1131',
@@ -969,7 +972,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   {
     id: 'trackdle.trophy', game: 'trackdle', name: 'Trophy',
-    colors: ['#F2C230', '#C8901E', '#FFE9A0'],
+    colors: ['#E8A81E', '#A8700F', '#FFE9A0'],
     draw: on([
       '1.313.1',
       '1111111',

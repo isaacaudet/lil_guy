@@ -44,10 +44,6 @@ export const eyes: Eyes[] = [
     'ee....ee',
     'ew....ew',
   ]),
-  eyes_('content', [
-    'e.e..e.e',
-    '.e....e.',
-  ]),
   eyes_('excited', [
     'e......e',
     '.e....e.',
@@ -62,10 +58,6 @@ export const eyes: Eyes[] = [
     'e......e',
     '.e....e.',
     '.e....e.',
-  ]),
-  eyes_('glance', [
-    'ew....ew',
-    'ee....ee',
   ]),
   // A little attitude, so not every guy is pure sugar.
   eyes_('chill', [
@@ -95,9 +87,11 @@ export const eyes: Eyes[] = [
     '.o....o.',
     'ee....ee',
   ]),
+  // Glowing, with a hot white core, so they read as lasers and not blush.
   eyes_('laser', [
-    'rr....rr',
-    'rr....rr',
+    '.r....r.',
+    'rwr..rwr',
+    '.r....r.',
   ]),
   eyes_('cyclops', [
     '.ww.',

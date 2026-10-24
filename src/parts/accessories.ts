@@ -1,4 +1,4 @@
-import { stamp, T } from './art';
+import { stamp, T, width } from './art';
 import type { Canvas } from './canvas';
 
 /**
@@ -158,10 +158,10 @@ export const accessories: Accessory[] = [
     layer: 'body',
     draw: c => {
       // A strap across the forehead and a patch over the left eye.
+      // The strap spans the face only, so it never cuts off a claw or an arm.
       const x = c.centred(glasses);
       const top = c.eyeLine - 3;
-      const r = c.rows[top];
-      if (r) for (let sx = r.left; sx <= r.right; sx++) wear(c, sx, top, T.OUTLINE);
+      for (let sx = x; sx < x + width(glasses); sx++) if (c.isBody(sx, top)) wear(c, sx, top, T.DEEP);
       for (let y = c.eyeLine - 2; y <= c.eyeLine; y++) for (let dx = 0; dx < 4; dx++) wear(c, x + dx, y, T.OUTLINE);
     },
   },

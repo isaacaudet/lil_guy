@@ -26,11 +26,11 @@ export interface Pin {
 
 export const PINS: Pin[] = [
   { id: 'star', name: 'Gold star', how: 'A perfect day', art: stamp(['.y.', 'yYy', '.y.']) },
-  { id: 'flame', name: 'Flame', how: 'A 7-day streak', art: stamp(['.r', 'rr', 'ry']) },
+  { id: 'flame', name: 'Flame', how: 'A 7-day streak', art: stamp(['.r.', 'rYr', 'ryr']) },
   { id: 'heart', name: 'Heart', how: '100 days played', art: stamp(['r.r', 'rrr', '.r.']) },
-  { id: 'bolt', name: 'Bolt', how: 'Fastest of the day', art: stamp(['.y', 'yy', 'y.']) },
-  { id: 'crown', name: 'Crown', how: 'Top of a board for a day', art: stamp(['y.y', 'yyy']) },
-  { id: 'leaf', name: 'Leaf', how: 'A first week in the club', art: stamp(['gg', '.G']) },
+  { id: 'bolt', name: 'Bolt', how: 'Fastest of the day', art: stamp(['.yy', '.y.', 'yy.']) },
+  { id: 'crown', name: 'Crown', how: 'Top of a board for a day', art: stamp(['y.y', 'yyy', 'YYY']) },
+  { id: 'leaf', name: 'Leaf', how: 'A first week in the club', art: stamp(['.gg', 'ggg', 'G..']) },
 ];
 
 /** A copy holds at most this many pins. */
@@ -86,10 +86,19 @@ export function markItem(grid: PixelGrid, slot: Slot, copy: Owned): void {
       ax += ax > (left + right) / 2 ? -1 : 1;
       ay += ay > (top + bottom) / 2 ? -1 : 1;
     }
+    const placed: [number, number][] = [];
     pin.art.forEach((row, dy) => row.forEach((t, dx) => {
       const x = ax + dx, y = ay + dy;
-      if (t && y >= 0 && y < GRID_SIZE && x >= 0 && x < GRID_SIZE && own(slot, grid[y][x])) grid[y][x] = t;
+      if (t && y >= 0 && y < GRID_SIZE && x >= 0 && x < GRID_SIZE && own(slot, grid[y][x])) { grid[y][x] = t; placed.push([x, y]); }
     }));
+    // A dark rim round the pin, on the item's own pixels, so it reads at a
+    // glance; never on the item's edge, which the guy's outline needs.
+    const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const inside = (x: number, y: number) => N.every(([dx, dy]) => (grid[y + dy]?.[x + dx] ?? 0) !== 0);
+    for (const [x, y] of placed) for (const [dx, dy] of N) {
+      const nx = x + dx, ny = y + dy;
+      if (own(slot, grid[ny]?.[nx] ?? 0) && inside(nx, ny)) grid[ny][nx] = T.OUTLINE;
+    }
   });
 }
 

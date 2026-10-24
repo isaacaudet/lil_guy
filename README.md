@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~4.6 trillion lil guys. Zero dependencies. ~32 KB gzipped.
+  ~3.8 trillion lil guys. Zero dependencies. ~32 KB gzipped.
 </p>
 
 <p align="center">
@@ -265,7 +265,7 @@ A few rules keep every combination good-looking:
 - **Clean colours, with depth.** No greys or murky browns; every guy gets the same outline, gleam and shading, and the vivid tone is common
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-27 shapes × 19 eyes × 16 mouths × 14 cheeks × 30 toppers × 14 markings × 14 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) × 2 (Lucky or not) = **4,621,668,710,400** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 365 billion equally-likely guys.
+25 shapes × 17 eyes × 16 mouths × 14 cheeks × 30 toppers × 14 markings × 14 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) × 2 (Lucky or not) = **3,828,867,840,000** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 294 billion equally-likely guys.
 
 **Lucky.** About one name in 400 (`LUCKY_ODDS`) comes out Lucky: the same colourway turned round the colour wheel, with gold trim. It counts in `guyOneIn` like any trait.
 
@@ -275,8 +275,8 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 
 | Slot | Values |
 |---|---|
-| `head` | `0-26` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart |
-| `eyes` | `0-18` beans, shiny, happy, sparkle, wink, glossy, content, excited, hearts, lashes, glance, chill, side-eye, shades, star, squint, fired up, laser, cyclops |
+| `head` | `0-24` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, tower, gourd, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart |
+| `eyes` | `0-16` beans, shiny, happy, sparkle, wink, glossy, excited, hearts, lashes, chill, side-eye, shades, star, squint, fired up, laser, cyclops |
 | `mouth` | `0-15` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum |
 | `cheeks` | `0-13` bare, blush, dot, rosy, freckles, scar, band-aid, war paint, whiskers, hearts, shine, stripes, stars, gold leaf |
 | `hair` | `0-29` whatever sits on top: ears, a sprout, a hat, a mohawk, headphones |

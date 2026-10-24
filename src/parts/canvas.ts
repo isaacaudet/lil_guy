@@ -41,12 +41,16 @@ export class Canvas {
       const left = row.indexOf(true);
       return left === -1 ? null : { left, right: row.lastIndexOf(true) };
     });
-    this.crown = this.rows.findIndex(r => r !== null);
+    const waist = this.rows[eyeLine]!;
+    this.centre = (waist.left + waist.right + 1) / 2;
+    // The crown is the top of the head at its middle, so a hat sits on the
+    // head and not on a crab's raised claw or between a bat's ears.
+    const mid = Math.floor(this.centre);
+    const tops = [mid - 1, mid].map(x => this.topOf(x)).filter((y): y is number => y !== null);
+    this.crown = tops.length ? Math.min(...tops) : this.rows.findIndex(r => r !== null);
     let bottom = this.crown;
     this.rows.forEach((r, y) => { if (r) bottom = y; });
     this.bottom = bottom;
-    const waist = this.rows[eyeLine]!;
-    this.centre = (waist.left + waist.right + 1) / 2;
   }
 
   inside(x: number, y: number): boolean {
