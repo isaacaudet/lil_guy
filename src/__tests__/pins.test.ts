@@ -9,6 +9,9 @@ import { guyOneIn, traitOdds } from '../rarity';
 import { animate, EMOTE_UNLOCKS } from '../animate';
 import { T } from '../parts/art';
 import { hashNth } from '../hash';
+import { inSeason, items, gameItems, GAMES } from '../items';
+import { rollSeason, nameOf as nameCopy } from '../owned';
+import { toShareSvg } from '../share';
 
 const ball: Owned = { item: 'puttsies.ball', finish: 'plain', scuff: 0.02, print: 40 };
 const grid = (name: string, copy: Owned) => compose(dress(resolve(name), { equip: [encode(copy)] }));
@@ -111,5 +114,50 @@ describe('emotes and the trail', () => {
     // Gold's grail colour, darkened for the trail.
     expect(trail('gold')).toBe(true);
     expect(trail('sunset')).toBe(false);
+  });
+});
+
+
+describe('buddies', () => {
+  test('one per game, drawn at his feet in front of him with an outline', () => {
+    for (const game of GAMES) expect(gameItems(game).filter(i => i.slot === 'buddy').length).toBe(1);
+    const bare = compose(dress(resolve('alice'), {}));
+    const withBuddy = compose(dress(resolve('alice'), { equip: ['puttsies.tee'] }));
+    const changed = withBuddy.flat().filter((t, i) => t !== bare.flat()[i]).length;
+    expect(changed).toBeGreaterThan(8);
+    expect(withBuddy.flat().some(t => t >= 50 && t < 60)).toBe(true);
+    // Only the bottom-right corner changes.
+    withBuddy.forEach((row, y) => row.forEach((t, x) => { if (t !== bare[y][x]) expect(x >= 9 && y >= 9).toBe(true); }));
+  });
+});
+
+describe('seasonal items', () => {
+  test('drop only in their days, across the new year too', () => {
+    expect(inSeason('2026-10-31').map(i => i.id)).toEqual(['club.pumpkin']);
+    expect(inSeason('2026-12-31').map(i => i.id)).toEqual(['club.snowcap']);
+    expect(inSeason('2027-01-03').map(i => i.id)).toEqual(['club.snowcap']);
+    expect(inSeason('2026-07-01')).toEqual([]);
+    expect(items.filter(i => i.game === 'club').every(i => i.season)).toBe(true);
+  });
+
+  test('copies keep their day, in the code and the name', () => {
+    const o = rollSeason('s1', '2026-10-31')!;
+    expect(o.item).toBe('club.pumpkin');
+    expect(o.date).toBe('2026-10-31');
+    expect(decode(encode(o))).toEqual(o);
+    expect(nameCopy(o).startsWith('2026 Pumpkin') || nameCopy(o).startsWith('Tallied 2026 Pumpkin')).toBe(true);
+    expect(rollSeason('s1', '2026-07-01')).toBeNull();
+  });
+});
+
+describe('the share card', () => {
+  test('is a 1200x630 SVG with the copy, its grade and its odds, and nothing to fetch', () => {
+    const svg = toShareSvg('alice', { item: 'trackdle.helmet', finish: 'gold', scuff: 0.004, print: 9, tally: 212 }, { name: 'Alice <3' });
+    expect(svg).toContain('width="1200" height="630"');
+    expect(svg).toContain('Race helmet');
+    expect(svg).toContain('★ Grail');
+    expect(svg).toContain('212 days');
+    expect(svg).toContain('ALICE &lt;3');
+    expect(svg).not.toMatch(/<image|href=|@import/);
   });
 });

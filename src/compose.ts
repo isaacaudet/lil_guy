@@ -231,6 +231,19 @@ export function compose(config: AvatarConfig): PixelGrid {
       if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, 'frame');
     }
   }
+
+  // The buddy sits at his feet, bottom right, in front of everything, with its own outline.
+  const buddy = itemById(config.buddy);
+  if (buddy?.slot === 'buddy') {
+    const art = buddy.art!, h = art.length, w = art[0].length;
+    const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
+    const on = (x: number, y: number) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
+    for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
+      if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
+      if (on(x, y)) { const t = art[y - y0][x - x0]; c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t; }
+      else if (on(x + 1, y) || on(x - 1, y) || on(x, y + 1) || on(x, y - 1)) c.grid[y][x] = T.OUTLINE;
+    }
+  }
   return c.grid;
 }
 

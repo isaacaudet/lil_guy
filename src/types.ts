@@ -12,7 +12,8 @@ export type PixelGrid = number[][];
  *  9 tongue       10 accent        11 accent shade    12 trim
  * 13 belly        14 leaf          15 leaf shade      16 gold
  * 17 gold shade   18 red           19 deep shade
- * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's
+ * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's,
+ * 50–58 the buddy's
  */
 export type ColorToken = number;
 
@@ -57,8 +58,10 @@ export interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
+  /** A tiny pet that sits beside him. */
+  buddy?: string;
   /** The owned copies behind those items, if known: finish, scuff, print. */
-  owned?: Partial<Record<'skin' | 'hat' | 'frame', import('./owned').Owned>>;
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', import('./owned').Owned>>;
 }
 
 export interface RenderOptions {

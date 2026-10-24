@@ -24,12 +24,15 @@ import { GRID_SIZE } from './types';
  * game or the club.
  */
 
-export type Slot = 'skin' | 'hat' | 'frame';
+export type Slot = 'skin' | 'hat' | 'frame' | 'buddy';
+
+/** Which game an item belongs to; `club` items are seasonal and belong to no one game. */
+export type ItemGame = GameId | 'club';
 
 export interface Item {
   /** `game.name`. */
   id: string;
-  game: GameId;
+  game: ItemGame;
   slot: Slot;
   name: string;
   /** The hat every player has in this game from the start. */
@@ -48,6 +51,8 @@ export interface Item {
   draw?: (c: Canvas) => void;
   /** Frames: which of the item's colours fills a background cell. */
   fill?: (x: number, y: number) => number;
+  /** Seasonal items: the days of the year they drop, as `MM-DD`, inclusive. */
+  season?: { from: string; to: string };
 }
 
 // ---------------------------------------------------------------- helpers
@@ -1113,11 +1118,52 @@ const frames: Omit<Item, 'slot'>[] = [
   },
 ];
 
-/** Every item: each game's skins, then hats, then frames. */
+// ---------------------------------------------------------------- buddies
+
+/**
+ * A tiny pet that sits at his feet, bottom right, in front of everything. One
+ * per game, drawn small enough (4 or 5 pixels) to leave the guy room.
+ */
+const buddies: Omit<Item, 'slot'>[] = [
+  { id: 'amountle.gemling', game: 'amountle', name: 'Gemling', colors: ['#5FE0D0', '#2FA89A', '#E6FFFB'], art: stamp(['.13.', '1132', '1122', '.22.']) },
+  { id: 'halfsies.pea', game: 'halfsies', name: 'Pea pod', colors: ['#7CC45A', '#4E9A36', '#C6F59A'], art: stamp(['.11.', '1332', '1332', '.22.']) },
+  { id: 'stackdle.cubelet', game: 'stackdle', name: 'Cubelet', colors: ['#FFB03B', '#E58A1F'], art: stamp(['1112', 'o1o2', '1112', '2222']) },
+  { id: 'flipsies.droplet', game: 'flipsies', name: 'Droplet', colors: ['#6FC3F5', '#3E8FD6', '#FFFFFF'], art: stamp(['.1..', '.11.', '1311', '1112', '.22.']) },
+  { id: 'puttsies.tee', game: 'puttsies', name: 'Tee buddy', colors: ['#FFFFFF', '#D3D8E2', '#E8B060'], art: stamp(['.11.', '1121', '.22.', '.3..', '333.']) },
+  { id: 'weighsies.mouse', game: 'weighsies', name: 'Mouse', colors: ['#B9C0CE', '#FF9EBB', '#8A93A3'], art: stamp(['2..2', '1111', 'o11o', '.33.']) },
+  { id: 'cutsies.seedling', game: 'cutsies', name: 'Seedling', colors: ['#7DD87A', '#4FAE5C', '#B07444'], art: stamp(['1..1', '.12.', '.2..', '3333']) },
+  { id: 'tiltsies.hamlet', game: 'tiltsies', name: 'Hamlet', colors: ['#F2B66D', '#FFE4C2', '#C98A45'], art: stamp(['3..3', '1111', 'o22o', '3333']) },
+  { id: 'trackdle.snail', game: 'trackdle', name: 'Turbo snail', colors: ['#E8A23A', '#B8721A', '#9FD18A'], art: stamp(['.11.', '1221', '1121', '3333']) },
+];
+
+// ---------------------------------------------------------------- seasonal
+
+/**
+ * Hats that only drop on certain days of the year. A copy keeps the date it
+ * dropped, so a 2026 Pumpkin is a different thing from a 2027 one.
+ */
+const seasonal: Omit<Item, 'slot'>[] = [
+  { id: 'club.birthday', game: 'club', name: 'Club birthday', season: { from: '10-12', to: '10-16' }, colors: ['#5FB4FF', '#FFD447', '#FF6FA0'], draw: on(['..3..', '.121.', '.212.', '12121']) },
+  { id: 'club.pumpkin', game: 'club', name: 'Pumpkin', season: { from: '10-20', to: '11-02' }, colors: ['#FF8A2B', '#D9661A', '#4FAE5C'], draw: on(['..3..', '11211', '11211', '.111.']) },
+  { id: 'club.snowcap', game: 'club', name: 'Snow cap', season: { from: '12-15', to: '01-06' }, colors: ['#E5484D', '#B83236', '#FFFFFF'], draw: on(['....3', '..11.', '.112.', '33333']) },
+  { id: 'club.sweetheart', game: 'club', name: 'Sweetheart', season: { from: '02-10', to: '02-16' }, colors: ['#FF5C8A', '#D93A6A', '#FFC2D4'], draw: on(['11.11', '13112', '.112.', '..2..']) },
+];
+
+/** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
+export function inSeason(day: string | Date): Item[] {
+  const md = (typeof day === 'string' ? day : day.toISOString()).slice(5, 10);
+  return items.filter(i => i.season && (i.season.from <= i.season.to
+    ? md >= i.season.from && md <= i.season.to
+    : md >= i.season.from || md <= i.season.to));
+}
+
+/** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
 export const items: Item[] = [
   ...skins.map(i => ({ ...i, slot: 'skin' as const })),
   ...hats.map(i => ({ ...i, slot: 'hat' as const })),
   ...frames.map(i => ({ ...i, slot: 'frame' as const })),
+  ...buddies.map(i => ({ ...i, slot: 'buddy' as const })),
+  ...seasonal.map(i => ({ ...i, slot: 'hat' as const })),
 ];
 
 const byId = new Map(items.map(i => [i.id, i]));
@@ -1178,7 +1224,7 @@ function contrast(a: string, b: string): number {
 /** Adds the equipped items' own colours to a palette. */
 export function withItems(palette: Palette, config: AvatarConfig): Palette {
   const colors = { ...palette.colors };
-  for (const slot of ['skin', 'hat', 'frame'] as const) {
+  for (const slot of ['skin', 'hat', 'frame', 'buddy'] as const) {
     const item = itemById(config[slot]);
     if (!item) continue;
     item.colors.forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });

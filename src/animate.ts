@@ -230,7 +230,7 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette): Layer
   const out = empty();
   grid.forEach((row, y) => row.forEach((t, x) => {
     const c = colors[y][x];
-    if (c) out[y + HEADROOM][x] = { c, item: t >= LAYER.skin && t < LAYER.frame };
+    if (c) out[y + HEADROOM][x] = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy };
   }));
   return out;
 }

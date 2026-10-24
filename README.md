@@ -314,6 +314,21 @@ recognisable everywhere.
 
 A **skin** turns the guy into the game's object and keeps his face.
 
+**Buddies.** Each game also has a buddy, a tiny pet that sits at the guy's
+feet, bottom right, in front of everything: Gemling, Pea pod, Cubelet,
+Droplet, Tee buddy, Mouse, Seedling, Hamlet and Turbo snail. Equip one like
+any item.
+
+**Seasonal hats.** Club birthday (12–16 October), Pumpkin (20 October – 2
+November), Snow cap (15 December – 6 January) and Sweetheart (10–16
+February) only drop in their days: `inSeason(day)` lists what's dropping and
+`rollSeason(seed, day)` rolls one. A seasonal copy keeps its day (`~d2026-10-31`
+in its code) and its year in its name, so a 2026 Pumpkin is its own thing.
+
+**Share cards.** `toShareSvg(seed, copy, { name })` draws a 1200×630 card of the
+guy wearing a copy, with its grade, condition, tally and odds: one SVG with
+nothing to fetch, ready to turn into a link preview.
+
 ### Owned copies: finish, scuff, print, tally
 
 An item is a design. A copy someone owns is the item plus:

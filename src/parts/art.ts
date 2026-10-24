@@ -28,11 +28,12 @@ export const T = {
 
 /**
  * Item colours are drawn as 101–109 and moved into their layer's range once
- * the layer is down: a skin's to 20–28, a hat's to 30–38, a frame's to 40–48.
+ * the layer is down: a skin's to 20–28, a hat's to 30–38, a frame's to 40–48,
+ * a buddy's to 50–58.
  * Each layer keeps its own colours, so a gold hat on a glass jar works.
  */
 export const LOCAL = 101;
-export const LAYER = { skin: 20, hat: 30, frame: 40 } as const;
+export const LAYER = { skin: 20, hat: 30, frame: 40, buddy: 50 } as const;
 
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
 export type Stamp = number[][];

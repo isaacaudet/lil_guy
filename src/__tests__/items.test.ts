@@ -47,11 +47,11 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game three skins, three hats (one free) and two frames', () => {
+  it('gives every game three skins, three hats (one free), two frames and a buddy', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
       const count = (slot: string) => own.filter(i => i.slot === slot).length;
-      expect([count('skin'), count('hat'), count('frame')]).toEqual([3, 3, 2]);
+      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([3, 3, 2, 1]);
       expect(own.filter(i => i.free).map(i => i.slot)).toEqual(['hat']);
       expect(freeItem(game).free).toBe(true);
     }

@@ -10,7 +10,7 @@ import type { AvatarConfig, Palette, PixelGrid } from './types';
  */
 export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette): (string | null)[][] {
   const state = { glint: false };
-  const slotOf = (t: number) => (t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null);
+  const slotOf = (t: number) => (t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null);
   return grid.map((row, y) => row.map((token, x) => {
     const color = resolveColor(palette, token);
     if (!color) return null;

@@ -46,8 +46,8 @@ export function tallyMarks(tally: number | undefined): number {
 /** A year of days: the item's outline goes gold. */
 export const GOLD_RIM_DAYS = 365;
 
-type Slot = 'skin' | 'hat' | 'frame';
-const START: Record<Slot, number> = { skin: LAYER.skin, hat: LAYER.hat, frame: LAYER.frame };
+type Slot = 'skin' | 'hat' | 'frame' | 'buddy';
+const START: Record<Slot, number> = { skin: LAYER.skin, hat: LAYER.hat, frame: LAYER.frame, buddy: LAYER.buddy };
 const own = (slot: Slot, token: number) => token >= START[slot] && token < START[slot] + 10;
 
 /** Scratches tally marks and sticks pins onto one worn item's pixels. */

@@ -1,5 +1,5 @@
 import { hash } from './hash';
-import { gameItems, freeItem, itemById, type Slot } from './items';
+import { gameItems, freeItem, inSeason, itemById, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
 import type { GameId } from './types';
 
@@ -37,6 +37,8 @@ export interface Owned {
   tally?: number;
   /** Pins earned and stuck on it (see ./pins), at most three. */
   pins?: string[];
+  /** A seasonal copy's drop day, `YYYY-MM-DD`; it is part of what the copy is. */
+  date?: string;
 }
 
 export const GRADES = [
@@ -120,7 +122,7 @@ export function gradeOf(o: Owned): Grade {
 /** The name as it would show on an inventory card. */
 export function nameOf(o: Owned): string {
   const item = itemById(o.item);
-  const base = item?.name ?? o.item;
+  const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
   const tally = o.tally !== undefined ? 'Tallied ' : '';
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
@@ -139,6 +141,7 @@ export function encode(o: Owned): string {
   const parts = [o.item, o.finish, o.scuff.toFixed(7), String(o.print)];
   if (o.tally !== undefined) parts.push(`t${o.tally}`);
   if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join('+')}`);
+  if (o.date) parts.push(`d${o.date}`);
   return parts.join('~');
 }
 
@@ -150,6 +153,7 @@ export function decode(s: string): Owned | null {
   const o: Owned = { item, finish: finish as Finish, scuff: f, print: p };
   for (const part of extra) {
     if (part.startsWith('t') && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
+    if (part.startsWith('d') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
     if (part.startsWith('p')) {
       const pins = part.slice(1).split('+').filter(id => pinById(id)).slice(0, MAX_PINS);
       if (pins.length) o.pins = pins;
@@ -188,7 +192,20 @@ export function starter(name: string, game: GameId): Owned {
  * drop time and stored with the copy — never from anything a player picks.
  */
 export function roll(seed: string, game: GameId): Owned {
-  const pool = gameItems(game).filter(i => !i.free);
+  return rollFrom(gameItems(game).filter(i => !i.free), seed);
+}
+
+/**
+ * A seasonal drop: one of the hats in season on `day` (`YYYY-MM-DD`), rolled
+ * like a capsule and stamped with the day. Null when nothing is in season.
+ */
+export function rollSeason(seed: string, day: string): Owned | null {
+  const pool = inSeason(day);
+  if (!pool.length) return null;
+  return { ...rollFrom(pool, seed), date: day.slice(0, 10) };
+}
+
+function rollFrom(pool: Item[], seed: string): Owned {
   const item = pool[hash(`${seed}|item`) % pool.length];
 
   let r = unit(`${seed}|finish`) * 100;
