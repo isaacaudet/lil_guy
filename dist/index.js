@@ -54,7 +54,10 @@ const HOP = [
 		squash: -1,
 		dy: -1
 	}),
-	b("base", 100, { squash: 2 }),
+	b("base", 100, {
+		squash: 2,
+		dust: true
+	}),
 	b("base", 80, { squash: 1 })
 ];
 const BEATS = {
@@ -73,8 +76,8 @@ const BEATS = {
 		b("sides", 200),
 		b("wave", 220),
 		b("sides", 200),
-		b("wave", 220),
-		b("base", 700)
+		b("wave", 220, { emote: "heart" }),
+		b("base", 700, { emote: "heart" })
 	] : [
 		b("base", 200, { dx: -1 }),
 		b("base", 200),
@@ -84,17 +87,20 @@ const BEATS = {
 	],
 	look: () => [
 		b("base", 500),
-		b("left", 700),
+		b("left", 700, {
+			emote: "question",
+			left: true
+		}),
 		b("base", 250),
-		b("right", 700),
+		b("right", 700, { emote: "question" }),
 		b("base", 250),
 		b("shut", 120),
 		b("base", 400)
 	],
 	cheer: (canWave) => {
-		const arm = canWave ? "wave" : "base";
+		const arm = canWave ? "laughWave" : "laugh";
 		const up = [
-			b("base", 80, { squash: 1 }),
+			b("laugh", 80, { squash: 1 }),
 			b(arm, 60, {
 				squash: -1,
 				dy: -2,
@@ -108,48 +114,69 @@ const BEATS = {
 				dy: -3,
 				stars: true
 			}),
-			b("base", 90, { squash: 2 })
+			b("laugh", 90, {
+				squash: 2,
+				dust: true
+			})
 		];
 		return [
 			...up,
 			...up,
 			b(arm, 220, { stars: true }),
-			b(canWave ? "sides" : "base", 220),
+			b("laugh", 220),
 			b("base", 400)
 		];
 	},
 	sad: () => [
-		b("shut", 900, {
+		b("frown", 900, {
 			squash: 1,
 			drop: true
 		}),
-		b("shut", 700, {
+		b("frown", 700, {
 			squash: 2,
 			drop: true
 		}),
-		b("shut", 900, {
+		b("frown", 900, {
 			squash: 1,
 			drop: true
 		}),
 		b("base", 500, { squash: 1 })
 	],
 	dance: () => [
-		b("base", 180, {
+		b("laugh", 180, {
 			dx: -1,
-			squash: 1
+			squash: 1,
+			emote: "note",
+			left: true
 		}),
-		b("base", 180),
 		b("base", 180, {
+			emote: "note",
+			left: true
+		}),
+		b("laugh", 180, {
 			dx: 1,
 			squash: 1,
-			turn: true
+			turn: true,
+			emote: "note"
 		}),
-		b("base", 180, { turn: true })
+		b("base", 180, {
+			turn: true,
+			emote: "note"
+		})
 	],
 	squish: () => [
-		b("base", 90, { squash: 2 }),
-		b("base", 80, { squash: -2 }),
-		b("base", 80, { squash: 1 }),
+		b("ooh", 90, {
+			squash: 2,
+			emote: "bang"
+		}),
+		b("ooh", 80, {
+			squash: -2,
+			emote: "bang"
+		}),
+		b("ooh", 80, {
+			squash: 1,
+			emote: "bang"
+		}),
 		b("base", 70, { squash: -1 }),
 		b("base", 700)
 	]
@@ -312,6 +339,80 @@ function twinkle(layer, x, y, centre, arms) {
 		item: false
 	};
 }
+const mouthIndex = (name) => Math.max(0, mouths.findIndex((m) => m.name === name));
+const EMOTES = {
+	note: {
+		rows: [
+			".##",
+			".#.",
+			"##.",
+			"##."
+		],
+		color: "#FFE27A"
+	},
+	question: {
+		rows: [
+			"###",
+			"..#",
+			".#.",
+			"...",
+			".#."
+		],
+		color: "#FFFFFF"
+	},
+	bang: {
+		rows: [
+			"#",
+			"#",
+			"#",
+			".",
+			"#"
+		],
+		color: "#FF6B6B"
+	},
+	heart: {
+		rows: [
+			"##.##",
+			"#####",
+			".###.",
+			"..#.."
+		],
+		color: "#FF6FA0"
+	}
+};
+/** Puts an emote, outlined, in a top corner that is clear of him. */
+function emote(layer, kind, left) {
+	const { rows, color } = EMOTES[kind];
+	const w = rows[0].length + 2, h = rows.length + 2;
+	const spots = [
+		[FRAME_WIDTH - w, 0],
+		[0, 0],
+		[FRAME_WIDTH - w, 1],
+		[0, 1],
+		[FRAME_WIDTH - w, 2],
+		[0, 2]
+	];
+	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
+	for (const [x0, y0] of spots) {
+		const cells = [];
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const on = rows[y - 1]?.[x - 1] === "#";
+			const near = !on && NEIGHBOURS.some(([dx, dy]) => rows[y - 1 + dy]?.[x - 1 + dx] === "#");
+			if (on || near) cells.push([
+				x0 + x,
+				y0 + y,
+				on ? color : "#1B1428"
+			]);
+		}
+		if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
+			for (const [x, y, c] of cells) layer[y][x] = {
+				c,
+				item: false
+			};
+			return;
+		}
+	}
+}
 /** Where sparkles may go: around the guy, clear of him. */
 const SPARKLE_SPOTS = [
 	[2, 6],
@@ -338,7 +439,20 @@ function animate(input, move, options = {}) {
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
 			const base = compose(figure);
-			grids.set(pose, pose === "base" ? base : pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : compose({
+			grids.set(pose, pose === "base" ? base : pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "laugh" ? compose({
+				...figure,
+				mouth: mouthIndex("laugh")
+			}) : pose === "laughWave" ? compose({
+				...figure,
+				mouth: mouthIndex("laugh"),
+				arms: 2
+			}) : pose === "frown" ? closeEyes(compose({
+				...figure,
+				mouth: mouthIndex("wobble")
+			}), config) : pose === "ooh" ? compose({
+				...figure,
+				mouth: mouthIndex("ooh")
+			}) : compose({
 				...figure,
 				arms: pose === "wave" ? 2 : 1
 			}));
@@ -419,6 +533,52 @@ function animate(input, move, options = {}) {
 				item: false
 			};
 		}
+		if (beat.dust) {
+			let low = -1;
+			layer.forEach((row$1, y) => {
+				if (row$1.some(Boolean)) low = y;
+			});
+			const row = layer[low] ?? [];
+			const l = row.findIndex(Boolean), r = row.reduce((m, cell, x) => cell ? x : m, -1);
+			if (l >= 0) {
+				for (const [x, y, c] of [
+					[
+						l - 1,
+						low,
+						"#E8E0D2"
+					],
+					[
+						l - 2,
+						low,
+						"#E8E0D2"
+					],
+					[
+						l - 2,
+						low - 1,
+						"#F6F1E8"
+					],
+					[
+						r + 1,
+						low,
+						"#E8E0D2"
+					],
+					[
+						r + 2,
+						low,
+						"#E8E0D2"
+					],
+					[
+						r + 2,
+						low - 1,
+						"#F6F1E8"
+					]
+				]) if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
+					c,
+					item: false
+				};
+			}
+		}
+		if (beat.emote) emote(layer, beat.emote, !!beat.left);
 		if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);

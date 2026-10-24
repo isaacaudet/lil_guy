@@ -209,6 +209,11 @@ const hop = animate("alice", "hop", { equip: [savedCopy] });
 drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);
 ```
 
+He changes his face for some of them: a laugh to cheer and dance, a wobbly
+mouth when sad, an "ooh" when squished. His own eyes always stay. Little
+emotes pop up beside him (music notes, a question mark, a heart, a "!"), and
+dust puffs out when he lands.
+
 Frames are 16 wide and 20 tall: the guy stands in the bottom 16 rows exactly
 as in the still, and the top 4 are room to jump into. Every frame is made from
 his own pixels. A squash loses a row from the middle of the body and a stretch

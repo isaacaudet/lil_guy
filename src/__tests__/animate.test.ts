@@ -84,6 +84,17 @@ describe('animate', () => {
     expect(rich.frames.length).toBeGreaterThan(plain.frames.length);
   });
 
+  test('moves have expressions, emotes and dust', () => {
+    const colours = (a: ReturnType<typeof animate>) => new Set(a.frames.flatMap(f => f.colors.flat()));
+    for (const name of NAMES) {
+      expect(colours(animate(name, 'dance')).has('#FFE27A')).toBe(true);
+      expect(colours(animate(name, 'look')).has('#FFFFFF')).toBe(true);
+      expect(colours(animate(name, 'hop')).has('#E8E0D2')).toBe(true);
+      const cheer = animate(name, 'cheer', { rarity: false }), rest = animate(name, 'blink').frames[0];
+      expect(cheer.frames.some(f => JSON.stringify(f.colors) !== JSON.stringify(rest.colors))).toBe(true);
+    }
+  });
+
   test('frameAt loops, or holds the last frame when played once', () => {
     const a = animate('bob', 'hop');
     expect(frameAt(a, 0)).toBe(a.frames[0]);
