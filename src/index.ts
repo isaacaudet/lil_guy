@@ -46,6 +46,8 @@ export type { Item, Slot } from "./items";
 export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, slotOf, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from "./owned";
 export type { Owned, Finish, Grade } from "./owned";
 export { paint } from "./paint";
+export { animate, frameAt, drawFrame, toAnimatedSvg, closeEyes, MOVES, HEADROOM, FRAME_WIDTH, FRAME_HEIGHT } from "./animate";
+export type { Move, Animation, AnimationFrame, AnimateOptions, AnimatedSvgOptions, PixelTarget } from "./animate";
 
 // ============================================================================
 // Utilities

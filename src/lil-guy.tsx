@@ -1,7 +1,8 @@
 import * as React from "react";
 import { resolve } from "./resolve";
 import { dress, withItems } from "./items";
-import { compose, composeBase } from "./compose";
+import { compose } from "./compose";
+import { closeEyes } from "./animate";
 import { hash } from "./hash";
 import { getPalette, shadePalette } from "./palette";
 import { paint } from "./paint";
@@ -256,27 +257,9 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 				return out;
 			};
 
-			// Closed-eye frame: drop every eye pixel to the bottom row of that
-			// eye and fill the vacated cells with whatever the body would have
-			// shown. Derived rather than hand-drawn, so it works for all of the
-			// eye parts and for any that get added later.
-			const shut = grid.map(row => [...row]);
-			const bare = composeBase(cfg);
-			// Only the eyes, not the mouth: both are drawn in the same ink, so
-			// the scan is limited to the rows above the mouth.
-			const EYE = 5, SHINE = 6;
-			const EYE_TOKENS = new Set([EYE, SHINE]);
-			const mouthTop = grid.findIndex(row => row.includes(8));
-			const eyeRows = mouthTop === -1 ? GRID_SIZE : mouthTop;
-			for (let x = 0; x < GRID_SIZE; x++) {
-				let lowest = -1;
-				for (let y = 0; y < eyeRows; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
-				if (lowest === -1) continue;
-				for (let y = 0; y < eyeRows; y++) {
-					if (!EYE_TOKENS.has(grid[y][x])) continue;
-					shut[y][x] = y === lowest ? EYE : (bare[y][x] ?? 0);
-				}
-			}
+			// Closed-eye frame: the same one the animations use, derived from the
+			// eye pixels so it works for every eye part.
+			const shut = closeEyes(grid, cfg);
 
 			return {
 				rects: toRects(grid, ''),

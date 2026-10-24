@@ -3787,10 +3787,22 @@ Object.defineProperty(exports, 'GRID_SIZE', {
     return GRID_SIZE;
   }
 });
+Object.defineProperty(exports, 'LAYER', {
+  enumerable: true,
+  get: function () {
+    return LAYER;
+  }
+});
 Object.defineProperty(exports, 'SHADE_COUNT', {
   enumerable: true,
   get: function () {
     return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, 'T', {
+  enumerable: true,
+  get: function () {
+    return T;
   }
 });
 Object.defineProperty(exports, 'WEAR', {
@@ -4051,4 +4063,4 @@ Object.defineProperty(exports, 'withItems', {
     return withItems;
   }
 });
-//# sourceMappingURL=paint-CEdAVl-u.cjs.map
+//# sourceMappingURL=paint-D3pYVnkK.cjs.map

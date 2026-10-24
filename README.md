@@ -192,6 +192,43 @@ Returns a PNG data URL. Browser only.
 
 Creates a Next.js route handler. Returns `{ GET }`.
 
+## Animations
+
+Nine moves for games: `idle`, `blink`, `hop`, `wave`, `look`, `cheer`, `sad`,
+`dance` and `squish`. They take the same options as `toSvgString`, so a guy
+hops in the hat he is wearing.
+
+```ts
+import { toAnimatedSvg, animate, frameAt, drawFrame } from "lil_guy";
+
+// One self-contained SVG that plays by itself: inline it or use it as an <img>.
+el.innerHTML = toAnimatedSvg("alice", "cheer", { game: "puttsies", size: 96 });
+
+// Or draw the frames yourself, in a canvas game loop.
+const hop = animate("alice", "hop", { equip: [savedCopy] });
+drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);
+```
+
+Frames are 16 wide and 20 tall: the guy stands in the bottom 16 rows exactly
+as in the still, and the top 4 are room to jump into. Every frame is made from
+his own pixels. A squash loses a row from the middle of the body and a stretch
+repeats one; a blink or a glance moves the eye pixels. Nothing is scaled.
+
+Rarity shows in the frames, so it reads without a shader. The best copy he is
+wearing sets how much:
+
+| Grade | In the frames |
+|---|---|
+| Everyday | nothing extra |
+| Special | a shine sweeps across the item |
+| Prized | and a ring in the grade's colour pulses round him |
+| Mythic | and sparkles |
+| ★ Grail | a gold ring and more sparkles |
+
+`rarity: false` turns it off. `once: true` plays the SVG once and holds the
+last frame. The SVG plays whatever the reduced-motion setting is, as the DLE
+Club games do; pass `stillWhenReduced: true` to hold the first frame instead.
+
 ## How It Works
 
 1. **Hash** — FNV-1a hash of the input string, with an independent hash for each slot, so adding a part to one slot never reshuffles the others

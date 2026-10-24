@@ -3726,5 +3726,5 @@ function paint(grid, config, palette) {
 }
 
 //#endregion
-export { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteWeights, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems };
-//# sourceMappingURL=paint-BCgcWA-v.js.map
+export { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, LAYER, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteWeights, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems };
+//# sourceMappingURL=paint-DTjQOrbR.js.map

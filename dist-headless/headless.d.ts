@@ -541,6 +541,84 @@ declare const accessories: Accessory[];
 declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette): (string | null)[][];
 
 //#endregion
+//#region src/animate.d.ts
+/**
+ * Animations for games: a guy that hops, waves, cheers, sulks.
+ *
+ * Every move is a short list of frames drawn on the same pixels as the still
+ * avatar — the body squashes by losing a row and stretches by repeating one,
+ * eyes close and glance by moving their own pixels — so nothing is ever
+ * resampled or blurred. Frames are 16 wide and 20 tall: the guy stands in the
+ * bottom 16 rows exactly as he does in the still, and the 4 rows above are
+ * room to jump into.
+ *
+ * Rarity shows in the frames too, so it reads in any game without a shader:
+ * from Special up a shine sweeps across the item, from Prized up a ring in the
+ * grade's colour pulses around the guy, and Mythic and Grail copies throw off
+ * sparkles.
+ */
+declare const MOVES: readonly ["idle", "blink", "hop", "wave", "look", "cheer", "sad", "dance", "squish"];
+type Move = (typeof MOVES)[number];
+/** Rows of room above the guy for jumps. */
+declare const HEADROOM = 4;
+declare const FRAME_WIDTH = 16;
+declare const FRAME_HEIGHT: number;
+interface AnimationFrame {
+  /** FRAME_HEIGHT rows of FRAME_WIDTH colours; null is transparent. */
+  colors: (string | null)[][];
+  /** How long the frame shows. */
+  ms: number;
+}
+interface Animation {
+  move: Move;
+  width: number;
+  height: number;
+  frames: AnimationFrame[];
+  /** All the frames' times added up. */
+  duration: number;
+}
+interface AnimateOptions extends RenderOptions {
+  /** Show the best equipped copy's grade: shine, aura and sparkles. Default true. */
+  rarity?: boolean;
+}
+/**
+ * The same guy with his eyes shut: each eye drops to a line on its bottom row
+ * and the cells it leaves show whatever the body has there. Derived, not
+ * drawn, so it works for every eye part.
+ */
+declare function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid;
+/**
+ * Builds the frames of a move for the guy `input` would render as. Takes the
+ * same options as `toSvgString` (game, equip, parts, palette).
+ */
+declare function animate(input: string, move: Move, options?: AnimateOptions): Animation;
+/** The frame showing `ms` into the animation, looping unless `once`. */
+declare function frameAt(animation: Animation, ms: number, once?: boolean): AnimationFrame;
+/** Anything with a 2D canvas's fillStyle and fillRect: a canvas, an OffscreenCanvas, a test double. */
+interface PixelTarget {
+  fillStyle: string | CanvasGradient | CanvasPattern;
+  fillRect(x: number, y: number, w: number, h: number): void;
+}
+/** Draws a frame at (x, y), each pixel `scale` units square. */
+declare function drawFrame(ctx: PixelTarget, frame: AnimationFrame, x?: number, y?: number, scale?: number): void;
+interface AnimatedSvgOptions extends AnimateOptions {
+  /** Width in pixels; the height is a quarter more. Default 128. */
+  size?: number;
+  /** Play once and hold the last frame. Default false: loop. */
+  once?: boolean;
+  /**
+   * Hold still on the first frame when the viewer asks for reduced motion.
+   * Off by default: the DLE Club games play motion whatever that setting says.
+   */
+  stillWhenReduced?: boolean;
+}
+/**
+ * The animation as one self-contained SVG: every frame is a group, and a CSS
+ * animation shows them in turn. Works as an <img>, inline, or as a file.
+ */
+declare function toAnimatedSvg(input: string, move: Move, options?: AnimatedSvgOptions): string;
+
+//#endregion
 //#region src/render-string.d.ts
 /**
  * Generates a complete SVG string for a lil_guy avatar.
@@ -597,4 +675,4 @@ declare function guyOneIn(config: AvatarConfig): number;
 declare function copyOneIn(o: Owned): number;
 
 //#endregion
-export { AvatarConfig, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, Intensity3D, Item, Owned, Palette, PixelGrid, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, bodies, cheeks, compose, composeBase, copyOneIn, decode, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, nebulaPhase, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, traitOdds, wearOf, withItems };
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, MOVES, Move, Owned, Palette, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, nebulaPhase, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toAnimatedSvg, toPng, toSvgString, traitOdds, wearOf, withItems };

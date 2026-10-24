@@ -1,8 +1,518 @@
 "use strict";
-const require_paint = require('./paint-CEdAVl-u.cjs');
+const require_paint = require('./paint-D3pYVnkK.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
+//#region src/animate.ts
+/**
+* Animations for games: a guy that hops, waves, cheers, sulks.
+*
+* Every move is a short list of frames drawn on the same pixels as the still
+* avatar — the body squashes by losing a row and stretches by repeating one,
+* eyes close and glance by moving their own pixels — so nothing is ever
+* resampled or blurred. Frames are 16 wide and 20 tall: the guy stands in the
+* bottom 16 rows exactly as he does in the still, and the 4 rows above are
+* room to jump into.
+*
+* Rarity shows in the frames too, so it reads in any game without a shader:
+* from Special up a shine sweeps across the item, from Prized up a ring in the
+* grade's colour pulses around the guy, and Mythic and Grail copies throw off
+* sparkles.
+*/
+const MOVES = [
+	"idle",
+	"blink",
+	"hop",
+	"wave",
+	"look",
+	"cheer",
+	"sad",
+	"dance",
+	"squish"
+];
+/** Rows of room above the guy for jumps. */
+const HEADROOM = 4;
+const FRAME_WIDTH = require_paint.GRID_SIZE;
+const FRAME_HEIGHT = require_paint.GRID_SIZE + HEADROOM;
+const b = (pose, ms, more = {}) => ({
+	pose,
+	ms,
+	...more
+});
+const HOP = [
+	b("base", 90, { squash: 1 }),
+	b("base", 70, {
+		squash: -1,
+		dy: -2
+	}),
+	b("base", 130, { dy: -4 }),
+	b("base", 70, { dy: -3 }),
+	b("base", 60, {
+		squash: -1,
+		dy: -1
+	}),
+	b("base", 100, { squash: 2 }),
+	b("base", 80, { squash: 1 })
+];
+const BEATS = {
+	idle: () => [
+		b("base", 700),
+		b("base", 500, { squash: 1 }),
+		b("base", 700),
+		b("shut", 120),
+		b("base", 480),
+		b("base", 500, { squash: 1 })
+	],
+	blink: () => [b("base", 2400), b("shut", 140)],
+	hop: () => [...HOP, b("base", 700)],
+	wave: (canWave) => canWave ? [
+		b("wave", 220),
+		b("sides", 200),
+		b("wave", 220),
+		b("sides", 200),
+		b("wave", 220),
+		b("base", 700)
+	] : [
+		b("base", 200, { dx: -1 }),
+		b("base", 200),
+		b("base", 200, { dx: 1 }),
+		b("base", 200),
+		b("base", 700)
+	],
+	look: () => [
+		b("base", 500),
+		b("left", 700),
+		b("base", 250),
+		b("right", 700),
+		b("base", 250),
+		b("shut", 120),
+		b("base", 400)
+	],
+	cheer: (canWave) => {
+		const arm = canWave ? "wave" : "base";
+		const up = [
+			b("base", 80, { squash: 1 }),
+			b(arm, 60, {
+				squash: -1,
+				dy: -2,
+				stars: true
+			}),
+			b(arm, 150, {
+				dy: -4,
+				stars: true
+			}),
+			b(arm, 70, {
+				dy: -3,
+				stars: true
+			}),
+			b("base", 90, { squash: 2 })
+		];
+		return [
+			...up,
+			...up,
+			b(arm, 220, { stars: true }),
+			b(canWave ? "sides" : "base", 220),
+			b("base", 400)
+		];
+	},
+	sad: () => [
+		b("shut", 900, {
+			squash: 1,
+			drop: true
+		}),
+		b("shut", 700, {
+			squash: 2,
+			drop: true
+		}),
+		b("shut", 900, {
+			squash: 1,
+			drop: true
+		}),
+		b("base", 500, { squash: 1 })
+	],
+	dance: () => [
+		b("base", 180, {
+			dx: -1,
+			squash: 1
+		}),
+		b("base", 180),
+		b("base", 180, {
+			dx: 1,
+			squash: 1,
+			turn: true
+		}),
+		b("base", 180, { turn: true })
+	],
+	squish: () => [
+		b("base", 90, { squash: 2 }),
+		b("base", 80, { squash: -2 }),
+		b("base", 80, { squash: 1 }),
+		b("base", 70, { squash: -1 }),
+		b("base", 700)
+	]
+};
+const EYE_TOKENS = new Set([require_paint.T.EYE, require_paint.T.WHITE]);
+/** The row the bottom of the eyes sits on, for this guy's shape or skin. */
+function eyeLineOf(config) {
+	const skin = require_paint.itemById(config.skin);
+	return skin?.slot === "skin" ? skin.eyes : require_paint.heads[config.head].eyes;
+}
+/** The bare body, mirrored the same way as the finished guy. */
+function bareOf(config) {
+	const bare = require_paint.composeBase(config);
+	if (config.flip) for (const row of bare) row.reverse();
+	return bare;
+}
+/** Eye pixels: eye ink and eye shine in the rows the eyes are drawn on. */
+function eyeCells(grid, config) {
+	const line = eyeLineOf(config);
+	const out = [];
+	for (let y = Math.max(0, line - 3); y <= line; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) if (EYE_TOKENS.has(grid[y][x])) out.push([x, y]);
+	return out;
+}
+/**
+* The same guy with his eyes shut: each eye drops to a line on its bottom row
+* and the cells it leaves show whatever the body has there. Derived, not
+* drawn, so it works for every eye part.
+*/
+function closeEyes(grid, config) {
+	const shut = grid.map((row) => [...row]);
+	const bare = bareOf(config);
+	const lowest = new Map();
+	for (const [x, y] of eyeCells(grid, config)) lowest.set(x, Math.max(lowest.get(x) ?? -1, y));
+	for (const [x, y] of eyeCells(grid, config)) shut[y][x] = y === lowest.get(x) ? require_paint.T.EYE : bare[y][x] ?? 0;
+	return shut;
+}
+/** The same guy glancing sideways: his eye pixels move one column, staying on his face. */
+function glance(grid, config, dx) {
+	const out = grid.map((row) => [...row]);
+	const bare = bareOf(config);
+	const cells = eyeCells(grid, config);
+	for (const [x, y] of cells) out[y][x] = bare[y][x] ?? 0;
+	for (const [x, y] of cells) {
+		const nx = x + dx;
+		if (nx >= 0 && nx < require_paint.GRID_SIZE && bare[y][nx]) out[y][nx] = grid[y][x];
+	}
+	return out;
+}
+const rgb = (h) => [
+	1,
+	3,
+	5
+].map((i) => parseInt(h.slice(i, i + 2), 16));
+const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix = (a, b$1, t) => {
+	const x = rgb(a), y = rgb(b$1);
+	return hex([
+		0,
+		1,
+		2
+	].map((i) => x[i] + (y[i] - x[i]) * t));
+};
+const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
+/** Paints a pose and keeps track of which pixels belong to a worn item. */
+function painted(grid, config, palette) {
+	const colors = require_paint.paint(grid, config, palette);
+	const out = empty();
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		const c = colors[y][x];
+		if (c) out[y + HEADROOM][x] = {
+			c,
+			item: t >= require_paint.LAYER.skin && t < require_paint.LAYER.frame
+		};
+	}));
+	return out;
+}
+/** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
+function squash(layer, n) {
+	if (!n) return layer;
+	let last = -1, first = -1;
+	layer.forEach((row, y) => {
+		if (row.some(Boolean)) {
+			if (first < 0) first = y;
+			last = y;
+		}
+	});
+	if (last < 0) return layer;
+	const r = Math.max(first + 2, last - 3);
+	const rows = layer.map((row) => [...row]);
+	if (n > 0) {
+		const blank = Array.from({ length: n }, () => new Array(FRAME_WIDTH).fill(null));
+		return [
+			...blank,
+			...rows.slice(0, r - n + 1),
+			...rows.slice(r + 1)
+		];
+	}
+	const k = -n;
+	return [
+		...rows.slice(k, r + 1),
+		...Array.from({ length: k }, () => [...rows[r]]),
+		...rows.slice(r + 1)
+	];
+}
+function shift(layer, dx, dy) {
+	const out = empty();
+	layer.forEach((row, y) => row.forEach((cell, x) => {
+		const nx = x + dx, ny = y + dy;
+		if (cell && nx >= 0 && ny >= 0 && nx < FRAME_WIDTH && ny < FRAME_HEIGHT) out[ny][nx] = cell;
+	}));
+	return out;
+}
+const NEIGHBOURS = [
+	[1, 0],
+	[-1, 0],
+	[0, 1],
+	[0, -1]
+];
+/** Empty cells touching the guy. */
+function rim(layer) {
+	const out = [];
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
+		if (layer[y][x]) continue;
+		if (NEIGHBOURS.some(([dx, dy]) => layer[y + dy]?.[x + dx])) out.push([x, y]);
+	}
+	return out;
+}
+/** A four-point twinkle, only where there is nothing. */
+function twinkle(layer, x, y, centre, arms) {
+	const cells = [
+		[
+			x,
+			y,
+			centre
+		],
+		[
+			x - 1,
+			y,
+			arms
+		],
+		[
+			x + 1,
+			y,
+			arms
+		],
+		[
+			x,
+			y - 1,
+			arms
+		],
+		[
+			x,
+			y + 1,
+			arms
+		]
+	];
+	if (!cells.every(([cx, cy]) => cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx])) return;
+	for (const [cx, cy, c] of cells) layer[cy][cx] = {
+		c,
+		item: false
+	};
+}
+/** Where sparkles may go: around the guy, clear of him. */
+const SPARKLE_SPOTS = [
+	[2, 6],
+	[13, 8],
+	[1, 13],
+	[14, 15],
+	[7, 1],
+	[2, 18],
+	[13, 2],
+	[12, 18]
+];
+/**
+* Builds the frames of a move for the guy `input` would render as. Takes the
+* same options as `toSvgString` (game, equip, parts, palette).
+*/
+function animate(input, move, options = {}) {
+	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
+	const palette = require_paint.withItems(options.palette ?? require_paint.shadePalette(require_paint.getPalette(config.palette), config.shade), config);
+	const figure = {
+		...config,
+		frame: void 0
+	};
+	const grids = new Map();
+	const grid = (pose) => {
+		if (!grids.has(pose)) {
+			const base = require_paint.compose(figure);
+			grids.set(pose, pose === "base" ? base : pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : require_paint.compose({
+				...figure,
+				arms: pose === "wave" ? 2 : 1
+			}));
+		}
+		return grids.get(pose);
+	};
+	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
+	const layers = new Map();
+	const layerOf = (pose) => {
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette));
+		return layers.get(pose);
+	};
+	let backdrop = null;
+	const frameItem = require_paint.itemById(config.frame);
+	if (frameItem?.slot === "frame") {
+		const tall = Array.from({ length: require_paint.GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: require_paint.GRID_SIZE }, (_$1, x) => require_paint.LAYER.frame + frameItem.fill(x, y + 48) - 1));
+		const colors = require_paint.paint(tall, config, palette);
+		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? require_paint.GRID_SIZE - HEADROOM + y : y - HEADROOM]);
+	}
+	const copies = Object.values(config.owned ?? {}).filter(Boolean);
+	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id)));
+	const gradeColor = grade >= 0 ? require_paint.GRADES[grade].color : "#FFFFFF";
+	const seed = require_paint.hash(input) % 997;
+	const beats = BEATS[move](canWave);
+	const slices = [];
+	let t = 0;
+	for (const beat of beats) {
+		const n = grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		for (let i = 0; i < n; i++) {
+			const ms = Math.round(beat.ms / n);
+			slices.push({
+				beat,
+				ms,
+				t
+			});
+			t += ms;
+		}
+	}
+	const frames = slices.map(({ beat, ms, t: t$1 }) => {
+		let layer = layerOf(beat.pose);
+		if (beat.turn) layer = layer.map((row) => [...row].reverse());
+		layer = squash(layer, beat.squash ?? 0);
+		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
+		if (grade >= 1) {
+			const at = (t$1 + seed) % 1600 / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+			layer.forEach((row, y) => row.forEach((cell, x) => {
+				if (!cell?.item) return;
+				const d = Math.abs(x + y - at);
+				if (d < 1) cell.c = mix(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix(cell.c, "#FFFFFF", .25);
+			}));
+		}
+		const aura = grade >= 2 ? rim(layer) : [];
+		if (beat.stars) {
+			const gold = palette.colors[require_paint.T.GOLD] ?? "#F2C230";
+			twinkle(layer, 2, 3, "#FFFFFF", gold);
+			twinkle(layer, 13, 2, "#FFFFFF", gold);
+			if (Math.floor(t$1 / 120) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
+		}
+		if (beat.drop) {
+			let top = -1;
+			layer.forEach((row$1, y) => {
+				if (top < 0 && row$1.some(Boolean)) top = y;
+			});
+			const row = layer[top + 2];
+			const right = row ? row.reduce((r, cell, x) => cell ? x : r, -1) : -1;
+			for (const [x, y, c] of [[
+				right + 1,
+				top + 1,
+				"#CFEFFF"
+			], [
+				right + 1,
+				top + 2,
+				"#7CC4F2"
+			]]) if (right >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
+				c,
+				item: false
+			};
+		}
+		if (grade >= 2) {
+			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
+			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
+			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
+				c: ring,
+				item: false
+			};
+		}
+		if (grade >= 3) {
+			const count = grade === 4 ? 4 : 3;
+			SPARKLE_SPOTS.slice(0, count + 2).forEach(([x, y], k) => {
+				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
+			});
+		}
+		const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+		return {
+			colors,
+			ms
+		};
+	});
+	return {
+		move,
+		width: FRAME_WIDTH,
+		height: FRAME_HEIGHT,
+		frames,
+		duration: t
+	};
+}
+/** The frame showing `ms` into the animation, looping unless `once`. */
+function frameAt(animation, ms, once = false) {
+	const { frames, duration } = animation;
+	let t = once ? Math.min(ms, duration - 1) : (ms % duration + duration) % duration;
+	for (const frame of frames) {
+		if (t < frame.ms) return frame;
+		t -= frame.ms;
+	}
+	return frames[frames.length - 1];
+}
+/** Draws a frame at (x, y), each pixel `scale` units square. */
+function drawFrame(ctx, frame, x = 0, y = 0, scale = 1) {
+	frame.colors.forEach((row, py) => row.forEach((c, px) => {
+		if (!c) return;
+		ctx.fillStyle = c;
+		ctx.fillRect(x + px * scale, y + py * scale, scale, scale);
+	}));
+}
+function runs(row) {
+	const out = [];
+	let start = 0, current = null;
+	for (let x = 0; x <= row.length; x++) {
+		const c = x < row.length ? row[x] : null;
+		if (c === current) continue;
+		if (current !== null) out.push({
+			x: start,
+			width: x - start,
+			color: current
+		});
+		current = c;
+		start = x;
+	}
+	return out;
+}
+/**
+* The animation as one self-contained SVG: every frame is a group, and a CSS
+* animation shows them in turn. Works as an <img>, inline, or as a file.
+*/
+function toAnimatedSvg(input, move, options = {}) {
+	const anim = animate(input, move, options);
+	const size = options.size ?? 128;
+	const id = `lg${require_paint.hash(`${input}|${move}|${JSON.stringify({
+		...options,
+		size: 0
+	})}`).toString(36)}`;
+	const pct = (ms) => +(ms / anim.duration * 100).toFixed(3);
+	let at = 0;
+	const css = [`.${id} g{visibility:hidden;animation-duration:${anim.duration}ms;animation-timing-function:step-end;animation-iteration-count:${options.once ? 1 : "infinite"};animation-fill-mode:${options.once ? "forwards" : "none"}}`];
+	const groups = anim.frames.map((frame, i) => {
+		const start = pct(at), end = pct(at + frame.ms);
+		at += frame.ms;
+		const last = i === anim.frames.length - 1;
+		const keys = i === 0 ? `0%{visibility:visible}${end}%{visibility:hidden}${last ? "" : "100%{visibility:hidden}"}` : `0%{visibility:hidden}${start}%{visibility:visible}${last ? "100%{visibility:visible}" : `${end}%{visibility:hidden}100%{visibility:hidden}`}`;
+		css.push(`.${id} .f${i}{animation-name:${id}-${i}}@keyframes ${id}-${i}{${keys}}`);
+		const rects = frame.colors.flatMap((row, y) => runs(row).map((r) => `<rect x="${r.x}" y="${y}" width="${r.width}" height="1" fill="${r.color}"/>`));
+		return `<g class="f${i}">${rects.join("")}</g>`;
+	});
+	if (options.stillWhenReduced) css.push(`@media (prefers-reduced-motion: reduce){.${id} g{animation:none}.${id} .f0{visibility:visible}}`);
+	const labelled = typeof options.title === "string" && options.title.length > 0;
+	return [
+		`<svg xmlns="http://www.w3.org/2000/svg" class="${id}" width="${size}" height="${size * FRAME_HEIGHT / FRAME_WIDTH}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
+		labelled ? `<title>${options.title.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;")}</title>` : "",
+		`<style>${css.join("")}</style>`,
+		...groups,
+		"</svg>"
+	].join("");
+}
+
+//#endregion
 //#region src/lil-guy.tsx
 const INTENSITY_PRESETS = {
 	none: {
@@ -138,21 +648,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 			}
 			return out;
 		};
-		const shut = grid.map((row) => [...row]);
-		const bare = require_paint.composeBase(cfg);
-		const EYE = 5, SHINE = 6;
-		const EYE_TOKENS = new Set([EYE, SHINE]);
-		const mouthTop = grid.findIndex((row) => row.includes(8));
-		const eyeRows = mouthTop === -1 ? require_paint.GRID_SIZE : mouthTop;
-		for (let x = 0; x < require_paint.GRID_SIZE; x++) {
-			let lowest = -1;
-			for (let y = 0; y < eyeRows; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
-			if (lowest === -1) continue;
-			for (let y = 0; y < eyeRows; y++) {
-				if (!EYE_TOKENS.has(grid[y][x])) continue;
-				shut[y][x] = y === lowest ? EYE : bare[y][x] ?? 0;
-			}
-		}
+		const shut = closeEyes(grid, cfg);
 		return {
 			rects: toRects(grid, ""),
 			shutRects: toRects(shut, "s"),
@@ -488,13 +984,13 @@ AvatarImage.displayName = "AvatarImage";
 * merging runs cuts the rect count by well over half.
 */
 function rowRuns(colors, y) {
-	const runs = [];
+	const runs$1 = [];
 	let start = -1;
 	let current = null;
 	for (let x = 0; x <= require_paint.GRID_SIZE; x++) {
 		const color = x < require_paint.GRID_SIZE ? colors[y][x] : null;
 		if (color === current) continue;
-		if (current !== null) runs.push({
+		if (current !== null) runs$1.push({
 			x: start,
 			width: x - start,
 			color: current
@@ -502,7 +998,7 @@ function rowRuns(colors, y) {
 		current = color;
 		start = x;
 	}
-	return runs;
+	return runs$1;
 }
 function escapeText(value) {
 	return value.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;");
@@ -636,7 +1132,7 @@ function getColor(colors, index) {
 
 //#endregion
 //#region src/rarity.ts
-const share = (weights, i) => weights[i] / weights.reduce((a, b) => a + b, 0);
+const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
 /** Each visible trait of a guy and how likely it was. */
 function traitOdds(config) {
 	return [
@@ -711,22 +1207,30 @@ exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
 exports.FINISHES = require_paint.FINISHES
 exports.FOOT_STYLES = require_paint.FOOT_STYLES
+exports.FRAME_HEIGHT = FRAME_HEIGHT
+exports.FRAME_WIDTH = FRAME_WIDTH
 exports.GAMES = require_paint.GAMES
 exports.GRADES = require_paint.GRADES
 exports.GRID_SIZE = require_paint.GRID_SIZE
+exports.HEADROOM = HEADROOM
 exports.LilGuy = LilGuy
+exports.MOVES = MOVES
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
+exports.animate = animate
 exports.bodies = require_paint.bodies
 exports.cheeks = require_paint.cheeks
+exports.closeEyes = closeEyes
 exports.compose = require_paint.compose
 exports.composeBase = require_paint.composeBase
 exports.copyOneIn = copyOneIn
 exports.decode = require_paint.decode
+exports.drawFrame = drawFrame
 exports.dress = require_paint.dress
 exports.encode = require_paint.encode
 exports.eyes = require_paint.eyes
+exports.frameAt = frameAt
 exports.freeItem = require_paint.freeItem
 exports.gameItems = require_paint.gameItems
 exports.getColor = getColor
@@ -752,6 +1256,7 @@ exports.shadePalette = require_paint.shadePalette
 exports.slotOf = require_paint.slotOf
 exports.special = require_paint.special
 exports.starter = require_paint.starter
+exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
 exports.toSvgString = toSvgString
 exports.traitOdds = traitOdds
