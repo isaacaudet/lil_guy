@@ -4935,6 +4935,12 @@ Object.defineProperty(exports, 'accessoryWeights', {
     return accessoryWeights;
   }
 });
+Object.defineProperty(exports, 'armWeights', {
+  enumerable: true,
+  get: function () {
+    return armWeights;
+  }
+});
 Object.defineProperty(exports, 'bodies', {
   enumerable: true,
   get: function () {
@@ -4999,6 +5005,12 @@ Object.defineProperty(exports, 'eyes', {
   enumerable: true,
   get: function () {
     return eyes;
+  }
+});
+Object.defineProperty(exports, 'footWeights', {
+  enumerable: true,
+  get: function () {
+    return footWeights;
   }
 });
 Object.defineProperty(exports, 'freeItem', {
@@ -5169,6 +5181,12 @@ Object.defineProperty(exports, 'shadePalette', {
     return shadePalette;
   }
 });
+Object.defineProperty(exports, 'shadeWeights', {
+  enumerable: true,
+  get: function () {
+    return shadeWeights;
+  }
+});
 Object.defineProperty(exports, 'slotOf', {
   enumerable: true,
   get: function () {
@@ -5211,4 +5229,4 @@ Object.defineProperty(exports, 'withItems', {
     return withItems;
   }
 });
-//# sourceMappingURL=paint-DHSa5q-6.cjs.map
+//# sourceMappingURL=paint-Dy-OQNX6.cjs.map

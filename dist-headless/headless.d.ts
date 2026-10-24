@@ -805,6 +805,17 @@ declare function decodeLook(code: string, own?: AvatarConfig): Look | null;
 declare function lookOf(seed: string, code?: string): AvatarConfig;
 
 //#endregion
+//#region src/guy.d.ts
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+declare function encodeGuy(config: AvatarConfig): string;
+/**
+ * A code back into a guy, or null for anything that isn't a version-1 code
+ * this library can draw: another version, a field missing, or one out of range.
+ * He comes back bare: items are worn on top with `dress`.
+ */
+declare function decodeGuy(code: string): AvatarConfig | null;
+
+//#endregion
 //#region src/share.d.ts
 /**
  * A card to share a copy: the guy wearing it, big, and what makes it rare.
@@ -841,4 +852,4 @@ interface Shine {
 declare function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine | null;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, TraitOdds, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, wearOf, withItems };
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, TraitOdds, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeGuy, decodeLook, drawFrame, dress, encode, encodeGuy, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, wearOf, withItems };

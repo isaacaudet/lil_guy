@@ -1,4 +1,4 @@
-import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-BG-71PIl.js";
+import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, armWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, footWeights, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-518pcjWU.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -1597,6 +1597,58 @@ function lookOf(seed, code = "") {
 }
 
 //#endregion
+//#region src/guy.ts
+/**
+* A whole guy as a short code, for showing him where his seed must not go.
+*
+* A seed is private and kept for good: anyone holding it could draw every
+* guy the player will ever be dealt. A board shows other people's guys, so it
+* sends this instead: every visible field of the guy as he is, picked look
+* and all, and nothing that leads back to the seed. Codes are versioned
+* (`g1:`), so a later change to the fields can't misread an old one.
+*/
+/** The fields in a version-1 code, in order, with how many values each can take. */
+const FIELDS = [
+	["head", headWeights.length],
+	["eyes", eyeWeights.length],
+	["mouth", mouthWeights.length],
+	["cheeks", cheekWeights.length],
+	["hair", hairWeights.length],
+	["body", bodyWeights.length],
+	["accessory", accessoryWeights.length],
+	["palette", paletteWeights.length],
+	["shade", shadeWeights.length],
+	["feet", footWeights.length],
+	["arms", armWeights.length],
+	["rotation", 9],
+	["flip", 2],
+	["lucky", 2]
+];
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+function encodeGuy(config) {
+	return "g1:" + FIELDS.map(([key]) => Number(config[key] ?? 0).toString(36)).join(".");
+}
+/**
+* A code back into a guy, or null for anything that isn't a version-1 code
+* this library can draw: another version, a field missing, or one out of range.
+* He comes back bare: items are worn on top with `dress`.
+*/
+function decodeGuy(code) {
+	if (typeof code !== "string" || !code.startsWith("g1:")) return null;
+	const values = code.slice(3).split(".");
+	if (values.length !== FIELDS.length) return null;
+	const config = {};
+	for (let i = 0; i < FIELDS.length; i++) {
+		const [key, count$1] = FIELDS[i];
+		if (!/^[0-9a-z]{1,2}$/.test(values[i])) return null;
+		const n = parseInt(values[i], 36);
+		if (n >= count$1) return null;
+		config[key] = key === "flip" || key === "lucky" ? n === 1 : n;
+	}
+	return config;
+}
+
+//#endregion
 //#region src/share.ts
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
 	"&": "&amp;",
@@ -1858,5 +1910,5 @@ function createShine(canvas) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, PINS, SHADE_COUNT, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, PINS, SHADE_COUNT, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeGuy, decodeLook, drawFrame, dress, encode, encodeGuy, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.js.map

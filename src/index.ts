@@ -61,6 +61,7 @@ export { traitOdds, guyOneIn, copyOneIn } from "./rarity";
 export type { TraitOdds } from "./rarity";
 export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf } from "./look";
 export type { Look, LookSlot } from "./look";
+export { encodeGuy, decodeGuy } from "./guy";
 export { toShareSvg } from "./share";
 export type { ShareOptions } from "./share";
 export { LilGuyAnimated, type LilGuyAnimatedProps } from "./lil-guy-animated";
