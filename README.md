@@ -372,6 +372,21 @@ a famous print if it has one, a scuff at least that low, and a tally.
 `equip` takes item ids or encoded copies. This library only draws them and
 rolls them; who owns which, and what it costs, belongs to the game or the club.
 
+### Keeping rarity real
+
+A rare guy only means something if nobody can choose one. So:
+
+- **Draw from a seed, not the name on the board.** Names can be typed, tried
+  and changed. Make a seed once with `makeSeed()`, keep it with the player and
+  draw from it (`toSvgString(seed)`, `starter(seed, game)`). The name stays a
+  label, a rename changes nothing, and nobody can search for a rare guy.
+- **A picker offers only common parts, plus the player's own.**
+  `pickable(own, slot)` lists them and `allowed(own, look)` checks a choice.
+- **Save picked looks as versioned codes.** `encodeLook({ eyes: 1 })` gives
+  `2:e1`; `decodeLook` refuses old seven-number codes, out-of-range parts and
+  rare parts the player didn't roll, and `lookOf(seed, code)` draws the
+  result.
+
 ### Upgrading from 0.1
 
 0.2 is a redraw: every name maps to a new character. The API is the same

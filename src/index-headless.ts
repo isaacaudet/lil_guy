@@ -24,3 +24,5 @@ export { toPng } from './export-png';
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from './utils/colors';
 export { traitOdds, guyOneIn, copyOneIn } from './rarity';
 export type { TraitOdds } from './rarity';
+export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf } from './look';
+export type { Look, LookSlot } from './look';
