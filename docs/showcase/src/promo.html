@@ -4,8 +4,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Pixelify+Sans:wght@600;700&display=swap">
 <style>
+  @font-face { font-family: "m6x11plus"; src: url("../fonts/m6x11plus.ttf") format("truetype"); font-style: normal; font-weight: 400; font-display: swap; }
   /* The DLE Club's look (dle-club redesign/site.css): a navy band carrying the header, the claim and the
-     rarest cards, then paper rising over its foot with round corners. Pixel type only on the cards. */
+     rarest cards, then paper rising over its foot with round corners. Pixel type on the hero and cards. */
   :root {
     color-scheme: light dark;
     --page: #fbf8f2; --card: #fff; --ink: #141414; --secondary: rgba(20,20,20,.62); --line: rgba(20,20,20,.1); --focus: #141414;
@@ -50,10 +51,10 @@
   .wallet { height: 34px; padding: 0 13px; border-radius: 11px; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--cream-line); font-variant-numeric: tabular-nums; }
   .devpill { background: var(--gold); color: #2a1a00; height: 34px; border-radius: 11px; padding: 0 12px; font-size: 13px; font-weight: 800; letter-spacing: .06em; }
   .hero { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px 48px; align-items: center; padding-top: 18px; position: relative; z-index: 2; }
-  .hero h1 { font-size: clamp(46px, 6.4vw, 78px); font-weight: 800; letter-spacing: -.035em; line-height: .98; }
+  .hero h1 { font-family: "m6x11plus", "VT323", monospace; font-size: 72px; font-weight: 400; letter-spacing: 0; line-height: 1; -webkit-font-smoothing: auto; }
   .hero h1 em { font-style: normal; color: var(--gold); }
   .hero .sub { margin: 22px 0 0; max-width: 44ch; font-size: 17px; line-height: 1.6; color: rgba(250,242,221,.86); }
-  .hero .kicker { color: var(--cream-2); }
+  .hero .kicker { color: var(--cream-2); font-family: "m6x11plus", "VT323", monospace; font-size: 18px; font-weight: 400; letter-spacing: 0; text-transform: none; }
   .hero .kicker b { color: var(--cream); }
   .recent { margin-top: 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--cream-2); }
   .faces { display: flex; }
@@ -259,7 +260,7 @@
   .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: #141414; color: #faf2dd; padding: 12px 18px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 
   @media (max-width: 1000px) {
-    .hero { grid-template-columns: 1fr; }
+    .hero { grid-template-columns: minmax(0, 1fr); }
     .odds-panel { grid-template-columns: 1fr; padding: 22px; }
     .odds-panel .stage { width: min(260px, 70%); justify-self: center; }
     .machines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -267,6 +268,7 @@
     .insp > .art-col { width: 200px; justify-self: center; }
   }
   @media (max-width: 640px) {
+    .hero h1 { font-size: 54px; }
     h2 { font-size: 28px; }
     .hand > .slot { width: 112px; margin-left: -46px; }
     .hand > .slot:nth-child(n+6) { display: none; }
@@ -278,6 +280,7 @@
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .mcard .body { padding: 10px 10px 12px 12px; gap: 8px; } .mcard h3 { font-size: 16px; } .mcard p { font-size: 12px; } .mcard .play { width: 34px; height: 34px; }
   }
+  @media (max-width: 360px) { .hero h1 { font-size: 36px; } }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -299,8 +302,8 @@
     <div class="hero">
       <div>
         <p class="kicker">DLE Club · <b id="today"></b></p>
-        <h1>One name.<br>One guy.<br><em>Nobody else's.</em></h1>
-        <p class="sub" id="sub">Claim your name and the club deals you a guy to go with it. Then fill his locker, one capsule at a time.</p>
+        <h1>See everyone's<br>claimed <em>lil guys.</em></h1>
+        <p class="sub" id="sub">Claim your own and see who everyone else got.</p>
         <div class="recent" id="recent" hidden><div class="faces" id="faces"></div><span id="recent-text"></span></div>
       </div>
 
@@ -362,7 +365,7 @@
     <div class="grid" id="grid"></div>
   </section>
 
-  <footer>A pretend collection to try the idea. Tickets are free; claimed names are shared with everyone who opens this page.</footer>
+  <footer>A pretend collection to try the idea. Tickets are free; claimed names are shared with everyone who opens this page. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>.</footer>
 </main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
@@ -717,7 +720,7 @@
   function renderClaim() {
     $('claim-form').hidden = !!state; $('claim-mine').hidden = !state;
     $('wallet-pill').hidden = !state;
-    if (!state) { paintInto($('mark-guy'), 'lilguys', []); $('sub').textContent = 'Claim your name and the club deals you a guy to go with it. Then fill his locker, one capsule at a time.'; return; }
+    if (!state) { paintInto($('mark-guy'), 'lilguys', []); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
     paintInto($('mark-guy'), state.seed, wornCodes());
     $('me-name').textContent = '@' + state.key;
     $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '1/1', bottom: 'One of one' }, false, 4));
@@ -725,7 +728,7 @@
     const n = LG.guyOneIn(guyConfig(state.seed));
     $('me-odds').textContent = `Dealt just for you. A guy like him turns up 1 in ${words(n)}.`;
     $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ 1 of 1</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
-    $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy.`;
+    $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy. See who everyone else got.`;
     $('go-free').textContent = state.free === today ? 'Open a capsule' : "Open today's free capsule";
   }
 
