@@ -32,7 +32,7 @@ describe('determinism', () => {
   });
 
   it('same input with custom palette produces identical SVG', () => {
-    const palette = palettes[3]; // Berry
+    const palette = palettes[3];
     for (const input of testInputs) {
       const a = toSvgString(input, { palette });
       const b = toSvgString(input, { palette });

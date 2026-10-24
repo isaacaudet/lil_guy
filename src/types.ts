@@ -1,53 +1,67 @@
-// 16x16 grid where each cell is a color token (0-8)
-// 0=transparent, 1=body, 2=feature, 3=pattern, 4=accent, 5=outline, 6=eye-white, 7=eye-pupil, 8=mouth
+/**
+ * A 16x16 grid where each cell is a colour token. Tokens are roles, not
+ * colours — "body", "blush", "hat" — and a palette decides what each looks
+ * like, so every part works in every colourway.
+ */
 export type PixelGrid = number[][];
 
-export type ColorToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+/**
+ *  0 transparent
+ *  1 body          2 body shade     3 body highlight   4 outline
+ *  5 eye           6 white (shine)  7 blush            8 mouth
+ *  9 tongue       10 accent        11 accent shade    12 trim
+ * 13 belly        14 leaf          15 leaf shade      16 gold
+ * 17 gold shade   18 red           19 deep shade
+ * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's,
+ * 50–58 the buddy's
+ */
+export type ColorToken = number;
 
 export interface Palette {
   name: string;
-  colors: Record<Exclude<ColorToken, 0>, string>; // token → hex color, no mapping for 0 (transparent)
+  colors: Record<number, string>; // token → hex colour; 0 is transparent
 }
+
+/** The DLE Club games that have items. */
+export type GameId =
+  | 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies'
+  | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle';
 
 export type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 
-/**
- * How a layer is positioned against the head silhouette it lands on.
- * - `field`  — drawn where authored (patterns that cover the whole guy)
- * - `face`   — follows the face block (eyes, mouth, eyewear)
- * - `top`    — rests on the crown of the head (hats, hair)
- * - `lower`  — hangs off the bottom of the body (belly motifs, bowtie)
- * - `edge`   — hugs the left/right edge of the silhouette (blush, freckles, the
- *              side bow), so an off-centre part stays on the head instead of
- *              drifting off a narrow one
- */
-export type PartPlacement = "field" | "face" | "top" | "lower" | "edge" | "float";
-
 export interface AvatarConfig {
+  /** Body silhouette. */
   head: number;
   eyes: number;
   mouth: number;
+  /** Blush, freckles or bare cheeks. */
+  cheeks: number;
+  /** Whatever sits on top: ears, a sprout, a hat. */
   hair: number;
+  /** Markings on the body: a belly patch, spots, a heart. */
   body: number;
+  /** Glasses, a bow tie, a scarf. */
   accessory: number;
-  palette: number;
-  rotation: number; // index into SPHERE_POSITIONS
-  /**
-   * Mirror the finished character horizontally. Nearly half the part library
-   * is asymmetric — the side bow, the wink, the sash, the monocle — so this is
-   * a different-looking guy rather than a duplicate.
-   */
-  flip: boolean;
-  /**
-   * Tone of the palette: 0 soft, 1 as authored, 2 deep. Applied to the body,
-   * feature, pattern, accent, outline and mouth tokens; the eye white and
-   * pupil are left alone so the face keeps its contrast.
-   */
-  shade: number;
-  /** Index into FOOT_STYLES — 0 keeps whatever the head was drawn with. */
+  /** Arm pose: none, by the sides, waving, both up. */
+  arms: number;
+  /** Feet: little nubs, wide paws, or tucked away. */
   feet: number;
-  /** 0 draws body patterns in the pattern colour, 1 in the accent colour. */
-  patternTone: number;
+  palette: number;
+  /** Colour tone: 0 pastel, 1 as authored, 2 vivid. */
+  shade: number;
+  /** Mirror the finished character. */
+  flip: boolean;
+  /** The rare Lucky colour variant: about one name in 400. */
+  lucky?: boolean;
+  rotation: number; // index into SPHERE_POSITIONS
+  /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
+  skin?: string;
+  hat?: string;
+  frame?: string;
+  /** A tiny pet that sits beside him. */
+  buddy?: string;
+  /** The owned copies behind those items, if known: finish, scuff, print. */
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', import('./owned').Owned>>;
 }
 
 export interface RenderOptions {
@@ -55,6 +69,18 @@ export interface RenderOptions {
   square?: boolean;
   palette?: Palette;
   parts?: Partial<Omit<AvatarConfig, 'palette'>>;
+  /**
+   * Dress the guy for a game: he wears that game's free hat unless `equip`
+   * says otherwise. The guy himself — face, shape, colours — stays the same in
+   * every game, so a player is recognisable everywhere.
+   */
+  game?: GameId;
+  /**
+   * What to wear, at most one per slot; later entries win. Each entry is an
+   * item id (`puttsies.ball`) or an owned copy from `encode`
+   * (`puttsies.ball~nebula~0.0123456~20`). Anything unrecognised is ignored.
+   */
+  equip?: string[];
   /**
    * Accessible name for the avatar. Omit when the avatar sits beside the name
    * it represents — it is then marked decorative, which is what a screen

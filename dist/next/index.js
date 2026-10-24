@@ -1,4 +1,4 @@
-import { GRID_SIZE, compose, getPalette, resolve, resolveColor, shadePalette } from "../palette-B1shCbhb.js";
+import { GRID_SIZE, compose, dress, paint, paletteOf, resolve, withItems } from "../paint-BG-71PIl.js";
 import { jsx } from "react/jsx-runtime";
 import { ImageResponse } from "next/og";
 
@@ -7,15 +7,17 @@ import { ImageResponse } from "next/og";
 * Static LilGuy image component for use with Next.js ImageResponse (Satori).
 * Uses only Satori-compatible CSS (flexbox, no CSS grid, no SVG foreignObject).
 */
-function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides }) {
-	const config = resolve(name, partOverrides);
-	const palette = customPalette ?? shadePalette(getPalette(config.palette), config.shade);
-	const grid = compose(config);
+function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides, game, equip }) {
+	const config = dress(resolve(name, partOverrides), {
+		game,
+		equip
+	}, name);
+	const palette = withItems(customPalette ?? paletteOf(config), config);
+	const colors = paint(compose(config), config, palette);
 	const pixelSize = Math.floor(size / GRID_SIZE);
 	const pixels = [];
 	for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
-		const token = grid[y][x];
-		const color = resolveColor(palette, token);
+		const color = colors[y][x];
 		if (color) pixels.push(/* @__PURE__ */ jsx("div", { style: {
 			position: "absolute",
 			left: x * pixelSize,

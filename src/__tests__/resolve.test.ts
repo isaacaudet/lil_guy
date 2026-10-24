@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { resolve } from '../resolve';
-import { heads, eyes, mouths, hair, bodies, accessories } from '../parts';
+import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from '../parts';
 import { palettes } from '../palette';
 
 describe('resolve', () => {
@@ -20,6 +20,7 @@ describe('resolve', () => {
     expect(config.accessory).toBeLessThan(accessories.length);
     expect(config.palette).toBeGreaterThanOrEqual(0);
     expect(config.palette).toBeLessThan(palettes.length);
+    expect(config.cheeks).toBeLessThan(cheeks.length);
   });
 
   it('is deterministic', () => {

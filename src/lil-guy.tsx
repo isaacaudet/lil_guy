@@ -1,9 +1,12 @@
 import * as React from "react";
 import { resolve } from "./resolve";
-import { compose, composeBase } from "./compose";
+import { dress, withItems } from "./items";
+import { compose } from "./compose";
+import { closeEyes } from "./animate";
 import { hash } from "./hash";
-import { getPalette, resolveColor, shadePalette } from "./palette";
-import type { ColorToken, Intensity3D, Palette } from "./types";
+import { paletteOf } from "./palette";
+import { paint } from "./paint";
+import type { GameId, Intensity3D, Palette } from "./types";
 import { GRID_SIZE } from "./types";
 
 // ============================================================================
@@ -111,10 +114,26 @@ export interface LilGuyProps
 		head: number;
 		eyes: number;
 		mouth: number;
+		cheeks: number;
 		hair: number;
 		body: number;
 		accessory: number;
+		arms: number;
+		feet: number;
+		shade: number;
+		flip: boolean;
 	}>;
+
+	/**
+	 * Dress the guy for a DLE Club game: he wears its free hat unless `equip`
+	 * says otherwise.
+	 */
+	game?: GameId;
+
+	/**
+	 * Item ids to wear (see `items`), one per slot.
+	 */
+	equip?: string[];
 
 	/**
 	 * 3D rotation intensity.
@@ -184,6 +203,8 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 			interactive = true,
 			palette: customPalette,
 			parts: partOverrides,
+			game,
+			equip,
 			intensity3d = "dramatic",
 			enableBlink = false,
 			colors,
@@ -208,16 +229,17 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 
 		// Resolve config and compose pixel grid
 		const { rects, shutRects, bgColor, config, hashValue } = React.useMemo(() => {
-			const cfg = resolve(name, partOverrides);
-			const palette = customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade);
+			const cfg = dress(resolve(name, partOverrides), { game, equip }, name);
+			const palette = withItems(customPalette ?? paletteOf(cfg), cfg);
 			const grid = compose(cfg);
 			const hv = hash(name);
 
 			const toRects = (source: number[][], keyPrefix: string) => {
 				const out: React.ReactElement[] = [];
+				const colors = paint(source, cfg, palette);
 				for (let y = 0; y < GRID_SIZE; y++) {
 					for (let x = 0; x < GRID_SIZE; x++) {
-						const color = resolveColor(palette, source[y][x] as ColorToken);
+						const color = colors[y][x];
 						if (color) {
 							out.push(
 								<rect
@@ -235,31 +257,18 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 				return out;
 			};
 
-			// Closed-eye frame: drop every eye pixel to the bottom row of that
-			// eye and fill the vacated cells with whatever the body would have
-			// shown. Derived rather than hand-drawn, so it works for all of the
-			// eye parts and for any that get added later.
-			const shut = grid.map(row => [...row]);
-			const bare = composeBase(cfg);
-			const EYE_TOKENS = new Set([6, 7]);
-			for (let x = 0; x < GRID_SIZE; x++) {
-				let lowest = -1;
-				for (let y = 0; y < GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
-				if (lowest === -1) continue;
-				for (let y = 0; y < GRID_SIZE; y++) {
-					if (!EYE_TOKENS.has(grid[y][x])) continue;
-					shut[y][x] = y === lowest ? 7 : (bare[y][x] ?? 0);
-				}
-			}
+			// Closed-eye frame: the same one the animations use, derived from the
+			// eye pixels so it works for every eye part.
+			const shut = closeEyes(grid, cfg);
 
 			return {
 				rects: toRects(grid, ''),
 				shutRects: toRects(shut, 's'),
-				bgColor: palette.colors[3], // outfit color as background
+				bgColor: palette.colors[3], // the body highlight: a soft tint of the body colour
 				config: cfg,
 				hashValue: hv,
 			};
-		}, [name, customPalette, partOverrides]);
+		}, [name, customPalette, partOverrides, game, equip?.join(",")]);
 
 		// 3D rotation
 		const preset = INTENSITY_PRESETS[intensity3d];

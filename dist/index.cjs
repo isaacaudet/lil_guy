@@ -1,8 +1,792 @@
 "use strict";
-const require_palette = require('./palette-C9S6jRBa.cjs');
-const react = require_palette.__toESM(require("react"));
-const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
+const require_paint = require('./paint-DHSa5q-6.cjs');
+const react = require_paint.__toESM(require("react"));
+const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
+//#region src/animate.ts
+/**
+* Animations for games: a guy that hops, waves, cheers, sulks.
+*
+* Every move is a short list of frames drawn on the same pixels as the still
+* avatar — the body squashes by losing a row and stretches by repeating one,
+* eyes close and glance by moving their own pixels — so nothing is ever
+* resampled or blurred. Frames are 16 wide and 20 tall: the guy stands in the
+* bottom 16 rows exactly as he does in the still, and the 4 rows above are
+* room to jump into.
+*
+* Rarity shows in the frames too, so it reads in any game without a shader:
+* from Special up a shine sweeps across the item, from Prized up a ring in the
+* grade's colour pulses around the guy, and Mythic and Grail copies throw off
+* sparkles.
+*/
+const MOVES = [
+	"idle",
+	"blink",
+	"hop",
+	"wave",
+	"look",
+	"cheer",
+	"sad",
+	"dance",
+	"squish",
+	"sleep"
+];
+/** Rows of room above the guy for jumps. */
+const HEADROOM = 4;
+const FRAME_WIDTH = require_paint.GRID_SIZE;
+const FRAME_HEIGHT = require_paint.GRID_SIZE + HEADROOM;
+/**
+* Emotes a player can show after a game, and how each is unlocked. The
+* moves use some on their own; `emote` in the options shows one over any move.
+*/
+const EMOTE_UNLOCKS = [
+	{
+		id: "heart",
+		name: "Heart",
+		how: "Everyone has it"
+	},
+	{
+		id: "note",
+		name: "Music",
+		how: "Everyone has it"
+	},
+	{
+		id: "zzz",
+		name: "Snooze",
+		how: "Everyone has it"
+	},
+	{
+		id: "question",
+		name: "Huh?",
+		how: "Everyone has it"
+	},
+	{
+		id: "bang",
+		name: "Whoa!",
+		how: "Everyone has it"
+	},
+	{
+		id: "fire",
+		name: "On fire",
+		how: "A 7-day streak"
+	},
+	{
+		id: "crown",
+		name: "Crown",
+		how: "A perfect day"
+	}
+];
+const b = (pose, ms, more = {}) => ({
+	pose,
+	ms,
+	...more
+});
+const HOP = [
+	b("base", 90, { squash: 1 }),
+	b("base", 70, {
+		squash: -1,
+		dy: -2
+	}),
+	b("base", 130, { dy: -4 }),
+	b("base", 70, { dy: -3 }),
+	b("base", 60, {
+		squash: -1,
+		dy: -1
+	}),
+	b("base", 100, {
+		squash: 2,
+		dust: true
+	}),
+	b("base", 80, { squash: 1 })
+];
+const BEATS = {
+	idle: () => [
+		b("base", 700),
+		b("base", 500, { squash: 1 }),
+		b("base", 700),
+		b("shut", 120),
+		b("base", 480),
+		b("base", 500, { squash: 1 })
+	],
+	blink: () => [b("base", 2400), b("shut", 140)],
+	hop: () => [...HOP, b("base", 700)],
+	wave: (canWave) => canWave ? [
+		b("wave", 220),
+		b("sides", 200),
+		b("wave", 220),
+		b("sides", 200),
+		b("wave", 220, { emote: "heart" }),
+		b("base", 700, { emote: "heart" })
+	] : [
+		b("base", 200, { dx: -1 }),
+		b("base", 200),
+		b("base", 200, { dx: 1 }),
+		b("base", 200),
+		b("base", 700)
+	],
+	look: () => [
+		b("base", 500),
+		b("left", 700, {
+			emote: "question",
+			left: true
+		}),
+		b("base", 250),
+		b("right", 700, { emote: "question" }),
+		b("base", 250),
+		b("shut", 120),
+		b("base", 400)
+	],
+	cheer: (canWave) => {
+		const arm = canWave ? "laughWave" : "laugh";
+		const up = [
+			b("laugh", 80, { squash: 1 }),
+			b(arm, 60, {
+				squash: -1,
+				dy: -2,
+				stars: true
+			}),
+			b(arm, 150, {
+				dy: -4,
+				stars: true
+			}),
+			b(arm, 70, {
+				dy: -3,
+				stars: true
+			}),
+			b("laugh", 90, {
+				squash: 2,
+				dust: true
+			})
+		];
+		return [
+			...up,
+			...up,
+			b(arm, 220, { stars: true }),
+			b("laugh", 220),
+			b("base", 400)
+		];
+	},
+	sad: () => [
+		b("frown", 900, {
+			squash: 1,
+			drop: true
+		}),
+		b("frown", 700, {
+			squash: 2,
+			drop: true
+		}),
+		b("frown", 900, {
+			squash: 1,
+			drop: true
+		}),
+		b("base", 500, { squash: 1 })
+	],
+	dance: () => [
+		b("laugh", 180, {
+			dx: -1,
+			squash: 1,
+			emote: "note",
+			left: true
+		}),
+		b("base", 180, {
+			emote: "note",
+			left: true
+		}),
+		b("laugh", 180, {
+			dx: 1,
+			squash: 1,
+			turn: true,
+			emote: "note"
+		}),
+		b("base", 180, {
+			turn: true,
+			emote: "note"
+		})
+	],
+	squish: () => [
+		b("ooh", 90, {
+			squash: 2,
+			emote: "bang"
+		}),
+		b("ooh", 80, {
+			squash: -2,
+			emote: "bang"
+		}),
+		b("ooh", 80, {
+			squash: 1,
+			emote: "bang"
+		}),
+		b("base", 70, { squash: -1 }),
+		b("base", 700)
+	],
+	sleep: () => [
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		}),
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		})
+	]
+};
+const EYE_TOKENS = new Set([require_paint.T.EYE, require_paint.T.WHITE]);
+/** The row the bottom of the eyes sits on, for this guy's shape or skin. */
+function eyeLineOf(config) {
+	const skin = require_paint.itemById(config.skin);
+	return skin?.slot === "skin" ? skin.eyes : require_paint.heads[config.head].eyes;
+}
+/** The bare body, mirrored the same way as the finished guy. */
+function bareOf(config) {
+	const bare = require_paint.composeBase(config);
+	if (config.flip) for (const row of bare) row.reverse();
+	return bare;
+}
+/** Eye pixels: eye ink and eye shine in the rows the eyes are drawn on. */
+function eyeCells(grid, config) {
+	const line = eyeLineOf(config);
+	const out = [];
+	for (let y = Math.max(0, line - 3); y <= line; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) if (EYE_TOKENS.has(grid[y][x])) out.push([x, y]);
+	return out;
+}
+/**
+* The same guy with his eyes shut: each eye drops to a line on its bottom row
+* and the cells it leaves show whatever the body has there. Derived, not
+* drawn, so it works for every eye part.
+*/
+function closeEyes(grid, config) {
+	const shut = grid.map((row) => [...row]);
+	const bare = bareOf(config);
+	const lowest = new Map();
+	for (const [x, y] of eyeCells(grid, config)) lowest.set(x, Math.max(lowest.get(x) ?? -1, y));
+	for (const [x, y] of eyeCells(grid, config)) shut[y][x] = y === lowest.get(x) ? require_paint.T.EYE : bare[y][x] ?? 0;
+	return shut;
+}
+/** The same guy glancing sideways: his eye pixels move one column, staying on his face. */
+function glance(grid, config, dx) {
+	const out = grid.map((row) => [...row]);
+	const bare = bareOf(config);
+	const cells = eyeCells(grid, config);
+	for (const [x, y] of cells) out[y][x] = bare[y][x] ?? 0;
+	for (const [x, y] of cells) {
+		const nx = x + dx;
+		if (nx >= 0 && nx < require_paint.GRID_SIZE && bare[y][nx]) out[y][nx] = grid[y][x];
+	}
+	return out;
+}
+const rgb = (h) => [
+	1,
+	3,
+	5
+].map((i) => parseInt(h.slice(i, i + 2), 16));
+const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix = (a, b$1, t) => {
+	const x = rgb(a), y = rgb(b$1);
+	return hex([
+		0,
+		1,
+		2
+	].map((i) => x[i] + (y[i] - x[i]) * t));
+};
+/** The order of `AnimationFrame.slots`, from 1. */
+const FRAME_SLOTS = [
+	"skin",
+	"hat",
+	"frame",
+	"buddy"
+];
+const slotIndex = (t) => t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
+const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
+/** Paints a pose and keeps track of which pixels belong to a worn item. */
+function painted(grid, config, palette) {
+	const colors = require_paint.paint(grid, config, palette);
+	const out = empty();
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		const c = colors[y][x];
+		if (c) out[y + HEADROOM][x] = {
+			c,
+			item: t >= require_paint.LAYER.skin && t < require_paint.LAYER.frame || t >= require_paint.LAYER.buddy,
+			slot: slotIndex(t)
+		};
+	}));
+	return out;
+}
+/** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
+function squash(layer, n) {
+	if (!n) return layer;
+	let last = -1, first = -1;
+	layer.forEach((row, y) => {
+		if (row.some(Boolean)) {
+			if (first < 0) first = y;
+			last = y;
+		}
+	});
+	if (last < 0) return layer;
+	const r = Math.max(first + 2, last - 3);
+	const rows = layer.map((row) => [...row]);
+	if (n > 0) {
+		const blank = Array.from({ length: n }, () => new Array(FRAME_WIDTH).fill(null));
+		return [
+			...blank,
+			...rows.slice(0, r - n + 1),
+			...rows.slice(r + 1)
+		];
+	}
+	const k = -n;
+	return [
+		...rows.slice(k, r + 1),
+		...Array.from({ length: k }, () => [...rows[r]]),
+		...rows.slice(r + 1)
+	];
+}
+function shift(layer, dx, dy) {
+	const out = empty();
+	layer.forEach((row, y) => row.forEach((cell, x) => {
+		const nx = x + dx, ny = y + dy;
+		if (cell && nx >= 0 && ny >= 0 && nx < FRAME_WIDTH && ny < FRAME_HEIGHT) out[ny][nx] = cell;
+	}));
+	return out;
+}
+const NEIGHBOURS = [
+	[1, 0],
+	[-1, 0],
+	[0, 1],
+	[0, -1]
+];
+/** Empty cells touching the guy. */
+function rim(layer) {
+	const out = [];
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
+		if (layer[y][x]) continue;
+		if (NEIGHBOURS.some(([dx, dy]) => layer[y + dy]?.[x + dx])) out.push([x, y]);
+	}
+	return out;
+}
+/** A four-point twinkle, only where there is nothing. */
+function twinkle(layer, x, y, centre, arms) {
+	const cells = [
+		[
+			x,
+			y,
+			centre
+		],
+		[
+			x - 1,
+			y,
+			arms
+		],
+		[
+			x + 1,
+			y,
+			arms
+		],
+		[
+			x,
+			y - 1,
+			arms
+		],
+		[
+			x,
+			y + 1,
+			arms
+		]
+	];
+	if (!cells.every(([cx, cy]) => cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx])) return;
+	for (const [cx, cy, c] of cells) layer[cy][cx] = {
+		c,
+		item: false
+	};
+}
+const mouthIndex = (name) => Math.max(0, require_paint.mouths.findIndex((m) => m.name === name));
+/** `#` is the emote's colour, `+` its second colour. */
+const EMOTES = {
+	note: {
+		rows: [
+			".##",
+			".#.",
+			"##.",
+			"##."
+		],
+		color: "#FFE27A"
+	},
+	question: {
+		rows: [
+			"###",
+			"..#",
+			".#.",
+			"...",
+			".#."
+		],
+		color: "#FFFFFF"
+	},
+	bang: {
+		rows: [
+			"#",
+			"#",
+			"#",
+			".",
+			"#"
+		],
+		color: "#FF6B6B"
+	},
+	heart: {
+		rows: [
+			"##.##",
+			"#####",
+			".###.",
+			"..#.."
+		],
+		color: "#FF6FA0"
+	},
+	zzz: {
+		rows: [
+			"###",
+			"..#",
+			".#.",
+			"###"
+		],
+		color: "#BFD8FF"
+	},
+	crown: {
+		rows: [
+			"#.#.#",
+			"#####",
+			"#+#+#"
+		],
+		color: "#FFD447",
+		accent: "#FF6B6B"
+	},
+	fire: {
+		rows: [
+			".#.",
+			"##.",
+			"#+#",
+			"#++",
+			".#."
+		],
+		color: "#FF7A3D",
+		accent: "#FFE27A"
+	}
+};
+/** Puts an emote, outlined, in a top corner that is clear of him. */
+function emote(layer, kind, left, lift = 0) {
+	const { rows, color, accent } = EMOTES[kind];
+	const w = rows[0].length + 2, h = rows.length + 2;
+	const spots = [
+		[FRAME_WIDTH - w, 0],
+		[0, 0],
+		[FRAME_WIDTH - w, 1],
+		[0, 1],
+		[FRAME_WIDTH - w, 2],
+		[0, 2]
+	].map(([x, y]) => [x, Math.max(0, y + 1 - lift)]);
+	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
+	const ink = (ch) => ch === "#" || ch === "+";
+	const at = ([x0, y0]) => {
+		const cells = [];
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const ch = rows[y - 1]?.[x - 1];
+			const on = ink(ch);
+			const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+			if (on || near) cells.push([
+				x0 + x,
+				y0 + y,
+				on ? ch === "+" ? accent ?? color : color : "#1B1428"
+			]);
+		}
+		return cells;
+	};
+	const clear = spots.map(at).find((cells) => cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x]));
+	for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = {
+		c,
+		item: false
+	};
+}
+/** Where sparkles may go: around the guy, clear of him. */
+const SPARKLE_SPOTS = [
+	[2, 6],
+	[13, 8],
+	[1, 13],
+	[14, 15],
+	[7, 1],
+	[2, 18],
+	[13, 2],
+	[12, 18]
+];
+/**
+* Builds the frames of a move for the guy `input` would render as. Takes the
+* same options as `toSvgString` (game, equip, parts, palette).
+*/
+function animate(input, move, options = {}) {
+	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
+	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
+	const figure = {
+		...config,
+		frame: void 0
+	};
+	const grids = new Map();
+	const grid = (pose) => {
+		if (!grids.has(pose)) {
+			const base = require_paint.compose(figure);
+			grids.set(pose, pose === "base" ? base : pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "laugh" ? require_paint.compose({
+				...figure,
+				mouth: mouthIndex("laugh")
+			}) : pose === "laughWave" ? require_paint.compose({
+				...figure,
+				mouth: mouthIndex("laugh"),
+				arms: 2
+			}) : pose === "frown" ? closeEyes(require_paint.compose({
+				...figure,
+				mouth: mouthIndex("wobble")
+			}), config) : pose === "ooh" ? require_paint.compose({
+				...figure,
+				mouth: mouthIndex("ooh")
+			}) : require_paint.compose({
+				...figure,
+				arms: pose === "wave" ? 2 : 1
+			}));
+		}
+		return grids.get(pose);
+	};
+	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
+	const layers = new Map();
+	const layerOf = (pose) => {
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette));
+		return layers.get(pose);
+	};
+	let backdrop = null;
+	const frameItem = require_paint.itemById(config.frame);
+	if (frameItem?.slot === "frame") {
+		const tall = Array.from({ length: require_paint.GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: require_paint.GRID_SIZE }, (_$1, x) => require_paint.LAYER.frame + frameItem.fill(x, y + 48) - 1));
+		const colors = require_paint.paint(tall, config, palette);
+		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? require_paint.GRID_SIZE - HEADROOM + y : y - HEADROOM]);
+	}
+	const copies = Object.values(config.owned ?? {}).filter(Boolean);
+	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id)));
+	const gradeColor = grade >= 0 ? require_paint.GRADES[grade].color : "#FFFFFF";
+	const seed = require_paint.hash(input) % 997;
+	const beats = BEATS[move](canWave);
+	const slices = [];
+	let t = 0;
+	for (const beat of beats) {
+		const n = grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		for (let i = 0; i < n; i++) {
+			const ms = Math.round(beat.ms / n);
+			slices.push({
+				beat,
+				ms,
+				t
+			});
+			t += ms;
+		}
+	}
+	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const behind = [];
+	const frames = slices.map(({ beat, ms, t: t$1 }) => {
+		let layer = layerOf(beat.pose);
+		if (beat.turn) layer = layer.map((row) => [...row].reverse());
+		layer = squash(layer, beat.squash ?? 0);
+		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		const figure$1 = layer;
+		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
+		if (trailFrom.length && (beat.dy ?? 0) < 0) behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
+			if (cell && !layer[y][x] && (x + y + k) % 2 === 0) layer[y][x] = {
+				c: trailFrom[k],
+				item: false
+			};
+		})));
+		behind.unshift(figure$1);
+		behind.length = Math.min(behind.length, 2);
+		if (grade >= 1) {
+			const at = (t$1 + seed) % 1600 / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+			layer.forEach((row, y) => row.forEach((cell, x) => {
+				if (!cell?.item) return;
+				const d = Math.abs(x + y - at);
+				if (d < 1) cell.c = mix(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix(cell.c, "#FFFFFF", .25);
+			}));
+		}
+		const aura = grade >= 2 ? rim(layer) : [];
+		if (beat.stars) {
+			const gold = palette.colors[require_paint.T.GOLD] ?? "#F2C230";
+			twinkle(layer, 2, 3, "#FFFFFF", gold);
+			twinkle(layer, 13, 2, "#FFFFFF", gold);
+			if (Math.floor(t$1 / 120) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
+		}
+		if (beat.drop) {
+			let top = -1;
+			layer.forEach((row$1, y) => {
+				if (top < 0 && row$1.some(Boolean)) top = y;
+			});
+			const row = layer[top + 2];
+			const right = row ? row.reduce((r, cell, x) => cell ? x : r, -1) : -1;
+			for (const [x, y, c] of [[
+				right + 1,
+				top + 1,
+				"#CFEFFF"
+			], [
+				right + 1,
+				top + 2,
+				"#7CC4F2"
+			]]) if (right >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
+				c,
+				item: false
+			};
+		}
+		if (beat.dust) {
+			let low = -1;
+			layer.forEach((row$1, y) => {
+				if (row$1.some(Boolean)) low = y;
+			});
+			const row = layer[low] ?? [];
+			const l = row.findIndex(Boolean), r = row.reduce((m, cell, x) => cell ? x : m, -1);
+			if (l >= 0) {
+				for (const [x, y, c] of [
+					[
+						l - 1,
+						low,
+						"#E8E0D2"
+					],
+					[
+						l - 2,
+						low,
+						"#E8E0D2"
+					],
+					[
+						l - 2,
+						low - 1,
+						"#F6F1E8"
+					],
+					[
+						r + 1,
+						low,
+						"#E8E0D2"
+					],
+					[
+						r + 2,
+						low,
+						"#E8E0D2"
+					],
+					[
+						r + 2,
+						low - 1,
+						"#F6F1E8"
+					]
+				]) if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
+					c,
+					item: false
+				};
+			}
+		}
+		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
+		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
+		if (grade >= 2) {
+			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
+			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
+			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
+				c: ring,
+				item: false
+			};
+		}
+		if (grade >= 3) {
+			const count$1 = grade === 4 ? 4 : 3;
+			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
+				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
+			});
+		}
+		const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
+		return {
+			colors,
+			ms,
+			slots
+		};
+	});
+	return {
+		move,
+		width: FRAME_WIDTH,
+		height: FRAME_HEIGHT,
+		frames,
+		duration: t
+	};
+}
+/** The frame showing `ms` into the animation, looping unless `once`. */
+function frameAt(animation, ms, once = false) {
+	const { frames, duration } = animation;
+	let t = once ? Math.min(ms, duration - 1) : (ms % duration + duration) % duration;
+	for (const frame of frames) {
+		if (t < frame.ms) return frame;
+		t -= frame.ms;
+	}
+	return frames[frames.length - 1];
+}
+/** Draws a frame at (x, y), each pixel `scale` units square. */
+function drawFrame(ctx, frame, x = 0, y = 0, scale = 1) {
+	frame.colors.forEach((row, py) => row.forEach((c, px) => {
+		if (!c) return;
+		ctx.fillStyle = c;
+		ctx.fillRect(x + px * scale, y + py * scale, scale, scale);
+	}));
+}
+function runs(row) {
+	const out = [];
+	let start = 0, current = null;
+	for (let x = 0; x <= row.length; x++) {
+		const c = x < row.length ? row[x] : null;
+		if (c === current) continue;
+		if (current !== null) out.push({
+			x: start,
+			width: x - start,
+			color: current
+		});
+		current = c;
+		start = x;
+	}
+	return out;
+}
+/**
+* The animation as one self-contained SVG: every frame is a group, and a CSS
+* animation shows them in turn. Works as an <img>, inline, or as a file.
+*/
+function toAnimatedSvg(input, move, options = {}) {
+	const anim = animate(input, move, options);
+	const size = options.size ?? 128;
+	const id = `lg${require_paint.hash(`${input}|${move}|${JSON.stringify({
+		...options,
+		size: 0
+	})}`).toString(36)}`;
+	const pct = (ms) => +(ms / anim.duration * 100).toFixed(3);
+	let at = 0;
+	const css = [`.${id} g{visibility:hidden;animation-duration:${anim.duration}ms;animation-timing-function:step-end;animation-iteration-count:${options.once ? 1 : "infinite"};animation-fill-mode:${options.once ? "forwards" : "none"}}`];
+	const groups = anim.frames.map((frame, i) => {
+		const start = pct(at), end = pct(at + frame.ms);
+		at += frame.ms;
+		const last = i === anim.frames.length - 1;
+		const keys = i === 0 ? `0%{visibility:visible}${end}%{visibility:hidden}${last ? "" : "100%{visibility:hidden}"}` : `0%{visibility:hidden}${start}%{visibility:visible}${last ? "100%{visibility:visible}" : `${end}%{visibility:hidden}100%{visibility:hidden}`}`;
+		css.push(`.${id} .f${i}{animation-name:${id}-${i}}@keyframes ${id}-${i}{${keys}}`);
+		const rects = frame.colors.flatMap((row, y) => runs(row).map((r) => `<rect x="${r.x}" y="${y}" width="${r.width}" height="1" fill="${r.color}"/>`));
+		return `<g class="f${i}">${rects.join("")}</g>`;
+	});
+	if (options.stillWhenReduced) css.push(`@media (prefers-reduced-motion: reduce){.${id} g{animation:none}.${id} .f0{visibility:visible}}`);
+	const labelled = typeof options.title === "string" && options.title.length > 0;
+	return [
+		`<svg xmlns="http://www.w3.org/2000/svg" class="${id}" width="${size}" height="${size * FRAME_HEIGHT / FRAME_WIDTH}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
+		labelled ? `<title>${options.title.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;")}</title>` : "",
+		`<style>${css.join("")}</style>`,
+		...groups,
+		"</svg>"
+	].join("");
+}
+
+//#endregion
 //#region src/lil-guy.tsx
 const INTENSITY_PRESETS = {
 	none: {
@@ -105,23 +889,27 @@ function injectBlinkKeyframes() {
 * <LilGuy name="alice" parts={{ hair: 2, eyes: 0 }} />
 * ```
 */
-const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
+const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, game, equip, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
 	const [isHovered, setIsHovered] = react.useState(false);
 	react.useEffect(() => {
 		if (enableBlink || interactive) injectBlinkKeyframes();
 	}, [enableBlink, interactive]);
 	const { rects, shutRects, bgColor, config, hashValue } = react.useMemo(() => {
-		const cfg = require_palette.resolve(name, partOverrides);
-		const palette = customPalette ?? require_palette.shadePalette(require_palette.getPalette(cfg.palette), cfg.shade);
-		const grid = require_palette.compose(cfg);
-		const hv = require_palette.hash(name);
+		const cfg = require_paint.dress(require_paint.resolve(name, partOverrides), {
+			game,
+			equip
+		}, name);
+		const palette = require_paint.withItems(customPalette ?? require_paint.paletteOf(cfg), cfg);
+		const grid = require_paint.compose(cfg);
+		const hv = require_paint.hash(name);
 		const toRects = (source, keyPrefix) => {
 			const out = [];
-			for (let y = 0; y < require_palette.GRID_SIZE; y++) for (let x = 0; x < require_palette.GRID_SIZE; x++) {
-				const color = require_palette.resolveColor(palette, source[y][x]);
+			const colors$1 = require_paint.paint(source, cfg, palette);
+			for (let y = 0; y < require_paint.GRID_SIZE; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) {
+				const color = colors$1[y][x];
 				if (color) out.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
 					"rect",
-					// outfit color as background
+					// the body highlight: a soft tint of the body colour
 					{
 						x,
 						y,
@@ -134,18 +922,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 			}
 			return out;
 		};
-		const shut = grid.map((row) => [...row]);
-		const bare = require_palette.composeBase(cfg);
-		const EYE_TOKENS = new Set([6, 7]);
-		for (let x = 0; x < require_palette.GRID_SIZE; x++) {
-			let lowest = -1;
-			for (let y = 0; y < require_palette.GRID_SIZE; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
-			if (lowest === -1) continue;
-			for (let y = 0; y < require_palette.GRID_SIZE; y++) {
-				if (!EYE_TOKENS.has(grid[y][x])) continue;
-				shut[y][x] = y === lowest ? 7 : bare[y][x] ?? 0;
-			}
-		}
+		const shut = closeEyes(grid, cfg);
 		return {
 			rects: toRects(grid, ""),
 			shutRects: toRects(shut, "s"),
@@ -156,7 +933,9 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 	}, [
 		name,
 		customPalette,
-		partOverrides
+		partOverrides,
+		game,
+		equip?.join(",")
 	]);
 	const preset = INTENSITY_PRESETS[intensity3d];
 	const position = SPHERE_POSITIONS[config.rotation] ?? SPHERE_POSITIONS[5];
@@ -228,7 +1007,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 					children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 						"aria-hidden": "true",
 						xmlns: "http://www.w3.org/2000/svg",
-						viewBox: `0 0 ${require_palette.GRID_SIZE} ${require_palette.GRID_SIZE}`,
+						viewBox: `0 0 ${require_paint.GRID_SIZE} ${require_paint.GRID_SIZE}`,
 						shapeRendering: "crispEdges",
 						style: {
 							width: "100%",
@@ -478,14 +1257,14 @@ AvatarImage.displayName = "AvatarImage";
 * neighbours that share a colour — these avatars are large flat areas, so
 * merging runs cuts the rect count by well over half.
 */
-function rowRuns(grid, palette, y) {
-	const runs = [];
+function rowRuns(colors, y) {
+	const runs$1 = [];
 	let start = -1;
 	let current = null;
-	for (let x = 0; x <= require_palette.GRID_SIZE; x++) {
-		const color = x < require_palette.GRID_SIZE ? require_palette.resolveColor(palette, grid[y][x]) : null;
+	for (let x = 0; x <= require_paint.GRID_SIZE; x++) {
+		const color = x < require_paint.GRID_SIZE ? colors[y][x] : null;
 		if (color === current) continue;
-		if (current !== null) runs.push({
+		if (current !== null) runs$1.push({
 			x: start,
 			width: x - start,
 			color: current
@@ -493,7 +1272,7 @@ function rowRuns(grid, palette, y) {
 		current = color;
 		start = x;
 	}
-	return runs;
+	return runs$1;
 }
 function escapeText(value) {
 	return value.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;");
@@ -507,13 +1286,13 @@ function escapeText(value) {
 * identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = require_palette.resolve(input, options.parts);
-	const palette = options.palette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade);
-	const grid = require_palette.compose(config);
+	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
+	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
+	const colors = require_paint.paint(require_paint.compose(config), config, palette);
 	const size = options.size ?? 128;
-	const pixelSize = size / require_palette.GRID_SIZE;
+	const pixelSize = size / require_paint.GRID_SIZE;
 	const rects = [];
-	for (let y = 0; y < require_palette.GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < require_paint.GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -626,35 +1405,542 @@ function getColor(colors, index) {
 }
 
 //#endregion
+//#region src/rarity.ts
+const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
+/** Each visible trait of a guy and how likely it was. */
+function traitOdds(config) {
+	return [
+		{
+			slot: "shape",
+			name: require_paint.heads[config.head].name,
+			chance: share(require_paint.headWeights, config.head)
+		},
+		{
+			slot: "eyes",
+			name: require_paint.eyes[config.eyes].name,
+			chance: share(require_paint.eyeWeights, config.eyes)
+		},
+		{
+			slot: "mouth",
+			name: require_paint.mouths[config.mouth].name,
+			chance: share(require_paint.mouthWeights, config.mouth)
+		},
+		{
+			slot: "cheeks",
+			name: require_paint.cheeks[config.cheeks].name,
+			chance: share(require_paint.cheekWeights, config.cheeks)
+		},
+		{
+			slot: "topper",
+			name: require_paint.hair[config.hair].name,
+			chance: share(require_paint.hairWeights, config.hair)
+		},
+		{
+			slot: "markings",
+			name: require_paint.bodies[config.body].name,
+			chance: share(require_paint.bodyWeights, config.body)
+		},
+		{
+			slot: "accessory",
+			name: require_paint.accessories[config.accessory].name,
+			chance: share(require_paint.accessoryWeights, config.accessory)
+		},
+		{
+			slot: "colour",
+			name: require_paint.palettes[config.palette].name,
+			chance: share(require_paint.paletteWeights, config.palette)
+		},
+		{
+			slot: "variant",
+			name: config.lucky ? "Lucky" : "regular",
+			chance: config.lucky ? 1 / require_paint.LUCKY_ODDS : 1 - 1 / require_paint.LUCKY_ODDS
+		}
+	];
+}
+/** One in how many guys has exactly this combination. */
+function guyOneIn(config) {
+	return 1 / traitOdds(config).reduce((p, t) => p * t.chance, 1);
+}
+/** One in how many capsules for its game give a copy at least this good. */
+function copyOneIn(o) {
+	const item = require_paint.itemById(o.item);
+	if (!item) return Infinity;
+	const pool = require_paint.gameItems(item.game).filter((i) => !i.free).length;
+	const f = require_paint.FINISHES[o.finish];
+	let p = 1 / pool * (f.odds / 100);
+	if (require_paint.special(o) === "Deep Blue") p *= require_paint.DEEP_BLUE_PRINTS.length / 1e3;
+	else if (require_paint.special(o)) p *= 1 / 20;
+	const [lo, hi] = f.scuffs;
+	p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
+	if (o.tally !== void 0) p *= .1;
+	return 1 / p;
+}
+
+//#endregion
+//#region src/look.ts
+/**
+* Keeping rarity real.
+*
+* A guy's rare traits only mean something if nobody can choose them. Two
+* rules make that so:
+*
+* 1. **Draw the guy from a seed, not the name on the board.** A name can be
+*    typed and changed, so anyone could try names until a rare guy came out,
+*    and a rename would change him. The club makes a random seed once
+*    (`makeSeed`), keeps it with the player, and draws from that:
+*    `toSvgString(seed, …)`, `starter(seed, game)`. The name stays a label.
+* 2. **A picker offers only common parts, plus the player's own.** A part
+*    someone rolled stays theirs to keep; a rare part they didn't roll can't be
+*    picked.
+*
+* Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
+* the parts can't silently turn a saved look into someone else.
+*/
+/** A slot in a look code: its letter, its config key and its weights. */
+const SLOTS = [
+	[
+		"h",
+		"head",
+		require_paint.headWeights
+	],
+	[
+		"e",
+		"eyes",
+		require_paint.eyeWeights
+	],
+	[
+		"m",
+		"mouth",
+		require_paint.mouthWeights
+	],
+	[
+		"c",
+		"cheeks",
+		require_paint.cheekWeights
+	],
+	[
+		"t",
+		"hair",
+		require_paint.hairWeights
+	],
+	[
+		"b",
+		"body",
+		require_paint.bodyWeights
+	],
+	[
+		"a",
+		"accessory",
+		require_paint.accessoryWeights
+	],
+	[
+		"p",
+		"palette",
+		require_paint.paletteWeights
+	]
+];
+/** The weight below which a part counts as rare and can't be picked. */
+const RARE = 2;
+/**
+* A random seed to draw a new player's guy from, made once and kept. 12
+* characters of base 36, about 62 bits.
+*/
+function makeSeed() {
+	const bytes = new Uint8Array(8);
+	globalThis.crypto.getRandomValues(bytes);
+	let n = 0n;
+	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
+	return n.toString(36).padStart(12, "0").slice(-12);
+}
+/** Which options a player may pick in a slot: every common one, and their own. */
+function pickable(own, slot) {
+	const weights = SLOTS.find((s) => s[1] === slot)[2];
+	return weights.map((w, i) => i).filter((i) => weights[i] >= RARE || i === own[slot]);
+}
+/** Whether a look only uses parts this player may pick. */
+function allowed(own, look) {
+	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own, slot).includes(look[slot]));
+}
+/** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
+function encodeLook(look) {
+	return "2:" + SLOTS.filter(([, slot]) => look[slot] !== void 0).map(([letter, slot]) => letter + look[slot]).join(".");
+}
+/**
+* A code back into a look, or null for anything that isn't a version-2 code
+* this library can draw: an old seven-number code from before 0.2, a part out
+* of range, or (given the player's own guy) a rare part they didn't roll.
+*/
+function decodeLook(code, own) {
+	if (typeof code !== "string" || !code.startsWith("2:")) return null;
+	const look = {};
+	for (const part of code.slice(2).split(".").filter(Boolean)) {
+		const slot = SLOTS.find((s) => s[0] === part[0]);
+		const n = Number(part.slice(1));
+		if (!slot || !/^\d{1,3}$/.test(part.slice(1)) || n >= slot[2].length) return null;
+		look[slot[1]] = n;
+	}
+	if (own && !allowed(own, look)) return null;
+	return look;
+}
+/** A player's guy: from their seed, with their picked look laid over it. */
+function lookOf(seed, code = "") {
+	const own = require_paint.resolve(seed);
+	const look = code ? decodeLook(code, own) : null;
+	return look ? {
+		...own,
+		...look
+	} : own;
+}
+
+//#endregion
+//#region src/share.ts
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
+	"&": "&amp;",
+	"<": "&lt;",
+	">": "&gt;",
+	"\"": "&quot;"
+})[c]);
+function count(n) {
+	return n >= 1e12 ? `${(n / 1e12).toFixed(1)} trillion` : n >= 1e9 ? `${(n / 1e9).toFixed(1)} billion` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} million` : Math.round(n).toLocaleString("en-US");
+}
+function toShareSvg(input, copy, options = {}) {
+	const config = require_paint.dress(options.config ?? require_paint.resolve(input), { equip: [require_paint.encode(copy)] });
+	const colors = require_paint.paint(require_paint.compose(config), config, require_paint.withItems(require_paint.paletteOf(config), config));
+	const grade = require_paint.gradeOf(copy);
+	const item = require_paint.itemById(copy.item);
+	const [title, finish] = require_paint.nameOf(copy).split(" | ");
+	const px = 26, gx = 96, gy = (630 - require_paint.GRID_SIZE * px) / 2;
+	const rects = [];
+	colors.forEach((row, y) => {
+		let x = 0;
+		while (x < require_paint.GRID_SIZE) {
+			const c = row[x];
+			let w = 1;
+			while (x + w < require_paint.GRID_SIZE && row[x + w] === c) w++;
+			if (c) rects.push(`<rect x="${gx + x * px}" y="${gy + y * px}" width="${w * px}" height="${px}" fill="${c}"/>`);
+			x += w;
+		}
+	});
+	const odds = copyOneIn(copy);
+	const lines = [
+		`${require_paint.wearOf(copy.scuff).name} · scuff ${copy.scuff.toFixed(4)} · print #${copy.print}`,
+		copy.tally !== void 0 ? `${copy.tally} days on its tally` : "",
+		item?.free ? "Everyone has one; no two are alike" : `1 in ${count(odds)} capsules`
+	].filter(Boolean);
+	const font = "font-family=\"system-ui, -apple-system, Segoe UI, sans-serif\"";
+	return [
+		`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img">`,
+		`<title>${esc(require_paint.nameOf(copy))}</title>`,
+		`<defs><radialGradient id="glow" cx="0.27" cy="0.5" r="0.5"><stop offset="0" stop-color="${grade.color}" stop-opacity="0.55"/><stop offset="1" stop-color="${grade.color}" stop-opacity="0"/></radialGradient></defs>`,
+		`<rect width="1200" height="630" fill="#14182a"/>`,
+		`<rect width="1200" height="630" fill="url(#glow)"/>`,
+		`<g shape-rendering="crispEdges">${rects.join("")}</g>`,
+		`<text x="600" y="150" ${font} font-size="24" font-weight="700" letter-spacing="4" fill="#a8b0cf">${esc(options.name ? `${options.name.toUpperCase()}'S COPY` : "A ONE-OF-A-KIND COPY")}</text>`,
+		`<text x="600" y="232" ${font} font-size="60" font-weight="800" fill="#ffffff">${esc(title)}</text>`,
+		finish ? `<text x="600" y="296" ${font} font-size="40" font-weight="700" fill="${grade.color}">${esc(finish)}</text>` : "",
+		`<rect x="600" y="${finish ? 324 : 264}" width="${grade.name.length * 18 + 40}" height="48" rx="10" fill="${grade.color}"/>`,
+		`<text x="620" y="${finish ? 357 : 297}" ${font} font-size="26" font-weight="800" fill="#ffffff">${esc(grade.name)}</text>`,
+		...lines.map((l, i) => `<text x="600" y="${(finish ? 420 : 360) + i * 44} " ${font} font-size="28" fill="#dfe3f2">${esc(l)}</text>`),
+		`<text x="600" y="570" ${font} font-size="24" font-weight="700" fill="#ffcf5c">${esc(options.footer ?? "dleclub.com")}</text>`,
+		`</svg>`
+	].join("");
+}
+
+//#endregion
+//#region src/lil-guy-animated.tsx
+/**
+* A lil guy playing a move: the library's animated SVG, which plays itself
+* with CSS, so there is no timer running in React.
+*
+* @example
+* ```tsx
+* <LilGuyAnimated name={player.seed} move="cheer" equip={[player.hat]} size={96} />
+* ```
+*/
+function LilGuyAnimated({ name, move, size = 64, game, equip, parts, emote: emote$1, once, rarity, title, style,...props }) {
+	const svg = react.useMemo(() => {
+		const options = {
+			size,
+			game,
+			equip,
+			parts,
+			emote: emote$1,
+			once,
+			rarity,
+			title
+		};
+		return toAnimatedSvg(name, move, options);
+	}, [
+		name,
+		move,
+		size,
+		game,
+		equip?.join(","),
+		JSON.stringify(parts),
+		emote$1,
+		once,
+		rarity,
+		title
+	]);
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+		"data-lil-guy-animated": "",
+		style: {
+			display: "inline-block",
+			lineHeight: 0,
+			...style
+		},
+		...props,
+		dangerouslySetInnerHTML: { __html: svg }
+	});
+}
+
+//#endregion
+//#region src/shine.ts
+/**
+* The finishes, moving: a WebGL shader that runs each worn copy's finish on
+* that copy's own pixels — Sunset's sheen, Tempered's glint, Nebula's drift,
+* Prism's rainbow, Negative's pulse, Gold's sparkle — while the guy plays a
+* move. Scuffed pixels shine less, the way they're painted.
+*
+* Browsers allow only a handful of WebGL contexts per page, so make one shine
+* and share it: draw each guy into it in turn and copy the result out with
+* `drawImage` into that guy's own 2D canvas. Without WebGL `createShine`
+* returns null; draw the frame's colours as they are.
+*/
+const FINISH_ORDER = [
+	"plain",
+	"sunset",
+	"tempered",
+	"nebula",
+	"prism",
+	"negative",
+	"gold"
+];
+/**
+* A frame as the shader reads it: its colours, and for each pixel the finish,
+* scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+*/
+function shineData(frame, owned = {}) {
+	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	frame.colors.forEach((row, y) => row.forEach((c, x) => {
+		if (!c) return;
+		const i = (y * FRAME_WIDTH + x) * 4;
+		colors.set([
+			parseInt(c.slice(1, 3), 16),
+			parseInt(c.slice(3, 5), 16),
+			parseInt(c.slice(5, 7), 16),
+			255
+		], i);
+		const slot = frame.slots[y][x];
+		const copy = slot ? owned?.[FRAME_SLOTS[slot - 1]] : void 0;
+		if (copy) info.set([
+			(FINISH_ORDER.indexOf(copy.finish) + 1) * 32,
+			Math.round(copy.scuff * 255),
+			Math.floor(copy.print / 4),
+			255
+		], i);
+	}));
+	return {
+		colors,
+		info
+	};
+}
+const VERTEX = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
+const FRAGMENT = `
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D base, info;
+uniform float time;
+float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
+vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+vec3 hueShift(vec3 c, float a) {
+  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+  vec3 yiq = toYIQ * c;
+  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
+  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+}
+void main() {
+  vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 k = texture2D(info, at);
+  float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;
+  if (k.a > 0.5 && finish >= 0.0) {
+    float scuff = k.g, print = floor(k.b * 255.0 + 0.5) * 4.0;
+    float d = cell.x + cell.y, h = hash(cell, print);
+    float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
+    float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
+    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
+    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
+    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
+    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
+    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); }
+    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
+    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
+  }
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+/** One shader to share across a page or a game, or null without WebGL. */
+function createShine(canvas) {
+	const target = canvas ?? (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(FRAME_WIDTH, FRAME_HEIGHT) : typeof document !== "undefined" ? document.createElement("canvas") : null);
+	if (!target) return null;
+	target.width = FRAME_WIDTH;
+	target.height = FRAME_HEIGHT;
+	const gl = target.getContext("webgl", {
+		premultipliedAlpha: false,
+		preserveDrawingBuffer: true
+	});
+	if (!gl) return null;
+	const shader = (type, source) => {
+		const s = gl.createShader(type);
+		gl.shaderSource(s, source);
+		gl.compileShader(s);
+		return s;
+	};
+	const program = gl.createProgram();
+	gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
+	gl.attachShader(program, shader(gl.FRAGMENT_SHADER, FRAGMENT));
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+		-1,
+		-1,
+		1,
+		-1,
+		-1,
+		1,
+		1,
+		1
+	]), gl.STATIC_DRAW);
+	const p = gl.getAttribLocation(program, "p");
+	gl.enableVertexAttribArray(p);
+	gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+	gl.uniform1i(gl.getUniformLocation(program, "base"), 0);
+	gl.uniform1i(gl.getUniformLocation(program, "info"), 1);
+	const time = gl.getUniformLocation(program, "time");
+	gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+	const texture = (unit) => {
+		const t = gl.createTexture();
+		gl.activeTexture(gl.TEXTURE0 + unit);
+		gl.bindTexture(gl.TEXTURE_2D, t);
+		for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.NEAREST);
+		for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
+		return t;
+	};
+	const textures = [texture(0), texture(1)];
+	return {
+		canvas: target,
+		draw(frame, owned, ms) {
+			const { colors, info } = shineData(frame, owned);
+			[colors, info].forEach((bytes, unit) => {
+				gl.activeTexture(gl.TEXTURE0 + unit);
+				gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+			});
+			gl.uniform1f(time, ms / 1e3);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		}
+	};
+}
+
+//#endregion
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
+exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
-exports.FOOT_STYLES = require_palette.FOOT_STYLES
-exports.GRID_SIZE = require_palette.GRID_SIZE
+exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
+exports.FINISHES = require_paint.FINISHES
+exports.FOOT_STYLES = require_paint.FOOT_STYLES
+exports.FRAME_HEIGHT = FRAME_HEIGHT
+exports.FRAME_SLOTS = FRAME_SLOTS
+exports.FRAME_WIDTH = FRAME_WIDTH
+exports.GAMES = require_paint.GAMES
+exports.GOLD_RIM_DAYS = require_paint.GOLD_RIM_DAYS
+exports.GRADES = require_paint.GRADES
+exports.GRID_SIZE = require_paint.GRID_SIZE
+exports.HEADROOM = HEADROOM
+exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
-exports.SHADE_COUNT = require_palette.SHADE_COUNT
-exports.accessories = require_palette.accessories
-exports.bodies = require_palette.bodies
-exports.compose = require_palette.compose
-exports.composeBase = require_palette.composeBase
-exports.eyes = require_palette.eyes
+exports.LilGuyAnimated = LilGuyAnimated
+exports.MAX_PINS = require_paint.MAX_PINS
+exports.MOVES = MOVES
+exports.PINS = require_paint.PINS
+exports.SHADE_COUNT = require_paint.SHADE_COUNT
+exports.WEAR = require_paint.WEAR
+exports.accessories = require_paint.accessories
+exports.allowed = allowed
+exports.animate = animate
+exports.bodies = require_paint.bodies
+exports.cheeks = require_paint.cheeks
+exports.closeEyes = closeEyes
+exports.compose = require_paint.compose
+exports.composeBase = require_paint.composeBase
+exports.copyOneIn = copyOneIn
+exports.createShine = createShine
+exports.decode = require_paint.decode
+exports.decodeLook = decodeLook
+exports.drawFrame = drawFrame
+exports.dress = require_paint.dress
+exports.encode = require_paint.encode
+exports.encodeLook = encodeLook
+exports.eyes = require_paint.eyes
+exports.frameAt = frameAt
+exports.freeItem = require_paint.freeItem
+exports.gameItems = require_paint.gameItems
 exports.getColor = getColor
-exports.getPalette = require_palette.getPalette
-exports.hair = require_palette.hair
-exports.hash = require_palette.hash
-exports.hashNth = require_palette.hashNth
-exports.heads = require_palette.heads
+exports.getPalette = require_paint.getPalette
+exports.gradeOf = require_paint.gradeOf
+exports.guyOneIn = guyOneIn
+exports.hair = require_paint.hair
+exports.hash = require_paint.hash
+exports.hashNth = require_paint.hashNth
+exports.heads = require_paint.heads
+exports.inSeason = require_paint.inSeason
+exports.itemById = require_paint.itemById
+exports.items = require_paint.items
+exports.lookOf = lookOf
+exports.luckyPalette = require_paint.luckyPalette
+exports.makeSeed = makeSeed
 exports.mergeRefs = mergeRefs
-exports.mouths = require_palette.mouths
-exports.palettes = require_palette.palettes
-exports.resolve = require_palette.resolve
-exports.resolveColor = require_palette.resolveColor
-exports.shadePalette = require_palette.shadePalette
+exports.mouths = require_paint.mouths
+exports.nameOf = require_paint.nameOf
+exports.nebulaPhase = require_paint.nebulaPhase
+exports.paint = require_paint.paint
+exports.paletteOf = require_paint.paletteOf
+exports.palettes = require_paint.palettes
+exports.pickable = pickable
+exports.pinById = require_paint.pinById
+exports.resolve = require_paint.resolve
+exports.resolveColor = require_paint.resolveColor
+exports.roll = require_paint.roll
+exports.rollSeason = require_paint.rollSeason
+exports.shadePalette = require_paint.shadePalette
+exports.shineData = shineData
+exports.slotOf = require_paint.slotOf
+exports.special = require_paint.special
+exports.starter = require_paint.starter
+exports.tallyMarks = require_paint.tallyMarks
+exports.temperTint = require_paint.temperTint
+exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
+exports.toShareSvg = toShareSvg
 exports.toSvgString = toSvgString
+exports.traitOdds = traitOdds
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
+exports.wearOf = require_paint.wearOf
+exports.withItems = require_paint.withItems
 //# sourceMappingURL=index.cjs.map

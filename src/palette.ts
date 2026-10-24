@@ -1,487 +1,197 @@
-import type { Palette, ColorToken } from './types';
+import type { AvatarConfig, Palette, ColorToken } from './types';
 
-const sunrise: Palette = {
-  name: 'Sunrise',
-  colors: {
-    1: '#FFB347', // warm orange blob
-    2: '#FF6B6B', // coral feature
-    3: '#FFE066', // sunny yellow pattern
-    4: '#FF8A5C', // peach accent
-    5: '#D4A070', // warm brown outline
-    6: '#FFFFFF',
-    7: '#2A1A10',
-    8: '#E06060',
-  },
-};
+/**
+ * Colourways. Each one is three hand-picked colours — the body, an accent for
+ * hats and clothes, and a trim — and everything else is worked out from the
+ * body so it always belongs to it:
+ *
+ * - the outline is a deep, hue-shifted version of the body rather than black,
+ *   which is what keeps a pale guy soft instead of cartoon-heavy
+ * - the shade leans towards violet and the gleam towards white, the way
+ *   pixel artists shade by hand
+ * - the eyes and mouth are a near-black taken from the outline's hue
+ * - the blush is a pink that always stands off the body, even a pink one
+ *
+ * Every body colour is light and clean on purpose. There are no greys,
+ * olives or murky browns here: those are what made the old set look ill.
+ */
+interface Colourway {
+  name: string;
+  body: string;
+  accent: string;
+  trim: string;
+}
 
-const ocean: Palette = {
-  name: 'Ocean',
-  colors: {
-    1: '#7EC8E3', // sky blue blob
-    2: '#4A90D9', // deeper blue feature
-    3: '#B8E6FF', // light blue pattern
-    4: '#5CBDD9', // teal accent
-    5: '#7098B0', // steel blue outline
-    6: '#FFFFFF',
-    7: '#1A2030',
-    8: '#E07088',
-  },
-};
-
-const forest: Palette = {
-  name: 'Forest',
-  colors: {
-    1: '#8BC990', // leaf green blob
-    2: '#5BA865', // darker green feature
-    3: '#C4E8A2', // lime pattern
-    4: '#A8D86E', // bright green accent
-    5: '#6A9A68', // forest outline
-    6: '#F0F8E8',
-    7: '#1A2A10',
-    8: '#D0A080',
-  },
-};
-
-const berry: Palette = {
-  name: 'Berry',
-  colors: {
-    1: '#D88ADB', // lavender blob
-    2: '#B45CB8', // purple feature
-    3: '#F0B0D0', // pink pattern
-    4: '#E870A0', // hot pink accent
-    5: '#9868A0', // deep purple outline
-    6: '#FFFFFF',
-    7: '#2A1030',
-    8: '#E06888',
-  },
-};
-
-const desert: Palette = {
-  name: 'Desert',
-  colors: {
-    1: '#E8C088', // sandy blob
-    2: '#D4946A', // terra cotta feature
-    3: '#F0D8A8', // cream pattern
-    4: '#C8A060', // gold accent
-    5: '#A88858', // warm brown outline
-    6: '#FFF8F0',
-    7: '#2A1A0A',
-    8: '#D08060',
-  },
-};
-
-const arctic: Palette = {
-  name: 'Arctic',
-  colors: {
-    1: '#B8D8F0', // ice blue blob
-    2: '#90B8D8', // steel blue feature
-    3: '#D8E8F8', // snow pattern
-    4: '#A0D0E8', // frost accent
-    5: '#88A8C0', // slate outline
-    6: '#FFFFFF',
-    7: '#1A2A3A',
-    8: '#D098A8',
-  },
-};
-
-const autumn: Palette = {
-  name: 'Autumn',
-  colors: {
-    1: '#E8A060', // amber blob
-    2: '#D07840', // rust feature
-    3: '#F0C878', // golden pattern
-    4: '#C89030', // mustard accent
-    5: '#A87838', // brown outline
-    6: '#FFF8F0',
-    7: '#2A1808',
-    8: '#D07850',
-  },
-};
-
-const twilight: Palette = {
-  name: 'Twilight',
-  colors: {
-    1: '#9A80C8', // violet blob
-    2: '#7060B0', // deep purple feature
-    3: '#C0A8E0', // lilac pattern
-    4: '#B090D8', // light purple accent
-    5: '#785898', // dark purple outline
-    6: '#F0E8FF',
-    7: '#100820',
-    8: '#C07898',
-  },
-};
-
-const meadow: Palette = {
-  name: 'Meadow',
-  colors: {
-    1: '#A8D870', // bright green blob
-    2: '#E8C040', // golden feature
-    3: '#D0F0A0', // light lime pattern
-    4: '#C8E050', // yellow-green accent
-    5: '#80A050', // olive outline
-    6: '#FFFFFF',
-    7: '#1A2A08',
-    8: '#E0A078',
-  },
-};
-
-const candy: Palette = {
-  name: 'Candy',
-  colors: {
-    1: '#FFB0C8', // pink blob
-    2: '#B088D0', // purple feature
-    3: '#B8E8D0', // mint pattern
-    4: '#90D8B8', // teal accent
-    5: '#B07898', // mauve outline
-    6: '#FFFFFF',
-    7: '#3A1830',
-    8: '#F088A8',
-  },
-};
-
-const coral: Palette = {
-  name: 'Coral',
-  colors: {
-    1: '#D77757', // Clawd's original warm orange
-    2: '#C05A3A', // darker coral feature
-    3: '#F0A888', // lighter peach pattern
-    4: '#E89070', // salmon accent
-    5: '#B07058', // warm outline
-    6: '#FFFFFF',
-    7: '#2A1008',
-    8: '#C05848',
-  },
-};
-
-const cloud: Palette = {
-  name: 'Cloud',
-  colors: {
-    1: '#7BA7D9', // Clawd's current blue
-    2: '#5A88C0', // deeper blue feature
-    3: '#A8C8F0', // lighter blue pattern
-    4: '#90B8E0', // sky accent
-    5: '#7890B0', // blue-gray outline
-    6: '#FFFFFF',
-    7: '#101828',
-    8: '#D08898',
-  },
-};
-
-const ember: Palette = {
-  name: 'Ember',
-  colors: {
-    1: '#E06B4A', // hot coral blob
-    2: '#B03A2E', // deep red feature
-    3: '#F8A870', // ember glow pattern
-    4: '#FFD070', // spark accent
-    5: '#9A4030', // charred outline
-    6: '#FFF0E0',
-    7: '#2A0C08',
-    8: '#C04838',
-  },
-};
-
-const moss: Palette = {
-  name: 'Moss',
-  colors: {
-    1: '#7FA86B', // damp green blob
-    2: '#4F7A48', // deep moss feature
-    3: '#B8CE90', // lichen pattern
-    4: '#D8C070', // dry grass accent
-    5: '#5A7850', // shaded outline
-    6: '#F4F8E8',
-    7: '#18240E',
-    8: '#C08868',
-  },
-};
-
-const orchid: Palette = {
-  name: 'Orchid',
-  colors: {
-    1: '#C878B8', // orchid blob
-    2: '#8E4A88', // wine feature
-    3: '#EEB8DE', // petal pattern
-    4: '#F0D060', // pollen accent
-    5: '#8A5880', // shaded outline
-    6: '#FFF4FC',
-    7: '#2A0E28',
-    8: '#D06890',
-  },
-};
-
-const slate: Palette = {
-  name: 'Slate',
-  colors: {
-    1: '#8C97A8', // cool grey blob
-    2: '#5F6B7C', // charcoal feature
-    3: '#C0C8D4', // pale grey pattern
-    4: '#7FB0C8', // cold blue accent
-    5: '#6A7484', // shaded outline
-    6: '#FFFFFF',
-    7: '#161C26',
-    8: '#B08088',
-  },
-};
-
-const mango: Palette = {
-  name: 'Mango',
-  colors: {
-    1: '#F0A83C', // ripe mango blob
-    2: '#D8642C', // rind feature
-    3: '#FFD98C', // flesh pattern
-    4: '#A8C850', // leaf accent
-    5: '#B87828', // shaded outline
-    6: '#FFF8E8',
-    7: '#2E1A06',
-    8: '#D8664C',
-  },
-};
-
-const lagoon: Palette = {
-  name: 'Lagoon',
-  colors: {
-    1: '#4FBFAE', // teal blob
-    2: '#2E8478', // deep lagoon feature
-    3: '#A8E8DC', // shallows pattern
-    4: '#F0D888', // sand accent
-    5: '#38867C', // shaded outline
-    6: '#F0FFFC',
-    7: '#0A2622',
-    8: '#D07C7C',
-  },
-};
-
-const plum: Palette = {
-  name: 'Plum',
-  colors: {
-    1: '#7A5C8E', // plum blob
-    2: '#4E3660', // dark plum feature
-    3: '#B79ACC', // bloom pattern
-    4: '#E0A0C0', // blossom accent
-    5: '#5C4470', // shaded outline
-    6: '#F6EEFF',
-    7: '#180E22',
-    8: '#B06A8A',
-  },
-};
-
-const bone: Palette = {
-  name: 'Bone',
-  colors: {
-    1: '#E4D8C0', // bone blob
-    2: '#B09878', // taupe feature
-    3: '#F6EEDC', // chalk pattern
-    4: '#C8A860', // brass accent
-    5: '#A89474', // shaded outline
-    6: '#FFFFFF',
-    7: '#2A2418',
-    8: '#C08C7C',
-  },
-};
-
-const inkwell: Palette = {
-  name: 'Inkwell',
-  colors: {
-    1: '#5A6B8C',
-    2: '#39465F',
-    3: '#93A6C4',
-    4: '#C8A85A',
-    5: '#3D4A63',
-    6: '#F0F4FF',
-    7: '#0C1220',
-    8: '#8A6E8E',
-  },
-};
-
-const peach: Palette = {
-  name: 'Peach',
-  colors: {
-    1: '#F8B48C',
-    2: '#DE7F5C',
-    3: '#FFD9BE',
-    4: '#7FC49A',
-    5: '#C4805E',
-    6: '#FFF6EE',
-    7: '#3A1E10',
-    8: '#D97878',
-  },
-};
-
-const mint: Palette = {
-  name: 'Mint',
-  colors: {
-    1: '#8ADCB4',
-    2: '#4FA87E',
-    3: '#CDF2DE',
-    4: '#F0C060',
-    5: '#5F9C7C',
-    6: '#F2FFF8',
-    7: '#0E2A1E',
-    8: '#D08A96',
-  },
-};
-
-const rose: Palette = {
-  name: 'Rose',
-  colors: {
-    1: '#E88CA0',
-    2: '#B4506A',
-    3: '#FFC4D2',
-    4: '#F0D890',
-    5: '#B06478',
-    6: '#FFF2F6',
-    7: '#2E0C18',
-    8: '#C4566E',
-  },
-};
-
-const storm: Palette = {
-  name: 'Storm',
-  colors: {
-    1: '#6E7C99',
-    2: '#454F68',
-    3: '#A5B2CC',
-    4: '#8CC0D8',
-    5: '#4E5872',
-    6: '#EEF2FA',
-    7: '#101622',
-    8: '#96707E',
-  },
-};
-
-const marigold: Palette = {
-  name: 'Marigold',
-  colors: {
-    1: '#F2C044',
-    2: '#C4882A',
-    3: '#FFE694',
-    4: '#7FA860',
-    5: '#B08428',
-    6: '#FFFBEA',
-    7: '#2E2206',
-    8: '#C4744C',
-  },
-};
-
-const violet: Palette = {
-  name: 'Violet',
-  colors: {
-    1: '#A88CE0',
-    2: '#6E52A8',
-    3: '#D4C2F4',
-    4: '#F0A8C8',
-    5: '#7A5FB4',
-    6: '#F8F2FF',
-    7: '#1A1030',
-    8: '#B06898',
-  },
-};
-
-const clay: Palette = {
-  name: 'Clay',
-  colors: {
-    1: '#C08A6E',
-    2: '#8E5C46',
-    3: '#E4BFA4',
-    4: '#7E9C7A',
-    5: '#8A6250',
-    6: '#FBF2EA',
-    7: '#2A180E',
-    8: '#B06A5C',
-  },
-};
-
-const sea: Palette = {
-  name: 'Sea',
-  colors: {
-    1: '#5FA8C4',
-    2: '#316C8C',
-    3: '#A8DCEC',
-    4: '#F0CE7A',
-    5: '#3E7C9C',
-    6: '#F0FAFE',
-    7: '#08202E',
-    8: '#C4787E',
-  },
-};
-
-const fern: Palette = {
-  name: 'Fern',
-  colors: {
-    1: '#78B45A',
-    2: '#4A7C3A',
-    3: '#B6DC9A',
-    4: '#E0C060',
-    5: '#578A44',
-    6: '#F4FCEC',
-    7: '#12240A',
-    8: '#C08A6A',
-  },
-};
-
-const cocoa: Palette = {
-  name: 'Cocoa',
-  colors: {
-    1: '#8E6E5C',
-    2: '#5C463A',
-    3: '#C0A490',
-    4: '#D4A860',
-    5: '#6E5648',
-    6: '#F6EFE8',
-    7: '#1E120C',
-    8: '#A86C64',
-  },
-};
-
-const neon: Palette = {
-  name: 'Neon',
-  colors: {
-    1: '#7CE0C8',
-    2: '#2EA890',
-    3: '#C0FFEE',
-    4: '#F080B8',
-    5: '#3E9C88',
-    6: '#F0FFFC',
-    7: '#062420',
-    8: '#D06898',
-  },
-};
-
-export const palettes: Palette[] = [
-  sunrise,
-  ocean,
-  forest,
-  berry,
-  desert,
-  arctic,
-  autumn,
-  twilight,
-  meadow,
-  candy,
-  coral,
-  cloud,
-  ember,
-  moss,
-  orchid,
-  slate,
-  mango,
-  lagoon,
-  plum,
-  bone,
-  inkwell,
-  peach,
-  mint,
-  rose,
-  storm,
-  marigold,
-  violet,
-  clay,
-  sea,
-  fern,
-  cocoa,
-  neon,
+const COLOURWAYS: Colourway[] = [
+  { name: 'Peach',        body: '#FFB38A', accent: '#7FC8F8', trim: '#FFF3E0' },
+  { name: 'Bubblegum',    body: '#FF9EC7', accent: '#8C7CF0', trim: '#FFFFFF' },
+  { name: 'Butter',       body: '#FFE07A', accent: '#FF7F96', trim: '#FFFFFF' },
+  { name: 'Mint',         body: '#8FE3B8', accent: '#FF8FB1', trim: '#FFF6C8' },
+  { name: 'Sky',          body: '#8CCBFF', accent: '#FFC857', trim: '#FFFFFF' },
+  { name: 'Lilac',        body: '#C9A7F5', accent: '#FFD166', trim: '#FFF0F6' },
+  { name: 'Coral',        body: '#FF8E7F', accent: '#5CC8C0', trim: '#FFF6E8' },
+  { name: 'Lime',         body: '#C6E86E', accent: '#FF8C69', trim: '#FFFFFF' },
+  { name: 'Aqua',         body: '#78DCE8', accent: '#FF7AA8', trim: '#FFF8D6' },
+  { name: 'Tangerine',    body: '#FFA552', accent: '#6C8CF5', trim: '#FFF1D6' },
+  { name: 'Strawberry',   body: '#FF7A93', accent: '#7FD1AE', trim: '#FFF0F3' },
+  { name: 'Periwinkle',   body: '#9DAEFF', accent: '#FF9F7A', trim: '#FFFFFF' },
+  { name: 'Cream',        body: '#FFF1D0', accent: '#FF8FAB', trim: '#9AD9F5' },
+  { name: 'Cocoa',        body: '#C69276', accent: '#FF9FB5', trim: '#FFF1DC' },
+  { name: 'Caramel',      body: '#E8B074', accent: '#7EC4CF', trim: '#FFF6E6' },
+  { name: 'Grape',        body: '#A68BF0', accent: '#7FE0C8', trim: '#FFF4C2' },
+  { name: 'Teal',         body: '#5ED3C3', accent: '#FFB86B', trim: '#FFFFFF' },
+  { name: 'Snow',         body: '#F2F5FA', accent: '#7BB8FF', trim: '#FFB5C8' },
+  { name: 'Sage',         body: '#A9D6A0', accent: '#F7A072', trim: '#FFF8E7' },
+  { name: 'Rose',         body: '#F6A6C1', accent: '#6FC2B8', trim: '#FFFFFF' },
+  { name: 'Honey',        body: '#FFC94D', accent: '#E86A8E', trim: '#FFF4D6' },
+  { name: 'Seafoam',      body: '#A8F0D8', accent: '#9A8CF5', trim: '#FFFFFF' },
+  { name: 'Blush',        body: '#FFC4C4', accent: '#7AA9F0', trim: '#FFFFFF' },
+  { name: 'Ocean',        body: '#6FB4F2', accent: '#FFDD6B', trim: '#FFFFFF' },
+  { name: 'Plum',         body: '#D48BD8', accent: '#FFD36B', trim: '#FFF0FA' },
+  { name: 'Sunflower',    body: '#FFD84A', accent: '#6FA8F0', trim: '#FFFFFF' },
+  { name: 'Melon',        body: '#B8F28C', accent: '#FF7A8A', trim: '#FFF5E0' },
+  { name: 'Lavender',     body: '#B8B6F7', accent: '#FF9EBB', trim: '#FFFFFF' },
+  { name: 'Pumpkin',      body: '#FF9446', accent: '#7C6BE0', trim: '#FFE9A8' },
+  { name: 'Cotton Candy', body: '#A9DCFF', accent: '#FFA3D1', trim: '#FFFFFF' },
+  { name: 'Matcha',       body: '#9CCB7A', accent: '#E9A2C8', trim: '#FFF7E0' },
+  { name: 'Ruby',         body: '#F2697E', accent: '#FFD56B', trim: '#FFF3E0' },
+  // Night colourways: deeper, for guys with a bit more edge. Rarer than the rest.
+  { name: 'Charcoal',     body: '#4A4E5E', accent: '#E8483D', trim: '#F2C230' },
+  { name: 'Cobalt',       body: '#3D6FE0', accent: '#F2C230', trim: '#FFFFFF' },
+  { name: 'Midnight',     body: '#2E3A66', accent: '#5FE0B0', trim: '#FFE066' },
+  { name: 'Oxblood',      body: '#8E2A3A', accent: '#F2C230', trim: '#FFF1D6' },
+  { name: 'Forest',       body: '#2F6B4A', accent: '#F28A2E', trim: '#FFF1D6' },
+  { name: 'Grape Soda',   body: '#6B3FA0', accent: '#3DE0B0', trim: '#FFE066' },
 ];
+
+// ---------------------------------------------------------------- colour math
+
+type HSL = [number, number, number];
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b]
+    .map(v => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
+function toHsl(hex: string): HSL {
+  const [r, g, b] = hexToRgb(hex).map(v => v / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+
+function fromHsl([h, s, l]: HSL): string {
+  h = ((h % 360) + 360) % 360;
+  s = Math.min(1, Math.max(0, s));
+  l = Math.min(1, Math.max(0, l));
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] =
+    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] :
+    h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+}
+
+function mix(a: string, b: string, amount: number): string {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+  return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
+}
+
+/** Moves a hue `amount` degrees towards `target` along the short way round. */
+function towards(hue: number, target: number, amount: number): number {
+  const diff = ((target - hue + 540) % 360) - 180;
+  return hue + Math.sign(diff) * Math.min(Math.abs(diff), amount);
+}
+
+function luminance(hex: string): number {
+  const channel = (v: number) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const [r, g, b] = hexToRgb(hex);
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Shade a colour by hand: darker and leaning towards violet, but never richer.
+ * Adding saturation in the shadow is what turned a green body's shade neon.
+ */
+function shadeOf(hex: string, depth = 0.12): string {
+  const [h, s, l] = toHsl(hex);
+  return fromHsl([towards(h, 265, 12), s * 0.85, l - depth]);
+}
+
+// ---------------------------------------------------------------- palettes
+
+/** Builds the full set of token colours from a body, an accent and a trim. */
+function derive(name: string, body: string, accent: string, trim: string): Palette {
+  const [h] = toHsl(body);
+  const outlineHue = towards(h, 285, 25);
+  // A deep version of the body; on a dark body it goes nearly black so the
+  // edge still reads.
+  const outline = fromHsl([outlineHue, 0.42, toHsl(body)[2] >= 0.5 ? 0.3 : toHsl(body)[2] * 0.25]);
+  // Dark eyes on most bodies; on a body too dark for them, the eyes and mouth
+  // glow a light cream instead, which reads as a look rather than a mistake.
+  const dark = fromHsl([outlineHue, 0.38, 0.14]);
+  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark : '#FFF1D6';
+
+  // A rosy pink, deepened until it reads on this body.
+  let blush = '#FF8FA8';
+  for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, 0.06);
+
+  let tongue = '#FF6B88';
+  for (let i = 0; i < 8 && contrast(tongue, body) < 1.4; i++) tongue = shadeOf(tongue, 0.06);
+
+  // Gold parts (a crown, star eyes, a star mark) on a yellow body would vanish,
+  // so there the gold turns to a deep amber that still reads as gold.
+  const goldReads = contrast('#FFD45C', body) >= 1.45;
+  const gold = goldReads ? '#FFD45C' : '#E8901A';
+  const goldShade = goldReads ? '#F0A93A' : '#B3620E';
+
+  return {
+    name,
+    colors: {
+      1: body,
+      2: shadeOf(body),
+      3: mix(body, '#FFFFFF', 0.55),
+      4: outline,
+      5: ink,
+      6: '#FFFFFF',
+      7: blush,
+      8: ink,
+      9: tongue,
+      10: accent,
+      11: shadeOf(accent),
+      12: trim,
+      13: mix(body, '#FFFBF0', 0.6),
+      14: '#7DD87A',
+      15: '#4FAE5C',
+      16: gold,
+      17: goldShade,
+      18: '#FF6B78',
+      19: shadeOf(body, 0.24),
+    },
+  };
+}
+
+export const palettes: Palette[] = COLOURWAYS.map(w => derive(w.name, w.body, w.accent, w.trim));
 
 export function getPalette(index: number): Palette {
   return palettes[index % palettes.length];
@@ -489,115 +199,51 @@ export function getPalette(index: number): Palette {
 
 export function resolveColor(palette: Palette, token: ColorToken): string | null {
   if (token === 0) return null;
-  return palette.colors[token];
+  return palette.colors[token] ?? null;
 }
 
-/** How many tones `shadePalette` offers. */
+/** Tones a colourway can be worn in: pastel, as picked, vivid. */
 export const SHADE_COUNT = 3;
 
-function mix(hex: string, towards: number, amount: number): string {
-  const channel = (i: number) => {
-    const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
-    return Math.round(v + (towards - v) * amount).toString(16).padStart(2, '0');
-  };
-  return `#${channel(0)}${channel(1)}${channel(2)}`.toUpperCase();
-}
-
 /**
- * Returns a lighter or deeper version of a palette.
- *
- * A third axis of colour variety for free — twenty palettes behave like sixty
- * without anyone hand-picking sixty sets of hexes. Tokens 6 and 7 (eye white
- * and pupil) are deliberately untouched: shading them would close the gap that
- * makes a face readable at 16px.
+ * Re-derives a palette in another tone. The pastel tone lifts the body and
+ * accent towards white; the vivid tone deepens them. It deliberately barely
+ * adds saturation — saturating an already-bright lime turns it acid. Either way
+ * the outline, shading and blush are worked out again from the result, so a
+ * toned palette is as coherent as the original.
  */
-/**
- * Relative luminance, per WCAG. Used only to compare two palette colours with
- * each other, never against a page background.
- */
-function luminance(hex: string): number {
-  const channel = (i: number) => {
-    const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
-}
-
-function contrast(a: string, b: string): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (light + 0.05) / (dark + 0.05);
-}
-
-/**
- * How far each token has to stand off the body colour it is drawn on.
- *
- * The palettes were picked by eye, and several of them put a token within a
- * hair of the body: Twilight's mouth was 1.01:1 against its blob, which is to
- * say invisible, and twenty of the thirty-two were under 1.5:1. A hat drawn in
- * the pattern colour vanished the same way, leaving just its brim — the reason
- * so many of them read as a stripe across the forehead rather than a hat.
- *
- * Rather than repaint thirty-two palettes by hand, each token is pushed away
- * from the body's lightness until it clears the floor for the job it does.
- * Only lightness moves, so a rosy mouth stays rosy. The floors are deliberately
- * uneven: a body pattern wants to stay quiet, a mouth carries the expression.
- */
-const CONTRAST_FLOOR: Record<number, number> = {
-  2: 1.7, // features — ears, antennae, sprouts
-  3: 1.7, // body patterns, and the crown of a hat
-  4: 1.7, // accents — brims, props, trim
-  5: 2.4, // outlines — glasses, whiskers, moustaches
-  8: 2.6, // the mouth carries the whole expression
-};
-
-/**
- * Pushes a colour away from the body colour until it clears its floor.
- *
- * It keeps whichever side of the body the colour was already on, so a dark
- * mouth gets darker rather than flipping to light. Steps are small and capped:
- * a colour that cannot reach its floor without going fully black or white
- * stops at the edge rather than blowing out the palette.
- */
-function separate(color: string, body: string, floor: number): string {
-  if (contrast(color, body) >= floor) return color;
-  const bodyLum = luminance(body);
-  const towards = luminance(color) === bodyLum ? (bodyLum > 0.4 ? 0 : 255)
-    : luminance(color) < bodyLum ? 0 : 255;
-
-  const reach = (target: number) => {
-    let result = color;
-    for (let amount = 0.04; amount <= 1; amount += 0.04) {
-      result = mix(color, target, amount);
-      if (contrast(result, body) >= floor) break;
-    }
-    return result;
-  };
-
-  // Prefer the side the colour is already on, but a light body under the soft
-  // shade can leave no room upwards; take the other direction rather than fall
-  // short of the floor.
-  const preferred = reach(towards);
-  if (contrast(preferred, body) >= floor) return preferred;
-  const other = reach(towards === 0 ? 255 : 0);
-  return contrast(other, body) > contrast(preferred, body) ? other : preferred;
-}
-
-/** Applies every contrast floor against the palette's own body colour. */
-function legible(palette: Palette): Palette {
-  const colors = { ...palette.colors };
-  for (const token of [2, 3, 4, 5, 8] as const) {
-    colors[token] = separate(colors[token], colors[1], CONTRAST_FLOOR[token]);
-  }
-  return { name: palette.name, colors };
-}
-
 export function shadePalette(palette: Palette, shade: number): Palette {
-  if (shade === 1) return legible(palette);
-  const [towards, amount] = shade === 0 ? [255, 0.28] : [0, 0.22];
+  if (shade === 1) return palette;
+  const tone = (hex: string) => {
+    if (shade === 0) return mix(hex, '#FFFFFF', 0.3);
+    const [h, s, l] = toHsl(hex);
+    return fromHsl([h, Math.min(0.8, s + 0.04), l > 0.4 ? l - 0.08 : l]);
+  };
+  const c = palette.colors;
+  return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
+}
 
-  const colors = { ...palette.colors };
-  for (const token of [1, 2, 3, 4, 5, 8] as const) {
-    colors[token] = mix(colors[token], towards, amount);
-  }
-  return legible({ name: palette.name, colors });
+/**
+ * The Lucky variant: the same colourway turned round the colour wheel, with
+ * gold trim. Derived again, so the face and outline read as well as ever.
+ */
+export function luckyPalette(palette: Palette): Palette {
+  // Lightness is pushed away from the middle, where neither dark nor cream
+  // eyes would read. A dark colour turned into the oranges and yellows comes
+  // out brown or olive, so dark ones skip on to jewel tones instead.
+  const turn = (hex: string) => {
+    const [h, s, l] = toHsl(hex);
+    let hue = (h + 150) % 360;
+    const dark = l < 0.45;
+    if (dark && hue >= 10 && hue <= 110) hue += 130;
+    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.min(0.85, s + 0.05), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.max(l, 0.66)]);
+  };
+  const c = palette.colors;
+  return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');
+}
+
+/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+export function paletteOf(config: AvatarConfig): Palette {
+  const toned = shadePalette(getPalette(config.palette), config.shade);
+  return config.lucky ? luckyPalette(toned) : toned;
 }

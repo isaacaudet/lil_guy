@@ -1,0 +1,344 @@
+<title>Lil Guys on Boards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap">
+<style>
+  /* Layout: a plan read top to bottom: the flow from a name to a dressed guy, then a working board, a game screen, and what the club needs. */
+  :root {
+    --bg: #f3efe6; --panel: #fcfaf5; --line: #e2dbcc; --ink: #231e2c; --muted: #6a6377; --accent: #2f6fe0; --you: #fff2c7; --code: #efe9dc;
+    --g0: #4B69FF; --g1: #8847FF; --g2: #D32CE6; --g3: #EB4B4B; --g4: #E4AE39;
+    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #14121b; --panel: #1d1a27; --line: #2d2939; --ink: #f2eee6; --muted: #a29bb2; --accent: #7aa7ff; --you: #3a3220; --code: #26222f; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #14121b; --panel: #1d1a27; --line: #2d2939; --ink: #f2eee6; --muted: #a29bb2; --accent: #7aa7ff; --you: #3a3220; --code: #26222f; color-scheme: dark; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 80px; }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 52px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(34px, 5vw, 50px); line-height: 1; }
+  h2 { font-size: 26px; }
+  h3 { font-size: 16px; }
+  p { margin: 0; }
+  .lede { color: var(--muted); max-width: 70ch; margin-top: 10px; }
+  section { display: grid; gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+  code, pre { font-family: var(--mono); font-size: 12.5px; }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  pre { background: var(--code); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 0; line-height: 1.5; }
+
+  /* the flow */
+  .who { display: grid; gap: 6px; }
+  .who label { font: 500 12px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .who input { font: 500 20px/1 var(--pixel); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: min(280px, 100%); }
+  .who input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .steps { display: grid; gap: 12px; counter-reset: step; }
+  .step { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .step .num { counter-increment: step; width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font: 700 20px/1 var(--pixel); background: var(--ink); color: var(--bg); }
+  .step .num::before { content: counter(step); }
+  .step .body { display: grid; gap: 10px; }
+  .step .body > p { color: var(--muted); max-width: 72ch; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { font: 500 12px/1 var(--pixel); padding: 5px 7px; border-radius: 5px; background: var(--code); }
+  .chip.g { color: #fff; background: var(--c); }
+  .strip { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .fig { display: grid; gap: 4px; justify-items: center; text-align: center; margin: 0; }
+  .fig figcaption { font-size: 11.5px; color: var(--muted); max-width: 96px; line-height: 1.3; }
+  .fig figcaption b { color: var(--ink); font-weight: 600; display: block; }
+  canvas.px { image-rendering: pixelated; background: var(--code); border-radius: 8px; display: block; }
+
+  /* the board */
+  .board { list-style: none; margin: 0; padding: 0; display: grid; }
+  .board li { display: grid; grid-template-columns: 34px 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .board li:last-child { border-bottom: 0; }
+  .board li.you { background: var(--you); border-radius: 8px; }
+  .board .rk { font: 700 15px/1 var(--pixel); text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .board .face { width: 40px; height: 50px; position: relative; display: grid; place-items: end center; }
+  .board .face canvas { width: 40px; height: 50px; }
+  /* Before any script: a ring in the best copy's grade, from one number the row carries. */
+  .board .face[data-grade]::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 3px; border-radius: 2px; background: var(--c); }
+  .board .name { min-width: 0; }
+  .board .name b { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board .name small { color: var(--muted); font-size: 12px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board .pts { font: 700 16px/1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--code); border-radius: 8px; padding: 10px 12px; }
+  .stat b { display: block; font: 700 22px/1.1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .rules { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+  .rules b { font-weight: 600; }
+
+  /* the game screen */
+  .game { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; background: linear-gradient(180deg, #7ec8f5, #bfe6ff); border-radius: 14px; padding: 18px; color: #12304a; }
+  .game h3 { font-size: 22px; }
+  .game p { color: #24506f; }
+  .game .score { font: 700 40px/1 var(--pixel); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 500 12px/1.2 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .table-wrap { overflow-x: auto; }
+  .decide { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .decide .panel h3 { margin-bottom: 8px; }
+  .decide .panel p { color: var(--muted); font-size: 14px; }
+  .decide .panel p + p { margin-top: 8px; }
+  .decide .panel p b { color: var(--ink); font-weight: 600; }
+  @media (max-width: 820px) { .split { grid-template-columns: 1fr; } .game { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Lil Guys on Boards</h1>
+    <p class="lede">How a player gets their guy and first items, and a light way to show what they wear on every board and in every game, with animation where it counts. Everything below is drawn by the library in this page, and the timings are measured here.</p>
+  </header>
+
+  <section id="flow">
+    <h2>From a name to a dressed guy</h2>
+    <div class="who"><label for="who">Player name</label><input id="who" value="sam42" autocomplete="off" spellcheck="false" maxlength="24"></div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section id="board">
+    <h2>On a leaderboard</h2>
+    <p class="lede">Every row shows the guy in what he wears, as a still. Only the top three and your own row move; any row moves while you point at it. Before the library has even loaded, each face square already shows its best copy's grade as a coloured bar, from one number in the row.</p>
+    <div class="split">
+      <div class="panel"><ol class="board" id="board-list"></ol></div>
+      <div style="display:grid;gap:14px">
+        <div class="stats" id="stats"></div>
+        <div class="panel">
+          <h3 style="margin-bottom:10px">What keeps it light</h3>
+          <ul class="rules">
+            <li><b>One canvas per face, drawn once.</b> Today each face is an SVG of up to 256 rectangles. A 16×16 canvas is one element and draws in a fraction of a millisecond.</li>
+            <li><b>Cached by what it shows.</b> The same name, look and wear always draws the same pixels, so the cache key is those three strings.</li>
+            <li><b>The library loads late.</b> As now, it's fetched when the first face is nearly on screen. Rows show at once with the grade bar.</li>
+            <li><b>Few things move.</b> The top three, you, and whatever you point at. One shared timer at 12 frames a second drives them all, and it stops when they scroll away or the tab is hidden.</li>
+            <li><b>Frames are made once.</b> A move's frames are built the first time it plays and reused.</li>
+            <li><b>Small rows.</b> The row carries the copies' short codes, not pictures.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="game">
+    <h2>In a game</h2>
+    <p class="lede">The results screen gets the same guy in the same items. He cheers on a good day and sulks on a bad one; the game asks club.js for a move and gets frames back.</p>
+    <div class="game">
+      <canvas class="px" id="game-guy" width="16" height="20" style="width:128px;height:160px;background:transparent"></canvas>
+      <div style="display:grid;gap:8px">
+        <h3>Puttsies · 24 October</h3>
+        <p class="score">84</p>
+        <p id="game-line"></p>
+        <div class="chips" id="game-moves"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="needs">
+    <h2>What the club needs</h2>
+    <div class="panel table-wrap">
+      <table>
+        <thead><tr><th>Where</th><th>Change</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Database</td><td><code>club_copies</code>: one row per owned copy (player, its code, where it came from, when). <code>club_players.wear</code>: what's worn, as codes joined by <code>|</code>.</td><td>A dated, additive migration. Isaac applies it. <code>wear</code> sits on the players table so boards read it in the query they already make, with no join.</td></tr>
+          <tr><td>API rows</td><td><code>wear</code> and <code>grade</code> beside <code>look</code>, everywhere a row carries <code>look</code> today.</td><td>About <span id="bytes-note">90</span> bytes a row. Old clients ignore them.</td></tr>
+          <tr><td>Writes</td><td><code>equip</code> (choose what to wear), and server-side drops: the server makes the seed, rolls, stores the copy.</td><td>Each gets an entry in <code>LIMITS</code>. No roll ever happens in the browser.</td></tr>
+          <tr><td><code>look.js</code></td><td><code>faceSvg(name, look, size, wear)</code> gains a last argument; new <code>faceCanvas</code> and <code>faceFrames</code>.</td><td>Additive, so <code>api/og.js</code> and old callers keep working.</td></tr>
+          <tr><td><code>rows.js</code></td><td>Draw into a canvas instead of SVG; one animation timer for the rows that move.</td><td>The lazy load and the reserved square stay as they are.</td></tr>
+          <tr><td><code>club.js</code></td><td>Add <code>DLEClub.guy(el, player, { move })</code> for games.</td><td>Additive only, as its rules require. Nothing renamed or removed.</td></tr>
+          <tr><td><code>faces.js</code></td><td>Copy the new library build over it.</td><td>It is Amountle's build, vendored. See the first decision below.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>A row, as the API would send it</h3>
+    <pre id="row-json"></pre>
+  </section>
+
+  <section id="decide">
+    <h2>Three things to decide first</h2>
+    <div class="decide">
+      <div class="panel"><h3>Saved looks break</h3><p>The club already lets players pick their guy, saved as seven numbers like <code>3.5.0.12.4.0.17</code>. Those are positions in the old parts list. The new library has different parts in different places, so every saved look would turn into someone else.</p><p><b>My pick:</b> version the code. Old codes keep the name's guy and the player is asked to pick again; new codes start with <code>2:</code>.</p></div>
+      <div class="panel"><h3>Renaming changes the guy</h3><p>The guy comes from the board name. Change the nickname and the guy changes, and so would starter copies made from the name.</p><p><b>My pick:</b> starters are made once on the server and stored, so they never change. Whether the guy follows a rename is your call: the look column can pin him.</p></div>
+      <div class="panel"><h3>Picking vs rare traits</h3><p>If anyone can pick laser eyes and a crown, a rare guy means nothing.</p><p><b>My pick:</b> the picker keeps the common parts. Rare shapes, eyes and toppers only come from your name or as items, so they stay worth something.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>/*LIB*/</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const GRADE = LG.GRADES.map(g => g.color);
+  const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
+  const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+
+  /* ------------------------------------------------ drawing, the light way */
+  const cache = new Map();          // name|wear → ImageData of the still
+  function still(name, wear) {
+    const key = name + '|' + wear.join('|');
+    if (!cache.has(key)) {
+      const cfg = LG.dress(LG.resolve(name), { equip: wear });
+      const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg));
+      const img = new ImageData(16, 20);
+      colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], ((y + 4) * 16 + x) * 4); }));
+      cache.set(key, img);
+    }
+    return cache.get(key);
+  }
+  const framesCache = new Map();    // name|wear|move → frames as ImageData
+  function frames(name, wear, move) {
+    const key = [name, wear.join('|'), move].join('#');
+    if (!framesCache.has(key)) {
+      const a = LG.animate(name, move, { equip: wear });
+      framesCache.set(key, { duration: a.duration, frames: a.frames.map(f => {
+        const img = new ImageData(16, 20);
+        f.colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], (y * 16 + x) * 4); }));
+        return { img, ms: f.ms };
+      }) });
+    }
+    return framesCache.get(key);
+  }
+  // One timer for everything that moves, at 12 frames a second.
+  const moving = new Set();
+  let last = 0;
+  function tick(now) {
+    requestAnimationFrame(tick);
+    if (now - last < 83 || document.hidden) return;
+    last = now;
+    for (const m of moving) {
+      if (!m.canvas.isConnected) { moving.delete(m); continue; }
+      if (!m.visible) continue;
+      let t = (now - m.t0) % m.f.duration, k = 0;
+      while (t >= m.f.frames[k].ms) { t -= m.f.frames[k].ms; k++; }
+      if (k !== m.k) { m.k = k; m.ctx.putImageData(m.f.frames[k].img, 0, 0); }
+    }
+  }
+  requestAnimationFrame(tick);
+  const seen = new IntersectionObserver(es => es.forEach(e => { for (const m of moving) if (m.canvas === e.target) m.visible = e.isIntersecting; }));
+  function play(canvas, name, wear, move) {
+    for (const m of moving) if (m.canvas === canvas) moving.delete(m);
+    const m = { canvas, ctx: canvas.getContext('2d'), f: frames(name, wear, move), t0: performance.now(), k: -1, visible: true };
+    moving.add(m); seen.observe(canvas);
+    return m;
+  }
+  function stop(canvas, name, wear) {
+    for (const m of moving) if (m.canvas === canvas) moving.delete(m);
+    canvas.getContext('2d').putImageData(still(name, wear), 0, 0);
+  }
+  const px = (w, h, css) => `<canvas class="px" width="${w}" height="${h}" style="${css}"></canvas>`;
+
+  /* ------------------------------------------------ the flow */
+  function renderFlow(name) {
+    const c = LG.resolve(name);
+    const traits = LG.traitOdds(c).filter(t => !['none', 'bare', 'plain', 'regular'].includes(t.name));
+    const starters = LG.GAMES.map(g => LG.starter(name, g));
+    const puttsies = starters[LG.GAMES.indexOf('puttsies')];
+    const drop = LG.roll('server-seed-' + strHash(name), 'trackdle');
+    const later = { ...drop, tally: 42, pins: ['star'] };
+    const steps = [
+      { title: 'A name', text: 'A player arrives with a club id. The board shows their nickname, or a generated name until they pick one.',
+        figs: `<span class="chip" style="font-size:18px">${esc(name)}</span>` },
+      { title: 'The guy', text: `The name picks every part: shape, eyes, mouth, cheeks, topper, markings, accessory and colour, plus a 1 in ${LG.LUCKY_ODDS} chance of Lucky. Same name, same guy, everywhere. A picked look can pin him.`,
+        figs: `<figure class="fig">${px(16, 20, 'width:96px;height:120px')}<figcaption><b>${esc(name)}</b>1 in ${Math.round(LG.guyOneIn(c)).toLocaleString('en-US')}</figcaption></figure><div class="chips" style="max-width:420px">${traits.map(t => `<span class="chip">${esc(t.name)}</span>`).join('')}</div>`, draw: [[name, []]] },
+      { title: 'Starter copies', text: 'Every player owns each game\'s free hat from the start: Plain, with its own scuff and print, so no two are quite the same. These should be made once on the server and stored, so a rename never changes them.',
+        figs: starters.map(o => `<figure class="fig">${px(16, 20, 'width:56px;height:70px')}<figcaption><b>${esc(LG.itemById(o.item).name)}</b>${LG.wearOf(o.scuff).short} · #${o.print}</figcaption></figure>`).join(''), draw: starters.map(o => [name, [LG.encode(o)]]) },
+      { title: 'What he wears', text: 'In a game he wears that game\'s free hat until he picks something else; on the club\'s boards he wears his chosen loadout, and nothing until he chooses one.',
+        figs: `<figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>In Puttsies</b>his golf visor</figcaption></figure><figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>On the club</b>no loadout yet</figcaption></figure>`, draw: [[name, [LG.encode(puttsies)]], [name, []]] },
+      { title: 'Earning more', text: 'Finishing the day\'s gauntlet drops a copy, rolled from a seed the server makes. A tallied copy counts the days it\'s worn; pins come from things done in the games. All of it is stored on the server.',
+        figs: `<figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>Today's drop</b>${esc(LG.nameOf(drop))}</figcaption></figure><figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>Weeks later</b>42-day tally, a gold star pin</figcaption></figure>`, draw: [[name, [LG.encode(drop)]], [name, [LG.encode(later)]]] },
+      { title: 'Shown everywhere', text: 'Boards, cards and games all draw the same three strings (name, look, wear) with the same library, so he looks the same in each.',
+        figs: `<a href="#board" class="chip">See the board below</a><a href="#game" class="chip">and a game</a>` },
+    ];
+    $('steps').innerHTML = steps.map(s => `<div class="step"><span class="num" aria-hidden="true"></span><div class="body"><h3>${s.title}</h3><p>${s.text}</p><div class="strip">${s.figs}</div></div></div>`).join('');
+    const canvases = [...$('steps').querySelectorAll('canvas')];
+    let i = 0;
+    for (const s of steps) for (const [n, wear] of s.draw ?? []) canvases[i++].getContext('2d').putImageData(still(n, wear), 0, 0);
+  }
+
+  /* ------------------------------------------------ the board */
+  const O = (item, finish, scuff, print, tally, pins) => LG.encode({ item, finish, scuff, print, ...(tally !== undefined ? { tally } : {}), ...(pins ? { pins } : {}) });
+  const PLAYERS = [
+    ['juno', 489, [O('trackdle.helmet', 'gold', 0.004, 9, 212, ['crown', 'star']), O('trackdle.flag', 'plain', 0.03, 4, 400)], 12],
+    ['pip', 476, [O('puttsies.ball', 'nebula', 0.01, 2, 61, ['flame'])], 7],
+    ['moss', 471, [O('stackdle.block', 'prism', 0.02, 11)], 4],
+    ['rex', 455, [O('amountle.cluster', 'sunset', 0.03, 40)], 0],
+    ['sam42', 449, [O('puttsies.visor', 'plain', 0.21, 318)], 3, true],
+    ['kai', 448, [O('cutsies.melon', 'tempered', 0.07, 661)], 2],
+    ['ivy', 430, [], 0],
+    ['zed', 428, [O('weighsies.dumbbell', 'negative', 0.01, 5)], 9],
+    ['lulu', 417, [O('halfsies.gingham', 'plain', 0.4, 77)], 0],
+    ['odin', 402, [O('tiltsies.hamster', 'sunset', 0.05, 9, 33)], 1],
+    ['wren', 398, [], 0],
+    ['fern', 391, [O('flipsies.beret', 'plain', 0.11, 600)], 0],
+  ].map(([name, pts, wear, streak, you], i) => ({ rank: i + 1, name, pts, wear: wear.filter(c => LG.decode(c)), streak, you: !!you }));
+  // A free item id isn't a copy code; give "sam42" his real starter.
+  PLAYERS.find(p => p.you).wear = [LG.encode(LG.starter('sam42', 'puttsies'))];
+
+  function renderBoard() {
+    const t0 = performance.now();
+    const list = $('board-list');
+    list.innerHTML = PLAYERS.map(p => {
+      const copies = p.wear.map(LG.decode);
+      const g = copies.length ? Math.max(...copies.map(gradeIdx)) : -1;
+      return `<li class="${p.you ? 'you' : ''}" data-name="${esc(p.name)}"><span class="rk">${p.rank}</span>
+        <span class="face"${g >= 0 ? ` data-grade="${g}" style="--c:${GRADE[g]}"` : ''}><canvas class="px" width="16" height="20" style="background:transparent"></canvas></span>
+        <span class="name"><b>${esc(p.name)}${p.you ? ' · you' : ''}</b><small>${copies.length ? esc(copies.map(LG.nameOf).join(', ')) : 'no loadout'}${p.streak > 1 ? ` · 🔥 ${p.streak}` : ''}</small></span>
+        <span class="pts">${p.pts}</span></li>`;
+    }).join('');
+    const rows = [...list.children];
+    rows.forEach((li, i) => {
+      const p = PLAYERS[i], cv = li.querySelector('canvas');
+      cv.getContext('2d').putImageData(still(p.name, p.wear), 0, 0);
+      const keep = p.rank <= 3 || p.you;
+      if (keep) play(cv, p.name, p.wear, p.rank === 1 ? 'cheer' : p.you ? 'idle' : 'hop');
+      li.addEventListener('pointerenter', () => play(cv, p.name, p.wear, 'dance'));
+      li.addEventListener('pointerleave', () => { if (keep) play(cv, p.name, p.wear, p.rank === 1 ? 'cheer' : p.you ? 'idle' : 'hop'); else stop(cv, p.name, p.wear); });
+    });
+    const drawMs = performance.now() - t0;
+
+    // Measure: 50 distinct faces cold, and the old way's element count.
+    cache.clear();
+    const t1 = performance.now();
+    for (let i = 0; i < 50; i++) still('bench' + i, i % 3 ? [] : [O('puttsies.ball', 'gold', 0.01, i)]);
+    const fifty = performance.now() - t1;
+    const t2 = performance.now();
+    const a = LG.animate('bench', 'cheer', { equip: [O('trackdle.helmet', 'gold', 0.004, 9)] });
+    const animMs = performance.now() - t2;
+    const svgSize = LG.toSvgString ? 0 : 0;
+    const row = { rank: 1, name: 'juno', look: '', wear: PLAYERS[0].wear.join('|'), grade: 4, combined: 489, streak: 12 };
+    const bytes = new TextEncoder().encode(JSON.stringify({ wear: row.wear, grade: row.grade })).length;
+    $('bytes-note').textContent = String(bytes);
+    $('row-json').textContent = JSON.stringify(row, null, 2);
+    $('stats').innerHTML = [
+      [fifty.toFixed(1) + ' ms', '50 different faces, drawn cold'],
+      [(fifty / 50).toFixed(2) + ' ms', 'one face'],
+      [animMs.toFixed(1) + ' ms', `a ${a.frames.length}-frame cheer, built once`],
+      [bytes + ' B', 'added to the richest row'],
+      ['1', 'element per face (was up to 256)'],
+      [String([...moving].length), 'faces moving right now'],
+    ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+    void drawMs; void svgSize;
+  }
+
+  /* ------------------------------------------------ the game */
+  function renderGame(name) {
+    const wear = [LG.encode(LG.starter(name, 'puttsies'))];
+    const cv = $('game-guy');
+    const moves = ['cheer', 'hop', 'dance', 'sad', 'idle', 'sleep'];
+    $('game-moves').innerHTML = moves.map(m => `<button class="chip" type="button" data-move="${m}" style="border:0;cursor:pointer">${m}</button>`).join('');
+    $('game-line').textContent = `${name} in their golf visor. The game picks the move: cheer for a good day, sad for a bad one.`;
+    play(cv, name, wear, 'cheer');
+    $('game-moves').onclick = e => { const b = e.target.closest('[data-move]'); if (b) play(cv, name, wear, b.dataset.move); };
+  }
+
+  let typing;
+  $('who').addEventListener('input', e => { clearTimeout(typing); typing = setTimeout(() => { const n = e.target.value.trim().toLowerCase() || 'sam42'; renderFlow(n); renderGame(n); }, 200); });
+  renderFlow('sam42');
+  renderBoard();
+  renderGame('sam42');
+})();
+</script>

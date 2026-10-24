@@ -1,7 +1,7 @@
-export { heads } from './heads';
-export { eyes } from './eyes';
-export { mouths } from './mouths';
-export { hair } from './hair';
-export { bodies } from './bodies';
-export { accessories, accessoryPlacements } from './accessories';
-export { headMetrics, REFERENCE, type HeadMetrics, type RowExtent } from './metrics';
+export { heads, type Head } from './heads';
+export { eyes, type Eyes } from './eyes';
+export { mouths, type Mouth } from './mouths';
+export { cheeks, type Cheeks } from './cheeks';
+export { hair, type Topper } from './hair';
+export { bodies, type Marking } from './bodies';
+export { accessories, type Accessory } from './accessories';

@@ -1,7 +1,9 @@
 import { resolve } from './resolve';
+import { dress, withItems } from './items';
+import { paint } from './paint';
 import { compose } from './compose';
-import { getPalette, resolveColor, shadePalette } from './palette';
-import type { ColorToken, Palette, PixelGrid, RenderOptions } from './types';
+import { paletteOf } from './palette';
+import type { RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
 /**
@@ -11,13 +13,13 @@ import { GRID_SIZE } from './types';
  * neighbours that share a colour — these avatars are large flat areas, so
  * merging runs cuts the rect count by well over half.
  */
-function rowRuns(grid: PixelGrid, palette: Palette, y: number): { x: number; width: number; color: string }[] {
+function rowRuns(colors: (string | null)[][], y: number): { x: number; width: number; color: string }[] {
   const runs: { x: number; width: number; color: string }[] = [];
   let start = -1;
   let current: string | null = null;
 
   for (let x = 0; x <= GRID_SIZE; x++) {
-    const color = x < GRID_SIZE ? resolveColor(palette, grid[y][x] as ColorToken) : null;
+    const color = x < GRID_SIZE ? colors[y][x] : null;
     if (color === current) continue;
     if (current !== null) runs.push({ x: start, width: x - start, color: current });
     current = color;
@@ -40,15 +42,15 @@ function escapeText(value: string): string {
  * identifying that person.
  */
 export function toSvgString(input: string, options: RenderOptions = {}): string {
-  const config = resolve(input, options.parts);
-  const palette = options.palette ?? shadePalette(getPalette(config.palette), config.shade);
-  const grid = compose(config);
+  const config = dress(resolve(input, options.parts), options, input);
+  const palette = withItems(options.palette ?? paletteOf(config), config);
+  const colors = paint(compose(config), config, palette);
   const size = options.size ?? 128;
   const pixelSize = size / GRID_SIZE;
 
   const rects: string[] = [];
   for (let y = 0; y < GRID_SIZE; y++) {
-    for (const run of rowRuns(grid, palette, y)) {
+    for (const run of rowRuns(colors, y)) {
       rects.push(
         `<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`
       );

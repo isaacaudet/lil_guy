@@ -1,8 +1,8 @@
 import { hashNth } from './hash';
 import {
-  headWeights, eyeWeights, mouthWeights, hairWeights,
-  bodyWeights, accessoryWeights, paletteWeights,
-  shadeWeights, footWeights, patternToneWeights, weightedPick,
+  headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
+  bodyWeights, accessoryWeights, armWeights, footWeights, shadeWeights,
+  paletteWeights, weightedPick,
 } from './parts/weights';
 import type { AvatarConfig, RenderOptions } from './types';
 
@@ -11,12 +11,13 @@ import type { AvatarConfig, RenderOptions } from './types';
  *
  * Each slot is hashed independently so adding or removing variants from one
  * part doesn't cascade into the others, and each pick is weighted (see
- * ./parts/weights) so the set keeps its character as the library grows —
- * a uniform roll over a big library averages out to something bland.
+ * ./parts/weights) so the simple, sweet looks are the common ones.
  */
+/** One name in this many gets the Lucky colour variant. */
+export const LUCKY_ODDS = 400;
+
 export function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig {
-  const pick = (slotIndex: number, weights: number[]): number =>
-    weightedPick(weights, hashNth(input, slotIndex));
+  const pick = (slot: number, weights: number[]): number => weightedPick(weights, hashNth(input, slot));
 
   return {
     head:      overrides?.head      ?? pick(0, headWeights),
@@ -26,10 +27,12 @@ export function resolve(input: string, overrides?: RenderOptions['parts']): Avat
     body:      overrides?.body      ?? pick(4, bodyWeights),
     accessory: overrides?.accessory ?? pick(5, accessoryWeights),
     palette:   pick(6, paletteWeights),
-    rotation:  hashNth(input, 7) % 9, // 9 sphere positions
-    flip:        overrides?.flip        ?? hashNth(input, 8) % 2 === 1,
-    shade:       overrides?.shade       ?? weightedPick(shadeWeights, hashNth(input, 9)),
-    feet:        overrides?.feet        ?? weightedPick(footWeights, hashNth(input, 10)),
-    patternTone: overrides?.patternTone ?? weightedPick(patternToneWeights, hashNth(input, 11)),
+    rotation:  overrides?.rotation  ?? hashNth(input, 7) % 9, // 9 sphere positions
+    flip:      overrides?.flip      ?? hashNth(input, 8) % 2 === 1,
+    shade:     overrides?.shade     ?? pick(9, shadeWeights),
+    feet:      overrides?.feet      ?? pick(10, footWeights),
+    cheeks:    overrides?.cheeks    ?? pick(11, cheekWeights),
+    arms:      overrides?.arms      ?? pick(12, armWeights),
+    lucky:     overrides?.lucky     ?? hashNth(input, 13) % LUCKY_ODDS === 0,
   };
 }
