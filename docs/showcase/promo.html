@@ -10,135 +10,205 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Pixelify+Sans:wght@600;700&display=swap">
 <style>
-  /* Layout: a parade across the top, then the deal (you get a guy), the machine, your collection. One dark arcade look on purpose. */
+  /* The DLE Club's look (dle-club redesign/site.css): a navy band carrying the header, the claim and the
+     rarest cards, then paper rising over its foot with round corners. Pixel type only on the cards. */
   :root {
-    --bg: #12152a; --panel: #1c2142; --panel-hi: #262d58; --edge: #0a0d1c; --line: #2d3566;
-    --ink: #f6f2e9; --muted: #a9b1d2; --amber: #ffcf5c; --amber-ink: #2a1a00; --mint: #6ee7b0; --pink: #ff7eb6;
-    --g0: #4B69FF; --g1: #8847FF; --g2: #D32CE6; --g3: #EB4B4B; --g4: #E4AE39;
-    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-    color-scheme: dark;
+    color-scheme: light dark;
+    --page: #fbf8f2; --card: #fff; --ink: #141414; --secondary: rgba(20,20,20,.62); --line: rgba(20,20,20,.1); --focus: #141414;
+    --band: #141b2d; --cream: #faf2dd; --cream-2: rgba(250,242,221,.68); --cream-line: rgba(250,242,221,.16);
+    --gold: #e4ae39; --good: #2f9b6e;
+    --pixel: "Pixelify Sans", "Courier New", monospace;
   }
-  [hidden] { display: none !important; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0e1117; --card: #181c24; --ink: #f3f1ec; --secondary: rgba(243,241,236,.64); --line: rgba(243,241,236,.12); --focus: #f3f1ec; --band: #182033; --good: #6fdca8; } }
+  :root[data-theme="dark"] { --page: #0e1117; --card: #181c24; --ink: #f3f1ec; --secondary: rgba(243,241,236,.64); --line: rgba(243,241,236,.12); --focus: #f3f1ec; --band: #182033; --good: #6fdca8; }
   * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); overflow-x: hidden;
-    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 90px;
-    background-image: radial-gradient(ellipse 90% 60% at 50% -8%, #303b86 0%, transparent 62%), radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0);
-    background-size: auto, 22px 22px; }
-  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 56px; }
-  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
-  h2 { font-size: clamp(26px, 4vw, 36px); text-shadow: 0 3px 0 var(--edge); }
-  .muted { color: var(--muted); }
-  .px { image-rendering: pixelated; display: block; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-optical-sizing: auto; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 8px; }
+  .wrap { max-width: 1216px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  h1, h2, h3 { margin: 0; letter-spacing: -.025em; text-wrap: balance; }
+  h2 { font-size: 34px; font-weight: 800; }
+  .kicker { margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--secondary); font-variant-numeric: tabular-nums; }
+  .num { font-variant-numeric: tabular-nums; }
+  .tk { width: 17px; height: 11px; flex: none; image-rendering: pixelated; }
 
-  nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); flex-wrap: wrap; }
-  .mark { font: 700 22px/1 var(--pixel); display: flex; align-items: center; gap: 8px; }
-  .mark canvas { width: 32px; height: 32px; }
-  .pill { font: 700 15px/1 var(--pixel); background: var(--panel); border-radius: 8px; padding: 9px 11px; box-shadow: 0 3px 0 var(--edge); display: inline-flex; gap: 8px; align-items: center; }
-  .tk { width: 18px; height: 12px; image-rendering: pixelated; flex: none; }
-  .btn { appearance: none; border: 0; cursor: pointer; font: 700 16px/1 var(--pixel); color: var(--amber-ink); background: var(--amber); padding: 12px 15px; border-radius: 7px; box-shadow: 0 4px 0 #a5781a; display: inline-flex; gap: 8px; align-items: center; justify-content: center; }
-  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #a5781a; }
-  .btn[disabled] { background: var(--line); color: var(--muted); box-shadow: 0 4px 0 var(--edge); cursor: not-allowed; transform: none; }
-  .btn.alt { background: var(--panel-hi); color: var(--ink); box-shadow: 0 4px 0 var(--edge); }
-  .btn.mint { background: var(--mint); color: #062a1a; box-shadow: 0 4px 0 #2f9b6e; }
-  .btn:focus-visible, input:focus-visible, .chip-btn:focus-visible, .copy:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
-  .btn .tk { filter: brightness(.22); }
-  .link { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; padding: 4px; }
+  /* buttons, as the club's */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 50px; padding: 0 22px; border-radius: 15px; font-size: 16px; font-weight: 800; background: var(--ink); color: var(--page); white-space: nowrap; transition: transform .12s; }
+  .btn:active { transform: scale(.97); }
+  .btn[disabled] { opacity: .38; cursor: not-allowed; transform: none; }
+  .btn.cream { background: var(--cream); color: #141414; }
+  .btn.ghost { background: none; color: inherit; box-shadow: inset 0 0 0 1.8px currentColor; }
+  .play { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: #141414; color: #faf2dd; }
+  .play svg { width: 13px; height: 13px; margin-left: 2px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 99px; font-size: 12.5px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
 
-  /* ---------- hero */
-  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; padding-top: 18px; }
-  .hero h1 { font-size: clamp(46px, 8.4vw, 96px); line-height: .92; text-shadow: 0 6px 0 var(--edge); }
-  .hero h1 em { font-style: normal; color: var(--amber); }
-  .hero p.lede { font-size: clamp(17px, 2.1vw, 20px); color: var(--muted); max-width: 40ch; margin: 18px 0 22px; }
-  .deal { display: flex; gap: 10px; flex-wrap: wrap; }
-  .deal input { flex: 1 1 200px; min-width: 0; font: 600 17px/1 var(--body); padding: 12px 14px; border-radius: 7px; border: 2px solid var(--line); background: var(--edge); color: var(--ink); }
-  .stagebox { position: relative; display: grid; place-items: center; min-height: 360px; }
-  .stagebox .glow { position: absolute; width: 330px; height: 330px; border-radius: 50%; background: radial-gradient(circle, var(--grade, #4b69ff) 0%, transparent 66%); opacity: .45; filter: blur(4px); }
-  .stagebox .floor { position: absolute; bottom: 26px; width: 240px; height: 26px; border-radius: 50%; background: rgba(0,0,0,.35); }
-  #hero-guy { position: relative; width: min(300px, 74vw); }
-  #hero-guy svg, #hero-guy canvas { width: 100%; height: auto; display: block; filter: drop-shadow(0 10px 0 rgba(5,7,16,.5)); }
-  .me { position: absolute; top: 4px; left: 50%; translate: -50% 0; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; width: 100%; }
-  .tag { font: 700 13px/1 var(--pixel); background: var(--panel-hi); border-radius: 6px; padding: 6px 8px; box-shadow: 0 2px 0 var(--edge); }
-  .tag.gold { background: var(--amber); color: var(--amber-ink); }
+  /* ------------------------------------------------------------ the band */
+  .band { --focus: var(--cream); background: var(--band); color: var(--cream); padding-top: env(safe-area-inset-top, 0px); position: relative; overflow: hidden; }
+  .band::after { content: ""; display: block; height: 32px; margin-top: 48px; border-radius: 32px 32px 0 0; background: var(--page); position: relative; z-index: 1; }
+  .band .glow { position: absolute; inset: -20% -10% auto auto; width: 70%; height: 90%; background: radial-gradient(closest-side, rgba(228,174,57,.16), transparent); pointer-events: none; }
+  .site-header { height: 68px; display: flex; align-items: center; gap: 16px; position: relative; z-index: 2; }
+  .site-name { display: inline-flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 800; letter-spacing: -.02em; }
+  .site-name canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+  .site-header .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .wallet { height: 34px; padding: 0 13px; border-radius: 11px; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--cream-line); font-variant-numeric: tabular-nums; }
+  .devpill { background: var(--gold); color: #2a1a00; height: 34px; border-radius: 11px; padding: 0 12px; font-size: 13px; font-weight: 800; letter-spacing: .06em; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px 48px; align-items: center; padding-top: 18px; position: relative; z-index: 2; }
+  .hero h1 { font-size: clamp(46px, 6.4vw, 78px); font-weight: 800; letter-spacing: -.035em; line-height: .98; }
+  .hero h1 em { font-style: normal; color: var(--gold); }
+  .hero .sub { margin: 22px 0 0; max-width: 44ch; font-size: 17px; line-height: 1.6; color: rgba(250,242,221,.86); }
+  .hero .kicker { color: var(--cream-2); }
+  .hero .kicker b { color: var(--cream); }
+  .recent { margin-top: 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--cream-2); }
+  .faces { display: flex; }
+  .faces span { width: 36px; height: 36px; margin-left: -8px; border-radius: 50%; background: rgba(250,242,221,.1); box-shadow: 0 0 0 3px var(--band); display: grid; place-items: center; overflow: hidden; }
+  .faces span:first-child { margin-left: 0; }
+  .faces canvas { width: 26px; height: 26px; image-rendering: pixelated; }
+  .recent b { color: var(--cream); }
 
-  .parade { overflow: hidden; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-  .parade .belt { display: flex; gap: 18px; width: max-content; animation: belt 60s linear infinite; padding: 6px 0; }
-  .parade .belt > span { width: 84px; flex: none; }
-  .parade svg { width: 100%; height: auto; display: block; }
-  @keyframes belt { to { translate: -50% 0 } }
+  /* the claim card, beside the title: as the club score card */
+  .claim { padding: 24px; border-radius: 24px; background: rgba(250,242,221,.05); box-shadow: inset 0 0 0 1px var(--cream-line); }
+  .claim-h { margin: 0 0 12px; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--cream-2); }
+  .field { display: flex; align-items: center; height: 58px; border-radius: 16px; background: rgba(0,0,0,.22); box-shadow: inset 0 0 0 1.5px var(--cream-line); padding: 0 6px 0 18px; gap: 8px; }
+  .field:focus-within { box-shadow: inset 0 0 0 2px var(--cream); }
+  .field span { color: var(--cream-2); font-size: 18px; font-weight: 700; }
+  .field input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: none; color: var(--cream); font: 800 22px/1 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: -.01em; }
+  .field input::placeholder { color: rgba(250,242,221,.3); }
+  .avail { margin: 10px 2px 0; min-height: 20px; font-size: 14px; font-weight: 700; color: var(--cream-2); display: flex; align-items: center; gap: 6px; }
+  .avail.ok { color: #7fe0b0; } .avail.no { color: #ff9b8a; }
+  .claim .btn { width: 100%; margin-top: 14px; }
+  .claim .fine { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--cream-2); }
+  .mine { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 20px; align-items: center; }
+  .mine .who h3 { font-size: 30px; font-weight: 800; line-height: 1.05; overflow-wrap: anywhere; }
+  .mine .who p { margin: 8px 0 0; font-size: 14px; color: var(--cream-2); line-height: 1.45; }
+  .mine .who .pill { background: var(--gold); color: #2a1a00; margin-top: 10px; }
+  .mine-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .mine-actions .btn { flex: 1; height: 46px; font-size: 15px; margin: 0; }
+  .linkish { font-size: 13px; color: var(--cream-2); text-decoration: underline; text-underline-offset: 3px; margin-top: 12px; }
 
-  /* ---------- traits */
-  .traits { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .trait { background: var(--panel); border-radius: 10px; padding: 12px; box-shadow: 0 3px 0 var(--edge); display: grid; gap: 2px; }
-  .trait small { font: 500 12px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  .trait b { font-weight: 600; text-transform: capitalize; }
-  .trait span { font-size: 13px; color: var(--muted); }
-  .trait.rare { background: linear-gradient(180deg, #3d2c78, var(--panel)); }
+  /* the hand: the rarest drops fanned like a hand of cards */
+  .hand-h { margin-top: 56px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; position: relative; z-index: 2; }
+  .hand-h p { margin: 0; color: var(--cream-2); font-size: 14px; }
+  .hand { position: relative; z-index: 2; display: flex; justify-content: center; padding: 34px 0 6px; }
+  .hand > .slot { flex: none; width: 150px; margin-left: -34px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; transition: transform .25s cubic-bezier(.2,.8,.2,1); position: relative; z-index: var(--z); }
+  .hand > .slot:first-child { margin-left: 0; }
+  .hand > .slot:hover, .hand > .slot:focus-within { transform: translateY(calc(var(--y) - 26px)) rotate(var(--r)); z-index: 30; }
+  .hand > .slot small { position: absolute; left: 0; right: 0; top: calc(100% + 10px); text-align: center; font-size: 12px; font-weight: 700; color: var(--cream-2); opacity: 0; transition: opacity .2s; white-space: nowrap; }
+  .hand > .slot:hover small { opacity: 1; }
 
-  /* ---------- machine */
-  .arcade { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 22px; background: var(--panel); border-radius: 18px; padding: 22px; box-shadow: 0 6px 0 var(--edge); align-items: center; }
-  .arcade .mach-wrap { display: grid; place-items: center; }
-  canvas.mach { width: 220px; height: 308px; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(5,7,16,.55)); }
-  .games { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
-  .chip-btn { appearance: none; border: 0; cursor: pointer; font: 700 13px/1 var(--pixel); padding: 8px 10px; border-radius: 6px; background: var(--edge); color: var(--ink); box-shadow: inset 0 -3px 0 var(--c); }
-  .chip-btn[aria-pressed="true"] { background: var(--c); color: #160f22; box-shadow: 0 3px 0 var(--edge); }
-  .open-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .odds { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
-  .odds div { border-top: 5px solid var(--g); background: var(--edge); border-radius: 4px; padding: 7px 6px; font-size: 12px; color: var(--muted); }
-  .odds b { display: block; font: 700 13px/1.1 var(--pixel); color: var(--ink); }
-  .season { margin-top: 14px; display: flex; gap: 12px; align-items: center; background: linear-gradient(90deg, #4a2a10, var(--edge)); border-radius: 10px; padding: 10px 12px; flex-wrap: wrap; }
-  .season canvas { width: 48px; height: 48px; image-rendering: pixelated; background: #f2ecdd; border-radius: 6px; }
-  .season div { flex: 1 1 160px; font-size: 14px; }
-  .season b { font-family: var(--pixel); display: block; }
+  /* ------------------------------------------------------------ trading cards (the locker's) */
+  .art { position: relative; display: block; transform-origin: 50% 60%; will-change: transform; container-type: inline-size; }
+  canvas.px { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(var(--sx, 0px) 9px 0 rgba(5, 7, 16, .45)); }
+  .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
+  .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
+    font-size: 8.6cqw; font-weight: 700; line-height: 1; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
+  .ov .t.foil, .ov .t.gold { color: transparent; -webkit-background-clip: text; background-clip: text; text-shadow: none; background-size: 300% 100%; animation: foil 2.4s linear infinite; filter: drop-shadow(0 .6cqw 0 rgba(10, 8, 24, .7)); }
+  .ov .t.foil { background-image: linear-gradient(90deg, #ff8fb1, #ffe27a, #8fffd2, #8fb8ff, #d79bff, #ff8fb1); }
+  .ov .t.gold { background-image: linear-gradient(90deg, #b8801c, #ffe9a8, #f2c230, #fffbe6, #c8901e, #b8801c); }
+  @keyframes foil { to { background-position: 300% 0; } }
+  .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
+  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: 6.6cqw; font-weight: 600; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
 
-  /* ---------- collection */
-  .coll-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
-  .counts { display: flex; gap: 6px; flex-wrap: wrap; }
-  .count { font: 700 13px/1 var(--pixel); padding: 7px 9px; background: var(--panel); border-radius: 6px; border-left: 5px solid var(--g); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 12px; }
-  .card { appearance: none; border: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; background: var(--panel); border-radius: 10px; padding: 8px; box-shadow: 0 4px 0 var(--edge); display: grid; gap: 6px; position: relative; }
-  .card:hover { background: var(--panel-hi); }
-  .card .art { background: #f2ecdd; border-radius: 7px; padding: 8%; position: relative; }
-  .card canvas { width: 100%; height: auto; aspect-ratio: 1; }
-  .card .bar { height: 5px; border-radius: 3px; background: var(--g); }
-  .card .nm { font: 700 13px/1.15 var(--pixel); }
-  .card .sub { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
-  .card .on { position: absolute; top: 12px; right: 12px; font: 700 11px/1 var(--pixel); background: var(--mint); color: #062a1a; padding: 4px 5px; border-radius: 4px; }
-  .card.new::after { content: "NEW"; position: absolute; top: 12px; left: 12px; font: 700 11px/1 var(--pixel); background: var(--pink); color: #2b0718; padding: 4px 5px; border-radius: 4px; }
-  .empty { grid-column: 1 / -1; background: var(--panel); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); }
+  /* ------------------------------------------------------------ the sheet */
+  main { display: grid; gap: 88px; padding-top: 24px; padding-bottom: 96px; }
+  .sec-h { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .sec-h p { margin: 8px 0 0; color: var(--secondary); font-size: 16px; }
 
-  /* ---------- inspect */
-  dialog { border: 0; padding: 0; background: transparent; color: var(--ink); max-width: min(940px, calc(100vw - 32px)); width: 100%; }
-  dialog::backdrop { background: rgba(5,7,15,.82); }
-  .insp { background: var(--panel); border-radius: 16px; box-shadow: 0 6px 0 var(--edge); padding: 20px; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 20px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
-  .insp .x { position: absolute; top: 12px; right: 12px; }
-  .insp .who { background: radial-gradient(circle, color-mix(in srgb, var(--g) 45%, transparent), transparent 70%); border-radius: 12px; display: grid; place-items: center; padding: 10px; }
-  .insp .who svg { width: min(240px, 60vw); height: auto; }
-  .insp h3 { font-size: 24px; line-height: 1.1; padding-right: 60px; }
-  .insp .gr { display: inline-block; font: 700 13px/1 var(--pixel); padding: 6px 8px; border-radius: 5px; background: var(--g); color: #fff; margin: 8px 0; }
-  .spec { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; margin: 6px 0 12px; }
-  .spec dt { color: var(--muted); } .spec dd { margin: 0; font-variant-numeric: tabular-nums; }
-  .float { position: relative; height: 10px; border-radius: 3px; background: linear-gradient(90deg, #4fd6a0 0 7%, #8fd65a 7% 15%, #e2d24b 15% 38%, #f19a3e 38% 45%, #e5484d 45% 100%); margin: 4px 0 2px; }
-  .float i { position: absolute; top: -4px; width: 3px; height: 18px; background: var(--ink); translate: -1px 0; box-shadow: 0 0 0 2px var(--edge); }
-  .share { margin-top: 12px; display: grid; gap: 8px; }
-  .share .svg { border-radius: 10px; overflow: hidden; box-shadow: 0 3px 0 var(--edge); }
+  /* your guy and his odds */
+  .odds-panel { --focus: var(--cream); background: var(--band); color: var(--cream); border-radius: 28px; padding: 32px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; align-items: center; overflow: hidden; position: relative; }
+  .odds-panel .stage { position: relative; display: grid; place-items: center; aspect-ratio: 1; border-radius: 22px; background: radial-gradient(circle at 50% 42%, rgba(250,242,221,.12), rgba(250,242,221,.02) 62%); }
+  .odds-panel .stage svg { width: 82%; height: auto; display: block; }
+  .rows { display: grid; gap: 2px; }
+  .row { display: grid; grid-template-columns: 92px minmax(0, 150px) minmax(0, 1fr) 84px; gap: 14px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--cream-line); opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s; }
+  .row.in { opacity: 1; transform: none; }
+  .row small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--cream-2); }
+  .row b { font-size: 16px; font-weight: 800; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .bar { height: 8px; border-radius: 99px; background: rgba(250,242,221,.1); overflow: hidden; }
+  .row .bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--cream-2); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .row.rare .bar i { background: var(--gold); }
+  .row.rare b::after { content: "rare"; margin-left: 8px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 6px; border-radius: 99px; background: var(--gold); color: #2a1a00; vertical-align: 3px; }
+  .row span { text-align: right; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--cream); }
+  .total { margin-top: 22px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .total .eq { font-size: 15px; color: var(--cream-2); font-weight: 700; }
+  .total b { font-size: clamp(44px, 6vw, 72px); font-weight: 800; letter-spacing: -.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .total small { flex-basis: 100%; font-size: 14px; color: var(--cream-2); }
+
+  /* the machines, as the club's game cards */
+  .odds-line { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--secondary); }
+  .odds-line span { display: inline-flex; align-items: center; gap: 7px; }
+  .odds-line i { width: 10px; height: 10px; border-radius: 3px; background: var(--g); }
+  .odds-line b { color: var(--ink); font-weight: 800; }
+  .machines { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .mcard { border-radius: 20px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; text-align: left; }
+  .mcard .pic { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; background: var(--tint); }
+  .mcard .pic canvas { height: 84%; width: auto; aspect-ratio: 40 / 56; image-rendering: pixelated; filter: drop-shadow(0 8px 0 rgba(10,12,30,.18)); }
+  .mcard .body { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px; }
+  .mcard .body div { flex: 1; min-width: 0; }
+  .mcard h3 { font-size: 18px; font-weight: 800; }
+  .mcard p { margin: 2px 0 0; font-size: 13.5px; color: var(--secondary); display: flex; align-items: center; gap: 6px; }
+  .mcard:hover .play { transform: scale(1.06); }
+  .mcard .play { transition: transform .15s; }
+  .mcard[aria-disabled="true"] { opacity: .5; }
+  .mcard.today { grid-column: span 2; grid-row: span 2; }
+  .mcard.today .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
+  .mcard.today h3 { font-size: 24px; }
+  .mcard .flag { position: absolute; left: 14px; top: 14px; background: #141414; color: #faf2dd; }
+  .season { margin-top: 16px; display: flex; align-items: center; gap: 16px; padding: 12px 14px 12px 12px; border-radius: 18px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+  .season .pic { width: 64px; height: 64px; border-radius: 14px; background: #ffe2c4; display: grid; place-items: center; flex: none; }
+  .season canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+  .season div { flex: 1; min-width: 0; }
+  .season h3 { font-size: 17px; font-weight: 800; }
+  .season p { margin: 2px 0 0; font-size: 13.5px; color: var(--secondary); }
+
+  /* the collection */
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filters button { height: 36px; padding: 0 14px; border-radius: 11px; font-size: 14px; font-weight: 800; color: var(--secondary); display: inline-flex; align-items: center; gap: 7px; }
+  .filters button i { width: 9px; height: 9px; border-radius: 3px; background: var(--g); }
+  .filters button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 28px 20px; }
+  .cc { display: grid; gap: 12px; text-align: left; position: relative; }
+  .cc .cc-cap b { display: block; font-size: 15px; font-weight: 800; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cc .cc-cap span { display: block; margin-top: 2px; font-size: 13px; color: var(--secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cc .tag { position: absolute; z-index: 3; top: -8px; right: -6px; transform: rotate(5deg); }
+  .tag.on { background: #141414; color: #faf2dd; }
+  .tag.new { background: var(--gold); color: #2a1a00; }
+  .tag.dev { background: #ff6fa0; color: #2b0718; left: -6px; right: auto; transform: rotate(-5deg); }
+  .empty { padding: 40px 24px; border-radius: 20px; text-align: center; color: var(--secondary); box-shadow: inset 0 0 0 1.5px var(--line); }
+  footer { color: var(--secondary); font-size: 13px; padding-bottom: 40px; }
+
+  /* ------------------------------------------------------------ inspect */
+  dialog { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(920px, calc(100vw - 32px)); max-width: none; }
+  dialog::backdrop { background: rgba(10,13,22,.7); backdrop-filter: blur(3px); }
+  .insp { background: var(--page); border-radius: 28px; padding: 28px; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
+  .insp .x { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; font-size: 20px; }
+  .insp h3 { font-size: 30px; font-weight: 800; line-height: 1.05; padding-right: 48px; }
+  .insp .fin { margin: 6px 0 0; font-size: 18px; font-weight: 700; color: var(--secondary); }
+  .insp .grade { margin-top: 12px; background: var(--g); color: #fff; }
+  .spec { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; font-size: 15px; margin: 20px 0; }
+  .spec dt { color: var(--secondary); } .spec dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .float { position: relative; height: 8px; border-radius: 99px; margin-top: 8px; background: linear-gradient(90deg, #3fbf8a 0 7%, #8fd65a 7% 15%, #e2c94b 15% 38%, #f19a3e 38% 45%, #e5484d 45% 100%); }
+  .float i { position: absolute; top: -5px; width: 4px; height: 18px; border-radius: 2px; background: var(--ink); translate: -2px 0; box-shadow: 0 0 0 2px var(--page); }
+  .share { margin-top: 20px; display: grid; gap: 10px; }
+  .share .svg { border-radius: 16px; overflow: hidden; }
   .share .svg svg { width: 100%; height: auto; display: block; }
-  .copy { appearance: none; border: 0; background: var(--edge); color: var(--ink); font: 500 13.5px/1.4 var(--body); text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
-  .copy small { display: block; color: var(--mint); font: 700 12px/1 var(--pixel); margin-top: 6px; }
+  .copy { text-align: left; padding: 14px 16px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 14.5px; line-height: 1.45; }
+  .copy small { display: block; margin-top: 6px; font-size: 13px; font-weight: 800; color: var(--good); }
 
-  /* ---------- reveal */
-  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(5, 7, 15, .92); padding: 24px 16px; }
+  /* ------------------------------------------------------------ the drop */
+  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(14, 18, 32, .96); color: var(--cream); padding: 24px 16px; --focus: var(--cream); }
   #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 3; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
   .flash.on { animation: flash .32s steps(4) 1; }
   @keyframes flash { 0% { opacity: .85 } 100% { opacity: 0 } }
   .rv-ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
-  .stage { position: relative; z-index: 2; display: grid; justify-items: center; gap: 16px; width: min(420px, 100%); }
-  .stage.quake { animation: quake .55s steps(9) 1; }
+  .rv-ctl button { height: 38px; padding: 0 14px; border-radius: 12px; font-size: 14px; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--cream-line); color: var(--cream); }
+  .stage2 { position: relative; z-index: 2; display: grid; justify-items: center; gap: 14px; width: min(440px, 100%); }
+  .stage2.quake { animation: quake .55s steps(9) 1; }
   @keyframes quake { 0%,100% { translate: 0 0 } 15% { translate: -10px 4px } 30% { translate: 9px -6px } 45% { translate: -7px -3px } 60% { translate: 6px 5px } 75% { translate: -3px 2px } 90% { translate: 2px -1px } }
   .gacha { position: relative; width: 200px; height: 280px; }
-  .mach.big { width: 200px; height: 280px; }
+  .mach.big { width: 200px; height: 280px; image-rendering: pixelated; filter: drop-shadow(0 12px 0 rgba(5,7,16,.55)); }
   .mach.big.drop { animation: drop .42s steps(7) 1; }
   @keyframes drop { 0% { translate: 0 -360px } 70% { translate: 0 12px } 85% { translate: 0 -6px } 100% { translate: 0 0 } }
   .mach.big.rattle { animation: rattle .24s steps(4) 1; }
@@ -151,162 +221,353 @@
   #cap-top { transition: rotate .18s steps(3), translate .38s steps(6), opacity .38s steps(6); }
   #cap-top.twist1 { rotate: -16deg; } #cap-top.twist2 { rotate: 12deg; } #cap-top.pop { rotate: -60deg; translate: -30px -150px; opacity: 0; }
   .result { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; width: 100%; }
-  .rays { position: absolute; left: 50%; top: 40%; width: 820px; height: 820px; translate: -50% -50%; z-index: -1; opacity: 0; border-radius: 50%;
+  .rays { position: absolute; left: 50%; top: 46%; width: 860px; height: 860px; translate: -50% -50%; z-index: -1; opacity: 0; border-radius: 50%;
     background: repeating-conic-gradient(var(--grade) 0deg 8deg, transparent 8deg 22.5deg);
     -webkit-mask-image: radial-gradient(circle, #000 0 14%, transparent 60%); mask-image: radial-gradient(circle, #000 0 14%, transparent 60%);
     animation: turn 18s linear infinite; transition: opacity .5s steps(5); }
   .result.go .rays { opacity: var(--rays, 0); }
   @keyframes turn { to { rotate: 360deg } }
-  .flip { position: relative; width: 220px; transition: transform .16s steps(4); }
+  .flip { position: relative; width: 230px; transition: transform .16s steps(4); }
   .flip.squash { transform: scaleX(0); }
   .flip.tremble { animation: tremble .09s steps(2) infinite; }
   @keyframes tremble { 0% { translate: calc(var(--amp) * -1) 0 } 50% { translate: var(--amp) calc(var(--amp) * -.6) } 100% { translate: 0 var(--amp) } }
-  .back, .front { border-radius: 14px; aspect-ratio: 5 / 7; box-shadow: 0 8px 0 var(--edge), 0 0 var(--glow, 0px) var(--grade); transition: box-shadow .9s; }
-  .back { background: repeating-linear-gradient(45deg, #2b3566 0 6px, #222a52 6px 12px); border: 6px solid #3a4580; display: grid; place-items: center; }
-  .back::after { content: ""; width: 44px; height: 44px; rotate: 45deg; background: var(--amber); box-shadow: 0 0 0 6px #a5781a; }
-  .front { background: linear-gradient(180deg, color-mix(in srgb, var(--grade) 55%, #1c2142), #1c2142); border: 6px solid var(--grade); padding: 14px; display: grid; grid-template-rows: 1fr auto; gap: 8px; }
-  .front .art { background: #f2ecdd; border-radius: 8px; display: grid; place-items: center; padding: 10%; }
-  .front canvas { width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-  .front .lbl { font: 700 14px/1.15 var(--pixel); text-align: left; }
-  .shout { font: 700 40px/1 var(--pixel); color: var(--grade); text-shadow: 0 4px 0 var(--edge); margin: 0; min-height: 40px; }
+  .flip canvas.back { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(0 9px 0 rgba(5,7,16,.55)) drop-shadow(0 0 var(--glow, 0px) var(--grade)); transition: filter .9s; }
+  .shout { font-size: 46px; font-weight: 800; letter-spacing: -.03em; color: var(--grade); margin: 0; min-height: 46px; line-height: 1; }
   .shout.slam { animation: slam .4s steps(6) 1; }
   @keyframes slam { 0% { scale: 2.8; opacity: 0 } 55% { scale: .88; opacity: 1 } 100% { scale: 1 } }
-  .rv-name { font: 600 19px/1.2 var(--pixel); margin: 0; }
-  .rv-sub { font-size: 14px; color: var(--muted); margin: 0; }
-  .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .rv-name { font-size: 20px; font-weight: 800; margin: 0; }
+  .rv-sub { font-size: 14px; color: var(--cream-2); margin: 0; }
+  .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: #141414; color: #faf2dd; padding: 12px 18px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 
-  /* ---------- deal shuffle */
-  .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-  .how div { background: var(--panel); border-radius: 12px; padding: 14px; box-shadow: 0 3px 0 var(--edge); }
-  .how b { font-family: var(--pixel); font-size: 17px; display: block; margin-bottom: 4px; }
-  .how span { color: var(--muted); font-size: 14px; }
-  footer { color: var(--muted); font-size: 13px; text-align: center; }
-
-  @media (max-width: 860px) { .hero, .arcade, .insp { grid-template-columns: 1fr; } .stagebox { min-height: 300px; } .odds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 1000px) {
+    .hero { grid-template-columns: 1fr; }
+    .odds-panel { grid-template-columns: 1fr; padding: 22px; }
+    .odds-panel .stage { width: min(260px, 70%); justify-self: center; }
+    .machines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .insp { grid-template-columns: 1fr; padding: 22px; }
+    .insp > .art-col { width: 200px; justify-self: center; }
+  }
+  @media (max-width: 640px) {
+    h2 { font-size: 28px; }
+    .hand > .slot { width: 112px; margin-left: -46px; }
+    .hand > .slot:nth-child(n+6) { display: none; }
+    .row { grid-template-columns: 74px minmax(0, 1fr) 76px; }
+    .row .bar { display: none; }
+    .mcard.today { grid-column: span 2; grid-row: auto; }
+    .mcard.today .pic { min-height: 220px; }
+    .mine { grid-template-columns: 110px minmax(0, 1fr); }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mcard .body { padding: 10px 10px 12px 12px; gap: 8px; } .mcard h3 { font-size: 16px; } .mcard p { font-size: 12px; } .mcard .play { width: 34px; height: 34px; }
+  }
 </style>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#e4ae39" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#9a6a12" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol>
+  <symbol id="tri" viewBox="0 0 12 12"><path fill="currentColor" d="M2 1.2v9.6c0 .8.9 1.3 1.6.8l7-4.8c.6-.4.6-1.2 0-1.6l-7-4.8C2.9-.1 2 .4 2 1.2z"/></symbol>
+</svg>
 
-<div class="wrap">
-  <nav>
-    <span class="mark"><canvas class="px" id="mark" width="16" height="16" aria-hidden="true"></canvas>lil guys</span>
-    <span class="pill" id="wallet-pill" hidden><svg class="tk"><use href="#ticket"/></svg><span id="wallet">0</span></span>
-  </nav>
-
-  <section class="hero">
-    <div>
-      <h1>Everyone gets a <em>lil guy.</em></h1>
-      <p class="lede" id="lede">He's dealt, not picked: one of 3.8 trillion. Then you fill his locker from the capsule machines, one game at a time.</p>
-      <form class="deal" id="deal-form">
-        <label for="name" class="muted" style="flex-basis:100%;font-size:14px">Your name, for your cards</label>
-        <input id="name" maxlength="18" autocomplete="nickname" placeholder="mia" required>
-        <button class="btn" type="submit" id="deal-btn">Deal me a guy</button>
-      </form>
-      <div id="dealt" hidden>
-        <div class="deal"><button class="btn" type="button" id="go-roll">Open today's free capsule</button><button class="btn alt" type="button" id="go-coll">My collection</button></div>
-        <p class="muted" style="font-size:13px;margin:12px 0 0">Saved in this browser only. <button class="link" type="button" id="reset">Start over</button></p>
+<header class="band">
+  <span class="glow"></span>
+  <div class="wrap">
+    <div class="site-header">
+      <span class="site-name"><canvas id="mark-guy" width="16" height="16" aria-hidden="true"></canvas>lil guys</span>
+      <div class="right">
+        <button class="devpill" type="button" id="devpill" hidden title="Dev drops: every capsule gives the rarest, cleanest copy. Click to turn off.">DEV · BEST DROPS</button>
+        <span class="wallet" id="wallet-pill" hidden><svg class="tk"><use href="#ticket"/></svg><span id="wallet">0</span></span>
       </div>
     </div>
-    <div class="stagebox"><span class="glow" id="glow"></span><span class="floor"></span><div id="hero-guy" aria-live="polite"></div><div class="me" id="me"></div></div>
-  </section>
 
-  <div class="parade" aria-hidden="true"><div class="belt" id="belt"></div></div>
-
-  <section id="traits-sec" hidden style="display:grid;gap:14px">
-    <h2 id="traits-title">Your guy</h2>
-    <div class="traits" id="traits"></div>
-  </section>
-
-  <section id="roll" style="display:grid;gap:14px">
-    <h2>The capsule machines</h2>
-    <div class="arcade">
-      <div class="mach-wrap"><canvas class="mach" id="mach" width="40" height="56" aria-hidden="true"></canvas></div>
+    <div class="hero">
       <div>
-        <p class="muted" style="margin:0">Every game has its own machine and set: skins, hats, a frame and a buddy. Finish the day's games and your first capsule is free.</p>
-        <div class="games" id="games" role="group" aria-label="Machine"></div>
-        <div class="open-row">
-          <button class="btn mint" type="button" id="free">Free daily capsule</button>
-          <button class="btn" type="button" id="buy"><svg class="tk"><use href="#ticket"/></svg> 120 · Open</button>
-          <button class="link" type="button" id="earn">Play a pretend game (+60)</button>
+        <p class="kicker">DLE Club · <b id="today"></b></p>
+        <h1>One name.<br>One guy.<br><em>Nobody else's.</em></h1>
+        <p class="sub" id="sub">Claim your name and the club deals you a guy to go with it. Then fill his locker, one capsule at a time.</p>
+        <div class="recent" id="recent" hidden><div class="faces" id="faces"></div><span id="recent-text"></span></div>
+      </div>
+
+      <div class="claim" id="claim">
+        <div id="claim-form">
+          <p class="claim-h">Claim your name</p>
+          <form id="claim-f" autocomplete="off">
+            <label class="field"><span>@</span><input id="name" maxlength="16" spellcheck="false" placeholder="yourname" aria-label="Name" aria-describedby="avail"></label>
+            <p class="avail" id="avail" aria-live="polite"></p>
+            <button class="btn cream" type="submit" id="claim-btn" disabled>Claim it</button>
+          </form>
+          <p class="fine" id="claim-fine">Two to sixteen letters or numbers. First come, first served, kept for good.</p>
         </div>
-        <div class="odds" id="odds"></div>
-        <div class="season" id="season" hidden><canvas width="16" height="16" aria-hidden="true"></canvas><div><b id="season-name"></b><span class="muted" id="season-sub"></span></div><button class="btn" type="button" id="season-buy"><svg class="tk"><use href="#ticket"/></svg> 150</button></div>
+        <div id="claim-mine" hidden>
+          <div class="mine">
+            <div id="me-card"></div>
+            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="pill">★ 1 of 1</span><p id="me-odds"></p></div>
+          </div>
+          <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button></div>
+          <button class="linkish" type="button" id="reset">Let the name go</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hand-h"><p class="kicker" style="margin:0;color:var(--cream-2)">The rarest drops in the machines</p><p id="hand-note"></p></div>
+    <div class="hand" id="hand"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="guy-sec" hidden>
+    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Every trait was dealt. Multiply the odds and he's this rare.</p></div></div>
+    <div class="odds-panel">
+      <div class="stage" id="guy-stage"></div>
+      <div>
+        <div class="rows" id="rows"></div>
+        <div class="total"><span class="eq">All of it together:</span><b id="total">1 in 0</b><small>guys dealt before another one like him turns up.</small></div>
       </div>
     </div>
   </section>
 
-  <section id="coll" style="display:grid;gap:14px">
-    <div class="coll-head"><h2>Your collection</h2><div class="counts" id="counts"></div></div>
+  <section id="roll">
+    <div class="sec-h">
+      <div><h2>Capsule machines</h2><p>One for each game: skins, hats, a frame and a buddy. Finish the day's games for a free one.</p></div>
+      <div class="odds-line" id="odds"></div>
+    </div>
+    <div class="machines" id="machines"></div>
+    <div class="season" id="season" hidden>
+      <div class="pic"><canvas width="16" height="16" aria-hidden="true"></canvas></div>
+      <div><h3 id="season-name"></h3><p id="season-sub"></p></div>
+      <button class="btn" type="button" id="season-buy"><svg class="tk"><use href="#ticket"/></svg> 150</button>
+    </div>
+    <p style="margin:14px 0 0;font-size:14px;color:var(--secondary)">Out of tickets? <button type="button" id="earn" style="text-decoration:underline;text-underline-offset:3px;font-weight:700;color:var(--ink)">Play a pretend game (+60)</button></p>
+  </section>
+
+  <section id="coll">
+    <div class="sec-h"><div><h2>Your collection</h2><p id="coll-sub">Every copy is one of a kind: its own finish, scuff and print.</p></div><div class="filters" id="filters"></div></div>
     <div class="grid" id="grid"></div>
   </section>
 
-  <section style="display:grid;gap:14px">
-    <h2>How it works</h2>
-    <div class="how">
-      <div><b>One guy each</b><span>Dealt from a random seed when you join, so nobody can type their way to a rare one. Change your name; he stays.</span></div>
-      <div><b>Starters</b><span>A free hat from each game, the first day you play it. Saved once, so they never change.</span></div>
-      <div><b>Daily capsule</b><span>Finish the day's games, open one capsule free. Same machine, same odds as any other.</span></div>
-      <div><b>No two alike</b><span>Every copy has its own finish, scuff and print. A tally counts the days you finish wearing it.</span></div>
-      <div><b>Just looks</b><span>Nothing here helps you score. It's all for showing off on the boards.</span></div>
-    </div>
-  </section>
-
-  <footer>A pretend collection to try the idea: tickets are free and nothing leaves this browser.</footer>
-</div>
+  <footer>A pretend collection to try the idea. Tickets are free; claimed names are shared with everyone who opens this page.</footer>
+</main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
 
-<div class="reveal" id="reveal" hidden role="dialog" aria-modal="true" aria-label="Capsule">
+<div class="reveal" id="reveal" hidden role="dialog" aria-modal="true" aria-label="Drop">
   <canvas id="burst" aria-hidden="true"></canvas><div class="flash" id="flash"></div>
-  <div class="rv-ctl"><button class="btn alt" type="button" id="sound" aria-pressed="true">Sound on</button><button class="btn alt" type="button" id="skip">Skip</button></div>
-  <div class="stage" id="stage">
+  <div class="rv-ctl"><button type="button" id="sound" aria-pressed="true">Sound on</button><button type="button" id="skip">Skip</button></div>
+  <div class="stage2" id="stage">
     <div class="gacha" id="gacha" hidden aria-hidden="true"><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><div class="cap" id="cap" hidden><canvas id="cap-bot" width="32" height="32"></canvas><canvas id="cap-top" width="32" height="32"></canvas></div></div>
     <div class="result" id="result" hidden>
       <span class="rays"></span>
       <p class="shout" id="shout"></p>
-      <div class="flip" id="flip"><div class="back" id="back"></div><div class="front" id="front" hidden><div class="art"><canvas width="16" height="16" aria-hidden="true"></canvas></div><span class="lbl" id="front-lbl"></span></div></div>
+      <div class="flip" id="flip"><canvas class="back" id="back" width="26" height="42" aria-hidden="true"></canvas><div id="front" hidden></div></div>
       <p class="rv-name" id="rv-name"></p>
       <p class="rv-sub" id="rv-sub"></p>
-      <div class="rv-actions" id="rv-actions" hidden><button class="btn" type="button" id="rv-wear">Wear it</button><button class="btn alt" type="button" id="rv-keep">Keep</button><button class="btn alt" type="button" id="rv-again">Another</button></div>
+      <div class="rv-actions" id="rv-actions" hidden><button class="btn cream" type="button" id="rv-wear">Wear it</button><button class="btn ghost" type="button" id="rv-keep">Keep</button><button class="btn ghost" type="button" id="rv-again">Another</button></div>
     </div>
   </div>
 </div>
+<div class="toast" id="toast" hidden role="status"></div>
 
 <script src="../lil-guy.js"></script>
 <script>window.LG = window.LilGuy;</script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+  const calm = { matches: false };                 // motion plays whatever the reduced-motion setting says (the club's rule)
+  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+  const GRADE = LG.GRADES.map(g => g.color);
+  const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
+  const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
+  const words = n => n >= 1e12 ? (n / 1e12).toFixed(1) + ' trillion' : n >= 1e9 ? (n / 1e9).toFixed(1) + ' billion' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' million' : Math.round(n).toLocaleString('en-US');
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   const cap = s => s[0].toUpperCase() + s.slice(1);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const today = new Date().toISOString().slice(0, 10);
+  const tk = '<svg class="tk"><use href="#ticket"/></svg>';
+  const tri = '<svg aria-hidden="true"><use href="#tri"/></svg>';
+
+  const compile = (gl, vs, fs) => {
+    const sh = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); return x; };
+    const p = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null;
+    gl.useProgram(p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(p, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    return p;
+  };
+  const VS = `attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }`;
+
+  /* ------------------------------------------------ cards, drawn per pixel */
+  const W = 26, H = 42;
+  const glCanvas = document.createElement('canvas');
+  glCanvas.width = W; glCanvas.height = H;
+  const gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false });
+  // Each pixel carries its own finish, scuff and print in the kind texture, so a
+  // guy wearing a Gold hat and a Nebula skin shines differently on each.
+  const prog = gl && compile(gl, VS, `
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D base, kind;
+uniform float time, hover, grade, neg, seed;
+uniform vec2 light;
+
+float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
+vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+vec3 hueShift(vec3 c, float a) {
+  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+  vec3 yiq = toYIQ * c;
+  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
+  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+}
+
+void main() {
+  vec2 res = vec2(26.0, 42.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 kd = texture2D(kind, at);
+  float k = floor(kd.r * 4.0 + 0.5);                    // 1 card, 2 window, 3 guy, 4 item
+  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
+  float scuff = kd.b;
+  float print = floor(kd.a * 255.0 + 0.5) * 4.0;
+  float d = cell.x + cell.y;
+  float h = hash(cell, print);
+  float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
+  float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
+  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 58.0) - 29.0) / 3.0, 0.0, 1.0);
+
+  if (k > 3.5 && finish >= 0.0) {
+    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
+    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
+    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
+    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
+    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); c *= 1.0 + 0.12 * step(mod(cell.y + floor(time * 10.0), 3.0), 0.5); }
+    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
+    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
+  } else if (k < 2.5) {
+    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
+    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
+    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * 2.4); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
+    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * 0.7 + d * 0.18); c += wide * 0.12; }
+    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), twinkle * 0.8); }
+  }
+  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`);
+  const u = {};
+  if (prog) {
+    for (const n of ['base', 'kind', 'time', 'hover', 'grade', 'neg', 'seed', 'light']) u[n] = gl.getUniformLocation(prog, n);
+    gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1);
+  }
+  const texture = bytes => {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+    for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
+    for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
+    return t;
+  };
   const rgb = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
   const blend = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
-  const fmt = n => n >= 1e12 ? (n / 1e12).toFixed(1) + ' trillion' : n >= 1e9 ? (n / 1e9).toFixed(1) + ' billion' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' million' : Math.round(n).toLocaleString('en-US');
-  const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
-  const GRADE = LG.GRADES.map(g => g.color);
-  const today = new Date().toISOString().slice(0, 10);
-  const tkIcon = '<svg class="tk"><use href="#ticket"/></svg>';
 
-  /* ---------------------------------------------- state, kept in this browser */
-  const KEY = 'lil-guys-promo-v1';
-  let state = null;
-  try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { state = null; }
-  if (state && (!state.seed || !Array.isArray(state.copies))) state = null;
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private window: it lasts this visit */ } };
-  const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: LG.decode(code) })).filter(c => c.o) : [];
-  const wornCodes = () => state ? Object.values(state.worn).filter(Boolean) : [];
-
-  /* ---------------------------------------------- drawing */
-  function paintInto(canvas, seed, equip) {
-    const cfg = LG.dress(LG.resolve(seed), { equip });
-    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg));
-    const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
-    colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([...rgb(c), 255], (y * 16 + x) * 4); }));
-    ctx.putImageData(img, 0, 0);
+  /** A card face: rounded edge, cream face, a window tinted by grade, the guy, grade pips. */
+  function build(spec) {
+    const copies = spec.copies || [];
+    const r = LG.resolve(spec.name, spec.parts);
+    if (spec.palette !== undefined) r.palette = spec.palette;
+    const config = LG.dress(r, { equip: copies.map(LG.encode) });
+    const palette = LG.withItems(LG.paletteOf(config), config);
+    const grid = LG.compose(config);
+    const colors = LG.paint(grid, config, palette);
+    const owned = config.owned || {};
+    const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIdx)) : -1);
+    const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4);
+    const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
+      const i = (y * W + x) * 4;
+      base[i] = c[0]; base[i + 1] = c[1]; base[i + 2] = c[2]; base[i + 3] = 255;
+      kind[i] = Math.round(k / 4 * 255); kind[i + 1] = (fi + 1) * 32; kind[i + 2] = Math.round(sc * 255); kind[i + 3] = Math.floor(pr / 4);
+    };
+    const edge = [34, 38, 58], cream = [242, 236, 221], rim = [207, 199, 180];
+    const gc = g >= 0 ? rgb(GRADE[g]) : (spec.tint ? rgb(spec.tint) : [120, 140, 170]);
+    const win = blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+      if (cx + cy < 2) continue;
+      put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
+    }
+    // The title band, in the grade's colour: the name is written over it.
+    // Mythic and Grail names are written in foil, so their band goes dark to show it off.
+    const band = g >= 3 ? [30, 26, 52] : g >= 0 ? blend(gc, [24, 22, 44], 0.3) : [58, 66, 100];
+    const lip = g >= 3 ? gc : blend(band, [255, 255, 255], 0.25);
+    for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) put(x, y, y === 7 ? (g >= 3 ? gc : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
+    for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : win, 2);
+    grid.forEach((row, y) => row.forEach((t, x) => {
+      const hex = colors[y][x];
+      if (!hex) return;
+      const slot = t >= 40 ? 'frame' : t >= 30 ? 'hat' : t >= 20 ? 'skin' : null;
+      const o = slot && owned[slot];
+      put(x + 5, y + 11, rgb(hex), o ? 4 : 3, o ? FIN.indexOf(o.finish) : -1, o ? o.scuff : 0, o ? o.print : 0);
+    }));
+    if (g >= 0) for (let p = 0; p < 5; p++) {
+      const x0 = 6 + p * 3;
+      for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim, 1);
+    } else for (let x = 8; x <= 17; x++) put(x, 31, rim, 1);
+    return { base, kind, g, neg: copies.some(o => o.finish === 'negative'), seed: copies.length ? copies[copies.length - 1].print : 0 };
   }
-  const animated = (seed, move, equip, size = 300, emote) => LG.toAnimatedSvg(seed, move, { size, equip, emote });
+
+  const live = new Set();
+  const byCanvas = new WeakMap();
+  const io = new IntersectionObserver(es => es.forEach(e => { const s = byCanvas.get(e.target); if (s) s.visible = e.isIntersecting; }), { rootMargin: '120px' });
+  const pending = [];
+  /** Card art markup; the canvas is filled in by hydrate() once it is in the page. */
+  const px = spec => {
+    pending.push(spec);
+    const l = spec.label;
+    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b">${l.bottom}</span></span>` : '';
+    return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}"></canvas>${ov}</span>`;
+  };
+  /** The words on an item's card: its name, its print, its grade and how rare it is. */
+  const itemLabel = (o, starter, one) => {
+    const it = LG.itemById(o.item), g = LG.gradeOf(o);
+    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), bottom: one ? '★ 1 of 1' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+  };
+
+  function mount(canvas, spec) {
+    const f = build(spec);
+    const s = { canvas, ctx: canvas.getContext('2d'), f, art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: true, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
+    s.still = !!spec.still;
+    if (prog) { s.base = texture(f.base); s.kind = texture(f.kind); }
+    s.card.addEventListener('pointerenter', () => { s.juice = performance.now() / 1000; });
+    s.card.addEventListener('focus', () => { s.juice = performance.now() / 1000; });
+    s.card.addEventListener('pointermove', e => {
+      const r = s.art.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      s.hover = 1; s.light = [x, y]; s.tilt = [x - 0.5, y - 0.5];
+    });
+    s.card.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
+    live.add(s); byCanvas.set(canvas, s); io.observe(canvas);
+    draw(s, performance.now() / 1000);
+    return s;
+  }
+  function hydrate(root) {
+    root.querySelectorAll('canvas[data-p]').forEach(c => { const i = +c.dataset.p; c.removeAttribute('data-p'); mount(c, pending[i]); pending[i] = null; });
+  }
+  function draw(s, t) {
+    if (!prog) { s.ctx.putImageData(new ImageData(new Uint8ClampedArray(s.f.base), W, H), 0, 0); return; }
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.base);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, s.kind);
+    gl.uniform1f(u.time, t); gl.uniform1f(u.hover, s.hover); gl.uniform1f(u.grade, s.f.g);
+    gl.uniform1f(u.neg, s.f.neg ? 1 : 0); gl.uniform1f(u.seed, s.f.seed);
+    gl.uniform2f(u.light, s.light[0], s.light[1]);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    s.ctx.clearRect(0, 0, W, H); s.ctx.drawImage(glCanvas, 0, 0);
+  }
+
 
   /* ------------------------------------------------ gachapon
    * A capsule is a clear top and a candy-coloured bottom that twist apart; the
@@ -414,20 +675,44 @@
   function addMachine(canvas, game, hoverEl) {
     const body = rgb(CANDY[game]);
     const others = LG.GAMES.map(g => rgb(CANDY[g]));
-    // Capsules piled in the dome, bottom rows first, about two thirds full.
+    // The dome: a glass ball centred over the body, its top fully inside the canvas.
+    const DX = 19.5, DY = 15, DR = 13.6;
+    // Capsules piled in the dome about two thirds full, in two layers: a dimmer back
+    // layer peeking between the front one. Drawn top to bottom so lower ones overlap.
     const pile = [];
-    for (let row = 0; row < 4; row++) {
-      const y = 20 - row * 6;
-      for (let x = 6 + (row % 2) * 4; x <= 34; x += 8) {
-        if (Math.hypot(x - 20, y - 13) <= 10.8) pile.push({ x, y, c: strHash(`${game}:${x}:${y}`) % 5 < 2 ? body : others[strHash(`${x}${y}${game}`) % others.length], jx: 0, jy: 0 });
+    for (const back of [1, 0]) for (let row = 0; row < 4; row++) {
+      const y = 19.5 - row * 5 - back * 2.5;
+      for (let x = 7.5 + ((row + back) % 2) * 4; x <= 32; x += 8) {
+        if (Math.hypot(x - DX, y - DY) > DR - 3.2) continue;
+        const k = `${game}:${back}:${x}:${y}`;
+        pile.push({ x, y, back, r: back ? 3.9 : 4.4, c: strHash(k) % 5 < 2 ? body : others[strHash(k + '#') % others.length], jx: 0, jy: 0 });
       }
     }
+    pile.sort((a, b) => b.back - a.back || a.y - b.y);
+    // One shaded capsule pixel: a sphere lit from the top left, clear tinted plastic
+    // over a coloured half, a pale seam between them and a hard white highlight.
+    const LIGHT = [-0.5, -0.62, 0.6];
+    function ballPx(dx, dy, r, c, dim) {
+      const nx = dx / r, ny = dy / r, r2 = nx * nx + ny * ny;
+      if (r2 > 1) return null;
+      const nz = Math.sqrt(1 - r2);
+      const lit = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]);
+      let base = ny < -0.12 ? blend(c, [236, 242, 255], 0.62) : Math.abs(ny + 0.06) <= 0.12 ? blend(c, WHITE, 0.45) : c;
+      let col = lit < 0.55 ? blend(base, INK, (0.55 - lit) * (ny < 0 ? 0.8 : 1.15)) : blend(base, WHITE, (lit - 0.55) * 0.55);
+      if (r2 > 0.78) col = blend(col, INK, 0.28);
+      if (Math.hypot(nx + 0.42, ny + 0.5) < 0.24) col = WHITE;
+      return dim ? blend(col, [40, 46, 78], 0.42) : col;
+    }
+    canvas.width = 80; canvas.height = 112;
     const ctx = canvas.getContext('2d');
     const st = {
       canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
       jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
       tick(t) {
-        const m = Px(40, 56);
+        // Drawn at twice the pixel density: the body in 2×2 blocks, the glass and
+        // capsules on the fine grid, so the spheres can be shaded.
+        const hi = Px(80, 112);
+        const m = { set(x, y, c, a) { x = Math.round(x); y = Math.round(y); for (let j = 0; j < 4; j++) hi.set(x * 2 + (j & 1), y * 2 + (j >> 1), c, a); } };
         const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
         // body
         for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
@@ -467,29 +752,36 @@
         }
         // the collar under the dome
         for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
-        // the dome: glass, capsules, then the shine on the glass
-        const glass = [];
-        for (let y = 0; y <= 22; y++) for (let x = 0; x < 40; x++) {
-          const d = Math.hypot(x - 20, y - 13);
-          if (d > 15.2 || (y < 1)) continue;
-          if (d > 14.2) m.set(x, y, [205, 222, 248], 235);
-          else { m.set(x, y, [190, 215, 250], 42); glass.push([x, y]); }
+        // the dome: glass, capsules, then the shine on the glass, then the cap (fine grid)
+        const cx2 = DX + 0.5, cy2 = DY + 0.5, glass = [];
+        const at = (X, Y) => [(X + 0.5) / 2, (Y + 0.5) / 2];
+        for (let Y = 0; Y <= 45; Y++) for (let X = 0; X < 80; X++) {
+          const [x, y] = at(X, Y), d = Math.hypot(x - cx2, y - cy2);
+          if (d > DR) continue;
+          if (d > DR - 0.55) hi.set(X, Y, [214, 228, 250], 240);
+          else if (d > DR - 1.05) hi.set(X, Y, [150, 170, 210], 200);
+          else { hi.set(X, Y, [190, 215, 250], 42); glass.push([X, Y, d, Math.atan2(y - cy2, x - cx2)]); }
         }
-        for (const p of pile) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
-          const d = Math.hypot(dx, dy), x = p.x + dx + p.jx, y = p.y + dy + p.jy;
-          if (d > 4.2 || Math.hypot(x - 20, y - 13) > 14) continue;
-          if (dy < 0) m.set(x, y, d > 3.4 ? [190, 208, 236] : blend(p.c, [240, 246, 255], 0.7), 235);
-          else m.set(x, y, d > 3.4 ? blend(p.c, INK, 0.45) : dy === 0 ? blend(p.c, WHITE, 0.35) : p.c);
-          if (dx === -2 && dy === -2) m.set(x, y, WHITE);
+        for (const p of pile) {
+          const px = p.x + 0.5 + p.jx, py = p.y + 0.5 + p.jy, R = Math.ceil(p.r * 2) + 1;
+          for (let Y = Math.floor(py * 2) - R; Y <= Math.floor(py * 2) + R; Y++) for (let X = Math.floor(px * 2) - R; X <= Math.floor(px * 2) + R; X++) {
+            const [x, y] = at(X, Y);
+            if (Y > 45 || Math.hypot(x - cx2, y - cy2) > DR - 1.1) continue;
+            const c = ballPx(x - px, y - py, p.r, p.c, p.back);
+            if (c) hi.set(X, Y, c);
+          }
         }
-        for (const [x, y] of glass) {
-          if ((x === 9 || x === 10) && y > 4 && y < 19) m.set(x, y, WHITE, x === 9 ? 120 : 70);
-          const k = (x + y + 60 - sweep) % 60;
-          if (k < 2) m.set(x, y, WHITE, 80);
+        for (const [X, Y, d, side] of glass) {
+          if (d > DR - 2.6 && d <= DR - 1.6 && side < -1.85 && side > -2.95) hi.set(X, Y, WHITE, 170);
+          if (d > DR - 2.2 && d <= DR - 1.6 && side > -0.45 && side < 0.35) hi.set(X, Y, WHITE, 70);
+          if ((X + Y + 120 - sweep * 2) % 120 < 3) hi.set(X, Y, WHITE, 60);
         }
-        for (let x = 18; x <= 21; x++) { m.set(x, 0, blend(body, WHITE, 0.2)); m.set(x, 1, body); }
-        m.outline(INK);
-        ctx.putImageData(new ImageData(m.d, 40, 56), 0, 0);
+        for (let x = 16; x <= 23; x++) for (let y = 0; y <= 2; y++) {
+          if ((x === 16 || x === 23) && y === 0) continue;
+          m.set(x, y, y === 0 ? blend(body, WHITE, 0.35) : x <= 17 ? blend(body, WHITE, 0.2) : x >= 22 ? blend(body, INK, 0.25) : body);
+        }
+        hi.outline(INK);
+        ctx.putImageData(new ImageData(hi.d, 80, 112), 0, 0);
         for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
       },
     };
@@ -503,109 +795,277 @@
 
 
 
-  /* ---------------------------------------------- the parade */
-  const MOVES = ['hop', 'wave', 'cheer', 'dance', 'squish', 'look', 'blink', 'sleep'];
-  const paradeGuys = Array.from({ length: 14 }, (_, k) => {
-    const seed = `parade-${k * 7 + 3}`, game = LG.GAMES[k % LG.GAMES.length];
-    const o = LG.roll(`${seed}:show`, game);
-    return animated(seed, MOVES[k % MOVES.length], [LG.freeItem(game)?.id, LG.encode(o)].filter(Boolean), 84);
-  });
-  $('belt').innerHTML = [...paradeGuys, ...paradeGuys].map(s => `<span>${s}</span>`).join('');
+  /* ---------------------------------------------- the founder: "isaac" is reserved for the person who made the club.
+   * Every slot holds its rarest trait, and he holds a copy no capsule can give. */
+  const byName = (list, name) => list.findIndex(x => x.name === name);
+  const FOUNDER = {
+    parts: { head: byName(LG.heads, 'flame'), eyes: byName(LG.eyes, 'laser'), mouth: byName(LG.mouths, 'smirk'), cheeks: byName(LG.cheeks, 'war paint'), hair: byName(LG.hair, 'crown'), body: byName(LG.bodies, 'star mark'), accessory: byName(LG.accessories, 'bowtie'), arms: 2, feet: 0, shade: 2, flip: false, lucky: true },
+    palette: byName(LG.palettes, 'Midnight'),
+    copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
+  };
+  const RESERVED = { isaac: FOUNDER };
+  const founderOf = seed => seed === 'founder:isaac' ? FOUNDER : null;
+  const guyConfig = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette } : LG.resolve(seed); };
+  const cardSpec = (seed, copies, label, still, grade) => { const f = founderOf(seed); return { name: seed, parts: f ? f.parts : undefined, palette: f ? f.palette : undefined, copies, label, still, grade }; };
+  const animated = (seed, move, equip, size, emote) => {
+    const f = founderOf(seed);
+    const o = { size, equip, emote };
+    if (f) { o.parts = f.parts; o.palette = LG.paletteOf({ palette: f.palette, shade: f.parts.shade, lucky: true }); }
+    return LG.toAnimatedSvg(seed, move, o);
+  };
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
 
-  /* ---------------------------------------------- hero */
-  function heroGuy(move = 'idle', emote) {
-    if (!state) { $('me').innerHTML = ''; $('glow').style.removeProperty('--grade'); $('hero-guy').innerHTML = animated('demo-7', 'wave', []); paintInto($('mark'), 'demo-7', []); return; }
-    const best = copies().filter(c => wornCodes().includes(c.code)).map(c => gradeIdx(c.o));
-    $('glow').style.setProperty('--grade', GRADE[Math.max(0, ...best)]);
-    $('hero-guy').innerHTML = animated(state.seed, move, wornCodes(), 300, emote);
-    const cfg = LG.resolve(state.seed);
-    const one = LG.guyOneIn(cfg);
-    $('me').innerHTML = `<span class="tag">${esc(state.name)}</span><span class="tag">1 in ${fmt(one)} guys</span>${cfg.lucky ? '<span class="tag gold">Lucky</span>' : ''}`;
-    paintInto($('mark'), state.seed, wornCodes());
+  /* ---------------------------------------------- state: your claim and collection.
+   * Kept in the page's database when this view has one (your own private row), else in this browser. */
+  const KEY = 'lil-guys-promo-v2';
+  let state = null, db = null, uid = null, owner = false;
+  try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { state = null; }
+  if (state && (!state.seed || !Array.isArray(state.copies))) state = null;
+  let saving = Promise.resolve(), saveTimer = null;
+  function save() {
+    try { if (state) localStorage.setItem(KEY, JSON.stringify(state)); else localStorage.removeItem(KEY); } catch (e) { /* private window: it lasts this visit */ }
+    if (!db || !uid) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const body = state ? { ...state } : { gone: true };
+      saving = saving.then(() => db.doc(`data/users/${uid}/promo`).set(body)).catch(() => {});
+    }, 500);
+  }
+  const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: LG.decode(code) })).filter(c => c.o) : [];
+  const wornCodes = () => state ? Object.values(state.worn).filter(Boolean) : [];
+  const wornCopies = () => wornCodes().map(LG.decode).filter(Boolean);
+
+  /* ---------------------------------------------- small helpers */
+  function paintInto(canvas, seed, equip) {
+    const f = founderOf(seed);
+    const cfg = LG.dress(guyConfig(seed), { equip });
+    const pal = f ? LG.paletteOf({ palette: f.palette, shade: f.parts.shade, lucky: true }) : LG.paletteOf(cfg);
+    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(pal, cfg));
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
+    colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([...rgb(c), 255], (y * 16 + x) * 4); }));
+    ctx.putImageData(img, 0, 0);
+  }
+  let toastT;
+  const toast = msg => { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); };
+  $('today').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  /* ---------------------------------------------- the hand: the rarest copies a sample of 12,000 capsules turned up */
+  function rarest(n) {
+    const seen = new Set(), found = [];
+    for (let i = 0; i < 12000; i++) {
+      const game = LG.GAMES[i % LG.GAMES.length], o = LG.roll(`hand:${today}:${i}`, game);
+      if (gradeIdx(o) >= 2) found.push(o);
+    }
+    found.sort((a, b) => LG.copyOneIn(b) - LG.copyOneIn(a));
+    const out = [];
+    for (const o of found) { if (seen.has(o.item)) continue; seen.add(o.item); out.push(o); if (out.length === n) break; }
+    return out;
+  }
+  const HAND_GUYS = ['mo', 'pip', 'juno', 'bix', 'tam', 'odie', 'fen', 'lux', 'kit'];
+  function renderHand() {
+    const hand = rarest(9).sort((a, b) => LG.copyOneIn(a) - LG.copyOneIn(b));
+    // Rarest in the middle, like a fanned hand.
+    const order = []; hand.forEach((o, i) => (i % 2 ? order.push(o) : order.unshift(o)));
+    const mid = (order.length - 1) / 2;
+    $('hand').innerHTML = order.map((o, i) => {
+      const d = i - mid;
+      return `<div class="slot" style="--r:${d * 5}deg;--y:${Math.round(d * d * 4)}px;--z:${20 - Math.round(Math.abs(d) * 2)}" tabindex="0">${px(cardSpec(HAND_GUYS[i], [o], itemLabel(o)))}<small>${esc(LG.nameOf(o).replace(' | ', ' · '))}</small></div>`;
+    }).join('');
+    hydrate($('hand'));
+    $('hand-note').textContent = `Out of 12,000 capsules opened just now, the rarest was 1 in ${words(LG.copyOneIn(hand.at(-1)))}.`;
   }
 
-  function renderTraits() {
-    if (!state) { $('traits-sec').hidden = true; return; }
-    $('traits-sec').hidden = false;
-    $('traits-title').textContent = `${state.name}'s guy`;
-    const odds = LG.traitOdds(LG.resolve(state.seed)).filter(t => t.slot !== 'variant' || t.name === 'Lucky');
-    const rarest = [...odds].sort((a, b) => a.chance - b.chance).slice(0, 2).map(t => t.slot);
-    $('traits').innerHTML = odds.map(t => `<div class="trait${rarest.includes(t.slot) ? ' rare' : ''}"><small>${t.slot}</small><b>${esc(t.name)}</b><span>1 in ${fmt(1 / t.chance)}</span></div>`).join('');
+  /* ---------------------------------------------- claiming a name */
+  let checkT = null, lastCheck = '';
+  function setAvail(cls, text) { const a = $('avail'); a.className = 'avail ' + cls; a.textContent = text; }
+  async function check() {
+    const raw = $('name').value, key = norm(raw);
+    if (raw && key !== raw.toLowerCase()) $('name').value = key;
+    $('claim-btn').disabled = true;
+    if (key.length < 2) { setAvail('', ''); return; }
+    if (RESERVED[key] && !owner) { setAvail('no', 'Reserved'); return; }
+    lastCheck = key;
+    if (!db) { setAvail('ok', '✓ Looks free (checked in this browser only)'); $('claim-btn').disabled = false; return; }
+    setAvail('', 'Checking…');
+    try {
+      const snap = await db.doc(`names/${key}`).get();
+      if (lastCheck !== key) return;
+      const d = snap.exists ? snap.data() : null;
+      if (d && d.seed && d.by !== uid) setAvail('no', `@${key} is taken`);
+      else { setAvail('ok', `✓ @${key} is yours to take`); $('claim-btn').disabled = false; }
+    } catch (e) { setAvail('', 'Could not check just now'); }
   }
+  $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
-  // The deal: faces flick past, slowing, and land on yours.
-  async function deal(name) {
-    const seed = LG.makeSeed();
-    state = { v: 1, seed, name, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [] };
+  async function claim(key) {
+    const seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed();
+    if (db) {
+      const ref = db.doc(`names/${key}`);
+      try {
+        // No create-if-absent write: take a short lease, re-read, and only then write the claim.
+        const lease = await ref.acquire({ holder: uid || `tab-${Math.random().toString(36).slice(2)}`, ttlMs: 5000 });
+        if (!lease.acquired) { setAvail('no', `Someone is claiming @${key} right now`); return; }
+        const snap = await ref.get();
+        const d = snap.exists ? snap.data() : null;
+        if (d && d.seed && d.by !== uid) { setAvail('no', `@${key} was just taken`); return; }
+        await ref.set({ name: key, seed, by: uid, at: new Date().toISOString() });
+      } catch (e) {
+        setAvail('no', e && e.code === 'invalid_argument' ? (RESERVED[key] ? 'Reserved' : 'This page is view-only for you') : 'Could not claim just now');
+        return;
+      }
+    }
+    state = { v: 2, key, seed, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
-    state.worn.hat = state.copies[strHash(seed) % state.copies.length];
+    const f = founderOf(seed);
+    if (f) { state.copies.push(LG.encode(f.copy)); state.worn.frame = undefined; state.worn.hat = LG.encode(f.copy); }
+    else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
-    const box = $('hero-guy');
-    box.innerHTML = '<canvas class="px" width="16" height="16"></canvas>';
-    const cv = box.firstChild;
-    for (let k = 0; k < 26; k++) { paintInto(cv, `${seed}:shuffle:${k}`, []); tone(700 + k * 18, 0.02, 0.02); await sleep(30 + k * k * 0.5); }
-    paintInto(cv, seed, []); tone(523, 0.12, 0.04); tone(784, 0.18, 0.04, 0.1);
-    await sleep(350);
+    await dropName();
     renderAll();
-    heroGuy('cheer', 'heart');
-    setTimeout(() => heroGuy('idle'), 2600);
   }
-  $('deal-form').addEventListener('submit', e => { e.preventDefault(); const n = $('name').value.trim().slice(0, 18); if (n) deal(n); });
-  $('reset').addEventListener('click', () => { if (!confirm('Start over? Your guy and collection go.')) return; state = null; try { localStorage.removeItem(KEY); } catch (e) {} renderAll(); });
-  $('go-roll').addEventListener('click', () => { $('roll').scrollIntoView({ behavior: 'smooth' }); });
-  $('go-coll').addEventListener('click', () => { $('coll').scrollIntoView({ behavior: 'smooth' }); });
+  $('claim-f').addEventListener('submit', e => { e.preventDefault(); const key = norm($('name').value); if (key.length >= 2 && !$('claim-btn').disabled) { $('claim-btn').disabled = true; claim(key); } });
+  $('reset').addEventListener('click', async () => {
+    if (!state || !confirm(`Let @${state.key} go? Your guy and collection go with it.`)) return;
+    const key = state.key;
+    state = null; save();
+    if (db) { try { const ref = db.doc(`names/${key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.delete(); } catch (e) {} }
+    renderAll();
+  });
+  $('go-free').addEventListener('click', () => { if (state.free !== today) { state.free = today; open(todayGame, 'Daily capsule'); } else $('roll').scrollIntoView({ behavior: 'smooth' }); });
+
+  // Who else has claimed: the latest dozen, live.
+  function watchNames() {
+    if (!db) return;
+    db.collection('names').orderBy('at', 'desc').limit(12).onSnapshot(snap => {
+      const list = snap.docs.map(d => d.data()).filter(d => d && d.seed && d.name);
+      if (!list.length) { $('recent').hidden = true; return; }
+      $('recent').hidden = false;
+      $('faces').innerHTML = list.slice(0, 6).map(() => '<span><canvas width="16" height="16"></canvas></span>').join('');
+      $('faces').querySelectorAll('canvas').forEach((c, i) => paintInto(c, list[i].seed, []));
+      const names = list.slice(0, 3).map(d => `<b>@${esc(d.name)}</b>`).join(', ');
+      $('recent-text').innerHTML = `${names}${list.length > 3 ? ` and ${list.length - 3} more` : ''} just claimed theirs.`;
+    }, () => { $('recent').hidden = true; });
+  }
+
+  /* ---------------------------------------------- your guy and his odds */
+  let rowsShown = false;
+  function renderGuy() {
+    $('guy-sec').hidden = !state;
+    if (!state) return;
+    $('guy-title').textContent = `@${state.key}`;
+    $('guy-stage').innerHTML = animated(state.seed, 'dance', wornCodes(), 300);
+    const cfg = guyConfig(state.seed);
+    const odds = LG.traitOdds(cfg).filter(t => t.slot !== 'variant' || t.name === 'Lucky');
+    const max = Math.max(...odds.map(t => Math.log10(1 / t.chance)));
+    const rare = [...odds].sort((a, b) => a.chance - b.chance).slice(0, 2).map(t => t.slot);
+    $('rows').innerHTML = odds.map(t => `<div class="row${rare.includes(t.slot) ? ' rare' : ''}"><small>${t.slot}</small><b>${esc(t.name)}</b><div class="bar"><i data-w="${Math.max(6, Math.log10(1 / t.chance) / max * 100)}"></i></div><span>1 in ${fmt(1 / t.chance)}</span></div>`).join('');
+    const total = LG.guyOneIn(cfg);
+    $('total').dataset.n = total;
+    $('total').textContent = '1 in ' + (rowsShown ? words(total) : '0');
+    if (rowsShown) showRows(true);
+  }
+  // The rows come in one by one and the total counts up, the first time you scroll to them.
+  function showRows(instant) {
+    const rows = [...$('rows').children];
+    rows.forEach((r, i) => setTimeout(() => { r.classList.add('in'); const b = r.querySelector('i'); b.style.width = b.dataset.w + '%'; }, instant ? 0 : i * 110));
+    const n = +$('total').dataset.n;
+    if (instant) { $('total').textContent = '1 in ' + words(n); return; }
+    const t0 = performance.now(), dur = 1400 + rows.length * 110;
+    const step = now => { const e = Math.min(1, (now - t0) / dur), v = Math.pow(10, Math.log10(n) * (1 - Math.pow(1 - e, 3))); $('total').textContent = '1 in ' + words(v); if (e < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+  new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && !rowsShown && state) { rowsShown = true; showRows(false); } }, { threshold: 0.3 }).observe($('rows'));
+
+  /* ---------------------------------------------- the claim card */
+  function renderClaim() {
+    $('claim-form').hidden = !!state; $('claim-mine').hidden = !state;
+    $('wallet-pill').hidden = !state;
+    if (!state) { paintInto($('mark-guy'), 'lilguys', []); $('sub').textContent = 'Claim your name and the club deals you a guy to go with it. Then fill his locker, one capsule at a time.'; return; }
+    paintInto($('mark-guy'), state.seed, wornCodes());
+    $('me-name').textContent = '@' + state.key;
+    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '1/1', bottom: 'One of one' }, false, 4));
+    hydrate($('me-card'));
+    const n = LG.guyOneIn(guyConfig(state.seed));
+    $('me-odds').textContent = `Dealt just for you. A guy like him turns up 1 in ${words(n)}.`;
+    $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy.`;
+    $('go-free').textContent = state.free === today ? 'Open a capsule' : "Open today's free capsule";
+  }
 
   /* ---------------------------------------------- machines */
-  let game = LG.GAMES[Math.floor(Date.now() / 864e5) % LG.GAMES.length];
-  let mach = null;
-  function renderGames() {
-    $('games').innerHTML = LG.GAMES.map(g => `<button class="chip-btn" type="button" style="--c:${CANDY[g]}" aria-pressed="${g === game}" data-g="${g}">${cap(g)}</button>`).join('');
-    if (mach) balls.delete(mach);
-    mach = addMachine($('mach'), game, $('mach').parentElement);
-    const pool = LG.gameItems(game).filter(i => !i.free);
-    const g = [0, 1, 2, 3, 4].map(k => Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0));
-    const finishNames = k => Object.values(LG.FINISHES).filter(f => f.grade === k).map(f => f.name).join(', ');
-    $('odds').innerHTML = LG.GRADES.map((gr, k) => `<div style="--g:${gr.color}"><b>${gr.name}</b>${g[k] >= 1 ? g[k].toFixed(0) : +g[k].toFixed(2)}% · ${finishNames(k)}</div>`).join('') ;
+  const todayGame = LG.GAMES[Math.floor(Date.now() / 864e5) % LG.GAMES.length];
+  const tint = g => `color-mix(in srgb, ${CANDY[g]} 34%, #fbf8f2)`;
+  function renderMachines() {
+    const odds = [0, 1, 2, 3, 4].map(k => Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0));
+    $('odds').innerHTML = LG.GRADES.map((g, k) => `<span style="--g:${g.color}"><i></i>${g.name} <b>${odds[k] >= 1 ? odds[k].toFixed(0) : +odds[k].toFixed(2)}%</b></span>`).join('');
+    const order = [todayGame, ...LG.GAMES.filter(g => g !== todayGame)];
+    $('machines').innerHTML = order.map((g, i) => {
+      const n = LG.gameItems(g).filter(it => !it.free).length;
+      const first = i === 0, free = first && state && state.free !== today;
+      return `<button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
+        <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
+        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : `${tk} 120 · ${n} items`}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button>`;
+    }).join('');
+    for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
+    $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
   }
-  $('games').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) { game = b.dataset.g; renderGames(); } });
-
-  function renderWallet() {
-    $('wallet-pill').hidden = !state;
-    if (!state) return;
-    $('wallet').textContent = state.tickets.toLocaleString('en-US');
-    $('buy').disabled = state.tickets < 120;
-    $('season-buy').disabled = state.tickets < 150;
-    const used = state.free === today;
-    $('free').disabled = used;
-    $('free').textContent = used ? 'Free capsule used today' : 'Free daily capsule';
-    $('go-roll').textContent = used ? 'Open a capsule' : "Open today's free capsule";
-  }
-  const need = () => { if (!state) { $('name').focus(); $('deal-form').scrollIntoView({ behavior: 'smooth', block: 'center' }); return true; } return false; };
-  $('free').addEventListener('click', () => { if (need() || state.free === today) return; state.free = today; open(game, 'Daily capsule'); });
-  $('buy').addEventListener('click', () => { if (need() || state.tickets < 120) return; state.tickets -= 120; open(game, 'Capsule'); });
-  $('earn').addEventListener('click', () => { if (need()) return; state.tickets += 60; save(); renderWallet(); heroGuy('hop'); });
+  $('machines').addEventListener('click', e => {
+    const b = e.target.closest('[data-g]'); if (!b) return;
+    if (!state) { $('name').focus(); toast('Claim a name first: your starters come with it.'); return; }
+    const g = b.dataset.g;
+    if (g === todayGame && state.free !== today) { state.free = today; open(g, 'Daily capsule'); return; }
+    if (state.tickets < 120 && !dev) { toast('Not enough tickets. Play a pretend game for more.'); return; }
+    if (!dev) state.tickets -= 120;
+    open(g, 'Capsule');
+  });
+  $('earn').addEventListener('click', () => { if (!state) { $('name').focus(); return; } state.tickets += 60; save(); renderWallet(); toast('+60 tickets'); });
 
   const seasonal = LG.inSeason(today);
   if (seasonal.length) {
     const it = seasonal[0];
     $('season').hidden = false;
-    $('season-name').textContent = `${it.name} · in season now`;
-    $('season-sub').textContent = `Every copy is stamped with the day it dropped. Gone ${new Date(`2026-${it.season.to}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}.`;
-    paintInto($('season').querySelector('canvas'), state ? state.seed : 'season', [it.id]);
+    $('season-name').textContent = `${it.name} · in season`;
+    $('season-sub').textContent = `Each copy is stamped with the day it dropped. Gone ${new Date(`2026-${it.season.to}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}.`;
+    paintInto($('season').querySelector('canvas'), 'season', [it.id]);
     $('season-buy').addEventListener('click', () => {
-      if (need() || state.tickets < 150) return;
-      state.tickets -= 150;
-      const o = LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
+      if (!state) { $('name').focus(); return; }
+      if (state.tickets < 150 && !dev) { toast('Not enough tickets.'); return; }
+      if (!dev) state.tickets -= 150;
+      const o = dev ? best(i => LG.rollSeason(`${state.seed}:dev:${i}`, today)) : LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
       reveal(o, null, 'Seasonal');
     });
   }
+  function renderWallet() { if (state) $('wallet').textContent = state.tickets.toLocaleString('en-US'); }
 
-  function open(g, how) {
-    const o = LG.roll(`${state.seed}:${how}:${today}:${++state.opened}`, g);
-    reveal(o, g, how);
+  /* ---------------------------------------------- dev drops: an easter egg.
+   * Type "rarest" anywhere, or tap the lil guys mark five times. Every capsule then gives the rarest,
+   * cleanest copy out of 6,000 rolls, through the same drop. Those copies are marked DEV. */
+  let dev = false;
+  try { dev = sessionStorage.getItem('lil-guys-dev') === '1'; } catch (e) {}
+  const setDev = on => { dev = on; try { sessionStorage.setItem('lil-guys-dev', on ? '1' : '0'); } catch (e) {} $('devpill').hidden = !on; if (on) toast('Dev drops on: every capsule is the rarest, cleanest copy.'); };
+  setDev(dev); if (dev) $('toast').hidden = true;
+  $('devpill').addEventListener('click', () => { setDev(false); toast('Dev drops off.'); });
+  let typed = '', taps = 0, tapT;
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input')) return;
+    typed = (typed + (e.key.length === 1 ? e.key.toLowerCase() : '')).slice(-6);
+    if (typed === 'rarest') { typed = ''; setDev(!dev); if (!dev) toast('Dev drops off.'); }
+  });
+  document.querySelector('.site-name').addEventListener('click', () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => { taps = 0; }, 900); if (taps >= 5) { taps = 0; setDev(!dev); if (!dev) toast('Dev drops off.'); } });
+  // Best means the top grade first (a famous print counts), then the lowest scuff, then the rarest odds.
+  const better = (a, b) => gradeIdx(a) - gradeIdx(b) || (LG.special(a) ? 1 : 0) - (LG.special(b) ? 1 : 0) || b.scuff - a.scuff || LG.copyOneIn(a) - LG.copyOneIn(b);
+  function best(rollAt) {
+    let top = null;
+    for (let i = 0; i < 6000; i++) { const o = rollAt(i); if (o && (!top || better(o, top) > 0)) top = o; }
+    return top;
   }
 
-  /* ---------------------------------------------- sound: little square-wave blips, after a click, one tap to mute */
+  function open(g, how) {
+    const o = dev ? best(i => LG.roll(`${state.seed}:dev:${state.opened}:${i}`, g)) : LG.roll(`${state.seed}:${how}:${today}:${state.opened}`, g);
+    state.opened++;
+    reveal(o, g, dev ? 'Dev drop' : how);
+  }
+
+  /* ---------------------------------------------- sound: square-wave blips, after a click; one tap mutes */
   let audio = null, sound = true;
   function tone(freq, dur, vol = 0.04, when = 0, type = 'square') {
     if (!sound) return;
@@ -639,7 +1099,23 @@
     if (bits.length) requestAnimationFrame(fly); else { bursting = false; bctx.clearRect(0, 0, burst.width, burst.height); }
   }
 
-  /* ---------------------------------------------- the reveal: the machine drops, cranks, a capsule pops, a card trembles and flips */
+  /* A face-down card: navy with a diamond weave and an amber gem. */
+  (function cardBack(canvas) {
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H);
+    const edge = [34, 38, 58], navy = [30, 38, 66], weave = [44, 56, 96], gem = [255, 207, 92], gemS = [165, 120, 26];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+      if (cx + cy < 2) continue;
+      let c = cx === 0 || cy === 0 || cx + cy === 2 ? edge : (cx === 2 || cy === 2) ? gemS : ((x + y) % 4 === 0 || (x - y + 64) % 4 === 0) ? weave : navy;
+      const m = Math.abs(x - 12.5) + Math.abs(y - 20.5);
+      if (m < 6) c = m < 3 ? gem : m < 4.5 ? gemS : edge;
+      if (m < 3 && x < 12 && y < 20) c = [255, 240, 190];
+      img.data.set([...c, 255], (y * W + x) * 4);
+    }
+    ctx.putImageData(img, 0, 0);
+  })($('back'));
+
+  /* ---------------------------------------------- the drop: the machine drops in, cranks, a capsule pops, a card trembles and flips */
   let rush = false, current = null;
   const wait = ms => rush ? Promise.resolve() : sleep(ms);
   async function gacha(g) {
@@ -676,19 +1152,13 @@
     box.hidden = true;
   }
 
-  async function reveal(o, g, how) {
-    const code = LG.encode(o);
-    state.copies.push(code); state.fresh = [...(state.fresh || []), code]; save();
-    current = { o, code, g, how };
-    renderWallet();
-    rush = false;
-    $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
-    if (g) await gacha(g);
-    const gr = gradeIdx(o), res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
+  // Face down, it trembles (harder and with a glow the rarer it is), flips, and pays off.
+  async function unveil(gr, cardHtml, shoutText, name, sub) {
+    const res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
     res.style.setProperty('--grade', GRADE[gr]);
     res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.75][gr]);
     res.classList.remove('go'); shout.classList.remove('slam'); shout.textContent = '';
-    front.hidden = true; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
+    front.hidden = true; front.innerHTML = ''; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
     if (!rush) {
@@ -702,12 +1172,10 @@
       await wait(170);
     }
     $('skip').hidden = true;
-    back.hidden = true; front.hidden = false;
-    paintInto(front.querySelector('canvas'), state.seed, [code]);
-    $('front-lbl').textContent = LG.nameOf(o).replace(' | ', ' · ');
+    back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front);
     flip.classList.remove('squash', 'tremble');
-    const famous = LG.special(o), grade = LG.gradeOf(o);
-    shout.textContent = famous ? famous + '!' : gr === 0 ? grade.name : grade.name + '!';
+    const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
+    shout.textContent = shoutText;
     res.classList.add('go');
     fanfare(gr);
     shout.classList.add('slam');
@@ -717,25 +1185,61 @@
     if (gr >= 2) { const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
     if (gr >= 3) { const st = $('stage'); st.classList.remove('quake'); void st.offsetWidth; st.classList.add('quake'); }
     if (gr >= 4) setTimeout(() => boom(4, r.left + r.width / 2, r.top + r.height * 0.3), 420);
-    $('rv-name').textContent = LG.nameOf(o);
-    $('rv-sub').textContent = `${how} · ${LG.wearOf(o.scuff).name} · print #${o.print} · 1 in ${fmt(LG.copyOneIn(o))}`;
+    $('rv-name').textContent = name;
+    $('rv-sub').textContent = sub;
     $('rv-actions').hidden = false;
-    $('rv-again').hidden = !(g && (state.tickets >= 120));
+  }
+
+  async function reveal(o, g, how) {
+    const code = LG.encode(o);
+    state.copies.push(code); state.fresh = [...(state.fresh || []), code];
+    if (how === 'Dev drop') state.dev = [...(state.dev || []), code];
+    save(); renderWallet();
+    current = { o, code, g, how };
+    rush = false;
+    $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
+    $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
+    if (g) await gacha(g);
+    const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
+    await unveil(gr, `<div class="card">${px(cardSpec(state.seed, [o], itemLabel(o)))}</div>`,
+      famous ? famous + '!' : gr === 0 ? grade.name : grade.name + '!',
+      LG.nameOf(o), `${how} · ${LG.wearOf(o.scuff).name} · scuff ${o.scuff.toFixed(4)} · #${o.print} · 1 in ${words(LG.copyOneIn(o))}`);
+    $('rv-again').hidden = !g;
     $('rv-wear').focus();
   }
+
+  // Claiming plays as a drop too: a gold card, face down, that turns over to your name.
+  async function dropName() {
+    current = null; rush = false;
+    $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
+    $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet him';
+    const n = LG.guyOneIn(guyConfig(state.seed));
+    await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '1/1', bottom: 'One of one' }, false, 4))}</div>`,
+      '1 of 1!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`);
+    $('rv-keep').focus();
+    await new Promise(r => { closeHook = r; });
+  }
+  let closeHook = null;
   function closeReveal(wear) {
-    if (!current || $('rv-actions').hidden) return;
+    if ($('rv-actions').hidden) return;
+    $('reveal').hidden = true;
+    if (closeHook) { const h = closeHook; closeHook = null; h(); setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120); return; }
+    if (!current) return;
     if (wear) state.worn[LG.slotOf(current.o)] = current.code;
     save();
-    $('reveal').hidden = true;
     const c = current; current = null;
     renderAll();
-    if (wear) heroGuy(gradeIdx(c.o) >= 2 ? 'cheer' : 'hop', gradeIdx(c.o) >= 4 ? 'crown' : undefined);
     return c;
   }
   $('rv-wear').addEventListener('click', () => closeReveal(true));
   $('rv-keep').addEventListener('click', () => closeReveal(false));
-  $('rv-again').addEventListener('click', () => { const c = closeReveal(false); if (c && state.tickets >= 120) { state.tickets -= 120; open(c.g, 'Capsule'); } });
+  $('rv-again').addEventListener('click', () => {
+    const c = closeReveal(false);
+    if (!c || !c.g) return;
+    if (state.tickets < 120 && !dev) { toast('Not enough tickets.'); return; }
+    if (!dev) state.tickets -= 120;
+    open(c.g, 'Capsule');
+  });
   $('skip').addEventListener('click', () => { rush = true; });
   addEventListener('keydown', e => {
     if ($('reveal').hidden) return;
@@ -743,23 +1247,26 @@
     else if (e.key === 'Escape') closeReveal(false);
   });
 
-  /* ---------------------------------------------- collection */
+  /* ---------------------------------------------- the collection */
+  let filter = -1;
   function renderColl() {
     const list = copies().sort((a, b) => gradeIdx(b.o) - gradeIdx(a.o) || LG.copyOneIn(b.o) - LG.copyOneIn(a.o));
     const n = [0, 0, 0, 0, 0]; list.forEach(c => n[gradeIdx(c.o)]++);
-    $('counts').innerHTML = state ? `<span class="count" style="--g:var(--line)">${list.length} copies</span>` + LG.GRADES.map((g, k) => n[k] ? `<span class="count" style="--g:${g.color}">${g.name} ${n[k]}</span>` : '').join('') : '';
-    if (!state) { $('grid').innerHTML = '<div class="empty">Get dealt a guy first. Your starters land here.</div>'; return; }
-    const worn = wornCodes(), fresh = state.fresh || [];
-    $('grid').innerHTML = list.map(c => {
-      const g = LG.gradeOf(c.o), it = LG.itemById(c.o.item);
-      return `<button class="card${fresh.includes(c.code) ? ' new' : ''}" type="button" data-i="${c.i}" style="--g:${g.color}" aria-label="${esc(LG.nameOf(c.o))}, ${g.name}">
-        <div class="art"><canvas class="px" width="16" height="16" aria-hidden="true"></canvas></div>${worn.includes(c.code) ? '<span class="on">ON</span>' : ''}
-        <span class="bar"></span><span class="nm">${esc(LG.nameOf(c.o).split(' | ')[0])}</span>
-        <span class="sub">${g.name} · ${LG.nameOf(c.o).split(' | ')[1] || it.slot}</span></button>`;
+    $('filters').innerHTML = state ? `<button type="button" data-f="-1" aria-pressed="${filter === -1}">All <span class="num">${list.length}</span></button>` + LG.GRADES.map((g, k) => n[k] ? `<button type="button" data-f="${k}" style="--g:${g.color}" aria-pressed="${filter === k}"><i></i>${g.name} <span class="num">${n[k]}</span></button>` : '').join('') : '';
+    if (!state) { $('grid').innerHTML = '<div class="empty" style="grid-column:1/-1">Claim a name and your nine starter hats land here.</div>'; return; }
+    const worn = wornCodes(), fresh = state.fresh || [], devs = state.dev || [];
+    const shown = list.filter(c => filter < 0 || gradeIdx(c.o) === filter);
+    $('grid').innerHTML = shown.map(c => {
+      const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
+      const one = c.o.tally === 999 && c.o.print === 1 && c.o.finish === 'gold' && founderOf(state.seed);
+      return `<button class="cc card" type="button" data-i="${c.i}" aria-label="${esc(LG.nameOf(c.o))}">
+        ${worn.includes(c.code) ? '<span class="pill tag on">ON</span>' : fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
+        ${px(cardSpec(state.seed, [c.o], itemLabel(c.o, it.free, one), shown.length > 24))}
+        <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : 'Plain'))} · ${LG.wearOf(c.o.scuff).name}</span></span></button>`;
     }).join('');
-    const cvs = $('grid').querySelectorAll('canvas');
-    list.forEach((c, k) => paintInto(cvs[k], state.seed, [c.code]));
+    hydrate($('grid'));
   }
+  $('filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = +b.dataset.f; renderColl(); } });
   $('grid').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) inspect(+b.dataset.i); });
 
   function inspect(i) {
@@ -768,33 +1275,33 @@
     state.fresh = (state.fresh || []).filter(c => c !== code); save();
     const g = LG.gradeOf(o), slot = LG.slotOf(o), on = state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
     const odds = LG.copyOneIn(o), item = LG.itemById(o.item);
-    const caption = `My lil guy pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${item.free ? '' : `, 1 in ${fmt(odds)} capsules`}.`;
+    const one = o.tally === 999 && o.print === 1 && o.finish === 'gold' && founderOf(state.seed);
+    const caption = `@${state.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', one of one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
     $('insp-body').style.setProperty('--g', g.color);
-    $('insp-body').innerHTML = `<button class="btn alt x" type="button" id="insp-close">Close</button>
-      <div class="who">${animated(state.seed, gradeIdx(o) >= 2 ? 'cheer' : 'hop', [...wornCodes().filter(c => LG.slotOf(LG.decode(c)) !== slot), code], 240)}</div>
+    $('insp-body').innerHTML = `<button class="x" type="button" id="insp-close" aria-label="Close">×</button>
+      <div class="art-col"><div class="card">${px(cardSpec(state.seed, [...wornCopies().filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)))}</div></div>
       <div>
-        <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="muted" style="margin:4px 0 0;font:600 17px/1.2 var(--pixel)">${esc(look)}</p>` : ''}
-        <span class="gr">${g.name}</span>
+        <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}
+        <span class="pill grade">${one ? '★ 1 of 1' : g.name}</span>
         <dl class="spec">
-          <dt>Item</dt><dd>${cap(item.game)} ${item.slot}${item.free ? ' · free starter' : ''}</dd>
+          <dt>Item</dt><dd>${cap(item.game)} ${item.slot}${item.free ? ' · starter' : ''}</dd>
           <dt>Condition</dt><dd>${LG.wearOf(o.scuff).name}</dd>
           <dt>Scuff</dt><dd>${o.scuff.toFixed(6)}<div class="float" aria-hidden="true"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></div></dd>
           <dt>Print</dt><dd>#${o.print}${LG.special(o) ? ` · ${esc(LG.special(o))}` : ''}</dd>
+          ${o.tally !== undefined ? `<dt>Tally</dt><dd>${o.tally} days</dd>` : ''}
           ${o.date ? `<dt>Dropped</dt><dd>${o.date}</dd>` : ''}
-          <dt>Odds</dt><dd>${item.free ? 'Everyone has one; no two alike' : `1 in ${fmt(odds)} capsules`}</dd>
+          <dt>Odds</dt><dd>${one ? 'No capsule can give it' : item.free ? 'Everyone has one; no two alike' : `1 in ${words(odds)} capsules`}</dd>
         </dl>
-        <div class="deal"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button></div>
+        <button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button>
         <div class="share">
-          <span class="muted" style="font-size:13px">Share card</span>
-          <div class="svg">${LG.toShareSvg(state.seed, o, { name: state.name })}</div>
+          <p class="kicker" style="margin:8px 0 0">Share card</p>
+          <div class="svg">${LG.toShareSvg(state.seed, o, { name: '@' + state.key })}</div>
           <button class="copy" type="button" id="insp-copy">${esc(caption)}<small id="insp-copied">Copy text</small></button>
         </div>
       </div>`;
+    hydrate($('insp-body'));
     $('insp-close').addEventListener('click', () => $('insp').close());
-    $('insp-wear').addEventListener('click', () => {
-      if (on) delete state.worn[slot]; else state.worn[slot] = code;
-      save(); $('insp').close(); renderAll(); heroGuy(on ? 'idle' : 'hop');
-    });
+    $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else state.worn[slot] = code; save(); $('insp').close(); renderAll(); });
     $('insp-copy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
@@ -804,21 +1311,50 @@
   $('insp').addEventListener('click', e => { if (e.target === $('insp')) $('insp').close(); });
   $('insp').addEventListener('close', () => renderColl());
 
-  /* ---------------------------------------------- everything */
-  function renderAll() {
-    $('deal-form').hidden = !!state; $('dealt').hidden = !state;
-    $('lede').textContent = state
-      ? `${state.name}, he's yours: dealt from a random seed, so he's the only one. Fill his locker from the machines.`
-      : "He's dealt, not picked: one of 3.8 trillion. Then you fill his locker from the capsule machines, one game at a time.";
-    heroGuy(); renderTraits(); renderWallet(); renderColl();
+  /* ---------------------------------------------- the loop: card shaders, tilt and bob, machines */
+  function sway(s, t) {
+    if (s.still) { s.art.style.transform = ''; return; }
+    const bob = Math.sin(t * 1.3 + s.phase) * 2, tilt = Math.sin(t * 0.9 + s.phase) * 0.6;
+    let scale = 1, spin = 0;
+    if (s.juice >= 0) { const e = t - s.juice; if (e < 0.45) { const f = 1 - e / 0.45; scale += 0.07 * Math.sin(e * 48) * f * f * f; spin = 4 * Math.sin(e * 38) * f * f; } else s.juice = -1; }
+    if (s.hover) scale += 0.03;
+    s.art.style.transform = `perspective(600px) translateY(${bob}px) rotateX(${-s.tilt[1] * 18}deg) rotateY(${s.tilt[0] * 18}deg) rotate(${tilt + spin}deg) scale(${scale})`;
+    s.canvas.style.setProperty('--sx', `${-s.tilt[0] * 10}px`);
   }
+  let lastT = 0;
+  const frame = now => {
+    requestAnimationFrame(frame);
+    if (now - lastT < 33) return;
+    lastT = now;
+    const t = now / 1000;
+    for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); } }
+    for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
+    for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }
+  };
+  requestAnimationFrame(frame);
 
-  // Machines idle with a slow shine on the glass. Motion plays whatever the reduced-motion setting says (the club's rule).
-  let last = 0;
-  const loop = n => { requestAnimationFrame(loop); if (n - last < 66) return; last = n; for (const b of balls) if (b.canvas.isConnected) b.tick(n / 1000); };
-  requestAnimationFrame(loop);
-  renderGames();
+  function renderAll() { renderClaim(); renderGuy(); renderMachines(); renderWallet(); renderColl(); }
+  renderHand();
   renderAll();
+
+  /* ---------------------------------------------- the database, when this view has one */
+  (async () => {
+    const [d, user] = await Promise.all([window.claude?.use?.('db') ?? null, window.claude?.use?.('user') ?? null]);
+    if (!d) return;
+    db = d;
+    try { owner = user ? await user.isOwner() : false; uid = user ? await user.id() : null; } catch (e) {}
+    watchNames();
+    if (uid) {
+      try {
+        const snap = await db.doc(`data/users/${uid}/promo`).get();
+        const remote = snap.exists ? snap.data() : null;
+        if (remote && remote.seed && Array.isArray(remote.copies)) { state = { ...remote }; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} renderAll(); }
+        else if (remote && remote.gone) { state = null; renderAll(); }
+        else if (state) save();
+      } catch (e) {}
+    }
+    if ($('name').value) check();
+  })();
 })();
 </script>
 

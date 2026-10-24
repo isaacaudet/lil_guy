@@ -601,7 +601,7 @@ void main() {
     const grid = LG.compose(config);
     const colors = LG.paint(grid, config, palette);
     const owned = config.owned || {};
-    const g = copies.length ? Math.max(...copies.map(gradeIdx)) : -1;
+    const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIdx)) : -1);
     const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4);
     const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
       const i = (y * W + x) * 4;
@@ -821,20 +821,44 @@ void main() {
   function addMachine(canvas, game, hoverEl) {
     const body = rgb(CANDY[game]);
     const others = LG.GAMES.map(g => rgb(CANDY[g]));
-    // Capsules piled in the dome, bottom rows first, about two thirds full.
+    // The dome: a glass ball centred over the body, its top fully inside the canvas.
+    const DX = 19.5, DY = 15, DR = 13.6;
+    // Capsules piled in the dome about two thirds full, in two layers: a dimmer back
+    // layer peeking between the front one. Drawn top to bottom so lower ones overlap.
     const pile = [];
-    for (let row = 0; row < 4; row++) {
-      const y = 20 - row * 6;
-      for (let x = 6 + (row % 2) * 4; x <= 34; x += 8) {
-        if (Math.hypot(x - 20, y - 13) <= 10.8) pile.push({ x, y, c: strHash(`${game}:${x}:${y}`) % 5 < 2 ? body : others[strHash(`${x}${y}${game}`) % others.length], jx: 0, jy: 0 });
+    for (const back of [1, 0]) for (let row = 0; row < 4; row++) {
+      const y = 19.5 - row * 5 - back * 2.5;
+      for (let x = 7.5 + ((row + back) % 2) * 4; x <= 32; x += 8) {
+        if (Math.hypot(x - DX, y - DY) > DR - 3.2) continue;
+        const k = `${game}:${back}:${x}:${y}`;
+        pile.push({ x, y, back, r: back ? 3.9 : 4.4, c: strHash(k) % 5 < 2 ? body : others[strHash(k + '#') % others.length], jx: 0, jy: 0 });
       }
     }
+    pile.sort((a, b) => b.back - a.back || a.y - b.y);
+    // One shaded capsule pixel: a sphere lit from the top left, clear tinted plastic
+    // over a coloured half, a pale seam between them and a hard white highlight.
+    const LIGHT = [-0.5, -0.62, 0.6];
+    function ballPx(dx, dy, r, c, dim) {
+      const nx = dx / r, ny = dy / r, r2 = nx * nx + ny * ny;
+      if (r2 > 1) return null;
+      const nz = Math.sqrt(1 - r2);
+      const lit = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]);
+      let base = ny < -0.12 ? blend(c, [236, 242, 255], 0.62) : Math.abs(ny + 0.06) <= 0.12 ? blend(c, WHITE, 0.45) : c;
+      let col = lit < 0.55 ? blend(base, INK, (0.55 - lit) * (ny < 0 ? 0.8 : 1.15)) : blend(base, WHITE, (lit - 0.55) * 0.55);
+      if (r2 > 0.78) col = blend(col, INK, 0.28);
+      if (Math.hypot(nx + 0.42, ny + 0.5) < 0.24) col = WHITE;
+      return dim ? blend(col, [40, 46, 78], 0.42) : col;
+    }
+    canvas.width = 80; canvas.height = 112;
     const ctx = canvas.getContext('2d');
     const st = {
       canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
       jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
       tick(t) {
-        const m = Px(40, 56);
+        // Drawn at twice the pixel density: the body in 2×2 blocks, the glass and
+        // capsules on the fine grid, so the spheres can be shaded.
+        const hi = Px(80, 112);
+        const m = { set(x, y, c, a) { x = Math.round(x); y = Math.round(y); for (let j = 0; j < 4; j++) hi.set(x * 2 + (j & 1), y * 2 + (j >> 1), c, a); } };
         const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
         // body
         for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
@@ -874,29 +898,36 @@ void main() {
         }
         // the collar under the dome
         for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
-        // the dome: glass, capsules, then the shine on the glass
-        const glass = [];
-        for (let y = 0; y <= 22; y++) for (let x = 0; x < 40; x++) {
-          const d = Math.hypot(x - 20, y - 13);
-          if (d > 15.2 || (y < 1)) continue;
-          if (d > 14.2) m.set(x, y, [205, 222, 248], 235);
-          else { m.set(x, y, [190, 215, 250], 42); glass.push([x, y]); }
+        // the dome: glass, capsules, then the shine on the glass, then the cap (fine grid)
+        const cx2 = DX + 0.5, cy2 = DY + 0.5, glass = [];
+        const at = (X, Y) => [(X + 0.5) / 2, (Y + 0.5) / 2];
+        for (let Y = 0; Y <= 45; Y++) for (let X = 0; X < 80; X++) {
+          const [x, y] = at(X, Y), d = Math.hypot(x - cx2, y - cy2);
+          if (d > DR) continue;
+          if (d > DR - 0.55) hi.set(X, Y, [214, 228, 250], 240);
+          else if (d > DR - 1.05) hi.set(X, Y, [150, 170, 210], 200);
+          else { hi.set(X, Y, [190, 215, 250], 42); glass.push([X, Y, d, Math.atan2(y - cy2, x - cx2)]); }
         }
-        for (const p of pile) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
-          const d = Math.hypot(dx, dy), x = p.x + dx + p.jx, y = p.y + dy + p.jy;
-          if (d > 4.2 || Math.hypot(x - 20, y - 13) > 14) continue;
-          if (dy < 0) m.set(x, y, d > 3.4 ? [190, 208, 236] : blend(p.c, [240, 246, 255], 0.7), 235);
-          else m.set(x, y, d > 3.4 ? blend(p.c, INK, 0.45) : dy === 0 ? blend(p.c, WHITE, 0.35) : p.c);
-          if (dx === -2 && dy === -2) m.set(x, y, WHITE);
+        for (const p of pile) {
+          const px = p.x + 0.5 + p.jx, py = p.y + 0.5 + p.jy, R = Math.ceil(p.r * 2) + 1;
+          for (let Y = Math.floor(py * 2) - R; Y <= Math.floor(py * 2) + R; Y++) for (let X = Math.floor(px * 2) - R; X <= Math.floor(px * 2) + R; X++) {
+            const [x, y] = at(X, Y);
+            if (Y > 45 || Math.hypot(x - cx2, y - cy2) > DR - 1.1) continue;
+            const c = ballPx(x - px, y - py, p.r, p.c, p.back);
+            if (c) hi.set(X, Y, c);
+          }
         }
-        for (const [x, y] of glass) {
-          if ((x === 9 || x === 10) && y > 4 && y < 19) m.set(x, y, WHITE, x === 9 ? 120 : 70);
-          const k = (x + y + 60 - sweep) % 60;
-          if (k < 2) m.set(x, y, WHITE, 80);
+        for (const [X, Y, d, side] of glass) {
+          if (d > DR - 2.6 && d <= DR - 1.6 && side < -1.85 && side > -2.95) hi.set(X, Y, WHITE, 170);
+          if (d > DR - 2.2 && d <= DR - 1.6 && side > -0.45 && side < 0.35) hi.set(X, Y, WHITE, 70);
+          if ((X + Y + 120 - sweep * 2) % 120 < 3) hi.set(X, Y, WHITE, 60);
         }
-        for (let x = 18; x <= 21; x++) { m.set(x, 0, blend(body, WHITE, 0.2)); m.set(x, 1, body); }
-        m.outline(INK);
-        ctx.putImageData(new ImageData(m.d, 40, 56), 0, 0);
+        for (let x = 16; x <= 23; x++) for (let y = 0; y <= 2; y++) {
+          if ((x === 16 || x === 23) && y === 0) continue;
+          m.set(x, y, y === 0 ? blend(body, WHITE, 0.35) : x <= 17 ? blend(body, WHITE, 0.2) : x >= 22 ? blend(body, INK, 0.25) : body);
+        }
+        hi.outline(INK);
+        ctx.putImageData(new ImageData(hi.d, 80, 112), 0, 0);
         for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
       },
     };

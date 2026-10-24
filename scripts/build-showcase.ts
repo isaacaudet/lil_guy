@@ -22,19 +22,23 @@ const PAGES: Record<string, string> = {
   review: 'Every part and item on four test guys, with what to keep, cut and add.',
 };
 
-// The shop draws the gacha machines with the locker's code, so it is shared from there.
+// The shop and the promo draw the gacha machines with the locker's code, so it is shared from there.
 const locker = await Bun.file(new URL('locker.html', SRC)).text();
 const machine = locker.slice(
   locker.indexOf('  /* ------------------------------------------------ gachapon'),
   locker.indexOf("  /** The reveal's opening"),
 );
+// The trading cards too: the shader setup and the per-pixel card faces, without the locker's own loop.
+const cards = locker.slice(locker.indexOf('  const compile = (gl, vs, fs) => {'), locker.indexOf('  /* ------------------------------------------------ the paint swirl'))
+  + locker.slice(locker.indexOf('  /* ------------------------------------------------ cards, drawn per pixel */'), locker.indexOf('  function move(s, t) {'));
 
 const LOAD = '<script src="../lil-guy.js"></script>\n<script>window.LG = window.LilGuy;</script>';
 
 for (const file of readdirSync(SRC).filter(f => f.endsWith('.html'))) {
   const body = (await Bun.file(new URL(file, SRC)).text())
     .replace('<script>/*LIB*/</script>', () => LOAD)
-    .replace('/*MACHINE*/', () => machine);
+    .replace('/*MACHINE*/', () => machine)
+    .replace('/*CARDS*/', () => cards);
   const page = `<!doctype html>
 <html lang="en">
 <head>
