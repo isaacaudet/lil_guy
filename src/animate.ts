@@ -37,6 +37,12 @@ export const FRAME_HEIGHT = GRID_SIZE + HEADROOM;
 export interface AnimationFrame {
   /** FRAME_HEIGHT rows of FRAME_WIDTH colours; null is transparent. */
   colors: (string | null)[][];
+  /**
+   * Which worn item each pixel belongs to: 0 none, 1 skin, 2 hat, 3 frame,
+   * 4 buddy (`FRAME_SLOTS`). A shader uses it to run each copy's finish on
+   * that copy's own pixels (see ./shine).
+   */
+  slots: number[][];
   /** How long the frame shows. */
   ms: number;
 }
@@ -219,8 +225,12 @@ const mix = (a: string, b: string, t: number) => {
 
 // ---------------------------------------------------------------- frames
 
-interface Cell { c: string; item: boolean }
+interface Cell { c: string; item: boolean; slot?: number }
 type Layer = (Cell | null)[][];
+
+/** The order of `AnimationFrame.slots`, from 1. */
+export const FRAME_SLOTS = ['skin', 'hat', 'frame', 'buddy'] as const;
+const slotIndex = (t: number) => (t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0);
 
 const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
 
@@ -230,7 +240,7 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette): Layer
   const out = empty();
   grid.forEach((row, y) => row.forEach((t, x) => {
     const c = colors[y][x];
-    if (c) out[y + HEADROOM][x] = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy };
+    if (c) out[y + HEADROOM][x] = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy, slot: slotIndex(t) };
   }));
   return out;
 }
@@ -454,7 +464,8 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     }
 
     const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
-    return { colors, ms };
+    const slots = layer.map((row, y) => row.map((cell, x) => (cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0)));
+    return { colors, ms, slots };
   });
 
   return { move, width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, duration: t };

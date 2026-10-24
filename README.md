@@ -234,6 +234,20 @@ wearing sets how much:
 | Mythic | and sparkles, and a trail when he jumps |
 | ★ Grail | a gold ring, more sparkles and a gold trail |
 
+**In React**, `<LilGuyAnimated name={seed} move="cheer" equip={[copy]} />` plays a
+move with the same SVG, so no timer runs in React.
+
+**With the finishes moving.** The frames carry a per-pixel mask of which item
+each pixel belongs to (`frame.slots`), so a shader can run each copy's finish
+on its own pixels. `createShine()` is that shader: one WebGL context to share
+across a page or a game. Draw a guy's frame into it, then copy the 16×20
+result into his canvas with `drawImage`. It returns null without WebGL; draw
+the frame's colours as they are.
+
+**Size.** The package is free of side effects, so a bundler keeps only what's
+used: still faces alone are about 17 KB gzipped, with animation about 20 KB,
+and everything (items, copies, share cards, the shader) about 27 KB.
+
 `rarity: false` turns it off. `once: true` plays the SVG once and holds the
 last frame. The SVG plays whatever the reduced-motion setting is, as the DLE
 Club games do; pass `stillWhenReduced: true` to hold the first frame instead.

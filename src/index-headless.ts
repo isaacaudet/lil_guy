@@ -28,3 +28,5 @@ export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf } from './l
 export type { Look, LookSlot } from './look';
 export { toShareSvg } from './share';
 export type { ShareOptions } from './share';
+export { createShine, shineData, type Shine } from './shine';
+export { FRAME_SLOTS } from './animate';
