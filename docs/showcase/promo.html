@@ -859,6 +859,14 @@ void main() {
    * Kept in the page's database when this view has one (your own private row), else in this browser. */
   const KEY = 'lil-guys-promo-v2';
   let state = null, db = null, uid = null, owner = false;
+  // Outside claude.ai (the Cloudflare deploy) names live behind the Worker's /api/names instead (DEPLOYMENT.md).
+  let backendReady = false;
+  async function namesApi(path, options) {
+    const response = await fetch(`/api/names${path}`, options);
+    const data = await response.json();
+    if (!response.ok) throw Object.assign(new Error(data.error || 'Names unavailable'), { status: response.status });
+    return data;
+  }
   try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { state = null; }
   if (state && (!state.seed || !Array.isArray(state.copies))) state = null;
   let saving = Promise.resolve(), saveTimer = null;
@@ -920,10 +928,17 @@ void main() {
     const raw = $('name').value, key = norm(raw);
     if (raw && key !== raw.toLowerCase()) $('name').value = key;
     $('claim-btn').disabled = true;
+    lastCheck = key;
     if (key.length < 2) { setAvail('', ''); return; }
     if (RESERVED[key] && !owner) { setAvail('no', 'Reserved'); return; }
     lastCheck = key;
-    if (!db) { setAvail('ok', '✓ Looks free (checked in this browser only)'); $('claim-btn').disabled = false; return; }
+    if (!backendReady) { setAvail('', 'Connecting…'); return; }
+    if (!db) {
+      setAvail('', 'Checking…');
+      try { await namesApi('/' + key); if (lastCheck === key) { setAvail('no', `@${key} is taken`); SFX.bad(); } }
+      catch (e) { if (lastCheck !== key) return; if (e.status === 404) { setAvail('ok', `✓ @${key} is yours to take`); $('claim-btn').disabled = false; SFX.good(); } else setAvail('no', 'Could not check just now'); }
+      return;
+    }
     setAvail('', 'Checking…');
     try {
       const snap = await db.doc(`names/${key}`).get();
@@ -936,7 +951,12 @@ void main() {
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
   async function claim(key) {
-    const seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed();
+    let seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed(), ownerToken = null;
+    if (!backendReady) return;
+    if (!db) {
+      try { const claimed = await namesApi('/' + key, { method: 'POST' }); seed = claimed.seed; ownerToken = claimed.owner; }
+      catch (e) { setAvail('no', e.message); SFX.bad(); return; }
+    }
     if (db) {
       const ref = db.doc(`names/${key}`);
       try {
@@ -952,12 +972,13 @@ void main() {
         return;
       }
     }
-    state = { v: 2, key, seed, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
+    state = { v: 2, key, seed, ownerToken, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
     const f = founderOf(seed);
     if (f) { state.copies.push(LG.encode(f.copy)); state.worn.frame = undefined; state.worn.hat = LG.encode(f.copy); }
     else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
+    watchNames();
     await dropName();
     renderAll();
   }
@@ -965,6 +986,11 @@ void main() {
   $('reset').addEventListener('click', async () => {
     if (!state || !confirm(`Let @${state.key} go? Your guy and collection go with it.`)) return;
     const key = state.key;
+    if (!db) {
+      if (!state.ownerToken) { toast('This browser has no owner token for that name.'); return; }
+      try { await namesApi('/' + key, { method: 'DELETE', headers: { Authorization: 'Bearer ' + state.ownerToken } }); }
+      catch (e) { toast(e.message); return; }
+    }
     state = null; save();
     if (db) { try { const ref = db.doc(`names/${key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.delete(); } catch (e) {} }
     renderAll();
@@ -972,16 +998,24 @@ void main() {
   $('go-free').addEventListener('click', () => { if (state.free !== today) { state.free = today; open(todayGame, 'Daily capsule'); } else $('roll').scrollIntoView({ behavior: 'smooth' }); });
 
   // Who else has claimed: the latest dozen, live.
+  function showRecent(list) {
+    if (!list.length) { $('recent').hidden = true; return; }
+    $('recent').hidden = false;
+    $('faces').innerHTML = list.slice(0, 6).map(() => '<span><canvas width="16" height="16"></canvas></span>').join('');
+    $('faces').querySelectorAll('canvas').forEach((c, i) => paintInto(c, list[i].seed, []));
+    const names = list.slice(0, 3).map(d => `<b>@${esc(d.name)}</b>`).join(', ');
+    $('recent-text').innerHTML = `${names}${list.length > 3 ? ` and ${list.length - 3} more` : ''} just claimed theirs.`;
+  }
+  let watching = false;
   function watchNames() {
-    if (!db) return;
+    if (!db) {
+      namesApi('?recent=12').then(list => showRecent(list.filter(d => d && d.seed && d.key).map(d => ({ ...d, name: d.key })))).catch(() => { $('recent').hidden = true; });
+      return;
+    }
+    if (watching) return;
+    watching = true;
     db.collection('names').orderBy('at', 'desc').limit(12).onSnapshot(snap => {
-      const list = snap.docs.map(d => d.data()).filter(d => d && d.seed && d.name);
-      if (!list.length) { $('recent').hidden = true; return; }
-      $('recent').hidden = false;
-      $('faces').innerHTML = list.slice(0, 6).map(() => '<span><canvas width="16" height="16"></canvas></span>').join('');
-      $('faces').querySelectorAll('canvas').forEach((c, i) => paintInto(c, list[i].seed, []));
-      const names = list.slice(0, 3).map(d => `<b>@${esc(d.name)}</b>`).join(', ');
-      $('recent-text').innerHTML = `${names}${list.length > 3 ? ` and ${list.length - 3} more` : ''} just claimed theirs.`;
+      showRecent(snap.docs.map(d => d.data()).filter(d => d && d.seed && d.name));
     }, () => { $('recent').hidden = true; });
   }
 
@@ -1711,7 +1745,8 @@ void main() {
   /* ---------------------------------------------- the database, when this view has one */
   (async () => {
     const [d, user] = await Promise.all([window.claude?.use?.('db') ?? null, window.claude?.use?.('user') ?? null]);
-    if (!d) return;
+    backendReady = true;
+    if (!d) { watchNames(); if ($('name').value) check(); return; }
     db = d;
     try { owner = user ? await user.isOwner() : false; uid = user ? await user.id() : null; } catch (e) {}
     watchNames();

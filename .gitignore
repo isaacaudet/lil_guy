@@ -1,3 +1,7 @@
 node_modules/
 *.tsbuildinfo
 .DS_Store
+site/
+.wrangler/
+.dev.vars
+.env*
