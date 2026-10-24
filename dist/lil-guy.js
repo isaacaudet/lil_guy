@@ -1869,7 +1869,7 @@ const FINISHES = {
 	"plain": {
 		name: "Plain",
 		grade: 0,
-		odds: 79.22,
+		odds: 79.87,
 		scuffs: [0, 1]
 	},
 	"sunset": {
@@ -1905,7 +1905,7 @@ const FINISHES = {
 	"gold": {
 		name: "Gold",
 		grade: 4,
-		odds: .9,
+		odds: .25,
 		scuffs: [0, .08]
 	}
 };

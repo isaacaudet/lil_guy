@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
+</head>
+<body>
+<title>Lil Guys</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  /* Layout: a parade across the top, then the deal (you get a guy), the machine, your collection. One dark arcade look on purpose. */
+  :root {
+    --bg: #12152a; --panel: #1c2142; --panel-hi: #262d58; --edge: #0a0d1c; --line: #2d3566;
+    --ink: #f6f2e9; --muted: #a9b1d2; --amber: #ffcf5c; --amber-ink: #2a1a00; --mint: #6ee7b0; --pink: #ff7eb6;
+    --g0: #4B69FF; --g1: #8847FF; --g2: #D32CE6; --g3: #EB4B4B; --g4: #E4AE39;
+    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); overflow-x: hidden;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 90px;
+    background-image: radial-gradient(ellipse 90% 60% at 50% -8%, #303b86 0%, transparent 62%), radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0);
+    background-size: auto, 22px 22px; }
+  .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 56px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h2 { font-size: clamp(26px, 4vw, 36px); text-shadow: 0 3px 0 var(--edge); }
+  .muted { color: var(--muted); }
+  .px { image-rendering: pixelated; display: block; }
+
+  nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); flex-wrap: wrap; }
+  .mark { font: 700 22px/1 var(--pixel); display: flex; align-items: center; gap: 8px; }
+  .mark canvas { width: 32px; height: 32px; }
+  .pill { font: 700 15px/1 var(--pixel); background: var(--panel); border-radius: 8px; padding: 9px 11px; box-shadow: 0 3px 0 var(--edge); display: inline-flex; gap: 8px; align-items: center; }
+  .tk { width: 18px; height: 12px; image-rendering: pixelated; flex: none; }
+  .btn { appearance: none; border: 0; cursor: pointer; font: 700 16px/1 var(--pixel); color: var(--amber-ink); background: var(--amber); padding: 12px 15px; border-radius: 7px; box-shadow: 0 4px 0 #a5781a; display: inline-flex; gap: 8px; align-items: center; justify-content: center; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #a5781a; }
+  .btn[disabled] { background: var(--line); color: var(--muted); box-shadow: 0 4px 0 var(--edge); cursor: not-allowed; transform: none; }
+  .btn.alt { background: var(--panel-hi); color: var(--ink); box-shadow: 0 4px 0 var(--edge); }
+  .btn.mint { background: var(--mint); color: #062a1a; box-shadow: 0 4px 0 #2f9b6e; }
+  .btn:focus-visible, input:focus-visible, .chip-btn:focus-visible, .copy:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
+  .btn .tk { filter: brightness(.22); }
+  .link { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; padding: 4px; }
+
+  /* ---------- hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; padding-top: 18px; }
+  .hero h1 { font-size: clamp(46px, 8.4vw, 96px); line-height: .92; text-shadow: 0 6px 0 var(--edge); }
+  .hero h1 em { font-style: normal; color: var(--amber); }
+  .hero p.lede { font-size: clamp(17px, 2.1vw, 20px); color: var(--muted); max-width: 40ch; margin: 18px 0 22px; }
+  .deal { display: flex; gap: 10px; flex-wrap: wrap; }
+  .deal input { flex: 1 1 200px; min-width: 0; font: 600 17px/1 var(--body); padding: 12px 14px; border-radius: 7px; border: 2px solid var(--line); background: var(--edge); color: var(--ink); }
+  .stagebox { position: relative; display: grid; place-items: center; min-height: 360px; }
+  .stagebox .glow { position: absolute; width: 330px; height: 330px; border-radius: 50%; background: radial-gradient(circle, var(--grade, #4b69ff) 0%, transparent 66%); opacity: .45; filter: blur(4px); }
+  .stagebox .floor { position: absolute; bottom: 26px; width: 240px; height: 26px; border-radius: 50%; background: rgba(0,0,0,.35); }
+  #hero-guy { position: relative; width: min(300px, 74vw); }
+  #hero-guy svg, #hero-guy canvas { width: 100%; height: auto; display: block; filter: drop-shadow(0 10px 0 rgba(5,7,16,.5)); }
+  .me { position: absolute; top: 4px; left: 50%; translate: -50% 0; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; width: 100%; }
+  .tag { font: 700 13px/1 var(--pixel); background: var(--panel-hi); border-radius: 6px; padding: 6px 8px; box-shadow: 0 2px 0 var(--edge); }
+  .tag.gold { background: var(--amber); color: var(--amber-ink); }
+
+  .parade { overflow: hidden; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .parade .belt { display: flex; gap: 18px; width: max-content; animation: belt 60s linear infinite; padding: 6px 0; }
+  .parade .belt > span { width: 84px; flex: none; }
+  .parade svg { width: 100%; height: auto; display: block; }
+  @keyframes belt { to { translate: -50% 0 } }
+
+  /* ---------- traits */
+  .traits { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .trait { background: var(--panel); border-radius: 10px; padding: 12px; box-shadow: 0 3px 0 var(--edge); display: grid; gap: 2px; }
+  .trait small { font: 500 12px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .trait b { font-weight: 600; text-transform: capitalize; }
+  .trait span { font-size: 13px; color: var(--muted); }
+  .trait.rare { background: linear-gradient(180deg, #3d2c78, var(--panel)); }
+
+  /* ---------- machine */
+  .arcade { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 22px; background: var(--panel); border-radius: 18px; padding: 22px; box-shadow: 0 6px 0 var(--edge); align-items: center; }
+  .arcade .mach-wrap { display: grid; place-items: center; }
+  canvas.mach { width: 220px; height: 308px; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(5,7,16,.55)); }
+  .games { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+  .chip-btn { appearance: none; border: 0; cursor: pointer; font: 700 13px/1 var(--pixel); padding: 8px 10px; border-radius: 6px; background: var(--edge); color: var(--ink); box-shadow: inset 0 -3px 0 var(--c); }
+  .chip-btn[aria-pressed="true"] { background: var(--c); color: #160f22; box-shadow: 0 3px 0 var(--edge); }
+  .open-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .odds { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
+  .odds div { border-top: 5px solid var(--g); background: var(--edge); border-radius: 4px; padding: 7px 6px; font-size: 12px; color: var(--muted); }
+  .odds b { display: block; font: 700 13px/1.1 var(--pixel); color: var(--ink); }
+  .season { margin-top: 14px; display: flex; gap: 12px; align-items: center; background: linear-gradient(90deg, #4a2a10, var(--edge)); border-radius: 10px; padding: 10px 12px; flex-wrap: wrap; }
+  .season canvas { width: 48px; height: 48px; image-rendering: pixelated; background: #f2ecdd; border-radius: 6px; }
+  .season div { flex: 1 1 160px; font-size: 14px; }
+  .season b { font-family: var(--pixel); display: block; }
+
+  /* ---------- collection */
+  .coll-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+  .counts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .count { font: 700 13px/1 var(--pixel); padding: 7px 9px; background: var(--panel); border-radius: 6px; border-left: 5px solid var(--g); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 12px; }
+  .card { appearance: none; border: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; background: var(--panel); border-radius: 10px; padding: 8px; box-shadow: 0 4px 0 var(--edge); display: grid; gap: 6px; position: relative; }
+  .card:hover { background: var(--panel-hi); }
+  .card .art { background: #f2ecdd; border-radius: 7px; padding: 8%; position: relative; }
+  .card canvas { width: 100%; height: auto; aspect-ratio: 1; }
+  .card .bar { height: 5px; border-radius: 3px; background: var(--g); }
+  .card .nm { font: 700 13px/1.15 var(--pixel); }
+  .card .sub { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+  .card .on { position: absolute; top: 12px; right: 12px; font: 700 11px/1 var(--pixel); background: var(--mint); color: #062a1a; padding: 4px 5px; border-radius: 4px; }
+  .card.new::after { content: "NEW"; position: absolute; top: 12px; left: 12px; font: 700 11px/1 var(--pixel); background: var(--pink); color: #2b0718; padding: 4px 5px; border-radius: 4px; }
+  .empty { grid-column: 1 / -1; background: var(--panel); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); }
+
+  /* ---------- inspect */
+  dialog { border: 0; padding: 0; background: transparent; color: var(--ink); max-width: min(940px, calc(100vw - 32px)); width: 100%; }
+  dialog::backdrop { background: rgba(5,7,15,.82); }
+  .insp { background: var(--panel); border-radius: 16px; box-shadow: 0 6px 0 var(--edge); padding: 20px; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 20px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
+  .insp .x { position: absolute; top: 12px; right: 12px; }
+  .insp .who { background: radial-gradient(circle, color-mix(in srgb, var(--g) 45%, transparent), transparent 70%); border-radius: 12px; display: grid; place-items: center; padding: 10px; }
+  .insp .who svg { width: min(240px, 60vw); height: auto; }
+  .insp h3 { font-size: 24px; line-height: 1.1; padding-right: 60px; }
+  .insp .gr { display: inline-block; font: 700 13px/1 var(--pixel); padding: 6px 8px; border-radius: 5px; background: var(--g); color: #fff; margin: 8px 0; }
+  .spec { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; margin: 6px 0 12px; }
+  .spec dt { color: var(--muted); } .spec dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .float { position: relative; height: 10px; border-radius: 3px; background: linear-gradient(90deg, #4fd6a0 0 7%, #8fd65a 7% 15%, #e2d24b 15% 38%, #f19a3e 38% 45%, #e5484d 45% 100%); margin: 4px 0 2px; }
+  .float i { position: absolute; top: -4px; width: 3px; height: 18px; background: var(--ink); translate: -1px 0; box-shadow: 0 0 0 2px var(--edge); }
+  .share { margin-top: 12px; display: grid; gap: 8px; }
+  .share .svg { border-radius: 10px; overflow: hidden; box-shadow: 0 3px 0 var(--edge); }
+  .share .svg svg { width: 100%; height: auto; display: block; }
+  .copy { appearance: none; border: 0; background: var(--edge); color: var(--ink); font: 500 13.5px/1.4 var(--body); text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+  .copy small { display: block; color: var(--mint); font: 700 12px/1 var(--pixel); margin-top: 6px; }
+
+  /* ---------- reveal */
+  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(5, 7, 15, .92); padding: 24px 16px; }
+  #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 3; }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
+  .flash.on { animation: flash .32s steps(4) 1; }
+  @keyframes flash { 0% { opacity: .85 } 100% { opacity: 0 } }
+  .rv-ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
+  .stage { position: relative; z-index: 2; display: grid; justify-items: center; gap: 16px; width: min(420px, 100%); }
+  .stage.quake { animation: quake .55s steps(9) 1; }
+  @keyframes quake { 0%,100% { translate: 0 0 } 15% { translate: -10px 4px } 30% { translate: 9px -6px } 45% { translate: -7px -3px } 60% { translate: 6px 5px } 75% { translate: -3px 2px } 90% { translate: 2px -1px } }
+  .gacha { position: relative; width: 200px; height: 280px; }
+  .mach.big { width: 200px; height: 280px; }
+  .mach.big.drop { animation: drop .42s steps(7) 1; }
+  @keyframes drop { 0% { translate: 0 -360px } 70% { translate: 0 12px } 85% { translate: 0 -6px } 100% { translate: 0 0 } }
+  .mach.big.rattle { animation: rattle .24s steps(4) 1; }
+  @keyframes rattle { 25% { translate: -3px 1px } 75% { translate: 3px -1px } }
+  .mach.big.away { opacity: 0; translate: 0 -30px; transition: opacity .3s steps(4), translate .3s steps(4); }
+  .cap { position: absolute; left: 50%; top: 88%; width: 168px; height: 168px; translate: -50% -50%; scale: .2; }
+  .cap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .cap.out { animation: roll .8s steps(12) forwards; }
+  @keyframes roll { 0% { top: 88%; scale: .2; rotate: 0deg } 50% { top: 44%; scale: 1; rotate: 300deg } 70% { top: 53%; scale: 1; rotate: 345deg } 85% { top: 48%; scale: 1 } 100% { top: 50%; scale: 1; rotate: 360deg } }
+  #cap-top { transition: rotate .18s steps(3), translate .38s steps(6), opacity .38s steps(6); }
+  #cap-top.twist1 { rotate: -16deg; } #cap-top.twist2 { rotate: 12deg; } #cap-top.pop { rotate: -60deg; translate: -30px -150px; opacity: 0; }
+  .result { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; width: 100%; }
+  .rays { position: absolute; left: 50%; top: 40%; width: 820px; height: 820px; translate: -50% -50%; z-index: -1; opacity: 0; border-radius: 50%;
+    background: repeating-conic-gradient(var(--grade) 0deg 8deg, transparent 8deg 22.5deg);
+    -webkit-mask-image: radial-gradient(circle, #000 0 14%, transparent 60%); mask-image: radial-gradient(circle, #000 0 14%, transparent 60%);
+    animation: turn 18s linear infinite; transition: opacity .5s steps(5); }
+  .result.go .rays { opacity: var(--rays, 0); }
+  @keyframes turn { to { rotate: 360deg } }
+  .flip { position: relative; width: 220px; transition: transform .16s steps(4); }
+  .flip.squash { transform: scaleX(0); }
+  .flip.tremble { animation: tremble .09s steps(2) infinite; }
+  @keyframes tremble { 0% { translate: calc(var(--amp) * -1) 0 } 50% { translate: var(--amp) calc(var(--amp) * -.6) } 100% { translate: 0 var(--amp) } }
+  .back, .front { border-radius: 14px; aspect-ratio: 5 / 7; box-shadow: 0 8px 0 var(--edge), 0 0 var(--glow, 0px) var(--grade); transition: box-shadow .9s; }
+  .back { background: repeating-linear-gradient(45deg, #2b3566 0 6px, #222a52 6px 12px); border: 6px solid #3a4580; display: grid; place-items: center; }
+  .back::after { content: ""; width: 44px; height: 44px; rotate: 45deg; background: var(--amber); box-shadow: 0 0 0 6px #a5781a; }
+  .front { background: linear-gradient(180deg, color-mix(in srgb, var(--grade) 55%, #1c2142), #1c2142); border: 6px solid var(--grade); padding: 14px; display: grid; grid-template-rows: 1fr auto; gap: 8px; }
+  .front .art { background: #f2ecdd; border-radius: 8px; display: grid; place-items: center; padding: 10%; }
+  .front canvas { width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+  .front .lbl { font: 700 14px/1.15 var(--pixel); text-align: left; }
+  .shout { font: 700 40px/1 var(--pixel); color: var(--grade); text-shadow: 0 4px 0 var(--edge); margin: 0; min-height: 40px; }
+  .shout.slam { animation: slam .4s steps(6) 1; }
+  @keyframes slam { 0% { scale: 2.8; opacity: 0 } 55% { scale: .88; opacity: 1 } 100% { scale: 1 } }
+  .rv-name { font: 600 19px/1.2 var(--pixel); margin: 0; }
+  .rv-sub { font-size: 14px; color: var(--muted); margin: 0; }
+  .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* ---------- deal shuffle */
+  .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .how div { background: var(--panel); border-radius: 12px; padding: 14px; box-shadow: 0 3px 0 var(--edge); }
+  .how b { font-family: var(--pixel); font-size: 17px; display: block; margin-bottom: 4px; }
+  .how span { color: var(--muted); font-size: 14px; }
+  footer { color: var(--muted); font-size: 13px; text-align: center; }
+
+  @media (max-width: 860px) { .hero, .arcade, .insp { grid-template-columns: 1fr; } .stagebox { min-height: 300px; } .odds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol></svg>
+
+<div class="wrap">
+  <nav>
+    <span class="mark"><canvas class="px" id="mark" width="16" height="16" aria-hidden="true"></canvas>lil guys</span>
+    <span class="pill" id="wallet-pill" hidden><svg class="tk"><use href="#ticket"/></svg><span id="wallet">0</span></span>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <h1>Everyone gets a <em>lil guy.</em></h1>
+      <p class="lede" id="lede">He's dealt, not picked: one of 3.8 trillion. Then you fill his locker from the capsule machines, one game at a time.</p>
+      <form class="deal" id="deal-form">
+        <label for="name" class="muted" style="flex-basis:100%;font-size:14px">Your name, for your cards</label>
+        <input id="name" maxlength="18" autocomplete="nickname" placeholder="mia" required>
+        <button class="btn" type="submit" id="deal-btn">Deal me a guy</button>
+      </form>
+      <div id="dealt" hidden>
+        <div class="deal"><button class="btn" type="button" id="go-roll">Open today's free capsule</button><button class="btn alt" type="button" id="go-coll">My collection</button></div>
+        <p class="muted" style="font-size:13px;margin:12px 0 0">Saved in this browser only. <button class="link" type="button" id="reset">Start over</button></p>
+      </div>
+    </div>
+    <div class="stagebox"><span class="glow" id="glow"></span><span class="floor"></span><div id="hero-guy" aria-live="polite"></div><div class="me" id="me"></div></div>
+  </section>
+
+  <div class="parade" aria-hidden="true"><div class="belt" id="belt"></div></div>
+
+  <section id="traits-sec" hidden style="display:grid;gap:14px">
+    <h2 id="traits-title">Your guy</h2>
+    <div class="traits" id="traits"></div>
+  </section>
+
+  <section id="roll" style="display:grid;gap:14px">
+    <h2>The capsule machines</h2>
+    <div class="arcade">
+      <div class="mach-wrap"><canvas class="mach" id="mach" width="40" height="56" aria-hidden="true"></canvas></div>
+      <div>
+        <p class="muted" style="margin:0">Every game has its own machine and set: skins, hats, a frame and a buddy. Finish the day's games and your first capsule is free.</p>
+        <div class="games" id="games" role="group" aria-label="Machine"></div>
+        <div class="open-row">
+          <button class="btn mint" type="button" id="free">Free daily capsule</button>
+          <button class="btn" type="button" id="buy"><svg class="tk"><use href="#ticket"/></svg> 120 · Open</button>
+          <button class="link" type="button" id="earn">Play a pretend game (+60)</button>
+        </div>
+        <div class="odds" id="odds"></div>
+        <div class="season" id="season" hidden><canvas width="16" height="16" aria-hidden="true"></canvas><div><b id="season-name"></b><span class="muted" id="season-sub"></span></div><button class="btn" type="button" id="season-buy"><svg class="tk"><use href="#ticket"/></svg> 150</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="coll" style="display:grid;gap:14px">
+    <div class="coll-head"><h2>Your collection</h2><div class="counts" id="counts"></div></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section style="display:grid;gap:14px">
+    <h2>How it works</h2>
+    <div class="how">
+      <div><b>One guy each</b><span>Dealt from a random seed when you join, so nobody can type their way to a rare one. Change your name; he stays.</span></div>
+      <div><b>Starters</b><span>A free hat from each game, the first day you play it. Saved once, so they never change.</span></div>
+      <div><b>Daily capsule</b><span>Finish the day's games, open one capsule free. Same machine, same odds as any other.</span></div>
+      <div><b>No two alike</b><span>Every copy has its own finish, scuff and print. A tally counts the days you finish wearing it.</span></div>
+      <div><b>Just looks</b><span>Nothing here helps you score. It's all for showing off on the boards.</span></div>
+    </div>
+  </section>
+
+  <footer>A pretend collection to try the idea: tickets are free and nothing leaves this browser.</footer>
+</div>
+
+<dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
+
+<div class="reveal" id="reveal" hidden role="dialog" aria-modal="true" aria-label="Capsule">
+  <canvas id="burst" aria-hidden="true"></canvas><div class="flash" id="flash"></div>
+  <div class="rv-ctl"><button class="btn alt" type="button" id="sound" aria-pressed="true">Sound on</button><button class="btn alt" type="button" id="skip">Skip</button></div>
+  <div class="stage" id="stage">
+    <div class="gacha" id="gacha" hidden aria-hidden="true"><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><div class="cap" id="cap" hidden><canvas id="cap-bot" width="32" height="32"></canvas><canvas id="cap-top" width="32" height="32"></canvas></div></div>
+    <div class="result" id="result" hidden>
+      <span class="rays"></span>
+      <p class="shout" id="shout"></p>
+      <div class="flip" id="flip"><div class="back" id="back"></div><div class="front" id="front" hidden><div class="art"><canvas width="16" height="16" aria-hidden="true"></canvas></div><span class="lbl" id="front-lbl"></span></div></div>
+      <p class="rv-name" id="rv-name"></p>
+      <p class="rv-sub" id="rv-sub"></p>
+      <div class="rv-actions" id="rv-actions" hidden><button class="btn" type="button" id="rv-wear">Wear it</button><button class="btn alt" type="button" id="rv-keep">Keep</button><button class="btn alt" type="button" id="rv-again">Another</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="../lil-guy.js"></script>
+<script>window.LG = window.LilGuy;</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rgb = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+  const blend = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const fmt = n => n >= 1e12 ? (n / 1e12).toFixed(1) + ' trillion' : n >= 1e9 ? (n / 1e9).toFixed(1) + ' billion' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' million' : Math.round(n).toLocaleString('en-US');
+  const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
+  const GRADE = LG.GRADES.map(g => g.color);
+  const today = new Date().toISOString().slice(0, 10);
+  const tkIcon = '<svg class="tk"><use href="#ticket"/></svg>';
+
+  /* ---------------------------------------------- state, kept in this browser */
+  const KEY = 'lil-guys-promo-v1';
+  let state = null;
+  try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { state = null; }
+  if (state && (!state.seed || !Array.isArray(state.copies))) state = null;
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private window: it lasts this visit */ } };
+  const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: LG.decode(code) })).filter(c => c.o) : [];
+  const wornCodes = () => state ? Object.values(state.worn).filter(Boolean) : [];
+
+  /* ---------------------------------------------- drawing */
+  function paintInto(canvas, seed, equip) {
+    const cfg = LG.dress(LG.resolve(seed), { equip });
+    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg));
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
+    colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([...rgb(c), 255], (y * 16 + x) * 4); }));
+    ctx.putImageData(img, 0, 0);
+  }
+  const animated = (seed, move, equip, size = 300, emote) => LG.toAnimatedSvg(seed, move, { size, equip, emote });
+
+  /* ------------------------------------------------ gachapon
+   * A capsule is a clear top and a candy-coloured bottom that twist apart; the
+   * toy inside (the game's own object) shows through the top, with the little
+   * folded paper insert behind it. Each game has its machine: a glass dome of
+   * capsules on a body in its colour, a crank, a coin slot and a chute. */
+  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+  const gameColor = g => CANDY[g];
+  const balls = new Set();
+  const WHITE = [255, 255, 255], INK = [22, 18, 34];
+
+  function Px(w, h) {
+    const d = new Uint8ClampedArray(w * h * 4);
+    return {
+      w, h, d,
+      set(x, y, c, a = 255) {
+        x = Math.round(x); y = Math.round(y);
+        if (x < 0 || y < 0 || x >= w || y >= h) return;
+        const i = (y * w + x) * 4, k = a / 255;
+        if (a >= 255 || !d[i + 3]) { d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = a; return; }
+        d[i] += (c[0] - d[i]) * k; d[i + 1] += (c[1] - d[i + 1]) * k; d[i + 2] += (c[2] - d[i + 2]) * k; d[i + 3] = Math.max(d[i + 3], a);
+      },
+      alpha(x, y) { return x < 0 || y < 0 || x >= w || y >= h ? 0 : d[(y * w + x) * 4 + 3]; },
+      outline(c) {
+        const add = [];
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          if (this.alpha(x, y)) continue;
+          if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => this.alpha(x + dx, y + dy) > 150)) add.push([x, y]);
+        }
+        for (const [x, y] of add) this.set(x, y, c);
+      },
+    };
+  }
+  const toyCache = new Map();
+  function toyOf(game) {
+    if (!toyCache.has(game)) {
+      const skin = LG.gameItems(game).find(i => i.slot === 'skin');
+      const cfg = LG.dress(LG.resolve('mystery'), { equip: [skin.id] });
+      const grid = LG.compose(cfg);
+      toyCache.set(game, LG.paint(grid, cfg, LG.withItems(LG.shadePalette(LG.getPalette(cfg.palette), cfg.shade), cfg)));
+    }
+    return toyCache.get(game);
+  }
+
+  /** The two halves of a 32x32 capsule; `open` adds light spilling over the bottom's rim. */
+  function capsuleHalves(game, open, t) {
+    const candy = rgb(CANDY[game]), toy = toyOf(game);
+    const top = Px(32, 32), bot = Px(32, 32);
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+      if (d > 14.7) continue;
+      if (y <= 15) {
+        if (d > 13.5) { top.set(x, y, [205, 222, 248], 235); continue; }
+        top.set(x, y, [225, 238, 255], 50);
+      } else {
+        let c = candy;
+        if (d > 13.5) c = blend(candy, INK, 0.62);
+        else if (dx > 7 || dy > 9.5) c = blend(candy, INK, 0.25);
+        else if (dx < -9) c = blend(candy, WHITE, 0.25);
+        if (d <= 13.5 && y === 16) c = blend(candy, WHITE, 0.4);
+        else if (d <= 13.5 && y === 17) c = blend(candy, INK, 0.12);
+        bot.set(x, y, c);
+      }
+    }
+    // the folded paper insert, tucked behind the toy
+    for (let y = 7; y <= 14; y++) for (let x = 19; x <= 24; x++) top.set(x, y, y === 9 || y === 10 ? [255, 160, 190] : x === 24 ? [214, 206, 190] : [250, 244, 228]);
+    // the toy: only the part above the seam shows, through the plastic
+    toy.forEach((row, ty) => row.forEach((hex, tx) => {
+      const x = tx + 8, y = ty + 4;
+      if (!hex || y > 15 || Math.hypot(x - 15.5, y - 15.5) > 13.4) return;
+      top.set(x, y, blend(rgb(hex), [235, 242, 255], 0.14));
+    }));
+    // the clear lip where the halves overlap, the big curved highlight, a glint
+    for (let x = 0; x < 32; x++) for (const y of [14, 15]) if (Math.hypot(x - 15.5, y - 15.5) <= 13.5) top.set(x, y, WHITE, y === 15 ? 90 : 60);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+      if (d > 10.6 && d < 12.6 && dx < -1 && dy < -3) top.set(x, y, WHITE, 185);
+    }
+    for (const [x, y] of [[9, 7], [10, 7], [9, 8]]) top.set(x, y, WHITE, 255);
+    bot.set(7, 20, WHITE, 170); bot.set(7, 21, WHITE, 120);
+    if (open) for (let k = 1; k <= 14; k++) {
+      const y = 16 - k, a = 1 - (k - 1) / 14;
+      for (let x = 4; x <= 27; x++) {
+        const beam = (x + Math.floor(t * 9)) % 4 === 0 ? 1 : x % 4 === 2 ? 0.5 : 0.18;
+        const v = Math.min(1, a * (0.35 + beam));
+        if (v > 0.05) bot.set(x, y, [255, 210 + 40 * v, 110 + 140 * v], Math.round(255 * v));
+      }
+    }
+    return { top, bot };
+  }
+  function addCapsule(topCanvas, botCanvas, game) {
+    const st = {
+      canvas: topCanvas, open: 0,
+      tick(t) {
+        const { top, bot } = capsuleHalves(game, st.open, t);
+        topCanvas.getContext('2d').putImageData(new ImageData(top.d, 32, 32), 0, 0);
+        botCanvas.getContext('2d').putImageData(new ImageData(bot.d, 32, 32), 0, 0);
+      },
+    };
+    balls.add(st); st.tick(0);
+    return st;
+  }
+
+  /** A gacha machine, 40x56. */
+  function addMachine(canvas, game, hoverEl) {
+    const body = rgb(CANDY[game]);
+    const others = LG.GAMES.map(g => rgb(CANDY[g]));
+    // Capsules piled in the dome, bottom rows first, about two thirds full.
+    const pile = [];
+    for (let row = 0; row < 4; row++) {
+      const y = 20 - row * 6;
+      for (let x = 6 + (row % 2) * 4; x <= 34; x += 8) {
+        if (Math.hypot(x - 20, y - 13) <= 10.8) pile.push({ x, y, c: strHash(`${game}:${x}:${y}`) % 5 < 2 ? body : others[strHash(`${x}${y}${game}`) % others.length], jx: 0, jy: 0 });
+      }
+    }
+    const ctx = canvas.getContext('2d');
+    const st = {
+      canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
+      jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
+      tick(t) {
+        const m = Px(40, 56);
+        const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
+        // body
+        for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
+          if ((x === 5 || x === 34) && (y === 25 || y === 53)) continue;
+          let c = body;
+          if (x >= 30) c = blend(body, INK, 0.22); else if (x <= 7) c = blend(body, WHITE, 0.28);
+          if (y === 25) c = blend(c, WHITE, 0.3);
+          m.set(x, y, c);
+        }
+        for (let x = 6; x <= 33; x++) { m.set(x, 54, [44, 38, 64]); m.set(x, 55, [30, 26, 46]); }
+        // the label: cream, with a strip of every game's colours
+        for (let y = 28; y <= 33; y++) for (let x = 9; x <= 30; x++) {
+          const edge = y === 28 || y === 33 || x === 9 || x === 30;
+          m.set(x, y, edge ? [214, 204, 182] : (y === 31 || y === 30) && x % 3 !== 0 ? others[Math.floor(x / 3) % others.length] : [250, 244, 228]);
+        }
+        // coin slot
+        for (let y = 37; y <= 46; y++) for (let x = 25; x <= 29; x++) {
+          const frame = x === 25 || x === 29 || y === 37 || y === 46;
+          m.set(x, y, frame ? [200, 205, 220] : x === 27 && y > 38 && y < 45 ? [16, 12, 24] : [150, 156, 178]);
+        }
+        // the crank
+        const cx = 14.5, cy = 41.5;
+        for (let y = 35; y <= 48; y++) for (let x = 8; x <= 21; x++) {
+          const d = Math.hypot(x - cx, y - cy);
+          if (d <= 5.6) m.set(x, y, d > 4.6 ? [140, 146, 170] : (x - cx + y - cy < -3 ? [246, 248, 252] : [222, 226, 238]));
+        }
+        const a = st.angle + (st.hover ? Math.sin(t * 7) * 0.22 : 0);
+        for (let k = -5; k <= 5; k += 0.5) {
+          const x = cx + Math.cos(a) * k, y = cy + Math.sin(a) * k;
+          m.set(x, y, [96, 102, 128]); m.set(x + Math.sin(a) * 0.7, y - Math.cos(a) * 0.7, [120, 126, 150]);
+        }
+        for (const k of [-5, 5]) m.set(cx + Math.cos(a) * k, cy + Math.sin(a) * k, blend(body, INK, 0.4));
+        // the chute and its flap
+        for (let y = 47; y <= 52; y++) for (let x = 12; x <= 27; x++) {
+          const frame = x === 12 || x === 27 || y === 47 || y === 52;
+          m.set(x, y, frame ? blend(body, INK, 0.5) : st.flap ? (y === 48 ? [60, 50, 80] : [14, 10, 22]) : y === 49 ? blend(body, WHITE, 0.2) : blend(body, INK, 0.3));
+        }
+        // the collar under the dome
+        for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
+        // the dome: glass, capsules, then the shine on the glass
+        const glass = [];
+        for (let y = 0; y <= 22; y++) for (let x = 0; x < 40; x++) {
+          const d = Math.hypot(x - 20, y - 13);
+          if (d > 15.2 || (y < 1)) continue;
+          if (d > 14.2) m.set(x, y, [205, 222, 248], 235);
+          else { m.set(x, y, [190, 215, 250], 42); glass.push([x, y]); }
+        }
+        for (const p of pile) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+          const d = Math.hypot(dx, dy), x = p.x + dx + p.jx, y = p.y + dy + p.jy;
+          if (d > 4.2 || Math.hypot(x - 20, y - 13) > 14) continue;
+          if (dy < 0) m.set(x, y, d > 3.4 ? [190, 208, 236] : blend(p.c, [240, 246, 255], 0.7), 235);
+          else m.set(x, y, d > 3.4 ? blend(p.c, INK, 0.45) : dy === 0 ? blend(p.c, WHITE, 0.35) : p.c);
+          if (dx === -2 && dy === -2) m.set(x, y, WHITE);
+        }
+        for (const [x, y] of glass) {
+          if ((x === 9 || x === 10) && y > 4 && y < 19) m.set(x, y, WHITE, x === 9 ? 120 : 70);
+          const k = (x + y + 60 - sweep) % 60;
+          if (k < 2) m.set(x, y, WHITE, 80);
+        }
+        for (let x = 18; x <= 21; x++) { m.set(x, 0, blend(body, WHITE, 0.2)); m.set(x, 1, body); }
+        m.outline(INK);
+        ctx.putImageData(new ImageData(m.d, 40, 56), 0, 0);
+        for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
+      },
+    };
+    if (hoverEl) {
+      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; });
+      hoverEl.addEventListener('pointerleave', () => { st.hover = 0; });
+    }
+    balls.add(st); st.tick(0);
+    return st;
+  }
+
+
+
+  /* ---------------------------------------------- the parade */
+  const MOVES = ['hop', 'wave', 'cheer', 'dance', 'squish', 'look', 'blink', 'sleep'];
+  const paradeGuys = Array.from({ length: 14 }, (_, k) => {
+    const seed = `parade-${k * 7 + 3}`, game = LG.GAMES[k % LG.GAMES.length];
+    const o = LG.roll(`${seed}:show`, game);
+    return animated(seed, MOVES[k % MOVES.length], [LG.freeItem(game)?.id, LG.encode(o)].filter(Boolean), 84);
+  });
+  $('belt').innerHTML = [...paradeGuys, ...paradeGuys].map(s => `<span>${s}</span>`).join('');
+
+  /* ---------------------------------------------- hero */
+  function heroGuy(move = 'idle', emote) {
+    if (!state) { $('me').innerHTML = ''; $('glow').style.removeProperty('--grade'); $('hero-guy').innerHTML = animated('demo-7', 'wave', []); paintInto($('mark'), 'demo-7', []); return; }
+    const best = copies().filter(c => wornCodes().includes(c.code)).map(c => gradeIdx(c.o));
+    $('glow').style.setProperty('--grade', GRADE[Math.max(0, ...best)]);
+    $('hero-guy').innerHTML = animated(state.seed, move, wornCodes(), 300, emote);
+    const cfg = LG.resolve(state.seed);
+    const one = LG.guyOneIn(cfg);
+    $('me').innerHTML = `<span class="tag">${esc(state.name)}</span><span class="tag">1 in ${fmt(one)} guys</span>${cfg.lucky ? '<span class="tag gold">Lucky</span>' : ''}`;
+    paintInto($('mark'), state.seed, wornCodes());
+  }
+
+  function renderTraits() {
+    if (!state) { $('traits-sec').hidden = true; return; }
+    $('traits-sec').hidden = false;
+    $('traits-title').textContent = `${state.name}'s guy`;
+    const odds = LG.traitOdds(LG.resolve(state.seed)).filter(t => t.slot !== 'variant' || t.name === 'Lucky');
+    const rarest = [...odds].sort((a, b) => a.chance - b.chance).slice(0, 2).map(t => t.slot);
+    $('traits').innerHTML = odds.map(t => `<div class="trait${rarest.includes(t.slot) ? ' rare' : ''}"><small>${t.slot}</small><b>${esc(t.name)}</b><span>1 in ${fmt(1 / t.chance)}</span></div>`).join('');
+  }
+
+  // The deal: faces flick past, slowing, and land on yours.
+  async function deal(name) {
+    const seed = LG.makeSeed();
+    state = { v: 1, seed, name, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [] };
+    for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
+    state.worn.hat = state.copies[strHash(seed) % state.copies.length];
+    save();
+    const box = $('hero-guy');
+    box.innerHTML = '<canvas class="px" width="16" height="16"></canvas>';
+    const cv = box.firstChild;
+    for (let k = 0; k < 26; k++) { paintInto(cv, `${seed}:shuffle:${k}`, []); tone(700 + k * 18, 0.02, 0.02); await sleep(30 + k * k * 0.5); }
+    paintInto(cv, seed, []); tone(523, 0.12, 0.04); tone(784, 0.18, 0.04, 0.1);
+    await sleep(350);
+    renderAll();
+    heroGuy('cheer', 'heart');
+    setTimeout(() => heroGuy('idle'), 2600);
+  }
+  $('deal-form').addEventListener('submit', e => { e.preventDefault(); const n = $('name').value.trim().slice(0, 18); if (n) deal(n); });
+  $('reset').addEventListener('click', () => { if (!confirm('Start over? Your guy and collection go.')) return; state = null; try { localStorage.removeItem(KEY); } catch (e) {} renderAll(); });
+  $('go-roll').addEventListener('click', () => { $('roll').scrollIntoView({ behavior: 'smooth' }); });
+  $('go-coll').addEventListener('click', () => { $('coll').scrollIntoView({ behavior: 'smooth' }); });
+
+  /* ---------------------------------------------- machines */
+  let game = LG.GAMES[Math.floor(Date.now() / 864e5) % LG.GAMES.length];
+  let mach = null;
+  function renderGames() {
+    $('games').innerHTML = LG.GAMES.map(g => `<button class="chip-btn" type="button" style="--c:${CANDY[g]}" aria-pressed="${g === game}" data-g="${g}">${cap(g)}</button>`).join('');
+    if (mach) balls.delete(mach);
+    mach = addMachine($('mach'), game, $('mach').parentElement);
+    const pool = LG.gameItems(game).filter(i => !i.free);
+    const g = [0, 1, 2, 3, 4].map(k => Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0));
+    const finishNames = k => Object.values(LG.FINISHES).filter(f => f.grade === k).map(f => f.name).join(', ');
+    $('odds').innerHTML = LG.GRADES.map((gr, k) => `<div style="--g:${gr.color}"><b>${gr.name}</b>${g[k] >= 1 ? g[k].toFixed(0) : +g[k].toFixed(2)}% · ${finishNames(k)}</div>`).join('') ;
+  }
+  $('games').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) { game = b.dataset.g; renderGames(); } });
+
+  function renderWallet() {
+    $('wallet-pill').hidden = !state;
+    if (!state) return;
+    $('wallet').textContent = state.tickets.toLocaleString('en-US');
+    $('buy').disabled = state.tickets < 120;
+    $('season-buy').disabled = state.tickets < 150;
+    const used = state.free === today;
+    $('free').disabled = used;
+    $('free').textContent = used ? 'Free capsule used today' : 'Free daily capsule';
+    $('go-roll').textContent = used ? 'Open a capsule' : "Open today's free capsule";
+  }
+  const need = () => { if (!state) { $('name').focus(); $('deal-form').scrollIntoView({ behavior: 'smooth', block: 'center' }); return true; } return false; };
+  $('free').addEventListener('click', () => { if (need() || state.free === today) return; state.free = today; open(game, 'Daily capsule'); });
+  $('buy').addEventListener('click', () => { if (need() || state.tickets < 120) return; state.tickets -= 120; open(game, 'Capsule'); });
+  $('earn').addEventListener('click', () => { if (need()) return; state.tickets += 60; save(); renderWallet(); heroGuy('hop'); });
+
+  const seasonal = LG.inSeason(today);
+  if (seasonal.length) {
+    const it = seasonal[0];
+    $('season').hidden = false;
+    $('season-name').textContent = `${it.name} · in season now`;
+    $('season-sub').textContent = `Every copy is stamped with the day it dropped. Gone ${new Date(`2026-${it.season.to}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}.`;
+    paintInto($('season').querySelector('canvas'), state ? state.seed : 'season', [it.id]);
+    $('season-buy').addEventListener('click', () => {
+      if (need() || state.tickets < 150) return;
+      state.tickets -= 150;
+      const o = LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
+      reveal(o, null, 'Seasonal');
+    });
+  }
+
+  function open(g, how) {
+    const o = LG.roll(`${state.seed}:${how}:${today}:${++state.opened}`, g);
+    reveal(o, g, how);
+  }
+
+  /* ---------------------------------------------- sound: little square-wave blips, after a click, one tap to mute */
+  let audio = null, sound = true;
+  function tone(freq, dur, vol = 0.04, when = 0, type = 'square') {
+    if (!sound) return;
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    const t0 = audio.currentTime + when, o = audio.createOscillator(), gn = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    gn.gain.setValueAtTime(vol, t0); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(gn).connect(audio.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  const FANFARE = [[523, 659], [523, 659, 784], [523, 659, 784, 1047], [392, 523, 659, 784, 1047], [392, 523, 659, 784, 1047, 1319, 1568]];
+  const fanfare = g => { FANFARE[g].forEach((f, i) => tone(f, g >= 3 ? 0.45 : 0.25, 0.045, i * 0.085)); if (g >= 3) tone(FANFARE[g].at(-1) * 2, 1.1, 0.03, FANFARE[g].length * 0.085, 'triangle'); };
+  $('sound').addEventListener('click', e => { sound = !sound; e.target.setAttribute('aria-pressed', sound); e.target.textContent = sound ? 'Sound on' : 'Sound off'; });
+
+  /* ---------------------------------------------- confetti */
+  const burst = $('burst'), bctx = burst.getContext('2d');
+  let bits = [], bursting = false;
+  function boom(g, x, y, palette) {
+    const S = 4;
+    burst.width = Math.ceil(innerWidth / S); burst.height = Math.ceil(innerHeight / S);
+    const cols = palette || [GRADE[g], '#ffffff', GRADE[g], g >= 3 ? '#ffcf5c' : '#c9d3ff'];
+    for (let i = 0, n = [26, 70, 130, 230, 420][g]; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, v = 0.5 + Math.random() * (1.4 + g * 0.7);
+      bits.push({ x: x / S, y: y / S, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.9, life: 45 + Math.random() * (40 + g * 18), c: cols[i % 4], s: Math.random() < 0.25 ? 2 : 1 });
+    }
+    if (!bursting) { bursting = true; requestAnimationFrame(fly); }
+  }
+  function fly() {
+    bctx.clearRect(0, 0, burst.width, burst.height);
+    bits = bits.filter(b => b.life-- > 0);
+    for (const b of bits) { b.vy += 0.035; b.vx *= 0.986; b.x += b.vx; b.y += b.vy; bctx.globalAlpha = Math.min(1, b.life / 18); bctx.fillStyle = b.c; bctx.fillRect(Math.round(b.x), Math.round(b.y), b.s, b.s); }
+    if (bits.length) requestAnimationFrame(fly); else { bursting = false; bctx.clearRect(0, 0, burst.width, burst.height); }
+  }
+
+  /* ---------------------------------------------- the reveal: the machine drops, cranks, a capsule pops, a card trembles and flips */
+  let rush = false, current = null;
+  const wait = ms => rush ? Promise.resolve() : sleep(ms);
+  async function gacha(g) {
+    const box = $('gacha'), mc = $('bigmach'), cp = $('cap'), ct = $('cap-top'), cb = $('cap-bot');
+    box.hidden = false; cp.hidden = true; cp.className = 'cap'; ct.className = ''; mc.className = 'mach big';
+    const m = addMachine(mc, g);
+    void mc.offsetWidth; mc.className = 'mach big drop';
+    tone(196, 0.08, 0.04, 0.32);
+    await wait(470);
+    for (let k = 0; k < 3 && !rush; k++) {
+      const a0 = m.angle, t0 = performance.now();
+      tone(560, 0.035, 0.04); tone(390, 0.05, 0.045, 0.13);
+      m.jiggle(); mc.className = 'mach big'; void mc.offsetWidth; mc.className = 'mach big rattle';
+      await new Promise(r => { const f = now => { const e = Math.min(1, (now - t0) / 260); m.angle = a0 + Math.PI / 2 * Math.round(e * 4) / 4; if (e < 1 && !rush) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
+      await wait(170);
+    }
+    if (!rush) {
+      m.flap = 1; tone(150, 0.1, 0.05);
+      const c = addCapsule(ct, cb, g);
+      cp.hidden = false; void cp.offsetWidth; cp.className = 'cap out';
+      await wait(300); mc.classList.add('away'); await wait(600);
+      if (!rush) {
+        ct.className = 'twist1'; tone(900, 0.04, 0.04); await wait(240);
+        ct.className = 'twist2'; tone(1150, 0.04, 0.04); await wait(240);
+        c.open = 1; ct.className = 'pop';
+        tone(880, 0.07, 0.05); tone(1320, 0.1, 0.04, 0.05); tone(1760, 0.14, 0.03, 0.1);
+        const r = cp.getBoundingClientRect();
+        boom(1, r.left + r.width / 2, r.top + r.height * 0.45, [CANDY[g], '#ffffff', '#ffcf5c', '#ffe9b0']);
+        await wait(520);
+      }
+      balls.delete(c);
+    }
+    balls.delete(m);
+    box.hidden = true;
+  }
+
+  async function reveal(o, g, how) {
+    const code = LG.encode(o);
+    state.copies.push(code); state.fresh = [...(state.fresh || []), code]; save();
+    current = { o, code, g, how };
+    renderWallet();
+    rush = false;
+    $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
+    if (g) await gacha(g);
+    const gr = gradeIdx(o), res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
+    res.style.setProperty('--grade', GRADE[gr]);
+    res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.75][gr]);
+    res.classList.remove('go'); shout.classList.remove('slam'); shout.textContent = '';
+    front.hidden = true; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
+    flip.style.setProperty('--glow', '0px');
+    res.hidden = false;
+    if (!rush) {
+      flip.style.setProperty('--amp', `${0.6 + gr * 1.2}px`);
+      flip.classList.add('tremble'); void flip.offsetWidth;
+      flip.style.setProperty('--glow', `${gr * 9}px`);
+      const t = 700 + gr * 420;
+      for (let k = 0, n = 4 + gr * 2; k < n; k++) tone(150 + k * (40 + gr * 12), 0.07, 0.03, (t / 1000) * (1 - Math.pow(1 - k / n, 1.6)));
+      await wait(t);
+      flip.classList.remove('tremble'); flip.classList.add('squash');
+      await wait(170);
+    }
+    $('skip').hidden = true;
+    back.hidden = true; front.hidden = false;
+    paintInto(front.querySelector('canvas'), state.seed, [code]);
+    $('front-lbl').textContent = LG.nameOf(o).replace(' | ', ' · ');
+    flip.classList.remove('squash', 'tremble');
+    const famous = LG.special(o), grade = LG.gradeOf(o);
+    shout.textContent = famous ? famous + '!' : gr === 0 ? grade.name : grade.name + '!';
+    res.classList.add('go');
+    fanfare(gr);
+    shout.classList.add('slam');
+    await sleep(90);
+    const r = flip.getBoundingClientRect();
+    boom(gr, r.left + r.width / 2, r.top + r.height / 2);
+    if (gr >= 2) { const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+    if (gr >= 3) { const st = $('stage'); st.classList.remove('quake'); void st.offsetWidth; st.classList.add('quake'); }
+    if (gr >= 4) setTimeout(() => boom(4, r.left + r.width / 2, r.top + r.height * 0.3), 420);
+    $('rv-name').textContent = LG.nameOf(o);
+    $('rv-sub').textContent = `${how} · ${LG.wearOf(o.scuff).name} · print #${o.print} · 1 in ${fmt(LG.copyOneIn(o))}`;
+    $('rv-actions').hidden = false;
+    $('rv-again').hidden = !(g && (state.tickets >= 120));
+    $('rv-wear').focus();
+  }
+  function closeReveal(wear) {
+    if (!current || $('rv-actions').hidden) return;
+    if (wear) state.worn[LG.slotOf(current.o)] = current.code;
+    save();
+    $('reveal').hidden = true;
+    const c = current; current = null;
+    renderAll();
+    if (wear) heroGuy(gradeIdx(c.o) >= 2 ? 'cheer' : 'hop', gradeIdx(c.o) >= 4 ? 'crown' : undefined);
+    return c;
+  }
+  $('rv-wear').addEventListener('click', () => closeReveal(true));
+  $('rv-keep').addEventListener('click', () => closeReveal(false));
+  $('rv-again').addEventListener('click', () => { const c = closeReveal(false); if (c && state.tickets >= 120) { state.tickets -= 120; open(c.g, 'Capsule'); } });
+  $('skip').addEventListener('click', () => { rush = true; });
+  addEventListener('keydown', e => {
+    if ($('reveal').hidden) return;
+    if (!$('skip').hidden && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); rush = true; }
+    else if (e.key === 'Escape') closeReveal(false);
+  });
+
+  /* ---------------------------------------------- collection */
+  function renderColl() {
+    const list = copies().sort((a, b) => gradeIdx(b.o) - gradeIdx(a.o) || LG.copyOneIn(b.o) - LG.copyOneIn(a.o));
+    const n = [0, 0, 0, 0, 0]; list.forEach(c => n[gradeIdx(c.o)]++);
+    $('counts').innerHTML = state ? `<span class="count" style="--g:var(--line)">${list.length} copies</span>` + LG.GRADES.map((g, k) => n[k] ? `<span class="count" style="--g:${g.color}">${g.name} ${n[k]}</span>` : '').join('') : '';
+    if (!state) { $('grid').innerHTML = '<div class="empty">Get dealt a guy first. Your starters land here.</div>'; return; }
+    const worn = wornCodes(), fresh = state.fresh || [];
+    $('grid').innerHTML = list.map(c => {
+      const g = LG.gradeOf(c.o), it = LG.itemById(c.o.item);
+      return `<button class="card${fresh.includes(c.code) ? ' new' : ''}" type="button" data-i="${c.i}" style="--g:${g.color}" aria-label="${esc(LG.nameOf(c.o))}, ${g.name}">
+        <div class="art"><canvas class="px" width="16" height="16" aria-hidden="true"></canvas></div>${worn.includes(c.code) ? '<span class="on">ON</span>' : ''}
+        <span class="bar"></span><span class="nm">${esc(LG.nameOf(c.o).split(' | ')[0])}</span>
+        <span class="sub">${g.name} · ${LG.nameOf(c.o).split(' | ')[1] || it.slot}</span></button>`;
+    }).join('');
+    const cvs = $('grid').querySelectorAll('canvas');
+    list.forEach((c, k) => paintInto(cvs[k], state.seed, [c.code]));
+  }
+  $('grid').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) inspect(+b.dataset.i); });
+
+  function inspect(i) {
+    const code = state.copies[i], o = LG.decode(code);
+    if (!o) return;
+    state.fresh = (state.fresh || []).filter(c => c !== code); save();
+    const g = LG.gradeOf(o), slot = LG.slotOf(o), on = state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
+    const odds = LG.copyOneIn(o), item = LG.itemById(o.item);
+    const caption = `My lil guy pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${item.free ? '' : `, 1 in ${fmt(odds)} capsules`}.`;
+    $('insp-body').style.setProperty('--g', g.color);
+    $('insp-body').innerHTML = `<button class="btn alt x" type="button" id="insp-close">Close</button>
+      <div class="who">${animated(state.seed, gradeIdx(o) >= 2 ? 'cheer' : 'hop', [...wornCodes().filter(c => LG.slotOf(LG.decode(c)) !== slot), code], 240)}</div>
+      <div>
+        <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="muted" style="margin:4px 0 0;font:600 17px/1.2 var(--pixel)">${esc(look)}</p>` : ''}
+        <span class="gr">${g.name}</span>
+        <dl class="spec">
+          <dt>Item</dt><dd>${cap(item.game)} ${item.slot}${item.free ? ' · free starter' : ''}</dd>
+          <dt>Condition</dt><dd>${LG.wearOf(o.scuff).name}</dd>
+          <dt>Scuff</dt><dd>${o.scuff.toFixed(6)}<div class="float" aria-hidden="true"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></div></dd>
+          <dt>Print</dt><dd>#${o.print}${LG.special(o) ? ` · ${esc(LG.special(o))}` : ''}</dd>
+          ${o.date ? `<dt>Dropped</dt><dd>${o.date}</dd>` : ''}
+          <dt>Odds</dt><dd>${item.free ? 'Everyone has one; no two alike' : `1 in ${fmt(odds)} capsules`}</dd>
+        </dl>
+        <div class="deal"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button></div>
+        <div class="share">
+          <span class="muted" style="font-size:13px">Share card</span>
+          <div class="svg">${LG.toShareSvg(state.seed, o, { name: state.name })}</div>
+          <button class="copy" type="button" id="insp-copy">${esc(caption)}<small id="insp-copied">Copy text</small></button>
+        </div>
+      </div>`;
+    $('insp-close').addEventListener('click', () => $('insp').close());
+    $('insp-wear').addEventListener('click', () => {
+      if (on) delete state.worn[slot]; else state.worn[slot] = code;
+      save(); $('insp').close(); renderAll(); heroGuy(on ? 'idle' : 'hop');
+    });
+    $('insp-copy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
+      catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
+    });
+    $('insp').showModal();
+  }
+  $('insp').addEventListener('click', e => { if (e.target === $('insp')) $('insp').close(); });
+  $('insp').addEventListener('close', () => renderColl());
+
+  /* ---------------------------------------------- everything */
+  function renderAll() {
+    $('deal-form').hidden = !!state; $('dealt').hidden = !state;
+    $('lede').textContent = state
+      ? `${state.name}, he's yours: dealt from a random seed, so he's the only one. Fill his locker from the machines.`
+      : "He's dealt, not picked: one of 3.8 trillion. Then you fill his locker from the capsule machines, one game at a time.";
+    heroGuy(); renderTraits(); renderWallet(); renderColl();
+  }
+
+  // Machines idle with a slow shine on the glass. Motion plays whatever the reduced-motion setting says (the club's rule).
+  let last = 0;
+  const loop = n => { requestAnimationFrame(loop); if (n - last < 66) return; last = n; for (const b of balls) if (b.canvas.isConnected) b.tick(n / 1000); };
+  requestAnimationFrame(loop);
+  renderGames();
+  renderAll();
+})();
+</script>
+
+</body>
+</html>

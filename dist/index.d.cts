@@ -123,7 +123,7 @@ declare const items: Item[];
 declare function itemById(id: string | undefined): Item | undefined;
 declare const GAMES: GameId[];
 /** A game's items. */
-declare function gameItems(game: GameId): Item[];
+declare function gameItems(game: ItemGame): Item[];
 /** The hat every player wears in a game until they put something else on. */
 declare function freeItem(game: GameId): Item;
 /**

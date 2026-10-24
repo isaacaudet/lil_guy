@@ -52,9 +52,7 @@ const headWeights = [
 	3,
 	2,
 	2,
-	2,
 	4,
-	3,
 	3,
 	1,
 	1,
@@ -75,10 +73,8 @@ const eyeWeights = [
 	8,
 	4,
 	6,
-	6,
 	4,
 	2,
-	4,
 	4,
 	6,
 	4,
@@ -325,14 +321,16 @@ const T = {
 };
 /**
 * Item colours are drawn as 101–109 and moved into their layer's range once
-* the layer is down: a skin's to 20–28, a hat's to 30–38, a frame's to 40–48.
+* the layer is down: a skin's to 20–28, a hat's to 30–38, a frame's to 40–48,
+* a buddy's to 50–58.
 * Each layer keeps its own colours, so a gold hat on a glass jar works.
 */
 const LOCAL = 101;
 const LAYER = {
 	skin: 20,
 	hat: 30,
-	frame: 40
+	frame: 40,
+	buddy: 50
 };
 function stamp(rows) {
 	return rows.map((row) => [...row].map((ch) => {
@@ -573,24 +571,6 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("peanut", 7, true, [
-		"................",
-		"................",
-		"................",
-		".....######.....",
-		"....########....",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"....########....",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"....########....",
-		"................",
-		"................"
-	]),
 	head("tower", 8, true, [
 		"................",
 		"................",
@@ -624,24 +604,6 @@ const heads = [
 		"..############..",
 		"..############..",
 		"...##########...",
-		"................",
-		"................"
-	]),
-	head("bean", 8, true, [
-		"................",
-		"................",
-		".....######.....",
-		"....########....",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"....########....",
-		"...##########...",
-		"....########....",
 		"................",
 		"................"
 	]),
@@ -717,16 +679,16 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("cactus", 8, true, [
+	head("cactus", 9, true, [
 		"................",
 		"................",
-		"....########....",
-		"...##########...",
-		"...##########...",
-		".#.##########.#.",
-		".#.##########.#.",
-		".#.##########.#.",
+		".....######.....",
+		".##.########.##.",
+		".##.########.##.",
+		".##.########.##.",
 		".##############.",
+		"...##########...",
+		"...##########...",
 		"...##########...",
 		"...##########...",
 		"...##########...",
@@ -789,39 +751,39 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("bat", 9, false, [
+	head("bat", 8, false, [
 		"................",
 		"................",
 		"................",
-		"...#........#...",
-		"...##......##...",
-		"...##########...",
-		"...##########...",
+		"....#......#....",
+		"....##....##....",
+		"....########....",
 		".#.##########.#.",
 		".##############.",
 		".##############.",
 		".##############.",
-		".#..########..#.",
-		"....########....",
+		".#.#.######.#.#.",
 		".....######.....",
+		"................",
+		"................",
 		"................",
 		"................"
 	]),
-	head("crab", 9, true, [
+	head("crab", 9, false, [
 		"................",
 		"................",
+		"................",
+		".##..........##.",
 		".#.#........#.#.",
-		".###........###.",
-		"..#..........#..",
-		"..#.########.#..",
+		"..##........##..",
+		"...##.####.##...",
 		"..############..",
 		"..############..",
-		"..############..",
-		"..############..",
-		"..############..",
+		".##############.",
+		".##############.",
 		"..############..",
 		"...##########...",
-		"...#.#....#.#...",
+		"..#.#......#.#..",
 		"................",
 		"................"
 	]),
@@ -866,7 +828,6 @@ const eyes = [
 		"ee....ee",
 		"ew....ew"
 	]),
-	eyes_("content", ["e.e..e.e", ".e....e."]),
 	eyes_("excited", [
 		"e......e",
 		".e....e.",
@@ -882,7 +843,6 @@ const eyes = [
 		".e....e.",
 		".e....e."
 	]),
-	eyes_("glance", ["ew....ew", "ee....ee"]),
 	eyes_("chill", ["ss....ss", "we....we"]),
 	eyes_("side-eye", [
 		"ss....ss",
@@ -901,7 +861,11 @@ const eyes = [
 		".o....o.",
 		"ee....ee"
 	]),
-	eyes_("laser", ["rr....rr", "rr....rr"]),
+	eyes_("laser", [
+		".r....r.",
+		"rwr..rwr",
+		".r....r."
+	]),
 	eyes_("cyclops", [
 		".ww.",
 		"weee",
@@ -947,7 +911,11 @@ const mouths = [
 	mouth("tongue out", ["mmmm", "..t."]),
 	mouth("flat", ["mmmm"]),
 	mouth("gritted", ["mmmmmm", "mwmwmm"]),
-	mouth("bubblegum", ["mm.cc", "...cc"])
+	mouth("bubblegum", [
+		"...cc.",
+		"mm.cwc",
+		"...cc."
+	])
 ];
 
 //#endregion
@@ -965,10 +933,10 @@ const cheeks = [
 	cheeks_("scar", [".......o..", "........o."]),
 	cheeks_("band-aid", [".......xx."]),
 	cheeks_("war paint", ["rr......rr"]),
-	cheeks_("whiskers", ["dd......dd"]),
+	cheeks_("whiskers", ["mm......mm"]),
 	cheeks_("hearts", ["r.r....r.r", ".r......r."]),
 	cheeks_("shine", ["ww......ww"]),
-	cheeks_("stripes", ["ss......ss", ".ss....ss."]),
+	cheeks_("stripes", ["AA......AA", ".AA....AA."]),
 	cheeks_("stars", [
 		".y......y.",
 		"yyy....yyy",
@@ -1352,8 +1320,9 @@ const bodies = [
 		draw: (c) => {
 			const r = c.rows[c.crown + 2];
 			if (!r) return;
-			onBody(c, r.right - 2, c.crown + 2, T.LIGHT);
+			onBody(c, r.right - 2, c.crown + 2, T.WHITE);
 			onBody(c, r.right - 2, c.crown + 3, T.LIGHT);
+			onBody(c, r.right - 1, c.crown + 4, T.LIGHT);
 		}
 	},
 	{
@@ -1361,7 +1330,7 @@ const bodies = [
 		draw: (c) => {
 			for (let y = c.eyeLine + 3; y <= c.bottom; y += 2) {
 				const r = c.rows[y];
-				if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.SHADE);
+				if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.ACCENT);
 			}
 		}
 	},
@@ -1370,7 +1339,7 @@ const bodies = [
 		draw: (c) => {
 			const y = c.eyeLine + 3;
 			const r = c.rows[y];
-			if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + x % 2, T.BELLY);
+			if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + x % 2, T.ACCENT);
 		}
 	},
 	{
@@ -1544,8 +1513,7 @@ const accessories = [
 		draw: (c) => {
 			const x = c.centred(glasses);
 			const top = c.eyeLine - 3;
-			const r = c.rows[top];
-			if (r) for (let sx = r.left; sx <= r.right; sx++) wear(c, sx, top, T.OUTLINE);
+			for (let sx = x; sx < x + width(glasses); sx++) if (c.isBody(sx, top)) wear(c, sx, top, T.DEEP);
 			for (let y = c.eyeLine - 2; y <= c.eyeLine; y++) for (let dx = 0; dx < 4; dx++) wear(c, x + dx, y, T.OUTLINE);
 		}
 	},
@@ -1629,14 +1597,16 @@ var Canvas = class {
 				right: row.lastIndexOf(true)
 			};
 		});
-		this.crown = this.rows.findIndex((r) => r !== null);
+		const waist = this.rows[eyeLine];
+		this.centre = (waist.left + waist.right + 1) / 2;
+		const mid = Math.floor(this.centre);
+		const tops = [mid - 1, mid].map((x) => this.topOf(x)).filter((y) => y !== null);
+		this.crown = tops.length ? Math.min(...tops) : this.rows.findIndex((r) => r !== null);
 		let bottom = this.crown;
 		this.rows.forEach((r, y) => {
 			if (r) bottom = y;
 		});
 		this.bottom = bottom;
-		const waist = this.rows[eyeLine];
-		this.centre = (waist.left + waist.right + 1) / 2;
 	}
 	inside(x, y) {
 		return x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
@@ -1710,9 +1680,9 @@ const PINS = [
 		name: "Flame",
 		how: "A 7-day streak",
 		art: stamp([
-			".r",
-			"rr",
-			"ry"
+			".r.",
+			"rYr",
+			"ryr"
 		])
 	},
 	{
@@ -1730,22 +1700,30 @@ const PINS = [
 		name: "Bolt",
 		how: "Fastest of the day",
 		art: stamp([
-			".y",
-			"yy",
-			"y."
+			".yy",
+			".y.",
+			"yy."
 		])
 	},
 	{
 		id: "crown",
 		name: "Crown",
 		how: "Top of a board for a day",
-		art: stamp(["y.y", "yyy"])
+		art: stamp([
+			"y.y",
+			"yyy",
+			"YYY"
+		])
 	},
 	{
 		id: "leaf",
 		name: "Leaf",
 		how: "A first week in the club",
-		art: stamp(["gg", ".G"])
+		art: stamp([
+			".gg",
+			"ggg",
+			"G.."
+		])
 	}
 ];
 /** A copy holds at most this many pins. */
@@ -1760,7 +1738,8 @@ const GOLD_RIM_DAYS = 365;
 const START = {
 	skin: LAYER.skin,
 	hat: LAYER.hat,
-	frame: LAYER.frame
+	frame: LAYER.frame,
+	buddy: LAYER.buddy
 };
 const own = (slot, token) => token >= START[slot] && token < START[slot] + 10;
 /** Scratches tally marks and sticks pins onto one worn item's pixels. */
@@ -1807,10 +1786,25 @@ function markItem(grid, slot, copy) {
 			ax += ax > (left + right) / 2 ? -1 : 1;
 			ay += ay > (top + bottom) / 2 ? -1 : 1;
 		}
+		const placed = [];
 		pin.art.forEach((row, dy) => row.forEach((t, dx) => {
 			const x = ax + dx, y = ay + dy;
-			if (t && y >= 0 && y < GRID_SIZE && x >= 0 && x < GRID_SIZE && own(slot, grid[y][x])) grid[y][x] = t;
+			if (t && y >= 0 && y < GRID_SIZE && x >= 0 && x < GRID_SIZE && own(slot, grid[y][x])) {
+				grid[y][x] = t;
+				placed.push([x, y]);
+			}
 		}));
+		const N = [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		];
+		const inside = (x, y) => N.every(([dx, dy]) => (grid[y + dy]?.[x + dx] ?? 0) !== 0);
+		for (const [x, y] of placed) for (const [dx, dy] of N) {
+			const nx = x + dx, ny = y + dy;
+			if (own(slot, grid[ny]?.[nx] ?? 0) && inside(nx, ny)) grid[ny][nx] = T.OUTLINE;
+		}
 	});
 }
 /** After a year of days, the outline around an item goes gold; a frame's edge does. */
@@ -1871,7 +1865,7 @@ const FINISHES = {
 	"plain": {
 		name: "Plain",
 		grade: 0,
-		odds: 79.22,
+		odds: 79.87,
 		scuffs: [0, 1]
 	},
 	"sunset": {
@@ -1907,7 +1901,7 @@ const FINISHES = {
 	"gold": {
 		name: "Gold",
 		grade: 4,
-		odds: .9,
+		odds: .25,
 		scuffs: [0, .08]
 	}
 };
@@ -2023,7 +2017,7 @@ function gradeOf(o) {
 /** The name as it would show on an inventory card. */
 function nameOf(o) {
 	const item = itemById(o.item);
-	const base = item?.name ?? o.item;
+	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
 	const tally = o.tally !== void 0 ? "Tallied " : "";
 	if (o.finish === "plain") return tally + base;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
@@ -2043,6 +2037,7 @@ function encode(o) {
 	];
 	if (o.tally !== void 0) parts.push(`t${o.tally}`);
 	if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join("+")}`);
+	if (o.date) parts.push(`d${o.date}`);
 	return parts.join("~");
 }
 function decode(s) {
@@ -2058,6 +2053,7 @@ function decode(s) {
 	};
 	for (const part of extra) {
 		if (part.startsWith("t") && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
+		if (part.startsWith("d") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
 		if (part.startsWith("p")) {
 			const pins = part.slice(1).split("+").filter((id) => pinById(id)).slice(0, MAX_PINS);
 			if (pins.length) o.pins = pins;
@@ -2091,7 +2087,21 @@ function starter(name, game) {
 * drop time and stored with the copy — never from anything a player picks.
 */
 function roll(seed, game) {
-	const pool = gameItems(game).filter((i) => !i.free);
+	return rollFrom(gameItems(game).filter((i) => !i.free), seed);
+}
+/**
+* A seasonal drop: one of the hats in season on `day` (`YYYY-MM-DD`), rolled
+* like a capsule and stamped with the day. Null when nothing is in season.
+*/
+function rollSeason(seed, day) {
+	const pool = inSeason(day);
+	if (!pool.length) return null;
+	return {
+		...rollFrom(pool, seed),
+		date: day.slice(0, 10)
+	};
+}
+function rollFrom(pool, seed) {
 	const item = pool[hash(`${seed}|item`) % pool.length];
 	let r = unit(`${seed}|finish`) * 100;
 	let finish = "plain";
@@ -3206,9 +3216,10 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			"xxxA",
-			"aaaA",
-			"aaaA"
+			"xxxxA",
+			"aaaaA",
+			"ayaaA",
+			"aaaaA"
 		])
 	},
 	{
@@ -3219,14 +3230,16 @@ const hats = [
 			"#FF8FB1",
 			"#E0628A",
 			"#FFB03B",
-			"#E58A1F"
+			"#E58A1F",
+			"#6FA8FF",
+			"#4A84E0"
 		],
 		draw: on([
-			".11.",
-			"1..2",
-			".12.",
-			".33.",
-			"3334"
+			".12..",
+			".12..",
+			"..34.",
+			"..34.",
+			"55556"
 		])
 	},
 	{
@@ -3235,7 +3248,11 @@ const hats = [
 		name: "Bottle cap",
 		free: true,
 		colors: [],
-		draw: on(["xaxa", "aAaA"])
+		draw: on([
+			".xxxx.",
+			"xaaaax",
+			"aAaAaA"
+		])
 	},
 	{
 		id: "flipsies.landed",
@@ -3248,10 +3265,11 @@ const hats = [
 			"#FFFFFF"
 		],
 		draw: on([
-			"4112",
-			"4112",
-			".12.",
-			".33."
+			".33.",
+			".11.",
+			"1112",
+			"4442",
+			"1112"
 		])
 	},
 	{
@@ -3289,9 +3307,9 @@ const hats = [
 		name: "Cheese wedge",
 		free: true,
 		colors: [
-			"#FFC94A",
-			"#E3A52E",
-			"#D98F22"
+			"#FFBE3A",
+			"#D9931F",
+			"#B8761A"
 		],
 		draw: on([
 			"...11",
@@ -3532,8 +3550,8 @@ const hats = [
 		game: "trackdle",
 		name: "Trophy",
 		colors: [
-			"#F2C230",
-			"#C8901E",
+			"#E8A81E",
+			"#A8700F",
 			"#FFE9A0"
 		],
 		draw: on([
@@ -3772,7 +3790,246 @@ const frames = [
 		fill: (x, y) => x === 7 || x === 8 ? y % 4 < 2 ? 3 : 1 : (x * 5 + y * 3) % 7 === 0 ? 2 : 1
 	}
 ];
-/** Every item: each game's skins, then hats, then frames. */
+/**
+* A tiny pet that sits at his feet, bottom right, in front of everything. One
+* per game, drawn small enough (4 or 5 pixels) to leave the guy room.
+*/
+const buddies = [
+	{
+		id: "amountle.gemling",
+		game: "amountle",
+		name: "Gemling",
+		colors: [
+			"#5FE0D0",
+			"#2FA89A",
+			"#E6FFFB"
+		],
+		art: stamp([
+			".13.",
+			"1132",
+			"1122",
+			".22."
+		])
+	},
+	{
+		id: "halfsies.pea",
+		game: "halfsies",
+		name: "Pea pod",
+		colors: [
+			"#7CC45A",
+			"#4E9A36",
+			"#C6F59A"
+		],
+		art: stamp([
+			".11.",
+			"1332",
+			"1332",
+			".22."
+		])
+	},
+	{
+		id: "stackdle.cubelet",
+		game: "stackdle",
+		name: "Cubelet",
+		colors: ["#FFB03B", "#E58A1F"],
+		art: stamp([
+			"1112",
+			"o1o2",
+			"1112",
+			"2222"
+		])
+	},
+	{
+		id: "flipsies.droplet",
+		game: "flipsies",
+		name: "Droplet",
+		colors: [
+			"#6FC3F5",
+			"#3E8FD6",
+			"#FFFFFF"
+		],
+		art: stamp([
+			".1..",
+			".11.",
+			"1311",
+			"1112",
+			".22."
+		])
+	},
+	{
+		id: "puttsies.tee",
+		game: "puttsies",
+		name: "Tee buddy",
+		colors: [
+			"#FFFFFF",
+			"#D3D8E2",
+			"#E8B060"
+		],
+		art: stamp([
+			".11.",
+			"1121",
+			".22.",
+			".3..",
+			"333."
+		])
+	},
+	{
+		id: "weighsies.mouse",
+		game: "weighsies",
+		name: "Mouse",
+		colors: [
+			"#B9C0CE",
+			"#FF9EBB",
+			"#8A93A3"
+		],
+		art: stamp([
+			"2..2",
+			"1111",
+			"o11o",
+			".33."
+		])
+	},
+	{
+		id: "cutsies.seedling",
+		game: "cutsies",
+		name: "Seedling",
+		colors: [
+			"#7DD87A",
+			"#4FAE5C",
+			"#B07444"
+		],
+		art: stamp([
+			"1..1",
+			".12.",
+			".2..",
+			"3333"
+		])
+	},
+	{
+		id: "tiltsies.hamlet",
+		game: "tiltsies",
+		name: "Hamlet",
+		colors: [
+			"#F2B66D",
+			"#FFE4C2",
+			"#C98A45"
+		],
+		art: stamp([
+			"3..3",
+			"1111",
+			"o22o",
+			"3333"
+		])
+	},
+	{
+		id: "trackdle.snail",
+		game: "trackdle",
+		name: "Turbo snail",
+		colors: [
+			"#E8A23A",
+			"#B8721A",
+			"#9FD18A"
+		],
+		art: stamp([
+			".11.",
+			"1221",
+			"1121",
+			"3333"
+		])
+	}
+];
+/**
+* Hats that only drop on certain days of the year. A copy keeps the date it
+* dropped, so a 2026 Pumpkin is a different thing from a 2027 one.
+*/
+const seasonal = [
+	{
+		id: "club.birthday",
+		game: "club",
+		name: "Club birthday",
+		season: {
+			from: "10-12",
+			to: "10-16"
+		},
+		colors: [
+			"#5FB4FF",
+			"#FFD447",
+			"#FF6FA0"
+		],
+		draw: on([
+			"..3..",
+			".121.",
+			".212.",
+			"12121"
+		])
+	},
+	{
+		id: "club.pumpkin",
+		game: "club",
+		name: "Pumpkin",
+		season: {
+			from: "10-20",
+			to: "11-02"
+		},
+		colors: [
+			"#FF8A2B",
+			"#D9661A",
+			"#4FAE5C"
+		],
+		draw: on([
+			"..3..",
+			"11211",
+			"11211",
+			".111."
+		])
+	},
+	{
+		id: "club.snowcap",
+		game: "club",
+		name: "Snow cap",
+		season: {
+			from: "12-15",
+			to: "01-06"
+		},
+		colors: [
+			"#E5484D",
+			"#B83236",
+			"#FFFFFF"
+		],
+		draw: on([
+			"....3",
+			"..11.",
+			".112.",
+			"33333"
+		])
+	},
+	{
+		id: "club.sweetheart",
+		game: "club",
+		name: "Sweetheart",
+		season: {
+			from: "02-10",
+			to: "02-16"
+		},
+		colors: [
+			"#FF5C8A",
+			"#D93A6A",
+			"#FFC2D4"
+		],
+		draw: on([
+			"11.11",
+			"13112",
+			".112.",
+			"..2.."
+		])
+	}
+];
+/** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
+function inSeason(day) {
+	const md = (typeof day === "string" ? day : day.toISOString()).slice(5, 10);
+	return items.filter((i) => i.season && (i.season.from <= i.season.to ? md >= i.season.from && md <= i.season.to : md >= i.season.from || md <= i.season.to));
+}
+/** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
 const items = [
 	...skins.map((i) => ({
 		...i,
@@ -3785,6 +4042,14 @@ const items = [
 	...frames.map((i) => ({
 		...i,
 		slot: "frame"
+	})),
+	...buddies.map((i) => ({
+		...i,
+		slot: "buddy"
+	})),
+	...seasonal.map((i) => ({
+		...i,
+		slot: "hat"
 	}))
 ];
 const byId = new Map(items.map((i) => [i.id, i]));
@@ -3851,7 +4116,8 @@ function withItems(palette, config) {
 	for (const slot of [
 		"skin",
 		"hat",
-		"frame"
+		"frame",
+		"buddy"
 	]) {
 		const item = itemById(config[slot]);
 		if (!item) continue;
@@ -4039,6 +4305,10 @@ function compose(config) {
 	if (hat?.slot === "hat") {
 		hat.draw(c);
 		claim(c.grid, LAYER.hat);
+		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
+			const t = c.grid[y][x], below = c.grid[y + 1][x];
+			if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
+		}
 	} else if (!skin) hair[config.hair].draw(c);
 	const accessory = accessories[config.accessory];
 	if (accessory.layer === "face") accessory.draw(c);
@@ -4065,6 +4335,19 @@ function compose(config) {
 		if (o) {
 			markItem(c.grid, "frame", o);
 			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
+		}
+	}
+	const buddy = itemById(config.buddy);
+	if (buddy?.slot === "buddy") {
+		const art = buddy.art, h = art.length, w = art[0].length;
+		const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
+		const on$1 = (x, y) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
+		for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
+			if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
+			if (on$1(x, y)) {
+				const t = art[y - y0][x - x0];
+				c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+			} else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) c.grid[y][x] = T.OUTLINE;
 		}
 	}
 	return c.grid;
@@ -4421,6 +4704,9 @@ function derive(name, body, accent, trim) {
 	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
 	let tongue = "#FF6B88";
 	for (let i = 0; i < 8 && contrast(tongue, body) < 1.4; i++) tongue = shadeOf(tongue, .06);
+	const goldReads = contrast("#FFD45C", body) >= 1.45;
+	const gold = goldReads ? "#FFD45C" : "#E8901A";
+	const goldShade = goldReads ? "#F0A93A" : "#B3620E";
 	return {
 		name,
 		colors: {
@@ -4439,8 +4725,8 @@ function derive(name, body, accent, trim) {
 			13: mix$1(body, "#FFFBF0", .6),
 			14: "#7DD87A",
 			15: "#4FAE5C",
-			16: "#FFD45C",
-			17: "#F0A93A",
+			16: gold,
+			17: goldShade,
 			18: "#FF6B78",
 			19: shadeOf(body, .24)
 		}
@@ -4484,10 +4770,13 @@ function shadePalette(palette, shade) {
 function luckyPalette(palette) {
 	const turn = (hex$2) => {
 		const [h, s, l] = toHsl(hex$2);
+		let hue = (h + 150) % 360;
+		const dark = l < .45;
+		if (dark && hue >= 10 && hue <= 110) hue += 130;
 		return fromHsl([
-			h + 150,
-			Math.min(.85, s + .05),
-			l >= .45 ? Math.max(l, .66) : Math.min(l, .3)
+			hue,
+			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.min(.85, s + .05),
+			dark ? Math.min(Math.max(l, .22), .28) : Math.max(l, .66)
 		]);
 	};
 	const c = palette.colors;
@@ -4508,7 +4797,7 @@ function paletteOf(config) {
 */
 function paint(grid, config, palette) {
 	const state = { glint: false };
-	const slotOf$1 = (t) => t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+	const slotOf$1 = (t) => t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	return grid.map((row, y) => row.map((token, x) => {
 		const color = resolveColor(palette, token);
 		if (!color) return null;
@@ -4812,6 +5101,14 @@ const mix = (a, b$1, t) => {
 		2
 	].map((i) => x[i] + (y[i] - x[i]) * t));
 };
+/** The order of `AnimationFrame.slots`, from 1. */
+const FRAME_SLOTS = [
+	"skin",
+	"hat",
+	"frame",
+	"buddy"
+];
+const slotIndex = (t) => t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette) {
@@ -4821,7 +5118,8 @@ function painted(grid, config, palette) {
 		const c = colors[y][x];
 		if (c) out[y + HEADROOM][x] = {
 			c,
-			item: t >= LAYER.skin && t < LAYER.frame
+			item: t >= LAYER.skin && t < LAYER.frame || t >= LAYER.buddy,
+			slot: slotIndex(t)
 		};
 	}));
 	return out;
@@ -5204,15 +5502,17 @@ function animate(input, move, options = {}) {
 			};
 		}
 		if (grade >= 3) {
-			const count = grade === 4 ? 4 : 3;
-			SPARKLE_SPOTS.slice(0, count + 2).forEach(([x, y], k) => {
+			const count$1 = grade === 4 ? 4 : 3;
+			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
 			});
 		}
 		const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
 		return {
 			colors,
-			ms
+			ms,
+			slots
 		};
 	});
 	return {
@@ -5492,4 +5792,333 @@ function copyOneIn(o) {
 }
 
 //#endregion
-export { DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, MAX_PINS, MOVES, PINS, SHADE_COUNT, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toSvgString, traitOdds, wearOf, withItems };
+//#region src/look.ts
+/**
+* Keeping rarity real.
+*
+* A guy's rare traits only mean something if nobody can choose them. Two
+* rules make that so:
+*
+* 1. **Draw the guy from a seed, not the name on the board.** A name can be
+*    typed and changed, so anyone could try names until a rare guy came out,
+*    and a rename would change him. The club makes a random seed once
+*    (`makeSeed`), keeps it with the player, and draws from that:
+*    `toSvgString(seed, …)`, `starter(seed, game)`. The name stays a label.
+* 2. **A picker offers only common parts, plus the player's own.** A part
+*    someone rolled stays theirs to keep; a rare part they didn't roll can't be
+*    picked.
+*
+* Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
+* the parts can't silently turn a saved look into someone else.
+*/
+/** A slot in a look code: its letter, its config key and its weights. */
+const SLOTS = [
+	[
+		"h",
+		"head",
+		headWeights
+	],
+	[
+		"e",
+		"eyes",
+		eyeWeights
+	],
+	[
+		"m",
+		"mouth",
+		mouthWeights
+	],
+	[
+		"c",
+		"cheeks",
+		cheekWeights
+	],
+	[
+		"t",
+		"hair",
+		hairWeights
+	],
+	[
+		"b",
+		"body",
+		bodyWeights
+	],
+	[
+		"a",
+		"accessory",
+		accessoryWeights
+	],
+	[
+		"p",
+		"palette",
+		paletteWeights
+	]
+];
+/** The weight below which a part counts as rare and can't be picked. */
+const RARE = 2;
+/**
+* A random seed to draw a new player's guy from, made once and kept. 12
+* characters of base 36, about 62 bits.
+*/
+function makeSeed() {
+	const bytes = new Uint8Array(8);
+	globalThis.crypto.getRandomValues(bytes);
+	let n = 0n;
+	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
+	return n.toString(36).padStart(12, "0").slice(-12);
+}
+/** Which options a player may pick in a slot: every common one, and their own. */
+function pickable(own$1, slot) {
+	const weights = SLOTS.find((s) => s[1] === slot)[2];
+	return weights.map((w, i) => i).filter((i) => weights[i] >= RARE || i === own$1[slot]);
+}
+/** Whether a look only uses parts this player may pick. */
+function allowed(own$1, look) {
+	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own$1, slot).includes(look[slot]));
+}
+/** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
+function encodeLook(look) {
+	return "2:" + SLOTS.filter(([, slot]) => look[slot] !== void 0).map(([letter, slot]) => letter + look[slot]).join(".");
+}
+/**
+* A code back into a look, or null for anything that isn't a version-2 code
+* this library can draw: an old seven-number code from before 0.2, a part out
+* of range, or (given the player's own guy) a rare part they didn't roll.
+*/
+function decodeLook(code, own$1) {
+	if (typeof code !== "string" || !code.startsWith("2:")) return null;
+	const look = {};
+	for (const part of code.slice(2).split(".").filter(Boolean)) {
+		const slot = SLOTS.find((s) => s[0] === part[0]);
+		const n = Number(part.slice(1));
+		if (!slot || !/^\d{1,3}$/.test(part.slice(1)) || n >= slot[2].length) return null;
+		look[slot[1]] = n;
+	}
+	if (own$1 && !allowed(own$1, look)) return null;
+	return look;
+}
+/** A player's guy: from their seed, with their picked look laid over it. */
+function lookOf(seed, code = "") {
+	const own$1 = resolve(seed);
+	const look = code ? decodeLook(code, own$1) : null;
+	return look ? {
+		...own$1,
+		...look
+	} : own$1;
+}
+
+//#endregion
+//#region src/share.ts
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
+	"&": "&amp;",
+	"<": "&lt;",
+	">": "&gt;",
+	"\"": "&quot;"
+})[c]);
+function count(n) {
+	return n >= 1e12 ? `${(n / 1e12).toFixed(1)} trillion` : n >= 1e9 ? `${(n / 1e9).toFixed(1)} billion` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} million` : Math.round(n).toLocaleString("en-US");
+}
+function toShareSvg(input, copy, options = {}) {
+	const config = dress(resolve(input), { equip: [encode(copy)] });
+	const colors = paint(compose(config), config, withItems(paletteOf(config), config));
+	const grade = gradeOf(copy);
+	const item = itemById(copy.item);
+	const [title, finish] = nameOf(copy).split(" | ");
+	const px = 26, gx = 96, gy = (630 - GRID_SIZE * px) / 2;
+	const rects = [];
+	colors.forEach((row, y) => {
+		let x = 0;
+		while (x < GRID_SIZE) {
+			const c = row[x];
+			let w = 1;
+			while (x + w < GRID_SIZE && row[x + w] === c) w++;
+			if (c) rects.push(`<rect x="${gx + x * px}" y="${gy + y * px}" width="${w * px}" height="${px}" fill="${c}"/>`);
+			x += w;
+		}
+	});
+	const odds = copyOneIn(copy);
+	const lines = [
+		`${wearOf(copy.scuff).name} · scuff ${copy.scuff.toFixed(4)} · print #${copy.print}`,
+		copy.tally !== void 0 ? `${copy.tally} days on its tally` : "",
+		item?.free ? "Everyone has one; no two are alike" : `1 in ${count(odds)} capsules`
+	].filter(Boolean);
+	const font = "font-family=\"system-ui, -apple-system, Segoe UI, sans-serif\"";
+	return [
+		`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img">`,
+		`<title>${esc(nameOf(copy))}</title>`,
+		`<defs><radialGradient id="glow" cx="0.27" cy="0.5" r="0.5"><stop offset="0" stop-color="${grade.color}" stop-opacity="0.55"/><stop offset="1" stop-color="${grade.color}" stop-opacity="0"/></radialGradient></defs>`,
+		`<rect width="1200" height="630" fill="#14182a"/>`,
+		`<rect width="1200" height="630" fill="url(#glow)"/>`,
+		`<g shape-rendering="crispEdges">${rects.join("")}</g>`,
+		`<text x="600" y="150" ${font} font-size="24" font-weight="700" letter-spacing="4" fill="#a8b0cf">${esc(options.name ? `${options.name.toUpperCase()}'S COPY` : "A ONE-OF-A-KIND COPY")}</text>`,
+		`<text x="600" y="232" ${font} font-size="60" font-weight="800" fill="#ffffff">${esc(title)}</text>`,
+		finish ? `<text x="600" y="296" ${font} font-size="40" font-weight="700" fill="${grade.color}">${esc(finish)}</text>` : "",
+		`<rect x="600" y="${finish ? 324 : 264}" width="${grade.name.length * 18 + 40}" height="48" rx="10" fill="${grade.color}"/>`,
+		`<text x="620" y="${finish ? 357 : 297}" ${font} font-size="26" font-weight="800" fill="#ffffff">${esc(grade.name)}</text>`,
+		...lines.map((l, i) => `<text x="600" y="${(finish ? 420 : 360) + i * 44} " ${font} font-size="28" fill="#dfe3f2">${esc(l)}</text>`),
+		`<text x="600" y="570" ${font} font-size="24" font-weight="700" fill="#ffcf5c">${esc(options.footer ?? "dleclub.com")}</text>`,
+		`</svg>`
+	].join("");
+}
+
+//#endregion
+//#region src/shine.ts
+/**
+* The finishes, moving: a WebGL shader that runs each worn copy's finish on
+* that copy's own pixels — Sunset's sheen, Tempered's glint, Nebula's drift,
+* Prism's rainbow, Negative's pulse, Gold's sparkle — while the guy plays a
+* move. Scuffed pixels shine less, the way they're painted.
+*
+* Browsers allow only a handful of WebGL contexts per page, so make one shine
+* and share it: draw each guy into it in turn and copy the result out with
+* `drawImage` into that guy's own 2D canvas. Without WebGL `createShine`
+* returns null; draw the frame's colours as they are.
+*/
+const FINISH_ORDER = [
+	"plain",
+	"sunset",
+	"tempered",
+	"nebula",
+	"prism",
+	"negative",
+	"gold"
+];
+/**
+* A frame as the shader reads it: its colours, and for each pixel the finish,
+* scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+*/
+function shineData(frame, owned = {}) {
+	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	frame.colors.forEach((row, y) => row.forEach((c, x) => {
+		if (!c) return;
+		const i = (y * FRAME_WIDTH + x) * 4;
+		colors.set([
+			parseInt(c.slice(1, 3), 16),
+			parseInt(c.slice(3, 5), 16),
+			parseInt(c.slice(5, 7), 16),
+			255
+		], i);
+		const slot = frame.slots[y][x];
+		const copy = slot ? owned?.[FRAME_SLOTS[slot - 1]] : void 0;
+		if (copy) info.set([
+			(FINISH_ORDER.indexOf(copy.finish) + 1) * 32,
+			Math.round(copy.scuff * 255),
+			Math.floor(copy.print / 4),
+			255
+		], i);
+	}));
+	return {
+		colors,
+		info
+	};
+}
+const VERTEX = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
+const FRAGMENT = `
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D base, info;
+uniform float time;
+float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
+vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+vec3 hueShift(vec3 c, float a) {
+  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+  vec3 yiq = toYIQ * c;
+  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
+  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+}
+void main() {
+  vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 k = texture2D(info, at);
+  float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;
+  if (k.a > 0.5 && finish >= 0.0) {
+    float scuff = k.g, print = floor(k.b * 255.0 + 0.5) * 4.0;
+    float d = cell.x + cell.y, h = hash(cell, print);
+    float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
+    float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
+    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
+    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
+    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
+    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
+    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); }
+    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
+    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
+  }
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+/** One shader to share across a page or a game, or null without WebGL. */
+function createShine(canvas) {
+	const target = canvas ?? (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(FRAME_WIDTH, FRAME_HEIGHT) : typeof document !== "undefined" ? document.createElement("canvas") : null);
+	if (!target) return null;
+	target.width = FRAME_WIDTH;
+	target.height = FRAME_HEIGHT;
+	const gl = target.getContext("webgl", {
+		premultipliedAlpha: false,
+		preserveDrawingBuffer: true
+	});
+	if (!gl) return null;
+	const shader = (type, source) => {
+		const s = gl.createShader(type);
+		gl.shaderSource(s, source);
+		gl.compileShader(s);
+		return s;
+	};
+	const program = gl.createProgram();
+	gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
+	gl.attachShader(program, shader(gl.FRAGMENT_SHADER, FRAGMENT));
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+		-1,
+		-1,
+		1,
+		-1,
+		-1,
+		1,
+		1,
+		1
+	]), gl.STATIC_DRAW);
+	const p = gl.getAttribLocation(program, "p");
+	gl.enableVertexAttribArray(p);
+	gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+	gl.uniform1i(gl.getUniformLocation(program, "base"), 0);
+	gl.uniform1i(gl.getUniformLocation(program, "info"), 1);
+	const time = gl.getUniformLocation(program, "time");
+	gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+	const texture = (unit$1) => {
+		const t = gl.createTexture();
+		gl.activeTexture(gl.TEXTURE0 + unit$1);
+		gl.bindTexture(gl.TEXTURE_2D, t);
+		for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.NEAREST);
+		for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
+		return t;
+	};
+	const textures = [texture(0), texture(1)];
+	return {
+		canvas: target,
+		draw(frame, owned, ms) {
+			const { colors, info } = shineData(frame, owned);
+			[colors, info].forEach((bytes, unit$1) => {
+				gl.activeTexture(gl.TEXTURE0 + unit$1);
+				gl.bindTexture(gl.TEXTURE_2D, textures[unit$1]);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+			});
+			gl.uniform1f(time, ms / 1e3);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		}
+	};
+}
+
+//#endregion
+export { DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, MAX_PINS, MOVES, PINS, SHADE_COUNT, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, wearOf, withItems };

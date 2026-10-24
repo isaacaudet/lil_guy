@@ -96,7 +96,7 @@
   <section>
     <div class="head"><h2 id="spot-title">This week</h2><span class="timer" id="t-week"></span></div>
     <div class="spot">
-      <div class="mach-wrap"><canvas class="mach" id="spot-mach" width="40" height="56" aria-hidden="true"></canvas><button class="btn" type="button" id="spot-open"><svg class="tk"><use href="#ticket"/></svg> 80 · Open</button></div>
+      <div class="mach-wrap"><canvas class="mach" id="spot-mach" width="40" height="56" aria-hidden="true"></canvas><button class="btn" type="button" id="spot-open"><svg class="tk"><use href="#ticket"/></svg> 100 · Open</button></div>
       <div style="display:grid;gap:10px;min-width:0">
         <p id="spot-lede"></p>
         <div class="set" id="spot-set"></div>
@@ -106,7 +106,7 @@
   </section>
 
   <section>
-    <div class="head"><h2>Capsules</h2><span class="muted">100 each · one of the game's 7 items, finish rolled</span></div>
+    <div class="head"><h2>Capsules</h2><span class="muted">120 each · your first one each day is free when you finish the gauntlet</span></div>
     <div class="machines" id="machines"></div>
   </section>
 
@@ -118,7 +118,7 @@
   <section class="two">
     <div class="box"><h3>Swap up and recycle</h3><ul>
       <li><b>Swap up:</b> five copies of one grade for one of the next.</li>
-      <li><b>Recycle:</b> a copy you don't want turns back into tickets: 15 for Everyday, 60 for Special, 250 for Prized.</li>
+      <li><b>Recycle:</b> a copy you don't want turns back into tickets: 10 for Everyday, 60 for Special, 250 for Prized.</li>
       <li>Starters and anything with a tally or pins can't be recycled.</li>
     </ul></div>
     <div class="box"><h3>Never for sale</h3><ul>
@@ -205,11 +205,11 @@
   $('spot-set').innerHTML = set.map(it => `<figure><canvas width="16" height="16" aria-hidden="true"></canvas><figcaption>${esc(it.name)}${it.free ? '<br>free' : ''}</figcaption></figure>`).join('');
   [...$('spot-set').querySelectorAll('canvas')].forEach((cv, i) => paintInto(cv, [set[i].id]));
   addMachine($('spot-mach'), spotlight, $('spot-mach').parentElement);
-  $('spot-open').dataset.price = '80';
-  $('spot-open').addEventListener('click', () => open(spotlight, 80));
+  $('spot-open').dataset.price = '100';
+  $('spot-open').addEventListener('click', () => open(spotlight, 100));
 
   // ---------------------------------------------------------- machines
-  $('machines').innerHTML = LG.GAMES.map(g => `<div class="m"><canvas width="40" height="56" data-g="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-price="${g === spotlight ? 80 : 100}" data-open="${g}">${tk} ${g === spotlight ? 80 : 100}</button></div>`).join('');
+  $('machines').innerHTML = LG.GAMES.map(g => `<div class="m"><canvas width="40" height="56" data-g="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-price="${g === spotlight ? 100 : 120}" data-open="${g}">${tk} ${g === spotlight ? 100 : 120}</button></div>`).join('');
   $('machines').querySelectorAll('canvas[data-g]').forEach(c => addMachine(c, c.dataset.g, c.parentElement));
   $('machines').addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) open(b.dataset.open, +b.dataset.price); });
   function open(game, price) {

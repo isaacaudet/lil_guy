@@ -13,10 +13,12 @@ const SRC = new URL('../docs/showcase/src/', import.meta.url);
 const OUT = new URL('../docs/showcase/', import.meta.url);
 
 const PAGES: Record<string, string> = {
+  promo: 'The pitch: get dealt a guy, open capsules, keep a collection and share your best copy.',
   guide: 'The whole system on one page.',
   locker: 'A player\'s guy, locker, moves, extras and the gacha shop, all working.',
   shop: 'A rotating shop: the daily shelf, a weekly spotlight, capsules and bundles.',
   boards: 'From a name to a dressed guy, and how boards and games would show it.',
+  economy: 'Tickets, prices and drop odds simulated over 90 days of play, with targets.',
   review: 'Every part and item on four test guys, with what to keep, cut and add.',
 };
 

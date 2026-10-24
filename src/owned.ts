@@ -56,13 +56,13 @@ export type Grade = (typeof GRADES)[number];
  * Battered Nebula.
  */
 export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number] }> = {
-  'plain':    { name: 'Plain',    grade: 0, odds: 79.22, scuffs: [0, 1] },
+  'plain':    { name: 'Plain',    grade: 0, odds: 79.87, scuffs: [0, 1] },
   'sunset':   { name: 'Sunset',   grade: 1, odds: 15.98, scuffs: [0, 0.08] },
   'tempered': { name: 'Tempered', grade: 2, odds: 1.6,   scuffs: [0, 1] },
   'nebula':   { name: 'Nebula',   grade: 2, odds: 1.6,   scuffs: [0, 0.08] },
   'prism':    { name: 'Prism',    grade: 3, odds: 0.5,   scuffs: [0, 0.08] },
   'negative': { name: 'Negative', grade: 3, odds: 0.2,   scuffs: [0, 0.08] },
-  'gold':     { name: 'Gold',     grade: 4, odds: 0.9,   scuffs: [0, 0.08] },
+  'gold':     { name: 'Gold',     grade: 4, odds: 0.25,  scuffs: [0, 0.08] },
 };
 
 /** Condition, by scuff, in the words toy collectors use. */

@@ -1083,7 +1083,7 @@ void main() {
       const o = LG.roll(seed, game);
       if (o.tally !== undefined) o.tally = 3 + strHash(`${name}:${i}:days`) % 60;
       if (o.tally !== undefined && o.tally >= 20) o.pins = LG.PINS.filter((_, k) => (strHash(`${name}:${i}:pin`) >> k) & 1).slice(0, 1 + (o.tally >= 50)).map(pn => pn.id);
-      state.locker.push(copyOf(o, 'Daily drop', `roll("${seed}", "${game}")`));
+      state.locker.push(copyOf(o, 'Daily capsule', `roll("${seed}", "${game}")`));
     }
     state.bought = new Set();
     state.opened = 0;

@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime0 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/parts/art.d.ts
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -123,7 +123,7 @@ declare const items: Item[];
 declare function itemById(id: string | undefined): Item | undefined;
 declare const GAMES: GameId[];
 /** A game's items. */
-declare function gameItems(game: GameId): Item[];
+declare function gameItems(game: ItemGame): Item[];
 /** The hat every player wears in a game until they put something else on. */
 declare function freeItem(game: GameId): Item;
 /**
@@ -1138,7 +1138,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts

@@ -1,0 +1,252 @@
+<title>Lil Guy Economy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap">
+<style>
+  /* Layout: controls on the left, results on the right: the checks first, then one chart, then the full table. */
+  :root {
+    --bg: #f5f2ea; --surface-1: #fcfcfb; --line: #e4dfd2; --grid: #ece8de; --ink: #1d1a24; --text-secondary: #57536a; --muted: #77728a;
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+    --good: #1f8a5b; --good-bg: #dcf2e6; --warn: #9a6400; --warn-bg: #f9ebcc;
+    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #131218; --surface-1: #1a1a19; --line: #2e2c36; --grid: #26252c; --ink: #f0efec; --text-secondary: #c3c2b7; --muted: #9d99a8;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --good: #6fdca8; --good-bg: #173a2b; --warn: #f2c46b; --warn-bg: #3d3120; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #131218; --surface-1: #1a1a19; --line: #2e2c36; --grid: #26252c; --ink: #f0efec; --text-secondary: #c3c2b7; --muted: #9d99a8;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --good: #6fdca8; --good-bg: #173a2b; --warn: #f2c46b; --warn-bg: #3d3120; color-scheme: dark; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 26px 70px; }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 22px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(34px, 5vw, 50px); line-height: 1; }
+  h2 { font-size: 20px; }
+  .lede { color: var(--text-secondary); max-width: 74ch; margin: 8px 0 0; }
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .panel { background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+  .controls { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  .ctl { display: grid; gap: 4px; }
+  .ctl label { display: flex; justify-content: space-between; font-size: 13.5px; }
+  .ctl label b { font: 700 14px/1 var(--body); font-variant-numeric: tabular-nums; }
+  .ctl input[type=range] { width: 100%; accent-color: var(--series-1); }
+  .ctl small { color: var(--muted); font-size: 12px; }
+  .toggle { display: flex; gap: 8px; align-items: center; font-size: 13.5px; }
+  .btn { appearance: none; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 700 13px/1 var(--pixel); padding: 9px 11px; border-radius: 6px; cursor: pointer; }
+  .btn:focus-visible, input:focus-visible { outline: 3px solid var(--series-1); outline-offset: 2px; }
+  .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .check { border-radius: 10px; padding: 12px; display: grid; gap: 4px; border: 1px solid var(--line); background: var(--surface-1); }
+  .check .st { font: 700 12px/1 var(--pixel); padding: 4px 7px; border-radius: 5px; justify-self: start; }
+  .check.ok .st { background: var(--good-bg); color: var(--good); }
+  .check.no .st { background: var(--warn-bg); color: var(--warn); }
+  .check b { font: 800 24px/1.1 var(--body); font-variant-numeric: tabular-nums; }
+  .check span { font-size: 13px; color: var(--text-secondary); }
+  .chart-wrap { position: relative; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--text-secondary); margin: 4px 0 8px; }
+  .legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 6px 20px rgba(0,0,0,.12); min-width: 160px; }
+  .tip b { font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px; }
+  th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font: 500 12px/1.2 var(--pixel); color: var(--muted); }
+  .types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; font-size: 13px; color: var(--text-secondary); }
+  .types b { color: var(--ink); font-weight: 600; display: block; }
+  .note { font-size: 12.5px; color: var(--muted); }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } .controls { position: static; } .types { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Lil Guy Economy</h1>
+    <p class="lede">600 simulated players over 90 days, rolling with the library's real drop odds (Gold is 1 in 400), to test prices and ticket earnings before real players do. The daily drop is a free capsule for finishing the day's gauntlet. Move the numbers; everything reruns.</p>
+  </header>
+
+  <div class="types">
+    <div class="panel"><b>Casual</b>Plays about 2 days a week, 1–3 games a day. Rarely finishes all five.</div>
+    <div class="panel"><b>Regular</b>Plays about 5 days a week, usually all five games.</div>
+    <div class="panel"><b>Daily</b>Plays nearly every day, all five, and keeps a streak.</div>
+  </div>
+
+  <div class="layout">
+    <div class="panel controls" id="controls">
+      <h2>Numbers</h2>
+      <div class="ctl"><label for="perGame">Tickets per game finished <b id="perGame-v"></b></label><input type="range" id="perGame" min="0" max="40" step="5"></div>
+      <div class="ctl"><label for="allFive">Bonus for finishing all five <b id="allFive-v"></b></label><input type="range" id="allFive" min="0" max="120" step="10"></div>
+      <div class="ctl"><label for="streak">Streak bonus per day (up to 10 days) <b id="streak-v"></b></label><input type="range" id="streak" min="0" max="10" step="1"></div>
+      <div class="ctl"><label for="capsule">Capsule price <b id="capsule-v"></b></label><input type="range" id="capsule" min="50" max="250" step="10"></div>
+      <div class="ctl"><label for="spend">Share of tickets spent on capsules <b id="spend-v"></b></label><input type="range" id="spend" min="30" max="100" step="10"><small>The rest is saved for the shop's shelf (Plain items at 300–450).</small></div>
+      <div class="ctl"><label for="recycle">Tickets for recycling an Everyday copy <b id="recycle-v"></b></label><input type="range" id="recycle" min="0" max="40" step="5"></div>
+      <label class="toggle"><input type="checkbox" id="free"> Free daily capsule for finishing the gauntlet</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="suggested">Use my suggested numbers</button><button class="btn" type="button" id="current">Use the first guesses</button></div>
+      <p class="note">Swap-ups run when a player has 5 spare Everyday copies, half the time.</p>
+    </div>
+
+    <div style="display:grid;gap:16px;min-width:0">
+      <div class="checks" id="checks"></div>
+      <div class="panel">
+        <h2>Players who own something Prized or better</h2>
+        <div class="legend" id="legend"></div>
+        <div class="chart-wrap" id="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 640 300" role="img" aria-label="Share of players owning a Prized or better copy by day, for each player type"></svg><div class="tip" id="tip" hidden></div></div>
+      </div>
+      <div class="panel">
+        <h2>By player type, after 90 days</h2>
+        <div class="table-wrap"><table id="table"></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>/*LIB*/</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const DAYS = 90, PER = 200;
+  const TYPES = [
+    { id: 'casual', name: 'Casual', play: 0.3, games: () => (rand() < 0.08 ? 5 : 1 + Math.floor(rand() * 3)), color: 'var(--series-1)' },
+    { id: 'regular', name: 'Regular', play: 0.7, games: () => (rand() < 0.75 ? 5 : 3), color: 'var(--series-2)' },
+    { id: 'daily', name: 'Daily', play: 0.95, games: () => 5, color: 'var(--series-3)' },
+  ];
+  const SUGGESTED = { perGame: 10, allFive: 30, streak: 2, capsule: 120, spend: 70, recycle: 10, free: true };
+  const MOCK = { perGame: 20, allFive: 60, streak: 5, capsule: 100, spend: 80, recycle: 15, free: true };
+  const KEYS = ['perGame', 'allFive', 'streak', 'capsule', 'spend', 'recycle'];
+
+  // A seeded generator, so a setting always gives the same result.
+  let s = 1;
+  const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
+
+  function simulate(cfg, PER = 200) {
+    s = 12345;
+    return TYPES.map(type => {
+      const owned = new Array(DAYS + 1).fill(0);       // players owning Prized+ by each day
+      const tot = { earned: 0, capsules: 0, free: 0, copies: 0, left: 0, firstPrized: [], firstMythic: [], grail: 0, special: 0, swaps: 0, recycled: 0, setDone: 0 };
+      for (let p = 0; p < PER; p++) {
+        let tickets = 0, shelfFund = 0, streak = 0, got = -1, gotM = -1, hasGrail = false, n = 0;
+        const everyday = [], seen = new Set();
+        const take = (o, day) => {
+          n++; tot.copies++;
+          const g = gradeIdx(o);
+          seen.add(o.item);
+          if (g >= 1) tot.special++;
+          if (g >= 2 && got < 0) got = day;
+          if (g >= 3 && gotM < 0) gotM = day;
+          if (g >= 4) hasGrail = true;
+          if (g === 0) {
+            if (everyday.length >= 4 && rand() < 0.5) { tickets += cfg.recycle; tot.recycled++; }
+            else everyday.push(o);
+          }
+        };
+        for (let day = 1; day <= DAYS; day++) {
+          if (rand() < type.play) {
+            const g = type.games();
+            const five = g === 5;
+            streak++;
+            const earn = g * cfg.perGame + (five ? cfg.allFive : 0) + cfg.streak * Math.min(streak, 10);
+            tot.earned += earn;
+            tickets += earn * cfg.spend / 100;
+            shelfFund += earn * (100 - cfg.spend) / 100;
+            const game = LG.GAMES[(p + day) % LG.GAMES.length];
+            if (cfg.free && five) { take(LG.roll(`f:${type.id}:${p}:${day}`, game), day); tot.free++; tot.capsules++; }
+            while (tickets >= cfg.capsule) { tickets -= cfg.capsule; tot.capsules++; take(LG.roll(`b:${type.id}:${p}:${day}:${n}`, game), day); }
+            if (shelfFund >= 370 && rand() < 0.3) { shelfFund -= 370; n++; tot.copies++; }
+            if (everyday.length >= 5 && rand() < 0.5) {
+              everyday.splice(0, 5); tot.swaps++;
+              let o; for (let i = 0; i < 4000; i++) { o = LG.roll(`s:${type.id}:${p}:${day}:${i}`, game); if (gradeIdx(o) === 1) break; }
+              take(o, day);
+            }
+          } else streak = 0;
+          if (got >= 0) owned[day]++;
+        }
+        tot.left += tickets + shelfFund;
+        if (got >= 0) tot.firstPrized.push(got);
+        if (gotM >= 0) tot.firstMythic.push(gotM);
+        if (hasGrail) tot.grail++;
+        if (seen.size >= 15) tot.setDone++;
+      }
+      const median = a => { if (a.length < PER / 2) return null; const b = [...a].sort((x, y) => x - y); return b[Math.floor(PER / 2)]; };
+      return {
+        type, curve: owned.map(c => c / PER),
+        earnedWeek: tot.earned / PER / (DAYS / 7), capsWeek: tot.capsules / PER / (DAYS / 7), freeWeek: tot.free / PER / (DAYS / 7),
+        copies: tot.copies / PER, special: tot.special / PER, prized90: tot.firstPrized.length / PER,
+        medianPrized: median(tot.firstPrized), mythic90: tot.firstMythic.length / PER, grail90: tot.grail / PER,
+        left: tot.left / PER, swaps: tot.swaps / PER, recycled: tot.recycled / PER,
+      };
+    });
+  }
+
+  const pct = v => Math.round(v * 100) + '%';
+  const one = v => v.toFixed(1);
+  function render(cfg) {
+    const res = simulate(cfg);
+    const [casual, regular, daily] = res;
+    // Targets: what feels good without making rare things common.
+    const checks = [
+      { ok: regular.medianPrized !== null && regular.medianPrized >= 7 && regular.medianPrized <= 28, big: regular.medianPrized === null ? 'never' : `day ${regular.medianPrized}`, text: 'A regular player\'s first Prized or better. Aim: within 1–4 weeks.' },
+      { ok: casual.special >= 1, big: one(casual.special), text: 'Special-or-better copies a casual player has by day 90. Aim: at least one.' },
+      { ok: daily.grail90 <= 0.35 && daily.grail90 >= 0.05, big: pct(daily.grail90), text: 'Daily players with a Grail by day 90. Aim: 5–35%, so it stays a story.' },
+      { ok: regular.left <= cfg.capsule * 3, big: Math.round(regular.left).toLocaleString('en-US'), text: `Tickets a regular player is sitting on at day 90. Aim: under 3 capsules' worth (${cfg.capsule * 3}).` },
+      { ok: regular.capsWeek >= 3 && regular.capsWeek <= 10, big: one(regular.capsWeek), text: 'Capsules a regular player opens a week. Aim: 3–10, a few a session.' },
+    ];
+    $('checks').innerHTML = checks.map(c => `<div class="check ${c.ok ? 'ok' : 'no'}"><span class="st">${c.ok ? '✓ On target' : '! Off target'}</span><b>${c.big}</b><span>${c.text}</span></div>`).join('');
+    $('table').innerHTML = `<thead><tr><th>Player</th><th>Tickets / week</th><th>Capsules / week</th><th>of them free</th><th>Copies</th><th>Special+</th><th>Prized+ by day 90</th><th>Mythic+</th><th>Grail</th><th>Tickets left</th></tr></thead><tbody>${res.map(r =>
+      `<tr><td>${r.type.name}</td><td>${Math.round(r.earnedWeek)}</td><td>${one(r.capsWeek)}</td><td>${one(r.freeWeek)}</td><td>${Math.round(r.copies)}</td><td>${one(r.special)}</td><td>${pct(r.prized90)}</td><td>${pct(r.mythic90)}</td><td>${pct(r.grail90)}</td><td>${Math.round(r.left)}</td></tr>`).join('')}</tbody>`;
+    drawChart(res);
+  }
+
+  // One line per player type: share of players owning a Prized+ copy by day.
+  const W = 640, H = 300, L = 44, R = 70, T = 12, B = 34;
+  const xs = d => L + (W - L - R) * d / DAYS, ys = v => T + (H - T - B) * (1 - v);
+  let lastRes = null;
+  function drawChart(res) {
+    lastRes = res;
+    const grid = [0, 0.25, 0.5, 0.75, 1].map(v => `<line x1="${L}" x2="${W - R}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${L - 8}" y="${ys(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v * 100}%</text>`).join('');
+    const xt = [0, 30, 60, 90].map(d => `<text x="${xs(d)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">day ${d}</text>`).join('');
+    // End labels, nudged apart so lines that finish close together stay readable.
+    const ends = res.map((r, i) => ({ i, y: ys(r.curve[DAYS]) })).sort((a, b) => a.y - b.y);
+    const ly = [];
+    ends.forEach((e, k) => { ly[e.i] = k ? Math.max(e.y, ly[ends[k - 1].i] + 15) : e.y; });
+    const lines = res.map((r, i) => {
+      const pts = r.curve.map((v, d) => `${xs(d).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+      const end = r.curve[DAYS];
+      return `<polyline points="${pts}" fill="none" stroke="${r.type.color}" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="${xs(DAYS)}" cy="${ys(end)}" r="4" fill="${r.type.color}" stroke="var(--surface-1)" stroke-width="2"/>
+        <text x="${xs(DAYS) + 8}" y="${ly[i] + 4}" font-size="12" fill="var(--text-secondary)">${r.type.name} ${Math.round(end * 100)}%</text>`;
+    }).join('');
+    $('chart').innerHTML = `${grid}${xt}<line x1="${L}" x2="${W - R}" y1="${ys(0)}" y2="${ys(0)}" stroke="var(--line)"/>${lines}<line id="cross" x1="0" x2="0" y1="${T}" y2="${ys(0)}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><rect id="hit" x="${L}" y="${T}" width="${W - L - R}" height="${ys(0) - T}" fill="transparent"/>`;
+    $('legend').innerHTML = res.map(r => `<span><i style="background:${r.type.color}"></i>${r.type.name}</span>`).join('');
+    const hit = $('hit'), tip = $('tip'), cross = $('cross');
+    const move = e => {
+      const box = $('chart').getBoundingClientRect();
+      const x = (e.clientX - box.left) / box.width * W;
+      const d = Math.max(0, Math.min(DAYS, Math.round((x - L) / (W - L - R) * DAYS)));
+      cross.setAttribute('x1', xs(d)); cross.setAttribute('x2', xs(d)); cross.setAttribute('visibility', 'visible');
+      tip.hidden = false;
+      tip.innerHTML = `<b>Day ${d}</b>${lastRes.map(r => `<div><i style="display:inline-block;width:10px;height:3px;background:${r.type.color};vertical-align:middle;margin-right:6px"></i>${r.type.name}: ${Math.round(r.curve[d] * 100)}%</div>`).join('')}`;
+      const px = xs(d) / W * box.width;
+      tip.style.left = Math.min(box.width - 170, px + 12) + 'px';
+      tip.style.top = '10px';
+    };
+    hit.addEventListener('pointermove', move);
+    hit.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+  }
+
+  // Controls
+  let cfg = { ...SUGGESTED };
+  function sync() {
+    for (const k of KEYS) { $(k).value = cfg[k]; $(k + '-v').textContent = k === 'spend' ? cfg[k] + '%' : cfg[k]; }
+    $('free').checked = cfg.free;
+  }
+  let timer;
+  const rerun = () => { clearTimeout(timer); timer = setTimeout(() => render(cfg), 60); };
+  for (const k of KEYS) $(k).addEventListener('input', e => { cfg[k] = +e.target.value; sync(); rerun(); });
+  $('free').addEventListener('change', e => { cfg.free = e.target.checked; rerun(); });
+  $('suggested').addEventListener('click', () => { cfg = { ...SUGGESTED }; sync(); rerun(); });
+  $('current').addEventListener('click', () => { cfg = { ...MOCK }; sync(); rerun(); });
+  sync(); render(cfg);
+  window.LGEconomy = { simulate };
+})();
+</script>

@@ -76,11 +76,13 @@ declare class Canvas {
  * This file only draws them. Who owns what, and what it costs, belongs to the
  * game or the club.
  */
-type Slot = 'skin' | 'hat' | 'frame';
+type Slot = 'skin' | 'hat' | 'frame' | 'buddy';
+/** Which game an item belongs to; `club` items are seasonal and belong to no one game. */
+type ItemGame = GameId | 'club';
 interface Item {
   /** `game.name`. */
   id: string;
-  game: GameId;
+  game: ItemGame;
   slot: Slot;
   name: string;
   /** The hat every player has in this game from the start. */
@@ -99,13 +101,20 @@ interface Item {
   draw?: (c: Canvas) => void;
   /** Frames: which of the item's colours fills a background cell. */
   fill?: (x: number, y: number) => number;
+  /** Seasonal items: the days of the year they drop, as `MM-DD`, inclusive. */
+  season?: {
+    from: string;
+    to: string;
+  };
 }
-/** Every item: each game's skins, then hats, then frames. */
+/** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
+declare function inSeason(day: string | Date): Item[];
+/** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
 declare const items: Item[];
 declare function itemById(id: string | undefined): Item | undefined;
 declare const GAMES: GameId[];
 /** A game's items. */
-declare function gameItems(game: GameId): Item[];
+declare function gameItems(game: ItemGame): Item[];
 /** The hat every player wears in a game until they put something else on. */
 declare function freeItem(game: GameId): Item;
 /**
@@ -151,6 +160,8 @@ interface Owned {
   tally?: number;
   /** Pins earned and stuck on it (see ./pins), at most three. */
   pins?: string[];
+  /** A seasonal copy's drop day, `YYYY-MM-DD`; it is part of what the copy is. */
+  date?: string;
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -261,6 +272,11 @@ declare function starter(name: string, game: GameId): Owned;
  * drop time and stored with the copy — never from anything a player picks.
  */
 declare function roll(seed: string, game: GameId): Owned;
+/**
+ * A seasonal drop: one of the hats in season on `day` (`YYYY-MM-DD`), rolled
+ * like a capsule and stamped with the day. Null when nothing is in season.
+ */
+declare function rollSeason(seed: string, day: string): Owned | null;
 /** Which slot a copy goes in. */
 declare function slotOf(o: Owned): Slot | undefined;
 
@@ -285,7 +301,8 @@ type PixelGrid = number[][];
  *  9 tongue       10 accent        11 accent shade    12 trim
  * 13 belly        14 leaf          15 leaf shade      16 gold
  * 17 gold shade   18 red           19 deep shade
- * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's
+ * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's,
+ * 50–58 the buddy's
  */
 type ColorToken = number;
 interface Palette {
@@ -324,8 +341,10 @@ interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
+  /** A tiny pet that sits beside him. */
+  buddy?: string;
   /** The owned copies behind those items, if known: finish, scuff, print. */
-  owned?: Partial<Record<'skin' | 'hat' | 'frame', Owned>>;
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', Owned>>;
 }
 interface RenderOptions {
   size?: number;
@@ -582,6 +601,12 @@ declare const FRAME_HEIGHT: number;
 interface AnimationFrame {
   /** FRAME_HEIGHT rows of FRAME_WIDTH colours; null is transparent. */
   colors: (string | null)[][];
+  /**
+   * Which worn item each pixel belongs to: 0 none, 1 skin, 2 hat, 3 frame,
+   * 4 buddy (`FRAME_SLOTS`). A shader uses it to run each copy's finish on
+   * that copy's own pixels (see ./shine).
+   */
+  slots: number[][];
   /** How long the frame shows. */
   ms: number;
 }
@@ -616,6 +641,8 @@ declare const EMOTE_UNLOCKS: {
  * drawn, so it works for every eye part.
  */
 declare function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid;
+/** The order of `AnimationFrame.slots`, from 1. */
+declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy"];
 /**
  * Builds the frames of a move for the guy `input` would render as. Takes the
  * same options as `toSvgString` (game, equip, parts, palette).
@@ -734,4 +761,82 @@ declare function guyOneIn(config: AvatarConfig): number;
 declare function copyOneIn(o: Owned): number;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, LUCKY_ODDS, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toSvgString, traitOdds, wearOf, withItems };
+//#region src/look.d.ts
+/**
+ * Keeping rarity real.
+ *
+ * A guy's rare traits only mean something if nobody can choose them. Two
+ * rules make that so:
+ *
+ * 1. **Draw the guy from a seed, not the name on the board.** A name can be
+ *    typed and changed, so anyone could try names until a rare guy came out,
+ *    and a rename would change him. The club makes a random seed once
+ *    (`makeSeed`), keeps it with the player, and draws from that:
+ *    `toSvgString(seed, …)`, `starter(seed, game)`. The name stays a label.
+ * 2. **A picker offers only common parts, plus the player's own.** A part
+ *    someone rolled stays theirs to keep; a rare part they didn't roll can't be
+ *    picked.
+ *
+ * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
+ * the parts can't silently turn a saved look into someone else.
+ */
+/** A slot in a look code: its letter, its config key and its weights. */
+declare const SLOTS: readonly [readonly ["h", "head", number[]], readonly ["e", "eyes", number[]], readonly ["m", "mouth", number[]], readonly ["c", "cheeks", number[]], readonly ["t", "hair", number[]], readonly ["b", "body", number[]], readonly ["a", "accessory", number[]], readonly ["p", "palette", any[]]];
+type LookSlot = (typeof SLOTS)[number][1];
+type Look = Partial<Record<LookSlot, number>>;
+/**
+ * A random seed to draw a new player's guy from, made once and kept. 12
+ * characters of base 36, about 62 bits.
+ */
+declare function makeSeed(): string;
+/** Which options a player may pick in a slot: every common one, and their own. */
+declare function pickable(own: AvatarConfig, slot: LookSlot): number[];
+/** Whether a look only uses parts this player may pick. */
+declare function allowed(own: AvatarConfig, look: Look): boolean;
+/** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
+declare function encodeLook(look: Look): string;
+/**
+ * A code back into a look, or null for anything that isn't a version-2 code
+ * this library can draw: an old seven-number code from before 0.2, a part out
+ * of range, or (given the player's own guy) a rare part they didn't roll.
+ */
+declare function decodeLook(code: string, own?: AvatarConfig): Look | null;
+/** A player's guy: from their seed, with their picked look laid over it. */
+declare function lookOf(seed: string, code?: string): AvatarConfig;
+
+//#endregion
+//#region src/share.d.ts
+/**
+ * A card to share a copy: the guy wearing it, big, and what makes it rare.
+ * 1200×630, the size link previews use, as one SVG string with no fonts or
+ * images to fetch, so a server can turn it into a PNG for an og:image.
+ */
+interface ShareOptions {
+  /** The player's name, shown as a label. The guy is drawn from `input`. */
+  name?: string;
+  /** Small line at the bottom, like the site's address. */
+  footer?: string;
+}
+declare function toShareSvg(input: string, copy: Owned, options?: ShareOptions): string;
+
+//#endregion
+//#region src/shine.d.ts
+/**
+ * A frame as the shader reads it: its colours, and for each pixel the finish,
+ * scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+ */
+declare function shineData(frame: AnimationFrame, owned?: AvatarConfig['owned']): {
+  colors: Uint8Array;
+  info: Uint8Array;
+};
+interface Shine {
+  /** The 16×20 canvas the shader draws into; copy it out with drawImage. */
+  canvas: HTMLCanvasElement | OffscreenCanvas;
+  /** Draws a frame with its copies' finishes `ms` into the shimmer. */
+  draw(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): void;
+}
+/** One shader to share across a page or a game, or null without WebGL. */
+declare function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine | null;
+
+//#endregion
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, TraitOdds, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, wearOf, withItems };
