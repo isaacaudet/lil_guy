@@ -2109,8 +2109,8 @@ const PAINT = {
 	},
 	"tempered": (x, y, l, p) => {
 		const blue = DEEP_BLUE_PRINTS.includes(p) ? .9 : .3 + p % 7 / 25;
-		const r = cellNoise(p, x, y, 1);
-		const c = r < blue ? rgb$1("#2F5FD0") : r < blue + .35 ? rgb$1("#D1A73A") : rgb$1("#9AA2AC");
+		const r = cellNoise(p, Math.floor((x + 1) / 3), Math.floor((y + 1) / 3), 1) * .55 + (x + y + p) % 14 / 14 * .45;
+		const c = r < blue ? rgb$1("#2F5FD0") : r < blue + .35 ? rgb$1("#D1A73A") : rgb$1("#8E5CC9");
 		return shaded(c, l);
 	},
 	"nebula": (x, y, l, p) => {

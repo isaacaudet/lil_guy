@@ -223,9 +223,11 @@ const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, origina
     return shaded(c, l);
   },
   'tempered': (x, y, l, p) => {
+    // Heat tint: blue, straw gold and violet pooling in patches along a
+    // diagonal, the way colours run on tempered steel, rather than speckle.
     const blue = DEEP_BLUE_PRINTS.includes(p) ? 0.9 : 0.3 + (p % 7) / 25;
-    const r = cellNoise(p, x, y, 1);
-    const c = r < blue ? rgb('#2F5FD0') : r < blue + 0.35 ? rgb('#D1A73A') : rgb('#9AA2AC');
+    const r = cellNoise(p, Math.floor((x + 1) / 3), Math.floor((y + 1) / 3), 1) * 0.55 + ((x + y + p) % 14) / 14 * 0.45;
+    const c = r < blue ? rgb('#2F5FD0') : r < blue + 0.35 ? rgb('#D1A73A') : rgb('#8E5CC9');
     return shaded(c, l);
   },
   'nebula': (x, y, l, p) => {
