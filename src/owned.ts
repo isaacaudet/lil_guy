@@ -79,6 +79,24 @@ export function wearOf(scuff: number) {
 /** The famous prints. A Tempered copy with one of these comes out nearly all blue. */
 export const DEEP_BLUE_PRINTS = [661, 670, 321, 387, 955];
 
+/**
+ * Tempered steel's tints, darkest to lightest. The print picks one; the famous
+ * Deep Blue prints are the only all-blue ones.
+ */
+const TINTS: Record<string, [string, string, string]> = {
+  'Steel': ['#3A5FC0', '#86A8E8', '#E2BC5A'],
+  'Rose': ['#B8456F', '#F09AB8', '#F2CF7A'],
+  'Emerald': ['#16806A', '#4FCB9E', '#CFE68A'],
+  'Copper': ['#94401F', '#E0773A', '#F6C978'],
+  'Violet': ['#5A3CB0', '#9F82F0', '#7FC6F2'],
+  'Deep Blue': ['#1B3A9E', '#2F5FD0', '#6F9BF5'],
+};
+
+/** A Tempered copy's tint, from its print. */
+export function temperTint(print: number): string {
+  return DEEP_BLUE_PRINTS.includes(print) ? 'Deep Blue' : ['Steel', 'Rose', 'Emerald', 'Copper', 'Violet'][print % 5];
+}
+
 /** A Nebula copy's look, from its print: three rare ones, otherwise one of four. */
 export function nebulaPhase(print: number): string {
   const p = print % 20;
@@ -106,7 +124,7 @@ export function nameOf(o: Owned): string {
   const tally = o.tally !== undefined ? 'Tallied ' : '';
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
-    : o.finish === 'tempered' && special(o) ? 'Deep Blue' : FINISHES[o.finish].name;
+    : o.finish === 'tempered' ? (special(o) ? 'Deep Blue' : `${temperTint(o.print)} Tempered`) : FINISHES[o.finish].name;
   return `${tally}${base} | ${look}`;
 }
 
@@ -223,12 +241,11 @@ const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, origina
     return shaded(c, l);
   },
   'tempered': (x, y, l, p) => {
-    // Heat tint: blue, straw gold and violet pooling in patches along a
-    // diagonal, the way colours run on tempered steel, rather than speckle.
-    const blue = DEEP_BLUE_PRINTS.includes(p) ? 0.9 : 0.3 + (p % 7) / 25;
-    const r = cellNoise(p, Math.floor((x + 1) / 3), Math.floor((y + 1) / 3), 1) * 0.55 + ((x + y + p) % 14) / 14 * 0.45;
-    const c = r < blue ? rgb('#2F5FD0') : r < blue + 0.35 ? rgb('#D1A73A') : rgb('#8E5CC9');
-    return shaded(c, l);
+    // Clean diagonal bands of heat tint, in the tint the print picks; the
+    // print also sets where the bands fall.
+    const stops = TINTS[temperTint(p)];
+    const band = Math.floor((((x + y + (p % 11)) % 12) + 12) % 12 / 3);
+    return shaded(rgb(stops[[0, 1, 2, 1][band]]), l);
   },
   'nebula': (x, y, l, p) => {
     const phase = nebulaPhase(p);

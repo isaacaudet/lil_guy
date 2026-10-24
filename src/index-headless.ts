@@ -10,7 +10,7 @@ export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPal
 export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 export { items, itemById, gameItems, freeItem, dress, withItems, GAMES } from './items';
 export type { Item, Slot } from './items';
-export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, slotOf, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
+export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
 export type { Owned, Finish, Grade } from './owned';
 export { paint } from './paint';
 export { animate, frameAt, drawFrame, toAnimatedSvg, closeEyes, MOVES, HEADROOM, FRAME_WIDTH, FRAME_HEIGHT, EMOTE_UNLOCKS } from './animate';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, FINISHES, type Owned } from '../owned';
+import { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, temperTint, FINISHES, type Owned } from '../owned';
 import { dress, freeItem, GAMES } from '../items';
 import { resolve } from '../resolve';
 import { compose } from '../compose';
@@ -33,6 +33,13 @@ describe('owned copies', () => {
     expect(nameOf({ item: 'puttsies.ball', finish: 'nebula', scuff: 0.01, print: 20, tally: 0 }))
       .toBe('Tallied Golf ball | Red Giant');
     expect(nameOf({ item: 'stackdle.block', finish: 'tempered', scuff: 0.1, print: 661 })).toBe('Toy block | Deep Blue');
+  });
+
+  it('give Tempered a tint from the print, so copies differ', () => {
+    const tints = new Set([0, 1, 2, 3, 4].map(p => temperTint(p)));
+    expect(tints.size).toBe(5);
+    expect(temperTint(661)).toBe('Deep Blue');
+    expect(nameOf({ item: 'stackdle.block', finish: 'tempered', scuff: 0.1, print: 1 })).toBe('Toy block | Rose Tempered');
   });
 });
 
