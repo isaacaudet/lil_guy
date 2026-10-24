@@ -4,12 +4,265 @@ import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
 
+//#region src/parts/art.d.ts
+/** A small drawing: rows of tokens, not necessarily 16 wide. */
+
+/** A small drawing: rows of tokens, not necessarily 16 wide. */
+type Stamp = number[][]; //#endregion
+//#region src/parts/canvas.d.ts
+interface RowExtent {
+  left: number;
+  right: number;
+}
+/**
+ * The grid a guy is being drawn on, plus the measurements every part needs to
+ * sit properly on whichever shape it landed on: where the crown is, how wide
+ * each row is, where the eyes go.
+ *
+ * Measurements are taken from the bare silhouette once, before anything is
+ * worn, so a hat cannot change where the next part thinks the head is.
+ */
+declare class Canvas {
+  readonly grid: PixelGrid;
+  /** Per-row span of the bare body, or null for rows it doesn't reach. */
+  readonly rows: (RowExtent | null)[];
+  /** First row of the body. */
+  readonly crown: number;
+  /** Last row of the body (feet excluded). */
+  readonly bottom: number;
+  /** Row the bottom of the eyes sits on. */
+  readonly eyeLine: number;
+  /** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
+  readonly centre: number;
+  private readonly body;
+  /**
+   * The silhouette is everything the starting drawing covers — a plain body,
+   * or a skin like a jar or a golf ball, which is drawn in its own colours.
+   */
+  constructor(grid: PixelGrid, eyeLine: number);
+  inside(x: number, y: number): boolean;
+  /** Whether the bare silhouette covers this cell. */
+  isBody(x: number, y: number): boolean;
+  get(x: number, y: number): number;
+  set(x: number, y: number, token: number): void;
+  /** First row the bare body covers in this column, or null. */
+  topOf(x: number): number | null;
+  /** First row at least `min` wide — where ears can sit on a pointed head. */
+  shoulder(min?: number): number;
+  /**
+   * Draws a stamp with its top-left at (x, y). `onBody` keeps it to the bare
+   * silhouette, which is what stops a face from hanging off a narrow head.
+   */
+  draw(s: Stamp, x: number, y: number, onBody?: boolean): void;
+  /** Left column that centres a stamp on the body. */
+  centred(s: Stamp): number;
+  /** Repaints every body cell in a row. */
+  paintRow(y: number, token: number): void;
+} //#endregion
+//#region src/items.d.ts
+/**
+ * Items: things a player earns or buys in a DLE Club game and wears
+ * everywhere. Each game has
+ *
+ * - two skins, which turn the guy into one of the game's own objects (a jar,
+ *   a golf ball, a traffic cone) while keeping his face
+ * - three hats, one of them free: every player has it from the start
+ * - a frame, the backdrop behind him
+ *
+ * An item is the design. A copy someone owns adds a finish, a float and a
+ * pattern seed (see ./owned), which is what makes one copy worth more than
+ * another. Items are drawn in their own colours (the `1`–`9` characters),
+ * listed with the item, and a finish repaints them. The free hats use the
+ * guy's own accent colour, so they still vary by name.
+ *
+ * This file only draws them. Who owns what, and what it costs, belongs to the
+ * game or the club.
+ */
+type Slot = 'skin' | 'hat' | 'frame';
+interface Item {
+  /** `game.name`. */
+  id: string;
+  game: GameId;
+  slot: Slot;
+  name: string;
+  /** The hat every player has in this game from the start. */
+  free?: boolean;
+  /** Colours for the art's `1`–`9`. */
+  colors: string[];
+  /** A skin's outline colour, replacing the one worked out from the palette. */
+  outline?: string;
+  /** Skins: the body, drawn on the full 16x16 grid. */
+  art?: Stamp;
+  /** Skins: the row the bottom of the eyes sits on. */
+  eyes?: number;
+  /** Skins: which of the item's colours arms and feet are drawn in, or none. */
+  limb?: number;
+  /** Hats: draws onto the head. */
+  draw?: (c: Canvas) => void;
+  /** Frames: which of the item's colours fills a background cell. */
+  fill?: (x: number, y: number) => number;
+}
+/** Every item: each game's skins, then hats, then frames. */
+declare const items: Item[];
+declare function itemById(id: string | undefined): Item | undefined;
+declare const GAMES: GameId[];
+/** A game's items. */
+declare function gameItems(game: GameId): Item[];
+/** The hat every player wears in a game until they put something else on. */
+declare function freeItem(game: GameId): Item;
+/**
+ * Puts items on a resolved guy. Naming a game puts on that game's free hat —
+ * the player's own copy of it when their `name` is given. Then each `equip`
+ * entry, an item id or an encoded owned copy, takes its slot.
+ */
+declare function dress(config: AvatarConfig, options?: Pick<RenderOptions, 'game' | 'equip'>, name?: string): AvatarConfig;
+/** Adds the equipped items' own colours to a palette. */
+declare function withItems(palette: Palette, config: AvatarConfig): Palette;
+
+//#endregion
+//#region src/owned.d.ts
+/**
+ * Owned copies of items, the way CS:GO does skins.
+ *
+ * An item (`puttsies.ball`) is a design. A copy someone owns adds:
+ *
+ * - a **finish**: the paint job. Stock is common; Fade, Case Hardened,
+ *   Doppler and Gold are progressively rarer
+ * - a **float** between 0 and 1: how worn it is. Low is pristine, high is
+ *   scuffed. The wear tiers (Factory New … Battle-Scarred) are ranges of it,
+ *   and the scuffs really show: paint chips off as the float rises
+ * - a **pattern** between 0 and 999: where the finish lands. Most patterns
+ *   are ordinary; a few are famous (an all-blue Case Hardened, a Ruby or
+ *   Sapphire Doppler)
+ * - optionally a **StatTrak** counter
+ *
+ * Two copies of the same item are almost never the same: the float alone has
+ * millions of values. Everything is deterministic from the stored numbers, so
+ * a copy looks the same everywhere it is drawn.
+ */
+type Finish = 'stock' | 'fade' | 'case-hardened' | 'doppler' | 'gold';
+interface Owned {
+  item: string;
+  finish: Finish;
+  float: number;
+  pattern: number;
+  stattrak?: number;
+}
+declare const GRADES: readonly [{
+  readonly id: "mil-spec";
+  readonly name: "Mil-Spec";
+  readonly color: "#4B69FF";
+}, {
+  readonly id: "restricted";
+  readonly name: "Restricted";
+  readonly color: "#8847FF";
+}, {
+  readonly id: "classified";
+  readonly name: "Classified";
+  readonly color: "#D32CE6";
+}, {
+  readonly id: "covert";
+  readonly name: "Covert";
+  readonly color: "#EB4B4B";
+}, {
+  readonly id: "exceedingly-rare";
+  readonly name: "★ Exceedingly Rare";
+  readonly color: "#E4AE39";
+}];
+type Grade = (typeof GRADES)[number];
+/**
+ * Each finish: its grade, the chance a case drop rolls it, and the float range
+ * it can come in. Like CS:GO's Fade, the flashy finishes only exist barely
+ * worn, so a Battle-Scarred Doppler is not a thing.
+ */
+declare const FINISHES: Record<Finish, {
+  name: string;
+  grade: number;
+  odds: number;
+  floats: [number, number];
+}>;
+declare const WEAR: readonly [{
+  readonly name: "Factory New";
+  readonly short: "FN";
+  readonly max: 0.07;
+}, {
+  readonly name: "Minimal Wear";
+  readonly short: "MW";
+  readonly max: 0.15;
+}, {
+  readonly name: "Field-Tested";
+  readonly short: "FT";
+  readonly max: 0.38;
+}, {
+  readonly name: "Well-Worn";
+  readonly short: "WW";
+  readonly max: 0.45;
+}, {
+  readonly name: "Battle-Scarred";
+  readonly short: "BS";
+  readonly max: 1.01;
+}];
+declare function wearOf(float: number): {
+  readonly name: "Factory New";
+  readonly short: "FN";
+  readonly max: 0.07;
+} | {
+  readonly name: "Minimal Wear";
+  readonly short: "MW";
+  readonly max: 0.15;
+} | {
+  readonly name: "Field-Tested";
+  readonly short: "FT";
+  readonly max: 0.38;
+} | {
+  readonly name: "Well-Worn";
+  readonly short: "WW";
+  readonly max: 0.45;
+} | {
+  readonly name: "Battle-Scarred";
+  readonly short: "BS";
+  readonly max: 1.01;
+};
+/** The famous patterns. A Case Hardened with one of these comes out nearly all blue. */
+declare const BLUE_GEMS: number[];
+declare function dopplerPhase(pattern: number): string;
+/** What makes this copy special beyond its finish, if anything. */
+declare function special(o: Owned): string | undefined;
+declare function gradeOf(o: Owned): Grade;
+/** The name as it would show on an inventory card. */
+declare function nameOf(o: Owned): string;
+/**
+ * A copy as one short string, to store or put in a URL:
+ * `puttsies.ball~doppler~0.0123456~20` or `…~20~st412`.
+ */
+declare function encode(o: Owned): string;
+declare function decode(s: string): Owned | null;
+/**
+ * The copy every player has from the start: their game's free hat, stock, with
+ * a float and pattern taken from their name. Everyone gets one, and everyone's
+ * is a little different — a lucky name gets a 0.003 Factory New.
+ */
+declare function starter(name: string, game: GameId): Owned;
+/**
+ * Opens a case for a game: one of its items (the free hat aside), with a
+ * finish, float, pattern and maybe StatTrak, all rolled from `seed`.
+ *
+ * The seed decides everything, so the same seed always opens the same thing.
+ * In production the seed must come from the server — a random value made at
+ * drop time and stored with the copy — never from anything a player picks.
+ */
+declare function roll(seed: string, game: GameId): Owned;
+/** Which slot a copy goes in. */
+declare function slotOf(o: Owned): Slot | undefined;
+
+//#endregion
 //#region src/types.d.ts
 /**
-* A 16x16 grid where each cell is a colour token. Tokens are roles, not
-* colours — "body", "blush", "hat" — and a palette decides what each looks
-* like, so every part works in every colourway.
-*/
+ * Paints one cell of an owned item: its finish, then its wear. Chips land in
+ * places fixed by the pattern, so a copy always wears the same way, and how
+ * many show is the float. `glint` is set once the first Factory New glint has
+ * been placed.
+ */
 /**
  * A 16x16 grid where each cell is a colour token. Tokens are roles, not
  * colours — "body", "blush", "hat" — and a palette decides what each looks
@@ -60,6 +313,8 @@ interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
+  /** The owned copies behind those items, if known: finish, float, pattern. */
+  owned?: Partial<Record<'skin' | 'hat' | 'frame', Owned>>;
 }
 interface RenderOptions {
   size?: number;
@@ -72,7 +327,11 @@ interface RenderOptions {
    * every game, so a player is recognisable everywhere.
    */
   game?: GameId;
-  /** Item ids to wear, at most one per slot; later ids win. Unknown ids are ignored. */
+  /**
+   * What to wear, at most one per slot; later entries win. Each entry is an
+   * item id (`puttsies.ball`) or an owned copy from `encode`
+   * (`puttsies.ball~doppler~0.0123456~20`). Anything unrecognised is ignored.
+   */
   equip?: string[];
   /**
    * Accessible name for the avatar. Omit when the avatar sits beside the name
@@ -81,7 +340,9 @@ interface RenderOptions {
    */
   title?: string;
 }
-declare const GRID_SIZE = 16; //#endregion
+declare const GRID_SIZE = 16;
+
+//#endregion
 //#region src/lil-guy.d.ts
 interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "children"> {
   /**
@@ -191,7 +452,9 @@ interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "chil
  * <LilGuy name="alice" parts={{ hair: 2, eyes: 0 }} />
  * ```
  */
-declare const LilGuy: React$4.ForwardRefExoticComponent<LilGuyProps & React$4.RefAttributes<HTMLDivElement>>; //#endregion
+declare const LilGuy: React$4.ForwardRefExoticComponent<LilGuyProps & React$4.RefAttributes<HTMLDivElement>>;
+
+//#endregion
 //#region src/avatar.d.ts
 type ImageLoadingStatus$1 = "idle" | "loading" | "loaded" | "error";
 type AvatarContextValue = {
@@ -416,11 +679,6 @@ declare const SHADE_COUNT = 3;
 declare function shadePalette(palette: Palette, shade: number): Palette;
 
 //#endregion
-//#region src/parts/art.d.ts
-/** A small drawing: rows of tokens, not necessarily 16 wide. */
-type Stamp = number[][];
-
-//#endregion
 //#region src/parts/heads.d.ts
 /**
  * Body silhouettes. Only the fill is drawn here: the outline, the soft shading
@@ -447,16 +705,7 @@ declare const heads: Head[];
 
 //#endregion
 //#region src/parts/eyes.d.ts
-/**
- * Eyes, drawn as a pair and centred on the seam. The bottom row of each
- * drawing sits on the head's eye line, so taller eyes grow upwards into the
- * forehead rather than down into the mouth.
- *
- * Every pair keeps the same spacing — the inner edges four columns apart —
- * which is the wide-set look that reads as friendly. Any eye with a solid
- * dark area gets a white catchlight: a flat dark square with no shine is what
- * made the old set look dead-eyed.
- */
+/** Eyes with attitude: cool, smug, fired up. Bottom row sits on the eye line. */
 interface Eyes {
   name: string;
   art: Stamp;
@@ -465,11 +714,7 @@ declare const eyes: Eyes[];
 
 //#endregion
 //#region src/parts/mouths.d.ts
-/**
- * Mouths, centred on the seam, top row one below the eye line. Every one of
- * them is pleased about something: there are no frowns, no bared teeth and no
- * flat lines here, so no eyes-and-mouth pairing can come out glum.
- */
+/** Mouths with attitude. Top row one below the eye line. */
 interface Mouth {
   name: string;
   art: Stamp;
@@ -478,67 +723,12 @@ declare const mouths: Mouth[];
 
 //#endregion
 //#region src/parts/cheeks.d.ts
-/**
- * Cheeks sit on the row just under the eyes, outside them, and are drawn
- * before the mouth so a wide grin can cut through them.
- */
+/** Marks under the eyes. Drawn before the mouth. */
 interface Cheeks {
   name: string;
   art: Stamp;
 }
 declare const cheeks: Cheeks[];
-
-//#endregion
-//#region src/parts/canvas.d.ts
-interface RowExtent {
-  left: number;
-  right: number;
-}
-/**
- * The grid a guy is being drawn on, plus the measurements every part needs to
- * sit properly on whichever shape it landed on: where the crown is, how wide
- * each row is, where the eyes go.
- *
- * Measurements are taken from the bare silhouette once, before anything is
- * worn, so a hat cannot change where the next part thinks the head is.
- */
-declare class Canvas {
-  readonly grid: PixelGrid;
-  /** Per-row span of the bare body, or null for rows it doesn't reach. */
-  readonly rows: (RowExtent | null)[];
-  /** First row of the body. */
-  readonly crown: number;
-  /** Last row of the body (feet excluded). */
-  readonly bottom: number;
-  /** Row the bottom of the eyes sits on. */
-  readonly eyeLine: number;
-  /** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
-  readonly centre: number;
-  private readonly body;
-  /**
-   * The silhouette is everything the starting drawing covers — a plain body,
-   * or a skin like a jar or a golf ball, which is drawn in its own colours.
-   */
-  constructor(grid: PixelGrid, eyeLine: number);
-  inside(x: number, y: number): boolean;
-  /** Whether the bare silhouette covers this cell. */
-  isBody(x: number, y: number): boolean;
-  get(x: number, y: number): number;
-  set(x: number, y: number, token: number): void;
-  /** First row the bare body covers in this column, or null. */
-  topOf(x: number): number | null;
-  /** First row at least `min` wide — where ears can sit on a pointed head. */
-  shoulder(min?: number): number;
-  /**
-   * Draws a stamp with its top-left at (x, y). `onBody` keeps it to the bare
-   * silhouette, which is what stops a face from hanging off a narrow head.
-   */
-  draw(s: Stamp, x: number, y: number, onBody?: boolean): void;
-  /** Left column that centres a stamp on the body. */
-  centred(s: Stamp): number;
-  /** Repaints every body cell in a row. */
-  paintRow(y: number, token: number): void;
-}
 
 //#endregion
 //#region src/parts/hair.d.ts
@@ -593,65 +783,13 @@ interface Accessory {
 declare const accessories: Accessory[];
 
 //#endregion
-//#region src/items.d.ts
+//#region src/paint.d.ts
 /**
- * Items: things a player earns or buys in a DLE Club game and wears
- * everywhere. Each game has
- *
- * - a skin, which turns the guy into the game's own object (a jar, a golf
- *   ball, a toy block) while keeping his face
- * - two hats: a free one, worn by default in that game, and a rare one
- * - a frame, the backdrop behind him
- *
- * and every skin, rare hat and frame also comes in a gold edition, which adds
- * a sparkle. Items are drawn in their own colours (the `1`–`9` characters),
- * listed with the item, so a golf ball is white whatever the guy's palette.
- * The free hats use the guy's own accent colour, so they still vary by name.
- *
- * This file only draws them. Who owns what, and what it costs, belongs to the
- * game or the club.
+ * Turns a composed grid into colours. Most cells take their token's palette
+ * colour; a cell belonging to an owned item is repainted with that copy's
+ * finish and wear.
  */
-type Slot = 'skin' | 'hat' | 'frame';
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
-interface Item {
-  /** `game.name`, with `.gold` on the end for a gold edition. */
-  id: string;
-  game: GameId;
-  slot: Slot;
-  name: string;
-  rarity: Rarity;
-  /** Colours for the art's `1`–`9`. */
-  colors: string[];
-  /** A skin's outline colour, replacing the one worked out from the palette. */
-  outline?: string;
-  /** Gold editions sparkle. */
-  shine?: boolean;
-  /** Skins: the body, drawn on the full 16x16 grid. */
-  art?: Stamp;
-  /** Skins: the row the bottom of the eyes sits on. */
-  eyes?: number;
-  /** Skins: which of the item's colours arms and feet are drawn in, or none. */
-  limb?: number;
-  /** Hats: draws onto the head. */
-  draw?: (c: Canvas) => void;
-  /** Frames: which of the item's colours fills a background cell. */
-  fill?: (x: number, y: number) => number;
-}
-/** Every item, in game order: skins, hats and frames, then the gold editions. */
-declare const items: Item[];
-declare function itemById(id: string | undefined): Item | undefined;
-declare const GAMES: GameId[];
-/** A game's items. */
-declare function gameItems(game: GameId): Item[];
-/** The hat every player wears in a game until they put something else on. */
-declare function freeItem(game: GameId): Item;
-/**
- * Puts items on a resolved guy: the game's free hat if a game is named, then
- * whatever `equip` lists, one per slot.
- */
-declare function dress(config: AvatarConfig, options?: Pick<RenderOptions, 'game' | 'equip'>): AvatarConfig;
-/** Adds the equipped items' own colours to a palette. */
-declare function withItems(palette: Palette, config: AvatarConfig): Palette;
+declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette): (string | null)[][];
 
 //#endregion
 //#region src/utils/merge-refs.d.ts
@@ -678,5 +816,5 @@ declare const DEFAULT_COLORS_DARK: readonly ["#db2777", "#d97706", "#2563eb", "#
 declare function getColor(colors: readonly string[], index: number): string;
 
 //#endregion
-export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GAMES, GRID_SIZE, GameId, Intensity3D, Item, LilGuy, LilGuyProps, Palette, PixelGrid, Rarity, RenderOptions, SHADE_COUNT, Slot, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getColor, getPalette, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs, withItems };
+export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BLUE_GEMS, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, Intensity3D, Item, LilGuy, LilGuyProps, Owned, Palette, PixelGrid, RenderOptions, SHADE_COUNT, Slot, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

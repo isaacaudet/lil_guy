@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~40 billion happy little characters. Zero dependencies. ~17 KB gzipped.
+  ~22 billion lil guys. Zero dependencies. ~21 KB gzipped.
 </p>
 
 <p align="center">
@@ -212,15 +212,13 @@ pair('cat ears', [
 ]),
 ```
 
-A few rules keep every combination likeable:
+A few rules keep every combination good-looking:
 
-- **Faces follow kawaii proportions.** Eyes sit at or below the middle with a big forehead above, set wide apart, with the mouth small and between them
-- **Every mouth is happy.** There are no frowns, flat lines or bared teeth, so no pairing of eyes and mouth can come out glum
-- **Every solid eye has a catchlight.** A flat dark square with no shine is what reads as dead-eyed
-- **Colours are light and clean.** No greys, olives or murky browns
+- **Attitude, not baby faces.** Eyes are chill, side-eyed, squinting or fired up, with shades, star eyes and laser eyes as the rare ones; mouths smirk, grin with teeth, stick a tongue out or chew gum. No blush, hearts or lashes
+- **Bold colours.** Punchy, saturated bodies with near-black outlines. On the darkest bodies the eyes and mouth glow cream instead of dark, so they always read
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-13 shapes × 11 eyes × 11 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 32 colourways × 3 tones × 2 (mirrored) = **40,590,950,400** characters. Weighting makes the sweet parts common and the busier ones rare, so the set behaves like about 7.7 billion equally-likely guys.
+13 shapes × 10 eyes × 9 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 24 colourways × 3 tones × 2 (mirrored) = **22,643,712,000** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 3.1 billion equally-likely guys.
 
 ### Pinning parts
 
@@ -229,15 +227,15 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 | Slot | Values |
 |---|---|
 | `head` | `0-12` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut |
-| `eyes` | `0-10` |
-| `mouth` | `0-10` |
-| `cheeks` | `0-4` bare, blush, dot, rosy, freckles |
+| `eyes` | `0-9` chill, beady, stare, side-eye, squint, wink, fired up, shades, star, laser |
+| `mouth` | `0-8` smirk, flat, toothy, tongue, fang, grin, ooh, gritted, gum |
+| `cheeks` | `0-4` bare, freckles, scar, band-aid, war paint |
 | `hair` | `0-27` whatever sits on top: ears, a sprout, a hat |
 | `body` | `0-7` markings |
 | `accessory` | `0-7` glasses, scarf, collar, bow tie, … |
 | `arms` | `0-2` none, by the sides, waving |
 | `feet` | `0-4` nubs, tiptoes, wide, socks, tucked |
-| `shade` | `0-2` pastel, as picked, vivid |
+| `shade` | `0-2` soft, as picked, vivid |
 | `flip` | `boolean` mirrors the finished guy |
 
 ```tsx
@@ -248,43 +246,63 @@ The parts are exported (`heads`, `eyes`, `mouths`, `cheeks`, `hair`, `bodies`, `
 
 ## Game items
 
-Every DLE Club game has items a player can wear, here and in every other game.
+Every DLE Club game has things a player can wear, here and in every other game.
 The guy underneath — face, shape, colours — never changes, so a player is
 recognisable everywhere.
 
-| Game | Skin | Free hat | Rare hat | Frame |
-|---|---|---|---|---|
-| Amountle | Jar of gems | Gem | Gem crown | Gem field |
-| Halfsies | Clay pot | Half pot | Scale dish | Kitchen teal |
-| Stackdle | Toy block | Little block | Tower | Toy box |
-| Flipsies | Water bottle | Bottle cap | Landed bottle | Bullseye |
-| Puttsies | Golf ball | Golf visor | Pin flag | Patchwork |
-| Weighsies | Cheese wheel | Cheese wedge | Balance | Lavender |
-| Cutsies | Kiwi | Kiwi slice | Chef hat | Kiwi slices |
-| Tiltsies | Hamster ball | Hamster ears | Hamster buddy | Toy maze |
-| Trackdle | Racer | Pit cap | Race helmet | Checkered flag |
+| Game | Skins | Hats (first is free) | Frame |
+|---|---|---|---|
+| Amountle | Jar of gems, Crystal | Gem, Gem crown, Big gem | Gem field |
+| Halfsies | Clay pot, Kitchen scale | Half pot, Scale dish, Pot helmet | Kitchen teal |
+| Stackdle | Toy block, Triangle | Little block, Tower, Ring | Toy box |
+| Flipsies | Water bottle, Bullseye | Bottle cap, Landed bottle, Bullseye beret | Bullseye |
+| Puttsies | Golf ball, Quilt pillow | Golf visor, Pin flag, Golf tam | Patchwork |
+| Weighsies | Cheese wheel, Kettlebell | Cheese wedge, Balance, Dumbbell | Lavender |
+| Cutsies | Kiwi, Melon slice | Kiwi slice, Chef hat, Orange half | Kiwi slices |
+| Tiltsies | Hamster ball, Hamster | Hamster ears, Hamster buddy, Sunflower seed | Toy maze |
+| Trackdle | Racer, Traffic cone | Pit cap, Race helmet, Trophy | Checkered flag |
 
-- A **skin** turns the guy into the game's object and keeps his face (and glasses)
-- The **free hat** is worn by default in its game, in the player's own accent colour
-- **Rare hats**, skins and frames are drawn in the item's own colours
-- Every skin, rare hat and frame has a **gold edition** (`<id>.gold`, legendary), with a sparkle and, for frames, a dark ground
+A **skin** turns the guy into the game's object and keeps his face.
 
-63 items: 9 common, 9 rare, 18 epic and 27 legendary.
+### Owned copies: finish, float, pattern
+
+An item is a design. A copy someone owns is the item plus:
+
+| | |
+|---|---|
+| **Finish** | Stock (79.92%), Fade (15.98%), Case Hardened (1.6%), Doppler (1.6%), Gold (0.9%). Fade, Doppler and Gold only exist in Factory New or Minimal Wear |
+| **Float** | 0–1, how worn it is. Factory New < 0.07 < Minimal Wear < 0.15 < Field-Tested < 0.38 < Well-Worn < 0.45 < Battle-Scarred. The wear really shows: paint chips off as it rises, and a Factory New copy keeps a glint |
+| **Pattern** | 0–999, where the finish lands, and where the chips go. A few are famous: Case Hardened 661, 670, 321, 387 and 955 come out almost all blue (Blue Gem); a Doppler's pattern picks its phase, and Ruby, Sapphire and Black Pearl are rare |
+| **StatTrak™** | an optional counter, on 10% of drops |
+
+Grades follow from the finish: Mil-Spec, Restricted, Classified, Covert (a
+famous pattern lifts a copy one grade), ★ Exceedingly Rare (Gold, with a
+sparkle).
+
+**Everyone gets one.** `starter(name, game)` is the copy of a game's free hat
+every player has from the start: stock, with a float and pattern taken from
+their name, so everyone's is a little different and a lucky name gets a
+Factory New. `roll(seed, game)` opens a case. The seed decides everything, so
+in production it must be made on the server at drop time and stored with the
+copy.
+
+A copy is one short string, to store or put in a URL:
 
 ```ts
-toSvgString("alice", { game: "puttsies" });                       // wears the golf visor
-toSvgString("alice", { equip: ["puttsies.ball", "puttsies.flag"] }); // golf ball skin, pin flag
-toSvgString("alice", { game: "trackdle", equip: ["trackdle.racer.gold", "trackdle.flag.gold"] });
+import { roll, encode, decode, nameOf, wearOf, gradeOf } from "lil_guy";
+
+const copy = roll(serverSeed, "puttsies");
+const saved = encode(copy);          // "puttsies.ball~doppler~0.0123456~20"
+nameOf(copy);                        // "Golf ball | Doppler (Ruby)"
+wearOf(copy.float).name;             // "Factory New"
+gradeOf(copy).name;                  // "Covert"
+
+toSvgString("alice", { game: "puttsies" });         // wears her own free visor
+toSvgString("alice", { equip: [saved] });           // wears this exact copy
 ```
 
-```tsx
-<LilGuy name="alice" game="tiltsies" equip={["tiltsies.ball"]} />
-```
-
-`items` lists the catalog (`id`, `game`, `slot`, `name`, `rarity`) for a shop or
-a locker; `gameItems(game)` and `freeItem(game)` narrow it. This library only
-draws items — who owns which, and what they cost, belongs to the game or the
-club.
+`equip` takes item ids or encoded copies. This library only draws them and
+rolls them; who owns which, and what it costs, belongs to the game or the club.
 
 ### Upgrading from 0.1
 

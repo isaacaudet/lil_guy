@@ -134,8 +134,8 @@ export function composeBase(config: AvatarConfig): PixelGrid {
 }
 
 /**
- * A four-point twinkle in a corner the guy leaves empty: the mark of a gold
- * edition. Top right first, then top left.
+ * A four-point twinkle in a corner the guy leaves empty: the mark of a Gold
+ * finish. Top right first, then top left.
  */
 function sparkle(grid: PixelGrid): void {
   for (const [x, y] of [[13, 2], [2, 2]]) {
@@ -205,7 +205,7 @@ export function compose(config: AvatarConfig): PixelGrid {
   // authored. The sparkle and the frame go on after, so they never flip.
   if (config.flip) for (const row of c.grid) row.reverse();
 
-  if ([skin, hat, frame].some(i => i?.shine)) sparkle(c.grid);
+  if (Object.values(config.owned ?? {}).some(o => o?.finish === 'gold')) sparkle(c.grid);
 
   if (frame?.slot === 'frame') {
     for (let y = 0; y < GRID_SIZE; y++) {

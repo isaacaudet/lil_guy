@@ -96,15 +96,17 @@ describe('compose', () => {
     for (let head = 0; head < heads.length; head++) {
       for (let h = 0; h < hair.length; h++) {
         for (let e = 0; e < eyes.length; e++) {
-          const inked = (g: PixelGrid) => g.flat().filter(v => v === T.EYE || v === T.WHITE || v === T.RED).length;
-          const drawn = inked(guy({ head, hair: h, eyes: e, mouth: 9 }));
+          const used = new Set(eyes[e].art.flat().filter(Boolean));
+          const inked = (g: PixelGrid) => g.flat().filter(v => used.has(v)).length;
+          const drawn = inked(guy({ head, hair: h, eyes: e, mouth: 1 }));
           const art = eyes[e].art.flat().filter(Boolean).length;
           // Hats may add their own white or red pixels, never take the eye's.
           if (drawn < art) wrong.push(`${heads[head].name} + ${hair[h].name} clips ${eyes[e].name}`);
         }
         for (let m = 0; m < mouths.length; m++) {
           const g = guy({ head, hair: h, mouth: m });
-          const drawn = g.flat().filter(v => v === T.MOUTH || v === T.TONGUE || v === T.WHITE).length;
+          const usedM = new Set(mouths[m].art.flat().filter(Boolean));
+          const drawn = g.flat().filter(v => usedM.has(v)).length;
           const art = mouths[m].art.flat().filter(Boolean).length;
           if (drawn < art) wrong.push(`${heads[head].name} + ${hair[h].name} clips ${mouths[m].name}`);
         }

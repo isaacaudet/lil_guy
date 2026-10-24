@@ -55,6 +55,8 @@ export interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
+  /** The owned copies behind those items, if known: finish, float, pattern. */
+  owned?: Partial<Record<'skin' | 'hat' | 'frame', import('./owned').Owned>>;
 }
 
 export interface RenderOptions {
@@ -68,7 +70,11 @@ export interface RenderOptions {
    * every game, so a player is recognisable everywhere.
    */
   game?: GameId;
-  /** Item ids to wear, at most one per slot; later ids win. Unknown ids are ignored. */
+  /**
+   * What to wear, at most one per slot; later entries win. Each entry is an
+   * item id (`puttsies.ball`) or an owned copy from `encode`
+   * (`puttsies.ball~doppler~0.0123456~20`). Anything unrecognised is ignored.
+   */
   equip?: string[];
   /**
    * Accessible name for the avatar. Omit when the avatar sits beside the name

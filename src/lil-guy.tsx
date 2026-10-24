@@ -3,8 +3,9 @@ import { resolve } from "./resolve";
 import { dress, withItems } from "./items";
 import { compose, composeBase } from "./compose";
 import { hash } from "./hash";
-import { getPalette, resolveColor, shadePalette } from "./palette";
-import type { ColorToken, GameId, Intensity3D, Palette } from "./types";
+import { getPalette, shadePalette } from "./palette";
+import { paint } from "./paint";
+import type { GameId, Intensity3D, Palette } from "./types";
 import { GRID_SIZE } from "./types";
 
 // ============================================================================
@@ -227,16 +228,17 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 
 		// Resolve config and compose pixel grid
 		const { rects, shutRects, bgColor, config, hashValue } = React.useMemo(() => {
-			const cfg = dress(resolve(name, partOverrides), { game, equip });
+			const cfg = dress(resolve(name, partOverrides), { game, equip }, name);
 			const palette = withItems(customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade), cfg);
 			const grid = compose(cfg);
 			const hv = hash(name);
 
 			const toRects = (source: number[][], keyPrefix: string) => {
 				const out: React.ReactElement[] = [];
+				const colors = paint(source, cfg, palette);
 				for (let y = 0; y < GRID_SIZE; y++) {
 					for (let x = 0; x < GRID_SIZE; x++) {
-						const color = resolveColor(palette, source[y][x] as ColorToken);
+						const color = colors[y][x];
 						if (color) {
 							out.push(
 								<rect

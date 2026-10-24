@@ -47,13 +47,13 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game a skin, a free hat, a rare hat and a frame, each with a gold edition', () => {
+  it('gives every game two skins, three hats (one free) and a frame', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
-      const count = (slot: string, rarity: string) => own.filter(i => i.slot === slot && i.rarity === rarity).length;
-      expect([count('skin', 'epic'), count('hat', 'common'), count('hat', 'rare'), count('frame', 'epic')]).toEqual([1, 1, 1, 1]);
-      expect([count('skin', 'legendary'), count('hat', 'legendary'), count('frame', 'legendary')]).toEqual([1, 1, 1]);
-      expect(freeItem(game).rarity).toBe('common');
+      const count = (slot: string) => own.filter(i => i.slot === slot).length;
+      expect([count('skin'), count('hat'), count('frame')]).toEqual([2, 3, 1]);
+      expect(own.filter(i => i.free).map(i => i.slot)).toEqual(['hat']);
+      expect(freeItem(game).free).toBe(true);
     }
   });
 
@@ -87,13 +87,15 @@ describe('skins', () => {
     for (const skin of skins) {
       for (const hat of [undefined, ...hats.map(h => h.id)]) {
         for (let e = 0; e < eyes.length; e++) {
-          const g = guy({ skin: skin.id, hat, eyes: e, mouth: 9 });
-          const drawn = g.flat().filter(v => v === T.EYE || v === T.WHITE || v === T.RED).length;
+          const g = guy({ skin: skin.id, hat, eyes: e, mouth: 1 });
+          const used = new Set(eyes[e].art.flat().filter(Boolean));
+          const drawn = g.flat().filter(v => used.has(v)).length;
           if (drawn < eyes[e].art.flat().filter(Boolean).length) wrong.push(`${skin.id} + ${hat} clips ${eyes[e].name}`);
         }
         for (let m = 0; m < mouths.length; m++) {
           const g = guy({ skin: skin.id, hat, mouth: m });
-          const drawn = g.flat().filter(v => v === T.MOUTH || v === T.TONGUE || v === T.WHITE).length;
+          const usedM = new Set(mouths[m].art.flat().filter(Boolean));
+          const drawn = g.flat().filter(v => usedM.has(v)).length;
           if (drawn < mouths[m].art.flat().filter(Boolean).length) wrong.push(`${skin.id} + ${hat} clips ${mouths[m].name}`);
         }
       }
@@ -120,7 +122,7 @@ describe('skins', () => {
       const under = new Set<number>();
       for (let y = e - 2; y <= e + 1; y++) for (let x = 4; x <= 11; x++) under.add(skin.art![y][x]);
       for (const p of palettes) for (let shade = 0; shade < SHADE_COUNT; shade++) {
-        const ink = shadePalette(p, shade).colors[T.EYE];
+        const ink = withItems(shadePalette(p, shade), { ...BASE, skin: skin.id }).colors[T.EYE];
         for (const token of under) {
           const hex = skin.colors[token - 101];
           if (contrast(ink, hex) < 3.5) wrong.push(`${skin.id} colour ${token - 100} vs ${p.name}/${shade}`);
@@ -142,9 +144,7 @@ describe('everything worn together', () => {
             const g = guy({ ...body, hat, arms, feet, accessory: 1 });
             const label = `${JSON.stringify(body)} + ${hat} arms ${arms} feet ${feet}`;
             if (touchesEdge(g)) wrong.push(`${label} touches the edge`);
-            // A gold edition's sparkle floats free of the guy by design.
-            const allowed = [body.skin, hat].some(id => itemById(id)?.shine) ? 2 : 1;
-            if (pieces(g) > allowed) wrong.push(`${label} is in ${pieces(g)} pieces`);
+            if (pieces(g) > 1) wrong.push(`${label} is in ${pieces(g)} pieces`);
           }
         }
       }
@@ -174,8 +174,8 @@ describe('dress', () => {
   });
 
   it('lets equipped items win, one per slot, and ignores unknown ids', () => {
-    const d = dress(resolve('alice'), { game: 'puttsies', equip: ['puttsies.flag', 'puttsies.ball', 'nope', 'trackdle.flag.gold'] });
-    expect([d.hat, d.skin, d.frame]).toEqual(['puttsies.flag', 'puttsies.ball', 'trackdle.flag.gold']);
+    const d = dress(resolve('alice'), { game: 'puttsies', equip: ['puttsies.flag', 'puttsies.ball', 'nope', 'trackdle.flag'] });
+    expect([d.hat, d.skin, d.frame]).toEqual(['puttsies.flag', 'puttsies.ball', 'trackdle.flag']);
   });
 
   it('leaves an undressed guy exactly as he was', () => {
@@ -184,7 +184,7 @@ describe('dress', () => {
   });
 
   it('draws the same dressed guy every time', () => {
-    const opts = { game: 'trackdle' as const, equip: ['trackdle.racer.gold', 'trackdle.flag'] };
+    const opts = { game: 'trackdle' as const, equip: ['trackdle.racer~gold~0.0100000~7', 'trackdle.flag'] };
     expect(toSvgString('kai', opts)).toBe(toSvgString('kai', opts));
   });
 });

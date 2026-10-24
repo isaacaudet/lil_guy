@@ -1,4 +1,4 @@
-import { FOOT_STYLES, GAMES, GRID_SIZE, SHADE_COUNT, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getPalette, hair, hash, hashNth, heads, itemById, items, mouths, palettes, resolve, resolveColor, shadePalette, withItems } from "./palette-BCqBhF7W.js";
+import { BLUE_GEMS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems } from "./paint-B0pmfSFV.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
@@ -117,14 +117,15 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 		const cfg = dress(resolve(name, partOverrides), {
 			game,
 			equip
-		});
+		}, name);
 		const palette = withItems(customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade), cfg);
 		const grid = compose(cfg);
 		const hv = hash(name);
 		const toRects = (source, keyPrefix) => {
 			const out = [];
+			const colors$1 = paint(source, cfg, palette);
 			for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
-				const color = resolveColor(palette, source[y][x]);
+				const color = colors$1[y][x];
 				if (color) out.push(/* @__PURE__ */ jsx(
 					"rect",
 					// the body highlight: a soft tint of the body colour
@@ -489,12 +490,12 @@ AvatarImage.displayName = "AvatarImage";
 * neighbours that share a colour — these avatars are large flat areas, so
 * merging runs cuts the rect count by well over half.
 */
-function rowRuns(grid, palette, y) {
+function rowRuns(colors, y) {
 	const runs = [];
 	let start = -1;
 	let current = null;
 	for (let x = 0; x <= GRID_SIZE; x++) {
-		const color = x < GRID_SIZE ? resolveColor(palette, grid[y][x]) : null;
+		const color = x < GRID_SIZE ? colors[y][x] : null;
 		if (color === current) continue;
 		if (current !== null) runs.push({
 			x: start,
@@ -518,13 +519,13 @@ function escapeText(value) {
 * identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = dress(resolve(input, options.parts), options);
+	const config = dress(resolve(input, options.parts), options, input);
 	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
-	const grid = compose(config);
+	const colors = paint(compose(config), config, palette);
 	const size = options.size ?? 128;
 	const pixelSize = size / GRID_SIZE;
 	const rects = [];
-	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -637,5 +638,5 @@ function getColor(colors, index) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GAMES, GRID_SIZE, LilGuy, SHADE_COUNT, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getColor, getPalette, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs, withItems };
+export { Avatar, AvatarFallback, AvatarImage, BLUE_GEMS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, LilGuy, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.js.map

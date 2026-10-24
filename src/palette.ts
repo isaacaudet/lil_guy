@@ -23,38 +23,30 @@ interface Colourway {
 }
 
 const COLOURWAYS: Colourway[] = [
-  { name: 'Peach',        body: '#FFB38A', accent: '#7FC8F8', trim: '#FFF3E0' },
-  { name: 'Bubblegum',    body: '#FF9EC7', accent: '#8C7CF0', trim: '#FFFFFF' },
-  { name: 'Butter',       body: '#FFE07A', accent: '#FF7F96', trim: '#FFFFFF' },
-  { name: 'Mint',         body: '#8FE3B8', accent: '#FF8FB1', trim: '#FFF6C8' },
-  { name: 'Sky',          body: '#8CCBFF', accent: '#FFC857', trim: '#FFFFFF' },
-  { name: 'Lilac',        body: '#C9A7F5', accent: '#FFD166', trim: '#FFF0F6' },
-  { name: 'Coral',        body: '#FF8E7F', accent: '#5CC8C0', trim: '#FFF6E8' },
-  { name: 'Lime',         body: '#C6E86E', accent: '#FF8C69', trim: '#FFFFFF' },
-  { name: 'Aqua',         body: '#78DCE8', accent: '#FF7AA8', trim: '#FFF8D6' },
-  { name: 'Tangerine',    body: '#FFA552', accent: '#6C8CF5', trim: '#FFF1D6' },
-  { name: 'Strawberry',   body: '#FF7A93', accent: '#7FD1AE', trim: '#FFF0F3' },
-  { name: 'Periwinkle',   body: '#9DAEFF', accent: '#FF9F7A', trim: '#FFFFFF' },
-  { name: 'Cream',        body: '#FFF1D0', accent: '#FF8FAB', trim: '#9AD9F5' },
-  { name: 'Cocoa',        body: '#C69276', accent: '#FF9FB5', trim: '#FFF1DC' },
-  { name: 'Caramel',      body: '#E8B074', accent: '#7EC4CF', trim: '#FFF6E6' },
-  { name: 'Grape',        body: '#A68BF0', accent: '#7FE0C8', trim: '#FFF4C2' },
-  { name: 'Teal',         body: '#5ED3C3', accent: '#FFB86B', trim: '#FFFFFF' },
-  { name: 'Snow',         body: '#F2F5FA', accent: '#7BB8FF', trim: '#FFB5C8' },
-  { name: 'Sage',         body: '#A9D6A0', accent: '#F7A072', trim: '#FFF8E7' },
-  { name: 'Rose',         body: '#F6A6C1', accent: '#6FC2B8', trim: '#FFFFFF' },
-  { name: 'Honey',        body: '#FFC94D', accent: '#E86A8E', trim: '#FFF4D6' },
-  { name: 'Seafoam',      body: '#A8F0D8', accent: '#9A8CF5', trim: '#FFFFFF' },
-  { name: 'Blush',        body: '#FFC4C4', accent: '#7AA9F0', trim: '#FFFFFF' },
-  { name: 'Ocean',        body: '#6FB4F2', accent: '#FFDD6B', trim: '#FFFFFF' },
-  { name: 'Plum',         body: '#D48BD8', accent: '#FFD36B', trim: '#FFF0FA' },
-  { name: 'Sunflower',    body: '#FFD84A', accent: '#6FA8F0', trim: '#FFFFFF' },
-  { name: 'Melon',        body: '#B8F28C', accent: '#FF7A8A', trim: '#FFF5E0' },
-  { name: 'Lavender',     body: '#B8B6F7', accent: '#FF9EBB', trim: '#FFFFFF' },
-  { name: 'Pumpkin',      body: '#FF9446', accent: '#7C6BE0', trim: '#FFE9A8' },
-  { name: 'Cotton Candy', body: '#A9DCFF', accent: '#FFA3D1', trim: '#FFFFFF' },
-  { name: 'Matcha',       body: '#9CCB7A', accent: '#E9A2C8', trim: '#FFF7E0' },
-  { name: 'Ruby',         body: '#F2697E', accent: '#FFD56B', trim: '#FFF3E0' },
+  { name: 'Tomato',   body: '#E8483D', accent: '#2E3A59', trim: '#F2C230' },
+  { name: 'Tangerine',body: '#F28A2E', accent: '#2D4F9E', trim: '#FFF1D6' },
+  { name: 'Gold',     body: '#F2C230', accent: '#C2302B', trim: '#2E3A59' },
+  { name: 'Lime',     body: '#9ACD32', accent: '#6B2FA3', trim: '#FFFFFF' },
+  { name: 'Emerald',  body: '#2EB872', accent: '#F2C230', trim: '#1E2A3A' },
+  { name: 'Teal',     body: '#1FAFA6', accent: '#F25C54', trim: '#FFFFFF' },
+  { name: 'Cyan',     body: '#3DB8F5', accent: '#F28A2E', trim: '#1E2A3A' },
+  { name: 'Cobalt',   body: '#3D6FE0', accent: '#F2C230', trim: '#FFFFFF' },
+  { name: 'Violet',   body: '#8A54E8', accent: '#3DE0B0', trim: '#FFE066' },
+  { name: 'Grape',    body: '#B04FC9', accent: '#F2C230', trim: '#FFFFFF' },
+  { name: 'Hot Pink', body: '#EF4F9A', accent: '#2E3A59', trim: '#FFE066' },
+  { name: 'Coral',    body: '#FF7A66', accent: '#1FAFA6', trim: '#FFFFFF' },
+  { name: 'Mint',     body: '#5FE0B0', accent: '#E8483D', trim: '#1E2A3A' },
+  { name: 'Sky',      body: '#6FC2FF', accent: '#E8483D', trim: '#FFFFFF' },
+  { name: 'Plum',     body: '#7A3F9E', accent: '#F28A2E', trim: '#FFE066' },
+  { name: 'Rust',     body: '#C2602B', accent: '#3DB8F5', trim: '#FFF1D6' },
+  { name: 'Slate',    body: '#5E7290', accent: '#F2C230', trim: '#FFFFFF' },
+  { name: 'Charcoal', body: '#4A4E5E', accent: '#E8483D', trim: '#F2C230' },
+  { name: 'Bone',     body: '#E8DEC8', accent: '#2D4F9E', trim: '#E8483D' },
+  { name: 'Sand',     body: '#D8B07A', accent: '#2EB872', trim: '#FFFFFF' },
+  { name: 'Cherry',   body: '#D93250', accent: '#F2C230', trim: '#FFFFFF' },
+  { name: 'Olive',    body: '#8C9A3A', accent: '#E8483D', trim: '#FFF1D6' },
+  { name: 'Ice',      body: '#BDEAF5', accent: '#3D6FE0', trim: '#E8483D' },
+  { name: 'Lava',     body: '#FF5A1F', accent: '#2E3A59', trim: '#FFE066' },
 ];
 
 // ---------------------------------------------------------------- colour math
@@ -137,8 +129,11 @@ function shadeOf(hex: string, depth = 0.12): string {
 function derive(name: string, body: string, accent: string, trim: string): Palette {
   const [h] = toHsl(body);
   const outlineHue = towards(h, 285, 25);
-  const outline = fromHsl([outlineHue, 0.42, 0.3]);
-  const ink = fromHsl([outlineHue, 0.38, 0.14]);
+  const outline = fromHsl([outlineHue, 0.35, 0.1]);
+  // Dark eyes on most bodies; on a body too dark for them, the eyes and mouth
+  // glow a light cream instead, which reads as a look rather than a mistake.
+  const dark = fromHsl([outlineHue, 0.38, 0.08]);
+  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark : '#FFF1D6';
 
   // A rosy pink, deepened until it reads on this body.
   let blush = '#FF8FA8';
@@ -199,7 +194,7 @@ export function shadePalette(palette: Palette, shade: number): Palette {
   const tone = (hex: string) => {
     if (shade === 0) return mix(hex, '#FFFFFF', 0.3);
     const [h, s, l] = toHsl(hex);
-    return fromHsl([h, Math.min(0.8, s + 0.04), l - 0.08]);
+    return fromHsl([h, Math.min(0.8, s + 0.04), l > 0.4 ? l - 0.08 : l]);
   };
   const c = palette.colors;
   return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);

@@ -55,67 +55,64 @@ const headWeights = [
 	2
 ];
 const eyeWeights = [
+	6,
 	5,
 	5,
 	4,
 	4,
+	3,
 	2,
-	3,
-	3,
 	2,
 	1,
-	2,
-	2
+	1
 ];
 const mouthWeights = [
-	5,
+	6,
+	4,
 	4,
 	3,
 	3,
-	2,
-	2,
-	2,
-	1,
-	1,
 	3,
+	2,
+	2,
 	1
 ];
 const cheekWeights = [
-	5,
+	12,
 	3,
 	2,
-	1,
-	2
+	2,
+	1
 ];
 const hairWeights = [
-	9,
-	4,
-	4,
-	2,
-	2,
-	1,
-	2,
-	4,
-	2,
-	2,
-	2,
-	1,
-	1,
+	8,
+	3,
 	2,
 	1,
 	2,
 	3,
-	2,
-	2,
-	2,
+	1,
 	2,
 	1,
 	1,
 	1,
 	1,
 	1,
+	3,
 	1,
-	1
+	1,
+	4,
+	1,
+	4,
+	5,
+	3,
+	1,
+	1,
+	1,
+	1,
+	2,
+	2,
+	2
 ];
 const bodyWeights = [
 	9,
@@ -158,7 +155,7 @@ const shadeWeights = [
 	2
 ];
 /** No colourway is more "correct" than another. */
-const paletteWeights = new Array(32).fill(1);
+const paletteWeights = new Array(24).fill(1);
 /**
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
@@ -546,37 +543,24 @@ const eyes_ = (name, rows) => ({
 	art: stamp(rows)
 });
 const eyes = [
-	eyes_("beans", ["e....e", "e....e"]),
-	eyes_("shiny", ["we....we", "ee....ee"]),
-	eyes_("happy", [".e....e.", "e.e..e.e"]),
-	eyes_("sparkle", [
-		"we....we",
-		"ee....ee",
+	eyes_("chill", ["ss....ss", "ee....ee"]),
+	eyes_("beady", ["e....e", "e....e"]),
+	eyes_("stare", ["we....we", "ee....ee"]),
+	eyes_("side-eye", ["ss....ss", "we....we"]),
+	eyes_("squint", ["ee....ee"]),
+	eyes_("wink", ["we......", "ee...eee"]),
+	eyes_("fired up", [
+		"o......o",
+		".o....o.",
 		"ee....ee"
 	]),
-	eyes_("wink", ["we....e.", "ee...e.e"]),
-	eyes_("glossy", [
-		"we....we",
-		"ee....ee",
-		"ew....ew"
+	eyes_("shades", ["weee..weee", ".ee....ee."]),
+	eyes_("star", [
+		".y....y.",
+		"yyy..yyy",
+		".y....y."
 	]),
-	eyes_("content", ["e.e..e.e", ".e....e."]),
-	eyes_("excited", [
-		"e......e",
-		".e....e.",
-		"e......e"
-	]),
-	eyes_("hearts", [
-		"r.r..r.r",
-		"rrr..rrr",
-		".r....r."
-	]),
-	eyes_("lashes", [
-		"e......e",
-		".e....e.",
-		".e....e."
-	]),
-	eyes_("glance", ["ew....ew", "ee....ee"])
+	eyes_("laser", ["rr....rr", "rr....rr"])
 ];
 
 //#endregion
@@ -586,33 +570,19 @@ const mouth = (name, rows) => ({
 	art: stamp(rows)
 });
 const mouths = [
-	mouth("smile", ["m..m", ".mm."]),
-	mouth("cat", ["m.mm.m", ".m..m."]),
-	mouth("laugh", [
+	mouth("smirk", ["...m", "mmm."]),
+	mouth("flat", ["mmmm"]),
+	mouth("toothy", ["mwwwwm", ".mmmm."]),
+	mouth("tongue", ["mmmm", "..t."]),
+	mouth("fang", ["mmmm", ".w.."]),
+	mouth("grin", [
 		"mmmm",
 		"mttm",
 		".mm."
 	]),
-	mouth("beak", ["m.m", ".m."]),
-	mouth("blep", [
-		"m..m",
-		".mm.",
-		"..t."
-	]),
-	mouth("grin", ["mmmmmm", ".mttm."]),
-	mouth("fang", ["m..m", ".mw."]),
-	mouth("smirk", ["...m", "mmm."]),
-	mouth("ooh", [
-		".mm.",
-		"mttm",
-		".mm."
-	]),
-	mouth("tiny", [".mm."]),
-	mouth("wobble", [
-		"m.mm.m",
-		".m..m.",
-		"..tt.."
-	])
+	mouth("ooh", ["mm", "mm"]),
+	mouth("gritted", ["mmmmmm", "mwmwmm"]),
+	mouth("gum", ["mm.cc", "...cc"])
 ];
 
 //#endregion
@@ -623,10 +593,10 @@ const cheeks_ = (name, rows) => ({
 });
 const cheeks = [
 	cheeks_("bare", []),
-	cheeks_("blush", ["cc......cc"]),
-	cheeks_("dot", ["c........c"]),
-	cheeks_("rosy", ["cc......cc", ".c......c."]),
-	cheeks_("freckles", ["s.s....s.s"])
+	cheeks_("freckles", ["s.s....s.s"]),
+	cheeks_("scar", [".......o..", "........o."]),
+	cheeks_("band-aid", [".......xx."]),
+	cheeks_("war paint", ["rr......rr"])
 ];
 
 //#endregion
@@ -1186,6 +1156,301 @@ var Canvas = class {
 };
 
 //#endregion
+//#region src/owned.ts
+const GRADES = [
+	{
+		id: "mil-spec",
+		name: "Mil-Spec",
+		color: "#4B69FF"
+	},
+	{
+		id: "restricted",
+		name: "Restricted",
+		color: "#8847FF"
+	},
+	{
+		id: "classified",
+		name: "Classified",
+		color: "#D32CE6"
+	},
+	{
+		id: "covert",
+		name: "Covert",
+		color: "#EB4B4B"
+	},
+	{
+		id: "exceedingly-rare",
+		name: "★ Exceedingly Rare",
+		color: "#E4AE39"
+	}
+];
+/**
+* Each finish: its grade, the chance a case drop rolls it, and the float range
+* it can come in. Like CS:GO's Fade, the flashy finishes only exist barely
+* worn, so a Battle-Scarred Doppler is not a thing.
+*/
+const FINISHES = {
+	"stock": {
+		name: "Stock",
+		grade: 0,
+		odds: 79.92,
+		floats: [0, 1]
+	},
+	"fade": {
+		name: "Fade",
+		grade: 1,
+		odds: 15.98,
+		floats: [0, .08]
+	},
+	"case-hardened": {
+		name: "Case Hardened",
+		grade: 2,
+		odds: 1.6,
+		floats: [0, 1]
+	},
+	"doppler": {
+		name: "Doppler",
+		grade: 2,
+		odds: 1.6,
+		floats: [0, .08]
+	},
+	"gold": {
+		name: "Gold",
+		grade: 4,
+		odds: .9,
+		floats: [0, .08]
+	}
+};
+const WEAR = [
+	{
+		name: "Factory New",
+		short: "FN",
+		max: .07
+	},
+	{
+		name: "Minimal Wear",
+		short: "MW",
+		max: .15
+	},
+	{
+		name: "Field-Tested",
+		short: "FT",
+		max: .38
+	},
+	{
+		name: "Well-Worn",
+		short: "WW",
+		max: .45
+	},
+	{
+		name: "Battle-Scarred",
+		short: "BS",
+		max: 1.01
+	}
+];
+function wearOf(float) {
+	return WEAR.find((w) => float < w.max);
+}
+/** The famous patterns. A Case Hardened with one of these comes out nearly all blue. */
+const BLUE_GEMS = [
+	661,
+	670,
+	321,
+	387,
+	955
+];
+function dopplerPhase(pattern) {
+	const p = pattern % 20;
+	return p === 0 ? "Ruby" : p === 1 ? "Sapphire" : p === 2 ? "Black Pearl" : `Phase ${pattern % 4 + 1}`;
+}
+/** What makes this copy special beyond its finish, if anything. */
+function special(o) {
+	if (o.finish === "case-hardened" && BLUE_GEMS.includes(o.pattern)) return "Blue Gem";
+	if (o.finish === "doppler" && [
+		"Ruby",
+		"Sapphire",
+		"Black Pearl"
+	].includes(dopplerPhase(o.pattern))) return dopplerPhase(o.pattern);
+	return void 0;
+}
+function gradeOf(o) {
+	return GRADES[Math.min(4, FINISHES[o.finish].grade + (special(o) ? 1 : 0))];
+}
+/** The name as it would show on an inventory card. */
+function nameOf(o) {
+	const item = itemById(o.item);
+	const base = item?.name ?? o.item;
+	const st = o.stattrak !== void 0 ? "StatTrak™ " : "";
+	if (o.finish === "stock") return st + base;
+	const phase = o.finish === "doppler" ? ` (${dopplerPhase(o.pattern)})` : "";
+	return `${st}${base} | ${FINISHES[o.finish].name}${phase}`;
+}
+/**
+* A copy as one short string, to store or put in a URL:
+* `puttsies.ball~doppler~0.0123456~20` or `…~20~st412`.
+*/
+function encode(o) {
+	const parts = [
+		o.item,
+		o.finish,
+		o.float.toFixed(7),
+		String(o.pattern)
+	];
+	if (o.stattrak !== void 0) parts.push(`st${o.stattrak}`);
+	return parts.join("~");
+}
+function decode(s) {
+	const [item, finish, float, pattern, st] = s.split("~");
+	if (!itemById(item) || !(finish in FINISHES)) return null;
+	const f = Number(float), p = Number(pattern);
+	if (!(f >= 0 && f <= 1) || !Number.isInteger(p) || p < 0 || p > 999) return null;
+	const o = {
+		item,
+		finish,
+		float: f,
+		pattern: p
+	};
+	if (st?.startsWith("st") && /^\d+$/.test(st.slice(2))) o.stattrak = Number(st.slice(2));
+	return o;
+}
+/** A uniform number in [0, 1) from a string, for deterministic rolls. */
+function unit(seed) {
+	return hash(seed) / 4294967296;
+}
+/**
+* The copy every player has from the start: their game's free hat, stock, with
+* a float and pattern taken from their name. Everyone gets one, and everyone's
+* is a little different — a lucky name gets a 0.003 Factory New.
+*/
+function starter(name, game) {
+	return {
+		item: freeItem(game).id,
+		finish: "stock",
+		float: Math.round(unit(`${name}|${game}|float`) * 1e7) / 1e7,
+		pattern: hash(`${name}|${game}|pattern`) % 1e3
+	};
+}
+/**
+* Opens a case for a game: one of its items (the free hat aside), with a
+* finish, float, pattern and maybe StatTrak, all rolled from `seed`.
+*
+* The seed decides everything, so the same seed always opens the same thing.
+* In production the seed must come from the server — a random value made at
+* drop time and stored with the copy — never from anything a player picks.
+*/
+function roll(seed, game) {
+	const pool = gameItems(game).filter((i) => !i.free);
+	const item = pool[hash(`${seed}|item`) % pool.length];
+	let r = unit(`${seed}|finish`) * 100;
+	let finish = "stock";
+	for (const [id, f] of Object.entries(FINISHES)) {
+		r -= f.odds;
+		if (r < 0) {
+			finish = id;
+			break;
+		}
+	}
+	const [lo, hi] = FINISHES[finish].floats;
+	const float = Math.round((lo + unit(`${seed}|float`) * (hi - lo)) * 1e7) / 1e7;
+	const pattern = hash(`${seed}|pattern`) % 1e3;
+	const o = {
+		item: item.id,
+		finish,
+		float,
+		pattern
+	};
+	if (unit(`${seed}|stattrak`) < .1) o.stattrak = 0;
+	return o;
+}
+/** Which slot a copy goes in. */
+function slotOf(o) {
+	return itemById(o.item)?.slot;
+}
+const rgb = (h) => [
+	1,
+	3,
+	5
+].map((i) => parseInt(h.slice(i, i + 2), 16));
+const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$1 = (a, b, t) => [
+	0,
+	1,
+	2
+].map((i) => a[i] + (b[i] - a[i]) * t);
+const lum = (c) => (.3 * c[0] + .59 * c[1] + .11 * c[2]) / 255;
+/** A well-mixed number in [0, 1) for a cell, so neighbouring cells don't correlate. */
+function cellNoise(...n) {
+	let h = 2654435769;
+	for (const v of n) {
+		h = Math.imul(h ^ v, 2246822507);
+		h = Math.imul(h ^ h >>> 13, 3266489909);
+		h ^= h >>> 16;
+	}
+	return (h >>> 0) / 4294967296;
+}
+/** Shades a finish colour by how light the item's own colour was there, keeping its form. */
+const shaded = (c, l) => mix$1(mix$1(c, [
+	0,
+	0,
+	0
+], .45), c, Math.min(1, l * 1.5));
+const PAINT = {
+	"stock": (_x, _y, _l, _p, original) => original,
+	"fade": (x, y, l, p) => {
+		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
+		const c = t < .5 ? mix$1(rgb("#F5C542"), rgb("#E55AA8"), t * 2) : mix$1(rgb("#E55AA8"), rgb("#7A4BE0"), (t - .5) * 2);
+		return shaded(c, l);
+	},
+	"case-hardened": (x, y, l, p) => {
+		const blue = BLUE_GEMS.includes(p) ? .9 : .3 + p % 7 / 25;
+		const r = cellNoise(p, x, y, 1);
+		const c = r < blue ? rgb("#2F5FD0") : r < blue + .35 ? rgb("#D1A73A") : rgb("#9AA2AC");
+		return shaded(c, l);
+	},
+	"doppler": (x, y, l, p) => {
+		const phase = dopplerPhase(p);
+		const base = phase === "Ruby" ? rgb("#D0102E") : phase === "Sapphire" ? rgb("#1E4FE8") : phase === "Black Pearl" ? rgb("#2A1E3A") : rgb([
+			"#8A2AB0",
+			"#3A2AB0",
+			"#2A6AB0",
+			"#B02A8A"
+		][p % 4]);
+		const c = cellNoise(p, x, y, 2) < .2 ? mix$1(base, rgb("#FFD6F0"), .55) : base;
+		return shaded(c, l);
+	},
+	"gold": (x, y, l) => {
+		if ((x + y) % 6 === 0 && l > .5) return rgb("#FFFBE6");
+		return l > .75 ? rgb("#FFF1B0") : l > .5 ? rgb("#F2C230") : l > .3 ? rgb("#C8901E") : rgb("#7A5212");
+	}
+};
+const PRIMER = rgb("#8B9097");
+/**
+* Paints one cell of an owned item: its finish, then its wear. Chips land in
+* places fixed by the pattern, so a copy always wears the same way, and how
+* many show is the float. `glint` is set once the first Factory New glint has
+* been placed.
+*/
+function paintCell(color, x, y, o, state) {
+	const original = rgb(color);
+	let c = PAINT[o.finish](x, y, lum(original), o.pattern, original);
+	if (cellNoise(o.pattern, x, y, 3) < Math.pow(o.float, .9) * .45) c = mix$1(PRIMER, c, .25);
+	c = mix$1(c, [
+		120,
+		116,
+		112
+	], Math.min(.25, o.float * .3));
+	if (o.float < .07 && !state.glint && lum(c) > .55) {
+		c = [
+			255,
+			255,
+			255
+		];
+		state.glint = true;
+	}
+	return hex(c);
+}
+
+//#endregion
 //#region src/items.ts
 const grid16 = (name, rows) => {
 	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
@@ -1505,6 +1770,292 @@ const skins = [
 			"................",
 			"................"
 		])
+	},
+	{
+		id: "amountle.crystal",
+		game: "amountle",
+		name: "Crystal",
+		eyes: 8,
+		colors: [
+			"#3FD1C1",
+			"#1F9C90",
+			"#A6F4EA",
+			"#FFFFFF"
+		],
+		outline: "#14524C",
+		art: grid16("gem", [
+			"................",
+			"................",
+			"................",
+			"......3311......",
+			".....333111.....",
+			"....43331111....",
+			"...3333311111...",
+			"..333331111112..",
+			"..333311111112..",
+			"..111111111122..",
+			"...1111111122...",
+			"....11111222....",
+			".....111222.....",
+			"......1222......",
+			".......22.......",
+			"................"
+		])
+	},
+	{
+		id: "halfsies.kitchen-scale",
+		game: "halfsies",
+		name: "Kitchen scale",
+		eyes: 8,
+		limb: 1,
+		colors: [
+			"#F4F4F2",
+			"#CFD3D8",
+			"#FFFFFF",
+			"#2B2F38",
+			"#E5484D",
+			"#9AA0A8"
+		],
+		outline: "#3C4048",
+		art: grid16("kitchen scale", [
+			"................",
+			"................",
+			"...6666666666...",
+			"....66666666....",
+			"......2222......",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311114411112..",
+			"..222245542222..",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "stackdle.triangle",
+		game: "stackdle",
+		name: "Triangle",
+		eyes: 10,
+		limb: 1,
+		colors: [
+			"#FFB03B",
+			"#E58A1F",
+			"#FFD27A"
+		],
+		outline: "#7A3E0A",
+		art: grid16("triangle", [
+			"................",
+			"................",
+			".......33.......",
+			"......3311......",
+			"......3311......",
+			".....331111.....",
+			".....331111.....",
+			"....33111111....",
+			"....31111111....",
+			"...3111111112...",
+			"...3111111112...",
+			"..311111111112..",
+			"..311111111112..",
+			".22222222222222.",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "flipsies.bullseye",
+		game: "flipsies",
+		name: "Bullseye",
+		eyes: 8,
+		colors: [
+			"#FFFFFF",
+			"#8EC5F0",
+			"#3E7BE0",
+			"#D9E3EE"
+		],
+		outline: "#1E3F78",
+		art: grid16("bullseye", [
+			"................",
+			"................",
+			"................",
+			".....333333.....",
+			"....33111133....",
+			"...3311111133...",
+			"..331122221133..",
+			"..311222222113..",
+			"..312211112213..",
+			"..312211112213..",
+			"..311222222113..",
+			"..331122221133..",
+			"...3311111133...",
+			"....33333333....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "puttsies.pillow",
+		game: "puttsies",
+		name: "Quilt pillow",
+		eyes: 8,
+		colors: [
+			"#F7B7B0",
+			"#B9E3A8",
+			"#B3D4F5",
+			"#FBE3A1",
+			"#C98A84"
+		],
+		outline: "#6E3E3A",
+		art: grid16("quilt pillow", [
+			"................",
+			"................",
+			"..5..........5..",
+			"..555555555555..",
+			"..511111222225..",
+			"..511111222225..",
+			"..511111222225..",
+			"..511111222225..",
+			"..533333444445..",
+			"..533333444445..",
+			"..533333444445..",
+			"..533333444445..",
+			"..555555555555..",
+			"..5..........5..",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "weighsies.kettlebell",
+		game: "weighsies",
+		name: "Kettlebell",
+		eyes: 8,
+		limb: 1,
+		colors: [
+			"#4A4E5E",
+			"#2E3140",
+			"#6C7286",
+			"#F2C230"
+		],
+		outline: "#14161C",
+		art: grid16("kettlebell", [
+			"................",
+			"................",
+			".....111111.....",
+			"....1......1....",
+			"....1......1....",
+			"....31111112....",
+			"...3111111112...",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"...3114444112...",
+			"....22222222....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "cutsies.melon",
+		game: "cutsies",
+		name: "Melon slice",
+		eyes: 8,
+		colors: [
+			"#F25C6B",
+			"#2EB872",
+			"#2A1B10",
+			"#E8F5D0"
+		],
+		outline: "#5A1A22",
+		art: grid16("melon slice", [
+			"................",
+			"................",
+			"................",
+			"................",
+			".11111111111111.",
+			".13111111111131.",
+			"..311111111113..",
+			"..111111111111..",
+			"..111111111111..",
+			"..111111111111..",
+			"...1111111111...",
+			"...4111111114...",
+			"....44444444....",
+			".....222222.....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "tiltsies.hamster",
+		game: "tiltsies",
+		name: "Hamster",
+		eyes: 8,
+		limb: 2,
+		colors: [
+			"#EDB57D",
+			"#CC8E55",
+			"#FFE7CB",
+			"#FFB3A7"
+		],
+		outline: "#5A3418",
+		art: grid16("hamster", [
+			"................",
+			"................",
+			"...22......22...",
+			"...2421111242...",
+			"...1111111111...",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311111111112..",
+			"..311133331112..",
+			"..311333333112..",
+			"..113333333311..",
+			"...2333333332...",
+			"....22222222....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "trackdle.cone",
+		game: "trackdle",
+		name: "Traffic cone",
+		eyes: 10,
+		colors: [
+			"#FF7A2F",
+			"#D65A1C",
+			"#FFFFFF",
+			"#FFAE73",
+			"#2B2F38"
+		],
+		outline: "#6A2A0C",
+		art: grid16("traffic cone", [
+			"................",
+			".......11.......",
+			".......11.......",
+			"......4112......",
+			"......3333......",
+			".....411112.....",
+			".....411112.....",
+			"....33333333....",
+			"....41111112....",
+			"...4111111112...",
+			"...4111111112...",
+			"...3333333333...",
+			"..411111111112..",
+			".55555555555555.",
+			"................",
+			"................"
+		])
 	}
 ];
 const hats = [
@@ -1512,7 +2063,7 @@ const hats = [
 		id: "amountle.gem",
 		game: "amountle",
 		name: "Gem",
-		rarity: "common",
+		free: true,
 		colors: [],
 		draw: on([
 			".xa.",
@@ -1524,7 +2075,6 @@ const hats = [
 		id: "amountle.crown",
 		game: "amountle",
 		name: "Gem crown",
-		rarity: "rare",
 		colors: [
 			"#FFD25A",
 			"#E0A62E",
@@ -1541,7 +2091,7 @@ const hats = [
 		id: "halfsies.bowl",
 		game: "halfsies",
 		name: "Half pot",
-		rarity: "common",
+		free: true,
 		colors: [],
 		draw: on([
 			".aaaa.",
@@ -1553,7 +2103,6 @@ const hats = [
 		id: "halfsies.scale",
 		game: "halfsies",
 		name: "Scale dish",
-		rarity: "rare",
 		colors: [
 			"#FFFFFF",
 			"#D9DEE6",
@@ -1569,7 +2118,7 @@ const hats = [
 		id: "stackdle.cube",
 		game: "stackdle",
 		name: "Little block",
-		rarity: "common",
+		free: true,
 		colors: [],
 		draw: on([
 			"xxxA",
@@ -1581,7 +2130,6 @@ const hats = [
 		id: "stackdle.tower",
 		game: "stackdle",
 		name: "Tower",
-		rarity: "rare",
 		colors: [
 			"#FF8FB1",
 			"#E0628A",
@@ -1600,7 +2148,7 @@ const hats = [
 		id: "flipsies.cap",
 		game: "flipsies",
 		name: "Bottle cap",
-		rarity: "common",
+		free: true,
 		colors: [],
 		draw: on(["xaxa", "aAaA"])
 	},
@@ -1608,7 +2156,6 @@ const hats = [
 		id: "flipsies.landed",
 		game: "flipsies",
 		name: "Landed bottle",
-		rarity: "rare",
 		colors: [
 			"#C4E8FB",
 			"#93CDEE",
@@ -1626,7 +2173,7 @@ const hats = [
 		id: "puttsies.visor",
 		game: "puttsies",
 		name: "Golf visor",
-		rarity: "common",
+		free: true,
 		colors: [],
 		draw: (c) => {
 			const y = c.crown + 1;
@@ -1640,7 +2187,6 @@ const hats = [
 		id: "puttsies.flag",
 		game: "puttsies",
 		name: "Pin flag",
-		rarity: "rare",
 		colors: [
 			"#8A8F99",
 			"#E5484D",
@@ -1656,7 +2202,7 @@ const hats = [
 		id: "weighsies.wedge",
 		game: "weighsies",
 		name: "Cheese wedge",
-		rarity: "common",
+		free: true,
 		colors: [
 			"#FFC94A",
 			"#E3A52E",
@@ -1672,7 +2218,6 @@ const hats = [
 		id: "weighsies.scale",
 		game: "weighsies",
 		name: "Balance",
-		rarity: "rare",
 		colors: [
 			"#2B2F38",
 			"#FFFFFF",
@@ -1688,7 +2233,7 @@ const hats = [
 		id: "cutsies.slice",
 		game: "cutsies",
 		name: "Kiwi slice",
-		rarity: "common",
+		free: true,
 		colors: [
 			"#86CF55",
 			"#C9F08F",
@@ -1706,7 +2251,6 @@ const hats = [
 		id: "cutsies.chef",
 		game: "cutsies",
 		name: "Chef hat",
-		rarity: "rare",
 		colors: ["#FFFFFF", "#DCE3EC"],
 		draw: on([
 			".1111.",
@@ -1718,7 +2262,7 @@ const hats = [
 		id: "tiltsies.ears",
 		game: "tiltsies",
 		name: "Hamster ears",
-		rarity: "common",
+		free: true,
 		colors: ["#EDB57D", "#FFB3A7"],
 		draw: onPair(["11", "12"], 1)
 	},
@@ -1726,7 +2270,6 @@ const hats = [
 		id: "tiltsies.buddy",
 		game: "tiltsies",
 		name: "Hamster buddy",
-		rarity: "rare",
 		colors: [
 			"#EDB57D",
 			"#FFE7CB",
@@ -1743,7 +2286,7 @@ const hats = [
 		id: "trackdle.cap",
 		game: "trackdle",
 		name: "Pit cap",
-		rarity: "common",
+		free: true,
 		colors: ["#23262D", "#FFFFFF"],
 		draw: (c) => {
 			capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
@@ -1756,25 +2299,165 @@ const hats = [
 		id: "trackdle.helmet",
 		game: "trackdle",
 		name: "Race helmet",
-		rarity: "rare",
 		colors: [
 			"#FF7A2F",
 			"#D65A1C",
 			"#FFFFFF",
-			"#23262D"
+			"#1C2733",
+			"#6FA8D8"
+		],
+		draw: (c) => {
+			capRows(c, 3, L(1), L(2));
+			const x = Math.floor(c.centre);
+			for (let y$1 = c.crown; y$1 < c.crown + 3; y$1++) {
+				c.set(x - 1, y$1, L(3));
+				c.set(x, y$1, L(3));
+			}
+			const y = c.crown + 3;
+			const r = c.rows[y];
+			for (let vx = r.left; vx <= Math.min(r.right + 1, 14); vx++) c.set(vx, y, L(4));
+			c.set(r.right - 1, y, L(5));
+			c.set(r.right, y, L(5));
+			if (r.left > 1) c.set(r.left - 1, y, L(1));
+		}
+	},
+	{
+		id: "amountle.cluster",
+		game: "amountle",
+		name: "Big gem",
+		colors: [
+			"#3FD1C1",
+			"#1F9C90",
+			"#A6F4EA"
+		],
+		draw: on([
+			".331.",
+			"33111",
+			"31112",
+			".112."
+		])
+	},
+	{
+		id: "halfsies.helmet",
+		game: "halfsies",
+		name: "Pot helmet",
+		colors: [
+			"#E07B4C",
+			"#B85A34",
+			"#F4A77C",
+			"#5E2A1C",
+			"#F6DCBB"
 		],
 		draw: (c) => {
 			capRows(c, 2, L(1), L(2));
-			const x = Math.floor(c.centre);
-			c.set(x - 1, c.crown, L(3));
-			c.set(x, c.crown, L(3));
-			c.set(x - 1, c.crown + 1, L(3));
-			c.set(x, c.crown + 1, L(3));
-			c.paintRow(c.crown + 2, L(4));
 			const r = c.rows[c.crown + 2];
-			c.set(r.left - 1, c.crown + 2, L(4));
-			c.set(r.right + 1, c.crown + 2, L(4));
+			for (let x$1 = r.left - 1; x$1 <= r.right + 1; x$1++) c.set(x$1, c.crown + 2, (x$1 - r.left) % 2 ? L(5) : L(4));
+			const x = Math.floor(c.centre);
+			if (c.crown > 1) {
+				c.set(x - 1, c.crown - 1, L(3));
+				c.set(x, c.crown - 1, L(1));
+			}
 		}
+	},
+	{
+		id: "stackdle.ring",
+		game: "stackdle",
+		name: "Ring",
+		colors: ["#FF8FB1", "#E0628A"],
+		draw: on([
+			".11.",
+			"1..2",
+			"1..2",
+			".22."
+		])
+	},
+	{
+		id: "flipsies.beret",
+		game: "flipsies",
+		name: "Bullseye beret",
+		colors: [
+			"#FFFFFF",
+			"#8EC5F0",
+			"#E5484D"
+		],
+		draw: on([
+			".1111.",
+			"123321",
+			".2222."
+		], 1)
+	},
+	{
+		id: "puttsies.tam",
+		game: "puttsies",
+		name: "Golf tam",
+		colors: [
+			"#2E7D4F",
+			"#1F5C38",
+			"#F2C230",
+			"#E5484D"
+		],
+		draw: on([
+			"..33..",
+			".1411.",
+			"141141",
+			"222222"
+		])
+	},
+	{
+		id: "weighsies.dumbbell",
+		game: "weighsies",
+		name: "Dumbbell",
+		colors: ["#4A4E5E", "#9AA0A8"],
+		draw: on([
+			"1.....1",
+			"1222221",
+			"1.....1"
+		])
+	},
+	{
+		id: "cutsies.orange",
+		game: "cutsies",
+		name: "Orange half",
+		colors: [
+			"#FF9F2E",
+			"#E07B14",
+			"#FFD08A",
+			"#FFF1D6"
+		],
+		draw: on([
+			".1111.",
+			"111112",
+			"343434"
+		])
+	},
+	{
+		id: "tiltsies.seed",
+		game: "tiltsies",
+		name: "Sunflower seed",
+		colors: ["#3A3A42", "#E8E4DA"],
+		draw: on([
+			".1.",
+			"121",
+			"121",
+			"121"
+		], 2)
+	},
+	{
+		id: "trackdle.trophy",
+		game: "trackdle",
+		name: "Trophy",
+		colors: [
+			"#F2C230",
+			"#C8901E",
+			"#FFE9A0"
+		],
+		draw: on([
+			"1.313.1",
+			"1111111",
+			".11111.",
+			"..121..",
+			".22222."
+		])
 	}
 ];
 const frames = [
@@ -1906,69 +2589,21 @@ const frames = [
 		fill: (x, y) => (Math.floor(x / 2) + Math.floor(y / 2)) % 2 ? 1 : 2
 	}
 ];
-const GOLD_RAMP = [
-	"#6E4510",
-	"#A9741C",
-	"#DDA533",
-	"#F7C94F",
-	"#FFE08A",
-	"#FFF4C7"
-];
-function luminance$1(hex) {
-	const [r, g, b] = [
-		1,
-		3,
-		5
-	].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-	return .2126 * r + .7152 * g + .0722 * b;
-}
-/**
-* The same item cast in gold: each colour keeps its place in the light-to-dark
-* order, so the drawing still reads, but every one of them is gold.
-*/
-function gilded(item) {
-	const order = [...new Set(item.colors)].sort((a, b) => luminance$1(a) - luminance$1(b));
-	const step = (hex) => {
-		const rank = order.indexOf(hex);
-		const at = order.length === 1 ? 3 : Math.round(rank / (order.length - 1) * (GOLD_RAMP.length - 2)) + 1;
-		return GOLD_RAMP[at];
-	};
-	if (item.slot === "frame") return {
-		...item,
-		id: `${item.id}.gold`,
-		name: `Gold ${item.name.toLowerCase()}`,
-		rarity: "legendary",
-		colors: item.colors.map((hex, i) => i === 0 ? "#2A2235" : step(hex)),
-		shine: true
-	};
-	return {
-		...item,
-		id: `${item.id}.gold`,
-		name: `Gold ${item.name.toLowerCase()}`,
-		rarity: "legendary",
-		colors: item.colors.map(step),
-		outline: item.outline ? "#5C3A0C" : void 0,
-		shine: true
-	};
-}
-const base = [
-	...skins.map((s) => ({
-		...s,
-		slot: "skin",
-		rarity: "epic"
+/** Every item: each game's skins, then hats, then frames. */
+const items = [
+	...skins.map((i) => ({
+		...i,
+		slot: "skin"
 	})),
-	...hats.map((h) => ({
-		...h,
+	...hats.map((i) => ({
+		...i,
 		slot: "hat"
 	})),
-	...frames.map((f) => ({
-		...f,
-		slot: "frame",
-		rarity: "epic"
+	...frames.map((i) => ({
+		...i,
+		slot: "frame"
 	}))
 ];
-/** Every item, in game order: skins, hats and frames, then the gold editions. */
-const items = [...base, ...base.filter((i) => i.rarity !== "common").map(gilded)];
 const byId = new Map(items.map((i) => [i.id, i]));
 function itemById(id) {
 	return id ? byId.get(id) : void 0;
@@ -1990,20 +2625,42 @@ function gameItems(game) {
 }
 /** The hat every player wears in a game until they put something else on. */
 function freeItem(game) {
-	return items.find((i) => i.game === game && i.rarity === "common");
+	return items.find((i) => i.game === game && i.free);
 }
 /**
-* Puts items on a resolved guy: the game's free hat if a game is named, then
-* whatever `equip` lists, one per slot.
+* Puts items on a resolved guy. Naming a game puts on that game's free hat —
+* the player's own copy of it when their `name` is given. Then each `equip`
+* entry, an item id or an encoded owned copy, takes its slot.
 */
-function dress(config, options = {}) {
-	const out = { ...config };
-	if (options.game) out.hat = freeItem(options.game).id;
-	for (const id of options.equip ?? []) {
-		const item = byId.get(id);
-		if (item) out[item.slot] = item.id;
+function dress(config, options = {}, name) {
+	const out = {
+		...config,
+		owned: { ...config.owned }
+	};
+	if (options.game) {
+		out.hat = freeItem(options.game).id;
+		if (name !== void 0) out.owned.hat = starter(name, options.game);
+	}
+	for (const entry of options.equip ?? []) {
+		const copy = entry.includes("~") ? decode(entry) : null;
+		const item = byId.get(copy ? copy.item : entry);
+		if (!item) continue;
+		out[item.slot] = item.id;
+		if (copy) out.owned[item.slot] = copy;
+		else delete out.owned[item.slot];
 	}
 	return out;
+}
+function contrast$1(a, b) {
+	const lum$1 = (hex$1) => {
+		const c = (i) => {
+			const v = parseInt(hex$1.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+			return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+		};
+		return .2126 * c(0) + .7152 * c(1) + .0722 * c(2);
+	};
+	const [hi, lo] = [lum$1(a), lum$1(b)].sort((x, y) => y - x);
+	return (hi + .05) / (lo + .05);
 }
 /** Adds the equipped items' own colours to a palette. */
 function withItems(palette, config) {
@@ -2015,10 +2672,14 @@ function withItems(palette, config) {
 	]) {
 		const item = itemById(config[slot]);
 		if (!item) continue;
-		item.colors.forEach((hex, i) => {
-			colors[LAYER[slot] + i] = hex;
+		item.colors.forEach((hex$1, i) => {
+			colors[LAYER[slot] + i] = hex$1;
 		});
-		if (slot === "skin" && item.outline) colors[T.OUTLINE] = item.outline;
+		if (slot === "skin") {
+			if (item.outline) colors[T.OUTLINE] = item.outline;
+			const dark = "#15111C", light$1 = "#FFF1D6";
+			colors[T.EYE] = colors[T.MOUTH] = contrast$1(dark, item.colors[0]) >= contrast$1(light$1, item.colors[0]) ? dark : light$1;
+		}
 	}
 	return {
 		name: palette.name,
@@ -2081,11 +2742,11 @@ function light(c) {
 function feet(c, style, limb) {
 	const spec = FOOT_STYLES[style];
 	if (!spec) return;
-	const base$1 = c.rows[c.bottom];
-	if (!base$1) return;
+	const base = c.rows[c.bottom];
+	if (!base) return;
 	const y = c.bottom + 1;
 	const mid = Math.floor(c.centre);
-	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base$1.left && x <= base$1.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
+	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base.left && x <= base.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
 }
 function arms(c, style, limb) {
 	const pose = ARM_STYLES[style];
@@ -2148,8 +2809,8 @@ function composeBase(config) {
 	return c.grid;
 }
 /**
-* A four-point twinkle in a corner the guy leaves empty: the mark of a gold
-* edition. Top right first, then top left.
+* A four-point twinkle in a corner the guy leaves empty: the mark of a Gold
+* finish. Top right first, then top left.
 */
 function sparkle(grid) {
 	for (const [x, y] of [[13, 2], [2, 2]]) {
@@ -2208,11 +2869,7 @@ function compose(config) {
 	if (accessory.layer === "body" && !skin) accessory.draw(c);
 	outline(c.grid);
 	if (config.flip) for (const row of c.grid) row.reverse();
-	if ([
-		skin,
-		hat,
-		frame
-	].some((i) => i?.shine)) sparkle(c.grid);
+	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
 	if (frame?.slot === "frame") {
 		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill(x, y) - 1;
 	}
@@ -2223,204 +2880,156 @@ function compose(config) {
 //#region src/palette.ts
 const COLOURWAYS = [
 	{
-		name: "Peach",
-		body: "#FFB38A",
-		accent: "#7FC8F8",
-		trim: "#FFF3E0"
+		name: "Tomato",
+		body: "#E8483D",
+		accent: "#2E3A59",
+		trim: "#F2C230"
 	},
 	{
-		name: "Bubblegum",
-		body: "#FF9EC7",
-		accent: "#8C7CF0",
+		name: "Tangerine",
+		body: "#F28A2E",
+		accent: "#2D4F9E",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Gold",
+		body: "#F2C230",
+		accent: "#C2302B",
+		trim: "#2E3A59"
+	},
+	{
+		name: "Lime",
+		body: "#9ACD32",
+		accent: "#6B2FA3",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Butter",
-		body: "#FFE07A",
-		accent: "#FF7F96",
+		name: "Emerald",
+		body: "#2EB872",
+		accent: "#F2C230",
+		trim: "#1E2A3A"
+	},
+	{
+		name: "Teal",
+		body: "#1FAFA6",
+		accent: "#F25C54",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Cyan",
+		body: "#3DB8F5",
+		accent: "#F28A2E",
+		trim: "#1E2A3A"
+	},
+	{
+		name: "Cobalt",
+		body: "#3D6FE0",
+		accent: "#F2C230",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Violet",
+		body: "#8A54E8",
+		accent: "#3DE0B0",
+		trim: "#FFE066"
+	},
+	{
+		name: "Grape",
+		body: "#B04FC9",
+		accent: "#F2C230",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Hot Pink",
+		body: "#EF4F9A",
+		accent: "#2E3A59",
+		trim: "#FFE066"
+	},
+	{
+		name: "Coral",
+		body: "#FF7A66",
+		accent: "#1FAFA6",
 		trim: "#FFFFFF"
 	},
 	{
 		name: "Mint",
-		body: "#8FE3B8",
-		accent: "#FF8FB1",
-		trim: "#FFF6C8"
+		body: "#5FE0B0",
+		accent: "#E8483D",
+		trim: "#1E2A3A"
 	},
 	{
 		name: "Sky",
-		body: "#8CCBFF",
-		accent: "#FFC857",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Lilac",
-		body: "#C9A7F5",
-		accent: "#FFD166",
-		trim: "#FFF0F6"
-	},
-	{
-		name: "Coral",
-		body: "#FF8E7F",
-		accent: "#5CC8C0",
-		trim: "#FFF6E8"
-	},
-	{
-		name: "Lime",
-		body: "#C6E86E",
-		accent: "#FF8C69",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Aqua",
-		body: "#78DCE8",
-		accent: "#FF7AA8",
-		trim: "#FFF8D6"
-	},
-	{
-		name: "Tangerine",
-		body: "#FFA552",
-		accent: "#6C8CF5",
-		trim: "#FFF1D6"
-	},
-	{
-		name: "Strawberry",
-		body: "#FF7A93",
-		accent: "#7FD1AE",
-		trim: "#FFF0F3"
-	},
-	{
-		name: "Periwinkle",
-		body: "#9DAEFF",
-		accent: "#FF9F7A",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Cream",
-		body: "#FFF1D0",
-		accent: "#FF8FAB",
-		trim: "#9AD9F5"
-	},
-	{
-		name: "Cocoa",
-		body: "#C69276",
-		accent: "#FF9FB5",
-		trim: "#FFF1DC"
-	},
-	{
-		name: "Caramel",
-		body: "#E8B074",
-		accent: "#7EC4CF",
-		trim: "#FFF6E6"
-	},
-	{
-		name: "Grape",
-		body: "#A68BF0",
-		accent: "#7FE0C8",
-		trim: "#FFF4C2"
-	},
-	{
-		name: "Teal",
-		body: "#5ED3C3",
-		accent: "#FFB86B",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Snow",
-		body: "#F2F5FA",
-		accent: "#7BB8FF",
-		trim: "#FFB5C8"
-	},
-	{
-		name: "Sage",
-		body: "#A9D6A0",
-		accent: "#F7A072",
-		trim: "#FFF8E7"
-	},
-	{
-		name: "Rose",
-		body: "#F6A6C1",
-		accent: "#6FC2B8",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Honey",
-		body: "#FFC94D",
-		accent: "#E86A8E",
-		trim: "#FFF4D6"
-	},
-	{
-		name: "Seafoam",
-		body: "#A8F0D8",
-		accent: "#9A8CF5",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Blush",
-		body: "#FFC4C4",
-		accent: "#7AA9F0",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Ocean",
-		body: "#6FB4F2",
-		accent: "#FFDD6B",
+		body: "#6FC2FF",
+		accent: "#E8483D",
 		trim: "#FFFFFF"
 	},
 	{
 		name: "Plum",
-		body: "#D48BD8",
-		accent: "#FFD36B",
-		trim: "#FFF0FA"
+		body: "#7A3F9E",
+		accent: "#F28A2E",
+		trim: "#FFE066"
 	},
 	{
-		name: "Sunflower",
-		body: "#FFD84A",
-		accent: "#6FA8F0",
+		name: "Rust",
+		body: "#C2602B",
+		accent: "#3DB8F5",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Slate",
+		body: "#5E7290",
+		accent: "#F2C230",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Melon",
-		body: "#B8F28C",
-		accent: "#FF7A8A",
-		trim: "#FFF5E0"
+		name: "Charcoal",
+		body: "#4A4E5E",
+		accent: "#E8483D",
+		trim: "#F2C230"
 	},
 	{
-		name: "Lavender",
-		body: "#B8B6F7",
-		accent: "#FF9EBB",
+		name: "Bone",
+		body: "#E8DEC8",
+		accent: "#2D4F9E",
+		trim: "#E8483D"
+	},
+	{
+		name: "Sand",
+		body: "#D8B07A",
+		accent: "#2EB872",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Pumpkin",
-		body: "#FF9446",
-		accent: "#7C6BE0",
-		trim: "#FFE9A8"
-	},
-	{
-		name: "Cotton Candy",
-		body: "#A9DCFF",
-		accent: "#FFA3D1",
+		name: "Cherry",
+		body: "#D93250",
+		accent: "#F2C230",
 		trim: "#FFFFFF"
 	},
 	{
-		name: "Matcha",
-		body: "#9CCB7A",
-		accent: "#E9A2C8",
-		trim: "#FFF7E0"
+		name: "Olive",
+		body: "#8C9A3A",
+		accent: "#E8483D",
+		trim: "#FFF1D6"
 	},
 	{
-		name: "Ruby",
-		body: "#F2697E",
-		accent: "#FFD56B",
-		trim: "#FFF3E0"
+		name: "Ice",
+		body: "#BDEAF5",
+		accent: "#3D6FE0",
+		trim: "#E8483D"
+	},
+	{
+		name: "Lava",
+		body: "#FF5A1F",
+		accent: "#2E3A59",
+		trim: "#FFE066"
 	}
 ];
-function hexToRgb(hex) {
+function hexToRgb(hex$1) {
 	return [
 		1,
 		3,
 		5
-	].map((i) => parseInt(hex.slice(i, i + 2), 16));
+	].map((i) => parseInt(hex$1.slice(i, i + 2), 16));
 }
 function rgbToHex(r, g, b) {
 	return "#" + [
@@ -2429,8 +3038,8 @@ function rgbToHex(r, g, b) {
 		b
 	].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
 }
-function toHsl(hex) {
-	const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+function toHsl(hex$1) {
+	const [r, g, b] = hexToRgb(hex$1).map((v) => v / 255);
 	const max = Math.max(r, g, b), min = Math.min(r, g, b);
 	const l = (max + min) / 2;
 	if (max === min) return [
@@ -2491,12 +3100,12 @@ function towards(hue, target, amount) {
 	const diff = (target - hue + 540) % 360 - 180;
 	return hue + Math.sign(diff) * Math.min(Math.abs(diff), amount);
 }
-function luminance(hex) {
+function luminance(hex$1) {
 	const channel = (v) => {
 		v /= 255;
 		return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
 	};
-	const [r, g, b] = hexToRgb(hex);
+	const [r, g, b] = hexToRgb(hex$1);
 	return .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b);
 }
 function contrast(a, b) {
@@ -2507,8 +3116,8 @@ function contrast(a, b) {
 * Shade a colour by hand: darker and leaning towards violet, but never richer.
 * Adding saturation in the shadow is what turned a green body's shade neon.
 */
-function shadeOf(hex, depth = .12) {
-	const [h, s, l] = toHsl(hex);
+function shadeOf(hex$1, depth = .12) {
+	const [h, s, l] = toHsl(hex$1);
 	return fromHsl([
 		towards(h, 265, 12),
 		s * .85,
@@ -2521,14 +3130,15 @@ function derive(name, body, accent, trim) {
 	const outlineHue = towards(h, 285, 25);
 	const outline$1 = fromHsl([
 		outlineHue,
-		.42,
-		.3
+		.35,
+		.1
 	]);
-	const ink = fromHsl([
+	const dark = fromHsl([
 		outlineHue,
 		.38,
-		.14
+		.08
 	]);
+	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : "#FFF1D6";
 	let blush = "#FF8FA8";
 	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
 	let tongue = "#FF6B88";
@@ -2577,17 +3187,36 @@ const SHADE_COUNT = 3;
 */
 function shadePalette(palette, shade) {
 	if (shade === 1) return palette;
-	const tone = (hex) => {
-		if (shade === 0) return mix(hex, "#FFFFFF", .3);
-		const [h, s, l] = toHsl(hex);
+	const tone = (hex$1) => {
+		if (shade === 0) return mix(hex$1, "#FFFFFF", .3);
+		const [h, s, l] = toHsl(hex$1);
 		return fromHsl([
 			h,
 			Math.min(.8, s + .04),
-			l - .08
+			l > .4 ? l - .08 : l
 		]);
 	};
 	const c = palette.colors;
 	return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
+}
+
+//#endregion
+//#region src/paint.ts
+/**
+* Turns a composed grid into colours. Most cells take their token's palette
+* colour; a cell belonging to an owned item is repainted with that copy's
+* finish and wear.
+*/
+function paint(grid, config, palette) {
+	const state = { glint: false };
+	const slotOf$1 = (t) => t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+	return grid.map((row, y) => row.map((token, x) => {
+		const color = resolveColor(palette, token);
+		if (!color) return null;
+		const slot = slotOf$1(token);
+		const copy = slot ? config.owned?.[slot] : void 0;
+		return copy ? paintCell(color, x, y, copy, state) : color;
+	}));
 }
 
 //#endregion
@@ -2599,12 +3228,12 @@ function shadePalette(palette, shade) {
 * neighbours that share a colour — these avatars are large flat areas, so
 * merging runs cuts the rect count by well over half.
 */
-function rowRuns(grid, palette, y) {
+function rowRuns(colors, y) {
 	const runs = [];
 	let start = -1;
 	let current = null;
 	for (let x = 0; x <= GRID_SIZE; x++) {
-		const color = x < GRID_SIZE ? resolveColor(palette, grid[y][x]) : null;
+		const color = x < GRID_SIZE ? colors[y][x] : null;
 		if (color === current) continue;
 		if (current !== null) runs.push({
 			x: start,
@@ -2628,13 +3257,13 @@ function escapeText(value) {
 * identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = dress(resolve(input, options.parts), options);
+	const config = dress(resolve(input, options.parts), options, input);
 	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
-	const grid = compose(config);
+	const colors = paint(compose(config), config, palette);
 	const size = options.size ?? 128;
 	const pixelSize = size / GRID_SIZE;
 	const rects = [];
-	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -2719,4 +3348,4 @@ function getColor(colors, index) {
 }
 
 //#endregion
-export { DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GAMES, GRID_SIZE, SHADE_COUNT, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getColor, getPalette, hair, hash, hashNth, heads, itemById, items, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, withItems };
+export { BLUE_GEMS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, wearOf, withItems };

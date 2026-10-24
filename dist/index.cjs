@@ -1,7 +1,7 @@
 "use strict";
-const require_palette = require('./palette-n8_M_gCN.cjs');
-const react = require_palette.__toESM(require("react"));
-const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
+const require_paint = require('./paint-UVjPqb05.cjs');
+const react = require_paint.__toESM(require("react"));
+const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
 //#region src/lil-guy.tsx
 const INTENSITY_PRESETS = {
@@ -111,17 +111,18 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 		if (enableBlink || interactive) injectBlinkKeyframes();
 	}, [enableBlink, interactive]);
 	const { rects, shutRects, bgColor, config, hashValue } = react.useMemo(() => {
-		const cfg = require_palette.dress(require_palette.resolve(name, partOverrides), {
+		const cfg = require_paint.dress(require_paint.resolve(name, partOverrides), {
 			game,
 			equip
-		});
-		const palette = require_palette.withItems(customPalette ?? require_palette.shadePalette(require_palette.getPalette(cfg.palette), cfg.shade), cfg);
-		const grid = require_palette.compose(cfg);
-		const hv = require_palette.hash(name);
+		}, name);
+		const palette = require_paint.withItems(customPalette ?? require_paint.shadePalette(require_paint.getPalette(cfg.palette), cfg.shade), cfg);
+		const grid = require_paint.compose(cfg);
+		const hv = require_paint.hash(name);
 		const toRects = (source, keyPrefix) => {
 			const out = [];
-			for (let y = 0; y < require_palette.GRID_SIZE; y++) for (let x = 0; x < require_palette.GRID_SIZE; x++) {
-				const color = require_palette.resolveColor(palette, source[y][x]);
+			const colors$1 = require_paint.paint(source, cfg, palette);
+			for (let y = 0; y < require_paint.GRID_SIZE; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) {
+				const color = colors$1[y][x];
 				if (color) out.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
 					"rect",
 					// the body highlight: a soft tint of the body colour
@@ -138,12 +139,12 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 			return out;
 		};
 		const shut = grid.map((row) => [...row]);
-		const bare = require_palette.composeBase(cfg);
+		const bare = require_paint.composeBase(cfg);
 		const EYE = 5, SHINE = 6;
 		const EYE_TOKENS = new Set([EYE, SHINE]);
 		const mouthTop = grid.findIndex((row) => row.includes(8));
-		const eyeRows = mouthTop === -1 ? require_palette.GRID_SIZE : mouthTop;
-		for (let x = 0; x < require_palette.GRID_SIZE; x++) {
+		const eyeRows = mouthTop === -1 ? require_paint.GRID_SIZE : mouthTop;
+		for (let x = 0; x < require_paint.GRID_SIZE; x++) {
 			let lowest = -1;
 			for (let y = 0; y < eyeRows; y++) if (EYE_TOKENS.has(grid[y][x])) lowest = y;
 			if (lowest === -1) continue;
@@ -236,7 +237,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 					children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 						"aria-hidden": "true",
 						xmlns: "http://www.w3.org/2000/svg",
-						viewBox: `0 0 ${require_palette.GRID_SIZE} ${require_palette.GRID_SIZE}`,
+						viewBox: `0 0 ${require_paint.GRID_SIZE} ${require_paint.GRID_SIZE}`,
 						shapeRendering: "crispEdges",
 						style: {
 							width: "100%",
@@ -486,12 +487,12 @@ AvatarImage.displayName = "AvatarImage";
 * neighbours that share a colour — these avatars are large flat areas, so
 * merging runs cuts the rect count by well over half.
 */
-function rowRuns(grid, palette, y) {
+function rowRuns(colors, y) {
 	const runs = [];
 	let start = -1;
 	let current = null;
-	for (let x = 0; x <= require_palette.GRID_SIZE; x++) {
-		const color = x < require_palette.GRID_SIZE ? require_palette.resolveColor(palette, grid[y][x]) : null;
+	for (let x = 0; x <= require_paint.GRID_SIZE; x++) {
+		const color = x < require_paint.GRID_SIZE ? colors[y][x] : null;
 		if (color === current) continue;
 		if (current !== null) runs.push({
 			x: start,
@@ -515,13 +516,13 @@ function escapeText(value) {
 * identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = require_palette.dress(require_palette.resolve(input, options.parts), options);
-	const palette = require_palette.withItems(options.palette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade), config);
-	const grid = require_palette.compose(config);
+	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
+	const palette = require_paint.withItems(options.palette ?? require_paint.shadePalette(require_paint.getPalette(config.palette), config.shade), config);
+	const colors = require_paint.paint(require_paint.compose(config), config, palette);
 	const size = options.size ?? 128;
-	const pixelSize = size / require_palette.GRID_SIZE;
+	const pixelSize = size / require_paint.GRID_SIZE;
 	const rects = [];
-	for (let y = 0; y < require_palette.GRID_SIZE; y++) for (const run of rowRuns(grid, palette, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < require_paint.GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -637,40 +638,55 @@ function getColor(colors, index) {
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
+exports.BLUE_GEMS = require_paint.BLUE_GEMS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
-exports.FOOT_STYLES = require_palette.FOOT_STYLES
-exports.GAMES = require_palette.GAMES
-exports.GRID_SIZE = require_palette.GRID_SIZE
+exports.FINISHES = require_paint.FINISHES
+exports.FOOT_STYLES = require_paint.FOOT_STYLES
+exports.GAMES = require_paint.GAMES
+exports.GRADES = require_paint.GRADES
+exports.GRID_SIZE = require_paint.GRID_SIZE
 exports.LilGuy = LilGuy
-exports.SHADE_COUNT = require_palette.SHADE_COUNT
-exports.accessories = require_palette.accessories
-exports.bodies = require_palette.bodies
-exports.cheeks = require_palette.cheeks
-exports.compose = require_palette.compose
-exports.composeBase = require_palette.composeBase
-exports.dress = require_palette.dress
-exports.eyes = require_palette.eyes
-exports.freeItem = require_palette.freeItem
-exports.gameItems = require_palette.gameItems
+exports.SHADE_COUNT = require_paint.SHADE_COUNT
+exports.WEAR = require_paint.WEAR
+exports.accessories = require_paint.accessories
+exports.bodies = require_paint.bodies
+exports.cheeks = require_paint.cheeks
+exports.compose = require_paint.compose
+exports.composeBase = require_paint.composeBase
+exports.decode = require_paint.decode
+exports.dopplerPhase = require_paint.dopplerPhase
+exports.dress = require_paint.dress
+exports.encode = require_paint.encode
+exports.eyes = require_paint.eyes
+exports.freeItem = require_paint.freeItem
+exports.gameItems = require_paint.gameItems
 exports.getColor = getColor
-exports.getPalette = require_palette.getPalette
-exports.hair = require_palette.hair
-exports.hash = require_palette.hash
-exports.hashNth = require_palette.hashNth
-exports.heads = require_palette.heads
-exports.itemById = require_palette.itemById
-exports.items = require_palette.items
+exports.getPalette = require_paint.getPalette
+exports.gradeOf = require_paint.gradeOf
+exports.hair = require_paint.hair
+exports.hash = require_paint.hash
+exports.hashNth = require_paint.hashNth
+exports.heads = require_paint.heads
+exports.itemById = require_paint.itemById
+exports.items = require_paint.items
 exports.mergeRefs = mergeRefs
-exports.mouths = require_palette.mouths
-exports.palettes = require_palette.palettes
-exports.resolve = require_palette.resolve
-exports.resolveColor = require_palette.resolveColor
-exports.shadePalette = require_palette.shadePalette
+exports.mouths = require_paint.mouths
+exports.nameOf = require_paint.nameOf
+exports.paint = require_paint.paint
+exports.palettes = require_paint.palettes
+exports.resolve = require_paint.resolve
+exports.resolveColor = require_paint.resolveColor
+exports.roll = require_paint.roll
+exports.shadePalette = require_paint.shadePalette
+exports.slotOf = require_paint.slotOf
+exports.special = require_paint.special
+exports.starter = require_paint.starter
 exports.toPng = toPng
 exports.toSvgString = toSvgString
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
-exports.withItems = require_palette.withItems
+exports.wearOf = require_paint.wearOf
+exports.withItems = require_paint.withItems
 //# sourceMappingURL=index.cjs.map

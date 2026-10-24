@@ -1,6 +1,7 @@
 import { LAYER, LOCAL, stamp, T, width, type Stamp } from './parts/art';
 import type { Canvas } from './parts/canvas';
 import { capRows, mirror, seat } from './parts/hair';
+import { decode, starter } from './owned';
 import type { AvatarConfig, GameId, Palette, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -8,36 +9,35 @@ import { GRID_SIZE } from './types';
  * Items: things a player earns or buys in a DLE Club game and wears
  * everywhere. Each game has
  *
- * - a skin, which turns the guy into the game's own object (a jar, a golf
- *   ball, a toy block) while keeping his face
- * - two hats: a free one, worn by default in that game, and a rare one
+ * - two skins, which turn the guy into one of the game's own objects (a jar,
+ *   a golf ball, a traffic cone) while keeping his face
+ * - three hats, one of them free: every player has it from the start
  * - a frame, the backdrop behind him
  *
- * and every skin, rare hat and frame also comes in a gold edition, which adds
- * a sparkle. Items are drawn in their own colours (the `1`–`9` characters),
- * listed with the item, so a golf ball is white whatever the guy's palette.
- * The free hats use the guy's own accent colour, so they still vary by name.
+ * An item is the design. A copy someone owns adds a finish, a float and a
+ * pattern seed (see ./owned), which is what makes one copy worth more than
+ * another. Items are drawn in their own colours (the `1`–`9` characters),
+ * listed with the item, and a finish repaints them. The free hats use the
+ * guy's own accent colour, so they still vary by name.
  *
  * This file only draws them. Who owns what, and what it costs, belongs to the
  * game or the club.
  */
 
 export type Slot = 'skin' | 'hat' | 'frame';
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
 export interface Item {
-  /** `game.name`, with `.gold` on the end for a gold edition. */
+  /** `game.name`. */
   id: string;
   game: GameId;
   slot: Slot;
   name: string;
-  rarity: Rarity;
+  /** The hat every player has in this game from the start. */
+  free?: boolean;
   /** Colours for the art's `1`–`9`. */
   colors: string[];
   /** A skin's outline colour, replacing the one worked out from the palette. */
   outline?: string;
-  /** Gold editions sparkle. */
-  shine?: boolean;
   /** Skins: the body, drawn on the full 16x16 grid. */
   art?: Stamp;
   /** Skins: the row the bottom of the eyes sits on. */
@@ -78,7 +78,7 @@ const L = (n: number) => LOCAL + n - 1;
 
 // ---------------------------------------------------------------- skins
 
-const skins: Omit<Item, 'slot' | 'rarity'>[] = [
+const skins: Omit<Item, 'slot'>[] = [
   {
     id: 'amountle.jar', game: 'amountle', name: 'Jar of gems', eyes: 7,
     colors: ['#E3F5F7', '#BFE1E7', '#FFFFFF', '#2E9C94', '#217A73', '#3FD1C1', '#1F9C90', '#A6F4EA'],
@@ -286,6 +286,213 @@ const skins: Omit<Item, 'slot' | 'rarity'>[] = [
       '................',
     ]),
   },
+  {
+    id: 'amountle.crystal', game: 'amountle', name: 'Crystal', eyes: 8,
+    colors: ['#3FD1C1', '#1F9C90', '#A6F4EA', '#FFFFFF'],
+    outline: '#14524C',
+    art: grid16('gem', [
+      '................',
+      '................',
+      '................',
+      '......3311......',
+      '.....333111.....',
+      '....43331111....',
+      '...3333311111...',
+      '..333331111112..',
+      '..333311111112..',
+      '..111111111122..',
+      '...1111111122...',
+      '....11111222....',
+      '.....111222.....',
+      '......1222......',
+      '.......22.......',
+      '................',
+    ]),
+  },
+  {
+    id: 'halfsies.kitchen-scale', game: 'halfsies', name: 'Kitchen scale', eyes: 8, limb: 1,
+    colors: ['#F4F4F2', '#CFD3D8', '#FFFFFF', '#2B2F38', '#E5484D', '#9AA0A8'],
+    outline: '#3C4048',
+    art: grid16('kitchen scale', [
+      '................',
+      '................',
+      '...6666666666...',
+      '....66666666....',
+      '......2222......',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311114411112..',
+      '..222245542222..',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'stackdle.triangle', game: 'stackdle', name: 'Triangle', eyes: 10, limb: 1,
+    colors: ['#FFB03B', '#E58A1F', '#FFD27A'],
+    outline: '#7A3E0A',
+    art: grid16('triangle', [
+      '................',
+      '................',
+      '.......33.......',
+      '......3311......',
+      '......3311......',
+      '.....331111.....',
+      '.....331111.....',
+      '....33111111....',
+      '....31111111....',
+      '...3111111112...',
+      '...3111111112...',
+      '..311111111112..',
+      '..311111111112..',
+      '.22222222222222.',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'flipsies.bullseye', game: 'flipsies', name: 'Bullseye', eyes: 8,
+    colors: ['#FFFFFF', '#8EC5F0', '#3E7BE0', '#D9E3EE'],
+    outline: '#1E3F78',
+    art: grid16('bullseye', [
+      '................',
+      '................',
+      '................',
+      '.....333333.....',
+      '....33111133....',
+      '...3311111133...',
+      '..331122221133..',
+      '..311222222113..',
+      '..312211112213..',
+      '..312211112213..',
+      '..311222222113..',
+      '..331122221133..',
+      '...3311111133...',
+      '....33333333....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'puttsies.pillow', game: 'puttsies', name: 'Quilt pillow', eyes: 8,
+    colors: ['#F7B7B0', '#B9E3A8', '#B3D4F5', '#FBE3A1', '#C98A84'],
+    outline: '#6E3E3A',
+    art: grid16('quilt pillow', [
+      '................',
+      '................',
+      '..5..........5..',
+      '..555555555555..',
+      '..511111222225..',
+      '..511111222225..',
+      '..511111222225..',
+      '..511111222225..',
+      '..533333444445..',
+      '..533333444445..',
+      '..533333444445..',
+      '..533333444445..',
+      '..555555555555..',
+      '..5..........5..',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'weighsies.kettlebell', game: 'weighsies', name: 'Kettlebell', eyes: 8, limb: 1,
+    colors: ['#4A4E5E', '#2E3140', '#6C7286', '#F2C230'],
+    outline: '#14161C',
+    art: grid16('kettlebell', [
+      '................',
+      '................',
+      '.....111111.....',
+      '....1......1....',
+      '....1......1....',
+      '....31111112....',
+      '...3111111112...',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '...3114444112...',
+      '....22222222....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'cutsies.melon', game: 'cutsies', name: 'Melon slice', eyes: 8,
+    colors: ['#F25C6B', '#2EB872', '#2A1B10', '#E8F5D0'],
+    outline: '#5A1A22',
+    art: grid16('melon slice', [
+      '................',
+      '................',
+      '................',
+      '................',
+      '.11111111111111.',
+      '.13111111111131.',
+      '..311111111113..',
+      '..111111111111..',
+      '..111111111111..',
+      '..111111111111..',
+      '...1111111111...',
+      '...4111111114...',
+      '....44444444....',
+      '.....222222.....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'tiltsies.hamster', game: 'tiltsies', name: 'Hamster', eyes: 8, limb: 2,
+    colors: ['#EDB57D', '#CC8E55', '#FFE7CB', '#FFB3A7'],
+    outline: '#5A3418',
+    art: grid16('hamster', [
+      '................',
+      '................',
+      '...22......22...',
+      '...2421111242...',
+      '...1111111111...',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311133331112..',
+      '..311333333112..',
+      '..113333333311..',
+      '...2333333332...',
+      '....22222222....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'trackdle.cone', game: 'trackdle', name: 'Traffic cone', eyes: 10,
+    colors: ['#FF7A2F', '#D65A1C', '#FFFFFF', '#FFAE73', '#2B2F38'],
+    outline: '#6A2A0C',
+    art: grid16('traffic cone', [
+      '................',
+      '.......11.......',
+      '.......11.......',
+      '......4112......',
+      '......3333......',
+      '.....411112.....',
+      '.....411112.....',
+      '....33333333....',
+      '....41111112....',
+      '...4111111112...',
+      '...4111111112...',
+      '...3333333333...',
+      '..411111111112..',
+      '.55555555555555.',
+      '................',
+      '................',
+    ]),
+  },
 ];
 
 // ---------------------------------------------------------------- hats
@@ -293,7 +500,7 @@ const skins: Omit<Item, 'slot' | 'rarity'>[] = [
 const hats: Omit<Item, 'slot'>[] = [
   // Amountle
   {
-    id: 'amountle.gem', game: 'amountle', name: 'Gem', rarity: 'common', colors: [],
+    id: 'amountle.gem', game: 'amountle', name: 'Gem', free: true, colors: [],
     draw: on([
       '.xa.',
       'aaaA',
@@ -301,7 +508,7 @@ const hats: Omit<Item, 'slot'>[] = [
     ]),
   },
   {
-    id: 'amountle.crown', game: 'amountle', name: 'Gem crown', rarity: 'rare',
+    id: 'amountle.crown', game: 'amountle', name: 'Gem crown', 
     colors: ['#FFD25A', '#E0A62E', '#3FD1C1', '#A6F4EA'],
     draw: on([
       '1.1.1',
@@ -311,7 +518,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Halfsies
   {
-    id: 'halfsies.bowl', game: 'halfsies', name: 'Half pot', rarity: 'common', colors: [],
+    id: 'halfsies.bowl', game: 'halfsies', name: 'Half pot', free: true, colors: [],
     draw: on([
       '.aaaa.',
       'axxxxA',
@@ -319,7 +526,7 @@ const hats: Omit<Item, 'slot'>[] = [
     ]),
   },
   {
-    id: 'halfsies.scale', game: 'halfsies', name: 'Scale dish', rarity: 'rare',
+    id: 'halfsies.scale', game: 'halfsies', name: 'Scale dish', 
     colors: ['#FFFFFF', '#D9DEE6', '#2B2F38'],
     draw: on([
       '11111111',
@@ -329,7 +536,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Stackdle
   {
-    id: 'stackdle.cube', game: 'stackdle', name: 'Little block', rarity: 'common', colors: [],
+    id: 'stackdle.cube', game: 'stackdle', name: 'Little block', free: true, colors: [],
     draw: on([
       'xxxA',
       'aaaA',
@@ -337,7 +544,7 @@ const hats: Omit<Item, 'slot'>[] = [
     ]),
   },
   {
-    id: 'stackdle.tower', game: 'stackdle', name: 'Tower', rarity: 'rare',
+    id: 'stackdle.tower', game: 'stackdle', name: 'Tower', 
     colors: ['#FF8FB1', '#E0628A', '#FFB03B', '#E58A1F'],
     draw: on([
       '.11.',
@@ -349,14 +556,14 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Flipsies
   {
-    id: 'flipsies.cap', game: 'flipsies', name: 'Bottle cap', rarity: 'common', colors: [],
+    id: 'flipsies.cap', game: 'flipsies', name: 'Bottle cap', free: true, colors: [],
     draw: on([
       'xaxa',
       'aAaA',
     ]),
   },
   {
-    id: 'flipsies.landed', game: 'flipsies', name: 'Landed bottle', rarity: 'rare',
+    id: 'flipsies.landed', game: 'flipsies', name: 'Landed bottle', 
     colors: ['#C4E8FB', '#93CDEE', '#3E7BE0', '#FFFFFF'],
     draw: on([
       '4112',
@@ -367,7 +574,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Puttsies
   {
-    id: 'puttsies.visor', game: 'puttsies', name: 'Golf visor', rarity: 'common', colors: [],
+    id: 'puttsies.visor', game: 'puttsies', name: 'Golf visor', free: true, colors: [],
     draw: c => {
       const y = c.crown + 1;
       c.paintRow(y, T.ACCENT);
@@ -377,7 +584,7 @@ const hats: Omit<Item, 'slot'>[] = [
     },
   },
   {
-    id: 'puttsies.flag', game: 'puttsies', name: 'Pin flag', rarity: 'rare',
+    id: 'puttsies.flag', game: 'puttsies', name: 'Pin flag', 
     colors: ['#8A8F99', '#E5484D', '#B8313A'],
     draw: on([
       '1222',
@@ -387,7 +594,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Weighsies
   {
-    id: 'weighsies.wedge', game: 'weighsies', name: 'Cheese wedge', rarity: 'common',
+    id: 'weighsies.wedge', game: 'weighsies', name: 'Cheese wedge', free: true,
     colors: ['#FFC94A', '#E3A52E', '#D98F22'],
     draw: on([
       '...11',
@@ -396,7 +603,7 @@ const hats: Omit<Item, 'slot'>[] = [
     ]),
   },
   {
-    id: 'weighsies.scale', game: 'weighsies', name: 'Balance', rarity: 'rare',
+    id: 'weighsies.scale', game: 'weighsies', name: 'Balance', 
     colors: ['#2B2F38', '#FFFFFF', '#D9DEE6'],
     draw: on([
       '22.1.22',
@@ -406,7 +613,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Cutsies
   {
-    id: 'cutsies.slice', game: 'cutsies', name: 'Kiwi slice', rarity: 'common',
+    id: 'cutsies.slice', game: 'cutsies', name: 'Kiwi slice', free: true,
     colors: ['#86CF55', '#C9F08F', '#2A1B10', '#F1F7D4', '#9C6E43'],
     draw: on([
       '.1111.',
@@ -415,7 +622,7 @@ const hats: Omit<Item, 'slot'>[] = [
     ]),
   },
   {
-    id: 'cutsies.chef', game: 'cutsies', name: 'Chef hat', rarity: 'rare',
+    id: 'cutsies.chef', game: 'cutsies', name: 'Chef hat', 
     colors: ['#FFFFFF', '#DCE3EC'],
     draw: on([
       '.1111.',
@@ -425,7 +632,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Tiltsies
   {
-    id: 'tiltsies.ears', game: 'tiltsies', name: 'Hamster ears', rarity: 'common',
+    id: 'tiltsies.ears', game: 'tiltsies', name: 'Hamster ears', free: true,
     colors: ['#EDB57D', '#FFB3A7'],
     draw: onPair([
       '11',
@@ -433,7 +640,7 @@ const hats: Omit<Item, 'slot'>[] = [
     ], 1),
   },
   {
-    id: 'tiltsies.buddy', game: 'tiltsies', name: 'Hamster buddy', rarity: 'rare',
+    id: 'tiltsies.buddy', game: 'tiltsies', name: 'Hamster buddy', 
     colors: ['#EDB57D', '#FFE7CB', '#2A1B10'],
     draw: on([
       '1...1',
@@ -444,7 +651,7 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Trackdle
   {
-    id: 'trackdle.cap', game: 'trackdle', name: 'Pit cap', rarity: 'common',
+    id: 'trackdle.cap', game: 'trackdle', name: 'Pit cap', free: true,
     colors: ['#23262D', '#FFFFFF'],
     draw: c => {
       capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
@@ -454,26 +661,119 @@ const hats: Omit<Item, 'slot'>[] = [
     },
   },
   {
-    id: 'trackdle.helmet', game: 'trackdle', name: 'Race helmet', rarity: 'rare',
-    colors: ['#FF7A2F', '#D65A1C', '#FFFFFF', '#23262D'],
+    id: 'trackdle.helmet', game: 'trackdle', name: 'Race helmet',
+    colors: ['#FF7A2F', '#D65A1C', '#FFFFFF', '#1C2733', '#6FA8D8'],
+    draw: c => {
+      capRows(c, 3, L(1), L(2));
+      const x = Math.floor(c.centre);
+      for (let y = c.crown; y < c.crown + 3; y++) { c.set(x - 1, y, L(3)); c.set(x, y, L(3)); }
+      const y = c.crown + 3;
+      const r = c.rows[y]!;
+      // The visor juts out a column where there is room for it.
+      for (let vx = r.left; vx <= Math.min(r.right + 1, 14); vx++) c.set(vx, y, L(4));
+      c.set(r.right - 1, y, L(5));
+      c.set(r.right, y, L(5));
+      if (r.left > 1) c.set(r.left - 1, y, L(1));
+    },
+  },
+  // Bigger third hats, one per game
+  {
+    id: 'amountle.cluster', game: 'amountle', name: 'Big gem',
+    colors: ['#3FD1C1', '#1F9C90', '#A6F4EA'],
+    draw: on([
+      '.331.',
+      '33111',
+      '31112',
+      '.112.',
+    ]),
+  },
+  {
+    id: 'halfsies.helmet', game: 'halfsies', name: 'Pot helmet',
+    colors: ['#E07B4C', '#B85A34', '#F4A77C', '#5E2A1C', '#F6DCBB'],
     draw: c => {
       capRows(c, 2, L(1), L(2));
-      const x = Math.floor(c.centre);
-      c.set(x - 1, c.crown, L(3));
-      c.set(x, c.crown, L(3));
-      c.set(x - 1, c.crown + 1, L(3));
-      c.set(x, c.crown + 1, L(3));
-      c.paintRow(c.crown + 2, L(4));
       const r = c.rows[c.crown + 2]!;
-      c.set(r.left - 1, c.crown + 2, L(4));
-      c.set(r.right + 1, c.crown + 2, L(4));
+      for (let x = r.left - 1; x <= r.right + 1; x++) c.set(x, c.crown + 2, (x - r.left) % 2 ? L(5) : L(4));
+      const x = Math.floor(c.centre);
+      if (c.crown > 1) {
+        c.set(x - 1, c.crown - 1, L(3));
+        c.set(x, c.crown - 1, L(1));
+      }
     },
+  },
+  {
+    id: 'stackdle.ring', game: 'stackdle', name: 'Ring',
+    colors: ['#FF8FB1', '#E0628A'],
+    draw: on([
+      '.11.',
+      '1..2',
+      '1..2',
+      '.22.',
+    ]),
+  },
+  {
+    id: 'flipsies.beret', game: 'flipsies', name: 'Bullseye beret',
+    colors: ['#FFFFFF', '#8EC5F0', '#E5484D'],
+    draw: on([
+      '.1111.',
+      '123321',
+      '.2222.',
+    ], 1),
+  },
+  {
+    id: 'puttsies.tam', game: 'puttsies', name: 'Golf tam',
+    colors: ['#2E7D4F', '#1F5C38', '#F2C230', '#E5484D'],
+    draw: on([
+      '..33..',
+      '.1411.',
+      '141141',
+      '222222',
+    ]),
+  },
+  {
+    id: 'weighsies.dumbbell', game: 'weighsies', name: 'Dumbbell',
+    colors: ['#4A4E5E', '#9AA0A8'],
+    draw: on([
+      '1.....1',
+      '1222221',
+      '1.....1',
+    ]),
+  },
+  {
+    id: 'cutsies.orange', game: 'cutsies', name: 'Orange half',
+    colors: ['#FF9F2E', '#E07B14', '#FFD08A', '#FFF1D6'],
+    draw: on([
+      '.1111.',
+      '111112',
+      '343434',
+    ]),
+  },
+  {
+    id: 'tiltsies.seed', game: 'tiltsies', name: 'Sunflower seed',
+    colors: ['#3A3A42', '#E8E4DA'],
+    draw: on([
+      '.1.',
+      '121',
+      '121',
+      '121',
+    ], 2),
+  },
+  {
+    id: 'trackdle.trophy', game: 'trackdle', name: 'Trophy',
+    colors: ['#F2C230', '#C8901E', '#FFE9A0'],
+    draw: on([
+      '1.313.1',
+      '1111111',
+      '.11111.',
+      '..121..',
+      '.22222.',
+    ]),
   },
 ];
 
 // ---------------------------------------------------------------- frames
 
-const frames: Omit<Item, 'slot' | 'rarity'>[] = [
+const frames: Omit<Item, 'slot'>[] = [
   {
     id: 'amountle.sparkle', game: 'amountle', name: 'Gem field',
     colors: ['#E4F6F4', '#3FD1C1', '#A6F4EA'],
@@ -548,60 +848,11 @@ const frames: Omit<Item, 'slot' | 'rarity'>[] = [
   },
 ];
 
-// ---------------------------------------------------------------- gold
-
-const GOLD_RAMP = ['#6E4510', '#A9741C', '#DDA533', '#F7C94F', '#FFE08A', '#FFF4C7'];
-
-function luminance(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/**
- * The same item cast in gold: each colour keeps its place in the light-to-dark
- * order, so the drawing still reads, but every one of them is gold.
- */
-function gilded(item: Item): Item {
-  const order = [...new Set(item.colors)].sort((a, b) => luminance(a) - luminance(b));
-  const step = (hex: string) => {
-    const rank = order.indexOf(hex);
-    const at = order.length === 1 ? 3 : Math.round((rank / (order.length - 1)) * (GOLD_RAMP.length - 2)) + 1;
-    return GOLD_RAMP[at];
-  };
-  // A gold backdrop behind a gold guy is one flat yellow square. A frame's
-  // ground (its first colour) goes to near-black instead, with the pattern in
-  // gold on top, which is what makes the rest of the set look precious.
-  if (item.slot === 'frame') {
-    return {
-      ...item,
-      id: `${item.id}.gold`,
-      name: `Gold ${item.name.toLowerCase()}`,
-      rarity: 'legendary',
-      colors: item.colors.map((hex, i) => (i === 0 ? '#2A2235' : step(hex))),
-      shine: true,
-    };
-  }
-  return {
-    ...item,
-    id: `${item.id}.gold`,
-    name: `Gold ${item.name.toLowerCase()}`,
-    rarity: 'legendary',
-    colors: item.colors.map(step),
-    outline: item.outline ? '#5C3A0C' : undefined,
-    shine: true,
-  };
-}
-
-const base: Item[] = [
-  ...skins.map(s => ({ ...s, slot: 'skin' as const, rarity: 'epic' as const })),
-  ...hats.map(h => ({ ...h, slot: 'hat' as const })),
-  ...frames.map(f => ({ ...f, slot: 'frame' as const, rarity: 'epic' as const })),
-];
-
-/** Every item, in game order: skins, hats and frames, then the gold editions. */
+/** Every item: each game's skins, then hats, then frames. */
 export const items: Item[] = [
-  ...base,
-  ...base.filter(i => i.rarity !== 'common').map(gilded),
+  ...skins.map(i => ({ ...i, slot: 'skin' as const })),
+  ...hats.map(i => ({ ...i, slot: 'hat' as const })),
+  ...frames.map(i => ({ ...i, slot: 'frame' as const })),
 ];
 
 const byId = new Map(items.map(i => [i.id, i]));
@@ -622,21 +873,41 @@ export function gameItems(game: GameId): Item[] {
 
 /** The hat every player wears in a game until they put something else on. */
 export function freeItem(game: GameId): Item {
-  return items.find(i => i.game === game && i.rarity === 'common')!;
+  return items.find(i => i.game === game && i.free)!;
 }
 
 /**
- * Puts items on a resolved guy: the game's free hat if a game is named, then
- * whatever `equip` lists, one per slot.
+ * Puts items on a resolved guy. Naming a game puts on that game's free hat —
+ * the player's own copy of it when their `name` is given. Then each `equip`
+ * entry, an item id or an encoded owned copy, takes its slot.
  */
-export function dress(config: AvatarConfig, options: Pick<RenderOptions, 'game' | 'equip'> = {}): AvatarConfig {
-  const out = { ...config };
-  if (options.game) out.hat = freeItem(options.game).id;
-  for (const id of options.equip ?? []) {
-    const item = byId.get(id);
-    if (item) out[item.slot] = item.id;
+export function dress(config: AvatarConfig, options: Pick<RenderOptions, 'game' | 'equip'> = {}, name?: string): AvatarConfig {
+  const out: AvatarConfig = { ...config, owned: { ...config.owned } };
+  if (options.game) {
+    out.hat = freeItem(options.game).id;
+    if (name !== undefined) out.owned!.hat = starter(name, options.game);
+  }
+  for (const entry of options.equip ?? []) {
+    const copy = entry.includes('~') ? decode(entry) : null;
+    const item = byId.get(copy ? copy.item : entry);
+    if (!item) continue;
+    out[item.slot] = item.id;
+    if (copy) out.owned![item.slot] = copy;
+    else delete out.owned![item.slot];
   }
   return out;
+}
+
+function contrast(a: string, b: string): number {
+  const lum = (hex: string) => {
+    const c = (i: number) => {
+      const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2);
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
 }
 
 /** Adds the equipped items' own colours to a palette. */
@@ -646,7 +917,12 @@ export function withItems(palette: Palette, config: AvatarConfig): Palette {
     const item = itemById(config[slot]);
     if (!item) continue;
     item.colors.forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });
-    if (slot === 'skin' && item.outline) colors[T.OUTLINE] = item.outline;
+    if (slot === 'skin') {
+      if (item.outline) colors[T.OUTLINE] = item.outline;
+      // The face is drawn on the skin now, so its ink follows the skin.
+      const dark = '#15111C', light = '#FFF1D6';
+      colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light, item.colors[0]) ? dark : light;
+    }
   }
   return { name: palette.name, colors };
 }

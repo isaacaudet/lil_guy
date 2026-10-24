@@ -1,7 +1,7 @@
 "use strict";
-const require_palette = require('../palette-n8_M_gCN.cjs');
-const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
-const next_og = require_palette.__toESM(require("next/og"));
+const require_paint = require('../paint-UVjPqb05.cjs');
+const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
+const next_og = require_paint.__toESM(require("next/og"));
 
 //#region src/next/image.tsx
 /**
@@ -9,17 +9,16 @@ const next_og = require_palette.__toESM(require("next/og"));
 * Uses only Satori-compatible CSS (flexbox, no CSS grid, no SVG foreignObject).
 */
 function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides, game, equip }) {
-	const config = require_palette.dress(require_palette.resolve(name, partOverrides), {
+	const config = require_paint.dress(require_paint.resolve(name, partOverrides), {
 		game,
 		equip
-	});
-	const palette = require_palette.withItems(customPalette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade), config);
-	const grid = require_palette.compose(config);
-	const pixelSize = Math.floor(size / require_palette.GRID_SIZE);
+	}, name);
+	const palette = require_paint.withItems(customPalette ?? require_paint.shadePalette(require_paint.getPalette(config.palette), config.shade), config);
+	const colors = require_paint.paint(require_paint.compose(config), config, palette);
+	const pixelSize = Math.floor(size / require_paint.GRID_SIZE);
 	const pixels = [];
-	for (let y = 0; y < require_palette.GRID_SIZE; y++) for (let x = 0; x < require_palette.GRID_SIZE; x++) {
-		const token = grid[y][x];
-		const color = require_palette.resolveColor(palette, token);
+	for (let y = 0; y < require_paint.GRID_SIZE; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) {
+		const color = colors[y][x];
 		if (color) pixels.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { style: {
 			position: "absolute",
 			left: x * pixelSize,
