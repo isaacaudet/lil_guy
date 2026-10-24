@@ -2754,20 +2754,20 @@ const heads = [
 	]),
 	head("flame", 10, false, [
 		"................",
+		"........#.......",
 		".......##.......",
-		"...#...##...#...",
-		"...#..####..#...",
-		"...##.####.##...",
-		"...##########...",
-		"..############..",
-		"..############..",
-		"..############..",
+		"......####......",
+		"......####......",
+		".....######.....",
+		"..#..######..#..",
+		"..##.######.##..",
 		"..############..",
 		"..############..",
 		"..############..",
 		"..############..",
 		"...##########...",
 		"....########....",
+		".....######.....",
 		"................"
 	]),
 	head("jellyfish", 7, false, [
@@ -4170,4 +4170,4 @@ function paint(grid, config, palette) {
 
 //#endregion
 export { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, wearOf, withItems };
-//# sourceMappingURL=paint-e6qMVeBE.js.map
+//# sourceMappingURL=paint-OT6t3NCD.js.map
