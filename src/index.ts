@@ -22,7 +22,7 @@ export { AvatarImage, type AvatarImageProps } from "./avatar-image";
 // Core Types & Constants
 // ============================================================================
 
-export type { PixelGrid, ColorToken, Palette, AvatarConfig, RenderOptions, Intensity3D } from "./types";
+export type { PixelGrid, ColorToken, Palette, AvatarConfig, RenderOptions, Intensity3D, GameId } from "./types";
 export { GRID_SIZE } from "./types";
 
 // ============================================================================
@@ -40,7 +40,9 @@ export { hash, hashNth } from "./hash";
 export { resolve } from "./resolve";
 export { compose, composeBase, FOOT_STYLES } from "./compose";
 export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT } from "./palette";
-export { heads, eyes, mouths, hair, bodies, accessories } from "./parts";
+export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from "./parts";
+export { items, itemById, gameItems, freeItem, dress, withItems, GAMES } from "./items";
+export type { Item, Slot, Rarity } from "./items";
 
 // ============================================================================
 // Utilities

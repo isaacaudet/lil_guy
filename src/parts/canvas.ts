@@ -1,4 +1,4 @@
-import { T, width, type Stamp } from './art';
+import { width, type Stamp } from './art';
 import type { PixelGrid } from '../types';
 import { GRID_SIZE } from '../types';
 
@@ -6,8 +6,6 @@ export interface RowExtent {
   left: number;
   right: number;
 }
-
-const BODY_TOKENS = new Set<number>([T.BODY, T.SHADE, T.LIGHT]);
 
 /**
  * The grid a guy is being drawn on, plus the measurements every part needs to
@@ -31,10 +29,14 @@ export class Canvas {
   readonly centre: number;
   private readonly body: boolean[][];
 
+  /**
+   * The silhouette is everything the starting drawing covers — a plain body,
+   * or a skin like a jar or a golf ball, which is drawn in its own colours.
+   */
   constructor(grid: PixelGrid, eyeLine: number) {
     this.grid = grid;
     this.eyeLine = eyeLine;
-    this.body = grid.map(row => row.map(v => BODY_TOKENS.has(v)));
+    this.body = grid.map(row => row.map(v => v !== 0));
     this.rows = this.body.map(row => {
       const left = row.indexOf(true);
       return left === -1 ? null : { left, right: row.lastIndexOf(true) };

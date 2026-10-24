@@ -1,9 +1,10 @@
 import * as React from "react";
 import { resolve } from "./resolve";
+import { dress, withItems } from "./items";
 import { compose, composeBase } from "./compose";
 import { hash } from "./hash";
 import { getPalette, resolveColor, shadePalette } from "./palette";
-import type { ColorToken, Intensity3D, Palette } from "./types";
+import type { ColorToken, GameId, Intensity3D, Palette } from "./types";
 import { GRID_SIZE } from "./types";
 
 // ============================================================================
@@ -122,6 +123,17 @@ export interface LilGuyProps
 	}>;
 
 	/**
+	 * Dress the guy for a DLE Club game: he wears its free hat unless `equip`
+	 * says otherwise.
+	 */
+	game?: GameId;
+
+	/**
+	 * Item ids to wear (see `items`), one per slot.
+	 */
+	equip?: string[];
+
+	/**
 	 * 3D rotation intensity.
 	 * @default "dramatic"
 	 */
@@ -189,6 +201,8 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 			interactive = true,
 			palette: customPalette,
 			parts: partOverrides,
+			game,
+			equip,
 			intensity3d = "dramatic",
 			enableBlink = false,
 			colors,
@@ -213,8 +227,8 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 
 		// Resolve config and compose pixel grid
 		const { rects, shutRects, bgColor, config, hashValue } = React.useMemo(() => {
-			const cfg = resolve(name, partOverrides);
-			const palette = customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade);
+			const cfg = dress(resolve(name, partOverrides), { game, equip });
+			const palette = withItems(customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade), cfg);
 			const grid = compose(cfg);
 			const hv = hash(name);
 
@@ -269,7 +283,7 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 				config: cfg,
 				hashValue: hv,
 			};
-		}, [name, customPalette, partOverrides]);
+		}, [name, customPalette, partOverrides, game, equip?.join(",")]);
 
 		// 3D rotation
 		const preset = INTENSITY_PRESETS[intensity3d];

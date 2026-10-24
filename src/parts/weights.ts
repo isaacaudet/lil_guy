@@ -41,7 +41,7 @@ export const eyeWeights = [
   3, // content
   2, // excited
   1, // hearts
-  3, // lashes
+  2, // lashes
   2, // glance
 ];
 
@@ -60,10 +60,10 @@ export const mouthWeights = [
 ];
 
 export const cheekWeights = [
-  3, // bare
-  5, // blush
+  5, // bare
+  3, // blush
   2, // dot
-  2, // rosy
+  1, // rosy
   2, // freckles
 ];
 
@@ -71,14 +71,14 @@ export const hairWeights = [
   9, // none
   4, // cat ears
   4, // bear ears
-  3, // bunny ears
+  2, // bunny ears
   2, // bug antennae
   1, // horns
   2, // space buns
   4, // sprout
   2, // apple stem
-  3, // flower
-  3, // bow
+  2, // flower
+  2, // bow
   1, // crown
   1, // party hat
   2, // antenna

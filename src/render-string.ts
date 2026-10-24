@@ -1,4 +1,5 @@
 import { resolve } from './resolve';
+import { dress, withItems } from './items';
 import { compose } from './compose';
 import { getPalette, resolveColor, shadePalette } from './palette';
 import type { ColorToken, Palette, PixelGrid, RenderOptions } from './types';
@@ -40,8 +41,8 @@ function escapeText(value: string): string {
  * identifying that person.
  */
 export function toSvgString(input: string, options: RenderOptions = {}): string {
-  const config = resolve(input, options.parts);
-  const palette = options.palette ?? shadePalette(getPalette(config.palette), config.shade);
+  const config = dress(resolve(input, options.parts), options);
+  const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
   const grid = compose(config);
   const size = options.size ?? 128;
   const pixelSize = size / GRID_SIZE;

@@ -11,16 +11,20 @@ export type PixelGrid = number[][];
  *  5 eye           6 white (shine)  7 blush            8 mouth
  *  9 tongue       10 accent        11 accent shade    12 trim
  * 13 belly        14 leaf          15 leaf shade      16 gold
- * 17 gold shade   18 red
+ * 17 gold shade   18 red           19 deep shade
+ * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's
  */
-export type ColorToken =
-  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-  | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
+export type ColorToken = number;
 
 export interface Palette {
   name: string;
-  colors: Record<Exclude<ColorToken, 0>, string>; // token → hex colour; 0 is transparent
+  colors: Record<number, string>; // token → hex colour; 0 is transparent
 }
+
+/** The DLE Club games that have items. */
+export type GameId =
+  | 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies'
+  | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle';
 
 export type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 
@@ -47,6 +51,10 @@ export interface AvatarConfig {
   /** Mirror the finished character. */
   flip: boolean;
   rotation: number; // index into SPHERE_POSITIONS
+  /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
+  skin?: string;
+  hat?: string;
+  frame?: string;
 }
 
 export interface RenderOptions {
@@ -54,6 +62,14 @@ export interface RenderOptions {
   square?: boolean;
   palette?: Palette;
   parts?: Partial<Omit<AvatarConfig, 'palette'>>;
+  /**
+   * Dress the guy for a game: he wears that game's free hat unless `equip`
+   * says otherwise. The guy himself — face, shape, colours — stays the same in
+   * every game, so a player is recognisable everywhere.
+   */
+  game?: GameId;
+  /** Item ids to wear, at most one per slot; later ids win. Unknown ids are ignored. */
+  equip?: string[];
   /**
    * Accessible name for the avatar. Omit when the avatar sits beside the name
    * it represents — it is then marked decorative, which is what a screen

@@ -168,6 +168,7 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
       16: '#FFD45C',
       17: '#F0A93A',
       18: '#FF6B78',
+      19: shadeOf(body, 0.24),
     },
   };
 }

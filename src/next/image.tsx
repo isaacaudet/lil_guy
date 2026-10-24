@@ -1,7 +1,8 @@
 import { resolve } from "../resolve";
+import { dress, withItems } from "../items";
 import { compose } from "../compose";
 import { getPalette, resolveColor, shadePalette } from "../palette";
-import type { ColorToken, Palette } from "../types";
+import type { ColorToken, GameId, Palette } from "../types";
 import { GRID_SIZE } from "../types";
 
 export type LilGuyImageProps = {
@@ -20,15 +21,19 @@ export type LilGuyImageProps = {
 		body: number;
 		accessory: number;
 	}>;
+	/** Dress the guy for a game: its free hat, unless `equip` says otherwise */
+	game?: GameId;
+	/** Item ids to wear */
+	equip?: string[];
 };
 
 /**
  * Static LilGuy image component for use with Next.js ImageResponse (Satori).
  * Uses only Satori-compatible CSS (flexbox, no CSS grid, no SVG foreignObject).
  */
-export function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides }: LilGuyImageProps) {
-	const config = resolve(name, partOverrides);
-	const palette = customPalette ?? shadePalette(getPalette(config.palette), config.shade);
+export function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides, game, equip }: LilGuyImageProps) {
+	const config = dress(resolve(name, partOverrides), { game, equip });
+	const palette = withItems(customPalette ?? shadePalette(getPalette(config.palette), config.shade), config);
 	const grid = compose(config);
 	const pixelSize = Math.floor(size / GRID_SIZE);
 

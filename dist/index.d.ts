@@ -22,13 +22,16 @@ type PixelGrid = number[][];
  *  5 eye           6 white (shine)  7 blush            8 mouth
  *  9 tongue       10 accent        11 accent shade    12 trim
  * 13 belly        14 leaf          15 leaf shade      16 gold
- * 17 gold shade   18 red
+ * 17 gold shade   18 red           19 deep shade
+ * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's
  */
-type ColorToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
+type ColorToken = number;
 interface Palette {
   name: string;
-  colors: Record<Exclude<ColorToken, 0>, string>;
+  colors: Record<number, string>;
 }
+/** The DLE Club games that have items. */
+type GameId = 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies' | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle';
 type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 interface AvatarConfig {
   /** Body silhouette. */
@@ -53,12 +56,24 @@ interface AvatarConfig {
   /** Mirror the finished character. */
   flip: boolean;
   rotation: number;
+  /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
+  skin?: string;
+  hat?: string;
+  frame?: string;
 }
 interface RenderOptions {
   size?: number;
   square?: boolean;
   palette?: Palette;
   parts?: Partial<Omit<AvatarConfig, 'palette'>>;
+  /**
+   * Dress the guy for a game: he wears that game's free hat unless `equip`
+   * says otherwise. The guy himself — face, shape, colours — stays the same in
+   * every game, so a player is recognisable everywhere.
+   */
+  game?: GameId;
+  /** Item ids to wear, at most one per slot; later ids win. Unknown ids are ignored. */
+  equip?: string[];
   /**
    * Accessible name for the avatar. Omit when the avatar sits beside the name
    * it represents — it is then marked decorative, which is what a screen
@@ -120,6 +135,15 @@ interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "chil
     shade: number;
     flip: boolean;
   }>;
+  /**
+   * Dress the guy for a DLE Club game: he wears its free hat unless `equip`
+   * says otherwise.
+   */
+  game?: GameId;
+  /**
+   * Item ids to wear (see `items`), one per slot.
+   */
+  equip?: string[];
   /**
    * 3D rotation intensity.
    * @default "dramatic"
@@ -453,6 +477,18 @@ interface Mouth {
 declare const mouths: Mouth[];
 
 //#endregion
+//#region src/parts/cheeks.d.ts
+/**
+ * Cheeks sit on the row just under the eyes, outside them, and are drawn
+ * before the mouth so a wide grin can cut through them.
+ */
+interface Cheeks {
+  name: string;
+  art: Stamp;
+}
+declare const cheeks: Cheeks[];
+
+//#endregion
 //#region src/parts/canvas.d.ts
 interface RowExtent {
   left: number;
@@ -479,6 +515,10 @@ declare class Canvas {
   /** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
   readonly centre: number;
   private readonly body;
+  /**
+   * The silhouette is everything the starting drawing covers — a plain body,
+   * or a skin like a jar or a golf ball, which is drawn in its own colours.
+   */
   constructor(grid: PixelGrid, eyeLine: number);
   inside(x: number, y: number): boolean;
   /** Whether the bare silhouette covers this cell. */
@@ -515,6 +555,12 @@ interface Topper {
   name: string;
   draw: (c: Canvas) => void;
 }
+/**
+ * Seats a drawing on the head: its bottom row lands on the highest body row
+ * beneath it. A tall part on a tall head is pushed down rather than allowed to
+ * touch the top of the grid, where it would lose its outline.
+ */
+
 declare const hair: Topper[];
 
 //#endregion
@@ -547,6 +593,67 @@ interface Accessory {
 declare const accessories: Accessory[];
 
 //#endregion
+//#region src/items.d.ts
+/**
+ * Items: things a player earns or buys in a DLE Club game and wears
+ * everywhere. Each game has
+ *
+ * - a skin, which turns the guy into the game's own object (a jar, a golf
+ *   ball, a toy block) while keeping his face
+ * - two hats: a free one, worn by default in that game, and a rare one
+ * - a frame, the backdrop behind him
+ *
+ * and every skin, rare hat and frame also comes in a gold edition, which adds
+ * a sparkle. Items are drawn in their own colours (the `1`–`9` characters),
+ * listed with the item, so a golf ball is white whatever the guy's palette.
+ * The free hats use the guy's own accent colour, so they still vary by name.
+ *
+ * This file only draws them. Who owns what, and what it costs, belongs to the
+ * game or the club.
+ */
+type Slot = 'skin' | 'hat' | 'frame';
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+interface Item {
+  /** `game.name`, with `.gold` on the end for a gold edition. */
+  id: string;
+  game: GameId;
+  slot: Slot;
+  name: string;
+  rarity: Rarity;
+  /** Colours for the art's `1`–`9`. */
+  colors: string[];
+  /** A skin's outline colour, replacing the one worked out from the palette. */
+  outline?: string;
+  /** Gold editions sparkle. */
+  shine?: boolean;
+  /** Skins: the body, drawn on the full 16x16 grid. */
+  art?: Stamp;
+  /** Skins: the row the bottom of the eyes sits on. */
+  eyes?: number;
+  /** Skins: which of the item's colours arms and feet are drawn in, or none. */
+  limb?: number;
+  /** Hats: draws onto the head. */
+  draw?: (c: Canvas) => void;
+  /** Frames: which of the item's colours fills a background cell. */
+  fill?: (x: number, y: number) => number;
+}
+/** Every item, in game order: skins, hats and frames, then the gold editions. */
+declare const items: Item[];
+declare function itemById(id: string | undefined): Item | undefined;
+declare const GAMES: GameId[];
+/** A game's items. */
+declare function gameItems(game: GameId): Item[];
+/** The hat every player wears in a game until they put something else on. */
+declare function freeItem(game: GameId): Item;
+/**
+ * Puts items on a resolved guy: the game's free hat if a game is named, then
+ * whatever `equip` lists, one per slot.
+ */
+declare function dress(config: AvatarConfig, options?: Pick<RenderOptions, 'game' | 'equip'>): AvatarConfig;
+/** Adds the equipped items' own colours to a palette. */
+declare function withItems(palette: Palette, config: AvatarConfig): Palette;
+
+//#endregion
 //#region src/utils/merge-refs.d.ts
 type PossibleRef<T> = React.Ref<T> | React.RefCallback<T> | undefined | null;
 /**
@@ -571,5 +678,5 @@ declare const DEFAULT_COLORS_DARK: readonly ["#db2777", "#d97706", "#2563eb", "#
 declare function getColor(colors: readonly string[], index: number): string;
 
 //#endregion
-export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GRID_SIZE, Intensity3D, LilGuy, LilGuyProps, Palette, PixelGrid, RenderOptions, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getColor, getPalette, hair, hash, hashNth, heads, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs };
+export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GAMES, GRID_SIZE, GameId, Intensity3D, Item, LilGuy, LilGuyProps, Palette, PixelGrid, Rarity, RenderOptions, SHADE_COUNT, Slot, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getColor, getPalette, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs, withItems };
 //# sourceMappingURL=index.d.ts.map

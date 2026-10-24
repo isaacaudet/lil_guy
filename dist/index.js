@@ -1,4 +1,4 @@
-import { FOOT_STYLES, GRID_SIZE, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getPalette, hair, hash, hashNth, heads, mouths, palettes, resolve, resolveColor, shadePalette } from "./palette-BTkR_zup.js";
+import { FOOT_STYLES, GAMES, GRID_SIZE, SHADE_COUNT, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getPalette, hair, hash, hashNth, heads, itemById, items, mouths, palettes, resolve, resolveColor, shadePalette, withItems } from "./palette-BCqBhF7W.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
@@ -108,14 +108,17 @@ function injectBlinkKeyframes() {
 * <LilGuy name="alice" parts={{ hair: 2, eyes: 0 }} />
 * ```
 */
-const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
+const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, game, equip, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
 	const [isHovered, setIsHovered] = React$4.useState(false);
 	React$4.useEffect(() => {
 		if (enableBlink || interactive) injectBlinkKeyframes();
 	}, [enableBlink, interactive]);
 	const { rects, shutRects, bgColor, config, hashValue } = React$4.useMemo(() => {
-		const cfg = resolve(name, partOverrides);
-		const palette = customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade);
+		const cfg = dress(resolve(name, partOverrides), {
+			game,
+			equip
+		});
+		const palette = withItems(customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade), cfg);
 		const grid = compose(cfg);
 		const hv = hash(name);
 		const toRects = (source, keyPrefix) => {
@@ -162,7 +165,9 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 	}, [
 		name,
 		customPalette,
-		partOverrides
+		partOverrides,
+		game,
+		equip?.join(",")
 	]);
 	const preset = INTENSITY_PRESETS[intensity3d];
 	const position = SPHERE_POSITIONS[config.rotation] ?? SPHERE_POSITIONS[5];
@@ -513,8 +518,8 @@ function escapeText(value) {
 * identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = resolve(input, options.parts);
-	const palette = options.palette ?? shadePalette(getPalette(config.palette), config.shade);
+	const config = dress(resolve(input, options.parts), options);
+	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
 	const grid = compose(config);
 	const size = options.size ?? 128;
 	const pixelSize = size / GRID_SIZE;
@@ -632,5 +637,5 @@ function getColor(colors, index) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GRID_SIZE, LilGuy, SHADE_COUNT, accessories, bodies, compose, composeBase, eyes, getColor, getPalette, hair, hash, hashNth, heads, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs };
+export { Avatar, AvatarFallback, AvatarImage, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FOOT_STYLES, GAMES, GRID_SIZE, LilGuy, SHADE_COUNT, accessories, bodies, cheeks, compose, composeBase, dress, eyes, freeItem, gameItems, getColor, getPalette, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, palettes, resolve, resolveColor, shadePalette, toPng, toSvgString, useAvatarContext, useMergeRefs, withItems };
 //# sourceMappingURL=index.js.map

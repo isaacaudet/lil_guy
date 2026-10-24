@@ -1,5 +1,5 @@
 "use strict";
-const require_palette = require('./palette-DcPeqSJE.cjs');
+const require_palette = require('./palette-n8_M_gCN.cjs');
 const react = require_palette.__toESM(require("react"));
 const react_jsx_runtime = require_palette.__toESM(require("react/jsx-runtime"));
 
@@ -105,14 +105,17 @@ function injectBlinkKeyframes() {
 * <LilGuy name="alice" parts={{ hair: 2, eyes: 0 }} />
 * ```
 */
-const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
+const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = "transparent", interactive = true, palette: customPalette, parts: partOverrides, game, equip, intensity3d = "dramatic", enableBlink = false, colors, colorClasses, gradientOverlayClass, showInitial = false, onRenderMouth, className, style, onMouseEnter, onMouseLeave,...props }, ref) => {
 	const [isHovered, setIsHovered] = react.useState(false);
 	react.useEffect(() => {
 		if (enableBlink || interactive) injectBlinkKeyframes();
 	}, [enableBlink, interactive]);
 	const { rects, shutRects, bgColor, config, hashValue } = react.useMemo(() => {
-		const cfg = require_palette.resolve(name, partOverrides);
-		const palette = customPalette ?? require_palette.shadePalette(require_palette.getPalette(cfg.palette), cfg.shade);
+		const cfg = require_palette.dress(require_palette.resolve(name, partOverrides), {
+			game,
+			equip
+		});
+		const palette = require_palette.withItems(customPalette ?? require_palette.shadePalette(require_palette.getPalette(cfg.palette), cfg.shade), cfg);
 		const grid = require_palette.compose(cfg);
 		const hv = require_palette.hash(name);
 		const toRects = (source, keyPrefix) => {
@@ -159,7 +162,9 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 	}, [
 		name,
 		customPalette,
-		partOverrides
+		partOverrides,
+		game,
+		equip?.join(",")
 	]);
 	const preset = INTENSITY_PRESETS[intensity3d];
 	const position = SPHERE_POSITIONS[config.rotation] ?? SPHERE_POSITIONS[5];
@@ -510,8 +515,8 @@ function escapeText(value) {
 * identifying that person.
 */
 function toSvgString(input, options = {}) {
-	const config = require_palette.resolve(input, options.parts);
-	const palette = options.palette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade);
+	const config = require_palette.dress(require_palette.resolve(input, options.parts), options);
+	const palette = require_palette.withItems(options.palette ?? require_palette.shadePalette(require_palette.getPalette(config.palette), config.shade), config);
 	const grid = require_palette.compose(config);
 	const size = options.size ?? 128;
 	const pixelSize = size / require_palette.GRID_SIZE;
@@ -636,20 +641,27 @@ exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
 exports.FOOT_STYLES = require_palette.FOOT_STYLES
+exports.GAMES = require_palette.GAMES
 exports.GRID_SIZE = require_palette.GRID_SIZE
 exports.LilGuy = LilGuy
 exports.SHADE_COUNT = require_palette.SHADE_COUNT
 exports.accessories = require_palette.accessories
 exports.bodies = require_palette.bodies
+exports.cheeks = require_palette.cheeks
 exports.compose = require_palette.compose
 exports.composeBase = require_palette.composeBase
+exports.dress = require_palette.dress
 exports.eyes = require_palette.eyes
+exports.freeItem = require_palette.freeItem
+exports.gameItems = require_palette.gameItems
 exports.getColor = getColor
 exports.getPalette = require_palette.getPalette
 exports.hair = require_palette.hair
 exports.hash = require_palette.hash
 exports.hashNth = require_palette.hashNth
 exports.heads = require_palette.heads
+exports.itemById = require_palette.itemById
+exports.items = require_palette.items
 exports.mergeRefs = mergeRefs
 exports.mouths = require_palette.mouths
 exports.palettes = require_palette.palettes
@@ -660,4 +672,5 @@ exports.toPng = toPng
 exports.toSvgString = toSvgString
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
+exports.withItems = require_palette.withItems
 //# sourceMappingURL=index.cjs.map

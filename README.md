@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~40 billion happy little characters. Zero dependencies. ~12 KB gzipped.
+  ~40 billion happy little characters. Zero dependencies. ~17 KB gzipped.
 </p>
 
 <p align="center">
@@ -220,7 +220,7 @@ A few rules keep every combination likeable:
 - **Colours are light and clean.** No greys, olives or murky browns
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-13 shapes × 11 eyes × 11 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 32 colourways × 3 tones × 2 (mirrored) = **40,590,950,400** characters. Weighting makes the sweet parts common and the busier ones rare, so the set behaves like about 8.2 billion equally-likely guys.
+13 shapes × 11 eyes × 11 mouths × 5 cheeks × 28 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 32 colourways × 3 tones × 2 (mirrored) = **40,590,950,400** characters. Weighting makes the sweet parts common and the busier ones rare, so the set behaves like about 7.7 billion equally-likely guys.
 
 ### Pinning parts
 
@@ -245,6 +245,46 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 ```
 
 The parts are exported (`heads`, `eyes`, `mouths`, `cheeks`, `hair`, `bodies`, `accessories`), each with a `name`, so you can list or label them.
+
+## Game items
+
+Every DLE Club game has items a player can wear, here and in every other game.
+The guy underneath — face, shape, colours — never changes, so a player is
+recognisable everywhere.
+
+| Game | Skin | Free hat | Rare hat | Frame |
+|---|---|---|---|---|
+| Amountle | Jar of gems | Gem | Gem crown | Gem field |
+| Halfsies | Clay pot | Half pot | Scale dish | Kitchen teal |
+| Stackdle | Toy block | Little block | Tower | Toy box |
+| Flipsies | Water bottle | Bottle cap | Landed bottle | Bullseye |
+| Puttsies | Golf ball | Golf visor | Pin flag | Patchwork |
+| Weighsies | Cheese wheel | Cheese wedge | Balance | Lavender |
+| Cutsies | Kiwi | Kiwi slice | Chef hat | Kiwi slices |
+| Tiltsies | Hamster ball | Hamster ears | Hamster buddy | Toy maze |
+| Trackdle | Racer | Pit cap | Race helmet | Checkered flag |
+
+- A **skin** turns the guy into the game's object and keeps his face (and glasses)
+- The **free hat** is worn by default in its game, in the player's own accent colour
+- **Rare hats**, skins and frames are drawn in the item's own colours
+- Every skin, rare hat and frame has a **gold edition** (`<id>.gold`, legendary), with a sparkle and, for frames, a dark ground
+
+63 items: 9 common, 9 rare, 18 epic and 27 legendary.
+
+```ts
+toSvgString("alice", { game: "puttsies" });                       // wears the golf visor
+toSvgString("alice", { equip: ["puttsies.ball", "puttsies.flag"] }); // golf ball skin, pin flag
+toSvgString("alice", { game: "trackdle", equip: ["trackdle.racer.gold", "trackdle.flag.gold"] });
+```
+
+```tsx
+<LilGuy name="alice" game="tiltsies" equip={["tiltsies.ball"]} />
+```
+
+`items` lists the catalog (`id`, `game`, `slot`, `name`, `rarity`) for a shop or
+a locker; `gameItems(game)` and `freeItem(game)` narrow it. This library only
+draws items — who owns which, and what they cost, belongs to the game or the
+club.
 
 ### Upgrading from 0.1
 

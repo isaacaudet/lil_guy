@@ -20,7 +20,7 @@ export interface Topper {
  * beneath it. A tall part on a tall head is pushed down rather than allowed to
  * touch the top of the grid, where it would lose its outline.
  */
-function seat(c: Canvas, s: Stamp, x: number, sink = 1): void {
+export function seat(c: Canvas, s: Stamp, x: number, sink = 1): void {
   const last = s.length - 1;
   let top = Infinity;
   s[last].forEach((token, dx) => {
@@ -32,10 +32,10 @@ function seat(c: Canvas, s: Stamp, x: number, sink = 1): void {
   c.draw(s, x, Math.max(1, top + sink - 1 - last));
 }
 
-const mirror = (s: Stamp): Stamp => s.map(row => [...row].reverse());
+export const mirror = (s: Stamp): Stamp => s.map(row => [...row].reverse());
 
 /** A drawing centred on the crown, nudged `dx` columns to the right. */
-const centre = (name: string, rows: string[], dx = 0, sink = 1): Topper => {
+export const centre = (name: string, rows: string[], dx = 0, sink = 1): Topper => {
   const s = stamp(rows);
   return { name, draw: c => seat(c, s, c.centred(s) + dx, sink) };
 };
@@ -45,7 +45,7 @@ const centre = (name: string, rows: string[], dx = 0, sink = 1): Topper => {
  * from the edge of the head's shoulder row, so ears stay on narrow and wide
  * heads alike.
  */
-const pair = (name: string, rows: string[], inset = 0, sink = 1): Topper => {
+export const pair = (name: string, rows: string[], inset = 0, sink = 1): Topper => {
   const left = stamp(rows);
   const right = mirror(left);
   return {
@@ -59,7 +59,7 @@ const pair = (name: string, rows: string[], inset = 0, sink = 1): Topper => {
 };
 
 /** Paints the top `n` rows of the head, shading the right-hand edge. */
-function capRows(c: Canvas, n: number, fill: number, shade: number): void {
+export function capRows(c: Canvas, n: number, fill: number, shade: number): void {
   for (let y = c.crown; y < c.crown + n; y++) {
     c.paintRow(y, fill);
     const r = c.rows[y];

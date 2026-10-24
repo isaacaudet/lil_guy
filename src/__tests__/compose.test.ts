@@ -65,7 +65,7 @@ describe('compose', () => {
     expect(grid.length).toBe(GRID_SIZE);
     for (const row of grid) {
       expect(row.length).toBe(GRID_SIZE);
-      for (const cell of row) expect(cell >= 0 && cell <= T.RED).toBe(true);
+      for (const cell of row) expect(cell >= 0 && cell <= T.DEEP).toBe(true);
     }
   });
 
