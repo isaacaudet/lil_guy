@@ -32,6 +32,13 @@ export const headWeights = [
   4, // tower
   3, // gourd
   3, // bean
+  1, // flame
+  1, // jellyfish
+  1, // octopus
+  2, // robot
+  1, // cactus
+  1, // saucer
+  1, // shard
 ];
 
 export const eyeWeights = [
@@ -53,6 +60,7 @@ export const eyeWeights = [
   3, // squint
   2, // fired up
   1, // laser
+  1, // cyclops
 ];
 
 export const mouthWeights = [

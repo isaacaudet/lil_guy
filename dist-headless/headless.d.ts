@@ -37,6 +37,11 @@ declare class Canvas {
   /** Whether the bare silhouette covers this cell. */
   isBody(x: number, y: number): boolean;
   get(x: number, y: number): number;
+  /**
+   * The grid's border belongs to the outline, so parts never paint on it: a
+   * hat on a tall head or an arm beside a wide one stops a pixel short instead
+   * of running off the edge with no outline.
+   */
   set(x: number, y: number, token: number): void;
   /** First row the bare body covers in this column, or null. */
   topOf(x: number): number | null;
@@ -120,7 +125,7 @@ declare function withItems(palette: Palette, config: AvatarConfig): Palette;
  * An item (`puttsies.ball`) is a design. A copy someone owns adds:
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
- *   Prism and Gold are progressively rarer
+ *   Prism, Negative and Gold are progressively rarer
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Mint in Box … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -134,7 +139,7 @@ declare function withItems(palette: Palette, config: AvatarConfig): Palette;
  * millions of values. Everything is deterministic from the stored numbers, so
  * a copy looks the same everywhere it is drawn.
  */
-type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'gold';
+type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold';
 interface Owned {
   item: string;
   finish: Finish;

@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~240 billion lil guys. Zero dependencies. ~21 KB gzipped.
+  ~370 billion lil guys. Zero dependencies. ~21 KB gzipped.
 </p>
 
 <p align="center">
@@ -219,7 +219,7 @@ A few rules keep every combination good-looking:
 - **Clean colours, with depth.** No greys or murky browns; every guy gets the same outline, gleam and shading, and the vivid tone is common
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-16 shapes × 18 eyes × 16 mouths × 8 cheeks × 30 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) = **242,063,769,600** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 36.7 billion equally-likely guys.
+23 shapes × 19 eyes × 16 mouths × 8 cheeks × 30 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) = **367,298,150,400** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 51.1 billion equally-likely guys.
 
 ### Pinning parts
 
@@ -227,8 +227,8 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 
 | Slot | Values |
 |---|---|
-| `head` | `0-15` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean |
-| `eyes` | `0-17` beans, shiny, happy, sparkle, wink, glossy, content, excited, hearts, lashes, glance, chill, side-eye, shades, star, squint, fired up, laser |
+| `head` | `0-22` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard |
+| `eyes` | `0-18` beans, shiny, happy, sparkle, wink, glossy, content, excited, hearts, lashes, glance, chill, side-eye, shades, star, squint, fired up, laser, cyclops |
 | `mouth` | `0-15` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum |
 | `cheeks` | `0-7` bare, blush, dot, rosy, freckles, scar, band-aid, war paint |
 | `hair` | `0-29` whatever sits on top: ears, a sprout, a hat, a mohawk, headphones |
@@ -271,7 +271,7 @@ An item is a design. A copy someone owns is the item plus:
 
 | | |
 |---|---|
-| **Finish** | Plain (79.42%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Gold (0.9%). Sunset, Nebula, Prism and Gold only come Mint in Box or Like New |
+| **Finish** | Plain (79.22%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Gold (0.9%), Prism (0.5%), Negative (0.2%). Everything but Plain and Tempered only comes Mint in Box or Like New |
 | **Scuff** | 0–1, how worn it is. Mint in Box < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Mint in Box copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered prints 661, 670, 321, 387 and 955 come out almost all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy |

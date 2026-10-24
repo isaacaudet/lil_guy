@@ -78,7 +78,7 @@ describe('compose', () => {
       if (cells.length) wrong.push(`${JSON.stringify(parts)} ${cells.join(' ')}`);
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('keeps every guy in one piece', () => {
     const wrong: string[] = [];
@@ -87,7 +87,7 @@ describe('compose', () => {
       if (n !== 1) wrong.push(`${JSON.stringify(parts)} has ${n} pieces`);
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('draws every eye and mouth in full, on every head, under every hat', () => {
     // The face is the whole character. If a narrow head or a low hat clips a
@@ -113,7 +113,7 @@ describe('compose', () => {
       }
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('never lets something worn cover the mouth', () => {
     const wrong: string[] = [];

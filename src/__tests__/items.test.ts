@@ -101,7 +101,7 @@ describe('skins', () => {
       }
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('keep the eyes legible on the skin, in every colourway and tone', () => {
     // The eyes are drawn in the palette's ink, onto the skin's own colours.
@@ -150,7 +150,7 @@ describe('everything worn together', () => {
       }
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('fills every empty cell when a frame is worn', () => {
     for (const frame of frames) {

@@ -8,7 +8,7 @@ import type { GameId } from './types';
  * An item (`puttsies.ball`) is a design. A copy someone owns adds:
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
- *   Prism and Gold are progressively rarer
+ *   Prism, Negative and Gold are progressively rarer
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Mint in Box … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -23,7 +23,7 @@ import type { GameId } from './types';
  * a copy looks the same everywhere it is drawn.
  */
 
-export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'gold';
+export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold';
 
 export interface Owned {
   item: string;
@@ -51,11 +51,12 @@ export type Grade = (typeof GRADES)[number];
  * Battered Nebula.
  */
 export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number] }> = {
-  'plain':    { name: 'Plain',    grade: 0, odds: 79.42, scuffs: [0, 1] },
+  'plain':    { name: 'Plain',    grade: 0, odds: 79.22, scuffs: [0, 1] },
   'sunset':   { name: 'Sunset',   grade: 1, odds: 15.98, scuffs: [0, 0.08] },
   'tempered': { name: 'Tempered', grade: 2, odds: 1.6,   scuffs: [0, 1] },
   'nebula':   { name: 'Nebula',   grade: 2, odds: 1.6,   scuffs: [0, 0.08] },
   'prism':    { name: 'Prism',    grade: 3, odds: 0.5,   scuffs: [0, 0.08] },
+  'negative': { name: 'Negative', grade: 3, odds: 0.2,   scuffs: [0, 0.08] },
   'gold':     { name: 'Gold',     grade: 4, odds: 0.9,   scuffs: [0, 0.08] },
 };
 
@@ -233,6 +234,11 @@ const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, origina
     };
     const c: RGB = [k(0) * 255, k(8) * 255, k(4) * 255];
     return mix(shaded(c, l), [255, 255, 255], 0.18);
+  },
+  'negative': (_x, _y, _l, _p, original) => {
+    // The item's own colours turned inside out, pulled towards violet.
+    const inverted: RGB = [255 - original[0], 255 - original[1], 255 - original[2]];
+    return mix(inverted, [92, 52, 160], 0.22);
   },
   'gold': (x, y, l) => {
     if ((x + y) % 6 === 0 && l > 0.5) return rgb('#FFFBE6');

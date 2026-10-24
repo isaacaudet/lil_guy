@@ -99,4 +99,9 @@ export const eyes: Eyes[] = [
     'rr....rr',
     'rr....rr',
   ]),
+  eyes_('cyclops', [
+    '.ww.',
+    'weee',
+    'eeee',
+  ]),
 ];

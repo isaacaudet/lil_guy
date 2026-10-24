@@ -62,8 +62,13 @@ export class Canvas {
     return this.inside(x, y) ? this.grid[y][x] : 0;
   }
 
+  /**
+   * The grid's border belongs to the outline, so parts never paint on it: a
+   * hat on a tall head or an arm beside a wide one stops a pixel short instead
+   * of running off the edge with no outline.
+   */
   set(x: number, y: number, token: number): void {
-    if (this.inside(x, y)) this.grid[y][x] = token;
+    if (x > 0 && y > 0 && x < GRID_SIZE - 1 && y < GRID_SIZE - 1) this.grid[y][x] = token;
   }
 
   /** First row the bare body covers in this column, or null. */
