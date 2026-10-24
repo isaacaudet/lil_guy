@@ -303,4 +303,26 @@ export const hair: Topper[] = [
       c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
     },
   },
+  centre('mohawk', [
+    '.aa.',
+    '.aA.',
+    '.aA.',
+    'aaAA',
+  ]),
+
+  {
+    name: 'headphones',
+    draw: c => {
+      // A band over the crown and a cup on each side of the head.
+      const r = c.rows[c.crown]!;
+      for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.OUTLINE);
+      const cups = c.rows[c.crown + 2]!;
+      for (const y of [c.crown + 2, c.crown + 3]) {
+        c.set(cups.left, y, T.ACCENT);
+        c.set(cups.right, y, T.ACCENT_SHADE);
+      }
+      c.set(r.left - 1, c.crown, T.OUTLINE);
+      c.set(r.right + 1, c.crown, T.OUTLINE);
+    },
+  },
 ];

@@ -1,4 +1,4 @@
-import { BLUE_GEMS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems } from "./paint-D0aLMF_J.js";
+import { BLUE_GEMS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, mouthWeights, mouths, nameOf, paint, paletteWeights, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems } from "./paint-BNQdEKpO.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
@@ -638,5 +638,76 @@ function getColor(colors, index) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, BLUE_GEMS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, LilGuy, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, useAvatarContext, useMergeRefs, wearOf, withItems };
+//#region src/rarity.ts
+const share = (weights, i) => weights[i] / weights.reduce((a, b) => a + b, 0);
+/** Each visible trait of a guy and how likely it was. */
+function traitOdds(config) {
+	return [
+		{
+			slot: "shape",
+			name: heads[config.head].name,
+			chance: share(headWeights, config.head)
+		},
+		{
+			slot: "eyes",
+			name: eyes[config.eyes].name,
+			chance: share(eyeWeights, config.eyes)
+		},
+		{
+			slot: "mouth",
+			name: mouths[config.mouth].name,
+			chance: share(mouthWeights, config.mouth)
+		},
+		{
+			slot: "cheeks",
+			name: cheeks[config.cheeks].name,
+			chance: share(cheekWeights, config.cheeks)
+		},
+		{
+			slot: "topper",
+			name: hair[config.hair].name,
+			chance: share(hairWeights, config.hair)
+		},
+		{
+			slot: "markings",
+			name: bodies[config.body].name,
+			chance: share(bodyWeights, config.body)
+		},
+		{
+			slot: "accessory",
+			name: accessories[config.accessory].name,
+			chance: share(accessoryWeights, config.accessory)
+		},
+		{
+			slot: "colour",
+			name: palettes[config.palette].name,
+			chance: share(paletteWeights, config.palette)
+		}
+	];
+}
+/** One in how many guys has exactly this combination. */
+function guyOneIn(config) {
+	return 1 / traitOdds(config).reduce((p, t) => p * t.chance, 1);
+}
+/** One in how many case drops for its game is a copy at least this good. */
+function copyOneIn(o) {
+	const item = itemById(o.item);
+	if (!item) return Infinity;
+	const pool = gameItems(item.game).filter((i) => !i.free).length;
+	const f = FINISHES[o.finish];
+	let p = 1 / pool * (f.odds / 100);
+	if (o.finish === "case-hardened" && BLUE_GEMS.includes(o.pattern)) p *= BLUE_GEMS.length / 1e3;
+	if (o.finish === "doppler" && [
+		"Ruby",
+		"Sapphire",
+		"Black Pearl"
+	].includes(dopplerPhase(o.pattern))) p *= 1 / 20;
+	const [lo, hi] = f.floats;
+	p *= Math.max(1e-7, (o.float - lo) / (hi - lo));
+	if (o.stattrak !== void 0) p *= .1;
+	return 1 / p;
+}
+
+//#endregion
+export { Avatar, AvatarFallback, AvatarImage, BLUE_GEMS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, LilGuy, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, copyOneIn, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.js.map

@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-C-5JbDHO.cjs');
+const require_paint = require('./paint-cJGGSJsn.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -635,6 +635,77 @@ function getColor(colors, index) {
 }
 
 //#endregion
+//#region src/rarity.ts
+const share = (weights, i) => weights[i] / weights.reduce((a, b) => a + b, 0);
+/** Each visible trait of a guy and how likely it was. */
+function traitOdds(config) {
+	return [
+		{
+			slot: "shape",
+			name: require_paint.heads[config.head].name,
+			chance: share(require_paint.headWeights, config.head)
+		},
+		{
+			slot: "eyes",
+			name: require_paint.eyes[config.eyes].name,
+			chance: share(require_paint.eyeWeights, config.eyes)
+		},
+		{
+			slot: "mouth",
+			name: require_paint.mouths[config.mouth].name,
+			chance: share(require_paint.mouthWeights, config.mouth)
+		},
+		{
+			slot: "cheeks",
+			name: require_paint.cheeks[config.cheeks].name,
+			chance: share(require_paint.cheekWeights, config.cheeks)
+		},
+		{
+			slot: "topper",
+			name: require_paint.hair[config.hair].name,
+			chance: share(require_paint.hairWeights, config.hair)
+		},
+		{
+			slot: "markings",
+			name: require_paint.bodies[config.body].name,
+			chance: share(require_paint.bodyWeights, config.body)
+		},
+		{
+			slot: "accessory",
+			name: require_paint.accessories[config.accessory].name,
+			chance: share(require_paint.accessoryWeights, config.accessory)
+		},
+		{
+			slot: "colour",
+			name: require_paint.palettes[config.palette].name,
+			chance: share(require_paint.paletteWeights, config.palette)
+		}
+	];
+}
+/** One in how many guys has exactly this combination. */
+function guyOneIn(config) {
+	return 1 / traitOdds(config).reduce((p, t) => p * t.chance, 1);
+}
+/** One in how many case drops for its game is a copy at least this good. */
+function copyOneIn(o) {
+	const item = require_paint.itemById(o.item);
+	if (!item) return Infinity;
+	const pool = require_paint.gameItems(item.game).filter((i) => !i.free).length;
+	const f = require_paint.FINISHES[o.finish];
+	let p = 1 / pool * (f.odds / 100);
+	if (o.finish === "case-hardened" && require_paint.BLUE_GEMS.includes(o.pattern)) p *= require_paint.BLUE_GEMS.length / 1e3;
+	if (o.finish === "doppler" && [
+		"Ruby",
+		"Sapphire",
+		"Black Pearl"
+	].includes(require_paint.dopplerPhase(o.pattern))) p *= 1 / 20;
+	const [lo, hi] = f.floats;
+	p *= Math.max(1e-7, (o.float - lo) / (hi - lo));
+	if (o.stattrak !== void 0) p *= .1;
+	return 1 / p;
+}
+
+//#endregion
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
@@ -655,6 +726,7 @@ exports.bodies = require_paint.bodies
 exports.cheeks = require_paint.cheeks
 exports.compose = require_paint.compose
 exports.composeBase = require_paint.composeBase
+exports.copyOneIn = copyOneIn
 exports.decode = require_paint.decode
 exports.dopplerPhase = require_paint.dopplerPhase
 exports.dress = require_paint.dress
@@ -665,6 +737,7 @@ exports.gameItems = require_paint.gameItems
 exports.getColor = getColor
 exports.getPalette = require_paint.getPalette
 exports.gradeOf = require_paint.gradeOf
+exports.guyOneIn = guyOneIn
 exports.hair = require_paint.hair
 exports.hash = require_paint.hash
 exports.hashNth = require_paint.hashNth
@@ -685,6 +758,7 @@ exports.special = require_paint.special
 exports.starter = require_paint.starter
 exports.toPng = toPng
 exports.toSvgString = toSvgString
+exports.traitOdds = traitOdds
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
 exports.wearOf = require_paint.wearOf

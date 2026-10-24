@@ -68,4 +68,15 @@ export const mouths: Mouth[] = [
     'mmmm',
     '..t.',
   ]),
+  mouth('flat', [
+    'mmmm',
+  ]),
+  mouth('gritted', [
+    'mmmmmm',
+    'mwmwmm',
+  ]),
+  mouth('bubblegum', [
+    'mm.cc',
+    '...cc',
+  ]),
 ];

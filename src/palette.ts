@@ -55,6 +55,13 @@ const COLOURWAYS: Colourway[] = [
   { name: 'Cotton Candy', body: '#A9DCFF', accent: '#FFA3D1', trim: '#FFFFFF' },
   { name: 'Matcha',       body: '#9CCB7A', accent: '#E9A2C8', trim: '#FFF7E0' },
   { name: 'Ruby',         body: '#F2697E', accent: '#FFD56B', trim: '#FFF3E0' },
+  // Night colourways: deeper, for guys with a bit more edge. Rarer than the rest.
+  { name: 'Charcoal',     body: '#4A4E5E', accent: '#E8483D', trim: '#F2C230' },
+  { name: 'Cobalt',       body: '#3D6FE0', accent: '#F2C230', trim: '#FFFFFF' },
+  { name: 'Midnight',     body: '#2E3A66', accent: '#5FE0B0', trim: '#FFE066' },
+  { name: 'Oxblood',      body: '#8E2A3A', accent: '#F2C230', trim: '#FFF1D6' },
+  { name: 'Forest',       body: '#2F6B4A', accent: '#F28A2E', trim: '#FFF1D6' },
+  { name: 'Grape Soda',   body: '#6B3FA0', accent: '#3DE0B0', trim: '#FFE066' },
 ];
 
 // ---------------------------------------------------------------- colour math
@@ -137,8 +144,13 @@ function shadeOf(hex: string, depth = 0.12): string {
 function derive(name: string, body: string, accent: string, trim: string): Palette {
   const [h] = toHsl(body);
   const outlineHue = towards(h, 285, 25);
-  const outline = fromHsl([outlineHue, 0.42, 0.3]);
-  const ink = fromHsl([outlineHue, 0.38, 0.14]);
+  // A deep version of the body; on a dark body it goes nearly black so the
+  // edge still reads.
+  const outline = fromHsl([outlineHue, 0.42, toHsl(body)[2] >= 0.5 ? 0.3 : toHsl(body)[2] * 0.25]);
+  // Dark eyes on most bodies; on a body too dark for them, the eyes and mouth
+  // glow a light cream instead, which reads as a look rather than a mistake.
+  const dark = fromHsl([outlineHue, 0.38, 0.14]);
+  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark : '#FFF1D6';
 
   // A rosy pink, deepened until it reads on this body.
   let blush = '#FF8FA8';
@@ -199,7 +211,7 @@ export function shadePalette(palette: Palette, shade: number): Palette {
   const tone = (hex: string) => {
     if (shade === 0) return mix(hex, '#FFFFFF', 0.3);
     const [h, s, l] = toHsl(hex);
-    return fromHsl([h, Math.min(0.8, s + 0.04), l - 0.08]);
+    return fromHsl([h, Math.min(0.8, s + 0.04), l > 0.4 ? l - 0.08 : l]);
   };
   const c = palette.colors;
   return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);

@@ -58,43 +58,52 @@ const headWeights = [
 	3
 ];
 const eyeWeights = [
-	5,
-	5,
+	10,
+	10,
+	8,
+	8,
+	4,
+	6,
+	6,
+	4,
+	2,
 	4,
 	4,
-	2,
-	3,
-	3,
-	2,
-	1,
+	6,
+	4,
 	2,
 	2,
 	3,
 	2,
-	1,
 	1
 ];
 const mouthWeights = [
-	5,
+	10,
+	8,
+	6,
+	6,
+	4,
+	4,
+	4,
+	2,
+	2,
+	6,
+	2,
+	4,
 	4,
 	3,
-	3,
-	2,
-	2,
-	2,
-	1,
-	1,
-	3,
-	1,
 	2,
 	2
 ];
 const cheekWeights = [
-	5,
-	3,
+	10,
+	6,
+	4,
 	2,
-	1,
-	2
+	4,
+	2,
+	2,
+	1
 ];
 const hairWeights = [
 	9,
@@ -124,7 +133,9 @@ const hairWeights = [
 	1,
 	1,
 	1,
-	1
+	1,
+	2,
+	2
 ];
 const bodyWeights = [
 	9,
@@ -167,7 +178,8 @@ const shadeWeights = [
 	3
 ];
 /** No colourway is more "correct" than another. */
-const paletteWeights = new Array(32).fill(1);
+/** The night colourways (the last six) are half as common as the rest. */
+const paletteWeights = [...new Array(32).fill(2), ...new Array(6).fill(1)];
 /**
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
@@ -651,7 +663,14 @@ const eyes = [
 		".y....y.",
 		"yyy..yyy",
 		".y....y."
-	])
+	]),
+	eyes_("squint", ["ee....ee"]),
+	eyes_("fired up", [
+		"o......o",
+		".o....o.",
+		"ee....ee"
+	]),
+	eyes_("laser", ["rr....rr", "rr....rr"])
 ];
 
 //#endregion
@@ -689,7 +708,10 @@ const mouths = [
 		"..tt.."
 	]),
 	mouth("toothy", ["mwwwwm", ".mmmm."]),
-	mouth("tongue out", ["mmmm", "..t."])
+	mouth("tongue out", ["mmmm", "..t."]),
+	mouth("flat", ["mmmm"]),
+	mouth("gritted", ["mmmmmm", "mwmwmm"]),
+	mouth("bubblegum", ["mm.cc", "...cc"])
 ];
 
 //#endregion
@@ -703,7 +725,10 @@ const cheeks = [
 	cheeks_("blush", ["cc......cc"]),
 	cheeks_("dot", ["c........c"]),
 	cheeks_("rosy", ["cc......cc", ".c......c."]),
-	cheeks_("freckles", ["s.s....s.s"])
+	cheeks_("freckles", ["s.s....s.s"]),
+	cheeks_("scar", [".......o..", "........o."]),
+	cheeks_("band-aid", [".......xx."]),
+	cheeks_("war paint", ["rr......rr"])
 ];
 
 //#endregion
@@ -960,6 +985,26 @@ const hair = [
 			c.paintRow(c.crown + 1, T.TRIM);
 			const prop = stamp(["xxoaa", "..o.."]);
 			c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
+		}
+	},
+	centre("mohawk", [
+		".aa.",
+		".aA.",
+		".aA.",
+		"aaAA"
+	]),
+	{
+		name: "headphones",
+		draw: (c) => {
+			const r = c.rows[c.crown];
+			for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.OUTLINE);
+			const cups = c.rows[c.crown + 2];
+			for (const y of [c.crown + 2, c.crown + 3]) {
+				c.set(cups.left, y, T.ACCENT);
+				c.set(cups.right, y, T.ACCENT_SHADE);
+			}
+			c.set(r.left - 1, c.crown, T.OUTLINE);
+			c.set(r.right + 1, c.crown, T.OUTLINE);
 		}
 	}
 ];
@@ -3177,6 +3222,42 @@ const COLOURWAYS = [
 		body: "#F2697E",
 		accent: "#FFD56B",
 		trim: "#FFF3E0"
+	},
+	{
+		name: "Charcoal",
+		body: "#4A4E5E",
+		accent: "#E8483D",
+		trim: "#F2C230"
+	},
+	{
+		name: "Cobalt",
+		body: "#3D6FE0",
+		accent: "#F2C230",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Midnight",
+		body: "#2E3A66",
+		accent: "#5FE0B0",
+		trim: "#FFE066"
+	},
+	{
+		name: "Oxblood",
+		body: "#8E2A3A",
+		accent: "#F2C230",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Forest",
+		body: "#2F6B4A",
+		accent: "#F28A2E",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Grape Soda",
+		body: "#6B3FA0",
+		accent: "#3DE0B0",
+		trim: "#FFE066"
 	}
 ];
 function hexToRgb(hex$1) {
@@ -3286,13 +3367,14 @@ function derive(name, body, accent, trim) {
 	const outline$1 = fromHsl([
 		outlineHue,
 		.42,
-		.3
+		toHsl(body)[2] >= .5 ? .3 : toHsl(body)[2] * .25
 	]);
-	const ink = fromHsl([
+	const dark = fromHsl([
 		outlineHue,
 		.38,
 		.14
 	]);
+	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : "#FFF1D6";
 	let blush = "#FF8FA8";
 	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
 	let tongue = "#FF6B88";
@@ -3347,7 +3429,7 @@ function shadePalette(palette, shade) {
 		return fromHsl([
 			h,
 			Math.min(.8, s + .04),
-			l - .08
+			l > .4 ? l - .08 : l
 		]);
 	};
 	const c = palette.colors;
@@ -3502,4 +3584,75 @@ function getColor(colors, index) {
 }
 
 //#endregion
-export { BLUE_GEMS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, wearOf, withItems };
+//#region src/rarity.ts
+const share = (weights, i) => weights[i] / weights.reduce((a, b) => a + b, 0);
+/** Each visible trait of a guy and how likely it was. */
+function traitOdds(config) {
+	return [
+		{
+			slot: "shape",
+			name: heads[config.head].name,
+			chance: share(headWeights, config.head)
+		},
+		{
+			slot: "eyes",
+			name: eyes[config.eyes].name,
+			chance: share(eyeWeights, config.eyes)
+		},
+		{
+			slot: "mouth",
+			name: mouths[config.mouth].name,
+			chance: share(mouthWeights, config.mouth)
+		},
+		{
+			slot: "cheeks",
+			name: cheeks[config.cheeks].name,
+			chance: share(cheekWeights, config.cheeks)
+		},
+		{
+			slot: "topper",
+			name: hair[config.hair].name,
+			chance: share(hairWeights, config.hair)
+		},
+		{
+			slot: "markings",
+			name: bodies[config.body].name,
+			chance: share(bodyWeights, config.body)
+		},
+		{
+			slot: "accessory",
+			name: accessories[config.accessory].name,
+			chance: share(accessoryWeights, config.accessory)
+		},
+		{
+			slot: "colour",
+			name: palettes[config.palette].name,
+			chance: share(paletteWeights, config.palette)
+		}
+	];
+}
+/** One in how many guys has exactly this combination. */
+function guyOneIn(config) {
+	return 1 / traitOdds(config).reduce((p, t) => p * t.chance, 1);
+}
+/** One in how many case drops for its game is a copy at least this good. */
+function copyOneIn(o) {
+	const item = itemById(o.item);
+	if (!item) return Infinity;
+	const pool = gameItems(item.game).filter((i) => !i.free).length;
+	const f = FINISHES[o.finish];
+	let p = 1 / pool * (f.odds / 100);
+	if (o.finish === "case-hardened" && BLUE_GEMS.includes(o.pattern)) p *= BLUE_GEMS.length / 1e3;
+	if (o.finish === "doppler" && [
+		"Ruby",
+		"Sapphire",
+		"Black Pearl"
+	].includes(dopplerPhase(o.pattern))) p *= 1 / 20;
+	const [lo, hi] = f.floats;
+	p *= Math.max(1e-7, (o.float - lo) / (hi - lo));
+	if (o.stattrak !== void 0) p *= .1;
+	return 1 / p;
+}
+
+//#endregion
+export { BLUE_GEMS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, copyOneIn, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, traitOdds, wearOf, withItems };

@@ -107,3 +107,19 @@ describe('drawing owned copies', () => {
     expect(plain.flat().filter(v => v === T.GOLD).length).toBeLessThan(gold.flat().filter(v => v === T.GOLD).length);
   });
 });
+
+describe('rarity', () => {
+  const { guyOneIn, copyOneIn } = require('../rarity');
+  it('makes a famous pattern and a low float rarer', () => {
+    const base = { item: 'puttsies.ball', finish: 'doppler' as const, float: 0.05, pattern: 7 };
+    expect(copyOneIn({ ...base, pattern: 20 })).toBeGreaterThan(copyOneIn(base));
+    expect(copyOneIn({ ...base, float: 0.001 })).toBeGreaterThan(copyOneIn(base));
+    expect(copyOneIn({ ...base, stattrak: 0 })).toBeCloseTo(copyOneIn(base) * 10, 5);
+  });
+
+  it('rates a guy with rare traits rarer than a common one', () => {
+    const plain = resolve('x', { eyes: 1, mouth: 0, hair: 0, cheeks: 0, accessory: 0, body: 0 });
+    const loud = resolve('x', { eyes: 17, mouth: 0, hair: 11, cheeks: 0, accessory: 0, body: 0 });
+    expect(guyOneIn(loud)).toBeGreaterThan(guyOneIn(plain));
+  });
+});

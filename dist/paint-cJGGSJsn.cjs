@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -54,43 +79,52 @@ const headWeights = [
 	3
 ];
 const eyeWeights = [
-	5,
-	5,
+	10,
+	10,
+	8,
+	8,
+	4,
+	6,
+	6,
+	4,
+	2,
 	4,
 	4,
-	2,
-	3,
-	3,
-	2,
-	1,
+	6,
+	4,
 	2,
 	2,
 	3,
 	2,
-	1,
 	1
 ];
 const mouthWeights = [
-	5,
+	10,
+	8,
+	6,
+	6,
+	4,
+	4,
+	4,
+	2,
+	2,
+	6,
+	2,
+	4,
 	4,
 	3,
-	3,
-	2,
-	2,
-	2,
-	1,
-	1,
-	3,
-	1,
 	2,
 	2
 ];
 const cheekWeights = [
-	5,
-	3,
+	10,
+	6,
+	4,
 	2,
-	1,
-	2
+	4,
+	2,
+	2,
+	1
 ];
 const hairWeights = [
 	9,
@@ -120,7 +154,9 @@ const hairWeights = [
 	1,
 	1,
 	1,
-	1
+	1,
+	2,
+	2
 ];
 const bodyWeights = [
 	9,
@@ -163,7 +199,8 @@ const shadeWeights = [
 	3
 ];
 /** No colourway is more "correct" than another. */
-const paletteWeights = new Array(32).fill(1);
+/** The night colourways (the last six) are half as common as the rest. */
+const paletteWeights = [...new Array(32).fill(2), ...new Array(6).fill(1)];
 /**
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
@@ -550,6 +587,26 @@ const hair = [
 			c.paintRow(c.crown + 1, T.TRIM);
 			const prop = stamp(["xxoaa", "..o.."]);
 			c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
+		}
+	},
+	centre("mohawk", [
+		".aa.",
+		".aA.",
+		".aA.",
+		"aaAA"
+	]),
+	{
+		name: "headphones",
+		draw: (c) => {
+			const r = c.rows[c.crown];
+			for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.OUTLINE);
+			const cups = c.rows[c.crown + 2];
+			for (const y of [c.crown + 2, c.crown + 3]) {
+				c.set(cups.left, y, T.ACCENT);
+				c.set(cups.right, y, T.ACCENT_SHADE);
+			}
+			c.set(r.left - 1, c.crown, T.OUTLINE);
+			c.set(r.right + 1, c.crown, T.OUTLINE);
 		}
 	}
 ];
@@ -2441,7 +2498,14 @@ const eyes = [
 		".y....y.",
 		"yyy..yyy",
 		".y....y."
-	])
+	]),
+	eyes_("squint", ["ee....ee"]),
+	eyes_("fired up", [
+		"o......o",
+		".o....o.",
+		"ee....ee"
+	]),
+	eyes_("laser", ["rr....rr", "rr....rr"])
 ];
 
 //#endregion
@@ -2479,7 +2543,10 @@ const mouths = [
 		"..tt.."
 	]),
 	mouth("toothy", ["mwwwwm", ".mmmm."]),
-	mouth("tongue out", ["mmmm", "..t."])
+	mouth("tongue out", ["mmmm", "..t."]),
+	mouth("flat", ["mmmm"]),
+	mouth("gritted", ["mmmmmm", "mwmwmm"]),
+	mouth("bubblegum", ["mm.cc", "...cc"])
 ];
 
 //#endregion
@@ -2493,7 +2560,10 @@ const cheeks = [
 	cheeks_("blush", ["cc......cc"]),
 	cheeks_("dot", ["c........c"]),
 	cheeks_("rosy", ["cc......cc", ".c......c."]),
-	cheeks_("freckles", ["s.s....s.s"])
+	cheeks_("freckles", ["s.s....s.s"]),
+	cheeks_("scar", [".......o..", "........o."]),
+	cheeks_("band-aid", [".......xx."]),
+	cheeks_("war paint", ["rr......rr"])
 ];
 
 //#endregion
@@ -3177,6 +3247,42 @@ const COLOURWAYS = [
 		body: "#F2697E",
 		accent: "#FFD56B",
 		trim: "#FFF3E0"
+	},
+	{
+		name: "Charcoal",
+		body: "#4A4E5E",
+		accent: "#E8483D",
+		trim: "#F2C230"
+	},
+	{
+		name: "Cobalt",
+		body: "#3D6FE0",
+		accent: "#F2C230",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Midnight",
+		body: "#2E3A66",
+		accent: "#5FE0B0",
+		trim: "#FFE066"
+	},
+	{
+		name: "Oxblood",
+		body: "#8E2A3A",
+		accent: "#F2C230",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Forest",
+		body: "#2F6B4A",
+		accent: "#F28A2E",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Grape Soda",
+		body: "#6B3FA0",
+		accent: "#3DE0B0",
+		trim: "#FFE066"
 	}
 ];
 function hexToRgb(hex$1) {
@@ -3286,13 +3392,14 @@ function derive(name, body, accent, trim) {
 	const outline$1 = fromHsl([
 		outlineHue,
 		.42,
-		.3
+		toHsl(body)[2] >= .5 ? .3 : toHsl(body)[2] * .25
 	]);
-	const ink = fromHsl([
+	const dark = fromHsl([
 		outlineHue,
 		.38,
 		.14
 	]);
+	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : "#FFF1D6";
 	let blush = "#FF8FA8";
 	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
 	let tongue = "#FF6B88";
@@ -3347,7 +3454,7 @@ function shadePalette(palette, shade) {
 		return fromHsl([
 			h,
 			Math.min(.8, s + .04),
-			l - .08
+			l > .4 ? l - .08 : l
 		]);
 	};
 	const c = palette.colors;
@@ -3374,5 +3481,304 @@ function paint(grid, config, palette) {
 }
 
 //#endregion
-export { BLUE_GEMS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems };
-//# sourceMappingURL=paint-D0aLMF_J.js.map
+Object.defineProperty(exports, 'BLUE_GEMS', {
+  enumerable: true,
+  get: function () {
+    return BLUE_GEMS;
+  }
+});
+Object.defineProperty(exports, 'FINISHES', {
+  enumerable: true,
+  get: function () {
+    return FINISHES;
+  }
+});
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'GAMES', {
+  enumerable: true,
+  get: function () {
+    return GAMES;
+  }
+});
+Object.defineProperty(exports, 'GRADES', {
+  enumerable: true,
+  get: function () {
+    return GRADES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, 'WEAR', {
+  enumerable: true,
+  get: function () {
+    return WEAR;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'accessoryWeights', {
+  enumerable: true,
+  get: function () {
+    return accessoryWeights;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'bodyWeights', {
+  enumerable: true,
+  get: function () {
+    return bodyWeights;
+  }
+});
+Object.defineProperty(exports, 'cheekWeights', {
+  enumerable: true,
+  get: function () {
+    return cheekWeights;
+  }
+});
+Object.defineProperty(exports, 'cheeks', {
+  enumerable: true,
+  get: function () {
+    return cheeks;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'decode', {
+  enumerable: true,
+  get: function () {
+    return decode;
+  }
+});
+Object.defineProperty(exports, 'dopplerPhase', {
+  enumerable: true,
+  get: function () {
+    return dopplerPhase;
+  }
+});
+Object.defineProperty(exports, 'dress', {
+  enumerable: true,
+  get: function () {
+    return dress;
+  }
+});
+Object.defineProperty(exports, 'encode', {
+  enumerable: true,
+  get: function () {
+    return encode;
+  }
+});
+Object.defineProperty(exports, 'eyeWeights', {
+  enumerable: true,
+  get: function () {
+    return eyeWeights;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'freeItem', {
+  enumerable: true,
+  get: function () {
+    return freeItem;
+  }
+});
+Object.defineProperty(exports, 'gameItems', {
+  enumerable: true,
+  get: function () {
+    return gameItems;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'gradeOf', {
+  enumerable: true,
+  get: function () {
+    return gradeOf;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hairWeights', {
+  enumerable: true,
+  get: function () {
+    return hairWeights;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'headWeights', {
+  enumerable: true,
+  get: function () {
+    return headWeights;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'itemById', {
+  enumerable: true,
+  get: function () {
+    return itemById;
+  }
+});
+Object.defineProperty(exports, 'items', {
+  enumerable: true,
+  get: function () {
+    return items;
+  }
+});
+Object.defineProperty(exports, 'mouthWeights', {
+  enumerable: true,
+  get: function () {
+    return mouthWeights;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'nameOf', {
+  enumerable: true,
+  get: function () {
+    return nameOf;
+  }
+});
+Object.defineProperty(exports, 'paint', {
+  enumerable: true,
+  get: function () {
+    return paint;
+  }
+});
+Object.defineProperty(exports, 'paletteWeights', {
+  enumerable: true,
+  get: function () {
+    return paletteWeights;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'roll', {
+  enumerable: true,
+  get: function () {
+    return roll;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+Object.defineProperty(exports, 'slotOf', {
+  enumerable: true,
+  get: function () {
+    return slotOf;
+  }
+});
+Object.defineProperty(exports, 'special', {
+  enumerable: true,
+  get: function () {
+    return special;
+  }
+});
+Object.defineProperty(exports, 'starter', {
+  enumerable: true,
+  get: function () {
+    return starter;
+  }
+});
+Object.defineProperty(exports, 'wearOf', {
+  enumerable: true,
+  get: function () {
+    return wearOf;
+  }
+});
+Object.defineProperty(exports, 'withItems', {
+  enumerable: true,
+  get: function () {
+    return withItems;
+  }
+});
+//# sourceMappingURL=paint-cJGGSJsn.cjs.map

@@ -832,5 +832,30 @@ declare const DEFAULT_COLORS_DARK: readonly ["#db2777", "#d97706", "#2563eb", "#
 declare function getColor(colors: readonly string[], index: number): string;
 
 //#endregion
-export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BLUE_GEMS, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, Intensity3D, Item, LilGuy, LilGuyProps, Owned, Palette, PixelGrid, RenderOptions, SHADE_COUNT, Slot, WEAR, accessories, bodies, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, useAvatarContext, useMergeRefs, wearOf, withItems };
+//#region src/rarity.d.ts
+/**
+ * How rare things are, as "one in N".
+ *
+ * A guy's rarity is the chance of rolling his exact combination of visible
+ * traits — shape, eyes, mouth, cheeks, topper, markings, accessory and
+ * colourway — so a laser-eyed guy in a crown is rarer than one with bean eyes
+ * and no hat. A copy's rarity is the chance a case drops exactly that: its
+ * item, its finish, a pattern as special as its pattern, a float at least as
+ * low as its float, and StatTrak if it has it.
+ */
+interface TraitOdds {
+  slot: string;
+  name: string;
+  /** Chance of this trait, 0–1. */
+  chance: number;
+}
+/** Each visible trait of a guy and how likely it was. */
+declare function traitOdds(config: AvatarConfig): TraitOdds[];
+/** One in how many guys has exactly this combination. */
+declare function guyOneIn(config: AvatarConfig): number;
+/** One in how many case drops for its game is a copy at least this good. */
+declare function copyOneIn(o: Owned): number;
+
+//#endregion
+export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BLUE_GEMS, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, Intensity3D, Item, LilGuy, LilGuyProps, Owned, Palette, PixelGrid, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, bodies, cheeks, compose, composeBase, copyOneIn, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

@@ -18,3 +18,5 @@ export { toSvgString } from './render-string';
 export { toPng } from './export-png';
 
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from './utils/colors';
+export { traitOdds, guyOneIn, copyOneIn } from './rarity';
+export type { TraitOdds } from './rarity';

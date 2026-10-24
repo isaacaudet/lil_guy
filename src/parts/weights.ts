@@ -35,45 +35,54 @@ export const headWeights = [
 ];
 
 export const eyeWeights = [
-  5, // beans
-  5, // shiny
-  4, // happy
-  4, // sparkle
-  2, // wink
-  3, // glossy
-  3, // content
-  2, // excited
-  1, // hearts
-  2, // lashes
-  2, // glance
-  3, // chill
-  2, // side-eye
-  1, // shades
-  1, // star
+  10, // beans
+  10, // shiny
+  8, // happy
+  8, // sparkle
+  4, // wink
+  6, // glossy
+  6, // content
+  4, // excited
+  2, // hearts
+  4, // lashes
+  4, // glance
+  6, // chill
+  4, // side-eye
+  2, // shades
+  2, // star
+  3, // squint
+  2, // fired up
+  1, // laser
 ];
 
 export const mouthWeights = [
-  5, // smile
-  4, // cat
-  3, // laugh
-  3, // beak
-  2, // blep
-  2, // grin
-  2, // fang
-  1, // smirk
-  1, // ooh
-  3, // tiny
-  1, // wobble
-  2, // toothy
-  2, // tongue out
+  10, // smile
+  8, // cat
+  6, // laugh
+  6, // beak
+  4, // blep
+  4, // grin
+  4, // fang
+  2, // smirk
+  2, // ooh
+  6, // tiny
+  2, // wobble
+  4, // toothy
+  4, // tongue out
+  3, // flat
+  2, // gritted
+  2, // bubblegum
 ];
 
 export const cheekWeights = [
-  5, // bare
-  3, // blush
-  2, // dot
-  1, // rosy
-  2, // freckles
+  10, // bare
+  6, // blush
+  4, // dot
+  2, // rosy
+  4, // freckles
+  2, // scar
+  2, // band-aid
+  1, // war paint
 ];
 
 export const hairWeights = [
@@ -105,6 +114,8 @@ export const hairWeights = [
   1, // beret
   1, // witch hat
   1, // propeller
+  2, // mohawk
+  2, // headphones
 ];
 
 export const bodyWeights = [
@@ -139,7 +150,8 @@ export const footWeights = [5, 2, 2, 1, 2];
 export const shadeWeights = [1, 5, 3];
 
 /** No colourway is more "correct" than another. */
-export const paletteWeights = new Array(32).fill(1);
+/** The night colourways (the last six) are half as common as the rest. */
+export const paletteWeights = [...new Array(32).fill(2), ...new Array(6).fill(1)];
 
 /**
  * Picks an index from a weight table using a hash value, so the result is

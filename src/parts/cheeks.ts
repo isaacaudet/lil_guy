@@ -26,4 +26,14 @@ export const cheeks: Cheeks[] = [
   cheeks_('freckles', [
     's.s....s.s',
   ]),
+  cheeks_('scar', [
+    '.......o..',
+    '........o.',
+  ]),
+  cheeks_('band-aid', [
+    '.......xx.',
+  ]),
+  cheeks_('war paint', [
+    'rr......rr',
+  ]),
 ];

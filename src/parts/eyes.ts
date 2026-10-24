@@ -86,4 +86,17 @@ export const eyes: Eyes[] = [
     'yyy..yyy',
     '.y....y.',
   ]),
+  // Edgier, and rarer still.
+  eyes_('squint', [
+    'ee....ee',
+  ]),
+  eyes_('fired up', [
+    'o......o',
+    '.o....o.',
+    'ee....ee',
+  ]),
+  eyes_('laser', [
+    'rr....rr',
+    'rr....rr',
+  ]),
 ];
