@@ -1,8 +1,10 @@
+import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
+import * as react_jsx_runtime0 from "react/jsx-runtime";
 
 //#region src/parts/art.d.ts
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -83,11 +85,13 @@ declare class Canvas {
  * This file only draws them. Who owns what, and what it costs, belongs to the
  * game or the club.
  */
-type Slot = 'skin' | 'hat' | 'frame';
+type Slot = 'skin' | 'hat' | 'frame' | 'buddy';
+/** Which game an item belongs to; `club` items are seasonal and belong to no one game. */
+type ItemGame = GameId | 'club';
 interface Item {
   /** `game.name`. */
   id: string;
-  game: GameId;
+  game: ItemGame;
   slot: Slot;
   name: string;
   /** The hat every player has in this game from the start. */
@@ -106,8 +110,15 @@ interface Item {
   draw?: (c: Canvas) => void;
   /** Frames: which of the item's colours fills a background cell. */
   fill?: (x: number, y: number) => number;
+  /** Seasonal items: the days of the year they drop, as `MM-DD`, inclusive. */
+  season?: {
+    from: string;
+    to: string;
+  };
 }
-/** Every item: each game's skins, then hats, then frames. */
+/** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
+declare function inSeason(day: string | Date): Item[];
+/** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
 declare const items: Item[];
 declare function itemById(id: string | undefined): Item | undefined;
 declare const GAMES: GameId[];
@@ -158,6 +169,8 @@ interface Owned {
   tally?: number;
   /** Pins earned and stuck on it (see ./pins), at most three. */
   pins?: string[];
+  /** A seasonal copy's drop day, `YYYY-MM-DD`; it is part of what the copy is. */
+  date?: string;
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -268,6 +281,11 @@ declare function starter(name: string, game: GameId): Owned;
  * drop time and stored with the copy — never from anything a player picks.
  */
 declare function roll(seed: string, game: GameId): Owned;
+/**
+ * A seasonal drop: one of the hats in season on `day` (`YYYY-MM-DD`), rolled
+ * like a capsule and stamped with the day. Null when nothing is in season.
+ */
+declare function rollSeason(seed: string, day: string): Owned | null;
 /** Which slot a copy goes in. */
 declare function slotOf(o: Owned): Slot | undefined;
 
@@ -292,7 +310,8 @@ type PixelGrid = number[][];
  *  9 tongue       10 accent        11 accent shade    12 trim
  * 13 belly        14 leaf          15 leaf shade      16 gold
  * 17 gold shade   18 red           19 deep shade
- * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's
+ * 20–28 the equipped skin's own colours, 30–38 the hat's, 40–48 the frame's,
+ * 50–58 the buddy's
  */
 type ColorToken = number;
 interface Palette {
@@ -331,8 +350,10 @@ interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
+  /** A tiny pet that sits beside him. */
+  buddy?: string;
   /** The owned copies behind those items, if known: finish, scuff, print. */
-  owned?: Partial<Record<'skin' | 'hat' | 'frame', Owned>>;
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', Owned>>;
 }
 interface RenderOptions {
   size?: number;
@@ -362,7 +383,7 @@ declare const GRID_SIZE = 16;
 
 //#endregion
 //#region src/lil-guy.d.ts
-interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "children"> {
+interface LilGuyProps extends Omit<React$5.HTMLAttributes<HTMLDivElement>, "children"> {
   /**
    * String to generate a deterministic avatar from.
    * Same string always produces the same character.
@@ -453,7 +474,7 @@ interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "chil
   /**
    * Custom mouth render function.
    */
-  onRenderMouth?: () => React$4.ReactNode;
+  onRenderMouth?: () => React$5.ReactNode;
 }
 /**
  * LilGuy - Deterministic pixel art avatars from any string.
@@ -470,7 +491,7 @@ interface LilGuyProps extends Omit<React$4.HTMLAttributes<HTMLDivElement>, "chil
  * <LilGuy name="alice" parts={{ hair: 2, eyes: 0 }} />
  * ```
  */
-declare const LilGuy: React$4.ForwardRefExoticComponent<LilGuyProps & React$4.RefAttributes<HTMLDivElement>>;
+declare const LilGuy: React$5.ForwardRefExoticComponent<LilGuyProps & React$5.RefAttributes<HTMLDivElement>>;
 
 //#endregion
 //#region src/avatar.d.ts
@@ -484,7 +505,7 @@ type AvatarContextValue = {
  * Throws an error if used outside of Avatar.
  */
 declare const useAvatarContext: () => AvatarContextValue;
-type AvatarProps = React$3.HTMLAttributes<HTMLSpanElement> & {
+type AvatarProps = React$4.HTMLAttributes<HTMLSpanElement> & {
   /** Render as the child element instead of a span */
   asChild?: boolean;
 };
@@ -499,14 +520,14 @@ type AvatarProps = React$3.HTMLAttributes<HTMLSpanElement> & {
  * </Avatar>
  * ```
  */
-declare const Avatar: React$3.ForwardRefExoticComponent<React$3.HTMLAttributes<HTMLSpanElement> & {
+declare const Avatar: React$4.ForwardRefExoticComponent<React$4.HTMLAttributes<HTMLSpanElement> & {
   /** Render as the child element instead of a span */
   asChild?: boolean;
-} & React$3.RefAttributes<HTMLSpanElement>>;
+} & React$4.RefAttributes<HTMLSpanElement>>;
 
 //#endregion
 //#region src/avatar-fallback.d.ts
-type AvatarFallbackProps = Omit<React$2.HTMLAttributes<HTMLSpanElement>, "children"> & {
+type AvatarFallbackProps = Omit<React$3.HTMLAttributes<HTMLSpanElement>, "children"> & {
   /**
    * The name to derive initials and LilGuy from.
    */
@@ -520,7 +541,7 @@ type AvatarFallbackProps = Omit<React$2.HTMLAttributes<HTMLSpanElement>, "childr
   /**
    * Custom children to render instead of initials or LilGuy.
    */
-  children?: React$2.ReactNode;
+  children?: React$3.ReactNode;
   /**
    * Use the LilGuy pixel avatar as fallback instead of initials.
    * @default true
@@ -549,7 +570,7 @@ type AvatarFallbackProps = Omit<React$2.HTMLAttributes<HTMLSpanElement>, "childr
  * </AvatarFallback>
  * ```
  */
-declare const AvatarFallback: React$2.ForwardRefExoticComponent<Omit<React$2.HTMLAttributes<HTMLSpanElement>, "children"> & {
+declare const AvatarFallback: React$3.ForwardRefExoticComponent<Omit<React$3.HTMLAttributes<HTMLSpanElement>, "children"> & {
   /**
    * The name to derive initials and LilGuy from.
    */
@@ -563,7 +584,7 @@ declare const AvatarFallback: React$2.ForwardRefExoticComponent<Omit<React$2.HTM
   /**
    * Custom children to render instead of initials or LilGuy.
    */
-  children?: React$2.ReactNode;
+  children?: React$3.ReactNode;
   /**
    * Use the LilGuy pixel avatar as fallback instead of initials.
    * @default true
@@ -573,12 +594,12 @@ declare const AvatarFallback: React$2.ForwardRefExoticComponent<Omit<React$2.HTM
    * Props to pass to the LilGuy component.
    */
   lilGuyProps?: Omit<LilGuyProps, "name">;
-} & React$2.RefAttributes<HTMLSpanElement>>;
+} & React$3.RefAttributes<HTMLSpanElement>>;
 
 //#endregion
 //#region src/avatar-image.d.ts
 type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error";
-type AvatarImageProps = Omit<React$1.ImgHTMLAttributes<HTMLImageElement>, "src"> & {
+type AvatarImageProps = Omit<React$2.ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   /**
    * The image source URL. If empty or undefined, triggers error state.
    */
@@ -600,7 +621,7 @@ type AvatarImageProps = Omit<React$1.ImgHTMLAttributes<HTMLImageElement>, "src">
  * </Avatar>
  * ```
  */
-declare const AvatarImage: React$1.ForwardRefExoticComponent<Omit<React$1.ImgHTMLAttributes<HTMLImageElement>, "src"> & {
+declare const AvatarImage: React$2.ForwardRefExoticComponent<Omit<React$2.ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   /**
    * The image source URL. If empty or undefined, triggers error state.
    */
@@ -609,7 +630,7 @@ declare const AvatarImage: React$1.ForwardRefExoticComponent<Omit<React$1.ImgHTM
    * Callback when the image loading status changes.
    */
   onLoadingStatusChange?: (status: ImageLoadingStatus) => void;
-} & React$1.RefAttributes<HTMLImageElement>>;
+} & React$2.RefAttributes<HTMLImageElement>>;
 
 //#endregion
 //#region src/render-string.d.ts
@@ -860,6 +881,12 @@ declare const FRAME_HEIGHT: number;
 interface AnimationFrame {
   /** FRAME_HEIGHT rows of FRAME_WIDTH colours; null is transparent. */
   colors: (string | null)[][];
+  /**
+   * Which worn item each pixel belongs to: 0 none, 1 skin, 2 hat, 3 frame,
+   * 4 buddy (`FRAME_SLOTS`). A shader uses it to run each copy's finish on
+   * that copy's own pixels (see ./shine).
+   */
+  slots: number[][];
   /** How long the frame shows. */
   ms: number;
 }
@@ -894,6 +921,8 @@ declare const EMOTE_UNLOCKS: {
  * drawn, so it works for every eye part.
  */
 declare function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid;
+/** The order of `AnimationFrame.slots`, from 1. */
+declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy"];
 /**
  * Builds the frames of a move for the guy `input` would render as. Takes the
  * same options as `toSvgString` (game, equip, parts, palette).
@@ -957,16 +986,16 @@ declare const GOLD_RIM_DAYS = 365;
 
 //#endregion
 //#region src/utils/merge-refs.d.ts
-type PossibleRef<T> = React.Ref<T> | React.RefCallback<T> | undefined | null;
+type PossibleRef<T> = React$1.Ref<T> | React$1.RefCallback<T> | undefined | null;
 /**
  * Merges multiple refs into a single callback ref.
  * Useful for forwarding refs to a component while also using a local ref.
  */
-declare function mergeRefs<T>(refs: PossibleRef<T>[]): React.RefCallback<T> | null;
+declare function mergeRefs<T>(refs: PossibleRef<T>[]): React$1.RefCallback<T> | null;
 /**
  * Hook version of mergeRefs that memoizes the result.
  */
-declare function useMergeRefs<T>(refs: PossibleRef<T>[]): React.RefCallback<T> | null;
+declare function useMergeRefs<T>(refs: PossibleRef<T>[]): React$1.RefCallback<T> | null;
 
 //#endregion
 //#region src/utils/colors.d.ts
@@ -1005,5 +1034,131 @@ declare function guyOneIn(config: AvatarConfig): number;
 declare function copyOneIn(o: Owned): number;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, LUCKY_ODDS, LilGuy, LilGuyProps, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+//#region src/look.d.ts
+/**
+ * Keeping rarity real.
+ *
+ * A guy's rare traits only mean something if nobody can choose them. Two
+ * rules make that so:
+ *
+ * 1. **Draw the guy from a seed, not the name on the board.** A name can be
+ *    typed and changed, so anyone could try names until a rare guy came out,
+ *    and a rename would change him. The club makes a random seed once
+ *    (`makeSeed`), keeps it with the player, and draws from that:
+ *    `toSvgString(seed, …)`, `starter(seed, game)`. The name stays a label.
+ * 2. **A picker offers only common parts, plus the player's own.** A part
+ *    someone rolled stays theirs to keep; a rare part they didn't roll can't be
+ *    picked.
+ *
+ * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
+ * the parts can't silently turn a saved look into someone else.
+ */
+/** A slot in a look code: its letter, its config key and its weights. */
+declare const SLOTS: readonly [readonly ["h", "head", number[]], readonly ["e", "eyes", number[]], readonly ["m", "mouth", number[]], readonly ["c", "cheeks", number[]], readonly ["t", "hair", number[]], readonly ["b", "body", number[]], readonly ["a", "accessory", number[]], readonly ["p", "palette", any[]]];
+type LookSlot = (typeof SLOTS)[number][1];
+type Look = Partial<Record<LookSlot, number>>;
+/**
+ * A random seed to draw a new player's guy from, made once and kept. 12
+ * characters of base 36, about 62 bits.
+ */
+declare function makeSeed(): string;
+/** Which options a player may pick in a slot: every common one, and their own. */
+declare function pickable(own: AvatarConfig, slot: LookSlot): number[];
+/** Whether a look only uses parts this player may pick. */
+declare function allowed(own: AvatarConfig, look: Look): boolean;
+/** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
+declare function encodeLook(look: Look): string;
+/**
+ * A code back into a look, or null for anything that isn't a version-2 code
+ * this library can draw: an old seven-number code from before 0.2, a part out
+ * of range, or (given the player's own guy) a rare part they didn't roll.
+ */
+declare function decodeLook(code: string, own?: AvatarConfig): Look | null;
+/** A player's guy: from their seed, with their picked look laid over it. */
+declare function lookOf(seed: string, code?: string): AvatarConfig;
+
+//#endregion
+//#region src/share.d.ts
+/**
+ * A card to share a copy: the guy wearing it, big, and what makes it rare.
+ * 1200×630, the size link previews use, as one SVG string with no fonts or
+ * images to fetch, so a server can turn it into a PNG for an og:image.
+ */
+interface ShareOptions {
+  /** The player's name, shown as a label. The guy is drawn from `input`. */
+  name?: string;
+  /** Small line at the bottom, like the site's address. */
+  footer?: string;
+}
+declare function toShareSvg(input: string, copy: Owned, options?: ShareOptions): string;
+
+//#endregion
+//#region src/lil-guy-animated.d.ts
+interface LilGuyAnimatedProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children" | "title"> {
+  /** The seed the guy is drawn from. */
+  name: string;
+  /** Which move to play. */
+  move: Move;
+  /** Width in pixels; the height is a quarter more, for jumps. @default 64 */
+  size?: number;
+  /** Dress him for a game: its free hat unless `equip` says otherwise. */
+  game?: GameId;
+  /** Item ids or encoded copies to wear. */
+  equip?: string[];
+  /** Pin specific parts. */
+  parts?: RenderOptions["parts"];
+  /** An emote to show over the move. */
+  emote?: Emote;
+  /** Play once and hold the last frame. @default false */
+  once?: boolean;
+  /** Show the best copy's grade in the frames. @default true */
+  rarity?: boolean;
+  /** Accessible name; without it the guy is decorative. */
+  title?: string;
+}
+/**
+ * A lil guy playing a move: the library's animated SVG, which plays itself
+ * with CSS, so there is no timer running in React.
+ *
+ * @example
+ * ```tsx
+ * <LilGuyAnimated name={player.seed} move="cheer" equip={[player.hat]} size={96} />
+ * ```
+ */
+declare function LilGuyAnimated({
+  name,
+  move,
+  size,
+  game,
+  equip,
+  parts,
+  emote,
+  once,
+  rarity,
+  title,
+  style,
+  ...props
+}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+
+//#endregion
+//#region src/shine.d.ts
+/**
+ * A frame as the shader reads it: its colours, and for each pixel the finish,
+ * scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+ */
+declare function shineData(frame: AnimationFrame, owned?: AvatarConfig['owned']): {
+  colors: Uint8Array;
+  info: Uint8Array;
+};
+interface Shine {
+  /** The 16×20 canvas the shader draws into; copy it out with drawImage. */
+  canvas: HTMLCanvasElement | OffscreenCanvas;
+  /** Draws a frame with its copies' finishes `ms` into the shimmer. */
+  draw(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): void;
+}
+/** One shader to share across a page or a game, or null without WebGL. */
+declare function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine | null;
+
+//#endregion
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, TraitOdds, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

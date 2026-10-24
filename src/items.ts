@@ -1178,7 +1178,7 @@ export const GAMES: GameId[] = [
 ];
 
 /** A game's items. */
-export function gameItems(game: GameId): Item[] {
+export function gameItems(game: ItemGame): Item[] {
   return items.filter(i => i.game === game);
 }
 

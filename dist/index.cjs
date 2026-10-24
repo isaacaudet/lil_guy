@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-BSkB6oBP.cjs');
+const require_paint = require('./paint-BqYS17Ub.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -296,6 +296,14 @@ const mix = (a, b$1, t) => {
 		2
 	].map((i) => x[i] + (y[i] - x[i]) * t));
 };
+/** The order of `AnimationFrame.slots`, from 1. */
+const FRAME_SLOTS = [
+	"skin",
+	"hat",
+	"frame",
+	"buddy"
+];
+const slotIndex = (t) => t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette) {
@@ -305,7 +313,8 @@ function painted(grid, config, palette) {
 		const c = colors[y][x];
 		if (c) out[y + HEADROOM][x] = {
 			c,
-			item: t >= require_paint.LAYER.skin && t < require_paint.LAYER.frame
+			item: t >= require_paint.LAYER.skin && t < require_paint.LAYER.frame || t >= require_paint.LAYER.buddy,
+			slot: slotIndex(t)
 		};
 	}));
 	return out;
@@ -688,15 +697,17 @@ function animate(input, move, options = {}) {
 			};
 		}
 		if (grade >= 3) {
-			const count = grade === 4 ? 4 : 3;
-			SPARKLE_SPOTS.slice(0, count + 2).forEach(([x, y], k) => {
+			const count$1 = grade === 4 ? 4 : 3;
+			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
 			});
 		}
 		const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
 		return {
 			colors,
-			ms
+			ms,
+			slots
 		};
 	});
 	return {
@@ -1466,6 +1477,383 @@ function copyOneIn(o) {
 }
 
 //#endregion
+//#region src/look.ts
+/**
+* Keeping rarity real.
+*
+* A guy's rare traits only mean something if nobody can choose them. Two
+* rules make that so:
+*
+* 1. **Draw the guy from a seed, not the name on the board.** A name can be
+*    typed and changed, so anyone could try names until a rare guy came out,
+*    and a rename would change him. The club makes a random seed once
+*    (`makeSeed`), keeps it with the player, and draws from that:
+*    `toSvgString(seed, …)`, `starter(seed, game)`. The name stays a label.
+* 2. **A picker offers only common parts, plus the player's own.** A part
+*    someone rolled stays theirs to keep; a rare part they didn't roll can't be
+*    picked.
+*
+* Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
+* the parts can't silently turn a saved look into someone else.
+*/
+/** A slot in a look code: its letter, its config key and its weights. */
+const SLOTS = [
+	[
+		"h",
+		"head",
+		require_paint.headWeights
+	],
+	[
+		"e",
+		"eyes",
+		require_paint.eyeWeights
+	],
+	[
+		"m",
+		"mouth",
+		require_paint.mouthWeights
+	],
+	[
+		"c",
+		"cheeks",
+		require_paint.cheekWeights
+	],
+	[
+		"t",
+		"hair",
+		require_paint.hairWeights
+	],
+	[
+		"b",
+		"body",
+		require_paint.bodyWeights
+	],
+	[
+		"a",
+		"accessory",
+		require_paint.accessoryWeights
+	],
+	[
+		"p",
+		"palette",
+		require_paint.paletteWeights
+	]
+];
+/** The weight below which a part counts as rare and can't be picked. */
+const RARE = 2;
+/**
+* A random seed to draw a new player's guy from, made once and kept. 12
+* characters of base 36, about 62 bits.
+*/
+function makeSeed() {
+	const bytes = new Uint8Array(8);
+	globalThis.crypto.getRandomValues(bytes);
+	let n = 0n;
+	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
+	return n.toString(36).padStart(12, "0").slice(-12);
+}
+/** Which options a player may pick in a slot: every common one, and their own. */
+function pickable(own, slot) {
+	const weights = SLOTS.find((s) => s[1] === slot)[2];
+	return weights.map((w, i) => i).filter((i) => weights[i] >= RARE || i === own[slot]);
+}
+/** Whether a look only uses parts this player may pick. */
+function allowed(own, look) {
+	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own, slot).includes(look[slot]));
+}
+/** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
+function encodeLook(look) {
+	return "2:" + SLOTS.filter(([, slot]) => look[slot] !== void 0).map(([letter, slot]) => letter + look[slot]).join(".");
+}
+/**
+* A code back into a look, or null for anything that isn't a version-2 code
+* this library can draw: an old seven-number code from before 0.2, a part out
+* of range, or (given the player's own guy) a rare part they didn't roll.
+*/
+function decodeLook(code, own) {
+	if (typeof code !== "string" || !code.startsWith("2:")) return null;
+	const look = {};
+	for (const part of code.slice(2).split(".").filter(Boolean)) {
+		const slot = SLOTS.find((s) => s[0] === part[0]);
+		const n = Number(part.slice(1));
+		if (!slot || !/^\d{1,3}$/.test(part.slice(1)) || n >= slot[2].length) return null;
+		look[slot[1]] = n;
+	}
+	if (own && !allowed(own, look)) return null;
+	return look;
+}
+/** A player's guy: from their seed, with their picked look laid over it. */
+function lookOf(seed, code = "") {
+	const own = require_paint.resolve(seed);
+	const look = code ? decodeLook(code, own) : null;
+	return look ? {
+		...own,
+		...look
+	} : own;
+}
+
+//#endregion
+//#region src/share.ts
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
+	"&": "&amp;",
+	"<": "&lt;",
+	">": "&gt;",
+	"\"": "&quot;"
+})[c]);
+function count(n) {
+	return n >= 1e12 ? `${(n / 1e12).toFixed(1)} trillion` : n >= 1e9 ? `${(n / 1e9).toFixed(1)} billion` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} million` : Math.round(n).toLocaleString("en-US");
+}
+function toShareSvg(input, copy, options = {}) {
+	const config = require_paint.dress(require_paint.resolve(input), { equip: [require_paint.encode(copy)] });
+	const colors = require_paint.paint(require_paint.compose(config), config, require_paint.withItems(require_paint.paletteOf(config), config));
+	const grade = require_paint.gradeOf(copy);
+	const item = require_paint.itemById(copy.item);
+	const [title, finish] = require_paint.nameOf(copy).split(" | ");
+	const px = 26, gx = 96, gy = (630 - require_paint.GRID_SIZE * px) / 2;
+	const rects = [];
+	colors.forEach((row, y) => {
+		let x = 0;
+		while (x < require_paint.GRID_SIZE) {
+			const c = row[x];
+			let w = 1;
+			while (x + w < require_paint.GRID_SIZE && row[x + w] === c) w++;
+			if (c) rects.push(`<rect x="${gx + x * px}" y="${gy + y * px}" width="${w * px}" height="${px}" fill="${c}"/>`);
+			x += w;
+		}
+	});
+	const odds = copyOneIn(copy);
+	const lines = [
+		`${require_paint.wearOf(copy.scuff).name} · scuff ${copy.scuff.toFixed(4)} · print #${copy.print}`,
+		copy.tally !== void 0 ? `${copy.tally} days on its tally` : "",
+		item?.free ? "Everyone has one; no two are alike" : `1 in ${count(odds)} capsules`
+	].filter(Boolean);
+	const font = "font-family=\"system-ui, -apple-system, Segoe UI, sans-serif\"";
+	return [
+		`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img">`,
+		`<title>${esc(require_paint.nameOf(copy))}</title>`,
+		`<defs><radialGradient id="glow" cx="0.27" cy="0.5" r="0.5"><stop offset="0" stop-color="${grade.color}" stop-opacity="0.55"/><stop offset="1" stop-color="${grade.color}" stop-opacity="0"/></radialGradient></defs>`,
+		`<rect width="1200" height="630" fill="#14182a"/>`,
+		`<rect width="1200" height="630" fill="url(#glow)"/>`,
+		`<g shape-rendering="crispEdges">${rects.join("")}</g>`,
+		`<text x="600" y="150" ${font} font-size="24" font-weight="700" letter-spacing="4" fill="#a8b0cf">${esc(options.name ? `${options.name.toUpperCase()}'S COPY` : "A ONE-OF-A-KIND COPY")}</text>`,
+		`<text x="600" y="232" ${font} font-size="60" font-weight="800" fill="#ffffff">${esc(title)}</text>`,
+		finish ? `<text x="600" y="296" ${font} font-size="40" font-weight="700" fill="${grade.color}">${esc(finish)}</text>` : "",
+		`<rect x="600" y="${finish ? 324 : 264}" width="${grade.name.length * 18 + 40}" height="48" rx="10" fill="${grade.color}"/>`,
+		`<text x="620" y="${finish ? 357 : 297}" ${font} font-size="26" font-weight="800" fill="#ffffff">${esc(grade.name)}</text>`,
+		...lines.map((l, i) => `<text x="600" y="${(finish ? 420 : 360) + i * 44} " ${font} font-size="28" fill="#dfe3f2">${esc(l)}</text>`),
+		`<text x="600" y="570" ${font} font-size="24" font-weight="700" fill="#ffcf5c">${esc(options.footer ?? "dleclub.com")}</text>`,
+		`</svg>`
+	].join("");
+}
+
+//#endregion
+//#region src/lil-guy-animated.tsx
+/**
+* A lil guy playing a move: the library's animated SVG, which plays itself
+* with CSS, so there is no timer running in React.
+*
+* @example
+* ```tsx
+* <LilGuyAnimated name={player.seed} move="cheer" equip={[player.hat]} size={96} />
+* ```
+*/
+function LilGuyAnimated({ name, move, size = 64, game, equip, parts, emote: emote$1, once, rarity, title, style,...props }) {
+	const svg = react.useMemo(() => {
+		const options = {
+			size,
+			game,
+			equip,
+			parts,
+			emote: emote$1,
+			once,
+			rarity,
+			title
+		};
+		return toAnimatedSvg(name, move, options);
+	}, [
+		name,
+		move,
+		size,
+		game,
+		equip?.join(","),
+		JSON.stringify(parts),
+		emote$1,
+		once,
+		rarity,
+		title
+	]);
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+		"data-lil-guy-animated": "",
+		style: {
+			display: "inline-block",
+			lineHeight: 0,
+			...style
+		},
+		...props,
+		dangerouslySetInnerHTML: { __html: svg }
+	});
+}
+
+//#endregion
+//#region src/shine.ts
+/**
+* The finishes, moving: a WebGL shader that runs each worn copy's finish on
+* that copy's own pixels — Sunset's sheen, Tempered's glint, Nebula's drift,
+* Prism's rainbow, Negative's pulse, Gold's sparkle — while the guy plays a
+* move. Scuffed pixels shine less, the way they're painted.
+*
+* Browsers allow only a handful of WebGL contexts per page, so make one shine
+* and share it: draw each guy into it in turn and copy the result out with
+* `drawImage` into that guy's own 2D canvas. Without WebGL `createShine`
+* returns null; draw the frame's colours as they are.
+*/
+const FINISH_ORDER = [
+	"plain",
+	"sunset",
+	"tempered",
+	"nebula",
+	"prism",
+	"negative",
+	"gold"
+];
+/**
+* A frame as the shader reads it: its colours, and for each pixel the finish,
+* scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+*/
+function shineData(frame, owned = {}) {
+	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	frame.colors.forEach((row, y) => row.forEach((c, x) => {
+		if (!c) return;
+		const i = (y * FRAME_WIDTH + x) * 4;
+		colors.set([
+			parseInt(c.slice(1, 3), 16),
+			parseInt(c.slice(3, 5), 16),
+			parseInt(c.slice(5, 7), 16),
+			255
+		], i);
+		const slot = frame.slots[y][x];
+		const copy = slot ? owned?.[FRAME_SLOTS[slot - 1]] : void 0;
+		if (copy) info.set([
+			(FINISH_ORDER.indexOf(copy.finish) + 1) * 32,
+			Math.round(copy.scuff * 255),
+			Math.floor(copy.print / 4),
+			255
+		], i);
+	}));
+	return {
+		colors,
+		info
+	};
+}
+const VERTEX = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
+const FRAGMENT = `
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D base, info;
+uniform float time;
+float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
+vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+vec3 hueShift(vec3 c, float a) {
+  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+  vec3 yiq = toYIQ * c;
+  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
+  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+}
+void main() {
+  vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 k = texture2D(info, at);
+  float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;
+  if (k.a > 0.5 && finish >= 0.0) {
+    float scuff = k.g, print = floor(k.b * 255.0 + 0.5) * 4.0;
+    float d = cell.x + cell.y, h = hash(cell, print);
+    float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
+    float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
+    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
+    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
+    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
+    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
+    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); }
+    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
+    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
+  }
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+/** One shader to share across a page or a game, or null without WebGL. */
+function createShine(canvas) {
+	const target = canvas ?? (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(FRAME_WIDTH, FRAME_HEIGHT) : typeof document !== "undefined" ? document.createElement("canvas") : null);
+	if (!target) return null;
+	target.width = FRAME_WIDTH;
+	target.height = FRAME_HEIGHT;
+	const gl = target.getContext("webgl", {
+		premultipliedAlpha: false,
+		preserveDrawingBuffer: true
+	});
+	if (!gl) return null;
+	const shader = (type, source) => {
+		const s = gl.createShader(type);
+		gl.shaderSource(s, source);
+		gl.compileShader(s);
+		return s;
+	};
+	const program = gl.createProgram();
+	gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
+	gl.attachShader(program, shader(gl.FRAGMENT_SHADER, FRAGMENT));
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+		-1,
+		-1,
+		1,
+		-1,
+		-1,
+		1,
+		1,
+		1
+	]), gl.STATIC_DRAW);
+	const p = gl.getAttribLocation(program, "p");
+	gl.enableVertexAttribArray(p);
+	gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+	gl.uniform1i(gl.getUniformLocation(program, "base"), 0);
+	gl.uniform1i(gl.getUniformLocation(program, "info"), 1);
+	const time = gl.getUniformLocation(program, "time");
+	gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+	const texture = (unit) => {
+		const t = gl.createTexture();
+		gl.activeTexture(gl.TEXTURE0 + unit);
+		gl.bindTexture(gl.TEXTURE_2D, t);
+		for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.NEAREST);
+		for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
+		return t;
+	};
+	const textures = [texture(0), texture(1)];
+	return {
+		canvas: target,
+		draw(frame, owned, ms) {
+			const { colors, info } = shineData(frame, owned);
+			[colors, info].forEach((bytes, unit) => {
+				gl.activeTexture(gl.TEXTURE0 + unit);
+				gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+			});
+			gl.uniform1f(time, ms / 1e3);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		}
+	};
+}
+
+//#endregion
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
@@ -1477,6 +1865,7 @@ exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FINISHES = require_paint.FINISHES
 exports.FOOT_STYLES = require_paint.FOOT_STYLES
 exports.FRAME_HEIGHT = FRAME_HEIGHT
+exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
 exports.GAMES = require_paint.GAMES
 exports.GOLD_RIM_DAYS = require_paint.GOLD_RIM_DAYS
@@ -1485,12 +1874,14 @@ exports.GRID_SIZE = require_paint.GRID_SIZE
 exports.HEADROOM = HEADROOM
 exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
+exports.LilGuyAnimated = LilGuyAnimated
 exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.PINS = require_paint.PINS
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
+exports.allowed = allowed
 exports.animate = animate
 exports.bodies = require_paint.bodies
 exports.cheeks = require_paint.cheeks
@@ -1498,10 +1889,13 @@ exports.closeEyes = closeEyes
 exports.compose = require_paint.compose
 exports.composeBase = require_paint.composeBase
 exports.copyOneIn = copyOneIn
+exports.createShine = createShine
 exports.decode = require_paint.decode
+exports.decodeLook = decodeLook
 exports.drawFrame = drawFrame
 exports.dress = require_paint.dress
 exports.encode = require_paint.encode
+exports.encodeLook = encodeLook
 exports.eyes = require_paint.eyes
 exports.frameAt = frameAt
 exports.freeItem = require_paint.freeItem
@@ -1514,9 +1908,12 @@ exports.hair = require_paint.hair
 exports.hash = require_paint.hash
 exports.hashNth = require_paint.hashNth
 exports.heads = require_paint.heads
+exports.inSeason = require_paint.inSeason
 exports.itemById = require_paint.itemById
 exports.items = require_paint.items
+exports.lookOf = lookOf
 exports.luckyPalette = require_paint.luckyPalette
+exports.makeSeed = makeSeed
 exports.mergeRefs = mergeRefs
 exports.mouths = require_paint.mouths
 exports.nameOf = require_paint.nameOf
@@ -1524,11 +1921,14 @@ exports.nebulaPhase = require_paint.nebulaPhase
 exports.paint = require_paint.paint
 exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
+exports.pickable = pickable
 exports.pinById = require_paint.pinById
 exports.resolve = require_paint.resolve
 exports.resolveColor = require_paint.resolveColor
 exports.roll = require_paint.roll
+exports.rollSeason = require_paint.rollSeason
 exports.shadePalette = require_paint.shadePalette
+exports.shineData = shineData
 exports.slotOf = require_paint.slotOf
 exports.special = require_paint.special
 exports.starter = require_paint.starter
@@ -1536,6 +1936,7 @@ exports.tallyMarks = require_paint.tallyMarks
 exports.temperTint = require_paint.temperTint
 exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
+exports.toShareSvg = toShareSvg
 exports.toSvgString = toSvgString
 exports.traitOdds = traitOdds
 exports.useAvatarContext = useAvatarContext
