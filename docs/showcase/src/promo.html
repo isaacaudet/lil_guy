@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Pixelify+Sans:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=VT323&family=Pixelify+Sans:wght@600;700&display=swap">
 <style>
   /* The DLE Club's look (dle-club redesign/site.css): a navy band carrying the header, the claim and the
      rarest cards, then paper rising over its foot with round corners. Pixel type only on the cards. */
@@ -101,7 +101,7 @@
   .ov .t.gold { background-image: linear-gradient(90deg, #b8801c, #ffe9a8, #f2c230, #fffbe6, #c8901e, #b8801c); }
   @keyframes foil { to { background-position: 300% 0; } }
   .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
-  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: 6.6cqw; font-weight: 600; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
+  .ov .b { font-family: "VT323", monospace; position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: 6.6cqw; font-weight: 600; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
 
   /* ------------------------------------------------------------ the sheet */
   main { display: grid; gap: 88px; padding-top: 24px; padding-bottom: 96px; }
@@ -252,6 +252,45 @@
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .mcard .body { padding: 10px 10px 12px 12px; gap: 8px; } .mcard h3 { font-size: 16px; } .mcard p { font-size: 12px; } .mcard .play { width: 34px; height: 34px; }
   }
+
+  /* A score-table treatment: heavy pixel numerals, inset labels and rare gold hits. */
+  .ov .t, .ov .c, .shout, .rv-name { font-family: "VT323", monospace; font-weight: 400; }
+  .ov .t { font-size: 11cqw; letter-spacing: .01em; }
+  .ov .b { font-size: 8cqw; }
+  .rows { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .row { grid-template-columns: minmax(0,1fr) auto; gap: 6px 10px; padding: 12px 14px 14px; border: 2px solid #394052; border-radius: 9px; background: #242c3e; box-shadow: 0 4px 0 #080e1a; }
+  .row small { grid-column: 1; font-size: 10px; color: #bec8d9; letter-spacing: .12em; }
+  .row b { grid-column: 1; grid-row: 2; font-family: "VT323", monospace; font-size: 25px; font-weight: 400; line-height: 1; white-space: normal; overflow-wrap: anywhere; color: #fff4dc; text-shadow: 0 2px #111827; }
+  .row span { grid-column: 2; grid-row: 1 / 3; align-self: center; font-family: "VT323", monospace; font-size: 26px; color: #a9e5de; }
+  .row span em { display: block; font: 10px "Bricolage Grotesque", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: #bec8d9; }
+  .row .bar { grid-column: 1 / -1; grid-row: 3; height: 3px; display: block; }
+  .row.rare { border-color: #b3893d; background: #3c342b; }
+  .row.rare span { color: #ffce68; }
+  .row.rare b::after { content: "★"; font-size: 15px; background: none; color: #ffce68; margin-left: 4px; padding: 0; vertical-align: 2px; }
+  .total { margin-top: 22px; gap: 6px; padding: 16px 20px; border-radius: 10px; background: #0b1221; border: 2px solid #454c5e; box-shadow: 0 5px 0 #080d17; }
+  .total .eq { flex-basis: 100%; font-size: 11px; letter-spacing: .16em; color: #c8d1e1; }
+  .total b { color: #ffce68; font-family: "VT323", monospace; font-size: clamp(36px, 5.5vw, 65px); font-weight: 400; letter-spacing: 0; text-shadow: 0 3px #7e4a20; overflow-wrap: anywhere; }
+  .total small { font-size: 12px; margin-top: 4px; }
+  .rv-sub { max-width: 35ch; line-height: 1.5; }
+  .coin { position: absolute; width: 26px; height: 26px; top: -40px; left: -50px; opacity: 0; border-radius: 50%; border: 3px solid #ffeab0; background: #e4ae39; box-shadow: inset -4px -2px #ac681e, 0 2px #694015; }
+  .coin.insert { animation: coin-in .65s cubic-bezier(.32,.05,.72,.9) both; }
+  @keyframes coin-in { 0% { opacity: 1; transform: translate(0,0) rotateY(0deg); } 55% { opacity: 1; transform: translate(112px,-55px) rotateY(540deg); } 90% { opacity: 1; } 100% { opacity: 0; transform: translate(164px,225px) rotateY(900deg) scale(.3); } }
+  .mach.big.drop { animation: machine-land .7s cubic-bezier(.2,.8,.25,1) both; }
+  @keyframes machine-land { 0% { transform: translateY(-65vh) rotate(-8deg); } 65% { transform: translateY(12px) scale(1.06,.94); } 82% { transform: translateY(-7px) scale(.98,1.02); } 100% { transform: none; } }
+  .mach.big.away { transition: opacity .35s ease, translate .4s ease; }
+  .cap { filter: drop-shadow(0 12px 8px #0006); }
+  .cap.out { animation: capsule-bounce 1.05s cubic-bezier(.25,.65,.4,1) forwards; }
+  @keyframes capsule-bounce { 0% { top: 88%; scale: .22; rotate: -110deg; } 38% { top: 67%; scale: 1; rotate: 24deg; } 57% { top: 83%; scale: 1.08 .92; rotate: -12deg; } 74% { top: 43%; scale: .98 1.02; rotate: 6deg; } 89% { top: 54%; scale: 1; rotate: -2deg; } 100% { top: 50%; scale: 1; rotate: 0deg; } }
+  #cap-top { transform-origin: 50% 52%; transition: rotate .3s cubic-bezier(.2,.9,.3,1.5), translate .5s ease, opacity .45s ease; }
+  #cap-top.twist1 { rotate: -19deg; translate: -3px -3px; }
+  #cap-top.twist2 { rotate: 16deg; translate: 3px -9px; }
+  #cap-top.pop { rotate: -85deg; translate: -70px -210px; opacity: 0; }
+  .cap.cracking { filter: drop-shadow(0 0 24px var(--drop-color)); }
+  .flip { transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+  .result.go .flip { animation: card-arrive .55s cubic-bezier(.16,1,.3,1); }
+  @keyframes card-arrive { from { transform: translateY(28px) scale(.82) rotate(-5deg); } to { transform: none; } }
+  @media(max-width:640px) { .rows { gap: 8px; } .row { padding: 10px; gap: 5px; } .row b { font-size: 22px; } .row span { font-size: 23px; } .total { padding: 14px; } .flip { width: min(200px, 48vw, 28dvh); } .shout { font-size: 38px; min-height: 38px; } .stage2 { gap: 8px; } .result { gap: 8px; } }
+  @media(prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -311,7 +350,7 @@
       <div class="stage" id="guy-stage"></div>
       <div>
         <div class="rows" id="rows"></div>
-        <div class="total"><span class="eq">All of it together:</span><b id="total">1 in 0</b><small>guys dealt before another one like him turns up.</small></div>
+        <div class="total"><span class="eq">YOUR FULL HAND</span><b id="total">1 in 0</b><small>Combined trait odds · every detail counts.</small></div>
       </div>
     </div>
   </section>
@@ -344,7 +383,7 @@
   <canvas id="burst" aria-hidden="true"></canvas><div class="flash" id="flash"></div>
   <div class="rv-ctl"><button type="button" id="sound" aria-pressed="true">Sound on</button><button type="button" id="skip">Skip</button></div>
   <div class="stage2" id="stage">
-    <div class="gacha" id="gacha" hidden aria-hidden="true"><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><div class="cap" id="cap" hidden><canvas id="cap-bot" width="32" height="32"></canvas><canvas id="cap-top" width="32" height="32"></canvas></div></div>
+    <div class="gacha" id="gacha" hidden aria-hidden="true"><span class="coin" id="coin"></span><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><div class="cap" id="cap" hidden><canvas id="cap-bot" width="64" height="64"></canvas><canvas id="cap-top" width="64" height="64"></canvas></div></div>
     <div class="result" id="result" hidden>
       <span class="rays"></span>
       <p class="shout" id="shout"></p>
@@ -361,7 +400,7 @@
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const calm = { matches: false };                 // motion plays whatever the reduced-motion setting says (the club's rule)
+  const calm = matchMedia('(prefers-reduced-motion: reduce)');                 // motion plays whatever the reduced-motion setting says (the club's rule)
   const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
@@ -403,6 +442,13 @@
    * Kept in the page's database when this view has one (your own private row), else in this browser. */
   const KEY = 'lil-guys-promo-v2';
   let state = null, db = null, uid = null, owner = false;
+  let backendReady = false;
+  async function namesApi(path, options) {
+    const response = await fetch(`/api/names${path}`, options);
+    const data = await response.json();
+    if (!response.ok) throw Object.assign(new Error(data.error || "Names unavailable"), { status: response.status });
+    return data;
+  }
   try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { state = null; }
   if (state && (!state.seed || !Array.isArray(state.copies))) state = null;
   let saving = Promise.resolve(), saveTimer = null;
@@ -466,10 +512,17 @@
     const raw = $('name').value, key = norm(raw);
     if (raw && key !== raw.toLowerCase()) $('name').value = key;
     $('claim-btn').disabled = true;
+    lastCheck = key;
     if (key.length < 2) { setAvail('', ''); return; }
     if (RESERVED[key] && !owner) { setAvail('no', 'Reserved'); return; }
     lastCheck = key;
-    if (!db) { setAvail('ok', '✓ Looks free (checked in this browser only)'); $('claim-btn').disabled = false; return; }
+    if (!backendReady) { setAvail('', 'Connecting…'); return; }
+    if (!db) {
+      setAvail('', 'Checking…');
+      try { await namesApi('/' + key); if (lastCheck === key) setAvail('no', `@${key} is taken`); }
+      catch (e) { if (lastCheck !== key) return; if (e.status === 404) { setAvail('ok', `✓ @${key} is yours to take`); $('claim-btn').disabled = false; } else setAvail('no', 'Could not check just now'); }
+      return;
+    }
     setAvail('', 'Checking…');
     try {
       const snap = await db.doc(`names/${key}`).get();
@@ -482,7 +535,13 @@
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
   async function claim(key) {
-    const seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed();
+    let seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed();
+    let ownerToken = null;
+    if (!backendReady) return;
+    if (!db) {
+      try { const claimed = await namesApi("/" + key, { method: "POST" }); seed = claimed.seed; ownerToken = claimed.owner; }
+      catch (e) { setAvail("no", e.message); return; }
+    }
     if (db) {
       const ref = db.doc(`names/${key}`);
       try {
@@ -498,12 +557,13 @@
         return;
       }
     }
-    state = { v: 2, key, seed, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
+    state = { v: 2, key, seed, ownerToken, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
     const f = founderOf(seed);
     if (f) { state.copies.push(LG.encode(f.copy)); state.worn.frame = undefined; state.worn.hat = LG.encode(f.copy); }
     else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
+    watchNames();
     await dropName();
     renderAll();
   }
@@ -511,6 +571,11 @@
   $('reset').addEventListener('click', async () => {
     if (!state || !confirm(`Let @${state.key} go? Your guy and collection go with it.`)) return;
     const key = state.key;
+    if (!db) {
+      if (!state.ownerToken) { toast('This browser has no owner token for that name.'); return; }
+      try { await namesApi('/' + key, { method: 'DELETE', headers: { Authorization: 'Bearer ' + state.ownerToken } }); }
+      catch (e) { toast(e.message); return; }
+    }
     state = null; save();
     if (db) { try { const ref = db.doc(`names/${key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.delete(); } catch (e) {} }
     renderAll();
@@ -519,7 +584,15 @@
 
   // Who else has claimed: the latest dozen, live.
   function watchNames() {
-    if (!db) return;
+    if (!db) {
+      namesApi('?recent=12').then(list => {
+        $('recent').hidden = !list.length;
+        $('faces').innerHTML = list.slice(0, 6).map(() => '<span><canvas width="16" height="16"></canvas></span>').join('');
+        $('faces').querySelectorAll('canvas').forEach((c, i) => paintInto(c, list[i].seed, []));
+        $('recent-text').textContent = list.slice(0, 3).map(d => '@' + d.key).join(', ') + ' just claimed theirs.';
+      }).catch(() => { $('recent').hidden = true; });
+      return;
+    }
     db.collection('names').orderBy('at', 'desc').limit(12).onSnapshot(snap => {
       const list = snap.docs.map(d => d.data()).filter(d => d && d.seed && d.name);
       if (!list.length) { $('recent').hidden = true; return; }
@@ -542,7 +615,8 @@
     const odds = LG.traitOdds(cfg).filter(t => t.slot !== 'variant' || t.name === 'Lucky');
     const max = Math.max(...odds.map(t => Math.log10(1 / t.chance)));
     const rare = [...odds].sort((a, b) => a.chance - b.chance).slice(0, 2).map(t => t.slot);
-    $('rows').innerHTML = odds.map(t => `<div class="row${rare.includes(t.slot) ? ' rare' : ''}"><small>${t.slot}</small><b>${esc(t.name)}</b><div class="bar"><i data-w="${Math.max(6, Math.log10(1 / t.chance) / max * 100)}"></i></div><span>1 in ${fmt(1 / t.chance)}</span></div>`).join('');
+    odds.sort((a, b) => a.chance - b.chance);
+    $('rows').innerHTML = odds.map(t => `<div class="row${rare.includes(t.slot) ? ' rare' : ''}"><small>${t.slot}</small><b>${esc(t.name)}</b><div class="bar"><i data-w="${Math.max(6, Math.log10(1 / t.chance) / max * 100)}"></i></div><span><em>1 in</em> ${fmt(1 / t.chance)}</span></div>`).join('');
     const total = LG.guyOneIn(cfg);
     $('total').dataset.n = total;
     $('total').textContent = '1 in ' + (rowsShown ? words(total) : '0');
@@ -649,19 +723,62 @@
     reveal(o, g, dev ? 'Dev drop' : how);
   }
 
-  /* ---------------------------------------------- sound: square-wave blips, after a click; one tap mutes */
-  let audio = null, sound = true;
-  function tone(freq, dur, vol = 0.04, when = 0, type = 'square') {
-    if (!sound) return;
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
-    const t0 = audio.currentTime + when, o = audio.createOscillator(), gn = audio.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t0);
-    gn.gain.setValueAtTime(vol, t0); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(gn).connect(audio.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  /* Sound is synthesized after a gesture. A dry bus keeps clicks crisp; a short room gives bells depth. */
+  let audio = null, mix = null, room = null, sound = localStorage.getItem('lil-guys-sound') !== 'off';
+  function audioReady() {
+    if (!sound) return false;
+    try {
+      if (!audio) {
+        audio = new (window.AudioContext || window.webkitAudioContext)();
+        mix = audio.createGain(); mix.gain.value = .65;
+        const compressor = audio.createDynamicsCompressor();
+        compressor.threshold.value = -18; compressor.ratio.value = 5;
+        mix.connect(compressor).connect(audio.destination);
+        const reverb = audio.createConvolver(), wet = audio.createGain(); wet.gain.value = .18;
+        const length = Math.floor(audio.sampleRate * .85), impulse = audio.createBuffer(2, length, audio.sampleRate);
+        for (let ch = 0; ch < 2; ch++) { const data = impulse.getChannelData(ch); for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3); }
+        reverb.buffer = impulse; room = reverb; reverb.connect(wet).connect(mix);
+      }
+      if (audio.state === 'suspended') audio.resume().catch(() => {});
+      return true;
+    } catch { return false; }
   }
-  const FANFARE = [[523, 659], [523, 659, 784], [523, 659, 784, 1047], [392, 523, 659, 784, 1047], [392, 523, 659, 784, 1047, 1319, 1568]];
-  const fanfare = g => { FANFARE[g].forEach((f, i) => tone(f, g >= 3 ? 0.45 : 0.25, 0.045, i * 0.085)); if (g >= 3) tone(FANFARE[g].at(-1) * 2, 1.1, 0.03, FANFARE[g].length * 0.085, 'triangle'); };
-  $('sound').addEventListener('click', e => { sound = !sound; e.target.setAttribute('aria-pressed', sound); e.target.textContent = sound ? 'Sound on' : 'Sound off'; });
+  function tone(freq, dur, vol = .04, when = 0, type = 'triangle', end = freq) {
+    if (!audioReady()) return;
+    const t = audio.currentTime + when, o = audio.createOscillator(), gain = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, end), t + dur);
+    gain.gain.setValueAtTime(.0001, t); gain.gain.exponentialRampToValueAtTime(vol, t + .008); gain.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(gain); gain.connect(mix); gain.connect(room); o.start(t); o.stop(t + dur + .02);
+    o.onended = () => { o.disconnect(); gain.disconnect(); };
+  }
+  function bell(freq, dur = .5, vol = .035, when = 0) {
+    tone(freq, dur, vol, when, 'sine'); tone(freq * 2.76, dur * .4, vol * .22, when, 'sine');
+  }
+  function noise(dur = .08, vol = .03, when = 0) {
+    if (!audioReady()) return;
+    const t = audio.currentTime + when, buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * dur), audio.sampleRate), data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+    const source = audio.createBufferSource(), gain = audio.createGain(), filter = audio.createBiquadFilter();
+    filter.type = 'highpass'; filter.frequency.value = 1600; gain.gain.value = vol;
+    source.buffer = buffer; source.connect(filter).connect(gain).connect(mix); source.start(t);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+  }
+  function impact(when = 0) { tone(130, .18, .085, when, 'sine', 38); noise(.075, .05, when); }
+  const FANFARE = [[523,659], [523,659,784], [523,659,784,1047], [392,523,659,784,1047], [392,523,659,784,1047,1319,1568]];
+  const fanfare = g => {
+    FANFARE[g].forEach((f,i) => bell(f, .45 + g * .11, .038, i * .085));
+    impact();
+    if (g >= 3) { bell(2093, 1.3, .028, .55); tone(131, .9, .06, 0, 'sine'); }
+  };
+  function soundLabel() { $('sound').setAttribute('aria-pressed', String(sound)); $('sound').textContent = sound ? 'Sound on' : 'Sound off'; }
+  soundLabel();
+  $('sound').addEventListener('click', () => {
+    sound = !sound; localStorage.setItem('lil-guys-sound', sound ? 'on' : 'off');
+    if (mix) mix.gain.setValueAtTime(sound ? .65 : 0, audio.currentTime);
+    soundLabel(); if (sound) bell(1047,.25,.03);
+  });
+  document.addEventListener('pointerdown', () => audioReady(), { once: true });
+  document.addEventListener('keydown', () => audioReady(), { once: true });
 
   /* ---------------------------------------------- confetti */
   const burst = $('burst'), bctx = burst.getContext('2d');
@@ -700,31 +817,73 @@
   })($('back'));
 
   /* ---------------------------------------------- the drop: the machine drops in, cranks, a capsule pops, a card trembles and flips */
+  // Higher resolution capsule only for the promo; shared showcase art stays independent.
+  function addPromoCapsule(topCanvas, botCanvas, game, grade) {
+    const candy = rgb(CANDY[game]), glow = rgb(GRADE[grade]), toy = toyOf(game);
+    const st = { canvas: topCanvas, open: 0, tick(t) {
+      const top = Px(64,64), bot = Px(64,64);
+      for (let y=0; y<64; y++) for (let x=0; x<64; x++) {
+        const dx=(x-31.5)/29, dy=(y-31.5)/29, r=Math.hypot(dx,dy);
+        if(r>1) continue;
+        const z=Math.sqrt(1-r*r), rim=r>.945;
+        if(y<32) {
+          top.set(x,y, rim ? [210,231,255] : [190,217,244], rim ? 230 : Math.round(28+45*(1-z)));
+          const tx=Math.floor((x-15)/2), ty=Math.floor((y-8)/2);
+          const pixel=toy[ty]?.[tx];
+          if(pixel && !rim) top.set(x,y,blend(rgb(pixel),[224,238,255],.15));
+          const reflection=Math.pow(Math.max(0, 1-Math.hypot((dx+.44)*3,(dy+.42)*2.4)),2);
+          if(reflection>.03) top.set(x,y,WHITE,Math.round(reflection*230));
+          if(y===30 || y===31) top.set(x,y,WHITE,y===31?150:70);
+        } else {
+          const light=Math.max(0, -.4*dx-.5*dy+.65*z);
+          const color=rim?blend(candy,INK,.65):blend(blend(candy,INK,.4),WHITE,light*.48);
+          bot.set(x,y,color);
+          if(y===32) bot.set(x,y,blend(candy,WHITE,.55));
+          if(y===34) bot.set(x,y,blend(candy,INK,.3));
+          if(x===12 && y>37 && y<44) bot.set(x,y,WHITE,160);
+        }
+        if(st.open && y<33 && y>12 && Math.abs(dx)<.8) {
+          const beam=(1-Math.abs(dx))*(1-(32-y)/22)*st.open*(.7+.3*Math.sin(t*8+x*.3));
+          bot.set(x,y,glow,Math.round(Math.max(0,beam)*240));
+        }
+      }
+      topCanvas.getContext('2d').putImageData(new ImageData(top.d,64,64),0,0);
+      botCanvas.getContext('2d').putImageData(new ImageData(bot.d,64,64),0,0);
+    }};
+    balls.add(st); st.tick(0); return st;
+  }
+
   let rush = false, current = null;
   const wait = ms => rush ? Promise.resolve() : sleep(ms);
-  async function gacha(g) {
+  async function gacha(g, gr) {
+    if (calm.matches) return;
+    $("cap").style.setProperty("--drop-color", GRADE[gr]);
     const box = $('gacha'), mc = $('bigmach'), cp = $('cap'), ct = $('cap-top'), cb = $('cap-bot');
     box.hidden = false; cp.hidden = true; cp.className = 'cap'; ct.className = ''; mc.className = 'mach big';
     const m = addMachine(mc, g);
     void mc.offsetWidth; mc.className = 'mach big drop';
-    tone(196, 0.08, 0.04, 0.32);
-    await wait(470);
+    impact(0.48);
+    await wait(720);
+    $('coin').className = 'coin insert';
+    bell(1568, .4, .035);
+    await wait(650);
+    impact();
     for (let k = 0; k < 3 && !rush; k++) {
       const a0 = m.angle, t0 = performance.now();
       tone(560, 0.035, 0.04); tone(390, 0.05, 0.045, 0.13);
       m.jiggle(); mc.className = 'mach big'; void mc.offsetWidth; mc.className = 'mach big rattle';
-      await new Promise(r => { const f = now => { const e = Math.min(1, (now - t0) / 260); m.angle = a0 + Math.PI / 2 * Math.round(e * 4) / 4; if (e < 1 && !rush) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
+      await new Promise(r => { const f = now => { const e = Math.min(1, (now - t0) / 260); m.angle = a0 + Math.PI / 2 * (1 - Math.pow(1 - e, 3)); if (e < 1 && !rush) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
       await wait(170);
     }
     if (!rush) {
       m.flap = 1; tone(150, 0.1, 0.05);
-      const c = addCapsule(ct, cb, g);
+      const c = addPromoCapsule(ct, cb, g, gr);
       cp.hidden = false; void cp.offsetWidth; cp.className = 'cap out';
-      await wait(300); mc.classList.add('away'); await wait(600);
+      await wait(550); impact(); mc.classList.add('away'); await wait(550);
       if (!rush) {
-        ct.className = 'twist1'; tone(900, 0.04, 0.04); await wait(240);
-        ct.className = 'twist2'; tone(1150, 0.04, 0.04); await wait(240);
-        c.open = 1; ct.className = 'pop';
+        cp.classList.add('cracking'); ct.className = 'twist1'; c.open = .25; noise(.12, .025); bell(900,.15,.02); await wait(340);
+        ct.className = 'twist2'; c.open = .65; noise(.16,.03); bell(1150,.2,.025); await wait(380);
+        noise(.25, .05); impact(); c.open = 1; ct.className = 'pop';
         tone(880, 0.07, 0.05); tone(1320, 0.1, 0.04, 0.05); tone(1760, 0.14, 0.03, 0.1);
         const r = cp.getBoundingClientRect();
         boom(1, r.left + r.width / 2, r.top + r.height * 0.45, [CANDY[g], '#ffffff', '#ffcf5c', '#ffe9b0']);
@@ -780,10 +939,10 @@
     if (how === 'Dev drop') state.dev = [...(state.dev || []), code];
     save(); renderWallet();
     current = { o, code, g, how };
-    rush = false;
+    rush = calm.matches;
     $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
-    if (g) await gacha(g);
+    if (g) await gacha(g, gradeIdx(o));
     const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
     await unveil(gr, `<div class="card">${px(cardSpec(state.seed, [o], itemLabel(o)))}</div>`,
       famous ? famous + '!' : gr === 0 ? grade.name : grade.name + '!',
@@ -794,7 +953,7 @@
 
   // Claiming plays as a drop too: a gold card, face down, that turns over to your name.
   async function dropName() {
-    current = null; rush = false;
+    current = null; rush = calm.matches;
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet him';
     const n = LG.guyOneIn(guyConfig(state.seed));
@@ -924,7 +1083,8 @@
   /* ---------------------------------------------- the database, when this view has one */
   (async () => {
     const [d, user] = await Promise.all([window.claude?.use?.('db') ?? null, window.claude?.use?.('user') ?? null]);
-    if (!d) return;
+    backendReady = true;
+    if (!d) { watchNames(); if ($('name').value) check(); return; }
     db = d;
     try { owner = user ? await user.isOwner() : false; uid = user ? await user.id() : null; } catch (e) {}
     watchNames();
