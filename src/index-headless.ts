@@ -10,7 +10,7 @@ export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT } from '.
 export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 export { items, itemById, gameItems, freeItem, dress, withItems, GAMES } from './items';
 export type { Item, Slot } from './items';
-export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, dopplerPhase, slotOf, FINISHES, GRADES, WEAR, BLUE_GEMS } from './owned';
+export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, slotOf, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
 export type { Owned, Finish, Grade } from './owned';
 export { paint } from './paint';
 

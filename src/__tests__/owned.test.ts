@@ -8,58 +8,59 @@ import { T } from '../parts/art';
 
 describe('owned copies', () => {
   it('round-trip through their string form', () => {
-    const o: Owned = { item: 'puttsies.ball', finish: 'doppler', float: 0.0123456, pattern: 20, stattrak: 412 };
+    const o: Owned = { item: 'puttsies.ball', finish: 'nebula', scuff: 0.0123456, print: 20, tally: 412 };
     expect(decode(encode(o))).toEqual(o);
-    const plain: Owned = { item: 'trackdle.helmet', finish: 'stock', float: 0.9, pattern: 0 };
+    const plain: Owned = { item: 'trackdle.helmet', finish: 'plain', scuff: 0.9, print: 0 };
     expect(decode(encode(plain))).toEqual(plain);
   });
 
   it('refuse anything malformed', () => {
-    for (const bad of ['', 'nope~stock~0.1~1', 'puttsies.ball~shiny~0.1~1', 'puttsies.ball~stock~1.5~1', 'puttsies.ball~stock~0.1~1000', 'puttsies.ball~stock~x~1']) {
+    for (const bad of ['', 'nope~plain~0.1~1', 'puttsies.ball~shiny~0.1~1', 'puttsies.ball~plain~1.5~1', 'puttsies.ball~plain~0.1~1000', 'puttsies.ball~plain~x~1']) {
       expect(decode(bad)).toBeNull();
     }
   });
 
-  it('name the wear tier from the float', () => {
-    expect([0.01, 0.1, 0.2, 0.4, 0.9].map(f => wearOf(f).short)).toEqual(['FN', 'MW', 'FT', 'WW', 'BS']);
-    expect(wearOf(1).short).toBe('BS');
+  it('name the condition from the scuff', () => {
+    expect([0.01, 0.1, 0.2, 0.4, 0.9].map(f => wearOf(f).short)).toEqual(['MIB', 'LN', 'PW', 'WL', 'BT']);
+    expect(wearOf(1).short).toBe('BT');
   });
 
-  it('lift famous patterns a grade, and name them', () => {
-    const ch = (pattern: number): Owned => ({ item: 'stackdle.block', finish: 'case-hardened', float: 0.1, pattern });
-    expect(special(ch(661))).toBe('Blue Gem');
-    expect(gradeOf(ch(661)).name).toBe('Covert');
-    expect(gradeOf(ch(117)).name).toBe('Classified');
-    expect(nameOf({ item: 'puttsies.ball', finish: 'doppler', float: 0.01, pattern: 20, stattrak: 0 }))
-      .toBe('StatTrak™ Golf ball | Doppler (Ruby)');
+  it('lift famous prints a grade, and name them', () => {
+    const t = (print: number): Owned => ({ item: 'stackdle.block', finish: 'tempered', scuff: 0.1, print });
+    expect(special(t(661))).toBe('Deep Blue');
+    expect(gradeOf(t(661)).name).toBe('Mythic');
+    expect(gradeOf(t(117)).name).toBe('Prized');
+    expect(nameOf({ item: 'puttsies.ball', finish: 'nebula', scuff: 0.01, print: 20, tally: 0 }))
+      .toBe('Tallied Golf ball | Red Giant');
+    expect(nameOf({ item: 'stackdle.block', finish: 'tempered', scuff: 0.1, print: 661 })).toBe('Toy block | Deep Blue');
   });
 });
 
 describe('the free starter', () => {
-  it("is every player's, and is the game's free hat in stock", () => {
+  it("is every player's, and is the game's free hat, plain", () => {
     for (const game of GAMES) {
       const s = starter('alice', game);
       expect(s.item).toBe(freeItem(game).id);
-      expect(s.finish).toBe('stock');
+      expect(s.finish).toBe('plain');
     }
   });
 
   it('is the same for the same name, and differs between names', () => {
     expect(starter('alice', 'puttsies')).toEqual(starter('alice', 'puttsies'));
-    const floats = new Set(['alice', 'bob', 'charlie', 'dana', 'elena'].map(n => starter(n, 'puttsies').float));
+    const floats = new Set(['alice', 'bob', 'charlie', 'dana', 'elena'].map(n => starter(n, 'puttsies').scuff));
     expect(floats.size).toBe(5);
   });
 });
 
-describe('case rolls', () => {
+describe('capsules', () => {
   it("always give one of the game's own items, never the free hat", () => {
     for (const game of GAMES) {
       for (let i = 0; i < 200; i++) {
         const o = roll(`seed-${i}`, game);
         expect(o.item.startsWith(game + '.')).toBe(true);
         expect(o.item).not.toBe(freeItem(game).id);
-        const [lo, hi] = FINISHES[o.finish].floats;
-        expect(o.float >= lo && o.float <= hi).toBe(true);
+        const [lo, hi] = FINISHES[o.finish].scuffs;
+        expect(o.scuff >= lo && o.scuff <= hi).toBe(true);
       }
     }
   });
@@ -83,15 +84,15 @@ describe('case rolls', () => {
 
 describe('drawing owned copies', () => {
   it('shows a copy the same every time, and differently from another copy', () => {
-    const a = toSvgString('kai', { equip: ['trackdle.helmet~fade~0.0100000~412'] });
-    expect(a).toBe(toSvgString('kai', { equip: ['trackdle.helmet~fade~0.0100000~412'] }));
-    expect(a).not.toBe(toSvgString('kai', { equip: ['trackdle.helmet~fade~0.0100000~413'] }));
-    expect(a).not.toBe(toSvgString('kai', { equip: ['trackdle.helmet~stock~0.0100000~412'] }));
+    const a = toSvgString('kai', { equip: ['trackdle.helmet~sunset~0.0100000~412'] });
+    expect(a).toBe(toSvgString('kai', { equip: ['trackdle.helmet~sunset~0.0100000~412'] }));
+    expect(a).not.toBe(toSvgString('kai', { equip: ['trackdle.helmet~sunset~0.0100000~413'] }));
+    expect(a).not.toBe(toSvgString('kai', { equip: ['trackdle.helmet~plain~0.0100000~412'] }));
   });
 
-  it('wears more as the float rises', () => {
-    const fresh = toSvgString('kai', { equip: ['trackdle.helmet~stock~0.0100000~5'] });
-    const worn = toSvgString('kai', { equip: ['trackdle.helmet~stock~0.9000000~5'] });
+  it('wears more as the scuff rises', () => {
+    const fresh = toSvgString('kai', { equip: ['trackdle.helmet~plain~0.0100000~5'] });
+    const worn = toSvgString('kai', { equip: ['trackdle.helmet~plain~0.9000000~5'] });
     expect(fresh).not.toBe(worn);
   });
 
@@ -102,7 +103,7 @@ describe('drawing owned copies', () => {
   });
 
   it('sparkles for a Gold finish', () => {
-    const plain = compose(dress(resolve('max'), { equip: ['puttsies.ball~stock~0.0100000~1'] }));
+    const plain = compose(dress(resolve('max'), { equip: ['puttsies.ball~plain~0.0100000~1'] }));
     const gold = compose(dress(resolve('max'), { equip: ['puttsies.ball~gold~0.0100000~1'] }));
     expect(plain.flat().filter(v => v === T.GOLD).length).toBeLessThan(gold.flat().filter(v => v === T.GOLD).length);
   });
@@ -110,11 +111,11 @@ describe('drawing owned copies', () => {
 
 describe('rarity', () => {
   const { guyOneIn, copyOneIn } = require('../rarity');
-  it('makes a famous pattern and a low float rarer', () => {
-    const base = { item: 'puttsies.ball', finish: 'doppler' as const, float: 0.05, pattern: 7 };
-    expect(copyOneIn({ ...base, pattern: 20 })).toBeGreaterThan(copyOneIn(base));
-    expect(copyOneIn({ ...base, float: 0.001 })).toBeGreaterThan(copyOneIn(base));
-    expect(copyOneIn({ ...base, stattrak: 0 })).toBeCloseTo(copyOneIn(base) * 10, 5);
+  it('makes a famous print and a low scuff rarer', () => {
+    const base = { item: 'puttsies.ball', finish: 'nebula' as const, scuff: 0.05, print: 7 };
+    expect(copyOneIn({ ...base, print: 20 })).toBeGreaterThan(copyOneIn(base));
+    expect(copyOneIn({ ...base, scuff: 0.001 })).toBeGreaterThan(copyOneIn(base));
+    expect(copyOneIn({ ...base, tally: 0 })).toBeCloseTo(copyOneIn(base) * 10, 5);
   });
 
   it('rates a guy with rare traits rarer than a common one', () => {

@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-cJGGSJsn.cjs');
+const require_paint = require('./paint-BYY8qyAX.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -686,22 +686,18 @@ function traitOdds(config) {
 function guyOneIn(config) {
 	return 1 / traitOdds(config).reduce((p, t) => p * t.chance, 1);
 }
-/** One in how many case drops for its game is a copy at least this good. */
+/** One in how many capsules for its game give a copy at least this good. */
 function copyOneIn(o) {
 	const item = require_paint.itemById(o.item);
 	if (!item) return Infinity;
 	const pool = require_paint.gameItems(item.game).filter((i) => !i.free).length;
 	const f = require_paint.FINISHES[o.finish];
 	let p = 1 / pool * (f.odds / 100);
-	if (o.finish === "case-hardened" && require_paint.BLUE_GEMS.includes(o.pattern)) p *= require_paint.BLUE_GEMS.length / 1e3;
-	if (o.finish === "doppler" && [
-		"Ruby",
-		"Sapphire",
-		"Black Pearl"
-	].includes(require_paint.dopplerPhase(o.pattern))) p *= 1 / 20;
-	const [lo, hi] = f.floats;
-	p *= Math.max(1e-7, (o.float - lo) / (hi - lo));
-	if (o.stattrak !== void 0) p *= .1;
+	if (require_paint.special(o) === "Deep Blue") p *= require_paint.DEEP_BLUE_PRINTS.length / 1e3;
+	else if (require_paint.special(o)) p *= 1 / 20;
+	const [lo, hi] = f.scuffs;
+	p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
+	if (o.tally !== void 0) p *= .1;
 	return 1 / p;
 }
 
@@ -709,7 +705,7 @@ function copyOneIn(o) {
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
-exports.BLUE_GEMS = require_paint.BLUE_GEMS
+exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
@@ -728,7 +724,6 @@ exports.compose = require_paint.compose
 exports.composeBase = require_paint.composeBase
 exports.copyOneIn = copyOneIn
 exports.decode = require_paint.decode
-exports.dopplerPhase = require_paint.dopplerPhase
 exports.dress = require_paint.dress
 exports.encode = require_paint.encode
 exports.eyes = require_paint.eyes
@@ -747,6 +742,7 @@ exports.items = require_paint.items
 exports.mergeRefs = mergeRefs
 exports.mouths = require_paint.mouths
 exports.nameOf = require_paint.nameOf
+exports.nebulaPhase = require_paint.nebulaPhase
 exports.paint = require_paint.paint
 exports.palettes = require_paint.palettes
 exports.resolve = require_paint.resolve

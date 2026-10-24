@@ -5,7 +5,7 @@ import {
 } from './parts/weights';
 import { palettes } from './palette';
 import { gameItems, itemById } from './items';
-import { BLUE_GEMS, dopplerPhase, FINISHES, type Owned } from './owned';
+import { DEEP_BLUE_PRINTS, FINISHES, special, type Owned } from './owned';
 import type { AvatarConfig } from './types';
 
 /**
@@ -14,9 +14,9 @@ import type { AvatarConfig } from './types';
  * A guy's rarity is the chance of rolling his exact combination of visible
  * traits — shape, eyes, mouth, cheeks, topper, markings, accessory and
  * colourway — so a laser-eyed guy in a crown is rarer than one with bean eyes
- * and no hat. A copy's rarity is the chance a case drops exactly that: its
- * item, its finish, a pattern as special as its pattern, a float at least as
- * low as its float, and StatTrak if it has it.
+ * and no hat. A copy's rarity is the chance a capsule gives exactly that: its
+ * item, its finish, a print as special as its print, a scuff at least as low
+ * as its scuff, and a tally if it has one.
  */
 
 export interface TraitOdds {
@@ -47,7 +47,7 @@ export function guyOneIn(config: AvatarConfig): number {
   return 1 / traitOdds(config).reduce((p, t) => p * t.chance, 1);
 }
 
-/** One in how many case drops for its game is a copy at least this good. */
+/** One in how many capsules for its game give a copy at least this good. */
 export function copyOneIn(o: Owned): number {
   const item = itemById(o.item);
   if (!item) return Infinity;
@@ -55,14 +55,14 @@ export function copyOneIn(o: Owned): number {
   const f = FINISHES[o.finish];
   let p = (1 / pool) * (f.odds / 100);
 
-  // The pattern only matters when it is one of the famous ones.
-  if (o.finish === 'case-hardened' && BLUE_GEMS.includes(o.pattern)) p *= BLUE_GEMS.length / 1000;
-  if (o.finish === 'doppler' && ['Ruby', 'Sapphire', 'Black Pearl'].includes(dopplerPhase(o.pattern))) p *= 1 / 20;
+  // The print only matters when it is one of the famous ones.
+  if (special(o) === 'Deep Blue') p *= DEEP_BLUE_PRINTS.length / 1000;
+  else if (special(o)) p *= 1 / 20;
 
-  // A float at least this low, within the finish's range.
-  const [lo, hi] = f.floats;
-  p *= Math.max(1e-7, (o.float - lo) / (hi - lo));
+  // A scuff at least this low, within the finish's range.
+  const [lo, hi] = f.scuffs;
+  p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
 
-  if (o.stattrak !== undefined) p *= 0.1;
+  if (o.tally !== undefined) p *= 0.1;
   return 1 / p;
 }

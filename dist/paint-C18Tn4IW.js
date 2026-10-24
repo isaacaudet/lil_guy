@@ -590,118 +590,132 @@ const hair = [
 //#region src/owned.ts
 const GRADES = [
 	{
-		id: "mil-spec",
-		name: "Mil-Spec",
+		id: "everyday",
+		name: "Everyday",
 		color: "#4B69FF"
 	},
 	{
-		id: "restricted",
-		name: "Restricted",
+		id: "special",
+		name: "Special",
 		color: "#8847FF"
 	},
 	{
-		id: "classified",
-		name: "Classified",
+		id: "prized",
+		name: "Prized",
 		color: "#D32CE6"
 	},
 	{
-		id: "covert",
-		name: "Covert",
+		id: "mythic",
+		name: "Mythic",
 		color: "#EB4B4B"
 	},
 	{
-		id: "exceedingly-rare",
-		name: "★ Exceedingly Rare",
+		id: "grail",
+		name: "★ Grail",
 		color: "#E4AE39"
 	}
 ];
 /**
-* Each finish: its grade, the chance a case drop rolls it, and the float range
-* it can come in. Like CS:GO's Fade, the flashy finishes only exist barely
-* worn, so a Battle-Scarred Doppler is not a thing.
+* Each finish: its grade, the chance a capsule rolls it, and the scuff range
+* it can come in. The flashy finishes only exist barely worn, so there is no
+* Battered Nebula.
 */
 const FINISHES = {
-	"stock": {
-		name: "Stock",
+	"plain": {
+		name: "Plain",
 		grade: 0,
-		odds: 79.92,
-		floats: [0, 1]
+		odds: 79.42,
+		scuffs: [0, 1]
 	},
-	"fade": {
-		name: "Fade",
+	"sunset": {
+		name: "Sunset",
 		grade: 1,
 		odds: 15.98,
-		floats: [0, .08]
+		scuffs: [0, .08]
 	},
-	"case-hardened": {
-		name: "Case Hardened",
+	"tempered": {
+		name: "Tempered",
 		grade: 2,
 		odds: 1.6,
-		floats: [0, 1]
+		scuffs: [0, 1]
 	},
-	"doppler": {
-		name: "Doppler",
+	"nebula": {
+		name: "Nebula",
 		grade: 2,
 		odds: 1.6,
-		floats: [0, .08]
+		scuffs: [0, .08]
+	},
+	"prism": {
+		name: "Prism",
+		grade: 3,
+		odds: .5,
+		scuffs: [0, .08]
 	},
 	"gold": {
 		name: "Gold",
 		grade: 4,
 		odds: .9,
-		floats: [0, .08]
+		scuffs: [0, .08]
 	}
 };
+/** Condition, by scuff, in the words toy collectors use. */
 const WEAR = [
 	{
-		name: "Factory New",
-		short: "FN",
+		name: "Mint in Box",
+		short: "MIB",
 		max: .07
 	},
 	{
-		name: "Minimal Wear",
-		short: "MW",
+		name: "Like New",
+		short: "LN",
 		max: .15
 	},
 	{
-		name: "Field-Tested",
-		short: "FT",
+		name: "Played With",
+		short: "PW",
 		max: .38
 	},
 	{
-		name: "Well-Worn",
-		short: "WW",
+		name: "Well Loved",
+		short: "WL",
 		max: .45
 	},
 	{
-		name: "Battle-Scarred",
-		short: "BS",
+		name: "Battered",
+		short: "BT",
 		max: 1.01
 	}
 ];
-function wearOf(float) {
-	return WEAR.find((w) => float < w.max);
+function wearOf(scuff) {
+	return WEAR.find((w) => scuff < w.max);
 }
-/** The famous patterns. A Case Hardened with one of these comes out nearly all blue. */
-const BLUE_GEMS = [
+/** The famous prints. A Tempered copy with one of these comes out nearly all blue. */
+const DEEP_BLUE_PRINTS = [
 	661,
 	670,
 	321,
 	387,
 	955
 ];
-function dopplerPhase(pattern) {
-	const p = pattern % 20;
-	return p === 0 ? "Ruby" : p === 1 ? "Sapphire" : p === 2 ? "Black Pearl" : `Phase ${pattern % 4 + 1}`;
+/** A Nebula copy's look, from its print: three rare ones, otherwise one of four. */
+function nebulaPhase(print) {
+	const p = print % 20;
+	return p === 0 ? "Red Giant" : p === 1 ? "Blue Moon" : p === 2 ? "Black Hole" : `Nebula ${[
+		"I",
+		"II",
+		"III",
+		"IV"
+	][print % 4]}`;
 }
+const RARE_PHASES = [
+	"Red Giant",
+	"Blue Moon",
+	"Black Hole"
+];
 /** What makes this copy special beyond its finish, if anything. */
 function special(o) {
-	if (o.finish === "case-hardened" && BLUE_GEMS.includes(o.pattern)) return "Blue Gem";
-	if (o.finish === "doppler" && [
-		"Ruby",
-		"Sapphire",
-		"Black Pearl"
-	].includes(dopplerPhase(o.pattern))) return dopplerPhase(o.pattern);
+	if (o.finish === "tempered" && DEEP_BLUE_PRINTS.includes(o.print)) return "Deep Blue";
+	if (o.finish === "nebula" && RARE_PHASES.includes(nebulaPhase(o.print))) return nebulaPhase(o.print);
 	return void 0;
 }
 function gradeOf(o) {
@@ -711,37 +725,37 @@ function gradeOf(o) {
 function nameOf(o) {
 	const item = itemById(o.item);
 	const base = item?.name ?? o.item;
-	const st = o.stattrak !== void 0 ? "StatTrak™ " : "";
-	if (o.finish === "stock") return st + base;
-	const phase = o.finish === "doppler" ? ` (${dopplerPhase(o.pattern)})` : "";
-	return `${st}${base} | ${FINISHES[o.finish].name}${phase}`;
+	const tally = o.tally !== void 0 ? "Tallied " : "";
+	if (o.finish === "plain") return tally + base;
+	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" && special(o) ? "Deep Blue" : FINISHES[o.finish].name;
+	return `${tally}${base} | ${look}`;
 }
 /**
 * A copy as one short string, to store or put in a URL:
-* `puttsies.ball~doppler~0.0123456~20` or `…~20~st412`.
+* `puttsies.ball~nebula~0.0123456~20` or, with a tally, `…~20~t412`.
 */
 function encode(o) {
 	const parts = [
 		o.item,
 		o.finish,
-		o.float.toFixed(7),
-		String(o.pattern)
+		o.scuff.toFixed(7),
+		String(o.print)
 	];
-	if (o.stattrak !== void 0) parts.push(`st${o.stattrak}`);
+	if (o.tally !== void 0) parts.push(`t${o.tally}`);
 	return parts.join("~");
 }
 function decode(s) {
-	const [item, finish, float, pattern, st] = s.split("~");
+	const [item, finish, scuff, print, tally] = s.split("~");
 	if (!itemById(item) || !(finish in FINISHES)) return null;
-	const f = Number(float), p = Number(pattern);
+	const f = Number(scuff), p = Number(print);
 	if (!(f >= 0 && f <= 1) || !Number.isInteger(p) || p < 0 || p > 999) return null;
 	const o = {
 		item,
 		finish,
-		float: f,
-		pattern: p
+		scuff: f,
+		print: p
 	};
-	if (st?.startsWith("st") && /^\d+$/.test(st.slice(2))) o.stattrak = Number(st.slice(2));
+	if (tally?.startsWith("t") && /^\d+$/.test(tally.slice(1))) o.tally = Number(tally.slice(1));
 	return o;
 }
 /** A uniform number in [0, 1) from a string, for deterministic rolls. */
@@ -749,21 +763,21 @@ function unit(seed) {
 	return hash(seed) / 4294967296;
 }
 /**
-* The copy every player has from the start: their game's free hat, stock, with
-* a float and pattern taken from their name. Everyone gets one, and everyone's
-* is a little different — a lucky name gets a 0.003 Factory New.
+* The copy every player has from the start: their game's free hat, plain, with
+* a scuff and print taken from their name. Everyone gets one, and everyone's
+* is a little different — a lucky name gets a 0.003 Mint in Box.
 */
 function starter(name, game) {
 	return {
 		item: freeItem(game).id,
-		finish: "stock",
-		float: Math.round(unit(`${name}|${game}|float`) * 1e7) / 1e7,
-		pattern: hash(`${name}|${game}|pattern`) % 1e3
+		finish: "plain",
+		scuff: Math.round(unit(`${name}|${game}|float`) * 1e7) / 1e7,
+		print: hash(`${name}|${game}|pattern`) % 1e3
 	};
 }
 /**
-* Opens a case for a game: one of its items (the free hat aside), with a
-* finish, float, pattern and maybe StatTrak, all rolled from `seed`.
+* Opens a capsule for a game: one of its items (the free hat aside), with a
+* finish, scuff, print and maybe a tally, all rolled from `seed`.
 *
 * The seed decides everything, so the same seed always opens the same thing.
 * In production the seed must come from the server — a random value made at
@@ -773,7 +787,7 @@ function roll(seed, game) {
 	const pool = gameItems(game).filter((i) => !i.free);
 	const item = pool[hash(`${seed}|item`) % pool.length];
 	let r = unit(`${seed}|finish`) * 100;
-	let finish = "stock";
+	let finish = "plain";
 	for (const [id, f] of Object.entries(FINISHES)) {
 		r -= f.odds;
 		if (r < 0) {
@@ -781,16 +795,16 @@ function roll(seed, game) {
 			break;
 		}
 	}
-	const [lo, hi] = FINISHES[finish].floats;
-	const float = Math.round((lo + unit(`${seed}|float`) * (hi - lo)) * 1e7) / 1e7;
-	const pattern = hash(`${seed}|pattern`) % 1e3;
+	const [lo, hi] = FINISHES[finish].scuffs;
+	const scuff = Math.round((lo + unit(`${seed}|float`) * (hi - lo)) * 1e7) / 1e7;
+	const print = hash(`${seed}|pattern`) % 1e3;
 	const o = {
 		item: item.id,
 		finish,
-		float,
-		pattern
+		scuff,
+		print
 	};
-	if (unit(`${seed}|stattrak`) < .1) o.stattrak = 0;
+	if (unit(`${seed}|stattrak`) < .1) o.tally = 0;
 	return o;
 }
 /** Which slot a copy goes in. */
@@ -826,21 +840,21 @@ const shaded = (c, l) => mix$1(mix$1(c, [
 	0
 ], .45), c, Math.min(1, l * 1.5));
 const PAINT = {
-	"stock": (_x, _y, _l, _p, original) => original,
-	"fade": (x, y, l, p) => {
+	"plain": (_x, _y, _l, _p, original) => original,
+	"sunset": (x, y, l, p) => {
 		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
 		const c = t < .5 ? mix$1(rgb("#F5C542"), rgb("#E55AA8"), t * 2) : mix$1(rgb("#E55AA8"), rgb("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
-	"case-hardened": (x, y, l, p) => {
-		const blue = BLUE_GEMS.includes(p) ? .9 : .3 + p % 7 / 25;
+	"tempered": (x, y, l, p) => {
+		const blue = DEEP_BLUE_PRINTS.includes(p) ? .9 : .3 + p % 7 / 25;
 		const r = cellNoise(p, x, y, 1);
 		const c = r < blue ? rgb("#2F5FD0") : r < blue + .35 ? rgb("#D1A73A") : rgb("#9AA2AC");
 		return shaded(c, l);
 	},
-	"doppler": (x, y, l, p) => {
-		const phase = dopplerPhase(p);
-		const base = phase === "Ruby" ? rgb("#D0102E") : phase === "Sapphire" ? rgb("#1E4FE8") : phase === "Black Pearl" ? rgb("#2A1E3A") : rgb([
+	"nebula": (x, y, l, p) => {
+		const phase = nebulaPhase(p);
+		const base = phase === "Red Giant" ? rgb("#D0102E") : phase === "Blue Moon" ? rgb("#1E4FE8") : phase === "Black Hole" ? rgb("#2A1E3A") : rgb([
 			"#8A2AB0",
 			"#3A2AB0",
 			"#2A6AB0",
@@ -848,6 +862,23 @@ const PAINT = {
 		][p % 4]);
 		const c = cellNoise(p, x, y, 2) < .2 ? mix$1(base, rgb("#FFD6F0"), .55) : base;
 		return shaded(c, l);
+	},
+	"prism": (x, y, l, p) => {
+		const h = ((x * 23 + y * 17 + p * 7) % 360 + 360) % 360;
+		const k = (n) => {
+			const t = (n + h / 30) % 12;
+			return .5 - .5 * Math.max(-1, Math.min(t - 3, 9 - t, 1));
+		};
+		const c = [
+			k(0) * 255,
+			k(8) * 255,
+			k(4) * 255
+		];
+		return mix$1(shaded(c, l), [
+			255,
+			255,
+			255
+		], .18);
 	},
 	"gold": (x, y, l) => {
 		if ((x + y) % 6 === 0 && l > .5) return rgb("#FFFBE6");
@@ -857,20 +888,20 @@ const PAINT = {
 const PRIMER = rgb("#8B9097");
 /**
 * Paints one cell of an owned item: its finish, then its wear. Chips land in
-* places fixed by the pattern, so a copy always wears the same way, and how
-* many show is the float. `glint` is set once the first Factory New glint has
-* been placed.
+* places fixed by the print, so a copy always wears the same way, and how many
+* show is the scuff. `glint` is set once the first Mint in Box glint has been
+* placed.
 */
 function paintCell(color, x, y, o, state) {
 	const original = rgb(color);
-	let c = PAINT[o.finish](x, y, lum(original), o.pattern, original);
-	if (cellNoise(o.pattern, x, y, 3) < Math.pow(o.float, .9) * .45) c = mix$1(PRIMER, c, .25);
+	let c = PAINT[o.finish](x, y, lum(original), o.print, original);
+	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$1(PRIMER, c, .25);
 	c = mix$1(c, [
 		120,
 		116,
 		112
-	], Math.min(.25, o.float * .3));
-	if (o.float < .07 && !state.glint && lum(c) > .55) {
+	], Math.min(.25, o.scuff * .3));
+	if (o.scuff < .07 && !state.glint && lum(c) > .55) {
 		c = [
 			255,
 			255,
@@ -3456,5 +3487,5 @@ function paint(grid, config, palette) {
 }
 
 //#endregion
-export { BLUE_GEMS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dopplerPhase, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, mouthWeights, mouths, nameOf, paint, paletteWeights, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems };
-//# sourceMappingURL=paint-BNQdEKpO.js.map
+export { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, SHADE_COUNT, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteWeights, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems };
+//# sourceMappingURL=paint-C18Tn4IW.js.map

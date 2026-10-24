@@ -69,8 +69,8 @@ declare class Canvas {
  * - three hats, one of them free: every player has it from the start
  * - a frame, the backdrop behind him
  *
- * An item is the design. A copy someone owns adds a finish, a float and a
- * pattern seed (see ./owned), which is what makes one copy worth more than
+ * An item is the design. A copy someone owns adds a finish, a scuff and a
+ * print number (see ./owned), which is what makes one copy worth more than
  * another. Items are drawn in their own colours (the `1`–`9` characters),
  * listed with the item, and a finish repaints them. The free hats use the
  * guy's own accent colour, so they still vary by name.
@@ -122,110 +122,116 @@ declare function withItems(palette: Palette, config: AvatarConfig): Palette;
 //#endregion
 //#region src/owned.d.ts
 /**
- * Owned copies of items, the way CS:GO does skins.
+ * Owned copies of items, collected like toys.
  *
  * An item (`puttsies.ball`) is a design. A copy someone owns adds:
  *
- * - a **finish**: the paint job. Stock is common; Fade, Case Hardened,
- *   Doppler and Gold are progressively rarer
- * - a **float** between 0 and 1: how worn it is. Low is pristine, high is
- *   scuffed. The wear tiers (Factory New … Battle-Scarred) are ranges of it,
- *   and the scuffs really show: paint chips off as the float rises
- * - a **pattern** between 0 and 999: where the finish lands. Most patterns
- *   are ordinary; a few are famous (an all-blue Case Hardened, a Ruby or
- *   Sapphire Doppler)
- * - optionally a **StatTrak** counter
+ * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
+ *   Prism and Gold are progressively rarer
+ * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
+ *   battered. The condition (Mint in Box … Battered) is a range of it, and
+ *   the scuffs really show: paint chips off as it rises
+ * - a **print** number between 0 and 999: where the finish lands. Most prints
+ *   are ordinary; a few are famous (a Deep Blue Tempered, a Red Giant or
+ *   Black Hole Nebula)
+ * - sometimes a **tally**: a counter of the days its owner finished the game
+ *   while wearing it
  *
- * Two copies of the same item are almost never the same: the float alone has
+ * Two copies of the same item are almost never the same: the scuff alone has
  * millions of values. Everything is deterministic from the stored numbers, so
  * a copy looks the same everywhere it is drawn.
  */
-type Finish = 'stock' | 'fade' | 'case-hardened' | 'doppler' | 'gold';
+type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'gold';
 interface Owned {
   item: string;
   finish: Finish;
-  float: number;
-  pattern: number;
-  stattrak?: number;
+  /** 0–1, how worn. */
+  scuff: number;
+  /** 0–999, where the finish and the scuffs land. */
+  print: number;
+  /** Days the owner finished the game wearing it, if it keeps a tally. */
+  tally?: number;
 }
 declare const GRADES: readonly [{
-  readonly id: "mil-spec";
-  readonly name: "Mil-Spec";
+  readonly id: "everyday";
+  readonly name: "Everyday";
   readonly color: "#4B69FF";
 }, {
-  readonly id: "restricted";
-  readonly name: "Restricted";
+  readonly id: "special";
+  readonly name: "Special";
   readonly color: "#8847FF";
 }, {
-  readonly id: "classified";
-  readonly name: "Classified";
+  readonly id: "prized";
+  readonly name: "Prized";
   readonly color: "#D32CE6";
 }, {
-  readonly id: "covert";
-  readonly name: "Covert";
+  readonly id: "mythic";
+  readonly name: "Mythic";
   readonly color: "#EB4B4B";
 }, {
-  readonly id: "exceedingly-rare";
-  readonly name: "★ Exceedingly Rare";
+  readonly id: "grail";
+  readonly name: "★ Grail";
   readonly color: "#E4AE39";
 }];
 type Grade = (typeof GRADES)[number];
 /**
- * Each finish: its grade, the chance a case drop rolls it, and the float range
- * it can come in. Like CS:GO's Fade, the flashy finishes only exist barely
- * worn, so a Battle-Scarred Doppler is not a thing.
+ * Each finish: its grade, the chance a capsule rolls it, and the scuff range
+ * it can come in. The flashy finishes only exist barely worn, so there is no
+ * Battered Nebula.
  */
 declare const FINISHES: Record<Finish, {
   name: string;
   grade: number;
   odds: number;
-  floats: [number, number];
+  scuffs: [number, number];
 }>;
+/** Condition, by scuff, in the words toy collectors use. */
 declare const WEAR: readonly [{
-  readonly name: "Factory New";
-  readonly short: "FN";
+  readonly name: "Mint in Box";
+  readonly short: "MIB";
   readonly max: 0.07;
 }, {
-  readonly name: "Minimal Wear";
-  readonly short: "MW";
+  readonly name: "Like New";
+  readonly short: "LN";
   readonly max: 0.15;
 }, {
-  readonly name: "Field-Tested";
-  readonly short: "FT";
+  readonly name: "Played With";
+  readonly short: "PW";
   readonly max: 0.38;
 }, {
-  readonly name: "Well-Worn";
-  readonly short: "WW";
+  readonly name: "Well Loved";
+  readonly short: "WL";
   readonly max: 0.45;
 }, {
-  readonly name: "Battle-Scarred";
-  readonly short: "BS";
+  readonly name: "Battered";
+  readonly short: "BT";
   readonly max: 1.01;
 }];
-declare function wearOf(float: number): {
-  readonly name: "Factory New";
-  readonly short: "FN";
+declare function wearOf(scuff: number): {
+  readonly name: "Mint in Box";
+  readonly short: "MIB";
   readonly max: 0.07;
 } | {
-  readonly name: "Minimal Wear";
-  readonly short: "MW";
+  readonly name: "Like New";
+  readonly short: "LN";
   readonly max: 0.15;
 } | {
-  readonly name: "Field-Tested";
-  readonly short: "FT";
+  readonly name: "Played With";
+  readonly short: "PW";
   readonly max: 0.38;
 } | {
-  readonly name: "Well-Worn";
-  readonly short: "WW";
+  readonly name: "Well Loved";
+  readonly short: "WL";
   readonly max: 0.45;
 } | {
-  readonly name: "Battle-Scarred";
-  readonly short: "BS";
+  readonly name: "Battered";
+  readonly short: "BT";
   readonly max: 1.01;
 };
-/** The famous patterns. A Case Hardened with one of these comes out nearly all blue. */
-declare const BLUE_GEMS: number[];
-declare function dopplerPhase(pattern: number): string;
+/** The famous prints. A Tempered copy with one of these comes out nearly all blue. */
+declare const DEEP_BLUE_PRINTS: number[];
+/** A Nebula copy's look, from its print: three rare ones, otherwise one of four. */
+declare function nebulaPhase(print: number): string;
 /** What makes this copy special beyond its finish, if anything. */
 declare function special(o: Owned): string | undefined;
 declare function gradeOf(o: Owned): Grade;
@@ -233,19 +239,19 @@ declare function gradeOf(o: Owned): Grade;
 declare function nameOf(o: Owned): string;
 /**
  * A copy as one short string, to store or put in a URL:
- * `puttsies.ball~doppler~0.0123456~20` or `…~20~st412`.
+ * `puttsies.ball~nebula~0.0123456~20` or, with a tally, `…~20~t412`.
  */
 declare function encode(o: Owned): string;
 declare function decode(s: string): Owned | null;
 /**
- * The copy every player has from the start: their game's free hat, stock, with
- * a float and pattern taken from their name. Everyone gets one, and everyone's
- * is a little different — a lucky name gets a 0.003 Factory New.
+ * The copy every player has from the start: their game's free hat, plain, with
+ * a scuff and print taken from their name. Everyone gets one, and everyone's
+ * is a little different — a lucky name gets a 0.003 Mint in Box.
  */
 declare function starter(name: string, game: GameId): Owned;
 /**
- * Opens a case for a game: one of its items (the free hat aside), with a
- * finish, float, pattern and maybe StatTrak, all rolled from `seed`.
+ * Opens a capsule for a game: one of its items (the free hat aside), with a
+ * finish, scuff, print and maybe a tally, all rolled from `seed`.
  *
  * The seed decides everything, so the same seed always opens the same thing.
  * In production the seed must come from the server — a random value made at
@@ -259,9 +265,9 @@ declare function slotOf(o: Owned): Slot | undefined;
 //#region src/types.d.ts
 /**
  * Paints one cell of an owned item: its finish, then its wear. Chips land in
- * places fixed by the pattern, so a copy always wears the same way, and how
- * many show is the float. `glint` is set once the first Factory New glint has
- * been placed.
+ * places fixed by the print, so a copy always wears the same way, and how many
+ * show is the scuff. `glint` is set once the first Mint in Box glint has been
+ * placed.
  */
 /**
  * A 16x16 grid where each cell is a colour token. Tokens are roles, not
@@ -313,7 +319,7 @@ interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
-  /** The owned copies behind those items, if known: finish, float, pattern. */
+  /** The owned copies behind those items, if known: finish, scuff, print. */
   owned?: Partial<Record<'skin' | 'hat' | 'frame', Owned>>;
 }
 interface RenderOptions {
@@ -330,7 +336,7 @@ interface RenderOptions {
   /**
    * What to wear, at most one per slot; later entries win. Each entry is an
    * item id (`puttsies.ball`) or an owned copy from `encode`
-   * (`puttsies.ball~doppler~0.0123456~20`). Anything unrecognised is ignored.
+   * (`puttsies.ball~nebula~0.0123456~20`). Anything unrecognised is ignored.
    */
   equip?: string[];
   /**
@@ -839,9 +845,9 @@ declare function getColor(colors: readonly string[], index: number): string;
  * A guy's rarity is the chance of rolling his exact combination of visible
  * traits — shape, eyes, mouth, cheeks, topper, markings, accessory and
  * colourway — so a laser-eyed guy in a crown is rarer than one with bean eyes
- * and no hat. A copy's rarity is the chance a case drops exactly that: its
- * item, its finish, a pattern as special as its pattern, a float at least as
- * low as its float, and StatTrak if it has it.
+ * and no hat. A copy's rarity is the chance a capsule gives exactly that: its
+ * item, its finish, a print as special as its print, a scuff at least as low
+ * as its scuff, and a tally if it has one.
  */
 interface TraitOdds {
   slot: string;
@@ -853,9 +859,9 @@ interface TraitOdds {
 declare function traitOdds(config: AvatarConfig): TraitOdds[];
 /** One in how many guys has exactly this combination. */
 declare function guyOneIn(config: AvatarConfig): number;
-/** One in how many case drops for its game is a copy at least this good. */
+/** One in how many capsules for its game give a copy at least this good. */
 declare function copyOneIn(o: Owned): number;
 
 //#endregion
-export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BLUE_GEMS, ColorToken, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, Intensity3D, Item, LilGuy, LilGuyProps, Owned, Palette, PixelGrid, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, bodies, cheeks, compose, composeBase, copyOneIn, decode, dopplerPhase, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+export { Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, Intensity3D, Item, LilGuy, LilGuyProps, Owned, Palette, PixelGrid, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, bodies, cheeks, compose, composeBase, copyOneIn, decode, dress, encode, eyes, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, nebulaPhase, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

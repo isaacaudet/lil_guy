@@ -265,27 +265,26 @@ recognisable everywhere.
 
 A **skin** turns the guy into the game's object and keeps his face.
 
-### Owned copies: finish, float, pattern
+### Owned copies: finish, scuff, print, tally
 
 An item is a design. A copy someone owns is the item plus:
 
 | | |
 |---|---|
-| **Finish** | Stock (79.92%), Fade (15.98%), Case Hardened (1.6%), Doppler (1.6%), Gold (0.9%). Fade, Doppler and Gold only exist in Factory New or Minimal Wear |
-| **Float** | 0–1, how worn it is. Factory New < 0.07 < Minimal Wear < 0.15 < Field-Tested < 0.38 < Well-Worn < 0.45 < Battle-Scarred. The wear really shows: paint chips off as it rises, and a Factory New copy keeps a glint |
-| **Pattern** | 0–999, where the finish lands, and where the chips go. A few are famous: Case Hardened 661, 670, 321, 387 and 955 come out almost all blue (Blue Gem); a Doppler's pattern picks its phase, and Ruby, Sapphire and Black Pearl are rare |
-| **StatTrak™** | an optional counter, on 10% of drops |
+| **Finish** | Plain (79.42%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Gold (0.9%). Sunset, Nebula, Prism and Gold only come Mint in Box or Like New |
+| **Scuff** | 0–1, how worn it is. Mint in Box < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Mint in Box copy keeps a glint |
+| **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered prints 661, 670, 321, 387 and 955 come out almost all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
+| **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy |
 
-Grades follow from the finish: Mil-Spec, Restricted, Classified, Covert (a
-famous pattern lifts a copy one grade), ★ Exceedingly Rare (Gold, with a
-sparkle).
+Grades follow from the finish: Everyday, Special, Prized, Mythic (a famous
+print lifts a copy one grade), ★ Grail (Gold, with a sparkle).
 
 **Everyone gets one.** `starter(name, game)` is the copy of a game's free hat
-every player has from the start: stock, with a float and pattern taken from
+every player has from the start: plain, with a scuff and print taken from
 their name, so everyone's is a little different and a lucky name gets a
-Factory New. `roll(seed, game)` opens a case. The seed decides everything, so
-in production it must be made on the server at drop time and stored with the
-copy.
+Mint in Box. `roll(seed, game)` opens a capsule. The seed decides everything,
+so in production it must be made on the server at drop time and stored with
+the copy.
 
 A copy is one short string, to store or put in a URL:
 
@@ -293,10 +292,10 @@ A copy is one short string, to store or put in a URL:
 import { roll, encode, decode, nameOf, wearOf, gradeOf } from "lil_guy";
 
 const copy = roll(serverSeed, "puttsies");
-const saved = encode(copy);          // "puttsies.ball~doppler~0.0123456~20"
-nameOf(copy);                        // "Golf ball | Doppler (Ruby)"
-wearOf(copy.float).name;             // "Factory New"
-gradeOf(copy).name;                  // "Covert"
+const saved = encode(copy);          // "puttsies.ball~nebula~0.0123456~20"
+nameOf(copy);                        // "Golf ball | Red Giant"
+wearOf(copy.scuff).name;             // "Mint in Box"
+gradeOf(copy).name;                  // "Mythic"
 
 toSvgString("alice", { game: "puttsies" });         // wears her own free visor
 toSvgString("alice", { equip: [saved] });           // wears this exact copy
@@ -306,17 +305,17 @@ toSvgString("alice", { equip: [saved] });           // wears this exact copy
 
 `guyOneIn(config)` is one in how many guys has exactly that combination of
 visible traits; `traitOdds(config)` lists each trait's chance. `copyOneIn(copy)`
-is one in how many case drops is a copy at least that good: its item, finish,
-a famous pattern if it has one, a float at least that low, and StatTrak.
+is one in how many capsules give a copy at least that good: its item, finish,
+a famous print if it has one, a scuff at least that low, and a tally.
 
 | Copy | One in |
 |---|---|
-| A stock drop, Field-Tested | ~20 |
-| Fade, Factory New | ~250 |
-| Gold, Factory New | ~1,500 |
-| Doppler Ruby / Sapphire / Black Pearl | ~12,500–25,000 |
-| Case Hardened Blue Gem | ~1 million |
-| StatTrak Blue Gem at 0.002 | ~300 million |
+| A plain drop, Played With | ~20 |
+| Sunset, Mint in Box | ~250 |
+| Gold, Mint in Box | ~1,500 |
+| Nebula Red Giant / Blue Moon / Black Hole | ~12,500–25,000 |
+| Tempered Deep Blue | ~1 million |
+| Tallied Deep Blue at 0.002 | ~300 million |
 
 `equip` takes item ids or encoded copies. This library only draws them and
 rolls them; who owns which, and what it costs, belongs to the game or the club.

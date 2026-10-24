@@ -14,8 +14,8 @@ import { GRID_SIZE } from './types';
  * - three hats, one of them free: every player has it from the start
  * - a frame, the backdrop behind him
  *
- * An item is the design. A copy someone owns adds a finish, a float and a
- * pattern seed (see ./owned), which is what makes one copy worth more than
+ * An item is the design. A copy someone owns adds a finish, a scuff and a
+ * print number (see ./owned), which is what makes one copy worth more than
  * another. Items are drawn in their own colours (the `1`–`9` characters),
  * listed with the item, and a finish repaints them. The free hats use the
  * guy's own accent colour, so they still vary by name.

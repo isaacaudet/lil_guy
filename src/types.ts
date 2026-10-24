@@ -55,7 +55,7 @@ export interface AvatarConfig {
   skin?: string;
   hat?: string;
   frame?: string;
-  /** The owned copies behind those items, if known: finish, float, pattern. */
+  /** The owned copies behind those items, if known: finish, scuff, print. */
   owned?: Partial<Record<'skin' | 'hat' | 'frame', import('./owned').Owned>>;
 }
 
@@ -73,7 +73,7 @@ export interface RenderOptions {
   /**
    * What to wear, at most one per slot; later entries win. Each entry is an
    * item id (`puttsies.ball`) or an owned copy from `encode`
-   * (`puttsies.ball~doppler~0.0123456~20`). Anything unrecognised is ignored.
+   * (`puttsies.ball~nebula~0.0123456~20`). Anything unrecognised is ignored.
    */
   equip?: string[];
   /**
