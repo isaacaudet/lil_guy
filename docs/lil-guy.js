@@ -4651,7 +4651,7 @@ function emote(layer, kind, left, lift = 0) {
 	].map(([x, y]) => [x, Math.max(0, y + 1 - lift)]);
 	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
 	const ink = (ch) => ch === "#" || ch === "+";
-	for (const [x0, y0] of spots) {
+	const at = ([x0, y0]) => {
 		const cells = [];
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
 			const ch = rows[y - 1]?.[x - 1];
@@ -4663,14 +4663,13 @@ function emote(layer, kind, left, lift = 0) {
 				on$1 ? ch === "+" ? accent ?? color : color : "#1B1428"
 			]);
 		}
-		if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
-			for (const [x, y, c] of cells) layer[y][x] = {
-				c,
-				item: false
-			};
-			return;
-		}
-	}
+		return cells;
+	};
+	const clear = spots.map(at).find((cells) => cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x]));
+	for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = {
+		c,
+		item: false
+	};
 }
 /** Where sparkles may go: around the guy, clear of him. */
 const SPARKLE_SPOTS = [

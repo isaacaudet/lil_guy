@@ -300,7 +300,7 @@ function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
     .map(([x, y]) => [x, Math.max(0, y + 1 - lift)] as [number, number]);
   if (left) spots.sort((a, b) => a[0] - b[0]);
   const ink = (ch: string | undefined) => ch === '#' || ch === '+';
-  for (const [x0, y0] of spots) {
+  const at = ([x0, y0]: [number, number]) => {
     const cells: [number, number, string][] = [];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const ch = rows[y - 1]?.[x - 1];
@@ -308,11 +308,12 @@ function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
       const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
       if (on || near) cells.push([x0 + x, y0 + y, on ? (ch === '+' ? accent ?? color : color) : '#1B1428']);
     }
-    if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
-      for (const [x, y, c] of cells) layer[y][x] = { c, item: false };
-      return;
-    }
-  }
+    return cells;
+  };
+  // A clear corner if there is one; on a guy too tall for that, it overlaps
+  // his edge like a speech bubble rather than not showing at all.
+  const clear = spots.map(at).find(cells => cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x]));
+  for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = { c, item: false };
 }
 
 /** Where sparkles may go: around the guy, clear of him. */

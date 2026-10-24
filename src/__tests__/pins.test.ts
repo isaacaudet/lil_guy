@@ -91,10 +91,10 @@ describe('Lucky', () => {
 });
 
 describe('emotes and the trail', () => {
-  test('every unlockable emote shows over a move', () => {
-    for (const { id } of EMOTE_UNLOCKS) {
-      const plain = animate('alice', 'idle'), withIt = animate('alice', 'idle', { emote: id });
-      expect(JSON.stringify(withIt.frames)).not.toBe(JSON.stringify(plain.frames));
+  test('every unlockable emote shows over a move, even on the tallest guys', () => {
+    for (const { id } of EMOTE_UNLOCKS) for (const head of [0, 16, 24]) {
+      const plain = animate('alice', 'idle', { parts: { head, hair: 11 } }), withIt = animate('alice', 'idle', { parts: { head, hair: 11 }, emote: id });
+      for (let i = 0; i < plain.frames.length; i++) expect(JSON.stringify(withIt.frames[i])).not.toBe(JSON.stringify(plain.frames[i]));
     }
   });
 
