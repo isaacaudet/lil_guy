@@ -1,0 +1,243 @@
+<title>Lil Guy Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap">
+<style>
+  /* Layout: a review sheet. Verdicts up top, then every option on four different guys so it can be judged in context. */
+  :root {
+    --bg: #f1ede4; --panel: #fbf9f4; --line: #e0d9cb; --ink: #241f2e; --muted: #6b6478;
+    --nice: #1f8a5b; --nice-bg: #dcf2e6; --ugly: #b4373f; --ugly-bg: #f8dcdc; --cut: #8a5a12; --cut-bg: #f7ead0;
+    --tile: #ffffff;
+    --pixel: "Pixelify Sans", "Courier New", monospace;
+    --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #15131c; --panel: #1e1b28; --line: #2e2a3b; --ink: #f1ede4; --muted: #a39cb3;
+    --nice: #6fdca8; --nice-bg: #173a2b; --ugly: #ff8d93; --ugly-bg: #43202a; --cut: #f2c46b; --cut-bg: #3d3120; --tile: #2a2636; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #15131c; --panel: #1e1b28; --line: #2e2a3b; --ink: #f1ede4; --muted: #a39cb3;
+    --nice: #6fdca8; --nice-bg: #173a2b; --ugly: #ff8d93; --ugly-bg: #43202a; --cut: #f2c46b; --cut-bg: #3d3120; --tile: #2a2636; color-scheme: dark; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 80px; }
+  .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 44px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(34px, 5vw, 52px); line-height: 1; }
+  h2 { font-size: 26px; }
+  h3 { font-size: 16px; }
+  header p, section > p { color: var(--muted); margin: 8px 0 0; max-width: 72ch; }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  nav a { font: 500 13px/1 var(--pixel); color: var(--ink); text-decoration: none; background: var(--panel); border: 1px solid var(--line); padding: 7px 9px; border-radius: 6px; }
+  nav a:focus-visible { outline: 3px solid var(--nice); outline-offset: 2px; }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
+  .v { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  .v h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .v ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+  .v li b { font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  section { display: grid; gap: 14px; scroll-margin-top: 16px; }
+  .rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(296px, 1fr)); gap: 10px; }
+  .row { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 10px 8px; display: grid; gap: 8px; min-width: 0; }
+  .row.nice { border-color: var(--nice); box-shadow: inset 0 0 0 1px var(--nice); }
+  .row.ugly { border-color: var(--ugly); box-shadow: inset 0 0 0 1px var(--ugly); }
+  .row.cut { border-color: var(--cut); box-shadow: inset 0 0 0 1px var(--cut); }
+  .row .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .row .n { font: 500 15px/1.2 var(--pixel); }
+  .row .meta { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tag { font: 500 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; white-space: nowrap; }
+  .tag.nice { color: var(--nice); background: var(--nice-bg); }
+  .tag.ugly { color: var(--ugly); background: var(--ugly-bg); }
+  .tag.cut { color: var(--cut); background: var(--cut-bg); }
+  .row .note { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .four { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .four.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  canvas.g { width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; background: var(--tile); border-radius: 6px; display: block; }
+  .crowd { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
+  .crowd figure { margin: 0; display: grid; gap: 3px; text-align: center; }
+  .crowd figcaption { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button.chip { font: 500 13px/1 var(--pixel); color: var(--ink); background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+  button.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  button.chip:focus-visible { outline: 3px solid var(--nice); outline-offset: 2px; }
+  @media (max-width: 520px) { .rows { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Lil Guy Review</h1>
+    <p>Everything in the library as of 0.5, each option on four different guys: a pastel one, a tall mint one, a dark night one and a yellow one, because yellow is where gold parts vanish. Green borders are what I'd keep and show off, red what's ugly, amber what I'd consider cutting.</p>
+    <nav aria-label="Sections">
+      <a href="#verdict">Verdict</a><a href="#crowd">Random players</a><a href="#shapes">Shapes</a><a href="#eyes">Eyes</a><a href="#mouths">Mouths</a><a href="#cheeks">Cheeks</a><a href="#toppers">Toppers</a><a href="#markings">Markings</a><a href="#accessories">Accessories</a><a href="#colours">Colours</a><a href="#skins">Skins</a><a href="#hats">Hats</a><a href="#frames">Frames</a><a href="#finishes">Finishes</a><a href="#earned">Pins and tallies</a>
+    </nav>
+  </header>
+
+  <section id="verdict">
+    <h2>Verdict</h2>
+    <div class="verdicts">
+      <div class="v"><h3><span class="dot" style="background:var(--nice)"></span>Nicest</h3><ul>
+        <li><b>The core faces:</b> shiny and sparkle eyes with a cat or laugh mouth. That's the charm.</li>
+        <li><b>Soft shapes:</b> round, mochi, gumdrop, onigiri, slime, ghost.</li>
+        <li><b>Rare shapes that work:</b> jellyfish, octopus, toadstool, heart, saucer.</li>
+        <li><b>Toppers:</b> cat and bunny ears, sprout, bow, mushroom, beanie, witch hat, propeller.</li>
+        <li><b>Skins:</b> jar of gems, toy block, water bottle, racer, traffic cone, hamster ball, crystal.</li>
+        <li><b>Frames:</b> checkered flag, patchwork, gingham, bricks, waves, spiral.</li>
+        <li><b>Finishes:</b> Nebula, Prism and Gold, plus the gold rim at a year of tally.</li>
+      </ul></div>
+      <div class="v"><h3><span class="dot" style="background:var(--ugly)"></span>Ugliest</h3><ul>
+        <li><b>Gold on yellow:</b> star eyes, gold-leaf and star cheeks, star, moon and bolt marks, starry, star sticker, crown, unicorn horn, trophy. They vanish.</li>
+        <li><b>Shapes that misread:</b> bat looks like a cat, crab's claws like antlers, cactus lost its arms. (Flame is redrawn.)</li>
+        <li><b>Laser eyes</b> look like blush.</li>
+        <li><b>Lucky night colours</b> go brown and olive.</li>
+        <li><b>Eye patch</b> reads as hair. <b>Headphones</b> melt into the head.</li>
+        <li><b>Tiny hats</b> that are just a lump: little block, tower, bottle cap, landed bottle.</li>
+        <li><b>The 2-pixel pins</b> (leaf, bolt).</li>
+      </ul></div>
+      <div class="v"><h3><span class="dot" style="background:var(--cut)"></span>Consider removing</h3><ul>
+        <li><b>Peanut and bean:</b> the same tall oval as pill and tower.</li>
+        <li><b>Glance and content eyes:</b> near copies of shiny and happy.</li>
+        <li><b>Dot cheeks</b> (a weak blush), <b>gleam</b> marking (barely there).</li>
+        <li><b>Stripes and zigzag markings, whiskers:</b> too faint at 16 pixels. Redraw or cut.</li>
+        <li><b>Chick tuft:</b> the tuft again. <b>Eggshell:</b> reads as a bald patch.</li>
+        <li><b>Two of the four lump hats</b>, and the flat <b>Lavender</b> and <b>Kitchen teal</b> frames.</li>
+      </ul></div>
+      <div class="v"><h3><span class="dot" style="background:var(--ink)"></span>Consider adding</h3><ul>
+        <li><b>A buddy:</b> a 4×4 pet beside him (a tiny golf ball, a chick, a slime). A new slot people would chase.</li>
+        <li><b>Held items:</b> a golf club, a flag, a spatula. One per game.</li>
+        <li><b>Eyes:</b> sleepy, dizzy spirals, button eyes, X eyes for a loss.</li>
+        <li><b>Toppers:</b> a ponytail, curls, a tiara, a viking helmet, a flower crown.</li>
+        <li><b>Shapes that read instantly:</b> a star, a dumpling, a cat loaf, a teardrop.</li>
+        <li><b>Patterned bodies</b> as a rare marking: calico, galaxy, polka dots.</li>
+        <li><b>Seasonal items</b> with a date stamp, and a <b>third skin</b> for the games with the fewest.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section id="crowd">
+    <h2>Random players</h2>
+    <p>Forty-eight names exactly as they come out. This is what most people will see, so it matters more than any single part.</p>
+    <div class="toolbar"><button class="chip" type="button" id="reroll">Show another 48</button></div>
+    <div class="crowd" id="crowd-grid"></div>
+  </section>
+
+  <div id="parts"></div>
+</div>
+
+<script>/*LIB*/</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
+  const idx = (list, name) => list.findIndex(x => x.name === name);
+
+  // Four test guys: pastel, tall mint, a night colour, and yellow (where gold vanishes).
+  const BASES = [
+    { head: idx(LG.heads, 'round'), palette: idx(LG.palettes, 'Peach'), eyes: idx(LG.eyes, 'shiny'), mouth: idx(LG.mouths, 'cat') },
+    { head: idx(LG.heads, 'tower'), palette: idx(LG.palettes, 'Mint'), eyes: idx(LG.eyes, 'sparkle'), mouth: idx(LG.mouths, 'smile') },
+    { head: idx(LG.heads, 'chonk'), palette: idx(LG.palettes, 'Midnight'), eyes: idx(LG.eyes, 'beans'), mouth: idx(LG.mouths, 'laugh') },
+    { head: idx(LG.heads, 'gumdrop'), palette: idx(LG.palettes, 'Butter'), eyes: idx(LG.eyes, 'happy'), mouth: idx(LG.mouths, 'tiny') },
+  ];
+  const PLAIN = { cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 1, feet: 0, shade: 1, flip: false, lucky: false };
+
+  function draw(canvas, { name = 'review', parts, palette, lucky, equip = [] }) {
+    const r = LG.resolve(name, parts);
+    if (palette !== undefined) r.palette = palette;
+    if (lucky !== undefined) r.lucky = lucky;
+    const cfg = LG.dress(r, { equip });
+    const pal = LG.withItems(LG.paletteOf(cfg), cfg);
+    const colors = LG.paint(LG.compose(cfg), cfg, pal);
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
+    colors.forEach((row, y) => row.forEach((c, x) => {
+      if (c) img.data.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], (y * 16 + x) * 4);
+    }));
+    ctx.putImageData(img, 0, 0);
+  }
+  const specs = [];
+  const cv = spec => { specs.push(spec); return `<canvas class="g" width="16" height="16" data-s="${specs.length - 1}" aria-hidden="true"></canvas>`; };
+  const paint = root => root.querySelectorAll('canvas[data-s]').forEach(c => { draw(c, specs[+c.dataset.s]); c.removeAttribute('data-s'); });
+
+  // My verdicts, by part name.
+  const V = {
+    shapes: { nice: ['round', 'mochi', 'gumdrop', 'onigiri', 'slime', 'ghost', 'jellyfish', 'octopus', 'toadstool', 'heart', 'saucer'], ugly: ['bat', 'crab', 'cactus'], cut: ['peanut', 'bean'],
+      notes: { flame: 'Redrawn: a tall leaning tip with licks curling up its sides.', bat: 'Reads as a cat. Wings need to spread wider.', crab: 'Claws read as antlers.', cactus: 'The arms barely show.', peanut: 'Same tall oval as pill and tower.', bean: 'Same tall oval as pill and tower.', jellyfish: 'Distinct at a glance.', heart: 'Distinct at a glance.' } },
+    eyes: { nice: ['shiny', 'sparkle', 'hearts', 'chill', 'side-eye', 'shades', 'cyclops', 'excited'], ugly: ['laser', 'star'], cut: ['glance', 'content'],
+      notes: { laser: 'Two red squares: reads as blush. Needs a beam.', star: 'Gold on yellow vanishes.', glance: 'Too close to shiny.', content: 'Too close to happy.' } },
+    mouths: { nice: ['cat', 'laugh', 'grin', 'fang', 'toothy', 'gritted', 'smirk'], ugly: ['bubblegum'], cut: [],
+      notes: { bubblegum: 'Reads as a tongue. A round pink bubble would read.' } },
+    cheeks: { nice: ['blush', 'rosy', 'war paint', 'hearts', 'band-aid'], ugly: ['stars', 'gold leaf', 'shine'], cut: ['dot', 'whiskers', 'stripes'],
+      notes: { stars: 'Gold on yellow vanishes.', 'gold leaf': 'The rarest cheek, invisible on yellow.', shine: 'White on pale bodies vanishes.', dot: 'A weaker blush.', whiskers: 'Too faint.', stripes: 'Too faint.' } },
+    toppers: { nice: ['cat ears', 'bunny ears', 'sprout', 'bow', 'mushroom', 'beanie', 'witch hat', 'propeller', 'party hat', 'frosting'], ugly: ['crown', 'unicorn horn', 'headphones', 'star clip'], cut: ['chick tuft', 'eggshell'],
+      notes: { crown: 'Gold on yellow vanishes.', 'unicorn horn': 'Gold on yellow vanishes.', headphones: 'The cups melt into the head.', 'chick tuft': 'The tuft again.', eggshell: 'Reads as a bald patch.' } },
+    markings: { nice: ['belly', 'two tone', 'heart mark', 'split'], ugly: ['star mark', 'moon mark', 'bolt mark', 'starry'], cut: ['gleam', 'stripes', 'zigzag'],
+      notes: { 'star mark': 'Gold on yellow vanishes.', 'moon mark': 'Gold on yellow vanishes.', 'bolt mark': 'Gold on yellow vanishes.', starry: 'Gold and white specks vanish on light bodies.', gleam: 'Barely there.', stripes: 'Too faint.', zigzag: 'Too faint.' } },
+    accessories: { nice: ['glasses', 'scarf', 'bowtie', 'bandana', 'necklace', 'monocle'], ugly: ['eye patch', 'star sticker'], cut: ['headband'],
+      notes: { 'eye patch': 'The strap reads as hair.', 'star sticker': 'Gold on yellow vanishes.', headband: 'Hides under most toppers.' } },
+    skins: { nice: ['Jar of gems', 'Toy block', 'Water bottle', 'Racer', 'Traffic cone', 'Hamster ball', 'Crystal', 'Golf ball'], ugly: [], cut: [] },
+    hats: { nice: ['Race helmet', 'Big gem', 'Pit cap', 'Golf visor', 'Chef hat', 'Hamster ears', 'Bullseye beret'], ugly: ['Trophy', 'Cheese wedge'], cut: ['Little block', 'Tower', 'Bottle cap', 'Landed bottle'],
+      notes: { Trophy: 'Gold on yellow vanishes.', 'Cheese wedge': 'Yellow on yellow vanishes.', 'Little block': 'A lump on the head.', Tower: 'A lump on the head.', 'Bottle cap': 'A lump on the head.', 'Landed bottle': 'A lump on the head.' } },
+    frames: { nice: ['Checkered flag', 'Patchwork', 'Gingham', 'Bricks', 'Waves', 'Spiral', 'Gem field'], ugly: ['Tarmac'], cut: ['Lavender', 'Kitchen teal'],
+      notes: { Tarmac: 'Mostly flat grey.', Lavender: 'Flat.', 'Kitchen teal': 'Flat.' } },
+  };
+  const verdict = (cat, name) => (V[cat].nice.includes(name) ? 'nice' : V[cat].ugly.includes(name) ? 'ugly' : V[cat].cut.includes(name) ? 'cut' : '');
+  const TAG = { nice: 'Keep', ugly: 'Ugly', cut: 'Cut?' };
+
+  const rowHtml = (cat, name, meta, canvases, two) => {
+    const v = verdict(cat, name), note = V[cat].notes?.[name];
+    return `<div class="row ${v}"><div class="top"><span class="n">${esc(name)}</span><span style="display:flex;gap:6px;align-items:center">${meta ? `<span class="meta">${meta}</span>` : ''}${v ? `<span class="tag ${v}">${TAG[v]}</span>` : ''}</span></div>
+      <div class="four${two ? ' two' : ''}">${canvases}</div>${note ? `<p class="note">${esc(note)}</p>` : ''}</div>`;
+  };
+  const section = (id, title, lede, rows) => `<section id="${id}"><h2>${title}</h2>${lede ? `<p>${lede}</p>` : ''}<div class="rows">${rows}</div></section>`;
+  const share = (cat, key, i) => {
+    const c = { ...LG.resolve('x'), [key]: i };
+    return LG.traitOdds(c).find(t => t.slot === cat).chance;
+  };
+  const partRows = (cat, slot, key, list, extra = {}) => list.map((p, i) => rowHtml(cat, p.name, `1 in ${fmt(1 / share(slot, key, i))}`,
+    BASES.map(b => cv({ parts: { ...PLAIN, ...b, ...extra, [key]: i }, palette: b.palette })).join(''))).join('');
+
+  let html = '';
+  html += section('shapes', 'Shapes', 'Each on the four test guys, with no topper so the silhouette shows.', LG.heads.map((h, i) => rowHtml('shapes', h.name, `1 in ${fmt(1 / share('shape', 'head', i))}`,
+    BASES.map(b => cv({ parts: { ...PLAIN, ...b, head: i }, palette: b.palette })).join(''))).join(''));
+  html += section('eyes', 'Eyes', '', partRows('eyes', 'eyes', 'eyes', LG.eyes));
+  html += section('mouths', 'Mouths', '', partRows('mouths', 'mouth', 'mouth', LG.mouths));
+  html += section('cheeks', 'Cheeks', '', partRows('cheeks', 'cheeks', 'cheeks', LG.cheeks));
+  html += section('toppers', 'Toppers', '', partRows('toppers', 'topper', 'hair', LG.hair));
+  html += section('markings', 'Markings', '', partRows('markings', 'markings', 'body', LG.bodies));
+  html += section('accessories', 'Accessories', '', partRows('accessories', 'accessory', 'accessory', LG.accessories));
+  html += section('colours', 'Colourways', 'Each colourway on a round and a tall guy, then Lucky on the same two. The night colours (last six) are where Lucky goes muddy.',
+    LG.palettes.map((p, i) => rowHtml('frames', p.name, i >= 32 ? 'night' : '',
+      [false, true].flatMap(lucky => [BASES[0], BASES[1]].map(b => cv({ parts: { ...PLAIN, ...b }, palette: i, lucky }))).join(''))).join(''));
+  const SLOTS = [['skins', 'skin'], ['hats', 'hat'], ['frames', 'frame']];
+  for (const [cat, slot] of SLOTS) {
+    html += section(cat, cat[0].toUpperCase() + cat.slice(1), '', LG.items.filter(it => it.slot === slot).map(it =>
+      rowHtml(cat, it.name, it.game + (it.free ? ' · free' : ''), BASES.map(b => cv({ parts: { ...PLAIN, ...b }, palette: b.palette, equip: [it.id] })).join(''))).join(''));
+  }
+  // Finishes on a skin, a hat and a frame; then the five conditions.
+  const FINS = Object.keys(LG.FINISHES);
+  const SAMPLES = [['Golf ball', 'puttsies.ball'], ['Race helmet', 'trackdle.helmet'], ['Checkered flag', 'trackdle.flag'], ['Toy block', 'stackdle.block']];
+  html += section('finishes', 'Finishes and condition', 'Every finish on a skin, a hat, a frame and a second skin, as the library paints them (the shimmer on the cards is extra). Then one Tempered toy block from Mint in Box to Battered.',
+    FINS.map(f => rowHtml('frames', LG.FINISHES[f].name, LG.FINISHES[f].odds + '%', SAMPLES.map(([, id], k) =>
+      cv({ parts: { ...PLAIN, ...BASES[k] }, palette: BASES[k].palette, equip: [LG.encode({ item: id, finish: f, scuff: 0.02, print: 40 + k })] })).join(''))).join('')
+    + [0.01, 0.1, 0.25, 0.42, 0.85].map(s => rowHtml('frames', LG.wearOf(s).name, s.toFixed(2), BASES.map(b =>
+      cv({ parts: { ...PLAIN, ...b }, palette: b.palette, equip: [LG.encode({ item: 'stackdle.block', finish: 'tempered', scuff: s, print: 250 })] })).join(''))).join(''));
+  html += section('earned', 'Pins and tallies', 'Each pin on a skin, a hat and a frame; then tally marks at 30 and 100 days and the gold rim at 365.',
+    LG.PINS.map(pn => rowHtml('frames', pn.name, esc(pn.how), [['puttsies.ball', 0], ['trackdle.helmet', 1], ['stackdle.block', 3], ['trackdle.flag', 2]].map(([id, k]) =>
+      cv({ parts: { ...PLAIN, ...BASES[k] }, palette: BASES[k].palette, equip: [LG.encode({ item: id, finish: 'plain', scuff: 0.02, print: 9, pins: [pn.id] })] })).join(''))).join('')
+    + [30, 100, 365].map(t => rowHtml('frames', `Tally ${t}`, '', [['puttsies.ball', 0], ['trackdle.helmet', 1], ['stackdle.block', 3], ['trackdle.flag', 2]].map(([id, k]) =>
+      cv({ parts: { ...PLAIN, ...BASES[k] }, palette: BASES[k].palette, equip: [LG.encode({ item: id, finish: 'plain', scuff: 0.02, print: 9, tally: t })] })).join(''))).join(''));
+  $('parts').innerHTML = `<div style="display:grid;gap:44px">${html}</div>`;
+  paint($('parts'));
+
+  // A crowd of real names.
+  let batch = 0;
+  function crowd() {
+    const names = Array.from({ length: 48 }, (_, i) => ['sam', 'alex', 'jo', 'mia', 'kai', 'ava', 'leo', 'zoe'][i % 8] + (batch * 48 + i + 1));
+    $('crowd-grid').innerHTML = names.map(n => `<figure>${cv({ name: n })}<figcaption>${n}</figcaption></figure>`).join('');
+    paint($('crowd-grid'));
+  }
+  $('reroll').addEventListener('click', () => { batch++; crowd(); });
+  crowd();
+})();
+</script>

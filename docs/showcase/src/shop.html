@@ -1,0 +1,254 @@
+<title>Lil Guy Shop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap">
+<style>
+  /* Layout: an arcade counter. The day's shelf first, then the week's spotlight game, the machines, bundles, and what's never for sale. One dark look on purpose. */
+  :root {
+    --bg: #14182a; --panel: #1d2340; --panel-hi: #262d52; --edge: #0b0e1c; --line: #2c3460;
+    --ink: #f4f1e8; --muted: #a8b0cf; --amber: #ffcf5c; --amber-ink: #2a1a00; --mint: #6ee7b0;
+    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 80px;
+    background-image: radial-gradient(ellipse at 50% -10%, #2a3470 0%, transparent 60%); background-attachment: fixed; }
+  .wrap { max-width: 1140px; margin: 0 auto; display: grid; gap: 40px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(36px, 6vw, 58px); line-height: 1; text-shadow: 0 4px 0 var(--edge); }
+  h2 { font-size: 26px; text-shadow: 0 3px 0 var(--edge); }
+  .muted { color: var(--muted); }
+  .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 14px; }
+  .wallet { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { font: 700 16px/1 var(--pixel); background: var(--panel); border-radius: 8px; padding: 10px 12px; box-shadow: 0 3px 0 var(--edge); display: inline-flex; gap: 8px; align-items: center; }
+  .pill small { font: 500 12px/1 var(--pixel); color: var(--muted); }
+  .tk { width: 18px; height: 12px; image-rendering: pixelated; flex: none; }
+  section { display: grid; gap: 14px; }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+  .timer { font: 500 14px/1 var(--pixel); color: var(--amber); font-variant-numeric: tabular-nums; }
+
+  .shelf { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr); grid-template-rows: auto auto; gap: 12px; }
+  .item { background: var(--panel); border-radius: 12px; box-shadow: 0 4px 0 var(--edge); padding: 12px; display: grid; gap: 8px; align-content: start; position: relative; min-width: 0; }
+  .item.feature { grid-row: span 2; background: linear-gradient(180deg, #3a2a6e, var(--panel)); }
+  .item .art { background: #f2ecdd; border-radius: 8px; display: grid; place-items: center; padding: 8%; }
+  .item canvas { width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; display: block; }
+  .item .nm { font: 700 15px/1.2 var(--pixel); }
+  .item .ds { font-size: 12.5px; color: var(--muted); }
+  .item .buy { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tag { position: absolute; top: 10px; left: 10px; font: 700 12px/1 var(--pixel); padding: 5px 7px; border-radius: 5px; background: var(--amber); color: var(--amber-ink); box-shadow: 0 2px 0 var(--edge); }
+  .grade { font: 700 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; color: #fff; background: var(--g); }
+  .btn { appearance: none; border: 0; cursor: pointer; font: 700 14px/1 var(--pixel); color: var(--amber-ink); background: var(--amber); padding: 9px 11px; border-radius: 6px; box-shadow: 0 3px 0 #a5781a; display: inline-flex; gap: 6px; align-items: center; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #a5781a; }
+  .btn[disabled] { background: var(--line); color: var(--muted); box-shadow: 0 3px 0 var(--edge); cursor: not-allowed; transform: none; }
+  .btn:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
+  .btn .tk { filter: brightness(.22); }
+  .btn[disabled] .tk { filter: none; opacity: .6; }
+
+  .spot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 18px; background: var(--panel); border-radius: 14px; box-shadow: 0 4px 0 var(--edge); padding: 18px; align-items: center; }
+  .spot .mach-wrap { display: grid; place-items: center; gap: 10px; }
+  .spot canvas.mach { width: 160px; height: 224px; image-rendering: pixelated; filter: drop-shadow(0 8px 0 rgba(5,7,16,.55)); }
+  .set { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+  .set figure { margin: 0; display: grid; gap: 3px; justify-items: center; text-align: center; }
+  .set canvas { width: 56px; height: 56px; image-rendering: pixelated; background: #f2ecdd; border-radius: 6px; }
+  .set figcaption { font-size: 11px; color: var(--muted); line-height: 1.2; }
+
+  .machines { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 12px; }
+  .m { display: grid; gap: 6px; justify-items: center; text-align: center; background: var(--panel); border-radius: 12px; padding: 12px 8px; box-shadow: 0 4px 0 var(--edge); }
+  .m canvas { width: 80px; height: 112px; image-rendering: pixelated; }
+  .m .g { font: 700 13px/1 var(--pixel); }
+
+  .bundles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .bundle { background: var(--panel); border-radius: 12px; box-shadow: 0 4px 0 var(--edge); padding: 14px; display: grid; gap: 8px; }
+  .bundle h3 { font-size: 17px; }
+  .bundle ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); }
+  .bundle .buy { display: flex; justify-content: space-between; align-items: center; }
+  .was { text-decoration: line-through; color: var(--muted); font: 500 13px/1 var(--pixel); margin-right: 6px; }
+
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .box { background: var(--panel); border-radius: 12px; box-shadow: 0 4px 0 var(--edge); padding: 16px; }
+  .box h3 { font-size: 17px; margin-bottom: 8px; }
+  .box ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+  .box ul b { font-weight: 600; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; background: var(--panel-hi); border-radius: 12px; box-shadow: 0 6px 0 var(--edge); padding: 12px 14px; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); }
+  .toast canvas { width: 64px; height: 64px; image-rendering: pixelated; background: #f2ecdd; border-radius: 6px; flex: none; }
+  .toast b { font: 700 15px/1.2 var(--pixel); display: block; }
+
+  @media (max-width: 860px) { .shelf { grid-template-columns: repeat(2, 1fr); } .item.feature { grid-column: span 2; grid-row: auto; } .spot { grid-template-columns: 1fr; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol></svg>
+
+<div class="wrap">
+  <div class="top">
+    <div><h1>Lil Guy Shop</h1><p class="muted" style="margin:8px 0 0">A mock-up. Tickets are pretend; in the club the server would sell and roll everything.</p></div>
+    <div class="wallet"><span class="pill"><svg class="tk"><use href="#ticket"/></svg><span id="wallet"></span></span><span class="pill"><small>Your name</small> mia7</span></div>
+  </div>
+
+  <section>
+    <div class="head"><h2>Today's shelf</h2><span class="timer" id="t-day"></span></div>
+    <p class="muted">Seven things, new every day at midnight UTC. Plain copies at set prices, plus one featured piece in a better finish. Everyone sees the same shelf.</p>
+    <div class="shelf" id="shelf"></div>
+  </section>
+
+  <section>
+    <div class="head"><h2 id="spot-title">This week</h2><span class="timer" id="t-week"></span></div>
+    <div class="spot">
+      <div class="mach-wrap"><canvas class="mach" id="spot-mach" width="40" height="56" aria-hidden="true"></canvas><button class="btn" type="button" id="spot-open"><svg class="tk"><use href="#ticket"/></svg> 80 · Open</button></div>
+      <div style="display:grid;gap:10px;min-width:0">
+        <p id="spot-lede"></p>
+        <div class="set" id="spot-set"></div>
+        <p class="muted" style="font-size:13px">The spotlight game's capsules cost less all week, and its set is on show. Odds don't change.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Capsules</h2><span class="muted">100 each · one of the game's 7 items, finish rolled</span></div>
+    <div class="machines" id="machines"></div>
+  </section>
+
+  <section>
+    <h2>Bundles</h2>
+    <div class="bundles" id="bundles"></div>
+  </section>
+
+  <section class="two">
+    <div class="box"><h3>Swap up and recycle</h3><ul>
+      <li><b>Swap up:</b> five copies of one grade for one of the next.</li>
+      <li><b>Recycle:</b> a copy you don't want turns back into tickets: 15 for Everyday, 60 for Special, 250 for Prized.</li>
+      <li>Starters and anything with a tally or pins can't be recycled.</li>
+    </ul></div>
+    <div class="box"><h3>Never for sale</h3><ul>
+      <li><b>Rare finishes</b> on the shelf. Prized and up only come from capsules and swap-ups.</li>
+      <li><b>Pins, tallies and emotes.</b> Earned by playing, so they mean something.</li>
+      <li><b>Your guy.</b> Lucky and rare traits come from your name.</li>
+      <li><b>Anything that helps you score.</b> It's all looks.</li>
+    </ul></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" hidden role="status"><canvas width="16" height="16" aria-hidden="true"></canvas><div><b id="toast-name"></b><span class="muted" id="toast-sub"></span></div></div>
+
+<script>/*LIB*/</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rgb = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+  const blend = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const ME = 'mia7';
+  const tk = '<svg class="tk"><use href="#ticket"/></svg>';
+  let tickets = 1240, opened = 0;
+  const wallet = () => { $('wallet').textContent = tickets.toLocaleString('en-US'); document.querySelectorAll('[data-price]').forEach(b => { if (!b.dataset.sold) b.disabled = tickets < +b.dataset.price; }); };
+
+  function paintInto(canvas, equip) {
+    const cfg = LG.dress(LG.resolve(ME), { equip });
+    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg));
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
+    colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([...rgb(c), 255], (y * 16 + x) * 4); }));
+    ctx.putImageData(img, 0, 0);
+  }
+
+/*MACHINE*/
+
+  // ---------------------------------------------------------- time
+  const now = new Date();
+  const dayKey = now.toISOString().slice(0, 10);
+  const week = Math.floor((now.getTime() / 864e5 + 3) / 7);       // weeks since a Monday
+  const spotlight = LG.GAMES[week % LG.GAMES.length];
+  function tickTimers() {
+    const t = new Date();
+    const nextDay = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() + 1);
+    const ms = nextDay - t.getTime();
+    const hms = [ms / 36e5, (ms / 6e4) % 60, (ms / 1e3) % 60].map(v => String(Math.floor(v)).padStart(2, '0')).join(':');
+    $('t-day').textContent = `New shelf in ${hms}`;
+    const days = 7 - ((Math.floor(t.getTime() / 864e5) + 3) % 7);
+    $('t-week').textContent = `Next spotlight in ${days} day${days === 1 ? '' : 's'}`;
+  }
+  tickTimers(); setInterval(tickTimers, 1000);
+
+  // ---------------------------------------------------------- today's shelf
+  const PRICE = { skin: 450, hat: 300, frame: 350 };
+  const pool = LG.items.filter(i => !i.free);
+  const pick = (k) => pool[strHash(`${dayKey}:${k}`) % pool.length];
+  const shelf = [];
+  for (let k = 0; shelf.length < 6 && k < 60; k++) { const it = pick(k); if (!shelf.some(s => s.item === it.id)) shelf.push({ item: it.id, finish: 'plain', scuff: 0.06 + (strHash(`${dayKey}:${k}:s`) % 60) / 1000, print: strHash(`${dayKey}:${k}:p`) % 1000 }); }
+  // The featured piece: a skin in Sunset.
+  const skins = pool.filter(i => i.slot === 'skin');
+  const feature = { item: skins[strHash(dayKey + ':feature') % skins.length].id, finish: 'sunset', scuff: 0.012, print: strHash(dayKey + ':fp') % 1000 };
+  const cards = [{ o: feature, price: 900, feature: true }, ...shelf.map(o => ({ o, price: PRICE[LG.slotOf(o)] }))];
+  $('shelf').innerHTML = cards.map((c, i) => {
+    const it = LG.itemById(c.o.item), g = LG.gradeOf(c.o);
+    return `<div class="item${c.feature ? ' feature' : ''}">${c.feature ? '<span class="tag">Featured</span>' : ''}
+      <div class="art"><canvas width="16" height="16" aria-hidden="true"></canvas></div>
+      <span class="nm">${esc(LG.nameOf(c.o))}</span>
+      <span class="ds">${cap(it.game)} ${it.slot} · <span class="grade" style="--g:${g.color}">${g.name}</span> · ${LG.wearOf(c.o.scuff).short} #${c.o.print}</span>
+      <div class="buy"><span class="ds">${c.feature ? 'Today only' : 'Plain'}</span><button class="btn" type="button" data-price="${c.price}" data-i="${i}">${tk} ${c.price}</button></div></div>`;
+  }).join('');
+  [...$('shelf').querySelectorAll('canvas')].forEach((cv, i) => paintInto(cv, [LG.encode(cards[i].o)]));
+  $('shelf').addEventListener('click', e => {
+    const b = e.target.closest('[data-i]');
+    if (!b || b.dataset.sold || tickets < +b.dataset.price) return;
+    tickets -= +b.dataset.price; b.dataset.sold = '1'; b.disabled = true; b.textContent = 'Yours';
+    show(cards[+b.dataset.i].o, 'Bought'); wallet();
+  });
+
+  // ---------------------------------------------------------- spotlight
+  $('spot-title').textContent = `This week: ${cap(spotlight)}`;
+  $('spot-lede').textContent = `${cap(spotlight)}${spotlight.endsWith('s') ? "'" : "'s"} full set this week. Every item here is in its capsule.`;
+  const set = LG.gameItems(spotlight);
+  $('spot-set').innerHTML = set.map(it => `<figure><canvas width="16" height="16" aria-hidden="true"></canvas><figcaption>${esc(it.name)}${it.free ? '<br>free' : ''}</figcaption></figure>`).join('');
+  [...$('spot-set').querySelectorAll('canvas')].forEach((cv, i) => paintInto(cv, [set[i].id]));
+  addMachine($('spot-mach'), spotlight, $('spot-mach').parentElement);
+  $('spot-open').dataset.price = '80';
+  $('spot-open').addEventListener('click', () => open(spotlight, 80));
+
+  // ---------------------------------------------------------- machines
+  $('machines').innerHTML = LG.GAMES.map(g => `<div class="m"><canvas width="40" height="56" data-g="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-price="${g === spotlight ? 80 : 100}" data-open="${g}">${tk} ${g === spotlight ? 80 : 100}</button></div>`).join('');
+  $('machines').querySelectorAll('canvas[data-g]').forEach(c => addMachine(c, c.dataset.g, c.parentElement));
+  $('machines').addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) open(b.dataset.open, +b.dataset.price); });
+  function open(game, price) {
+    if (tickets < price) return;
+    tickets -= price;
+    const o = LG.roll(`${ME}:shop:${dayKey}:${++opened}`, game);
+    show(o, `From the ${cap(game)} capsule`); wallet();
+  }
+
+  // ---------------------------------------------------------- bundles
+  const BUNDLES = [
+    { name: 'Starter pack', items: ['3 capsules from any games', 'one Plain hat of your choice', 'a free frame swap'], price: 480, was: 600 },
+    { name: `${cap(spotlight)} week`, items: [`5 ${cap(spotlight)} capsules`, 'guaranteed Special or better in one'], price: 400, was: 500 },
+    { name: 'Collector\'s crate', items: ['10 capsules, any mix', 'one guaranteed Prized or better'], price: 900, was: 1000 },
+  ];
+  $('bundles').innerHTML = BUNDLES.map((b, i) => `<div class="bundle"><h3>${esc(b.name)}</h3><ul>${b.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <div class="buy"><span><span class="was">${b.was}</span></span><button class="btn" type="button" data-price="${b.price}" data-b="${i}">${tk} ${b.price}</button></div></div>`).join('');
+  $('bundles').addEventListener('click', e => {
+    const b = e.target.closest('[data-b]');
+    if (!b || b.dataset.sold || tickets < +b.dataset.price) return;
+    tickets -= +b.dataset.price; b.dataset.sold = '1'; b.disabled = true; b.textContent = 'Yours'; wallet();
+  });
+
+  // ---------------------------------------------------------- what you got
+  let hide;
+  function show(o, how) {
+    const t = $('toast');
+    paintInto(t.querySelector('canvas'), [LG.encode(o)]);
+    const g = LG.gradeOf(o);
+    $('toast-name').textContent = LG.nameOf(o);
+    $('toast-sub').textContent = `${how} · ${g.name} · ${LG.wearOf(o.scuff).name} · #${o.print}`;
+    t.hidden = false; clearTimeout(hide); hide = setTimeout(() => { t.hidden = true; }, 3800);
+  }
+
+  // Machines idle: a slow shine on the glass and a wiggling crank on hover.
+  const calm = matchMedia('(prefers-reduced-motion: reduce)');
+  let last = 0;
+  const loop = n => { requestAnimationFrame(loop); if (calm.matches || n - last < 66) return; last = n; for (const b of balls) if (b.canvas.isConnected) b.tick(n / 1000); };
+  requestAnimationFrame(loop);
+  wallet();
+})();
+</script>

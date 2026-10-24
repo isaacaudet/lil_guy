@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
+</head>
+<body>
+<title>Lil Guy Shop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap">
+<style>
+  /* Layout: an arcade counter. The day's shelf first, then the week's spotlight game, the machines, bundles, and what's never for sale. One dark look on purpose. */
+  :root {
+    --bg: #14182a; --panel: #1d2340; --panel-hi: #262d52; --edge: #0b0e1c; --line: #2c3460;
+    --ink: #f4f1e8; --muted: #a8b0cf; --amber: #ffcf5c; --amber-ink: #2a1a00; --mint: #6ee7b0;
+    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 80px;
+    background-image: radial-gradient(ellipse at 50% -10%, #2a3470 0%, transparent 60%); background-attachment: fixed; }
+  .wrap { max-width: 1140px; margin: 0 auto; display: grid; gap: 40px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(36px, 6vw, 58px); line-height: 1; text-shadow: 0 4px 0 var(--edge); }
+  h2 { font-size: 26px; text-shadow: 0 3px 0 var(--edge); }
+  .muted { color: var(--muted); }
+  .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 14px; }
+  .wallet { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { font: 700 16px/1 var(--pixel); background: var(--panel); border-radius: 8px; padding: 10px 12px; box-shadow: 0 3px 0 var(--edge); display: inline-flex; gap: 8px; align-items: center; }
+  .pill small { font: 500 12px/1 var(--pixel); color: var(--muted); }
+  .tk { width: 18px; height: 12px; image-rendering: pixelated; flex: none; }
+  section { display: grid; gap: 14px; }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+  .timer { font: 500 14px/1 var(--pixel); color: var(--amber); font-variant-numeric: tabular-nums; }
+
+  .shelf { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr); grid-template-rows: auto auto; gap: 12px; }
+  .item { background: var(--panel); border-radius: 12px; box-shadow: 0 4px 0 var(--edge); padding: 12px; display: grid; gap: 8px; align-content: start; position: relative; min-width: 0; }
+  .item.feature { grid-row: span 2; background: linear-gradient(180deg, #3a2a6e, var(--panel)); }
+  .item .art { background: #f2ecdd; border-radius: 8px; display: grid; place-items: center; padding: 8%; }
+  .item canvas { width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; display: block; }
+  .item .nm { font: 700 15px/1.2 var(--pixel); }
+  .item .ds { font-size: 12.5px; color: var(--muted); }
+  .item .buy { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tag { position: absolute; top: 10px; left: 10px; font: 700 12px/1 var(--pixel); padding: 5px 7px; border-radius: 5px; background: var(--amber); color: var(--amber-ink); box-shadow: 0 2px 0 var(--edge); }
+  .grade { font: 700 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; color: #fff; background: var(--g); }
+  .btn { appearance: none; border: 0; cursor: pointer; font: 700 14px/1 var(--pixel); color: var(--amber-ink); background: var(--amber); padding: 9px 11px; border-radius: 6px; box-shadow: 0 3px 0 #a5781a; display: inline-flex; gap: 6px; align-items: center; }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #a5781a; }
+  .btn[disabled] { background: var(--line); color: var(--muted); box-shadow: 0 3px 0 var(--edge); cursor: not-allowed; transform: none; }
+  .btn:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; }
+  .btn .tk { filter: brightness(.22); }
+  .btn[disabled] .tk { filter: none; opacity: .6; }
+
+  .spot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 18px; background: var(--panel); border-radius: 14px; box-shadow: 0 4px 0 var(--edge); padding: 18px; align-items: center; }
+  .spot .mach-wrap { display: grid; place-items: center; gap: 10px; }
+  .spot canvas.mach { width: 160px; height: 224px; image-rendering: pixelated; filter: drop-shadow(0 8px 0 rgba(5,7,16,.55)); }
+  .set { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+  .set figure { margin: 0; display: grid; gap: 3px; justify-items: center; text-align: center; }
+  .set canvas { width: 56px; height: 56px; image-rendering: pixelated; background: #f2ecdd; border-radius: 6px; }
+  .set figcaption { font-size: 11px; color: var(--muted); line-height: 1.2; }
+
+  .machines { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 12px; }
+  .m { display: grid; gap: 6px; justify-items: center; text-align: center; background: var(--panel); border-radius: 12px; padding: 12px 8px; box-shadow: 0 4px 0 var(--edge); }
+  .m canvas { width: 80px; height: 112px; image-rendering: pixelated; }
+  .m .g { font: 700 13px/1 var(--pixel); }
+
+  .bundles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .bundle { background: var(--panel); border-radius: 12px; box-shadow: 0 4px 0 var(--edge); padding: 14px; display: grid; gap: 8px; }
+  .bundle h3 { font-size: 17px; }
+  .bundle ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); }
+  .bundle .buy { display: flex; justify-content: space-between; align-items: center; }
+  .was { text-decoration: line-through; color: var(--muted); font: 500 13px/1 var(--pixel); margin-right: 6px; }
+
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .box { background: var(--panel); border-radius: 12px; box-shadow: 0 4px 0 var(--edge); padding: 16px; }
+  .box h3 { font-size: 17px; margin-bottom: 8px; }
+  .box ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+  .box ul b { font-weight: 600; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; background: var(--panel-hi); border-radius: 12px; box-shadow: 0 6px 0 var(--edge); padding: 12px 14px; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); }
+  .toast canvas { width: 64px; height: 64px; image-rendering: pixelated; background: #f2ecdd; border-radius: 6px; flex: none; }
+  .toast b { font: 700 15px/1.2 var(--pixel); display: block; }
+
+  @media (max-width: 860px) { .shelf { grid-template-columns: repeat(2, 1fr); } .item.feature { grid-column: span 2; grid-row: auto; } .spot { grid-template-columns: 1fr; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol></svg>
+
+<div class="wrap">
+  <div class="top">
+    <div><h1>Lil Guy Shop</h1><p class="muted" style="margin:8px 0 0">A mock-up. Tickets are pretend; in the club the server would sell and roll everything.</p></div>
+    <div class="wallet"><span class="pill"><svg class="tk"><use href="#ticket"/></svg><span id="wallet"></span></span><span class="pill"><small>Your name</small> mia7</span></div>
+  </div>
+
+  <section>
+    <div class="head"><h2>Today's shelf</h2><span class="timer" id="t-day"></span></div>
+    <p class="muted">Seven things, new every day at midnight UTC. Plain copies at set prices, plus one featured piece in a better finish. Everyone sees the same shelf.</p>
+    <div class="shelf" id="shelf"></div>
+  </section>
+
+  <section>
+    <div class="head"><h2 id="spot-title">This week</h2><span class="timer" id="t-week"></span></div>
+    <div class="spot">
+      <div class="mach-wrap"><canvas class="mach" id="spot-mach" width="40" height="56" aria-hidden="true"></canvas><button class="btn" type="button" id="spot-open"><svg class="tk"><use href="#ticket"/></svg> 80 · Open</button></div>
+      <div style="display:grid;gap:10px;min-width:0">
+        <p id="spot-lede"></p>
+        <div class="set" id="spot-set"></div>
+        <p class="muted" style="font-size:13px">The spotlight game's capsules cost less all week, and its set is on show. Odds don't change.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Capsules</h2><span class="muted">100 each · one of the game's 7 items, finish rolled</span></div>
+    <div class="machines" id="machines"></div>
+  </section>
+
+  <section>
+    <h2>Bundles</h2>
+    <div class="bundles" id="bundles"></div>
+  </section>
+
+  <section class="two">
+    <div class="box"><h3>Swap up and recycle</h3><ul>
+      <li><b>Swap up:</b> five copies of one grade for one of the next.</li>
+      <li><b>Recycle:</b> a copy you don't want turns back into tickets: 15 for Everyday, 60 for Special, 250 for Prized.</li>
+      <li>Starters and anything with a tally or pins can't be recycled.</li>
+    </ul></div>
+    <div class="box"><h3>Never for sale</h3><ul>
+      <li><b>Rare finishes</b> on the shelf. Prized and up only come from capsules and swap-ups.</li>
+      <li><b>Pins, tallies and emotes.</b> Earned by playing, so they mean something.</li>
+      <li><b>Your guy.</b> Lucky and rare traits come from your name.</li>
+      <li><b>Anything that helps you score.</b> It's all looks.</li>
+    </ul></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" hidden role="status"><canvas width="16" height="16" aria-hidden="true"></canvas><div><b id="toast-name"></b><span class="muted" id="toast-sub"></span></div></div>
+
+<script src="../lil-guy.js"></script>
+<script>window.LG = window.LilGuy;</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rgb = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+  const blend = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const ME = 'mia7';
+  const tk = '<svg class="tk"><use href="#ticket"/></svg>';
+  let tickets = 1240, opened = 0;
+  const wallet = () => { $('wallet').textContent = tickets.toLocaleString('en-US'); document.querySelectorAll('[data-price]').forEach(b => { if (!b.dataset.sold) b.disabled = tickets < +b.dataset.price; }); };
+
+  function paintInto(canvas, equip) {
+    const cfg = LG.dress(LG.resolve(ME), { equip });
+    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg));
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
+    colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([...rgb(c), 255], (y * 16 + x) * 4); }));
+    ctx.putImageData(img, 0, 0);
+  }
+
+  /* ------------------------------------------------ gachapon
+   * A capsule is a clear top and a candy-coloured bottom that twist apart; the
+   * toy inside (the game's own object) shows through the top, with the little
+   * folded paper insert behind it. Each game has its machine: a glass dome of
+   * capsules on a body in its colour, a crank, a coin slot and a chute. */
+  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+  const gameColor = g => CANDY[g];
+  const balls = new Set();
+  const WHITE = [255, 255, 255], INK = [22, 18, 34];
+
+  function Px(w, h) {
+    const d = new Uint8ClampedArray(w * h * 4);
+    return {
+      w, h, d,
+      set(x, y, c, a = 255) {
+        x = Math.round(x); y = Math.round(y);
+        if (x < 0 || y < 0 || x >= w || y >= h) return;
+        const i = (y * w + x) * 4, k = a / 255;
+        if (a >= 255 || !d[i + 3]) { d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = a; return; }
+        d[i] += (c[0] - d[i]) * k; d[i + 1] += (c[1] - d[i + 1]) * k; d[i + 2] += (c[2] - d[i + 2]) * k; d[i + 3] = Math.max(d[i + 3], a);
+      },
+      alpha(x, y) { return x < 0 || y < 0 || x >= w || y >= h ? 0 : d[(y * w + x) * 4 + 3]; },
+      outline(c) {
+        const add = [];
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          if (this.alpha(x, y)) continue;
+          if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => this.alpha(x + dx, y + dy) > 150)) add.push([x, y]);
+        }
+        for (const [x, y] of add) this.set(x, y, c);
+      },
+    };
+  }
+  const toyCache = new Map();
+  function toyOf(game) {
+    if (!toyCache.has(game)) {
+      const skin = LG.gameItems(game).find(i => i.slot === 'skin');
+      const cfg = LG.dress(LG.resolve('mystery'), { equip: [skin.id] });
+      const grid = LG.compose(cfg);
+      toyCache.set(game, LG.paint(grid, cfg, LG.withItems(LG.shadePalette(LG.getPalette(cfg.palette), cfg.shade), cfg)));
+    }
+    return toyCache.get(game);
+  }
+
+  /** The two halves of a 32x32 capsule; `open` adds light spilling over the bottom's rim. */
+  function capsuleHalves(game, open, t) {
+    const candy = rgb(CANDY[game]), toy = toyOf(game);
+    const top = Px(32, 32), bot = Px(32, 32);
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+      if (d > 14.7) continue;
+      if (y <= 15) {
+        if (d > 13.5) { top.set(x, y, [205, 222, 248], 235); continue; }
+        top.set(x, y, [225, 238, 255], 50);
+      } else {
+        let c = candy;
+        if (d > 13.5) c = blend(candy, INK, 0.62);
+        else if (dx > 7 || dy > 9.5) c = blend(candy, INK, 0.25);
+        else if (dx < -9) c = blend(candy, WHITE, 0.25);
+        if (d <= 13.5 && y === 16) c = blend(candy, WHITE, 0.4);
+        else if (d <= 13.5 && y === 17) c = blend(candy, INK, 0.12);
+        bot.set(x, y, c);
+      }
+    }
+    // the folded paper insert, tucked behind the toy
+    for (let y = 7; y <= 14; y++) for (let x = 19; x <= 24; x++) top.set(x, y, y === 9 || y === 10 ? [255, 160, 190] : x === 24 ? [214, 206, 190] : [250, 244, 228]);
+    // the toy: only the part above the seam shows, through the plastic
+    toy.forEach((row, ty) => row.forEach((hex, tx) => {
+      const x = tx + 8, y = ty + 4;
+      if (!hex || y > 15 || Math.hypot(x - 15.5, y - 15.5) > 13.4) return;
+      top.set(x, y, blend(rgb(hex), [235, 242, 255], 0.14));
+    }));
+    // the clear lip where the halves overlap, the big curved highlight, a glint
+    for (let x = 0; x < 32; x++) for (const y of [14, 15]) if (Math.hypot(x - 15.5, y - 15.5) <= 13.5) top.set(x, y, WHITE, y === 15 ? 90 : 60);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+      if (d > 10.6 && d < 12.6 && dx < -1 && dy < -3) top.set(x, y, WHITE, 185);
+    }
+    for (const [x, y] of [[9, 7], [10, 7], [9, 8]]) top.set(x, y, WHITE, 255);
+    bot.set(7, 20, WHITE, 170); bot.set(7, 21, WHITE, 120);
+    if (open) for (let k = 1; k <= 14; k++) {
+      const y = 16 - k, a = 1 - (k - 1) / 14;
+      for (let x = 4; x <= 27; x++) {
+        const beam = (x + Math.floor(t * 9)) % 4 === 0 ? 1 : x % 4 === 2 ? 0.5 : 0.18;
+        const v = Math.min(1, a * (0.35 + beam));
+        if (v > 0.05) bot.set(x, y, [255, 210 + 40 * v, 110 + 140 * v], Math.round(255 * v));
+      }
+    }
+    return { top, bot };
+  }
+  function addCapsule(topCanvas, botCanvas, game) {
+    const st = {
+      canvas: topCanvas, open: 0,
+      tick(t) {
+        const { top, bot } = capsuleHalves(game, st.open, t);
+        topCanvas.getContext('2d').putImageData(new ImageData(top.d, 32, 32), 0, 0);
+        botCanvas.getContext('2d').putImageData(new ImageData(bot.d, 32, 32), 0, 0);
+      },
+    };
+    balls.add(st); st.tick(0);
+    return st;
+  }
+
+  /** A gacha machine, 40x56. */
+  function addMachine(canvas, game, hoverEl) {
+    const body = rgb(CANDY[game]);
+    const others = LG.GAMES.map(g => rgb(CANDY[g]));
+    // Capsules piled in the dome, bottom rows first, about two thirds full.
+    const pile = [];
+    for (let row = 0; row < 4; row++) {
+      const y = 20 - row * 6;
+      for (let x = 6 + (row % 2) * 4; x <= 34; x += 8) {
+        if (Math.hypot(x - 20, y - 13) <= 10.8) pile.push({ x, y, c: strHash(`${game}:${x}:${y}`) % 5 < 2 ? body : others[strHash(`${x}${y}${game}`) % others.length], jx: 0, jy: 0 });
+      }
+    }
+    const ctx = canvas.getContext('2d');
+    const st = {
+      canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
+      jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
+      tick(t) {
+        const m = Px(40, 56);
+        const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
+        // body
+        for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
+          if ((x === 5 || x === 34) && (y === 25 || y === 53)) continue;
+          let c = body;
+          if (x >= 30) c = blend(body, INK, 0.22); else if (x <= 7) c = blend(body, WHITE, 0.28);
+          if (y === 25) c = blend(c, WHITE, 0.3);
+          m.set(x, y, c);
+        }
+        for (let x = 6; x <= 33; x++) { m.set(x, 54, [44, 38, 64]); m.set(x, 55, [30, 26, 46]); }
+        // the label: cream, with a strip of every game's colours
+        for (let y = 28; y <= 33; y++) for (let x = 9; x <= 30; x++) {
+          const edge = y === 28 || y === 33 || x === 9 || x === 30;
+          m.set(x, y, edge ? [214, 204, 182] : (y === 31 || y === 30) && x % 3 !== 0 ? others[Math.floor(x / 3) % others.length] : [250, 244, 228]);
+        }
+        // coin slot
+        for (let y = 37; y <= 46; y++) for (let x = 25; x <= 29; x++) {
+          const frame = x === 25 || x === 29 || y === 37 || y === 46;
+          m.set(x, y, frame ? [200, 205, 220] : x === 27 && y > 38 && y < 45 ? [16, 12, 24] : [150, 156, 178]);
+        }
+        // the crank
+        const cx = 14.5, cy = 41.5;
+        for (let y = 35; y <= 48; y++) for (let x = 8; x <= 21; x++) {
+          const d = Math.hypot(x - cx, y - cy);
+          if (d <= 5.6) m.set(x, y, d > 4.6 ? [140, 146, 170] : (x - cx + y - cy < -3 ? [246, 248, 252] : [222, 226, 238]));
+        }
+        const a = st.angle + (st.hover ? Math.sin(t * 7) * 0.22 : 0);
+        for (let k = -5; k <= 5; k += 0.5) {
+          const x = cx + Math.cos(a) * k, y = cy + Math.sin(a) * k;
+          m.set(x, y, [96, 102, 128]); m.set(x + Math.sin(a) * 0.7, y - Math.cos(a) * 0.7, [120, 126, 150]);
+        }
+        for (const k of [-5, 5]) m.set(cx + Math.cos(a) * k, cy + Math.sin(a) * k, blend(body, INK, 0.4));
+        // the chute and its flap
+        for (let y = 47; y <= 52; y++) for (let x = 12; x <= 27; x++) {
+          const frame = x === 12 || x === 27 || y === 47 || y === 52;
+          m.set(x, y, frame ? blend(body, INK, 0.5) : st.flap ? (y === 48 ? [60, 50, 80] : [14, 10, 22]) : y === 49 ? blend(body, WHITE, 0.2) : blend(body, INK, 0.3));
+        }
+        // the collar under the dome
+        for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
+        // the dome: glass, capsules, then the shine on the glass
+        const glass = [];
+        for (let y = 0; y <= 22; y++) for (let x = 0; x < 40; x++) {
+          const d = Math.hypot(x - 20, y - 13);
+          if (d > 15.2 || (y < 1)) continue;
+          if (d > 14.2) m.set(x, y, [205, 222, 248], 235);
+          else { m.set(x, y, [190, 215, 250], 42); glass.push([x, y]); }
+        }
+        for (const p of pile) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+          const d = Math.hypot(dx, dy), x = p.x + dx + p.jx, y = p.y + dy + p.jy;
+          if (d > 4.2 || Math.hypot(x - 20, y - 13) > 14) continue;
+          if (dy < 0) m.set(x, y, d > 3.4 ? [190, 208, 236] : blend(p.c, [240, 246, 255], 0.7), 235);
+          else m.set(x, y, d > 3.4 ? blend(p.c, INK, 0.45) : dy === 0 ? blend(p.c, WHITE, 0.35) : p.c);
+          if (dx === -2 && dy === -2) m.set(x, y, WHITE);
+        }
+        for (const [x, y] of glass) {
+          if ((x === 9 || x === 10) && y > 4 && y < 19) m.set(x, y, WHITE, x === 9 ? 120 : 70);
+          const k = (x + y + 60 - sweep) % 60;
+          if (k < 2) m.set(x, y, WHITE, 80);
+        }
+        for (let x = 18; x <= 21; x++) { m.set(x, 0, blend(body, WHITE, 0.2)); m.set(x, 1, body); }
+        m.outline(INK);
+        ctx.putImageData(new ImageData(m.d, 40, 56), 0, 0);
+        for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
+      },
+    };
+    if (hoverEl) {
+      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; });
+      hoverEl.addEventListener('pointerleave', () => { st.hover = 0; });
+    }
+    balls.add(st); st.tick(0);
+    return st;
+  }
+
+
+
+  // ---------------------------------------------------------- time
+  const now = new Date();
+  const dayKey = now.toISOString().slice(0, 10);
+  const week = Math.floor((now.getTime() / 864e5 + 3) / 7);       // weeks since a Monday
+  const spotlight = LG.GAMES[week % LG.GAMES.length];
+  function tickTimers() {
+    const t = new Date();
+    const nextDay = Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() + 1);
+    const ms = nextDay - t.getTime();
+    const hms = [ms / 36e5, (ms / 6e4) % 60, (ms / 1e3) % 60].map(v => String(Math.floor(v)).padStart(2, '0')).join(':');
+    $('t-day').textContent = `New shelf in ${hms}`;
+    const days = 7 - ((Math.floor(t.getTime() / 864e5) + 3) % 7);
+    $('t-week').textContent = `Next spotlight in ${days} day${days === 1 ? '' : 's'}`;
+  }
+  tickTimers(); setInterval(tickTimers, 1000);
+
+  // ---------------------------------------------------------- today's shelf
+  const PRICE = { skin: 450, hat: 300, frame: 350 };
+  const pool = LG.items.filter(i => !i.free);
+  const pick = (k) => pool[strHash(`${dayKey}:${k}`) % pool.length];
+  const shelf = [];
+  for (let k = 0; shelf.length < 6 && k < 60; k++) { const it = pick(k); if (!shelf.some(s => s.item === it.id)) shelf.push({ item: it.id, finish: 'plain', scuff: 0.06 + (strHash(`${dayKey}:${k}:s`) % 60) / 1000, print: strHash(`${dayKey}:${k}:p`) % 1000 }); }
+  // The featured piece: a skin in Sunset.
+  const skins = pool.filter(i => i.slot === 'skin');
+  const feature = { item: skins[strHash(dayKey + ':feature') % skins.length].id, finish: 'sunset', scuff: 0.012, print: strHash(dayKey + ':fp') % 1000 };
+  const cards = [{ o: feature, price: 900, feature: true }, ...shelf.map(o => ({ o, price: PRICE[LG.slotOf(o)] }))];
+  $('shelf').innerHTML = cards.map((c, i) => {
+    const it = LG.itemById(c.o.item), g = LG.gradeOf(c.o);
+    return `<div class="item${c.feature ? ' feature' : ''}">${c.feature ? '<span class="tag">Featured</span>' : ''}
+      <div class="art"><canvas width="16" height="16" aria-hidden="true"></canvas></div>
+      <span class="nm">${esc(LG.nameOf(c.o))}</span>
+      <span class="ds">${cap(it.game)} ${it.slot} · <span class="grade" style="--g:${g.color}">${g.name}</span> · ${LG.wearOf(c.o.scuff).short} #${c.o.print}</span>
+      <div class="buy"><span class="ds">${c.feature ? 'Today only' : 'Plain'}</span><button class="btn" type="button" data-price="${c.price}" data-i="${i}">${tk} ${c.price}</button></div></div>`;
+  }).join('');
+  [...$('shelf').querySelectorAll('canvas')].forEach((cv, i) => paintInto(cv, [LG.encode(cards[i].o)]));
+  $('shelf').addEventListener('click', e => {
+    const b = e.target.closest('[data-i]');
+    if (!b || b.dataset.sold || tickets < +b.dataset.price) return;
+    tickets -= +b.dataset.price; b.dataset.sold = '1'; b.disabled = true; b.textContent = 'Yours';
+    show(cards[+b.dataset.i].o, 'Bought'); wallet();
+  });
+
+  // ---------------------------------------------------------- spotlight
+  $('spot-title').textContent = `This week: ${cap(spotlight)}`;
+  $('spot-lede').textContent = `${cap(spotlight)}${spotlight.endsWith('s') ? "'" : "'s"} full set this week. Every item here is in its capsule.`;
+  const set = LG.gameItems(spotlight);
+  $('spot-set').innerHTML = set.map(it => `<figure><canvas width="16" height="16" aria-hidden="true"></canvas><figcaption>${esc(it.name)}${it.free ? '<br>free' : ''}</figcaption></figure>`).join('');
+  [...$('spot-set').querySelectorAll('canvas')].forEach((cv, i) => paintInto(cv, [set[i].id]));
+  addMachine($('spot-mach'), spotlight, $('spot-mach').parentElement);
+  $('spot-open').dataset.price = '80';
+  $('spot-open').addEventListener('click', () => open(spotlight, 80));
+
+  // ---------------------------------------------------------- machines
+  $('machines').innerHTML = LG.GAMES.map(g => `<div class="m"><canvas width="40" height="56" data-g="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-price="${g === spotlight ? 80 : 100}" data-open="${g}">${tk} ${g === spotlight ? 80 : 100}</button></div>`).join('');
+  $('machines').querySelectorAll('canvas[data-g]').forEach(c => addMachine(c, c.dataset.g, c.parentElement));
+  $('machines').addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) open(b.dataset.open, +b.dataset.price); });
+  function open(game, price) {
+    if (tickets < price) return;
+    tickets -= price;
+    const o = LG.roll(`${ME}:shop:${dayKey}:${++opened}`, game);
+    show(o, `From the ${cap(game)} capsule`); wallet();
+  }
+
+  // ---------------------------------------------------------- bundles
+  const BUNDLES = [
+    { name: 'Starter pack', items: ['3 capsules from any games', 'one Plain hat of your choice', 'a free frame swap'], price: 480, was: 600 },
+    { name: `${cap(spotlight)} week`, items: [`5 ${cap(spotlight)} capsules`, 'guaranteed Special or better in one'], price: 400, was: 500 },
+    { name: 'Collector\'s crate', items: ['10 capsules, any mix', 'one guaranteed Prized or better'], price: 900, was: 1000 },
+  ];
+  $('bundles').innerHTML = BUNDLES.map((b, i) => `<div class="bundle"><h3>${esc(b.name)}</h3><ul>${b.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <div class="buy"><span><span class="was">${b.was}</span></span><button class="btn" type="button" data-price="${b.price}" data-b="${i}">${tk} ${b.price}</button></div></div>`).join('');
+  $('bundles').addEventListener('click', e => {
+    const b = e.target.closest('[data-b]');
+    if (!b || b.dataset.sold || tickets < +b.dataset.price) return;
+    tickets -= +b.dataset.price; b.dataset.sold = '1'; b.disabled = true; b.textContent = 'Yours'; wallet();
+  });
+
+  // ---------------------------------------------------------- what you got
+  let hide;
+  function show(o, how) {
+    const t = $('toast');
+    paintInto(t.querySelector('canvas'), [LG.encode(o)]);
+    const g = LG.gradeOf(o);
+    $('toast-name').textContent = LG.nameOf(o);
+    $('toast-sub').textContent = `${how} · ${g.name} · ${LG.wearOf(o.scuff).name} · #${o.print}`;
+    t.hidden = false; clearTimeout(hide); hide = setTimeout(() => { t.hidden = true; }, 3800);
+  }
+
+  // Machines idle: a slow shine on the glass and a wiggling crank on hover.
+  const calm = matchMedia('(prefers-reduced-motion: reduce)');
+  let last = 0;
+  const loop = n => { requestAnimationFrame(loop); if (calm.matches || n - last < 66) return; last = n; for (const b of balls) if (b.canvas.isConnected) b.tick(n / 1000); };
+  requestAnimationFrame(loop);
+  wallet();
+})();
+</script>
+
+</body>
+</html>

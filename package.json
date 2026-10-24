@@ -21,7 +21,8 @@
   "scripts": {
     "build": "tsdown",
     "test": "bun test",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "showcase": "tsdown && cp dist/lil-guy.js docs/lil-guy.js && bun scripts/build-showcase.ts"
   },
   "peerDependencies": {
     "react": ">=18",

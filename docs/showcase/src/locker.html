@@ -1,0 +1,1611 @@
+<title>Lil Guy Locker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap">
+<style>
+  /* Layout: the same card table as the capsule page. A name field on top drives three rooms: traits, the locker with a loadout beside it, and the shop. */
+  :root {
+    --felt: #121a2c;
+    --panel: #1b2238;
+    --panel-hi: #232b46;
+    --panel-edge: #0b0f1c;
+    --line: #2a3354;
+    --ink: #f4f1e8;
+    --muted: #a7b0cc;
+    --amber: #ffcf5c;
+    --amber-ink: #2a1a00;
+    --mint: #6ee7b0;
+    --pixel: "Pixelify Sans", "Courier New", monospace;
+    --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--felt); color: var(--ink); font: 400 15px/1.5 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 80px;
+  }
+  [hidden] { display: none !important; }
+  #swirl { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; image-rendering: pixelated; }
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background:
+      repeating-linear-gradient(to bottom, rgba(0,0,0,.16) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45) 100%);
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; display: grid; gap: 56px; }
+
+  /* ---------- top bar */
+  .top { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: end; justify-content: space-between; }
+  h1, h2, h3.room { font-family: var(--pixel); text-shadow: 0 4px 0 var(--panel-edge); margin: 0; }
+  h1 { font-size: clamp(40px, 6vw, 68px); line-height: .95; font-weight: 700; }
+  h1 em { font-style: normal; color: var(--amber); }
+  .who { display: grid; gap: 6px; }
+  .who label { font: 600 12px/1 var(--pixel); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .who input {
+    font: 600 22px/1 var(--pixel); color: var(--ink); background: var(--panel); border: 0; border-radius: 8px;
+    padding: 12px 14px; width: min(320px, 100%); box-shadow: 0 4px 0 var(--panel-edge), inset 0 0 0 2px var(--line);
+  }
+  .who input:focus-visible { outline: none; box-shadow: 0 4px 0 var(--panel-edge), inset 0 0 0 2px var(--amber); }
+  nav.rooms { display: flex; flex-wrap: wrap; gap: 8px; }
+  nav.rooms a, .chipbtn {
+    font: 600 14px/1 var(--pixel); color: var(--ink); text-decoration: none; background: var(--panel);
+    padding: 9px 12px; border-radius: 6px; box-shadow: 0 3px 0 var(--panel-edge); border: 0; cursor: pointer;
+  }
+  nav.rooms a:hover, .chipbtn:hover { background: var(--panel-hi); }
+  .chipbtn[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); }
+  nav.rooms a:focus-visible, .chipbtn:focus-visible, .btn:focus-visible, select:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  .wallet { font: 700 18px/1 var(--pixel); display: inline-flex; gap: 8px; align-items: center; background: var(--panel); padding: 9px 12px; border-radius: 6px; box-shadow: 0 3px 0 var(--panel-edge); }
+  .wallet svg { width: 22px; height: 14px; image-rendering: pixelated; }
+
+  section.room { display: grid; gap: 22px; scroll-margin-top: 20px; }
+  section.room > header h2 { font-size: 34px; line-height: 1; font-weight: 700; }
+  section.room > header p { color: var(--muted); margin: 10px 0 0; max-width: 68ch; text-shadow: 0 2px 0 var(--panel-edge); }
+  h3.room { font-size: 20px; color: var(--amber); }
+  .panel { background: var(--panel); border-radius: 10px; box-shadow: 0 4px 0 var(--panel-edge); padding: 16px; min-width: 0; }
+
+  /* ---------- cards */
+  .card { position: relative; display: grid; gap: 10px; align-content: start; margin: 0; outline: none; }
+  button.card { appearance: none; background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .art { position: relative; display: block; transform-origin: 50% 60%; will-change: transform; }
+  canvas.px {
+    display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated;
+    filter: drop-shadow(var(--sx, 0px) 9px 0 rgba(5, 7, 16, .55));
+  }
+  .art { container-type: inline-size; }
+  .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
+  .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
+    font-size: 8.6cqw; font-weight: 700; line-height: 1; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
+  .ov .t.foil, .ov .t.gold { color: transparent; -webkit-background-clip: text; background-clip: text; text-shadow: none; background-size: 300% 100%; animation: foil 2.4s linear infinite;
+    filter: drop-shadow(0 .6cqw 0 rgba(10, 8, 24, .7)); }
+  .ov .t.foil { background-image: linear-gradient(90deg, #ff8fb1, #ffe27a, #8fffd2, #8fb8ff, #d79bff, #ff8fb1); }
+  .ov .t.gold { background-image: linear-gradient(90deg, #b8801c, #ffe9a8, #f2c230, #fffbe6, #c8901e, #b8801c); }
+  @keyframes foil { to { background-position: 300% 0; } }
+  .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
+  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center;
+    font-size: 6.6cqw; font-weight: 600; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
+  .no-gl .ov { display: none; }
+  .card:focus-visible canvas.px { outline: 3px solid var(--amber); outline-offset: 4px; }
+  .meta { background: var(--panel); border-radius: 8px; padding: 9px 10px 10px; display: grid; gap: 6px; min-width: 0; box-shadow: 0 4px 0 var(--panel-edge); }
+  .meta .h { font: 600 14px/1.2 var(--pixel); display: block; }
+  .meta .sub { font-size: 12px; color: var(--muted); display: block; }
+  .meta .sub b { color: var(--ink); font: 600 13px/1 var(--pixel); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; }
+  .chip { font: 600 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; background: var(--line); color: var(--ink); }
+  .chip.grade { background: var(--grade); color: #fff; }
+  .tally, .badge {
+    position: absolute; z-index: 2; font: 700 12px/1 var(--pixel); padding: 5px 7px; border-radius: 5px; box-shadow: 0 3px 0 var(--panel-edge);
+  }
+  .tally { left: -6px; top: 10px; background: var(--amber); color: var(--amber-ink); transform: rotate(-6deg); }
+  .badge { right: -6px; top: 10px; background: var(--ink); color: var(--felt); transform: rotate(5deg); }
+  .badge.new { background: var(--mint); color: #062b1c; }
+  .card.worn .meta { box-shadow: inset 0 0 0 2px var(--amber), 0 4px 0 var(--panel-edge); }
+
+  /* ---------- traits */
+  .mine { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .mine .card .meta { text-align: center; }
+  .traits { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .traits td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .traits tr:last-child td { border-bottom: 0; }
+  .traits .slot { font: 600 12px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; width: 92px; }
+  .traits .name { font: 600 15px/1.2 var(--pixel); }
+  .traits .num { font: 600 14px/1 var(--pixel); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; width: 84px; }
+  .bar { height: 8px; background: var(--felt); border-radius: 2px; overflow: hidden; min-width: 60px; }
+  .bar i { display: block; height: 100%; background: var(--c, var(--muted)); }
+  .tier { font: 600 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; background: var(--c); color: #fff; white-space: nowrap; }
+  .total { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; margin: 0 0 10px; }
+  .total b { font: 700 30px/1 var(--pixel); color: var(--amber); }
+  .total span { color: var(--muted); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 12px; }
+  .tile figcaption { display: grid; gap: 3px; text-align: center; font: 600 12px/1.2 var(--pixel); text-shadow: 0 2px 0 var(--panel-edge); }
+  .tile figcaption small { color: var(--muted); font: 600 11px/1 var(--pixel); text-transform: uppercase; letter-spacing: .06em; }
+  .tile figcaption b { color: var(--amber); }
+  .names { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
+  .names .btn { justify-self: start; }
+
+  /* ---------- locker + loadout */
+  .loadout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .dress { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 16px; }
+  .dress .card { width: 78%; justify-self: center; }
+  .slots { display: grid; gap: 8px; }
+  .slotrow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--felt); border-radius: 6px; }
+  .slotrow .k { font: 600 11px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .slotrow .v { font: 600 13px/1.25 var(--pixel); min-width: 0; }
+  .slotrow .v small { display: block; font: 400 12px/1.3 var(--body); color: var(--muted); }
+  .slotrow .v.empty { color: var(--muted); }
+  .x { appearance: none; border: 0; background: var(--line); color: var(--ink); font: 700 13px/1 var(--pixel); width: 26px; height: 26px; border-radius: 5px; cursor: pointer; }
+  .x:hover { background: #3a4570; }
+  .x:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  .bar-tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; justify-content: space-between; }
+  .bar-tools .group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar-tools .count { font: 600 13px/1 var(--pixel); color: var(--muted); }
+  select { font: 600 14px/1 var(--pixel); color: var(--ink); background: var(--panel); border: 0; border-radius: 6px; padding: 9px 10px; box-shadow: 0 3px 0 var(--panel-edge); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 22px 14px; }
+
+  /* ---------- inspect */
+  .insp { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .insp .card { width: 100%; }
+  .eyebrow { font: 600 11px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 8px; }
+  .iname { font: 700 26px/1.25 var(--pixel); margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .iname span { border-bottom: 3px solid var(--u); padding-bottom: 2px; }
+  .iname sup { font-size: 11px; color: var(--u); margin-left: 2px; }
+  .spec { display: grid; grid-template-columns: 118px minmax(0, 1fr); margin: 0; }
+  .spec dt, .spec dd { padding: 9px 0; border-bottom: 1px solid var(--line); margin: 0; min-width: 0; }
+  .spec dt { font: 600 12px/1.3 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .spec dt sup { color: var(--u); }
+  .spec dd b { font: 600 15px/1.3 var(--pixel); }
+  .spec dd small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .spec code { font: 600 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace; background: var(--felt); padding: 3px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+  .fbar { position: relative; margin: 10px 0 18px; }
+  .fbar .segs { display: flex; height: 10px; border-radius: 2px; overflow: hidden; }
+  .fbar .segs i { display: block; height: 100%; }
+  .fbar .range { position: absolute; top: -5px; height: 3px; background: var(--ink); opacity: .6; }
+  .fbar .mark { position: absolute; top: -4px; width: 3px; height: 18px; background: var(--ink); translate: -1px 0; box-shadow: 0 0 0 1px var(--felt); }
+  .fbar .ticks { position: absolute; top: 13px; left: 0; right: 0; font: 600 10px/1 var(--pixel); color: var(--muted); }
+  .fbar .ticks span { position: absolute; translate: -50% 0; white-space: nowrap; }
+  .copybtn { margin-left: 6px; padding: 5px 8px; font-size: 12px; }
+
+  /* ---------- moves */
+  .moves { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 12px; }
+  .mover { display: grid; gap: 8px; justify-items: center; margin: 0; }
+  .mover canvas { width: 96px; height: 120px; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(5,7,16,.55)); }
+  .mover figcaption { font: 600 13px/1.2 var(--pixel); text-align: center; text-shadow: 0 2px 0 var(--panel-edge); }
+  .mover figcaption small { display: block; font: 600 11px/1.2 var(--pixel); color: var(--muted); }
+  pre.snip { margin: 0; overflow-x: auto; font: 13px/1.55 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); }
+
+  /* ---------- cool ones */
+  .cool { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 22px 16px; }
+  .star { display: grid; gap: 10px; margin: 0; }
+  .star button.stage-btn { appearance: none; border: 0; padding: 14px 0 8px; height: 184px; align-content: center; cursor: pointer; border-radius: 10px; display: grid; place-items: center;
+    background: radial-gradient(ellipse at 50% 85%, color-mix(in srgb, var(--grade) 38%, transparent), transparent 70%), var(--panel-edge); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--grade) 55%, transparent); }
+  .star button.stage-btn:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+  .stage-row { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 10px; align-items: end; }
+  .stage-row .card.mini { display: block; }
+  .star .stage-btn canvas { width: 112px; height: 140px; image-rendering: pixelated; filter: drop-shadow(0 7px 0 rgba(5,7,16,.6)); }
+  .star .move { font: 600 11px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+  .star figcaption { display: grid; gap: 7px; }
+  .star .h { font: 700 18px/1.1 var(--pixel); }
+  .star .worn { font: 600 13px/1.3 var(--pixel); color: var(--ink); }
+  .star .odds { font-size: 12px; color: var(--muted); }
+  .star .odds b { color: var(--amber); font: 600 13px/1 var(--pixel); }
+  .chip.rare { background: #5a2330; color: #ffd0d6; }
+
+  /* ---------- shop */
+  .btn {
+    appearance: none; border: 0; cursor: pointer; font: 700 14px/1 var(--pixel); color: var(--amber-ink); background: var(--amber);
+    padding: 10px 12px; border-radius: 6px; box-shadow: 0 4px 0 #a5781a; display: inline-flex; gap: 6px; align-items: center; justify-content: center;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #a5781a; }
+  .btn.ghost { background: var(--line); color: var(--ink); box-shadow: 0 4px 0 var(--panel-edge); }
+  .btn[disabled] { background: var(--line); color: var(--muted); box-shadow: 0 4px 0 var(--panel-edge); cursor: not-allowed; transform: none; }
+  .btn svg { flex: none; width: 16px; height: 10px; image-rendering: pixelated; filter: brightness(.22); }
+  .shop-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+  .earn { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  .earn li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .earn li:last-child { border-bottom: 0; }
+  .earn b { font: 600 14px/1.3 var(--pixel); color: var(--amber); white-space: nowrap; }
+  .odds-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .odds-list li { display: grid; grid-template-columns: 74px minmax(0, 1fr) 56px; gap: 8px; align-items: center; font-size: 13px; }
+  .odds-list .n { font: 600 13px/1 var(--pixel); }
+  .odds-list .p { text-align: right; font: 600 13px/1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .odds-list .bar i { background: var(--c); }
+  .panel h3 { font: 600 15px/1 var(--pixel); margin: 0 0 12px; color: var(--ink); }
+  .panel p.fine { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+  .capsules { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 18px 14px; }
+  .capsule { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 14px 10px 12px; }
+  .capsule canvas { width: 100px; height: 140px; image-rendering: pixelated; filter: drop-shadow(0 7px 0 rgba(5,7,16,.55)); }
+  .capsule .g { font: 600 14px/1 var(--pixel); }
+  @keyframes wiggle { 0%,100% { rotate: 0deg } 25% { rotate: -6deg } 75% { rotate: 6deg } }
+  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
+  .buyrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .swaps { display: grid; gap: 10px; }
+  .swap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--felt); border-radius: 6px; }
+  .swap .t { font: 600 14px/1.3 var(--pixel); }
+  .swap .t .chip { margin: 0 2px; }
+  .swap small { display: block; color: var(--muted); font-size: 12px; }
+  .shop-low { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+  /* ---------- reveal: reel, then a face-down card that trembles, then the flip and the payoff */
+  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(5, 7, 15, .9); padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+  #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 3; }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
+  .flash.on { animation: flash .32s steps(4) 1; }
+  @keyframes flash { 0% { opacity: .85 } 100% { opacity: 0 } }
+  .ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 8px; }
+  .stage { position: relative; z-index: 2; width: min(980px, 100%); display: grid; justify-items: center; gap: 18px; }
+  .stage.quake { animation: quake .55s steps(9) 1; }
+  @keyframes quake { 0%,100% { translate: 0 0 } 15% { translate: -10px 4px } 30% { translate: 9px -6px } 45% { translate: -7px -3px } 60% { translate: 6px 5px } 75% { translate: -3px 2px } 90% { translate: 2px -1px } }
+  .gacha { position: relative; width: 200px; height: 280px; }
+  .mach.big { width: 200px; height: 280px; image-rendering: pixelated; filter: drop-shadow(0 12px 0 rgba(5, 7, 16, .55)); }
+  .mach.big.drop { animation: drop .42s steps(7) 1; }
+  @keyframes drop { 0% { translate: 0 -360px } 70% { translate: 0 12px } 85% { translate: 0 -6px } 100% { translate: 0 0 } }
+  .mach.big.rattle { animation: rattle .24s steps(4) 1; }
+  @keyframes rattle { 25% { translate: -3px 1px } 75% { translate: 3px -1px } }
+  .mach.big.away { opacity: 0; translate: 0 -30px; transition: opacity .3s steps(4), translate .3s steps(4); }
+  .cap { position: absolute; left: 50%; top: 88%; width: 168px; height: 168px; translate: -50% -50%; scale: .2; }
+  .cap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .cap.out { animation: roll .8s steps(12) forwards; }
+  @keyframes roll { 0% { top: 88%; scale: .2; rotate: 0deg } 50% { top: 44%; scale: 1; rotate: 300deg } 70% { top: 53%; scale: 1; rotate: 345deg } 85% { top: 48%; scale: 1 } 100% { top: 50%; scale: 1; rotate: 360deg } }
+  #cap-top { transition: rotate .18s steps(3), translate .38s steps(6), opacity .38s steps(6); }
+  #cap-top.twist1 { rotate: -16deg; }
+  #cap-top.twist2 { rotate: 12deg; }
+  #cap-top.pop { rotate: -60deg; translate: -30px -150px; opacity: 0; }
+  .reel-title { font: 700 22px/1 var(--pixel); margin: 0; color: var(--ink); text-shadow: 0 3px 0 var(--panel-edge); }
+  .reel { position: relative; width: 100%; height: 176px; overflow: hidden; background: var(--panel-edge); border-radius: 10px; box-shadow: inset 0 0 0 3px var(--line); -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+  .reel::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; translate: -2px 0; background: var(--amber); box-shadow: 0 0 12px var(--amber); z-index: 2; }
+  .track { position: absolute; left: 0; top: 14px; display: flex; gap: 10px; will-change: transform; }
+  .slot-card { width: 104px; flex: none; display: grid; gap: 6px; }
+  .slot-card .g { display: block; height: 6px; border-radius: 2px; background: var(--grade); }
+  .slot-card.hit { animation: hit .6s steps(6) 1; }
+  @keyframes hit { 0%,100% { scale: 1 } 40% { scale: 1.12 } }
+  .result { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; width: min(340px, 100%); }
+  .rays { position: absolute; left: 50%; top: 44%; width: 820px; height: 820px; translate: -50% -50%; z-index: -1; opacity: 0; border-radius: 50%;
+    background: repeating-conic-gradient(var(--grade) 0deg 8deg, transparent 8deg 22.5deg);
+    -webkit-mask-image: radial-gradient(circle, #000 0 14%, transparent 60%); mask-image: radial-gradient(circle, #000 0 14%, transparent 60%);
+    animation: turn 18s linear infinite; transition: opacity .5s steps(5); }
+  .result.go .rays { opacity: var(--rays, 0); }
+  @keyframes turn { to { rotate: 360deg } }
+  .flip { position: relative; width: 210px; transition: transform .16s steps(4); }
+  .flip.squash { transform: scaleX(0); }
+  .flip canvas.back { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(0 9px 0 rgba(5, 7, 16, .55)) drop-shadow(0 0 var(--glow, 0px) var(--grade)); transition: filter .9s; }
+  .flip.tremble { animation: tremble .09s steps(2) infinite; }
+  @keyframes tremble { 0% { translate: calc(var(--amp) * -1) 0 } 50% { translate: var(--amp) calc(var(--amp) * -.6) } 100% { translate: 0 var(--amp) } }
+  .reveal .card { width: 210px; }
+  .reveal .shout { font: 700 34px/1 var(--pixel); color: var(--grade); text-shadow: 0 4px 0 var(--panel-edge); margin: 0; min-height: 34px; }
+  .reveal .shout.slam { animation: slam .4s steps(6) 1; }
+  @keyframes slam { 0% { scale: 2.8; opacity: 0 } 55% { scale: .88; opacity: 1 } 100% { scale: 1 } }
+  .reveal h3 { font: 600 18px/1.2 var(--pixel); margin: 0; }
+  .reveal .actions { display: flex; gap: 10px; }
+  .note { font-size: 12px; color: var(--muted); margin: 0; }
+
+  @media (max-width: 860px) {
+    .loadout, .mine, .shop-top, .shop-low, .insp { grid-template-columns: 1fr; }
+    .insp .card { width: 180px; justify-self: center; }
+    .dress { position: static; }
+    .dress .card, .mine > .card { width: 200px; justify-self: center; }
+  }
+  @media (max-width: 520px) {
+    .traits td:nth-child(3) { display: none; }
+    .traits .slot { width: auto; }
+    .spec { grid-template-columns: 1fr; }
+    .spec dt { border-bottom: 0; padding-bottom: 0; }
+    .tiles { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+    .names, .shelf { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mach.big, .cap.out, .flip.tremble, .stage.quake, .shout.slam, .rays, .ov .t.foil, .ov .t.gold { animation: none; }
+  }
+</style>
+
+<canvas id="swirl" aria-hidden="true"></canvas>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol>
+</svg>
+
+<div class="wrap">
+  <div class="top">
+    <div style="display:grid;gap:14px">
+      <h1>Lil Guy <em>Locker</em></h1>
+      <nav class="rooms" aria-label="Rooms"><a href="#cool">Rarest</a><a href="#traits">Traits</a><a href="#locker">Locker</a><a href="#moves">Moves</a><a href="#extras">Extras</a><a href="#shop">Shop</a></nav>
+    </div>
+    <div class="who">
+      <label for="who">Player name</label>
+      <input id="who" value="isaac" autocomplete="off" spellcheck="false" maxlength="24">
+    </div>
+  </div>
+
+  <section class="room" id="cool">
+    <header><h2>Rarest possible</h2><p id="cool-lede">Built from the parts, not found in names: the rarest trait in every slot. Each wears the rarest kind of copy as a frame, since a hat would cover the topper and a skin the shape. He moves on the left; the card shows him in it. Tap him to change his move.</p></header>
+    <div class="cool" id="cool-grid"></div>
+  </section>
+
+  <section class="room" id="traits">
+    <header><h2>Best traits</h2><p>Your guy comes from your name and never changes. Rare traits are luck of the name: nobody can buy or roll them.</p></header>
+    <div class="mine" id="mine"></div>
+    <h3 class="room">The rarest trait in every slot</h3>
+    <div class="tiles" id="rarest"></div>
+    <h3 class="room">Luckiest names we found</h3>
+    <div class="names" id="names"><p class="note">Searching 20,000 names…</p></div>
+  </section>
+
+  <section class="room" id="locker">
+    <header><h2>Locker</h2><p>Every copy this player owns. Tap one to wear it and see what it's made of; tap it again to take it off. One skin, one hat and one frame at a time.</p></header>
+    <div class="panel" id="inspect"></div>
+    <div class="loadout">
+      <div class="dress panel" id="dress"></div>
+      <div style="display:grid;gap:16px;min-width:0">
+        <div class="bar-tools">
+          <div class="group" role="group" aria-label="Show">
+            <button class="chipbtn" type="button" data-filter="all" aria-pressed="true">All</button>
+            <button class="chipbtn" type="button" data-filter="skin" aria-pressed="false">Skins</button>
+            <button class="chipbtn" type="button" data-filter="hat" aria-pressed="false">Hats</button>
+            <button class="chipbtn" type="button" data-filter="frame" aria-pressed="false">Frames</button>
+          </div>
+          <div class="group">
+            <span class="count" id="count"></span>
+            <label class="count" for="sort">Sort</label>
+            <select id="sort"><option value="rare">Rarest first</option><option value="new">Newest</option><option value="game">By game</option></select>
+          </div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="room" id="moves">
+    <header><h2>Moves</h2><p>The library's animations, for the games. Every frame is drawn from the guy's own pixels, and the best copy he wears shows in them.</p></header>
+    <h3 class="room">In what he's wearing now</h3>
+    <div class="moves" id="moves-all"></div>
+    <h3 class="room">Same hop, every grade</h3>
+    <div class="moves" id="moves-grades"></div>
+    <div class="panel"><pre class="snip">// One SVG that plays itself, in any game
+el.innerHTML = toAnimatedSvg(name, "cheer", { equip: [copy], size: 96 });
+
+// Or frame by frame in a canvas loop
+const hop = animate(name, "hop", { equip: [copy] });
+drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
+  </section>
+
+  <section class="room" id="extras">
+    <header><h2>Extras</h2><p>What a copy collects as it's worn, the rare Lucky guys, emotes to unlock, and the newest parts.</p></header>
+    <h3 class="room">Pins</h3>
+    <div class="shelf" id="x-pins"></div>
+    <h3 class="room">Tally marks</h3>
+    <div class="shelf" id="x-tally"></div>
+    <h3 class="room">Lucky</h3>
+    <p class="note" id="x-lucky-note"></p>
+    <div class="cool" id="x-lucky"></div>
+    <h3 class="room">Emotes</h3>
+    <div class="moves" id="x-emotes"></div>
+    <h3 class="room">New parts</h3>
+    <div class="tiles" id="x-parts"></div>
+    <h3 class="room">New frames</h3>
+    <div class="tiles" id="x-frames"></div>
+  </section>
+
+  <section class="room" id="shop">
+    <header><h2>Shop</h2><p>A mock-up. Tickets are pretend here; in the club the server would roll every capsule and keep the copy.</p></header>
+    <div class="shop-top">
+      <div class="panel">
+        <h3>Capsules · 100 <svg class="tk" width="16" height="10" aria-label="tickets"><use href="#ticket"/></svg></h3>
+        <div class="capsules" id="capsules"></div>
+      </div>
+      <div style="display:grid;gap:16px;align-content:start">
+        <div class="panel">
+          <h3>What's inside</h3>
+          <ul class="odds-list" id="odds"></ul>
+          <p class="fine">Then a scuff, a print from 0 to 999, and one in ten keeps a tally.</p>
+        </div>
+        <div class="panel">
+          <h3>Earn tickets</h3>
+          <ul class="earn">
+            <li><span>Finish a game in today's gauntlet</span><b>+20</b></li>
+            <li><span>Finish all five</span><b>+60</b></li>
+            <li><span>Each day of your streak, up to 10</span><b>+5</b></li>
+            <li><span>Your first day in a new game</span><b>+100</b></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="shop-low">
+      <div style="display:grid;gap:14px;min-width:0">
+        <h3 class="room">Today's shelf</h3>
+        <div class="shelf" id="shelf"></div>
+      </div>
+      <div style="display:grid;gap:14px;min-width:0">
+        <h3 class="room">Swap up</h3>
+        <div class="panel"><div class="swaps" id="swaps"></div><p class="fine">Trades the five least rare copies of that grade you aren't wearing. Starters can't be traded.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="reveal" id="reveal" hidden role="dialog" aria-modal="true" aria-labelledby="reel-title">
+  <canvas id="burst" aria-hidden="true"></canvas>
+  <i class="flash" id="flash" aria-hidden="true"></i>
+  <div class="ctl">
+    <button class="chipbtn" type="button" id="sound" aria-pressed="true">Sound on</button>
+    <button class="chipbtn" type="button" id="skip" hidden>Skip</button>
+  </div>
+  <div class="stage" id="stage">
+    <p class="reel-title" id="reel-title"></p>
+    <div class="gacha" id="gacha" hidden aria-hidden="true"><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><div class="cap" id="cap" hidden><canvas id="cap-bot" width="32" height="32"></canvas><canvas id="cap-top" width="32" height="32"></canvas></div></div>
+    <div class="reel" id="reel" hidden><div class="track" id="track"></div></div>
+    <div class="result" id="result" hidden>
+      <div class="rays" aria-hidden="true"></div>
+      <p class="shout" id="reveal-shout"></p>
+      <div class="flip" id="flip"><canvas class="back" id="back" width="26" height="42" aria-hidden="true"></canvas><div id="reveal-card" hidden></div></div>
+      <h3 id="reveal-name"></h3>
+      <p class="chips" id="reveal-chips" style="justify-content:center"></p>
+      <div class="actions" id="reveal-actions" hidden>
+        <button class="btn" type="button" id="wear-it">Wear it</button>
+        <button class="btn ghost" type="button" id="keep-it">Keep it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>/*LIB*/</script>
+<script>
+(() => {
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+  const GRADE = LG.GRADES.map(g => g.color);
+  const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
+  const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const $ = id => document.getElementById(id);
+  const ticket = '<svg width="16" height="10" aria-hidden="true"><use href="#ticket"/></svg>';
+
+  const compile = (gl, vs, fs) => {
+    const sh = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); return x; };
+    const p = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null;
+    gl.useProgram(p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(p, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    return p;
+  };
+  const VS = `attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }`;
+
+  /* ------------------------------------------------ the paint swirl behind the table */
+  const swirl = $('swirl');
+  const sgl = swirl.getContext('webgl');
+  let paintSwirl = () => {};
+  if (sgl) {
+    const prog = compile(sgl, VS, `
+precision highp float;
+varying vec2 uv;
+uniform vec2 res;
+uniform float time;
+void main() {
+  vec2 q = floor(uv * res) / res - 0.5;
+  q.x *= res.x / res.y;
+  float r = length(q);
+  float a = atan(q.y, q.x) + time * 0.03 + r * 1.6;
+  vec2 w = vec2(cos(a), sin(a)) * r * 9.0;
+  for (int i = 0; i < 5; i++) {
+    float k = float(i) * 1.37;
+    w += 0.55 * vec2(sin(w.y * 0.9 + time * 0.11 + k), cos(w.x * 0.8 - time * 0.09 + k * 1.3));
+    w = mat2(0.86, -0.5, 0.5, 0.86) * w;
+  }
+  float band = 0.5 + 0.5 * sin(length(w) * 0.9 - time * 0.15);
+  vec3 deep = vec3(0.071, 0.102, 0.173);
+  vec3 sea  = vec3(0.110, 0.255, 0.400);
+  vec3 teal = vec3(0.118, 0.420, 0.420);
+  vec3 col = mix(deep, sea, smoothstep(0.25, 0.6, band));
+  col = mix(col, teal, smoothstep(0.72, 0.95, band) * 0.8);
+  gl_FragColor = vec4(col, 1.0);
+}`);
+    if (prog) {
+      const uRes = sgl.getUniformLocation(prog, 'res'), uTime = sgl.getUniformLocation(prog, 'time');
+      const size = () => {
+        const w = Math.max(80, Math.round(innerWidth / 5)), h = Math.max(80, Math.round(innerHeight / 5));
+        swirl.width = w; swirl.height = h; sgl.viewport(0, 0, w, h); sgl.uniform2f(uRes, w, h);
+      };
+      size(); addEventListener('resize', size);
+      paintSwirl = t => { sgl.uniform1f(uTime, t); sgl.drawArrays(sgl.TRIANGLE_STRIP, 0, 4); };
+      paintSwirl(40);
+    }
+  }
+
+  /* ------------------------------------------------ cards, drawn per pixel */
+  const W = 26, H = 42;
+  const glCanvas = document.createElement('canvas');
+  glCanvas.width = W; glCanvas.height = H;
+  const gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false });
+  // Each pixel carries its own finish, scuff and print in the kind texture, so a
+  // guy wearing a Gold hat and a Nebula skin shines differently on each.
+  const prog = gl && compile(gl, VS, `
+precision mediump float;
+varying vec2 uv;
+uniform sampler2D base, kind;
+uniform float time, hover, grade, neg, seed;
+uniform vec2 light;
+
+float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
+vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+vec3 hueShift(vec3 c, float a) {
+  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+  vec3 yiq = toYIQ * c;
+  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
+  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+}
+
+void main() {
+  vec2 res = vec2(26.0, 42.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 kd = texture2D(kind, at);
+  float k = floor(kd.r * 4.0 + 0.5);                    // 1 card, 2 window, 3 guy, 4 item
+  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
+  float scuff = kd.b;
+  float print = floor(kd.a * 255.0 + 0.5) * 4.0;
+  float d = cell.x + cell.y;
+  float h = hash(cell, print);
+  float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
+  float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
+  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 58.0) - 29.0) / 3.0, 0.0, 1.0);
+
+  if (k > 3.5 && finish >= 0.0) {
+    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
+    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
+    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
+    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
+    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); c *= 1.0 + 0.12 * step(mod(cell.y + floor(time * 10.0), 3.0), 0.5); }
+    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
+    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
+  } else if (k < 2.5) {
+    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
+    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
+    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * 2.4); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
+    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * 0.7 + d * 0.18); c += wide * 0.12; }
+    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), twinkle * 0.8); }
+  }
+  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`);
+  const u = {};
+  if (prog) {
+    for (const n of ['base', 'kind', 'time', 'hover', 'grade', 'neg', 'seed', 'light']) u[n] = gl.getUniformLocation(prog, n);
+    gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1);
+  }
+  const texture = bytes => {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+    for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
+    for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
+    return t;
+  };
+  const rgb = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+  const blend = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+
+  /** A card face: rounded edge, cream face, a window tinted by grade, the guy, grade pips. */
+  function build(spec) {
+    const copies = spec.copies || [];
+    const r = LG.resolve(spec.name, spec.parts);
+    if (spec.palette !== undefined) r.palette = spec.palette;
+    const config = LG.dress(r, { equip: copies.map(LG.encode) });
+    const palette = LG.withItems(LG.paletteOf(config), config);
+    const grid = LG.compose(config);
+    const colors = LG.paint(grid, config, palette);
+    const owned = config.owned || {};
+    const g = copies.length ? Math.max(...copies.map(gradeIdx)) : -1;
+    const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4);
+    const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
+      const i = (y * W + x) * 4;
+      base[i] = c[0]; base[i + 1] = c[1]; base[i + 2] = c[2]; base[i + 3] = 255;
+      kind[i] = Math.round(k / 4 * 255); kind[i + 1] = (fi + 1) * 32; kind[i + 2] = Math.round(sc * 255); kind[i + 3] = Math.floor(pr / 4);
+    };
+    const edge = [34, 38, 58], cream = [242, 236, 221], rim = [207, 199, 180];
+    const gc = g >= 0 ? rgb(GRADE[g]) : (spec.tint ? rgb(spec.tint) : [120, 140, 170]);
+    const win = blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+      if (cx + cy < 2) continue;
+      put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
+    }
+    // The title band, in the grade's colour: the name is written over it.
+    // Mythic and Grail names are written in foil, so their band goes dark to show it off.
+    const band = g >= 3 ? [30, 26, 52] : g >= 0 ? blend(gc, [24, 22, 44], 0.3) : [58, 66, 100];
+    const lip = g >= 3 ? gc : blend(band, [255, 255, 255], 0.25);
+    for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) put(x, y, y === 7 ? (g >= 3 ? gc : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
+    for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : win, 2);
+    grid.forEach((row, y) => row.forEach((t, x) => {
+      const hex = colors[y][x];
+      if (!hex) return;
+      const slot = t >= 40 ? 'frame' : t >= 30 ? 'hat' : t >= 20 ? 'skin' : null;
+      const o = slot && owned[slot];
+      put(x + 5, y + 11, rgb(hex), o ? 4 : 3, o ? FIN.indexOf(o.finish) : -1, o ? o.scuff : 0, o ? o.print : 0);
+    }));
+    if (g >= 0) for (let p = 0; p < 5; p++) {
+      const x0 = 6 + p * 3;
+      for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim, 1);
+    } else for (let x = 8; x <= 17; x++) put(x, 31, rim, 1);
+    return { base, kind, g, neg: copies.some(o => o.finish === 'negative'), seed: copies.length ? copies[copies.length - 1].print : 0 };
+  }
+
+  const live = new Set();
+  const byCanvas = new WeakMap();
+  const io = new IntersectionObserver(es => es.forEach(e => { const s = byCanvas.get(e.target); if (s) s.visible = e.isIntersecting; }), { rootMargin: '120px' });
+  const pending = [];
+  /** Card art markup; the canvas is filled in by hydrate() once it is in the page. */
+  const px = spec => {
+    pending.push(spec);
+    const l = spec.label;
+    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b">${l.bottom}</span></span>` : '';
+    return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}"></canvas>${ov}</span>`;
+  };
+  /** The words on an item's card: its name, its print, its grade and how rare it is. */
+  const itemLabel = (o, starter, one) => {
+    const it = LG.itemById(o.item), g = LG.gradeOf(o);
+    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), bottom: one ? '★ 1 of 1' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+  };
+
+  function mount(canvas, spec) {
+    const f = build(spec);
+    const s = { canvas, ctx: canvas.getContext('2d'), f, art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: true, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
+    s.still = !!spec.still;
+    if (prog) { s.base = texture(f.base); s.kind = texture(f.kind); }
+    s.card.addEventListener('pointerenter', () => { s.juice = performance.now() / 1000; });
+    s.card.addEventListener('focus', () => { s.juice = performance.now() / 1000; });
+    s.card.addEventListener('pointermove', e => {
+      const r = s.art.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      s.hover = 1; s.light = [x, y]; s.tilt = [x - 0.5, y - 0.5];
+    });
+    s.card.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
+    live.add(s); byCanvas.set(canvas, s); io.observe(canvas);
+    draw(s, performance.now() / 1000);
+    return s;
+  }
+  function hydrate(root) {
+    root.querySelectorAll('canvas[data-p]').forEach(c => { const i = +c.dataset.p; c.removeAttribute('data-p'); mount(c, pending[i]); pending[i] = null; });
+  }
+  function draw(s, t) {
+    if (!prog) { s.ctx.putImageData(new ImageData(new Uint8ClampedArray(s.f.base), W, H), 0, 0); return; }
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.base);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, s.kind);
+    gl.uniform1f(u.time, t); gl.uniform1f(u.hover, s.hover); gl.uniform1f(u.grade, s.f.g);
+    gl.uniform1f(u.neg, s.f.neg ? 1 : 0); gl.uniform1f(u.seed, s.f.seed);
+    gl.uniform2f(u.light, s.light[0], s.light[1]);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    s.ctx.clearRect(0, 0, W, H); s.ctx.drawImage(glCanvas, 0, 0);
+  }
+  function move(s, t) {
+    if (calm.matches || s.still) { s.art.style.transform = ''; return; }
+    const bob = Math.sin(t * 1.3 + s.phase) * 2.5, sway = Math.sin(t * 0.9 + s.phase) * 0.8;
+    let scale = 1, spin = 0;
+    if (s.juice >= 0) {
+      const e = t - s.juice;
+      if (e < 0.45) { const f = 1 - e / 0.45; scale += 0.07 * Math.sin(e * 48) * f * f * f; spin = 4 * Math.sin(e * 38) * f * f; }
+      else s.juice = -1;
+    }
+    if (s.hover) scale += 0.04;
+    s.art.style.transform = `perspective(600px) translateY(${bob - (s.hover ? 6 : 0)}px) rotateX(${-s.tilt[1] * 18}deg) rotateY(${s.tilt[0] * 18}deg) rotate(${sway + spin}deg) scale(${scale})`;
+    s.canvas.style.setProperty('--sx', `${-s.tilt[0] * 10}px`);
+  }
+  let last = 0;
+  const loop = now => {
+    requestAnimationFrame(loop);
+    if (now - last < 33) return;
+    last = now;
+    const t = now / 1000;
+    for (const s of live) if (!s.canvas.isConnected) {
+      live.delete(s); io.unobserve(s.canvas);
+      if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); }
+    }
+    if (calm.matches) return;
+    paintSwirl(40 + t);
+    for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
+    for (const m of movers) if (m.canvas.isConnected) drawMover(m, now); else movers.delete(m);
+    for (const s of live) if (s.visible) { draw(s, t); move(s, t); }
+  };
+  requestAnimationFrame(loop);
+
+  /* ------------------------------------------------ gachapon
+   * A capsule is a clear top and a candy-coloured bottom that twist apart; the
+   * toy inside (the game's own object) shows through the top, with the little
+   * folded paper insert behind it. Each game has its machine: a glass dome of
+   * capsules on a body in its colour, a crank, a coin slot and a chute. */
+  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+  const gameColor = g => CANDY[g];
+  const balls = new Set();
+  const WHITE = [255, 255, 255], INK = [22, 18, 34];
+
+  function Px(w, h) {
+    const d = new Uint8ClampedArray(w * h * 4);
+    return {
+      w, h, d,
+      set(x, y, c, a = 255) {
+        x = Math.round(x); y = Math.round(y);
+        if (x < 0 || y < 0 || x >= w || y >= h) return;
+        const i = (y * w + x) * 4, k = a / 255;
+        if (a >= 255 || !d[i + 3]) { d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = a; return; }
+        d[i] += (c[0] - d[i]) * k; d[i + 1] += (c[1] - d[i + 1]) * k; d[i + 2] += (c[2] - d[i + 2]) * k; d[i + 3] = Math.max(d[i + 3], a);
+      },
+      alpha(x, y) { return x < 0 || y < 0 || x >= w || y >= h ? 0 : d[(y * w + x) * 4 + 3]; },
+      outline(c) {
+        const add = [];
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          if (this.alpha(x, y)) continue;
+          if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => this.alpha(x + dx, y + dy) > 150)) add.push([x, y]);
+        }
+        for (const [x, y] of add) this.set(x, y, c);
+      },
+    };
+  }
+  const toyCache = new Map();
+  function toyOf(game) {
+    if (!toyCache.has(game)) {
+      const skin = LG.gameItems(game).find(i => i.slot === 'skin');
+      const cfg = LG.dress(LG.resolve('mystery'), { equip: [skin.id] });
+      const grid = LG.compose(cfg);
+      toyCache.set(game, LG.paint(grid, cfg, LG.withItems(LG.shadePalette(LG.getPalette(cfg.palette), cfg.shade), cfg)));
+    }
+    return toyCache.get(game);
+  }
+
+  /** The two halves of a 32x32 capsule; `open` adds light spilling over the bottom's rim. */
+  function capsuleHalves(game, open, t) {
+    const candy = rgb(CANDY[game]), toy = toyOf(game);
+    const top = Px(32, 32), bot = Px(32, 32);
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+      if (d > 14.7) continue;
+      if (y <= 15) {
+        if (d > 13.5) { top.set(x, y, [205, 222, 248], 235); continue; }
+        top.set(x, y, [225, 238, 255], 50);
+      } else {
+        let c = candy;
+        if (d > 13.5) c = blend(candy, INK, 0.62);
+        else if (dx > 7 || dy > 9.5) c = blend(candy, INK, 0.25);
+        else if (dx < -9) c = blend(candy, WHITE, 0.25);
+        if (d <= 13.5 && y === 16) c = blend(candy, WHITE, 0.4);
+        else if (d <= 13.5 && y === 17) c = blend(candy, INK, 0.12);
+        bot.set(x, y, c);
+      }
+    }
+    // the folded paper insert, tucked behind the toy
+    for (let y = 7; y <= 14; y++) for (let x = 19; x <= 24; x++) top.set(x, y, y === 9 || y === 10 ? [255, 160, 190] : x === 24 ? [214, 206, 190] : [250, 244, 228]);
+    // the toy: only the part above the seam shows, through the plastic
+    toy.forEach((row, ty) => row.forEach((hex, tx) => {
+      const x = tx + 8, y = ty + 4;
+      if (!hex || y > 15 || Math.hypot(x - 15.5, y - 15.5) > 13.4) return;
+      top.set(x, y, blend(rgb(hex), [235, 242, 255], 0.14));
+    }));
+    // the clear lip where the halves overlap, the big curved highlight, a glint
+    for (let x = 0; x < 32; x++) for (const y of [14, 15]) if (Math.hypot(x - 15.5, y - 15.5) <= 13.5) top.set(x, y, WHITE, y === 15 ? 90 : 60);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
+      if (d > 10.6 && d < 12.6 && dx < -1 && dy < -3) top.set(x, y, WHITE, 185);
+    }
+    for (const [x, y] of [[9, 7], [10, 7], [9, 8]]) top.set(x, y, WHITE, 255);
+    bot.set(7, 20, WHITE, 170); bot.set(7, 21, WHITE, 120);
+    if (open) for (let k = 1; k <= 14; k++) {
+      const y = 16 - k, a = 1 - (k - 1) / 14;
+      for (let x = 4; x <= 27; x++) {
+        const beam = (x + Math.floor(t * 9)) % 4 === 0 ? 1 : x % 4 === 2 ? 0.5 : 0.18;
+        const v = Math.min(1, a * (0.35 + beam));
+        if (v > 0.05) bot.set(x, y, [255, 210 + 40 * v, 110 + 140 * v], Math.round(255 * v));
+      }
+    }
+    return { top, bot };
+  }
+  function addCapsule(topCanvas, botCanvas, game) {
+    const st = {
+      canvas: topCanvas, open: 0,
+      tick(t) {
+        const { top, bot } = capsuleHalves(game, st.open, t);
+        topCanvas.getContext('2d').putImageData(new ImageData(top.d, 32, 32), 0, 0);
+        botCanvas.getContext('2d').putImageData(new ImageData(bot.d, 32, 32), 0, 0);
+      },
+    };
+    balls.add(st); st.tick(0);
+    return st;
+  }
+
+  /** A gacha machine, 40x56. */
+  function addMachine(canvas, game, hoverEl) {
+    const body = rgb(CANDY[game]);
+    const others = LG.GAMES.map(g => rgb(CANDY[g]));
+    // Capsules piled in the dome, bottom rows first, about two thirds full.
+    const pile = [];
+    for (let row = 0; row < 4; row++) {
+      const y = 20 - row * 6;
+      for (let x = 6 + (row % 2) * 4; x <= 34; x += 8) {
+        if (Math.hypot(x - 20, y - 13) <= 10.8) pile.push({ x, y, c: strHash(`${game}:${x}:${y}`) % 5 < 2 ? body : others[strHash(`${x}${y}${game}`) % others.length], jx: 0, jy: 0 });
+      }
+    }
+    const ctx = canvas.getContext('2d');
+    const st = {
+      canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
+      jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
+      tick(t) {
+        const m = Px(40, 56);
+        const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
+        // body
+        for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
+          if ((x === 5 || x === 34) && (y === 25 || y === 53)) continue;
+          let c = body;
+          if (x >= 30) c = blend(body, INK, 0.22); else if (x <= 7) c = blend(body, WHITE, 0.28);
+          if (y === 25) c = blend(c, WHITE, 0.3);
+          m.set(x, y, c);
+        }
+        for (let x = 6; x <= 33; x++) { m.set(x, 54, [44, 38, 64]); m.set(x, 55, [30, 26, 46]); }
+        // the label: cream, with a strip of every game's colours
+        for (let y = 28; y <= 33; y++) for (let x = 9; x <= 30; x++) {
+          const edge = y === 28 || y === 33 || x === 9 || x === 30;
+          m.set(x, y, edge ? [214, 204, 182] : (y === 31 || y === 30) && x % 3 !== 0 ? others[Math.floor(x / 3) % others.length] : [250, 244, 228]);
+        }
+        // coin slot
+        for (let y = 37; y <= 46; y++) for (let x = 25; x <= 29; x++) {
+          const frame = x === 25 || x === 29 || y === 37 || y === 46;
+          m.set(x, y, frame ? [200, 205, 220] : x === 27 && y > 38 && y < 45 ? [16, 12, 24] : [150, 156, 178]);
+        }
+        // the crank
+        const cx = 14.5, cy = 41.5;
+        for (let y = 35; y <= 48; y++) for (let x = 8; x <= 21; x++) {
+          const d = Math.hypot(x - cx, y - cy);
+          if (d <= 5.6) m.set(x, y, d > 4.6 ? [140, 146, 170] : (x - cx + y - cy < -3 ? [246, 248, 252] : [222, 226, 238]));
+        }
+        const a = st.angle + (st.hover ? Math.sin(t * 7) * 0.22 : 0);
+        for (let k = -5; k <= 5; k += 0.5) {
+          const x = cx + Math.cos(a) * k, y = cy + Math.sin(a) * k;
+          m.set(x, y, [96, 102, 128]); m.set(x + Math.sin(a) * 0.7, y - Math.cos(a) * 0.7, [120, 126, 150]);
+        }
+        for (const k of [-5, 5]) m.set(cx + Math.cos(a) * k, cy + Math.sin(a) * k, blend(body, INK, 0.4));
+        // the chute and its flap
+        for (let y = 47; y <= 52; y++) for (let x = 12; x <= 27; x++) {
+          const frame = x === 12 || x === 27 || y === 47 || y === 52;
+          m.set(x, y, frame ? blend(body, INK, 0.5) : st.flap ? (y === 48 ? [60, 50, 80] : [14, 10, 22]) : y === 49 ? blend(body, WHITE, 0.2) : blend(body, INK, 0.3));
+        }
+        // the collar under the dome
+        for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
+        // the dome: glass, capsules, then the shine on the glass
+        const glass = [];
+        for (let y = 0; y <= 22; y++) for (let x = 0; x < 40; x++) {
+          const d = Math.hypot(x - 20, y - 13);
+          if (d > 15.2 || (y < 1)) continue;
+          if (d > 14.2) m.set(x, y, [205, 222, 248], 235);
+          else { m.set(x, y, [190, 215, 250], 42); glass.push([x, y]); }
+        }
+        for (const p of pile) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+          const d = Math.hypot(dx, dy), x = p.x + dx + p.jx, y = p.y + dy + p.jy;
+          if (d > 4.2 || Math.hypot(x - 20, y - 13) > 14) continue;
+          if (dy < 0) m.set(x, y, d > 3.4 ? [190, 208, 236] : blend(p.c, [240, 246, 255], 0.7), 235);
+          else m.set(x, y, d > 3.4 ? blend(p.c, INK, 0.45) : dy === 0 ? blend(p.c, WHITE, 0.35) : p.c);
+          if (dx === -2 && dy === -2) m.set(x, y, WHITE);
+        }
+        for (const [x, y] of glass) {
+          if ((x === 9 || x === 10) && y > 4 && y < 19) m.set(x, y, WHITE, x === 9 ? 120 : 70);
+          const k = (x + y + 60 - sweep) % 60;
+          if (k < 2) m.set(x, y, WHITE, 80);
+        }
+        for (let x = 18; x <= 21; x++) { m.set(x, 0, blend(body, WHITE, 0.2)); m.set(x, 1, body); }
+        m.outline(INK);
+        ctx.putImageData(new ImageData(m.d, 40, 56), 0, 0);
+        for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
+      },
+    };
+    if (hoverEl) {
+      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; });
+      hoverEl.addEventListener('pointerleave', () => { st.hover = 0; });
+    }
+    balls.add(st); st.tick(0);
+    return st;
+  }
+
+  /** The reveal's opening: the machine drops in, the crank turns three times, a capsule rolls out and twists open. */
+  let rush = false;
+  async function gacha(game) {
+    const box = $('gacha'), mc = $('bigmach'), cap = $('cap'), ct = $('cap-top'), cb = $('cap-bot');
+    box.hidden = false; cap.hidden = true; cap.className = 'cap'; ct.className = ''; mc.className = 'mach big';
+    const m = addMachine(mc, game);
+    void mc.offsetWidth; mc.className = 'mach big drop';
+    tone(196, 0.08, 0.04, 0.32);
+    await sleep(470);
+    for (let k = 0; k < 3 && !rush; k++) {
+      const a0 = m.angle, t0 = performance.now();
+      tone(560, 0.035, 0.04); tone(390, 0.05, 0.045, 0.13);      // ga… cha
+      m.jiggle();
+      mc.className = 'mach big'; void mc.offsetWidth; mc.className = 'mach big rattle';
+      await new Promise(r => { const f = now => { const e = Math.min(1, (now - t0) / 260); m.angle = a0 + Math.PI / 2 * Math.round(e * 4) / 4; if (e < 1) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
+      await sleep(170);
+    }
+    if (!rush) {
+      m.flap = 1;
+      tone(150, 0.1, 0.05);
+      const c = addCapsule(ct, cb, game);
+      cap.hidden = false; void cap.offsetWidth; cap.className = 'cap out';
+      setTimeout(() => tone(260, 0.06, 0.04), 420); setTimeout(() => tone(210, 0.05, 0.03), 600);
+      await sleep(300); mc.classList.add('away'); await sleep(600);
+      if (!rush) {
+        ct.className = 'twist1'; tone(900, 0.04, 0.04); await sleep(240);
+        ct.className = 'twist2'; tone(1150, 0.04, 0.04); await sleep(240);
+        c.open = 1; ct.className = 'pop';
+        tone(880, 0.07, 0.05); tone(1320, 0.1, 0.04, 0.05); tone(1760, 0.14, 0.03, 0.1);
+        const r = cap.getBoundingClientRect();
+        boom(1, r.left + r.width / 2, r.top + r.height * 0.45, [CANDY[game], '#ffffff', '#ffcf5c', '#ffe9b0']);
+        await sleep(520);
+      }
+      balls.delete(c);
+    }
+    balls.delete(m);
+    box.hidden = true;
+  }
+
+  /* ------------------------------------------------ moves */
+  const movers = new Set();
+  function addMover(canvas, anim) {
+    const m = { canvas, ctx: canvas.getContext('2d'), anim, t0: performance.now() + Math.random() * 400, last: null };
+    movers.add(m); drawMover(m, m.t0);
+    return m;
+  }
+  function drawMover(m, now) {
+    const f = LG.frameAt(m.anim, Math.max(0, now - m.t0));
+    if (f === m.last) return;
+    m.last = f;
+    const img = m.ctx.createImageData(16, 20);
+    f.colors.forEach((row, y) => row.forEach((c, x) => {
+      if (!c) return;
+      img.data.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], (y * 16 + x) * 4);
+    }));
+    m.ctx.putImageData(img, 0, 0);
+  }
+  const NOTE = { idle: 'breathing, blinks', blink: '', hop: 'squash and stretch', wave: 'arm up and down', look: 'glances', cheer: 'for a win', sad: 'for a loss', dance: 'turns side to side', squish: 'when tapped' };
+  function renderMoves() {
+    const equip = ['skin', 'hat', 'frame'].map(s => find(state.worn[s])).filter(Boolean).map(c => LG.encode(c.o));
+    const el = $('moves-all');
+    el.innerHTML = LG.MOVES.map(mv => `<figure class="mover"><canvas width="16" height="20" data-move="${mv}" aria-hidden="true"></canvas><figcaption>${mv}${NOTE[mv] ? `<small>${NOTE[mv]}</small>` : ''}</figcaption></figure>`).join('');
+    el.querySelectorAll('canvas').forEach(c => addMover(c, LG.animate(state.name, c.dataset.move, moveOpts(state.name, { equip }))));
+  }
+  function renderGrades() {
+    const hat = LG.items.find(i => i.game === 'puttsies' && i.slot === 'hat' && !i.free).id;
+    const ladder = [['plain', 0.03, 'Everyday'], ['sunset', 0.03, 'Special · shine'], ['tempered', 0.03, 'Prized · ring'], ['prism', 0.03, 'Mythic · sparkles'], ['gold', 0.01, '★ Grail · gold']];
+    const el = $('moves-grades');
+    el.innerHTML = ladder.map(([f, sc, label], i) => `<figure class="mover"><canvas width="16" height="20" data-i="${i}" aria-hidden="true"></canvas><figcaption>${label}</figcaption></figure>`).join('');
+    el.querySelectorAll('canvas').forEach(c => {
+      const [f, sc] = ladder[+c.dataset.i];
+      addMover(c, LG.animate(state.name, 'hop', moveOpts(state.name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
+    });
+  }
+
+  /* ------------------------------------------------ rarest possible */
+  const COOL_MOVES = ['cheer', 'dance', 'hop', 'wave', 'squish', 'look', 'idle', 'sad'];
+  const big = n => {
+    if (n < 1e15) return fmt(n);
+    const e = Math.floor(Math.log10(n));
+    return `${(n / 10 ** e).toFixed(1)}×10<sup>${e}</sup>`;
+  };
+  function renderCool() {
+    // Every option in each slot that ties for rarest.
+    const rarest = {};
+    for (const sl of SLOTS) {
+      const ch = sl.list.map((_, i) => chanceOf(sl.slot, sl.key, i));
+      const min = Math.min(...ch);
+      rarest[sl.key] = ch.map((c, i) => [c, i]).filter(([c]) => c === min).map(([, i]) => i);
+    }
+    const frames = LG.items.filter(i => i.slot === 'frame');
+    // The rarest kinds of copy there are, at the lowest scuff there is, with a tally.
+    const FINEST = [
+      ['tempered', p => LG.DEEP_BLUE_PRINTS[p % LG.DEEP_BLUE_PRINTS.length]],
+      ['nebula', p => [2, 0, 1][p % 3] + 20 * (p % 7)],
+      ['negative', p => 100 + p], ['gold', p => 200 + p], ['prism', p => 300 + p],
+    ];
+    const guys = rarest.head.map((head, i) => {
+      const pick = (key, k = 0) => rarest[key][(i + k) % rarest[key].length];
+      const parts = { head, eyes: pick('eyes'), mouth: pick('mouth', 1), cheeks: pick('cheeks'), hair: pick('hair', 3), body: pick('body'), accessory: pick('accessory', 2), arms: i % 2 ? 2 : 1, feet: 0, lucky: true };
+      const palette = pick('palette', 1);
+      const config = { ...LG.resolve('rarest', parts), palette };
+      const [finish, printOf] = FINEST[i % FINEST.length];
+      const copy = { item: frames[i % frames.length].id, finish, scuff: 0, print: printOf(i), tally: 365 + i * 41, pins: [['star', 'crown', 'flame'], ['heart', 'bolt'], ['leaf', 'star', 'heart']][i % 3] };
+      return { i, parts, palette, config, copy, move: COOL_MOVES[i % COOL_MOVES.length], guy: LG.guyOneIn(config), item: LG.copyOneIn(copy) };
+    });
+    guys.sort((a, b) => b.guy * b.item - a.guy * a.item);
+    const el = $('cool-grid');
+    el.innerHTML = guys.map((g, n) => {
+      const traits = LG.traitOdds(g.config);
+      const gc = LG.gradeOf(g.copy).color;
+      return `<figure class="star" style="--grade:${gc}">
+        <div class="stage-row">
+          <button class="stage-btn" type="button" data-cool="${n}" aria-label="Change his move"><canvas width="16" height="20" aria-hidden="true"></canvas><span class="move">${g.move}</span></button>
+          <span class="card mini" style="--grade:${gc}">${px({ name: 'rarest', parts: g.parts, palette: g.palette, copies: [g.copy], label: { title: cap(traits[0].name), bottom: fmt(g.guy), g: 4 } })}</span>
+        </div>
+        <figcaption>
+          <span class="h">${esc(cap(traits[0].name))}</span>
+          <span class="chips">${traits.slice(1).filter(t => t.name !== 'none' && t.name !== 'bare' && t.name !== 'plain').map(t => `<span class="chip rare">${esc(t.name)}</span>`).join('')}</span>
+          <span class="worn">${esc(LG.nameOf(g.copy))} <span class="chip grade" style="--grade:${gc}">${LG.gradeOf(g.copy).name}</span></span>
+          <span class="odds">Guy 1 in <b>${big(g.guy)}</b> · frame 1 in <b>${big(g.item)}</b><br>Both: 1 in <b>${big(g.guy * g.item)}</b></span>
+        </figcaption></figure>`;
+    }).join('');
+    hydrate(el);
+    el.querySelectorAll('[data-cool]').forEach(b => {
+      const g = guys[+b.dataset.cool];
+      const opts = { parts: g.parts, palette: LG.paletteOf({ ...g.config, shade: g.config.shade }) };
+      const start = () => { g.mover = addMover(b.querySelector('canvas'), LG.animate('rarest', g.move, opts)); };
+      start();
+      b.addEventListener('click', () => {
+        g.move = COOL_MOVES[(COOL_MOVES.indexOf(g.move) + 1) % COOL_MOVES.length];
+        b.querySelector('.move').textContent = g.move;
+        movers.delete(g.mover); start();
+      });
+    });
+    // Put it next to what names actually reach.
+    let bestName = 0;
+    for (let n = 0; n < 200000; n++) bestName = Math.max(bestName, LG.guyOneIn(LG.resolve('u' + n)));
+    $('cool-lede').insertAdjacentHTML('afterend', `<p>Every guy here is 1 in ${big(guys[0].guy)}. The rarest of 200,000 real names is 1 in ${big(bestName)}, so no player is likely to ever have one. The frames are the rarest copies a capsule can give: Mint in Box at a scuff of 0.0000000, famous prints, and a tally.</p>`);
+  }
+
+  /* ------------------------------------------------ the player */
+  const state = { name: 'luna', tickets: 640, locker: [], worn: { skin: null, hat: null, frame: null }, filter: 'all', sort: 'rare', bought: new Set(), opened: 0 };
+  let uid = 0;
+  const copyOf = (o, source, from) => ({ uid: ++uid, o, source, from, game: LG.itemById(o.item).game, slot: LG.slotOf(o), fresh: false });
+  const find = id => state.locker.find(c => c.uid === id);
+  const oneIn = c => c.one ? 1e30 : c.source === 'Starter' ? 0 : LG.copyOneIn(c.o);
+
+  /* The maker's guy: a mock of an account-pinned look. Every slot holds its
+   * rarest trait, and the club grants him a copy no capsule can give. */
+  const byName = (list, name) => list.findIndex(x => x.name === name);
+  const ISAAC = {
+    parts: { head: byName(LG.heads, 'flame'), eyes: byName(LG.eyes, 'laser'), mouth: byName(LG.mouths, 'smirk'), cheeks: byName(LG.cheeks, 'war paint'), hair: byName(LG.hair, 'crown'), body: byName(LG.bodies, 'star mark'), accessory: byName(LG.accessories, 'bowtie'), arms: 2, feet: 0, shade: 2, flip: false, lucky: true },
+    palette: byName(LG.palettes, 'Midnight'),
+    copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
+  };
+  const pinned = name => name === 'isaac' ? ISAAC : null;
+  const baseResolve = LG.resolve;
+  LG.resolve = (name, parts) => {
+    const pin = !parts && pinned(name);
+    return pin ? { ...baseResolve(name, pin.parts), palette: pin.palette } : baseResolve(name, parts);
+  };
+  const moveOpts = (name, more) => {
+    const pin = pinned(name);
+    return pin ? { ...more, parts: pin.parts, palette: LG.paletteOf({ palette: pin.palette, shade: pin.parts.shade, lucky: true }) } : more;
+  };
+
+  function newPlayer(name) {
+    state.name = name;
+    state.locker = LG.GAMES.map(g => copyOf(LG.starter(name, g), 'Starter', `starter("${name}", "${g}")`));
+    for (let i = 0; i < 26; i++) {
+      const game = LG.GAMES[(i * 4) % 9], seed = `${name}:drop:${i}`;
+      const o = LG.roll(seed, game);
+      if (o.tally !== undefined) o.tally = 3 + strHash(`${name}:${i}:days`) % 60;
+      if (o.tally !== undefined && o.tally >= 20) o.pins = LG.PINS.filter((_, k) => (strHash(`${name}:${i}:pin`) >> k) & 1).slice(0, 1 + (o.tally >= 50)).map(pn => pn.id);
+      state.locker.push(copyOf(o, 'Daily drop', `roll("${seed}", "${game}")`));
+    }
+    state.bought = new Set();
+    state.opened = 0;
+    // Put on the rarest hat and frame; the skin stays off so his own body shows.
+    const best = slot => state.locker.filter(c => c.slot === slot).sort((a, b) => oneIn(b) - oneIn(a))[0];
+    if (pinned(name)) {
+      const one = copyOf(pinned(name).copy, 'One of one', 'Granted by the club to the person who made it. No capsule can give it.');
+      one.one = true;
+      state.locker.push(one);
+    }
+    state.worn = { skin: null, hat: pinned(name) ? null : best('hat')?.uid ?? null, frame: best('frame')?.uid ?? null };
+    state.inspect = state.locker.slice().sort((a, b) => oneIn(b) - oneIn(a))[0].uid;
+  }
+
+  const chipsFor = o => `<span class="chip grade">${LG.gradeOf(o).name}</span><span class="chip">${LG.wearOf(o.scuff).short} ${o.scuff.toFixed(4)}</span><span class="chip">#${o.print}</span>`;
+
+  /* ------------------------------------------------ traits */
+  const SLOTS = [
+    { slot: 'shape', key: 'head', list: LG.heads },
+    { slot: 'eyes', key: 'eyes', list: LG.eyes },
+    { slot: 'mouth', key: 'mouth', list: LG.mouths },
+    { slot: 'cheeks', key: 'cheeks', list: LG.cheeks },
+    { slot: 'topper', key: 'hair', list: LG.hair },
+    { slot: 'markings', key: 'body', list: LG.bodies },
+    { slot: 'accessory', key: 'accessory', list: LG.accessories },
+    { slot: 'colour', key: 'palette', list: LG.palettes },
+  ];
+  const DEMO = { head: 0, eyes: 1, mouth: 0, cheeks: 1, hair: 0, body: 0, accessory: 0, arms: 1, feet: 0 };
+  const chanceOf = (slot, key, i) => {
+    const c = { ...LG.resolve('demo', DEMO), palette: 0 };
+    c[key] = i;
+    return LG.traitOdds(c).find(t => t.slot === slot).chance;
+  };
+  const tierOf = ch => ch <= 0.02 ? ['Rare', '#EB4B4B'] : ch <= 0.05 ? ['Uncommon', '#8847FF'] : ['Common', '#3a4570'];
+
+  function renderTraits() {
+    const config = LG.resolve(state.name);
+    const odds = LG.traitOdds(config);
+    const total = LG.guyOneIn(config);
+    const maxR = Math.log(80);
+    const mine = $('mine');
+    mine.innerHTML = `<figure class="card">${px({ name: state.name, label: { title: state.name, bottom: `1 in ${fmt(total)}` } })}<figcaption class="meta"><span class="h">${esc(state.name)}</span><span class="sub">1 in <b>${fmt(total)}</b> guys</span></figcaption></figure>
+      <div class="panel">
+        <p class="total"><b>1 in ${fmt(total)}</b><span>guys has exactly this mix</span></p>
+        <table class="traits"><tbody>${odds.map(t => {
+          const [tier, col] = tierOf(t.chance);
+          return `<tr><td class="slot">${t.slot}</td><td class="name">${esc(t.name)}</td><td style="width:34%"><div class="bar" style="--c:${col}"><i style="width:${Math.min(100, Math.max(4, -Math.log(t.chance) / maxR * 100)).toFixed(0)}%"></i></div></td><td><span class="tier" style="--c:${col}">${tier}</span></td><td class="num">1 in ${fmt(1 / t.chance)}</td></tr>`;
+        }).join('')}</tbody></table>
+      </div>`;
+    hydrate(mine);
+  }
+
+  function renderRarest() {
+    const tiles = [];
+    for (const s of SLOTS) {
+      const ch = s.list.map((_, i) => chanceOf(s.slot, s.key, i));
+      const min = Math.min(...ch);
+      const picks = ch.map((c, i) => [c, i]).filter(([c]) => c === min).slice(0, s.slot === 'shape' ? 4 : 2);
+      for (const [c, i] of picks) {
+        const spec = s.key === 'palette' ? { name: 'demo', parts: DEMO, palette: i } : { name: 'demo', parts: { ...DEMO, [s.key]: i } };
+        tiles.push(`<figure class="card tile" tabindex="0">${px({ ...spec, label: { title: s.list[i].name, bottom: `1 in ${fmt(1 / c)}` } })}<figcaption><small>${s.slot}</small>${esc(s.list[i].name)}<b>1 in ${fmt(1 / c)}</b></figcaption></figure>`);
+      }
+    }
+    $('rarest').innerHTML = tiles.join('');
+    hydrate($('rarest'));
+  }
+
+  function renderNames() {
+    const firsts = ['alex', 'sam', 'jo', 'max', 'kai', 'mia', 'zoe', 'leo', 'ivy', 'ben', 'ava', 'eli', 'noa', 'finn', 'ruby', 'theo', 'nina', 'omar', 'lena', 'yuki'];
+    const found = [];
+    for (const f of firsts) for (let n = 0; n < 1000; n++) {
+      const name = n ? f + n : f;
+      found.push([LG.guyOneIn(LG.resolve(name)), name]);
+    }
+    found.sort((a, b) => b[0] - a[0]);
+    const el = $('names');
+    el.innerHTML = found.slice(0, 6).map(([n, name]) => `<figure class="card">${px({ name, label: { title: name, bottom: `1 in ${fmt(n)}` } })}<figcaption class="meta"><span class="h">${esc(name)}</span><span class="sub">1 in <b>${fmt(n)}</b> guys</span><button class="btn ghost" type="button" data-use="${esc(name)}">Use this name</button></figcaption></figure>`).join('');
+    hydrate(el);
+  }
+
+  /* ------------------------------------------------ locker + loadout */
+  const SORTS = {
+    rare: (a, b) => oneIn(b) - oneIn(a) || b.uid - a.uid,
+    new: (a, b) => b.uid - a.uid,
+    game: (a, b) => LG.GAMES.indexOf(a.game) - LG.GAMES.indexOf(b.game) || ['skin', 'hat', 'frame'].indexOf(a.slot) - ['skin', 'hat', 'frame'].indexOf(b.slot) || oneIn(b) - oneIn(a),
+  };
+  const isWorn = c => state.worn[c.slot] === c.uid;
+
+  function lockerCard(c) {
+    const o = c.o, worn = isWorn(c);
+    return `<button type="button" class="card pick${worn ? ' worn' : ''}" data-uid="${c.uid}" style="--grade:${LG.gradeOf(o).color}" aria-pressed="${worn}">
+      ${px({ name: state.name, copies: [o], label: itemLabel(o, c.source === 'Starter', c.one) })}
+      <span class="badge${c.fresh && !worn ? ' new' : ''}"${worn || c.fresh ? '' : ' hidden'}>${worn ? 'Worn' : 'New'}</span>
+      ${o.tally !== undefined ? `<span class="tally">Tally ${o.tally}</span>` : ''}
+      <span class="meta"><span class="h">${esc(LG.nameOf(o))}</span><span class="chips">${chipsFor(o)}</span>
+      <span class="sub">${cap(c.game)} · ${c.one ? '<b>1 of 1</b>' : c.source === 'Starter' ? 'Free starter' : `1 in <b>${fmt(oneIn(c))}</b>`}</span></span>
+    </button>`;
+  }
+  function renderLocker() {
+    const list = state.locker.filter(c => state.filter === 'all' || c.slot === state.filter).sort(SORTS[state.sort]);
+    $('grid').innerHTML = list.map(lockerCard).join('');
+    $('count').textContent = `${list.length} ${list.length === 1 ? 'copy' : 'copies'}`;
+    hydrate($('grid'));
+  }
+  function refreshWorn() {
+    $('grid').querySelectorAll('.pick').forEach(b => {
+      const c = find(+b.dataset.uid), worn = isWorn(c);
+      b.classList.toggle('worn', worn);
+      b.setAttribute('aria-pressed', worn);
+      const badge = b.querySelector('.badge');
+      badge.hidden = !worn && !c.fresh;
+      badge.textContent = worn ? 'Worn' : 'New';
+      badge.classList.toggle('new', !worn && c.fresh);
+    });
+  }
+  function renderDress() {
+    const worn = ['skin', 'hat', 'frame'].map(s => find(state.worn[s])).filter(Boolean);
+    const copies = worn.map(c => c.o);
+    const top = worn.reduce((a, c) => (oneIn(c) > oneIn(a || c) ? c : a || c), null);
+    const g = copies.length ? Math.max(...copies.map(gradeIdx)) : -1;
+    const row = slot => {
+      const c = find(state.worn[slot]);
+      return `<div class="slotrow"><span class="k">${slot}</span>${c
+        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span><button class="x" type="button" data-off="${slot}" aria-label="Take off ${esc(LG.nameOf(c.o))}">×</button>`
+        : `<span class="v empty">Empty</span><span></span>`}</div>`;
+    };
+    $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>1 of 1</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
+      <div class="slots">${row('skin')}${row('hat')}${row('frame')}</div>`;
+    hydrate($('dress'));
+    renderMoves();
+  }
+  function toggle(c) {
+    state.worn[c.slot] = isWorn(c) ? null : c.uid;
+    c.fresh = false;
+    state.inspect = c.uid;
+    refreshWorn(); renderDress(); renderSwaps(); renderInspect();
+  }
+
+  /** How a copy's name is put together, and every number behind it. */
+  function renderInspect() {
+    const c = find(state.inspect) || state.locker[0];
+    if (!c) return;
+    const o = c.o, item = LG.itemById(o.item), f = LG.FINISHES[o.finish], g = LG.gradeOf(o), w = LG.wearOf(o.scuff);
+    const [left, right] = LG.nameOf(o).split(' | ');
+    const itemWord = left.replace(/^Tallied /, '');
+    const U = { tally: 'var(--amber)', item: 'var(--ink)', finish: g.color, scuff: '#6ee7b0', print: '#7fb6ff' };
+    const seg = (text, key, n) => `<span style="--u:${U[key]}">${esc(text)}<sup>${n}</sup></span>`;
+    const name = [o.tally !== undefined ? seg('Tallied', 'tally', 5) : '', seg(itemWord, 'item', 1), right ? seg(right, 'finish', 2) : ''].join('');
+    const segs = [['#3fbf7f', 0.07], ['#8fd14f', 0.15], ['#e0c341', 0.38], ['#e8893a', 0.45], ['#d94b4b', 1]];
+    let prev = 0;
+    const bar = segs.map(([col, max]) => { const wpx = (max - prev) * 100; prev = max; return `<i style="width:${wpx}%;background:${col}"></i>`; }).join('');
+    const [lo, hi] = f.scuffs;
+    const fam = LG.special(o);
+    const pool = LG.gameItems(c.game).filter(i => !i.free).length;
+    const code = LG.encode(o);
+    const dt = (label, key, n) => `<dt style="--u:${U[key] || 'var(--muted)'}">${label}${n ? `<sup> ${n}</sup>` : ''}</dt>`;
+    $('inspect').innerHTML = `<div class="insp">
+      <figure class="card" style="--grade:${g.color}">${px({ name: state.name, copies: [o], label: itemLabel(o, c.source === 'Starter', c.one) })}${o.tally !== undefined ? `<span class="tally">Tally ${o.tally}</span>` : ''}</figure>
+      <div style="min-width:0">
+        <p class="eyebrow">Inspect · ${esc(state.name)}'s copy</p>
+        <h3 class="iname">${name}</h3>
+        <dl class="spec">
+          ${dt('Item', 'item', 1)}<dd><b>${esc(item.name)}</b><small>${cap(c.game)} ${item.slot}${item.free ? ', the free one every player has' : `, one of ${pool} in the ${cap(c.game)} machine`}</small></dd>
+          ${dt('Finish', 'finish', 2)}<dd><b>${f.name}</b> <span class="chip grade" style="--grade:${g.color}">${g.name}</span><small>${f.odds}% of capsules${o.finish === 'plain' ? '. Plain copies leave the finish out of the name' : ''}</small></dd>
+          ${dt('Scuff', 'scuff', 3)}<dd><b>${o.scuff.toFixed(7)}</b> · ${w.name}
+            <div class="fbar"><div class="segs">${bar}</div><span class="range" style="left:${lo * 100}%;width:${(hi - lo) * 100}%"></span><span class="mark" style="left:${o.scuff * 100}%"></span>
+            <div class="ticks"><span style="left:0;translate:0 0">0</span><span style="left:7%">.07</span><span style="left:15%">.15</span><span style="left:38%">.38</span><span style="left:45%">.45</span><span style="left:100%;translate:-100% 0">1</span></div></div>
+            <small>Lower is cleaner. ${f.name} only comes between ${lo.toFixed(2)} and ${hi.toFixed(2)}${o.scuff > 0.07 ? '; past .07 the paint starts to chip' : ''}.</small></dd>
+          ${dt('Print', 'print', 4)}<dd><b>#${o.print}</b>${fam ? ` <span class="chip grade" style="--grade:#4B69FF">${esc(fam)}</span>` : ''}<small>${fam ? 'One of the famous prints.' : 'Where the shine and the scuffs land, 0 to 999.'}${o.finish === 'nebula' && !fam ? ' On Nebula it also picks the pattern in the name.' : ''}</small></dd>
+          ${dt('Tally', 'tally', 5)}<dd>${o.tally !== undefined ? `<b>${o.tally} days</b><small>Days finished wearing it. Shows as "Tallied" in the name${o.tally >= 365 ? ', and a year of days has turned its outline gold' : o.tally >= 100 ? ', and as four marks on the item' : o.tally >= 30 ? ', and as two marks on the item' : ''}.</small>` : '<b>None</b><small>One copy in ten keeps a tally.</small>'}</dd>
+          ${dt('Pins')}<dd>${o.pins?.length ? o.pins.map(id => { const pn = LG.PINS.find(x => x.id === id); return `<b>${esc(pn.name)}</b><small>${esc(pn.how)}</small>`; }).join('') : '<b>None yet</b><small>Earned in the games, up to three.</small>'}</dd>
+          ${dt('Rarity')}<dd>${c.one ? '<b>1 of 1</b><small>The only one. It exists because it was given, not rolled.</small>' : c.source === 'Starter' ? '<b>Free</b><small>Every player has one; the name decides its scuff and print.</small>' : `<b>1 in ${fmt(LG.copyOneIn(o))}</b><small>Capsules for ${cap(c.game)} that give this item, this finish${fam ? ', a famous print' : ''}, a scuff this low${o.tally !== undefined ? ' and a tally' : ''}.</small>`}</dd>
+          ${dt('Made from')}<dd><code>${esc(c.from || c.source)}</code><small>${c.source === 'Starter' ? 'The same name always gets the same starter, in every game.' : 'The same seed always opens the same copy.'}</small></dd>
+          ${dt('Code')}<dd><code id="code">${esc(code)}</code><button class="btn ghost copybtn" type="button" id="copy-code">Copy</button><small>All a copy is: item~finish~scuff~print, plus ~t and the tally.</small></dd>
+        </dl>
+      </div>
+    </div>`;
+    hydrate($('inspect'));
+  }
+  $('inspect').addEventListener('click', e => {
+    if (!e.target.closest('#copy-code')) return;
+    const text = $('code').textContent, b = $('copy-code');
+    const done = ok => { b.textContent = ok ? 'Copied' : 'Select it'; if (!ok) getSelection().selectAllChildren($('code')); setTimeout(() => { b.textContent = 'Copy'; }, 1400); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (err) { done(false); }
+  });
+
+  $('grid').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) toggle(find(+b.dataset.uid)); });
+  $('dress').addEventListener('click', e => { const b = e.target.closest('[data-off]'); if (b) { state.worn[b.dataset.off] = null; refreshWorn(); renderDress(); renderSwaps(); } });
+  document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => {
+    state.filter = b.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    renderLocker();
+  }));
+  $('sort').addEventListener('change', e => { state.sort = e.target.value; renderLocker(); });
+
+  /* ------------------------------------------------ shop */
+  const PRICE = { capsule: 100, skin: 450, hat: 300, frame: 350 };
+  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.tickets.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); renderSwaps(); }
+
+  function renderCapsules() {
+    const el = $('capsules');
+    if (!el.children.length) {
+      el.innerHTML = LG.GAMES.map(g => `<div class="capsule"><canvas width="40" height="56" data-cap="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-open="${g}">${ticket} Turn</button></div>`).join('');
+      el.querySelectorAll('canvas[data-cap]').forEach(c => addMachine(c, c.dataset.cap, c.closest('.capsule')));
+    }
+    el.querySelectorAll('[data-open]').forEach(b => { b.disabled = state.tickets < PRICE.capsule; });
+  }
+  $('capsules').addEventListener('click', e => {
+    const b = e.target.closest('[data-open]');
+    if (!b || state.tickets < PRICE.capsule) return;
+    state.tickets -= PRICE.capsule;
+    const game = b.dataset.open;
+    const seed = `${state.name}:capsule:${++state.opened}`;
+    const o = LG.roll(seed, game);
+    reveal(o, 'Capsule', game, `roll("${seed}", "${game}")  ·  the server would pick this seed`);
+  });
+
+  function renderOdds() {
+    const max = Math.log(100 / 0.2);
+    $('odds').innerHTML = Object.values(LG.FINISHES).map(f => `<li><span class="n">${f.name}</span><div class="bar" style="--c:${GRADE[f.grade]}"><i style="width:${Math.max(4, (1 - Math.log(100 / f.odds) / max) * 100 + 6).toFixed(0)}%"></i></div><span class="p">${f.odds}%</span></li>`).join('');
+  }
+
+  function shelfToday() {
+    const day = new Date().toISOString().slice(0, 10);
+    const pool = LG.items.filter(i => !i.free);
+    const out = [];
+    for (let k = 0; out.length < 4 && k < 50; k++) {
+      const it = pool[strHash(`${day}:${k}`) % pool.length];
+      if (!out.some(x => x.item === it.id)) out.push({ item: it.id, finish: 'plain', scuff: Math.round((0.07 + (strHash(`${day}:${k}:s`) % 800) / 10000) * 1e7) / 1e7, print: strHash(`${day}:${k}:p`) % 1000 });
+    }
+    return out;
+  }
+  function renderShelf() {
+    const el = $('shelf');
+    el.innerHTML = shelfToday().map(o => {
+      const slot = LG.slotOf(o), price = PRICE[slot], key = LG.encode(o), owned = state.bought.has(key);
+      return `<figure class="card" style="--grade:${LG.gradeOf(o).color}">${px({ name: state.name, copies: [o], label: itemLabel(o) })}<figcaption class="meta"><span class="h">${esc(LG.nameOf(o))}</span><span class="chips">${chipsFor(o)}</span>
+        <span class="buyrow"><span class="sub">${cap(LG.itemById(o.item).game)} · ${slot}</span><button class="btn" type="button" data-buy="${esc(key)}"${owned || state.tickets < price ? ' disabled' : ''}>${owned ? 'Owned' : `${ticket} ${price}`}</button></span></figcaption></figure>`;
+    }).join('');
+    hydrate(el);
+  }
+  $('shelf').addEventListener('click', e => {
+    const b = e.target.closest('[data-buy]');
+    if (!b) return;
+    const o = LG.decode(b.dataset.buy), price = PRICE[LG.slotOf(o)];
+    if (state.tickets < price || state.bought.has(b.dataset.buy)) return;
+    state.tickets -= price; state.bought.add(b.dataset.buy);
+    reveal(o, 'Shop', null, "Today's shelf: always Plain, scuff and print set by the date");
+  });
+
+  const tradeable = g => state.locker.filter(c => c.source !== 'Starter' && !isWorn(c) && gradeIdx(c.o) === g).sort((a, b) => oneIn(a) - oneIn(b));
+  function renderSwaps() {
+    $('swaps').innerHTML = [0, 1, 2, 3].map(g => {
+      const n = tradeable(g).length, from = LG.GRADES[g], to = LG.GRADES[g + 1];
+      return `<div class="swap"><span class="t"><span class="chip grade" style="--grade:${from.color}">5 ${from.name}</span> → <span class="chip grade" style="--grade:${to.color}">1 ${to.name}</span><small>You have ${n}</small></span><button class="btn" type="button" data-swap="${g}"${n < 5 ? ' disabled' : ''}>Swap</button></div>`;
+    }).join('');
+  }
+  $('swaps').addEventListener('click', e => {
+    const b = e.target.closest('[data-swap]');
+    if (!b) return;
+    const g = +b.dataset.swap, give = tradeable(g).slice(0, 5);
+    if (give.length < 5) return;
+    state.locker = state.locker.filter(c => !give.includes(c));
+    // Re-roll until the finish lands on the next grade; the game is one of the traded copies'.
+    const game = give[strHash(`${state.name}:${state.opened}`) % 5].game;
+    let o;
+    let seed;
+    for (let i = 0; i < 20000; i++) { seed = `${state.name}:swap:${++state.opened}:${i}`; o = LG.roll(seed, game); if (gradeIdx(o) === g + 1) break; }
+    reveal(o, 'Swap-up', game, `roll("${seed}", "${game}")  ·  first roll of the next grade`);
+  });
+
+  /* ------------------------------------------------ reveal */
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const hold = () => calm.matches;
+
+  // Little square-wave blips, made on the spot. Only after a click, and off with one tap.
+  let audio = null, sound = true;
+  function tone(freq, dur, vol = 0.04, when = 0, type = 'square') {
+    if (!sound) return;
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    const t0 = audio.currentTime + when, o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(audio.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  const FANFARE = [[523, 659], [523, 659, 784], [523, 659, 784, 1047], [392, 523, 659, 784, 1047], [392, 523, 659, 784, 1047, 1319, 1568]];
+  const fanfare = g => {
+    FANFARE[g].forEach((f, i) => tone(f, g >= 3 ? 0.45 : 0.25, 0.045, i * 0.085));
+    if (g >= 3) tone(FANFARE[g].at(-1) * 2, 1.1, 0.03, FANFARE[g].length * 0.085, 'triangle');
+  };
+  $('sound').addEventListener('click', e => { sound = !sound; e.target.setAttribute('aria-pressed', sound); e.target.textContent = sound ? 'Sound on' : 'Sound off'; });
+
+  /** A face-down card: navy with a diamond weave and an amber gem. */
+  (function cardBack(canvas) {
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H);
+    const edge = [34, 38, 58], navy = [30, 38, 66], weave = [44, 56, 96], gem = [255, 207, 92], gemS = [165, 120, 26];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+      if (cx + cy < 2) continue;
+      let c = cx === 0 || cy === 0 || cx + cy === 2 ? edge : (cx === 2 || cy === 2) ? gemS : ((x + y) % 4 === 0 || (x - y + 64) % 4 === 0) ? weave : navy;
+      const m = Math.abs(x - 12.5) + Math.abs(y - 20.5);
+      if (m < 6) c = m < 3 ? gem : m < 4.5 ? gemS : edge;
+      if (m < 3 && x < 12 && y < 20) c = [255, 240, 190];
+      img.data.set([...c, 255], (y * W + x) * 4);
+    }
+    ctx.putImageData(img, 0, 0);
+  })($('back'));
+
+  /** A filler for the reel: rarer than real odds, so the reel looks like it could be anything. */
+  function filler(seed, game, want) {
+    if (want === undefined) { const r = strHash(seed) % 100; want = r < 56 ? 0 : r < 80 ? 1 : r < 92 ? 2 : r < 97 ? 3 : 4; }
+    let o;
+    for (let i = 0; i < 6000; i++) { o = LG.roll(`${seed}:${i}`, game); if (gradeIdx(o) === want) break; }
+    return o;
+  }
+
+  let skipSpin = null;
+  /** The reel: about fifty cards rush past a marker and slow onto the one you got. */
+  function spin(o, game, g) {
+    return new Promise(done => {
+      const reel = $('reel'), track = $('track');
+      const N = 54, WIN = 46, CW = 104, STEP = CW + 10;
+      const base = `${state.name}:reel:${state.opened}`;
+      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : filler(`${base}:${i}`, game));
+      // Below Mythic, something better sits right after it, and the reel stops just short.
+      if (g < 3) list[WIN + 1] = filler(`${base}:tease`, game, strHash(base) % 3 ? 3 : 4);
+      reel.hidden = false;
+      track.innerHTML = list.map((x, i) => `<div class="slot-card${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}">${px({ name: state.name, copies: [x], still: true })}<i class="g"></i></div>`).join('');
+      hydrate(track);
+      const mid = reel.clientWidth / 2;
+      const jitter = g < 3 ? 0.42 * CW : (strHash(base + 'j') % 100 / 100 - 0.5) * 0.6 * CW;
+      const x0 = mid + STEP * 1.5, x1 = mid - (WIN * STEP + CW / 2 + jitter);
+      const dur = g >= 3 ? 7200 : 5800, t0 = performance.now();
+      let over = false, lastIdx = null;
+      const settle = () => {
+        if (over) return;
+        over = true; skipSpin = null; $('skip').hidden = true;
+        track.style.transform = `translateX(${x1}px)`;
+        track.querySelector('.win').classList.add('hit');
+        tone(220, 0.12, 0.05);
+        setTimeout(() => { reel.hidden = true; track.innerHTML = ''; done(); }, 800);
+      };
+      skipSpin = settle; $('skip').hidden = false;
+      if (rush) { settle(); return; }
+      const frame = now => {
+        if (over) return;
+        const t = Math.min(1, (now - t0) / dur), p = 1 - Math.pow(1 - t, 4.4);
+        const x = x0 + (x1 - x0) * p;
+        track.style.transform = `translateX(${x}px)`;
+        const idx = Math.floor((mid - x) / STEP);
+        if (idx !== lastIdx) { if (lastIdx !== null) tone(1250 + (idx % 3) * 110, 0.03, 0.022); lastIdx = idx; }
+        if (t < 1) requestAnimationFrame(frame); else settle();
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+
+  /* Pixel confetti: a burst from the card, more and faster the rarer it is. */
+  const burst = $('burst'), bctx = burst.getContext('2d');
+  let bits = [], bursting = false;
+  function boom(g, x, y, palette) {
+    const S = 4;
+    burst.width = Math.ceil(innerWidth / S); burst.height = Math.ceil(innerHeight / S);
+    const cols = palette || [GRADE[g], '#ffffff', GRADE[g], g >= 3 ? '#ffcf5c' : '#c9d3ff'];
+    for (let i = 0, n = [26, 70, 130, 230, 420][g]; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, v = 0.5 + Math.random() * (1.4 + g * 0.7);
+      bits.push({ x: x / S, y: y / S, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.9, life: 45 + Math.random() * (40 + g * 18), c: cols[i % 4], s: Math.random() < 0.25 ? 2 : 1 });
+    }
+    if (!bursting) { bursting = true; requestAnimationFrame(fly); }
+  }
+  function fly() {
+    bctx.clearRect(0, 0, burst.width, burst.height);
+    bits = bits.filter(b => b.life-- > 0);
+    for (const b of bits) {
+      b.vy += 0.035; b.vx *= 0.986; b.x += b.vx; b.y += b.vy;
+      bctx.globalAlpha = Math.min(1, b.life / 18); bctx.fillStyle = b.c;
+      bctx.fillRect(Math.round(b.x), Math.round(b.y), b.s, b.s);
+    }
+    if (bits.length) requestAnimationFrame(fly); else { bursting = false; bctx.clearRect(0, 0, burst.width, burst.height); }
+  }
+
+  /** Face down, it trembles (harder and with a glow the rarer it is), flips, and pays off. */
+  async function unveil(o, g) {
+    const res = $('result'), flip = $('flip'), front = $('reveal-card'), back = $('back'), shout = $('reveal-shout');
+    res.style.setProperty('--grade', GRADE[g]);
+    res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.7][g]);
+    res.classList.remove('go'); shout.classList.remove('slam'); shout.textContent = '';
+    front.hidden = true; front.innerHTML = ''; back.hidden = false;
+    $('reveal-name').textContent = ''; $('reveal-chips').innerHTML = ''; $('reveal-actions').hidden = true;
+    flip.style.setProperty('--glow', '0px');
+    res.hidden = false;
+    if (!hold()) {
+      flip.style.setProperty('--amp', `${0.6 + g * 1.1}px`);
+      flip.classList.add('tremble');
+      void flip.offsetWidth;
+      flip.style.setProperty('--glow', `${g * 7}px`);
+      const wait = 650 + g * 380;
+      for (let k = 0, n = 4 + g * 2; k < n; k++) tone(150 + k * (40 + g * 12), 0.07, 0.03, (wait / 1000) * (1 - Math.pow(1 - k / n, 1.6)));
+      await sleep(wait);
+      flip.classList.remove('tremble');
+      flip.classList.add('squash');
+      await sleep(170);
+    }
+    back.hidden = true; front.hidden = false;
+    front.innerHTML = `<div class="card">${px({ name: state.name, copies: [o], label: itemLabel(o) })}${o.tally !== undefined ? `<span class="tally">Tally ${o.tally}</span>` : ''}</div>`;
+    hydrate(front);
+    flip.classList.remove('squash');
+    const s = byCanvas.get(front.querySelector('canvas'));
+    if (s) s.juice = performance.now() / 1000;
+
+    const grade = LG.gradeOf(o), famous = LG.special(o);
+    shout.textContent = famous ? famous + '!' : g === 0 ? (o.tally !== undefined ? 'Tallied!' : grade.name) : grade.name + '!';
+    res.classList.add('go');
+    fanfare(g);
+    if (!hold()) {
+      shout.classList.add('slam');
+      await sleep(90);
+      const r = flip.getBoundingClientRect();
+      boom(g, r.left + r.width / 2, r.top + r.height / 2);
+      if (g >= 2) { const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+      if (g >= 3) { const st = $('stage'); st.classList.remove('quake'); void st.offsetWidth; st.classList.add('quake'); }
+      if (g >= 4) setTimeout(() => boom(4, r.left + r.width / 2, r.top + r.height * 0.3), 420);
+      await sleep(380);
+    }
+    $('reveal-name').textContent = LG.nameOf(o);
+    $('reveal-chips').innerHTML = chipsFor(o) + `<span class="chip">1 in ${fmt(LG.copyOneIn(o))}</span>`;
+    $('reveal-actions').hidden = false;
+    $('wear-it').focus();
+  }
+
+  let revealed = null;
+  async function reveal(o, source, game, from) {
+    const c = copyOf(o, source, from);
+    c.fresh = true;
+    state.locker.push(c);
+    revealed = c;
+    renderWallet();
+    $('reveal').hidden = false;
+    $('result').hidden = true;
+    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : source === 'Swap-up' ? `${cap(game)} swap-up` : `${cap(game)} capsule`;
+    const g = gradeIdx(o);
+    rush = false;
+    if (game && !hold()) { $('skip').hidden = false; if (source === 'Capsule') await gacha(game); await spin(o, game, g); }
+    await unveil(o, g);
+  }
+  function closeReveal(wear) {
+    if (!revealed || $('reveal-actions').hidden) return;
+    if (wear) { state.worn[revealed.slot] = revealed.uid; revealed.fresh = false; }
+    state.inspect = revealed.uid;
+    $('reveal').hidden = true;
+    revealed = null;
+    renderLocker(); renderDress(); renderSwaps(); renderInspect();
+  }
+  $('wear-it').addEventListener('click', () => closeReveal(true));
+  $('keep-it').addEventListener('click', () => closeReveal(false));
+  $('skip').addEventListener('click', () => { rush = true; if (skipSpin) skipSpin(); });
+  addEventListener('keydown', e => {
+    if ($('reveal').hidden) return;
+    if (!$('skip').hidden && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); rush = true; if (skipSpin) skipSpin(); }
+    else if (e.key === 'Escape') closeReveal(false);
+  });
+
+  /* ------------------------------------------------ name */
+  /* ------------------------------------------------ extras */
+  function renderExtras() {
+    const me = state.name;
+    const block = (pins, tally) => ({ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: 40, ...(tally !== undefined ? { tally } : {}), ...(pins ? { pins } : {}) });
+    const card = (o, title, sub, worn = [o]) => `<figure class="card" style="--grade:${LG.gradeOf(o).color}">${px({ name: me, copies: worn, label: { ...itemLabel(o), title } })}<figcaption class="meta"><span class="h">${esc(title)}</span><span class="sub">${sub}</span></figcaption></figure>`;
+    $('x-pins').innerHTML = LG.PINS.map(pn => card(block([pn.id]), pn.name, esc(pn.how))).join('')
+      + card(block(['star', 'flame', 'crown']), 'Three pins', 'The most a copy holds');
+    $('x-tally').innerHTML = [[undefined, 'No tally', 'Nine copies in ten'], [12, '12 days', 'Counting'], [30, '30 days', 'Two marks'], [100, '100 days', 'Four marks'], [365, '365 days', 'A gold outline']]
+      .map(([t, title, sub]) => card(block(null, t), title, sub)).join('');
+    // Lucky guys from real names, beside how they'd look otherwise.
+    const lucky = [];
+    for (let i = 0; lucky.length < 5 && i < 20000; i++) { const n = 'luck' + i; if (baseResolve(n).lucky) lucky.push(n); }
+    $('x-lucky-note').textContent = `About one name in ${LG.LUCKY_ODDS}. Same guy, colours turned round the wheel, gold trim. Left: Lucky. Right: how he'd look otherwise.`;
+    $('x-lucky').innerHTML = lucky.map(n => {
+      const c = baseResolve(n);
+      return `<figure class="star" style="--grade:#E4AE39"><div class="stage-row" style="grid-template-columns:1fr 1fr">
+        <span class="card">${px({ name: n, label: { title: n, bottom: '★ Lucky', g: 4 } })}</span>
+        <span class="card">${px({ name: n, parts: { lucky: false }, label: { title: n, bottom: LG.palettes[c.palette].name } })}</span></div>
+        <figcaption><span class="odds">1 in <b>${fmt(LG.guyOneIn(c))}</b> guys</span></figcaption></figure>`;
+    }).join('');
+    // Emotes over his idle.
+    const em = $('x-emotes');
+    em.innerHTML = LG.EMOTE_UNLOCKS.map(e => `<figure class="mover"><canvas width="16" height="20" data-emote="${e.id}" aria-hidden="true"></canvas><figcaption>${esc(e.name)}<small>${esc(e.how)}</small></figcaption></figure>`).join('');
+    em.querySelectorAll('canvas').forEach(c => addMover(c, LG.animate(me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
+    // The parts added in 0.5, each on a plain guy.
+    const NEW = [['cheeks', LG.cheeks, 8], ['body', LG.bodies, 8], ['accessory', LG.accessories, 8]];
+    $('x-parts').innerHTML = NEW.flatMap(([key, list, from]) => list.slice(from).map((part, k) => {
+      const i = from + k, spec = { name: 'demo', parts: { ...DEMO, [key]: i } };
+      const slot = { cheeks: 'cheeks', body: 'markings', accessory: 'accessory' }[key];
+      const ch = chanceOf(slot, key, i);
+      return `<figure class="card tile" tabindex="0">${px({ ...spec, label: { title: part.name, bottom: `1 in ${fmt(1 / ch)}` } })}<figcaption><small>${slot}</small>${esc(part.name)}<b>1 in ${fmt(1 / ch)}</b></figcaption></figure>`;
+    })).join('');
+    $('x-frames').innerHTML = LG.GAMES.map(g => LG.gameItems(g).filter(it => it.slot === 'frame')[1]).map(it => {
+      const o = { item: it.id, finish: 'plain', scuff: 0.03, print: 7 };
+      return `<figure class="card tile" tabindex="0">${px({ name: me, copies: [o], label: { title: it.name, bottom: cap(it.game) } })}<figcaption><small>${cap(it.game)}</small>${esc(it.name)}</figcaption></figure>`;
+    }).join('');
+    for (const id of ['x-pins', 'x-tally', 'x-lucky', 'x-parts', 'x-frames']) hydrate($(id));
+  }
+
+  function renderAll() { renderTraits(); renderLocker(); renderDress(); renderInspect(); renderGrades(); renderExtras(); renderWallet(); }
+  let typing;
+  $('who').addEventListener('input', e => {
+    clearTimeout(typing);
+    typing = setTimeout(() => { newPlayer(e.target.value.trim().toLowerCase() || 'luna'); renderAll(); }, 250);
+  });
+  $('names').addEventListener('click', e => {
+    const b = e.target.closest('[data-use]');
+    if (!b) return;
+    $('who').value = b.dataset.use;
+    newPlayer(b.dataset.use); renderAll();
+    $('traits').scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth' });
+  });
+
+  // The wallet sits in the shop heading and the top bar.
+  document.querySelector('.rooms').insertAdjacentHTML('beforeend', `<span class="wallet"><svg aria-hidden="true"><use href="#ticket"/></svg><span data-wallet></span></span>`);
+
+  newPlayer('isaac');
+  renderRarest(); renderOdds(); renderAll();
+  setTimeout(renderNames, 60);
+  setTimeout(renderCool, 30);
+})();
+</script>
