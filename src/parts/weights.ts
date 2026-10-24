@@ -39,6 +39,10 @@ export const headWeights = [
   1, // cactus
   1, // saucer
   1, // shard
+  1, // toadstool
+  1, // bat
+  1, // crab
+  1, // heart
 ];
 
 export const eyeWeights = [

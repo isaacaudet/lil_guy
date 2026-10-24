@@ -179,9 +179,12 @@ export const hair: Topper[] = [
     draw: c => {
       capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
       c.paintRow(c.crown + 2, T.TRIM);
+      // The pompom sits on whatever is under it, which on a crab is its back,
+      // not the tips of its claws.
       const x = Math.floor(c.centre) - 1;
-      c.set(x, c.crown - 1, T.TRIM);
-      c.set(x + 1, c.crown - 1, T.TRIM);
+      const top = Math.min(c.topOf(x) ?? c.crown, c.topOf(x + 1) ?? c.crown);
+      c.set(x, top - 1, T.TRIM);
+      c.set(x + 1, top - 1, T.TRIM);
     },
   },
 

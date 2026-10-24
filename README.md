@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~370 billion lil guys. Zero dependencies. ~21 KB gzipped.
+  ~430 billion lil guys. Zero dependencies. ~21 KB gzipped.
 </p>
 
 <p align="center">
@@ -219,7 +219,7 @@ A few rules keep every combination good-looking:
 - **Clean colours, with depth.** No greys or murky browns; every guy gets the same outline, gleam and shading, and the vivid tone is common
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-23 shapes × 19 eyes × 16 mouths × 8 cheeks × 30 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) = **367,298,150,400** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 51.1 billion equally-likely guys.
+27 shapes × 19 eyes × 16 mouths × 8 cheeks × 30 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) = **431,176,089,600** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 58.7 billion equally-likely guys.
 
 ### Pinning parts
 
@@ -227,7 +227,7 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 
 | Slot | Values |
 |---|---|
-| `head` | `0-22` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard |
+| `head` | `0-26` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart |
 | `eyes` | `0-18` beans, shiny, happy, sparkle, wink, glossy, content, excited, hearts, lashes, glance, chill, side-eye, shades, star, squint, fired up, laser, cyclops |
 | `mouth` | `0-15` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum |
 | `cheeks` | `0-7` bare, blush, dot, rosy, freckles, scar, band-aid, war paint |
