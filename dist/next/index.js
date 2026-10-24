@@ -1,4 +1,4 @@
-import { GRID_SIZE, compose, dress, getPalette, paint, resolve, shadePalette, withItems } from "../paint-DTjQOrbR.js";
+import { GRID_SIZE, compose, dress, paint, paletteOf, resolve, withItems } from "../paint-e6qMVeBE.js";
 import { jsx } from "react/jsx-runtime";
 import { ImageResponse } from "next/og";
 
@@ -12,7 +12,7 @@ function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides,
 		game,
 		equip
 	}, name);
-	const palette = withItems(customPalette ?? shadePalette(getPalette(config.palette), config.shade), config);
+	const palette = withItems(customPalette ?? paletteOf(config), config);
 	const colors = paint(compose(config), config, palette);
 	const pixelSize = Math.floor(size / GRID_SIZE);
 	const pixels = [];

@@ -3,7 +3,7 @@ import { dress, itemById, withItems } from './items';
 import { compose, composeBase } from './compose';
 import { heads, mouths } from './parts';
 import { paint } from './paint';
-import { getPalette, shadePalette } from './palette';
+import { paletteOf } from './palette';
 import { GRADES, gradeOf } from './owned';
 import { LAYER, T } from './parts/art';
 import { hash } from './hash';
@@ -26,7 +26,7 @@ import { GRID_SIZE } from './types';
  * sparkles.
  */
 
-export const MOVES = ['idle', 'blink', 'hop', 'wave', 'look', 'cheer', 'sad', 'dance', 'squish'] as const;
+export const MOVES = ['idle', 'blink', 'hop', 'wave', 'look', 'cheer', 'sad', 'dance', 'squish', 'sleep'] as const;
 export type Move = (typeof MOVES)[number];
 
 /** Rows of room above the guy for jumps. */
@@ -51,8 +51,10 @@ export interface Animation {
 }
 
 export interface AnimateOptions extends RenderOptions {
-  /** Show the best equipped copy's grade: shine, aura and sparkles. Default true. */
+  /** Show the best equipped copy's grade: shine, aura, sparkles and a trail. Default true. */
   rarity?: boolean;
+  /** An emote to show over the whole move, bobbing beside his head. */
+  emote?: Emote;
 }
 
 /**
@@ -63,7 +65,21 @@ export interface AnimateOptions extends RenderOptions {
 type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh';
 
 /** Little pictures that pop up beside his head. */
-type Emote = 'note' | 'question' | 'bang' | 'heart';
+export type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire';
+
+/**
+ * Emotes a player can show after a game, and how each is unlocked. The
+ * moves use some on their own; `emote` in the options shows one over any move.
+ */
+export const EMOTE_UNLOCKS: { id: Emote; name: string; how: string }[] = [
+  { id: 'heart', name: 'Heart', how: 'Everyone has it' },
+  { id: 'note', name: 'Music', how: 'Everyone has it' },
+  { id: 'zzz', name: 'Snooze', how: 'Everyone has it' },
+  { id: 'question', name: 'Huh?', how: 'Everyone has it' },
+  { id: 'bang', name: 'Whoa!', how: 'Everyone has it' },
+  { id: 'fire', name: 'On fire', how: 'A 7-day streak' },
+  { id: 'crown', name: 'Crown', how: 'A perfect day' },
+];
 
 /** One beat of a move: a pose, held for `ms`, moved and squashed. */
 interface Beat {
@@ -85,6 +101,8 @@ interface Beat {
   emote?: Emote;
   /** Which side the emote prefers. */
   left?: boolean;
+  /** Lift the emote a row, so it floats. */
+  rise?: boolean;
 }
 
 const b = (pose: Pose, ms: number, more: Omit<Beat, 'pose' | 'ms'> = {}): Beat => ({ pose, ms, ...more });
@@ -129,6 +147,9 @@ const BEATS: Record<Move, (canWave: boolean) => Beat[]> = {
   ],
   squish: () => [
     b('ooh', 90, { squash: 2, emote: 'bang' }), b('ooh', 80, { squash: -2, emote: 'bang' }), b('ooh', 80, { squash: 1, emote: 'bang' }), b('base', 70, { squash: -1 }), b('base', 700),
+  ],
+  sleep: () => [
+    b('shut', 1100, { squash: 1, emote: 'zzz' }), b('shut', 1100, { emote: 'zzz', rise: true }), b('shut', 1100, { squash: 1, emote: 'zzz' }), b('shut', 1100, { emote: 'zzz', rise: true }),
   ],
 };
 
@@ -260,25 +281,32 @@ function twinkle(layer: Layer, x: number, y: number, centre: string, arms: strin
 
 const mouthIndex = (name: string) => Math.max(0, mouths.findIndex(m => m.name === name));
 
-const EMOTES: Record<Emote, { rows: string[]; color: string }> = {
+/** `#` is the emote's colour, `+` its second colour. */
+const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string }> = {
   note: { rows: ['.##', '.#.', '##.', '##.'], color: '#FFE27A' },
   question: { rows: ['###', '..#', '.#.', '...', '.#.'], color: '#FFFFFF' },
   bang: { rows: ['#', '#', '#', '.', '#'], color: '#FF6B6B' },
   heart: { rows: ['##.##', '#####', '.###.', '..#..'], color: '#FF6FA0' },
+  zzz: { rows: ['###', '..#', '.#.', '###'], color: '#BFD8FF' },
+  crown: { rows: ['#.#.#', '#####', '#+#+#'], color: '#FFD447', accent: '#FF6B6B' },
+  fire: { rows: ['.#.', '##.', '#+#', '#++', '.#.'], color: '#FF7A3D', accent: '#FFE27A' },
 };
 
 /** Puts an emote, outlined, in a top corner that is clear of him. */
-function emote(layer: Layer, kind: Emote, left: boolean): void {
-  const { rows, color } = EMOTES[kind];
+function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
+  const { rows, color, accent } = EMOTES[kind];
   const w = rows[0].length + 2, h = rows.length + 2;
-  const spots: [number, number][] = [[FRAME_WIDTH - w, 0], [0, 0], [FRAME_WIDTH - w, 1], [0, 1], [FRAME_WIDTH - w, 2], [0, 2]];
+  const spots: [number, number][] = [[FRAME_WIDTH - w, 0], [0, 0], [FRAME_WIDTH - w, 1], [0, 1], [FRAME_WIDTH - w, 2], [0, 2]]
+    .map(([x, y]) => [x, Math.max(0, y + 1 - lift)] as [number, number]);
   if (left) spots.sort((a, b) => a[0] - b[0]);
+  const ink = (ch: string | undefined) => ch === '#' || ch === '+';
   for (const [x0, y0] of spots) {
     const cells: [number, number, string][] = [];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const on = rows[y - 1]?.[x - 1] === '#';
-      const near = !on && NEIGHBOURS.some(([dx, dy]) => rows[y - 1 + dy]?.[x - 1 + dx] === '#');
-      if (on || near) cells.push([x0 + x, y0 + y, on ? color : '#1B1428']);
+      const ch = rows[y - 1]?.[x - 1];
+      const on = ink(ch);
+      const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+      if (on || near) cells.push([x0 + x, y0 + y, on ? (ch === '+' ? accent ?? color : color) : '#1B1428']);
     }
     if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
       for (const [x, y, c] of cells) layer[y][x] = { c, item: false };
@@ -296,7 +324,7 @@ const SPARKLE_SPOTS: [number, number][] = [[2, 6], [13, 8], [1, 13], [14, 15], [
  */
 export function animate(input: string, move: Move, options: AnimateOptions = {}): Animation {
   const config = dress(resolve(input, options.parts), options, input);
-  const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
+  const palette = withItems(options.palette ?? paletteOf(config), config);
   const figure: AvatarConfig = { ...config, frame: undefined };
 
   const grids = new Map<Pose, PixelGrid>();
@@ -354,12 +382,24 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     }
   }
 
+  // Mythic and Grail guys leave a trail when they leave the ground.
+  const trailFrom = (grade >= 3 ? [mix(gradeColor, '#000000', 0.2), mix(gradeColor, '#000000', 0.55)] : []);
+  const behind: Layer[] = [];
+
   const frames = slices.map(({ beat, ms, t }) => {
     let layer = layerOf(beat.pose);
     if (beat.turn) layer = layer.map(row => [...row].reverse());
     layer = squash(layer, beat.squash ?? 0);
     layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+    const figure = layer;
     layer = layer.map(row => row.map(cell => (cell ? { ...cell } : null)));
+    if (trailFrom.length && (beat.dy ?? 0) < 0) {
+      behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
+        if (cell && !layer[y][x] && (x + y + k) % 2 === 0) layer[y][x] = { c: trailFrom[k], item: false };
+      })));
+    }
+    behind.unshift(figure);
+    behind.length = Math.min(behind.length, 2);
 
     if (grade >= 1) {
       // A shine sweeping diagonally across the item, once every 1.6 seconds.
@@ -397,7 +437,8 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
         if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = { c, item: false };
       }
     }
-    if (beat.emote) emote(layer, beat.emote, !!beat.left);
+    if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
+    if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t / 400) % 2);
     if (grade >= 2) {
       // A ring in the grade's colour, breathing in and out.
       const on = Math.floor((t + seed) / 320) % 2 === 0;

@@ -2,6 +2,7 @@ import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts'
 import { LAYER, LOCAL, T } from './parts/art';
 import { Canvas } from './parts/canvas';
 import { itemById, type Item } from './items';
+import { goldRim, GOLD_RIM_DAYS, markItem } from './pins';
 import type { AvatarConfig, PixelGrid } from './types';
 import { GRID_SIZE } from './types';
 
@@ -199,7 +200,12 @@ export function compose(config: AvatarConfig): PixelGrid {
 
   if (accessory.layer === 'body' && !skin) accessory.draw(c);
 
+  // What the worn copies have collected: tally marks and pins on their own pixels.
+  const worn = (slot: 'skin' | 'hat' | 'frame') => (itemById(config[slot])?.slot === slot ? config.owned?.[slot] : undefined);
+  for (const slot of ['skin', 'hat'] as const) { const o = worn(slot); if (o) markItem(c.grid, slot, o); }
+
   outline(c.grid);
+  for (const slot of ['skin', 'hat'] as const) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 
   // Mirror once the guy is finished, so every layer lands where it was
   // authored. The sparkle and the frame go on after, so they never flip.
@@ -212,6 +218,11 @@ export function compose(config: AvatarConfig): PixelGrid {
       for (let x = 0; x < GRID_SIZE; x++) {
         if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill!(x, y) - 1;
       }
+    }
+    const o = worn('frame');
+    if (o) {
+      markItem(c.grid, 'frame', o);
+      if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, 'frame');
     }
   }
   return c.grid;

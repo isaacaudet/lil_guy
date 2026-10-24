@@ -1,5 +1,6 @@
 import { hash } from './hash';
 import { gameItems, freeItem, itemById, type Slot } from './items';
+import { MAX_PINS, pinById } from './pins';
 import type { GameId } from './types';
 
 /**
@@ -34,6 +35,8 @@ export interface Owned {
   print: number;
   /** Days the owner finished the game wearing it, if it keeps a tally. */
   tally?: number;
+  /** Pins earned and stuck on it (see ./pins), at most three. */
+  pins?: string[];
 }
 
 export const GRADES = [
@@ -111,21 +114,29 @@ export function nameOf(o: Owned): string {
 
 /**
  * A copy as one short string, to store or put in a URL:
- * `puttsies.ball~nebula~0.0123456~20` or, with a tally, `…~20~t412`.
+ * `puttsies.ball~nebula~0.0123456~20`; with a tally `…~20~t412`; with pins
+ * `…~p` and their ids joined by `+`, as in `…~t412~pstar+flame`.
  */
 export function encode(o: Owned): string {
   const parts = [o.item, o.finish, o.scuff.toFixed(7), String(o.print)];
   if (o.tally !== undefined) parts.push(`t${o.tally}`);
+  if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join('+')}`);
   return parts.join('~');
 }
 
 export function decode(s: string): Owned | null {
-  const [item, finish, scuff, print, tally] = s.split('~');
+  const [item, finish, scuff, print, ...extra] = s.split('~');
   if (!itemById(item) || !(finish in FINISHES)) return null;
   const f = Number(scuff), p = Number(print);
   if (!(f >= 0 && f <= 1) || !Number.isInteger(p) || p < 0 || p > 999) return null;
   const o: Owned = { item, finish: finish as Finish, scuff: f, print: p };
-  if (tally?.startsWith('t') && /^\d+$/.test(tally.slice(1))) o.tally = Number(tally.slice(1));
+  for (const part of extra) {
+    if (part.startsWith('t') && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
+    if (part.startsWith('p')) {
+      const pins = part.slice(1).split('+').filter(id => pinById(id)).slice(0, MAX_PINS);
+      if (pins.length) o.pins = pins;
+    }
+  }
   return o;
 }
 

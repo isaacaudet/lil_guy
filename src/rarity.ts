@@ -6,6 +6,7 @@ import {
 import { palettes } from './palette';
 import { gameItems, itemById } from './items';
 import { DEEP_BLUE_PRINTS, FINISHES, special, type Owned } from './owned';
+import { LUCKY_ODDS } from './resolve';
 import type { AvatarConfig } from './types';
 
 /**
@@ -39,6 +40,7 @@ export function traitOdds(config: AvatarConfig): TraitOdds[] {
     { slot: 'markings', name: bodies[config.body].name, chance: share(bodyWeights, config.body) },
     { slot: 'accessory', name: accessories[config.accessory].name, chance: share(accessoryWeights, config.accessory) },
     { slot: 'colour', name: palettes[config.palette].name, chance: share(paletteWeights, config.palette) },
+    { slot: 'variant', name: config.lucky ? 'Lucky' : 'regular', chance: config.lucky ? 1 / LUCKY_ODDS : 1 - 1 / LUCKY_ODDS },
   ];
 }
 

@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('../paint-D3pYVnkK.cjs');
+const require_paint = require('../paint-evW_Gzrh.cjs');
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 const next_og = require_paint.__toESM(require("next/og"));
 
@@ -13,7 +13,7 @@ function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides,
 		game,
 		equip
 	}, name);
-	const palette = require_paint.withItems(customPalette ?? require_paint.shadePalette(require_paint.getPalette(config.palette), config.shade), config);
+	const palette = require_paint.withItems(customPalette ?? require_paint.paletteOf(config), config);
 	const colors = require_paint.paint(require_paint.compose(config), config, palette);
 	const pixelSize = Math.floor(size / require_paint.GRID_SIZE);
 	const pixels = [];

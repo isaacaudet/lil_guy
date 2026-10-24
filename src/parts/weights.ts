@@ -95,6 +95,12 @@ export const cheekWeights = [
   2, // scar
   2, // band-aid
   1, // war paint
+  3, // whiskers
+  2, // hearts
+  3, // shine
+  2, // stripes
+  1, // stars
+  1, // gold leaf
 ];
 
 export const hairWeights = [
@@ -139,6 +145,12 @@ export const bodyWeights = [
   1, // star mark
   1, // heart mark
   2, // gleam
+  2, // stripes
+  2, // zigzag
+  2, // split
+  1, // moon mark
+  1, // bolt mark
+  1, // starry
 ];
 
 export const accessoryWeights = [
@@ -150,6 +162,12 @@ export const accessoryWeights = [
   2, // bandana
   1, // star sticker
   1, // heart badge
+  1, // monocle
+  1, // eye patch
+  2, // necklace
+  2, // medal
+  2, // flower pin
+  2, // headband
 ];
 
 /** None, by the sides, waving. */

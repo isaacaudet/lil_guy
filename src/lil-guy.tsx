@@ -4,7 +4,7 @@ import { dress, withItems } from "./items";
 import { compose } from "./compose";
 import { closeEyes } from "./animate";
 import { hash } from "./hash";
-import { getPalette, shadePalette } from "./palette";
+import { paletteOf } from "./palette";
 import { paint } from "./paint";
 import type { GameId, Intensity3D, Palette } from "./types";
 import { GRID_SIZE } from "./types";
@@ -230,7 +230,7 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 		// Resolve config and compose pixel grid
 		const { rects, shutRects, bgColor, config, hashValue } = React.useMemo(() => {
 			const cfg = dress(resolve(name, partOverrides), { game, equip }, name);
-			const palette = withItems(customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade), cfg);
+			const palette = withItems(customPalette ?? paletteOf(cfg), cfg);
 			const grid = compose(cfg);
 			const hv = hash(name);
 

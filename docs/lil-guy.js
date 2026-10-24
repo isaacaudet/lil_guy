@@ -119,6 +119,12 @@ const cheekWeights = [
 	4,
 	2,
 	2,
+	1,
+	3,
+	2,
+	3,
+	2,
+	1,
 	1
 ];
 const hairWeights = [
@@ -161,7 +167,13 @@ const bodyWeights = [
 	2,
 	1,
 	1,
-	2
+	2,
+	2,
+	2,
+	2,
+	1,
+	1,
+	1
 ];
 const accessoryWeights = [
 	12,
@@ -171,7 +183,13 @@ const accessoryWeights = [
 	1,
 	2,
 	1,
-	1
+	1,
+	1,
+	1,
+	2,
+	2,
+	2,
+	2
 ];
 /** None, by the sides, waving. */
 const armWeights = [
@@ -220,6 +238,8 @@ function weightedPick(weights, hashValue) {
 * part doesn't cascade into the others, and each pick is weighted (see
 * ./parts/weights) so the simple, sweet looks are the common ones.
 */
+/** One name in this many gets the Lucky colour variant. */
+const LUCKY_ODDS = 400;
 function resolve(input, overrides) {
 	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
 	return {
@@ -235,7 +255,8 @@ function resolve(input, overrides) {
 		shade: overrides?.shade ?? pick(9, shadeWeights),
 		feet: overrides?.feet ?? pick(10, footWeights),
 		cheeks: overrides?.cheeks ?? pick(11, cheekWeights),
-		arms: overrides?.arms ?? pick(12, armWeights)
+		arms: overrides?.arms ?? pick(12, armWeights),
+		lucky: overrides?.lucky ?? hashNth(input, 13) % LUCKY_ODDS === 0
 	};
 }
 
@@ -947,7 +968,17 @@ const cheeks = [
 	cheeks_("freckles", ["s.s....s.s"]),
 	cheeks_("scar", [".......o..", "........o."]),
 	cheeks_("band-aid", [".......xx."]),
-	cheeks_("war paint", ["rr......rr"])
+	cheeks_("war paint", ["rr......rr"]),
+	cheeks_("whiskers", ["dd......dd"]),
+	cheeks_("hearts", ["r.r....r.r", ".r......r."]),
+	cheeks_("shine", ["ww......ww"]),
+	cheeks_("stripes", ["ss......ss", ".ss....ss."]),
+	cheeks_("stars", [
+		".y......y.",
+		"yyy....yyy",
+		".y......y."
+	]),
+	cheeks_("gold leaf", ["yY......Yy"])
 ];
 
 //#endregion
@@ -1241,6 +1272,16 @@ const star$1 = stamp([
 	"yyy",
 	".y."
 ]);
+const moon = stamp([
+	".yy",
+	"y..",
+	".yy"
+]);
+const bolt = stamp([
+	"..y",
+	"yyy",
+	"y.."
+]);
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c, x, y, token) {
 	if (c.isBody(x, y)) c.set(x, y, token);
@@ -1318,6 +1359,57 @@ const bodies = [
 			onBody(c, r.right - 2, c.crown + 2, T.LIGHT);
 			onBody(c, r.right - 2, c.crown + 3, T.LIGHT);
 		}
+	},
+	{
+		name: "stripes",
+		draw: (c) => {
+			for (let y = c.eyeLine + 3; y <= c.bottom; y += 2) {
+				const r = c.rows[y];
+				if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.SHADE);
+			}
+		}
+	},
+	{
+		name: "zigzag",
+		draw: (c) => {
+			const y = c.eyeLine + 3;
+			const r = c.rows[y];
+			if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + x % 2, T.BELLY);
+		}
+	},
+	{
+		name: "split",
+		draw: (c) => {
+			for (let y = c.crown; y <= c.bottom; y++) {
+				const r = c.rows[y];
+				if (r) {
+					for (let x = r.left; x < Math.floor(c.centre); x++) if (c.get(x, y) === T.BODY) onBody(c, x, y, T.BELLY);
+				}
+			}
+		}
+	},
+	{
+		name: "moon mark",
+		draw: (c) => {
+			c.draw(moon, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+		}
+	},
+	{
+		name: "bolt mark",
+		draw: (c) => {
+			c.draw(bolt, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+		}
+	},
+	{
+		name: "starry",
+		draw: (c) => {
+			const x = Math.floor(c.centre);
+			onBody(c, x - 4, c.crown + 2, T.WHITE);
+			onBody(c, x + 1, c.crown + 1, T.GOLD);
+			onBody(c, x + 3, c.crown + 3, T.WHITE);
+			onBody(c, x - 3, c.bottom - 1, T.GOLD);
+			onBody(c, x + 4, c.bottom - 2, T.WHITE);
+		}
 	}
 ];
 
@@ -1343,6 +1435,17 @@ const heart = stamp([
 	"r.r",
 	"rrr",
 	".r."
+]);
+const monocle = stamp([
+	".oo.",
+	"o..o",
+	"o..o",
+	".oo."
+]);
+const flower = stamp([
+	".a.",
+	"aya",
+	".a."
 ]);
 /** Paints a body cell unless the mouth is already there. */
 function wear(c, x, y, token) {
@@ -1427,6 +1530,67 @@ const accessories = [
 				const x = r.right - 3 + dx, y = c.bottom - 2 + dy;
 				if (token && c.isBody(x, y)) wear(c, x, y, token);
 			}));
+		}
+	},
+	{
+		name: "monocle",
+		layer: "face",
+		draw: (c) => {
+			const x = c.centred(glasses) + 6;
+			c.draw(monocle, x, c.eyeLine - 2);
+			c.set(x + 3, c.eyeLine + 2, T.GOLD);
+			c.set(x + 3, c.eyeLine + 3, T.GOLD_SHADE);
+		}
+	},
+	{
+		name: "eye patch",
+		layer: "body",
+		draw: (c) => {
+			const x = c.centred(glasses);
+			const top = c.eyeLine - 3;
+			const r = c.rows[top];
+			if (r) for (let sx = r.left; sx <= r.right; sx++) wear(c, sx, top, T.OUTLINE);
+			for (let y = c.eyeLine - 2; y <= c.eyeLine; y++) for (let dx = 0; dx < 4; dx++) wear(c, x + dx, y, T.OUTLINE);
+		}
+	},
+	{
+		name: "necklace",
+		layer: "body",
+		draw: (c) => {
+			const y = c.eyeLine + 3;
+			const r = c.rows[y];
+			if (!r) return;
+			for (let x = r.left + 1; x < r.right; x += 2) wear(c, x, y, T.WHITE);
+			wear(c, Math.floor(c.centre) - 1, y + 1, T.GOLD);
+		}
+	},
+	{
+		name: "medal",
+		layer: "body",
+		draw: (c) => {
+			const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+			wear(c, x, y, T.ACCENT);
+			wear(c, x + 1, y, T.ACCENT_SHADE);
+			wear(c, x, y + 1, T.GOLD);
+			wear(c, x + 1, y + 1, T.GOLD_SHADE);
+		}
+	},
+	{
+		name: "flower pin",
+		layer: "body",
+		draw: (c) => {
+			const r = c.rows[c.eyeLine - 3];
+			if (r) c.draw(flower, r.left + 1, c.eyeLine - 4, true);
+		}
+	},
+	{
+		name: "headband",
+		layer: "face",
+		draw: (c) => {
+			const y = c.eyeLine - 4;
+			const r = c.rows[y];
+			if (!r) return;
+			for (let x = r.left; x <= r.right; x++) c.set(x, y, x === r.right ? T.ACCENT_SHADE : T.ACCENT);
 		}
 	}
 ];
@@ -1531,6 +1695,147 @@ var Canvas = class {
 		for (let x = r.left; x <= r.right; x++) if (this.isBody(x, y)) this.set(x, y, token);
 	}
 };
+
+//#endregion
+//#region src/pins.ts
+const PINS = [
+	{
+		id: "star",
+		name: "Gold star",
+		how: "A perfect day",
+		art: stamp([
+			".y.",
+			"yYy",
+			".y."
+		])
+	},
+	{
+		id: "flame",
+		name: "Flame",
+		how: "A 7-day streak",
+		art: stamp([
+			".r",
+			"rr",
+			"ry"
+		])
+	},
+	{
+		id: "heart",
+		name: "Heart",
+		how: "100 days played",
+		art: stamp([
+			"r.r",
+			"rrr",
+			".r."
+		])
+	},
+	{
+		id: "bolt",
+		name: "Bolt",
+		how: "Fastest of the day",
+		art: stamp([
+			".y",
+			"yy",
+			"y."
+		])
+	},
+	{
+		id: "crown",
+		name: "Crown",
+		how: "Top of a board for a day",
+		art: stamp(["y.y", "yyy"])
+	},
+	{
+		id: "leaf",
+		name: "Leaf",
+		how: "A first week in the club",
+		art: stamp(["gg", ".G"])
+	}
+];
+/** A copy holds at most this many pins. */
+const MAX_PINS = 3;
+const pinById = (id) => PINS.find((p) => p.id === id);
+/** The tally marks a copy shows for its tally: none, 2 or 4. */
+function tallyMarks(tally) {
+	return (tally ?? 0) >= 100 ? 4 : (tally ?? 0) >= 30 ? 2 : 0;
+}
+/** A year of days: the item's outline goes gold. */
+const GOLD_RIM_DAYS = 365;
+const START = {
+	skin: LAYER.skin,
+	hat: LAYER.hat,
+	frame: LAYER.frame
+};
+const own = (slot, token) => token >= START[slot] && token < START[slot] + 10;
+/** Scratches tally marks and sticks pins onto one worn item's pixels. */
+function markItem(grid, slot, copy) {
+	const cells = [];
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		if (own(slot, t)) cells.push([x, y]);
+	}));
+	if (!cells.length) return;
+	const xs = cells.map((c) => c[0]), ys = cells.map((c) => c[1]);
+	const [left, right, top, bottom] = [
+		Math.min(...xs),
+		Math.max(...xs),
+		Math.min(...ys),
+		Math.max(...ys)
+	];
+	let marks = tallyMarks(copy.tally);
+	for (let y = bottom; y >= top && marks > 0; y--) {
+		const row = cells.filter(([, cy]) => cy === y).map(([x]) => x).sort((a, b$1) => a - b$1);
+		for (let i = 1; i < row.length - 1 && marks > 0; i += 2, marks--) grid[y][row[i]] = T.WHITE;
+	}
+	(copy.pins ?? []).slice(0, MAX_PINS).forEach((id, k) => {
+		const pin = pinById(id);
+		if (!pin) return;
+		const h = pin.art.length, w = pin.art[0].length;
+		const anchors = slot === "frame" ? [
+			[GRID_SIZE - w, GRID_SIZE - h],
+			[0, GRID_SIZE - h],
+			[GRID_SIZE - w, 0]
+		] : [
+			[right - w, bottom - h - 1],
+			[left + 1, bottom - h - 1],
+			[right - w, top + 1]
+		];
+		let [ax, ay] = anchors[k];
+		for (let tries = 0; tries < (slot === "frame" ? 0 : 4); tries++) {
+			let on$1 = 0, total = 0;
+			pin.art.forEach((row, dy) => row.forEach((t, dx) => {
+				if (!t) return;
+				total++;
+				if (own(slot, grid[ay + dy]?.[ax + dx] ?? 0)) on$1++;
+			}));
+			if (on$1 === total) break;
+			ax += ax > (left + right) / 2 ? -1 : 1;
+			ay += ay > (top + bottom) / 2 ? -1 : 1;
+		}
+		pin.art.forEach((row, dy) => row.forEach((t, dx) => {
+			const x = ax + dx, y = ay + dy;
+			if (t && y >= 0 && y < GRID_SIZE && x >= 0 && x < GRID_SIZE && own(slot, grid[y][x])) grid[y][x] = t;
+		}));
+	});
+}
+/** After a year of days, the outline around an item goes gold; a frame's edge does. */
+function goldRim(grid, slot) {
+	const edge = (x, y) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
+	const set = [];
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		if (slot === "frame") {
+			if (own("frame", t) && edge(x, y)) set.push([x, y]);
+			return;
+		}
+		if (t !== T.OUTLINE) return;
+		if ([
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set.push([x, y]);
+	}));
+	for (const [x, y] of set) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+}
 
 //#endregion
 //#region src/owned.ts
@@ -1684,7 +1989,8 @@ function nameOf(o) {
 }
 /**
 * A copy as one short string, to store or put in a URL:
-* `puttsies.ball~nebula~0.0123456~20` or, with a tally, `…~20~t412`.
+* `puttsies.ball~nebula~0.0123456~20`; with a tally `…~20~t412`; with pins
+* `…~p` and their ids joined by `+`, as in `…~t412~pstar+flame`.
 */
 function encode(o) {
 	const parts = [
@@ -1694,10 +2000,11 @@ function encode(o) {
 		String(o.print)
 	];
 	if (o.tally !== void 0) parts.push(`t${o.tally}`);
+	if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join("+")}`);
 	return parts.join("~");
 }
 function decode(s) {
-	const [item, finish, scuff, print, tally] = s.split("~");
+	const [item, finish, scuff, print, ...extra] = s.split("~");
 	if (!itemById(item) || !(finish in FINISHES)) return null;
 	const f = Number(scuff), p = Number(print);
 	if (!(f >= 0 && f <= 1) || !Number.isInteger(p) || p < 0 || p > 999) return null;
@@ -1707,7 +2014,13 @@ function decode(s) {
 		scuff: f,
 		print: p
 	};
-	if (tally?.startsWith("t") && /^\d+$/.test(tally.slice(1))) o.tally = Number(tally.slice(1));
+	for (const part of extra) {
+		if (part.startsWith("t") && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
+		if (part.startsWith("p")) {
+			const pins = part.slice(1).split("+").filter((id) => pinById(id)).slice(0, MAX_PINS);
+			if (pins.length) o.pins = pins;
+		}
+	}
 	return o;
 }
 /** A uniform number in [0, 1) from a string, for deterministic rolls. */
@@ -3013,6 +3326,104 @@ const frames = [
 		name: "Checkered flag",
 		colors: ["#2A2D33", "#F4F4F4"],
 		fill: (x, y) => (Math.floor(x / 2) + Math.floor(y / 2)) % 2 ? 1 : 2
+	},
+	{
+		id: "amountle.coins",
+		game: "amountle",
+		name: "Coin pile",
+		colors: [
+			"#FFF4D6",
+			"#F2C230",
+			"#C8901E"
+		],
+		fill: (x, y) => y >= 12 ? (x + y) % 3 === 0 ? 3 : 2 : (x * 7 + y * 3) % 23 === 0 ? 2 : 1
+	},
+	{
+		id: "halfsies.gingham",
+		game: "halfsies",
+		name: "Gingham",
+		colors: [
+			"#FFFFFF",
+			"#F7C2BA",
+			"#EE968B"
+		],
+		fill: (x, y) => {
+			const a = Math.floor(x / 2) % 2, b$1 = Math.floor(y / 2) % 2;
+			return a && b$1 ? 3 : a || b$1 ? 2 : 1;
+		}
+	},
+	{
+		id: "stackdle.bricks",
+		game: "stackdle",
+		name: "Bricks",
+		colors: [
+			"#F08A5D",
+			"#D9704A",
+			"#FCE1D2"
+		],
+		fill: (x, y) => y % 4 === 3 || (x + Math.floor(y / 4) % 2 * 2) % 4 === 3 ? 3 : (x + y) % 5 === 0 ? 2 : 1
+	},
+	{
+		id: "flipsies.waves",
+		game: "flipsies",
+		name: "Waves",
+		colors: [
+			"#BFE6FF",
+			"#7CC4F2",
+			"#FFFFFF"
+		],
+		fill: (x, y) => {
+			const v = (y + [
+				0,
+				1,
+				1,
+				0
+			][x % 4]) % 4;
+			return v === 0 ? 2 : v === 1 && x % 4 === 1 ? 3 : 1;
+		}
+	},
+	{
+		id: "puttsies.fairway",
+		game: "puttsies",
+		name: "Fairway",
+		colors: ["#A6DB86", "#8CCB6C"],
+		fill: (x) => Math.floor(x / 3) % 2 ? 2 : 1
+	},
+	{
+		id: "weighsies.ruler",
+		game: "weighsies",
+		name: "Ruler",
+		colors: ["#FFE9A8", "#B98420"],
+		fill: (x, y) => y <= 1 && x % 2 === 0 || y === 2 && x % 4 === 0 || y >= 14 && x % 2 === 1 ? 2 : 1
+	},
+	{
+		id: "cutsies.seeds",
+		game: "cutsies",
+		name: "Melon seeds",
+		colors: [
+			"#FF8FA3",
+			"#2A1B10",
+			"#FFC2CC"
+		],
+		fill: (x, y) => (x * 3 + y * 5) % 11 === 0 ? 2 : (x + y) % 2 === 0 && y % 3 === 0 ? 3 : 1
+	},
+	{
+		id: "tiltsies.spiral",
+		game: "tiltsies",
+		name: "Spiral",
+		colors: ["#E6D8FF", "#B9A3F0"],
+		fill: (x, y) => Math.floor(Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5))) % 2 ? 2 : 1
+	},
+	{
+		id: "trackdle.tarmac",
+		game: "trackdle",
+		name: "Tarmac",
+		colors: [
+			"#5A5F6B",
+			"#4A4E58",
+			"#F2C230"
+		],
+		fill: (x, y) => x === 7 || x === 8 ? y % 4 < 2 ? 3 : 1 : (x * 5 + y * 3) % 7 === 0 ? 2 : 1
 	}
 ];
 /** Every item: each game's skins, then hats, then frames. */
@@ -3293,11 +3704,22 @@ function compose(config) {
 	const mouth$1 = mouths[config.mouth].art;
 	c.draw(mouth$1, c.centred(mouth$1), line + 1, true);
 	if (accessory.layer === "body" && !skin) accessory.draw(c);
+	const worn = (slot) => itemById(config[slot])?.slot === slot ? config.owned?.[slot] : void 0;
+	for (const slot of ["skin", "hat"]) {
+		const o = worn(slot);
+		if (o) markItem(c.grid, slot, o);
+	}
 	outline(c.grid);
+	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 	if (config.flip) for (const row of c.grid) row.reverse();
 	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
 	if (frame?.slot === "frame") {
 		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill(x, y) - 1;
+		const o = worn("frame");
+		if (o) {
+			markItem(c.grid, "frame", o);
+			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
+		}
 	}
 	return c.grid;
 }
@@ -3709,6 +4131,27 @@ function shadePalette(palette, shade) {
 	const c = palette.colors;
 	return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
 }
+/**
+* The Lucky variant: the same colourway turned round the colour wheel, with
+* gold trim. Derived again, so the face and outline read as well as ever.
+*/
+function luckyPalette(palette) {
+	const turn = (hex$2) => {
+		const [h, s, l] = toHsl(hex$2);
+		return fromHsl([
+			h + 150,
+			Math.min(.85, s + .05),
+			l >= .45 ? Math.max(l, .66) : Math.min(l, .3)
+		]);
+	};
+	const c = palette.colors;
+	return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
+}
+/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+function paletteOf(config) {
+	const toned = shadePalette(getPalette(config.palette), config.shade);
+	return config.lucky ? luckyPalette(toned) : toned;
+}
 
 //#endregion
 //#region src/paint.ts
@@ -3755,12 +4198,54 @@ const MOVES = [
 	"cheer",
 	"sad",
 	"dance",
-	"squish"
+	"squish",
+	"sleep"
 ];
 /** Rows of room above the guy for jumps. */
 const HEADROOM = 4;
 const FRAME_WIDTH = GRID_SIZE;
 const FRAME_HEIGHT = GRID_SIZE + HEADROOM;
+/**
+* Emotes a player can show after a game, and how each is unlocked. The
+* moves use some on their own; `emote` in the options shows one over any move.
+*/
+const EMOTE_UNLOCKS = [
+	{
+		id: "heart",
+		name: "Heart",
+		how: "Everyone has it"
+	},
+	{
+		id: "note",
+		name: "Music",
+		how: "Everyone has it"
+	},
+	{
+		id: "zzz",
+		name: "Snooze",
+		how: "Everyone has it"
+	},
+	{
+		id: "question",
+		name: "Huh?",
+		how: "Everyone has it"
+	},
+	{
+		id: "bang",
+		name: "Whoa!",
+		how: "Everyone has it"
+	},
+	{
+		id: "fire",
+		name: "On fire",
+		how: "A 7-day streak"
+	},
+	{
+		id: "crown",
+		name: "Crown",
+		how: "A perfect day"
+	}
+];
 const b = (pose, ms, more = {}) => ({
 	pose,
 	ms,
@@ -3903,6 +4388,24 @@ const BEATS = {
 		}),
 		b("base", 70, { squash: -1 }),
 		b("base", 700)
+	],
+	sleep: () => [
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		}),
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		})
 	]
 };
 const EYE_TOKENS = new Set([T.EYE, T.WHITE]);
@@ -4064,6 +4567,7 @@ function twinkle(layer, x, y, centre$1, arms$1) {
 	};
 }
 const mouthIndex = (name) => Math.max(0, mouths.findIndex((m) => m.name === name));
+/** `#` is the emote's colour, `+` its second colour. */
 const EMOTES = {
 	note: {
 		rows: [
@@ -4102,11 +4606,40 @@ const EMOTES = {
 			"..#.."
 		],
 		color: "#FF6FA0"
+	},
+	zzz: {
+		rows: [
+			"###",
+			"..#",
+			".#.",
+			"###"
+		],
+		color: "#BFD8FF"
+	},
+	crown: {
+		rows: [
+			"#.#.#",
+			"#####",
+			"#+#+#"
+		],
+		color: "#FFD447",
+		accent: "#FF6B6B"
+	},
+	fire: {
+		rows: [
+			".#.",
+			"##.",
+			"#+#",
+			"#++",
+			".#."
+		],
+		color: "#FF7A3D",
+		accent: "#FFE27A"
 	}
 };
 /** Puts an emote, outlined, in a top corner that is clear of him. */
-function emote(layer, kind, left) {
-	const { rows, color } = EMOTES[kind];
+function emote(layer, kind, left, lift = 0) {
+	const { rows, color, accent } = EMOTES[kind];
 	const w = rows[0].length + 2, h = rows.length + 2;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
@@ -4115,17 +4648,19 @@ function emote(layer, kind, left) {
 		[0, 1],
 		[FRAME_WIDTH - w, 2],
 		[0, 2]
-	];
+	].map(([x, y]) => [x, Math.max(0, y + 1 - lift)]);
 	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
+	const ink = (ch) => ch === "#" || ch === "+";
 	for (const [x0, y0] of spots) {
 		const cells = [];
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const on$1 = rows[y - 1]?.[x - 1] === "#";
-			const near = !on$1 && NEIGHBOURS.some(([dx, dy]) => rows[y - 1 + dy]?.[x - 1 + dx] === "#");
+			const ch = rows[y - 1]?.[x - 1];
+			const on$1 = ink(ch);
+			const near = !on$1 && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 			if (on$1 || near) cells.push([
 				x0 + x,
 				y0 + y,
-				on$1 ? color : "#1B1428"
+				on$1 ? ch === "+" ? accent ?? color : color : "#1B1428"
 			]);
 		}
 		if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
@@ -4154,7 +4689,7 @@ const SPARKLE_SPOTS = [
 */
 function animate(input, move, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
-	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
+	const palette = withItems(options.palette ?? paletteOf(config), config);
 	const figure = {
 		...config,
 		frame: void 0
@@ -4215,12 +4750,23 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
+	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const behind = [];
 	const frames$1 = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row].reverse());
 		layer = squash(layer, beat.squash ?? 0);
 		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
+		if (trailFrom.length && (beat.dy ?? 0) < 0) behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
+			if (cell && !layer[y][x] && (x + y + k) % 2 === 0) layer[y][x] = {
+				c: trailFrom[k],
+				item: false
+			};
+		})));
+		behind.unshift(figure$1);
+		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
 			const at = (t$1 + seed) % 1600 / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
@@ -4302,7 +4848,8 @@ function animate(input, move, options = {}) {
 				};
 			}
 		}
-		if (beat.emote) emote(layer, beat.emote, !!beat.left);
+		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
+		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
 		if (grade >= 2) {
 			const on$1 = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix(gradeColor, "#000000", .35);
@@ -4438,7 +4985,7 @@ function escapeText(value) {
 */
 function toSvgString(input, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
-	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
+	const palette = withItems(options.palette ?? paletteOf(config), config);
 	const colors = paint(compose(config), config, palette);
 	const size = options.size ?? 128;
 	const pixelSize = size / GRID_SIZE;
@@ -4572,6 +5119,11 @@ function traitOdds(config) {
 			slot: "colour",
 			name: palettes[config.palette].name,
 			chance: share(paletteWeights, config.palette)
+		},
+		{
+			slot: "variant",
+			name: config.lucky ? "Lucky" : "regular",
+			chance: config.lucky ? 1 / LUCKY_ODDS : 1 - 1 / LUCKY_ODDS
 		}
 	];
 }
@@ -4599,15 +5151,20 @@ exports.DEEP_BLUE_PRINTS = DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
+exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FINISHES = FINISHES
 exports.FOOT_STYLES = FOOT_STYLES
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_WIDTH = FRAME_WIDTH
 exports.GAMES = GAMES
+exports.GOLD_RIM_DAYS = GOLD_RIM_DAYS
 exports.GRADES = GRADES
 exports.GRID_SIZE = GRID_SIZE
 exports.HEADROOM = HEADROOM
+exports.LUCKY_ODDS = LUCKY_ODDS
+exports.MAX_PINS = MAX_PINS
 exports.MOVES = MOVES
+exports.PINS = PINS
 exports.SHADE_COUNT = SHADE_COUNT
 exports.WEAR = WEAR
 exports.accessories = accessories
@@ -4636,11 +5193,14 @@ exports.hashNth = hashNth
 exports.heads = heads
 exports.itemById = itemById
 exports.items = items
+exports.luckyPalette = luckyPalette
 exports.mouths = mouths
 exports.nameOf = nameOf
 exports.nebulaPhase = nebulaPhase
 exports.paint = paint
+exports.paletteOf = paletteOf
 exports.palettes = palettes
+exports.pinById = pinById
 exports.resolve = resolve
 exports.resolveColor = resolveColor
 exports.roll = roll
@@ -4648,6 +5208,7 @@ exports.shadePalette = shadePalette
 exports.slotOf = slotOf
 exports.special = special
 exports.starter = starter
+exports.tallyMarks = tallyMarks
 exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
 exports.toSvgString = toSvgString

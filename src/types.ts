@@ -50,6 +50,8 @@ export interface AvatarConfig {
   shade: number;
   /** Mirror the finished character. */
   flip: boolean;
+  /** The rare Lucky colour variant: about one name in 400. */
+  lucky?: boolean;
   rotation: number; // index into SPHERE_POSITIONS
   /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
   skin?: string;

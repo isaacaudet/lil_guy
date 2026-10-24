@@ -1,4 +1,4 @@
-import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GRADES, GRID_SIZE, LAYER, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteWeights, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, wearOf, withItems } from "./paint-DTjQOrbR.js";
+import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, wearOf, withItems } from "./paint-e6qMVeBE.js";
 import * as React$4 from "react";
 import * as React$3 from "react";
 import * as React$2 from "react";
@@ -31,12 +31,54 @@ const MOVES = [
 	"cheer",
 	"sad",
 	"dance",
-	"squish"
+	"squish",
+	"sleep"
 ];
 /** Rows of room above the guy for jumps. */
 const HEADROOM = 4;
 const FRAME_WIDTH = GRID_SIZE;
 const FRAME_HEIGHT = GRID_SIZE + HEADROOM;
+/**
+* Emotes a player can show after a game, and how each is unlocked. The
+* moves use some on their own; `emote` in the options shows one over any move.
+*/
+const EMOTE_UNLOCKS = [
+	{
+		id: "heart",
+		name: "Heart",
+		how: "Everyone has it"
+	},
+	{
+		id: "note",
+		name: "Music",
+		how: "Everyone has it"
+	},
+	{
+		id: "zzz",
+		name: "Snooze",
+		how: "Everyone has it"
+	},
+	{
+		id: "question",
+		name: "Huh?",
+		how: "Everyone has it"
+	},
+	{
+		id: "bang",
+		name: "Whoa!",
+		how: "Everyone has it"
+	},
+	{
+		id: "fire",
+		name: "On fire",
+		how: "A 7-day streak"
+	},
+	{
+		id: "crown",
+		name: "Crown",
+		how: "A perfect day"
+	}
+];
 const b = (pose, ms, more = {}) => ({
 	pose,
 	ms,
@@ -179,6 +221,24 @@ const BEATS = {
 		}),
 		b("base", 70, { squash: -1 }),
 		b("base", 700)
+	],
+	sleep: () => [
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		}),
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		})
 	]
 };
 const EYE_TOKENS = new Set([T.EYE, T.WHITE]);
@@ -340,6 +400,7 @@ function twinkle(layer, x, y, centre, arms) {
 	};
 }
 const mouthIndex = (name) => Math.max(0, mouths.findIndex((m) => m.name === name));
+/** `#` is the emote's colour, `+` its second colour. */
 const EMOTES = {
 	note: {
 		rows: [
@@ -378,11 +439,40 @@ const EMOTES = {
 			"..#.."
 		],
 		color: "#FF6FA0"
+	},
+	zzz: {
+		rows: [
+			"###",
+			"..#",
+			".#.",
+			"###"
+		],
+		color: "#BFD8FF"
+	},
+	crown: {
+		rows: [
+			"#.#.#",
+			"#####",
+			"#+#+#"
+		],
+		color: "#FFD447",
+		accent: "#FF6B6B"
+	},
+	fire: {
+		rows: [
+			".#.",
+			"##.",
+			"#+#",
+			"#++",
+			".#."
+		],
+		color: "#FF7A3D",
+		accent: "#FFE27A"
 	}
 };
 /** Puts an emote, outlined, in a top corner that is clear of him. */
-function emote(layer, kind, left) {
-	const { rows, color } = EMOTES[kind];
+function emote(layer, kind, left, lift = 0) {
+	const { rows, color, accent } = EMOTES[kind];
 	const w = rows[0].length + 2, h = rows.length + 2;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
@@ -391,17 +481,19 @@ function emote(layer, kind, left) {
 		[0, 1],
 		[FRAME_WIDTH - w, 2],
 		[0, 2]
-	];
+	].map(([x, y]) => [x, Math.max(0, y + 1 - lift)]);
 	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
+	const ink = (ch) => ch === "#" || ch === "+";
 	for (const [x0, y0] of spots) {
 		const cells = [];
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const on = rows[y - 1]?.[x - 1] === "#";
-			const near = !on && NEIGHBOURS.some(([dx, dy]) => rows[y - 1 + dy]?.[x - 1 + dx] === "#");
+			const ch = rows[y - 1]?.[x - 1];
+			const on = ink(ch);
+			const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 			if (on || near) cells.push([
 				x0 + x,
 				y0 + y,
-				on ? color : "#1B1428"
+				on ? ch === "+" ? accent ?? color : color : "#1B1428"
 			]);
 		}
 		if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
@@ -430,7 +522,7 @@ const SPARKLE_SPOTS = [
 */
 function animate(input, move, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
-	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
+	const palette = withItems(options.palette ?? paletteOf(config), config);
 	const figure = {
 		...config,
 		frame: void 0
@@ -491,12 +583,23 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
+	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const behind = [];
 	const frames = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row].reverse());
 		layer = squash(layer, beat.squash ?? 0);
 		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
+		if (trailFrom.length && (beat.dy ?? 0) < 0) behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
+			if (cell && !layer[y][x] && (x + y + k) % 2 === 0) layer[y][x] = {
+				c: trailFrom[k],
+				item: false
+			};
+		})));
+		behind.unshift(figure$1);
+		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
 			const at = (t$1 + seed) % 1600 / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
@@ -578,7 +681,8 @@ function animate(input, move, options = {}) {
 				};
 			}
 		}
-		if (beat.emote) emote(layer, beat.emote, !!beat.left);
+		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
+		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
 		if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
@@ -788,7 +892,7 @@ const LilGuy = React$4.forwardRef(({ name, size = 40, shape = "circle", variant 
 			game,
 			equip
 		}, name);
-		const palette = withItems(customPalette ?? shadePalette(getPalette(cfg.palette), cfg.shade), cfg);
+		const palette = withItems(customPalette ?? paletteOf(cfg), cfg);
 		const grid = compose(cfg);
 		const hv = hash(name);
 		const toRects = (source, keyPrefix) => {
@@ -1176,7 +1280,7 @@ function escapeText(value) {
 */
 function toSvgString(input, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
-	const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
+	const palette = withItems(options.palette ?? paletteOf(config), config);
 	const colors = paint(compose(config), config, palette);
 	const size = options.size ?? 128;
 	const pixelSize = size / GRID_SIZE;
@@ -1338,6 +1442,11 @@ function traitOdds(config) {
 			slot: "colour",
 			name: palettes[config.palette].name,
 			chance: share(paletteWeights, config.palette)
+		},
+		{
+			slot: "variant",
+			name: config.lucky ? "Lucky" : "regular",
+			chance: config.lucky ? 1 / LUCKY_ODDS : 1 - 1 / LUCKY_ODDS
 		}
 	];
 }
@@ -1361,5 +1470,5 @@ function copyOneIn(o) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, GAMES, GRADES, GRID_SIZE, HEADROOM, LilGuy, MOVES, SHADE_COUNT, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, nebulaPhase, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, MAX_PINS, MOVES, PINS, SHADE_COUNT, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.js.map

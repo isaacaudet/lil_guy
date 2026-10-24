@@ -1,7 +1,7 @@
 import { resolve } from "../resolve";
 import { dress, withItems } from "../items";
 import { compose } from "../compose";
-import { getPalette, shadePalette } from "../palette";
+import { paletteOf } from "../palette";
 import { paint } from "../paint";
 import type { GameId, Palette } from "../types";
 import { GRID_SIZE } from "../types";
@@ -34,7 +34,7 @@ export type LilGuyImageProps = {
  */
 export function LilGuyImage({ name, size, palette: customPalette, parts: partOverrides, game, equip }: LilGuyImageProps) {
 	const config = dress(resolve(name, partOverrides), { game, equip }, name);
-	const palette = withItems(customPalette ?? shadePalette(getPalette(config.palette), config.shade), config);
+	const palette = withItems(customPalette ?? paletteOf(config), config);
 	const colors = paint(compose(config), config, palette);
 	const pixelSize = Math.floor(size / GRID_SIZE);
 

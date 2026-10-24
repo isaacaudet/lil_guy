@@ -72,7 +72,7 @@ declare class Canvas {
  * - two skins, which turn the guy into one of the game's own objects (a jar,
  *   a golf ball, a traffic cone) while keeping his face
  * - three hats, one of them free: every player has it from the start
- * - a frame, the backdrop behind him
+ * - two frames, the backdrop behind him
  *
  * An item is the design. A copy someone owns adds a finish, a scuff and a
  * print number (see ./owned), which is what makes one copy worth more than
@@ -156,6 +156,8 @@ interface Owned {
   print: number;
   /** Days the owner finished the game wearing it, if it keeps a tally. */
   tally?: number;
+  /** Pins earned and stuck on it (see ./pins), at most three. */
+  pins?: string[];
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -244,7 +246,8 @@ declare function gradeOf(o: Owned): Grade;
 declare function nameOf(o: Owned): string;
 /**
  * A copy as one short string, to store or put in a URL:
- * `puttsies.ball~nebula~0.0123456~20` or, with a tally, `…~20~t412`.
+ * `puttsies.ball~nebula~0.0123456~20`; with a tally `…~20~t412`; with pins
+ * `…~p` and their ids joined by `+`, as in `…~t412~pstar+flame`.
  */
 declare function encode(o: Owned): string;
 declare function decode(s: string): Owned | null;
@@ -319,6 +322,8 @@ interface AvatarConfig {
   shade: number;
   /** Mirror the finished character. */
   flip: boolean;
+  /** The rare Lucky colour variant: about one name in 400. */
+  lucky?: boolean;
   rotation: number;
   /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
   skin?: string;
@@ -644,6 +649,8 @@ declare function hashNth(input: string, index: number): number;
  * part doesn't cascade into the others, and each pick is weighted (see
  * ./parts/weights) so the simple, sweet looks are the common ones.
  */
+/** One name in this many gets the Lucky colour variant. */
+declare const LUCKY_ODDS = 400;
 declare function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig;
 
 //#endregion
@@ -688,6 +695,13 @@ declare const SHADE_COUNT = 3;
  * toned palette is as coherent as the original.
  */
 declare function shadePalette(palette: Palette, shade: number): Palette;
+/**
+ * The Lucky variant: the same colourway turned round the colour wheel, with
+ * gold trim. Derived again, so the face and outline read as well as ever.
+ */
+declare function luckyPalette(palette: Palette): Palette;
+/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+declare function paletteOf(config: AvatarConfig): Palette;
 
 //#endregion
 //#region src/parts/heads.d.ts
@@ -835,7 +849,7 @@ declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette):
  * grade's colour pulses around the guy, and Mythic and Grail copies throw off
  * sparkles.
  */
-declare const MOVES: readonly ["idle", "blink", "hop", "wave", "look", "cheer", "sad", "dance", "squish"];
+declare const MOVES: readonly ["idle", "blink", "hop", "wave", "look", "cheer", "sad", "dance", "squish", "sleep"];
 type Move = (typeof MOVES)[number];
 /** Rows of room above the guy for jumps. */
 declare const HEADROOM = 4;
@@ -856,9 +870,22 @@ interface Animation {
   duration: number;
 }
 interface AnimateOptions extends RenderOptions {
-  /** Show the best equipped copy's grade: shine, aura and sparkles. Default true. */
+  /** Show the best equipped copy's grade: shine, aura, sparkles and a trail. Default true. */
   rarity?: boolean;
+  /** An emote to show over the whole move, bobbing beside his head. */
+  emote?: Emote;
 }
+/** Little pictures that pop up beside his head. */
+type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire';
+/**
+ * Emotes a player can show after a game, and how each is unlocked. The
+ * moves use some on their own; `emote` in the options shows one over any move.
+ */
+declare const EMOTE_UNLOCKS: {
+  id: Emote;
+  name: string;
+  how: string;
+}[];
 /**
  * The same guy with his eyes shut: each eye drops to a line on its bottom row
  * and the cells it leaves show whatever the body has there. Derived, not
@@ -895,6 +922,36 @@ interface AnimatedSvgOptions extends AnimateOptions {
  * animation shows them in turn. Works as an <img>, inline, or as a file.
  */
 declare function toAnimatedSvg(input: string, move: Move, options?: AnimatedSvgOptions): string;
+
+//#endregion
+//#region src/pins.d.ts
+/**
+ * What a copy collects by being worn: pins, earned for things done in the
+ * games and stuck onto the item, and tally marks, scratched into it as its
+ * tally climbs.
+ *
+ * - 30 days: two marks along its bottom edge
+ * - 100 days: four
+ * - 365 days: and its outline turns gold
+ *
+ * Neither is rolled. The club grants pins and counts the days; the library
+ * only draws them, on the item's own pixels, so they move with it.
+ */
+interface Pin {
+  id: string;
+  name: string;
+  /** How a player earns it. */
+  how: string;
+  art: Stamp;
+}
+declare const PINS: Pin[];
+/** A copy holds at most this many pins. */
+declare const MAX_PINS = 3;
+declare const pinById: (id: string) => Pin | undefined;
+/** The tally marks a copy shows for its tally: none, 2 or 4. */
+declare function tallyMarks(tally: number | undefined): number;
+/** A year of days: the item's outline goes gold. */
+declare const GOLD_RIM_DAYS = 365;
 
 //#endregion
 //#region src/utils/merge-refs.d.ts
@@ -946,5 +1003,5 @@ declare function guyOneIn(config: AvatarConfig): number;
 declare function copyOneIn(o: Owned): number;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, LilGuy, LilGuyProps, MOVES, Move, Owned, Palette, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, mergeRefs, mouths, nameOf, nebulaPhase, paint, palettes, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, LUCKY_ODDS, LilGuy, LilGuyProps, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, Slot, TraitOdds, WEAR, accessories, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, decode, drawFrame, dress, encode, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, itemById, items, luckyPalette, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, toAnimatedSvg, toPng, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

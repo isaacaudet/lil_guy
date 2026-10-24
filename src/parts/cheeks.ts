@@ -36,4 +36,29 @@ export const cheeks: Cheeks[] = [
   cheeks_('war paint', [
     'rr......rr',
   ]),
+  // Deep shade rather than outline: an outline-coloured cell at the edge
+  // would cost the body its own outline beside it.
+  cheeks_('whiskers', [
+    'dd......dd',
+  ]),
+  cheeks_('hearts', [
+    'r.r....r.r',
+    '.r......r.',
+  ]),
+  cheeks_('shine', [
+    'ww......ww',
+  ]),
+  cheeks_('stripes', [
+    'ss......ss',
+    '.ss....ss.',
+  ]),
+  cheeks_('stars', [
+    '.y......y.',
+    'yyy....yyy',
+    '.y......y.',
+  ]),
+  // The rarest: cheeks pressed with gold leaf.
+  cheeks_('gold leaf', [
+    'yY......Yy',
+  ]),
 ];

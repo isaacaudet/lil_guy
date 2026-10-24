@@ -13,6 +13,9 @@ import type { AvatarConfig, RenderOptions } from './types';
  * part doesn't cascade into the others, and each pick is weighted (see
  * ./parts/weights) so the simple, sweet looks are the common ones.
  */
+/** One name in this many gets the Lucky colour variant. */
+export const LUCKY_ODDS = 400;
+
 export function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig {
   const pick = (slot: number, weights: number[]): number => weightedPick(weights, hashNth(input, slot));
 
@@ -30,5 +33,6 @@ export function resolve(input: string, overrides?: RenderOptions['parts']): Avat
     feet:      overrides?.feet      ?? pick(10, footWeights),
     cheeks:    overrides?.cheeks    ?? pick(11, cheekWeights),
     arms:      overrides?.arms      ?? pick(12, armWeights),
+    lucky:     overrides?.lucky     ?? hashNth(input, 13) % LUCKY_ODDS === 0,
   };
 }

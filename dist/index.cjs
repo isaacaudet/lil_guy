@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-D3pYVnkK.cjs');
+const require_paint = require('./paint-evW_Gzrh.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -28,12 +28,54 @@ const MOVES = [
 	"cheer",
 	"sad",
 	"dance",
-	"squish"
+	"squish",
+	"sleep"
 ];
 /** Rows of room above the guy for jumps. */
 const HEADROOM = 4;
 const FRAME_WIDTH = require_paint.GRID_SIZE;
 const FRAME_HEIGHT = require_paint.GRID_SIZE + HEADROOM;
+/**
+* Emotes a player can show after a game, and how each is unlocked. The
+* moves use some on their own; `emote` in the options shows one over any move.
+*/
+const EMOTE_UNLOCKS = [
+	{
+		id: "heart",
+		name: "Heart",
+		how: "Everyone has it"
+	},
+	{
+		id: "note",
+		name: "Music",
+		how: "Everyone has it"
+	},
+	{
+		id: "zzz",
+		name: "Snooze",
+		how: "Everyone has it"
+	},
+	{
+		id: "question",
+		name: "Huh?",
+		how: "Everyone has it"
+	},
+	{
+		id: "bang",
+		name: "Whoa!",
+		how: "Everyone has it"
+	},
+	{
+		id: "fire",
+		name: "On fire",
+		how: "A 7-day streak"
+	},
+	{
+		id: "crown",
+		name: "Crown",
+		how: "A perfect day"
+	}
+];
 const b = (pose, ms, more = {}) => ({
 	pose,
 	ms,
@@ -176,6 +218,24 @@ const BEATS = {
 		}),
 		b("base", 70, { squash: -1 }),
 		b("base", 700)
+	],
+	sleep: () => [
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		}),
+		b("shut", 1100, {
+			squash: 1,
+			emote: "zzz"
+		}),
+		b("shut", 1100, {
+			emote: "zzz",
+			rise: true
+		})
 	]
 };
 const EYE_TOKENS = new Set([require_paint.T.EYE, require_paint.T.WHITE]);
@@ -337,6 +397,7 @@ function twinkle(layer, x, y, centre, arms) {
 	};
 }
 const mouthIndex = (name) => Math.max(0, require_paint.mouths.findIndex((m) => m.name === name));
+/** `#` is the emote's colour, `+` its second colour. */
 const EMOTES = {
 	note: {
 		rows: [
@@ -375,11 +436,40 @@ const EMOTES = {
 			"..#.."
 		],
 		color: "#FF6FA0"
+	},
+	zzz: {
+		rows: [
+			"###",
+			"..#",
+			".#.",
+			"###"
+		],
+		color: "#BFD8FF"
+	},
+	crown: {
+		rows: [
+			"#.#.#",
+			"#####",
+			"#+#+#"
+		],
+		color: "#FFD447",
+		accent: "#FF6B6B"
+	},
+	fire: {
+		rows: [
+			".#.",
+			"##.",
+			"#+#",
+			"#++",
+			".#."
+		],
+		color: "#FF7A3D",
+		accent: "#FFE27A"
 	}
 };
 /** Puts an emote, outlined, in a top corner that is clear of him. */
-function emote(layer, kind, left) {
-	const { rows, color } = EMOTES[kind];
+function emote(layer, kind, left, lift = 0) {
+	const { rows, color, accent } = EMOTES[kind];
 	const w = rows[0].length + 2, h = rows.length + 2;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
@@ -388,17 +478,19 @@ function emote(layer, kind, left) {
 		[0, 1],
 		[FRAME_WIDTH - w, 2],
 		[0, 2]
-	];
+	].map(([x, y]) => [x, Math.max(0, y + 1 - lift)]);
 	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
+	const ink = (ch) => ch === "#" || ch === "+";
 	for (const [x0, y0] of spots) {
 		const cells = [];
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const on = rows[y - 1]?.[x - 1] === "#";
-			const near = !on && NEIGHBOURS.some(([dx, dy]) => rows[y - 1 + dy]?.[x - 1 + dx] === "#");
+			const ch = rows[y - 1]?.[x - 1];
+			const on = ink(ch);
+			const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 			if (on || near) cells.push([
 				x0 + x,
 				y0 + y,
-				on ? color : "#1B1428"
+				on ? ch === "+" ? accent ?? color : color : "#1B1428"
 			]);
 		}
 		if (cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x])) {
@@ -427,7 +519,7 @@ const SPARKLE_SPOTS = [
 */
 function animate(input, move, options = {}) {
 	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
-	const palette = require_paint.withItems(options.palette ?? require_paint.shadePalette(require_paint.getPalette(config.palette), config.shade), config);
+	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
 	const figure = {
 		...config,
 		frame: void 0
@@ -488,12 +580,23 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
+	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const behind = [];
 	const frames = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row].reverse());
 		layer = squash(layer, beat.squash ?? 0);
 		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
+		if (trailFrom.length && (beat.dy ?? 0) < 0) behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
+			if (cell && !layer[y][x] && (x + y + k) % 2 === 0) layer[y][x] = {
+				c: trailFrom[k],
+				item: false
+			};
+		})));
+		behind.unshift(figure$1);
+		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
 			const at = (t$1 + seed) % 1600 / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
@@ -575,7 +678,8 @@ function animate(input, move, options = {}) {
 				};
 			}
 		}
-		if (beat.emote) emote(layer, beat.emote, !!beat.left);
+		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
+		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
 		if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
@@ -785,7 +889,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 			game,
 			equip
 		}, name);
-		const palette = require_paint.withItems(customPalette ?? require_paint.shadePalette(require_paint.getPalette(cfg.palette), cfg.shade), cfg);
+		const palette = require_paint.withItems(customPalette ?? require_paint.paletteOf(cfg), cfg);
 		const grid = require_paint.compose(cfg);
 		const hv = require_paint.hash(name);
 		const toRects = (source, keyPrefix) => {
@@ -1173,7 +1277,7 @@ function escapeText(value) {
 */
 function toSvgString(input, options = {}) {
 	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
-	const palette = require_paint.withItems(options.palette ?? require_paint.shadePalette(require_paint.getPalette(config.palette), config.shade), config);
+	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
 	const colors = require_paint.paint(require_paint.compose(config), config, palette);
 	const size = options.size ?? 128;
 	const pixelSize = size / require_paint.GRID_SIZE;
@@ -1335,6 +1439,11 @@ function traitOdds(config) {
 			slot: "colour",
 			name: require_paint.palettes[config.palette].name,
 			chance: share(require_paint.paletteWeights, config.palette)
+		},
+		{
+			slot: "variant",
+			name: config.lucky ? "Lucky" : "regular",
+			chance: config.lucky ? 1 / require_paint.LUCKY_ODDS : 1 - 1 / require_paint.LUCKY_ODDS
 		}
 	];
 }
@@ -1365,16 +1474,21 @@ exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
+exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FINISHES = require_paint.FINISHES
 exports.FOOT_STYLES = require_paint.FOOT_STYLES
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_WIDTH = FRAME_WIDTH
 exports.GAMES = require_paint.GAMES
+exports.GOLD_RIM_DAYS = require_paint.GOLD_RIM_DAYS
 exports.GRADES = require_paint.GRADES
 exports.GRID_SIZE = require_paint.GRID_SIZE
 exports.HEADROOM = HEADROOM
+exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
+exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
+exports.PINS = require_paint.PINS
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
@@ -1403,12 +1517,15 @@ exports.hashNth = require_paint.hashNth
 exports.heads = require_paint.heads
 exports.itemById = require_paint.itemById
 exports.items = require_paint.items
+exports.luckyPalette = require_paint.luckyPalette
 exports.mergeRefs = mergeRefs
 exports.mouths = require_paint.mouths
 exports.nameOf = require_paint.nameOf
 exports.nebulaPhase = require_paint.nebulaPhase
 exports.paint = require_paint.paint
+exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
+exports.pinById = require_paint.pinById
 exports.resolve = require_paint.resolve
 exports.resolveColor = require_paint.resolveColor
 exports.roll = require_paint.roll
@@ -1416,6 +1533,7 @@ exports.shadePalette = require_paint.shadePalette
 exports.slotOf = require_paint.slotOf
 exports.special = require_paint.special
 exports.starter = require_paint.starter
+exports.tallyMarks = require_paint.tallyMarks
 exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
 exports.toSvgString = toSvgString

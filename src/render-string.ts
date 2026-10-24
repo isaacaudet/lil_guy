@@ -2,7 +2,7 @@ import { resolve } from './resolve';
 import { dress, withItems } from './items';
 import { paint } from './paint';
 import { compose } from './compose';
-import { getPalette, shadePalette } from './palette';
+import { paletteOf } from './palette';
 import type { RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -43,7 +43,7 @@ function escapeText(value: string): string {
  */
 export function toSvgString(input: string, options: RenderOptions = {}): string {
   const config = dress(resolve(input, options.parts), options, input);
-  const palette = withItems(options.palette ?? shadePalette(getPalette(config.palette), config.shade), config);
+  const palette = withItems(options.palette ?? paletteOf(config), config);
   const colors = paint(compose(config), config, palette);
   const size = options.size ?? 128;
   const pixelSize = size / GRID_SIZE;

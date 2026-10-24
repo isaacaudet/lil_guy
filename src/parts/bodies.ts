@@ -24,6 +24,18 @@ const star = stamp([
   '.y.',
 ]);
 
+const moon = stamp([
+  '.yy',
+  'y..',
+  '.yy',
+]);
+
+const bolt = stamp([
+  '..y',
+  'yyy',
+  'y..',
+]);
+
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c: Canvas, x: number, y: number, token: number): void {
   if (c.isBody(x, y)) c.set(x, y, token);
@@ -101,6 +113,63 @@ export const bodies: Marking[] = [
       if (!r) return;
       onBody(c, r.right - 2, c.crown + 2, T.LIGHT);
       onBody(c, r.right - 2, c.crown + 3, T.LIGHT);
+    },
+  },
+
+  {
+    name: 'stripes',
+    draw: c => {
+      for (let y = c.eyeLine + 3; y <= c.bottom; y += 2) {
+        const r = c.rows[y];
+        if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.SHADE);
+      }
+    },
+  },
+
+  {
+    name: 'zigzag',
+    draw: c => {
+      const y = c.eyeLine + 3;
+      const r = c.rows[y];
+      if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + (x % 2), T.BELLY);
+    },
+  },
+
+  {
+    name: 'split',
+    draw: c => {
+      // The left half a shade lighter, like a two-colour toy.
+      for (let y = c.crown; y <= c.bottom; y++) {
+        const r = c.rows[y];
+        if (r) for (let x = r.left; x < Math.floor(c.centre); x++) if (c.get(x, y) === T.BODY) onBody(c, x, y, T.BELLY);
+      }
+    },
+  },
+
+  {
+    name: 'moon mark',
+    draw: c => {
+      c.draw(moon, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+    },
+  },
+
+  {
+    name: 'bolt mark',
+    draw: c => {
+      c.draw(bolt, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+    },
+  },
+
+  {
+    name: 'starry',
+    draw: c => {
+      // A night sky on the body: a few white and gold specks.
+      const x = Math.floor(c.centre);
+      onBody(c, x - 4, c.crown + 2, T.WHITE);
+      onBody(c, x + 1, c.crown + 1, T.GOLD);
+      onBody(c, x + 3, c.crown + 3, T.WHITE);
+      onBody(c, x - 3, c.bottom - 1, T.GOLD);
+      onBody(c, x + 4, c.bottom - 2, T.WHITE);
     },
   },
 ];

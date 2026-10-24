@@ -12,11 +12,11 @@ o#o##########o#o
 o#o##########o#o
 o#oeeew##eeewo#o
 o#ee####ee#sso
-.oosxmmmmmm##oo.
+.oos#mmmmmm##oo.
 ..os##mttm###o..
-..os#########o..
-..os#########o..
-..osssssso..
+..osr#r######o..
+..osrrr######o..
+..orsssssso..
 ...oooooooooo...
 ................"
 ,
@@ -24,17 +24,17 @@ o#ee####ee#sso
 ".......oo.......
 ....oooaaooo....
 ...o###Aa###o...
-..o####Aa#hw#o..
-.oo###AAaa#h#oo.
-o#o##########o#o
+..o##s#Aa#hw#o..
+.oo###AAaash#oo.
+o#o#######s##o#o
 o#o#ss####ss#o#o
 o#o#we####we#o#o
 o#ee####ee#sso
-.ooc#mwwwwm#coo.
+.oos#mwwwwm#soo.
 ..os##mmmm###o..
-..osr#r######o..
-..osrrr######o..
-..orsssssso..
+..os###Aa####o..
+..osss#Yy####o..
+..osssssso..
 ...oo##oo##oo...
 .....oo..oo....."
 ,
@@ -44,14 +44,14 @@ o#ee####ee#sso
 ...oaxxxyxxo....
 ...oxxgxxxaxo...
 ..o##x##x#hx#o..
-..o##x#######o..
+..o##xyy#####o..
 ..o####ww####o..
 ..o###eeew###o..
 .o#s##eeee###o..
-.o#c#mwwwwm#co..
+.o#mwwwwmo..
 ..os##mmmm####o.
-..os##########o.
-..o########so..
+..os#w#w#w#w##o.
+..o####y###so..
 ...ossssso...
 ....o##oo##o....
 .....oo..oo....."
@@ -59,17 +59,17 @@ o#ee####ee#sso
   "bob@example.com": 
 "...oo......oo...
 ..oaaooooooaao..
-..oaA#r#r##Aao..
-..oaa#rrr#haao..
-.o#####r###h##o.
+..oaA#yy###Aao..
+..oAaaaaaaaaao..
+.o####yy###h##o.
 .o############o.
 .o###e####e###o.
 .o###e####e###o.
 .o###ommmm####o.
 o#s#o#mttm#####o
-o#aaaaammaaaaa#o
-.oso#aaaassoso.
-.ooosoAAosooso.
+o#s##mms##s##o
+.oso#os#ossoso.
+.ooosossosooso.
 oso.oooooso.oso
 oo..oooso..oso
 .o....o..o....o."
@@ -79,12 +79,12 @@ oo..oooso..oso
 ........oo.oo...
 .......oaaoaao..
 .....oooaaAaao..
-....o##yay#oao..
-...o#wh#yyy#o...
-..o##h###y###o..
-.o##we####we##o.
-.o##ee####ee###o
-.o#c##mmmm##cs#o
+....o###a##oao..
+...o#wh#####o...
+..o#oo####oo#o..
+.o#oweooooweo#o.
+.o#oeeo##oeeo##o
+.o##oommmmoo#s#o
 o#######t####so.
 o#s##########o.
 .oos########o..
@@ -99,10 +99,10 @@ o#s##########o.
 ....o##yY##o....
 ...o#wh#####o...
 ..o##h#######o..
-..o#oo####oo#o..
-...o#eooooe#o...
-...oe#e##e#eo...
-.oocoom##moocoo.
+..o##########o..
+..o##e####e##o..
+..o#e#e##e#e#o..
+.oo###m##mxxsoo.
 o######mm#####so
 os############o
 .oss#ssss#o.
@@ -113,7 +113,7 @@ os############o
 }
 `;
 
-exports[`golden art emits the same SVG for a fixed input 1`] = `"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" role="presentation" aria-hidden="true"><g><rect x="4" y="1" width="7" height="1" fill="#332C6D"/><rect x="3" y="2" width="1" height="1" fill="#332C6D"/><rect x="4" y="2" width="1" height="1" fill="#F2C230"/><rect x="5" y="2" width="3" height="1" fill="#FFFFFF"/><rect x="8" y="2" width="1" height="1" fill="#FFD45C"/><rect x="9" y="2" width="2" height="1" fill="#FFFFFF"/><rect x="11" y="2" width="1" height="1" fill="#332C6D"/><rect x="3" y="3" width="1" height="1" fill="#332C6D"/><rect x="4" y="3" width="2" height="1" fill="#FFFFFF"/><rect x="6" y="3" width="1" height="1" fill="#7DD87A"/><rect x="7" y="3" width="3" height="1" fill="#FFFFFF"/><rect x="10" y="3" width="1" height="1" fill="#F2C230"/><rect x="11" y="3" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="3" width="1" height="1" fill="#332C6D"/><rect x="2" y="4" width="1" height="1" fill="#332C6D"/><rect x="3" y="4" width="2" height="1" fill="#3D6FE0"/><rect x="5" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="4" width="2" height="1" fill="#3D6FE0"/><rect x="8" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="9" y="4" width="1" height="1" fill="#3D6FE0"/><rect x="10" y="4" width="1" height="1" fill="#A8BEF1"/><rect x="11" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="4" width="1" height="1" fill="#3D6FE0"/><rect x="13" y="4" width="1" height="1" fill="#332C6D"/><rect x="2" y="5" width="1" height="1" fill="#332C6D"/><rect x="3" y="5" width="2" height="1" fill="#3D6FE0"/><rect x="5" y="5" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="5" width="7" height="1" fill="#3D6FE0"/><rect x="13" y="5" width="1" height="1" fill="#332C6D"/><rect x="2" y="6" width="1" height="1" fill="#332C6D"/><rect x="3" y="6" width="4" height="1" fill="#3D6FE0"/><rect x="7" y="6" width="2" height="1" fill="#FFFFFF"/><rect x="9" y="6" width="4" height="1" fill="#3D6FE0"/><rect x="13" y="6" width="1" height="1" fill="#332C6D"/><rect x="2" y="7" width="1" height="1" fill="#332C6D"/><rect x="3" y="7" width="3" height="1" fill="#3D6FE0"/><rect x="6" y="7" width="3" height="1" fill="#FFF1D6"/><rect x="9" y="7" width="1" height="1" fill="#FFFFFF"/><rect x="10" y="7" width="3" height="1" fill="#3D6FE0"/><rect x="13" y="7" width="1" height="1" fill="#332C6D"/><rect x="1" y="8" width="1" height="1" fill="#332C6D"/><rect x="2" y="8" width="1" height="1" fill="#3D6FE0"/><rect x="3" y="8" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="8" width="2" height="1" fill="#3D6FE0"/><rect x="6" y="8" width="4" height="1" fill="#FFF1D6"/><rect x="10" y="8" width="3" height="1" fill="#3D6FE0"/><rect x="13" y="8" width="1" height="1" fill="#332C6D"/><rect x="1" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="9" width="1" height="1" fill="#3D6FE0"/><rect x="3" y="9" width="1" height="1" fill="#FF8FA8"/><rect x="4" y="9" width="1" height="1" fill="#3D6FE0"/><rect x="5" y="9" width="1" height="1" fill="#FFF1D6"/><rect x="6" y="9" width="4" height="1" fill="#FFFFFF"/><rect x="10" y="9" width="1" height="1" fill="#FFF1D6"/><rect x="11" y="9" width="1" height="1" fill="#3D6FE0"/><rect x="12" y="9" width="1" height="1" fill="#FF8FA8"/><rect x="13" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="10" width="1" height="1" fill="#332C6D"/><rect x="3" y="10" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="10" width="2" height="1" fill="#3D6FE0"/><rect x="6" y="10" width="4" height="1" fill="#FFF1D6"/><rect x="10" y="10" width="4" height="1" fill="#3D6FE0"/><rect x="14" y="10" width="1" height="1" fill="#332C6D"/><rect x="2" y="11" width="1" height="1" fill="#332C6D"/><rect x="3" y="11" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="11" width="10" height="1" fill="#3D6FE0"/><rect x="14" y="11" width="1" height="1" fill="#332C6D"/><rect x="2" y="12" width="1" height="1" fill="#332C6D"/><rect x="3" y="12" width="1" height="1" fill="#1F2A83"/><rect x="4" y="12" width="8" height="1" fill="#3D6FE0"/><rect x="12" y="12" width="1" height="1" fill="#2B3AB5"/><rect x="13" y="12" width="1" height="1" fill="#332C6D"/><rect x="3" y="13" width="1" height="1" fill="#332C6D"/><rect x="4" y="13" width="3" height="1" fill="#1F2A83"/><rect x="7" y="13" width="5" height="1" fill="#2B3AB5"/><rect x="12" y="13" width="1" height="1" fill="#332C6D"/><rect x="4" y="14" width="1" height="1" fill="#332C6D"/><rect x="5" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="7" y="14" width="2" height="1" fill="#332C6D"/><rect x="9" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="11" y="14" width="1" height="1" fill="#332C6D"/><rect x="5" y="15" width="2" height="1" fill="#332C6D"/><rect x="9" y="15" width="2" height="1" fill="#332C6D"/></g></svg>"`;
+exports[`golden art emits the same SVG for a fixed input 1`] = `"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" role="presentation" aria-hidden="true"><g><rect x="4" y="1" width="7" height="1" fill="#332C6D"/><rect x="3" y="2" width="1" height="1" fill="#332C6D"/><rect x="4" y="2" width="1" height="1" fill="#F2C230"/><rect x="5" y="2" width="3" height="1" fill="#FFFFFF"/><rect x="8" y="2" width="1" height="1" fill="#FFD45C"/><rect x="9" y="2" width="2" height="1" fill="#FFFFFF"/><rect x="11" y="2" width="1" height="1" fill="#332C6D"/><rect x="3" y="3" width="1" height="1" fill="#332C6D"/><rect x="4" y="3" width="2" height="1" fill="#FFFFFF"/><rect x="6" y="3" width="1" height="1" fill="#7DD87A"/><rect x="7" y="3" width="3" height="1" fill="#FFFFFF"/><rect x="10" y="3" width="1" height="1" fill="#F2C230"/><rect x="11" y="3" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="3" width="1" height="1" fill="#332C6D"/><rect x="2" y="4" width="1" height="1" fill="#332C6D"/><rect x="3" y="4" width="2" height="1" fill="#3D6FE0"/><rect x="5" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="4" width="2" height="1" fill="#3D6FE0"/><rect x="8" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="9" y="4" width="1" height="1" fill="#3D6FE0"/><rect x="10" y="4" width="1" height="1" fill="#A8BEF1"/><rect x="11" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="4" width="1" height="1" fill="#3D6FE0"/><rect x="13" y="4" width="1" height="1" fill="#332C6D"/><rect x="2" y="5" width="1" height="1" fill="#332C6D"/><rect x="3" y="5" width="2" height="1" fill="#3D6FE0"/><rect x="5" y="5" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="5" width="2" height="1" fill="#FFD45C"/><rect x="8" y="5" width="5" height="1" fill="#3D6FE0"/><rect x="13" y="5" width="1" height="1" fill="#332C6D"/><rect x="2" y="6" width="1" height="1" fill="#332C6D"/><rect x="3" y="6" width="4" height="1" fill="#3D6FE0"/><rect x="7" y="6" width="2" height="1" fill="#FFFFFF"/><rect x="9" y="6" width="4" height="1" fill="#3D6FE0"/><rect x="13" y="6" width="1" height="1" fill="#332C6D"/><rect x="2" y="7" width="1" height="1" fill="#332C6D"/><rect x="3" y="7" width="3" height="1" fill="#3D6FE0"/><rect x="6" y="7" width="3" height="1" fill="#FFF1D6"/><rect x="9" y="7" width="1" height="1" fill="#FFFFFF"/><rect x="10" y="7" width="3" height="1" fill="#3D6FE0"/><rect x="13" y="7" width="1" height="1" fill="#332C6D"/><rect x="1" y="8" width="1" height="1" fill="#332C6D"/><rect x="2" y="8" width="1" height="1" fill="#3D6FE0"/><rect x="3" y="8" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="8" width="2" height="1" fill="#3D6FE0"/><rect x="6" y="8" width="4" height="1" fill="#FFF1D6"/><rect x="10" y="8" width="3" height="1" fill="#3D6FE0"/><rect x="13" y="8" width="1" height="1" fill="#332C6D"/><rect x="1" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="9" width="1" height="1" fill="#3D6FE0"/><rect x="3" y="9" width="2" height="1" fill="#1F2A83"/><rect x="5" y="9" width="1" height="1" fill="#FFF1D6"/><rect x="6" y="9" width="4" height="1" fill="#FFFFFF"/><rect x="10" y="9" width="1" height="1" fill="#FFF1D6"/><rect x="11" y="9" width="2" height="1" fill="#1F2A83"/><rect x="13" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="10" width="1" height="1" fill="#332C6D"/><rect x="3" y="10" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="10" width="2" height="1" fill="#3D6FE0"/><rect x="6" y="10" width="4" height="1" fill="#FFF1D6"/><rect x="10" y="10" width="4" height="1" fill="#3D6FE0"/><rect x="14" y="10" width="1" height="1" fill="#332C6D"/><rect x="2" y="11" width="1" height="1" fill="#332C6D"/><rect x="3" y="11" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="5" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="7" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="8" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="9" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="10" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="11" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="11" width="2" height="1" fill="#3D6FE0"/><rect x="14" y="11" width="1" height="1" fill="#332C6D"/><rect x="2" y="12" width="1" height="1" fill="#332C6D"/><rect x="3" y="12" width="1" height="1" fill="#1F2A83"/><rect x="4" y="12" width="4" height="1" fill="#3D6FE0"/><rect x="8" y="12" width="1" height="1" fill="#FFD45C"/><rect x="9" y="12" width="3" height="1" fill="#3D6FE0"/><rect x="12" y="12" width="1" height="1" fill="#2B3AB5"/><rect x="13" y="12" width="1" height="1" fill="#332C6D"/><rect x="3" y="13" width="1" height="1" fill="#332C6D"/><rect x="4" y="13" width="3" height="1" fill="#1F2A83"/><rect x="7" y="13" width="5" height="1" fill="#2B3AB5"/><rect x="12" y="13" width="1" height="1" fill="#332C6D"/><rect x="4" y="14" width="1" height="1" fill="#332C6D"/><rect x="5" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="7" y="14" width="2" height="1" fill="#332C6D"/><rect x="9" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="11" y="14" width="1" height="1" fill="#332C6D"/><rect x="5" y="15" width="2" height="1" fill="#332C6D"/><rect x="9" y="15" width="2" height="1" fill="#332C6D"/></g></svg>"`;
 
 exports[`golden art covers every head wearing every topper 1`] = `
 {

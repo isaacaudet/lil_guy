@@ -1,4 +1,4 @@
-import type { Palette, ColorToken } from './types';
+import type { AvatarConfig, Palette, ColorToken } from './types';
 
 /**
  * Colourways. Each one is three hand-picked colours — the body, an accent for
@@ -215,4 +215,25 @@ export function shadePalette(palette: Palette, shade: number): Palette {
   };
   const c = palette.colors;
   return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
+}
+
+/**
+ * The Lucky variant: the same colourway turned round the colour wheel, with
+ * gold trim. Derived again, so the face and outline read as well as ever.
+ */
+export function luckyPalette(palette: Palette): Palette {
+  // Lightness is pushed away from the middle, where neither dark nor cream
+  // eyes would read.
+  const turn = (hex: string) => {
+    const [h, s, l] = toHsl(hex);
+    return fromHsl([h + 150, Math.min(0.85, s + 0.05), l >= 0.45 ? Math.max(l, 0.66) : Math.min(l, 0.3)]);
+  };
+  const c = palette.colors;
+  return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');
+}
+
+/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+export function paletteOf(config: AvatarConfig): Palette {
+  const toned = shadePalette(getPalette(config.palette), config.shade);
+  return config.lucky ? luckyPalette(toned) : toned;
 }

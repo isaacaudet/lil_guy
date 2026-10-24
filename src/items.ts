@@ -12,7 +12,7 @@ import { GRID_SIZE } from './types';
  * - two skins, which turn the guy into one of the game's own objects (a jar,
  *   a golf ball, a traffic cone) while keeping his face
  * - three hats, one of them free: every player has it from the start
- * - a frame, the backdrop behind him
+ * - two frames, the backdrop behind him
  *
  * An item is the design. A copy someone owns adds a finish, a scuff and a
  * print number (see ./owned), which is what makes one copy worth more than
@@ -845,6 +845,59 @@ const frames: Omit<Item, 'slot'>[] = [
     id: 'trackdle.flag', game: 'trackdle', name: 'Checkered flag',
     colors: ['#2A2D33', '#F4F4F4'],
     fill: (x, y) => ((Math.floor(x / 2) + Math.floor(y / 2)) % 2 ? 1 : 2),
+  },
+
+  // A second frame for every game.
+  {
+    id: 'amountle.coins', game: 'amountle', name: 'Coin pile',
+    colors: ['#FFF4D6', '#F2C230', '#C8901E'],
+    fill: (x, y) => (y >= 12 ? ((x + y) % 3 === 0 ? 3 : 2) : (x * 7 + y * 3) % 23 === 0 ? 2 : 1),
+  },
+  {
+    id: 'halfsies.gingham', game: 'halfsies', name: 'Gingham',
+    colors: ['#FFFFFF', '#F7C2BA', '#EE968B'],
+    fill: (x, y) => {
+      const a = Math.floor(x / 2) % 2, b = Math.floor(y / 2) % 2;
+      return a && b ? 3 : a || b ? 2 : 1;
+    },
+  },
+  {
+    id: 'stackdle.bricks', game: 'stackdle', name: 'Bricks',
+    colors: ['#F08A5D', '#D9704A', '#FCE1D2'],
+    fill: (x, y) => (y % 4 === 3 || (x + (Math.floor(y / 4) % 2) * 2) % 4 === 3 ? 3 : (x + y) % 5 === 0 ? 2 : 1),
+  },
+  {
+    id: 'flipsies.waves', game: 'flipsies', name: 'Waves',
+    colors: ['#BFE6FF', '#7CC4F2', '#FFFFFF'],
+    fill: (x, y) => {
+      const v = (y + [0, 1, 1, 0][x % 4]) % 4;
+      return v === 0 ? 2 : v === 1 && x % 4 === 1 ? 3 : 1;
+    },
+  },
+  {
+    id: 'puttsies.fairway', game: 'puttsies', name: 'Fairway',
+    colors: ['#A6DB86', '#8CCB6C'],
+    fill: x => (Math.floor(x / 3) % 2 ? 2 : 1),
+  },
+  {
+    id: 'weighsies.ruler', game: 'weighsies', name: 'Ruler',
+    colors: ['#FFE9A8', '#B98420'],
+    fill: (x, y) => ((y <= 1 && x % 2 === 0) || (y === 2 && x % 4 === 0) || (y >= 14 && x % 2 === 1) ? 2 : 1),
+  },
+  {
+    id: 'cutsies.seeds', game: 'cutsies', name: 'Melon seeds',
+    colors: ['#FF8FA3', '#2A1B10', '#FFC2CC'],
+    fill: (x, y) => ((x * 3 + y * 5) % 11 === 0 ? 2 : (x + y) % 2 === 0 && y % 3 === 0 ? 3 : 1),
+  },
+  {
+    id: 'tiltsies.spiral', game: 'tiltsies', name: 'Spiral',
+    colors: ['#E6D8FF', '#B9A3F0'],
+    fill: (x, y) => (Math.floor(Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5))) % 2 ? 2 : 1),
+  },
+  {
+    id: 'trackdle.tarmac', game: 'trackdle', name: 'Tarmac',
+    colors: ['#5A5F6B', '#4A4E58', '#F2C230'],
+    fill: (x, y) => ((x === 7 || x === 8) ? (y % 4 < 2 ? 3 : 1) : (x * 5 + y * 3) % 7 === 0 ? 2 : 1),
   },
 ];
 

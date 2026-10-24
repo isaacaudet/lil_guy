@@ -17,7 +17,7 @@
 
 <p align="center">
   Deterministic pixel art avatars from any string.<br />
-  ~430 billion lil guys. Zero dependencies. ~21 KB gzipped.
+  ~4.6 trillion lil guys. Zero dependencies. ~32 KB gzipped.
 </p>
 
 <p align="center">
@@ -194,8 +194,8 @@ Creates a Next.js route handler. Returns `{ GET }`.
 
 ## Animations
 
-Nine moves for games: `idle`, `blink`, `hop`, `wave`, `look`, `cheer`, `sad`,
-`dance` and `squish`. They take the same options as `toSvgString`, so a guy
+Ten moves for games: `idle`, `blink`, `hop`, `wave`, `look`, `cheer`, `sad`,
+`dance`, `squish` and `sleep`. They take the same options as `toSvgString`, so a guy
 hops in the hat he is wearing.
 
 ```ts
@@ -214,6 +214,10 @@ mouth when sad, an "ooh" when squished. His own eyes always stay. Little
 emotes pop up beside him (music notes, a question mark, a heart, a "!"), and
 dust puffs out when he lands.
 
+Players can show an emote over any move with `emote`. `EMOTE_UNLOCKS` lists
+them and how each is earned: a heart, music, a snooze, "huh?" and "whoa!"
+for everyone, a flame for a 7-day streak and a crown for a perfect day.
+
 Frames are 16 wide and 20 tall: the guy stands in the bottom 16 rows exactly
 as in the still, and the top 4 are room to jump into. Every frame is made from
 his own pixels. A squash loses a row from the middle of the body and a stretch
@@ -227,8 +231,8 @@ wearing sets how much:
 | Everyday | nothing extra |
 | Special | a shine sweeps across the item |
 | Prized | and a ring in the grade's colour pulses round him |
-| Mythic | and sparkles |
-| ★ Grail | a gold ring and more sparkles |
+| Mythic | and sparkles, and a trail when he jumps |
+| ★ Grail | a gold ring, more sparkles and a gold trail |
 
 `rarity: false` turns it off. `once: true` plays the SVG once and holds the
 last frame. The SVG plays whatever the reduced-motion setting is, as the DLE
@@ -261,7 +265,9 @@ A few rules keep every combination good-looking:
 - **Clean colours, with depth.** No greys or murky browns; every guy gets the same outline, gleam and shading, and the vivid tone is common
 - **Nothing is clipped.** Tests check every shape against every hat, accessory, arm pose and foot style: each guy is fully outlined inside the frame, in one piece, and no hat or scarf ever covers an eye or the mouth
 
-27 shapes × 19 eyes × 16 mouths × 8 cheeks × 30 toppers × 8 markings × 8 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) = **431,176,089,600** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 58.7 billion equally-likely guys.
+27 shapes × 19 eyes × 16 mouths × 14 cheeks × 30 toppers × 14 markings × 14 accessories × 3 arm poses × 5 foot styles × 38 colourways × 3 tones × 2 (mirrored) × 2 (Lucky or not) = **4,621,668,710,400** characters. Weighting makes the simple parts common and the loud ones rare, so the set behaves like about 365 billion equally-likely guys.
+
+**Lucky.** About one name in 400 (`LUCKY_ODDS`) comes out Lucky: the same colourway turned round the colour wheel, with gold trim. It counts in `guyOneIn` like any trait.
 
 ### Pinning parts
 
@@ -272,14 +278,15 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 | `head` | `0-26` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, peanut, tower, gourd, bean, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart |
 | `eyes` | `0-18` beans, shiny, happy, sparkle, wink, glossy, content, excited, hearts, lashes, glance, chill, side-eye, shades, star, squint, fired up, laser, cyclops |
 | `mouth` | `0-15` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum |
-| `cheeks` | `0-7` bare, blush, dot, rosy, freckles, scar, band-aid, war paint |
+| `cheeks` | `0-13` bare, blush, dot, rosy, freckles, scar, band-aid, war paint, whiskers, hearts, shine, stripes, stars, gold leaf |
 | `hair` | `0-29` whatever sits on top: ears, a sprout, a hat, a mohawk, headphones |
-| `body` | `0-7` markings |
-| `accessory` | `0-7` glasses, scarf, collar, bow tie, … |
+| `body` | `0-13` markings: plain, belly, two tone, tabby, spots, star mark, heart mark, gleam, stripes, zigzag, split, moon mark, bolt mark, starry |
+| `accessory` | `0-13` glasses, scarf, collar, bow tie, bandana, star sticker, heart badge, monocle, eye patch, necklace, medal, flower pin, headband |
 | `arms` | `0-2` none, by the sides, waving |
 | `feet` | `0-4` nubs, tiptoes, wide, socks, tucked |
 | `shade` | `0-2` pastel, as picked, vivid |
 | `flip` | `boolean` mirrors the finished guy |
+| `lucky` | `boolean` the Lucky colour variant |
 
 ```tsx
 <LilGuy name="alice" parts={{ hair: 1, arms: 2, flip: true }} />
@@ -293,17 +300,17 @@ Every DLE Club game has things a player can wear, here and in every other game.
 The guy underneath — face, shape, colours — never changes, so a player is
 recognisable everywhere.
 
-| Game | Skins | Hats (first is free) | Frame |
+| Game | Skins | Hats (first is free) | Frames |
 |---|---|---|---|
-| Amountle | Jar of gems, Crystal | Gem, Gem crown, Big gem | Gem field |
-| Halfsies | Clay pot, Kitchen scale | Half pot, Scale dish, Pot helmet | Kitchen teal |
-| Stackdle | Toy block, Triangle | Little block, Tower, Ring | Toy box |
-| Flipsies | Water bottle, Bullseye | Bottle cap, Landed bottle, Bullseye beret | Bullseye |
-| Puttsies | Golf ball, Quilt pillow | Golf visor, Pin flag, Golf tam | Patchwork |
-| Weighsies | Cheese wheel, Kettlebell | Cheese wedge, Balance, Dumbbell | Lavender |
-| Cutsies | Kiwi, Melon slice | Kiwi slice, Chef hat, Orange half | Kiwi slices |
-| Tiltsies | Hamster ball, Hamster | Hamster ears, Hamster buddy, Sunflower seed | Toy maze |
-| Trackdle | Racer, Traffic cone | Pit cap, Race helmet, Trophy | Checkered flag |
+| Amountle | Jar of gems, Crystal | Gem, Gem crown, Big gem | Gem field, Coin pile |
+| Halfsies | Clay pot, Kitchen scale | Half pot, Scale dish, Pot helmet | Kitchen teal, Gingham |
+| Stackdle | Toy block, Triangle | Little block, Tower, Ring | Toy box, Bricks |
+| Flipsies | Water bottle, Bullseye | Bottle cap, Landed bottle, Bullseye beret | Bullseye, Waves |
+| Puttsies | Golf ball, Quilt pillow | Golf visor, Pin flag, Golf tam | Patchwork, Fairway |
+| Weighsies | Cheese wheel, Kettlebell | Cheese wedge, Balance, Dumbbell | Lavender, Ruler |
+| Cutsies | Kiwi, Melon slice | Kiwi slice, Chef hat, Orange half | Kiwi slices, Melon seeds |
+| Tiltsies | Hamster ball, Hamster | Hamster ears, Hamster buddy, Sunflower seed | Toy maze, Spiral |
+| Trackdle | Racer, Traffic cone | Pit cap, Race helmet, Trophy | Checkered flag, Tarmac |
 
 A **skin** turns the guy into the game's object and keeps his face.
 
@@ -316,7 +323,8 @@ An item is a design. A copy someone owns is the item plus:
 | **Finish** | Plain (79.22%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Gold (0.9%), Prism (0.5%), Negative (0.2%). Everything but Plain and Tempered only comes Mint in Box or Like New |
 | **Scuff** | 0–1, how worn it is. Mint in Box < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Mint in Box copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered prints 661, 670, 321, 387 and 955 come out almost all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
-| **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy |
+| **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |
+| **Pins** | up to three, earned and stuck on: a gold star (a perfect day), a flame (a 7-day streak), a heart (100 days played), a bolt (fastest of the day), a crown (top of a board) and a leaf (a first week). The club grants them; they are drawn on the item's own pixels |
 
 Grades follow from the finish: Everyday, Special, Prized, Mythic (a famous
 print lifts a copy one grade), ★ Grail (Gold, with a sparkle).
@@ -335,6 +343,8 @@ import { roll, encode, decode, nameOf, wearOf, gradeOf } from "lil_guy";
 
 const copy = roll(serverSeed, "puttsies");
 const saved = encode(copy);          // "puttsies.ball~nebula~0.0123456~20"
+encode({ ...copy, tally: 412, pins: ["star", "flame"] });
+                                     // "…~20~t412~pstar+flame"
 nameOf(copy);                        // "Golf ball | Red Giant"
 wearOf(copy.scuff).name;             // "Mint in Box"
 gradeOf(copy).name;                  // "Mythic"

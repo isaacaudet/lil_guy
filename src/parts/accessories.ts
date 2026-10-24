@@ -38,6 +38,19 @@ const heart = stamp([
   '.r.',
 ]);
 
+const monocle = stamp([
+  '.oo.',
+  'o..o',
+  'o..o',
+  '.oo.',
+]);
+
+const flower = stamp([
+  '.a.',
+  'aya',
+  '.a.',
+]);
+
 /** Paints a body cell unless the mouth is already there. */
 function wear(c: Canvas, x: number, y: number, token: number): void {
   if (c.get(x, y) === T.MOUTH || c.get(x, y) === T.TONGUE) return;
@@ -125,6 +138,75 @@ export const accessories: Accessory[] = [
         const x = r.right - 3 + dx, y = c.bottom - 2 + dy;
         if (token && c.isBody(x, y)) wear(c, x, y, token);
       }));
+    },
+  },
+
+  {
+    name: 'monocle',
+    layer: 'face',
+    draw: c => {
+      // Around the right eye, where a pair of glasses has its right lens, on a gold chain.
+      const x = c.centred(glasses) + 6;
+      c.draw(monocle, x, c.eyeLine - 2);
+      c.set(x + 3, c.eyeLine + 2, T.GOLD);
+      c.set(x + 3, c.eyeLine + 3, T.GOLD_SHADE);
+    },
+  },
+
+  {
+    name: 'eye patch',
+    layer: 'body',
+    draw: c => {
+      // A strap across the forehead and a patch over the left eye.
+      const x = c.centred(glasses);
+      const top = c.eyeLine - 3;
+      const r = c.rows[top];
+      if (r) for (let sx = r.left; sx <= r.right; sx++) wear(c, sx, top, T.OUTLINE);
+      for (let y = c.eyeLine - 2; y <= c.eyeLine; y++) for (let dx = 0; dx < 4; dx++) wear(c, x + dx, y, T.OUTLINE);
+    },
+  },
+
+  {
+    name: 'necklace',
+    layer: 'body',
+    draw: c => {
+      const y = c.eyeLine + 3;
+      const r = c.rows[y];
+      if (!r) return;
+      for (let x = r.left + 1; x < r.right; x += 2) wear(c, x, y, T.WHITE);
+      wear(c, Math.floor(c.centre) - 1, y + 1, T.GOLD);
+    },
+  },
+
+  {
+    name: 'medal',
+    layer: 'body',
+    draw: c => {
+      const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+      wear(c, x, y, T.ACCENT);
+      wear(c, x + 1, y, T.ACCENT_SHADE);
+      wear(c, x, y + 1, T.GOLD);
+      wear(c, x + 1, y + 1, T.GOLD_SHADE);
+    },
+  },
+
+  {
+    name: 'flower pin',
+    layer: 'body',
+    draw: c => {
+      const r = c.rows[c.eyeLine - 3];
+      if (r) c.draw(flower, r.left + 1, c.eyeLine - 4, true);
+    },
+  },
+
+  {
+    name: 'headband',
+    layer: 'face',
+    draw: c => {
+      const y = c.eyeLine - 4;
+      const r = c.rows[y];
+      if (!r) return;
+      for (let x = r.left; x <= r.right; x++) c.set(x, y, x === r.right ? T.ACCENT_SHADE : T.ACCENT);
     },
   },
 ];

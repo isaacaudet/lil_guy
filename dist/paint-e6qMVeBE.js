@@ -1,28 +1,3 @@
-"use strict";
-//#region rolldown:runtime
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
-		key = keys[i];
-		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
-			get: ((k) => from[k]).bind(null, key),
-			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
-		});
-	}
-	return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
-	value: mod,
-	enumerable: true
-}) : target, mod));
-
-//#endregion
-
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -136,6 +111,12 @@ const cheekWeights = [
 	4,
 	2,
 	2,
+	1,
+	3,
+	2,
+	3,
+	2,
+	1,
 	1
 ];
 const hairWeights = [
@@ -178,7 +159,13 @@ const bodyWeights = [
 	2,
 	1,
 	1,
-	2
+	2,
+	2,
+	2,
+	2,
+	1,
+	1,
+	1
 ];
 const accessoryWeights = [
 	12,
@@ -188,7 +175,13 @@ const accessoryWeights = [
 	1,
 	2,
 	1,
-	1
+	1,
+	1,
+	1,
+	2,
+	2,
+	2,
+	2
 ];
 /** None, by the sides, waving. */
 const armWeights = [
@@ -237,6 +230,8 @@ function weightedPick(weights, hashValue) {
 * part doesn't cascade into the others, and each pick is weighted (see
 * ./parts/weights) so the simple, sweet looks are the common ones.
 */
+/** One name in this many gets the Lucky colour variant. */
+const LUCKY_ODDS = 400;
 function resolve(input, overrides) {
 	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
 	return {
@@ -252,7 +247,8 @@ function resolve(input, overrides) {
 		shade: overrides?.shade ?? pick(9, shadeWeights),
 		feet: overrides?.feet ?? pick(10, footWeights),
 		cheeks: overrides?.cheeks ?? pick(11, cheekWeights),
-		arms: overrides?.arms ?? pick(12, armWeights)
+		arms: overrides?.arms ?? pick(12, armWeights),
+		lucky: overrides?.lucky ?? hashNth(input, 13) % LUCKY_ODDS === 0
 	};
 }
 
@@ -625,6 +621,151 @@ const hair = [
 ];
 
 //#endregion
+//#region src/types.ts
+const GRID_SIZE = 16;
+
+//#endregion
+//#region src/pins.ts
+const PINS = [
+	{
+		id: "star",
+		name: "Gold star",
+		how: "A perfect day",
+		art: stamp([
+			".y.",
+			"yYy",
+			".y."
+		])
+	},
+	{
+		id: "flame",
+		name: "Flame",
+		how: "A 7-day streak",
+		art: stamp([
+			".r",
+			"rr",
+			"ry"
+		])
+	},
+	{
+		id: "heart",
+		name: "Heart",
+		how: "100 days played",
+		art: stamp([
+			"r.r",
+			"rrr",
+			".r."
+		])
+	},
+	{
+		id: "bolt",
+		name: "Bolt",
+		how: "Fastest of the day",
+		art: stamp([
+			".y",
+			"yy",
+			"y."
+		])
+	},
+	{
+		id: "crown",
+		name: "Crown",
+		how: "Top of a board for a day",
+		art: stamp(["y.y", "yyy"])
+	},
+	{
+		id: "leaf",
+		name: "Leaf",
+		how: "A first week in the club",
+		art: stamp(["gg", ".G"])
+	}
+];
+/** A copy holds at most this many pins. */
+const MAX_PINS = 3;
+const pinById = (id) => PINS.find((p) => p.id === id);
+/** The tally marks a copy shows for its tally: none, 2 or 4. */
+function tallyMarks(tally) {
+	return (tally ?? 0) >= 100 ? 4 : (tally ?? 0) >= 30 ? 2 : 0;
+}
+/** A year of days: the item's outline goes gold. */
+const GOLD_RIM_DAYS = 365;
+const START = {
+	skin: LAYER.skin,
+	hat: LAYER.hat,
+	frame: LAYER.frame
+};
+const own = (slot, token) => token >= START[slot] && token < START[slot] + 10;
+/** Scratches tally marks and sticks pins onto one worn item's pixels. */
+function markItem(grid, slot, copy) {
+	const cells = [];
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		if (own(slot, t)) cells.push([x, y]);
+	}));
+	if (!cells.length) return;
+	const xs = cells.map((c) => c[0]), ys = cells.map((c) => c[1]);
+	const [left, right, top, bottom] = [
+		Math.min(...xs),
+		Math.max(...xs),
+		Math.min(...ys),
+		Math.max(...ys)
+	];
+	let marks = tallyMarks(copy.tally);
+	for (let y = bottom; y >= top && marks > 0; y--) {
+		const row = cells.filter(([, cy]) => cy === y).map(([x]) => x).sort((a, b) => a - b);
+		for (let i = 1; i < row.length - 1 && marks > 0; i += 2, marks--) grid[y][row[i]] = T.WHITE;
+	}
+	(copy.pins ?? []).slice(0, MAX_PINS).forEach((id, k) => {
+		const pin = pinById(id);
+		if (!pin) return;
+		const h = pin.art.length, w = pin.art[0].length;
+		const anchors = slot === "frame" ? [
+			[GRID_SIZE - w, GRID_SIZE - h],
+			[0, GRID_SIZE - h],
+			[GRID_SIZE - w, 0]
+		] : [
+			[right - w, bottom - h - 1],
+			[left + 1, bottom - h - 1],
+			[right - w, top + 1]
+		];
+		let [ax, ay] = anchors[k];
+		for (let tries = 0; tries < (slot === "frame" ? 0 : 4); tries++) {
+			let on$1 = 0, total = 0;
+			pin.art.forEach((row, dy) => row.forEach((t, dx) => {
+				if (!t) return;
+				total++;
+				if (own(slot, grid[ay + dy]?.[ax + dx] ?? 0)) on$1++;
+			}));
+			if (on$1 === total) break;
+			ax += ax > (left + right) / 2 ? -1 : 1;
+			ay += ay > (top + bottom) / 2 ? -1 : 1;
+		}
+		pin.art.forEach((row, dy) => row.forEach((t, dx) => {
+			const x = ax + dx, y = ay + dy;
+			if (t && y >= 0 && y < GRID_SIZE && x >= 0 && x < GRID_SIZE && own(slot, grid[y][x])) grid[y][x] = t;
+		}));
+	});
+}
+/** After a year of days, the outline around an item goes gold; a frame's edge does. */
+function goldRim(grid, slot) {
+	const edge = (x, y) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
+	const set = [];
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		if (slot === "frame") {
+			if (own("frame", t) && edge(x, y)) set.push([x, y]);
+			return;
+		}
+		if (t !== T.OUTLINE) return;
+		if ([
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set.push([x, y]);
+	}));
+	for (const [x, y] of set) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+}
+
+//#endregion
 //#region src/owned.ts
 const GRADES = [
 	{
@@ -776,7 +917,8 @@ function nameOf(o) {
 }
 /**
 * A copy as one short string, to store or put in a URL:
-* `puttsies.ball~nebula~0.0123456~20` or, with a tally, `…~20~t412`.
+* `puttsies.ball~nebula~0.0123456~20`; with a tally `…~20~t412`; with pins
+* `…~p` and their ids joined by `+`, as in `…~t412~pstar+flame`.
 */
 function encode(o) {
 	const parts = [
@@ -786,10 +928,11 @@ function encode(o) {
 		String(o.print)
 	];
 	if (o.tally !== void 0) parts.push(`t${o.tally}`);
+	if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join("+")}`);
 	return parts.join("~");
 }
 function decode(s) {
-	const [item, finish, scuff, print, tally] = s.split("~");
+	const [item, finish, scuff, print, ...extra] = s.split("~");
 	if (!itemById(item) || !(finish in FINISHES)) return null;
 	const f = Number(scuff), p = Number(print);
 	if (!(f >= 0 && f <= 1) || !Number.isInteger(p) || p < 0 || p > 999) return null;
@@ -799,7 +942,13 @@ function decode(s) {
 		scuff: f,
 		print: p
 	};
-	if (tally?.startsWith("t") && /^\d+$/.test(tally.slice(1))) o.tally = Number(tally.slice(1));
+	for (const part of extra) {
+		if (part.startsWith("t") && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
+		if (part.startsWith("p")) {
+			const pins = part.slice(1).split("+").filter((id) => pinById(id)).slice(0, MAX_PINS);
+			if (pins.length) o.pins = pins;
+		}
+	}
 	return o;
 }
 /** A uniform number in [0, 1) from a string, for deterministic rolls. */
@@ -967,10 +1116,6 @@ function paintCell(color, x, y, o, state) {
 	}
 	return hex(c);
 }
-
-//#endregion
-//#region src/types.ts
-const GRID_SIZE = 16;
 
 //#endregion
 //#region src/items.ts
@@ -2109,6 +2254,104 @@ const frames = [
 		name: "Checkered flag",
 		colors: ["#2A2D33", "#F4F4F4"],
 		fill: (x, y) => (Math.floor(x / 2) + Math.floor(y / 2)) % 2 ? 1 : 2
+	},
+	{
+		id: "amountle.coins",
+		game: "amountle",
+		name: "Coin pile",
+		colors: [
+			"#FFF4D6",
+			"#F2C230",
+			"#C8901E"
+		],
+		fill: (x, y) => y >= 12 ? (x + y) % 3 === 0 ? 3 : 2 : (x * 7 + y * 3) % 23 === 0 ? 2 : 1
+	},
+	{
+		id: "halfsies.gingham",
+		game: "halfsies",
+		name: "Gingham",
+		colors: [
+			"#FFFFFF",
+			"#F7C2BA",
+			"#EE968B"
+		],
+		fill: (x, y) => {
+			const a = Math.floor(x / 2) % 2, b = Math.floor(y / 2) % 2;
+			return a && b ? 3 : a || b ? 2 : 1;
+		}
+	},
+	{
+		id: "stackdle.bricks",
+		game: "stackdle",
+		name: "Bricks",
+		colors: [
+			"#F08A5D",
+			"#D9704A",
+			"#FCE1D2"
+		],
+		fill: (x, y) => y % 4 === 3 || (x + Math.floor(y / 4) % 2 * 2) % 4 === 3 ? 3 : (x + y) % 5 === 0 ? 2 : 1
+	},
+	{
+		id: "flipsies.waves",
+		game: "flipsies",
+		name: "Waves",
+		colors: [
+			"#BFE6FF",
+			"#7CC4F2",
+			"#FFFFFF"
+		],
+		fill: (x, y) => {
+			const v = (y + [
+				0,
+				1,
+				1,
+				0
+			][x % 4]) % 4;
+			return v === 0 ? 2 : v === 1 && x % 4 === 1 ? 3 : 1;
+		}
+	},
+	{
+		id: "puttsies.fairway",
+		game: "puttsies",
+		name: "Fairway",
+		colors: ["#A6DB86", "#8CCB6C"],
+		fill: (x) => Math.floor(x / 3) % 2 ? 2 : 1
+	},
+	{
+		id: "weighsies.ruler",
+		game: "weighsies",
+		name: "Ruler",
+		colors: ["#FFE9A8", "#B98420"],
+		fill: (x, y) => y <= 1 && x % 2 === 0 || y === 2 && x % 4 === 0 || y >= 14 && x % 2 === 1 ? 2 : 1
+	},
+	{
+		id: "cutsies.seeds",
+		game: "cutsies",
+		name: "Melon seeds",
+		colors: [
+			"#FF8FA3",
+			"#2A1B10",
+			"#FFC2CC"
+		],
+		fill: (x, y) => (x * 3 + y * 5) % 11 === 0 ? 2 : (x + y) % 2 === 0 && y % 3 === 0 ? 3 : 1
+	},
+	{
+		id: "tiltsies.spiral",
+		game: "tiltsies",
+		name: "Spiral",
+		colors: ["#E6D8FF", "#B9A3F0"],
+		fill: (x, y) => Math.floor(Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5))) % 2 ? 2 : 1
+	},
+	{
+		id: "trackdle.tarmac",
+		game: "trackdle",
+		name: "Tarmac",
+		colors: [
+			"#5A5F6B",
+			"#4A4E58",
+			"#F2C230"
+		],
+		fill: (x, y) => x === 7 || x === 8 ? y % 4 < 2 ? 3 : 1 : (x * 5 + y * 3) % 7 === 0 ? 2 : 1
 	}
 ];
 /** Every item: each game's skins, then hats, then frames. */
@@ -2828,7 +3071,17 @@ const cheeks = [
 	cheeks_("freckles", ["s.s....s.s"]),
 	cheeks_("scar", [".......o..", "........o."]),
 	cheeks_("band-aid", [".......xx."]),
-	cheeks_("war paint", ["rr......rr"])
+	cheeks_("war paint", ["rr......rr"]),
+	cheeks_("whiskers", ["dd......dd"]),
+	cheeks_("hearts", ["r.r....r.r", ".r......r."]),
+	cheeks_("shine", ["ww......ww"]),
+	cheeks_("stripes", ["ss......ss", ".ss....ss."]),
+	cheeks_("stars", [
+		".y......y.",
+		"yyy....yyy",
+		".y......y."
+	]),
+	cheeks_("gold leaf", ["yY......Yy"])
 ];
 
 //#endregion
@@ -2842,6 +3095,16 @@ const star$1 = stamp([
 	".y.",
 	"yyy",
 	".y."
+]);
+const moon = stamp([
+	".yy",
+	"y..",
+	".yy"
+]);
+const bolt = stamp([
+	"..y",
+	"yyy",
+	"y.."
 ]);
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c, x, y, token) {
@@ -2920,6 +3183,57 @@ const bodies = [
 			onBody(c, r.right - 2, c.crown + 2, T.LIGHT);
 			onBody(c, r.right - 2, c.crown + 3, T.LIGHT);
 		}
+	},
+	{
+		name: "stripes",
+		draw: (c) => {
+			for (let y = c.eyeLine + 3; y <= c.bottom; y += 2) {
+				const r = c.rows[y];
+				if (r) for (let x = r.left + 1; x < r.right; x++) onBody(c, x, y, T.SHADE);
+			}
+		}
+	},
+	{
+		name: "zigzag",
+		draw: (c) => {
+			const y = c.eyeLine + 3;
+			const r = c.rows[y];
+			if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + x % 2, T.BELLY);
+		}
+	},
+	{
+		name: "split",
+		draw: (c) => {
+			for (let y = c.crown; y <= c.bottom; y++) {
+				const r = c.rows[y];
+				if (r) {
+					for (let x = r.left; x < Math.floor(c.centre); x++) if (c.get(x, y) === T.BODY) onBody(c, x, y, T.BELLY);
+				}
+			}
+		}
+	},
+	{
+		name: "moon mark",
+		draw: (c) => {
+			c.draw(moon, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+		}
+	},
+	{
+		name: "bolt mark",
+		draw: (c) => {
+			c.draw(bolt, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+		}
+	},
+	{
+		name: "starry",
+		draw: (c) => {
+			const x = Math.floor(c.centre);
+			onBody(c, x - 4, c.crown + 2, T.WHITE);
+			onBody(c, x + 1, c.crown + 1, T.GOLD);
+			onBody(c, x + 3, c.crown + 3, T.WHITE);
+			onBody(c, x - 3, c.bottom - 1, T.GOLD);
+			onBody(c, x + 4, c.bottom - 2, T.WHITE);
+		}
 	}
 ];
 
@@ -2945,6 +3259,17 @@ const heart = stamp([
 	"r.r",
 	"rrr",
 	".r."
+]);
+const monocle = stamp([
+	".oo.",
+	"o..o",
+	"o..o",
+	".oo."
+]);
+const flower = stamp([
+	".a.",
+	"aya",
+	".a."
 ]);
 /** Paints a body cell unless the mouth is already there. */
 function wear(c, x, y, token) {
@@ -3029,6 +3354,67 @@ const accessories = [
 				const x = r.right - 3 + dx, y = c.bottom - 2 + dy;
 				if (token && c.isBody(x, y)) wear(c, x, y, token);
 			}));
+		}
+	},
+	{
+		name: "monocle",
+		layer: "face",
+		draw: (c) => {
+			const x = c.centred(glasses) + 6;
+			c.draw(monocle, x, c.eyeLine - 2);
+			c.set(x + 3, c.eyeLine + 2, T.GOLD);
+			c.set(x + 3, c.eyeLine + 3, T.GOLD_SHADE);
+		}
+	},
+	{
+		name: "eye patch",
+		layer: "body",
+		draw: (c) => {
+			const x = c.centred(glasses);
+			const top = c.eyeLine - 3;
+			const r = c.rows[top];
+			if (r) for (let sx = r.left; sx <= r.right; sx++) wear(c, sx, top, T.OUTLINE);
+			for (let y = c.eyeLine - 2; y <= c.eyeLine; y++) for (let dx = 0; dx < 4; dx++) wear(c, x + dx, y, T.OUTLINE);
+		}
+	},
+	{
+		name: "necklace",
+		layer: "body",
+		draw: (c) => {
+			const y = c.eyeLine + 3;
+			const r = c.rows[y];
+			if (!r) return;
+			for (let x = r.left + 1; x < r.right; x += 2) wear(c, x, y, T.WHITE);
+			wear(c, Math.floor(c.centre) - 1, y + 1, T.GOLD);
+		}
+	},
+	{
+		name: "medal",
+		layer: "body",
+		draw: (c) => {
+			const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+			wear(c, x, y, T.ACCENT);
+			wear(c, x + 1, y, T.ACCENT_SHADE);
+			wear(c, x, y + 1, T.GOLD);
+			wear(c, x + 1, y + 1, T.GOLD_SHADE);
+		}
+	},
+	{
+		name: "flower pin",
+		layer: "body",
+		draw: (c) => {
+			const r = c.rows[c.eyeLine - 3];
+			if (r) c.draw(flower, r.left + 1, c.eyeLine - 4, true);
+		}
+	},
+	{
+		name: "headband",
+		layer: "face",
+		draw: (c) => {
+			const y = c.eyeLine - 4;
+			const r = c.rows[y];
+			if (!r) return;
+			for (let x = r.left; x <= r.right; x++) c.set(x, y, x === r.right ? T.ACCENT_SHADE : T.ACCENT);
 		}
 	}
 ];
@@ -3314,11 +3700,22 @@ function compose(config) {
 	const mouth$1 = mouths[config.mouth].art;
 	c.draw(mouth$1, c.centred(mouth$1), line + 1, true);
 	if (accessory.layer === "body" && !skin) accessory.draw(c);
+	const worn = (slot) => itemById(config[slot])?.slot === slot ? config.owned?.[slot] : void 0;
+	for (const slot of ["skin", "hat"]) {
+		const o = worn(slot);
+		if (o) markItem(c.grid, slot, o);
+	}
 	outline(c.grid);
+	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 	if (config.flip) for (const row of c.grid) row.reverse();
 	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
 	if (frame?.slot === "frame") {
 		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill(x, y) - 1;
+		const o = worn("frame");
+		if (o) {
+			markItem(c.grid, "frame", o);
+			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
+		}
 	}
 	return c.grid;
 }
@@ -3730,6 +4127,27 @@ function shadePalette(palette, shade) {
 	const c = palette.colors;
 	return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
 }
+/**
+* The Lucky variant: the same colourway turned round the colour wheel, with
+* gold trim. Derived again, so the face and outline read as well as ever.
+*/
+function luckyPalette(palette) {
+	const turn = (hex$1) => {
+		const [h, s, l] = toHsl(hex$1);
+		return fromHsl([
+			h + 150,
+			Math.min(.85, s + .05),
+			l >= .45 ? Math.max(l, .66) : Math.min(l, .3)
+		]);
+	};
+	const c = palette.colors;
+	return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
+}
+/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+function paletteOf(config) {
+	const toned = shadePalette(getPalette(config.palette), config.shade);
+	return config.lucky ? luckyPalette(toned) : toned;
+}
 
 //#endregion
 //#region src/paint.ts
@@ -3751,316 +4169,5 @@ function paint(grid, config, palette) {
 }
 
 //#endregion
-Object.defineProperty(exports, 'DEEP_BLUE_PRINTS', {
-  enumerable: true,
-  get: function () {
-    return DEEP_BLUE_PRINTS;
-  }
-});
-Object.defineProperty(exports, 'FINISHES', {
-  enumerable: true,
-  get: function () {
-    return FINISHES;
-  }
-});
-Object.defineProperty(exports, 'FOOT_STYLES', {
-  enumerable: true,
-  get: function () {
-    return FOOT_STYLES;
-  }
-});
-Object.defineProperty(exports, 'GAMES', {
-  enumerable: true,
-  get: function () {
-    return GAMES;
-  }
-});
-Object.defineProperty(exports, 'GRADES', {
-  enumerable: true,
-  get: function () {
-    return GRADES;
-  }
-});
-Object.defineProperty(exports, 'GRID_SIZE', {
-  enumerable: true,
-  get: function () {
-    return GRID_SIZE;
-  }
-});
-Object.defineProperty(exports, 'LAYER', {
-  enumerable: true,
-  get: function () {
-    return LAYER;
-  }
-});
-Object.defineProperty(exports, 'SHADE_COUNT', {
-  enumerable: true,
-  get: function () {
-    return SHADE_COUNT;
-  }
-});
-Object.defineProperty(exports, 'T', {
-  enumerable: true,
-  get: function () {
-    return T;
-  }
-});
-Object.defineProperty(exports, 'WEAR', {
-  enumerable: true,
-  get: function () {
-    return WEAR;
-  }
-});
-Object.defineProperty(exports, '__toESM', {
-  enumerable: true,
-  get: function () {
-    return __toESM;
-  }
-});
-Object.defineProperty(exports, 'accessories', {
-  enumerable: true,
-  get: function () {
-    return accessories;
-  }
-});
-Object.defineProperty(exports, 'accessoryWeights', {
-  enumerable: true,
-  get: function () {
-    return accessoryWeights;
-  }
-});
-Object.defineProperty(exports, 'bodies', {
-  enumerable: true,
-  get: function () {
-    return bodies;
-  }
-});
-Object.defineProperty(exports, 'bodyWeights', {
-  enumerable: true,
-  get: function () {
-    return bodyWeights;
-  }
-});
-Object.defineProperty(exports, 'cheekWeights', {
-  enumerable: true,
-  get: function () {
-    return cheekWeights;
-  }
-});
-Object.defineProperty(exports, 'cheeks', {
-  enumerable: true,
-  get: function () {
-    return cheeks;
-  }
-});
-Object.defineProperty(exports, 'compose', {
-  enumerable: true,
-  get: function () {
-    return compose;
-  }
-});
-Object.defineProperty(exports, 'composeBase', {
-  enumerable: true,
-  get: function () {
-    return composeBase;
-  }
-});
-Object.defineProperty(exports, 'decode', {
-  enumerable: true,
-  get: function () {
-    return decode;
-  }
-});
-Object.defineProperty(exports, 'dress', {
-  enumerable: true,
-  get: function () {
-    return dress;
-  }
-});
-Object.defineProperty(exports, 'encode', {
-  enumerable: true,
-  get: function () {
-    return encode;
-  }
-});
-Object.defineProperty(exports, 'eyeWeights', {
-  enumerable: true,
-  get: function () {
-    return eyeWeights;
-  }
-});
-Object.defineProperty(exports, 'eyes', {
-  enumerable: true,
-  get: function () {
-    return eyes;
-  }
-});
-Object.defineProperty(exports, 'freeItem', {
-  enumerable: true,
-  get: function () {
-    return freeItem;
-  }
-});
-Object.defineProperty(exports, 'gameItems', {
-  enumerable: true,
-  get: function () {
-    return gameItems;
-  }
-});
-Object.defineProperty(exports, 'getPalette', {
-  enumerable: true,
-  get: function () {
-    return getPalette;
-  }
-});
-Object.defineProperty(exports, 'gradeOf', {
-  enumerable: true,
-  get: function () {
-    return gradeOf;
-  }
-});
-Object.defineProperty(exports, 'hair', {
-  enumerable: true,
-  get: function () {
-    return hair;
-  }
-});
-Object.defineProperty(exports, 'hairWeights', {
-  enumerable: true,
-  get: function () {
-    return hairWeights;
-  }
-});
-Object.defineProperty(exports, 'hash', {
-  enumerable: true,
-  get: function () {
-    return hash;
-  }
-});
-Object.defineProperty(exports, 'hashNth', {
-  enumerable: true,
-  get: function () {
-    return hashNth;
-  }
-});
-Object.defineProperty(exports, 'headWeights', {
-  enumerable: true,
-  get: function () {
-    return headWeights;
-  }
-});
-Object.defineProperty(exports, 'heads', {
-  enumerable: true,
-  get: function () {
-    return heads;
-  }
-});
-Object.defineProperty(exports, 'itemById', {
-  enumerable: true,
-  get: function () {
-    return itemById;
-  }
-});
-Object.defineProperty(exports, 'items', {
-  enumerable: true,
-  get: function () {
-    return items;
-  }
-});
-Object.defineProperty(exports, 'mouthWeights', {
-  enumerable: true,
-  get: function () {
-    return mouthWeights;
-  }
-});
-Object.defineProperty(exports, 'mouths', {
-  enumerable: true,
-  get: function () {
-    return mouths;
-  }
-});
-Object.defineProperty(exports, 'nameOf', {
-  enumerable: true,
-  get: function () {
-    return nameOf;
-  }
-});
-Object.defineProperty(exports, 'nebulaPhase', {
-  enumerable: true,
-  get: function () {
-    return nebulaPhase;
-  }
-});
-Object.defineProperty(exports, 'paint', {
-  enumerable: true,
-  get: function () {
-    return paint;
-  }
-});
-Object.defineProperty(exports, 'paletteWeights', {
-  enumerable: true,
-  get: function () {
-    return paletteWeights;
-  }
-});
-Object.defineProperty(exports, 'palettes', {
-  enumerable: true,
-  get: function () {
-    return palettes;
-  }
-});
-Object.defineProperty(exports, 'resolve', {
-  enumerable: true,
-  get: function () {
-    return resolve;
-  }
-});
-Object.defineProperty(exports, 'resolveColor', {
-  enumerable: true,
-  get: function () {
-    return resolveColor;
-  }
-});
-Object.defineProperty(exports, 'roll', {
-  enumerable: true,
-  get: function () {
-    return roll;
-  }
-});
-Object.defineProperty(exports, 'shadePalette', {
-  enumerable: true,
-  get: function () {
-    return shadePalette;
-  }
-});
-Object.defineProperty(exports, 'slotOf', {
-  enumerable: true,
-  get: function () {
-    return slotOf;
-  }
-});
-Object.defineProperty(exports, 'special', {
-  enumerable: true,
-  get: function () {
-    return special;
-  }
-});
-Object.defineProperty(exports, 'starter', {
-  enumerable: true,
-  get: function () {
-    return starter;
-  }
-});
-Object.defineProperty(exports, 'wearOf', {
-  enumerable: true,
-  get: function () {
-    return wearOf;
-  }
-});
-Object.defineProperty(exports, 'withItems', {
-  enumerable: true,
-  get: function () {
-    return withItems;
-  }
-});
-//# sourceMappingURL=paint-D3pYVnkK.cjs.map
+export { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, shadePalette, slotOf, special, starter, tallyMarks, wearOf, withItems };
+//# sourceMappingURL=paint-e6qMVeBE.js.map
