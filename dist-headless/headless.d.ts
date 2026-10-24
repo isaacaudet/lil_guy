@@ -816,6 +816,8 @@ interface ShareOptions {
   name?: string;
   /** Small line at the bottom, like the site's address. */
   footer?: string;
+  /** The guy as the player has him: a picked look laid over `input` (see `lookOf`). */
+  config?: AvatarConfig;
 }
 declare function toShareSvg(input: string, copy: Owned, options?: ShareOptions): string;
 

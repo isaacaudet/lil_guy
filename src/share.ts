@@ -5,7 +5,7 @@ import { paint } from './paint';
 import { paletteOf } from './palette';
 import { encode, gradeOf, nameOf, wearOf, type Owned } from './owned';
 import { copyOneIn } from './rarity';
-import { GRID_SIZE } from './types';
+import { GRID_SIZE, type AvatarConfig } from './types';
 
 /**
  * A card to share a copy: the guy wearing it, big, and what makes it rare.
@@ -17,6 +17,8 @@ export interface ShareOptions {
   name?: string;
   /** Small line at the bottom, like the site's address. */
   footer?: string;
+  /** The guy as the player has him: a picked look laid over `input` (see `lookOf`). */
+  config?: AvatarConfig;
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -27,7 +29,7 @@ function count(n: number): string {
 }
 
 export function toShareSvg(input: string, copy: Owned, options: ShareOptions = {}): string {
-  const config = dress(resolve(input), { equip: [encode(copy)] });
+  const config = dress(options.config ?? resolve(input), { equip: [encode(copy)] });
   const colors = paint(compose(config), config, withItems(paletteOf(config), config));
   const grade = gradeOf(copy);
   const item = itemById(copy.item);

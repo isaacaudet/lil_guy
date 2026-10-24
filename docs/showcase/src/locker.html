@@ -1092,7 +1092,7 @@ void main() {
   const byName = (list, name) => list.findIndex(x => x.name === name);
   const ISAAC = {
     parts: { head: byName(LG.heads, 'flame'), eyes: byName(LG.eyes, 'laser'), mouth: byName(LG.mouths, 'smirk'), cheeks: byName(LG.cheeks, 'war paint'), hair: byName(LG.hair, 'crown'), body: byName(LG.bodies, 'star mark'), accessory: byName(LG.accessories, 'bowtie'), arms: 2, feet: 0, shade: 2, flip: false, lucky: true },
-    palette: byName(LG.palettes, 'Midnight'),
+    palette: byName(LG.palettes, 'Ocean'),            // turned by Lucky to a red flame
     copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
   };
   const pinned = name => name === 'isaac' ? ISAAC : null;

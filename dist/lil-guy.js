@@ -5923,7 +5923,7 @@ function count(n) {
 	return n >= 1e12 ? `${(n / 1e12).toFixed(1)} trillion` : n >= 1e9 ? `${(n / 1e9).toFixed(1)} billion` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} million` : Math.round(n).toLocaleString("en-US");
 }
 function toShareSvg(input, copy, options = {}) {
-	const config = dress(resolve(input), { equip: [encode(copy)] });
+	const config = dress(options.config ?? resolve(input), { equip: [encode(copy)] });
 	const colors = paint(compose(config), config, withItems(paletteOf(config), config));
 	const grade = gradeOf(copy);
 	const item = itemById(copy.item);

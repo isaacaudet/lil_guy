@@ -12,6 +12,7 @@ import { hashNth } from '../hash';
 import { inSeason, items, gameItems, GAMES } from '../items';
 import { rollSeason, nameOf as nameCopy } from '../owned';
 import { toShareSvg } from '../share';
+import { lookOf } from '../look';
 
 const ball: Owned = { item: 'puttsies.ball', finish: 'plain', scuff: 0.02, print: 40 };
 const grid = (name: string, copy: Owned) => compose(dress(resolve(name), { equip: [encode(copy)] }));
@@ -159,5 +160,12 @@ describe('the share card', () => {
     expect(svg).toContain('212 days');
     expect(svg).toContain('ALICE &lt;3');
     expect(svg).not.toMatch(/<image|href=|@import/);
+  });
+
+  test('draws the guy as the player has him when given a picked look', () => {
+    const copy = { item: 'trackdle.helmet', finish: 'plain' as const, scuff: 0.2, print: 9 };
+    const picked = lookOf('alice', '2:p0.h0');
+    expect(toShareSvg('alice', copy, { config: picked })).not.toBe(toShareSvg('alice', copy));
+    expect(toShareSvg('alice', copy, { config: resolve('alice') })).toBe(toShareSvg('alice', copy));
   });
 });

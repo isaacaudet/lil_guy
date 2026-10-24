@@ -1604,7 +1604,7 @@ function count(n) {
 	return n >= 1e12 ? `${(n / 1e12).toFixed(1)} trillion` : n >= 1e9 ? `${(n / 1e9).toFixed(1)} billion` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} million` : Math.round(n).toLocaleString("en-US");
 }
 function toShareSvg(input, copy, options = {}) {
-	const config = require_paint.dress(require_paint.resolve(input), { equip: [require_paint.encode(copy)] });
+	const config = require_paint.dress(options.config ?? require_paint.resolve(input), { equip: [require_paint.encode(copy)] });
 	const colors = require_paint.paint(require_paint.compose(config), config, require_paint.withItems(require_paint.paletteOf(config), config));
 	const grade = require_paint.gradeOf(copy);
 	const item = require_paint.itemById(copy.item);

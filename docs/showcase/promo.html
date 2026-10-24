@@ -83,7 +83,6 @@
   .mine { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 20px; align-items: center; }
   .mine .who h3 { font-size: 30px; font-weight: 800; line-height: 1.05; overflow-wrap: anywhere; }
   .mine .who p { margin: 8px 0 0; font-size: 14px; color: var(--cream-2); line-height: 1.45; }
-  .mine .who .pill { background: var(--gold); color: #2a1a00; margin-top: 10px; }
   .mine-actions { display: flex; gap: 8px; margin-top: 18px; }
   .mine-actions .btn { flex: 1; height: 46px; font-size: 15px; margin: 0; }
   .linkish { font-size: 13px; color: var(--cream-2); text-decoration: underline; text-underline-offset: 3px; margin-top: 12px; }
@@ -120,21 +119,38 @@
   .odds-panel { --focus: var(--cream); background: var(--band); color: var(--cream); border-radius: 28px; padding: 32px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; align-items: center; overflow: hidden; position: relative; }
   .odds-panel .stage { position: relative; display: grid; place-items: center; aspect-ratio: 1; border-radius: 22px; background: radial-gradient(circle at 50% 42%, rgba(250,242,221,.12), rgba(250,242,221,.02) 62%); }
   .odds-panel .stage svg { width: 82%; height: auto; display: block; }
-  .rows { display: grid; gap: 2px; }
-  .row { display: grid; grid-template-columns: 92px minmax(0, 150px) minmax(0, 1fr) 84px; gap: 14px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--cream-line); opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s; }
-  .row.in { opacity: 1; transform: none; }
-  .row small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--cream-2); }
-  .row b { font-size: 16px; font-weight: 800; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row .bar { height: 8px; border-radius: 99px; background: rgba(250,242,221,.1); overflow: hidden; }
-  .row .bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--cream-2); transition: width .8s cubic-bezier(.2,.8,.2,1); }
-  .row.rare .bar i { background: var(--gold); }
-  .row.rare b::after { content: "rare"; margin-left: 8px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 6px; border-radius: 99px; background: var(--gold); color: #2a1a00; vertical-align: 3px; }
-  .row span { text-align: right; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--cream); }
-  .total { margin-top: 22px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-  .total .eq { font-size: 15px; color: var(--cream-2); font-weight: 700; }
-  .total b { font-size: clamp(44px, 6vw, 72px); font-weight: 800; letter-spacing: -.045em; line-height: 1; font-variant-numeric: tabular-nums; }
-  .total small { flex-basis: 100%; font-size: 14px; color: var(--cream-2); }
-
+  /* Your guy, scored like a hand in Balatro: pixel type with a hard shadow, tiles edged in their rarity's
+     colour, red ×N chips, and one total that catches fire when it's huge. */
+  .scoring { display: grid; gap: 18px; font-family: var(--pixel); min-width: 0; }
+  .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .tt { position: relative; background: #222c4a; border: 2px solid var(--tier); border-radius: 12px; padding: 9px 11px 10px; box-shadow: 0 4px 0 #0b0f1d; display: grid; gap: 1px; min-width: 0; transition: opacity .3s; }
+  .tiles.counting .tt:not(.done) { opacity: .45; }
+  .tt .slot { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: rgba(250,242,221,.55); }
+  .tt b { font-size: 20px; font-weight: 700; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.55); text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tt .foot { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 5px; }
+  .tt.hit { animation: hit .42s cubic-bezier(.2,1.6,.4,1); z-index: 2; }
+  @keyframes hit { 0% { transform: none } 30% { transform: scale(1.12) rotate(-3deg) } 60% { transform: scale(.97) rotate(2deg) } 100% { transform: none } }
+  .tt.poly { border-color: transparent; background: linear-gradient(#222c4a, #222c4a) padding-box, linear-gradient(90deg, #ff6b9d, #ffd36b, #6bffb8, #6bc4ff, #c06bff, #ff6b9d) border-box; background-size: 100% 100%, 300% 100%; animation: poly 3s linear infinite; }
+  .tt.poly.hit { animation: hit .42s cubic-bezier(.2,1.6,.4,1), poly 3s linear infinite; }
+  .bal { position: relative; overflow: hidden; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font: 700 12px/1 var(--pixel); letter-spacing: .05em; text-transform: uppercase; color: #fff; background: var(--b); box-shadow: 0 3px 0 color-mix(in srgb, var(--b) 55%, #000); text-shadow: 0 1px 0 rgba(0,0,0,.4); white-space: nowrap; }
+  .bal::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%); transform: translateX(-120%); animation: shine 2.8s ease-in-out infinite; }
+  @keyframes shine { 60%, 100% { transform: translateX(120%); } }
+  .bal.poly { background: linear-gradient(90deg, #ff6b9d, #ffd36b, #6bffb8, #6bc4ff, #c06bff, #ff6b9d); background-size: 300% 100%; box-shadow: 0 3px 0 #5a3b7a; animation: poly 3s linear infinite; }
+  @keyframes poly { to { background-position: 300% 0, 300% 0; } }
+  .x { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: #fe5f55; color: #fff; font: 700 15px/1 var(--pixel); box-shadow: 0 3px 0 #a8352e; text-shadow: 0 1px 0 rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .popx { position: absolute; left: 50%; top: 0; font: 700 26px/1 var(--pixel); color: #fff; background: #fe5f55; padding: 5px 10px; border-radius: 8px; box-shadow: 0 4px 0 #a8352e; text-shadow: 0 2px 0 rgba(0,0,0,.35); pointer-events: none; animation: popx .85s cubic-bezier(.2,.9,.3,1) forwards; z-index: 6; white-space: nowrap; }
+  @keyframes popx { 0% { transform: translate(-50%, 0) scale(.4); opacity: 0 } 25% { transform: translate(-50%, -26px) scale(1.18); opacity: 1 } 70% { opacity: 1 } 100% { transform: translate(-50%, -58px) scale(1); opacity: 0 } }
+  .score { position: relative; display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; padding: 16px 20px 18px; border-radius: 16px; background: #0b0f1d; box-shadow: inset 0 0 0 2px rgba(250,242,221,.08), 0 5px 0 #05070f; cursor: pointer; isolation: isolate; }
+  .score .lbl { font-size: 22px; color: rgba(250,242,221,.7); text-shadow: 0 2px 0 #000; }
+  .score b { display: inline-block; font: 700 clamp(52px, 7vw, 88px)/.9 var(--pixel); color: #fff; text-shadow: 0 5px 0 #000; font-variant-numeric: tabular-nums; }
+  .score .unit { font-size: clamp(18px, 2.3vw, 28px); color: #f5b143; text-transform: uppercase; letter-spacing: .04em; text-shadow: 0 3px 0 #000; }
+  .score.bump b { animation: bumpn .2s ease-out; }
+  @keyframes bumpn { 50% { transform: scale(1.08) rotate(-1deg); } }
+  .score.slam { animation: slambox .55s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes slambox { 0% { transform: scale(1.1) rotate(-1.5deg); } 100% { transform: none; } }
+  .score .fire { position: absolute; left: 0; bottom: 74%; width: 100%; height: 110px; image-rendering: pixelated; z-index: -1; opacity: 0; transition: opacity .6s; pointer-events: none; }
+  .scoring .note { margin: 0; font: 400 14px/1.45 "Bricolage Grotesque", system-ui, sans-serif; color: var(--cream-2); }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   /* the machines, as the club's game cards */
   .odds-line { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--secondary); }
   .odds-line span { display: inline-flex; align-items: center; gap: 7px; }
@@ -171,7 +187,7 @@
   .cc { display: grid; gap: 12px; text-align: left; position: relative; }
   .cc .cc-cap b { display: block; font-size: 15px; font-weight: 800; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cc .cc-cap span { display: block; margin-top: 2px; font-size: 13px; color: var(--secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cc .tag { position: absolute; z-index: 3; top: -8px; right: -6px; transform: rotate(5deg); }
+  .cc .tag { position: absolute; z-index: 3; top: -8px; right: -6px; transform: rotate(5deg); font: 700 12px/1 var(--pixel); letter-spacing: .05em; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .tag.on { background: #141414; color: #faf2dd; }
   .tag.new { background: var(--gold); color: #2a1a00; }
   .tag.dev { background: #ff6fa0; color: #2b0718; left: -6px; right: auto; transform: rotate(-5deg); }
@@ -182,7 +198,7 @@
   dialog { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(920px, calc(100vw - 32px)); max-width: none; }
   dialog::backdrop { background: rgba(10,13,22,.7); backdrop-filter: blur(3px); }
   .insp { background: var(--page); border-radius: 28px; padding: 28px; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
-  .insp .x { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; font-size: 20px; }
+  .insp .x { position: absolute; z-index: 2; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: var(--page); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; font-size: 20px; }
   .insp h3 { font-size: 30px; font-weight: 800; line-height: 1.05; padding-right: 48px; }
   .insp .fin { margin: 6px 0 0; font-size: 18px; font-weight: 700; color: var(--secondary); }
   .insp .grade { margin-top: 12px; background: var(--g); color: #fff; }
@@ -196,30 +212,35 @@
   .copy { text-align: left; padding: 14px 16px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 14.5px; line-height: 1.45; }
   .copy small { display: block; margin-top: 6px; font-size: 13px; font-weight: 800; color: var(--good); }
 
+  /* ------------------------------------------------------------ the look picker */
+  .lookp .look-stage { background: var(--band); border-radius: 22px; display: grid; place-items: center; aspect-ratio: 1; }
+  .lookp .look-stage svg { width: 80%; height: auto; display: block; }
+  .lookp .filters { margin: 16px 0 12px; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 330px; overflow: auto; padding: 4px; }
+  .opt { display: grid; justify-items: center; gap: 6px; padding: 10px 6px 8px; border-radius: 14px; background: var(--card); box-shadow: 0 0 0 1px var(--line); font-size: 12.5px; font-weight: 700; text-align: center; text-transform: capitalize; }
+  .opt canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+  .opt[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--ink); }
+  .opt .bal { height: 18px; font-size: 10px; padding: 0 6px; }
+  .look-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
   /* ------------------------------------------------------------ the drop */
   .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(14, 18, 32, .96); color: var(--cream); padding: 24px 16px; --focus: var(--cream); }
   #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 3; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
-  .flash.on { animation: flash .32s steps(4) 1; }
-  @keyframes flash { 0% { opacity: .85 } 100% { opacity: 0 } }
+  .flash.on { animation: flash .5s cubic-bezier(.2,.8,.2,1) 1; }
+  @keyframes flash { 0% { opacity: var(--v, .85) } 100% { opacity: 0 } }
   .rv-ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
   .rv-ctl button { height: 38px; padding: 0 14px; border-radius: 12px; font-size: 14px; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--cream-line); color: var(--cream); }
   .stage2 { position: relative; z-index: 2; display: grid; justify-items: center; gap: 14px; width: min(440px, 100%); }
-  .stage2.quake { animation: quake .55s steps(9) 1; }
-  @keyframes quake { 0%,100% { translate: 0 0 } 15% { translate: -10px 4px } 30% { translate: 9px -6px } 45% { translate: -7px -3px } 60% { translate: 6px 5px } 75% { translate: -3px 2px } 90% { translate: 2px -1px } }
-  .gacha { position: relative; width: 200px; height: 280px; }
-  .mach.big { width: 200px; height: 280px; image-rendering: pixelated; filter: drop-shadow(0 12px 0 rgba(5,7,16,.55)); }
-  .mach.big.drop { animation: drop .42s steps(7) 1; }
-  @keyframes drop { 0% { translate: 0 -360px } 70% { translate: 0 12px } 85% { translate: 0 -6px } 100% { translate: 0 0 } }
-  .mach.big.rattle { animation: rattle .24s steps(4) 1; }
-  @keyframes rattle { 25% { translate: -3px 1px } 75% { translate: 3px -1px } }
-  .mach.big.away { opacity: 0; translate: 0 -30px; transition: opacity .3s steps(4), translate .3s steps(4); }
-  .cap { position: absolute; left: 50%; top: 88%; width: 168px; height: 168px; translate: -50% -50%; scale: .2; }
-  .cap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
-  .cap.out { animation: roll .8s steps(12) forwards; }
-  @keyframes roll { 0% { top: 88%; scale: .2; rotate: 0deg } 50% { top: 44%; scale: 1; rotate: 300deg } 70% { top: 53%; scale: 1; rotate: 345deg } 85% { top: 48%; scale: 1 } 100% { top: 50%; scale: 1; rotate: 360deg } }
-  #cap-top { transition: rotate .18s steps(3), translate .38s steps(6), opacity .38s steps(6); }
-  #cap-top.twist1 { rotate: -16deg; } #cap-top.twist2 { rotate: 12deg; } #cap-top.pop { rotate: -60deg; translate: -30px -150px; opacity: 0; }
+    .gacha { position: relative; width: 300px; height: 440px; }
+  .gacha .spot { position: absolute; left: 50%; top: 48%; width: 560px; height: 560px; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(250,242,221,.13), transparent); pointer-events: none; }
+  .gacha .floor { position: absolute; left: 50%; bottom: 26px; width: 270px; height: 30px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); opacity: 0; }
+  .gacha .mach.big { position: absolute; left: 30px; bottom: 40px; width: 240px; height: 336px; image-rendering: pixelated; transform-origin: 50% 100%; will-change: transform; filter: drop-shadow(0 10px 0 rgba(5,7,16,.5)); }
+  .gacha .coin { position: absolute; left: 0; top: 0; width: 36px; height: 36px; image-rendering: pixelated; will-change: transform; }
+  .cap2 { position: absolute; left: 0; top: 0; width: 192px; height: 192px; will-change: transform; }
+  .cap2 canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; will-change: transform; }
+  .cap2 .leak { position: absolute; left: 50%; top: 49%; width: 420px; height: 150px; transform: translate(-50%, -50%); opacity: 0; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(closest-side, #fff 0%, color-mix(in srgb, var(--grade) 80%, #fff) 18%, color-mix(in srgb, var(--grade) 45%, transparent) 48%, transparent 100%); mix-blend-mode: screen; }
   .result { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; width: 100%; }
   .rays { position: absolute; left: 50%; top: 46%; width: 860px; height: 860px; translate: -50% -50%; z-index: -1; opacity: 0; border-radius: 50%;
     background: repeating-conic-gradient(var(--grade) 0deg 8deg, transparent 8deg 22.5deg);
@@ -227,14 +248,16 @@
     animation: turn 18s linear infinite; transition: opacity .5s steps(5); }
   .result.go .rays { opacity: var(--rays, 0); }
   @keyframes turn { to { rotate: 360deg } }
-  .flip { position: relative; width: 230px; transition: transform .16s steps(4); }
+  .flip { position: relative; width: 230px; transition: transform .17s cubic-bezier(.55,0,.8,.2); }
+  .flip.rise { animation: rise .5s cubic-bezier(.2,.9,.25,1.15) backwards; }
+  @keyframes rise { 0% { transform: translateY(120px) scale(.35); opacity: 0; filter: brightness(2.2); } 100% { transform: none; opacity: 1; filter: none; } }
   .flip.squash { transform: scaleX(0); }
   .flip.tremble { animation: tremble .09s steps(2) infinite; }
   @keyframes tremble { 0% { translate: calc(var(--amp) * -1) 0 } 50% { translate: var(--amp) calc(var(--amp) * -.6) } 100% { translate: 0 var(--amp) } }
   .flip canvas.back { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(0 9px 0 rgba(5,7,16,.55)) drop-shadow(0 0 var(--glow, 0px) var(--grade)); transition: filter .9s; }
   .shout { font-size: 46px; font-weight: 800; letter-spacing: -.03em; color: var(--grade); margin: 0; min-height: 46px; line-height: 1; }
-  .shout.slam { animation: slam .4s steps(6) 1; }
-  @keyframes slam { 0% { scale: 2.8; opacity: 0 } 55% { scale: .88; opacity: 1 } 100% { scale: 1 } }
+  .shout.slam { animation: slam .55s cubic-bezier(.2,1.5,.35,1) 1; }
+  @keyframes slam { 0% { scale: 2.6; opacity: 0; filter: blur(6px) } 100% { scale: 1; opacity: 1; filter: none } }
   .rv-name { font-size: 20px; font-weight: 800; margin: 0; }
   .rv-sub { font-size: 14px; color: var(--cream-2); margin: 0; }
   .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
@@ -252,8 +275,8 @@
     h2 { font-size: 28px; }
     .hand > .slot { width: 112px; margin-left: -46px; }
     .hand > .slot:nth-child(n+6) { display: none; }
-    .row { grid-template-columns: 74px minmax(0, 1fr) 76px; }
-    .row .bar { display: none; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tt b { font-size: 17px; }
     .mcard.today { grid-column: span 2; grid-row: auto; }
     .mcard.today .pic { min-height: 220px; }
     .mine { grid-template-columns: 110px minmax(0, 1fr); }
@@ -273,6 +296,7 @@
     <div class="site-header">
       <span class="site-name"><canvas id="mark-guy" width="16" height="16" aria-hidden="true"></canvas>lil guys</span>
       <div class="right">
+        <button class="wallet" type="button" id="snd" aria-pressed="true">Sound on</button>
         <button class="devpill" type="button" id="devpill" hidden title="Dev drops: every capsule gives the rarest, cleanest copy. Click to turn off.">DEV · BEST DROPS</button>
         <span class="wallet" id="wallet-pill" hidden><svg class="tk"><use href="#ticket"/></svg><span id="wallet">0</span></span>
       </div>
@@ -299,7 +323,7 @@
         <div id="claim-mine" hidden>
           <div class="mine">
             <div id="me-card"></div>
-            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="pill">★ 1 of 1</span><p id="me-odds"></p></div>
+            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span><p id="me-odds"></p></div>
           </div>
           <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button></div>
           <button class="linkish" type="button" id="reset">Let the name go</button>
@@ -314,12 +338,13 @@
 
 <main class="wrap">
   <section id="guy-sec" hidden>
-    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Every trait was dealt. Multiply the odds and he's this rare.</p></div></div>
+    <div class="sec-h"><button class="btn ghost" type="button" id="look-open" style="order:2">Change look</button><div><h2 id="guy-title">Your guy</h2><p>Every trait was dealt. Multiply them and this is how rare he is.</p></div></div>
     <div class="odds-panel">
       <div class="stage" id="guy-stage"></div>
-      <div>
-        <div class="rows" id="rows"></div>
-        <div class="total"><span class="eq">All of it together:</span><b id="total">1 in 0</b><small>guys dealt before another one like him turns up.</small></div>
+      <div class="scoring">
+        <div class="tiles" id="tiles"></div>
+        <div class="score" id="score" role="button" tabindex="0" aria-label="Count again"><canvas class="fire" id="fire" width="96" height="32" aria-hidden="true"></canvas><span class="lbl">1 in</span><b id="total">1</b><span class="unit" id="unit"></span></div>
+        <p class="note">Guys dealt before another like him turns up. Tap the total to count again.</p>
       </div>
     </div>
   </section>
@@ -347,12 +372,23 @@
 </main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
+<dialog id="lookd" aria-labelledby="look-h"><div class="insp lookp">
+  <button class="x" type="button" id="look-close" aria-label="Close">×</button>
+  <div class="art-col"><div class="look-stage" id="look-stage"></div></div>
+  <div>
+    <h3 id="look-h">Change your look</h3>
+    <p class="fin">Any common part. Rare parts only come from the deal.</p>
+    <div class="filters" id="look-tabs"></div>
+    <div class="opts" id="look-opts"></div>
+    <div class="look-actions"><button class="btn" type="button" id="look-save">Save look</button><button class="btn ghost" type="button" id="look-reset">As he was dealt</button></div>
+  </div>
+</div></dialog>
 
 <div class="reveal" id="reveal" hidden role="dialog" aria-modal="true" aria-label="Drop">
   <canvas id="burst" aria-hidden="true"></canvas><div class="flash" id="flash"></div>
   <div class="rv-ctl"><button type="button" id="sound" aria-pressed="true">Sound on</button><button type="button" id="skip">Skip</button></div>
   <div class="stage2" id="stage">
-    <div class="gacha" id="gacha" hidden aria-hidden="true"><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><div class="cap" id="cap" hidden><canvas id="cap-bot" width="32" height="32"></canvas><canvas id="cap-top" width="32" height="32"></canvas></div></div>
+    <div class="gacha" id="gacha" hidden aria-hidden="true"><span class="spot"></span><span class="floor" id="g-floor"></span><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><canvas class="coin" id="coin" width="12" height="12" hidden></canvas><div class="cap2" id="cap2" hidden><span class="leak" id="leak"></span><canvas id="cap-bot" width="64" height="64"></canvas><canvas id="cap-top" width="64" height="64"></canvas></div></div>
     <div class="result" id="result" hidden>
       <span class="rays"></span>
       <p class="shout" id="shout"></p>
@@ -374,8 +410,10 @@
   const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
-  const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
-  const words = n => n >= 1e12 ? (n / 1e12).toFixed(1) + ' trillion' : n >= 1e9 ? (n / 1e9).toFixed(1) + ' billion' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' million' : Math.round(n).toLocaleString('en-US');
+  const fmt = n => !isFinite(n) ? '∞' : n >= 1e18 ? (n / 1e18).toFixed(1) + 'Qi' : n >= 1e15 ? (n / 1e15).toFixed(1) + 'Qa' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
+  const UNITS = [[1e33, 'decillion'], [1e30, 'nonillion'], [1e27, 'octillion'], [1e24, 'septillion'], [1e21, 'sextillion'], [1e18, 'quintillion'], [1e15, 'quadrillion'], [1e12, 'trillion'], [1e9, 'billion'], [1e6, 'million']];
+  const split = n => { for (const [v, w] of UNITS) if (n >= v) return [(n / v).toFixed(n / v >= 100 ? 0 : 1), w]; return [Math.round(n).toLocaleString('en-US'), '']; };
+  const words = n => split(n).join(' ').trim();
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   const cap = s => s[0].toUpperCase() + s.slice(1);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -800,19 +838,21 @@ void main() {
   const byName = (list, name) => list.findIndex(x => x.name === name);
   const FOUNDER = {
     parts: { head: byName(LG.heads, 'flame'), eyes: byName(LG.eyes, 'laser'), mouth: byName(LG.mouths, 'smirk'), cheeks: byName(LG.cheeks, 'war paint'), hair: byName(LG.hair, 'crown'), body: byName(LG.bodies, 'star mark'), accessory: byName(LG.accessories, 'bowtie'), arms: 2, feet: 0, shade: 2, flip: false, lucky: true },
-    palette: byName(LG.palettes, 'Midnight'),
+    palette: byName(LG.palettes, 'Ocean'),            // turned by Lucky to a red flame
     copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
   };
   const RESERVED = { isaac: FOUNDER };
   const founderOf = seed => seed === 'founder:isaac' ? FOUNDER : null;
-  const guyConfig = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette } : LG.resolve(seed); };
-  const cardSpec = (seed, copies, label, still, grade) => { const f = founderOf(seed); return { name: seed, parts: f ? f.parts : undefined, palette: f ? f.palette : undefined, copies, label, still, grade }; };
-  const animated = (seed, move, equip, size, emote) => {
-    const f = founderOf(seed);
-    const o = { size, equip, emote };
-    if (f) { o.parts = f.parts; o.palette = LG.paletteOf({ palette: f.palette, shade: f.parts.shade, lucky: true }); }
-    return LG.toAnimatedSvg(seed, move, o);
+  const dealt = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette } : LG.resolve(seed); };
+  // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
+  const guyConfig = seed => {
+    const base = dealt(seed);
+    const look = state && seed === state.seed && state.look ? LG.decodeLook(state.look, base) : null;
+    return look ? { ...base, ...look } : base;
   };
+  const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
+  const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
+  const animated = (seed, move, equip, size, emote) => { const c = guyConfig(seed); return LG.toAnimatedSvg(seed, move, { size, equip, emote, parts: partsOf(c), palette: LG.paletteOf(c) }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
 
   /* ---------------------------------------------- state: your claim and collection.
@@ -836,11 +876,9 @@ void main() {
   const wornCopies = () => wornCodes().map(LG.decode).filter(Boolean);
 
   /* ---------------------------------------------- small helpers */
-  function paintInto(canvas, seed, equip) {
-    const f = founderOf(seed);
-    const cfg = LG.dress(guyConfig(seed), { equip });
-    const pal = f ? LG.paletteOf({ palette: f.palette, shade: f.parts.shade, lucky: true }) : LG.paletteOf(cfg);
-    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(pal, cfg));
+  const paintInto = (canvas, seed, equip) => paintCfg(canvas, LG.dress(guyConfig(seed), { equip }));
+  function paintCfg(canvas, cfg) {
+    const colors = LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg));
     const ctx = canvas.getContext('2d'), img = ctx.createImageData(16, 16);
     colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([...rgb(c), 255], (y * 16 + x) * 4); }));
     ctx.putImageData(img, 0, 0);
@@ -891,8 +929,8 @@ void main() {
       const snap = await db.doc(`names/${key}`).get();
       if (lastCheck !== key) return;
       const d = snap.exists ? snap.data() : null;
-      if (d && d.seed && d.by !== uid) setAvail('no', `@${key} is taken`);
-      else { setAvail('ok', `✓ @${key} is yours to take`); $('claim-btn').disabled = false; }
+      if (d && d.seed && d.by !== uid) { setAvail('no', `@${key} is taken`); SFX.bad(); }
+      else { setAvail('ok', `✓ @${key} is yours to take`); $('claim-btn').disabled = false; SFX.good(); }
     } catch (e) { setAvail('', 'Could not check just now'); }
   }
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
@@ -947,34 +985,113 @@ void main() {
     }, () => { $('recent').hidden = true; });
   }
 
-  /* ---------------------------------------------- your guy and his odds */
-  let rowsShown = false;
+  /* ---------------------------------------------- your guy, scored like a hand: each trait a tile with its rarity,
+   * triggering in turn and multiplying into one total */
+  const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 0, c: '#b26cbb' }];
+  const tierOf = p => TIERS.find(x => p >= x.min);
+  const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
+  let scored = false, scoring = false;
   function renderGuy() {
     $('guy-sec').hidden = !state;
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
-    $('guy-stage').innerHTML = animated(state.seed, 'dance', wornCodes(), 300);
+    $('guy-stage').innerHTML = animated(state.seed, 'dance', wornCodes().filter(c => LG.slotOf(LG.decode(c)) !== 'frame'), 300);
     const cfg = guyConfig(state.seed);
-    const odds = LG.traitOdds(cfg).filter(t => t.slot !== 'variant' || t.name === 'Lucky');
-    const max = Math.max(...odds.map(t => Math.log10(1 / t.chance)));
-    const rare = [...odds].sort((a, b) => a.chance - b.chance).slice(0, 2).map(t => t.slot);
-    $('rows').innerHTML = odds.map(t => `<div class="row${rare.includes(t.slot) ? ' rare' : ''}"><small>${t.slot}</small><b>${esc(t.name)}</b><div class="bar"><i data-w="${Math.max(6, Math.log10(1 / t.chance) / max * 100)}"></i></div><span>1 in ${fmt(1 / t.chance)}</span></div>`).join('');
-    const total = LG.guyOneIn(cfg);
-    $('total').dataset.n = total;
-    $('total').textContent = '1 in ' + (rowsShown ? words(total) : '0');
-    if (rowsShown) showRows(true);
+    const odds = LG.traitOdds(cfg).filter(x => x.slot !== 'variant' || x.name === 'Lucky');
+    $('tiles').innerHTML = odds.map(x => {
+      const lucky = x.slot === 'variant', tier = lucky ? { name: 'Polychrome', c: '#c06bff' } : tierOf(x.chance);
+      return `<div class="tt${lucky ? ' poly' : ''}" style="--tier:${tier.c}" data-n="${1 / x.chance}"><span class="slot">${lucky ? 'variant' : x.slot}</span><b>${esc(x.name)}</b><span class="foot"><span class="bal${lucky ? ' poly' : ''}" style="--b:${tier.c}">${tier.name}</span><span class="x">×${Math.round(1 / x.chance).toLocaleString('en-US')}</span></span></div>`;
+    }).join('');
+    $('score').dataset.n = LG.guyOneIn(cfg);
+    setTotal(scored ? +$('score').dataset.n : 1);
+    if (scored) fire(heatOf(+$('score').dataset.n));
   }
-  // The rows come in one by one and the total counts up, the first time you scroll to them.
-  function showRows(instant) {
-    const rows = [...$('rows').children];
-    rows.forEach((r, i) => setTimeout(() => { r.classList.add('in'); const b = r.querySelector('i'); b.style.width = b.dataset.w + '%'; }, instant ? 0 : i * 110));
-    const n = +$('total').dataset.n;
-    if (instant) { $('total').textContent = '1 in ' + words(n); return; }
-    const t0 = performance.now(), dur = 1400 + rows.length * 110;
-    const step = now => { const e = Math.min(1, (now - t0) / dur), v = Math.pow(10, Math.log10(n) * (1 - Math.pow(1 - e, 3))); $('total').textContent = '1 in ' + words(v); if (e < 1) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
+  const heatOf = n => Math.min(1, Math.max(0, (Math.log10(n) - 7) / 7));
+  const frames = (ms, fn) => new Promise(r => { const t0 = performance.now(); const f = now => { const p = Math.min(1, (now - t0) / ms); fn(1 - Math.pow(1 - p, 3)); if (p < 1) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
+  async function score() {
+    if (scoring || !state) return;
+    scoring = true; scored = true;
+    const tiles = [...$('tiles').children], box = $('score');
+    let v = 1; setTotal(1); fire(0);
+    $('tiles').classList.add('counting');
+    tiles.forEach(x => x.classList.remove('hit', 'done'));
+    await sleep(250);
+    for (let i = 0; i < tiles.length; i++) {
+      const tile = tiles[i], from = v;
+      v *= +tile.dataset.n;
+      tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit', 'done');
+      const pop = document.createElement('span'); pop.className = 'popx'; pop.textContent = tile.querySelector('.x').textContent;
+      tile.appendChild(pop); setTimeout(() => pop.remove(), 900);
+      SFX.score(i);
+      box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
+      await frames(220, e => setTotal(Math.pow(10, Math.log10(from) + (Math.log10(v) - Math.log10(from)) * e)));
+      await sleep(Math.max(110, 300 - i * 24));
+    }
+    const final = +box.dataset.n;
+    setTotal(final);
+    box.classList.remove('slam'); void box.offsetWidth; box.classList.add('slam');
+    SFX.total(final);
+    fire(heatOf(final));
+    $('tiles').classList.remove('counting');
+    scoring = false;
   }
-  new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && !rowsShown && state) { rowsShown = true; showRows(false); } }, { threshold: 0.3 }).observe($('rows'));
+  $('score').addEventListener('click', score);
+  $('score').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); score(); } });
+  new IntersectionObserver(es => { if (es.some(x => x.isIntersecting) && !scored && state) score(); }, { threshold: 0.35 }).observe($('tiles'));
+
+  /* Pixel fire over the total once it's in the billions: the old spreading-fire trick on a 64×26 grid. */
+  const fireCv = $('fire'), fctx = fireCv.getContext('2d'), FW = 96, FH = 32, heat = new Uint8Array(FW * FH), fimg = fctx.createImageData(FW, FH);
+  const FIRE = [[0, 0, 0, 0], [70, 16, 40, 90], [150, 24, 34, 170], [214, 52, 34, 220], [245, 104, 40, 240], [252, 160, 58, 250], [255, 212, 110, 255], [255, 244, 200, 255]];
+  let fireLevel = 0;
+  function fire(level) { fireLevel = level; fireCv.style.opacity = level > 0 ? 1 : 0; if (!level) heat.fill(0); }
+  function fireTick() {
+    if (fireLevel <= 0) return;
+    // The bottom row burns unevenly and drifts, so the flames come up as tongues rather than a wall.
+    const t = performance.now() / 1000;
+    for (let x = 0; x < FW; x++) {
+      const w = 0.5 + 0.5 * Math.sin(x * 0.42 + t * 2.3) * Math.sin(x * 0.13 - t * 1.1);
+      heat[(FH - 1) * FW + x] = Math.round(Math.min(7, (2 + 6 * w) * (0.45 + 0.55 * fireLevel) + Math.random()));
+    }
+    const cool = 0.62 - fireLevel * 0.3;
+    for (let y = 1; y < FH; y++) for (let x = 0; x < FW; x++) {
+      const src = y * FW + x, r = (Math.random() * 3) | 0, dst = (y - 1) * FW + Math.min(FW - 1, Math.max(0, x - r + 1));
+      heat[dst] = Math.max(0, heat[src] - (Math.random() < cool ? 1 : 0));
+    }
+    for (let i = 0; i < FW * FH; i++) fimg.data.set(FIRE[heat[i]], i * 4);
+    fctx.putImageData(fimg, 0, 0);
+  }
+
+  /* ---------------------------------------------- changing your look: any common part, plus the ones you were dealt */
+  const LOOK_TABS = [['head', 'Shape', 'heads'], ['eyes', 'Eyes', 'eyes'], ['mouth', 'Mouth', 'mouths'], ['cheeks', 'Cheeks', 'cheeks'], ['hair', 'Topper', 'hair'], ['body', 'Markings', 'bodies'], ['accessory', 'Accessory', 'accessories'], ['palette', 'Colour', 'palettes']];
+  let draft = {}, lookTab = 'head';
+  function renderLook() {
+    const base = dealt(state.seed), cur = { ...base, ...draft }, list = LG[LOOK_TABS.find(x => x[0] === lookTab)[2]];
+    $('look-tabs').innerHTML = LOOK_TABS.map(([k, label]) => `<button type="button" data-t="${k}" aria-pressed="${k === lookTab}">${label}</button>`).join('');
+    $('look-stage').innerHTML = LG.toAnimatedSvg(state.seed, 'idle', { size: 240, parts: partsOf(cur), palette: LG.paletteOf(cur) });
+    const opts = LG.pickable(base, lookTab), commons = new Set(LG.pickable({ ...base, [lookTab]: -1 }, lookTab));
+    $('look-opts').innerHTML = opts.map(i => `<button class="opt" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span>${i === base[lookTab] ? `<span class="bal" style="--b:${commons.has(i) ? '#5d6b8a' : '#b26cbb'}">Dealt</span>` : ''}</button>`).join('');
+    $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: opts[k] }));
+  }
+  $('look-open').addEventListener('click', () => {
+    const base = dealt(state.seed);
+    draft = { ...((state.look && LG.decodeLook(state.look, base)) || {}) };
+    renderLook(); SFX.whoosh(0.22, 400, 2400, 0.06); $('lookd').showModal();
+  });
+  $('look-tabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { lookTab = b.dataset.t; renderLook(); } });
+  $('look-opts').addEventListener('click', e => {
+    const b = e.target.closest('[data-i]'); if (!b) return;
+    const i = +b.dataset.i;
+    if (i === dealt(state.seed)[lookTab]) delete draft[lookTab]; else draft[lookTab] = i;
+    renderLook();
+  });
+  $('look-reset').addEventListener('click', () => { draft = {}; renderLook(); });
+  $('look-close').addEventListener('click', () => $('lookd').close());
+  $('lookd').addEventListener('click', e => { if (e.target === $('lookd')) $('lookd').close(); });
+  $('look-save').addEventListener('click', () => {
+    state.look = Object.keys(draft).length ? LG.encodeLook(draft) : '';
+    save(); SFX.equip(); $('lookd').close();
+    scored = false; renderAll(); score();
+  });
 
   /* ---------------------------------------------- the claim card */
   function renderClaim() {
@@ -987,6 +1104,7 @@ void main() {
     hydrate($('me-card'));
     const n = LG.guyOneIn(guyConfig(state.seed));
     $('me-odds').textContent = `Dealt just for you. A guy like him turns up 1 in ${words(n)}.`;
+    $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ 1 of 1</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy.`;
     $('go-free').textContent = state.free === today ? 'Open a capsule' : "Open today's free capsule";
   }
@@ -1017,7 +1135,7 @@ void main() {
     if (!dev) state.tickets -= 120;
     open(g, 'Capsule');
   });
-  $('earn').addEventListener('click', () => { if (!state) { $('name').focus(); return; } state.tickets += 60; save(); renderWallet(); toast('+60 tickets'); });
+  $('earn').addEventListener('click', () => { if (!state) { $('name').focus(); return; } state.tickets += 60; save(); renderWallet(); SFX.earn(); toast('+60 tickets'); });
 
   const seasonal = LG.inSeason(today);
   if (seasonal.length) {
@@ -1041,8 +1159,8 @@ void main() {
    * cleanest copy out of 6,000 rolls, through the same drop. Those copies are marked DEV. */
   let dev = false;
   try { dev = sessionStorage.getItem('lil-guys-dev') === '1'; } catch (e) {}
-  const setDev = on => { dev = on; try { sessionStorage.setItem('lil-guys-dev', on ? '1' : '0'); } catch (e) {} $('devpill').hidden = !on; if (on) toast('Dev drops on: every capsule is the rarest, cleanest copy.'); };
-  setDev(dev); if (dev) $('toast').hidden = true;
+  const setDev = (on, quiet) => { if (!quiet) SFX.dev(on); dev = on; try { sessionStorage.setItem('lil-guys-dev', on ? '1' : '0'); } catch (e) {} $('devpill').hidden = !on; if (on) toast('Dev drops on: every capsule is the rarest, cleanest copy.'); };
+  setDev(dev, true); if (dev) $('toast').hidden = true;
   $('devpill').addEventListener('click', () => { setDev(false); toast('Dev drops off.'); });
   let typed = '', taps = 0, tapT;
   addEventListener('keydown', e => {
@@ -1065,19 +1183,136 @@ void main() {
     reveal(o, g, dev ? 'Dev drop' : how);
   }
 
-  /* ---------------------------------------------- sound: square-wave blips, after a click; one tap mutes */
-  let audio = null, sound = true;
-  function tone(freq, dur, vol = 0.04, when = 0, type = 'square') {
-    if (!sound) return;
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
-    const t0 = audio.currentTime + when, o = audio.createOscillator(), gn = audio.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t0);
-    gn.gain.setValueAtTime(vol, t0); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(gn).connect(audio.destination); o.start(t0); o.stop(t0 + dur + 0.02);
-  }
-  const FANFARE = [[523, 659], [523, 659, 784], [523, 659, 784, 1047], [392, 523, 659, 784, 1047], [392, 523, 659, 784, 1047, 1319, 1568]];
-  const fanfare = g => { FANFARE[g].forEach((f, i) => tone(f, g >= 3 ? 0.45 : 0.25, 0.045, i * 0.085)); if (g >= 3) tone(FANFARE[g].at(-1) * 2, 1.1, 0.03, FANFARE[g].length * 0.085, 'triangle'); };
-  $('sound').addEventListener('click', e => { sound = !sound; e.target.setAttribute('aria-pressed', sound); e.target.textContent = sound ? 'Sound on' : 'Sound off'; });
+  /* ---------------------------------------------- sound: a small synth made on the spot after the first click.
+   * Bells for coins and sparkle, filtered noise for clicks, ratchets and whooshes, a stinger per grade,
+   * all through one compressor with a plate reverb on a send. The choice to mute is remembered. */
+  const SFX = (() => {
+    let ctx = null, out = null, verb = null, noiseBuf = null, on = true;
+    try { on = localStorage.getItem('lil-guys-sound') !== 'off'; } catch (e) {}
+    const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
+    function init() {
+      if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.25;
+      out = ctx.createGain(); out.gain.value = 0.7;
+      out.connect(comp).connect(ctx.destination);
+      const len = Math.floor(ctx.sampleRate * 2.4), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+      const conv = ctx.createConvolver(); conv.buffer = ir;
+      verb = ctx.createGain(); verb.gain.value = 0.3;
+      verb.connect(conv).connect(out);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    }
+    const ready = () => on && ctx && ctx.state === 'running';
+    function route(node, t, end, wet, pan) {
+      let last = node;
+      if (pan && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; last.connect(p); last = p; }
+      last.connect(out);
+      if (wet) { const s = ctx.createGain(); s.gain.value = wet; last.connect(s); s.connect(verb); }
+    }
+    // One oscillator through an attack-decay envelope.
+    function voice({ type = 'sine', f, to, at = 0, a = 0.005, d = 0.3, vol = 0.2, wet = 0.2, detune = 0, lp, pan = 0 }) {
+      if (!ready()) return;
+      const t = ctx.currentTime + at, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = detune;
+      if (to) o.frequency.exponentialRampToValueAtTime(to, t + a + d);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+      o.connect(g);
+      let last = g;
+      if (lp) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; g.connect(fl); last = fl; }
+      route(last, t, t + a + d, wet, pan);
+      o.start(t); o.stop(t + a + d + 0.05);
+    }
+    // Filtered noise: clicks, ratchets, thuds and whooshes.
+    function noise({ at = 0, d = 0.05, vol = 0.2, type = 'bandpass', f = 2000, to, q = 1, wet = 0.1, a = 0.002, pan = 0 }) {
+      if (!ready()) return;
+      const t = ctx.currentTime + at, s = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = noiseBuf; s.loop = true;
+      fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q;
+      if (to) fl.frequency.exponentialRampToValueAtTime(to, t + a + d);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+      s.connect(fl).connect(g);
+      route(g, t, t + a + d, wet, pan);
+      s.start(t, Math.random() * 0.8); s.stop(t + a + d + 0.05);
+    }
+    // A bell: inharmonic partials, the higher ones dying first.
+    const bell = (f, at = 0, vol = 0.12, wet = 0.35, pan = 0) => [[1, 1, 1.6], [2.76, 0.42, 0.7], [5.4, 0.22, 0.35], [8.93, 0.12, 0.2]]
+      .forEach(([m, v, d]) => voice({ f: f * m, at, a: 0.002, d, vol: vol * v, wet, pan }));
+    const pluck = (f, at = 0, vol = 0.14, d = 0.35, wet = 0.15) => { voice({ type: 'triangle', f, at, d, vol, wet, lp: 3200 }); voice({ f: f * 2, at, d: d * 0.5, vol: vol * 0.3, wet }); };
+    const pad = (notes, at, d, vol = 0.05, lp = 1800) => notes.forEach((n, i) => [-9, 9].forEach(dt => voice({ type: 'sawtooth', f: NOTE(n), at: at + i * 0.012, a: 0.08, d, vol, wet: 0.5, detune: dt, lp })));
+    let lastTick = 0;
+    const api = {
+      init, get on() { return on; },
+      toggle() { on = !on; try { localStorage.setItem('lil-guys-sound', on ? 'on' : 'off'); } catch (e) {} if (on) init(); return on; },
+      tick() { const n = performance.now(); if (n - lastTick < 45) return; lastTick = n; noise({ d: 0.012, vol: 0.05, f: 4200, q: 3, wet: 0 }); },
+      click() { noise({ d: 0.02, vol: 0.1, f: 2600, q: 2, wet: 0.02 }); voice({ f: 520, to: 380, d: 0.05, vol: 0.05, wet: 0 }); },
+      card(i = 0) { const n = performance.now(); if (n - lastTick < 45) return; lastTick = n; noise({ d: 0.05, vol: 0.07, f: 2600 + (i % 5) * 320, to: 5200, q: 1.5, wet: 0.05, pan: ((i % 9) - 4) / 8 }); },
+      good() { bell(NOTE(84), 0, 0.06); bell(NOTE(88), 0.07, 0.06); },
+      bad() { voice({ type: 'square', f: 196, d: 0.09, vol: 0.04, lp: 900, wet: 0 }); voice({ type: 'square', f: 147, at: 0.1, d: 0.14, vol: 0.04, lp: 900, wet: 0 }); },
+      earn() { [79, 84, 88].forEach((n, i) => bell(NOTE(n), i * 0.06, 0.07)); },
+      equip() { pluck(NOTE(67), 0, 0.12); pluck(NOTE(74), 0.06, 0.1); noise({ at: 0.02, d: 0.05, vol: 0.1, type: 'lowpass', f: 900, wet: 0 }); },
+      dev(isOn) { (isOn ? [60, 64, 67, 72, 76, 79, 84, 88] : [84, 79, 72, 67, 60]).forEach((n, i) => voice({ type: 'square', f: NOTE(n), at: i * 0.045, d: 0.07, vol: 0.045, lp: 4000, wet: 0.1 })); },
+      whoosh(d = 0.3, f = 300, to = 2400, vol = 0.12) { noise({ d, vol, f, to, q: 0.8, a: d * 0.4, wet: 0.15 }); },
+      // the machine: a heavy landing, a coin, the crank's ratchet and clunk
+      land() { voice({ f: 130, to: 42, d: 0.35, vol: 0.5, wet: 0.1 }); noise({ d: 0.18, vol: 0.25, type: 'lowpass', f: 600, wet: 0.08 }); noise({ at: 0.015, d: 0.12, vol: 0.06, f: 3200, q: 3, wet: 0.2 }); },
+      coin() { bell(NOTE(96), 0, 0.05, 0.2); bell(NOTE(100), 0.05, 0.04, 0.2); },
+      slot() { noise({ d: 0.03, vol: 0.12, f: 3200, q: 4, wet: 0.05 }); bell(NOTE(91), 0.02, 0.05, 0.15); noise({ at: 0.1, d: 0.06, vol: 0.09, type: 'lowpass', f: 700, wet: 0.05 }); },
+      crank() { for (let i = 0; i < 4; i++) { noise({ at: i * 0.075, d: 0.014, vol: 0.16, f: 2100 + i * 120, q: 7, wet: 0.04 }); voice({ type: 'square', f: 180, at: i * 0.075, d: 0.012, vol: 0.025, wet: 0 }); } },
+      clunk() { voice({ f: 110, to: 60, d: 0.12, vol: 0.3, wet: 0.08 }); noise({ d: 0.06, vol: 0.12, type: 'lowpass', f: 1200, wet: 0.05 }); },
+      drop() { noise({ d: 0.18, vol: 0.06, f: 900, to: 2600, q: 2, wet: 0.05 }); },
+      bounce(v = 1) { voice({ f: 320 * (0.8 + 0.2 * v), to: 140, d: 0.09, vol: 0.22 * v, wet: 0.1 }); noise({ d: 0.03, vol: 0.1 * v, f: 2400, q: 2, wet: 0.05 }); },
+      roll(d = 0.7) {
+        for (let i = 0; i < 9; i++) noise({ at: i * d / 9 + Math.random() * 0.02, d: 0.02, vol: 0.05 * (1 - i / 12), f: 1500 + Math.random() * 900, q: 3, wet: 0.05 });
+        noise({ d, vol: 0.05, type: 'lowpass', f: 300, a: 0.1, wet: 0 });
+      },
+      // the capsule: a creak per twist, and a hum underneath that rises with the grade inside
+      twist(k, gr) {
+        voice({ type: 'sawtooth', f: 70 + k * 10, d: 0.3, vol: 0.05, lp: 700 + k * 300, wet: 0.05, a: 0.05 });
+        noise({ d: 0.28, vol: 0.06, f: 500 + k * 200, to: 1400 + k * 300, q: 6, a: 0.05, wet: 0.05 });
+        voice({ f: NOTE(60 + gr * 2 + k * 5), d: 0.4, vol: 0.04 + gr * 0.015, a: 0.15, wet: 0.4 });
+      },
+      pop(gr) { voice({ f: 900, to: 160, d: 0.08, vol: 0.35, wet: 0.1 }); noise({ d: 0.07, vol: 0.25, type: 'highpass', f: 2500, wet: 0.15 }); voice({ f: 90, to: 40, d: 0.35, vol: 0.25 + gr * 0.06, wet: 0.1 }); api.sparkle(4 + gr * 3, 0.05); },
+      sparkle(n = 6, at = 0, spread = 0.7) { const s = [84, 86, 88, 91, 93, 96, 98, 100]; for (let i = 0; i < n; i++) bell(NOTE(s[(Math.random() * s.length) | 0]), at + Math.random() * spread, 0.03, 0.5, Math.random() * 1.6 - 0.8); },
+      // face down: a riser that climbs while it trembles, with a heartbeat for Mythic and Grail
+      riser(gr, dur) {
+        noise({ d: dur, vol: 0.05 + gr * 0.025, f: 300, to: 1500 + gr * 1400, q: 1.2, a: dur * 0.9, wet: 0.2 });
+        voice({ type: 'sawtooth', f: NOTE(43 + gr), to: NOTE(55 + gr * 2), d: 0.08, a: dur, vol: 0.03 + gr * 0.012, lp: 900 + gr * 400, wet: 0.2 });
+        if (gr >= 3) for (let b = 0, t = 0; t < dur - 0.15; b++) { voice({ f: 62, to: 40, at: t, d: 0.16, vol: 0.4, wet: 0.05 }); voice({ f: 58, to: 38, at: t + 0.14, d: 0.14, vol: 0.28, wet: 0.05 }); t += Math.max(0.28, 0.62 - b * 0.08); }
+      },
+      flip() { api.whoosh(0.16, 600, 3800, 0.1); },
+      // the payoff: a stinger per grade, bigger and longer the rarer
+      stinger(gr) {
+        const C = 72;
+        if (gr === 0) { pluck(NOTE(C + 4), 0, 0.1); pluck(NOTE(C + 7), 0.09, 0.09); return; }
+        if (gr === 1) { [0, 4, 7, 12].forEach((n, i) => pluck(NOTE(C + n), i * 0.07, 0.11)); bell(NOTE(C + 16), 0.3, 0.06); return; }
+        if (gr === 2) { [0, 4, 7, 11, 14].forEach((n, i) => pluck(NOTE(C + n), i * 0.06, 0.11)); pad([60, 64, 67, 71], 0.02, 1.2, 0.035, 2200); api.sparkle(6, 0.3); return; }
+        voice({ f: 110, to: 36, d: 0.9, vol: 0.55, wet: 0.2 });
+        noise({ d: 0.5, vol: 0.12, type: 'lowpass', f: 1200, to: 200, wet: 0.3 });
+        if (gr === 3) { pad([53, 57, 60, 64, 67], 0.03, 1.8, 0.04, 2600); [0, 4, 7, 12, 16, 19].forEach((n, i) => bell(NOTE(C + n), 0.05 + i * 0.07, 0.06)); api.sparkle(10, 0.5, 1); return; }
+        pad([48, 55, 60, 64, 67, 74], 0.03, 2.8, 0.045, 3200);
+        [0, 2, 4, 7, 9, 12, 14, 16, 19, 24].forEach((n, i) => bell(NOTE(C + n), 0.08 + i * 0.065, 0.065, 0.45, i % 2 ? 0.4 : -0.4));
+        voice({ type: 'triangle', f: NOTE(C + 24), at: 0.8, a: 0.4, d: 1.8, vol: 0.05, wet: 0.6 });
+        api.sparkle(18, 0.6, 1.6);
+      },
+      // scoring your guy: a chime that climbs a step per trait, then a thump and a chord for the total
+      score(i) { pluck(NOTE(67 + i * 2), 0, 0.12, 0.25, 0.1); bell(NOTE(79 + i * 2), 0.01, 0.045, 0.25); noise({ d: 0.02, vol: 0.08, f: 3000, q: 2, wet: 0 }); },
+      total(n) {
+        voice({ f: 110, to: 40, d: 0.5, vol: 0.4, wet: 0.2 });
+        [0, 4, 7, 12].forEach((x, i) => pluck(NOTE(72 + x), i * 0.05, 0.1));
+        if (n >= 1e9) { noise({ d: 1.4, vol: 0.07, type: 'lowpass', f: 900, a: 0.25, wet: 0.2 }); for (let i = 0; i < 14; i++) noise({ at: 0.1 + Math.random() * 1.2, d: 0.012, vol: 0.06, f: 3500, q: 2, wet: 0.05 }); api.sparkle(8, 0.1, 0.9); }
+      },
+      // claiming a name: the Grail stinger with a brass chord over it
+      claim() { api.stinger(4); [67, 72, 76, 79].forEach(n => voice({ type: 'sawtooth', f: NOTE(n), at: 0.02, a: 0.03, d: 0.9, vol: 0.03, lp: 2400, wet: 0.35 })); },
+    };
+    return api;
+  })();
+  addEventListener('pointerdown', () => SFX.init(), { capture: true });
+  addEventListener('keydown', () => SFX.init(), { capture: true });
+  const syncSound = () => { for (const b of [$('sound'), $('snd')]) { b.setAttribute('aria-pressed', SFX.on); b.textContent = SFX.on ? 'Sound on' : 'Sound off'; } };
+  for (const b of [$('sound'), $('snd')]) b.addEventListener('click', () => { SFX.toggle(); syncSound(); });
+  syncSound();
 
   /* ---------------------------------------------- confetti */
   const burst = $('burst'), bctx = burst.getContext('2d');
@@ -1092,10 +1327,17 @@ void main() {
     }
     if (!bursting) { bursting = true; requestAnimationFrame(fly); }
   }
+  // A low puff of dust to one side, gone in half a second.
+  function dust(x, y, dir) {
+    const S = 4;
+    if (!bursting) { burst.width = Math.ceil(innerWidth / S); burst.height = Math.ceil(innerHeight / S); }
+    for (let i = 0; i < 22; i++) bits.push({ x: x / S, y: y / S, vx: dir * (0.3 + Math.random() * 1.8), vy: -Math.random() * 0.6, life: 12 + Math.random() * 18, c: ['#d9d2c3', '#b4ab99', '#efe8d8'][i % 3], s: Math.random() < 0.3 ? 2 : 1, drag: 0.9 });
+    if (!bursting) { bursting = true; requestAnimationFrame(fly); }
+  }
   function fly() {
     bctx.clearRect(0, 0, burst.width, burst.height);
     bits = bits.filter(b => b.life-- > 0);
-    for (const b of bits) { b.vy += 0.035; b.vx *= 0.986; b.x += b.vx; b.y += b.vy; bctx.globalAlpha = Math.min(1, b.life / 18); bctx.fillStyle = b.c; bctx.fillRect(Math.round(b.x), Math.round(b.y), b.s, b.s); }
+    for (const b of bits) { b.vy += 0.035; b.vx *= b.drag || 0.986; b.x += b.vx; b.y += b.vy; bctx.globalAlpha = Math.min(1, b.life / 18); bctx.fillStyle = b.c; bctx.fillRect(Math.round(b.x), Math.round(b.y), b.s, b.s); }
     if (bits.length) requestAnimationFrame(fly); else { bursting = false; bctx.clearRect(0, 0, burst.width, burst.height); }
   }
 
@@ -1115,45 +1357,157 @@ void main() {
     ctx.putImageData(img, 0, 0);
   })($('back'));
 
-  /* ---------------------------------------------- the drop: the machine drops in, cranks, a capsule pops, a card trembles and flips */
+  /* ---------------------------------------------- the drop */
   let rush = false, current = null;
   const wait = ms => rush ? Promise.resolve() : sleep(ms);
-  async function gacha(g) {
-    const box = $('gacha'), mc = $('bigmach'), cp = $('cap'), ct = $('cap-top'), cb = $('cap-bot');
-    box.hidden = false; cp.hidden = true; cp.className = 'cap'; ct.className = ''; mc.className = 'mach big';
-    const m = addMachine(mc, g);
-    void mc.offsetWidth; mc.className = 'mach big drop';
-    tone(196, 0.08, 0.04, 0.32);
-    await wait(470);
-    for (let k = 0; k < 3 && !rush; k++) {
-      const a0 = m.angle, t0 = performance.now();
-      tone(560, 0.035, 0.04); tone(390, 0.05, 0.045, 0.13);
-      m.jiggle(); mc.className = 'mach big'; void mc.offsetWidth; mc.className = 'mach big rattle';
-      await new Promise(r => { const f = now => { const e = Math.min(1, (now - t0) / 260); m.angle = a0 + Math.PI / 2 * Math.round(e * 4) / 4; if (e < 1 && !rush) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
-      await wait(170);
-    }
-    if (!rush) {
-      m.flap = 1; tone(150, 0.1, 0.05);
-      const c = addCapsule(ct, cb, g);
-      cp.hidden = false; void cp.offsetWidth; cp.className = 'cap out';
-      await wait(300); mc.classList.add('away'); await wait(600);
-      if (!rush) {
-        ct.className = 'twist1'; tone(900, 0.04, 0.04); await wait(240);
-        ct.className = 'twist2'; tone(1150, 0.04, 0.04); await wait(240);
-        c.open = 1; ct.className = 'pop';
-        tone(880, 0.07, 0.05); tone(1320, 0.1, 0.04, 0.05); tone(1760, 0.14, 0.03, 0.1);
-        const r = cp.getBoundingClientRect();
-        boom(1, r.left + r.width / 2, r.top + r.height * 0.45, [CANDY[g], '#ffffff', '#ffcf5c', '#ffe9b0']);
-        await wait(520);
+  /* ---------------------------------------------- motion: tweens on the frame clock; Skip jumps every one to its end */
+  const ease = { out: t => 1 - Math.pow(1 - t, 3), in: t => t * t * t, inOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, lin: t => t };
+  function tween(ms, fn, e = ease.out) {
+    return new Promise(res => {
+      if (rush) { fn(1, 1); res(); return; }
+      const t0 = performance.now();
+      const step = now => {
+        const p = rush ? 1 : Math.min(1, (now - t0) / ms);
+        fn(e(p), p);
+        if (p < 1) requestAnimationFrame(step); else res();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  const shake = (amp, ms = 380) => tween(ms, (e, p) => { const k = amp * (1 - p); $('stage').style.translate = p >= 1 ? '' : `${(Math.random() * 2 - 1) * k}px ${(Math.random() * 2 - 1) * k}px`; }, ease.lin);
+  const flash = (v = 0.85) => { const f = $('flash'); f.style.setProperty('--v', v); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); };
+
+  /* A capsule at 64×64, to match the machine's fine grid: a clear dome over a candy half, shaded as a
+   * sphere lit from the top left, with the game's toy showing through the plastic. */
+  function drawCapsule(topCv, botCv, g) {
+    const candy = rgb(CANDY[g]), toy = toyOf(g);
+    const top = Px(64, 64), bot = Px(64, 64), R = 29.5, C = 31.5, L = [-0.48, -0.6, 0.64];
+    toy.forEach((row, ty) => row.forEach((hex, tx) => {
+      if (!hex) return;
+      for (let j = 0; j < 4; j++) { const x = 16 + tx * 2 + (j & 1), y = 6 + ty * 2 + (j >> 1); if (y < 31 && Math.hypot(x - C, y - C) < R - 2) top.set(x, y, blend(rgb(hex), [228, 238, 255], 0.16)); }
+    }));
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+      const dx = (x - C) / R, dy = (y - C) / R, r2 = dx * dx + dy * dy;
+      if (r2 > 1) continue;
+      const nz = Math.sqrt(1 - r2), lit = Math.max(0, dx * L[0] + dy * L[1] + nz * L[2]);
+      if (y < 31) {
+        const rim = Math.pow(r2, 3), ang = Math.atan2(dy, dx);
+        top.set(x, y, blend([214, 228, 250], [120, 140, 190], rim * 0.5), Math.round(28 + rim * 175));
+        if (r2 > 0.6 && r2 < 0.78 && ang < -1.8 && ang > -2.75) top.set(x, y, WHITE, 215);
+        if (r2 > 0.6 && r2 < 0.7 && ang > -0.6 && ang < -0.25) top.set(x, y, WHITE, 90);
+      } else if (y <= 32) bot.set(x, y, blend(candy, WHITE, y === 31 ? 0.55 : 0.18));
+      else {
+        let c = lit < 0.55 ? blend(candy, INK, (0.55 - lit) * 1.1) : blend(candy, WHITE, (lit - 0.55) * 0.55);
+        if (r2 > 0.88) c = blend(c, INK, 0.3);
+        if (Math.hypot(dx + 0.5, dy - 0.2) < 0.09) c = blend(c, WHITE, 0.6);
+        bot.set(x, y, c);
       }
-      balls.delete(c);
     }
+    for (const [x, y, a] of [[17, 12, 255], [18, 12, 255], [17, 13, 255], [22, 9, 170]]) top.set(x, y, WHITE, a);
+    top.outline(INK); bot.outline(INK);
+    topCv.getContext('2d').putImageData(new ImageData(top.d, 64, 64), 0, 0);
+    botCv.getContext('2d').putImageData(new ImageData(bot.d, 64, 64), 0, 0);
+  }
+  (function drawCoin(cv) {
+    const m = Px(12, 12);
+    for (let y = 0; y < 12; y++) for (let x = 0; x < 12; x++) {
+      const d = Math.hypot(x - 5.5, y - 5.5);
+      if (d > 5.6) continue;
+      m.set(x, y, d > 4.6 ? [178, 120, 22] : d > 3.6 ? [242, 190, 64] : (x + y < 10 ? [255, 228, 140] : [232, 176, 50]));
+    }
+    for (const [x, y] of [[5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [6, 3], [6, 7]]) m.set(x, y, [178, 120, 22]);
+    m.set(3, 3, WHITE); m.outline(INK);
+    cv.getContext('2d').putImageData(new ImageData(m.d, 12, 12), 0, 0);
+  })($('coin'));
+
+  /* The open, in the stage's own 300×440 box: the machine falls in and lands with a squash, a coin arcs
+   * into the slot, the crank turns three times, a capsule drops from the chute, bounces and rolls out
+   * toward you while the machine steps back, twists twice (the seam cracks and light leaks out in the
+   * grade's colour) and pops. Every step is a tween, so Skip lands each on its last frame. */
+  const MW = 240, MH = 336, MX = 30, MY = 440 - 40 - MH, FLOOR = 400, RAD = 88.5;
+  const inMach = (x, y) => [MX + x / 40 * MW, MY + y / 56 * MH];
+  async function gacha(g, gr) {
+    const box = $('gacha'), mc = $('bigmach'), cp = $('cap2'), ct = $('cap-top'), cb = $('cap-bot'), coin = $('coin'), floor = $('g-floor'), leak = $('leak');
+    box.hidden = false; cp.hidden = true; coin.hidden = true;
+    box.style.setProperty('--grade', GRADE[gr]);
+    for (const el of [ct, cb]) { el.style.transform = ''; el.style.opacity = 1; }
+    mc.style.opacity = 1;
+    const m = addMachine(mc, g);
+    const setM = (y, sx, sy, r = 0, s = 1) => { mc.style.transform = `translateY(${y}px) rotate(${r}deg) scale(${sx * s}, ${sy * s})`; };
+    const setC = (x, y, s, r) => { cp.style.transform = `translate(${x - 96}px, ${y - 96}px) scale(${s}) rotate(${r}deg)`; };
+    const at = (x, y) => { const r = box.getBoundingClientRect(); return [r.left + x * r.width / 300, r.top + y * r.height / 440]; };
+
+    // 1. the drop and the landing
+    SFX.whoosh(0.32, 250, 1600, 0.08);
+    await tween(400, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
+    SFX.land(); shake(7);
+    dust(...at(70, FLOOR), -1); dust(...at(230, FLOOR), 1);
+    await tween(560, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
+
+    // 2. a coin, into the slot
+    const [sx, sy] = inMach(27, 40);
+    coin.hidden = false; SFX.coin();
+    await tween(440, (e, p) => {
+      const x = 10 + (sx - 18 - 10) * e, y = 150 + (sy - 18 - 150) * e - Math.sin(p * Math.PI) * 120;
+      coin.style.transform = `translate(${x}px, ${y}px) scaleX(${Math.max(0.15, Math.abs(Math.cos(p * 14)))})`;
+    }, ease.inOut);
+    coin.hidden = true; SFX.slot();
+    await wait(120);
+
+    // 3. three turns of the crank, the machine leaning into each
+    for (let k = 0; k < 3; k++) {
+      const a0 = m.angle; m.jiggle(); SFX.crank();
+      await tween(330, (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
+      SFX.clunk();
+      await wait(90);
+    }
+
+    // 4. out of the chute: a fall, two bounces, then it rolls out toward you and the machine steps back
+    m.flap = 1;
+    drawCapsule(ct, cb, g);
+    leak.style.opacity = 0;
+    const [cx, cy] = inMach(19.5, 49.5), s0 = 0.3, ground = FLOOR - RAD * s0;
+    cp.hidden = false; SFX.drop();
+    await tween(240, e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
+    SFX.bounce(1);
+    await tween(300, (e, p) => setC(cx + 6 * p, ground - Math.sin(p * Math.PI) * 34, s0, 40 * p), ease.lin);
+    SFX.bounce(0.55);
+    await tween(200, (e, p) => setC(cx + 6 + 4 * p, ground - Math.sin(p * Math.PI) * 12, s0, 40 + 25 * p), ease.lin);
+    SFX.bounce(0.3); SFX.roll(0.75);
+    await tween(760, e => {
+      setC(cx + 10 + (150 - cx - 10) * e, ground + (232 - ground) * e - Math.sin(e * Math.PI) * 30, s0 + (1 - s0) * e, 65 + 655 * e);
+      setM(-24 * e, 1, 1, 0, 1 - 0.14 * e); mc.style.opacity = 1 - 0.78 * e; floor.style.opacity = 1 - e;
+    }, ease.inOut);
+
+    // 5. two twists: the seam cracks a little more each time, and light leaks out in the grade's colour
+    for (let k = 1; k <= 2; k++) {
+      SFX.twist(k, gr);
+      await tween(420, (e, p) => {
+        const w = Math.sin(p * Math.PI * 3) * (1 - p * 0.6) * (7 + k * 4);
+        setC(150, 232, 1 + 0.03 * k * Math.sin(p * Math.PI), w);
+        ct.style.transform = `translateY(${-(k - 1 + e) * 3}px) rotate(${w * 0.5}deg)`;
+        leak.style.opacity = Math.min(1, ((k - 1) + e) * (0.2 + gr * 0.07));
+        leak.style.transform = `translate(-50%, -50%) scaleX(${0.7 + 0.25 * (k - 1 + e)})`;
+      }, ease.lin);
+      if (k === 1) await wait(140);
+    }
+    await wait(120);
+
+    // 6. pop: the dome flies off, the candy half drops away, light pours out
+    SFX.pop(gr); flash(0.35 + gr * 0.12);
+    boom(Math.max(1, gr), ...at(150, 232), [CANDY[g], '#ffffff', GRADE[gr], '#ffe9b0']);
+    await tween(560, (e, p) => {
+      ct.style.transform = `translate(${-70 * p}px, ${-280 * p + 320 * p * p}px) rotate(${-150 * p}deg)`; ct.style.opacity = 1 - p * p;
+      cb.style.transform = `translate(${36 * p}px, ${220 * p * p}px) rotate(${50 * p}deg)`; cb.style.opacity = 1 - p;
+      leak.style.opacity = 1 - p * 0.7; leak.style.transform = `translate(-50%, -50%) scale(${1 + 1.6 * e})`;
+    }, ease.lin);
     balls.delete(m);
     box.hidden = true;
+    mc.style.transform = ''; mc.style.opacity = 1; floor.style.opacity = 0;
   }
 
-  // Face down, it trembles (harder and with a glow the rarer it is), flips, and pays off.
-  async function unveil(gr, cardHtml, shoutText, name, sub) {
+  // Face down, it rises out of the light, trembles (harder, with a glow and a rising sound, the rarer it is), flips, and pays off.
+  async function unveil(gr, cardHtml, shoutText, name, sub, claimDrop) {
     const res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
     res.style.setProperty('--grade', GRADE[gr]);
     res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.75][gr]);
@@ -1161,14 +1515,18 @@ void main() {
     front.hidden = true; front.innerHTML = ''; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
+    flip.classList.remove('rise'); void flip.offsetWidth; flip.classList.add('rise');
+    SFX.whoosh(0.4, 200, 1800, 0.07);
+    await wait(480);
     if (!rush) {
+      const t = 700 + gr * 420;
       flip.style.setProperty('--amp', `${0.6 + gr * 1.2}px`);
       flip.classList.add('tremble'); void flip.offsetWidth;
-      flip.style.setProperty('--glow', `${gr * 9}px`);
-      const t = 700 + gr * 420;
-      for (let k = 0, n = 4 + gr * 2; k < n; k++) tone(150 + k * (40 + gr * 12), 0.07, 0.03, (t / 1000) * (1 - Math.pow(1 - k / n, 1.6)));
+      flip.style.setProperty('--glow', `${gr * 10}px`);
+      SFX.riser(gr, t / 1000);
       await wait(t);
       flip.classList.remove('tremble'); flip.classList.add('squash');
+      SFX.flip();
       await wait(170);
     }
     $('skip').hidden = true;
@@ -1177,13 +1535,13 @@ void main() {
     const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
     shout.textContent = shoutText;
     res.classList.add('go');
-    fanfare(gr);
+    if (claimDrop) SFX.claim(); else SFX.stinger(gr);
     shout.classList.add('slam');
     await sleep(90);
     const r = flip.getBoundingClientRect();
     boom(gr, r.left + r.width / 2, r.top + r.height / 2);
-    if (gr >= 2) { const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
-    if (gr >= 3) { const st = $('stage'); st.classList.remove('quake'); void st.offsetWidth; st.classList.add('quake'); }
+    if (gr >= 2) flash(0.5 + gr * 0.1);
+    if (gr >= 3) shake(12, 560);
     if (gr >= 4) setTimeout(() => boom(4, r.left + r.width / 2, r.top + r.height * 0.3), 420);
     $('rv-name').textContent = name;
     $('rv-sub').textContent = sub;
@@ -1199,7 +1557,7 @@ void main() {
     rush = false;
     $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
-    if (g) await gacha(g);
+    if (g) await gacha(g, gradeIdx(o));
     const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
     await unveil(gr, `<div class="card">${px(cardSpec(state.seed, [o], itemLabel(o)))}</div>`,
       famous ? famous + '!' : gr === 0 ? grade.name : grade.name + '!',
@@ -1215,7 +1573,7 @@ void main() {
     $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet him';
     const n = LG.guyOneIn(guyConfig(state.seed));
     await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '1/1', bottom: 'One of one' }, false, 4))}</div>`,
-      '1 of 1!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`);
+      '1 of 1!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`, true);
     $('rv-keep').focus();
     await new Promise(r => { closeHook = r; });
   }
@@ -1225,7 +1583,7 @@ void main() {
     $('reveal').hidden = true;
     if (closeHook) { const h = closeHook; closeHook = null; h(); setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120); return; }
     if (!current) return;
-    if (wear) state.worn[LG.slotOf(current.o)] = current.code;
+    if (wear) { state.worn[LG.slotOf(current.o)] = current.code; SFX.equip(); }
     save();
     const c = current; current = null;
     renderAll();
@@ -1295,17 +1653,18 @@ void main() {
         <button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button>
         <div class="share">
           <p class="kicker" style="margin:8px 0 0">Share card</p>
-          <div class="svg">${LG.toShareSvg(state.seed, o, { name: '@' + state.key })}</div>
+          <div class="svg">${LG.toShareSvg(state.seed, o, { name: '@' + state.key, config: guyConfig(state.seed) })}</div>
           <button class="copy" type="button" id="insp-copy">${esc(caption)}<small id="insp-copied">Copy text</small></button>
         </div>
       </div>`;
     hydrate($('insp-body'));
     $('insp-close').addEventListener('click', () => $('insp').close());
-    $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else state.worn[slot] = code; save(); $('insp').close(); renderAll(); });
+    $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else { state.worn[slot] = code; SFX.equip(); } save(); $('insp').close(); renderAll(); });
     $('insp-copy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
     });
+    SFX.whoosh(0.22, 400, 2400, 0.06);
     $('insp').showModal();
   }
   $('insp').addEventListener('click', e => { if (e.target === $('insp')) $('insp').close(); });
@@ -1330,10 +1689,22 @@ void main() {
     for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); } }
     for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
     for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }
+    fireTick();
   };
   requestAnimationFrame(frame);
 
   function renderAll() { renderClaim(); renderGuy(); renderMachines(); renderWallet(); renderColl(); }
+  // Small sounds under the pointer: a paper flick over a card, a tick over a machine, a click on any button.
+  let overCard = null;
+  addEventListener('pointerover', e => {
+    const c = e.target.closest && e.target.closest('.slot, .cc, .mcard');
+    if (!c || c === overCard) return;
+    overCard = c;
+    if (c.classList.contains('mcard')) SFX.tick(); else SFX.card([...c.parentElement.children].indexOf(c));
+  });
+  addEventListener('pointerout', e => { if (overCard && !overCard.contains(e.relatedTarget)) overCard = null; });
+  addEventListener('click', e => { if (e.target.closest && e.target.closest('button')) SFX.click(); }, { capture: true });
+
   renderHand();
   renderAll();
 
