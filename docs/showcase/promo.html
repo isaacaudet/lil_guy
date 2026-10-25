@@ -20,11 +20,12 @@
     --page: #fbf8f2; --card: #fff; --ink: #141414; --secondary: rgba(20,20,20,.62); --line: rgba(20,20,20,.1); --focus: #141414;
     --band: #141b2d; --cream: #faf2dd; --cream-2: rgba(250,242,221,.68); --cream-line: rgba(250,242,221,.16);
     --gold: #e4ae39; --good: #2f9b6e;
-    --pixel: "Pixelify Sans", "Courier New", monospace;
+    --pixel: "m6x11plus", "Pixelify Sans", "Courier New", monospace;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0e1117; --card: #181c24; --ink: #f3f1ec; --secondary: rgba(243,241,236,.64); --line: rgba(243,241,236,.12); --focus: #f3f1ec; --band: #182033; --good: #6fdca8; } }
   :root[data-theme="dark"] { --page: #0e1117; --card: #181c24; --ink: #f3f1ec; --secondary: rgba(243,241,236,.64); --line: rgba(243,241,236,.12); --focus: #f3f1ec; --band: #182033; --good: #6fdca8; }
   * { box-sizing: border-box; }
+  :root { font-synthesis: none; }
   body { margin: 0; background: var(--page); color: var(--ink); font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-optical-sizing: auto; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   [hidden] { display: none !important; }
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
@@ -201,7 +202,7 @@
   dialog { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(920px, calc(100vw - 32px)); max-width: none; }
   dialog::backdrop { background: rgba(10,13,22,.7); backdrop-filter: blur(3px); }
   .insp { background: var(--page); border-radius: 28px; padding: 28px; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
-  .insp .x { position: absolute; z-index: 2; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: var(--page); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; font-size: 20px; }
+  .insp .close { position: absolute; z-index: 2; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: var(--page); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); display: grid; place-items: center; font-size: 20px; }
   .insp h3 { font-size: 30px; font-weight: 800; line-height: 1.05; padding-right: 48px; }
   .insp .fin { margin: 6px 0 0; font-size: 18px; font-weight: 700; color: var(--secondary); }
   .insp .grade { margin-top: 12px; background: var(--g); color: #fff; }
@@ -214,6 +215,53 @@
   .share .svg svg { width: 100%; height: auto; display: block; }
   .copy { text-align: left; padding: 14px 16px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 14.5px; line-height: 1.45; }
   .copy small { display: block; margin-top: 6px; font-size: 13px; font-weight: 800; color: var(--good); }
+
+  /* ------------------------------------------------------------ inspect: the object on its own, its float, its odds */
+  #insp { width: min(1080px, calc(100vw - 32px)); }
+  .insp2 { grid-template-columns: 400px minmax(0, 1fr); align-items: start; }
+  .ins-stage { position: sticky; top: 0; border-radius: 22px; background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--g) 55%, #1d2540), #0e1220 72%); color: var(--cream); padding: 14px 14px 16px; display: grid; gap: 10px; }
+  .ins-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(0,0,0,.28); justify-self: start; }
+  .ins-tabs button { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 13.5px; font-weight: 800; color: var(--cream-2); }
+  .ins-tabs button[aria-pressed="true"] { background: var(--cream); color: #141414; }
+  .ins-view { display: grid; place-items: center; height: 340px; perspective: 900px; }
+  .ins-view .tilt { transition: transform .12s ease-out; transform-style: preserve-3d; filter: drop-shadow(0 14px 0 rgba(0,0,0,.35)) drop-shadow(0 0 30px color-mix(in srgb, var(--g) 70%, transparent)); }
+  .ins-view canvas.alone { display: block; image-rendering: pixelated; }
+  .ins-view .card { width: 220px; }
+  .ins-cap { margin: 0; text-align: center; font: 400 18px/1 var(--pixel); color: var(--cream-2); }
+  .fl { margin: 18px 0 0; padding: 16px; border-radius: 18px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+  .fl-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .fl-h .kicker { margin: 0; }
+  .fl-h b { font: 400 40px/1 var(--pixel); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .fl-bar { position: relative; display: flex; height: 22px; margin: 26px 0 22px; border-radius: 6px; overflow: visible; }
+  .fl-bar > span { position: relative; height: 100%; }
+  .fl-bar > span:first-child { border-radius: 6px 0 0 6px; } .fl-bar > span:last-of-type { border-radius: 0 6px 6px 0; }
+  .fl-bar > span em { position: absolute; left: 0; right: 0; top: calc(100% + 4px); text-align: center; font: 400 14px/1 var(--pixel); font-style: normal; color: var(--secondary); }
+  .fl-bar .out { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(-45deg, rgba(20,20,20,.55) 0 4px, rgba(20,20,20,.2) 4px 8px); }
+  .fl-bar .out.l { border-radius: 6px 0 0 6px; } .fl-bar .out.r { border-radius: 0 6px 6px 0; }
+  .mk { position: absolute; top: -9px; bottom: -9px; width: 4px; margin-left: -2px; border-radius: 2px; background: var(--ink); box-shadow: 0 0 0 2px var(--card); z-index: 2; }
+  .mk::before { content: attr(data-v); position: absolute; bottom: calc(100% + 4px); left: 50%; translate: -50% 0; font: 400 15px/1 var(--pixel); white-space: nowrap; background: var(--ink); color: var(--page); padding: 3px 5px; border-radius: 5px; }
+  .fl-zoom { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin-top: 8px; font: 400 15px/1 var(--pixel); color: var(--secondary); }
+  .zb { position: relative; height: 12px; border-radius: 6px; }
+  .zb .mk { top: -6px; bottom: -6px; }
+  .zb .mk::before { display: none; }
+  .fl p { margin: 14px 0 0; font-size: 14.5px; color: var(--secondary); }
+  .fl p b { color: var(--ink); }
+  .oddsbox { margin-top: 16px; padding: 16px; border-radius: 18px; background: var(--band); color: var(--cream); }
+  .oddsbox .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .oddsbox .score { margin-top: 12px; cursor: default; padding: 12px 16px 14px; }
+  .oddsbox .score b { font-size: clamp(40px, 5vw, 60px); }
+  .insp details { margin-top: 16px; }
+  .insp summary { cursor: pointer; font-weight: 800; }
+  .ins-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .mf { display: block; position: relative; height: 4px; border-radius: 2px; margin-top: 7px; background: linear-gradient(90deg, #3fbf8a 0 7%, #8fd65a 7% 15%, #e2c94b 15% 38%, #f19a3e 38% 45%, #e5484d 45% 100%); }
+  .mf i { position: absolute; top: -3px; width: 3px; height: 10px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1.5px var(--page); }
+  /* every finish, side by side */
+  .fins { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; }
+  .fintile { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 14px 8px 12px; border-radius: 18px; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--g) 45%, #1d2540), #0e1220 75%); color: var(--cream); }
+  .fintile .pic { height: 120px; display: grid; place-items: center; }
+  .fintile canvas { image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); }
+  .fintile b { font: 400 20px/1 var(--pixel); }
+  .fintile small { font-size: 12.5px; color: var(--cream-2); }
 
   /* ------------------------------------------------------------ the look picker */
   .lookp .look-stage { background: var(--band); border-radius: 22px; display: grid; place-items: center; aspect-ratio: 1; }
@@ -235,7 +283,8 @@
   @keyframes flash { 0% { opacity: var(--v, .85) } 100% { opacity: 0 } }
   .rv-ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
   .rv-ctl button { height: 38px; padding: 0 14px; border-radius: 12px; font-size: 14px; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--cream-line); color: var(--cream); }
-  .stage2 { position: relative; z-index: 2; display: grid; justify-items: center; gap: 14px; width: min(440px, 100%); }
+  .stage2 { position: relative; z-index: 2; display: grid; justify-items: center; gap: 14px; width: min(1040px, 100%); }
+  .result { width: min(440px, 100%); }
     .gacha { position: relative; width: 300px; height: 440px; }
   .gacha .spot { position: absolute; left: 50%; top: 48%; width: 560px; height: 560px; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(250,242,221,.13), transparent); pointer-events: none; }
   .gacha .floor { position: absolute; left: 50%; bottom: 26px; width: 270px; height: 30px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); opacity: 0; }
@@ -265,6 +314,30 @@
   .rv-name { font-size: 20px; font-weight: 800; margin: 0; }
   .rv-sub { font-size: 14px; color: var(--cream-2); margin: 0; }
   .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  /* the scroll */
+  .reelwrap { width: min(1040px, calc(100vw - 32px)); display: grid; gap: 12px; justify-items: center; }
+  .reel { position: relative; width: 100%; height: 232px; overflow: hidden; border-radius: 18px; background: rgba(6,8,18,.6); box-shadow: inset 0 0 0 2px rgba(250,242,221,.1); transition: background .4s;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .reel::after { content: ""; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 4px; translate: -2px 0; border-radius: 2px; background: #ffcf5c; box-shadow: 0 0 14px #ffcf5c, 0 0 2px #fff; z-index: 4; }
+  .track { position: absolute; left: 0; top: 20px; display: flex; gap: 12px; will-change: transform; }
+  .rc { position: relative; width: 112px; flex: none; transition: opacity .4s, transform .4s cubic-bezier(.2,1.4,.4,1); }
+  .rc .g { display: block; height: 6px; border-radius: 3px; background: var(--grade); margin-top: 10px; box-shadow: 0 0 10px var(--grade); }
+  .reel.done .rc:not(.win), .reel.dim .rc:not(.win) { opacity: .18; }
+  .reel.dim { background: rgba(0,0,0,.8); }
+  .reel.done .rc.win { transform: scale(1.12); z-index: 3; }
+  .rc.win.hold { animation: holdshake .07s steps(2) infinite; }
+  @keyframes holdshake { 50% { translate: 2px -1px; } }
+  .rc .glow { position: absolute; inset: -34px; border-radius: 40px; background: radial-gradient(closest-side, var(--grade), transparent); opacity: 0; transition: opacity .7s; z-index: -1; }
+  .reel.done .rc.win .glow, .rc.win.hold .glow { opacity: .85; }
+  /* tier effects: shockwaves, a spinning entrance, titles that land a letter at a time */
+  .wave { position: absolute; left: 50%; top: 45%; width: 140px; height: 140px; margin: -70px 0 0 -70px; border-radius: 50%; border: 7px solid var(--grade); pointer-events: none; z-index: -1; animation: wave .95s cubic-bezier(.15,.7,.3,1) forwards; }
+  @keyframes wave { 0% { transform: scale(.3); opacity: 1; } 100% { transform: scale(7); opacity: 0; border-width: 1px; } }
+  .flip.spin { animation: spiny var(--spin-ms, .9s) cubic-bezier(.15,.8,.25,1) both; }
+  @keyframes spiny { 0% { transform: perspective(900px) translateY(60px) rotateY(0deg) scale(.4); opacity: 0; } 20% { opacity: 1; } 100% { transform: perspective(900px) rotateY(var(--turns, 360deg)) scale(1); opacity: 1; } }
+  .shout .ch { display: inline-block; animation: chdrop .5s cubic-bezier(.2,1.6,.4,1) backwards; animation-delay: calc(var(--i) * 60ms); }
+  @keyframes chdrop { 0% { transform: translateY(-70px) scale(2.2) rotate(-12deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  .shout.big { font-size: 64px; min-height: 64px; text-shadow: 0 5px 0 rgba(0,0,0,.5), 0 0 30px var(--grade); }
+
   .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: #141414; color: #faf2dd; padding: 12px 18px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 
   @media (max-width: 1000px) {
@@ -273,6 +346,9 @@
     .odds-panel .stage { width: min(260px, 70%); justify-self: center; }
     .machines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .insp { grid-template-columns: 1fr; padding: 22px; }
+    .ins-stage { position: static; }
+    .ins-view { height: 280px; }
+    .fins { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .insp > .art-col { width: 200px; justify-self: center; }
   }
   @media (max-width: 640px) {
@@ -286,6 +362,8 @@
     .mcard.today .pic { min-height: 220px; }
     .mine { grid-template-columns: 110px minmax(0, 1fr); }
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fins { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .shout.big { font-size: 46px; }
     .mcard .body { padding: 10px 10px 12px 12px; gap: 8px; } .mcard h3 { font-size: 16px; } .mcard p { font-size: 12px; } .mcard .play { width: 34px; height: 34px; }
   }
   @media (max-width: 360px) { .hero h1 { font-size: 36px; } }
@@ -368,6 +446,11 @@
     <p style="margin:14px 0 0;font-size:14px;color:var(--secondary)">Out of tickets? <button type="button" id="earn" style="text-decoration:underline;text-underline-offset:3px;font-weight:700;color:var(--ink)">Play a pretend game (+60)</button></p>
   </section>
 
+  <section id="fin-sec">
+    <div class="sec-h"><div><h2>Every finish</h2><p>One item in all seven, live. The rarer the finish, the louder it moves.</p></div><div class="filters" id="fin-items"></div></div>
+    <div class="fins" id="fins"></div>
+  </section>
+
   <section id="coll">
     <div class="sec-h"><div><h2>Your collection</h2><p id="coll-sub">Every copy is one of a kind: its own finish, scuff and print.</p></div><div class="filters" id="filters"></div></div>
     <div class="grid" id="grid"></div>
@@ -378,7 +461,7 @@
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
 <dialog id="lookd" aria-labelledby="look-h"><div class="insp lookp">
-  <button class="x" type="button" id="look-close" aria-label="Close">×</button>
+  <button class="close" type="button" id="look-close" aria-label="Close">×</button>
   <div class="art-col"><div class="look-stage" id="look-stage"></div></div>
   <div>
     <h3 id="look-h">Change your look</h3>
@@ -394,6 +477,7 @@
   <div class="rv-ctl"><button type="button" id="sound" aria-pressed="true">Sound on</button><button type="button" id="skip">Skip</button></div>
   <div class="stage2" id="stage">
     <div class="gacha" id="gacha" hidden aria-hidden="true"><span class="spot"></span><span class="floor" id="g-floor"></span><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><canvas class="coin" id="coin" width="12" height="12" hidden></canvas><div class="cap2" id="cap2" hidden><span class="leak" id="leak"></span><canvas id="cap-bot" width="64" height="64"></canvas><canvas id="cap-top" width="64" height="64"></canvas></div></div>
+    <div class="reelwrap" id="reelwrap" hidden><div class="reel" id="reel"><div class="track" id="track"></div></div></div>
     <div class="result" id="result" hidden>
       <span class="rays"></span>
       <p class="shout" id="shout"></p>
@@ -1281,7 +1365,7 @@ void main() {
       .forEach(([m, v, d]) => voice({ f: f * m, at, a: 0.002, d, vol: vol * v, wet, pan }));
     const pluck = (f, at = 0, vol = 0.14, d = 0.35, wet = 0.15) => { voice({ type: 'triangle', f, at, d, vol, wet, lp: 3200 }); voice({ f: f * 2, at, d: d * 0.5, vol: vol * 0.3, wet }); };
     const pad = (notes, at, d, vol = 0.05, lp = 1800) => notes.forEach((n, i) => [-9, 9].forEach(dt => voice({ type: 'sawtooth', f: NOTE(n), at: at + i * 0.012, a: 0.08, d, vol, wet: 0.5, detune: dt, lp })));
-    let lastTick = 0;
+    let lastTick = 0, lastReel = 0;
     const api = {
       init, get on() { return on; },
       toggle() { on = !on; try { localStorage.setItem('lil-guys-sound', on ? 'on' : 'off'); } catch (e) {} if (on) init(); return on; },
@@ -1342,6 +1426,10 @@ void main() {
         [0, 4, 7, 12].forEach((x, i) => pluck(NOTE(72 + x), i * 0.05, 0.1));
         if (n >= 1e9) { noise({ d: 1.4, vol: 0.07, type: 'lowpass', f: 900, a: 0.25, wet: 0.2 }); for (let i = 0; i < 14; i++) noise({ at: 0.1 + Math.random() * 1.2, d: 0.012, vol: 0.06, f: 3500, q: 2, wet: 0.05 }); api.sparkle(8, 0.1, 0.9); }
       },
+      // the scroll: a tick per card past the marker (lower as it slows), a thunk when it stops
+      reelTick(t) { const n = performance.now(); if (n - lastReel < 28) return; lastReel = n; noise({ d: 0.012, vol: 0.08, f: 2400 + Math.random() * 900, q: 4, wet: 0 }); voice({ type: 'square', f: 1100 - t * 500, d: 0.014, vol: 0.018, wet: 0 }); },
+      reelStop() { voice({ f: 220, to: 90, d: 0.16, vol: 0.26, wet: 0.1 }); noise({ d: 0.05, vol: 0.12, type: 'lowpass', f: 1200, wet: 0.05 }); },
+      firework() { noise({ d: 0.3, vol: 0.1, f: 1800, to: 300, q: 0.7, wet: 0.45, pan: Math.random() * 1.6 - 0.8 }); bell(NOTE(84 + ((Math.random() * 12) | 0)), 0.03, 0.035, 0.5, Math.random() * 1.6 - 0.8); },
       // claiming a name: the Grail stinger with a brass chord over it
       claim() { api.stinger(4); [67, 72, 76, 79].forEach(n => voice({ type: 'sawtooth', f: NOTE(n), at: 0.02, a: 0.03, d: 0.9, vol: 0.03, lp: 2400, wet: 0.35 })); },
     };
@@ -1465,10 +1553,10 @@ void main() {
    * grade's colour) and pops. Every step is a tween, so Skip lands each on its last frame. */
   const MW = 240, MH = 336, MX = 30, MY = 440 - 40 - MH, FLOOR = 400, RAD = 88.5;
   const inMach = (x, y) => [MX + x / 40 * MW, MY + y / 56 * MH];
-  async function gacha(g, gr) {
+  async function gacha(g) {
     const box = $('gacha'), mc = $('bigmach'), cp = $('cap2'), ct = $('cap-top'), cb = $('cap-bot'), coin = $('coin'), floor = $('g-floor'), leak = $('leak');
     box.hidden = false; cp.hidden = true; coin.hidden = true;
-    box.style.setProperty('--grade', GRADE[gr]);
+    box.style.setProperty('--grade', '#ffe2a0');                 // the same warm light whatever is inside: the scroll tells
     dropColour(TABLES[g] || '#5f6a8c', 0.45, 300);
     for (const el of [ct, cb]) { el.style.transform = ''; el.style.opacity = 1; }
     mc.style.opacity = 1;
@@ -1478,65 +1566,58 @@ void main() {
     const at = (x, y) => { const r = box.getBoundingClientRect(); return [r.left + x * r.width / 300, r.top + y * r.height / 440]; };
 
     // 1. the drop and the landing
-    SFX.whoosh(0.32, 250, 1600, 0.08);
-    await tween(400, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
+    SFX.whoosh(0.3, 250, 1600, 0.08);
+    await tween(340, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
     SFX.land(); shake(7);
     dust(...at(70, FLOOR), -1); dust(...at(230, FLOOR), 1);
-    await tween(560, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
+    await tween(440, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
 
     // 2. a coin, into the slot
     const [sx, sy] = inMach(27, 40);
     coin.hidden = false; SFX.coin();
-    await tween(440, (e, p) => {
+    await tween(360, (e, p) => {
       const x = 10 + (sx - 18 - 10) * e, y = 150 + (sy - 18 - 150) * e - Math.sin(p * Math.PI) * 120;
       coin.style.transform = `translate(${x}px, ${y}px) scaleX(${Math.max(0.15, Math.abs(Math.cos(p * 14)))})`;
     }, ease.inOut);
     coin.hidden = true; SFX.slot();
-    await wait(120);
 
-    // 3. three turns of the crank, the machine leaning into each
-    for (let k = 0; k < 3; k++) {
+    // 3. two turns of the crank, the machine leaning into each
+    for (let k = 0; k < 2; k++) {
       const a0 = m.angle; m.jiggle(); SFX.crank();
-      await tween(330, (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
+      await tween(300, (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
       SFX.clunk();
-      await wait(90);
+      await wait(60);
     }
 
-    // 4. out of the chute: a fall, two bounces, then it rolls out toward you and the machine steps back
+    // 4. out of the chute: a fall, a bounce, then it rolls out toward you and the machine steps back
     m.flap = 1;
     drawCapsule(ct, cb, g);
     leak.style.opacity = 0;
     const [cx, cy] = inMach(19.5, 49.5), s0 = 0.3, ground = FLOOR - RAD * s0;
     cp.hidden = false; SFX.drop();
-    await tween(240, e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
+    await tween(220, e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
     SFX.bounce(1);
-    await tween(300, (e, p) => setC(cx + 6 * p, ground - Math.sin(p * Math.PI) * 34, s0, 40 * p), ease.lin);
-    SFX.bounce(0.55);
-    await tween(200, (e, p) => setC(cx + 6 + 4 * p, ground - Math.sin(p * Math.PI) * 12, s0, 40 + 25 * p), ease.lin);
-    SFX.bounce(0.3); SFX.roll(0.75);
-    await tween(760, e => {
-      setC(cx + 10 + (150 - cx - 10) * e, ground + (232 - ground) * e - Math.sin(e * Math.PI) * 30, s0 + (1 - s0) * e, 65 + 655 * e);
+    await tween(260, (e, p) => setC(cx + 6 * p, ground - Math.sin(p * Math.PI) * 30, s0, 40 * p), ease.lin);
+    SFX.bounce(0.4); SFX.roll(0.55);
+    await tween(560, e => {
+      setC(cx + 6 + (150 - cx - 6) * e, ground + (232 - ground) * e - Math.sin(e * Math.PI) * 30, s0 + (1 - s0) * e, 40 + 680 * e);
       setM(-24 * e, 1, 1, 0, 1 - 0.14 * e); mc.style.opacity = 1 - 0.78 * e; floor.style.opacity = 1 - e;
     }, ease.inOut);
 
-    // 5. two twists: the seam cracks a little more each time, and light leaks out in the grade's colour
-    for (let k = 1; k <= 2; k++) {
-      SFX.twist(k, gr);
-      await tween(420, (e, p) => {
-        const w = Math.sin(p * Math.PI * 3) * (1 - p * 0.6) * (7 + k * 4);
-        setC(150, 232, 1 + 0.03 * k * Math.sin(p * Math.PI), w);
-        ct.style.transform = `translateY(${-(k - 1 + e) * 3}px) rotate(${w * 0.5}deg)`;
-        leak.style.opacity = Math.min(1, ((k - 1) + e) * (0.2 + gr * 0.07));
-        leak.style.transform = `translate(-50%, -50%) scaleX(${0.7 + 0.25 * (k - 1 + e)})`;
-      }, ease.lin);
-      if (k === 1) await wait(140);
-    }
-    await wait(120);
+    // 5. one twist: the seam cracks and warm light leaks out
+    SFX.twist(1, 0);
+    await tween(420, (e, p) => {
+      const w = Math.sin(p * Math.PI * 3) * (1 - p * 0.6) * 11;
+      setC(150, 232, 1 + 0.03 * Math.sin(p * Math.PI), w);
+      ct.style.transform = `translateY(${-e * 4}px) rotate(${w * 0.5}deg)`;
+      leak.style.opacity = e * 0.6;
+      leak.style.transform = `translate(-50%, -50%) scaleX(${0.7 + 0.3 * e})`;
+    }, ease.lin);
 
-    // 6. pop: the dome flies off, the candy half drops away, light pours out
-    SFX.pop(gr); flash(0.35 + gr * 0.12); if (dropPaint) dropPaint.kick(0.6 + gr * 0.2);
-    boom(Math.max(1, gr), ...at(150, 232), [CANDY[g], '#ffffff', GRADE[gr], '#ffe9b0']);
-    await tween(560, (e, p) => {
+    // 6. pop: the dome flies off, the candy half drops away, light pours out, and the scroll comes up out of it
+    SFX.pop(1); flash(0.45); if (dropPaint) dropPaint.kick(0.8);
+    boom(1, ...at(150, 232), [CANDY[g], '#ffffff', '#ffe2a0', '#ffe9b0']);
+    await tween(460, (e, p) => {
       ct.style.transform = `translate(${-70 * p}px, ${-280 * p + 320 * p * p}px) rotate(${-150 * p}deg)`; ct.style.opacity = 1 - p * p;
       cb.style.transform = `translate(${36 * p}px, ${220 * p * p}px) rotate(${50 * p}deg)`; cb.style.opacity = 1 - p;
       leak.style.opacity = 1 - p * 0.7; leak.style.transform = `translate(-50%, -50%) scale(${1 + 1.6 * e})`;
@@ -1546,20 +1627,105 @@ void main() {
     mc.style.transform = ''; mc.style.opacity = 1; floor.style.opacity = 0;
   }
 
-  // Face down, it rises out of the light, trembles (harder, with a glow and a rising sound, the rarer it is), flips, and pays off.
-  async function unveil(gr, cardHtml, shoutText, name, sub, claimDrop) {
+  /* The scroll: cards rush past the marker and slow onto yours. Every filler is a real roll at the real
+   * odds, the winner sits at a random place in the strip, and where the marker stops inside its card is
+   * random too, so nothing better is ever planted just past it. Same length whatever you got. */
+  function reel(o, g) {
+    return new Promise(done => {
+      const wrap = $('reelwrap'), box = $('reel'), track = $('track');
+      const N = 60, WIN = 42 + Math.floor(Math.random() * 8), CW = 112, STEP = CW + 12;
+      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : LG.roll(`reel:${Math.random()}:${i}`, g));
+      wrap.hidden = false; box.classList.remove('done', 'dim');
+      track.innerHTML = list.map((x, i) => `<div class="rc${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}"><span class="glow"></span>${px(cardSpec(state.seed, [x], itemLabel(x), true))}<i class="g"></i></div>`).join('');
+      hydrate(track);
+      const mid = box.clientWidth / 2;
+      const offset = (Math.random() - 0.5) * 0.92 * CW;
+      const x0 = mid + STEP * 2, x1 = mid - (WIN * STEP + CW / 2 + offset);
+      const dur = 5400, t0 = performance.now();
+      let lastIdx = null, over = false;
+      const settle = () => { if (over) return; over = true; track.style.transform = `translateX(${x1}px)`; box.classList.add('done'); SFX.reelStop(); done(); };
+      if (rush) { settle(); return; }
+      const step = now => {
+        if (over) return;
+        if (rush) { settle(); return; }
+        const t = Math.min(1, (now - t0) / dur), p = 1 - Math.pow(1 - t, 4.3);
+        const x = x0 + (x1 - x0) * p;
+        track.style.transform = `translateX(${x}px)`;
+        const idx = Math.floor((mid - x) / STEP);
+        if (idx !== lastIdx) { if (lastIdx !== null) SFX.reelTick(t); lastIdx = idx; }
+        if (t < 1) requestAnimationFrame(step); else settle();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  // A held breath on a Mythic or a Grail: the rest of the strip goes dark and the card shakes with a heartbeat.
+  async function holdFor(gr) {
+    await wait(gr >= 3 ? 150 : 450);
+    if (gr < 3 || rush) return;
+    const win = $('track').querySelector('.win'), box = $('reel');
+    box.classList.add('dim'); win.classList.add('hold');
+    dropColour('#000000', 0.2, 300);
+    SFX.riser(gr, gr === 4 ? 1.4 : 0.85);
+    await wait(gr === 4 ? 1400 : 850);
+    win.classList.remove('hold');
+  }
+
+  // The payoff, bigger with every grade: shockwaves, a spinning entrance, a title that lands a letter at a
+  // time, fireworks, and for a Grail a rain of gold.
+  function wave() { const w = document.createElement('span'); w.className = 'wave'; $('flip').appendChild(w); setTimeout(() => w.remove(), 1000); }
+  function fireworks(n, spread, gr) {
+    for (let i = 0; i < n; i++) setTimeout(() => {
+      boom(Math.min(3, gr), innerWidth * (0.12 + Math.random() * 0.76), innerHeight * (0.1 + Math.random() * 0.45), [GRADE[gr], '#ffffff', '#ffe9b0', gr >= 4 ? '#ffcf5c' : GRADE[gr]]);
+      SFX.firework();
+    }, Math.random() * spread);
+  }
+  function goldRain(ms) {
+    const S = 4, end = performance.now() + ms;
+    const drip = () => {
+      if (performance.now() > end || $('reveal').hidden) return;
+      if (!bursting) { burst.width = Math.ceil(innerWidth / S); burst.height = Math.ceil(innerHeight / S); }
+      for (let i = 0; i < 7; i++) bits.push({ x: Math.random() * burst.width, y: -2, vx: (Math.random() - 0.5) * 0.3, vy: 0.6 + Math.random() * 1.2, life: 160, c: ['#ffcf5c', '#f2b02e', '#fff1c4', '#c8901e'][i % 4], s: 2, drag: 1 });
+      if (!bursting) { bursting = true; requestAnimationFrame(fly); }
+      setTimeout(drip, 70);
+    };
+    drip();
+  }
+  function celebrate(gr) {
+    const r = $('flip').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    boom(gr, cx, cy);
+    for (let i = 0; i < gr; i++) setTimeout(wave, i * 170);
+    if (gr >= 2) flash(0.45 + gr * 0.12);
+    if (gr >= 3) shake(10 + (gr - 3) * 10, 600 + (gr - 3) * 500);
+    if (gr >= 3) fireworks(gr === 4 ? 14 : 5, gr === 4 ? 2600 : 1100, gr);
+    if (gr >= 4) { goldRain(3400); setTimeout(() => boom(4, cx, r.top + r.height * 0.3), 420); }
+  }
+
+  // After the scroll the card comes up face up with its tier's entrance. A claimed name still comes face
+  // down, trembles, flips and pays off.
+  async function unveil(gr, cardHtml, shoutText, name, sub, claimDrop, faceUp) {
     const res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
     res.style.setProperty('--grade', GRADE[gr]);
     res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.75][gr]);
-    res.classList.remove('go'); shout.classList.remove('slam'); shout.textContent = '';
+    res.classList.remove('go'); shout.classList.remove('slam', 'big'); shout.textContent = '';
+    flip.classList.remove('spin', 'rise');
     front.hidden = true; front.innerHTML = ''; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
+    if (faceUp) {
+      // Everyday and Special rise; Prized and up spin in, more turns and slower the rarer.
+      back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front);
+      $('skip').hidden = true;
+      if (gr >= 2) { flip.style.setProperty('--turns', `${360 * (gr - 1)}deg`); flip.style.setProperty('--spin-ms', `${0.7 + 0.25 * gr}s`); void flip.offsetWidth; flip.classList.add('spin'); SFX.whoosh(0.5 + gr * 0.1, 300, 3000, 0.1); }
+      else { void flip.offsetWidth; flip.classList.add('rise'); SFX.whoosh(0.3, 300, 2000, 0.07); }
+      await sleep(gr >= 2 ? 380 + gr * 120 : 220);
+    }
+    if (!faceUp) {
     dropColour('#3a4366', 0.5, 400);
     flip.classList.remove('rise'); void flip.offsetWidth; flip.classList.add('rise');
     SFX.whoosh(0.4, 200, 1800, 0.07);
     await wait(480);
-    if (!rush) {
+    }
+    if (!faceUp && !rush) {
       const t = 700 + gr * 420;
       flip.style.setProperty('--amp', `${0.6 + gr * 1.2}px`);
       flip.classList.add('tremble'); void flip.offsetWidth;
@@ -1570,21 +1736,20 @@ void main() {
       SFX.flip();
       await wait(170);
     }
-    $('skip').hidden = true;
-    back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front);
+    if (!faceUp) {
+      $('skip').hidden = true;
+      back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front);
+    }
     flip.classList.remove('squash', 'tremble');
     const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
-    shout.textContent = shoutText;
+    if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
+    else shout.textContent = shoutText;
     res.classList.add('go');
     dropColour(GRADE[gr], 0.64, 500); if (dropPaint) dropPaint.kick(0.5 + gr * 0.25);
     if (claimDrop) SFX.claim(); else SFX.stinger(gr);
-    shout.classList.add('slam');
+    if (gr < 3) shout.classList.add('slam');
     await sleep(90);
-    const r = flip.getBoundingClientRect();
-    boom(gr, r.left + r.width / 2, r.top + r.height / 2);
-    if (gr >= 2) flash(0.5 + gr * 0.1);
-    if (gr >= 3) shake(12, 560);
-    if (gr >= 4) setTimeout(() => boom(4, r.left + r.width / 2, r.top + r.height * 0.3), 420);
+    celebrate(gr);
     $('rv-name').textContent = name;
     $('rv-sub').textContent = sub;
     $('rv-actions').hidden = false;
@@ -1599,11 +1764,12 @@ void main() {
     rush = false;
     $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
-    if (g) await gacha(g, gradeIdx(o));
     const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
+    $('reelwrap').hidden = true;
+    if (g) { await gacha(g); await reel(o, g); await holdFor(gr); $('reelwrap').hidden = true; }
     await unveil(gr, `<div class="card">${px(cardSpec(state.seed, [o], itemLabel(o)))}</div>`,
-      famous ? famous + '!' : gr === 0 ? grade.name : grade.name + '!',
-      LG.nameOf(o), `${how} · ${LG.wearOf(o.scuff).name} · scuff ${o.scuff.toFixed(4)} · #${o.print} · 1 in ${words(LG.copyOneIn(o))}`);
+      famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!',
+      LG.nameOf(o), `${how} · ${LG.wearOf(o.scuff).name} · float ${o.scuff.toFixed(6)} · #${o.print} · 1 in ${words(LG.copyOneIn(o))}`, false, !!g);
     $('rv-again').hidden = !g;
     $('rv-wear').focus();
   }
@@ -1662,12 +1828,87 @@ void main() {
       return `<button class="cc card" type="button" data-i="${c.i}" aria-label="${esc(LG.nameOf(c.o))}">
         ${worn.includes(c.code) ? '<span class="pill tag on">ON</span>' : fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
         ${px(cardSpec(state.seed, [c.o], itemLabel(c.o, it.free, one), shown.length > 24))}
-        <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : 'Plain'))} · ${LG.wearOf(c.o.scuff).name}</span></span></button>`;
+        <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : 'Plain'))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
     }).join('');
     hydrate($('grid'));
   }
   $('filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = +b.dataset.f; renderColl(); } });
   $('grid').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) inspect(+b.dataset.i); });
+
+  /* ---------------------------------------------- an item on its own: the pixels that are the item (by layer, or by
+   * what changes when the guy puts it on), outlined, on a frame the library's finish shader reads, so the finish
+   * moves on the object itself: Gold glints, Nebula drifts, Prism runs a rainbow, scuffed pixels shine less. */
+  const SLOT_RANGE = { skin: [20, 30], hat: [30, 40], frame: [40, 50], buddy: [50, 60] };
+  const shiner = LG.createShine ? LG.createShine() : null;
+  const shows = new Set();
+  function itemAlone(o, seed) {
+    const base = state && seed === state.seed ? guyConfig(seed) : LG.resolve(seed);
+    const slot = LG.slotOf(o), [lo, hi] = SLOT_RANGE[slot], want = LG.FRAME_SLOTS.indexOf(slot) + 1;
+    const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg)) }; };
+    const worn = draw(LG.dress(base, { equip: [LG.encode(o)] }));
+    let mask = worn.grid.map(row => row.map(tk => tk >= lo && tk < hi));
+    if (!mask.some(r => r.some(Boolean))) { const bare = draw(LG.dress(base, { equip: [] })); mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x])); }
+    const W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT, top = H - 16;
+    const colors = Array.from({ length: H }, () => new Array(W).fill(null)), slots = Array.from({ length: H }, () => new Array(W).fill(0));
+    worn.colors.forEach((row, y) => row.forEach((c, x) => { if (mask[y][x] && c) { colors[y + top][x] = c; slots[y + top][x] = want; } }));
+    const edge = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!colors[y][x] && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => slots[y + dy]?.[x + dx])) edge.push([x, y]);
+    for (const [x, y] of edge) colors[y][x] = '#1a1626';
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    colors.forEach((row, y) => row.forEach((c, x) => { if (c) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }));
+    return { frame: { colors, slots, ms: 0 }, owned: { [slot]: o }, box: { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } };
+  }
+  function showItem(canvas, o, seed, maxW, maxH) {
+    const a = itemAlone(o, seed), k = Math.max(1, Math.floor(Math.min(maxW / a.box.w, maxH / a.box.h)));
+    canvas.width = a.box.w; canvas.height = a.box.h;
+    canvas.style.width = a.box.w * k + 'px'; canvas.style.height = a.box.h * k + 'px';
+    const s = { canvas, ctx: canvas.getContext('2d'), ...a };
+    shows.add(s); drawShow(s, performance.now());
+    return s;
+  }
+  function drawShow(s, now) {
+    const { x, y, w, h } = s.box;
+    s.ctx.clearRect(0, 0, w, h);
+    if (shiner) { shiner.draw(s.frame, s.owned, now); s.ctx.drawImage(shiner.canvas, x, y, w, h, 0, 0, w, h); return; }
+    const img = s.ctx.createImageData(w, h);
+    for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const c = s.frame.colors[y + yy][x + xx]; if (c) img.data.set([...rgb(c), 255], (yy * w + xx) * 4); }
+    s.ctx.putImageData(img, 0, 0);
+  }
+
+  /* ---------------------------------------------- inspect: the object on its own or on your guy, its float drawn
+   * against every condition and against what its finish can roll, and its odds as tiles that multiply. */
+  const WEAR_COLOURS = ['#3fbf8a', '#8fd65a', '#e2c94b', '#f19a3e', '#e5484d'];
+  const tierFor = n => n < 12 ? TIERS[0] : n < 30 ? TIERS[1] : n < 80 ? TIERS[2] : TIERS[3];
+  function floatPanel(o) {
+    const fin = LG.FINISHES[o.finish], [lo, hi] = fin.scuffs, wear = LG.wearOf(o.scuff), wi = LG.WEAR.indexOf(wear);
+    let prev = 0;
+    const segs = LG.WEAR.map((w, k) => { const a = prev, b = Math.min(1, w.max); prev = b; return `<span style="flex:${(b - a).toFixed(3)};background:${WEAR_COLOURS[k]}" title="${w.name}"><em>${w.short}</em></span>`; }).join('');
+    const within = hi > lo ? (o.scuff - lo) / (hi - lo) : 0, cleaner = Math.round((1 - within) * 100);
+    const zoom = `linear-gradient(90deg, ${WEAR_COLOURS[LG.WEAR.indexOf(LG.wearOf(lo))]}, ${WEAR_COLOURS[LG.WEAR.indexOf(LG.wearOf(Math.min(0.999, hi)))]})`;
+    return `<div class="fl">
+      <div class="fl-h"><p class="kicker">Float</p><b>${o.scuff.toFixed(6)}</b><span class="bal" style="--b:${WEAR_COLOURS[wi]}">${wear.name}</span></div>
+      <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk" data-v="${o.scuff.toFixed(4)}" style="left:${Math.min(100, o.scuff * 100)}%"></b></div>
+      <div class="fl-zoom"><span>${lo.toFixed(2)}</span><div class="zb" style="background:${zoom}"><b class="mk" style="left:${(within * 100).toFixed(1)}%"></b></div><span>${hi.toFixed(2)}</span></div>
+      <p>${fin.name} only comes ${lo.toFixed(2)} to ${hi.toFixed(2)}${hi < 1 ? ' (the striped part can’t roll)' : ''}. This one is cleaner than <b>${cleaner}%</b> of ${fin.name} copies.</p>
+    </div>`;
+  }
+  function oddsBox(o, one) {
+    const item = LG.itemById(o.item);
+    if (one) return `<div class="oddsbox"><p class="kicker" style="margin:0 0 10px;color:var(--cream-2)">Odds</p><div class="score"><span class="lbl">1 of</span><b>1</b><span class="unit">no capsule gives it</span></div></div>`;
+    if (item.free) return `<div class="oddsbox"><p class="kicker" style="margin:0 0 10px;color:var(--cream-2)">Odds</p><div class="score"><span class="lbl">Starter</span><b>free</b><span class="unit">no two alike</span></div></div>`;
+    const fin = LG.FINISHES[o.finish], [lo, hi] = fin.scuffs, famous = LG.special(o);
+    const pool = LG.gameItems(item.game).filter(x => !x.free).length;
+    const tiles = [
+      ['item', item.name, pool],
+      ['finish', fin.name, 100 / fin.odds],
+      famous ? ['print', `${famous} #${o.print}`, famous === 'Deep Blue' ? 1000 / LG.DEEP_BLUE_PRINTS.length : 20] : null,
+      ['float', `≤ ${o.scuff.toFixed(4)}`, 1 / Math.max(1e-7, (o.scuff - lo) / (hi - lo))],
+      o.tally !== undefined ? ['tally', 'Counts days', 10] : null,
+    ].filter(Boolean);
+    const [a, b] = split(LG.copyOneIn(o));
+    return `<div class="oddsbox"><p class="kicker" style="margin:0 0 10px;color:var(--cream-2)">Odds, multiplied</p><div class="tiles">${tiles.map(([slot, name, n]) => { const tr = tierFor(n); return `<div class="tt" style="--tier:${tr.c}"><span class="slot">${slot}</span><b>${esc(name)}</b><span class="foot"><span class="bal" style="--b:${tr.c}">${tr.name}</span><span class="x">×${n >= 100 ? fmt(n) : n < 10 && Math.abs(n - Math.round(n)) > 0.05 ? n.toFixed(1) : Math.round(n)}</span></span></div>`; }).join('')}</div>
+      <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b ? b + ' ' : ''}capsules</span></div></div>`;
+  }
 
   function inspect(i) {
     const code = state.copies[i], o = LG.decode(code);
@@ -1677,29 +1918,38 @@ void main() {
     const odds = LG.copyOneIn(o), item = LG.itemById(o.item);
     const one = o.tally === 999 && o.print === 1 && o.finish === 'gold' && founderOf(state.seed);
     const caption = `@${state.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', one of one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
+    $('insp-body').className = 'insp insp2';
     $('insp-body').style.setProperty('--g', g.color);
-    $('insp-body').innerHTML = `<button class="x" type="button" id="insp-close" aria-label="Close">×</button>
-      <div class="art-col"><div class="card">${px(cardSpec(state.seed, [...wornCopies().filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)))}</div></div>
+    $('insp-body').innerHTML = `<button class="close" type="button" id="insp-close" aria-label="Close">×</button>
+      <div class="ins-stage">
+        <div class="ins-tabs" role="group" aria-label="View"><button type="button" data-v="alone" aria-pressed="true">On its own</button><button type="button" data-v="guy" aria-pressed="false">On your guy</button></div>
+        <div class="ins-view" id="ins-view"></div>
+        <p class="ins-cap">#${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
+      </div>
       <div>
         <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}
-        <span class="pill grade">${one ? '★ 1 of 1' : g.name}</span>
-        <dl class="spec">
-          <dt>Item</dt><dd>${cap(item.game)} ${item.slot}${item.free ? ' · starter' : ''}</dd>
-          <dt>Condition</dt><dd>${LG.wearOf(o.scuff).name}</dd>
-          <dt>Scuff</dt><dd>${o.scuff.toFixed(6)}<div class="float" aria-hidden="true"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></div></dd>
-          <dt>Print</dt><dd>#${o.print}${LG.special(o) ? ` · ${esc(LG.special(o))}` : ''}</dd>
-          ${o.tally !== undefined ? `<dt>Tally</dt><dd>${o.tally} days</dd>` : ''}
-          ${o.date ? `<dt>Dropped</dt><dd>${o.date}</dd>` : ''}
-          <dt>Odds</dt><dd>${one ? 'No capsule can give it' : item.free ? 'Everyone has one; no two alike' : `1 in ${words(odds)} capsules`}</dd>
-        </dl>
-        <button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button>
-        <div class="share">
-          <p class="kicker" style="margin:8px 0 0">Share card</p>
-          <div class="svg">${LG.toShareSvg(state.seed, o, { name: '@' + state.key, config: guyConfig(state.seed) })}</div>
-          <button class="copy" type="button" id="insp-copy">${esc(caption)}<small id="insp-copied">Copy text</small></button>
-        </div>
+        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ 1 of 1' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${(state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
+        ${floatPanel(o)}
+        ${oddsBox(o, one)}
+        <div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button></div>
+        <details><summary>Share card</summary>
+          <div class="share">
+            <div class="svg">${LG.toShareSvg(state.seed, o, { name: '@' + state.key, config: guyConfig(state.seed) })}</div>
+            <button class="copy" type="button" id="insp-copy">${esc(caption)}<small id="insp-copied">Copy text</small></button>
+          </div>
+        </details>
       </div>`;
-    hydrate($('insp-body'));
+    const view = $('ins-view');
+    const setView = v => {
+      view.innerHTML = v === 'alone' ? '<div class="tilt"><canvas class="alone" aria-label="The item on its own"></canvas></div>'
+        : `<div class="tilt"><div class="card">${px(cardSpec(state.seed, [...wornCopies().filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)))}</div></div>`;
+      if (v === 'alone') showItem(view.querySelector('canvas'), o, state.seed, 300, 300); else hydrate(view);
+      $('insp-body').querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
+    };
+    setView('alone');
+    $('insp-body').querySelector('.ins-tabs').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) setView(b.dataset.v); });
+    view.addEventListener('pointermove', e => { const r = view.getBoundingClientRect(), tl = view.querySelector('.tilt'); if (tl) tl.style.transform = `rotateY(${((e.clientX - r.left) / r.width - 0.5) * 26}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 22}deg)`; });
+    view.addEventListener('pointerleave', () => { const tl = view.querySelector('.tilt'); if (tl) tl.style.transform = ''; });
     $('insp-close').addEventListener('click', () => $('insp').close());
     $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else { state.worn[slot] = code; SFX.equip(); } save(); $('insp').close(); renderAll(); });
     $('insp-copy').addEventListener('click', async () => {
@@ -1709,6 +1959,21 @@ void main() {
     SFX.whoosh(0.22, 400, 2400, 0.06);
     $('insp').showModal();
   }
+
+  /* ---------------------------------------------- every finish: one of today's items in all seven, live */
+  let finItem = null;
+  function renderFins() {
+    const its = LG.gameItems(todayGame).filter(x => !x.free);
+    const pick = ['hat', 'skin', 'frame', 'buddy'].map(sl => its.find(x => x.slot === sl)).filter(Boolean);
+    if (!finItem) finItem = pick[0].id;
+    $('fin-items').innerHTML = pick.map(x => `<button type="button" data-it="${x.id}" aria-pressed="${x.id === finItem}">${esc(x.name)}</button>`).join('');
+    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+    const pool = its.length;
+    $('fins').innerHTML = order.map(f => { const fin = LG.FINISHES[f], g = LG.GRADES[fin.grade]; return `<div class="fintile" style="--g:${g.color}"><div class="pic"><canvas aria-hidden="true"></canvas></div><b>${fin.name}</b><span class="bal" style="--b:${g.color}">${esc(g.name)}</span><small>1 in ${fmt(pool * 100 / fin.odds)} capsules</small></div>`; }).join('');
+    $('fins').querySelectorAll('canvas').forEach((c, k) => { const f = order[k], [lo, hi] = LG.FINISHES[f].scuffs; showItem(c, { item: finItem, finish: f, scuff: lo + (hi - lo) * 0.03, print: f === 'tempered' ? 3 : 7 }, 'finishes', 112, 112); });
+  }
+  $('fin-items').addEventListener('click', e => { const b = e.target.closest('[data-it]'); if (b) { finItem = b.dataset.it; renderFins(); } });
+
   $('insp').addEventListener('click', e => { if (e.target === $('insp')) $('insp').close(); });
   $('insp').addEventListener('close', () => renderColl());
 
@@ -1775,6 +2040,7 @@ void main() {
     for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); } }
     for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
     for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }
+    for (const s of shows) if (s.canvas.isConnected) drawShow(s, now); else shows.delete(s);
     fireTick();
     if (bandPaint) bandPaint.draw(now);
     if (dropPaint && !$('reveal').hidden) dropPaint.draw(now);
@@ -1794,6 +2060,7 @@ void main() {
   addEventListener('click', e => { if (e.target.closest && e.target.closest('button')) SFX.click(); }, { capture: true });
 
   renderHand();
+  renderFins();
   renderAll();
 
   /* ---------------------------------------------- the database, when this view has one */

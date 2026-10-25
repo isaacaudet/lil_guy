@@ -1423,14 +1423,6 @@ void main() {
     ctx.putImageData(img, 0, 0);
   })($('back'));
 
-  /** A filler for the reel: rarer than real odds, so the reel looks like it could be anything. */
-  function filler(seed, game, want) {
-    if (want === undefined) { const r = strHash(seed) % 100; want = r < 56 ? 0 : r < 80 ? 1 : r < 92 ? 2 : r < 97 ? 3 : 4; }
-    let o;
-    for (let i = 0; i < 6000; i++) { o = LG.roll(`${seed}:${i}`, game); if (gradeIdx(o) === want) break; }
-    return o;
-  }
-
   let skipSpin = null;
   /** The reel: about fifty cards rush past a marker and slow onto the one you got. */
   function spin(o, game, g) {
@@ -1438,14 +1430,13 @@ void main() {
       const reel = $('reel'), track = $('track');
       const N = 54, WIN = 46, CW = 104, STEP = CW + 10;
       const base = `${state.name}:reel:${state.opened}`;
-      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : filler(`${base}:${i}`, game));
-      // Below Mythic, something better sits right after it, and the reel stops just short.
-      if (g < 3) list[WIN + 1] = filler(`${base}:tease`, game, strHash(base) % 3 ? 3 : 4);
+      // Every filler is a real roll at the real odds; nothing better is planted next to yours.
+      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : LG.roll(`${base}:${i}:${Math.random()}`, game));
       reel.hidden = false;
       track.innerHTML = list.map((x, i) => `<div class="slot-card${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}">${px({ name: state.name, copies: [x], still: true })}<i class="g"></i></div>`).join('');
       hydrate(track);
       const mid = reel.clientWidth / 2;
-      const jitter = g < 3 ? 0.42 * CW : (strHash(base + 'j') % 100 / 100 - 0.5) * 0.6 * CW;
+      const jitter = (Math.random() - 0.5) * 0.9 * CW;            // anywhere inside the card, the same for every grade
       const x0 = mid + STEP * 1.5, x1 = mid - (WIN * STEP + CW / 2 + jitter);
       const dur = g >= 3 ? 7200 : 5800, t0 = performance.now();
       let over = false, lastIdx = null;
