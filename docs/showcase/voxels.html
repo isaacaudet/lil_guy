@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
+</head>
+<body>
+<title>Lil Guys 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Pixelify+Sans:wght@600;700&display=swap">
+<script type="importmap">{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }</script>
+<style>
+  @font-face { font-family: "m6x11plus"; src: url("../fonts/m6x11plus.ttf") format("truetype"); font-style: normal; font-weight: 400; font-display: swap; }
+  /* A showroom: the reveal's night navy in both schemes, so the figures' lighting reads the same. */
+  :root {
+    color-scheme: dark;
+    --page: #0e1220; --panel: #161c30; --line: rgba(250,242,221,.12); --cream: #faf2dd; --cream-2: rgba(250,242,221,.66); --focus: #faf2dd;
+    --pixel: "m6x11plus", "Pixelify Sans", "Courier New", monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0e1220; --panel: #161c30; } }
+  :root[data-theme="dark"] { --page: #0e1220; --panel: #161c30; }
+  * { box-sizing: border-box; }
+  :root { font-synthesis: none; }
+  body { margin: 0; background: var(--page); color: var(--cream); font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 10px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
+  .top { padding-top: 34px; }
+  .kicker { margin: 0 0 10px; font: 400 16px/1 var(--pixel); letter-spacing: .06em; text-transform: uppercase; color: var(--cream-2); }
+  h1 { margin: 0; font: 400 clamp(44px, 8vw, 76px)/.95 var(--pixel); text-shadow: 0 5px 0 rgba(0,0,0,.5); }
+  h2 { margin: 0 0 16px; font: 400 34px/1 var(--pixel); }
+  section { margin-top: 56px; }
+
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: center; margin-top: 18px; }
+  .stage { position: relative; aspect-ratio: 1 / 1; max-height: 74vh; width: 100%; border-radius: 26px; overflow: hidden; touch-action: pan-y; cursor: grab;
+    background: radial-gradient(60% 55% at 50% 42%, color-mix(in srgb, var(--accent, #4b69ff) 34%, transparent), transparent 70%), radial-gradient(120% 90% at 50% 120%, #1d2742, #0b0f1c 70%);
+    box-shadow: inset 0 0 0 1.5px var(--line); }
+  .stage:active { cursor: grabbing; }
+  .stage canvas.gl { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .flat { position: absolute; left: 16px; bottom: 16px; display: grid; justify-items: center; gap: 6px; padding: 10px 10px 8px; border-radius: 14px; background: rgba(0,0,0,.35); font: 400 14px/1 var(--pixel); color: var(--cream-2); pointer-events: none; }
+  .flat canvas { width: 48px; height: 60px; image-rendering: pixelated; }
+  .hint { position: absolute; right: 18px; bottom: 16px; margin: 0; font: 400 15px/1 var(--pixel); color: var(--cream-2); pointer-events: none; }
+  .side { display: grid; gap: 18px; align-content: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { height: 40px; padding: 0 15px; border-radius: 12px; font-weight: 800; font-size: 15px; box-shadow: inset 0 0 0 1.6px var(--line); }
+  .chip[aria-pressed="true"] { background: var(--cream); color: #141414; box-shadow: none; }
+  .wearing { display: grid; gap: 8px; }
+  .worn { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: baseline; padding: 10px 12px; border-radius: 12px; background: var(--panel); }
+  .worn b { font-size: 15px; }
+  .worn span { font: 400 17px/1 var(--pixel); color: var(--g); }
+  .worn small { grid-column: 1 / -1; font-size: 12.5px; color: var(--cream-2); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 14px; }
+  .tile { position: relative; border-radius: 20px; overflow: hidden; background: radial-gradient(70% 60% at 50% 38%, color-mix(in srgb, var(--g) 30%, transparent), transparent 72%), linear-gradient(#182038, #0d1222); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--g) 40%, transparent); }
+  .tile canvas { display: block; width: 100%; aspect-ratio: 1 / 1; }
+  .tile p { position: absolute; left: 14px; right: 14px; bottom: 12px; margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .tile p b { white-space: nowrap; font: 400 22px/1 var(--pixel); color: var(--g); text-shadow: 0 2px 0 rgba(0,0,0,.6); }
+  .tile p span { font: 400 14px/1 var(--pixel); color: var(--cream-2); text-align: right; }
+  .err { padding: 40px 0; color: var(--cream-2); }
+  footer { height: 70px; }
+
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .stage { max-height: none; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .tile p b { font-size: 18px; }
+  }
+</style>
+
+<header class="wrap top">
+  <p class="kicker">Prototype</p>
+  <h1>Lil Guys in 3D</h1>
+</header>
+<main class="wrap">
+  <div class="hero">
+    <div class="stage" id="stage">
+      <div class="flat"><canvas id="flat" width="16" height="20" aria-hidden="true"></canvas>Flat</div>
+      <p class="hint">Drag to turn</p>
+    </div>
+    <div class="side">
+      <div><p class="kicker">Guy</p><div class="chips" id="guys"></div></div>
+      <div><p class="kicker">Move</p><div class="chips" id="moves"></div></div>
+      <div class="wearing" id="wearing"></div>
+    </div>
+  </div>
+  <section><h2>Every finish</h2><div class="tiles" id="fins"></div></section>
+  <section><h2>Condition</h2><div class="tiles" id="cond"></div></section>
+  <section><h2>On the stand</h2><div class="tiles" id="stand"></div></section>
+  <p class="err" id="err" hidden>This needs WebGL, which this browser has turned off.</p>
+</main>
+<footer></footer>
+
+<script src="../lil-guy.js"></script>
+<script>window.LG = window.LilGuy;</script>
+<script type="module">
+  import * as THREE from 'three';
+  import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+  const LG = window.LilGuy, $ = id => document.getElementById(id);
+  const code = (item, finish, scuff, print) => LG.encode({ item, finish, scuff, print });
+  const SLOT_RANGE = { skin: [20, 30], hat: [30, 40], frame: [40, 50], buddy: [50, 60] };
+
+  /* ---------------------------------------------- surfaces: each finish as a material, wear roughening it */
+  const SURF = {
+    body:     { roughness: .46, metalness: 0, clearcoat: .35, clearcoatRoughness: .35 },
+    plain:    { roughness: .5, metalness: 0, clearcoat: .3, clearcoatRoughness: .4 },
+    sunset:   { roughness: .3, metalness: .05, clearcoat: .9, clearcoatRoughness: .12, sheen: 1, sheenRoughness: .3, sheenColor: '#ffc59a' },
+    tempered: { roughness: .28, metalness: .85, clearcoat: .4, clearcoatRoughness: .2 },
+    nebula:   { roughness: .22, metalness: .1, clearcoat: 1, clearcoatRoughness: .08, glow: .9 },
+    prism:    { roughness: .12, metalness: .35, clearcoat: 1, clearcoatRoughness: .04, iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820] },
+    negative: { roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .03, glow: .2 },
+    gold:     { roughness: .16, metalness: 1, clearcoat: .5, clearcoatRoughness: .08 },
+  };
+  const clock = { value: 0 };
+  const mats = new Map();
+  function material(kind, scuff = 0) {
+    const wear = Math.round(Math.min(1, scuff) * 10) / 10, key = `${kind}|${wear}`;
+    if (mats.has(key)) return mats.get(key);
+    const { glow, sheenColor, ...s } = SURF[kind];
+    const m = new THREE.MeshPhysicalMaterial({ ...s, roughness: Math.min(1, s.roughness + wear * .55), clearcoat: (s.clearcoat || 0) * (1 - wear) });
+    if (sheenColor) m.sheenColor = new THREE.Color(sheenColor);
+    if (glow) {
+      // Lit from inside: the copy's own colours added back as light, breathing up the figure.
+      m.onBeforeCompile = sh => {
+        sh.uniforms.uT = clock;
+        sh.fragmentShader = 'uniform float uT;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ${glow.toFixed(2)} * (0.7 + 0.3 * sin(uT * 2.2 + vViewPosition.y * 0.6));`);
+      };
+      m.customProgramCacheKey = () => 'glow' + glow;
+    }
+    mats.set(key, m);
+    return m;
+  }
+
+  /* ---------------------------------------------- pixels to voxels: each pixel a rounded column, thicker away
+   * from the silhouette's edge so he comes out pillow-round; eyes and mouth stand proud, a hat sits forward,
+   * a frame becomes the plate behind him, a buddy is its own little figure. */
+  const lum = hex => { const n = parseInt(hex.slice(1, 7), 16); return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255; };
+  function distField(W, H, inside) {
+    const d = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => inside(x, y) ? 99 : 0));
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y - 1]?.[x] ?? 0) + 1, (d[y][x - 1] ?? 0) + 1);
+    for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y + 1]?.[x] ?? 0) + 1, (d[y][x + 1] ?? 0) + 1);
+    return d;
+  }
+  function voxelize(frame, owned, small = false) {
+    const C = frame.colors, S = frame.slots, H = C.length, W = C[0].length;
+    const dF = distField(W, H, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
+    const dB = distField(W, H, (x, y) => !!C[y][x] && S[y][x] === 4);
+    const T = Array.from({ length: H }, () => new Array(W).fill(0));
+    let maxT = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = C[y][x], s = S[y][x];
+      if (!c || s === 3) continue;
+      const d = s === 4 ? dB[y][x] : dF[y][x], L = lum(c);
+      // An item on its own is only a few pixels tall, so it stays shallow or it turns into a brick.
+      let t = small ? 1 + .45 * Math.min(d, 3) : 1.3 + 1.05 * Math.min(d, 4);
+      if (s === 4 && !small) t *= .82;
+      if (s === 0 && d >= 2 && L < .22) t += .45;
+      if (s === 0 && d >= 2 && L > .86) t += .3;
+      if (s === 2 && !small) t += .5;
+      T[y][x] = t; maxT = Math.max(maxT, t);
+    }
+    const vox = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = C[y][x], s = S[y][x];
+      if (!c) continue;
+      const copy = s ? owned[LG.FRAME_SLOTS[s - 1]] : null;
+      const kind = copy ? copy.finish : 'body', scuff = copy ? copy.scuff : 0;
+      if (s === 3) { vox.push({ x, y, z: -(maxT / 2 + .5), t: .7, color: new THREE.Color(c), kind, scuff }); continue; }
+      const t = T[y][x];
+      let ao = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (T[y + dy]?.[x + dx] ?? 0) > t + .4) ao++;
+      vox.push({ x, y, z: 0, t, color: new THREE.Color(c).multiplyScalar(1 - ao * .045), kind, scuff });
+    }
+    return { vox, W, H };
+  }
+
+  const BOX = new RoundedBoxGeometry(1, 1, 1, 2, .11);
+  function build({ vox, W, H }) {
+    const by = new Map();
+    for (const v of vox) { const m = material(v.kind, v.scuff); if (!by.has(m)) by.set(m, []); by.get(m).push(v); }
+    const g = new THREE.Group(), mtx = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    for (const [m, list] of by) {
+      const mesh = new THREE.InstancedMesh(BOX, m, list.length);
+      list.forEach((v, i) => { mesh.setMatrixAt(i, mtx.compose(p.set(v.x - W / 2 + .5, H / 2 - v.y - .5, v.z), q, sc.set(1, 1, v.t))); mesh.setColorAt(i, v.color); });
+      mesh.castShadow = mesh.receiveShadow = true;
+      g.add(mesh);
+    }
+    return g;
+  }
+  const ownedOf = codes => Object.fromEntries(codes.map(c => { const o = LG.decode(c); return [LG.slotOf(o), o]; }));
+
+  // A moving guy: every frame of the move built once, one shown at a time.
+  function figure(seed, move, codes) {
+    const anim = LG.animate(seed, move, { equip: codes, rarity: false }), owned = ownedOf(codes);
+    const root = new THREE.Group(), parts = anim.frames.map(f => { const g = build(voxelize(f, owned)); g.visible = false; root.add(g); return g; });
+    let shown = -1;
+    return {
+      root, anim, H: anim.height,
+      at(ms) {
+        let t = ms % anim.duration, i = 0;
+        while (i < anim.frames.length - 1 && t >= anim.frames[i].ms) { t -= anim.frames[i].ms; i++; }
+        if (i !== shown) { if (shown >= 0) parts[shown].visible = false; parts[i].visible = true; shown = i; }
+        return anim.frames[i];
+      },
+    };
+  }
+  // An item on its own, cut out of a guy wearing it.
+  function itemFrame(o) {
+    const base = LG.resolve('display stand'), slot = LG.slotOf(o), [lo, hi] = SLOT_RANGE[slot], want = LG.FRAME_SLOTS.indexOf(slot) + 1;
+    const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg)) }; };
+    const worn = draw(LG.dress(base, { equip: [LG.encode(o)] }));
+    let mask = worn.grid.map(row => row.map(t => t >= lo && t < hi));
+    if (!mask.some(r => r.some(Boolean))) { const bare = draw(LG.dress(base, { equip: [] })); mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x])); }
+    const colors = worn.colors.map((row, y) => row.map((c, x) => mask[y][x] ? c : null));
+    return { colors, slots: colors.map(row => row.map(c => c ? want : 0)) };
+  }
+
+  /* ---------------------------------------------- stages */
+  function lights(scene, accent) {
+    const key = new THREE.DirectionalLight('#fff3df', 2.6);
+    key.position.set(-7, 12, 14); key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024); Object.assign(key.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 60 });
+    key.shadow.bias = -.0004; key.shadow.normalBias = .03;
+    const rim = new THREE.DirectionalLight(accent, 3);
+    rim.position.set(9, 5, -11);
+    scene.add(key, rim, new THREE.HemisphereLight('#c4d4ff', '#2b2018', .5));
+  }
+  function envFor(renderer) { const pm = new THREE.PMREMGenerator(renderer); return pm.fromScene(new RoomEnvironment(), .04).texture; }
+  function makeRenderer(canvas, alpha = true) {
+    const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha, preserveDrawingBuffer: false });
+    r.setPixelRatio(Math.min(2, devicePixelRatio));
+    r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1.05;
+    r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+    return r;
+  }
+  function floorAt(scene, y, puck, accent) {
+    const shadow = new THREE.Mesh(new THREE.CircleGeometry(14, 64), new THREE.ShadowMaterial({ opacity: .5 }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.y = y + (puck ? .61 : 0); shadow.receiveShadow = true;
+    scene.add(shadow);
+    if (!puck) return;
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(puck, puck * 1.04, .6, 64), new THREE.MeshPhysicalMaterial({ color: '#1a2036', roughness: .35, clearcoat: 1, clearcoatRoughness: .2 }));
+    top.position.y = y + .3; top.receiveShadow = true;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(puck * 1.03, .09, 12, 96), new THREE.MeshBasicMaterial({ color: accent }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = y + .3;
+    scene.add(top, ring);
+  }
+
+  /* ---------------------------------------------- the hero: one guy, turned by dragging */
+  const GUYS = [
+    { name: 'Rex', seed: 'rex-77', equip: [code('amountle.crown', 'gold', .012, 7), code('amountle.gemling', 'prism', .03, 88)] },
+    { name: 'Jo', seed: 'jo-4', equip: [code('cutsies.melon', 'nebula', .02, 231), code('flipsies.beret', 'negative', .04, 12)] },
+    { name: 'Kai', seed: 'kai-9', equip: [code('puttsies.flag', 'tempered', .62, 661), code('stackdle.toybox', 'sunset', .05, 3)] },
+    { name: 'Mia', seed: 'mia', equip: [] },
+  ];
+  const MOVES = ['dance', 'wave', 'cheer', 'hop', 'idle'];
+  const gradeColour = codes => { let best = null; for (const c of codes) { const g = LG.gradeOf(LG.decode(c)); if (!best || LG.GRADES.indexOf(g) > LG.GRADES.indexOf(best)) best = g; } return best ? best.color : '#4b69ff'; };
+
+  let hero;
+  function startHero() {
+    const stage = $('stage'), canvas = document.createElement('canvas');
+    canvas.className = 'gl'; stage.prepend(canvas);
+    const renderer = makeRenderer(canvas), env = envFor(renderer);
+    const camera = new THREE.PerspectiveCamera(26, 1, 1, 200);
+    camera.position.set(0, 9, 54); camera.lookAt(0, -1.5, 0);
+    const flat = $('flat').getContext('2d');
+    let guy = GUYS[0], move = MOVES[0], scene, fig, accent;
+    function load() {
+      scene = new THREE.Scene(); scene.environment = env; scene.environmentIntensity = 1;
+      accent = gradeColour(guy.equip);
+      stage.style.setProperty('--accent', accent);
+      lights(scene, accent);
+      fig = figure(guy.seed, move, guy.equip);
+      scene.add(fig.root);
+      floorAt(scene, -fig.H / 2, 0, accent);
+      $('wearing').innerHTML = guy.equip.map(c => { const o = LG.decode(c), g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
+        return `<div class="worn" style="--g:${g.color}"><b>${title}</b><span>${look || 'Plain'}</span><small>${g.name} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</small></div>`; }).join('') ||
+        '<div class="worn" style="--g:#9aa6c8"><b>Just him</b><span>No items</span></div>';
+      chips();
+    }
+    function chips() {
+      $('guys').innerHTML = GUYS.map((g, i) => `<button class="chip" data-g="${i}" aria-pressed="${g === guy}">${g.name}</button>`).join('');
+      $('moves').innerHTML = MOVES.map(m => `<button class="chip" data-m="${m}" aria-pressed="${m === move}">${m[0].toUpperCase() + m.slice(1)}</button>`).join('');
+    }
+    $('guys').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) { guy = GUYS[+b.dataset.g]; load(); } });
+    $('moves').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) { move = b.dataset.m; load(); } });
+
+    let yaw = .5, vel = 0, drag = null, lastSize = '';
+    stage.addEventListener('pointerdown', e => { drag = { x: e.clientX, yaw }; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener('pointermove', e => { if (!drag) return; const ny = drag.yaw + (e.clientX - drag.x) * .012; vel = ny - yaw; yaw = ny; });
+    const up = () => { drag = null; };
+    stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+
+    load();
+    hero = now => {
+      const w = stage.clientWidth, h = stage.clientHeight, size = `${w}x${h}`;
+      if (size !== lastSize) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); lastSize = size; }
+      if (!drag) { vel *= .94; yaw += vel; yaw += (.45 + Math.sin(now / 2300) * .4 - yaw) * .012 * (Math.abs(vel) < .002 ? 1 : 0); }
+      fig.root.rotation.y = yaw;
+      const f = fig.at(now);
+      const img = flat.createImageData(16, 20);
+      f.colors.forEach((row, y) => row.forEach((c, x) => { if (c) { const n = parseInt(c.slice(1, 7), 16); img.data.set([n >> 16 & 255, n >> 8 & 255, n & 255, 255], (y * 16 + x) * 4); } }));
+      flat.putImageData(img, 0, 0);
+      renderer.render(scene, camera);
+    };
+  }
+
+  /* ---------------------------------------------- tiles: copies on a turning stand, one renderer drawing them all */
+  const tiles = [];
+  let tileR, tileEnv;
+  const TILE = 320;
+  function tile(host, o, label, sub) {
+    const g = LG.gradeOf(o), el = document.createElement('div');
+    el.className = 'tile'; el.style.setProperty('--g', g.color);
+    el.innerHTML = `<canvas width="${TILE * tileR.getPixelRatio()}" height="${TILE * tileR.getPixelRatio()}" aria-label="${LG.nameOf(o)}"></canvas><p><b>${label}</b><span>${sub}</span></p>`;
+    host.append(el);
+    const scene = new THREE.Scene(); scene.environment = tileEnv; scene.environmentIntensity = .8;
+    lights(scene, g.color);
+    const v = voxelize(itemFrame(o), { [LG.slotOf(o)]: o }, true);
+    const model = build(v);
+    const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+    model.position.set(-mid.x, -box.min.y, -mid.z);
+    const spin = new THREE.Group(); spin.add(model); scene.add(spin);
+    const reach = Math.max(size.x, size.z) * .58 + .9;
+    floorAt(scene, -.6, reach, g.color);
+    spin.position.y = 0;
+    // Framed to sit in the top three quarters, clear of the label.
+    const camera = new THREE.PerspectiveCamera(28, 1, 1, 300), r = Math.hypot(Math.max(size.x, size.z, reach * 2) / 2, size.y / 2 + .6);
+    const dist = r / Math.sin(THREE.MathUtils.degToRad(14)) * 1.08;
+    camera.position.set(0, size.y * .5 + dist * .3, dist); camera.lookAt(0, size.y * .5 - r * .26, 0);
+    const t = { el, ctx: el.querySelector('canvas').getContext('2d'), scene, camera, spin, phase: tiles.length * .9, on: false, fast: 0, extra: 0 };
+    el.addEventListener('pointerenter', () => { t.fast = 1; }); el.addEventListener('pointerleave', () => { t.fast = 0; });
+    tiles.push(t);
+    io.observe(el);
+  }
+  const io = new IntersectionObserver(es => es.forEach(e => { const t = tiles.find(t => t.el === e.target); if (t) t.on = e.isIntersecting; }));
+  function startTiles() {
+    tileR = makeRenderer(document.createElement('canvas'));
+    tileR.setSize(TILE, TILE, false);
+    tileEnv = envFor(tileR);
+    const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+    FIN.forEach((f, i) => { const o = { item: 'amountle.crown', finish: f, scuff: f === 'plain' || f === 'tempered' ? .05 : .02, print: f === 'tempered' ? 387 : 100 + i };
+      tile($('fins'), o, LG.FINISHES[f].name, LG.gradeOf(o).name); });
+    [['plain', .003], ['plain', .3], ['plain', .93], ['tempered', .004], ['tempered', .88]].forEach(([f, s]) => {
+      const o = { item: 'trackdle.trophy', finish: f, scuff: s, print: 41 };
+      tile($('cond'), o, LG.wearOf(s).name, `${LG.FINISHES[f].name} · ${s.toFixed(3)}`); });
+    [{ item: 'cutsies.melon', finish: 'gold', scuff: .01, print: 9 }, { item: 'weighsies.mouse', finish: 'prism', scuff: .02, print: 70 },
+     { item: 'trackdle.trophy', finish: 'nebula', scuff: .03, print: 501 }, { item: 'flipsies.target', finish: 'sunset', scuff: .04, print: 18 }]
+      .forEach(o => { const [title] = LG.nameOf(o).split(' | '); tile($('stand'), o, title, LG.FINISHES[o.finish].name); });
+  }
+
+  try {
+    startHero(); startTiles();
+    let last = performance.now();
+    const loop = now => {
+      const dt = Math.min(.05, (now - last) / 1000); last = now;
+      clock.value = now / 1000;
+      hero(now);
+      for (const t of tiles) {
+        // Pixel art is flat-faced, so a stand sways it through three quarters rather than showing its edge; hover spins it.
+        t.extra += dt * t.fast * 3;
+        t.spin.rotation.y = .3 + Math.sin(now / 1700 + t.phase) * .7 + t.extra;
+        if (!t.on) continue;
+        tileR.render(t.scene, t.camera);
+        t.ctx.clearRect(0, 0, t.ctx.canvas.width, t.ctx.canvas.height);
+        t.ctx.drawImage(tileR.domElement, 0, 0);
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  } catch (e) {
+    console.error(e);
+    $('err').hidden = false;
+  }
+</script>
+
+</body>
+</html>

@@ -20,6 +20,7 @@ const PAGES: Record<string, string> = {
   boards: 'From a name to a dressed guy, and how boards and games would show it.',
   economy: 'Tickets, prices and drop odds simulated over 90 days of play, with targets.',
   review: 'Every part and item on four test guys, with what to keep, cut and add.',
+  voxels: 'A prototype: the same pixels as 3D figures, each finish a real material.',
 };
 
 // The shop and the promo draw the gacha machines with the locker's code, so it is shared from there.
