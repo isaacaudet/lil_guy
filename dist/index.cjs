@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-DHSa5q-6.cjs');
+const require_paint = require('./paint-Dy-OQNX6.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -347,7 +347,13 @@ function squash(layer, n) {
 		...rows.slice(r + 1)
 	];
 }
+/**
+* Moves the guy by (dx, dy). A sideways step that would push him past the
+* frame's edge is dropped: a guy as wide as the frame sways in place rather
+* than losing a column.
+*/
 function shift(layer, dx, dy) {
+	if (dx && layer.some((row) => row[dx < 0 ? 0 : FRAME_WIDTH - 1])) dx = 0;
 	const out = empty();
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		const nx = x + dx, ny = y + dy;
@@ -1593,6 +1599,58 @@ function lookOf(seed, code = "") {
 }
 
 //#endregion
+//#region src/guy.ts
+/**
+* A whole guy as a short code, for showing him where his seed must not go.
+*
+* A seed is private and kept for good: anyone holding it could draw every
+* guy the player will ever be dealt. A board shows other people's guys, so it
+* sends this instead: every visible field of the guy as he is, picked look
+* and all, and nothing that leads back to the seed. Codes are versioned
+* (`g1:`), so a later change to the fields can't misread an old one.
+*/
+/** The fields in a version-1 code, in order, with how many values each can take. */
+const FIELDS = [
+	["head", require_paint.headWeights.length],
+	["eyes", require_paint.eyeWeights.length],
+	["mouth", require_paint.mouthWeights.length],
+	["cheeks", require_paint.cheekWeights.length],
+	["hair", require_paint.hairWeights.length],
+	["body", require_paint.bodyWeights.length],
+	["accessory", require_paint.accessoryWeights.length],
+	["palette", require_paint.paletteWeights.length],
+	["shade", require_paint.shadeWeights.length],
+	["feet", require_paint.footWeights.length],
+	["arms", require_paint.armWeights.length],
+	["rotation", 9],
+	["flip", 2],
+	["lucky", 2]
+];
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+function encodeGuy(config) {
+	return "g1:" + FIELDS.map(([key]) => Number(config[key] ?? 0).toString(36)).join(".");
+}
+/**
+* A code back into a guy, or null for anything that isn't a version-1 code
+* this library can draw: another version, a field missing, or one out of range.
+* He comes back bare: items are worn on top with `dress`.
+*/
+function decodeGuy(code) {
+	if (typeof code !== "string" || !code.startsWith("g1:")) return null;
+	const values = code.slice(3).split(".");
+	if (values.length !== FIELDS.length) return null;
+	const config = {};
+	for (let i = 0; i < FIELDS.length; i++) {
+		const [key, count$1] = FIELDS[i];
+		if (!/^[0-9a-z]{1,2}$/.test(values[i])) return null;
+		const n = parseInt(values[i], 36);
+		if (n >= count$1) return null;
+		config[key] = key === "flip" || key === "lucky" ? n === 1 : n;
+	}
+	return config;
+}
+
+//#endregion
 //#region src/share.ts
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
 	"&": "&amp;",
@@ -1891,10 +1949,12 @@ exports.composeBase = require_paint.composeBase
 exports.copyOneIn = copyOneIn
 exports.createShine = createShine
 exports.decode = require_paint.decode
+exports.decodeGuy = decodeGuy
 exports.decodeLook = decodeLook
 exports.drawFrame = drawFrame
 exports.dress = require_paint.dress
 exports.encode = require_paint.encode
+exports.encodeGuy = encodeGuy
 exports.encodeLook = encodeLook
 exports.eyes = require_paint.eyes
 exports.frameAt = frameAt

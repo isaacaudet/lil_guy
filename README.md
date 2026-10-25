@@ -415,6 +415,10 @@ A rare guy only means something if nobody can choose one. So:
   `2:e1`; `decodeLook` refuses old seven-number codes, out-of-range parts and
   rare parts the player didn't roll, and `lookOf(seed, code)` draws the
   result.
+- **Show other people the guy, never the seed.** `encodeGuy(lookOf(seed, code))`
+  gives a `g1:` code of every visible field; `decodeGuy(code)` gives him back,
+  drawn with `toSvgString('', { parts: guy, palette: paletteOf(guy) })`. Boards
+  send this code, since a seed would let anyone draw every guy the player is dealt.
 
 ### Upgrading from 0.1
 

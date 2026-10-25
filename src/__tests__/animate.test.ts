@@ -50,6 +50,17 @@ describe('animate', () => {
     for (let y = 0; y < GRID_SIZE; y++) expect(rest[y + HEADROOM]).toEqual(s[y]);
   });
 
+  test('a dance never pushes a column off the frame', () => {
+    const columns = (rows: (string | null)[][]) => new Set(rows.flatMap(row => row.flatMap((c, x) => (c ? [x] : [])))).size;
+    for (let i = 0; i < 200; i++) {
+      const name = `sway${i}`;
+      const wide = columns(still(name));
+      for (const move of ['dance'] as const) {
+        for (const f of animate(name, move).frames) expect(columns(f.colors)).toBeGreaterThanOrEqual(wide);
+      }
+    }
+  });
+
   test('a hop goes up into the headroom', () => {
     for (const name of NAMES) {
       const a = animate(name, 'hop');
