@@ -1,0 +1,397 @@
+<title>Lil Guy Catalog</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  /* Layout: what's thin first, then the ladder, then every option slot by slot (rarest first), the items game by
+   * game, finishes and condition, and last the proposed tier above Grail with the founder. */
+  :root {
+    --bg: #f4f0e7; --panel: #fffdf8; --line: #e4dccd; --ink: #221d2b; --muted: #6b6377; --tile: #f0eadf;
+    --c0: #009dff; --c1: #35b07d; --c2: #fe5f55; --c3: #b26cbb;
+    --g0: #4B69FF; --g1: #8847FF; --g2: #D32CE6; --g3: #EB4B4B; --g4: #E4AE39;
+    --pixel: "Pixelify Sans", "Courier New", monospace; --body: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15131c; --panel: #1e1b28; --line: #2e2a3b; --ink: #f2eee6; --muted: #a39cb2; --tile: #282435; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #15131c; --panel: #1e1b28; --line: #2e2a3b; --ink: #f2eee6; --muted: #a39cb2; --tile: #282435; color-scheme: dark; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 80px; }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 48px; }
+  h1, h2, h3 { font-family: var(--pixel); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(36px, 6vw, 56px); line-height: 1; }
+  h2 { font-size: 28px; }
+  h3 { font-size: 18px; }
+  .lede { color: var(--muted); margin: 8px 0 0; max-width: 70ch; }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  nav a { font: 500 13px/1 var(--pixel); color: var(--ink); text-decoration: none; background: var(--panel); border: 1px solid var(--line); padding: 7px 9px; border-radius: 6px; }
+  section { display: grid; gap: 16px; scroll-margin-top: 16px; }
+  .sh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+  .sh p { margin: 0; color: var(--muted); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 20px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .stat b { display: block; font: 700 28px/1 var(--pixel); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 13px; color: var(--muted); }
+
+  .thin { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+  .note h3 { font-size: 17px; }
+  .note p { margin: 0; color: var(--muted); font-size: 14px; }
+  .note .fix { color: var(--ink); }
+  .sev { font: 500 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; justify-self: start; color: #fff; }
+  .sev.hi { background: #c2412e; } .sev.mid { background: #b07a12; } .sev.lo { background: #5d6b8a; }
+
+  .bars { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; }
+  .bar { display: grid; grid-template-columns: 104px minmax(0, 1fr) 150px; gap: 12px; align-items: center; font-size: 13.5px; }
+  .bar .track { height: 14px; background: var(--tile); border-radius: 4px; position: relative; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; background: #6b5bd6; border-radius: 0 4px 4px 0; }
+  .bar .fill.low { background: #c2412e; }
+  .bar .v { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar b { font-weight: 600; }
+
+  .ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .rung { border-radius: 10px; padding: 12px 10px; color: #fff; display: grid; gap: 4px; align-content: start; min-width: 0; }
+  .rung b { font: 700 16px/1.1 var(--pixel); }
+  .rung span { font-size: 12.5px; opacity: .95; line-height: 1.3; }
+  .rung.new { background: linear-gradient(135deg, #1b1430, #3d2a70 45%, #e4ae39); outline: 2px dashed #e4ae39; outline-offset: 2px; }
+
+  .tiers { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--muted); }
+  .tiers i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .t { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 8px 9px; display: grid; gap: 4px; min-width: 0; }
+  .t canvas { width: 100%; height: auto; aspect-ratio: 1; image-rendering: pixelated; background: var(--tile); border-radius: 8px; display: block; }
+  .t .n { font: 500 14px/1.15 var(--pixel); overflow-wrap: anywhere; }
+  .t .o { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chip { font: 500 10.5px/1 var(--pixel); padding: 3px 5px; border-radius: 4px; color: #fff; background: var(--k); white-space: nowrap; }
+  .t.thin-slot { border-style: dashed; }
+
+  .game { display: grid; gap: 10px; }
+  .game h3 { display: flex; gap: 10px; align-items: baseline; }
+  .game h3 small { font: 400 13px/1 var(--body); color: var(--muted); }
+
+  table { border-collapse: collapse; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { font: 500 12px/1 var(--pixel); color: var(--muted); letter-spacing: .03em; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td canvas { width: 40px; height: 40px; image-rendering: pixelated; background: var(--tile); border-radius: 6px; display: block; }
+  .scroll { overflow-x: auto; border-radius: 12px; }
+
+  .prop { background: #16121f; color: #f2eee6; border-radius: 18px; padding: 24px; display: grid; gap: 22px; }
+  .prop h2, .prop h3 { color: #fff; }
+  .prop .lede, .prop p { color: #b9b1c9; }
+  .prop .t { background: #221c30; border-color: #352c48; }
+  .prop .t canvas { background: #2c2440; }
+  .prop .t .o { color: #b9b1c9; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .opt { border: 1px solid #352c48; border-radius: 14px; padding: 16px; display: grid; gap: 12px; align-content: start; }
+  .opt .tag { font: 500 12px/1 var(--pixel); color: #16121f; background: #e4ae39; padding: 4px 7px; border-radius: 5px; justify-self: start; }
+  .live { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+  .live figure { margin: 0; display: grid; gap: 4px; text-align: center; }
+  .live canvas { width: 100%; height: auto; aspect-ratio: 16 / 20; image-rendering: pixelated; background: #2c2440; border-radius: 8px; }
+  .live figcaption { font-size: 12px; color: #b9b1c9; line-height: 1.25; }
+  .live figcaption b { display: block; color: #fff; font: 500 13px/1.2 var(--pixel); }
+  .vs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .vs figure { margin: 0; display: grid; gap: 8px; }
+  .vs canvas { width: 100%; max-width: 240px; height: auto; aspect-ratio: 16 / 20; image-rendering: pixelated; background: #2c2440; border-radius: 12px; justify-self: center; }
+  .vs figcaption { text-align: center; color: #b9b1c9; font-size: 13.5px; }
+  .vs figcaption b { display: block; color: #fff; font: 700 18px/1.2 var(--pixel); }
+  .vs ul { margin: 6px 0 0; padding-left: 18px; text-align: left; font-size: 13px; color: #d9d2e6; }
+  @media (max-width: 760px) {
+    .ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .bar { grid-template-columns: 84px minmax(0, 1fr); }
+    .bar .v { grid-column: 2; margin-top: -4px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+    .vs { grid-template-columns: 1fr; }
+    .prop { padding: 18px 14px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Every lil guy part and how rare it is</h1>
+    <p class="lede">Every part a guy can be dealt, every item in the machines, every finish and condition, with real odds from the library. Rarest first in each slot. The last section proposes a tier above Grail.</p>
+    <nav id="nav"></nav>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section id="thin">
+    <div class="sh"><h2>Where it's thin</h2><p>What there isn't enough of, worst first.</p></div>
+    <div class="thin" id="thin-notes"></div>
+    <div class="bars" id="bars" aria-label="Rarest option in each slot"></div>
+  </section>
+
+  <section id="ladder">
+    <div class="sh"><h2>The ladder</h2><p>How rare a copy can be, per capsule, plus the tier this page proposes.</p></div>
+    <div class="ladder" id="ladder-rungs"></div>
+    <div class="tiers" id="tier-key"></div>
+  </section>
+
+  <div id="slots" style="display:grid;gap:48px"></div>
+
+  <section id="items">
+    <div class="sh"><h2>Items, machine by machine</h2><p>A capsule from a game's machine gives one of its items, each equally likely, then a finish.</p></div>
+    <div id="games" style="display:grid;gap:28px"></div>
+  </section>
+
+  <section id="finishes">
+    <div class="sh"><h2>Finishes, prints and condition</h2><p>Rolled on every capsule, whatever the item.</p></div>
+    <div class="scroll"><table id="fin-table"></table></div>
+    <div class="scroll"><table id="print-table"></table></div>
+    <div class="scroll"><table id="wear-table"></table></div>
+    <div class="scroll"><table id="earn-table"></table></div>
+  </section>
+
+  <section id="relics">
+    <div class="prop">
+      <div><h2>Proposed: ★ Relics, the tier above Grail</h2>
+        <p class="lede">The knife of the machines: about 1 in 1,000 capsules, from any machine, rarer than any Grail, with its own finishes and something you see every time the guy moves. Two ways to draw it.</p></div>
+      <div class="opts">
+        <div class="opt"><span class="tag">Option A · held</span><h3>A relic in his hand</h3>
+          <p>A ★ item he holds, tip up into the empty top corner. Reads best as a lollipop, cleaver or wand; a thin blade is a squeeze at 16 pixels.</p>
+          <div class="live" id="held"></div></div>
+        <div class="opt"><span class="tag">Option B · aura</span><h3>An aura round him</h3>
+          <p>A ★ effect in the empty pixels round him, moving all the time, so it shows on a board row as well as on a card.</p>
+          <div class="live" id="auras"></div></div>
+      </div>
+      <div class="scroll"><table id="relic-table" style="background:#221c30;border-color:#352c48;color:#f2eee6"></table></div>
+      <div><h3>The founder, one of one</h3><p>Today the founder gets the rarest part in every slot, and it's the busiest guy in the club. Rare parts piled up look worse, not better. Better: a clean guy, and two things nobody else can ever get: a holo body that shimmers through the rainbow, and the Origin aura, a gold halo with stars going round him.</p></div>
+      <div class="vs" id="vs"></div>
+    </div>
+  </section>
+</div>
+
+<script>/*LIB*/</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
+  const oneIn = p => `1 in ${1 / p < 9.95 ? +(1 / p).toFixed(1) : fmt(1 / p)}`;
+  const idx = (list, name) => list.findIndex(x => x.name === name);
+  const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 0, c: '#b26cbb' }];
+  const tierOf = p => TIERS.find(t => p >= t.min);
+
+  // One test guy every option is drawn on: round, peach, plain, so the option is all you see.
+  const BASE = { head: idx(LG.heads, 'round'), eyes: idx(LG.eyes, 'shiny'), mouth: idx(LG.mouths, 'cat'), cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 1, feet: 0, shade: 1, flip: false, lucky: false };
+  const PEACH = idx(LG.palettes, 'Peach');
+  const configOf = ({ parts = {}, palette = PEACH, equip = [], name = 'catalog' }) => {
+    const r = { ...LG.resolve(name, { ...BASE, ...parts }), palette };
+    if (parts.lucky !== undefined) r.lucky = parts.lucky;
+    return LG.dress(r, { equip });
+  };
+  const colorsOf = spec => { const cfg = configOf(spec); return LG.paint(LG.compose(cfg), cfg, LG.withItems(LG.paletteOf(cfg), cfg)); };
+  const put = (canvas, colors) => {
+    canvas.width = colors[0].length; canvas.height = colors.length;
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(canvas.width, canvas.height);
+    colors.forEach((row, y) => row.forEach((c, x) => { if (c) img.data.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], (y * canvas.width + x) * 4); }));
+    ctx.putImageData(img, 0, 0);
+  };
+  const specs = [];
+  const cv = spec => { specs.push(spec); return `<canvas width="16" height="16" data-s="${specs.length - 1}" aria-hidden="true"></canvas>`; };
+  const paintAll = () => document.querySelectorAll('canvas[data-s]').forEach(c => { put(c, colorsOf(specs[+c.dataset.s])); c.removeAttribute('data-s'); });
+  const tile = (name, p, canvas, extra = '') => { const t = tierOf(p); return `<div class="t${extra}">${canvas}<span class="n">${esc(name)}</span><span class="o">${oneIn(p)}<span class="chip" style="--k:${t.c}">${t.name}</span></span></div>`; };
+
+  // Each option's chance, from the library's own weights.
+  const SLOTS = [
+    { id: 'shapes', title: 'Shapes', key: 'head', list: LG.heads, odds: 'shape' },
+    { id: 'eyes', title: 'Eyes', key: 'eyes', list: LG.eyes, odds: 'eyes' },
+    { id: 'mouths', title: 'Mouths', key: 'mouth', list: LG.mouths, odds: 'mouth' },
+    { id: 'cheeks', title: 'Cheeks', key: 'cheeks', list: LG.cheeks, odds: 'cheeks' },
+    { id: 'toppers', title: 'Toppers', key: 'hair', list: LG.hair, odds: 'topper' },
+    { id: 'markings', title: 'Markings', key: 'body', list: LG.bodies, odds: 'markings' },
+    { id: 'accessories', title: 'Accessories', key: 'accessory', list: LG.accessories, odds: 'accessory' },
+  ];
+  const chanceOf = (slot, i) => LG.traitOdds({ ...LG.resolve('x'), [slot.key]: i }).find(t => t.slot === slot.odds).chance;
+  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: chanceOf(s, i) })).sort((a, b) => a.p - b.p);
+  const palOdds = LG.palettes.map((p, i) => ({ i, name: p.name, p: LG.traitOdds({ ...LG.resolve('x'), palette: i }).find(t => t.slot === 'colour').chance })).sort((a, b) => a.p - b.p);
+  // Traits the seed rolls that aren't in the odds list (weights from parts/weights.ts).
+  const share = w => w.map(x => x / w.reduce((a, b) => a + b, 0));
+  const EXTRA = [
+    ...['none', 'by the sides', 'waving'].map((name, k) => ({ name: 'Arms ' + name, p: share([4, 3, 2])[k], parts: { arms: k } })),
+    ...['nubs', 'tiptoes', 'wide', 'socks', 'tucked'].map((name, k) => ({ name: 'Feet ' + name, p: share([5, 2, 2, 1, 2])[k], parts: { feet: k } })),
+    ...['pastel', 'as picked', 'vivid'].map((name, k) => ({ name: 'Tone ' + name, p: share([1, 5, 3])[k], parts: { shade: k } })),
+    { name: 'Facing left', p: .5, parts: { flip: true } },
+    { name: 'Lucky', p: 1 / LG.LUCKY_ODDS, parts: { lucky: true } },
+  ].sort((a, b) => a.p - b.p);
+
+  const machine = g => LG.gameItems(g).filter(i => !i.free);
+  const slotCount = slot => LG.GAMES.map(g => machine(g).filter(i => i.slot === slot).length);
+  const combos = SLOTS.reduce((n, s) => n * s.list.length, 1) * LG.palettes.length * 3 * 5 * 3 * 2 * 2;
+
+  $('nav').innerHTML = [['thin', 'What\'s thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Relics']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
+  const rarestPart = Math.min(...SLOTS.map(s => s.options[0].p));
+  $('stats').innerHTML = [
+    [fmt(combos), 'different guys the parts can make'],
+    [SLOTS.reduce((n, s) => n + s.list.length, 0) + LG.palettes.length, 'face and body parts, in 8 slots'],
+    [LG.items.length, `items: ${LG.items.filter(i => i.free).length} free hats, ${LG.items.filter(i => !i.free && !i.season).length} in machines, ${LG.items.filter(i => i.season).length} seasonal`],
+    [oneIn(rarestPart), 'the rarest single part (apart from Lucky)'],
+    ['1 in 400', 'a ★ Grail copy, the top of the ladder today'],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${esc(s)}</span></div>`).join('');
+
+  // ---------------------------------------------------------------- what's thin
+  const buddies = slotCount('buddy')[0], hats = slotCount('hat')[0], frames = slotCount('frame')[0], skins = slotCount('skin')[0];
+  $('thin-notes').innerHTML = [
+    ['hi', `One buddy per machine`, `Each game has ${buddies} buddy, so every buddy you pull from a machine is the same one: ${LG.items.filter(i => i.slot === 'buddy').length} buddies across all nine games.`, 'Three or four per game, and buddies are the easiest to draw (tiny, no fitting to a head).'],
+    ['hi', 'No chase parts', `The rarest face part is ${oneIn(rarestPart)}, and mouths, markings and accessories top out near 1 in 35. Nothing about a guy is rare enough to show off except Lucky.`, 'Two or three chase parts per slot at 1 in 300 to 1 in 1,000: a galaxy eye, a diamond shape, a gold tooth.'],
+    ['hi', 'Nothing above Grail', 'A Gold copy is the ceiling at 1 in 400 capsules, and with endless capsules people reach it fast.', 'A ★ Relic tier at about 1 in 1,000, with its own finishes (the section at the end).'],
+    ['mid', `Only ${machine('amountle').length} items per machine`, `${skins} skins, ${hats} hats, ${frames} frames and ${buddies} buddy per game. After a few dozen capsules a machine has nothing new, only finishes.`, 'Twelve to fifteen per machine, so a full set takes a while.'],
+    ['mid', `${LG.items.filter(i => i.season).length} seasonal hats`, 'Most of the year nothing is in season, so the seasonal machine is empty.', 'One per month at least, two a month around holidays.'],
+    ['lo', 'Rarity is flat inside a slot', 'Most options sit between 1 in 10 and 1 in 40, so "Rare" and "Uncommon" chips appear on nearly every guy and stop meaning much.', 'Fewer, more common everyday parts; the chase parts carry the rarity.'],
+  ].map(([sev, h, p, fix]) => `<div class="note"><span class="sev ${sev}">${sev === 'hi' ? 'Most needed' : sev === 'mid' ? 'Needed' : 'Nice to fix'}</span><h3>${esc(h)}</h3><p>${esc(p)}</p><p class="fix"><b>Add:</b> ${esc(fix)}</p></div>`).join('');
+  const barRows = [...SLOTS.map(s => [s.title, s.list.length, s.options[0]]), ['Colours', LG.palettes.length, palOdds[0]], ['Buddies', buddies, { name: 'per game', p: 1 / 8 }], ['Hats', hats, { name: 'per game', p: 2 / 8 }], ['Frames', frames, { name: 'per game', p: 2 / 8 }], ['Skins', skins, { name: 'per game', p: 3 / 8 }]];
+  const most = Math.max(...barRows.map(r => r[1]));
+  $('bars').innerHTML = `<div class="bar" style="font-size:12px;color:var(--muted)"><span>Slot</span><span>Options</span><span>Rarest</span></div>` + barRows.map(([n, count, r]) =>
+    `<div class="bar"><b>${esc(n)}</b><span class="track" title="${count} options"><span class="fill${count < 5 ? ' low' : ''}" style="width:${(count / most) * 100}%"></span></span><span class="v">${count} · ${n === 'Buddies' || n === 'Hats' || n === 'Frames' || n === 'Skins' ? 'per machine' : `${esc(r.name)}, ${oneIn(r.p)}`}</span></div>`).join('');
+
+  // ---------------------------------------------------------------- the ladder
+  const per = f => LG.FINISHES[f].odds / 100;
+  const gradeP = g => Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === g).reduce((a, f) => a + per(f), 0);
+  $('ladder-rungs').innerHTML = LG.GRADES.map((g, k) => `<div class="rung" style="background:${g.color}"><b>${esc(g.name)}</b><span>${oneIn(gradeP(k))} capsules</span><span>${Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === k).map(f => LG.FINISHES[f].name).join(', ')}</span></div>`).join('')
+    + `<div class="rung new"><b>★ Relic</b><span>1 in 1,000 capsules</span><span>Proposed: a new class, with its own finishes</span></div>`;
+  $('tier-key').innerHTML = 'Parts are tiered by how often they turn up: ' + TIERS.map((t, k) => `<span><i style="background:${t.c}"></i>${t.name} ${k === 3 ? 'rarer than 1 in 80' : `to ${oneIn(t.min)}`}</span>`).join('');
+
+  // ---------------------------------------------------------------- slots
+  let html = '';
+  for (const s of SLOTS) html += `<section id="${s.id}"><div class="sh"><h2>${s.title}</h2><p>${s.list.length} options, rarest first.</p></div><div class="grid">${s.options.map(o => tile(o.name, o.p, cv({ parts: { [s.key]: o.i, ...(s.key === 'head' ? { hair: 0 } : {}) } }))).join('')}</div></section>`;
+  html += `<section id="colours"><div class="sh"><h2>Colourways</h2><p>${LG.palettes.length} options, rarest first. The six night colours are the rarest.</p></div><div class="grid">${palOdds.map(o => tile(o.name, o.p, cv({ palette: o.i }))).join('')}</div></section>`;
+  html += `<section id="extras"><div class="sh"><h2>Body, tone and Lucky</h2><p>Rolled from the seed too. Lucky turns the colourway round the wheel.</p></div><div class="grid">${EXTRA.map(o => tile(o.name, o.p, cv({ parts: o.parts }))).join('')}</div></section>`;
+  $('slots').innerHTML = html;
+
+  // ---------------------------------------------------------------- items by game
+  const gold = per('gold');
+  $('games').innerHTML = [...LG.GAMES.map(g => {
+    const list = machine(g), free = LG.freeItem(g);
+    return `<div class="game"><h3>${g[0].toUpperCase() + g.slice(1)}<small>${list.length} items · each 1 in ${list.length} capsules · in Gold 1 in ${fmt(list.length / gold)}</small></h3>
+      <div class="grid">${[free, ...list].map(it => `<div class="t">${cv({ equip: [it.id] })}<span class="n">${esc(it.name)}</span><span class="o">${it.free ? 'free for all' : oneIn(1 / list.length)}<span class="chip" style="--k:${{ skin: '#2f9b6e', hat: '#d9702a', frame: '#7a52d6', buddy: '#cf4578' }[it.slot]}">${it.slot}</span></span></div>`).join('')}</div></div>`;
+  }), `<div class="game"><h3>Seasonal<small>the seasonal machine, only on these days</small></h3><div class="grid">${LG.items.filter(i => i.season).map(it => `<div class="t">${cv({ equip: [it.id] })}<span class="n">${esc(it.name)}</span><span class="o">${it.season.from} to ${it.season.to}<span class="chip" style="--k:#d9702a">hat</span></span></div>`).join('')}</div></div>`].join('');
+
+  // ---------------------------------------------------------------- finishes, prints, wear, earned
+  const sample = f => cv({ equip: [LG.encode({ item: 'stackdle.block', finish: f, scuff: 0.02, print: 40 })] });
+  $('fin-table').innerHTML = `<tr><th></th><th>Finish</th><th>Grade</th><th>Chance a capsule</th><th>Condition range</th></tr>` + Object.entries(LG.FINISHES).map(([f, x]) =>
+    `<tr><td>${sample(f)}</td><td><b>${esc(x.name)}</b></td><td><span class="chip" style="--k:${LG.GRADES[x.grade].color}">${esc(LG.GRADES[x.grade].name)}</span></td><td class="num">${x.odds}% · ${oneIn(x.odds / 100)}</td><td class="num">${x.scuffs[1] < 1 ? 'Mint in Box to Like New' : 'any'}</td></tr>`).join('');
+  const nebula = per('nebula'), tempered = per('tempered');
+  $('print-table').innerHTML = `<tr><th></th><th>Famous print</th><th>What it is</th><th>Chance a capsule</th></tr>` + [
+    ['tempered', LG.DEEP_BLUE_PRINTS[0], 'Deep Blue', `Tempered with one of ${LG.DEEP_BLUE_PRINTS.length} prints of 1,000: all blue, one grade up`, tempered * LG.DEEP_BLUE_PRINTS.length / 1000],
+    ['nebula', 0, 'Red Giant', 'Nebula, print ending in 00, 20, 40…: one grade up', nebula / 20],
+    ['nebula', 1, 'Blue Moon', 'Nebula, one print in 20: one grade up', nebula / 20],
+    ['nebula', 2, 'Black Hole', 'Nebula, one print in 20: one grade up', nebula / 20],
+  ].map(([f, print, n, what, p]) => `<tr><td>${cv({ equip: [LG.encode({ item: 'stackdle.block', finish: f, scuff: 0.02, print })] })}</td><td><b>${n}</b></td><td>${what}</td><td class="num">${oneIn(p)}</td></tr>`).join('');
+  const wearP = (lo, hi) => { const plain = per('plain') + per('tempered'); const flashy = 1 - plain; const span = (a, b, l, h) => Math.max(0, Math.min(b, h) - Math.max(a, l)) / (b - a); return plain * span(0, 1, lo, hi) + flashy * span(0, .08, lo, hi); };
+  let prev = 0;
+  $('wear-table').innerHTML = `<tr><th>Condition</th><th>Float</th><th>Share of all copies</th></tr>` + LG.WEAR.map(w => { const r = `<tr><td><b>${esc(w.name)}</b></td><td class="num">${prev.toFixed(2)} to ${Math.min(1, w.max).toFixed(2)}</td><td class="num">${Math.round(wearP(prev, Math.min(1, w.max)) * 100)}%</td></tr>`; prev = w.max; return r; }).join('');
+  $('earn-table').innerHTML = `<tr><th></th><th>Earned, never rolled</th><th>How</th></tr>` + [
+    ...LG.PINS.map(p => [cv({ equip: [LG.encode({ item: 'stackdle.block', finish: 'plain', scuff: .02, print: 9, pins: [p.id] })] }), `${p.name} pin`, p.how]),
+    [cv({ equip: [LG.encode({ item: 'stackdle.block', finish: 'plain', scuff: .02, print: 9, tally: 100 })] }), 'Tally', 'One copy in 10 keeps a tally of days finished wearing it'],
+    [cv({ equip: [LG.encode({ item: 'stackdle.block', finish: 'plain', scuff: .02, print: 9, tally: LG.GOLD_RIM_DAYS })] }), 'Gold rim', `A tally of ${LG.GOLD_RIM_DAYS} days`],
+  ].map(([c, n, how]) => `<tr><td>${c}</td><td><b>${esc(n)}</b></td><td>${esc(how)}</td></tr>`).join('');
+
+  paintAll();
+
+  // ---------------------------------------------------------------- the proposal: relics and auras, drawn over the animation's frames
+  const RELICS = {
+    lolly:   { name: 'Lollipop', grip: [5, 5], rows: ['.rr...', 'rwwr..', 'rrwr..', '.rrs..', '....s.', '.....s'] },
+    cleaver: { name: 'Cleaver', grip: [5, 5], rows: ['.eb...', 'ebbB..', 'bbbbB.', '.bbbBh', '..bB.h', '.....p'] },
+    wand:    { name: 'Star wand', grip: [5, 5], rows: ['.y....', 'yYy...', '.yYy..', '..ys..', '....s.', '.....s'] },
+    butter:  { name: 'Butter knife', grip: [4, 5], rows: ['.ee...', 'ebbB..', '.bbbB.', '..bbB.', '...hh.', '....hp'] },
+    sword:   { name: 'Sword', grip: [5, 5], rows: ['e.....', '.eB...', '.bbB..', '..bbB.', '...gg.', '...ghp'] },
+  };
+  const P = { e: '#FFFFFF', b: '#D3DBEA', B: '#8A97B4', g: '#E4AE39', h: '#7A4A2A', p: '#E4AE39', s: '#F2E6CF', y: '#FFD45C', Y: '#E89A1A', r: '#FF5C8A', w: '#FFFFFF' };
+  const mixc = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
+  const hsl = (h, s, l) => { const f = n => { const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); }; return `#${f(0)}${f(8)}${f(4)}`; };
+  const metal = 'bBry';
+  const sea = (lo, mid, hi, edge) => (k, t, x, y) => metal.includes(k) ? (k === 'B' ? lo : (x * 2 + y) % 5 === 0 ? hi : mid) : k === 'e' ? edge : P[k];
+  const RF = {
+    steel: { name: 'Steel', share: 55, paint: k => P[k] },
+    fade: { name: 'Fade', share: 25, paint: (k, t) => metal.includes(k) ? (t < .5 ? mixc('#FFE07A', '#FF6FB5', t * 2) : mixc('#FF6FB5', '#7C5CFF', (t - .5) * 2)) : P[k] },
+    marble: { name: 'Marble', share: 14, paint: (k, t, x, y) => metal.includes(k) ? ['#F4F1FF', '#C9C2E8', '#FF7BB0', '#7FD6FF'][(x * 3 + y * 5) % 4] : P[k] },
+    sapphire: { name: 'Deep sea · Sapphire', share: 3, paint: sea('#0B2A8A', '#1F5BFF', '#9CC4FF', '#E1EDFF') },
+    ruby: { name: 'Deep sea · Ruby', share: 2.5, paint: sea('#6E0622', '#E0204F', '#FF9AB2', '#FFE0E8') },
+    pearl: { name: 'Deep sea · Black pearl', share: 0.5, paint: sea('#100B22', '#352A66', '#B79CFF', '#EFE6FF') },
+    origin: { name: 'Origin (founder only)', share: 0, paint: (k, t, x, y, ms) => metal.includes(k) ? hsl((ms / 8 + (x + y) * 28) % 360, .85, k === 'B' ? .45 : .62) : k === 'e' ? '#FFFFFF' : P[k] },
+  };
+  const OUT = '#1E1830';
+  function holdRelic(colors, relic, finish, ms) {
+    const out = colors.map(r => [...r]), R = RELICS[relic], F = RF[finish], H = out.length, W = out[0].length;
+    const hy = H - 8, row = out[hy], left = row.findIndex(Boolean);
+    const hx = Math.max(R.grip[0], left < 0 ? 3 : left), x0 = hx - R.grip[0], y0 = hy - R.grip[1];
+    const cells = [];
+    R.rows.forEach((line, i) => [...line].forEach((k, j) => { if (k !== '.') cells.push([x0 + j, y0 + i, k, (i + j) / (R.rows.length + line.length - 2), j, i]); }));
+    const own = new Set(cells.map(([x, y]) => x + ',' + y));
+    for (const [x, y] of cells) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && nx < W && ny >= 0 && ny < H && !own.has(nx + ',' + ny) && !colors[ny][nx]) out[ny][nx] = OUT; }
+    for (const [x, y, k, t, j, i] of cells) if (x >= 0 && x < W && y >= 0 && y < H) out[y][x] = F.paint(k, t, j, i, ms);
+    return out;
+  }
+  // Auras use only the empty pixels round him, so they never cover his face.
+  const noise = (x, y, t) => { const s = Math.sin(x * 12.9898 + y * 78.233 + t * 37.719) * 43758.5453; return s - Math.floor(s); };
+  const AURAS = {
+    flames: { name: 'Flames', draw: (out, fig, ms, hue) => {
+      const t = Math.floor(ms / 110), W = out[0].length;
+      for (let x = 0; x < W; x++) {
+        const top = fig.findIndex(r => r[x]); if (top < 0) continue;
+        const h = 1 + Math.floor(noise(x, 0, t) * 3.2);
+        for (let k = 1; k <= h; k++) { const y = top - k; if (y < 0 || out[y][x]) continue; const c = k === 1 ? 0 : k === 2 ? 1 : 2; out[y][x] = hue == null ? ['#FFD45C', '#FF8A2B', '#E5484D'][c] : hsl((hue + x * 22 + k * 30) % 360, .9, [.68, .58, .5][c]); }
+      }
+      fig.forEach((r, y) => r.forEach((c, x) => { for (const dx of [-1, 1]) { const nx = x + dx; if (c && nx >= 0 && nx < W && !fig[y][nx] && !out[y][nx] && noise(nx, y, t) > .86) out[y][nx] = hue == null ? '#FF8A2B' : hsl((hue + y * 20) % 360, .9, .6); } }));
+    } },
+    orbit: { name: 'Orbit', draw: (out, fig, ms) => {
+      const H = out.length, cx = 7.5, cy = H - 6;
+      for (let k = 0; k < 3; k++) {
+        const a = ms / 520 + k * 2.094, x = Math.round(cx + Math.cos(a) * 8), y = Math.round(cy + Math.sin(a) * 2.6 - 3);
+        const front = Math.sin(a) > 0;
+        for (const [dx, dy, c] of [[0, 0, '#FFFFFF'], [1, 0, '#FFD45C'], [-1, 0, '#FFD45C'], [0, 1, '#FFD45C'], [0, -1, '#FFD45C']]) {
+          const px = x + dx, py = y + dy; if (px < 0 || px >= 16 || py < 0 || py >= H) continue;
+          if (front || !out[py][px]) out[py][px] = c;
+        }
+      }
+    } },
+    halo: { name: 'Halo', draw: (out, fig, ms) => {
+      const top = fig.findIndex(r => r.some(Boolean)), y = Math.max(0, top - 2 - (Math.floor(ms / 400) % 2));
+      const on = Math.floor(ms / 160) % 6;
+      for (let x = 4; x <= 11; x++) if (!out[y][x]) out[y][x] = x === 4 + on || x === 5 + on ? '#FFFFFF' : (x === 4 || x === 11) ? '#C98A1A' : '#FFD45C';
+      for (let x = 5; x <= 10; x++) if (y + 1 < out.length && !out[y + 1][x]) out[y + 1][x] = '#B97A10';
+    } },
+    origin: { name: 'Origin (founder only)', draw: (out, fig, ms) => { AURAS.halo.draw(out, fig, ms); AURAS.orbit.draw(out, fig, ms); } },
+  };
+
+  // The founder as proposed: a clean guy (round, glossy eyes, a smile, a crown) in Ocean, and what nobody can roll.
+  const FOUNDER = { parts: { head: idx(LG.heads, 'round'), eyes: idx(LG.eyes, 'glossy'), mouth: idx(LG.mouths, 'smile'), cheeks: idx(LG.cheeks, 'blush'), hair: idx(LG.hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false }, palette: idx(LG.palettes, 'Ocean') };
+  const lives = [];
+  const live = (canvas, { name, parts, palette, equip = [], move = 'idle', relic, finish, aura, holo, rarity }) => {
+    const cfg = { ...LG.resolve(name, parts), ...(palette == null ? {} : { palette }) }, pal = LG.paletteOf(cfg);
+    const anim = LG.animate(name, move, { parts, palette: pal, equip, rarity });
+    // A holo body keeps the face's own colours (outline, ink, shine, blush, mouth, tongue).
+    const face = new Set([4, 5, 6, 7, 8, 9].map(k => (pal.colors[k] || '').toUpperCase()));
+    lives.push({ canvas, anim, relic, finish, aura, holo: holo ? face : null });
+  };
+  const fig = (spec, cap, sub) => { const id = 'l' + lives.length + Math.random().toString(36).slice(2, 6); setTimeout(() => live(document.getElementById(id), spec)); return `<figure><canvas id="${id}" width="16" height="20" aria-hidden="true"></canvas><figcaption><b>${esc(cap)}</b>${esc(sub || '')}</figcaption></figure>`; };
+
+  $('held').innerHTML = [['maya', 'lolly', 'steel'], ['okapi', 'cleaver', 'fade'], ['bluejay', 'wand', 'marble'], ['tadpole', 'butter', 'sapphire'], ['hazel', 'lolly', 'ruby'], ['pip', 'sword', 'pearl']]
+    .map(([n, r, f]) => fig({ name: n, relic: r, finish: f }, `★ ${RELICS[r].name}`, RF[f].name)).join('');
+  $('auras').innerHTML = [['maya', 'flames'], ['okapi', 'orbit'], ['bluejay', 'halo'], ['tadpole', 'flames'], ['hazel', 'orbit'], ['pip', 'halo']]
+    .map(([n, a]) => fig({ name: n, aura: a }, `★ ${AURAS[a].name}`, n)).join('');
+  $('relic-table').innerHTML = `<tr><th style="color:#b9b1c9">Relic finish (proposed)</th><th style="color:#b9b1c9">Of relics</th><th style="color:#b9b1c9">Chance a capsule</th></tr>` +
+    Object.values(RF).map(f => `<tr><td><b>${esc(f.name)}</b></td><td class="num">${f.share ? f.share + '%' : 'one of one'}</td><td class="num">${f.share ? oneIn(f.share / 100 / 1000) : '—'}</td></tr>`).join('');
+  const BEST = { parts: { head: idx(LG.heads, 'jellyfish'), eyes: idx(LG.eyes, 'cyclops'), mouth: idx(LG.mouths, 'ooh'), cheeks: idx(LG.cheeks, 'stars'), hair: idx(LG.hair, 'horns'), body: idx(LG.bodies, 'moon mark'), accessory: idx(LG.accessories, 'star sticker'), arms: 1, feet: 0, shade: 1, flip: false, lucky: true }, palette: idx(LG.palettes, 'Midnight') };
+  const grail = item => LG.encode({ item, finish: 'gold', scuff: 0.001, print: 1, tally: 999 });
+  $('vs').innerHTML = fig({ name: 'best', ...BEST, equip: [grail('trackdle.snail')], aura: 'flames' }, 'The best a player can roll', 'The rarest part in every slot, Lucky, a Gold buddy and a ★ Flames aura')
+    + fig({ name: 'founder:isaac', ...FOUNDER, rarity: false, holo: true, aura: 'origin' }, '@isaac, the founder', 'A clean guy in a crown, and what no one can roll: a holo body and the Origin halo with its stars');
+
+  // One loop draws every live figure.
+  const t0 = performance.now();
+  (function frame(now) {
+    const ms = now - t0;
+    for (const l of lives) {
+      if (!l.canvas || !l.canvas.isConnected) continue;
+      const f = LG.frameAt(l.anim, ms);
+      let out = f.colors.map(r => [...r]);
+      const figure = f.colors.map(r => r.map(Boolean));
+      if (l.holo) out = out.map((row, y) => row.map((c, x) => !c || l.holo.has(c.toUpperCase()) || parseInt(c.slice(1, 3), 16) + parseInt(c.slice(3, 5), 16) + parseInt(c.slice(5, 7), 16) < 160 ? c : mixc(c, hsl((((x + y) * 18 - ms / 5) % 360 + 360) % 360, .9, .7), .38)));
+      if (l.aura) AURAS[l.aura].draw(out, figure, ms);
+      if (l.relic) out = holdRelic(out, l.relic, l.finish, ms);
+      put(l.canvas, out);
+    }
+    requestAnimationFrame(frame);
+  })(t0);
+})();
+</script>
