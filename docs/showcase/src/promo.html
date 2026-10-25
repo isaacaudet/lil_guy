@@ -318,13 +318,13 @@
   /* ------------------------------------------------------------ the drop */
   .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: #0e1220; color: var(--cream); padding: 24px 16px; --focus: var(--cream); }
   .reveal .paint { opacity: .9; }
-  #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 3; }
+  #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 2; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
   .flash.on { animation: flash .5s cubic-bezier(.2,.8,.2,1) 1; }
   @keyframes flash { 0% { opacity: var(--v, .85) } 100% { opacity: 0 } }
   .rv-ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
   .rv-ctl button { height: 38px; padding: 0 14px; border-radius: 12px; font-size: 14px; font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--cream-line); color: var(--cream); }
-  .stage2 { position: relative; z-index: 2; display: grid; justify-items: center; gap: 14px; width: min(1040px, 100%); }
+  .stage2 { position: relative; z-index: 3; display: grid; justify-items: center; gap: 14px; width: min(1040px, 100%); }
   .result { width: min(440px, 100%); }
     .gacha { position: relative; width: 300px; height: 440px; }
   .gacha .spot { position: absolute; left: 50%; top: 48%; width: 560px; height: 560px; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(250,242,221,.13), transparent); pointer-events: none; }
@@ -353,6 +353,47 @@
   .shout.slam { animation: slam .55s cubic-bezier(.2,1.5,.35,1) 1; }
   @keyframes slam { 0% { scale: 2.6; opacity: 0; filter: blur(6px) } 100% { scale: 1; opacity: 1; filter: none } }
   .rv-name { font-size: 20px; font-weight: 800; margin: 0; }
+  /* What you won: the object on its own beside its name, its float and its odds. */
+  .result.withinfo { width: min(820px, 100%); grid-template-columns: minmax(0, 300px) minmax(0, 420px); justify-content: center; align-items: center; column-gap: 36px; }
+  .result.withinfo .shout { grid-column: 1 / -1; }
+  .result.withinfo .flip { grid-column: 1; grid-row: 2; justify-self: center; width: 280px; }
+  .result.withinfo .won-info { grid-column: 2; grid-row: 2; }
+  .result.withinfo .rv-name, .result.withinfo .rv-sub { display: none; }
+  .result.withinfo .rv-actions { grid-column: 1 / -1; }
+  .won-art { width: 280px; height: 280px; display: grid; place-items: center; }
+  .won-art canvas { image-rendering: pixelated; filter: drop-shadow(0 12px 0 rgba(0,0,0,.45)) drop-shadow(0 0 28px var(--grade)); }
+  .won-info { text-align: left; display: grid; gap: 10px; padding: 18px; border-radius: 20px; background: rgba(8,10,20,.84); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--grade) 55%, transparent), 0 0 40px color-mix(in srgb, var(--grade) 25%, transparent); color: var(--cream); }
+  .won-how { margin: 0; font: 400 16px/1 var(--pixel); color: var(--cream-2); }
+  .won-title { margin: 0; font-size: 28px; font-weight: 800; line-height: 1.05; }
+  .won-fin { margin: -4px 0 0; font: 400 26px/1 var(--pixel); color: var(--grade); text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+  .won-info .badges { margin: 0; }
+  .wf { display: grid; gap: 8px; padding: 12px 12px 10px; border-radius: 14px; background: rgba(0,0,0,.35); }
+  .wf-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .wf-h small { font: 400 15px/1 var(--pixel); color: var(--cream-2); }
+  .wf-h b { font: 400 38px/1 var(--pixel); font-variant-numeric: tabular-nums; color: var(--wc); text-shadow: 0 3px 0 rgba(0,0,0,.6), 0 0 18px color-mix(in srgb, var(--wc) 60%, transparent); }
+  .wf .fl-bar { margin: 30px 0 18px; height: 16px; }
+  .mk.lo::before { translate: -4px 0; } .mk.hi::before { translate: calc(-100% + 4px) 0; }
+  .wf .fl-bar > span em { color: var(--cream-2); }
+  .wf .fl-bar .out { background: repeating-linear-gradient(-45deg, rgba(0,0,0,.7) 0 4px, rgba(0,0,0,.35) 4px 8px); }
+  .wf .mk { background: var(--cream); box-shadow: 0 0 0 2px #0e1220, 0 0 10px var(--cream); transition: left 1.1s cubic-bezier(.2,.9,.25,1); }
+  .wf .mk::before { background: var(--cream); color: #141414; }
+  .wf p { margin: 0; font-size: 13.5px; color: var(--cream-2); }
+  .wf p b { color: var(--wc); }
+  .won-odds { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .won-odds span { font: 400 18px/1 var(--pixel); color: var(--cream-2); }
+  .won-odds b { font: 400 44px/1 var(--pixel); color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.6); }
+  .won-odds .u { color: #f5b143; text-transform: uppercase; }
+  .won-on { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--cream-2); }
+  .won-on canvas { width: 40px; height: 40px; image-rendering: pixelated; border-radius: 8px; background: rgba(250,242,221,.08); }
+  @media (max-width: 760px) {
+    .result.withinfo { grid-template-columns: minmax(0, 1fr); row-gap: 10px; }
+    .result.withinfo .flip, .result.withinfo .won-info { grid-column: 1; grid-row: auto; }
+    .result.withinfo .flip { width: 190px; }
+    .won-art { width: 190px; height: 190px; }
+    .won-info { padding: 14px; gap: 8px; }
+    .won-title { font-size: 22px; } .won-fin { font-size: 22px; } .wf-h b { font-size: 30px; } .won-odds b { font-size: 34px; }
+    .reveal { overflow-x: hidden; overflow-y: auto; place-items: start center; padding-top: 60px; }
+  }
   .rv-sub { font-size: 14px; color: var(--cream-2); margin: 0; }
   .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
   /* the scroll */
@@ -570,6 +611,7 @@
       <span class="rays"></span>
       <p class="shout" id="shout"></p>
       <div class="flip" id="flip"><canvas class="back" id="back" width="26" height="42" aria-hidden="true"></canvas><div id="front" hidden></div></div>
+      <div class="won-info" id="rv-info" hidden></div>
       <p class="rv-name" id="rv-name"></p>
       <p class="rv-sub" id="rv-sub"></p>
       <div class="rv-actions" id="rv-actions" hidden><button class="btn cream" type="button" id="rv-wear">Wear it</button><button class="btn ghost" type="button" id="rv-keep">Keep</button><button class="btn ghost" type="button" id="rv-again">Another</button></div>
@@ -1496,15 +1538,47 @@
     if (gr >= 4) { goldRain(3400); setTimeout(() => boom(4, cx, r.top + r.height * 0.3), 420); }
   }
 
+  // What you won, spelled out: what it is, its finish and grade, its float on the wear bar (the number counts
+  // up while the marker slides into place), how rare it is, and a look at it on you.
+  function wonInfo(o, how) {
+    const it = LG.itemById(o.item), g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
+    const fin = LG.FINISHES[o.finish], [lo, hi] = fin.scuffs, wear = LG.wearOf(o.scuff), wc = WEAR_COLOURS[LG.WEAR.indexOf(wear)];
+    let prev = 0;
+    const segs = LG.WEAR.map((w, k) => { const a = prev, b = Math.min(1, w.max); prev = b; return `<span style="flex:${(b - a).toFixed(3)};background:${WEAR_COLOURS[k]}"><em>${w.short}</em></span>`; }).join('');
+    const within = hi > lo ? (o.scuff - lo) / (hi - lo) : 0, cleaner = Math.round((1 - within) * 100);
+    const [a, b] = split(LG.copyOneIn(o));
+    return `<p class="won-how">${esc(how)} · ${cap(it.game)} ${it.slot}${o.date ? ' · ' + o.date : ''}</p>
+      <h3 class="won-title">${esc(title)}</h3>
+      <p class="won-fin">${esc(look || 'Plain')}</p>
+      <div class="badges"><span class="bal" style="--b:${g.color}">${esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}<span class="bal" style="--b:#5d6b8a">#${o.print}</span>${o.tally !== undefined ? '<span class="bal" style="--b:#5d6b8a">Counts days</span>' : ''}</div>
+      <div class="wf" style="--wc:${wc}">
+        <div class="wf-h"><small>FLOAT</small><b id="wf-n">0.000000</b><span class="bal" style="--b:${wc}">${wear.name}</span></div>
+        <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk${o.scuff < .06 ? ' lo' : o.scuff > .94 ? ' hi' : ''}" id="wf-mk" data-v="${o.scuff.toFixed(4)}" style="left:0%"></b></div>
+        <p>${hi < 1 ? `${fin.name} only rolls ${lo.toFixed(2)} to ${hi.toFixed(2)}. ` : ''}Cleaner than <b>${cleaner}%</b> of ${fin.name} copies.</p>
+      </div>
+      ${it.free ? '' : `<div class="won-odds"><span>1 in</span><b>${a}</b><span class="u">${b ? b + ' ' : ''}capsules</span></div>`}
+      ${LG.slotOf(o) === 'frame' ? '' : `<div class="won-on"><canvas width="16" height="16" aria-hidden="true"></canvas><span>On ${state.key ? '@' + esc(state.key) : 'you'}</span></div>`}`;
+  }
+  function playWon(o) {
+    const n = $('wf-n'), mk = $('wf-mk');
+    const on = $('rv-info').querySelector('.won-on canvas');
+    if (on) paintInto(on, state.seed, [...wornCodes().filter(c => ![LG.slotOf(o), 'frame'].includes(LG.slotOf(LG.decode(c)))), LG.encode(o)]);
+    if (!n) return;
+    requestAnimationFrame(() => { mk.style.left = Math.min(100, o.scuff * 100) + '%'; });
+    let ticks = 0;
+    frames(1100, e => { n.textContent = (o.scuff * e).toFixed(6); if (e * 8 > ticks) { ticks++; SFX.tick(); } });
+  }
+
   // After the scroll the card comes up face up with its tier's entrance. A claimed name still comes face
   // down, trembles, flips and pays off.
-  async function unveil(gr, cardHtml, shoutText, name, sub, claimDrop, faceUp) {
+  async function unveil(gr, cardHtml, shoutText, name, sub, claimDrop, faceUp, won) {
     const res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
     res.style.setProperty('--grade', GRADE[gr]);
     res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.75][gr]);
     res.classList.remove('go'); shout.classList.remove('slam', 'big'); shout.textContent = '';
     flip.classList.remove('spin', 'rise');
     front.hidden = true; front.innerHTML = ''; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
+    res.classList.toggle('withinfo', !!won); $('rv-info').hidden = true; $('rv-info').innerHTML = '';
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
     if (faceUp) {
@@ -1538,6 +1612,7 @@
     }
     flip.classList.remove('squash', 'tremble');
     const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
+    const alone = front.querySelector('canvas.alone'); if (alone && won) showItem(alone, won, state.seed, 260, 260);
     if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
     else shout.textContent = shoutText;
     res.classList.add('go');
@@ -1548,6 +1623,7 @@
     celebrate(gr);
     $('rv-name').textContent = name;
     $('rv-sub').textContent = sub;
+    if (won) { $('rv-info').innerHTML = wonInfo(won, sub); $('rv-info').hidden = false; playWon(won); }
     $('rv-actions').hidden = false;
   }
 
@@ -1563,9 +1639,9 @@
     const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
     $('reelwrap').hidden = true;
     if (g) { await gacha(g); await reel(o, g); await holdFor(gr); $('reelwrap').hidden = true; }
-    await unveil(gr, `<div class="card">${px(cardSpec(state.seed, [o], itemLabel(o)))}</div>`,
+    await unveil(gr, `<div class="won-art"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div>`,
       famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!',
-      LG.nameOf(o), `${how} · ${LG.wearOf(o.scuff).name} · float ${o.scuff.toFixed(6)} · #${o.print} · 1 in ${words(LG.copyOneIn(o))}`, false, !!g);
+      LG.nameOf(o), how, false, !!g, o);
     $('rv-again').hidden = !g;
     $('rv-wear').focus();
   }
@@ -1682,7 +1758,7 @@
     const zoom = `linear-gradient(90deg, ${WEAR_COLOURS[LG.WEAR.indexOf(LG.wearOf(lo))]}, ${WEAR_COLOURS[LG.WEAR.indexOf(LG.wearOf(Math.min(0.999, hi)))]})`;
     return `<div class="fl">
       <div class="fl-h"><p class="kicker">Float</p><b>${o.scuff.toFixed(6)}</b><span class="bal" style="--b:${WEAR_COLOURS[wi]}">${wear.name}</span></div>
-      <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk" data-v="${o.scuff.toFixed(4)}" style="left:${Math.min(100, o.scuff * 100)}%"></b></div>
+      <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk${o.scuff < .06 ? ' lo' : o.scuff > .94 ? ' hi' : ''}" data-v="${o.scuff.toFixed(4)}" style="left:${Math.min(100, o.scuff * 100)}%"></b></div>
       <div class="fl-zoom"><span>${lo.toFixed(2)}</span><div class="zb" style="background:${zoom}"><b class="mk" style="left:${(within * 100).toFixed(1)}%"></b></div><span>${hi.toFixed(2)}</span></div>
       <p>${fin.name} only comes ${lo.toFixed(2)} to ${hi.toFixed(2)}${hi < 1 ? ' (the striped part can’t roll)' : ''}. This one is cleaner than <b>${cleaner}%</b> of ${fin.name} copies.</p>
     </div>`;
