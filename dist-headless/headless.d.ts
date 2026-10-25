@@ -1,3 +1,39 @@
+//#region src/effects.d.ts
+/**
+ * Effects: a rare layer a copy can roll on top of its finish, the way a knife
+ * has its phase. Any copy from a capsule can have one; an aura is far more
+ * likely to, so aura effects make a ladder of their own. Three are versions
+ * (Shimmer, Pulse, Holo) and three are rarer (Chroma, Embers, Starlight).
+ *
+ * An effect moves in `animate`, and shows in a still picture as it stands at
+ * the start. It never changes the item's own drawing, only how it shines.
+ */
+type Fx = 'shimmer' | 'pulse' | 'holo' | 'chroma' | 'embers' | 'starlight';
+interface Effect {
+  name: string;
+  /** One line on what it does. */
+  what: string;
+  /** About one item copy in this many has it. */
+  item: number;
+  /** About one aura in this many has it. */
+  aura: number;
+}
+declare const EFFECTS: Record<Fx, Effect>;
+declare const FX_IDS: Fx[];
+/** The effect a uniform number in [0, 1) gives, rarest checked first, or none. */
+declare function rollFx(u: number, aura: boolean): Fx | undefined;
+/** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
+declare function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print?: number): string;
+/**
+ * Applies the effects of the copies a frame shows: `slots` says which slot
+ * each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
+ * `FRAME_SLOTS`), `copies` the copy in each slot. Embers also send sparks up
+ * into the empty pixels above their copy.
+ */
+declare function applyFx(colors: (string | null)[][], slots: number[][], copies: (({
+  fx?: Fx;
+  print: number;
+}) | undefined)[], t: number): (string | null)[][]; //#endregion
 //#region src/parts/art.d.ts
 
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -56,7 +92,8 @@ declare class Canvas {
   centred(s: Stamp): number;
   /** Repaints every body cell in a row. */
   paintRow(y: number, token: number): void;
-} //#endregion
+}
+//#endregion
 //#region src/items.d.ts
 /**
  * Items: things a player earns or buys in a DLE Club game and wears
@@ -168,6 +205,8 @@ interface Owned {
   date?: string;
   /** A souvenir: the day's free capsule for finishing every game, and that day. */
   souvenir?: string;
+  /** A rare effect on top of the finish (see ./effects). */
+  fx?: Fx;
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -600,7 +639,7 @@ declare const accessories: Accessory[];
  * colour; a cell belonging to an owned item is repainted with that copy's
  * finish and wear.
  */
-declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean): (string | null)[][];
+declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean, still?: boolean): (string | null)[][];
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 declare const SMALL_SIZE = 36;
 
@@ -767,24 +806,38 @@ declare function getColor(colors: readonly string[], index: number): string;
  * How rare things are, as "one in N".
  *
  * A guy's rarity is the chance of rolling his exact combination of visible
- * traits — shape, eyes, mouth, cheeks, topper, markings, accessory and
- * colourway — so a laser-eyed guy in a crown is rarer than one with bean eyes
+ * traits — shape, eyes, mouth, cheeks, topper, markings, accessory, colourway,
+ * tone, arms, feet and whether he is Lucky — so a laser-eyed guy in a crown is rarer than one with bean eyes
  * and no hat. A copy's rarity is the chance a capsule gives exactly that: its
  * item, its finish, a print as special as its print, a scuff at least as low
  * as its scuff, and a tally if it has one.
  */
+/** The twelve traits, in the order `traitOdds` lists them. */
+declare const TRAIT_SLOTS: readonly ["shape", "eyes", "mouth", "cheeks", "topper", "markings", "accessory", "colour", "tone", "arms", "feet", "lucky"];
+type TraitSlot = (typeof TRAIT_SLOTS)[number];
+/** Names for the traits that are only an index: tone (`shade`), arms and feet. */
+declare const TONE_NAMES: readonly ["pastel", "as picked", "vivid"];
+declare const ARM_NAMES: readonly ["none", "by the sides", "waving"];
+declare const FOOT_NAMES: readonly ["nubs", "tiptoes", "wide", "socks", "tucked"];
 interface TraitOdds {
-  slot: string;
+  slot: TraitSlot;
   name: string;
   /** Chance of this trait, 0–1. */
   chance: number;
 }
-/** Each visible trait of a guy and how likely it was. */
+/** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 declare function traitOdds(config: AvatarConfig): TraitOdds[];
 /** One in how many guys has exactly this combination. */
 declare function guyOneIn(config: AvatarConfig): number;
 /** One in how many capsules for its game give a copy at least this good. */
 declare function copyOneIn(o: Owned): number;
+
+//#endregion
+//#region src/icons.d.ts
+declare const TRAIT_ICONS: Record<TraitSlot, string>;
+/** The rarity tiers the site shows, rising: a pip, a diamond, a gem, a star, a crown. */
+type Tier = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Chase';
+declare const TIER_ICONS: Record<Tier, string>;
 
 //#endregion
 //#region src/look.d.ts
@@ -1027,4 +1080,4 @@ interface Note {
 declare function collectorNotes(o: Owned): Note[];
 
 //#endregion
-export { AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
