@@ -1,3 +1,4 @@
+import { authApi, ownedName, sessionAccount } from './auth.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
@@ -67,11 +68,7 @@ async function ensurePlayer(env, name) {
   return env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
 }
 
-async function owner(request, env, key) {
-  const token = request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-  if (!token) return null;
-  return env.DB.prepare('SELECT key, seed FROM names WHERE key = ? AND owner = ?').bind(key, await digest(token)).first();
-}
+const owner = ownedName;
 
 async function meState(env, name) {
   const p = await ensurePlayer(env, name);
@@ -185,6 +182,7 @@ async function stats(env) {
 }
 
 export async function api(request, env, url = new URL(request.url)) {
+  if (url.pathname.startsWith('/api/auth/')) return authApi(request, env, url);
   if (request.method === 'GET' && url.pathname === '/api/names') {
     const limit = Math.min(12, Math.max(1, Number.parseInt(url.searchParams.get('recent') || '12') || 12));
     const { results } = await env.DB.prepare('SELECT key, seed, at FROM names ORDER BY at DESC LIMIT ?').bind(limit).all();
@@ -215,13 +213,22 @@ export async function api(request, env, url = new URL(request.url)) {
   const origin = request.headers.get('Origin');
   if (origin && origin !== url.origin) return json({ error: 'Cross-origin writes are not allowed' }, 403);
   if (request.method === 'DELETE') {
+    const name = await owner(request, env, key);
+    if (!name) return json({ error: 'Owner authentication required' }, request.headers.has('Authorization') ? 403 : 401);
+    // Recheck ownership in the write: a concurrent release/reclaim must not delete a new owner's name.
+    const session = await sessionAccount(request, env);
     const token = request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-    if (!token) return json({ error: 'Owner token required' }, 401);
-    const result = await env.DB.prepare('DELETE FROM names WHERE key = ? AND owner = ?').bind(key, await digest(token)).run();
-    if (!result.meta.changes) return json({ error: 'Owner token does not match' }, 403);
-    // Letting a name go lets its guy and his collection go too.
-    await env.DB.prepare('DELETE FROM copies WHERE key = ?').bind(key).run();
-    await env.DB.prepare('DELETE FROM players WHERE key = ?').bind(key).run();
+    const proof = session && (await env.DB.prepare('SELECT key FROM names WHERE key = ? AND account = ?').bind(key, session.account).first())
+      ? { clause: 'account = ?', value: session.account }
+      : { clause: 'owner = ? AND account IS NULL', value: token ? await digest(token) : '' };
+    // Delete the collection and name in one transaction, guarded by the same current owner.
+    const guard = `EXISTS (SELECT 1 FROM names WHERE key = ? AND ${proof.clause})`;
+    const results = await env.DB.batch([
+      env.DB.prepare(`DELETE FROM copies WHERE key = ? AND ${guard}`).bind(key, key, proof.value),
+      env.DB.prepare(`DELETE FROM players WHERE key = ? AND ${guard}`).bind(key, key, proof.value),
+      env.DB.prepare(`DELETE FROM names WHERE key = ? AND ${proof.clause}`).bind(key, proof.value),
+    ]);
+    if (!results[2].meta.changes) return json({ error: 'Owner authentication changed. Reload and try again.' }, 403);
     return json({ deleted: true });
   }
   if (!env.CLAIM_SALT) return json({ error: 'Name claims are not configured' }, 503);
@@ -240,8 +247,10 @@ export async function api(request, env, url = new URL(request.url)) {
   const seed = key === 'isaac' ? 'founder:isaac' : crypto.randomUUID();
   const ownerToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
   const at = new Date().toISOString();
-  const result = await env.DB.prepare('INSERT INTO names(key, seed, owner, at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING').bind(key, seed, await digest(ownerToken), at).run();
+  const session = await sessionAccount(request, env);
+  const result = await env.DB.prepare('INSERT INTO names(key, seed, owner, at, account) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING')
+    .bind(key, seed, await digest(ownerToken), at, session?.account || null).run();
   if (!result.meta.changes) return json({ error: 'That name was just taken' }, 409);
   await ensurePlayer(env, { key, seed });
-  return json({ key, seed, owner: ownerToken, at }, 201);
+  return json({ key, seed, owner: session ? null : ownerToken, linked: !!session, at }, 201);
 }

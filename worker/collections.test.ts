@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
-  env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { prepare(sql: string) {
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
       async first() { return db.prepare(sql).get(...args); }, async all() { return { results: db.prepare(sql).all(...args) }; },
