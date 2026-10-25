@@ -41,6 +41,8 @@ export interface Owned {
   pins?: string[];
   /** A seasonal copy's drop day, `YYYY-MM-DD`; it is part of what the copy is. */
   date?: string;
+  /** A souvenir: the day's free capsule for finishing every game, and that day. */
+  souvenir?: string;
 }
 
 export const GRADES = [
@@ -137,7 +139,7 @@ export function gradeOf(o: Owned): Grade {
 export function nameOf(o: Owned): string {
   const item = itemById(o.item);
   const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
-  const tally = o.tally !== undefined ? 'Tallied ' : '';
+  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.tally !== undefined ? 'Tallied ' : '');
   if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === 'classic' ? '' : ` | ${FINISHES[o.finish].name}`}`;
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
@@ -157,6 +159,7 @@ export function encode(o: Owned): string {
   if (o.tally !== undefined) parts.push(`t${o.tally}`);
   if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join('+')}`);
   if (o.date) parts.push(`d${o.date}`);
+  if (o.souvenir) parts.push(`s${o.souvenir}`);
   return parts.join('~');
 }
 
@@ -169,6 +172,7 @@ export function decode(s: string): Owned | null {
   for (const part of extra) {
     if (part.startsWith('t') && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
     if (part.startsWith('d') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
+    if (part.startsWith('s') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
     if (part.startsWith('p')) {
       const pins = part.slice(1).split('+').filter(id => pinById(id)).slice(0, MAX_PINS);
       if (pins.length) o.pins = pins;

@@ -46,6 +46,18 @@ function copyRow(o, key, source) {
     one_in: source === 'founder' ? ONE_OF_ONE : item.free ? 0 : copyOneIn(o), scuff: o.scuff, source,
   };
 }
+/**
+ * Where a copy's float stands: how many copies of the same item in the same finish there are, how many
+ * are cleaner, and how many of the item there are in any finish. Only counts, never whose they are.
+ */
+async function rank(env, url) {
+  const o = decode(url.searchParams.get('code') || '');
+  if (!o) return json({ error: 'Not a copy' }, 400);
+  const same = await env.DB.prepare('SELECT COUNT(*) AS pop, SUM(scuff < ?) AS cleaner FROM copies WHERE item = ? AND finish = ?').bind(o.scuff, o.item, o.finish).first();
+  const all = await env.DB.prepare('SELECT COUNT(*) AS pop FROM copies WHERE item = ?').bind(o.item).first();
+  return json({ pop: same.pop, rank: (same.cleaner || 0) + 1, itemPop: all.pop }, 200, { 'Cache-Control': 'public, max-age=60' });
+}
+
 async function insertCopy(env, row, worn = 0) {
   const at = new Date().toISOString();
   const r = await env.DB.prepare('INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -100,7 +112,9 @@ async function me(request, env, key, action) {
       const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.capsule, key, RULES.capsule).run();
       if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
     }
-    const copy = await insertCopy(env, copyRow(roll(crypto.randomUUID(), game), key, body.free ? 'daily' : 'capsule'));
+    // The day's free capsule is a souvenir of that day: no other capsule can be one.
+    const o = roll(crypto.randomUUID(), game);
+    const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
     const p = await env.DB.prepare('SELECT tickets, free_day FROM players WHERE key = ?').bind(key).first();
     return json({ copy: publicCopy(copy), tickets: p.tickets, freeDay: p.free_day }, 201);
   }
@@ -217,6 +231,7 @@ export async function api(request, env, url = new URL(request.url)) {
   if (request.method === 'GET' && url.pathname === '/api/guys') return guys(env, url);
   if (request.method === 'GET' && url.pathname === '/api/market') return market(env, url);
   if (request.method === 'GET' && url.pathname === '/api/stats') return stats(env);
+  if (request.method === 'GET' && url.pathname === '/api/rank') return rank(env, url);
   const profile = /^\/api\/guys\/([a-z0-9]{2,16})$/.exec(url.pathname);
   if (profile && request.method === 'GET') {
     const name = await env.DB.prepare('SELECT key, seed, at FROM names WHERE key = ?').bind(profile[1]).first();

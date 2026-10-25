@@ -2,11 +2,12 @@ import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { api, RULES, todayGame } from './index.js';
 import { readFileSync } from 'node:fs';
+import { decode, encode } from '../src/index-headless.ts';
 
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
@@ -37,6 +38,8 @@ test('capsules are rolled and stored on the server, paid in tickets, and the fre
   expect(free.status).toBe(201);
   const body: any = await free.json();
   expect(body.copy.code).toContain('~');
+  // The free one is a souvenir of today; no other capsule is.
+  expect(body.copy.code).toMatch(/~s\d{4}-\d{2}-\d{2}/);
   expect(body.tickets).toBe(RULES.start);
   expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, auth(c.owner))).status).toBe(409);
   // Tickets are endless for now: a paid capsule leaves them where they were, even at none.
@@ -131,4 +134,21 @@ test('letting a name go takes its collection with it; the founder holds the one 
   const prof: any = await (await call('/guys/isaac')).json();
   expect(prof.copies.find((c: any) => c.one)?.code).toContain('trackdle.flag~gold');
   expect(f.seed).toBe('founder:isaac');
+});
+
+test('a float rank counts copies of the same item and finish, cleaner first, and names no one', async () => {
+  const c = await claim('flo');
+  const codes: string[] = [];
+  for (let i = 0; i < 6; i++) codes.push(((await (await call('/me/flo/open', 'POST', { game: 'stackdle' }, auth(c.owner))).json()) as any).copy.code);
+  const o = decode(codes[0])!;
+  const r: any = await (await call('/rank?code=' + encodeURIComponent(codes[0]))).json();
+  expect(r.pop).toBeGreaterThanOrEqual(1);
+  expect(r.rank).toBeGreaterThanOrEqual(1);
+  expect(r.rank).toBeLessThanOrEqual(r.pop);
+  expect(r.itemPop).toBeGreaterThanOrEqual(r.pop);
+  expect(JSON.stringify(r)).not.toContain('flo');
+  // The cleanest possible copy of it would rank first.
+  const best: any = await (await call('/rank?code=' + encodeURIComponent(encode({ ...o, scuff: 0 })))).json();
+  expect(best.rank).toBe(1);
+  expect((await call('/rank?code=nope')).status).toBe(400);
 });

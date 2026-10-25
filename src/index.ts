@@ -69,3 +69,4 @@ export { voxelColumns, voxelItem, voxelMesh, itemFrame, ownedOf, surfaceOf } fro
 export type { VoxelColumn, VoxelMesh, VoxelSource, VoxelOptions, Surface, SurfaceKind } from "./voxel";
 export { FRAME_SLOTS } from "./animate";
 export { AURAS, AURA_ODDS, auraById, auraCells, auraColor } from "./auras";
+export { collectorNotes, type Note } from "./collector";

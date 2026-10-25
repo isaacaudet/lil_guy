@@ -9,7 +9,7 @@ const pair = await generateKeyPair('RS256');
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const file of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql']) db.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
+  for (const file of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql']) db.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-salt', FOUNDER_SECRET: 'founder-test', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const stmt = { bind(...v: any[]) { args = v; return stmt; },
