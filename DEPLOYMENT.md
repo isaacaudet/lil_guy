@@ -68,12 +68,56 @@ Validated locally with `wrangler dev --local` and both migrations applied:
 - the Guys, profile and Market pages listed both, and a reload restored state from D1;
 - `bun test`: 142 pass, including the Worker's ten API tests.
 
-The browser keeps only its owner token (and a cached copy of the state) in localStorage. Losing
-browser storage loses the owner token, and with it access to the name; the
-collection stays on the server, but there is no account recovery or second
-device sign-in yet. A legacy browser-only claim without
-an owner token does not grant server ownership. Claude artifact sessions keep
-using their existing artifact database path.
+## Google sign-in (migration 0003)
+
+The live promo supports Google sign-in using Google Identity Services, as the club does.
+These are separate Lil Guys accounts: this does not merge Club scores or collections.
+The default OAuth client is DLE Club Web's public client ID. `https://lilguys.isaac-audet.workers.dev` was added to that client's **Authorized JavaScript origins**
+in Google Cloud Console on October 24, 2026 (Pacific), then read back after saving. No redirect URI or client secret is needed for this popup flow.
+A separate web client can be selected with the Worker variable `GOOGLE_CLIENT_ID`.
+For local Google acceptance, authorize the exact localhost origin too.
+
+Apply `0003_google_accounts.sql` before deploying this Worker. It adds a nullable,
+unique account hash to existing names and creates session and sign-in nonce tables.
+Existing claims, seeds, tickets, copies and looks are preserved.
+
+- Existing owners: use the browser that holds the claim token, then choose **Continue
+  with Google**. The server verifies both Google and the existing claim token before
+  linking. Once linked, the old claim token no longer grants access.
+- New owners: sign in before claiming, or claim first and link afterward.
+- Another device: use the same Google account to restore the same name and collection
+  from D1. One Google account keeps one name. Conflicting names are never merged or
+  transferred automatically; the page offers an explicit switch to the saved name and
+  keeps the unlinked claim on the original device until sign-out restores it.
+- Sign out revokes this device's session. Other signed-in devices keep theirs. Sessions
+  last 30 days, with at most twelve active sessions per account.
+- Unlinked claims still depend on their browser token. Clearing that browser before
+  linking loses control of the name. The collection remains on the server.
+- The founder reservation is unchanged: Google sign-in alone cannot claim `isaac`.
+
+The Worker verifies Google's RS256 signature, issuer, audience, expiration, issue time
+and a browser-bound, ten-minute, single-use nonce. Session tokens are random, kept in
+Secure/HttpOnly/SameSite cookies and stored only as hashes. Only `sha256("google:<sub>")`
+is persisted for the Google account; no email, name, picture or Google token is stored.
+Auth writes require the exact same origin and have a salted daily IP limit separate
+from claims. Public reads never include account hashes or authentication credentials.
+
+Endpoints: `GET /api/auth/session`, `POST /api/auth/start`, `POST /api/auth/google`
+(`credential`, optional existing `key` and `ownerToken`), `POST /api/auth/logout`.
+Owner endpoints accept the session cookie; browser tokens work only for unlinked names.
+Releasing a name removes its collection and account link in one D1 transaction. The
+account can then claim a new name. Claude artifact sessions keep their existing
+artifact database path and never load Google sign-in.
+
+Local validation: 19 Worker tests pass (including nine account/security tests). They
+verify real locally signed JWTs, existing-owner linking, second-device restoration,
+nonce replay/expiry, account conflicts, session expiry/logout, founder reservation,
+public-response privacy, origin rejection and preserved collections. The local browser fixture also passed claim/link/reload/sign-out/sign-in with the same
+name and nine copies restored. The full library suite has 150 passes and one pre-existing
+golden-art snapshot failure. A single low-effort Codex autoreview was attempted with
+web search off; its installed CLI binary is missing, so direct inspection and focused
+validation were used. Wrangler deploy dry-run passes. Real Google browser acceptance
+is recorded separately after deployment.
 
 ## Validation (October 24, 2026, Pacific)
 

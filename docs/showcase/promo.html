@@ -445,6 +445,13 @@
       </div>
 
       <div class="claim" id="claim">
+        <div id="account" hidden style="margin-bottom:18px">
+          <p class="fine" id="account-note" role="status" aria-live="polite"></p>
+          <button class="btn cream" type="button" id="account-start">Continue with Google</button>
+          <div id="google-slot" style="margin-top:12px;max-width:100%;overflow:hidden"></div>
+          <button class="linkish" type="button" id="account-restore" hidden>Use your saved name instead</button>
+          <button class="linkish" type="button" id="account-out" hidden>Sign out on this device</button>
+        </div>
         <div id="claim-form">
           <p class="claim-h">Claim your name</p>
           <form id="claim-f" autocomplete="off">
@@ -1040,7 +1047,7 @@ void main() {
   const KEY = 'lil-guys-promo-v2';
   let state = null, db = null, uid = null, owner = false;
   // Outside claude.ai (the Cloudflare deploy) names live behind the Worker's /api/names instead (DEPLOYMENT.md).
-  let backendReady = false;
+  let backendReady = false, signedIn = false, accountKey = null;
   // The live site: no artifact database, but the Worker's API. It rolls every capsule and keeps every collection.
   // Only when the Worker answers: a page with neither a database nor the API (a signed-out claude.ai view,
   // a saved copy) is the demo, and keeps the collection in this browser.
@@ -1048,7 +1055,7 @@ void main() {
   const isLive = () => !db && apiUp;
   async function getJSON(path) { const r = await fetch('/api' + path); const d = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(d.error || 'Unavailable'), { status: r.status }); return d; }
   async function meApi(action, body) {
-    const init = { headers: { Authorization: 'Bearer ' + state.ownerToken } };
+    const init = { headers: state.ownerToken ? { Authorization: 'Bearer ' + state.ownerToken } : {} };
     if (body !== undefined) Object.assign(init, { method: 'POST', headers: { ...init.headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const r = await fetch(`/api/me/${state.key}/${action}`, init);
     const d = await r.json().catch(() => ({}));
@@ -1061,7 +1068,7 @@ void main() {
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [] };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
-  const wearLive = slot => { if (isLive() && state.ownerToken) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
+  const wearLive = slot => { if (isLive() && state) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
   async function namesApi(path, options) {
     const response = await fetch(`/api/names${path}`, options);
     const data = await response.json();
@@ -1083,6 +1090,68 @@ void main() {
   const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: LG.decode(code) })).filter(c => c.o) : [];
   const wornCodes = () => state ? Object.values(state.worn).filter(Boolean) : [];
   const wornCopies = () => wornCodes().map(LG.decode).filter(Boolean);
+
+  /* ---------------------------------------------- Google accounts on the live site only */
+  let googleLoading = null, restoreSaved = false;
+  async function accountApi(action, body = {}) {
+    const r = await fetch('/api/auth/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) throw Object.assign(new Error(d.error || 'Could not sign in'), d, { status: r.status });
+    return d;
+  }
+  function renderAccount() {
+    $('account').hidden = !isLive();
+    $('account-start').hidden = signedIn && (!state || state.key === accountKey);
+    $('account-out').hidden = !signedIn;
+    if (signedIn && (!state || state.key === accountKey)) {
+      $('google-slot').textContent = '';
+      $('account-note').textContent = state ? `@${state.key} is saved to your Google account. Sign in on another device to pick up here.` : 'Signed in with Google. Claim a name and it will follow you to every device.';
+    } else if (!$('google-slot').children.length) {
+      $('account-note').textContent = state ? `Keep @${state.key} and your collection across devices. Link Google from this browser before clearing its storage.` : 'Already have a guy? Sign in to get your name and collection back. New here? Sign in before or after claiming.';
+    }
+  }
+  async function startGoogle() {
+    $('account-start').disabled = true; $('account-restore').hidden = true;
+    $('account-note').textContent = 'Connecting to Google…';
+    try {
+      const start = await accountApi('start');
+      if (!googleLoading) googleLoading = new Promise((resolve, reject) => {
+        const script = document.createElement('script'); script.src = 'https://accounts.google.com/gsi/client'; script.async = true;
+        script.onload = resolve; script.onerror = () => { googleLoading = null; reject(new Error('Could not reach Google. Check your connection and try again.')); };
+        document.head.appendChild(script);
+      });
+      await googleLoading;
+      $('google-slot').textContent = '';
+      window.google.accounts.id.initialize({ client_id: start.clientId, nonce: start.nonce, auto_select: false, callback: async r => {
+        $('account-note').textContent = 'Signing you in…';
+        try {
+          const guest = state?.ownerToken && !restoreSaved ? { key: state.key, ownerToken: state.ownerToken } : {};
+          const result = await accountApi('google', { credential: r.credential, ...guest });
+          // Choosing a saved account never destroys an unlinked browser claim. Sign-out brings it back.
+          if (restoreSaved && state?.ownerToken) { try { localStorage.setItem(KEY + '-unlinked', JSON.stringify(state)); } catch {} }
+          signedIn = result.signedIn; accountKey = result.name?.key || null; restoreSaved = false; state = null;
+          if (result.name) { state = { key: result.name.key, seed: result.name.seed, copies: [] }; fromServer(await meApi('state')); }
+          save(); renderAll(); route();
+        } catch (e) {
+          $('account-note').textContent = e.message;
+          $('account-restore').hidden = !e.savedKey;
+          $('google-slot').textContent = '';
+        }
+      } });
+      window.google.accounts.id.renderButton($('google-slot'), { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', width: Math.min(320, $('claim').clientWidth - 48) });
+      $('account-note').textContent = restoreSaved ? 'Continue with the Google account that keeps your saved name. Your unlinked name stays on this device.' : state ? `Continue to link @${state.key}. Your name and collection stay as they are.` : 'Continue to restore your saved guy, or start an account.';
+    } catch (e) { $('account-note').textContent = e.message; }
+    finally { $('account-start').disabled = false; }
+  }
+  $('account-start').addEventListener('click', () => { restoreSaved = false; startGoogle(); });
+  $('account-restore').addEventListener('click', () => { restoreSaved = true; startGoogle(); });
+  $('account-out').addEventListener('click', async () => {
+    try {
+      await accountApi('logout'); signedIn = false; accountKey = null; state = state?.ownerToken ? state : null;
+      try { const previous = JSON.parse(localStorage.getItem(KEY + '-unlinked') || 'null'); if (previous?.ownerToken) state = previous; localStorage.removeItem(KEY + '-unlinked'); } catch {}
+      window.google?.accounts?.id?.disableAutoSelect(); save(); renderAll(); route();
+    } catch (e) { $('account-note').textContent = e.message; }
+  });
 
   /* ---------------------------------------------- small helpers */
   const paintInto = (canvas, seed, equip) => paintCfg(canvas, LG.dress(guyConfig(seed), { equip }));
@@ -1156,7 +1225,7 @@ void main() {
     let seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed(), ownerToken = null;
     if (!backendReady) return;
     if (isLive()) {
-      try { const claimed = await namesApi('/' + key, { method: 'POST' }); seed = claimed.seed; ownerToken = claimed.owner; }
+      try { const claimed = await namesApi('/' + key, { method: 'POST' }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
       catch (e) { setAvail('no', e.message); SFX.bad(); return; }
     }
     if (db) {
@@ -1180,7 +1249,7 @@ void main() {
     if (f) { state.copies.push(LG.encode(f.copy)); state.worn.frame = undefined; state.worn.hat = LG.encode(f.copy); }
     else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
-    if (isLive() && ownerToken) { try { fromServer(await meApi('state')); } catch (e) { toast(e.message); } }
+    if (isLive() && (ownerToken || signedIn)) { try { fromServer(await meApi('state')); } catch (e) { toast(e.message); } }
     watchNames();
     await dropName();
     renderAll();
@@ -1190,8 +1259,8 @@ void main() {
     if (!state || !confirm(`Let @${state.key} go? Your guy and collection go with it.`)) return;
     const key = state.key;
     if (isLive()) {
-      if (!state.ownerToken) { toast('This browser has no owner token for that name.'); return; }
-      try { await namesApi('/' + key, { method: 'DELETE', headers: { Authorization: 'Bearer ' + state.ownerToken } }); }
+      if (!state.ownerToken && !signedIn) { toast('Sign in to manage this name.'); return; }
+      try { await namesApi('/' + key, { method: 'DELETE', headers: state.ownerToken ? { Authorization: 'Bearer ' + state.ownerToken } : {} }); }
       catch (e) { toast(e.message); return; }
     }
     state = null; save();
@@ -1334,6 +1403,7 @@ void main() {
 
   /* ---------------------------------------------- the claim card */
   function renderClaim() {
+    renderAccount();
     $('claim-form').hidden = !!state; $('claim-mine').hidden = !state;
     $('wallet-pill').hidden = !state;
     if (!state) { paintInto($('mark-guy'), 'lilguys', []); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
@@ -2359,8 +2429,16 @@ void main() {
       backendReady = true;
       watchNames(); if ($('name').value) check();
       if (apiUp) {
-        if (state && state.ownerToken) { try { fromServer(await meApi('state')); } catch (e) { if (e.status === 401) { state = null; save(); } } }
-        else if (state) { state = null; save(); }             // a browser-only claim has no place on the live site
+      try {
+        const account = await getJSON('/auth/session'); signedIn = account.signedIn; accountKey = account.name?.key || null;
+        if (account.name) {
+          if (state?.ownerToken && state.key !== account.name.key) { try { localStorage.setItem(KEY + '-unlinked', JSON.stringify(state)); } catch {} }
+          state = { key: account.name.key, seed: account.name.seed, copies: [] };
+          fromServer(await meApi('state'));
+        } else if (state?.ownerToken) {
+          try { fromServer(await meApi('state')); } catch (e) { if (e.status === 401) { state = null; save(); } else throw e; }
+        } else { state = null; save(); }
+      } catch (e) { toast('Could not restore your account. Reload to try again.'); }
       }
       renderAll(); route();
       return;

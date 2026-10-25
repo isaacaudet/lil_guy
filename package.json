@@ -67,5 +67,8 @@
     "svg",
     "headless",
     "typescript"
-  ]
+  ],
+  "dependencies": {
+    "jose": "^6.2.13"
+  }
 }
