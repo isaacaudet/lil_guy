@@ -22,8 +22,10 @@ export { toSvgString } from './render-string';
 export { toPng } from './export-png';
 
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from './utils/colors';
-export { traitOdds, guyOneIn, copyOneIn } from './rarity';
-export type { TraitOdds } from './rarity';
+export { traitOdds, guyOneIn, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from './rarity';
+export type { TraitOdds, TraitSlot } from './rarity';
+export { TRAIT_ICONS, TIER_ICONS } from './icons';
+export type { Tier } from './icons';
 export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf } from './look';
 export type { Look, LookSlot } from './look';
 export { toShareSvg } from './share';

@@ -416,7 +416,12 @@ toSvgString("alice", { equip: [saved] });           // wears this exact copy
 ### How rare is it
 
 `guyOneIn(config)` is one in how many guys has exactly that combination of
-visible traits; `traitOdds(config)` lists each trait's chance. `copyOneIn(copy)`
+traits; `traitOdds(config)` lists each trait's chance, always the same twelve in
+the same order (`TRAIT_SLOTS`): shape, eyes, mouth, cheeks, topper, markings,
+accessory, colour, tone, arms, feet and lucky. `TRAIT_ICONS[slot]` is a small
+pixel icon for each, and `TIER_ICONS` one for each tier a page shows (Common,
+Uncommon, Rare, Legendary, Chase): SVG strings in `currentColor` with a
+`viewBox` and no size, so CSS sizes and colours them. `copyOneIn(copy)`
 is one in how many capsules give a copy at least that good: its item, finish,
 a famous print if it has one, a scuff at least that low, and a tally.
 

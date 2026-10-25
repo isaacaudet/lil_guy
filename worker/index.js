@@ -24,6 +24,11 @@ export default {
 // starts with, what collecting the day's tickets gives, and which machine is free today. Tickets are
 // endless for now (the owner): capsules and seasonals cost nothing until there is something to earn them with.
 export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360, infinite: true, trade: 5 };
+// The founder never pays, whatever the rules say.
+const free = key => RULES.infinite || key === 'isaac';
+// Capsule luck: a player's first few capsules are each the best of a few rolls (weighted toward good, never
+// promised), and after a long dry run below Prized the next capsule is Prized or better.
+export const LUCK = { beginner: 3, rolls: 3, pity: 30, tries: 5000 };
 const today = () => new Date().toISOString().slice(0, 10);
 export const todayGame = () => GAMES[Math.floor(Date.now() / 864e5) % GAMES.length];
 
@@ -39,6 +44,31 @@ const FOUNDER = {
 const dealt = seed => seed === 'founder:isaac' ? { ...resolve(seed, FOUNDER.parts), palette: FOUNDER.palette } : resolve(seed);
 const guyOf = (seed, look) => { const base = dealt(seed); const picked = look ? decodeLook(look, base) : null; return picked ? { ...base, ...picked } : base; };
 const ONE_OF_ONE = 1e18;
+const gradeIndex = o => GRADES.findIndex(g => g.id === gradeOf(o).id);
+const PRIZED = GRADES.findIndex(g => g.id === 'prized');
+
+/**
+ * Rolls a capsule from a machine with the player's luck: `opened` capsules before this one and `dry` in a
+ * row below Prized (auras count as Prized or better). Pity first, then beginner's luck (the best of a few
+ * rolls by grade, the lower float on a tie), else one plain roll. Every roll is the server's own.
+ */
+export function luckyRoll(game, opened, dry) {
+  const one = () => roll(crypto.randomUUID(), game);
+  if (dry >= LUCK.pity) {
+    let o = one();
+    for (let i = 1; i < LUCK.tries && gradeIndex(o) < PRIZED; i++) o = one();
+    return { o, luck: 'pity' };
+  }
+  if (opened < LUCK.beginner) {
+    let best = one();
+    for (let i = 1; i < LUCK.rolls; i++) {
+      const o = one(), g = gradeIndex(o), b = gradeIndex(best);
+      if (g > b || (g === b && o.scuff < best.scuff)) best = o;
+    }
+    return { o: best, luck: 'beginner' };
+  }
+  return { o: one(), luck: null };
+}
 
 function copyRow(o, key, source) {
   const item = itemById(o.item);
@@ -76,6 +106,12 @@ async function ensurePlayer(env, name) {
     if (name.seed === 'founder:isaac' && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
       await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
     }
+    // A guy's rarity is recounted when the traits it counts change (tone, arms and feet joined them).
+    const oneIn = guyOneIn(guyOf(name.seed, found.look));
+    if (Math.abs(oneIn - found.guy_one_in) > oneIn * 1e-9) {
+      await env.DB.prepare('UPDATE players SET guy_one_in = ? WHERE key = ?').bind(oneIn, name.key).run();
+      return { ...found, guy_one_in: oneIn };
+    }
     return found;
   }
   const at = new Date().toISOString();
@@ -98,7 +134,7 @@ const owner = ownedName;
 async function meState(env, name) {
   const p = await ensurePlayer(env, name);
   const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, tickets: p.tickets, freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy) };
+  return { key: name.key, seed: name.seed, look: p.look, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy) };
 }
 
 /** Everything a signed-in owner does: read their state, open a capsule, collect the day's tickets, wear, change their look. */
@@ -120,19 +156,22 @@ async function me(request, env, key, action) {
       if (game !== todayGame()) return json({ error: 'Only today’s machine is free' }, 409);
       const r = await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day <> ?').bind(day, key, day).run();
       if (!r.meta.changes) return json({ error: 'Today’s free capsule is already open' }, 409);
-    } else if (!RULES.infinite) {
+    } else if (!free(key)) {
       const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.capsule, key, RULES.capsule).run();
       if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
     }
+    // Count the capsule before rolling it, so two opened at once never share a beginner's roll.
+    const count = await env.DB.prepare('UPDATE players SET opened = opened + 1 WHERE key = ? RETURNING opened, dry').bind(key).first();
+    const { o, luck } = luckyRoll(game, count.opened - 1, count.dry);
+    await env.DB.prepare('UPDATE players SET dry = CASE WHEN ? THEN 0 ELSE dry + 1 END WHERE key = ?').bind(gradeIndex(o) >= PRIZED ? 1 : 0, key).run();
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
-    const o = roll(crypto.randomUUID(), game);
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
     const p = await env.DB.prepare('SELECT tickets, free_day FROM players WHERE key = ?').bind(key).first();
-    return json({ copy: publicCopy(copy), tickets: p.tickets, freeDay: p.free_day }, 201);
+    return json({ copy: publicCopy(copy), tickets: p.tickets, freeDay: p.free_day, luck }, 201);
   }
   if (action === 'season') {
     if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
-    if (!RULES.infinite) {
+    if (!free(key)) {
       const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.seasonal, key, RULES.seasonal).run();
       if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
     }
