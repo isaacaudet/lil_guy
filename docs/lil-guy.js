@@ -6294,6 +6294,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 				depth: .7,
 				color: c,
 				back: c,
+				side: c,
 				slot: s,
 				surface,
 				lift: 0
@@ -6316,13 +6317,25 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			});
 			if (around) back = C[y + around[1]][x + around[0]];
 		}
+		const color = shade ? darken(c, 1 - shade * .045) : c;
+		let side = color;
+		if (lum(c) < .3 && (s === 4 ? buddy[y][x] : figure[y][x]) === 1) {
+			const inside = [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			].map(([dx, dy]) => C[y + dy]?.[x + dx]).filter((n) => !!n && lum(n) >= .3);
+			if (inside.length) side = darken(inside[0], .92);
+		}
 		out.push({
 			x: px,
 			y: py,
 			z: (z0 + z1) / 2,
 			depth: z1 - z0,
-			color: shade ? darken(c, 1 - shade * .045) : c,
+			color,
 			back,
+			side,
 			slot: s,
 			surface,
 			lift: feature(x, y) * squeeze
@@ -6488,9 +6501,25 @@ function voxelMesh(columns, cell = 1, options = {}) {
 		const start = pos.length / 3;
 		for (const c of list) {
 			const x0 = c.x - .5, x1 = c.x + .5, y0 = c.y - .5, y1 = c.y + .5, z0 = c.z - c.depth / 2, z1 = c.z + c.depth / 2;
-			const face = linear(c.color), back = linear(c.back);
+			const face = linear(c.color), back = linear(c.back), side = linear(c.side ?? c.color);
 			flat = c.slot === 3;
 			wall = 0;
+			const RIM = .4, rim$1 = z1 - RIM;
+			const wallQuads = (spans, corners, n) => {
+				for (const [a, b$1] of spans) {
+					if (c.side === void 0 || c.side === c.color || b$1 <= rim$1) {
+						const q$1 = corners(a, b$1);
+						quad(q$1[0], q$1[1], q$1[2], q$1[3], n, b$1 <= rim$1 ? side : face);
+						continue;
+					}
+					if (a < rim$1) {
+						const q$1 = corners(a, rim$1);
+						quad(q$1[0], q$1[1], q$1[2], q$1[3], n, side);
+					}
+					const q = corners(Math.max(a, rim$1), b$1);
+					quad(q[0], q[1], q[2], q[3], n, face);
+				}
+			};
 			quad([
 				x0,
 				y0,
@@ -6535,93 +6564,113 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			], back);
 			const left = at.get(`${c.x - 1},${c.y}`), right = at.get(`${c.x + 1},${c.y}`), up = at.get(`${c.x},${c.y + 1}`), down = at.get(`${c.x},${c.y - 1}`);
 			wall = left ? 0 : .9;
-			for (const [a, b$1] of open(z0, z1, left)) quad([
-				x0,
-				y0,
-				a
-			], [
-				x0,
-				y0,
-				b$1
-			], [
-				x0,
-				y1,
-				b$1
-			], [
-				x0,
-				y1,
-				a
+			wallQuads(open(z0, z1, left), (a, b$1) => [
+				[
+					x0,
+					y0,
+					a
+				],
+				[
+					x0,
+					y0,
+					b$1
+				],
+				[
+					x0,
+					y1,
+					b$1
+				],
+				[
+					x0,
+					y1,
+					a
+				]
 			], [
 				-1,
 				0,
 				0
-			], face);
+			]);
 			wall = right ? 0 : .9;
-			for (const [a, b$1] of open(z0, z1, right)) quad([
-				x1,
-				y0,
-				b$1
-			], [
-				x1,
-				y0,
-				a
-			], [
-				x1,
-				y1,
-				a
-			], [
-				x1,
-				y1,
-				b$1
+			wallQuads(open(z0, z1, right), (a, b$1) => [
+				[
+					x1,
+					y0,
+					b$1
+				],
+				[
+					x1,
+					y0,
+					a
+				],
+				[
+					x1,
+					y1,
+					a
+				],
+				[
+					x1,
+					y1,
+					b$1
+				]
 			], [
 				1,
 				0,
 				0
-			], face);
+			]);
 			wall = up ? 0 : .9;
-			for (const [a, b$1] of open(z0, z1, up)) quad([
-				x0,
-				y1,
-				b$1
-			], [
-				x1,
-				y1,
-				b$1
-			], [
-				x1,
-				y1,
-				a
-			], [
-				x0,
-				y1,
-				a
+			wallQuads(open(z0, z1, up), (a, b$1) => [
+				[
+					x0,
+					y1,
+					b$1
+				],
+				[
+					x1,
+					y1,
+					b$1
+				],
+				[
+					x1,
+					y1,
+					a
+				],
+				[
+					x0,
+					y1,
+					a
+				]
 			], [
 				0,
 				1,
 				0
-			], face);
+			]);
 			wall = down ? 0 : .9;
-			for (const [a, b$1] of open(z0, z1, down)) quad([
-				x0,
-				y0,
-				a
-			], [
-				x1,
-				y0,
-				a
-			], [
-				x1,
-				y0,
-				b$1
-			], [
-				x0,
-				y0,
-				b$1
+			wallQuads(open(z0, z1, down), (a, b$1) => [
+				[
+					x0,
+					y0,
+					a
+				],
+				[
+					x1,
+					y0,
+					a
+				],
+				[
+					x1,
+					y0,
+					b$1
+				],
+				[
+					x0,
+					y0,
+					b$1
+				]
 			], [
 				0,
 				-1,
 				0
-			], face);
+			]);
 		}
 		groups.push({
 			start,

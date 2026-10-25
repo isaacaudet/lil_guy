@@ -70,6 +70,8 @@ export interface VoxelColumn {
   color: string;
   /** The back: the body's colour behind an eye or mouth. */
   back: string;
+  /** The sides behind a thin rim of `color`: the body's colour where the front is the dark outline, so the outline reads as a line drawn on the front, not a dark wall. */
+  side: string;
   slot: number;
   surface: Surface;
   /** How far an eye or mouth stands proud of the body: left out of the mesh's shading. */
@@ -150,7 +152,7 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
     const px = x - W / 2 + .5, py = H / 2 - y - .5;
     if (s === 3) {
       // A frame stands behind him as a plate.
-      out.push({ x: px, y: py, z: -(deepest / 2 + .5), depth: .7, color: c, back: c, slot: s, surface, lift: 0 });
+      out.push({ x: px, y: py, z: -(deepest / 2 + .5), depth: .7, color: c, back: c, side: c, slot: s, surface, lift: 0 });
       continue;
     }
     const { z0, z1 } = span[y][x]!;
@@ -162,7 +164,14 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
       const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dx, dy]) => { const n = C[y + dy]?.[x + dx]; return !!n && !feature(x + dx, y + dy) && lum(n) >= .22 && lum(n) <= .86; });
       if (around) back = C[y + around[1]][x + around[0]]!;
     }
-    out.push({ x: px, y: py, z: (z0 + z1) / 2, depth: z1 - z0, color: shade ? darken(c, 1 - shade * .045) : c, back, slot: s, surface, lift: feature(x, y) * squeeze });
+    const color = shade ? darken(c, 1 - shade * .045) : c;
+    let side = color;
+    if (lum(c) < .3 && (s === 4 ? buddy[y][x] : figure[y][x]) === 1) {
+      // An outline pixel: its sides take the colour just inside it.
+      const inside = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => C[y + dy]?.[x + dx]).filter((n): n is string => !!n && lum(n) >= .3);
+      if (inside.length) side = darken(inside[0], .92);
+    }
+    out.push({ x: px, y: py, z: (z0 + z1) / 2, depth: z1 - z0, color, back, side, slot: s, surface, lift: feature(x, y) * squeeze });
   }
   return out;
 }
@@ -282,19 +291,28 @@ export function voxelMesh(columns: readonly VoxelColumn[], cell = 1, options: { 
     const start = pos.length / 3;
     for (const c of list) {
       const x0 = c.x - .5, x1 = c.x + .5, y0 = c.y - .5, y1 = c.y + .5, z0 = c.z - c.depth / 2, z1 = c.z + c.depth / 2;
-      const face = linear(c.color), back = linear(c.back);
+      const face = linear(c.color), back = linear(c.back), side = linear(c.side ?? c.color);
       flat = c.slot === 3; wall = 0;
+      // A side: its front RIM in the face's colour, the rest in the side's.
+      const RIM = .4, rim = z1 - RIM;
+      const wallQuads = (spans: [number, number][], corners: (a: number, b: number) => number[][], n: number[]) => {
+        for (const [a, b] of spans) {
+          if (c.side === undefined || c.side === c.color || b <= rim) { const q = corners(a, b); quad(q[0], q[1], q[2], q[3], n, b <= rim ? side : face); continue; }
+          if (a < rim) { const q = corners(a, rim); quad(q[0], q[1], q[2], q[3], n, side); }
+          const q = corners(Math.max(a, rim), b); quad(q[0], q[1], q[2], q[3], n, face);
+        }
+      };
       quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], face);
       quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], back);
       const left = at.get(`${c.x - 1},${c.y}`), right = at.get(`${c.x + 1},${c.y}`), up = at.get(`${c.x},${c.y + 1}`), down = at.get(`${c.x},${c.y - 1}`);
       wall = left ? 0 : .9;
-      for (const [a, b] of open(z0, z1, left)) quad([x0, y0, a], [x0, y0, b], [x0, y1, b], [x0, y1, a], [-1, 0, 0], face);
+      wallQuads(open(z0, z1, left), (a, b) => [[x0, y0, a], [x0, y0, b], [x0, y1, b], [x0, y1, a]], [-1, 0, 0]);
       wall = right ? 0 : .9;
-      for (const [a, b] of open(z0, z1, right)) quad([x1, y0, b], [x1, y0, a], [x1, y1, a], [x1, y1, b], [1, 0, 0], face);
+      wallQuads(open(z0, z1, right), (a, b) => [[x1, y0, b], [x1, y0, a], [x1, y1, a], [x1, y1, b]], [1, 0, 0]);
       wall = up ? 0 : .9;
-      for (const [a, b] of open(z0, z1, up)) quad([x0, y1, b], [x1, y1, b], [x1, y1, a], [x0, y1, a], [0, 1, 0], face);
+      wallQuads(open(z0, z1, up), (a, b) => [[x0, y1, b], [x1, y1, b], [x1, y1, a], [x0, y1, a]], [0, 1, 0]);
       wall = down ? 0 : .9;
-      for (const [a, b] of open(z0, z1, down)) quad([x0, y0, a], [x1, y0, a], [x1, y0, b], [x0, y0, b], [0, -1, 0], face);
+      wallQuads(open(z0, z1, down), (a, b) => [[x0, y0, a], [x1, y0, a], [x1, y0, b], [x0, y0, b]], [0, -1, 0]);
     }
     groups.push({ start, count: pos.length / 3 - start, surface: list[0].surface });
   }
