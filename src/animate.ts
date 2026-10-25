@@ -261,7 +261,13 @@ function squash(layer: Layer, n: number): Layer {
   return [...rows.slice(k, r + 1), ...Array.from({ length: k }, () => [...rows[r]]), ...rows.slice(r + 1)];
 }
 
+/**
+ * Moves the guy by (dx, dy). A sideways step that would push him past the
+ * frame's edge is dropped: a guy as wide as the frame sways in place rather
+ * than losing a column.
+ */
 function shift(layer: Layer, dx: number, dy: number): Layer {
+  if (dx && layer.some(row => row[dx < 0 ? 0 : FRAME_WIDTH - 1])) dx = 0;
   const out = empty();
   layer.forEach((row, y) => row.forEach((cell, x) => {
     const nx = x + dx, ny = y + dy;
