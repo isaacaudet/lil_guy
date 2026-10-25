@@ -21,8 +21,9 @@ export default {
 
 // ------------------------------------------------------------ the guys and their copies
 // The rules the page plays by, kept here so the server decides them: what a capsule costs, what a claim
-// starts with, what collecting the day's tickets gives, and which machine is free today.
-export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360 };
+// starts with, what collecting the day's tickets gives, and which machine is free today. Tickets are
+// endless for now (the owner): capsules and seasonals cost nothing until there is something to earn them with.
+export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360, infinite: true, trade: 5 };
 const today = () => new Date().toISOString().slice(0, 10);
 export const todayGame = () => GAMES[Math.floor(Date.now() / 864e5) % GAMES.length];
 
@@ -95,7 +96,7 @@ async function me(request, env, key, action) {
       if (game !== todayGame()) return json({ error: 'Only today’s machine is free' }, 409);
       const r = await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day <> ?').bind(day, key, day).run();
       if (!r.meta.changes) return json({ error: 'Today’s free capsule is already open' }, 409);
-    } else {
+    } else if (!RULES.infinite) {
       const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.capsule, key, RULES.capsule).run();
       if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
     }
@@ -105,8 +106,10 @@ async function me(request, env, key, action) {
   }
   if (action === 'season') {
     if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
-    const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.seasonal, key, RULES.seasonal).run();
-    if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
+    if (!RULES.infinite) {
+      const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.seasonal, key, RULES.seasonal).run();
+      if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
+    }
     const copy = await insertCopy(env, copyRow(rollSeason(crypto.randomUUID(), day), key, 'seasonal'));
     const p = await env.DB.prepare('SELECT tickets FROM players WHERE key = ?').bind(key).first();
     return json({ copy: publicCopy(copy), tickets: p.tickets }, 201);
@@ -116,6 +119,28 @@ async function me(request, env, key, action) {
     if (!r.meta.changes) return json({ error: 'Today’s tickets are already collected' }, 409);
     const p = await env.DB.prepare('SELECT tickets, checkin_day FROM players WHERE key = ?').bind(key).first();
     return json({ tickets: p.tickets, checkinDay: p.checkin_day });
+  }
+  if (action === 'trade') {
+    // Trade up: five copies of one grade, none worn, starters and the founder's aside, for one copy of the next
+    // grade from one of their games. The five go in one guarded delete, so a copy can never be traded twice.
+    const ids = Array.isArray(body.ids) ? [...new Set(body.ids.map(Number))].filter(Number.isInteger) : [];
+    if (ids.length !== RULES.trade) return json({ error: `Pick ${RULES.trade} copies to trade` }, 400);
+    const marks = ids.map(() => '?').join(',');
+    const { results: give } = await env.DB.prepare(`SELECT * FROM copies WHERE key = ? AND id IN (${marks})`).bind(key, ...ids).all();
+    if (give.length !== ids.length) return json({ error: 'Not your copies' }, 404);
+    const grade = give[0].grade;
+    if (give.some(c => c.grade !== grade || c.worn || c.source === 'starter' || c.source === 'founder')) return json({ error: 'Trade five copies of one grade, none worn' }, 400);
+    if (grade >= GRADES.length - 1) return json({ error: 'A Grail is as high as it goes' }, 400);
+    const game = give[Math.floor(Math.random() * give.length)].game;
+    let o = null;
+    for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (GRADES.findIndex(g => g.id === gradeOf(r).id) === grade + 1) { o = r; break; } }
+    if (!o) return json({ error: 'Could not trade just now' }, 503);
+    const fits = `key = ? AND worn = 0 AND grade = ? AND source NOT IN ('starter', 'founder') AND id IN (${marks})`;
+    const gone = await env.DB.prepare(`DELETE FROM copies WHERE ${fits} AND (SELECT COUNT(*) FROM copies WHERE ${fits}) = ?`)
+      .bind(key, grade, ...ids, key, grade, ...ids, ids.length).run();
+    if (gone.meta.changes !== ids.length) return json({ error: 'Those copies changed. Reload and try again.' }, 409);
+    const copy = await insertCopy(env, copyRow(o, key, 'trade'));
+    return json({ copy: publicCopy(copy), traded: ids }, 201);
   }
   if (action === 'wear') {
     const slot = body.slot;
@@ -140,7 +165,7 @@ async function me(request, env, key, action) {
 /** Everyone's guys, rarest or newest first, with what each wears and their best copy. */
 async function guys(env, url) {
   const sort = url.searchParams.get('sort') === 'recent' ? 'n.at DESC' : 'COALESCE(p.guy_one_in, 0) DESC, n.at';
-  const limit = Math.min(60, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '48') || 48));
+  const limit = Math.min(200, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '48') || 48));
   const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0') || 0);
   const q = (url.searchParams.get('q') || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
   const { results } = await env.DB.prepare(`SELECT n.key, n.seed, n.at, COALESCE(p.look, '') AS look, p.guy_one_in FROM names n LEFT JOIN players p ON p.key = n.key
@@ -199,7 +224,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all();
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);

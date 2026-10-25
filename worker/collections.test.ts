@@ -39,11 +39,49 @@ test('capsules are rolled and stored on the server, paid in tickets, and the fre
   expect(body.copy.code).toContain('~');
   expect(body.tickets).toBe(RULES.start);
   expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, auth(c.owner))).status).toBe(409);
+  // Tickets are endless for now: a paid capsule leaves them where they were, even at none.
   const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json();
-  expect(paid.tickets).toBe(RULES.start - RULES.capsule);
-  env.db.exec("UPDATE players SET tickets = 10 WHERE key = 'mia'");
-  expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(402);
+  expect(paid.tickets).toBe(RULES.start);
+  env.db.exec("UPDATE players SET tickets = 0 WHERE key = 'mia'");
+  expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
   expect((await call('/me/mia/open', 'POST', { game: 'nope' }, auth(c.owner))).status).toBe(400);
+});
+
+test('with tickets switched back on, a capsule costs them and runs out', async () => {
+  RULES.infinite = false;
+  try {
+    const c = await claim('mia');
+    const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json();
+    expect(paid.tickets).toBe(RULES.start - RULES.capsule);
+    env.db.exec("UPDATE players SET tickets = 10 WHERE key = 'mia'");
+    expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(402);
+  } finally { RULES.infinite = true; }
+});
+
+test('trade up: five unworn copies of one grade for one of the next, each copy traded once', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  const at = new Date().toISOString();
+  const put = (key: string, grade: number, extra = '') => env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, 'amountle.crown~plain~0.5000000~1', 'amountle.crown', 'amountle', 'hat', 'plain', ?, 100, 0.5, ${extra || "'capsule'"}, 0, ?)`).run(key, grade, at).lastInsertRowid as number;
+  const five = [0, 1, 2, 3, 4].map(() => Number(put('mia', 0)));
+  // Four is not a trade, nor is another player's copy, a starter or a mixed grade.
+  expect((await call('/me/mia/trade', 'POST', { ids: five.slice(0, 4) }, auth(c.owner))).status).toBe(400);
+  const theirs = Number(put('bo', 0));
+  expect((await call('/me/mia/trade', 'POST', { ids: [...five.slice(0, 4), theirs] }, auth(c.owner))).status).toBe(404);
+  const higher = Number(put('mia', 1));
+  expect((await call('/me/mia/trade', 'POST', { ids: [...five.slice(0, 4), higher] }, auth(c.owner))).status).toBe(400);
+  const starter: any = (await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json() as any).copies.find((x: any) => x.source === 'starter' && !x.worn);
+  expect((await call('/me/mia/trade', 'POST', { ids: [...five.slice(0, 4), starter.id] }, auth(c.owner))).status).toBe(400);
+  const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
+  expect(r.status).toBe(201);
+  const got: any = await r.json();
+  expect(got.copy.grade).toBe(1);
+  expect(got.copy.source).toBe('trade');
+  const left: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(left.copies.some((x: any) => five.includes(x.id))).toBe(false);
+  // Traded copies are gone: the same five cannot trade again.
+  expect((await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).status).toBe(404);
+  expect((await call('/me/mia/trade', 'POST', { ids: five })).status).toBe(401);
+  expect(b.owner).toBeTruthy();
 });
 
 test('the day’s tickets are collected once', async () => {

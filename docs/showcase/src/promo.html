@@ -187,6 +187,66 @@
   .tag.on { background: #141414; color: #faf2dd; }
   .tag.new { background: var(--gold); color: #2a1a00; }
   .tag.dev { background: #ff6fa0; color: #2b0718; left: -6px; right: auto; transform: rotate(-5deg); }
+  /* the locker: your guy and his four slots beside every copy, sorted into categories */
+  .locker { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .lk-guy { position: sticky; top: 16px; display: grid; gap: 12px; }
+  .lk-stage { display: grid; place-items: center; aspect-ratio: 1; border-radius: 24px; background: radial-gradient(circle at 50% 45%, #2a3558, #0e1220 75%); }
+  .lk-stage svg { width: 82%; height: auto; image-rendering: pixelated; }
+  .lk-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .lk-slot { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 7px; border-radius: 14px; background: color-mix(in srgb, var(--cat) 12%, var(--card)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--cat) 45%, transparent); font-size: 11.5px; font-weight: 800; color: var(--cat); }
+  .lk-slot .pic { height: 44px; display: grid; place-items: center; }
+  .lk-slot canvas { image-rendering: pixelated; }
+  .lk-slot em { font-style: normal; color: var(--secondary); font-weight: 700; font-size: 11px; height: 44px; display: grid; place-items: center; }
+  .lk-slot[aria-pressed="true"] { box-shadow: inset 0 0 0 2.5px var(--cat); }
+  .cats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cats button { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px 0 10px; border-radius: 13px; font-size: 15px; font-weight: 800; color: var(--cat); background: color-mix(in srgb, var(--cat) 10%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--cat) 35%, transparent); }
+  .cats button .num { color: var(--secondary); font-weight: 700; }
+  .cats button[aria-selected="true"] { background: var(--cat); color: #fff; box-shadow: 0 3px 0 color-mix(in srgb, var(--cat) 55%, #000); }
+  .cats button[aria-selected="true"] .num { color: rgba(255,255,255,.8); }
+  .ci { width: 18px; height: 18px; flex: none; }
+  .lk-main .filters { margin-bottom: 14px; }
+  .inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .itw { position: relative; }
+  .it { width: 100%; display: grid; gap: 4px; text-align: left; padding: 10px 10px 12px; border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); transition: transform .12s; }
+  .it:hover { transform: translateY(-2px); }
+  .it[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--cat); }
+  .it-pic { position: relative; display: grid; place-items: center; height: 110px; border-radius: 12px; margin-bottom: 6px; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--g) 50%, #1d2540), #0e1220 78%); }
+  .it-pic canvas { image-rendering: pixelated; filter: drop-shadow(0 5px 0 rgba(0,0,0,.35)); }
+  .it-cat { justify-self: start; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 6px; background: var(--cat); color: #fff; font: 700 11px/1 var(--pixel); letter-spacing: .04em; text-transform: uppercase; }
+  .it-cat .ci { width: 14px; height: 14px; }
+  .it b { font-size: 14.5px; font-weight: 800; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it-fin { font: 400 16px/1 var(--pixel); color: color-mix(in srgb, var(--g) 80%, var(--ink)); }
+  .it-wear { font-size: 12.5px; color: var(--secondary); }
+  .it .tag { position: absolute; z-index: 3; top: -8px; right: -6px; transform: rotate(5deg); font: 700 12px/1 var(--pixel); letter-spacing: .05em; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .it-more { position: absolute; z-index: 2; right: 16px; top: 88px; width: 28px; height: 28px; border-radius: 9px; font: 700 15px/1 var(--pixel); color: var(--secondary); box-shadow: inset 0 0 0 1.5px var(--line); background: var(--card); }
+  .it-more:hover { color: var(--ink); }
+  /* trade up */
+  .trades { display: grid; gap: 10px; }
+  .trade { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 16px; padding: 12px 14px; border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .tr-give { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tr-c { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--g) 50%, #1d2540), #0e1220 80%); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .5s; }
+  .tr-c.gap { background: none; box-shadow: inset 0 0 0 1.5px var(--line); }
+  .tr-c canvas { image-rendering: pixelated; }
+  .tr-arrow { font: 400 28px/1 var(--pixel); color: var(--secondary); }
+  .tr-get { display: grid; justify-items: center; gap: 4px; min-width: 96px; }
+  .tr-get small { font-size: 12.5px; color: var(--secondary); }
+  .trade .btn[disabled] { opacity: .38; }
+  .trade.going .tr-c:not(.gap) { transform: translateX(var(--fly)) scale(.3); opacity: 0; }
+  /* who you could get */
+  .maybe { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+  .mb { display: grid; justify-items: center; gap: 4px; padding: 10px 6px 8px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .mb canvas { width: 72px; height: 72px; image-rendering: pixelated; animation: mbob 2.4s ease-in-out infinite; animation-delay: var(--d); }
+  .mb small { font: 400 14px/1 var(--pixel); color: var(--secondary); }
+  .mb.rare small { color: var(--ink); }
+  @keyframes mbob { 50% { transform: translateY(-4px); } }
+  @media (max-width: 760px) {
+    .locker { grid-template-columns: minmax(0, 1fr); }
+    .lk-guy { position: static; grid-template-columns: 120px minmax(0, 1fr); align-items: center; }
+    .lk-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .inv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .trade { grid-template-columns: minmax(0, 1fr) auto; }
+    .tr-arrow { display: none; }
+  }
   .empty { padding: 40px 24px; border-radius: 20px; text-align: center; color: var(--secondary); box-shadow: inset 0 0 0 1.5px var(--line); }
   footer { color: var(--secondary); font-size: 13px; padding-bottom: 40px; }
 
@@ -524,6 +584,11 @@
     </div>
   </section>
 
+  <section id="maybe-sec">
+    <div class="sec-h"><div><h2>Who you could get</h2><p id="maybe-sub">Every name is dealt its own guy. Here are some of the ways it can go.</p></div><button class="btn ghost" type="button" id="maybe-more">Deal more</button></div>
+    <div class="maybe" id="maybe"></div>
+  </section>
+
   <section id="roll">
     <div class="sec-h">
       <div><h2>Capsule machines</h2><p>One for each game: skins, hats, a frame and a buddy. Finish the day's games for a free one.</p></div>
@@ -544,8 +609,16 @@
   </section>
 
   <section id="coll">
-    <div class="sec-h"><div><h2>Your collection</h2><p id="coll-sub">Every copy is one of a kind: its own finish, scuff and print.</p></div><div class="filters" id="filters"></div></div>
-    <div class="grid" id="grid"></div>
+    <div class="sec-h"><div><h2>Your locker</h2><p id="coll-sub">Tap a copy to put it on. Every one is one of a kind: its own finish, float and print.</p></div></div>
+    <div class="locker">
+      <div class="lk-guy"><div class="lk-stage" id="lk-stage"></div><div class="lk-slots" id="lk-slots"></div></div>
+      <div class="lk-main"><div class="cats" id="cats" role="tablist" aria-label="Categories"></div><div class="filters" id="filters"></div><div class="inv" id="grid"></div></div>
+    </div>
+  </section>
+
+  <section id="trade-sec">
+    <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade for one of the next. What you wear and your starters stay put.</p></div></div>
+    <div class="trades" id="trades"></div>
   </section>
  </div>
 
@@ -635,6 +708,8 @@
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   const cap = s => s[0].toUpperCase() + s.slice(1);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // Tickets are endless for now (the owner), here and on the live site: nothing ever costs any.
+  const INFINITE = true;
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const today = new Date().toISOString().slice(0, 10);
   const tk = '<svg class="tk"><use href="#ticket"/></svg>';
@@ -653,6 +728,14 @@
     copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
   };
   const RESERVED = { isaac: FOUNDER };
+  // The founder claims the reserved name with ?founder=<the Worker's FOUNDER_SECRET>, kept for this tab only
+  // and taken out of the address at once.
+  let founderKey = null;
+  try {
+    const q = new URLSearchParams(location.search), f = q.get('founder');
+    if (f) { founderKey = f; sessionStorage.setItem('lil-guys-founder', f); q.delete('founder'); history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash); }
+    else founderKey = sessionStorage.getItem('lil-guys-founder');
+  } catch (e) {}
   const founderOf = seed => seed === 'founder:isaac' ? FOUNDER : null;
   const dealt = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette } : LG.resolve(seed); };
   // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
@@ -826,7 +909,7 @@
     $('claim-btn').disabled = true;
     lastCheck = key;
     if (key.length < 2) { setAvail('', ''); return; }
-    if (RESERVED[key] && !owner) { setAvail('no', 'Reserved'); return; }
+    if (RESERVED[key] && !owner && !founderKey) { setAvail('no', 'Reserved for the founder'); return; }
     lastCheck = key;
     if (!backendReady) { setAvail('', 'Connecting…'); return; }
     if (!db && !apiUp) { setAvail('ok', '✓ Free in this browser (the demo)'); $('claim-btn').disabled = false; SFX.good(); return; }
@@ -851,7 +934,7 @@
     let seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed(), ownerToken = null;
     if (!backendReady) return;
     if (isLive()) {
-      try { const claimed = await namesApi('/' + key, { method: 'POST' }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
+      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {} }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
       catch (e) { setAvail('no', e.message); SFX.bad(); return; }
     }
     if (db) {
@@ -1056,7 +1139,7 @@
       const first = i === 0, free = first && state && state.free !== today;
       return `<button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : `${tk} 120 · ${n} items`}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button>`;
+        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
@@ -1079,6 +1162,7 @@
     state.tickets += 60; save(); renderWallet(); SFX.earn(); toast('+60 tickets');
   });
   function renderEarn() {
+    $('earn').parentElement.hidden = INFINITE;
     if (!isLive()) return;
     $('earn').textContent = state && state.checkin === today ? 'Today’s tickets are collected. More tomorrow.' : 'Collect today’s tickets (+360)';
     $('earn').disabled = !!(state && state.checkin === today);
@@ -1091,6 +1175,7 @@
     $('season-name').textContent = `${it.name} · in season`;
     $('season-sub').textContent = `Each copy is stamped with the day it dropped. Gone ${new Date(`2026-${it.season.to}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}.`;
     paintInto($('season').querySelector('canvas'), 'season', [it.id]);
+    if (INFINITE) $('season-buy').textContent = 'Open';
     $('season-buy').addEventListener('click', () => {
       if (!state) { $('name').focus(); return; }
       if (isLive()) { meApi('season', {}).then(r => { state.tickets = r.tickets; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); }).catch(e => toast(e.status === 402 ? 'Not enough tickets.' : e.message)); return; }
@@ -1101,11 +1186,11 @@
   }
   // Tickets are pretend here, so running out tops you up instead of stopping you.
   function pay(price) {
-    if (dev || isLive()) return;
+    if (INFINITE || dev || isLive()) return;
     if (state.tickets < price) { state.tickets += 600; SFX.earn(); toast('Out of tickets, so here are 600 more. They’re pretend.'); }
     state.tickets -= price;
   }
-  function renderWallet() { if (state) $('wallet').textContent = state.tickets.toLocaleString('en-US'); }
+  function renderWallet() { if (state) $('wallet').textContent = INFINITE ? '∞' : state.tickets.toLocaleString('en-US'); }
 
   /* ---------------------------------------------- dev drops: an easter egg.
    * Type "rarest" anywhere, or tap the lil guys mark five times. Every capsule then gives the rarest,
@@ -1684,27 +1769,118 @@
     else if (e.key === 'Escape') closeReveal(false);
   });
 
-  /* ---------------------------------------------- the collection */
-  let filter = -1;
+  /* ---------------------------------------------- the locker: your guy and his four slots, and every copy sorted
+   * into its category, each with its own colour and mark. Tapping a copy puts it on (or takes it off). */
+  const ICON = {
+    '': '<path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/>',
+    skin: '<path d="M5 2h6v1h1v4h1v6H3V7h1V3h1z"/>',
+    hat: '<path d="M5 2h6v8h3v3H2v-3h3z"/>',
+    frame: '<path d="M2 2h12v12H2zm3 3v6h6V5z" fill-rule="evenodd"/>',
+    buddy: '<path d="M4 4h3v3H4zM9 4h3v3H9zM3 8h10v5H3z"/>',
+  };
+  const CATS = [{ id: '', name: 'All', one: 'capsule', c: '#5d6b8a' }, { id: 'skin', name: 'Skins', one: 'Skin', c: '#2f9b6e' }, { id: 'hat', name: 'Hats', one: 'Hat', c: '#d9702a' }, { id: 'frame', name: 'Frames', one: 'Frame', c: '#7a52d6' }, { id: 'buddy', name: 'Buddies', one: 'Buddy', c: '#cf4578' }];
+  const catOf = slot => CATS.find(c => c.id === slot) || CATS[0];
+  const icon = id => `<svg class="ci" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">${ICON[id]}</svg>`;
+  const founderCopy = o => o.tally === 999 && o.print === 1 && o.finish === 'gold' && !!founderOf(state.seed);
+  let filter = -1, cat = '';
   function renderColl() {
     const list = copies().sort((a, b) => gradeIdx(b.o) - gradeIdx(a.o) || LG.copyOneIn(b.o) - LG.copyOneIn(a.o));
-    const n = [0, 0, 0, 0, 0]; list.forEach(c => n[gradeIdx(c.o)]++);
-    $('filters').innerHTML = state ? `<button type="button" data-f="-1" aria-pressed="${filter === -1}">All <span class="num">${list.length}</span></button>` + LG.GRADES.map((g, k) => n[k] ? `<button type="button" data-f="${k}" style="--g:${g.color}" aria-pressed="${filter === k}"><i></i>${g.name} <span class="num">${n[k]}</span></button>` : '').join('') : '';
-    if (!state) { $('grid').innerHTML = '<div class="empty" style="grid-column:1/-1">Claim a name and your nine starter hats land here.</div>'; return; }
+    $('trade-sec').hidden = !state;
+    if (!state) {
+      $('cats').innerHTML = ''; $('filters').innerHTML = ''; $('lk-slots').innerHTML = ''; $('lk-stage').innerHTML = '';
+      $('grid').innerHTML = '<div class="empty" style="grid-column:1/-1">Claim a name and your nine starter hats land here.</div>'; return;
+    }
     const worn = wornCodes(), fresh = state.fresh || [], devs = state.dev || [];
-    const shown = list.filter(c => filter < 0 || gradeIdx(c.o) === filter);
-    $('grid').innerHTML = shown.map(c => {
-      const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
-      const one = c.o.tally === 999 && c.o.print === 1 && c.o.finish === 'gold' && founderOf(state.seed);
-      return `<button class="cc card" type="button" data-i="${c.i}" aria-label="${esc(LG.nameOf(c.o))}">
-        ${worn.includes(c.code) ? '<span class="pill tag on">ON</span>' : fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
-        ${px(cardSpec(state.seed, [c.o], itemLabel(c.o, it.free, one), shown.length > 24))}
-        <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : 'Plain'))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
+    // Your guy as he stands, and what's in each slot.
+    $('lk-stage').innerHTML = animated(state.seed, 'dance', worn, 260);
+    $('lk-slots').innerHTML = ['skin', 'hat', 'frame', 'buddy'].map(sl => {
+      const k = catOf(sl), code = state.worn[sl];
+      return `<button type="button" class="lk-slot" data-cat="${sl}" style="--cat:${k.c}" aria-pressed="${cat === sl}">${icon(sl)}<span class="pic">${code ? '<canvas aria-hidden="true"></canvas>' : '<em>empty</em>'}</span>${k.one}</button>`;
     }).join('');
-    hydrate($('grid'));
+    $('lk-slots').querySelectorAll('[data-cat]').forEach(b => { const code = state.worn[b.dataset.cat], cv = b.querySelector('canvas'); if (code && cv) showItem(cv, LG.decode(code), state.seed, 40, 40); });
+    const inCat = list.filter(c => !cat || LG.slotOf(c.o) === cat);
+    $('cats').innerHTML = CATS.map(k => `<button type="button" role="tab" data-cat="${k.id}" style="--cat:${k.c}" aria-selected="${cat === k.id}">${icon(k.id)}${k.name} <span class="num">${k.id ? list.filter(c => LG.slotOf(c.o) === k.id).length : list.length}</span></button>`).join('');
+    const n = [0, 0, 0, 0, 0]; inCat.forEach(c => n[gradeIdx(c.o)]++);
+    $('filters').innerHTML = `<button type="button" data-f="-1" aria-pressed="${filter === -1}">Every grade</button>` + LG.GRADES.map((g, k) => n[k] ? `<button type="button" data-f="${k}" style="--g:${g.color}" aria-pressed="${filter === k}"><i></i>${g.name} <span class="num">${n[k]}</span></button>` : '').join('');
+    const shown = inCat.filter(c => filter < 0 || gradeIdx(c.o) === filter);
+    $('grid').innerHTML = shown.length ? shown.map(c => {
+      const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | '), k = catOf(it.slot), g = LG.gradeOf(c.o), on = worn.includes(c.code);
+      const one = founderCopy(c.o);
+      return `<div class="itw"><button class="it" type="button" data-i="${c.i}" style="--cat:${k.c};--g:${g.color}" aria-pressed="${on}" aria-label="${on ? 'Take off' : 'Put on'} ${esc(LG.nameOf(c.o))}">
+        ${on ? '<span class="pill tag on">ON</span>' : fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
+        <span class="it-pic"><canvas aria-hidden="true"></canvas></span>
+        <span class="it-cat">${icon(it.slot)}${k.one}</span><b>${esc(title)}</b><span class="it-fin">${esc(one ? '★ One of one' : look || (it.free ? 'Starter' : 'Plain'))}</span>
+        <span class="it-wear">${esc(it.free ? 'Starter' : g.name)} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></button>
+        <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button></div>`;
+    }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
+    $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
+    renderTrades();
   }
+  $('cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = b.dataset.cat; filter = -1; renderColl(); } });
+  $('lk-slots').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = cat === b.dataset.cat ? '' : b.dataset.cat; filter = -1; renderColl(); } });
   $('filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = +b.dataset.f; renderColl(); } });
-  $('grid').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) inspect(+b.dataset.i); });
+  $('grid').addEventListener('click', e => {
+    const more = e.target.closest('[data-more]'); if (more) return inspect(+more.dataset.more);
+    const b = e.target.closest('[data-i]'); if (!b) return;
+    const c = copies().find(x => x.i === +b.dataset.i); if (!c) return;
+    const slot = LG.slotOf(c.o);
+    state.worn[slot] = state.worn[slot] === c.code ? undefined : c.code;
+    SFX.equip(); wearLive(slot); save();
+    renderClaim(); renderGuy(); renderColl();
+  });
+
+  /* ---------------------------------------------- trade up: five of a grade (the least rare first) for one of the next */
+  const TRADE = 5;
+  const tradeable = g => copies().filter(c => !LG.itemById(c.o.item).free && !wornCodes().includes(c.code) && !founderCopy(c.o) && gradeIdx(c.o) === g).sort((a, b) => LG.copyOneIn(a.o) - LG.copyOneIn(b.o));
+  function renderTrades() {
+    $('trades').innerHTML = [0, 1, 2, 3].map(g => {
+      const give = tradeable(g), from = LG.GRADES[g], to = LG.GRADES[g + 1];
+      const cells = Array.from({ length: TRADE }, (_, k) => give[k] ? `<span class="tr-c" style="--g:${from.color}"><canvas aria-hidden="true"></canvas></span>` : '<span class="tr-c gap"></span>').join('');
+      return `<div class="trade" data-row="${g}"><div class="tr-give" aria-label="Five ${esc(from.name)} copies">${cells}</div><span class="tr-arrow">→</span>
+        <span class="tr-get"><span class="bal" style="--b:${to.color}">${esc(to.name)}</span><small>${give.length} of ${TRADE} ${esc(from.name)}</small></span>
+        <button class="btn" type="button" data-trade="${g}"${give.length < TRADE ? ' disabled' : ''}>Trade up</button></div>`;
+    }).join('');
+    $('trades').querySelectorAll('[data-row]').forEach(row => { const give = tradeable(+row.dataset.row); row.querySelectorAll('.tr-c canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 44, 44)); });
+  }
+  $('trades').addEventListener('click', async e => {
+    const b = e.target.closest('[data-trade]'); if (!b || b.disabled) return;
+    const g = +b.dataset.trade, give = tradeable(g).slice(0, TRADE);
+    if (give.length < TRADE) return;
+    $('trades').querySelectorAll('[data-trade]').forEach(x => { x.disabled = true; });
+    // The five fly into the next grade.
+    const row = b.closest('.trade'), to = row.querySelector('.tr-get').getBoundingClientRect();
+    row.querySelectorAll('.tr-c:not(.gap)').forEach((c, k) => { const r = c.getBoundingClientRect(); c.style.setProperty('--fly', `${to.left + to.width / 2 - r.left - r.width / 2}px`); c.style.transitionDelay = `${k * 60}ms`; });
+    row.classList.add('going'); SFX.riser(g + 1, 0.7);
+    await sleep(800);
+    let o;
+    if (isLive()) {
+      try {
+        const r = await meApi('trade', { ids: give.map(c => state.ids?.[c.code]) });
+        o = LG.decode(r.copy.code); state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
+      } catch (err) { toast(err.message); renderColl(); return; }
+    } else {
+      const game = LG.itemById(give[strHash(`${state.seed}:${state.opened}`) % TRADE].o.item).game;
+      for (let i = 0; i < 50000; i++) { o = LG.roll(`${state.seed}:trade:${state.opened}:${i}`, game); if (gradeIdx(o) === g + 1) break; }
+      state.opened++;
+    }
+    const gone = new Set(give.map(c => c.code));
+    state.copies = state.copies.filter(code => !gone.has(code));
+    state.fresh = (state.fresh || []).filter(code => !gone.has(code));
+    reveal(o, null, 'Trade up');
+  });
+
+  /* ---------------------------------------------- who you could get: a deal of guys from fresh names, some wearing
+   * something a capsule could give them */
+  function renderMaybe() {
+    const guys = Array.from({ length: 24 }, (_, i) => {
+      const seed = LG.makeSeed(), cfg = LG.resolve(seed);
+      const equip = i % 3 === 0 ? [LG.encode(LG.roll(seed, LG.GAMES[i % LG.GAMES.length]))] : [];
+      return { seed, cfg, equip, n: LG.guyOneIn(cfg) };
+    }).sort((a, b) => b.n - a.n);
+    $('maybe').innerHTML = guys.map((g, i) => `<div class="mb${i < 3 ? ' rare' : ''}"><canvas width="16" height="16" style="--d:${(i % 7) * -.31}s" aria-hidden="true"></canvas><small>1 in ${fmt(g.n)}</small></div>`).join('');
+    $('maybe').querySelectorAll('canvas').forEach((c, i) => paintCfg(c, LG.dress(guys[i].cfg, { equip: guys[i].equip })));
+  }
+  $('maybe-more').addEventListener('click', renderMaybe);
 
   /* ---------------------------------------------- an item on its own: the pixels that are the item (by layer, or by
    * what changes when the guy puts it on), outlined, on a frame the library's finish shader reads, so the finish
@@ -1862,7 +2038,15 @@
   // Where the pages read from: the Worker on the live site; in the demo, your own collection (and names others claimed here).
   const myGuy = () => { const list = copies().filter(c => !LG.itemById(c.o.item).free).sort((a, b) => LG.copyOneIn(b.o) - LG.copyOneIn(a.o)); const b = list[0]; return { key: state.key, seed: state.seed, look: state.look || '', worn: wornCodes(), oneIn: LG.guyOneIn(guyConfig(state.seed)), best: b ? { code: b.code, grade: gradeIdx(b.o), oneIn: LG.copyOneIn(b.o) } : null }; };
   async function listGuys(sort, q) {
-    if (isLive()) return getJSON(`/guys?sort=${sort}&q=${encodeURIComponent(q)}`);
+    if (isLive()) {
+      // Every claimed guy, a page of 200 at a time.
+      let all = [];
+      for (let offset = 0; ; offset += 200) {
+        const page = await getJSON(`/guys?sort=${sort}&q=${encodeURIComponent(q)}&limit=200&offset=${offset}`);
+        all = all.concat(page);
+        if (page.length < 200) return all;
+      }
+    }
     let list = [];
     if (db) { try { const snap = await db.collection('names').get(); list = snap.docs.map(d => d.data()).filter(v => v && v.seed && v.name).map(v => ({ key: v.name, seed: v.seed, look: '', worn: [], best: null, oneIn: LG.guyOneIn(dealt(v.seed)), at: v.at })); } catch (e) {} }
     if (state) list = [myGuy(), ...list.filter(g => g.key !== state.key)];
@@ -1888,6 +2072,7 @@
     $('guys-sort').querySelectorAll('[data-s]').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === guysSort));
     let list = [];
     try { list = await listGuys(guysSort, guysQ); } catch (e) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${esc(e.message)}</div>`; return; }
+    $('guys-sub').textContent = list.length ? `${list.length.toLocaleString('en-US')} ${guysQ ? 'found' : `guy${list.length === 1 ? '' : 's'} claimed`}. ${guysSort === 'rarest' ? 'Rarest first' : 'Newest first'}. Tap one to see their collection.` : '';
     if (!list.length) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${guysQ ? 'No one by that name yet.' : 'No one has claimed a guy yet. Be the first.'}</div>`; return; }
     for (const g of list) lookFor[g.seed] = g.look || '';
     $('guys-grid').innerHTML = list.map((g, i) => {
@@ -2077,6 +2262,7 @@
   addEventListener('click', e => { if (e.target.closest && e.target.closest('button')) SFX.click(); }, { capture: true });
 
   renderHand();
+  renderMaybe();
   renderFins();
   renderAll();
   route();

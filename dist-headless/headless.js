@@ -4799,12 +4799,31 @@ function paint(grid, config, palette) {
 	const state = { glint: false };
 	const slotOf$1 = (t) => t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = resolveColor(palette, token);
+		const color = token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
 		return copy ? paintCell(color, x, y, copy, state) : color;
 	}));
+}
+/**
+* An eye's white catchlight. On a light face a white pixel on the eye's edge
+* melts into the skin and leaves the eye a bitten-off L, so there it is a
+* pale tint of the eye instead: the eye keeps its whole shape and still shines.
+*/
+function catchlight(grid, x, y, palette) {
+	const white = resolveColor(palette, T.WHITE);
+	const near = [
+		[x - 1, y],
+		[x + 1, y],
+		[x, y - 1],
+		[x, y + 1]
+	].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
+	if (!white || !near.includes(T.EYE)) return white;
+	const ink = resolveColor(palette, T.EYE);
+	if (!ink || contrast(white, ink) < 3) return white;
+	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette, t) ?? "#000000") < 1.6);
+	return pale ? mix$1(ink, white, .6) : white;
 }
 
 //#endregion
@@ -4898,10 +4917,7 @@ const HOP = [
 		squash: -1,
 		dy: -1
 	}),
-	b("base", 100, {
-		squash: 2,
-		dust: true
-	}),
+	b("base", 100, { squash: 2 }),
 	b("base", 80, { squash: 1 })
 ];
 const BEATS = {
@@ -4958,10 +4974,7 @@ const BEATS = {
 				dy: -3,
 				stars: true
 			}),
-			b("laugh", 90, {
-				squash: 2,
-				dust: true
-			})
+			b("laugh", 90, { squash: 2 })
 		];
 		return [
 			...up,
@@ -5445,51 +5458,6 @@ function animate(input, move, options = {}) {
 				c,
 				item: false
 			};
-		}
-		if (beat.dust) {
-			let low = -1;
-			layer.forEach((row$1, y) => {
-				if (row$1.some(Boolean)) low = y;
-			});
-			const row = layer[low] ?? [];
-			const l = row.findIndex(Boolean), r = row.reduce((m, cell, x) => cell ? x : m, -1);
-			if (l >= 0) {
-				for (const [x, y, c] of [
-					[
-						l - 1,
-						low,
-						"#E8E0D2"
-					],
-					[
-						l - 2,
-						low,
-						"#E8E0D2"
-					],
-					[
-						l - 2,
-						low - 1,
-						"#F6F1E8"
-					],
-					[
-						r + 1,
-						low,
-						"#E8E0D2"
-					],
-					[
-						r + 2,
-						low,
-						"#E8E0D2"
-					],
-					[
-						r + 2,
-						low - 1,
-						"#F6F1E8"
-					]
-				]) if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
-					c,
-					item: false
-				};
-			}
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);

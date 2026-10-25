@@ -102,8 +102,6 @@ interface Beat {
   stars?: boolean;
   /** A bead of sweat. */
   drop?: boolean;
-  /** A puff of dust either side of his feet. */
-  dust?: boolean;
   emote?: Emote;
   /** Which side the emote prefers. */
   left?: boolean;
@@ -119,7 +117,7 @@ const HOP: Beat[] = [
   b('base', 130, { dy: -4 }),
   b('base', 70, { dy: -3 }),
   b('base', 60, { squash: -1, dy: -1 }),
-  b('base', 100, { squash: 2, dust: true }),
+  b('base', 100, { squash: 2 }),
   b('base', 80, { squash: 1 }),
 ];
 
@@ -140,7 +138,7 @@ const BEATS: Record<Move, (canWave: boolean) => Beat[]> = {
       b(arm, 60, { squash: -1, dy: -2, stars: true }),
       b(arm, 150, { dy: -4, stars: true }),
       b(arm, 70, { dy: -3, stars: true }),
-      b('laugh', 90, { squash: 2, dust: true }),
+      b('laugh', 90, { squash: 2 }),
     ];
     return [...up, ...up, b(arm, 220, { stars: true }), b('laugh', 220), b('base', 400)];
   },
@@ -437,15 +435,6 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       const right = row ? row.reduce((r, cell, x) => (cell ? x : r), -1) : -1;
       for (const [x, y, c] of [[right + 1, top + 1, '#CFEFFF'], [right + 1, top + 2, '#7CC4F2']] as [number, number, string][]) {
         if (right >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = { c, item: false };
-      }
-    }
-    if (beat.dust) {
-      let low = -1;
-      layer.forEach((row, y) => { if (row.some(Boolean)) low = y; });
-      const row = layer[low] ?? [];
-      const l = row.findIndex(Boolean), r = row.reduce((m, cell, x) => (cell ? x : m), -1);
-      if (l >= 0) for (const [x, y, c] of [[l - 1, low, '#E8E0D2'], [l - 2, low, '#E8E0D2'], [l - 2, low - 1, '#F6F1E8'], [r + 1, low, '#E8E0D2'], [r + 2, low, '#E8E0D2'], [r + 2, low - 1, '#F6F1E8']] as [number, number, string][]) {
-        if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = { c, item: false };
       }
     }
     if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);

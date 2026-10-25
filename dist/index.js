@@ -1,4 +1,4 @@
-import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-BG-71PIl.js";
+import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-BlBKH9MY.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -97,10 +97,7 @@ const HOP = [
 		squash: -1,
 		dy: -1
 	}),
-	b("base", 100, {
-		squash: 2,
-		dust: true
-	}),
+	b("base", 100, { squash: 2 }),
 	b("base", 80, { squash: 1 })
 ];
 const BEATS = {
@@ -157,10 +154,7 @@ const BEATS = {
 				dy: -3,
 				stars: true
 			}),
-			b("laugh", 90, {
-				squash: 2,
-				dust: true
-			})
+			b("laugh", 90, { squash: 2 })
 		];
 		return [
 			...up,
@@ -644,51 +638,6 @@ function animate(input, move, options = {}) {
 				c,
 				item: false
 			};
-		}
-		if (beat.dust) {
-			let low = -1;
-			layer.forEach((row$1, y) => {
-				if (row$1.some(Boolean)) low = y;
-			});
-			const row = layer[low] ?? [];
-			const l = row.findIndex(Boolean), r = row.reduce((m, cell, x) => cell ? x : m, -1);
-			if (l >= 0) {
-				for (const [x, y, c] of [
-					[
-						l - 1,
-						low,
-						"#E8E0D2"
-					],
-					[
-						l - 2,
-						low,
-						"#E8E0D2"
-					],
-					[
-						l - 2,
-						low - 1,
-						"#F6F1E8"
-					],
-					[
-						r + 1,
-						low,
-						"#E8E0D2"
-					],
-					[
-						r + 2,
-						low,
-						"#E8E0D2"
-					],
-					[
-						r + 2,
-						low - 1,
-						"#F6F1E8"
-					]
-				]) if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
-					c,
-					item: false
-				};
-			}
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);

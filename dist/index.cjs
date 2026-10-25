@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-DHSa5q-6.cjs');
+const require_paint = require('./paint-B-EKjYC5.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -93,10 +93,7 @@ const HOP = [
 		squash: -1,
 		dy: -1
 	}),
-	b("base", 100, {
-		squash: 2,
-		dust: true
-	}),
+	b("base", 100, { squash: 2 }),
 	b("base", 80, { squash: 1 })
 ];
 const BEATS = {
@@ -153,10 +150,7 @@ const BEATS = {
 				dy: -3,
 				stars: true
 			}),
-			b("laugh", 90, {
-				squash: 2,
-				dust: true
-			})
+			b("laugh", 90, { squash: 2 })
 		];
 		return [
 			...up,
@@ -640,51 +634,6 @@ function animate(input, move, options = {}) {
 				c,
 				item: false
 			};
-		}
-		if (beat.dust) {
-			let low = -1;
-			layer.forEach((row$1, y) => {
-				if (row$1.some(Boolean)) low = y;
-			});
-			const row = layer[low] ?? [];
-			const l = row.findIndex(Boolean), r = row.reduce((m, cell, x) => cell ? x : m, -1);
-			if (l >= 0) {
-				for (const [x, y, c] of [
-					[
-						l - 1,
-						low,
-						"#E8E0D2"
-					],
-					[
-						l - 2,
-						low,
-						"#E8E0D2"
-					],
-					[
-						l - 2,
-						low - 1,
-						"#F6F1E8"
-					],
-					[
-						r + 1,
-						low,
-						"#E8E0D2"
-					],
-					[
-						r + 2,
-						low,
-						"#E8E0D2"
-					],
-					[
-						r + 2,
-						low - 1,
-						"#F6F1E8"
-					]
-				]) if (x >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
-					c,
-					item: false
-				};
-			}
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
