@@ -4272,6 +4272,7 @@ const skins = [
 		id: "cutsies.kiwi",
 		game: "cutsies",
 		name: "Kiwi",
+		about: "Turns your guy into a fuzzy brown kiwi, cut open on top.",
 		eyes: 10,
 		limb: 1,
 		colors: [
@@ -5437,6 +5438,7 @@ const hats = [
 		game: "cutsies",
 		name: "Kiwi slice",
 		free: true,
+		about: "A round of kiwi worn like a beret. Cutsies is the slicing game.",
 		colors: [
 			"#86CF55",
 			"#C9F08F",
@@ -5445,20 +5447,29 @@ const hats = [
 			"#9C6E43"
 		],
 		draw: on([
-			".1111.",
-			"134431",
-			".5555."
+			".55555.",
+			"5131315",
+			"5324235",
+			"5131315",
+			".55555."
 		])
 	},
 	{
 		id: "cutsies.chef",
 		game: "cutsies",
 		name: "Chef hat",
-		colors: ["#FFFFFF", "#DCE3EC"],
+		about: "A chef's tall white toque, for the one who does the cutting in Cutsies.",
+		colors: [
+			"#FFFFFF",
+			"#DCE3EC",
+			"#B9C4D2"
+		],
 		draw: on([
-			".1111.",
-			"111112",
-			".2222."
+			".11.111.",
+			"11111112",
+			"11111122",
+			".111112.",
+			".333333."
 		])
 	},
 	{
@@ -5913,11 +5924,14 @@ const frames = [
 		id: "cutsies.slices",
 		game: "cutsies",
 		name: "Kiwi slices",
+		about: "A wooden chopping board with a kiwi sliced at each corner.",
 		colors: [
-			"#9CC8F0",
+			"#D9A066",
 			"#86CF55",
 			"#2A1B10",
-			"#7A5432"
+			"#7A5432",
+			"#F1F7D4",
+			"#BE8650"
 		],
 		fill: (x, y) => {
 			for (const [kx, ky] of [
@@ -5926,12 +5940,13 @@ const frames = [
 				[13, 2],
 				[2, 13]
 			]) {
-				const d = Math.abs(x - kx) + Math.abs(y - ky);
-				if (d === 0) return 3;
-				if (d === 1) return 2;
-				if (d === 2 && x !== kx && y !== ky) return 4;
+				const d2 = (x - kx) ** 2 + (y - ky) ** 2;
+				if (d2 === 0) return 5;
+				if (d2 === 2) return 3;
+				if (d2 <= 4) return 2;
+				if (d2 <= 6) return 4;
 			}
-			return 1;
+			return (y + (x >> 2)) % 5 === 0 ? 6 : 1;
 		}
 	},
 	{
@@ -6358,6 +6373,7 @@ const buddies = [
 		id: "cutsies.seedling",
 		game: "cutsies",
 		name: "Seedling",
+		about: "A sprout in a clay pot that follows you around. It came from a kiwi seed.",
 		colors: [
 			"#7DD87A",
 			"#3E9A4C",

@@ -474,7 +474,9 @@
   .opt canvas { width: 48px; height: 48px; image-rendering: pixelated; }
   .opt[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
   .opt[disabled] { opacity: .45; cursor: not-allowed; }
-  .opt .bal { height: 20px; font-size: 16px; padding: 0 6px; }
+  .opt-odds .lock { width: 9px; height: 10px; shape-rendering: crispEdges; vertical-align: -1px; }
+  .opt-odds { text-transform: none; font-size: 16px; filter: brightness(1.25); white-space: nowrap; }
+  .opt span:not(.opt-odds) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .look-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
   /* ------------------------------------------------------------ the drop */
@@ -532,6 +534,13 @@
   .won-info > * { animation: statpop .32s cubic-bezier(.2,1.6,.4,1) backwards; animation-delay: calc(var(--k, 0) * 40ms); }
   @keyframes statpop { 0% { transform: scale(.6) translateY(8px); opacity: 0; } 100% { transform: none; opacity: 1; } }
   .won-how { font-size: 16px; color: var(--ink-3); }
+  .about { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--paper); color: var(--paper-ink); font-size: 16px; line-height: 1.3; }
+  .wear-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .wear-strip figure { margin: 0; display: grid; justify-items: center; gap: 4px; padding: 6px 2px 4px; border-radius: 8px; background: var(--well); box-shadow: inset 0 -3px 0 var(--wc); }
+  .wear-strip figure.on { background: var(--panel); box-shadow: 0 0 0 3px var(--wc); }
+  .wear-strip figure.off { opacity: .35; }
+  .wear-strip canvas { image-rendering: pixelated; max-width: 100%; height: auto; }
+  .wear-strip figcaption { font-size: 16px; color: var(--ink-2); white-space: nowrap; }
   .won-title { font-size: 32px; line-height: 1.05; text-shadow: var(--ts); }
   .won-fin { margin: -4px 0 0; font-size: 32px; color: var(--grade); text-shadow: var(--ts); }
   .won-info .badges { margin: 0; }
@@ -818,7 +827,7 @@
   <div class="art-col"><div class="look-stage" id="look-stage"></div></div>
   <div>
     <h3 id="look-h">Change your look</h3>
-    <p class="fin">Any common part. Rare parts only come from the deal.</p>
+    <p class="fin">Any common part. The locked ones only come from the deal.</p>
     <div class="filters" id="look-tabs"></div>
     <div class="opts" id="look-opts"></div>
     <div class="look-actions"><button class="btn" type="button" id="look-save">Save look</button><button class="btn ghost" type="button" id="look-reset">As he was dealt</button></div>
@@ -1276,14 +1285,22 @@
 
   /* ---------------------------------------------- changing your look: any common part, plus the ones you were dealt */
   const LOOK_TABS = [['head', 'Shape', 'heads'], ['eyes', 'Eyes', 'eyes'], ['mouth', 'Mouth', 'mouths'], ['cheeks', 'Cheeks', 'cheeks'], ['hair', 'Topper', 'hair'], ['body', 'Markings', 'bodies'], ['accessory', 'Accessory', 'accessories'], ['palette', 'Colour', 'palettes']];
+  const LOCK = '<svg class="lock" viewBox="0 0 7 8" aria-hidden="true"><path fill="currentColor" d="M2 0h3v1h1v2h1v5H0V3h1V1h1zM2 1v2h3V1z"/></svg> ';
+  const LOOK_SLOT = { head: 'shape', eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', hair: 'topper', body: 'markings', accessory: 'accessory', palette: 'colour' };
   let draft = {}, lookTab = 'head';
   function renderLook() {
     const base = dealt(state.seed), cur = { ...base, ...draft }, list = LG[LOOK_TABS.find(x => x[0] === lookTab)[2]];
     $('look-tabs').innerHTML = LOOK_TABS.map(([k, label]) => `<button type="button" data-t="${k}" aria-pressed="${k === lookTab}">${label}</button>`).join('');
     $('look-stage').innerHTML = LG.toAnimatedSvg(state.seed, 'idle', { size: 240, parts: partsOf(cur), palette: LG.paletteOf(cur) });
-    const opts = LG.pickable(base, lookTab), commons = new Set(LG.pickable({ ...base, [lookTab]: -1 }, lookTab));
-    $('look-opts').innerHTML = opts.map(i => `<button class="opt" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span>${i === base[lookTab] ? `<span class="bal" style="--b:${commons.has(i) ? '#5d6b8a' : '#b26cbb'}">Dealt</span>` : ''}</button>`).join('');
-    $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: opts[k] }));
+    // Every part with its odds: the ones you can pick first, then the rarer ones only the deal gives, locked.
+    const pick = new Set(LG.pickable(base, lookTab)), slot = LOOK_SLOT[lookTab];
+    const chance = i => LG.traitOdds({ ...cur, [lookTab]: i }).find(t => t.slot === slot)?.chance || 0;
+    const all = list.map((_, i) => i).filter(i => pick.has(i) || chance(i) > 0).sort((x, y) => (pick.has(y) - pick.has(x)) || (chance(y) - chance(x)));
+    $('look-opts').innerHTML = all.map(i => {
+      const p = chance(i), tier = tierOf(p), open = pick.has(i);
+      return `<button class="opt" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${open ? '' : ' disabled title="Only the deal gives this one"'}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${tier.c}">${i === base[lookTab] ? 'Dealt · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}</span></button>`;
+    }).join('');
+    $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: all[k] }));
   }
   $('look-open').addEventListener('click', () => {
     const base = dealt(state.seed);
@@ -1845,12 +1862,12 @@
     const it = LG.itemById(o.item), g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
     const fin = LG.FINISHES[o.finish], [lo, hi] = fin.scuffs, wear = LG.wearOf(o.scuff), wc = WEAR_COLOURS[LG.WEAR.indexOf(wear)];
     let prev = 0;
-    const segs = LG.WEAR.map((w, k) => { const a = prev, b = Math.min(1, w.max); prev = b; return `<span style="flex:${(b - a).toFixed(3)};background:${WEAR_COLOURS[k]}"><em>${w.short}</em></span>`; }).join('');
+    const segs = LG.WEAR.map((w, k) => { const a = prev, b = Math.min(1, w.max); prev = b; return `<span style="flex:${(b - a).toFixed(3)};background:${WEAR_COLOURS[k]}">${b - a >= 0.1 ? `<em>${w.short}</em>` : ''}</span>`; }).join('');
     const within = hi > lo ? (o.scuff - lo) / (hi - lo) : 0, cleaner = Math.round((1 - within) * 100);
     const [a, b] = split(LG.copyOneIn(o));
     return `<p class="won-how">${esc(how)} · ${cap(it.game)} ${it.slot}${o.date ? ' · ' + o.date : ''}</p>
       <h3 class="won-title">${esc(title)}</h3>
-      <p class="won-fin">${esc(look || plainOf(o))}</p>
+      <p class="won-fin">${esc(look || plainOf(o))}</p>${it.about ? `<p class="about">${esc(it.about)}</p>` : ''}
       <div class="badges"><span class="bal" style="--b:${g.color}">${esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}<span class="bal" style="--b:#5d6b8a">#${o.print}</span>${o.tally !== undefined ? '<span class="bal" style="--b:#5d6b8a">Counts days</span>' : ''}${LG.collectorNotes(o).filter(n => n.id !== 'tally' && n.id !== 'famous-print').slice(0, 2).map(n => `<span class="bal poly">${esc(n.name)}</span>`).join('')}</div>
       <div class="wf" style="--wc:${wc}">
         <div class="wf-h"><small>FLOAT</small><b id="wf-n">0.000000</b><span class="bal" style="--b:${wc}">${wear.name}</span></div>
@@ -2173,8 +2190,13 @@
       <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk${o.scuff < .06 ? ' lo' : o.scuff > .94 ? ' hi' : ''}" data-v="${o.scuff.toFixed(4)}" style="left:${Math.min(100, o.scuff * 100)}%"></b></div>
       <div class="fl-zoom"><span>${lo.toFixed(2)}</span><div class="zb" style="background:${zoom}"><b class="mk" style="left:${(within * 100).toFixed(1)}%"></b></div><span>${hi.toFixed(2)}</span></div>
       <p>${fin.name} only comes ${lo.toFixed(2)} to ${hi.toFixed(2)}${hi < 1 ? ' (the striped part can’t roll)' : ''}. This one is cleaner than <b>${cleaner}%</b> of ${fin.name} copies.</p>
+      <p class="kicker" style="margin:16px 0 8px">What wear does to it</p>
+      <div class="wear-strip">${LG.WEAR.map((w, k) => { const sc = WEAR_SHOW[k], can = sc >= lo && sc <= hi; return `<figure class="${k === wi ? 'on' : ''}${can ? '' : ' off'}" style="--wc:${WEAR_COLOURS[k]}"><canvas data-scuff="${sc}" aria-hidden="true"></canvas><figcaption>${w.name}</figcaption></figure>`; }).join('')}</div>
     </div>`;
   }
+  // A float from the middle of each condition, to draw the same copy at each.
+  const WEAR_SHOW = [0.03, 0.11, 0.26, 0.41, 0.75];
+  const fillWear = (root, o, seed) => root.querySelectorAll('.wear-strip canvas').forEach(c => showItem(c, { ...o, scuff: +c.dataset.scuff, fx: undefined }, seed, 96, 80));
   // What a collector looks at in a copy: its notes (floats, prints, souvenir, tally), where its float ranks
   // against every copy of it, and its tally on a counter.
   function collectorPanel(o, g) {
@@ -2253,7 +2275,7 @@
         <p class="ins-cap">#${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
       </div>
       <div>
-        <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}
+        <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}${item.about ? `<p class="about">${esc(item.about)}</p>` : ''}
         <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ 1 of 1' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
         ${floatPanel(o)}
         ${collectorPanel(o, g)}
@@ -2274,6 +2296,7 @@
       $('insp-body').querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
     };
     setView('alone');
+    fillWear($('insp-body'), o, ctx.seed);
     fillRank(o, code);
     $('insp-body').querySelector('.ins-tabs').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) setView(b.dataset.v); });
     view.addEventListener('pointermove', e => { const r = view.getBoundingClientRect(), tl = view.querySelector('.tilt'); if (tl) tl.style.transform = `rotateY(${((e.clientX - r.left) / r.width - 0.5) * 26}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 22}deg)`; });
