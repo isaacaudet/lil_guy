@@ -97,122 +97,56 @@
 
   const LG = window.LilGuy, $ = id => document.getElementById(id);
   const code = (item, finish, scuff, print) => LG.encode({ item, finish, scuff, print });
-  const SLOT_RANGE = { skin: [20, 30], hat: [30, 40], frame: [40, 50], buddy: [50, 60] };
 
-  /* ---------------------------------------------- surfaces: each finish as a material, wear roughening it */
-  const SURF = {
-    body:     { roughness: .46, metalness: 0, clearcoat: .35, clearcoatRoughness: .35 },
-    plain:    { roughness: .5, metalness: 0, clearcoat: .3, clearcoatRoughness: .4 },
-    sunset:   { roughness: .3, metalness: .05, clearcoat: .9, clearcoatRoughness: .12, sheen: 1, sheenRoughness: .3, sheenColor: '#ffc59a' },
-    tempered: { roughness: .28, metalness: .85, clearcoat: .4, clearcoatRoughness: .2 },
-    nebula:   { roughness: .22, metalness: .1, clearcoat: 1, clearcoatRoughness: .08, glow: .9 },
-    prism:    { roughness: .12, metalness: .35, clearcoat: 1, clearcoatRoughness: .04, iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820] },
-    negative: { roughness: .1, metalness: .2, clearcoat: 1, clearcoatRoughness: .03, glow: .2 },
-    gold:     { roughness: .16, metalness: 1, clearcoat: .5, clearcoatRoughness: .08 },
-  };
+  /* ---------------------------------------------- the library does the pixels-to-columns work (voxelColumns,
+   * voxelItem, surfaceOf); the page draws each column as a rounded box, one instanced mesh a surface. */
   const clock = { value: 0 };
   const mats = new Map();
-  function material(kind, scuff = 0) {
-    const wear = Math.round(Math.min(1, scuff) * 10) / 10, key = `${kind}|${wear}`;
+  function material(s) {
+    const key = `${s.kind}|${s.roughness}|${s.clearcoat}`;
     if (mats.has(key)) return mats.get(key);
-    const { glow, sheenColor, ...s } = SURF[kind];
-    const m = new THREE.MeshPhysicalMaterial({ ...s, roughness: Math.min(1, s.roughness + wear * .55), clearcoat: (s.clearcoat || 0) * (1 - wear) });
-    if (sheenColor) m.sheenColor = new THREE.Color(sheenColor);
-    if (glow) {
+    const m = new THREE.MeshPhysicalMaterial({ roughness: s.roughness, metalness: s.metalness, clearcoat: s.clearcoat, clearcoatRoughness: s.clearcoatRoughness,
+      iridescence: s.iridescence, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820], sheen: s.sheen, sheenRoughness: .3, sheenColor: new THREE.Color('#ffc59a') });
+    if (s.glow) {
       // Lit from inside: the copy's own colours added back as light, breathing up the figure.
       m.onBeforeCompile = sh => {
         sh.uniforms.uT = clock;
         sh.fragmentShader = 'uniform float uT;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
-          `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ${glow.toFixed(2)} * (0.7 + 0.3 * sin(uT * 2.2 + vViewPosition.y * 0.6));`);
+          `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ${s.glow.toFixed(2)} * (0.7 + 0.3 * sin(uT * 2.2 + vViewPosition.y * 0.6));`);
       };
-      m.customProgramCacheKey = () => 'glow' + glow;
+      m.customProgramCacheKey = () => 'glow' + s.glow;
     }
     mats.set(key, m);
     return m;
   }
 
-  /* ---------------------------------------------- pixels to voxels: each pixel a rounded column, thicker away
-   * from the silhouette's edge so he comes out pillow-round; eyes and mouth stand proud, a hat sits forward,
-   * a frame becomes the plate behind him, a buddy is its own little figure. */
-  const lum = hex => { const n = parseInt(hex.slice(1, 7), 16); return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255; };
-  function distField(W, H, inside) {
-    const d = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => inside(x, y) ? 99 : 0));
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y - 1]?.[x] ?? 0) + 1, (d[y][x - 1] ?? 0) + 1);
-    for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y + 1]?.[x] ?? 0) + 1, (d[y][x + 1] ?? 0) + 1);
-    return d;
-  }
-  function voxelize(frame, owned, small = false) {
-    const C = frame.colors, S = frame.slots, H = C.length, W = C[0].length;
-    const dF = distField(W, H, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
-    const dB = distField(W, H, (x, y) => !!C[y][x] && S[y][x] === 4);
-    const T = Array.from({ length: H }, () => new Array(W).fill(0));
-    let maxT = 0;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const c = C[y][x], s = S[y][x];
-      if (!c || s === 3) continue;
-      const d = s === 4 ? dB[y][x] : dF[y][x], L = lum(c);
-      // An item on its own is only a few pixels tall, so it stays shallow or it turns into a brick.
-      let t = small ? 1 + .45 * Math.min(d, 3) : 1.3 + 1.05 * Math.min(d, 4);
-      if (s === 4 && !small) t *= .82;
-      if (s === 0 && d >= 2 && L < .22) t += .45;
-      if (s === 0 && d >= 2 && L > .86) t += .3;
-      if (s === 2 && !small) t += .5;
-      T[y][x] = t; maxT = Math.max(maxT, t);
-    }
-    const vox = [];
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const c = C[y][x], s = S[y][x];
-      if (!c) continue;
-      const copy = s ? owned[LG.FRAME_SLOTS[s - 1]] : null;
-      const kind = copy ? copy.finish : 'body', scuff = copy ? copy.scuff : 0;
-      if (s === 3) { vox.push({ x, y, z: -(maxT / 2 + .5), t: .7, color: new THREE.Color(c), kind, scuff }); continue; }
-      const t = T[y][x];
-      let ao = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (T[y + dy]?.[x + dx] ?? 0) > t + .4) ao++;
-      vox.push({ x, y, z: 0, t, color: new THREE.Color(c).multiplyScalar(1 - ao * .045), kind, scuff });
-    }
-    return { vox, W, H };
-  }
-
   const BOX = new RoundedBoxGeometry(1, 1, 1, 2, .11);
-  function build({ vox, W, H }) {
+  function build(columns) {
     const by = new Map();
-    for (const v of vox) { const m = material(v.kind, v.scuff); if (!by.has(m)) by.set(m, []); by.get(m).push(v); }
-    const g = new THREE.Group(), mtx = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    for (const c of columns) { const m = material(c.surface); if (!by.has(m)) by.set(m, []); by.get(m).push(c); }
+    const g = new THREE.Group(), mtx = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), col = new THREE.Color();
     for (const [m, list] of by) {
       const mesh = new THREE.InstancedMesh(BOX, m, list.length);
-      list.forEach((v, i) => { mesh.setMatrixAt(i, mtx.compose(p.set(v.x - W / 2 + .5, H / 2 - v.y - .5, v.z), q, sc.set(1, 1, v.t))); mesh.setColorAt(i, v.color); });
+      list.forEach((c, i) => { mesh.setMatrixAt(i, mtx.compose(p.set(c.x, c.y, c.z), q, sc.set(1, 1, c.depth))); mesh.setColorAt(i, col.set(c.color)); });
       mesh.castShadow = mesh.receiveShadow = true;
       g.add(mesh);
     }
     return g;
   }
-  const ownedOf = codes => Object.fromEntries(codes.map(c => { const o = LG.decode(c); return [LG.slotOf(o), o]; }));
 
   // A moving guy: every frame of the move built once, one shown at a time.
   function figure(seed, move, codes) {
-    const anim = LG.animate(seed, move, { equip: codes, rarity: false }), owned = ownedOf(codes);
-    const root = new THREE.Group(), parts = anim.frames.map(f => { const g = build(voxelize(f, owned)); g.visible = false; root.add(g); return g; });
+    const anim = LG.animate(seed, move, { equip: codes, rarity: false }), owned = LG.ownedOf(codes);
+    const root = new THREE.Group(), parts = anim.frames.map(f => { const g = build(LG.voxelColumns(f, owned)); g.visible = false; root.add(g); return g; });
     let shown = -1;
     return {
       root, anim, H: anim.height,
       at(ms) {
-        let t = ms % anim.duration, i = 0;
-        while (i < anim.frames.length - 1 && t >= anim.frames[i].ms) { t -= anim.frames[i].ms; i++; }
+        const f = LG.frameAt(anim, ms), i = anim.frames.indexOf(f);
         if (i !== shown) { if (shown >= 0) parts[shown].visible = false; parts[i].visible = true; shown = i; }
-        return anim.frames[i];
+        return f;
       },
     };
-  }
-  // An item on its own, cut out of a guy wearing it.
-  function itemFrame(o) {
-    const base = LG.resolve('display stand'), slot = LG.slotOf(o), [lo, hi] = SLOT_RANGE[slot], want = LG.FRAME_SLOTS.indexOf(slot) + 1;
-    const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg)) }; };
-    const worn = draw(LG.dress(base, { equip: [LG.encode(o)] }));
-    let mask = worn.grid.map(row => row.map(t => t >= lo && t < hi));
-    if (!mask.some(r => r.some(Boolean))) { const bare = draw(LG.dress(base, { equip: [] })); mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x])); }
-    const colors = worn.colors.map((row, y) => row.map((c, x) => mask[y][x] ? c : null));
-    return { colors, slots: colors.map(row => row.map(c => c ? want : 0)) };
   }
 
   /* ---------------------------------------------- stages */
@@ -315,8 +249,7 @@
     host.append(el);
     const scene = new THREE.Scene(); scene.environment = tileEnv; scene.environmentIntensity = .8;
     lights(scene, g.color);
-    const v = voxelize(itemFrame(o), { [LG.slotOf(o)]: o }, true);
-    const model = build(v);
+    const model = build(LG.voxelItem(o));
     const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
     model.position.set(-mid.x, -box.min.y, -mid.z);
     const spin = new THREE.Group(); spin.add(model); scene.add(spin);

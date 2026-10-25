@@ -65,4 +65,6 @@ export { toShareSvg } from "./share";
 export type { ShareOptions } from "./share";
 export { LilGuyAnimated, type LilGuyAnimatedProps } from "./lil-guy-animated";
 export { createShine, shineData, type Shine } from "./shine";
+export { voxelColumns, voxelItem, voxelMesh, itemFrame, ownedOf, surfaceOf } from "./voxel";
+export type { VoxelColumn, VoxelMesh, VoxelSource, VoxelOptions, Surface, SurfaceKind } from "./voxel";
 export { FRAME_SLOTS } from "./animate";
