@@ -2,6 +2,7 @@ import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts'
 import { LAYER, LOCAL, T } from './parts/art';
 import { Canvas } from './parts/canvas';
 import { itemById, type Item } from './items';
+import { auraById, auraCells } from './auras';
 import { goldRim, GOLD_RIM_DAYS, markItem } from './pins';
 import type { AvatarConfig, PixelGrid } from './types';
 import { GRID_SIZE } from './types';
@@ -218,6 +219,14 @@ export function compose(config: AvatarConfig): PixelGrid {
   if (config.flip) for (const row of c.grid) row.reverse();
 
   if (Object.values(config.owned ?? {}).some(o => o?.finish === 'gold')) sparkle(c.grid);
+
+  // An aura goes round the finished guy, in front of any frame, as it stands
+  // at its still moment (animate moves it).
+  const aura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
+  if (aura) {
+    const mask = c.grid.map(row => row.map(Boolean));
+    for (const [x, y, k] of auraCells(aura.id, mask, aura.still, config.owned?.aura)) c.grid[y][x] = LAYER.aura + k;
+  }
 
   if (frame?.slot === 'frame') {
     for (let y = 0; y < GRID_SIZE; y++) {

@@ -130,7 +130,8 @@ async function me(request, env, key, action) {
     if (give.length !== ids.length) return json({ error: 'Not your copies' }, 404);
     const grade = give[0].grade;
     if (give.some(c => c.grade !== grade || c.worn || c.source === 'starter' || c.source === 'founder')) return json({ error: 'Trade five copies of one grade, none worn' }, 400);
-    if (grade >= GRADES.length - 1) return json({ error: 'A Grail is as high as it goes' }, 400);
+    // A trade never makes an aura: they only come out of capsules.
+    if (grade >= GRADES.findIndex(g => g.id === 'grail')) return json({ error: 'A Grail is as high as a trade goes' }, 400);
     const game = give[Math.floor(Math.random() * give.length)].game;
     let o = null;
     for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (GRADES.findIndex(g => g.id === gradeOf(r).id) === grade + 1) { o = r; break; } }

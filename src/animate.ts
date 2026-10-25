@@ -7,6 +7,7 @@ import { paletteOf } from './palette';
 import { GRADES, gradeOf } from './owned';
 import { LAYER, T } from './parts/art';
 import { hash } from './hash';
+import { auraById, auraCells, auraColor } from './auras';
 import type { AvatarConfig, Palette, PixelGrid, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -227,8 +228,8 @@ interface Cell { c: string; item: boolean; slot?: number }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
-export const FRAME_SLOTS = ['skin', 'hat', 'frame', 'buddy'] as const;
-const slotIndex = (t: number) => (t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0);
+export const FRAME_SLOTS = ['skin', 'hat', 'frame', 'buddy', 'aura'] as const;
+const slotIndex = (t: number) => (t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0);
 
 const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
 
@@ -334,7 +335,9 @@ const SPARKLE_SPOTS: [number, number][] = [[2, 6], [13, 8], [1, 13], [14, 15], [
 export function animate(input: string, move: Move, options: AnimateOptions = {}): Animation {
   const config = dress(resolve(input, options.parts), options, input);
   const palette = withItems(options.palette ?? paletteOf(config), config);
-  const figure: AvatarConfig = { ...config, frame: undefined };
+  // The frame and any aura are drawn per frame round him, not into his poses.
+  const figure: AvatarConfig = { ...config, frame: undefined, aura: undefined };
+  const wornAura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
 
   const grids = new Map<Pose, PixelGrid>();
   const grid = (pose: Pose): PixelGrid => {
@@ -372,8 +375,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
   }
 
-  // The best copy he is wearing sets how much shows.
-  const copies = Object.values(config.owned ?? {}).filter(Boolean);
+  // The best copy he is wearing sets how much shows. An aura is its own show,
+  // so it doesn't count here.
+  const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== 'aura').map(([, o]) => o);
   const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map(o => GRADES.findIndex(g => g.id === gradeOf(o!).id)));
   const gradeColor = grade >= 0 ? GRADES[grade].color : '#FFFFFF';
   const seed = hash(input) % 997;
@@ -383,7 +387,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const slices: { beat: Beat; ms: number; t: number }[] = [];
   let t = 0;
   for (const beat of beats) {
-    const n = grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+    const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
     for (let i = 0; i < n; i++) {
       const ms = Math.round(beat.ms / n);
       slices.push({ beat, ms, t });
@@ -392,7 +396,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   }
 
   // Mythic and Grail guys leave a trail when they leave the ground.
-  const trailFrom = (grade >= 3 ? [mix(gradeColor, '#000000', 0.2), mix(gradeColor, '#000000', 0.55)] : []);
+  const trailFrom = (grade >= 3 && !wornAura ? [mix(gradeColor, '#000000', 0.2), mix(gradeColor, '#000000', 0.55)] : []);
   const behind: Layer[] = [];
 
   const frames = slices.map(({ beat, ms, t }) => {
@@ -439,13 +443,19 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     }
     if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
     if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t / 400) % 2);
-    if (grade >= 2) {
+    if (wornAura) {
+      // The aura, round him as he stands in this frame, in its finish.
+      const copy = config.owned?.aura, mask = layer.map(row => row.map(Boolean));
+      for (const [x, y, k] of auraCells(wornAura.id, mask, t, copy)) {
+        layer[y][x] = { c: copy ? auraColor(wornAura.id, k, copy.finish, x, y, t) : wornAura.colors[k], item: false, slot: 5 };
+      }
+    } else if (grade >= 2) {
       // A ring in the grade's colour, breathing in and out.
       const on = Math.floor((t + seed) / 320) % 2 === 0;
       const ring = grade === 4 ? (on ? '#FFE27A' : '#E4AE39') : on ? gradeColor : mix(gradeColor, '#000000', 0.35);
       for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = { c: ring, item: false };
     }
-    if (grade >= 3) {
+    if (grade >= 3 && !wornAura) {
       const count = grade === 4 ? 4 : 3;
       SPARKLE_SPOTS.slice(0, count + 2).forEach(([x, y], k) => {
         if (((t / 240 + k * 1.7 + seed) % 4) < 1) twinkle(layer, x, y, '#FFFFFF', grade === 4 ? '#FFE27A' : gradeColor);

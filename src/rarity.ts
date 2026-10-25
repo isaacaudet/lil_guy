@@ -5,6 +5,7 @@ import {
 } from './parts/weights';
 import { palettes } from './palette';
 import { gameItems, itemById } from './items';
+import { AURAS, AURA_ODDS } from './auras';
 import { DEEP_BLUE_PRINTS, FINISHES, special, type Owned } from './owned';
 import { LUCKY_ODDS } from './resolve';
 import type { AvatarConfig } from './types';
@@ -53,9 +54,10 @@ export function guyOneIn(config: AvatarConfig): number {
 export function copyOneIn(o: Owned): number {
   const item = itemById(o.item);
   if (!item) return Infinity;
-  const pool = gameItems(item.game).filter(i => !i.free).length;
   const f = FINISHES[o.finish];
-  let p = (1 / pool) * (f.odds / 100);
+  // An aura comes from any capsule: this aura, in this finish.
+  let p = f.aura ? AURA_ODDS * (1 / AURAS.length) * (f.aura / 100)
+    : (1 / gameItems(item.game).filter(i => !i.free && i.slot !== 'aura').length) * (f.odds / 100) * (item.game === 'club' ? 1 : 1 - AURA_ODDS);
 
   // The print only matters when it is one of the famous ones.
   if (special(o) === 'Deep Blue') p *= DEEP_BLUE_PRINTS.length / 1000;

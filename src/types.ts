@@ -60,8 +60,10 @@ export interface AvatarConfig {
   frame?: string;
   /** A tiny pet that sits beside him. */
   buddy?: string;
+  /** An aura round him (see ./auras). */
+  aura?: string;
   /** The owned copies behind those items, if known: finish, scuff, print. */
-  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', import('./owned').Owned>>;
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy' | 'aura', import('./owned').Owned>>;
 }
 
 export interface RenderOptions {

@@ -138,7 +138,7 @@ describe('seasonal items', () => {
     expect(inSeason('2026-12-31').map(i => i.id)).toEqual(['club.snowcap']);
     expect(inSeason('2027-01-03').map(i => i.id)).toEqual(['club.snowcap']);
     expect(inSeason('2026-07-01')).toEqual([]);
-    expect(items.filter(i => i.game === 'club').every(i => i.season)).toBe(true);
+    expect(items.filter(i => i.game === 'club' && i.slot !== 'aura').every(i => i.season)).toBe(true);
   });
 
   test('copies keep their day, in the code and the name', () => {

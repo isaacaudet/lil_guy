@@ -2,6 +2,7 @@ import { LAYER, LOCAL, stamp, T, width, type Stamp } from './parts/art';
 import type { Canvas } from './parts/canvas';
 import { capRows, mirror, seat } from './parts/hair';
 import { decode, starter } from './owned';
+import { AURAS } from './auras';
 import type { AvatarConfig, GameId, Palette, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -24,7 +25,7 @@ import { GRID_SIZE } from './types';
  * game or the club.
  */
 
-export type Slot = 'skin' | 'hat' | 'frame' | 'buddy';
+export type Slot = 'skin' | 'hat' | 'frame' | 'buddy' | 'aura';
 
 /** Which game an item belongs to; `club` items are seasonal and belong to no one game. */
 export type ItemGame = GameId | 'club';
@@ -1164,6 +1165,8 @@ export const items: Item[] = [
   ...frames.map(i => ({ ...i, slot: 'frame' as const })),
   ...buddies.map(i => ({ ...i, slot: 'buddy' as const })),
   ...seasonal.map(i => ({ ...i, slot: 'hat' as const })),
+  // Auras belong to no machine: any capsule can be one (see ./auras).
+  ...AURAS.map(({ id, name, colors }) => ({ id, name, colors, game: 'club' as const, slot: 'aura' as const })),
 ];
 
 const byId = new Map(items.map(i => [i.id, i]));
@@ -1224,7 +1227,7 @@ function contrast(a: string, b: string): number {
 /** Adds the equipped items' own colours to a palette. */
 export function withItems(palette: Palette, config: AvatarConfig): Palette {
   const colors = { ...palette.colors };
-  for (const slot of ['skin', 'hat', 'frame', 'buddy'] as const) {
+  for (const slot of ['skin', 'hat', 'frame', 'buddy', 'aura'] as const) {
     const item = itemById(config[slot]);
     if (!item) continue;
     item.colors.forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });

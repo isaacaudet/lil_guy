@@ -33,7 +33,7 @@ export const T = {
  * Each layer keeps its own colours, so a gold hat on a glass jar works.
  */
 export const LOCAL = 101;
-export const LAYER = { skin: 20, hat: 30, frame: 40, buddy: 50 } as const;
+export const LAYER = { skin: 20, hat: 30, frame: 40, buddy: 50, aura: 60 } as const;
 
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
 export type Stamp = number[][];

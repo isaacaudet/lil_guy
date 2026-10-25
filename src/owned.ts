@@ -1,4 +1,5 @@
 import { hash } from './hash';
+import { AURAS, AURA_ODDS } from './auras';
 import { gameItems, freeItem, inSeason, itemById, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
 import type { GameId } from './types';
@@ -24,7 +25,8 @@ import type { GameId } from './types';
  * a copy looks the same everywhere it is drawn.
  */
 
-export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold';
+export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold'
+  | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl';
 
 export interface Owned {
   item: string;
@@ -47,6 +49,7 @@ export const GRADES = [
   { id: 'prized', name: 'Prized', color: '#D32CE6' },
   { id: 'mythic', name: 'Mythic', color: '#EB4B4B' },
   { id: 'grail', name: '★ Grail', color: '#E4AE39' },
+  { id: 'aura', name: '★ Aura', color: '#19D3C5' },
 ] as const;
 export type Grade = (typeof GRADES)[number];
 
@@ -55,7 +58,7 @@ export type Grade = (typeof GRADES)[number];
  * it can come in. The flashy finishes only exist barely worn, so there is no
  * Battered Nebula.
  */
-export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number] }> = {
+export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number]; aura?: number }> = {
   'plain':    { name: 'Plain',    grade: 0, odds: 79.87, scuffs: [0, 1] },
   'sunset':   { name: 'Sunset',   grade: 1, odds: 15.98, scuffs: [0, 0.08] },
   'tempered': { name: 'Tempered', grade: 2, odds: 1.6,   scuffs: [0, 1] },
@@ -63,6 +66,16 @@ export const FINISHES: Record<Finish, { name: string; grade: number; odds: numbe
   'prism':    { name: 'Prism',    grade: 3, odds: 0.5,   scuffs: [0, 0.08] },
   'negative': { name: 'Negative', grade: 3, odds: 0.2,   scuffs: [0, 0.08] },
   'gold':     { name: 'Gold',     grade: 4, odds: 0.25,  scuffs: [0, 0.08] },
+  // An aura's own finishes (./auras): never rolled on an item; `aura` is each
+  // one's share of auras, in percent. Any float, since a worn aura shows it.
+  'classic':  { name: 'Classic',  grade: 5, odds: 0, aura: 50,  scuffs: [0, 1] },
+  'fade':     { name: 'Fade',     grade: 5, odds: 0, aura: 22,  scuffs: [0, 1] },
+  'frost':    { name: 'Frost',    grade: 5, odds: 0, aura: 12,  scuffs: [0, 1] },
+  'toxic':    { name: 'Toxic',    grade: 5, odds: 0, aura: 8,   scuffs: [0, 1] },
+  'shadow':   { name: 'Shadow',   grade: 5, odds: 0, aura: 5,   scuffs: [0, 1] },
+  'sapphire': { name: 'Deep sea · Sapphire', grade: 5, odds: 0, aura: 1.5, scuffs: [0, 1] },
+  'ruby':     { name: 'Deep sea · Ruby', grade: 5, odds: 0, aura: 1.2, scuffs: [0, 1] },
+  'pearl':    { name: 'Deep sea · Black pearl', grade: 5, odds: 0, aura: 0.3, scuffs: [0, 1] },
 };
 
 /** Condition, by scuff, in the words toy collectors use. */
@@ -115,7 +128,8 @@ export function special(o: Owned): string | undefined {
 }
 
 export function gradeOf(o: Owned): Grade {
-  // A famous print lifts a copy one grade.
+  if (FINISHES[o.finish].grade === 5) return GRADES[5];
+  // A famous print lifts a copy one grade, as far as Grail.
   return GRADES[Math.min(4, FINISHES[o.finish].grade + (special(o) ? 1 : 0))];
 }
 
@@ -124,6 +138,7 @@ export function nameOf(o: Owned): string {
   const item = itemById(o.item);
   const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
   const tally = o.tally !== undefined ? 'Tallied ' : '';
+  if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === 'classic' ? '' : ` | ${FINISHES[o.finish].name}`}`;
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
     : o.finish === 'tempered' ? (special(o) ? 'Deep Blue' : `${temperTint(o.print)} Tempered`) : FINISHES[o.finish].name;
@@ -192,7 +207,23 @@ export function starter(name: string, game: GameId): Owned {
  * drop time and stored with the copy — never from anything a player picks.
  */
 export function roll(seed: string, game: GameId): Owned {
+  if (unit(`${seed}|aura`) < AURA_ODDS) return rollAura(seed);
   return rollFrom(gameItems(game).filter(i => !i.free), seed);
+}
+
+/** An aura, from any machine: which one, its finish by share, any float, a print and maybe a tally. */
+function rollAura(seed: string): Owned {
+  const aura = AURAS[hash(`${seed}|which`) % AURAS.length];
+  let r = unit(`${seed}|finish`) * 100;
+  let finish: Finish = 'classic';
+  for (const [id, f] of Object.entries(FINISHES) as [Finish, (typeof FINISHES)[Finish]][]) {
+    if (!f.aura) continue;
+    r -= f.aura;
+    if (r < 0) { finish = id; break; }
+  }
+  const o: Owned = { item: aura.id, finish, scuff: Math.round(unit(`${seed}|float`) * 1e7) / 1e7, print: hash(`${seed}|pattern`) % 1000 };
+  if (unit(`${seed}|stattrak`) < 0.1) o.tally = 0;
+  return o;
 }
 
 /**
@@ -295,6 +326,15 @@ const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, origina
     const inverted: RGB = [255 - original[0], 255 - original[1], 255 - original[2]];
     return mix(inverted, [92, 52, 160], 0.22);
   },
+  // Auras are coloured by ./auras, not here.
+  'classic': (_x, _y, _l, _p, original) => original,
+  'fade': (_x, _y, _l, _p, original) => original,
+  'frost': (_x, _y, _l, _p, original) => original,
+  'toxic': (_x, _y, _l, _p, original) => original,
+  'shadow': (_x, _y, _l, _p, original) => original,
+  'sapphire': (_x, _y, _l, _p, original) => original,
+  'ruby': (_x, _y, _l, _p, original) => original,
+  'pearl': (_x, _y, _l, _p, original) => original,
   'gold': (x, y, l) => {
     if ((x + y) % 6 === 0 && l > 0.5) return rgb('#FFFBE6');
     return l > 0.75 ? rgb('#FFF1B0') : l > 0.5 ? rgb('#F2C230') : l > 0.3 ? rgb('#C8901E') : rgb('#7A5212');
