@@ -594,6 +594,30 @@
   @keyframes chdrop { 0% { transform: translateY(-70px) scale(2.2) rotate(-12deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
   .shout.big { font-size: 64px; min-height: 64px; }
 
+  /* the trade-up machine: five copies in, a dial that could land on a dud, the next grade or two up */
+  .tu { position: fixed; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px 16px; background: #0b0e18; }
+  .tu-cap { font-size: 32px; text-shadow: var(--ts); text-align: center; }
+  .tu-in { display: flex; gap: 10px; height: 72px; position: relative; z-index: 1; }
+  .tu-in .tr-c { width: 64px; height: 64px; transition: transform .45s cubic-bezier(.55,0,.8,.4), opacity .45s; }
+  .tu-in .tr-c.in { transform: translate(var(--tx), 150px) scale(.25) rotate(var(--rot)); opacity: 0; }
+  .tu-mach { position: relative; width: 300px; padding: 28px 20px 20px; border-radius: 16px; background: var(--panel-2); box-shadow: 0 6px 0 var(--edge), inset 0 -8px 0 rgba(0,0,0,.25); display: grid; gap: 12px; }
+  .tu-mouth { position: absolute; left: 50%; top: -10px; width: 120px; height: 20px; translate: -50% 0; border-radius: 6px; background: var(--well); box-shadow: inset 0 4px 0 #000; }
+  .tu-screen { height: 72px; border-radius: 10px; background: var(--well); display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 3px #000; }
+  .tu-dial { font-size: 48px; line-height: 1; color: var(--dc, var(--ink-3)); text-shadow: 0 3px 0 #000; }
+  .tu-dial.land { animation: slam .45s cubic-bezier(.2,1.5,.35,1); }
+  .tu-lamps { display: flex; justify-content: center; gap: 10px; }
+  .tu-lamps i { width: 16px; height: 16px; border-radius: 3px; background: #3a4258; box-shadow: 0 3px 0 var(--edge); }
+  .tu-mach.working .tu-lamps i { animation: lamp .5s steps(2) infinite; }
+  .tu-mach.working .tu-lamps i:nth-child(2n) { animation-delay: .25s; }
+  @keyframes lamp { 50% { background: var(--gold); } }
+  .tu-bar { height: 16px; border-radius: 4px; background: var(--well); overflow: hidden; }
+  .tu-bar i { display: block; height: 100%; width: 0; background: conic-gradient(from 270deg at 8px 8px, var(--gold) 90deg, var(--gold-d) 0) 0 0 / 12px 16px; transition: width .2s steps(8); }
+  .tu-chute { justify-self: center; width: 96px; height: 18px; border-radius: 0 0 8px 8px; background: var(--well); }
+  .tu-mach.working { animation: churn .12s steps(2) infinite; }
+  @keyframes churn { 50% { translate: 2px -1px; } }
+  .tu-mach.done { animation: thud .35s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes thud { 0% { transform: scale(1.06, .92); } 100% { transform: none; } }
+  .tu-odds { font-size: 16px; color: var(--ink-3); text-align: center; }
   .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: var(--paper); color: var(--paper-ink); padding: 10px 16px; border-radius: 10px; font-size: 16px; box-shadow: var(--lift), 0 12px 30px rgba(0,0,0,.4); }
 
   @media (max-width: 1000px) {
@@ -769,7 +793,7 @@
   </section>
 
   <section id="trade-sec">
-    <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade for one of the next. What you wear and your starters stay put.</p></div></div>
+    <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade into the machine. Usually one of the next grade comes out; sometimes a dud, now and then two grades up.</p></div></div>
     <div class="trades" id="trades"></div>
   </section>
  </div>
@@ -859,6 +883,18 @@
     </div>
   </div>
 </div>
+<div class="tu" id="tu" hidden role="dialog" aria-modal="true" aria-label="Trade up">
+  <p class="tu-cap" id="tu-cap"></p>
+  <div class="tu-in" id="tu-in"></div>
+  <div class="tu-mach" id="tu-mach">
+    <span class="tu-mouth"></span>
+    <div class="tu-screen"><span class="tu-dial" id="tu-dial"></span></div>
+    <div class="tu-lamps"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="tu-bar"><i id="tu-fill"></i></div>
+    <span class="tu-chute"></span>
+  </div>
+  <p class="tu-odds" id="tu-odds"></p>
+</div>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="../lil-guy.js"></script>
@@ -882,7 +918,8 @@
   const cap = s => s[0].toUpperCase() + s.slice(1);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   // Tickets are endless for now (the owner), here and on the live site: nothing ever costs any.
-  const INFINITE = true;
+  // Everyone opens for free for now; the server says who does (the founder always).
+  let INFINITE = true;
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const today = new Date().toISOString().slice(0, 10);
   const tk = '<svg class="tk"><use href="#ticket"/></svg>';
@@ -1463,6 +1500,7 @@ void main() {
     return d;
   }
   function fromServer(s) {
+    if (typeof s.infinite === 'boolean') INFINITE = s.infinite;
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', tickets: s.tickets, free: s.freeDay, checkin: s.checkinDay,
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [] };
@@ -1964,18 +2002,24 @@ void main() {
     return top;
   }
 
+  const LUCK_WORDS = { beginner: 'Beginner’s luck', pity: 'Lucky break' };
   async function open(g, how) {
     if (isLive()) {
       try {
         const r = await meApi('open', { game: g, free: how === 'Daily capsule' });
         state.tickets = r.tickets; state.free = r.freeDay; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
-        reveal(LG.decode(r.copy.code), g, how);
+        reveal(LG.decode(r.copy.code), g, r.luck ? `${how} · ${LUCK_WORDS[r.luck]}` : how);
       } catch (e) { toast(e.status === 402 ? 'Not enough tickets. Collect today’s tickets below.' : e.message); renderAll(); }
       return;
     }
-    let o = dev ? best(i => LG.roll(`${state.seed}:dev:${state.opened}:${i}`, g)) : LG.roll(`${state.seed}:${how}:${today}:${state.opened}`, g);
+    // Beginner's luck, as the server does it: each of your first three capsules is the best of three rolls.
+    const beginner = !dev && (state.opened || 0) < 3;
+    let o = dev ? best(i => LG.roll(`${state.seed}:dev:${state.opened}:${i}`, g))
+      : beginner ? [0, 1, 2].map(i => LG.roll(`${state.seed}:${how}:${today}:${state.opened}:${i}`, g)).sort((a, b) => gradeIdx(b) - gradeIdx(a) || a.scuff - b.scuff)[0]
+      : LG.roll(`${state.seed}:${how}:${today}:${state.opened}`, g);
     // The day's free capsule is a souvenir of the day.
     if (how === 'Daily capsule') o = { ...o, souvenir: today };
+    if (beginner) how = `${how} · ${LUCK_WORDS.beginner}`;
     state.opened++;
     reveal(o, g, dev ? 'Dev drop' : how);
   }
@@ -2607,27 +2651,62 @@ void main() {
     const g = +b.dataset.trade, give = tradeable(g).slice(0, TRADE);
     if (give.length < TRADE) return;
     $('trades').querySelectorAll('[data-trade]').forEach(x => { x.disabled = true; });
-    // The five fly into the next grade.
-    const row = b.closest('.trade'), to = row.querySelector('.tr-get').getBoundingClientRect();
-    row.querySelectorAll('.tr-c:not(.gap)').forEach((c, k) => { const r = c.getBoundingClientRect(); c.style.setProperty('--fly', `${to.left + to.width / 2 - r.left - r.width / 2}px`); c.style.transitionDelay = `${k * 60}ms`; });
-    row.classList.add('going'); SFX.riser(g + 1, 0.7);
-    await sleep(800);
-    let o;
-    if (isLive()) {
-      try {
-        const r = await meApi('trade', { ids: give.map(c => state.ids?.[c.code]) });
-        o = LG.decode(r.copy.code); state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
-      } catch (err) { toast(err.message); renderColl(); return; }
-    } else {
-      const game = LG.itemById(give[strHash(`${state.seed}:${state.opened}`) % TRADE].o.item).game;
-      for (let i = 0; i < 50000; i++) { o = LG.roll(`${state.seed}:trade:${state.opened}:${i}`, game); if (gradeIdx(o) === g + 1) break; }
-      state.opened++;
-    }
+    // Ask for the result now; the machine plays while it comes back.
+    const result = isLive()
+      ? meApi('trade', { ids: give.map(c => state.ids?.[c.code]) }).then(r => { state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; return { o: LG.decode(r.copy.code), outcome: r.outcome || 'up' }; })
+      : Promise.resolve(demoTrade(g, give));
+    result.catch(() => {});
+    const got = await tradeMachine(g, give, result);
+    if (!got) { renderColl(); return; }
     const gone = new Set(give.map(c => c.code));
     state.copies = state.copies.filter(code => !gone.has(code));
     state.fresh = (state.fresh || []).filter(code => !gone.has(code));
-    reveal(o, null, 'Trade up');
+    reveal(got.o, null, `Trade up · ${TRADE_WORDS[got.outcome]}`);
   });
+
+  // The demo's trade, with the server's odds: a dud one time in five, two grades up one in twenty, never past Grail.
+  const TRADE_WORDS = { dud: 'A dud', up: 'One grade up', jump: 'Two grades up!' };
+  function demoTrade(g, give) {
+    const u = (strHash(`${state.seed}:trade-odds:${state.opened}`) % 10000) / 10000, top = 4;
+    const out = u < 0.2 ? { grade: g, outcome: 'dud' } : u >= 0.95 && g + 2 <= top ? { grade: g + 2, outcome: 'jump' } : { grade: Math.min(top, g + 1), outcome: 'up' };
+    const game = LG.itemById(give[strHash(`${state.seed}:${state.opened}`) % TRADE].o.item).game;
+    let o;
+    for (let i = 0; i < 50000; i++) { o = LG.roll(`${state.seed}:trade:${state.opened}:${i}`, game); if (gradeIdx(o) === out.grade) break; }
+    state.opened++;
+    return { o, outcome: out.outcome };
+  }
+  // The machine: the five drop in one by one, it churns while a dial flicks between what could come out, then it
+  // lands. Resolves to the result, or null if the trade failed.
+  async function tradeMachine(g, give, result) {
+    const from = LG.GRADES[g], cands = [g, g + 1, g + 2].filter(k => k <= 4).map(k => LG.GRADES[k]);
+    $('tu-cap').textContent = `Five ${from.name} in`;
+    $('tu-odds').textContent = `Usually ${LG.GRADES[Math.min(4, g + 1)].name}. One in five is a dud.${g + 2 <= 4 ? ` One in twenty jumps to ${LG.GRADES[g + 2].name}.` : ''}`;
+    $('tu-in').innerHTML = give.map((c, k) => `<span class="tr-c" style="--g:${from.color};--tx:${(2 - k) * 74}px;--rot:${(k - 2) * 40}deg"><canvas aria-hidden="true"></canvas></span>`).join('');
+    $('tu-in').querySelectorAll('canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 52, 52));
+    const dial = $('tu-dial'), fill = $('tu-fill'), mach = $('tu-mach');
+    dial.textContent = '?'; dial.style.removeProperty('--dc'); dial.classList.remove('land'); fill.style.width = '0'; mach.classList.remove('working', 'done');
+    $('tu').hidden = false; SFX.whoosh(0.22, 400, 2400, 0.06);
+    await sleep(500);
+    const cells = [...$('tu-in').children];
+    for (let k = 0; k < cells.length; k++) { cells[k].classList.add('in'); SFX.clunk(); fill.style.width = `${(k + 1) * 8}%`; await sleep(240); }
+    mach.classList.add('working'); SFX.riser(g + 1, 1.6);
+    // Flick between the outcomes, slowing down, until the result is in and the time is up.
+    let res = null, err = null; result.then(r => { res = r; }, e => { err = e; });
+    const t0 = performance.now();
+    for (let i = 0, wait = 60; ; i++) {
+      const c = cands[i % cands.length]; dial.textContent = c.name; dial.style.setProperty('--dc', c.color); SFX.reelTick(Math.min(1, (performance.now() - t0) / 2500));
+      fill.style.width = `${Math.min(96, 40 + (performance.now() - t0) / 30)}%`;
+      if (err) { $('tu').hidden = true; toast(err.message); return null; }
+      if (res && performance.now() - t0 > 1700 && LG.GRADES[gradeIdx(res.o)] === c) break;
+      await sleep(wait); if (performance.now() - t0 > 1000) wait = Math.min(260, wait * 1.18);
+    }
+    mach.classList.remove('working'); mach.classList.add('done'); fill.style.width = '100%';
+    dial.classList.add('land'); SFX.reelStop(); if (res.outcome === 'dud') SFX.bad(); else SFX.good();
+    $('tu-cap').textContent = res.outcome === 'dud' ? 'A dud.' : res.outcome === 'jump' ? 'Two grades up!' : `${LG.GRADES[gradeIdx(res.o)].name}!`;
+    await sleep(1100);
+    $('tu').hidden = true;
+    return res;
+  }
 
   /* ---------------------------------------------- who you could get: a deal of guys from fresh names, some wearing
    * something a capsule could give them */

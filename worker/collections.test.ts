@@ -1,6 +1,6 @@
 import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import { api, RULES, todayGame } from './index.js';
+import { api, RULES, todayGame, tradeGrade } from './index.js';
 import { readFileSync } from 'node:fs';
 import { decode, encode } from '../src/index-headless.ts';
 
@@ -77,7 +77,8 @@ test('trade up: five unworn copies of one grade for one of the next, each copy t
   const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
   expect(r.status).toBe(201);
   const got: any = await r.json();
-  expect(got.copy.grade).toBe(1);
+  // Usually the next grade; a dud stays at the same grade and a jump goes two up.
+  expect({ dud: 0, up: 1, jump: 2 }[got.outcome as string]).toBe(got.copy.grade);
   expect(got.copy.source).toBe('trade');
   const left: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(left.copies.some((x: any) => five.includes(x.id))).toBe(false);
@@ -85,6 +86,15 @@ test('trade up: five unworn copies of one grade for one of the next, each copy t
   expect((await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).status).toBe(404);
   expect((await call('/me/mia/trade', 'POST', { ids: five })).status).toBe(401);
   expect(b.owner).toBeTruthy();
+});
+
+test('a trade up is usually the next grade, sometimes a dud, now and then two up, never past Grail', () => {
+  const at = (u: number, g: number) => tradeGrade(g, u, 4);
+  expect(at(0.1, 0)).toEqual({ grade: 0, outcome: 'dud' });
+  expect(at(0.5, 0)).toEqual({ grade: 1, outcome: 'up' });
+  expect(at(0.97, 0)).toEqual({ grade: 2, outcome: 'jump' });
+  expect(at(0.97, 3)).toEqual({ grade: 4, outcome: 'up' });
+  expect(at(0.5, 3)).toEqual({ grade: 4, outcome: 'up' });
 });
 
 test('the day’s tickets are collected once', async () => {

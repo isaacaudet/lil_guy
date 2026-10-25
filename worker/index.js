@@ -30,6 +30,14 @@ const free = key => RULES.infinite || key === 'isaac';
 // promised), and after a long dry run below Prized the next capsule is Prized or better.
 export const LUCK = { beginner: 3, rolls: 3, pity: 30, tries: 5000 };
 const today = () => new Date().toISOString().slice(0, 10);
+// A trade up is a gamble, like CS's: usually the next grade, sometimes a dud back at the same grade, now and then
+// two grades up. Never past Grail.
+export const TRADE_ODDS = { dud: 0.2, jump: 0.05 };
+export function tradeGrade(grade, u, top) {
+  if (u < TRADE_ODDS.dud) return { grade, outcome: 'dud' };
+  if (u >= 1 - TRADE_ODDS.jump && grade + 2 <= top) return { grade: grade + 2, outcome: 'jump' };
+  return { grade: Math.min(top, grade + 1), outcome: 'up' };
+}
 export const todayGame = () => GAMES[Math.floor(Date.now() / 864e5) % GAMES.length];
 
 // "isaac" is the founder's: a clean guy in a crown, and two copies no capsule gives, the Gold flag and the
@@ -198,15 +206,16 @@ async function me(request, env, key, action) {
     // A trade never makes an aura: they only come out of capsules.
     if (grade >= GRADES.findIndex(g => g.id === 'grail')) return json({ error: 'A Grail is as high as a trade goes' }, 400);
     const game = give[Math.floor(Math.random() * give.length)].game;
+    const out = tradeGrade(grade, Math.random(), GRADES.findIndex(g => g.id === 'grail'));
     let o = null;
-    for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (GRADES.findIndex(g => g.id === gradeOf(r).id) === grade + 1) { o = r; break; } }
+    for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (GRADES.findIndex(g => g.id === gradeOf(r).id) === out.grade) { o = r; break; } }
     if (!o) return json({ error: 'Could not trade just now' }, 503);
     const fits = `key = ? AND worn = 0 AND grade = ? AND source NOT IN ('starter', 'founder') AND id IN (${marks})`;
     const gone = await env.DB.prepare(`DELETE FROM copies WHERE ${fits} AND (SELECT COUNT(*) FROM copies WHERE ${fits}) = ?`)
       .bind(key, grade, ...ids, key, grade, ...ids, ids.length).run();
     if (gone.meta.changes !== ids.length) return json({ error: 'Those copies changed. Reload and try again.' }, 409);
     const copy = await insertCopy(env, copyRow(o, key, 'trade'));
-    return json({ copy: publicCopy(copy), traded: ids }, 201);
+    return json({ copy: publicCopy(copy), traded: ids, outcome: out.outcome }, 201);
   }
   if (action === 'wear') {
     const slot = body.slot;
