@@ -146,6 +146,8 @@ interface Item {
   game: ItemGame;
   slot: Slot;
   name: string;
+  /** One line on what it is, for items that don't explain themselves. */
+  about?: string;
   /** The hat every player has in this game from the start. */
   free?: boolean;
   /** Colours for the art's `1`–`9`. */
@@ -1090,24 +1092,38 @@ declare function getColor(colors: readonly string[], index: number): string;
  * How rare things are, as "one in N".
  *
  * A guy's rarity is the chance of rolling his exact combination of visible
- * traits — shape, eyes, mouth, cheeks, topper, markings, accessory and
- * colourway — so a laser-eyed guy in a crown is rarer than one with bean eyes
+ * traits — shape, eyes, mouth, cheeks, topper, markings, accessory, colourway,
+ * tone, arms, feet and whether he is Lucky — so a laser-eyed guy in a crown is rarer than one with bean eyes
  * and no hat. A copy's rarity is the chance a capsule gives exactly that: its
  * item, its finish, a print as special as its print, a scuff at least as low
  * as its scuff, and a tally if it has one.
  */
+/** The twelve traits, in the order `traitOdds` lists them. */
+declare const TRAIT_SLOTS: readonly ["shape", "eyes", "mouth", "cheeks", "topper", "markings", "accessory", "colour", "tone", "arms", "feet", "lucky"];
+type TraitSlot = (typeof TRAIT_SLOTS)[number];
+/** Names for the traits that are only an index: tone (`shade`), arms and feet. */
+declare const TONE_NAMES: readonly ["pastel", "as picked", "vivid"];
+declare const ARM_NAMES: readonly ["none", "by the sides", "waving"];
+declare const FOOT_NAMES: readonly ["nubs", "tiptoes", "wide", "socks", "tucked"];
 interface TraitOdds {
-  slot: string;
+  slot: TraitSlot;
   name: string;
   /** Chance of this trait, 0–1. */
   chance: number;
 }
-/** Each visible trait of a guy and how likely it was. */
+/** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 declare function traitOdds(config: AvatarConfig): TraitOdds[];
 /** One in how many guys has exactly this combination. */
 declare function guyOneIn(config: AvatarConfig): number;
 /** One in how many capsules for its game give a copy at least this good. */
 declare function copyOneIn(o: Owned): number;
+
+//#endregion
+//#region src/icons.d.ts
+declare const TRAIT_ICONS: Record<TraitSlot, string>;
+/** The rarity tiers the site shows, rising: a pip, a diamond, a gem, a star, a crown. */
+type Tier = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Chase';
+declare const TIER_ICONS: Record<Tier, string>;
 
 //#endregion
 //#region src/look.d.ts
@@ -1398,5 +1414,5 @@ interface Note {
 declare function collectorNotes(o: Owned): Note[];
 
 //#endregion
-export { AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

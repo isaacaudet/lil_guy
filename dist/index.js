@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-CoHdTafk.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-D-qjKL6W.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -1402,8 +1402,51 @@ function getColor(colors, index) {
 
 //#endregion
 //#region src/rarity.ts
+/**
+* How rare things are, as "one in N".
+*
+* A guy's rarity is the chance of rolling his exact combination of visible
+* traits — shape, eyes, mouth, cheeks, topper, markings, accessory, colourway,
+* tone, arms, feet and whether he is Lucky — so a laser-eyed guy in a crown is rarer than one with bean eyes
+* and no hat. A copy's rarity is the chance a capsule gives exactly that: its
+* item, its finish, a print as special as its print, a scuff at least as low
+* as its scuff, and a tally if it has one.
+*/
+/** The twelve traits, in the order `traitOdds` lists them. */
+const TRAIT_SLOTS = [
+	"shape",
+	"eyes",
+	"mouth",
+	"cheeks",
+	"topper",
+	"markings",
+	"accessory",
+	"colour",
+	"tone",
+	"arms",
+	"feet",
+	"lucky"
+];
+/** Names for the traits that are only an index: tone (`shade`), arms and feet. */
+const TONE_NAMES = [
+	"pastel",
+	"as picked",
+	"vivid"
+];
+const ARM_NAMES = [
+	"none",
+	"by the sides",
+	"waving"
+];
+const FOOT_NAMES = [
+	"nubs",
+	"tiptoes",
+	"wide",
+	"socks",
+	"tucked"
+];
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
-/** Each visible trait of a guy and how likely it was. */
+/** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
 	return [
 		{
@@ -1447,7 +1490,22 @@ function traitOdds(config) {
 			chance: share(paletteWeights, config.palette)
 		},
 		{
-			slot: "variant",
+			slot: "tone",
+			name: TONE_NAMES[config.shade],
+			chance: share(shadeWeights, config.shade)
+		},
+		{
+			slot: "arms",
+			name: ARM_NAMES[config.arms],
+			chance: share(armWeights, config.arms)
+		},
+		{
+			slot: "feet",
+			name: FOOT_NAMES[config.feet],
+			chance: share(footWeights, config.feet)
+		},
+		{
+			slot: "lucky",
 			name: config.lucky ? "Lucky" : "regular",
 			chance: config.lucky ? 1 / LUCKY_ODDS : 1 - 1 / LUCKY_ODDS
 		}
@@ -1471,6 +1529,285 @@ function copyOneIn(o) {
 	if (o.fx) p *= 1 / EFFECTS[o.fx][f.aura ? "aura" : "item"];
 	return 1 / p;
 }
+
+//#endregion
+//#region src/icons.ts
+/**
+* Pixel icons for the traits and the rarity tiers, as SVG strings.
+*
+* Each is drawn on a 12x12 grid in `currentColor`, so the page colours it
+* (a tier icon takes its tier's colour), with at most two fixed accents
+* where the colour is the point (blush pink, a sprout's green). They carry a
+* `viewBox` and no size: CSS sizes them, crisp at any multiple of 12px and
+* readable from 24px.
+*/
+/** A grid's letters: `#` is `currentColor`, the rest its accents, `.` empty. */
+function icon(rows, accents = {}) {
+	const fills = {
+		"#": "currentColor",
+		...accents
+	};
+	const rects = [];
+	rows.forEach((row, y) => {
+		for (let x = 0; x < row.length;) {
+			const ch = row[x];
+			let end = x + 1;
+			while (end < row.length && row[end] === ch) end++;
+			if (fills[ch]) rects.push(`<rect x="${x}" y="${y}" width="${end - x}" height="1" fill="${fills[ch]}"/>`);
+			x = end;
+		}
+	});
+	const w = Math.max(...rows.map((r) => r.length));
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${rects.join("")}</svg>`;
+}
+const PINK = "#FF6F9F";
+const GREEN = "#4CC25A";
+const TRAIT_ICONS = {
+	shape: icon([
+		"............",
+		"....####....",
+		"..########..",
+		".##########.",
+		".##########.",
+		"############",
+		"############",
+		"############",
+		".##########.",
+		"..########..",
+		"..##....##..",
+		"............"
+	]),
+	eyes: icon([
+		"............",
+		"............",
+		"..##....##..",
+		".####..####.",
+		".#.##..#.##.",
+		".####..####.",
+		".####..####.",
+		".####..####.",
+		"..##....##..",
+		"............",
+		"............",
+		"............"
+	]),
+	mouth: icon([
+		"............",
+		"............",
+		"............",
+		"##........##",
+		"##........##",
+		".##########.",
+		".##########.",
+		"..###aa###..",
+		"...##aa##...",
+		"....####....",
+		"............",
+		"............"
+	], { a: PINK }),
+	cheeks: icon([
+		"............",
+		"............",
+		"...##..##...",
+		"...##..##...",
+		"............",
+		"............",
+		".aaa....aaa.",
+		"aaaaa..aaaaa",
+		"aaaaa..aaaaa",
+		".aaa....aaa.",
+		"............",
+		"............"
+	], { a: PINK }),
+	topper: icon([
+		"..aa....aa..",
+		".aaaa..aaaa.",
+		".aaaaa#aaaa.",
+		"..aaa##aaa..",
+		".....##.....",
+		".....##.....",
+		"............",
+		"...######...",
+		".##########.",
+		"############",
+		"############",
+		"############"
+	], { a: GREEN }),
+	markings: icon([
+		"....####....",
+		"..########..",
+		".##..######.",
+		".##..###..#.",
+		"#########..#",
+		"####..######",
+		"####..######",
+		"#######..###",
+		".#.####..##.",
+		".#..######..",
+		"..########..",
+		"....####...."
+	]),
+	accessory: icon([
+		"............",
+		"............",
+		"##........##",
+		"####....####",
+		"#####..#####",
+		"############",
+		"############",
+		"#####..#####",
+		"####....####",
+		"##........##",
+		"............",
+		"............"
+	]),
+	colour: icon([
+		"............",
+		"...#####....",
+		"..########..",
+		".##aa##bb##.",
+		".##aa##bb##.",
+		"##########..",
+		"#########...",
+		"##cc####....",
+		"##cc#####...",
+		".#########..",
+		"..#######...",
+		"............"
+	], {
+		a: PINK,
+		b: GREEN,
+		c: PINK
+	}),
+	tone: icon([
+		"............",
+		"....####....",
+		"..#####.##..",
+		".######...#.",
+		".######...#.",
+		"#######....#",
+		"#######....#",
+		".######...#.",
+		".######...#.",
+		"..#####.##..",
+		"....####....",
+		"............"
+	]),
+	arms: icon([
+		"##........##",
+		"##........##",
+		".##......##.",
+		"..##.##.##..",
+		"...######...",
+		"..########..",
+		"..########..",
+		"..########..",
+		"..########..",
+		"...######...",
+		"...##..##...",
+		"............"
+	]),
+	feet: icon([
+		"............",
+		".#.#....#.#.",
+		"............",
+		".###....###.",
+		"####....####",
+		"####....####",
+		"####....####",
+		".###....###.",
+		".###....###.",
+		"..#......#..",
+		"............",
+		"............"
+	]),
+	lucky: icon([
+		"............",
+		"..aaa..aaa..",
+		".aaaaa.aaaa.",
+		".aaaaaaaaaa.",
+		"..aaaaaaaa..",
+		"....aaaa....",
+		"..aaaaaaaa..",
+		".aaaaaaaaaa.",
+		".aaaaa#aaaa.",
+		"..aaa.#aaa..",
+		".......#....",
+		"........#..."
+	], { a: GREEN })
+};
+const TIER_ICONS = {
+	Common: icon([
+		"............",
+		"............",
+		"............",
+		"............",
+		"....####....",
+		"...######...",
+		"...######...",
+		"....####....",
+		"............",
+		"............",
+		"............",
+		"............"
+	]),
+	Uncommon: icon([
+		"............",
+		".....##.....",
+		"....####....",
+		"...######...",
+		"..########..",
+		".##########.",
+		".##########.",
+		"..########..",
+		"...######...",
+		"....####....",
+		".....##.....",
+		"............"
+	]),
+	Rare: icon([
+		"............",
+		"............",
+		"..########..",
+		".##.####.##.",
+		"############",
+		"............",
+		"############",
+		".##########.",
+		"..########..",
+		"....####....",
+		".....##.....",
+		"............"
+	]),
+	Legendary: icon([
+		".....##.....",
+		".....##.....",
+		"....####....",
+		"....####....",
+		"############",
+		".##########.",
+		"..########..",
+		"...######...",
+		"..########..",
+		"..###..###..",
+		".###....###.",
+		".##......##."
+	]),
+	Chase: icon([
+		"............",
+		"#....##....#",
+		"##..####..##",
+		"###.####.###",
+		"############",
+		"############",
+		"############",
+		"############",
+		"............",
+		"############",
+		"############",
+		"............"
+	])
+};
 
 //#endregion
 //#region src/look.ts
@@ -2576,5 +2913,5 @@ function collectorNotes(o) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map
