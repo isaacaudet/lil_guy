@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  db.exec(readFileSync(new URL('../migrations/0001_names.sql', import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', DB: { prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
       async first() { return db.prepare(sql).get(...args); }, async all() { return { results: db.prepare(sql).all(...args) }; },
-      async run() { const r = db.prepare(sql).run(...args); return { meta: { changes: r.changes } }; } };
+      async run() { const r = db.prepare(sql).run(...args); return { meta: { changes: r.changes, last_row_id: Number(r.lastInsertRowid) } }; } };
     return statement;
   } }, db };
 });

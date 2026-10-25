@@ -255,6 +255,55 @@
   .fintile b { font: 400 20px/1 var(--pixel); }
   .fintile small { font-size: 12.5px; color: var(--cream-2); }
 
+  /* ------------------------------------------------------------ the site: pages, everyone's guys, profiles, the market */
+  .site-nav { display: flex; gap: 4px; margin-left: 20px; }
+  .site-nav a { display: flex; align-items: center; height: 34px; padding: 0 13px; border-radius: 11px; font-size: 15px; font-weight: 700; color: var(--cream-2); text-decoration: none; }
+  .site-nav a:hover { color: var(--cream); }
+  .site-nav a[aria-current="page"] { background: rgba(250,242,221,.1); color: var(--cream); }
+  .page-h { position: relative; z-index: 2; padding: 18px 0 6px; }
+  .page-h h1 { font-family: "m6x11plus", "VT323", monospace; font-size: 64px; font-weight: 400; line-height: 1; -webkit-font-smoothing: auto; }
+  .page-h .kicker { font-family: "m6x11plus", "VT323", monospace; font-size: 18px; letter-spacing: 0; text-transform: none; color: var(--cream-2); }
+  .page-h .sub { margin: 14px 0 0; font-size: 17px; color: rgba(250,242,221,.86); max-width: 60ch; }
+  body:not([data-route="home"]) .hero, body:not([data-route="home"]) .hand-h, body:not([data-route="home"]) .hand { display: none; }
+  body[data-route="home"] .page-h { display: none; }
+  .view { display: grid; gap: 88px; }
+  .search { display: flex; align-items: center; gap: 6px; height: 48px; max-width: 360px; padding: 0 16px; margin-bottom: 22px; border-radius: 14px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+  .search span { color: var(--secondary); font-weight: 800; }
+  .search input { flex: 1; min-width: 0; border: 0; outline: none; background: none; color: var(--ink); font: 700 17px/1 "Bricolage Grotesque", system-ui, sans-serif; }
+  .guys { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 30px 22px; }
+  .gcard { display: grid; gap: 10px; text-decoration: none; color: inherit; position: relative; }
+  .gcard .rank { position: absolute; z-index: 3; top: -10px; left: -8px; font: 400 20px/1 var(--pixel); background: #141414; color: #faf2dd; padding: 5px 8px; border-radius: 8px; transform: rotate(-5deg); }
+  .gcard b { font-size: 17px; font-weight: 800; }
+  .gcard small { display: block; margin-top: 2px; font-size: 13px; color: var(--secondary); }
+  .gcard .bal { justify-self: start; }
+  .profile .scoring .badges { margin: 0 0 4px; }
+  .profile .score { cursor: default; }
+  .mstats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+  .mstat { display: grid; gap: 2px; padding: 12px 16px; border-radius: 14px; background: var(--band); color: var(--cream); min-width: 120px; }
+  .mstat b { font: 400 34px/1 var(--pixel); }
+  .mstat span { font-size: 12.5px; font-weight: 700; color: var(--cream-2); }
+  .mstat i { display: block; width: 100%; height: 4px; border-radius: 2px; background: var(--g); margin-top: 6px; }
+  .mfilters { display: grid; gap: 10px; margin-bottom: 24px; }
+  .mfilters .filters button { height: 34px; }
+  .selects { display: flex; gap: 8px; flex-wrap: wrap; }
+  .selects select { height: 38px; padding: 0 12px; border-radius: 11px; border: 0; background: var(--card); color: var(--ink); box-shadow: 0 0 0 1px var(--line); font: 700 14px/1 "Bricolage Grotesque", system-ui, sans-serif; }
+  .mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+  .mcopy { display: grid; text-align: left; border-radius: 18px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); transition: transform .15s; }
+  .mcopy:hover { transform: translateY(-3px); }
+  .mcopy .pic { position: relative; height: 170px; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--g) 50%, #1d2540), #0e1220 75%); }
+  .mcopy .pic canvas { image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); }
+  .mcopy .pic .bal { position: absolute; left: 10px; top: 10px; }
+  .mcopy .pic .one { position: absolute; right: 10px; top: 10px; font: 400 16px/1 var(--pixel); color: var(--cream); background: rgba(0,0,0,.35); padding: 4px 6px; border-radius: 6px; }
+  .mcopy .meta { display: grid; gap: 2px; padding: 12px 14px 14px; }
+  .mcopy .meta b { font-size: 15.5px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mcopy .meta span { font-size: 13px; color: var(--secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mcopy .own { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 13px; font-weight: 800; }
+  .mcopy .own em { font-style: normal; font-weight: 700; color: var(--secondary); }
+  .owner-line { margin: 14px 0 0; font-size: 15px; }
+  .owner-line a { font-weight: 800; color: var(--ink); }
+  @media (max-width: 760px) { .site-header { flex-wrap: wrap; height: auto; padding: 10px 0; } .site-nav { order: 3; margin: 0; width: 100%; } .page-h h1 { font-size: 44px; } }
+  @media (max-width: 640px) { .guys { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; } .mstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } .mstat { min-width: 0; padding: 10px 12px; } .mstat b { font-size: 26px; } .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .mcopy .pic { height: 130px; } .mcopy .meta { padding: 10px; } }
+
   /* ------------------------------------------------------------ the look picker */
   .lookp .look-stage { background: var(--band); border-radius: 22px; display: grid; place-items: center; aspect-ratio: 1; }
   .lookp .look-stage svg { width: 80%; height: auto; display: block; }
@@ -370,6 +419,7 @@
   <div class="wrap">
     <div class="site-header">
       <span class="site-name"><canvas id="mark-guy" width="16" height="16" aria-hidden="true"></canvas>lil guys</span>
+      <nav class="site-nav" id="nav" aria-label="Pages"><a href="#/" data-r="home">Claim</a><a href="#/guys" data-r="guys">Guys</a><a href="#/market" data-r="market">Market</a><a href="#/u/me" data-r="u" id="nav-me" hidden>You</a></nav>
       <div class="right">
         <button class="wallet" type="button" id="snd" aria-pressed="true">Sound on</button>
         <button class="devpill" type="button" id="devpill" hidden title="Dev drops: every capsule gives the rarest, cleanest copy. Click to turn off.">DEV · BEST DROPS</button>
@@ -377,6 +427,7 @@
       </div>
     </div>
 
+    <div class="page-h" id="page-h"><p class="kicker" id="page-kicker"></p><h1 id="page-title"></h1><p class="sub" id="page-sub"></p></div>
     <div class="hero">
       <div>
         <p class="kicker">DLE Club · <b id="today"></b></p>
@@ -412,6 +463,7 @@
 </header>
 
 <main class="wrap">
+ <div class="view" id="v-home">
   <section id="guy-sec" hidden>
     <div class="sec-h"><button class="btn ghost" type="button" id="look-open" style="order:2">Change look</button><div><h2 id="guy-title">Your guy</h2><p>Every trait was dealt. Multiply them and this is how rare he is.</p></div></div>
     <div class="odds-panel">
@@ -447,8 +499,45 @@
     <div class="sec-h"><div><h2>Your collection</h2><p id="coll-sub">Every copy is one of a kind: its own finish, scuff and print.</p></div><div class="filters" id="filters"></div></div>
     <div class="grid" id="grid"></div>
   </section>
+ </div>
 
-  <footer>A pretend collection to try the idea. Tickets are free; claimed names are shared with everyone who opens this page. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>.</footer>
+ <div class="view" id="v-guys" hidden>
+  <section>
+    <div class="sec-h"><div><h2>Everyone's guys</h2><p id="guys-sub">Rarest first. Tap one to see their collection.</p></div><div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
+    <label class="search"><span>@</span><input id="guys-q" placeholder="find a name" maxlength="16" spellcheck="false" aria-label="Find a name"></label>
+    <div class="guys" id="guys-grid"></div>
+  </section>
+ </div>
+
+ <div class="view" id="v-u" hidden>
+  <section class="odds-panel profile">
+    <div class="stage" id="u-stage"></div>
+    <div class="scoring">
+      <div class="badges" id="u-badges"></div>
+      <div class="tiles" id="u-tiles"></div>
+      <div class="score"><span class="lbl">1 in</span><b id="u-total"></b><span class="unit" id="u-unit"></span></div>
+    </div>
+  </section>
+  <section>
+    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><a class="btn ghost" id="u-market" href="#/market">On the market</a></div>
+    <div class="grid" id="u-grid"></div>
+  </section>
+ </div>
+
+ <div class="view" id="v-market" hidden>
+  <section>
+    <div class="mstats" id="m-stats"></div>
+    <div class="mfilters">
+      <div class="filters" id="m-grade" aria-label="Grade"></div>
+      <div class="filters" id="m-slot" aria-label="Slot"></div>
+      <div class="selects"><select id="m-game" aria-label="Game"></select><select id="m-finish" aria-label="Finish"></select><select id="m-sort" aria-label="Sort"><option value="rarest">Rarest first</option><option value="float">Best float</option><option value="newest">Newest</option></select></div>
+    </div>
+    <div class="mgrid" id="m-grid"></div>
+    <div style="display:flex;justify-content:center;margin-top:20px"><button class="btn ghost" type="button" id="m-more" hidden>Load more</button></div>
+  </section>
+ </div>
+
+  <footer>A pretend collection to try the idea. Every capsule is rolled on the server. Nothing is for sale yet. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>.</footer>
 </main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
@@ -520,9 +609,11 @@
   // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
   const guyConfig = seed => {
     const base = dealt(seed);
-    const look = state && seed === state.seed && state.look ? LG.decodeLook(state.look, base) : null;
+    const code = state && seed === state.seed ? state.look : lookFor[seed];
+    const look = code ? LG.decodeLook(code, base) : null;
     return look ? { ...base, ...look } : base;
   };
+  const lookFor = {};                                  // other people's picked looks, by seed
   const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   const animated = (seed, move, equip, size, emote) => { const c = guyConfig(seed); return LG.toAnimatedSvg(seed, move, { size, equip, emote, parts: partsOf(c), palette: LG.paletteOf(c) }); };
@@ -534,6 +625,24 @@
   let state = null, db = null, uid = null, owner = false;
   // Outside claude.ai (the Cloudflare deploy) names live behind the Worker's /api/names instead (DEPLOYMENT.md).
   let backendReady = false;
+  // The live site: no artifact database, but the Worker's API. It rolls every capsule and keeps every collection.
+  const isLive = () => !db && backendReady;
+  async function getJSON(path) { const r = await fetch('/api' + path); const d = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(d.error || 'Unavailable'), { status: r.status }); return d; }
+  async function meApi(action, body) {
+    const init = { headers: { Authorization: 'Bearer ' + state.ownerToken } };
+    if (body !== undefined) Object.assign(init, { method: 'POST', headers: { ...init.headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch(`/api/me/${state.key}/${action}`, init);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(d.error || 'Something went wrong'), { status: r.status });
+    return d;
+  }
+  function fromServer(s) {
+    state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', tickets: s.tickets, free: s.freeDay, checkin: s.checkinDay,
+      copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
+      worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [] };
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  const wearLive = slot => { if (isLive() && state.ownerToken) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
   async function namesApi(path, options) {
     const response = await fetch(`/api/names${path}`, options);
     const data = await response.json();
@@ -651,6 +760,7 @@
     if (f) { state.copies.push(LG.encode(f.copy)); state.worn.frame = undefined; state.worn.hat = LG.encode(f.copy); }
     else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
+    if (isLive() && ownerToken) { try { fromServer(await meApi('state')); } catch (e) { toast(e.message); } }
     watchNames();
     await dropName();
     renderAll();
@@ -796,6 +906,7 @@
   $('lookd').addEventListener('click', e => { if (e.target === $('lookd')) $('lookd').close(); });
   $('look-save').addEventListener('click', () => {
     state.look = Object.keys(draft).length ? LG.encodeLook(draft) : '';
+    if (isLive()) meApi('look', { look: state.look }).catch(e => toast(e.message));
     save(); SFX.equip(); $('lookd').close();
     scored = false; renderAll(); score();
   });
@@ -841,7 +952,20 @@
     pay(120);
     open(g, 'Capsule');
   });
-  $('earn').addEventListener('click', () => { if (!state) { $('name').focus(); return; } state.tickets += 60; save(); renderWallet(); SFX.earn(); toast('+60 tickets'); });
+  $('earn').addEventListener('click', async () => {
+    if (!state) { $('name').focus(); return; }
+    if (isLive()) {
+      try { const r = await meApi('checkin', {}); state.tickets = r.tickets; state.checkin = r.checkinDay; save(); renderWallet(); SFX.earn(); toast(`+${360} tickets`); }
+      catch (e) { toast(e.message); }
+      renderEarn(); return;
+    }
+    state.tickets += 60; save(); renderWallet(); SFX.earn(); toast('+60 tickets');
+  });
+  function renderEarn() {
+    if (!isLive()) return;
+    $('earn').textContent = state && state.checkin === today ? 'Today’s tickets are collected. More tomorrow.' : 'Collect today’s tickets (+360)';
+    $('earn').disabled = !!(state && state.checkin === today);
+  }
 
   const seasonal = LG.inSeason(today);
   if (seasonal.length) {
@@ -852,6 +976,7 @@
     paintInto($('season').querySelector('canvas'), 'season', [it.id]);
     $('season-buy').addEventListener('click', () => {
       if (!state) { $('name').focus(); return; }
+      if (isLive()) { meApi('season', {}).then(r => { state.tickets = r.tickets; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); }).catch(e => toast(e.status === 402 ? 'Not enough tickets.' : e.message)); return; }
       pay(150);
       const o = dev ? best(i => LG.rollSeason(`${state.seed}:dev:${i}`, today)) : LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
       reveal(o, null, 'Seasonal');
@@ -859,7 +984,7 @@
   }
   // Tickets are pretend here, so running out tops you up instead of stopping you.
   function pay(price) {
-    if (dev) return;
+    if (dev || isLive()) return;
     if (state.tickets < price) { state.tickets += 600; SFX.earn(); toast('Out of tickets, so here are 600 more. They’re pretend.'); }
     state.tickets -= price;
   }
@@ -870,16 +995,16 @@
    * cleanest copy out of 6,000 rolls, through the same drop. Those copies are marked DEV. */
   let dev = false;
   try { dev = sessionStorage.getItem('lil-guys-dev') === '1'; } catch (e) {}
-  const setDev = (on, quiet) => { if (!quiet) SFX.dev(on); dev = on; try { sessionStorage.setItem('lil-guys-dev', on ? '1' : '0'); } catch (e) {} $('devpill').hidden = !on; if (on) toast('Dev drops on: every capsule is the rarest, cleanest copy.'); };
+  const setDev = (on, quiet) => { if (on && isLive()) { toast('Dev drops only work in the demo; here every capsule is rolled on the server.'); return; } if (!quiet) SFX.dev(on); dev = on; try { sessionStorage.setItem('lil-guys-dev', on ? '1' : '0'); } catch (e) {} $('devpill').hidden = !on; if (on) toast('Dev drops on: every capsule is the rarest, cleanest copy.'); };
   setDev(dev, true); if (dev) $('toast').hidden = true;
   $('devpill').addEventListener('click', () => { setDev(false); toast('Dev drops off.'); });
   let typed = '', taps = 0, tapT;
   addEventListener('keydown', e => {
     if (e.target.closest && e.target.closest('input')) return;
     typed = (typed + (e.key.length === 1 ? e.key.toLowerCase() : '')).slice(-6);
-    if (typed === 'rarest') { typed = ''; setDev(!dev); if (!dev) toast('Dev drops off.'); }
+    if (typed === 'rarest') { typed = ''; const was = dev; setDev(!dev); if (was && !dev) toast('Dev drops off.'); }
   });
-  document.querySelector('.site-name').addEventListener('click', () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => { taps = 0; }, 900); if (taps >= 5) { taps = 0; setDev(!dev); if (!dev) toast('Dev drops off.'); } });
+  document.querySelector('.site-name').addEventListener('click', () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => { taps = 0; }, 900); if (taps >= 5) { taps = 0; const was = dev; setDev(!dev); if (was && !dev) toast('Dev drops off.'); } });
   // Best means the top grade first (a famous print counts), then the lowest scuff, then the rarest odds.
   const better = (a, b) => gradeIdx(a) - gradeIdx(b) || (LG.special(a) ? 1 : 0) - (LG.special(b) ? 1 : 0) || b.scuff - a.scuff || LG.copyOneIn(a) - LG.copyOneIn(b);
   function best(rollAt) {
@@ -888,7 +1013,15 @@
     return top;
   }
 
-  function open(g, how) {
+  async function open(g, how) {
+    if (isLive()) {
+      try {
+        const r = await meApi('open', { game: g, free: how === 'Daily capsule' });
+        state.tickets = r.tickets; state.free = r.freeDay; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
+        reveal(LG.decode(r.copy.code), g, how);
+      } catch (e) { toast(e.status === 402 ? 'Not enough tickets. Collect today’s tickets below.' : e.message); renderAll(); }
+      return;
+    }
     const o = dev ? best(i => LG.roll(`${state.seed}:dev:${state.opened}:${i}`, g)) : LG.roll(`${state.seed}:${how}:${today}:${state.opened}`, g);
     state.opened++;
     reveal(o, g, dev ? 'Dev drop' : how);
@@ -1379,7 +1512,7 @@
     $('reveal').hidden = true;
     if (closeHook) { const h = closeHook; closeHook = null; h(); setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120); return; }
     if (!current) return;
-    if (wear) { state.worn[LG.slotOf(current.o)] = current.code; SFX.equip(); }
+    if (wear) { state.worn[LG.slotOf(current.o)] = current.code; SFX.equip(); wearLive(LG.slotOf(current.o)); }
     save();
     const c = current; current = null;
     renderAll();
@@ -1429,7 +1562,7 @@
   const shiner = LG.createShine ? LG.createShine() : null;
   const shows = new Set();
   function itemAlone(o, seed) {
-    const base = state && seed === state.seed ? guyConfig(seed) : LG.resolve(seed);
+    const base = guyConfig(seed);
     const slot = LG.slotOf(o), [lo, hi] = SLOT_RANGE[slot], want = LG.FRAME_SLOTS.indexOf(slot) + 1;
     const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg)) }; };
     const worn = draw(LG.dress(base, { equip: [LG.encode(o)] }));
@@ -1498,13 +1631,19 @@
   }
 
   function inspect(i) {
-    const code = state.copies[i], o = LG.decode(code);
-    if (!o) return;
+    const code = state.copies[i];
     state.fresh = (state.fresh || []).filter(c => c !== code); save();
-    const g = LG.gradeOf(o), slot = LG.slotOf(o), on = state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
+    inspectCopy(LG.decode(code), { code, key: state.key, seed: state.seed, mine: true });
+  }
+  // Any copy: yours (wear it) or anyone's (who owns it; nothing is for sale yet).
+  function inspectCopy(o, ctx) {
+    if (!o) return;
+    const code = ctx.code;
+    const g = LG.gradeOf(o), slot = LG.slotOf(o), on = ctx.mine && state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
     const odds = LG.copyOneIn(o), item = LG.itemById(o.item);
-    const one = o.tally === 999 && o.print === 1 && o.finish === 'gold' && founderOf(state.seed);
-    const caption = `@${state.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', one of one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
+    const one = o.tally === 999 && o.print === 1 && o.finish === 'gold' && founderOf(ctx.seed);
+    const others = ctx.mine ? wornCopies() : (ctx.worn || []).map(LG.decode).filter(Boolean);
+    const caption = `@${ctx.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', one of one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
     $('insp-body').className = 'insp insp2';
     $('insp-body').style.setProperty('--g', g.color);
     $('insp-body').innerHTML = `<button class="close" type="button" id="insp-close" aria-label="Close">×</button>
@@ -1515,13 +1654,13 @@
       </div>
       <div>
         <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}
-        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ 1 of 1' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${(state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
+        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ 1 of 1' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
         ${floatPanel(o)}
         ${oddsBox(o, one)}
-        <div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button></div>
+        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button></div>` : `<p class="owner-line">Owned by <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a> · Not for sale</p>`}
         <details><summary>Share card</summary>
           <div class="share">
-            <div class="svg">${LG.toShareSvg(state.seed, o, { name: '@' + state.key, config: guyConfig(state.seed) })}</div>
+            <div class="svg">${LG.toShareSvg(ctx.seed, o, { name: '@' + ctx.key, config: guyConfig(ctx.seed) })}</div>
             <button class="copy" type="button" id="insp-copy">${esc(caption)}<small id="insp-copied">Copy text</small></button>
           </div>
         </details>
@@ -1529,8 +1668,8 @@
     const view = $('ins-view');
     const setView = v => {
       view.innerHTML = v === 'alone' ? '<div class="tilt"><canvas class="alone" aria-label="The item on its own"></canvas></div>'
-        : `<div class="tilt"><div class="card">${px(cardSpec(state.seed, [...wornCopies().filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)))}</div></div>`;
-      if (v === 'alone') showItem(view.querySelector('canvas'), o, state.seed, 300, 300); else hydrate(view);
+        : `<div class="tilt"><div class="card">${px(cardSpec(ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)))}</div></div>`;
+      if (v === 'alone') showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); else hydrate(view);
       $('insp-body').querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
     };
     setView('alone');
@@ -1538,7 +1677,8 @@
     view.addEventListener('pointermove', e => { const r = view.getBoundingClientRect(), tl = view.querySelector('.tilt'); if (tl) tl.style.transform = `rotateY(${((e.clientX - r.left) / r.width - 0.5) * 26}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 22}deg)`; });
     view.addEventListener('pointerleave', () => { const tl = view.querySelector('.tilt'); if (tl) tl.style.transform = ''; });
     $('insp-close').addEventListener('click', () => $('insp').close());
-    $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else { state.worn[slot] = code; SFX.equip(); } save(); $('insp').close(); renderAll(); });
+    if (ctx.mine) $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else { state.worn[slot] = code; SFX.equip(); } wearLive(slot); save(); $('insp').close(); renderAll(); });
+    else $('insp-owner').addEventListener('click', () => $('insp').close());
     $('insp-copy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
@@ -1546,6 +1686,143 @@
     SFX.whoosh(0.22, 400, 2400, 0.06);
     $('insp').showModal();
   }
+
+  /* ---------------------------------------------- pages: #/ (claim and your guy), #/guys, #/u/<name>, #/market */
+  const PAGES = {
+    guys: ['Everyone', 'Every claimed guy', 'Each one dealt once, to one name. The rarest dealt guys come first.'],
+    u: ['Player', '', ''],
+    market: ['Market', 'Every copy out there', 'Every capsule anyone has opened, rarest first. Nothing is for sale yet.'],
+  };
+  function route() {
+    const [r, arg] = location.hash.replace(/^#\/?/, '').split('/');
+    const view = PAGES[r] ? r : 'home';
+    document.body.dataset.route = view;
+    for (const v of ['home', 'guys', 'u', 'market']) $('v-' + v).hidden = v !== view;
+    $('nav').querySelectorAll('a').forEach(a => a.toggleAttribute('aria-current', a.dataset.r === view && (view !== 'u' || arg === 'me' || arg === state?.key)));
+    $('nav').querySelectorAll('a[aria-current]').forEach(a => a.setAttribute('aria-current', 'page'));
+    if (view !== 'home') { const [k, h, sub] = PAGES[view]; $('page-kicker').textContent = k; $('page-title').textContent = h; $('page-sub').textContent = sub; }
+    if (view === 'guys') renderGuys();
+    if (view === 'market') renderMarket(true);
+    if (view === 'u') renderUser(arg === 'me' || !arg ? state?.key : arg);
+    scrollTo(0, 0);
+  }
+  addEventListener('hashchange', route);
+
+  // Where the pages read from: the Worker on the live site; in the demo, your own collection (and names others claimed here).
+  const myGuy = () => { const list = copies().filter(c => !LG.itemById(c.o.item).free).sort((a, b) => LG.copyOneIn(b.o) - LG.copyOneIn(a.o)); const b = list[0]; return { key: state.key, seed: state.seed, look: state.look || '', worn: wornCodes(), oneIn: LG.guyOneIn(guyConfig(state.seed)), best: b ? { code: b.code, grade: gradeIdx(b.o), oneIn: LG.copyOneIn(b.o) } : null }; };
+  async function listGuys(sort, q) {
+    if (isLive()) return getJSON(`/guys?sort=${sort}&q=${encodeURIComponent(q)}`);
+    let list = [];
+    if (db) { try { const snap = await db.collection('names').get(); list = snap.docs.map(d => d.data()).filter(v => v && v.seed && v.name).map(v => ({ key: v.name, seed: v.seed, look: '', worn: [], best: null, oneIn: LG.guyOneIn(dealt(v.seed)), at: v.at })); } catch (e) {} }
+    if (state) list = [myGuy(), ...list.filter(g => g.key !== state.key)];
+    list = list.filter(g => g.key.includes(q));
+    return sort === 'recent' ? list.sort((a, b) => String(b.at || '').localeCompare(String(a.at || ''))) : list.sort((a, b) => b.oneIn - a.oneIn);
+  }
+  async function getUser(key) {
+    if (isLive()) return getJSON('/guys/' + key);
+    if (state && key === state.key) return { key, seed: state.seed, look: state.look || '', copies: copies().map(c => ({ code: c.code, worn: wornCodes().includes(c.code) })) };
+    throw Object.assign(new Error('Only on the live site'), { status: 404 });
+  }
+  async function listMarket(f) {
+    if (isLive()) return getJSON('/market?' + new URLSearchParams(Object.entries(f).filter(([, v]) => v !== '' && v !== undefined)));
+    if (!state) return [];
+    let list = copies().filter(c => !LG.itemById(c.o.item).free).map(c => ({ key: state.key, seed: state.seed, look: state.look || '', code: c.code, grade: gradeIdx(c.o), oneIn: LG.copyOneIn(c.o), id: c.i }));
+    list = list.filter(c => { const o = LG.decode(c.code), it = LG.itemById(o.item); return (f.grade === '' || c.grade === +f.grade) && (!f.slot || it.slot === f.slot) && (!f.game || it.game === f.game) && (!f.finish || o.finish === f.finish); });
+    const by = { rarest: (a, b) => b.oneIn - a.oneIn, float: (a, b) => LG.decode(a.code).scuff - LG.decode(b.code).scuff, newest: (a, b) => b.id - a.id }[f.sort];
+    return list.sort(by).slice(f.offset, f.offset + f.limit);
+  }
+
+  let guysSort = 'rarest', guysQ = '', guysT;
+  async function renderGuys() {
+    $('guys-sort').querySelectorAll('[data-s]').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === guysSort));
+    let list = [];
+    try { list = await listGuys(guysSort, guysQ); } catch (e) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${esc(e.message)}</div>`; return; }
+    if (!list.length) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${guysQ ? 'No one by that name yet.' : 'No one has claimed a guy yet. Be the first.'}</div>`; return; }
+    for (const g of list) lookFor[g.seed] = g.look || '';
+    $('guys-grid').innerHTML = list.map((g, i) => {
+      const worn = (g.worn || []).map(LG.decode).filter(Boolean), best = g.best, bg = best ? LG.GRADES[best.grade] : null;
+      return `<a class="gcard card" href="#/u/${esc(g.key)}">${guysSort === 'rarest' && !guysQ && i < 3 ? `<span class="rank">#${i + 1}</span>` : ''}
+        ${px(cardSpec(g.seed, worn, { title: '@' + g.key, g: best ? best.grade : 0, corner: '', bottom: `1 in ${fmt(g.oneIn)}` }, list.length > 30, best ? best.grade : undefined))}
+        <span><b>@${esc(g.key)}</b><small>A guy like him: 1 in ${words(g.oneIn)}</small></span>
+        ${bg ? `<span class="bal" style="--b:${bg.color}">Best: ${esc(LG.nameOf(LG.decode(best.code)).split(' | ')[1] || bg.name)}</span>` : ''}</a>`;
+    }).join('');
+    hydrate($('guys-grid'));
+  }
+  $('guys-sort').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b) { guysSort = b.dataset.s; renderGuys(); } });
+  $('guys-q').addEventListener('input', () => { clearTimeout(guysT); guysT = setTimeout(() => { guysQ = norm($('guys-q').value); renderGuys(); }, 250); });
+
+  // A player's page: their guy dancing, his traits scored, and every copy he owns.
+  let userCopies = [];
+  async function renderUser(key) {
+    if (!key) { location.hash = '#/'; return; }
+    let u;
+    try { u = await getUser(key); } catch (e) { $('page-title').textContent = '@' + key; $('page-sub').textContent = e.status === 404 ? 'No one has claimed this name yet.' : e.message; $('u-grid').innerHTML = ''; $('u-tiles').innerHTML = ''; return; }
+    lookFor[u.seed] = u.look || '';
+    const mine = state && key === state.key, cfg = guyConfig(u.seed), worn = u.copies.filter(c => c.worn).map(c => c.code);
+    $('page-kicker').textContent = mine ? 'You' : 'Player';
+    $('page-title').textContent = '@' + key;
+    $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of one.`;
+    $('u-stage').innerHTML = animated(u.seed, 'dance', worn.filter(c => LG.slotOf(LG.decode(c)) !== 'frame'), 300);
+    $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ 1 of 1</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    const odds = LG.traitOdds(cfg).filter(x => x.slot !== 'variant' || x.name === 'Lucky');
+    $('u-tiles').innerHTML = odds.map(x => { const lucky = x.slot === 'variant', tier = lucky ? { name: 'Polychrome', c: '#c06bff' } : tierOf(x.chance); return `<div class="tt done${lucky ? ' poly' : ''}" style="--tier:${tier.c}"><span class="slot">${lucky ? 'variant' : x.slot}</span><b>${esc(x.name)}</b><span class="foot"><span class="bal${lucky ? ' poly' : ''}" style="--b:${tier.c}">${tier.name}</span><span class="x">×${Math.round(1 / x.chance).toLocaleString('en-US')}</span></span></div>`; }).join('');
+    const [a, b] = split(LG.guyOneIn(cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
+    userCopies = u.copies.map(c => ({ ...c, o: LG.decode(c.code) })).filter(c => c.o).sort((x, y) => gradeIdx(y.o) - gradeIdx(x.o) || LG.copyOneIn(y.o) - LG.copyOneIn(x.o));
+    $('u-coll-h').textContent = mine ? 'Your collection' : 'Collection';
+    $('u-coll-sub').textContent = `${userCopies.length} copies, ${userCopies.filter(c => !LG.itemById(c.o.item).free).length} from capsules.`;
+    $('u-market').href = '#/market';
+    $('u-market').onclick = () => { mf.key = key; };
+    $('u-grid').innerHTML = userCopies.map((c, i) => {
+      const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
+      return `<button class="cc card" type="button" data-u="${i}">${c.worn ? '<span class="pill tag on">ON</span>' : ''}
+        ${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one), userCopies.length > 24))}
+        <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : 'Plain'))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
+    }).join('');
+    hydrate($('u-grid'));
+    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn }); };
+  }
+
+  // The market: every copy anyone has opened, the object itself on show, filtered and sorted.
+  const mf = { grade: '', slot: '', game: '', finish: '', sort: 'rarest', key: '', offset: 0, limit: 48 };
+  let marketList = [];
+  $('m-grade').innerHTML = `<button type="button" data-g="" aria-pressed="true">All grades</button>` + LG.GRADES.map((g, k) => `<button type="button" data-g="${k}" style="--g:${g.color}" aria-pressed="false"><i></i>${esc(g.name)}</button>`).join('');
+  $('m-slot').innerHTML = [['', 'Everything'], ['hat', 'Hats'], ['skin', 'Skins'], ['frame', 'Frames'], ['buddy', 'Buddies']].map(([v, l]) => `<button type="button" data-sl="${v}" aria-pressed="${v === ''}">${l}</button>`).join('');
+  $('m-game').innerHTML = '<option value="">Every game</option>' + LG.GAMES.map(g => `<option value="${g}">${cap(g)}</option>`).join('');
+  $('m-finish').innerHTML = '<option value="">Every finish</option>' + ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'].map(f => `<option value="${f}">${LG.FINISHES[f].name}</option>`).join('');
+  $('m-grade').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; mf.grade = b.dataset.g; $('m-grade').querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
+  $('m-slot').addEventListener('click', e => { const b = e.target.closest('[data-sl]'); if (!b) return; mf.slot = b.dataset.sl; $('m-slot').querySelectorAll('[data-sl]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
+  for (const [id, k] of [['m-game', 'game'], ['m-finish', 'finish'], ['m-sort', 'sort']]) $(id).addEventListener('change', () => { mf[k] = $(id).value; renderMarket(true); });
+  $('m-more').addEventListener('click', () => renderMarket(false));
+  async function renderStats() {
+    let s = null;
+    if (isLive()) { try { s = await getJSON('/stats'); } catch (e) {} }
+    if (!s) { const n = [0, 0, 0, 0, 0]; copies().filter(c => !LG.itemById(c.o.item).free).forEach(c => n[gradeIdx(c.o)]++); s = { players: state ? 1 : 0, copies: n.reduce((a, b) => a + b, 0), grades: n }; }
+    $('m-stats').innerHTML = `<div class="mstat" style="--g:#5d6b8a"><b>${s.players.toLocaleString('en-US')}</b><span>guys claimed</span><i></i></div><div class="mstat" style="--g:#5d6b8a"><b>${s.copies.toLocaleString('en-US')}</b><span>copies opened</span><i></i></div>`
+      + LG.GRADES.map((g, k) => `<div class="mstat" style="--g:${g.color}"><b>${(s.grades[k] || 0).toLocaleString('en-US')}</b><span>${esc(g.name)}${k ? '' : ' copies'}</span><i></i></div>`).join('');
+  }
+  async function renderMarket(reset) {
+    if (reset) { mf.offset = 0; marketList = []; renderStats(); }
+    if (mf.key) $('page-sub').textContent = `@${mf.key}'s copies. `;
+    let page = [];
+    try { page = await listMarket(mf); } catch (e) { $('m-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${esc(e.message)}</div>`; return; }
+    marketList = marketList.concat(page);
+    mf.offset += page.length;
+    $('m-more').hidden = page.length < mf.limit;
+    if (!marketList.length) { $('m-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">Nothing here yet. ${state ? 'Open a capsule and it shows up.' : 'Claim a name and open a capsule.'}</div>`; return; }
+    for (const c of page) lookFor[c.seed] = c.look || '';
+    const start = reset ? 0 : marketList.length - page.length;
+    const html = page.map((c, k) => {
+      const o = LG.decode(c.code); if (!o) return '';
+      const g = LG.GRADES[c.grade] || LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
+      return `<button class="mcopy" type="button" data-m="${start + k}" style="--g:${g.color}">
+        <span class="pic"><span class="bal" style="--b:${g.color}">${esc(c.one ? '★ 1 of 1' : g.name)}</span><span class="one">${c.one ? '1 of 1' : '1 in ' + fmt(c.oneIn ?? LG.copyOneIn(o))}</span><canvas aria-hidden="true"></canvas></span>
+        <span class="meta"><b>${esc(title)}</b><span>${esc(look || 'Plain')} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</span><span class="mf"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></span>
+        <span class="own"><span>@${esc(c.key)}</span><em>Not for sale</em></span></span></button>`;
+    }).join('');
+    if (reset) $('m-grid').innerHTML = html; else $('m-grid').insertAdjacentHTML('beforeend', html);
+    page.forEach((c, k) => { const el = $('m-grid').querySelector(`[data-m="${start + k}"] canvas`), o = LG.decode(c.code); if (el && o) showItem(el, o, c.seed, 150, 120); });
+  }
+  $('m-grid').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const c = marketList[+b.dataset.m]; const mine = state && c.key === state.key; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(LG.decode(c.code), { code: c.code, key: c.key, seed: c.seed, mine: false }); });
 
   /* ---------------------------------------------- every finish: one of today's items in all seven, live */
   let finItem = null;
@@ -1634,7 +1911,9 @@
   };
   requestAnimationFrame(frame);
 
-  function renderAll() { renderClaim(); renderGuy(); renderMachines(); renderWallet(); renderColl(); }
+  function renderAll() {
+    $('nav-me').hidden = !state; if (state) $('nav-me').href = '#/u/' + state.key;
+    renderEarn(); renderClaim(); renderGuy(); renderMachines(); renderWallet(); renderColl(); }
   // Small sounds under the pointer: a paper flick over a card, a tick over a machine, a click on any button.
   let overCard = null;
   addEventListener('pointerover', e => {
@@ -1649,12 +1928,19 @@
   renderHand();
   renderFins();
   renderAll();
+  route();
 
   /* ---------------------------------------------- the database, when this view has one */
   (async () => {
     const [d, user] = await Promise.all([window.claude?.use?.('db') ?? null, window.claude?.use?.('user') ?? null]);
     backendReady = true;
-    if (!d) { watchNames(); if ($('name').value) check(); return; }
+    if (!d) {
+      watchNames(); if ($('name').value) check();
+      if (state && state.ownerToken) { try { fromServer(await meApi('state')); } catch (e) { if (e.status === 401) { state = null; save(); } } }
+      else if (state) { state = null; save(); }               // a browser-only claim has no place on the live site
+      renderAll(); route();
+      return;
+    }
     db = d;
     try { owner = user ? await user.isOwner() : false; uid = user ? await user.id() : null; } catch (e) {}
     watchNames();

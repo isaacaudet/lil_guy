@@ -37,9 +37,41 @@ ignored `.dev.vars` file. Production secrets were uploaded with Wrangler.
   secret-salted daily digest is retained in D1. Old digest rows are removed on
   the next accepted claim attempt. Owner tokens are hashed before storage.
 
-The browser retains its collection and owner token in localStorage. Losing
-browser storage loses the release token and collection; there is no account
-recovery or cross-device collection sync. A legacy browser-only claim without
+## Collections and the market (migration 0002)
+
+Every copy is rolled and stored by the Worker, so what the market shows is what
+capsules really gave. Apply `migrations/0002_collections.sql` (the deploy commands
+above apply every pending migration) before deploying a Worker that reads it.
+
+- A claim creates the player record: 1,200 tickets and the nine starter copies
+  (the founder also gets the one-of-one Gold flag). Names claimed before 0002 get
+  theirs on first use.
+- Owner-only (`Authorization: Bearer <owner token>`, same-origin writes):
+  - `GET /api/me/:key/state`: tickets, today's free and ticket days, the look and every copy.
+  - `POST /api/me/:key/open {game, free}`: one capsule, rolled on the server from a random
+    seed. Today's machine is free once a UTC day; otherwise 120 tickets. 402 when short.
+  - `POST /api/me/:key/season`: the seasonal hat, 150 tickets, only while one is in season.
+  - `POST /api/me/:key/checkin`: 360 tickets, once a UTC day.
+  - `POST /api/me/:key/wear {slot, id|null}`: only your own copy, for its own slot.
+  - `POST /api/me/:key/look {look}`: only parts `decodeLook` allows for your dealt guy.
+- Public, never with owner tokens:
+  - `GET /api/guys?sort=rarest|recent&q=`: every guy with what he wears and his best copy.
+  - `GET /api/guys/:key`: one player's guy and collection.
+  - `GET /api/market?grade=&game=&slot=&finish=&key=&sort=rarest|float|newest`: every
+    copy from a capsule (starters aside).
+  - `GET /api/stats`: claims, copies and counts by grade.
+- Releasing a name (`DELETE /api/names/:key`) deletes its player record and copies.
+- Nothing is for sale. Dev drops (the `rarest` easter egg) only work in the demo.
+
+Validated locally with `wrangler dev --local` and both migrations applied:
+- two players claimed, opened free and paid capsules, and collected tickets;
+- the Guys, profile and Market pages listed both, and a reload restored state from D1;
+- `bun test`: 142 pass, including the Worker's ten API tests.
+
+The browser keeps only its owner token (and a cached copy of the state) in localStorage. Losing
+browser storage loses the owner token, and with it access to the name; the
+collection stays on the server, but there is no account recovery or second
+device sign-in yet. A legacy browser-only claim without
 an owner token does not grant server ownership. Claude artifact sessions keep
 using their existing artifact database path.
 
