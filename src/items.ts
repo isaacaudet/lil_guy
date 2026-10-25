@@ -10,10 +10,14 @@ import { GRID_SIZE } from './types';
  * Items: things a player earns or buys in a DLE Club game and wears
  * everywhere. Each game has
  *
- * - three skins, which turn the guy into one of the game's own objects (a jar,
+ * - four skins, which turn the guy into one of the game's own objects (a jar,
  *   a golf ball, a traffic cone) while keeping his face
- * - three hats, one of them free: every player has it from the start
- * - two frames, the backdrop behind him
+ * - four hats, one of them free: every player has it from the start
+ * - three frames, the backdrop behind him
+ * - three buddies, a tiny pet at his feet
+ *
+ * So each game's capsule machine holds thirteen. Lists are append-only: a
+ * saved copy stores its item's id, so an item is never renamed or removed.
  *
  * An item is the design. A copy someone owns adds a finish, a scuff and a
  * print number (see ./owned), which is what makes one copy worth more than
@@ -708,6 +712,215 @@ const skins: Omit<Item, 'slot'>[] = [
       '................',
     ]),
   },
+
+  // A fourth skin for every game.
+  {
+    id: 'amountle.gumball', game: 'amountle', name: 'Gumball machine', eyes: 7,
+    colors: ['#EAF6FA', '#C5DDE6', '#FFFFFF', '#E5484D', '#B83236', '#FFD447', '#3FD1C1', '#FF7AA8', '#5A1A22'],
+    outline: '#5A1A22',
+    art: grid16('gumball machine', [
+      '................',
+      '................',
+      '.......44.......',
+      '.....455554.....',
+      '...3111111112...',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..111111111112..',
+      '..167186171682..',
+      '...6871687862...',
+      '...4444444444...',
+      '...4444994445...',
+      '...5555555555...',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'halfsies.lemon', game: 'halfsies', name: 'Lemon half', eyes: 8,
+    colors: ['#FFE680', '#F2D35E', '#FFFFFF', '#FFD23A', '#E0A61E', '#FFFBE6'],
+    outline: '#7A5A0A',
+    art: grid16('lemon half', [
+      '................',
+      '................',
+      '................',
+      '.....444444.....',
+      '...4466666655...',
+      '..461311113165..',
+      '..461131131165..',
+      '..461111111165..',
+      '..461111111165..',
+      '..461111111165..',
+      '..461111111165..',
+      '..461131131165..',
+      '...4631113165...',
+      '....55555555....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'stackdle.stack', game: 'stackdle', name: 'Block stack', eyes: 8, limb: 2,
+    colors: ['#FFB03B', '#E58A1F', '#FFD27A', '#FFE2A8', '#4C8DF6', '#3467C9', '#FF8FB1', '#E0628A', '#FFC2D6'],
+    outline: '#6A3A0A',
+    art: grid16('block stack', [
+      '................',
+      '................',
+      '.....997778.....',
+      '.....977778.....',
+      '.....888888.....',
+      '..344444444442..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..222222222222..',
+      '...5555555556...',
+      '...5555555556...',
+      '...6666666666...',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'flipsies.can', game: 'flipsies', name: 'Soda can', eyes: 8,
+    colors: ['#E5484D', '#B83236', '#FF7A7E', '#D7DCE4', '#9AA0A8', '#FFFFFF'],
+    outline: '#5A1A22',
+    art: grid16('soda can', [
+      '................',
+      '................',
+      '................',
+      '...5444444445...',
+      '...4555555554...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...6661111666...',
+      '...3116666112...',
+      '...4555555554...',
+      '....44444444....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'puttsies.windmill', game: 'puttsies', name: 'Windmill', eyes: 10,
+    colors: ['#F4EDE0', '#D9CDB4', '#FFFFFF', '#C2463A', '#8E2E26', '#FFFFFF', '#B07A4A', '#2B2F38', '#3A9466'],
+    outline: '#4A2A1E',
+    art: grid16('windmill', [
+      '................',
+      '..66........66..',
+      '..766......667..',
+      '...766....667...',
+      '....76688667....',
+      '.....644446.....',
+      '...6444444456...',
+      '..644444444456..',
+      '.67311111111276.',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111992...',
+      '...2222222992...',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'weighsies.flour', game: 'weighsies', name: 'Flour sack', eyes: 9, limb: 2,
+    colors: ['#F2E6CC', '#D6C5A0', '#FFFBF0', '#B07444', '#7FA8D8', '#4E78B0'],
+    outline: '#5E4A2A',
+    art: grid16('flour sack', [
+      '................',
+      '................',
+      '.....31...13....',
+      '......3113......',
+      '.......44.......',
+      '.....311112.....',
+      '....31111112....',
+      '...3111111112...',
+      '..311111111112..',
+      '..311111111112..',
+      '..311111111112..',
+      '..315555555612..',
+      '..316666666612..',
+      '...2222222222...',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'cutsies.strawberry', game: 'cutsies', name: 'Strawberry', eyes: 8,
+    colors: ['#F0435A', '#B82A40', '#FF8A96', '#FFE07A', '#5CB85C', '#3E8E3E'],
+    outline: '#5A1422',
+    art: grid16('strawberry', [
+      '................',
+      '................',
+      '......5..5......',
+      '....55566555....',
+      '...3166666612...',
+      '..341111111142..',
+      '..311111111112..',
+      '..411111111114..',
+      '..311111111112..',
+      '..311111111112..',
+      '...4111111142...',
+      '...3114114112...',
+      '....21111122....',
+      '.....222222.....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'tiltsies.acorn', game: 'tiltsies', name: 'Acorn', eyes: 9,
+    colors: ['#E0A868', '#B87F42', '#F6CF98', '#8A5A32', '#A87448', '#6A4224', '#5C3A1E'],
+    outline: '#3E2410',
+    art: grid16('acorn', [
+      '................',
+      '................',
+      '.......77.......',
+      '....55545554....',
+      '...5454545454...',
+      '..454545454546..',
+      '..666666666666..',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '....31111112....',
+      '.....311112.....',
+      '.......22.......',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'trackdle.tyre', game: 'trackdle', name: 'Tyre', eyes: 8,
+    colors: ['#C9CED8', '#9AA0A8', '#EEF1F5', '#2B2F38', '#4A4E58', '#FF7A2F'],
+    outline: '#14161C',
+    art: grid16('tyre', [
+      '................',
+      '................',
+      '......5454......',
+      '....44444445....',
+      '...4446666445...',
+      '..444633116445..',
+      '..546331111644..',
+      '..446311111644..',
+      '..463111111264..',
+      '..446111112644..',
+      '..546111122644..',
+      '..444611226445..',
+      '...4446666445...',
+      '....44444445....',
+      '......5454......',
+      '................',
+    ]),
+  },
 ];
 
 // ---------------------------------------------------------------- hats
@@ -987,6 +1200,102 @@ const hats: Omit<Item, 'slot'>[] = [
       '.22222.',
     ]),
   },
+  // A fourth hat for every game
+  {
+    id: 'amountle.coin-stack', game: 'amountle', name: 'Coin stack',
+    colors: ['#FFD25A', '#E0A62E', '#FFF1B0', '#B8781A'],
+    draw: on([
+      '.3311.',
+      '.4242.',
+      '33111.',
+      '42424.',
+      '.33111',
+      '.42424',
+    ]),
+  },
+  {
+    id: 'halfsies.sandwich', game: 'halfsies', name: 'Half sandwich',
+    colors: ['#F6DCA8', '#D9A866', '#7DD87A', '#E5484D', '#FFE38F', '#B07444'],
+    draw: on([
+      '6.....',
+      '61....',
+      '6531..',
+      '64351.',
+      '666666',
+    ]),
+  },
+  {
+    id: 'stackdle.arch', game: 'stackdle', name: 'Arch',
+    colors: ['#6FA8FF', '#4A84E0', '#B5D3FF'],
+    draw: on([
+      '3311112',
+      '3111112',
+      '11...12',
+    ]),
+  },
+  {
+    id: 'flipsies.cup', game: 'flipsies', name: 'Flipped cup',
+    colors: ['#E5484D', '#B83236', '#FFFFFF', '#FF7A7E'],
+    draw: on([
+      '.4112.',
+      '.4112.',
+      '411112',
+      '333333',
+    ]),
+  },
+  {
+    id: 'puttsies.argyle', game: 'puttsies', name: 'Argyle bucket',
+    colors: ['#F4EDE0', '#3A9466', '#2E7D4F', '#E5484D'],
+    draw: on([
+      '..1311..',
+      '.141141.',
+      '.311311.',
+      '22222222',
+    ]),
+  },
+  {
+    id: 'weighsies.feather', game: 'weighsies', name: 'Feather',
+    colors: ['#E6DCFF', '#B39EEC', '#7A5FD0'],
+    draw: on([
+      '...11',
+      '..121',
+      '.121.',
+      '121..',
+      '3....',
+    ], 1),
+  },
+  {
+    id: 'cutsies.banana', game: 'cutsies', name: 'Banana',
+    colors: ['#FFE066', '#E0B020', '#FFF4B0', '#6A4A1E'],
+    draw: on([
+      '4.....4',
+      '23...31',
+      '.21111.',
+    ]),
+  },
+  {
+    id: 'tiltsies.wheel', game: 'tiltsies', name: 'Hamster wheel',
+    colors: ['#C9CED8', '#8A93A3', '#EDB57D'],
+    draw: on([
+      '.111.',
+      '12.21',
+      '1.3.1',
+      '12.21',
+      '.111.',
+    ]),
+  },
+  {
+    id: 'trackdle.goggles', game: 'trackdle', name: 'Race goggles',
+    colors: ['#2B2F38', '#6FA8D8', '#C4E8FB', '#FF7A2F'],
+    draw: c => {
+      c.paintRow(c.crown, L(4));
+      on([
+        '.11.11.',
+        '1321321',
+        '.11.11.',
+      ], 0, 2)(c);
+    },
+  },
 ];
 
 // ---------------------------------------------------------------- frames
@@ -1117,24 +1426,373 @@ const frames: Omit<Item, 'slot'>[] = [
     colors: ['#5A5F6B', '#4A4E58', '#F2C230'],
     fill: (x, y) => ((x === 7 || x === 8) ? (y % 4 < 2 ? 3 : 1) : (x * 5 + y * 3) % 7 === 0 ? 2 : 1),
   },
+
+  // A third frame for every game.
+  {
+    id: 'amountle.beans', game: 'amountle', name: 'Jelly beans',
+    colors: ['#FFF4E4', '#FF5C8A', '#FFD447', '#3FD1C1', '#8C7CF0', '#7DD87A'],
+    fill: (x, y) => {
+      // Each bean is two cells across, in its own flavour.
+      const beans = [[1, 1, 2], [12, 1, 4], [6, 0, 6], [0, 5, 5], [14, 6, 3], [1, 10, 4], [13, 11, 2], [3, 14, 3], [9, 14, 5], [12, 14, 6], [0, 13, 6]];
+      for (const [bx, by, c] of beans) if (y === by && (x === bx || x === bx + 1)) return c;
+      return 1;
+    },
+  },
+  {
+    id: 'halfsies.split', game: 'halfsies', name: 'Half and half',
+    colors: ['#F6C7AE', '#A9E3DC', '#FFFFFF'],
+    fill: (x, y) => (x + y === 15 && x % 2 === 0 ? 3 : x + y < 15 ? 1 : 2),
+  },
+  {
+    id: 'stackdle.blueprint', game: 'stackdle', name: 'Blueprint',
+    colors: ['#3A78D8', '#5A92E6', '#CFE2FF'],
+    fill: (x, y) => {
+      // A block drawn in the top left corner, on the plan's grid.
+      if (((x === 1 || x === 4) && y >= 1 && y <= 4) || ((y === 1 || y === 4) && x >= 1 && x <= 4)) return 3;
+      return x % 4 === 3 || y % 4 === 3 ? 2 : 1;
+    },
+  },
+  {
+    id: 'flipsies.tiles', game: 'flipsies', name: 'Pool tiles',
+    colors: ['#9ED8F2', '#86CBEC', '#E9F8FF'],
+    fill: (x, y) => (x % 3 === 2 || y % 3 === 2 ? 3 : (Math.floor(x / 3) + Math.floor(y / 3)) % 2 ? 2 : 1),
+  },
+  {
+    id: 'puttsies.green', game: 'puttsies', name: 'Putting green',
+    colors: ['#8ED46E', '#7CC45C', '#2B2F38', '#FFFFFF', '#E5484D'],
+    fill: (x, y) => {
+      // A flag in its hole, top left.
+      if (x === 1 && y >= 0 && y <= 3) return 4;
+      if ((x === 2 || x === 3) && y === 0) return 5;
+      if (x === 2 && y === 1) return 5;
+      if ((x === 0 || x === 2) && y === 4) return 3;
+      if (x === 1 && y === 4) return 3;
+      return Math.floor((x + y) / 3) % 2 ? 2 : 1;
+    },
+  },
+  {
+    id: 'weighsies.dial', game: 'weighsies', name: 'Scale dial',
+    colors: ['#FFF8E8', '#2B2F38', '#E5484D', '#E8DCC0'],
+    fill: (x, y) => {
+      const dx = x - 7.5, dy = y - 7.5, d = Math.hypot(dx, dy);
+      if (d > 7.6) return 4;
+      // The needle points up and right, past the guy's shoulder.
+      if (dx > 1 && dy < -1 && Math.abs(dx + dy) < 0.6) return 3;
+      // Ticks round the rim, a long one every so often.
+      const a = Math.round((Math.atan2(dy, dx) / (2 * Math.PI)) * 24);
+      if (d > 6.2 && a % 2 === 0) return 2;
+      return 1;
+    },
+  },
+  {
+    id: 'cutsies.board', game: 'cutsies', name: 'Cutting board',
+    colors: ['#E8C690', '#D9B077', '#B98B52'],
+    fill: (x, y) => {
+      if ((x === 2 && y === 2) || (x === 13 && y === 12)) return 3;
+      return (y + Math.floor(x / 5)) % 4 === 0 ? 2 : 1;
+    },
+  },
+  {
+    id: 'tiltsies.bedding', game: 'tiltsies', name: 'Wood shavings',
+    colors: ['#F6EBD2', '#E3C997', '#CFAE74'],
+    fill: (x, y) => ((x * 5 + y * 7) % 9 === 0 ? 2 : (x * 3 + y * 11) % 13 === 0 || (y >= 13 && (x + y) % 3 === 0) ? 3 : 1),
+  },
+  {
+    id: 'trackdle.kerb', game: 'trackdle', name: 'Kerb',
+    colors: ['#5A5F6B', '#E5484D', '#FFFFFF', '#4A4E58'],
+    fill: (x, y) => (y <= 1 || y >= 14 ? (Math.floor((x + y) / 2) % 2 ? 2 : 3) : (x * 5 + y * 3) % 7 === 0 ? 4 : 1),
+  },
 ];
 
 // ---------------------------------------------------------------- buddies
 
 /**
- * A tiny pet that sits at his feet, bottom right, in front of everything. One
- * per game, drawn small enough (4 or 5 pixels) to leave the guy room.
+ * A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
+ * pixel round it for its outline). `o` is an eye, in the guy's outline
+ * colour, so it stays dark whatever finish the buddy has.
+ */
+const pet = (name: string, rows: string[]): Stamp => {
+  if (rows.length > 5 || rows.some(r => r.length > 5)) throw new Error(`Buddy "${name}" must fit in 5x5`);
+  return stamp(rows);
+};
+
+/**
+ * A tiny pet that sits at his feet, bottom right, in front of everything.
+ * Each is a bold shape of its own (a gem, a drop, a bean, a cone) with a lit
+ * side, a shaded side and a face, filling as much of its 5x5 as it can, so it
+ * reads at a glance on any guy and any frame.
  */
 const buddies: Omit<Item, 'slot'>[] = [
-  { id: 'amountle.gemling', game: 'amountle', name: 'Gemling', colors: ['#5FE0D0', '#2FA89A', '#E6FFFB'], art: stamp(['.13.', '1132', '1122', '.22.']) },
-  { id: 'halfsies.pea', game: 'halfsies', name: 'Pea pod', colors: ['#7CC45A', '#4E9A36', '#C6F59A'], art: stamp(['.11.', '1332', '1332', '.22.']) },
-  { id: 'stackdle.cubelet', game: 'stackdle', name: 'Cubelet', colors: ['#FFB03B', '#E58A1F'], art: stamp(['1112', 'o1o2', '1112', '2222']) },
-  { id: 'flipsies.droplet', game: 'flipsies', name: 'Droplet', colors: ['#6FC3F5', '#3E8FD6', '#FFFFFF'], art: stamp(['.1..', '.11.', '1311', '1112', '.22.']) },
-  { id: 'puttsies.tee', game: 'puttsies', name: 'Tee buddy', colors: ['#FFFFFF', '#D3D8E2', '#E8B060'], art: stamp(['.11.', '1121', '.22.', '.3..', '333.']) },
-  { id: 'weighsies.mouse', game: 'weighsies', name: 'Mouse', colors: ['#B9C0CE', '#FF9EBB', '#8A93A3'], art: stamp(['2..2', '1111', 'o11o', '.33.']) },
-  { id: 'cutsies.seedling', game: 'cutsies', name: 'Seedling', colors: ['#7DD87A', '#4FAE5C', '#B07444'], art: stamp(['1..1', '.12.', '.2..', '3333']) },
-  { id: 'tiltsies.hamlet', game: 'tiltsies', name: 'Hamlet', colors: ['#F2B66D', '#FFE4C2', '#C98A45'], art: stamp(['3..3', '1111', 'o22o', '3333']) },
-  { id: 'trackdle.snail', game: 'trackdle', name: 'Turbo snail', colors: ['#E8A23A', '#B8721A', '#9FD18A'], art: stamp(['.11.', '1221', '1121', '3333']) },
+  {
+    id: 'amountle.gemling', game: 'amountle', name: 'Gemling', colors: ['#3FD1C1', '#1F9C90', '#C8FFF7'],
+    art: pet('gemling', [
+      '.333.',
+      '31112',
+      '1o1o2',
+      '.112.',
+      '..2..',
+    ]),
+  },
+  {
+    id: 'halfsies.pea', game: 'halfsies', name: 'Pea pod', colors: ['#7CC45A', '#3E8A2A', '#C6F59A', '#2E6B20'],
+    art: pet('pea pod', [
+      '...4.',
+      '.334.',
+      '31112',
+      '1o1o2',
+      '.122.',
+    ]),
+  },
+  {
+    id: 'stackdle.cubelet', game: 'stackdle', name: 'Cubelet', colors: ['#FFB03B', '#D97A12', '#FFE0A0'],
+    art: pet('cubelet', [
+      '33332',
+      '31112',
+      '1o1o2',
+      '11112',
+      '22222',
+    ]),
+  },
+  {
+    id: 'flipsies.droplet', game: 'flipsies', name: 'Droplet', colors: ['#5CB8F2', '#2F7CC8', '#FFFFFF'],
+    art: pet('droplet', [
+      '..1..',
+      '.311.',
+      '31112',
+      '1o1o2',
+      '.122.',
+    ]),
+  },
+  {
+    id: 'puttsies.tee', game: 'puttsies', name: 'Tee buddy', colors: ['#FFFFFF', '#C9CFDA', '#E8B060', '#B98232'],
+    art: pet('tee buddy', [
+      '.112.',
+      '1o1o2',
+      '11122',
+      '.222.',
+      '.343.',
+    ]),
+  },
+  {
+    id: 'weighsies.mouse', game: 'weighsies', name: 'Mouse', colors: ['#B9C0CE', '#7E879A', '#FF9EBB', '#E3E7EE'],
+    art: pet('mouse', [
+      '33.33',
+      '34143',
+      '1o1o2',
+      '.132.',
+      '..2..',
+    ]),
+  },
+  {
+    id: 'cutsies.seedling', game: 'cutsies', name: 'Seedling', colors: ['#7DD87A', '#3E9A4C', '#E07B4C', '#B05A30'],
+    art: pet('seedling', [
+      '11.11',
+      '.121.',
+      '33334',
+      '3o3o4',
+      '.444.',
+    ]),
+  },
+  {
+    id: 'tiltsies.hamlet', game: 'tiltsies', name: 'Hamlet', colors: ['#F2B66D', '#C98A45', '#FFE4C2', '#FF9EBB'],
+    art: pet('hamlet', [
+      '2...2',
+      '11112',
+      '1o1o2',
+      '33433',
+      '.333.',
+    ]),
+  },
+  {
+    id: 'trackdle.snail', game: 'trackdle', name: 'Turbo snail', colors: ['#FF8A3A', '#C85A14', '#FFD08A', '#9FD18A', '#5FA04A'],
+    art: pet('turbo snail', [
+      '.11.o',
+      '13214',
+      '12214',
+      '44444',
+    ]),
+  },
+
+  // More buddies for every game.
+  {
+    id: 'amountle.jellybean', game: 'amountle', name: 'Jelly bean', colors: ['#FF5C8A', '#C93A66', '#FFC2D4'],
+    art: pet('jelly bean', [
+      '.31..',
+      '3111.',
+      '1o1o1',
+      '11112',
+      '.222.',
+    ]),
+  },
+  {
+    id: 'amountle.piglet', game: 'amountle', name: 'Piglet bank', colors: ['#FFA3C0', '#E5799C', '#FFD2E0', '#F2C230', '#C8406E'],
+    art: pet('piglet bank', [
+      '2.4.2',
+      '31112',
+      '1o1o2',
+      '13312',
+      '.2.2.',
+    ]),
+  },
+  {
+    id: 'halfsies.yolk', game: 'halfsies', name: 'Sunny egg', colors: ['#FFFFFF', '#D5DBE3', '#FFC93A', '#E59A12'],
+    art: pet('sunny egg', [
+      '.11..',
+      '13331',
+      '1o3o1',
+      '13342',
+      '.122.',
+    ]),
+  },
+  {
+    id: 'halfsies.berry', game: 'halfsies', name: 'Berry half', colors: ['#F0435A', '#B82A40', '#FFC2CC', '#5CB85C'],
+    art: pet('berry half', [
+      '.444.',
+      '13331',
+      '1o3o2',
+      '.132.',
+      '..2..',
+    ]),
+  },
+  {
+    id: 'stackdle.pyramid', game: 'stackdle', name: 'Pyramid', colors: ['#FF8FB1', '#D9557F', '#FFC9DA'],
+    art: pet('pyramid', [
+      '..3..',
+      '.312.',
+      '.312.',
+      '3o1o2',
+      '11122',
+    ]),
+  },
+  {
+    id: 'stackdle.brickling', game: 'stackdle', name: 'Brickling', colors: ['#5C9BFF', '#2F64C8', '#B5D3FF'],
+    art: pet('brickling', [
+      '.3.3.',
+      '33332',
+      '1o1o2',
+      '11112',
+      '22222',
+    ]),
+  },
+  {
+    id: 'flipsies.shortstack', game: 'flipsies', name: 'Short stack', colors: ['#E8A04E', '#9A5A20', '#F8CF8A', '#FFF39A', '#7A3A10'],
+    art: pet('short stack', [
+      '..4..',
+      '.333.',
+      '1o1o1',
+      '25522',
+      '11111',
+    ]),
+  },
+  {
+    id: 'flipsies.duck', game: 'flipsies', name: 'Rubber duck', colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF8A2B'],
+    art: pet('rubber duck', [
+      '.31..',
+      '1o44.',
+      '.11.3',
+      '31112',
+      '.222.',
+    ]),
+  },
+  {
+    id: 'puttsies.gopher', game: 'puttsies', name: 'Gopher', colors: ['#B07A4A', '#7A4E2A', '#F2D4A8', '#3A9466', '#256B47'],
+    art: pet('gopher', [
+      '2...2',
+      '11112',
+      '1o1o2',
+      '13312',
+      '44445',
+    ]),
+  },
+  {
+    id: 'puttsies.frog', game: 'puttsies', name: 'Hazard frog', colors: ['#6CC24A', '#3E8E2E', '#C8F59A', '#FFFFFF'],
+    art: pet('hazard frog', [
+      '44.44',
+      '4o1o4',
+      '11112',
+      '13332',
+      '.1.2.',
+    ]),
+  },
+  {
+    id: 'weighsies.cheddar', game: 'weighsies', name: 'Cheddar', colors: ['#FFC94A', '#D98F22', '#FFE38F', '#E3A52E'],
+    art: pet('cheddar', [
+      '...3.',
+      '..311',
+      '.3141',
+      '1o1o1',
+      '22222',
+    ]),
+  },
+  {
+    id: 'weighsies.chick', game: 'weighsies', name: 'Chick', colors: ['#FFE066', '#E8B320', '#FFF6C2', '#FF8A2B'],
+    art: pet('chick', [
+      '..3..',
+      '.311.',
+      '1o4o2',
+      '11112',
+      '.4.4.',
+    ]),
+  },
+  {
+    id: 'cutsies.cherries', game: 'cutsies', name: 'Cherries', colors: ['#E5384D', '#A8202F', '#FF9AA4', '#4FAE5C'],
+    art: pet('cherries', [
+      '..44.',
+      '.4..4',
+      '31.31',
+      '12.12',
+    ]),
+  },
+  {
+    id: 'cutsies.pineapple', game: 'cutsies', name: 'Pineapple', colors: ['#FFC93A', '#D9961E', '#FFE7A0', '#5CB85C', '#2E7D3A'],
+    art: pet('pineapple', [
+      '4.5.4',
+      '.454.',
+      '31212',
+      '1o1o2',
+      '.212.',
+    ]),
+  },
+  {
+    id: 'tiltsies.rolly', game: 'tiltsies', name: 'Rolly', colors: ['#D8EEF8', '#8EBFD8', '#FFFFFF', '#EDB57D', '#CC8E55'],
+    art: pet('rolly', [
+      '.312.',
+      '34452',
+      '1o4o2',
+      '14552',
+      '.222.',
+    ]),
+  },
+  {
+    id: 'tiltsies.sunflower', game: 'tiltsies', name: 'Sunflower', colors: ['#FFD23A', '#E0A61E', '#D9A066', '#4FAE5C'],
+    art: pet('sunflower', [
+      '.1.1.',
+      '13331',
+      '3o3o3',
+      '13331',
+      '.242.',
+    ]),
+  },
+  {
+    id: 'trackdle.conelet', game: 'trackdle', name: 'Conelet', colors: ['#FF7A2F', '#C8501A', '#FFFFFF', '#FFAE73'],
+    art: pet('conelet', [
+      '..1..',
+      '.414.',
+      '.333.',
+      '1o1o2',
+      '22222',
+    ]),
+  },
+  {
+    id: 'trackdle.kart', game: 'trackdle', name: 'Go-kart', colors: ['#E5484D', '#B02A30', '#FFD447', '#2B2F38', '#FF8A8E'],
+    art: pet('go-kart', [
+      '..33.',
+      '.1341',
+      '51112',
+      '11222',
+      '44.44',
+    ]),
+  },
 ];
 
 // ---------------------------------------------------------------- seasonal
@@ -1148,6 +1806,21 @@ const seasonal: Omit<Item, 'slot'>[] = [
   { id: 'club.pumpkin', game: 'club', name: 'Pumpkin', season: { from: '10-20', to: '11-02' }, colors: ['#FF8A2B', '#D9661A', '#4FAE5C'], draw: on(['..3..', '11211', '11211', '.111.']) },
   { id: 'club.snowcap', game: 'club', name: 'Snow cap', season: { from: '12-15', to: '01-06' }, colors: ['#E5484D', '#B83236', '#FFFFFF'], draw: on(['....3', '..11.', '.112.', '33333']) },
   { id: 'club.sweetheart', game: 'club', name: 'Sweetheart', season: { from: '02-10', to: '02-16' }, colors: ['#FF5C8A', '#D93A6A', '#FFC2D4'], draw: on(['11.11', '13112', '.112.', '..2..']) },
+
+  // The rest of the year, so every month drops something, and two around the
+  // big holidays. A range that runs past New Year wraps (see inSeason).
+  { id: 'club.newyear', game: 'club', name: 'New Year top hat', season: { from: '12-29', to: '01-02' }, colors: ['#2B2F38', '#4A4E5E', '#F2C230', '#FF6FA0', '#5FB4FF'], draw: on(['4...5', '.112.', '.112.', '.333.', '11112']) },
+  { id: 'club.lantern', game: 'club', name: 'Red lantern', season: { from: '01-20', to: '02-12' }, colors: ['#E5363D', '#B02028', '#FFD447', '#FF8A80'], draw: on(['..3..', '.333.', '41112', '41112', '.333.']) },
+  { id: 'club.shamrock', game: 'club', name: 'Shamrock', season: { from: '03-10', to: '03-18' }, colors: ['#4FBF5C', '#2E8E3E', '#A8EBA8'], draw: on(['..31..', '3.11.3', '112211', '.1.21.', '...2..']) },
+  { id: 'club.blossom', game: 'club', name: 'Cherry blossom', season: { from: '03-19', to: '04-14' }, colors: ['#FFB3D1', '#F07AA8', '#FFF4A0', '#FFFFFF'], draw: on(['.4.1.', '11211', '.232.', '11211', '.1.1.']) },
+  { id: 'club.egg', game: 'club', name: 'Painted egg', season: { from: '03-22', to: '04-25' }, colors: ['#B9A3F0', '#8C7CF0', '#FFE066', '#7FD1AE', '#E6DCFF'], draw: on(['.51.', '5112', '3434', '1112', '.22.']) },
+  { id: 'club.daisy', game: 'club', name: 'Daisy chain', season: { from: '05-01', to: '05-31' }, colors: ['#FFFFFF', '#FFD23A', '#4FAE5C', '#DCE3EC'], draw: on(['.1...1.', '121.121', '.43334.']) },
+  { id: 'club.sunhat', game: 'club', name: 'Sun hat', season: { from: '06-14', to: '07-20' }, colors: ['#F2D58A', '#D9B060', '#E5484D', '#FFF1C2'], draw: on(['...4112...', '...3333...', '2111111112']) },
+  { id: 'club.sparkler', game: 'club', name: 'Fireworks', season: { from: '07-01', to: '07-07' }, colors: ['#FFE066', '#FF6B78', '#7FB0FF', '#FFFFFF', '#8A93A3'], draw: on(['2.1.3', '.414.', '14441', '.424.', '..5..']) },
+  { id: 'club.icecream', game: 'club', name: 'Ice cream', season: { from: '08-01', to: '08-25' }, colors: ['#FFB3D1', '#F07AA8', '#E8B060', '#B98232', '#FFE3EE'], draw: on(['..3..', '.343.', '34343', '51111', '1.1.2']) },
+  { id: 'club.maple', game: 'club', name: 'Maple leaf', season: { from: '09-20', to: '11-30' }, colors: ['#E8572E', '#B83A1A', '#FFA05A', '#8A5A32'], draw: on(['..3..', '3.1.1', '11311', '.111.', '..4..']) },
+  { id: 'club.turkey', game: 'club', name: 'Turkey feathers', season: { from: '11-18', to: '11-30' }, colors: ['#E5484D', '#FF9F2E', '#FFD447', '#8A5A32', '#B07444'], draw: on(['1.2.1', '12321', '23432', '.454.']) },
+  { id: 'club.antlers', game: 'club', name: 'Reindeer antlers', season: { from: '12-01', to: '12-24' }, colors: ['#A8743F', '#7A5228', '#E5484D'], draw: onPair(['1..', '1.1', '111', '.2.'], 1) },
 ];
 
 /** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
