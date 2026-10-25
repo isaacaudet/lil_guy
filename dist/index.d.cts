@@ -1162,5 +1162,87 @@ interface Shine {
 declare function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine | null;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, TraitOdds, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, wearOf, withItems };
+//#region src/voxel.d.ts
+/**
+ * Pixels to 3D: a guy, or one item on its own, as voxel columns, and the
+ * columns as one mesh. Nothing here draws: a mesh is positions, normals and
+ * colours a 3D engine takes as they are (three.js's BufferGeometry), split
+ * into groups by the surface each finish should have, with the points a
+ * convex collider needs.
+ *
+ * Each pixel is a column, deeper the further it sits inside the silhouette,
+ * so a guy comes out pillow-round rather than a slab. Eyes and mouth stand
+ * proud of the face, a hat sits forward, a frame becomes a plate behind
+ * him and a buddy is its own little figure. An item on its own stays
+ * shallow, since it is only a few pixels tall.
+ */
+/** What a frame holds: a colour per pixel and which worn copy it belongs to (0 none, 1 skin, 2 hat, 3 frame, 4 buddy). */
+interface VoxelSource {
+  colors: (string | null)[][];
+  slots: number[][];
+}
+type SurfaceKind = Finish | 'body';
+/** A physically based surface, in the terms three.js's MeshPhysicalMaterial takes. */
+interface Surface {
+  kind: SurfaceKind;
+  roughness: number;
+  metalness: number;
+  clearcoat: number;
+  clearcoatRoughness: number;
+  /** Thin-film rainbow as it turns (Prism). */
+  iridescence: number;
+  /** Soft satin sheen (Sunset). */
+  sheen: number;
+  /** Light from inside, as a share of the surface's own colour (Nebula, Negative). */
+  glow: number;
+}
+/** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
+declare function surfaceOf(kind: SurfaceKind, scuff?: number): Surface;
+/** One pixel as a column: its middle in pixel units (y up, the grid centred on 0), how deep, its colours and surface. */
+interface VoxelColumn {
+  x: number;
+  y: number;
+  z: number;
+  depth: number;
+  /** The front and sides, sRGB hex, darkened where a deeper neighbour shades it. */
+  color: string;
+  /** The back: the body's colour behind an eye or mouth. */
+  back: string;
+  slot: number;
+  surface: Surface;
+}
+interface VoxelOptions {
+  /** An item on its own: shallow columns, nothing pushed forward. */
+  item?: boolean;
+}
+/** A frame (an animation frame, or `itemFrame`) as columns, each worn copy's pixels on its finish's surface. */
+declare function voxelColumns(frame: VoxelSource, owned?: Partial<Record<Slot, Owned>>, options?: VoxelOptions): VoxelColumn[];
+/** One copy on its own, cut out of a guy wearing it: a 16×16 frame with only the item's pixels. */
+declare function itemFrame(o: Owned, seed?: string): VoxelSource;
+/** One copy on its own as columns. */
+declare function voxelItem(o: Owned): VoxelColumn[];
+/** Worn copies by slot, from their codes, for `voxelColumns` on a guy's animation frames. */
+declare function ownedOf(codes: readonly string[]): Partial<Record<Slot, Owned>>;
+interface VoxelMesh {
+  /** Triangles, not indexed: three floats a vertex. */
+  positions: Float32Array;
+  normals: Float32Array;
+  /** Linear RGB (sRGB decoded), as three.js wants vertex colours. */
+  colors: Float32Array;
+  /** Vertex ranges sharing a surface: one material each. */
+  groups: {
+    start: number;
+    count: number;
+    surface: Surface;
+  }[];
+  /** The silhouette's corners, front and back: enough for a convex collider. */
+  hull: Float32Array;
+  min: [number, number, number];
+  max: [number, number, number];
+}
+/** Columns as one mesh, `cell` units a pixel, with faces between touching columns left out. */
+declare function voxelMesh(columns: readonly VoxelColumn[], cell?: number): VoxelMesh;
+
+//#endregion
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

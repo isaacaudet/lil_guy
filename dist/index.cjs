@@ -1854,6 +1854,470 @@ function createShine(canvas) {
 }
 
 //#endregion
+//#region src/voxel.ts
+const SURFACES = {
+	body: {
+		roughness: .46,
+		metalness: 0,
+		clearcoat: .35,
+		clearcoatRoughness: .35,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
+	},
+	plain: {
+		roughness: .5,
+		metalness: 0,
+		clearcoat: .3,
+		clearcoatRoughness: .4,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
+	},
+	sunset: {
+		roughness: .3,
+		metalness: .05,
+		clearcoat: .9,
+		clearcoatRoughness: .12,
+		iridescence: 0,
+		sheen: 1,
+		glow: 0
+	},
+	tempered: {
+		roughness: .28,
+		metalness: .85,
+		clearcoat: .4,
+		clearcoatRoughness: .2,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
+	},
+	nebula: {
+		roughness: .22,
+		metalness: .1,
+		clearcoat: 1,
+		clearcoatRoughness: .08,
+		iridescence: 0,
+		sheen: 0,
+		glow: .9
+	},
+	prism: {
+		roughness: .12,
+		metalness: .35,
+		clearcoat: 1,
+		clearcoatRoughness: .04,
+		iridescence: 1,
+		sheen: 0,
+		glow: 0
+	},
+	negative: {
+		roughness: .1,
+		metalness: .2,
+		clearcoat: 1,
+		clearcoatRoughness: .03,
+		iridescence: 0,
+		sheen: 0,
+		glow: .2
+	},
+	gold: {
+		roughness: .16,
+		metalness: 1,
+		clearcoat: .5,
+		clearcoatRoughness: .08,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
+	}
+};
+/** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
+function surfaceOf(kind, scuff = 0) {
+	const s = SURFACES[kind], wear = Math.round(Math.min(1, Math.max(0, scuff)) * 10) / 10;
+	return {
+		kind,
+		...s,
+		roughness: Math.min(1, +(s.roughness + wear * .55).toFixed(3)),
+		clearcoat: +(s.clearcoat * (1 - wear)).toFixed(3)
+	};
+}
+const lum = (hex$1) => {
+	const n = parseInt(hex$1.slice(1, 7), 16);
+	return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255;
+};
+const darken = (hex$1, k) => {
+	const n = parseInt(hex$1.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
+	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
+};
+/** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
+function inset(w, h, inside) {
+	const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_$1, x) => inside(x, y) ? 99 : 0));
+	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y - 1]?.[x] ?? 0) + 1, (d[y][x - 1] ?? 0) + 1);
+	for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y + 1]?.[x] ?? 0) + 1, (d[y][x + 1] ?? 0) + 1);
+	return d;
+}
+/** A frame (an animation frame, or `itemFrame`) as columns, each worn copy's pixels on its finish's surface. */
+function voxelColumns(frame, owned = {}, options = {}) {
+	const C = frame.colors, S = frame.slots, H = C.length, W = C[0]?.length ?? 0, small = !!options.item;
+	const slotName = (s) => [
+		"skin",
+		"hat",
+		"frame",
+		"buddy"
+	][s - 1];
+	const figure = inset(W, H, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
+	const buddy = inset(W, H, (x, y) => !!C[y][x] && S[y][x] === 4);
+	const feature = (x, y) => {
+		const c = C[y][x];
+		if (!c || S[y][x] !== 0 || figure[y][x] < 2) return 0;
+		const l = lum(c);
+		return l < .22 ? .45 : l > .86 ? .3 : 0;
+	};
+	const front = Array.from({ length: H }, () => new Array(W).fill(-Infinity));
+	const span = Array.from({ length: H }, () => new Array(W).fill(null));
+	let deepest = 0;
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const c = C[y][x], s = S[y][x];
+		if (!c || s === 3) continue;
+		const d = s === 4 ? buddy[y][x] : figure[y][x];
+		let t = small ? 1 + .45 * Math.min(d, 3) : 1.3 + 1.05 * Math.min(d, 4);
+		if (s === 4 && !small) t *= .82;
+		if (s === 2 && !small) t += .5;
+		const lift = feature(x, y);
+		span[y][x] = {
+			z0: -t / 2,
+			z1: t / 2 + lift
+		};
+		front[y][x] = t / 2 + lift;
+		deepest = Math.max(deepest, t);
+	}
+	const out = [];
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const c = C[y][x], s = S[y][x];
+		if (!c) continue;
+		const copy = s ? owned[slotName(s)] : void 0;
+		const surface = surfaceOf(copy ? copy.finish : "body", copy ? copy.scuff : 0);
+		const px = x - W / 2 + .5, py = H / 2 - y - .5;
+		if (s === 3) {
+			out.push({
+				x: px,
+				y: py,
+				z: -(deepest / 2 + .5),
+				depth: .7,
+				color: c,
+				back: c,
+				slot: s,
+				surface
+			});
+			continue;
+		}
+		const { z0, z1 } = span[y][x];
+		let shade = 0;
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (front[y + dy]?.[x + dx] ?? -Infinity) > z1 + .4) shade++;
+		let back = c;
+		if (feature(x, y)) {
+			const around = [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			].find(([dx, dy]) => {
+				const n = C[y + dy]?.[x + dx];
+				return !!n && !feature(x + dx, y + dy) && lum(n) >= .22 && lum(n) <= .86;
+			});
+			if (around) back = C[y + around[1]][x + around[0]];
+		}
+		out.push({
+			x: px,
+			y: py,
+			z: (z0 + z1) / 2,
+			depth: z1 - z0,
+			color: shade ? darken(c, 1 - shade * .045) : c,
+			back,
+			slot: s,
+			surface
+		});
+	}
+	return out;
+}
+const SLOT_TOKENS = {
+	skin: [require_paint.LAYER.skin, require_paint.LAYER.hat],
+	hat: [require_paint.LAYER.hat, require_paint.LAYER.frame],
+	frame: [require_paint.LAYER.frame, require_paint.LAYER.buddy],
+	buddy: [require_paint.LAYER.buddy, require_paint.LAYER.buddy + 10]
+};
+/** One copy on its own, cut out of a guy wearing it: a 16×16 frame with only the item's pixels. */
+function itemFrame(o, seed = "display stand") {
+	const slot = require_paint.slotOf(o);
+	if (!slot) throw new Error(`Unknown item "${o.item}"`);
+	const [lo, hi] = SLOT_TOKENS[slot], want = [
+		"skin",
+		"hat",
+		"frame",
+		"buddy"
+	].indexOf(slot) + 1;
+	const base = require_paint.resolve(seed);
+	const draw = (equip) => {
+		const cfg = require_paint.dress(base, { equip });
+		const grid = require_paint.compose(cfg);
+		return {
+			grid,
+			colors: require_paint.paint(grid, cfg, require_paint.withItems(require_paint.paletteOf(cfg), cfg))
+		};
+	};
+	const worn = draw([require_paint.encode(o)]);
+	let mask = worn.grid.map((row) => row.map((t) => t >= lo && t < hi));
+	if (!mask.some((r) => r.some(Boolean))) {
+		const bare = draw([]);
+		mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x]));
+	}
+	const colors = worn.colors.map((row, y) => row.map((c, x) => mask[y][x] ? c : null));
+	return {
+		colors,
+		slots: colors.map((row) => row.map((c) => c ? want : 0))
+	};
+}
+/** One copy on its own as columns. */
+function voxelItem(o) {
+	return voxelColumns(itemFrame(o), { [require_paint.slotOf(o)]: o }, { item: true });
+}
+/** Worn copies by slot, from their codes, for `voxelColumns` on a guy's animation frames. */
+function ownedOf(codes) {
+	const out = {};
+	for (const code of codes) {
+		const o = require_paint.decode(code);
+		const slot = o && require_paint.slotOf(o);
+		if (o && slot) out[slot] = o;
+	}
+	return out;
+}
+const linear = (hex$1) => {
+	const n = parseInt(hex$1.slice(1, 7), 16);
+	return [
+		n >> 16 & 255,
+		n >> 8 & 255,
+		n & 255
+	].map((v) => {
+		const c = v / 255;
+		return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
+	});
+};
+/** Columns as one mesh, `cell` units a pixel, with faces between touching columns left out. */
+function voxelMesh(columns, cell = 1) {
+	const at = new Map();
+	for (const c of columns) at.set(`${c.x},${c.y}`, c);
+	const key = (s) => `${s.kind}|${s.roughness}|${s.clearcoat}`;
+	const bySurface = new Map();
+	for (const c of columns) {
+		const k = key(c.surface);
+		if (!bySurface.has(k)) bySurface.set(k, []);
+		bySurface.get(k).push(c);
+	}
+	const pos = [], nor = [], col = [], groups = [];
+	const quad = (a, b$1, c, d, n, rgb$1) => {
+		for (const p of [
+			a,
+			b$1,
+			c,
+			a,
+			c,
+			d
+		]) {
+			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
+			nor.push(...n);
+			col.push(...rgb$1);
+		}
+	};
+	const open = (z0, z1, n) => {
+		if (!n) return [[z0, z1]];
+		const n0 = n.z - n.depth / 2, n1 = n.z + n.depth / 2, out = [];
+		if (n0 > z0) out.push([z0, Math.min(z1, n0)]);
+		if (n1 < z1) out.push([Math.max(z0, n1), z1]);
+		return out.filter(([a, b$1]) => b$1 - a > 1e-6);
+	};
+	for (const list of bySurface.values()) {
+		const start = pos.length / 3;
+		for (const c of list) {
+			const x0 = c.x - .5, x1 = c.x + .5, y0 = c.y - .5, y1 = c.y + .5, z0 = c.z - c.depth / 2, z1 = c.z + c.depth / 2;
+			const face = linear(c.color), back = linear(c.back);
+			quad([
+				x0,
+				y0,
+				z1
+			], [
+				x1,
+				y0,
+				z1
+			], [
+				x1,
+				y1,
+				z1
+			], [
+				x0,
+				y1,
+				z1
+			], [
+				0,
+				0,
+				1
+			], face);
+			quad([
+				x1,
+				y0,
+				z0
+			], [
+				x0,
+				y0,
+				z0
+			], [
+				x0,
+				y1,
+				z0
+			], [
+				x1,
+				y1,
+				z0
+			], [
+				0,
+				0,
+				-1
+			], back);
+			for (const [a, b$1] of open(z0, z1, at.get(`${c.x - 1},${c.y}`))) quad([
+				x0,
+				y0,
+				a
+			], [
+				x0,
+				y0,
+				b$1
+			], [
+				x0,
+				y1,
+				b$1
+			], [
+				x0,
+				y1,
+				a
+			], [
+				-1,
+				0,
+				0
+			], face);
+			for (const [a, b$1] of open(z0, z1, at.get(`${c.x + 1},${c.y}`))) quad([
+				x1,
+				y0,
+				b$1
+			], [
+				x1,
+				y0,
+				a
+			], [
+				x1,
+				y1,
+				a
+			], [
+				x1,
+				y1,
+				b$1
+			], [
+				1,
+				0,
+				0
+			], face);
+			for (const [a, b$1] of open(z0, z1, at.get(`${c.x},${c.y + 1}`))) quad([
+				x0,
+				y1,
+				b$1
+			], [
+				x1,
+				y1,
+				b$1
+			], [
+				x1,
+				y1,
+				a
+			], [
+				x0,
+				y1,
+				a
+			], [
+				0,
+				1,
+				0
+			], face);
+			for (const [a, b$1] of open(z0, z1, at.get(`${c.x},${c.y - 1}`))) quad([
+				x0,
+				y0,
+				a
+			], [
+				x1,
+				y0,
+				a
+			], [
+				x1,
+				y0,
+				b$1
+			], [
+				x0,
+				y0,
+				b$1
+			], [
+				0,
+				-1,
+				0
+			], face);
+		}
+		groups.push({
+			start,
+			count: pos.length / 3 - start,
+			surface: list[0].surface
+		});
+	}
+	const seen = new Set(), hull = [];
+	const min = [
+		Infinity,
+		Infinity,
+		Infinity
+	], max = [
+		-Infinity,
+		-Infinity,
+		-Infinity
+	];
+	for (const c of columns) {
+		const edge = [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		].some(([dx, dy]) => !at.has(`${c.x + dx},${c.y + dy}`));
+		for (const px of [c.x - .5, c.x + .5]) for (const py of [c.y - .5, c.y + .5]) for (const pz of [c.z - c.depth / 2, c.z + c.depth / 2]) {
+			const p = [
+				px * cell,
+				py * cell,
+				pz * cell
+			];
+			p.forEach((v, i) => {
+				min[i] = Math.min(min[i], v);
+				max[i] = Math.max(max[i], v);
+			});
+			if (!edge) continue;
+			const k = p.join(",");
+			if (!seen.has(k)) {
+				seen.add(k);
+				hull.push(...p);
+			}
+		}
+	}
+	return {
+		positions: new Float32Array(pos),
+		normals: new Float32Array(nor),
+		colors: new Float32Array(col),
+		groups,
+		hull: new Float32Array(hull),
+		min,
+		max
+	};
+}
+
+//#endregion
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
@@ -1910,6 +2374,7 @@ exports.hashNth = require_paint.hashNth
 exports.heads = require_paint.heads
 exports.inSeason = require_paint.inSeason
 exports.itemById = require_paint.itemById
+exports.itemFrame = itemFrame
 exports.items = require_paint.items
 exports.lookOf = lookOf
 exports.luckyPalette = require_paint.luckyPalette
@@ -1918,6 +2383,7 @@ exports.mergeRefs = mergeRefs
 exports.mouths = require_paint.mouths
 exports.nameOf = require_paint.nameOf
 exports.nebulaPhase = require_paint.nebulaPhase
+exports.ownedOf = ownedOf
 exports.paint = require_paint.paint
 exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
@@ -1932,6 +2398,7 @@ exports.shineData = shineData
 exports.slotOf = require_paint.slotOf
 exports.special = require_paint.special
 exports.starter = require_paint.starter
+exports.surfaceOf = surfaceOf
 exports.tallyMarks = require_paint.tallyMarks
 exports.temperTint = require_paint.temperTint
 exports.toAnimatedSvg = toAnimatedSvg
@@ -1941,6 +2408,9 @@ exports.toSvgString = toSvgString
 exports.traitOdds = traitOdds
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
+exports.voxelColumns = voxelColumns
+exports.voxelItem = voxelItem
+exports.voxelMesh = voxelMesh
 exports.wearOf = require_paint.wearOf
 exports.withItems = require_paint.withItems
 //# sourceMappingURL=index.cjs.map
