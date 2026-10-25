@@ -6256,6 +6256,25 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		front[y][x] = t / 2 + lift;
 		deepest = Math.max(deepest, t);
 	}
+	let squeeze = 1;
+	if (options.deepest) {
+		let lo = Infinity, hi = -Infinity;
+		for (const row of span) for (const s of row) if (s) {
+			lo = Math.min(lo, s.z0);
+			hi = Math.max(hi, s.z1);
+		}
+		if (hi - lo > options.deepest) squeeze = options.deepest / (hi - lo);
+	}
+	if (squeeze < 1) {
+		for (const row of span) for (const s of row) if (s) {
+			s.z0 *= squeeze;
+			s.z1 *= squeeze;
+		}
+		for (const row of front) row.forEach((v, x) => {
+			row[x] = v * squeeze;
+		});
+		deepest *= squeeze;
+	}
 	const out = [];
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const c = C[y][x], s = S[y][x];
@@ -6302,7 +6321,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			back,
 			slot: s,
 			surface,
-			lift: feature(x, y)
+			lift: feature(x, y) * squeeze
 		});
 	}
 	return out;
@@ -6640,6 +6659,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 				hull.push(...p);
 			}
 		}
+		if (!edge) for (const pz of [c.z - c.depth / 2, c.z + c.depth / 2]) hull.push(c.x * cell, c.y * cell, pz * cell);
 	}
 	return {
 		positions: new Float32Array(pos),

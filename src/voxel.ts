@@ -79,6 +79,8 @@ export interface VoxelColumn {
 export interface VoxelOptions {
   /** An item on its own: shallow columns, nothing pushed forward. */
   item?: boolean;
+  /** At most this many pixels deep, front to back, everything squeezed to fit (a game's pile piece keeps to its collider). */
+  deepest?: number;
 }
 
 const lum = (hex: string) => {
@@ -126,6 +128,18 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
     front[y][x] = t / 2 + lift;
     deepest = Math.max(deepest, t);
   }
+  // Squeezed to a cap, the face's lift with it.
+  let squeeze = 1;
+  if (options.deepest) {
+    let lo = Infinity, hi = -Infinity;
+    for (const row of span) for (const s of row) if (s) { lo = Math.min(lo, s.z0); hi = Math.max(hi, s.z1); }
+    if (hi - lo > options.deepest) squeeze = options.deepest / (hi - lo);
+  }
+  if (squeeze < 1) {
+    for (const row of span) for (const s of row) if (s) { s.z0 *= squeeze; s.z1 *= squeeze; }
+    for (const row of front) row.forEach((v, x) => { row[x] = v * squeeze; });
+    deepest *= squeeze;
+  }
 
   const out: VoxelColumn[] = [];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -148,7 +162,7 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
       const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dx, dy]) => { const n = C[y + dy]?.[x + dx]; return !!n && !feature(x + dx, y + dy) && lum(n) >= .22 && lum(n) <= .86; });
       if (around) back = C[y + around[1]][x + around[0]]!;
     }
-    out.push({ x: px, y: py, z: (z0 + z1) / 2, depth: z1 - z0, color: shade ? darken(c, 1 - shade * .045) : c, back, slot: s, surface, lift: feature(x, y) });
+    out.push({ x: px, y: py, z: (z0 + z1) / 2, depth: z1 - z0, color: shade ? darken(c, 1 - shade * .045) : c, back, slot: s, surface, lift: feature(x, y) * squeeze });
   }
   return out;
 }
@@ -193,7 +207,7 @@ export interface VoxelMesh {
   colors: Float32Array;
   /** Vertex ranges sharing a surface: one material each. */
   groups: { start: number; count: number; surface: Surface }[];
-  /** The silhouette's corners, front and back: enough for a convex collider. */
+  /** The silhouette's corners, front and back, and the front and back of every column inside it: enough for a convex collider or a box. */
   hull: Float32Array;
   min: [number, number, number];
   max: [number, number, number];
@@ -296,6 +310,8 @@ export function voxelMesh(columns: readonly VoxelColumn[], cell = 1, options: { 
       const k = p.join(',');
       if (!seen.has(k)) { seen.add(k); hull.push(...p); }
     }
+    // Inside the silhouette only its front and back matter, the deepest there.
+    if (!edge) for (const pz of [c.z - c.depth / 2, c.z + c.depth / 2]) hull.push(c.x * cell, c.y * cell, pz * cell);
   }
   return { positions: new Float32Array(pos), normals: new Float32Array(nor), colors: new Float32Array(col), groups, hull: new Float32Array(hull), min, max };
 }

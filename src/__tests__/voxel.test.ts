@@ -33,6 +33,16 @@ describe('voxel', () => {
     expect(surfaceOf('gold', .9).clearcoat).toBeLessThan(surfaceOf('gold', 0).clearcoat);
   });
 
+  test('a cap squeezes a figure to its depth, the lift with it', () => {
+    const frame = animate('rex', 'idle', { equip: [encode(crown)], rarity: false }).frames[0];
+    const free = voxelColumns(frame, ownedOf([encode(crown)]));
+    const capped = voxelColumns(frame, ownedOf([encode(crown)]), { deepest: 4 });
+    const extent = (cols: typeof free) => Math.max(...cols.map(c => c.z + c.depth / 2)) - Math.min(...cols.map(c => c.z - c.depth / 2));
+    expect(extent(free)).toBeGreaterThan(4);
+    expect(extent(capped)).toBeCloseTo(4, 5);
+    expect(Math.max(...capped.map(c => c.lift))).toBeLessThan(Math.max(...free.map(c => c.lift)));
+  });
+
   test('a frame is a plate behind', () => {
     const cols = voxelItem(plate);
     expect(cols.every(c => c.slot === 3 && c.depth < 1)).toBe(true);
@@ -49,6 +59,9 @@ describe('voxel', () => {
       expect(cross[0] * n[i] + cross[1] * n[i + 1] + cross[2] * n[i + 2]).toBeGreaterThan(0);
     }
     expect(m.hull.length).toBeGreaterThan(0);
+    // The hull spans the whole mesh, its deepest middle included.
+    const span = (k: number) => { let lo = Infinity, hi = -Infinity; for (let i = k; i < m.hull.length; i += 3) { lo = Math.min(lo, m.hull[i]); hi = Math.max(hi, m.hull[i]); } return [lo, hi]; };
+    for (let k = 0; k < 3; k++) { expect(span(k)[0]).toBeCloseTo(m.min[k], 6); expect(span(k)[1]).toBeCloseTo(m.max[k], 6); }
     for (let i = 0; i < m.hull.length; i += 3) for (let k = 0; k < 3; k++) {
       expect(m.hull[i + k]).toBeGreaterThanOrEqual(m.min[k] - 1e-6);
       expect(m.hull[i + k]).toBeLessThanOrEqual(m.max[k] + 1e-6);

@@ -1216,6 +1216,8 @@ interface VoxelColumn {
 interface VoxelOptions {
   /** An item on its own: shallow columns, nothing pushed forward. */
   item?: boolean;
+  /** At most this many pixels deep, front to back, everything squeezed to fit (a game's pile piece keeps to its collider). */
+  deepest?: number;
 }
 /** A frame (an animation frame, or `itemFrame`) as columns, each worn copy's pixels on its finish's surface. */
 declare function voxelColumns(frame: VoxelSource, owned?: Partial<Record<Slot, Owned>>, options?: VoxelOptions): VoxelColumn[];
@@ -1237,7 +1239,7 @@ interface VoxelMesh {
     count: number;
     surface: Surface;
   }[];
-  /** The silhouette's corners, front and back: enough for a convex collider. */
+  /** The silhouette's corners, front and back, and the front and back of every column inside it: enough for a convex collider or a box. */
   hull: Float32Array;
   min: [number, number, number];
   max: [number, number, number];
