@@ -817,21 +817,98 @@ void main() {
     return st;
   }
 
-  /** A gacha machine, 40x56. */
+  /* Each game's machine has its own look: capsules in the game's colours, a pattern on the body, a sign
+   * with the game's own icon (some of them moving) and a topper on the dome. Sprites are rows of letters
+   * from MPAL, drawn on the fine grid and centred on a point; '.' is see-through. */
+  const MPAL = { k: [22, 18, 34], w: [252, 250, 244], W: [214, 206, 188], y: [255, 207, 92], Y: [196, 140, 30], o: [255, 150, 70], r: [232, 76, 82], R: [160, 40, 50],
+    g: [110, 200, 110], G: [46, 128, 70], P: [196, 70, 128], b: [95, 180, 255], B: [40, 96, 180], p: [255, 126, 182], s: [205, 210, 226], S: [128, 134, 160], n: [176, 116, 64], N: [110, 70, 40], v: [170, 140, 255], t: [80, 214, 196], d: [24, 30, 46] };
+  function sprite(hi, rows, cx, y0, dx = 0) {
+    const w = Math.max(...rows.map(r => r.length)), x0 = Math.round(cx - w / 2 + dx);
+    rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') hi.set(x0 + x, y0 + y, MPAL[ch]); }));
+  }
+  const DIGIT = ['111101101101111', '010110010010111', '111001111100111', '111001111001111', '101101111001001', '111100111001111', '111100111101111', '111001001001001', '111101111101111', '111101111001111'];
+  function digits(hi, text, x0, y0, c, s = 1) {
+    [...text].forEach((ch, i) => { const d = DIGIT[+ch]; if (!d) return; for (let k = 0; k < 15; k++) if (d[k] === '1') for (let j = 0; j < s * s; j++) hi.set(x0 + i * 4 * s + (k % 3) * s + (j % s), y0 + Math.floor(k / 3) * s + Math.floor(j / s), c); });
+  }
+  const plate = (hi, fill) => { for (let y = 56; y <= 67; y++) for (let x = 20; x <= 59; x++) hi.set(x, y, typeof fill === 'function' ? fill(x, y) : fill); };
+  const THEMES = {
+    amountle: { pile: ['#ff7eb6', '#ffd447', '#7fd1ff', '#9be37a', '#c79bff'], small: true,
+      body: (x, y, c) => (y % 4 === 1 && (x + (y % 8 < 4 ? 0 : 2)) % 4 === 0 ? blend(c, WHITE, 0.4) : c),
+      sign(hi, t) { plate(hi, MPAL.d); digits(hi, String(1000 + Math.floor(t * 7) % 9000).slice(-4), 23, 57, MPAL.y, 2); },
+      top: ['......yyyy......', '....yyYYYYyy....', '...yYyyyyyyYy...', '...yYyYYYYyYy...', '...yYyyyyyyYy...', '....yyYYYYyy....', '..ssssssssssss..', '.sSsSsSsSsSsSsS.', '.sssssssssssssss', '..SSSSSSSSSSSS..'] },
+    halfsies: { pile: ['#f2b066', '#fff1d6', '#ff8a5c', '#ffd28a'],
+      body: (x, y, c) => (x === 20 ? (y % 2 ? blend(c, INK, 0.45) : c) : x > 20 ? blend(c, WHITE, 0.55) : c),
+      sign(hi) { plate(hi, x => x < 40 ? MPAL.o : MPAL.w); digits(hi, '1', 28, 57, MPAL.w, 2); for (let k = 0; k < 10; k++) { hi.set(44 - Math.round(k / 2.5), 57 + k, MPAL.k); hi.set(45 - Math.round(k / 2.5), 57 + k, MPAL.k); } digits(hi, '2', 48, 57, MPAL.o, 2); },
+      top: ['...oooo..WWWW...', '..oooooo.wwwwW..', '.ooooooo.wwwwwW.', '.ooooooo.wwwwwW.', '.ooooooo.wwwwwW.', '..oooooo.wwwwW..', '...oooo..WWWW...', '.....SSSSSS.....', '..SSSSSSSSSSSS..'] },
+    stackdle: { pile: ['#ffd447', '#ff6b6b', '#5fb4ff', '#74d97c'],
+      body: (x, y, c) => { const row = Math.floor((y - 26) / 4); return (y - 26) % 4 === 3 || (x + (row % 2) * 3) % 6 === 0 ? blend(c, INK, 0.2) : c; },
+      sign(hi) { plate(hi, MPAL.w); const B = ['...rrr...', '...rRr...', '...rrr...', '..bbbyyy.', '..bBbyYy.', '..bbbyyy.', '.gggpppbb', '.gGgpPpbB', '.gggpppbb']; for (const cx of [28, 40, 52]) sprite(hi, B, cx, 57); },
+      top: ['.....rrr.....', '.....rRr.....', '.....rrr.....', '...bbbyyy....', '...bBbyYy....', '...bbbyyy....', '..gggpppbbb..', '..gGgpPpbBb..', '..gggpppbbb..', '.SSSSSSSSSSS.'] },
+    flipsies: { pile: ['#5fb4ff', '#d8f0ff', '#ffd447', '#9bd2ff'],
+      body: (x, y, c) => (y >= 49 ? ((x * 7 + y * 3) % 11 === 0 ? MPAL.N : MPAL.n) : (x + y) % 7 === 0 ? blend(c, WHITE, 0.18) : c),
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        sprite(hi, ['...rrrr...', '.rrwwwwrr.', 'rrwwrrwwrr', 'rwwrrrrwwr', 'rwrrwwrrwr', 'rwwrrrrwwr', 'rrwwrrwwrr', '.rrwwwwrr.', '...rrrr...'], 50, 57);
+        const up = ['.ss.', '.bb.', 'bbbb', 'bwbb', 'bwbb', 'bbbb', 'BBBB'], side = ['.......', 'sbbbbbB', 'bwwbbbB', 'bbbbbbB', '.......'];
+        sprite(hi, Math.floor(t * 2.5) % 2 ? up : side, 30, Math.floor(t * 2.5) % 2 ? 58 : 60);
+      },
+      top: ['..ss..', '..bb..', '..bb..', '.bbbb.', 'bbbbbB', 'bwbbbB', 'bwbbbB', 'bbbbbB', '.BBBB.'] },
+    puttsies: { pile: ['#74d97c', '#ffffff', '#ffd447', '#b6f0a0'],
+      body: (x, y, c) => (y >= 44 ? (Math.floor(x / 3) % 2 ? blend(c, INK, 0.12) : blend(c, WHITE, 0.1)) : c),
+      sign(hi, t) {
+        plate(hi, (x, y) => (x + y) % 6 < 3 ? MPAL.g : [96, 186, 98]);
+        sprite(hi, ['rrrr.', 'rrrrr', 'rrrr.', 'k....', 'k....', 'k....', 'k....', 'k....'], 54, 57);
+        for (const [x, y] of [[51, 65], [52, 65], [53, 65], [54, 65], [52, 66], [53, 66]]) hi.set(x, y, MPAL.k);
+        const k = (t * 0.45) % 1, bx = 24 + Math.floor(k * 26);
+        if (k < 0.95) sprite(hi, ['.ww.', 'wwww', 'wwww', '.ww.'], bx, 62);
+      },
+      top: ['...wwww...', '..wwSwww..', '.wwwwwSww.', '.wSwwwwww.', '.wwwSwwSw.', '..wwwwww..', '...wwww...', '....nn....', '....nn....', '..nnnnnn..'] },
+    weighsies: { pile: ['#a98bff', '#e0d6ff', '#ffd447', '#c7b6ff'],
+      body: (x, y, c) => ((x === 7 || x === 32) && y % 5 === 2 ? MPAL.s : y === 35 ? blend(c, INK, 0.2) : c),
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        for (let a = 0; a <= Math.PI; a += 0.04) hi.set(40 + Math.round(Math.cos(Math.PI + a) * 17), 67 + Math.round(Math.sin(Math.PI + a) * 10), MPAL.S);
+        for (let k = 0; k <= 6; k++) { const a = Math.PI + (k / 6) * Math.PI; hi.set(40 + Math.round(Math.cos(a) * 14), 67 + Math.round(Math.sin(a) * 8), k === 3 ? MPAL.r : MPAL.k); }
+        const n = Math.PI * (0.5 + 0.38 * Math.sin(t * 2.1));
+        for (let r = 0; r < 12; r++) hi.set(40 + Math.round(-Math.cos(n) * r), 67 - Math.round(Math.sin(n) * r * 0.75), MPAL.r);
+        hi.set(40, 67, MPAL.k); hi.set(39, 67, MPAL.k); hi.set(41, 67, MPAL.k);
+      },
+      top: ['........y........', '.......yYy.......', 'yyyyyyyyyyyyyyyyy', 's.......y.......s', 's.......y.......s', 's.......y.......s', 'Ss......y......sS', 'SSSs....y....sSSS', '.SS.....y.....SS.', '......yyyyy......'] },
+    cutsies: { pile: ['#ff6b6b', '#86cf55', '#ffd447', '#ffb3a8'],
+      body: (x, y, c) => { const line = 52 - Math.round((x - 6) * 0.95); return y === line ? WHITE : y < line ? blend(c, WHITE, 0.16) : c; },
+      sign(hi) { plate(hi, MPAL.w); const K = ['..GGGG..', '.GggggG.', 'GggkkggG', 'GgkwwkgG', 'GgkwwkgG', 'GggkkggG', '.GggggG.', '..GGGG..']; for (const cx of [27, 40, 53]) sprite(hi, K, cx, 58); },
+      top: ['rrrrrrrrrrrrrrrr', 'rrkrrrrrkrrrrkrr', '.rrrrrkrrrrrrrr.', '..rrrrrrrrkrrr..', '...rrrrrrrrrr...', '....wwwwwwww....', '.....gggggg.....', '......GGGG......'] },
+    tiltsies: { pile: ['#4fd6c4', '#ffffff', '#ffd447', '#a8f0e6'],
+      body: (x, y, c) => { const cx = Math.floor((x - 6) / 4), cy = Math.floor((y - 26) / 4); return ((x - 6) % 4 === 0 && strHash(`${cx}:${cy}`) % 3 === 0) || ((y - 26) % 4 === 0 && strHash(`${cy}:${cx}h`) % 3 === 0) ? blend(c, INK, 0.25) : c; },
+      sign(hi, t) {
+        plate(hi, (x, y) => ((x - 20) % 8 === 0 && y < 64) || ((y - 56) % 6 === 0 && x % 5 !== 0) ? MPAL.S : MPAL.w);
+        const k = (t * 0.5) % 1, bx = 23 + Math.round(34 * (k < 0.5 ? k * 2 : 2 - k * 2));
+        sprite(hi, ['.tt.', 'tttt', 'tttt', '.tt.'], bx, 60);
+      },
+      topFn(hi, t) { const s = Math.sin(t * 1.8); for (let x = -9; x <= 9; x++) { const y = 8 + Math.round(x * s * 0.25); hi.set(40 + x, y, MPAL.S); hi.set(40 + x, y + 1, MPAL.s); } sprite(hi, ['..wwww..', '.wwwwww.', 'wwwwwwww', 'wwwwwwww', '.wwwwww.', '..wwww..'], 40, 1 + Math.round(-s * 1.5), Math.round(s * 6)); } },
+    trackdle: { pile: ['#ff8a3d', '#ffffff', '#2a2a2a', '#ffd447'],
+      body: (x, y, c) => (x >= 31 && x <= 33 ? ((x + y) % 2 ? MPAL.k : WHITE) : y === 26 || y === 27 ? WHITE : c),
+      sign(hi) { plate(hi, x => x < 36 ? MPAL.w : MPAL.w); for (let y = 56; y <= 67; y++) for (let x = 20; x <= 35; x++) hi.set(x, y, ((x >> 2) + (y >> 2)) % 2 ? MPAL.k : MPAL.w); digits(hi, '01', 41, 57, MPAL.r, 2); },
+      topFn(hi, t) { for (let y = 0; y < 10; y++) hi.set(31, y, MPAL.N), hi.set(32, y, MPAL.n); for (let x = 0; x < 15; x++) { const w = Math.round(Math.sin(t * 6 - x * 0.7) * 1.2); for (let y = 0; y < 6; y++) hi.set(33 + x, y + 1 + w, ((x >> 1) + (y >> 1)) % 2 ? MPAL.k : MPAL.w); } } },
+  };
+
+  /** A gacha machine, 40x56, drawn in its game's own look. */
   function addMachine(canvas, game, hoverEl) {
     const body = rgb(CANDY[game]);
     const others = LG.GAMES.map(g => rgb(CANDY[g]));
     // The dome: a glass ball centred over the body, its top fully inside the canvas.
-    const DX = 19.5, DY = 15, DR = 13.6;
+    const DX = 19.5, DY = 17, DR = 12.4;            // lower than the canvas top: the band above is the game's topper
     // Capsules piled in the dome about two thirds full, in two layers: a dimmer back
     // layer peeking between the front one. Drawn top to bottom so lower ones overlap.
-    const pile = [];
-    for (const back of [1, 0]) for (let row = 0; row < 4; row++) {
-      const y = 19.5 - row * 5 - back * 2.5;
-      for (let x = 7.5 + ((row + back) % 2) * 4; x <= 32; x += 8) {
-        if (Math.hypot(x - DX, y - DY) > DR - 3.2) continue;
+    const TH = THEMES[game] || {};
+    const colours = (TH.pile || [CANDY[game]]).map(rgb);
+    const pile = [], sm = TH.small ? 0.72 : 1;
+    for (const back of [1, 0]) for (let row = 0; row < (TH.small ? 6 : 4); row++) {
+      const y = 19.5 - row * 5 * sm - back * 2.5 * sm;
+      for (let x = 7.5 + ((row + back) % 2) * 4 * sm; x <= 32; x += 8 * sm) {
+        if (Math.hypot(x - DX, y - DY) > DR - 3.2 * sm) continue;
         const k = `${game}:${back}:${x}:${y}`;
-        pile.push({ x, y, back, r: back ? 3.9 : 4.4, c: strHash(k) % 5 < 2 ? body : others[strHash(k + '#') % others.length], jx: 0, jy: 0 });
+        pile.push({ x, y, back, r: (back ? 3.9 : 4.4) * sm, c: colours[strHash(k) % colours.length], jx: 0, jy: 0 });
       }
     }
     pile.sort((a, b) => b.back - a.back || a.y - b.y);
@@ -865,15 +942,17 @@ void main() {
           if ((x === 5 || x === 34) && (y === 25 || y === 53)) continue;
           let c = body;
           if (x >= 30) c = blend(body, INK, 0.22); else if (x <= 7) c = blend(body, WHITE, 0.28);
+          if (TH.body && y > 25 && y < 53 && x > 5 && x < 34) c = TH.body(x, y, c);
           if (y === 25) c = blend(c, WHITE, 0.3);
           m.set(x, y, c);
         }
         for (let x = 6; x <= 33; x++) { m.set(x, 54, [44, 38, 64]); m.set(x, 55, [30, 26, 46]); }
         // the label: cream, with a strip of every game's colours
-        for (let y = 28; y <= 33; y++) for (let x = 9; x <= 30; x++) {
-          const edge = y === 28 || y === 33 || x === 9 || x === 30;
+        for (let y = 27; y <= 34; y++) for (let x = 9; x <= 30; x++) {
+          const edge = y === 27 || y === 34 || x === 9 || x === 30;
           m.set(x, y, edge ? [214, 204, 182] : (y === 31 || y === 30) && x % 3 !== 0 ? others[Math.floor(x / 3) % others.length] : [250, 244, 228]);
         }
+        if (TH.sign) TH.sign(hi, t);
         // coin slot
         for (let y = 37; y <= 46; y++) for (let x = 25; x <= 29; x++) {
           const frame = x === 25 || x === 29 || y === 37 || y === 46;
@@ -922,7 +1001,9 @@ void main() {
           if (d > DR - 2.2 && d <= DR - 1.6 && side > -0.45 && side < 0.35) hi.set(X, Y, WHITE, 70);
           if ((X + Y + 120 - sweep * 2) % 120 < 3) hi.set(X, Y, WHITE, 60);
         }
-        for (let x = 16; x <= 23; x++) for (let y = 0; y <= 2; y++) {
+        if (TH.topFn) TH.topFn(hi, t);
+        else if (TH.top) sprite(hi, TH.top, 40, 0);
+        else for (let x = 16; x <= 23; x++) for (let y = 0; y <= 2; y++) {
           if ((x === 16 || x === 23) && y === 0) continue;
           m.set(x, y, y === 0 ? blend(body, WHITE, 0.35) : x <= 17 ? blend(body, WHITE, 0.2) : x >= 22 ? blend(body, INK, 0.25) : body);
         }
