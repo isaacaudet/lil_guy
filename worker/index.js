@@ -85,7 +85,8 @@ async function ensurePlayer(env, name) {
     const founder = name.seed === 'founder:isaac';
     for (const [i, g] of GAMES.entries()) await insertCopy(env, copyRow(starter(name.seed, g), name.key, 'starter'), !founder && i === 0 ? 1 : 0);
     if (founder) {
-      await insertCopy(env, copyRow(FOUNDER.copy, name.key, 'founder'), 1);
+      // He wears Origin on a clean background; the Gold flag is his to put on.
+      await insertCopy(env, copyRow(FOUNDER.copy, name.key, 'founder'), 0);
       await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
     }
   }

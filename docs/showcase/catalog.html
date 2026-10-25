@@ -130,7 +130,7 @@
   </section>
 
   <section id="ladder">
-    <div class="sh"><h2>The ladder</h2><p>How rare a copy can be, per capsule, plus the tier this page proposes.</p></div>
+    <div class="sh"><h2>The ladder</h2><p>How rare a copy can be, per capsule.</p></div>
     <div class="ladder" id="ladder-rungs"></div>
     <div class="tiers" id="tier-key"></div>
   </section>
@@ -152,18 +152,11 @@
 
   <section id="relics">
     <div class="prop">
-      <div><h2>Proposed: ★ Relics, the tier above Grail</h2>
-        <p class="lede">The knife of the machines: about 1 in 1,000 capsules, from any machine, rarer than any Grail, with its own finishes and something you see every time the guy moves. Two ways to draw it.</p></div>
-      <div class="opts">
-        <div class="opt"><span class="tag">Option A · held</span><h3>A relic in his hand</h3>
-          <p>A ★ item he holds, tip up into the empty top corner. Reads best as a lollipop, cleaver or wand; a thin blade is a squeeze at 16 pixels.</p>
-          <div class="live" id="held"></div></div>
-        <div class="opt"><span class="tag">Option B · aura</span><h3>An aura round him</h3>
-          <p>A ★ effect in the empty pixels round him, moving all the time, so it shows on a board row as well as on a card.</p>
-          <div class="live" id="auras"></div></div>
-      </div>
+      <div><h2>★ Auras, above Grail</h2>
+        <p class="lede">One capsule in a thousand, from any machine, is an aura instead of the machine's item: an effect round the guy that moves with him. Its float thins it, its print sets its timing, and it comes in its own finishes. Trade-ups stop at Grail.</p></div>
+      <div class="live" id="auras"></div>
       <div class="scroll"><table id="relic-table" style="background:#221c30;border-color:#352c48;color:#f2eee6"></table></div>
-      <div><h3>The founder, one of one</h3><p>Today the founder gets the rarest part in every slot, and it's the busiest guy in the club. Rare parts piled up look worse, not better. Better: a clean guy, and two things nobody else can ever get: a holo body that shimmers through the rainbow, and the Origin aura, a gold halo with stars going round him.</p></div>
+      <div><h3>The founder, one of one</h3><p>A clean guy in a crown, wearing the Origin aura, which no capsule gives (with the Gold flag in his locker).</p></div>
       <div class="vs" id="vs"></div>
     </div>
   </section>
@@ -228,7 +221,7 @@
   const slotCount = slot => LG.GAMES.map(g => machine(g).filter(i => i.slot === slot).length);
   const combos = SLOTS.reduce((n, s) => n * s.list.length, 1) * LG.palettes.length * 3 * 5 * 3 * 2 * 2;
 
-  $('nav').innerHTML = [['thin', 'What\'s thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Relics']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
+  $('nav').innerHTML = [['thin', 'What\'s thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Auras']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
   const rarestPart = Math.min(...SLOTS.map(s => s.options[0].p));
   $('stats').innerHTML = [
     [fmt(combos), 'different guys the parts can make'],
@@ -255,9 +248,9 @@
 
   // ---------------------------------------------------------------- the ladder
   const per = f => LG.FINISHES[f].odds / 100;
-  const gradeP = g => Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === g).reduce((a, f) => a + per(f), 0);
-  $('ladder-rungs').innerHTML = LG.GRADES.map((g, k) => `<div class="rung" style="background:${g.color}"><b>${esc(g.name)}</b><span>${oneIn(gradeP(k))} capsules</span><span>${Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === k).map(f => LG.FINISHES[f].name).join(', ')}</span></div>`).join('')
-    + `<div class="rung new"><b>★ Relic</b><span>1 in 1,000 capsules</span><span>Proposed: a new class, with its own finishes</span></div>`;
+  const gradeP = g => g === 5 ? LG.AURA_ODDS : Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === g).reduce((a, f) => a + per(f), 0) * (1 - LG.AURA_ODDS);
+  $('ladder-rungs').innerHTML = LG.GRADES.map((g, k) => `<div class="rung" style="background:${g.color}"><b>${esc(g.name)}</b><span>${oneIn(gradeP(k))} capsules</span><span>${k === 5 ? 'Any machine, its own finishes' : Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === k).map(f => LG.FINISHES[f].name).join(', ')}</span></div>`).join('')
+;
   $('tier-key').innerHTML = 'Parts are tiered by how often they turn up: ' + TIERS.map((t, k) => `<span><i style="background:${t.c}"></i>${t.name} ${k === 3 ? 'rarer than 1 in 80' : `to ${oneIn(t.min)}`}</span>`).join('');
 
   // ---------------------------------------------------------------- slots
@@ -277,7 +270,7 @@
 
   // ---------------------------------------------------------------- finishes, prints, wear, earned
   const sample = f => cv({ equip: [LG.encode({ item: 'stackdle.block', finish: f, scuff: 0.02, print: 40 })] });
-  $('fin-table').innerHTML = `<tr><th></th><th>Finish</th><th>Grade</th><th>Chance a capsule</th><th>Condition range</th></tr>` + Object.entries(LG.FINISHES).map(([f, x]) =>
+  $('fin-table').innerHTML = `<tr><th></th><th>Finish</th><th>Grade</th><th>Chance a capsule</th><th>Condition range</th></tr>` + Object.entries(LG.FINISHES).filter(([, x]) => !x.aura).map(([f, x]) =>
     `<tr><td>${sample(f)}</td><td><b>${esc(x.name)}</b></td><td><span class="chip" style="--k:${LG.GRADES[x.grade].color}">${esc(LG.GRADES[x.grade].name)}</span></td><td class="num">${x.odds}% · ${oneIn(x.odds / 100)}</td><td class="num">${x.scuffs[1] < 1 ? 'Mint in Box to Like New' : 'any'}</td></tr>`).join('');
   const nebula = per('nebula'), tempered = per('tempered');
   $('print-table').innerHTML = `<tr><th></th><th>Famous print</th><th>What it is</th><th>Chance a capsule</th></tr>` + [
@@ -297,111 +290,30 @@
 
   paintAll();
 
-  // ---------------------------------------------------------------- the proposal: relics and auras, drawn over the animation's frames
-  const RELICS = {
-    lolly:   { name: 'Lollipop', grip: [5, 5], rows: ['.rr...', 'rwwr..', 'rrwr..', '.rrs..', '....s.', '.....s'] },
-    cleaver: { name: 'Cleaver', grip: [5, 5], rows: ['.eb...', 'ebbB..', 'bbbbB.', '.bbbBh', '..bB.h', '.....p'] },
-    wand:    { name: 'Star wand', grip: [5, 5], rows: ['.y....', 'yYy...', '.yYy..', '..ys..', '....s.', '.....s'] },
-    butter:  { name: 'Butter knife', grip: [4, 5], rows: ['.ee...', 'ebbB..', '.bbbB.', '..bbB.', '...hh.', '....hp'] },
-    sword:   { name: 'Sword', grip: [5, 5], rows: ['e.....', '.eB...', '.bbB..', '..bbB.', '...gg.', '...ghp'] },
-  };
-  const P = { e: '#FFFFFF', b: '#D3DBEA', B: '#8A97B4', g: '#E4AE39', h: '#7A4A2A', p: '#E4AE39', s: '#F2E6CF', y: '#FFD45C', Y: '#E89A1A', r: '#FF5C8A', w: '#FFFFFF' };
-  const mixc = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
-  const hsl = (h, s, l) => { const f = n => { const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); }; return `#${f(0)}${f(8)}${f(4)}`; };
-  const metal = 'bBry';
-  const sea = (lo, mid, hi, edge) => (k, t, x, y) => metal.includes(k) ? (k === 'B' ? lo : (x * 2 + y) % 5 === 0 ? hi : mid) : k === 'e' ? edge : P[k];
-  const RF = {
-    steel: { name: 'Steel', share: 55, paint: k => P[k] },
-    fade: { name: 'Fade', share: 25, paint: (k, t) => metal.includes(k) ? (t < .5 ? mixc('#FFE07A', '#FF6FB5', t * 2) : mixc('#FF6FB5', '#7C5CFF', (t - .5) * 2)) : P[k] },
-    marble: { name: 'Marble', share: 14, paint: (k, t, x, y) => metal.includes(k) ? ['#F4F1FF', '#C9C2E8', '#FF7BB0', '#7FD6FF'][(x * 3 + y * 5) % 4] : P[k] },
-    sapphire: { name: 'Deep sea · Sapphire', share: 3, paint: sea('#0B2A8A', '#1F5BFF', '#9CC4FF', '#E1EDFF') },
-    ruby: { name: 'Deep sea · Ruby', share: 2.5, paint: sea('#6E0622', '#E0204F', '#FF9AB2', '#FFE0E8') },
-    pearl: { name: 'Deep sea · Black pearl', share: 0.5, paint: sea('#100B22', '#352A66', '#B79CFF', '#EFE6FF') },
-    origin: { name: 'Origin (founder only)', share: 0, paint: (k, t, x, y, ms) => metal.includes(k) ? hsl((ms / 8 + (x + y) * 28) % 360, .85, k === 'B' ? .45 : .62) : k === 'e' ? '#FFFFFF' : P[k] },
-  };
-  const OUT = '#1E1830';
-  function holdRelic(colors, relic, finish, ms) {
-    const out = colors.map(r => [...r]), R = RELICS[relic], F = RF[finish], H = out.length, W = out[0].length;
-    const hy = H - 8, row = out[hy], left = row.findIndex(Boolean);
-    const hx = Math.max(R.grip[0], left < 0 ? 3 : left), x0 = hx - R.grip[0], y0 = hy - R.grip[1];
-    const cells = [];
-    R.rows.forEach((line, i) => [...line].forEach((k, j) => { if (k !== '.') cells.push([x0 + j, y0 + i, k, (i + j) / (R.rows.length + line.length - 2), j, i]); }));
-    const own = new Set(cells.map(([x, y]) => x + ',' + y));
-    for (const [x, y] of cells) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && nx < W && ny >= 0 && ny < H && !own.has(nx + ',' + ny) && !colors[ny][nx]) out[ny][nx] = OUT; }
-    for (const [x, y, k, t, j, i] of cells) if (x >= 0 && x < W && y >= 0 && y < H) out[y][x] = F.paint(k, t, j, i, ms);
-    return out;
-  }
-  // Auras use only the empty pixels round him, so they never cover his face.
-  const noise = (x, y, t) => { const s = Math.sin(x * 12.9898 + y * 78.233 + t * 37.719) * 43758.5453; return s - Math.floor(s); };
-  const AURAS = {
-    flames: { name: 'Flames', draw: (out, fig, ms, hue) => {
-      const t = Math.floor(ms / 110), W = out[0].length;
-      for (let x = 0; x < W; x++) {
-        const top = fig.findIndex(r => r[x]); if (top < 0) continue;
-        const h = 1 + Math.floor(noise(x, 0, t) * 3.2);
-        for (let k = 1; k <= h; k++) { const y = top - k; if (y < 0 || out[y][x]) continue; const c = k === 1 ? 0 : k === 2 ? 1 : 2; out[y][x] = hue == null ? ['#FFD45C', '#FF8A2B', '#E5484D'][c] : hsl((hue + x * 22 + k * 30) % 360, .9, [.68, .58, .5][c]); }
-      }
-      fig.forEach((r, y) => r.forEach((c, x) => { for (const dx of [-1, 1]) { const nx = x + dx; if (c && nx >= 0 && nx < W && !fig[y][nx] && !out[y][nx] && noise(nx, y, t) > .86) out[y][nx] = hue == null ? '#FF8A2B' : hsl((hue + y * 20) % 360, .9, .6); } }));
-    } },
-    orbit: { name: 'Orbit', draw: (out, fig, ms) => {
-      const H = out.length, cx = 7.5, cy = H - 6;
-      for (let k = 0; k < 3; k++) {
-        const a = ms / 520 + k * 2.094, x = Math.round(cx + Math.cos(a) * 8), y = Math.round(cy + Math.sin(a) * 2.6 - 3);
-        const front = Math.sin(a) > 0;
-        for (const [dx, dy, c] of [[0, 0, '#FFFFFF'], [1, 0, '#FFD45C'], [-1, 0, '#FFD45C'], [0, 1, '#FFD45C'], [0, -1, '#FFD45C']]) {
-          const px = x + dx, py = y + dy; if (px < 0 || px >= 16 || py < 0 || py >= H) continue;
-          if (front || !out[py][px]) out[py][px] = c;
-        }
-      }
-    } },
-    halo: { name: 'Halo', draw: (out, fig, ms) => {
-      const top = fig.findIndex(r => r.some(Boolean)), y = Math.max(0, top - 2 - (Math.floor(ms / 400) % 2));
-      const on = Math.floor(ms / 160) % 6;
-      for (let x = 4; x <= 11; x++) if (!out[y][x]) out[y][x] = x === 4 + on || x === 5 + on ? '#FFFFFF' : (x === 4 || x === 11) ? '#C98A1A' : '#FFD45C';
-      for (let x = 5; x <= 10; x++) if (y + 1 < out.length && !out[y + 1][x]) out[y + 1][x] = '#B97A10';
-    } },
-    origin: { name: 'Origin (founder only)', draw: (out, fig, ms) => { AURAS.halo.draw(out, fig, ms); AURAS.orbit.draw(out, fig, ms); } },
-  };
-
-  // The founder as proposed: a clean guy (round, glossy eyes, a smile, a crown) in Ocean, and what nobody can roll.
-  const FOUNDER = { parts: { head: idx(LG.heads, 'round'), eyes: idx(LG.eyes, 'glossy'), mouth: idx(LG.mouths, 'smile'), cheeks: idx(LG.cheeks, 'blush'), hair: idx(LG.hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false }, palette: idx(LG.palettes, 'Ocean') };
+  // ---------------------------------------------------------------- auras and the founder, moving
   const lives = [];
-  const live = (canvas, { name, parts, palette, equip = [], move = 'idle', relic, finish, aura, holo, rarity }) => {
-    const cfg = { ...LG.resolve(name, parts), ...(palette == null ? {} : { palette }) }, pal = LG.paletteOf(cfg);
-    const anim = LG.animate(name, move, { parts, palette: pal, equip, rarity });
-    // A holo body keeps the face's own colours (outline, ink, shine, blush, mouth, tongue).
-    const face = new Set([4, 5, 6, 7, 8, 9].map(k => (pal.colors[k] || '').toUpperCase()));
-    lives.push({ canvas, anim, relic, finish, aura, holo: holo ? face : null });
+  const live = (canvas, { name, parts, palette, equip = [], move = 'idle' }) => {
+    const cfg = { ...LG.resolve(name, parts), ...(palette == null ? {} : { palette }) };
+    lives.push({ canvas, anim: LG.animate(name, move, { parts, palette: LG.paletteOf(cfg), equip }) });
   };
-  const fig = (spec, cap, sub) => { const id = 'l' + lives.length + Math.random().toString(36).slice(2, 6); setTimeout(() => live(document.getElementById(id), spec)); return `<figure><canvas id="${id}" width="16" height="20" aria-hidden="true"></canvas><figcaption><b>${esc(cap)}</b>${esc(sub || '')}</figcaption></figure>`; };
-
-  $('held').innerHTML = [['maya', 'lolly', 'steel'], ['okapi', 'cleaver', 'fade'], ['bluejay', 'wand', 'marble'], ['tadpole', 'butter', 'sapphire'], ['hazel', 'lolly', 'ruby'], ['pip', 'sword', 'pearl']]
-    .map(([n, r, f]) => fig({ name: n, relic: r, finish: f }, `★ ${RELICS[r].name}`, RF[f].name)).join('');
-  $('auras').innerHTML = [['maya', 'flames'], ['okapi', 'orbit'], ['bluejay', 'halo'], ['tadpole', 'flames'], ['hazel', 'orbit'], ['pip', 'halo']]
-    .map(([n, a]) => fig({ name: n, aura: a }, `★ ${AURAS[a].name}`, n)).join('');
-  $('relic-table').innerHTML = `<tr><th style="color:#b9b1c9">Relic finish (proposed)</th><th style="color:#b9b1c9">Of relics</th><th style="color:#b9b1c9">Chance a capsule</th></tr>` +
-    Object.values(RF).map(f => `<tr><td><b>${esc(f.name)}</b></td><td class="num">${f.share ? f.share + '%' : 'one of one'}</td><td class="num">${f.share ? oneIn(f.share / 100 / 1000) : '—'}</td></tr>`).join('');
-  const BEST = { parts: { head: idx(LG.heads, 'jellyfish'), eyes: idx(LG.eyes, 'cyclops'), mouth: idx(LG.mouths, 'ooh'), cheeks: idx(LG.cheeks, 'stars'), hair: idx(LG.hair, 'horns'), body: idx(LG.bodies, 'moon mark'), accessory: idx(LG.accessories, 'star sticker'), arms: 1, feet: 0, shade: 1, flip: false, lucky: true }, palette: idx(LG.palettes, 'Midnight') };
-  const grail = item => LG.encode({ item, finish: 'gold', scuff: 0.001, print: 1, tally: 999 });
-  $('vs').innerHTML = fig({ name: 'best', ...BEST, equip: [grail('trackdle.snail')], aura: 'flames' }, 'The best a player can roll', 'The rarest part in every slot, Lucky, a Gold buddy and a ★ Flames aura')
-    + fig({ name: 'founder:isaac', ...FOUNDER, rarity: false, holo: true, aura: 'origin' }, '@isaac, the founder', 'A clean guy in a crown, and what no one can roll: a holo body and the Origin halo with its stars');
+  let figs = 0;
+  const fig = (spec, cap, sub) => { const id = 'live' + figs++; setTimeout(() => live(document.getElementById(id), spec)); return `<figure><canvas id="${id}" width="16" height="20" aria-hidden="true"></canvas><figcaption><b>${esc(cap)}</b>${esc(sub || '')}</figcaption></figure>`; };
+  const names = ['maya', 'okapi', 'bluejay', 'tadpole', 'hazel', 'pip', 'juno', 'wren'];
+  const finishes = Object.entries(LG.FINISHES).filter(([, f]) => f.aura);
+  $('auras').innerHTML = LG.AURAS.map((a, k) => { const [fid, f] = finishes[k % finishes.length]; return fig({ name: names[k % names.length], equip: [LG.encode({ item: a.id, finish: fid, scuff: 0.01, print: k })] }, `★ ${a.name}`, f.name); }).join('');
+  $('relic-table').innerHTML = `<tr><th style="color:#b9b1c9">Aura finish</th><th style="color:#b9b1c9">Of auras</th><th style="color:#b9b1c9">A given aura in it</th></tr>` +
+    finishes.map(([, f]) => `<tr><td><b>${esc(f.name)}</b></td><td class="num">${f.aura}%</td><td class="num">${oneIn(LG.AURA_ODDS / LG.AURAS.length * f.aura / 100)} capsules</td></tr>`).join('') +
+    `<tr><td><b>Origin</b></td><td class="num">one of one</td><td class="num">the founder's</td></tr>`;
+  const FOUNDER = { parts: { head: idx(LG.heads, 'round'), eyes: idx(LG.eyes, 'glossy'), mouth: idx(LG.mouths, 'smile'), cheeks: idx(LG.cheeks, 'blush'), hair: idx(LG.hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false }, palette: idx(LG.palettes, 'Ocean') };
+  const best = LG.makeSeed();
+  $('vs').innerHTML = fig({ name: best, equip: [LG.encode({ item: 'puttsies.tee', finish: 'gold', scuff: 0.001, print: 1 }), LG.encode({ item: 'aura.galaxy', finish: 'pearl', scuff: 0.0004, print: 7 })] }, 'A great roll', 'A 0.001 Gold buddy and a 0.000 Black pearl Galaxy')
+    + fig({ name: 'founder:isaac', ...FOUNDER, equip: [LG.encode({ item: 'aura.origin', finish: 'classic', scuff: 0, print: 1 })] }, '@isaac, the founder', 'The Origin aura, one of one');
 
   // One loop draws every live figure.
-  const t0 = performance.now();
   (function frame(now) {
-    const ms = now - t0;
-    for (const l of lives) {
-      if (!l.canvas || !l.canvas.isConnected) continue;
-      const f = LG.frameAt(l.anim, ms);
-      let out = f.colors.map(r => [...r]);
-      const figure = f.colors.map(r => r.map(Boolean));
-      if (l.holo) out = out.map((row, y) => row.map((c, x) => !c || l.holo.has(c.toUpperCase()) || parseInt(c.slice(1, 3), 16) + parseInt(c.slice(3, 5), 16) + parseInt(c.slice(5, 7), 16) < 160 ? c : mixc(c, hsl((((x + y) * 18 - ms / 5) % 360 + 360) % 360, .9, .7), .38)));
-      if (l.aura) AURAS[l.aura].draw(out, figure, ms);
-      if (l.relic) out = holdRelic(out, l.relic, l.finish, ms);
-      put(l.canvas, out);
-    }
+    for (const l of lives) if (l.canvas && l.canvas.isConnected) put(l.canvas, LG.frameAt(l.anim, now).colors);
     requestAnimationFrame(frame);
-  })(t0);
+  })(performance.now());
 })();
 </script>
 

@@ -1028,7 +1028,7 @@
     state = { v: 2, key, seed, ownerToken, tickets: 1200, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
     const f = founderOf(seed);
-    if (f) { state.copies.push(LG.encode(f.copy), LG.encode(f.aura)); state.worn.frame = LG.encode(f.copy); state.worn.aura = LG.encode(f.aura); }
+    if (f) { state.copies.push(LG.encode(f.copy), LG.encode(f.aura)); state.worn.aura = LG.encode(f.aura); }
     else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
     if (isLive() && (ownerToken || signedIn)) { try { fromServer(await meApi('state')); } catch (e) { toast(e.message); } }
