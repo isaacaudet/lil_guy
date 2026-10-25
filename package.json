@@ -18,12 +18,17 @@
       "types": "./dist/next/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "bun test",
     "dev": "tsdown --watch",
-    "showcase": "tsdown && cp dist/lil-guy.js docs/lil-guy.js && bun scripts/build-showcase.ts"
+    "showcase": "tsdown && cp dist/lil-guy.js docs/lil-guy.js && bun scripts/build-showcase.ts",
+    "test:cloudflare-auto": "node --test scripts/auto-deploy.test.mjs",
+    "build:cloudflare-auto": "node scripts/auto-deploy.mjs",
+    "deploy:cloudflare-auto": "node scripts/auto-deploy.mjs --deploy"
   },
   "peerDependencies": {
     "react": ">=18",
