@@ -198,7 +198,7 @@
   .dist-me em { position: absolute; top: -2px; left: 6px; font-style: normal; font-size: 16px; color: #2a1a00; background: var(--gold); padding: 0 6px; border-radius: 4px; white-space: nowrap; }
   .dist-x { position: relative; height: 18px; font-size: 16px; color: var(--ink-3); }
   .dist-x span { position: absolute; top: 0; translate: -50% 0; white-space: nowrap; }
-  .dist-x span:first-child { translate: 0 0; }
+  .dist-x span:last-child { translate: -100% 0; }
 
   /* the machines */
   .odds-line { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 16px; color: var(--ink-3); }
@@ -683,6 +683,7 @@
     .lk-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .inv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .trade { grid-template-columns: minmax(0, 1fr) auto; }
+    .tr-give { flex-wrap: nowrap; gap: 4px; } .tr-c { width: 40px; height: 40px; } .tr-c canvas { max-width: 32px; max-height: 32px; }
     .tr-arrow { display: none; }
     .result.withinfo { grid-template-columns: minmax(0, 1fr); row-gap: 10px; }
     .result.withinfo .flip, .result.withinfo .won-info { grid-column: 1; grid-row: auto; }
@@ -1316,7 +1317,10 @@
     const bins = new Array(B).fill(0); d.forEach(v => bins[Math.min(B - 1, Math.floor((v - lo) / (hi - lo) * B))]++);
     const max = Math.max(...bins), bw = W / B, me = Math.min(B - 1, Math.max(0, Math.floor((Math.log10(n) - lo) / (hi - lo) * B)));
     const bars = bins.map((c, i) => { const h = Math.max(c ? 3 : 0, Math.round(c / max * (H - 8))); return `<rect x="${(i * bw + 1).toFixed(1)}" y="${H - h}" width="${(bw - 2).toFixed(1)}" height="${h}" rx="1" fill="${i === me ? 'var(--gold)' : 'var(--panel-2)'}"><title>1 in ${words(10 ** (lo + i / 4))} to ${words(10 ** (lo + (i + 1) / 4))}: ${(c / d.length * 100).toFixed(1)}% of guys</title></rect>`; }).join('');
-    const ticks = []; for (let e = lo; e <= hi; e++) if ((e - lo) % 2 === 0) ticks.push(`<span style="left:${(e - lo) / (hi - lo) * 100}%">${words(10 ** e)}</span>`);
+    // Short tick labels, every third power of ten: 1M, 1B, 1T.
+    const SHORT = { 3: 'K', 6: 'M', 9: 'B', 12: 'T', 15: 'Q' };
+    const short = e => `${10 ** (e % 3)}${SHORT[e - (e % 3)] || ''}`;
+    const ticks = []; for (let e = lo; e <= hi; e++) if (e % 3 === 0) ticks.push(`<span style="left:${(e - lo) / (hi - lo) * 100}%">1 in ${short(e)}</span>`);
     host.innerHTML = `<p class="dist-h">Every guy dealt, from common to rare</p><div class="dist-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars}</svg><i class="dist-me" style="left:${(me + 0.5) / B * 100}%"><em>You</em></i></div><div class="dist-x">${ticks.join('')}</div>`;
   }
   const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
