@@ -2004,14 +2004,14 @@
       const c = guyConfig(seed), anim = LG.animate(seed, 'idle', { parts: partsOf(c), palette: LG.paletteOf(c), equip: [LG.encode(o)], rarity: false });
       const W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT, k = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
       canvas.width = W; canvas.height = H; canvas.style.width = W * k + 'px'; canvas.style.height = H * k + 'px';
-      const s = { canvas, ctx: canvas.getContext('2d'), anim, box: { x: 0, y: 0, w: W, h: H } };
+      const s = { canvas, ctx: canvas.getContext('2d'), anim, box: { x: 0, y: 0, w: W, h: H }, moves: true };
       shows.add(s); drawShow(s, performance.now());
       return s;
     }
     const a = itemAlone(o, seed), k = Math.max(1, Math.floor(Math.min(maxW / a.box.w, maxH / a.box.h)));
     canvas.width = a.box.w; canvas.height = a.box.h;
     canvas.style.width = a.box.w * k + 'px'; canvas.style.height = a.box.h * k + 'px';
-    const s = { canvas, ctx: canvas.getContext('2d'), ...a };
+    const s = { canvas, ctx: canvas.getContext('2d'), ...a, moves: !!(o.fx || o.finish !== 'plain') };
     shows.add(s); drawShow(s, performance.now());
     return s;
   }
@@ -2454,6 +2454,10 @@
     s.art.style.transform = `perspective(600px) translateY(${bob}px) rotateX(${-s.tilt[1] * 18}deg) rotateY(${s.tilt[0] * 18}deg) rotate(${tilt + spin}deg) scale(${scale})`;
     s.canvas.style.setProperty('--sx', `${-s.tilt[0] * 10}px`);
   }
+  // What is on screen, for the loop: canvases off screen don't draw.
+  const seen = new WeakMap();
+  const watch = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: '80px' });
+  const onScreen = c => { if (!seen.has(c)) { seen.set(c, false); watch.observe(c); } return seen.get(c); };
   let lastT = 0;
   const frame = now => {
     requestAnimationFrame(frame);
@@ -2461,9 +2465,14 @@
     lastT = now;
     const t = now / 1000;
     for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); } }
-    for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
+    // Only what is on screen moves; a still item draws once.
+    for (const b of balls) if (!b.canvas.isConnected) balls.delete(b); else if (onScreen(b.canvas)) b.tick(t);
     for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }
-    for (const s of shows) if (s.canvas.isConnected) drawShow(s, now); else shows.delete(s);
+    for (const s of shows) {
+      if (!s.canvas.isConnected) { shows.delete(s); continue; }
+      if (!onScreen(s.canvas) || (s.drawn && !s.moves)) continue;
+      drawShow(s, now); s.drawn = true;
+    }
     fireTick();
     if (bandPaint) bandPaint.draw(now);
     if (dropPaint && !$('reveal').hidden) dropPaint.draw(now);
