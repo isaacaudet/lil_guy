@@ -133,6 +133,8 @@ test('letting a name go takes its collection with it; the founder holds the one 
   const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
   const prof: any = await (await call('/guys/isaac')).json();
   expect(prof.copies.find((c: any) => c.one)?.code).toContain('trackdle.flag~gold');
+  // And the Origin aura, worn, which no capsule can give.
+  expect(prof.copies.find((c: any) => c.code.startsWith('aura.origin'))?.worn).toBe(true);
   expect(f.seed).toBe('founder:isaac');
 });
 

@@ -32,5 +32,5 @@ export { createShine, shineData, type Shine } from './shine';
 export { voxelColumns, voxelItem, voxelMesh, itemFrame, ownedOf, surfaceOf } from './voxel';
 export type { VoxelColumn, VoxelMesh, VoxelSource, VoxelOptions, Surface, SurfaceKind } from './voxel';
 export { FRAME_SLOTS } from './animate';
-export { AURAS, AURA_ODDS, auraById, auraCells, auraColor } from './auras';
+export { AURAS, ONE_OF_ONE_AURAS, AURA_ODDS, auraById, auraCells, auraColor } from './auras';
 export { collectorNotes, type Note } from './collector';

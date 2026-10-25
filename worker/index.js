@@ -27,12 +27,14 @@ export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360, inf
 const today = () => new Date().toISOString().slice(0, 10);
 export const todayGame = () => GAMES[Math.floor(Date.now() / 864e5) % GAMES.length];
 
-// "isaac" is the founder's: every slot its rarest trait, and a copy no capsule gives (the page draws the same).
+// "isaac" is the founder's: a clean guy in a crown, and two copies no capsule gives, the Gold flag and the
+// Origin aura (the page draws the same).
 const byName = (list, name) => list.findIndex(x => x.name === name);
 const FOUNDER = {
-  parts: { head: byName(heads, 'flame'), eyes: byName(eyes, 'laser'), mouth: byName(mouths, 'smirk'), cheeks: byName(cheeks, 'war paint'), hair: byName(hair, 'crown'), body: byName(bodies, 'star mark'), accessory: byName(accessories, 'bowtie'), arms: 2, feet: 0, shade: 2, flip: false, lucky: true },
+  parts: { head: byName(heads, 'round'), eyes: byName(eyes, 'glossy'), mouth: byName(mouths, 'smile'), cheeks: byName(cheeks, 'blush'), hair: byName(hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false },
   palette: byName(palettes, 'Ocean'),
   copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
+  aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1 },
 };
 const dealt = seed => seed === 'founder:isaac' ? { ...resolve(seed, FOUNDER.parts), palette: FOUNDER.palette } : resolve(seed);
 const guyOf = (seed, look) => { const base = dealt(seed); const picked = look ? decodeLook(look, base) : null; return picked ? { ...base, ...picked } : base; };
@@ -69,14 +71,23 @@ const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, gra
 /** A claimed name's player record, made on first use: its tickets and its nine starters (the founder's flag too). */
 async function ensurePlayer(env, name) {
   const found = await env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
-  if (found) return found;
+  if (found) {
+    // A founder made before Origin existed is given it once.
+    if (name.seed === 'founder:isaac' && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
+      await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
+    }
+    return found;
+  }
   const at = new Date().toISOString();
   const made = await env.DB.prepare('INSERT INTO players(key, tickets, guy_one_in, at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING')
     .bind(name.key, RULES.start, guyOneIn(dealt(name.seed)), at).run();
   if (made.meta.changes) {
     const founder = name.seed === 'founder:isaac';
     for (const [i, g] of GAMES.entries()) await insertCopy(env, copyRow(starter(name.seed, g), name.key, 'starter'), !founder && i === 0 ? 1 : 0);
-    if (founder) await insertCopy(env, copyRow(FOUNDER.copy, name.key, 'founder'), 1);
+    if (founder) {
+      await insertCopy(env, copyRow(FOUNDER.copy, name.key, 'founder'), 1);
+      await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
+    }
   }
   return env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
 }
@@ -159,7 +170,7 @@ async function me(request, env, key, action) {
   }
   if (action === 'wear') {
     const slot = body.slot;
-    if (!['skin', 'hat', 'frame', 'buddy'].includes(slot)) return json({ error: 'Unknown slot' }, 400);
+    if (!['skin', 'hat', 'frame', 'buddy', 'aura'].includes(slot)) return json({ error: 'Unknown slot' }, 400);
     if (body.id != null) {
       const c = await env.DB.prepare('SELECT id FROM copies WHERE id = ? AND key = ? AND slot = ?').bind(Number(body.id), key, slot).first();
       if (!c) return json({ error: 'Not your copy' }, 404);

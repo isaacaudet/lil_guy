@@ -248,7 +248,21 @@ export const AURAS: Aura[] = [
   },
 ];
 
-const byId = new Map(AURAS.map(a => [a.id, a]));
+/**
+ * Auras no capsule gives: the founder's Origin, a gold halo with stars going
+ * round him and a shimmer in every colour. One of one.
+ */
+export const ONE_OF_ONE_AURAS: Aura[] = [
+  {
+    id: 'aura.origin', name: 'Origin', colors: ['#FFFFFF', '#FFD45C', '#B97A10'], still: 900,
+    cells: (mask, t, print) => [
+      ...AURAS.find(a => a.id === 'aura.halo')!.cells(mask, t, print),
+      ...AURAS.find(a => a.id === 'aura.orbit')!.cells(mask, t, print),
+    ],
+  },
+];
+
+const byId = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map(a => [a.id, a]));
 export const auraById = (id: string | undefined) => (id ? byId.get(id) : undefined);
 
 /**

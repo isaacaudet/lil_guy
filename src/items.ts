@@ -2,7 +2,7 @@ import { LAYER, LOCAL, stamp, T, width, type Stamp } from './parts/art';
 import type { Canvas } from './parts/canvas';
 import { capRows, mirror, seat } from './parts/hair';
 import { decode, starter } from './owned';
-import { AURAS } from './auras';
+import { AURAS, ONE_OF_ONE_AURAS } from './auras';
 import type { AvatarConfig, GameId, Palette, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -1166,7 +1166,7 @@ export const items: Item[] = [
   ...buddies.map(i => ({ ...i, slot: 'buddy' as const })),
   ...seasonal.map(i => ({ ...i, slot: 'hat' as const })),
   // Auras belong to no machine: any capsule can be one (see ./auras).
-  ...AURAS.map(({ id, name, colors }) => ({ id, name, colors, game: 'club' as const, slot: 'aura' as const })),
+  ...[...AURAS, ...ONE_OF_ONE_AURAS].map(({ id, name, colors }) => ({ id, name, colors, game: 'club' as const, slot: 'aura' as const })),
 ];
 
 const byId = new Map(items.map(i => [i.id, i]));
