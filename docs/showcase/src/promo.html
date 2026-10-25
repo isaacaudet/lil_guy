@@ -321,6 +321,9 @@
   .lcd b { font: 400 30px/1 var(--pixel); color: #ff9a3c; text-shadow: 0 0 8px rgba(255,138,43,.7); letter-spacing: .12em; font-variant-numeric: tabular-nums; }
   .souv { justify-self: start; font: 400 15px/1 var(--pixel); color: #fff; background: linear-gradient(90deg, #b8860b, #e4ae39); padding: 6px 10px; border-radius: 6px; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
   .odds-more { font-weight: 800; color: var(--ink); text-decoration: none; border-bottom: 2px solid currentColor; }
+  .pull { margin: 10px 0 0; font-size: 13.5px; color: var(--cream-2); }
+  .pull b { color: #ffd45c; font-weight: 800; }
+  .won-pull { margin: 2px 0 0; font: 400 15px/1 var(--pixel); color: #ffd45c; letter-spacing: .02em; }
   .oddsbox { margin-top: 16px; padding: 16px; border-radius: 18px; background: var(--band); color: var(--cream); }
   .oddsbox .tiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .oddsbox .score { margin-top: 12px; cursor: default; padding: 12px 16px 14px; }
@@ -710,6 +713,7 @@
           <div class="rz-fv"><b id="rz-fn">0.0420</b><span class="bal" id="rz-fw"></span></div><div class="fl-bar" id="rz-fbar"></div><div class="cn-list" id="rz-fnotes"></div></div></div></div>
     <div class="rz-sec"><h2>Prints</h2><p>Every copy has a print from 0 to 999. It sets where the pattern falls, and a few prints are famous.</p><div class="rz-grid" id="rz-prints"></div></div>
     <div class="rz-sec"><h2>★ Auras</h2><p>One capsule in a thousand, from any machine. An aura goes round your guy and moves with him. Its float thins it, its print sets its timing, and it has its own finishes.</p><div class="rz-grid" id="rz-auras"></div><div class="rz-chips" id="rz-afin"></div></div>
+    <div class="rz-sec"><h2>Effects</h2><p>A rare layer on top of the finish. About one item in fifteen has one, and about one aura in three, so an aura's effect is its version. The last three are the rarest.</p><div class="rz-grid" id="rz-fx"></div><div class="rz-grid" id="rz-fxa" style="margin-top:12px"></div></div>
     <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different. Collectors look for these.</p><div class="rz-extras" id="rz-extras"></div></div>
     <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, make one copy of the next grade, from a game one of them came from. Trades stop at Grail: auras only come out of capsules.</p></div>
     <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, and he never changes. Each part has its own odds; a few are chase parts, one guy in hundreds. One guy in 400 is Lucky, his colours turned round the wheel.</p><div class="rz-grid" id="rz-guys"></div></div>
@@ -771,6 +775,8 @@
   const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
+  // What a capsule costs, in tickets: the price behind every pull cost.
+  const PRICE = 120;
   // The finish a name leaves unsaid: an item's Plain, an aura's Classic.
   const plainOf = o => (LG.FINISHES[o.finish]?.aura ? 'Classic' : 'Plain');
   const fmt = n => !isFinite(n) ? '∞' : n >= 1e18 ? (n / 1e18).toFixed(1) + 'Qi' : n >= 1e15 ? (n / 1e15).toFixed(1) + 'Qa' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
@@ -798,7 +804,7 @@
     parts: { head: byName(LG.heads, 'round'), eyes: byName(LG.eyes, 'glossy'), mouth: byName(LG.mouths, 'smile'), cheeks: byName(LG.cheeks, 'blush'), hair: byName(LG.hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false },
     palette: byName(LG.palettes, 'Ocean'),
     copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
-    aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1 },
+    aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' },
   };
   const RESERVED = { isaac: FOUNDER };
   // The founder claims the reserved name with ?founder=<the Worker's FOUNDER_SECRET>, kept for this tab only
@@ -1726,7 +1732,7 @@
         <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk${o.scuff < .06 ? ' lo' : o.scuff > .94 ? ' hi' : ''}" id="wf-mk" data-v="${o.scuff.toFixed(4)}" style="left:0%"></b></div>
         <p>${hi < 1 ? `${fin.name} only rolls ${lo.toFixed(2)} to ${hi.toFixed(2)}. ` : ''}Cleaner than <b>${cleaner}%</b> of ${fin.name} copies.</p>
       </div>
-      ${it.free ? '' : `<div class="won-odds"><span>1 in</span><b>${a}</b><span class="u">${b ? b + ' ' : ''}capsules</span></div>`}
+      ${it.free ? '' : `<div class="won-odds"><span>1 in</span><b>${a}</b><span class="u">${b ? b + ' ' : ''}capsules</span></div><p class="won-pull">≈ ${words(LG.copyOneIn(o) * PRICE)} tickets to pull</p>`}
       ${LG.slotOf(o) === 'frame' ? '' : `<div class="won-on"><canvas width="16" height="16" aria-hidden="true"></canvas><span>On ${state.key ? '@' + esc(state.key) : 'you'}</span></div>`}`;
   }
   function playWon(o) {
@@ -1810,7 +1816,7 @@
     $('reelwrap').hidden = true;
     if (g) { await gacha(g); await reel(o, g); await holdFor(gr); $('reelwrap').hidden = true; }
     await unveil(gr, `<div class="won-art"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div>`,
-      gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!',
+      (o.fx ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!'),
       LG.nameOf(o), how, false, !!g, o);
     $('rv-again').hidden = !g;
     $('rv-wear').focus();
@@ -1976,7 +1982,8 @@
   function itemAlone(o, seed) {
     const base = guyConfig(seed);
     const slot = LG.slotOf(o), [lo, hi] = SLOT_RANGE[slot], want = LG.FRAME_SLOTS.indexOf(slot) + 1;
-    const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg)) }; };
+    // Painted without its effect: drawShow moves the effect itself.
+    const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg), false, false) }; };
     const worn = draw(LG.dress(base, { equip: [LG.encode(o)] }));
     let mask = worn.grid.map(row => row.map(tk => tk >= lo && tk < hi));
     if (!mask.some(r => r.some(Boolean))) { const bare = draw(LG.dress(base, { equip: [] })); mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x])); }
@@ -1988,6 +1995,7 @@
     for (const [x, y] of edge) colors[y][x] = '#1a1626';
     let x0 = W, y0 = H, x1 = -1, y1 = -1;
     colors.forEach((row, y) => row.forEach((c, x) => { if (c) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }));
+    if (o.fx === 'embers' || o.fx === 'pulse') { y0 = Math.max(0, y0 - (o.fx === 'embers' ? 5 : 1)); x0 = Math.max(0, x0 - 1); x1 = Math.min(W - 1, x1 + 1); y1 = Math.min(H - 1, y1 + 1); }
     return { frame: { colors, slots, ms: 0 }, owned: { [slot]: o }, box: { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } };
   }
   function showItem(canvas, o, seed, maxW, maxH) {
@@ -2011,12 +2019,15 @@
     const { x, y, w, h } = s.box;
     s.ctx.clearRect(0, 0, w, h);
     if (s.anim) s.frame = LG.frameAt(s.anim, now);
+    // A copy's effect moves on the item on its own too.
+    const fxOn = !s.anim && s.owned && Object.values(s.owned).some(o => o?.fx);
+    const frame = fxOn ? { ...s.frame, colors: LG.applyFx(s.frame.colors, s.frame.slots, LG.FRAME_SLOTS.map(sl => s.owned[sl]), now) } : s.frame;
     if (s.anim || !shiner) {
       const img = s.ctx.createImageData(w, h);
-      for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const c = s.frame.colors[y + yy][x + xx]; if (c) img.data.set([...rgb(c), 255], (yy * w + xx) * 4); }
+      for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const c = frame.colors[y + yy][x + xx]; if (c) img.data.set([...rgb(c), 255], (yy * w + xx) * 4); }
       s.ctx.putImageData(img, 0, 0); return;
     }
-    if (shiner) { shiner.draw(s.frame, s.owned, now); s.ctx.drawImage(shiner.canvas, x, y, w, h, 0, 0, w, h); return; }
+    if (shiner) { shiner.draw(frame, s.owned, now); s.ctx.drawImage(shiner.canvas, x, y, w, h, 0, 0, w, h); return; }
     const img = s.ctx.createImageData(w, h);
     for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const c = s.frame.colors[y + yy][x + xx]; if (c) img.data.set([...rgb(c), 255], (yy * w + xx) * 4); }
     s.ctx.putImageData(img, 0, 0);
@@ -2079,16 +2090,19 @@
       ['finish', fin.name, 100 / fin.aura],
       ['float', `≤ ${o.scuff.toFixed(4)}`, 1 / Math.max(1e-7, (o.scuff - lo) / (hi - lo))],
       o.tally !== undefined ? ['tally', 'Counts days', 10] : null,
+      o.fx ? ['effect', LG.EFFECTS[o.fx].name, LG.EFFECTS[o.fx].aura] : null,
     ].filter(Boolean) : [
       ['item', item.name, pool],
       ['finish', fin.name, 100 / fin.odds],
       famous ? ['print', `${famous} #${o.print}`, famous === 'Deep Blue' ? 1000 / LG.DEEP_BLUE_PRINTS.length : 20] : null,
       ['float', `≤ ${o.scuff.toFixed(4)}`, 1 / Math.max(1e-7, (o.scuff - lo) / (hi - lo))],
       o.tally !== undefined ? ['tally', 'Counts days', 10] : null,
+      o.fx ? ['effect', LG.EFFECTS[o.fx].name, LG.EFFECTS[o.fx].item] : null,
     ].filter(Boolean);
     const [a, b] = split(LG.copyOneIn(o));
     return `<div class="oddsbox"><p class="kicker" style="margin:0 0 10px;color:var(--cream-2)">Odds, multiplied</p><div class="tiles">${tiles.map(([slot, name, n]) => { const tr = tierFor(n); return `<div class="tt" style="--tier:${tr.c}"><span class="slot">${slot}</span><b>${esc(name)}</b><span class="foot"><span class="bal" style="--b:${tr.c}">${tr.name}</span><span class="x">×${n >= 100 ? fmt(n) : n < 10 && Math.abs(n - Math.round(n)) > 0.05 ? n.toFixed(1) : Math.round(n)}</span></span></div>`; }).join('')}</div>
-      <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b ? b + ' ' : ''}capsules</span></div></div>`;
+      <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b ? b + ' ' : ''}capsules</span></div>
+      <p class="pull">About <b>${words(LG.copyOneIn(o) * PRICE)}</b> tickets of capsules to pull one this good.</p></div>`;
   }
 
   function inspect(i) {
@@ -2202,6 +2216,12 @@
     $('rz-auras').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: LG.AURAS[k].id, finish: 'classic', scuff: 0.02, print: k }, seed, 110, 130); });
     $('rz-afin').innerHTML = Object.values(LG.FINISHES).filter(f => f.aura).map(f => `<span class="bal" style="--b:#14a89c">${esc(f.name)} · ${f.aura}% of auras</span>`).join('');
 
+    // Every effect, on an item and on an aura.
+    $('rz-fx').innerHTML = LG.FX_IDS.map(id => { const e = LG.EFFECTS[id]; return `<div class="rz-t"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(e.name)}</b><span>${esc(e.what)} 1 in ${fmt(e.item)} items.</span></div>`; }).join('');
+    $('rz-fx').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: k * 7, fx: LG.FX_IDS[k] }, seed, 120, 120); });
+    $('rz-fxa').innerHTML = LG.FX_IDS.map(id => { const e = LG.EFFECTS[id]; return `<div class="rz-t"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(e.name)} ★ Galaxy</b><span>1 in ${fmt(e.aura)} auras</span></div>`; }).join('');
+    $('rz-fxa').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: 'aura.galaxy', finish: 'classic', scuff: 0.02, print: k * 7, fx: LG.FX_IDS[k] }, seed, 110, 130); });
+
     // The rest of what collectors look for.
     const tally = '<span class="lcd"><small>TALLY</small><b>000412</b></span>';
     $('rz-extras').innerHTML = [
@@ -2213,6 +2233,7 @@
       ['Souvenir', '<span class="souv">Souvenir · ' + today + '</span><br>The free capsule for finishing every game that day. No other capsule is one.'],
       ['Gold rim', `A tally of ${LG.GOLD_RIM_DAYS} days rims the copy in gold.`],
       ['Float rank', 'On the live site every copy shows where its float ranks against every copy of it in its finish.'],
+      ['Pull cost', `Every copy shows about how many tickets of capsules (${PRICE} each) it takes to pull one as good: its odds, in tickets.`],
     ].map(([h, p]) => `<div class="rz-x"><h3>${esc(h)}</h3><p>${p}</p></div>`).join('');
 
     // A few guys, rarest first.

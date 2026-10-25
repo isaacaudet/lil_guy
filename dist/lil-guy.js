@@ -2465,7 +2465,7 @@ var Canvas = class {
 /** One capsule in this many is an aura. */
 const AURA_ODDS = 1 / 1e3;
 /** A well-mixed number in [0, 1) from integers. */
-function noise(...n) {
+function noise$1(...n) {
 	let h = 2654435769;
 	for (const v of n) {
 		h = Math.imul(h ^ v, 2246822507);
@@ -2556,7 +2556,7 @@ const AURAS = [
 			const s = shape(mask), step = Math.floor(t / 110) + print, out = [];
 			s.tops.forEach((top, x) => {
 				if (top < 0) return;
-				const tall = 1 + Math.floor(noise(x, step) * 3.2);
+				const tall = 1 + Math.floor(noise$1(x, step) * 3.2);
 				for (let k = 1; k <= tall; k++) out.push([
 					x,
 					top - k,
@@ -2565,7 +2565,7 @@ const AURAS = [
 			});
 			mask.forEach((row, y) => row.forEach((on$1, x) => {
 				if (on$1) {
-					for (const dx of [-1, 1]) if (!row[x + dx] && noise(x + dx, y, step) > .86) out.push([
+					for (const dx of [-1, 1]) if (!row[x + dx] && noise$1(x + dx, y, step) > .86) out.push([
 						x + dx,
 						y - 1,
 						1
@@ -2585,9 +2585,9 @@ const AURAS = [
 		],
 		still: 900,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], turn = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+			const s = shape(mask), out = [], turn$1 = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
 			for (let i = 0; i < 3; i++) {
-				const a = turn * t / 560 + i * 2.094 + print;
+				const a = turn$1 * t / 560 + i * 2.094 + print;
 				out.push(...plus(Math.round(s.w / 2 - .5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 1));
 			}
 			return out;
@@ -2630,7 +2630,7 @@ const AURAS = [
 			const near = ring(mask, 3), out = [];
 			for (let i = 0; i < 5; i++) {
 				const life = Math.floor((t + i * 173 + print * 11) / 520), phase = (t + i * 173 + print * 11) % 520 / 520;
-				const [x, y] = near[Math.floor(noise(i, life, print) * near.length)] ?? [0, 0];
+				const [x, y] = near[Math.floor(noise$1(i, life, print) * near.length)] ?? [0, 0];
 				out.push(...phase < .35 || phase > .85 ? [[
 					x,
 					y,
@@ -2875,7 +2875,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 12; i++) {
-				const fall = wrap(Math.floor((t + i * 311 + print * 7) / 170), s.h), x = wrap(Math.round(noise(i, print) * s.w + Math.sin((t + i * 400) / 600) * 1.2), s.w);
+				const fall = wrap(Math.floor((t + i * 311 + print * 7) / 170), s.h), x = wrap(Math.round(noise$1(i, print) * s.w + Math.sin((t + i * 400) / 600) * 1.2), s.w);
 				out.push([
 					x,
 					fall,
@@ -2897,7 +2897,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 8; i++) {
-				const step = Math.floor((t + i * 377 + print * 5) / 150), y = wrap(step, s.h + 2) - 1, x = wrap(Math.round(noise(i, print) * s.w) - Math.floor(step / 2), s.w);
+				const step = Math.floor((t + i * 377 + print * 5) / 150), y = wrap(step, s.h + 2) - 1, x = wrap(Math.round(noise$1(i, print) * s.w) - Math.floor(step / 2), s.w);
 				out.push([
 					x,
 					y,
@@ -2925,7 +2925,7 @@ const AURAS = [
 			return ring(mask, 2).map(([x, y, d]) => [
 				x,
 				y,
-				noise(x, y, step, print) > .9 ? 0 : d === 1 ? 1 : 2
+				noise$1(x, y, step, print) > .9 ? 0 : d === 1 ? 1 : 2
 			]);
 		}
 	},
@@ -2966,8 +2966,8 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const step = Math.floor((t + print * 13) / 120), out = [];
 			mask.forEach((row, y) => {
-				if (noise(y, step, print) < .55) return;
-				const shove = noise(y, step, 2) < .5 ? 1 : 2;
+				if (noise$1(y, step, print) < .55) return;
+				const shove = noise$1(y, step, 2) < .5 ? 1 : 2;
 				row.forEach((on$1, x) => {
 					if (!on$1) return;
 					if (!row[x - 1]) out.push([
@@ -3020,7 +3020,7 @@ function auraCells(id, mask, t, copy) {
 	]).filter(([x, y]) => {
 		if (x < 0 || y < 0 || x >= w || y >= h || mask[y][x] || seen.has(y * w + x)) return false;
 		seen.add(y * w + x);
-		return noise(x, y, step, print, 7) >= scuff * .45;
+		return noise$1(x, y, step, print, 7) >= scuff * .45;
 	});
 }
 /** Each aura finish's three colours, brightest first; Classic keeps the aura's own. */
@@ -3081,9 +3081,199 @@ function auraColor(id, k, finish, x, y, t) {
 	}
 	const ramp = RAMPS[finish];
 	if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-	const glint = (finish === "sapphire" || finish === "ruby" || finish === "pearl") && noise(x, y, Math.floor(t / 180), 9) > .86;
+	const glint = (finish === "sapphire" || finish === "ruby" || finish === "pearl") && noise$1(x, y, Math.floor(t / 180), 9) > .86;
 	if (glint) return finish === "pearl" ? hsl(wrap(x * 40 + y * 25 + t / 6, 360), .85, .7) : ramp[0];
 	return ramp[Math.min(2, k % 3)];
+}
+
+//#endregion
+//#region src/effects.ts
+const EFFECTS = {
+	shimmer: {
+		name: "Shimmer",
+		what: "Glints race across it.",
+		item: 25,
+		aura: 5
+	},
+	pulse: {
+		name: "Pulse",
+		what: "It breathes, brightening and dimming.",
+		item: 60,
+		aura: 10
+	},
+	holo: {
+		name: "Holo",
+		what: "A rainbow sheen sweeps across it, like foil.",
+		item: 150,
+		aura: 25
+	},
+	chroma: {
+		name: "Chroma",
+		what: "Its colours cycle round the rainbow.",
+		item: 600,
+		aura: 80
+	},
+	embers: {
+		name: "Embers",
+		what: "Sparks drift up off it.",
+		item: 1e3,
+		aura: 150
+	},
+	starlight: {
+		name: "Starlight",
+		what: "Stars twinkle inside it, like a night sky.",
+		item: 2500,
+		aura: 400
+	}
+};
+const FX_IDS = Object.keys(EFFECTS);
+/** The effect a uniform number in [0, 1) gives, rarest checked first, or none. */
+function rollFx(u, aura) {
+	let edge = 0;
+	for (const id of [...FX_IDS].reverse()) {
+		edge += 1 / EFFECTS[id][aura ? "aura" : "item"];
+		if (u < edge) return id;
+	}
+	return void 0;
+}
+const rgb$2 = (h) => [
+	1,
+	3,
+	5
+].map((i) => parseInt(h.slice(i, i + 2), 16));
+const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$3 = (a, b$1, t) => [
+	0,
+	1,
+	2
+].map((i) => a[i] + (b$1[i] - a[i]) * t);
+const WHITE = [
+	255,
+	255,
+	255
+];
+function noise(...n) {
+	let h = 2654435769;
+	for (const v of n) {
+		h = Math.imul(h ^ v, 2246822507);
+		h = Math.imul(h ^ h >>> 13, 3266489909);
+		h ^= h >>> 16;
+	}
+	return (h >>> 0) / 4294967296;
+}
+const hue = (h, s = .9, l = .65) => {
+	const f = (n) => {
+		const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+		return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)));
+	};
+	return [
+		f(0),
+		f(8),
+		f(4)
+	];
+};
+/** A colour turned round the wheel by `deg`, keeping how light and how strong it is. */
+function turn(c, deg) {
+	const [r, g, b$1] = c.map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), l = (max + min) / 2, d = max - min;
+	if (d < .04) return c;
+	const s = d / (1 - Math.abs(2 * l - 1));
+	const h = max === r ? 60 * ((g - b$1) / d % 6) : max === g ? 60 * ((b$1 - r) / d + 2) : 60 * ((r - g) / d + 4);
+	return hue((h + deg + 720) % 360, Math.min(1, s), l);
+}
+/** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
+function fxColor(color, fx, x, y, t, print = 0) {
+	const c = rgb$2(color), tt = t + print * 37;
+	switch (fx) {
+		case "shimmer": {
+			const at = tt % 900 / 900 * 34 - 8;
+			for (const band of [at, at - 14]) {
+				const d = x + y - band;
+				if (d >= 0 && d < 1.5) return "#FFFFFF";
+				if (d >= -1.5 && d < 0) return hex$2(mix$3(c, [
+					150,
+					220,
+					255
+				], .75));
+			}
+			return noise(x, y, Math.floor(tt / 140)) > .94 ? "#FFFFFF" : color;
+		}
+		case "pulse": return hex$2(mix$3(c, Math.sin(tt / 260) > 0 ? WHITE : [
+			0,
+			0,
+			0
+		], .4 * Math.abs(Math.sin(tt / 260))));
+		case "holo": return hex$2(mix$3(c, hue(((x * 22 + y * 14 + tt / 5) % 360 + 360) % 360), .45));
+		case "chroma": {
+			const turned = turn(c, tt / 9 + x * 6);
+			return turned === c ? hex$2(mix$3(c, hue(((tt / 9 + x * 6) % 360 + 360) % 360, .9, .6), .45)) : hex$2(turned);
+		}
+		case "starlight": {
+			const n = noise(x, y, Math.floor(tt / 220), print);
+			const night = mix$3(mix$3(c, [
+				26,
+				18,
+				70
+			], .62), [
+				90,
+				60,
+				200
+			], .12 * (1 + Math.sin(tt / 700 + x * .6 + y)));
+			return n > .92 ? "#FFFFFF" : n > .84 ? hex$2(mix$3(night, [
+				200,
+				180,
+				255
+			], .7)) : hex$2(night);
+		}
+		case "embers": return hex$2(mix$3(c, [
+			255,
+			140,
+			60
+		], .12 + .1 * Math.sin(tt / 180 + x)));
+	}
+}
+/**
+* Applies the effects of the copies a frame shows: `slots` says which slot
+* each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
+* `FRAME_SLOTS`), `copies` the copy in each slot. Embers also send sparks up
+* into the empty pixels above their copy.
+*/
+function applyFx(colors, slots, copies, t) {
+	if (!copies.some((o) => o?.fx)) return colors;
+	const out = colors.map((row) => [...row]);
+	slots.forEach((row, y) => row.forEach((s, x) => {
+		const o = copies[s - 1];
+		if (s && o?.fx && colors[y][x]) out[y][x] = fxColor(colors[y][x], o.fx, x, y, t, o.print);
+	}));
+	copies.forEach((o, k) => {
+		if (o?.fx !== "pulse") return;
+		const breath = Math.sin((t + o.print * 37) / 260);
+		if (breath < .2) return;
+		slots.forEach((row, y) => row.forEach((s, x) => {
+			if (s !== k + 1 || !colors[y][x]) return;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const nx = x + dx, ny = y + dy;
+				if (ny >= 0 && ny < out.length && nx >= 0 && nx < out[0].length && !out[ny][nx]) out[ny][nx] = hex$2(mix$3(rgb$2(colors[y][x]), WHITE, .25 + .3 * breath));
+			}
+		}));
+	});
+	copies.forEach((o, k) => {
+		if (o?.fx !== "embers") return;
+		const tops = new Map();
+		slots.forEach((row, y) => row.forEach((s, x) => {
+			if (s === k + 1 && !tops.has(x)) tops.set(x, y);
+		}));
+		for (const [x, top] of tops) {
+			if (noise(x, o.print, 3) > .45) continue;
+			const rise = 5, step = Math.floor((t + noise(x, o.print) * 900) / 110) % (rise + 3), y = top - 1 - step;
+			if (step < rise && y >= 0 && !out[y][x]) out[y][x] = step < 2 ? "#FFE27A" : step < 4 ? "#FF8A2B" : "#C2412E";
+		}
+	});
+	return out;
 }
 
 //#endregion
@@ -3579,7 +3769,7 @@ function gradeOf(o) {
 function nameOf(o) {
 	const item = itemById(o.item);
 	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
-	const tally = (o.souvenir ? "Souvenir " : "") + (o.tally !== void 0 ? "Tallied " : "");
+	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Tallied " : "");
 	if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
 	if (o.finish === "plain") return tally + base;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
@@ -3601,6 +3791,7 @@ function encode(o) {
 	if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join("+")}`);
 	if (o.date) parts.push(`d${o.date}`);
 	if (o.souvenir) parts.push(`s${o.souvenir}`);
+	if (o.fx) parts.push(`x${o.fx}`);
 	return parts.join("~");
 }
 function decode(s) {
@@ -3618,6 +3809,7 @@ function decode(s) {
 		if (part.startsWith("t") && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
 		if (part.startsWith("d") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
 		if (part.startsWith("s") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
+		if (part.startsWith("x") && FX_IDS.includes(part.slice(1))) o.fx = part.slice(1);
 		if (part.startsWith("p")) {
 			const pins = part.slice(1).split("+").filter((id) => pinById(id)).slice(0, MAX_PINS);
 			if (pins.length) o.pins = pins;
@@ -3674,6 +3866,8 @@ function rollAura(seed) {
 		print: hash(`${seed}|pattern`) % 1e3
 	};
 	if (unit(`${seed}|stattrak`) < .1) o.tally = 0;
+	const fx = rollFx(unit(`${seed}|fx`), true);
+	if (fx) o.fx = fx;
 	return o;
 }
 /**
@@ -3709,6 +3903,8 @@ function rollFrom(pool, seed) {
 		print
 	};
 	if (unit(`${seed}|stattrak`) < .1) o.tally = 0;
+	const fx = rollFx(unit(`${seed}|fx`), false);
+	if (fx) o.fx = fx;
 	return o;
 }
 /** Which slot a copy goes in. */
@@ -6969,9 +7165,9 @@ function dress(config, options = {}, name) {
 	return out;
 }
 function contrast$1(a, b$1) {
-	const lum$2 = (hex$2) => {
+	const lum$2 = (hex$3) => {
 		const c = (i) => {
-			const v = parseInt(hex$2.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+			const v = parseInt(hex$3.slice(1 + i * 2, 3 + i * 2), 16) / 255;
 			return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
 		};
 		return .2126 * c(0) + .7152 * c(1) + .0722 * c(2);
@@ -6991,8 +7187,8 @@ function withItems(palette, config) {
 	]) {
 		const item = itemById(config[slot]);
 		if (!item) continue;
-		item.colors.forEach((hex$2, i) => {
-			colors[LAYER[slot] + i] = hex$2;
+		item.colors.forEach((hex$3, i) => {
+			colors[LAYER[slot] + i] = hex$3;
 		});
 		if (slot === "skin") {
 			if (item.outline) colors[T.OUTLINE] = item.outline;
@@ -7522,12 +7718,12 @@ const COLOURWAYS = [
 ];
 /** Hand-set token colours by colourway name, applied over the derived ones. */
 const TONES = new Map(COLOURWAYS.filter((w) => w.tones).map((w) => [w.name, w.tones]));
-function hexToRgb(hex$2) {
+function hexToRgb(hex$3) {
 	return [
 		1,
 		3,
 		5
-	].map((i) => parseInt(hex$2.slice(i, i + 2), 16));
+	].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
 }
 function rgbToHex(r, g, b$1) {
 	return "#" + [
@@ -7536,8 +7732,8 @@ function rgbToHex(r, g, b$1) {
 		b$1
 	].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
 }
-function toHsl(hex$2) {
-	const [r, g, b$1] = hexToRgb(hex$2).map((v) => v / 255);
+function toHsl(hex$3) {
+	const [r, g, b$1] = hexToRgb(hex$3).map((v) => v / 255);
 	const max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
 	const l = (max + min) / 2;
 	if (max === min) return [
@@ -7594,16 +7790,16 @@ function mix$1(a, b$1, amount) {
 	return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
 }
 /** Moves a hue `amount` degrees towards `target` along the short way round. */
-function towards(hue, target, amount) {
-	const diff = (target - hue + 540) % 360 - 180;
-	return hue + Math.sign(diff) * Math.min(Math.abs(diff), amount);
+function towards(hue$1, target, amount) {
+	const diff = (target - hue$1 + 540) % 360 - 180;
+	return hue$1 + Math.sign(diff) * Math.min(Math.abs(diff), amount);
 }
-function luminance(hex$2) {
+function luminance(hex$3) {
 	const channel = (v) => {
 		v /= 255;
 		return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
 	};
-	const [r, g, b$1] = hexToRgb(hex$2);
+	const [r, g, b$1] = hexToRgb(hex$3);
 	return .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b$1);
 }
 function contrast(a, b$1) {
@@ -7614,8 +7810,8 @@ function contrast(a, b$1) {
 * Shade a colour by hand: darker and leaning towards violet, but never richer.
 * Adding saturation in the shadow is what turned a green body's shade neon.
 */
-function shadeOf(hex$2, depth = .12) {
-	const [h, s, l] = toHsl(hex$2);
+function shadeOf(hex$3, depth = .12) {
+	const [h, s, l] = toHsl(hex$3);
 	return fromHsl([
 		towards(h, 265, 12),
 		s * .85,
@@ -7689,9 +7885,9 @@ const SHADE_COUNT = 3;
 */
 function shadePalette(palette, shade) {
 	if (shade === 1) return palette;
-	const tone = (hex$2) => {
-		if (shade === 0) return mix$1(hex$2, "#FFFFFF", .3);
-		const [h, s, l] = toHsl(hex$2);
+	const tone = (hex$3) => {
+		if (shade === 0) return mix$1(hex$3, "#FFFFFF", .3);
+		const [h, s, l] = toHsl(hex$3);
 		return fromHsl([
 			h,
 			Math.min(.8, s + .04),
@@ -7706,19 +7902,19 @@ function shadePalette(palette, shade) {
 * gold trim. Derived again, so the face and outline read as well as ever.
 */
 function luckyPalette(palette) {
-	const turn = (hex$2) => {
-		const [h, s, l] = toHsl(hex$2);
-		let hue = (h + 150) % 360;
+	const turn$1 = (hex$3) => {
+		const [h, s, l] = toHsl(hex$3);
+		let hue$1 = (h + 150) % 360;
 		const dark = l < .45;
-		if (dark && hue >= 10 && hue <= 110) hue += 130;
+		if (dark && hue$1 >= 10 && hue$1 <= 110) hue$1 += 130;
 		return fromHsl([
-			hue,
+			hue$1,
 			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.min(.85, s + .05),
 			dark ? Math.min(Math.max(l, .22), .28) : Math.max(l, .66)
 		]);
 	};
 	const c = palette.colors;
-	return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
+	return derive(`${palette.name} Lucky`, turn$1(c[1]), turn$1(c[10]), "#FFE9A8");
 }
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
 function paletteOf(config) {
@@ -7733,7 +7929,7 @@ function paletteOf(config) {
 * colour; a cell belonging to an owned item is repainted with that copy's
 * finish and wear.
 */
-function paint(grid, config, palette, small = false) {
+function paint(grid, config, palette, small = false, still = true) {
 	const state = { glint: false };
 	const slotOf$1 = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	const aura = auraById(config.aura);
@@ -7743,8 +7939,8 @@ function paint(grid, config, palette, small = false) {
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
-		if (slot === "aura") return aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color;
-		return copy ? paintCell(color, x, y, copy, state) : color;
+		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
+		return still && copy?.fx ? fxColor(painted$1, copy.fx, x, y, 0, copy.print) : painted$1;
 	}));
 }
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
@@ -8101,7 +8297,7 @@ const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette, small = false) {
-	const colors = paint(grid, config, palette, small);
+	const colors = paint(grid, config, palette, small, false);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -8328,6 +8524,8 @@ function animate(input, move, options = {}) {
 		aura: void 0
 	};
 	const wornAura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
+	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
+	const withFx = fxCopies.some((o) => o?.fx);
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
@@ -8362,7 +8560,7 @@ function animate(input, move, options = {}) {
 	const frameItem = itemById(config.frame);
 	if (frameItem?.slot === "frame") {
 		const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: GRID_SIZE }, (_$1, x) => LAYER.frame + frameItem.fill(x, y + 48) - 1));
-		const colors = paint(tall, config, palette);
+		const colors = paint(tall, config, palette, false, false);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
 	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
@@ -8373,7 +8571,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (const beat of beats) {
-		const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		const n = wornAura || withFx ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms / n);
 			slices.push({
@@ -8460,8 +8658,9 @@ function animate(input, move, options = {}) {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
 			});
 		}
-		const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
 		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
+		const colors = withFx ? applyFx(flat, slots, fxCopies, t$1) : flat;
 		return {
 			colors,
 			ms,
@@ -8769,6 +8968,7 @@ function copyOneIn(o) {
 	const [lo, hi] = f.scuffs;
 	p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
 	if (o.tally !== void 0) p *= .1;
+	if (o.fx) p *= 1 / EFFECTS[o.fx][f.aura ? "aura" : "item"];
 	return 1 / p;
 }
 
@@ -9188,12 +9388,12 @@ function surfaceOf(kind, scuff = 0) {
 		clearcoat: +(s.clearcoat * (1 - wear$1)).toFixed(3)
 	};
 }
-const lum = (hex$2) => {
-	const n = parseInt(hex$2.slice(1, 7), 16);
+const lum = (hex$3) => {
+	const n = parseInt(hex$3.slice(1, 7), 16);
 	return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255;
 };
-const darken = (hex$2, k) => {
-	const n = parseInt(hex$2.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
+const darken = (hex$3, k) => {
+	const n = parseInt(hex$3.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
 	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
 };
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
@@ -9372,8 +9572,8 @@ function ownedOf(codes) {
 	}
 	return out;
 }
-const linear = (hex$2) => {
-	const n = parseInt(hex$2.slice(1, 7), 16);
+const linear = (hex$3) => {
+	const n = parseInt(hex$3.slice(1, 7), 16);
 	return [
 		n >> 16 & 255,
 		n >> 8 & 255,
@@ -9442,7 +9642,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			v[2] / l
 		];
 	};
-	const quad = (a, b$1, c, d, n, rgb$2) => {
+	const quad = (a, b$1, c, d, n, rgb$3) => {
 		const shaded$1 = [
 			a,
 			b$1,
@@ -9465,7 +9665,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
 			nor.push(...shaded$1[i]);
-			col.push(...rgb$2);
+			col.push(...rgb$3);
 		}
 	};
 	const open = (z0, z1, n) => {
@@ -9797,6 +9997,15 @@ function collectorNotes(o) {
 		why: "A run in the print number.",
 		oneIn: 1e3 / 14
 	});
+	if (o.fx) {
+		const e = EFFECTS[o.fx];
+		notes.push({
+			id: "effect",
+			name: e.name,
+			why: `${e.what} An effect on top of its finish.`,
+			oneIn: FINISHES[o.finish].aura ? e.aura : e.item
+		});
+	}
 	if (o.souvenir) notes.push({
 		id: "souvenir",
 		name: "Souvenir",
@@ -9826,12 +10035,14 @@ exports.DEEP_BLUE_PRINTS = DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
+exports.EFFECTS = EFFECTS
 exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FINISHES = FINISHES
 exports.FOOT_STYLES = FOOT_STYLES
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
+exports.FX_IDS = FX_IDS
 exports.GAMES = GAMES
 exports.GOLD_RIM_DAYS = GOLD_RIM_DAYS
 exports.GRADES = GRADES
@@ -9848,6 +10059,7 @@ exports.WEAR = WEAR
 exports.accessories = accessories
 exports.allowed = allowed
 exports.animate = animate
+exports.applyFx = applyFx
 exports.auraById = auraById
 exports.auraCells = auraCells
 exports.auraColor = auraColor
@@ -9869,6 +10081,7 @@ exports.encodeLook = encodeLook
 exports.eyes = eyes
 exports.frameAt = frameAt
 exports.freeItem = freeItem
+exports.fxColor = fxColor
 exports.gameItems = gameItems
 exports.getColor = getColor
 exports.getPalette = getPalette
@@ -9897,6 +10110,7 @@ exports.pinById = pinById
 exports.resolve = resolve
 exports.resolveColor = resolveColor
 exports.roll = roll
+exports.rollFx = rollFx
 exports.rollSeason = rollSeason
 exports.shadePalette = shadePalette
 exports.shineData = shineData

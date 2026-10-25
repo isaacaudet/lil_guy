@@ -6,8 +6,54 @@ import * as React$1 from "react";
 import * as React from "react";
 import * as react_jsx_runtime1 from "react/jsx-runtime";
 
+//#region src/effects.d.ts
+/**
+* Effects: a rare layer a copy can roll on top of its finish, the way a knife
+* has its phase. Any copy from a capsule can have one; an aura is far more
+* likely to, so aura effects make a ladder of their own. Three are versions
+* (Shimmer, Pulse, Holo) and three are rarer (Chroma, Embers, Starlight).
+*
+* An effect moves in `animate`, and shows in a still picture as it stands at
+* the start. It never changes the item's own drawing, only how it shines.
+*/
+/**
+ * Effects: a rare layer a copy can roll on top of its finish, the way a knife
+ * has its phase. Any copy from a capsule can have one; an aura is far more
+ * likely to, so aura effects make a ladder of their own. Three are versions
+ * (Shimmer, Pulse, Holo) and three are rarer (Chroma, Embers, Starlight).
+ *
+ * An effect moves in `animate`, and shows in a still picture as it stands at
+ * the start. It never changes the item's own drawing, only how it shines.
+ */
+type Fx = 'shimmer' | 'pulse' | 'holo' | 'chroma' | 'embers' | 'starlight';
+interface Effect {
+  name: string;
+  /** One line on what it does. */
+  what: string;
+  /** About one item copy in this many has it. */
+  item: number;
+  /** About one aura in this many has it. */
+  aura: number;
+}
+declare const EFFECTS: Record<Fx, Effect>;
+declare const FX_IDS: Fx[];
+/** The effect a uniform number in [0, 1) gives, rarest checked first, or none. */
+declare function rollFx(u: number, aura: boolean): Fx | undefined;
+/** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
+declare function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print?: number): string;
+/**
+ * Applies the effects of the copies a frame shows: `slots` says which slot
+ * each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
+ * `FRAME_SLOTS`), `copies` the copy in each slot. Embers also send sparks up
+ * into the empty pixels above their copy.
+ */
+declare function applyFx(colors: (string | null)[][], slots: number[][], copies: (({
+  fx?: Fx;
+  print: number;
+}) | undefined)[], t: number): (string | null)[][];
+
+//#endregion
 //#region src/parts/art.d.ts
-/** A small drawing: rows of tokens, not necessarily 16 wide. */
 
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
 type Stamp = number[][]; //#endregion
@@ -65,7 +111,9 @@ declare class Canvas {
   centred(s: Stamp): number;
   /** Repaints every body cell in a row. */
   paintRow(y: number, token: number): void;
-} //#endregion
+}
+
+//#endregion
 //#region src/items.d.ts
 /**
  * Items: things a player earns or buys in a DLE Club game and wears
@@ -177,6 +225,8 @@ interface Owned {
   date?: string;
   /** A souvenir: the day's free capsule for finishing every game, and that day. */
   souvenir?: string;
+  /** A rare effect on top of the finish (see ./effects). */
+  fx?: Fx;
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -872,7 +922,7 @@ declare const accessories: Accessory[];
  * colour; a cell belonging to an owned item is repainted with that copy's
  * finish and wear.
  */
-declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean): (string | null)[][];
+declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean, still?: boolean): (string | null)[][];
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 declare const SMALL_SIZE = 36;
 
@@ -1348,5 +1398,5 @@ interface Note {
 declare function collectorNotes(o: Owned): Note[];
 
 //#endregion
-export { AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

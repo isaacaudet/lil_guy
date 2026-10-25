@@ -156,6 +156,10 @@
         <p class="lede">One capsule in a thousand, from any machine, is an aura instead of the machine's item: an effect round the guy that moves with him. Its float thins it, its print sets its timing, and it comes in its own finishes. Trade-ups stop at Grail.</p></div>
       <div class="live" id="auras"></div>
       <div class="scroll"><table id="relic-table" style="background:#221c30;border-color:#352c48;color:#f2eee6"></table></div>
+      <div><h3>Effects</h3><p>A rare layer on top of any copy's finish. On an aura it is the aura's version.</p></div>
+      <div class="live" id="fx-items"></div>
+      <div class="live" id="fx-auras"></div>
+      <div class="scroll"><table id="fx-table" style="background:#221c30;border-color:#352c48;color:#f2eee6"></table></div>
       <div><h3>The founder, one of one</h3><p>A clean guy in a crown, wearing the Origin aura, which no capsule gives (with the Gold flag in his locker).</p></div>
       <div class="vs" id="vs"></div>
     </div>
@@ -223,7 +227,7 @@
   const slotCount = slot => LG.GAMES.map(g => machine(g).filter(i => i.slot === slot).length);
   const combos = SLOTS.reduce((n, s) => n * s.list.length, 1) * LG.palettes.length * 3 * 5 * 3 * 2 * 2;
 
-  $('nav').innerHTML = [['thin', 'What was thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Auras']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
+  $('nav').innerHTML = [['thin', 'What was thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Auras and effects']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
   const rarestPart = Math.min(...SLOTS.map(s => s.options.find(o => o.p).p));
   $('stats').innerHTML = [
     [fmt(combos), 'different guys the parts can make'],
@@ -307,10 +311,14 @@
   $('relic-table').innerHTML = `<tr><th style="color:#b9b1c9">Aura finish</th><th style="color:#b9b1c9">Of auras</th><th style="color:#b9b1c9">A given aura in it</th></tr>` +
     finishes.map(([, f]) => `<tr><td><b>${esc(f.name)}</b></td><td class="num">${f.aura}%</td><td class="num">${oneIn(LG.AURA_ODDS / LG.AURAS.length * f.aura / 100)} capsules</td></tr>`).join('') +
     `<tr><td><b>Origin</b></td><td class="num">one of one</td><td class="num">the founder's</td></tr>`;
+  $('fx-items').innerHTML = LG.FX_IDS.map((id, k) => fig({ name: names[k], equip: [LG.encode({ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: k, fx: id })] }, LG.EFFECTS[id].name, 'Sunset Toy block')).join('');
+  $('fx-auras').innerHTML = LG.FX_IDS.map((id, k) => fig({ name: names[k + 1], equip: [LG.encode({ item: LG.AURAS[(k * 5 + 2) % LG.AURAS.length].id, finish: 'classic', scuff: 0.02, print: k, fx: id })] }, `${LG.EFFECTS[id].name} ★ ${LG.AURAS[(k * 5 + 2) % LG.AURAS.length].name}`, '')).join('');
+  $('fx-table').innerHTML = `<tr><th style="color:#b9b1c9">Effect</th><th style="color:#b9b1c9">What it does</th><th style="color:#b9b1c9">Items</th><th style="color:#b9b1c9">Auras</th></tr>` +
+    LG.FX_IDS.map(id => { const e = LG.EFFECTS[id]; return `<tr><td><b>${esc(e.name)}</b></td><td>${esc(e.what)}</td><td class="num">1 in ${fmt(e.item)}</td><td class="num">1 in ${fmt(e.aura)}</td></tr>`; }).join('');
   const FOUNDER = { parts: { head: idx(LG.heads, 'round'), eyes: idx(LG.eyes, 'glossy'), mouth: idx(LG.mouths, 'smile'), cheeks: idx(LG.cheeks, 'blush'), hair: idx(LG.hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false }, palette: idx(LG.palettes, 'Ocean') };
   const best = LG.makeSeed();
   $('vs').innerHTML = fig({ name: best, equip: [LG.encode({ item: 'puttsies.tee', finish: 'gold', scuff: 0.001, print: 1 }), LG.encode({ item: 'aura.galaxy', finish: 'pearl', scuff: 0.0004, print: 7 })] }, 'A great roll', 'A 0.001 Gold buddy and a 0.000 Black pearl Galaxy')
-    + fig({ name: 'founder:isaac', ...FOUNDER, equip: [LG.encode({ item: 'aura.origin', finish: 'classic', scuff: 0, print: 1 })] }, '@isaac, the founder', 'The Origin aura, one of one');
+    + fig({ name: 'founder:isaac', ...FOUNDER, equip: [LG.encode({ item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' })] }, '@isaac, the founder', 'The Origin aura, one of one');
 
   // One loop draws every live figure.
   (function frame(now) {

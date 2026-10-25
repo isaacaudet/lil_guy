@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-C7x3Uk4U.cjs');
+const require_paint = require('./paint-DOVMwQJq.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -302,7 +302,7 @@ const slotIndex = (t) => t >= require_paint.LAYER.aura ? 5 : t >= require_paint.
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette, small = false) {
-	const colors = require_paint.paint(grid, config, palette, small);
+	const colors = require_paint.paint(grid, config, palette, small, false);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -529,6 +529,8 @@ function animate(input, move, options = {}) {
 		aura: void 0
 	};
 	const wornAura = require_paint.auraById(require_paint.itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
+	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
+	const withFx = fxCopies.some((o) => o?.fx);
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
@@ -563,7 +565,7 @@ function animate(input, move, options = {}) {
 	const frameItem = require_paint.itemById(config.frame);
 	if (frameItem?.slot === "frame") {
 		const tall = Array.from({ length: require_paint.GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: require_paint.GRID_SIZE }, (_$1, x) => require_paint.LAYER.frame + frameItem.fill(x, y + 48) - 1));
-		const colors = require_paint.paint(tall, config, palette);
+		const colors = require_paint.paint(tall, config, palette, false, false);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? require_paint.GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
 	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
@@ -574,7 +576,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (const beat of beats) {
-		const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		const n = wornAura || withFx ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms / n);
 			slices.push({
@@ -661,8 +663,9 @@ function animate(input, move, options = {}) {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
 			});
 		}
-		const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
 		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
+		const colors = withFx ? require_paint.applyFx(flat, slots, fxCopies, t$1) : flat;
 		return {
 			colors,
 			ms,
@@ -1461,6 +1464,7 @@ function copyOneIn(o) {
 	const [lo, hi] = f.scuffs;
 	p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
 	if (o.tally !== void 0) p *= .1;
+	if (o.fx) p *= 1 / require_paint.EFFECTS[o.fx][f.aura ? "aura" : "item"];
 	return 1 / p;
 }
 
@@ -2537,6 +2541,15 @@ function collectorNotes(o) {
 		why: "A run in the print number.",
 		oneIn: 1e3 / 14
 	});
+	if (o.fx) {
+		const e = require_paint.EFFECTS[o.fx];
+		notes.push({
+			id: "effect",
+			name: e.name,
+			why: `${e.what} An effect on top of its finish.`,
+			oneIn: require_paint.FINISHES[o.finish].aura ? e.aura : e.item
+		});
+	}
 	if (o.souvenir) notes.push({
 		id: "souvenir",
 		name: "Souvenir",
@@ -2569,12 +2582,14 @@ exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
+exports.EFFECTS = require_paint.EFFECTS
 exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FINISHES = require_paint.FINISHES
 exports.FOOT_STYLES = require_paint.FOOT_STYLES
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
+exports.FX_IDS = require_paint.FX_IDS
 exports.GAMES = require_paint.GAMES
 exports.GOLD_RIM_DAYS = require_paint.GOLD_RIM_DAYS
 exports.GRADES = require_paint.GRADES
@@ -2593,6 +2608,7 @@ exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
 exports.allowed = allowed
 exports.animate = animate
+exports.applyFx = require_paint.applyFx
 exports.auraById = require_paint.auraById
 exports.auraCells = require_paint.auraCells
 exports.auraColor = require_paint.auraColor
@@ -2614,6 +2630,7 @@ exports.encodeLook = encodeLook
 exports.eyes = require_paint.eyes
 exports.frameAt = frameAt
 exports.freeItem = require_paint.freeItem
+exports.fxColor = require_paint.fxColor
 exports.gameItems = require_paint.gameItems
 exports.getColor = getColor
 exports.getPalette = require_paint.getPalette
@@ -2643,6 +2660,7 @@ exports.pinById = require_paint.pinById
 exports.resolve = require_paint.resolve
 exports.resolveColor = require_paint.resolveColor
 exports.roll = require_paint.roll
+exports.rollFx = require_paint.rollFx
 exports.rollSeason = require_paint.rollSeason
 exports.shadePalette = require_paint.shadePalette
 exports.shineData = shineData

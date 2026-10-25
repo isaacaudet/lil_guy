@@ -34,7 +34,7 @@ const FOUNDER = {
   parts: { head: byName(heads, 'round'), eyes: byName(eyes, 'glossy'), mouth: byName(mouths, 'smile'), cheeks: byName(cheeks, 'blush'), hair: byName(hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false },
   palette: byName(palettes, 'Ocean'),
   copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
-  aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1 },
+  aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' },
 };
 const dealt = seed => seed === 'founder:isaac' ? { ...resolve(seed, FOUNDER.parts), palette: FOUNDER.palette } : resolve(seed);
 const guyOf = (seed, look) => { const base = dealt(seed); const picked = look ? decodeLook(look, base) : null; return picked ? { ...base, ...picked } : base; };
