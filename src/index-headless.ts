@@ -3,7 +3,7 @@ export type { PixelGrid, ColorToken, Palette, AvatarConfig, RenderOptions, Inten
 export { GRID_SIZE } from './types';
 
 export { hash, hashNth } from './hash';
-export { resolve, LUCKY_ODDS } from './resolve';
+export { resolve, LUCKY_ODDS, DEAL_PREFIX, dealOf } from './resolve';
 export { compose, composeBase, FOOT_STYLES } from './compose';
 
 export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPalette, paletteOf } from './palette';

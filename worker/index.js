@@ -1,7 +1,7 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
-  decodeLook, resolve, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
+  decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
 } from '../src/index-headless.ts';
 
 const json = (body, status = 200, extra = {}) => Response.json(body, {
@@ -269,7 +269,7 @@ export async function api(request, env, url = new URL(request.url)) {
   if (key === 'isaac' && (!env.FOUNDER_SECRET || !await equal(request.headers.get('X-Founder-Secret') || '', env.FOUNDER_SECRET))) {
     return json({ error: 'This name is reserved' }, 403);
   }
-  const seed = key === 'isaac' ? 'founder:isaac' : crypto.randomUUID();
+  const seed = key === 'isaac' ? 'founder:isaac' : makeSeed();
   const ownerToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
   const at = new Date().toISOString();
   const session = await sessionAccount(request, env);

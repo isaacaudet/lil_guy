@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { allowed, decodeLook, encodeLook, lookOf, makeSeed, pickable } from '../look';
-import { resolve } from '../resolve';
+import { resolve, dealOf } from '../resolve';
 import { eyes, heads } from '../parts';
 import { palettes } from '../palette';
 import { eyeWeights, headWeights } from '../parts/weights';
@@ -9,11 +9,30 @@ const laser = eyes.findIndex(e => e.name === 'laser');
 const crab = heads.findIndex(h => h.name === 'crab');
 
 describe('seeds', () => {
-  test('are random, 12 characters, and draw a guy like any name', () => {
+  test('are random, the deal prefix and 12 characters, and draw a guy like any name', () => {
     const a = makeSeed(), b = makeSeed();
-    expect(a).toMatch(/^[0-9a-z]{12}$/);
+    expect(a).toMatch(/^3-[0-9a-z]{12}$/);
     expect(a).not.toBe(b);
     expect(lookOf(a)).toEqual(resolve(a));
+  });
+});
+
+describe('the deal', () => {
+  // A guy already dealt never changes: names and seeds from before deal 3 read
+  // the frozen deal 2 tables, whatever parts and weights are added later.
+  test('keeps every older seed and plain name exactly as it was dealt', () => {
+    const was: [string, number[]][] = [
+      ['alice', [7, 10, 11, 8, 23, 11, 10, 33]],
+      ['okapi', [2, 7, 9, 12, 0, 2, 0, 1]],
+      ['ud33mycomvkl', [14, 9, 4, 2, 8, 0, 5, 32]],
+      ['founder:isaac', [15, 3, 4, 2, 29, 4, 7, 18]],
+    ];
+    for (const [name, parts] of was) {
+      const c = resolve(name);
+      expect([c.head, c.eyes, c.mouth, c.cheeks, c.hair, c.body, c.accessory, c.palette]).toEqual(parts);
+    }
+    expect(dealOf('alice')).toBe(2);
+    expect(dealOf(makeSeed())).toBe(3);
   });
 });
 

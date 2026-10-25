@@ -1,4 +1,4 @@
-import { resolve } from './resolve';
+import { resolve, DEAL_PREFIX } from './resolve';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights, bodyWeights, accessoryWeights, paletteWeights,
 } from './parts/weights';
@@ -38,25 +38,26 @@ const SLOTS = [
 export type LookSlot = (typeof SLOTS)[number][1];
 export type Look = Partial<Record<LookSlot, number>>;
 
-/** The weight below which a part counts as rare and can't be picked. */
-const RARE = 2;
+/** A part rarer than this (1 in 45) counts as rare and can't be picked. */
+const RARE = 1 / 45;
 
 /**
- * A random seed to draw a new player's guy from, made once and kept. 12
- * characters of base 36, about 62 bits.
+ * A random seed to draw a new player's guy from, made once and kept: the deal
+ * prefix (`3-`), then 12 characters of base 36, about 62 bits.
  */
 export function makeSeed(): string {
   const bytes = new Uint8Array(8);
   globalThis.crypto.getRandomValues(bytes);
   let n = 0n;
   for (const b of bytes) n = (n << 8n) | BigInt(b);
-  return n.toString(36).padStart(12, '0').slice(-12);
+  return DEAL_PREFIX + n.toString(36).padStart(12, '0').slice(-12);
 }
 
 /** Which options a player may pick in a slot: every common one, and their own. */
 export function pickable(own: AvatarConfig, slot: LookSlot): number[] {
   const weights = SLOTS.find(s => s[1] === slot)![2];
-  return weights.map((w, i) => i).filter(i => weights[i] >= RARE || i === own[slot]);
+  const total = weights.reduce((a, b) => a + b, 0);
+  return weights.map((w, i) => i).filter(i => weights[i] / total >= RARE || i === own[slot]);
 }
 
 /** Whether a look only uses parts this player may pick. */

@@ -179,6 +179,24 @@ export const shadeWeights = [1, 5, 3];
 /** The night colourways (the last six) are half as common as the rest. */
 export const paletteWeights = [...new Array(32).fill(2), ...new Array(6).fill(1)];
 
+
+/**
+ * The deal before 3 (seeds without the `3-` prefix, and plain names). Frozen:
+ * every guy already dealt from one of these keeps his parts, so these lists
+ * never change, not even to add a part. New parts and new weights go in the
+ * tables above, which only seeds made by `makeSeed` from deal 3 on read.
+ */
+export const DEAL_2 = {
+  head: [3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 2, 2, 4, 3, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1],
+  eyes: [10, 10, 8, 8, 4, 6, 4, 2, 4, 6, 4, 2, 2, 3, 2, 1, 1],
+  mouth: [10, 8, 6, 6, 4, 4, 4, 2, 2, 6, 2, 4, 4, 3, 2, 2],
+  cheeks: [10, 6, 4, 2, 4, 2, 2, 1, 3, 2, 3, 2, 1, 1],
+  hair: [9, 4, 4, 2, 2, 1, 2, 4, 2, 2, 2, 1, 1, 2, 1, 2, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2],
+  body: [9, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 1],
+  accessory: [12, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 2, 2, 2],
+  palette: [...new Array(32).fill(2), ...new Array(6).fill(1)],
+};
+
 /**
  * Picks an index from a weight table using a hash value, so the result is
  * deterministic for a given input and the distribution follows the weights.
