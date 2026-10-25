@@ -887,6 +887,8 @@ interface VoxelColumn {
   color: string;
   /** The back: the body's colour behind an eye or mouth. */
   back: string;
+  /** The sides behind a thin rim of `color`: the body's colour where the front is the dark outline, so the outline reads as a line drawn on the front, not a dark wall. */
+  side: string;
   slot: number;
   surface: Surface;
   /** How far an eye or mouth stands proud of the body: left out of the mesh's shading. */

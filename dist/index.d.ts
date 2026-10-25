@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime0 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/parts/art.d.ts
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -1140,7 +1140,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -1208,6 +1208,8 @@ interface VoxelColumn {
   color: string;
   /** The back: the body's colour behind an eye or mouth. */
   back: string;
+  /** The sides behind a thin rim of `color`: the body's colour where the front is the dark outline, so the outline reads as a line drawn on the front, not a dark wall. */
+  side: string;
   slot: number;
   surface: Surface;
   /** How far an eye or mouth stands proud of the body: left out of the mesh's shading. */
