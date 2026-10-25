@@ -316,16 +316,102 @@ export const hair: Topper[] = [
   {
     name: 'headphones',
     draw: c => {
-      // A band over the crown and a cup on each side of the head.
-      const r = c.rows[c.crown]!;
-      for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.OUTLINE);
-      const cups = c.rows[c.crown + 2]!;
-      for (const y of [c.crown + 2, c.crown + 3]) {
-        c.set(cups.left, y, T.ACCENT);
-        c.set(cups.right, y, T.ACCENT_SHADE);
+      // Big cups over the ears, standing out past the sides of the head, and
+      // a band in the accent's shade hugging the top of the head between
+      // them. A band in the outline colour and one-pixel cups melted into
+      // the head.
+      const cup = c.eyeLine - 3;
+      const r = c.rows[cup + 1]!;
+      const [left, right] = [r.left, r.right];
+      for (let y = cup; y < cup + 3; y++) {
+        c.set(left - 1, y, T.ACCENT_SHADE);
+        c.set(left, y, T.ACCENT);
+        c.set(right, y, T.ACCENT);
+        c.set(right + 1, y, T.ACCENT_SHADE);
       }
-      c.set(r.left - 1, c.crown, T.OUTLINE);
-      c.set(r.right + 1, c.crown, T.OUTLINE);
+      for (let y = c.crown; y < cup; y++) {
+        const row = c.rows[y];
+        if (!row) continue;
+        c.set(row.left - 1, y, T.ACCENT_SHADE);
+        c.set(row.right + 1, y, T.ACCENT_SHADE);
+      }
+      const top = c.rows[c.crown]!;
+      for (let x = top.left; x <= top.right; x++) c.set(x, c.crown - 1, T.ACCENT_SHADE);
     },
   },
+
+  centre('cherries', [
+    '..gG..',
+    '.g..g.',
+    'rr..rr',
+    'rr..rr',
+  ], 0, 0),
+
+  {
+    name: 'flower crown',
+    draw: c => {
+      // Leaves along the top of the head, following its curve, and a flower
+      // every third column, in turn the accent, gold and blush.
+      const r = c.rows[c.crown + 1]!;
+      const flowers = [T.ACCENT, T.GOLD, T.BLUSH];
+      for (let x = r.left; x <= r.right; x++) {
+        const top = c.topOf(x);
+        if (top === null) continue;
+        c.set(x, top, T.LEAF);
+        if ((x - r.left) % 3 === 1) c.set(x, top - 1, flowers[Math.floor((x - r.left) / 3) % 3]);
+      }
+    },
+  },
+
+  pair('antlers', [
+    'x.x',
+    'xx.',
+    '.x.',
+  ], 1),
+
+  centre('chef hat', [
+    '.ww.ww.',
+    'wwwwwww',
+    'wwwwwww',
+    '.xxxxx.',
+  ]),
+
+  // Chase toppers, one guy in several hundred.
+  {
+    name: 'laurel',
+    draw: c => {
+      // A victor's wreath in gold: leaves along the top of the head, open
+      // at the middle, running down past its sides.
+      const r = c.rows[c.crown + 1]!;
+      const mid = Math.floor(c.centre);
+      for (let x = r.left; x <= r.right; x++) {
+        if (x === mid - 1 || x === mid) continue;
+        const top = c.topOf(x);
+        if (top === null) continue;
+        c.set(x, top - 1, T.GOLD_SHADE);
+        // Each leaf's tip points out and away from the middle.
+        if ((x - r.left) % 2 === 0) c.set(x + (x < mid ? -1 : 1), top - 2, T.GOLD);
+      }
+      for (let dy = 1; dy <= 3; dy++) {
+        const row = c.rows[c.crown + dy];
+        if (!row) continue;
+        c.set(row.left - 1, c.crown + dy, dy % 2 ? T.GOLD : T.GOLD_SHADE);
+        c.set(row.right + 1, c.crown + dy, dy % 2 ? T.GOLD : T.GOLD_SHADE);
+      }
+    },
+  },
+
+  centre('star crown', [
+    '....y....',
+    '.y.yyy.y.',
+    'yyy.y.yyy',
+    '.y.....y.',
+  ], 0, 0),
+
+  centre('on fire', [
+    '...y...',
+    '..yr.y.',
+    '.yrry..',
+    'yrryrry',
+  ]),
 ];

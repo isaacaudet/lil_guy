@@ -124,16 +124,22 @@ describe('weights', () => {
   ];
 
   for (const [name, weights, count] of TABLES) {
-    it(`${name} has one positive weight per part`, () => {
+    // A weight of 0 retires a part from new deals; it stays in its list, so
+    // saved looks and older guys that point at it still draw.
+    it(`${name} has one whole, non-negative weight per part`, () => {
       expect(weights.length).toBe(count);
-      for (const w of weights) expect(w).toBeGreaterThan(0);
+      for (const w of weights) {
+        expect(Number.isInteger(w)).toBe(true);
+        expect(w).toBeGreaterThanOrEqual(0);
+      }
+      expect(weights.filter(w => w === 0).length).toBeLessThan(count / 4);
     });
 
-    it(`${name} can produce every index`, () => {
+    it(`${name} can produce every index it weights`, () => {
       const total = weights.reduce((a, b) => a + b, 0);
       const seen = new Set<number>();
       for (let h = 0; h < total; h++) seen.add(weightedPick(weights, h));
-      expect(seen.size).toBe(count);
+      expect([...seen].sort((a, b) => a - b)).toEqual(weights.map((w, i) => i).filter(i => weights[i] > 0));
     });
   }
 });

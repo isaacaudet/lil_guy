@@ -81,4 +81,35 @@ export const mouths: Mouth[] = [
     'mm.cwc',
     '...cc.',
   ]),
+  // Buck teeth, framed by the mouth so they show on a white guy too.
+  mouth('bunny', [
+    'mmmm',
+    'mwwm',
+  ]),
+  mouth('vampire', [
+    'm....m',
+    '.mmmm.',
+    '.w..w.',
+  ]),
+  mouth('wide', [
+    'm....m',
+    '.mmmm.',
+  ]),
+  // Chase mouths, one guy in several hundred.
+  mouth('gold tooth', [
+    'mmmmmm',
+    'mwwywm',
+    '.mmmm.',
+  ]),
+  mouth('grillz', [
+    'mmmmmm',
+    'mywyym',
+    '.mmmm.',
+  ]),
+  // A curled handlebar in the face's ink, so a dark guy's is a dashing white.
+  mouth('mustache', [
+    'mm..mm',
+    'm.mm.m',
+    '..tt..',
+  ]),
 ];

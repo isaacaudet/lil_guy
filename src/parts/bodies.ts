@@ -36,6 +36,13 @@ const bolt = stamp([
   'y..',
 ]);
 
+/**
+ * The top row of a mark on the forehead: a row under the crown, where the head
+ * is wide enough to hold it. Measured from the eyes it ran off the top of
+ * round heads and was cut in half.
+ */
+const forehead = (c: Canvas) => c.crown + 1;
+
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c: Canvas, x: number, y: number, token: number): void {
   if (c.isBody(x, y)) c.set(x, y, token);
@@ -94,27 +101,30 @@ export const bodies: Marking[] = [
   {
     name: 'star mark',
     draw: c => {
-      c.draw(star, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+      c.draw(star, Math.floor(c.centre) - 1, forehead(c), true);
     },
   },
 
   {
     name: 'heart mark',
     draw: c => {
-      c.draw(heart, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+      c.draw(heart, Math.floor(c.centre) - 1, forehead(c), true);
     },
   },
 
   {
     name: 'gleam',
     draw: c => {
-      // A second, bigger shine, as if the guy were glazed.
-      const r = c.rows[c.crown + 2];
-      if (!r) return;
-      // A glossy streak down the right side, as if glazed.
-      onBody(c, r.right - 2, c.crown + 2, T.WHITE);
-      onBody(c, r.right - 2, c.crown + 3, T.LIGHT);
-      onBody(c, r.right - 1, c.crown + 4, T.LIGHT);
+      // A second, bigger shine, as if the guy were glazed: a white streak
+      // curving down the upper right, the opposite side from his own gleam.
+      // Three pixels in a column were barely there.
+      const r = c.rows[c.crown + 1], r2 = c.rows[c.crown + 2], r3 = c.rows[c.crown + 3];
+      if (!r || !r2 || !r3) return;
+      onBody(c, r.right - 3, c.crown + 1, T.LIGHT);
+      onBody(c, r.right - 2, c.crown + 1, T.WHITE);
+      onBody(c, r2.right - 2, c.crown + 2, T.LIGHT);
+      onBody(c, r2.right - 1, c.crown + 2, T.WHITE);
+      onBody(c, r3.right - 1, c.crown + 3, T.LIGHT);
     },
   },
 
@@ -151,27 +161,88 @@ export const bodies: Marking[] = [
   {
     name: 'moon mark',
     draw: c => {
-      c.draw(moon, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+      c.draw(moon, Math.floor(c.centre) - 1, forehead(c), true);
     },
   },
 
   {
     name: 'bolt mark',
     draw: c => {
-      c.draw(bolt, Math.floor(c.centre) - 1, c.eyeLine - 5, true);
+      c.draw(bolt, Math.floor(c.centre) - 1, forehead(c), true);
     },
   },
 
   {
     name: 'starry',
     draw: c => {
-      // A night sky on the body: a few white and gold specks.
+      // A night sky on the body: two gold twinkles with white hearts, and a
+      // few specks. Single specks alone vanished on a light body.
       const x = Math.floor(c.centre);
-      onBody(c, x - 4, c.crown + 2, T.WHITE);
-      onBody(c, x + 1, c.crown + 1, T.GOLD);
-      onBody(c, x + 3, c.crown + 3, T.WHITE);
-      onBody(c, x - 3, c.bottom - 1, T.GOLD);
-      onBody(c, x + 4, c.bottom - 2, T.WHITE);
+      for (const [sx, sy] of [[x + 3, c.crown + 2], [x - 4, c.bottom - 1]]) {
+        for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) onBody(c, sx + dx, sy + dy, T.GOLD);
+        onBody(c, sx, sy, T.WHITE);
+      }
+      onBody(c, x - 3, c.crown + 2, T.GOLD);
+      onBody(c, x + 4, c.bottom - 1, T.WHITE);
+      onBody(c, x - 1, c.crown + 1, T.WHITE);
+    },
+  },
+
+  {
+    name: 'polka dots',
+    draw: c => {
+      const x = Math.floor(c.centre);
+      const dots = [[-4, c.crown + 2], [-1, c.crown + 1], [2, c.crown + 2], [5, c.crown + 4],
+        [-5, c.eyeLine + 2], [-2, c.bottom - 1], [1, c.bottom], [4, c.bottom - 1]];
+      for (const [dx, y] of dots) onBody(c, x + dx, y, T.ACCENT);
+    },
+  },
+
+  {
+    name: 'blaze',
+    draw: c => {
+      // A pale stripe down the middle of the forehead, like a pony's.
+      const x = Math.floor(c.centre);
+      for (let y = c.crown; y <= c.eyeLine - 1; y++) { onBody(c, x - 1, y, T.BELLY); onBody(c, x, y, T.BELLY); }
+    },
+  },
+
+  {
+    name: 'sprinkles',
+    draw: c => {
+      const x = Math.floor(c.centre);
+      const bits: [number, number, number][] = [[-4, c.crown + 2, T.ACCENT], [-1, c.crown + 1, T.GOLD], [2, c.crown + 2, T.BLUSH],
+        [5, c.crown + 4, T.LEAF], [-5, c.eyeLine + 2, T.GOLD], [-2, c.bottom - 1, T.LEAF], [1, c.bottom, T.ACCENT], [4, c.bottom - 1, T.BLUSH]];
+      for (const [dx, y, t] of bits) onBody(c, x + dx, y, t);
+    },
+  },
+
+  // Chase markings, one guy in several hundred.
+  {
+    name: 'kintsugi',
+    draw: c => {
+      // Mended with gold: two cracks filled with it, like a treasured bowl.
+      const x = Math.floor(c.centre);
+      const cracks = [
+        [[1, c.crown], [2, c.crown + 1], [2, c.crown + 2], [3, c.crown + 3], [4, c.crown + 3], [5, c.crown + 4], [5, c.crown + 5]],
+        [[-6, c.bottom - 3], [-5, c.bottom - 2], [-4, c.bottom - 2], [-3, c.bottom - 1], [-3, c.bottom], [-2, c.bottom]],
+      ];
+      for (const crack of cracks) crack.forEach(([dx, y], i) => onBody(c, x + dx, y, i % 3 === 1 ? T.GOLD_SHADE : T.GOLD));
+    },
+  },
+
+  {
+    name: 'gold dipped',
+    draw: c => {
+      // Dipped feet first in gold: the bottom of the body gilded, its edge
+      // uneven where the gold ran.
+      const x = Math.floor(c.centre);
+      for (let y = c.bottom - 2; y <= c.bottom; y++) {
+        const r = c.rows[y];
+        if (r) for (let gx = r.left; gx <= r.right; gx++) onBody(c, gx, y, y === c.bottom ? T.GOLD_SHADE : T.GOLD);
+      }
+      for (const dx of [-4, -1, 3]) onBody(c, x + dx, c.bottom - 3, T.GOLD);
+      onBody(c, x - 4, c.bottom - 4, T.GOLD);
     },
   },
 ];
