@@ -1061,7 +1061,7 @@ void main() {
         return;
       }
     }
-    state = { v: 2, key, seed, ownerToken, tickets: 360, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
+    state = { v: 2, key, seed, ownerToken, tickets: 1200, copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
     const f = founderOf(seed);
     if (f) { state.copies.push(LG.encode(f.copy)); state.worn.frame = undefined; state.worn.hat = LG.encode(f.copy); }
@@ -1254,8 +1254,7 @@ void main() {
     if (!state) { $('name').focus(); toast('Claim a name first: your starters come with it.'); return; }
     const g = b.dataset.g;
     if (g === todayGame && state.free !== today) { state.free = today; open(g, 'Daily capsule'); return; }
-    if (state.tickets < 120 && !dev) { toast('Not enough tickets. Play a pretend game for more.'); return; }
-    if (!dev) state.tickets -= 120;
+    pay(120);
     open(g, 'Capsule');
   });
   $('earn').addEventListener('click', () => { if (!state) { $('name').focus(); return; } state.tickets += 60; save(); renderWallet(); SFX.earn(); toast('+60 tickets'); });
@@ -1269,11 +1268,16 @@ void main() {
     paintInto($('season').querySelector('canvas'), 'season', [it.id]);
     $('season-buy').addEventListener('click', () => {
       if (!state) { $('name').focus(); return; }
-      if (state.tickets < 150 && !dev) { toast('Not enough tickets.'); return; }
-      if (!dev) state.tickets -= 150;
+      pay(150);
       const o = dev ? best(i => LG.rollSeason(`${state.seed}:dev:${i}`, today)) : LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
       reveal(o, null, 'Seasonal');
     });
+  }
+  // Tickets are pretend here, so running out tops you up instead of stopping you.
+  function pay(price) {
+    if (dev) return;
+    if (state.tickets < price) { state.tickets += 600; SFX.earn(); toast('Out of tickets, so here are 600 more. They’re pretend.'); }
+    state.tickets -= price;
   }
   function renderWallet() { if (state) $('wallet').textContent = state.tickets.toLocaleString('en-US'); }
 
@@ -1802,8 +1806,7 @@ void main() {
   $('rv-again').addEventListener('click', () => {
     const c = closeReveal(false);
     if (!c || !c.g) return;
-    if (state.tickets < 120 && !dev) { toast('Not enough tickets.'); return; }
-    if (!dev) state.tickets -= 120;
+    pay(120);
     open(c.g, 'Capsule');
   });
   $('skip').addEventListener('click', () => { rush = true; });
