@@ -4,6 +4,7 @@ import { compose } from '../compose';
 import { paint } from '../paint';
 import { paletteOf, contrast } from '../palette';
 import { T } from '../parts/art';
+import { toSvgString } from '../render-string';
 
 describe('eyes', () => {
   // A white catchlight on the edge of a dark eye, against a light face, melted
@@ -24,5 +25,21 @@ describe('eyes', () => {
       }));
     }
     expect(checked).toBeGreaterThan(20);
+  });
+});
+
+describe('small', () => {
+  const fills = (svg: string) => [...svg.matchAll(/fill="(#[0-9A-F]+)"/gi)].map(m => m[1].toUpperCase());
+  test('a guy drawn small has solid, darker eyes and keeps his body', () => {
+    for (const name of ['alice', 'maya', 'okapi', 'bluejay', 'hazel']) {
+      const big = fills(toSvgString(name, { size: 128, square: true })), small = fills(toSvgString(name, { size: 24, square: true }));
+      expect(toSvgString(name, { size: 24, square: true, small: false })).not.toBe(toSvgString(name, { size: 24, square: true }));
+      // The body colour is untouched, and nothing new but a darker ink appears.
+      const config = resolve(name), palette = paletteOf(config);
+      expect(small).toContain(palette.colors[T.BODY]!.toUpperCase());
+      expect(new Set(small.filter(c => !big.includes(c))).size).toBeLessThanOrEqual(1);
+    }
+    // At 37px and up the full drawing stays.
+    expect(toSvgString('alice', { size: 40 })).toBe(toSvgString('alice', { size: 40, small: false }));
   });
 });

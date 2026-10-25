@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-B-EKjYC5.cjs');
+const require_paint = require('./paint-BGzhks5u.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -300,8 +300,8 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette) {
-	const colors = require_paint.paint(grid, config, palette);
+function painted(grid, config, palette, small = false) {
+	const colors = require_paint.paint(grid, config, palette, small);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -553,7 +553,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette));
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -853,7 +853,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 		const hv = require_paint.hash(name);
 		const toRects = (source, keyPrefix) => {
 			const out = [];
-			const colors$1 = require_paint.paint(source, cfg, palette);
+			const colors$1 = require_paint.paint(source, cfg, palette, typeof size === "number" && size <= require_paint.SMALL_SIZE);
 			for (let y = 0; y < require_paint.GRID_SIZE; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) {
 				const color = colors$1[y][x];
 				if (color) out.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
@@ -884,7 +884,8 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 		customPalette,
 		partOverrides,
 		game,
-		equip?.join(",")
+		equip?.join(","),
+		size
 	]);
 	const preset = INTENSITY_PRESETS[intensity3d];
 	const position = SPHERE_POSITIONS[config.rotation] ?? SPHERE_POSITIONS[5];
@@ -1234,14 +1235,43 @@ function escapeText(value) {
 * sits next to the name it stands for. Pass `title` when it is the only thing
 * identifying that person.
 */
+/** The smallest square round the drawn pixels, centred on them, kept inside the grid. */
+function bounds(colors, margin) {
+	let left = require_paint.GRID_SIZE, right = -1, top = require_paint.GRID_SIZE, bottom = -1;
+	colors.forEach((row, y) => row.forEach((c, x) => {
+		if (!c) return;
+		left = Math.min(left, x);
+		right = Math.max(right, x);
+		top = Math.min(top, y);
+		bottom = Math.max(bottom, y);
+	}));
+	if (right < 0) return {
+		x: 0,
+		y: 0,
+		side: require_paint.GRID_SIZE
+	};
+	const side = Math.min(require_paint.GRID_SIZE, Math.max(right - left, bottom - top) + 1 + margin);
+	const at = (lo, hi) => Math.max(0, Math.min(require_paint.GRID_SIZE - side, Math.floor((lo + hi + 1 - side) / 2)));
+	return {
+		x: at(left, right),
+		y: at(top, bottom),
+		side
+	};
+}
 function toSvgString(input, options = {}) {
 	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
 	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
-	const colors = require_paint.paint(require_paint.compose(config), config, palette);
 	const size = options.size ?? 128;
-	const pixelSize = size / require_paint.GRID_SIZE;
+	const small = options.small ?? size <= require_paint.SMALL_SIZE;
+	const colors = require_paint.paint(require_paint.compose(config), config, palette, small);
+	const box = small ? bounds(colors, options.square ? 0 : 3) : {
+		x: 0,
+		y: 0,
+		side: require_paint.GRID_SIZE
+	};
+	const pixelSize = size / box.side;
 	const rects = [];
-	for (let y = 0; y < require_paint.GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < require_paint.GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${(run.x - box.x) * pixelSize}" y="${(y - box.y) * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -2429,6 +2459,7 @@ exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.PINS = require_paint.PINS
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
+exports.SMALL_SIZE = require_paint.SMALL_SIZE
 exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
 exports.allowed = allowed

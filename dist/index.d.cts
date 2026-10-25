@@ -378,6 +378,12 @@ interface RenderOptions {
    * reader wants. Pass it when the avatar is the only identifier.
    */
   title?: string;
+  /**
+   * Draw for a small size: solid eyes, darker ink, no soft highlight, so the
+   * face still reads at a pixel or two a cell. `toSvgString` turns it on at
+   * 36px and under; pass `false` to keep the full drawing.
+   */
+  small?: boolean;
 }
 declare const GRID_SIZE = 16;
 
@@ -634,14 +640,6 @@ declare const AvatarImage: React$2.ForwardRefExoticComponent<Omit<React$2.ImgHTM
 
 //#endregion
 //#region src/render-string.d.ts
-/**
- * Generates a complete SVG string for a lil_guy avatar.
- * Works anywhere — no React or DOM required.
- *
- * Without `title` the SVG is marked decorative, which is right when the avatar
- * sits next to the name it stands for. Pass `title` when it is the only thing
- * identifying that person.
- */
 declare function toSvgString(input: string, options?: RenderOptions): string;
 
 //#endregion
@@ -853,7 +851,9 @@ declare const accessories: Accessory[];
  * colour; a cell belonging to an owned item is repainted with that copy's
  * finish and wear.
  */
-declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette): (string | null)[][];
+declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean): (string | null)[][];
+/** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
+declare const SMALL_SIZE = 36;
 
 //#endregion
 //#region src/animate.d.ts
@@ -1258,5 +1258,5 @@ declare function voxelMesh(columns: readonly VoxelColumn[], cell?: number, optio
 }): VoxelMesh;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

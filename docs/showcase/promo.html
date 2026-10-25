@@ -241,13 +241,21 @@
   .trade .btn[disabled] { opacity: .38; }
   .trade.going .tr-c:not(.gap) { transform: translateX(var(--fly)) scale(.3); opacity: 0; }
   /* who you could get */
-  .maybe { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+  .maybe { display: grid; grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 18px 14px; }
+  .mbc { display: grid; gap: 8px; align-content: start; }
+  .mbc .tchips { justify-content: center; }
+  .tchips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tchip { display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 7px; border-radius: 8px; font-size: 12px; font-weight: 800; color: color-mix(in srgb, var(--tier) 75%, var(--ink)); background: color-mix(in srgb, var(--tier) 14%, var(--card)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tier) 40%, transparent); }
+  .tchip { white-space: nowrap; }
+  .tchip i { font: 400 13px/1 var(--pixel); font-style: normal; color: var(--secondary); }
   .mb { display: grid; justify-items: center; gap: 4px; padding: 10px 6px 8px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
   .mb canvas { width: 72px; height: 72px; image-rendering: pixelated; animation: mbob 2.4s ease-in-out infinite; animation-delay: var(--d); }
   .mb small { font: 400 14px/1 var(--pixel); color: var(--secondary); }
   .mb.rare small { color: var(--ink); }
   @keyframes mbob { 50% { transform: translateY(-4px); } }
   @media (max-width: 760px) {
+    .maybe { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
+    .mbc .tchip { white-space: normal; flex-wrap: wrap; justify-content: center; text-align: center; }
     .locker { grid-template-columns: minmax(0, 1fr); }
     .lk-guy { position: static; grid-template-columns: 120px minmax(0, 1fr); align-items: center; }
     .lk-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1502,6 +1510,12 @@ void main() {
    * triggering in turn and multiplying into one total */
   const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 0, c: '#b26cbb' }];
   const tierOf = p => TIERS.find(x => p >= x.min);
+  // A guy's rarest traits, rarest first: what to lead with on his card.
+  const rarestOf = (cfg, n = 2, shapes = false) => LG.traitOdds(cfg).filter(t => (t.slot !== 'variant' || t.name === 'Lucky') && !(shapes && t.slot === 'colour')).sort((a, b) => a.chance - b.chance).slice(0, n);
+  // A card's title names the rarest thing you can see in his drawing, not his colourway.
+  const cardTrait = cfg => traitWord(rarestOf(cfg, 1, true)[0]);
+  const traitWord = t => t.slot === 'variant' ? 'Lucky' : `${cap(t.name)} ${t.slot}`;
+  const traitChips = (cfg, n = 2) => `<span class="tchips">${rarestOf(cfg, n).map(t => `<span class="tchip" style="--tier:${t.slot === 'variant' ? '#c06bff' : tierOf(t.chance).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`).join('')}</span>`;
   const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
   let scored = false, scoring = false;
   function renderGuy() {
@@ -1619,7 +1633,7 @@ void main() {
     hydrate($('me-card'));
     const n = LG.guyOneIn(guyConfig(state.seed));
     $('me-odds').textContent = `Dealt just for you. A guy like him turns up 1 in ${words(n)}.`;
-    $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ 1 of 1</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ 1 of 1</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy. See who everyone else got.`;
     $('go-free').textContent = state.free === today ? 'Open a capsule' : "Open today's free capsule";
   }
@@ -2369,13 +2383,13 @@ void main() {
   /* ---------------------------------------------- who you could get: a deal of guys from fresh names, some wearing
    * something a capsule could give them */
   function renderMaybe() {
-    const guys = Array.from({ length: 24 }, (_, i) => {
+    const guys = Array.from({ length: 12 }, (_, i) => {
       const seed = LG.makeSeed(), cfg = LG.resolve(seed);
-      const equip = i % 3 === 0 ? [LG.encode(LG.roll(seed, LG.GAMES[i % LG.GAMES.length]))] : [];
-      return { seed, cfg, equip, n: LG.guyOneIn(cfg) };
+      const copies = i % 3 === 0 ? [LG.roll(seed, LG.GAMES[i % LG.GAMES.length])] : [];
+      return { seed, cfg, copies, n: LG.guyOneIn(cfg) };
     }).sort((a, b) => b.n - a.n);
-    $('maybe').innerHTML = guys.map((g, i) => `<div class="mb${i < 3 ? ' rare' : ''}"><canvas width="16" height="16" style="--d:${(i % 7) * -.31}s" aria-hidden="true"></canvas><small>1 in ${fmt(g.n)}</small></div>`).join('');
-    $('maybe').querySelectorAll('canvas').forEach((c, i) => paintCfg(c, LG.dress(guys[i].cfg, { equip: guys[i].equip })));
+    $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, { title: cardTrait(g.cfg), g: 0, corner: '', bottom: `1 in ${fmt(g.n)}` }, true))}</div>${traitChips(g.cfg)}</div>`).join('');
+    hydrate($('maybe'));
   }
   $('maybe-more').addEventListener('click', renderMaybe);
 
@@ -2575,8 +2589,8 @@ void main() {
     $('guys-grid').innerHTML = list.map((g, i) => {
       const worn = (g.worn || []).map(LG.decode).filter(Boolean), best = g.best, bg = best ? LG.GRADES[best.grade] : null;
       return `<a class="gcard card" href="#/u/${esc(g.key)}">${guysSort === 'rarest' && !guysQ && i < 3 ? `<span class="rank">#${i + 1}</span>` : ''}
-        ${px(cardSpec(g.seed, worn, { title: '@' + g.key, g: best ? best.grade : 0, corner: '', bottom: `1 in ${fmt(g.oneIn)}` }, list.length > 30, best ? best.grade : undefined))}
-        <span><b>@${esc(g.key)}</b><small>A guy like him: 1 in ${words(g.oneIn)}</small></span>
+        ${px(cardSpec(g.seed, worn, { title: '@' + g.key, g: best ? best.grade : 0, corner: '', bottom: esc(cardTrait(guyConfig(g.seed))) }, list.length > 30, best ? best.grade : undefined))}
+        <span><b>@${esc(g.key)}</b><small>A guy like him: 1 in ${words(g.oneIn)}</small></span>${traitChips(guyConfig(g.seed))}
         ${bg ? `<span class="bal" style="--b:${bg.color}">Best: ${esc(LG.nameOf(LG.decode(best.code)).split(' | ')[1] || bg.name)}</span>` : ''}</a>`;
     }).join('');
     hydrate($('guys-grid'));

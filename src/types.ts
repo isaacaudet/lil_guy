@@ -87,6 +87,12 @@ export interface RenderOptions {
    * reader wants. Pass it when the avatar is the only identifier.
    */
   title?: string;
+  /**
+   * Draw for a small size: solid eyes, darker ink, no soft highlight, so the
+   * face still reads at a pixel or two a cell. `toSvgString` turns it on at
+   * 36px and under; pass `false` to keep the full drawing.
+   */
+  small?: boolean;
 }
 
 export const GRID_SIZE = 16;

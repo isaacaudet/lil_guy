@@ -233,8 +233,8 @@ const slotIndex = (t: number) => (t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : 
 const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
 
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette): Layer {
-  const colors = paint(grid, config, palette);
+function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false): Layer {
+  const colors = paint(grid, config, palette, small);
   const out = empty();
   grid.forEach((row, y) => row.forEach((t, x) => {
     const c = colors[y][x];
@@ -358,7 +358,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
   const layers = new Map<Pose, Layer>();
   const layerOf = (pose: Pose) => {
-    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette));
+    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
     return layers.get(pose)!;
   };
 

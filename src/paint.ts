@@ -8,9 +8,10 @@ import type { AvatarConfig, Palette, PixelGrid } from './types';
  * colour; a cell belonging to an owned item is repainted with that copy's
  * finish and wear.
  */
-export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette): (string | null)[][] {
+export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false): (string | null)[][] {
   const state = { glint: false };
   const slotOf = (t: number) => (t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null);
+  if (small) ({ grid, palette } = forSmall(grid, palette));
   return grid.map((row, y) => row.map((token, x) => {
     const color = token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
     if (!color) return null;
@@ -18,6 +19,29 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette): 
     const copy = slot ? config.owned?.[slot] : undefined;
     return copy ? paintCell(color, x, y, copy, state) : color;
   }));
+}
+
+/** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
+export const SMALL_SIZE = 36;
+
+/**
+ * A guy drawn small, in a board's row or beside a name, is a pixel or two a
+ * cell, and his face is what goes first: a catchlight takes half an eye, the
+ * soft highlight blots the forehead, and a dark ink that reads at 128 greys
+ * out. Small, each eye is solid, the highlight goes back to the body colour,
+ * and dark ink goes darker still. Nothing moves, so he is the same guy.
+ */
+function forSmall(grid: PixelGrid, palette: Palette): { grid: PixelGrid; palette: Palette } {
+  const eyeAt = (x: number, y: number) => grid[y]?.[x] === T.EYE;
+  const out = grid.map((row, y) => row.map((t, x) => {
+    if (t === T.WHITE && (eyeAt(x - 1, y) || eyeAt(x + 1, y) || eyeAt(x, y - 1) || eyeAt(x, y + 1))) return T.EYE;
+    if (t === T.LIGHT) return T.BODY;
+    return t;
+  }));
+  const ink = palette.colors[T.EYE];
+  if (!ink || contrast('#FFFFFF', ink) < 3) return { grid: out, palette };
+  const deep = mix(ink, '#000000', 0.45);
+  return { grid: out, palette: { ...palette, colors: { ...palette.colors, [T.EYE]: deep, [T.MOUTH]: deep } } };
 }
 
 /**

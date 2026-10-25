@@ -4799,9 +4799,10 @@ function paletteOf(config) {
 * colour; a cell belonging to an owned item is repainted with that copy's
 * finish and wear.
 */
-function paint(grid, config, palette) {
+function paint(grid, config, palette, small = false) {
 	const state = { glint: false };
 	const slotOf$1 = (t) => t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+	if (small) ({grid, palette} = forSmall(grid, palette));
 	return grid.map((row, y) => row.map((token, x) => {
 		const color = token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
 		if (!color) return null;
@@ -4809,6 +4810,40 @@ function paint(grid, config, palette) {
 		const copy = slot ? config.owned?.[slot] : void 0;
 		return copy ? paintCell(color, x, y, copy, state) : color;
 	}));
+}
+/** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
+const SMALL_SIZE = 36;
+/**
+* A guy drawn small, in a board's row or beside a name, is a pixel or two a
+* cell, and his face is what goes first: a catchlight takes half an eye, the
+* soft highlight blots the forehead, and a dark ink that reads at 128 greys
+* out. Small, each eye is solid, the highlight goes back to the body colour,
+* and dark ink goes darker still. Nothing moves, so he is the same guy.
+*/
+function forSmall(grid, palette) {
+	const eyeAt = (x, y) => grid[y]?.[x] === T.EYE;
+	const out = grid.map((row, y) => row.map((t, x) => {
+		if (t === T.WHITE && (eyeAt(x - 1, y) || eyeAt(x + 1, y) || eyeAt(x, y - 1) || eyeAt(x, y + 1))) return T.EYE;
+		if (t === T.LIGHT) return T.BODY;
+		return t;
+	}));
+	const ink = palette.colors[T.EYE];
+	if (!ink || contrast("#FFFFFF", ink) < 3) return {
+		grid: out,
+		palette
+	};
+	const deep = mix$1(ink, "#000000", .45);
+	return {
+		grid: out,
+		palette: {
+			...palette,
+			colors: {
+				...palette.colors,
+				[T.EYE]: deep,
+				[T.MOUTH]: deep
+			}
+		}
+	};
 }
 /**
 * An eye's white catchlight. On a light face a white pixel on the eye's edge
@@ -5128,8 +5163,8 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette) {
-	const colors = paint(grid, config, palette);
+function painted(grid, config, palette, small = false) {
+	const colors = paint(grid, config, palette, small);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -5381,7 +5416,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette));
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -5600,14 +5635,43 @@ function escapeText(value) {
 * sits next to the name it stands for. Pass `title` when it is the only thing
 * identifying that person.
 */
+/** The smallest square round the drawn pixels, centred on them, kept inside the grid. */
+function bounds(colors, margin) {
+	let left = GRID_SIZE, right = -1, top = GRID_SIZE, bottom = -1;
+	colors.forEach((row, y) => row.forEach((c, x) => {
+		if (!c) return;
+		left = Math.min(left, x);
+		right = Math.max(right, x);
+		top = Math.min(top, y);
+		bottom = Math.max(bottom, y);
+	}));
+	if (right < 0) return {
+		x: 0,
+		y: 0,
+		side: GRID_SIZE
+	};
+	const side = Math.min(GRID_SIZE, Math.max(right - left, bottom - top) + 1 + margin);
+	const at = (lo, hi) => Math.max(0, Math.min(GRID_SIZE - side, Math.floor((lo + hi + 1 - side) / 2)));
+	return {
+		x: at(left, right),
+		y: at(top, bottom),
+		side
+	};
+}
 function toSvgString(input, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
 	const palette = withItems(options.palette ?? paletteOf(config), config);
-	const colors = paint(compose(config), config, palette);
 	const size = options.size ?? 128;
-	const pixelSize = size / GRID_SIZE;
+	const small = options.small ?? size <= SMALL_SIZE;
+	const colors = paint(compose(config), config, palette, small);
+	const box = small ? bounds(colors, options.square ? 0 : 3) : {
+		x: 0,
+		y: 0,
+		side: GRID_SIZE
+	};
+	const pixelSize = size / box.side;
 	const rects = [];
-	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${(run.x - box.x) * pixelSize}" y="${(y - box.y) * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -6714,6 +6778,7 @@ exports.MAX_PINS = MAX_PINS
 exports.MOVES = MOVES
 exports.PINS = PINS
 exports.SHADE_COUNT = SHADE_COUNT
+exports.SMALL_SIZE = SMALL_SIZE
 exports.WEAR = WEAR
 exports.accessories = accessories
 exports.allowed = allowed

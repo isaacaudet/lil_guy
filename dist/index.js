@@ -1,4 +1,4 @@
-import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-BlBKH9MY.js";
+import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-9J3dAm5P.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -304,8 +304,8 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette) {
-	const colors = paint(grid, config, palette);
+function painted(grid, config, palette, small = false) {
+	const colors = paint(grid, config, palette, small);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -557,7 +557,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette));
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -857,7 +857,7 @@ const LilGuy = React$5.forwardRef(({ name, size = 40, shape = "circle", variant 
 		const hv = hash(name);
 		const toRects = (source, keyPrefix) => {
 			const out = [];
-			const colors$1 = paint(source, cfg, palette);
+			const colors$1 = paint(source, cfg, palette, typeof size === "number" && size <= SMALL_SIZE);
 			for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
 				const color = colors$1[y][x];
 				if (color) out.push(/* @__PURE__ */ jsx(
@@ -888,7 +888,8 @@ const LilGuy = React$5.forwardRef(({ name, size = 40, shape = "circle", variant 
 		customPalette,
 		partOverrides,
 		game,
-		equip?.join(",")
+		equip?.join(","),
+		size
 	]);
 	const preset = INTENSITY_PRESETS[intensity3d];
 	const position = SPHERE_POSITIONS[config.rotation] ?? SPHERE_POSITIONS[5];
@@ -1238,14 +1239,43 @@ function escapeText(value) {
 * sits next to the name it stands for. Pass `title` when it is the only thing
 * identifying that person.
 */
+/** The smallest square round the drawn pixels, centred on them, kept inside the grid. */
+function bounds(colors, margin) {
+	let left = GRID_SIZE, right = -1, top = GRID_SIZE, bottom = -1;
+	colors.forEach((row, y) => row.forEach((c, x) => {
+		if (!c) return;
+		left = Math.min(left, x);
+		right = Math.max(right, x);
+		top = Math.min(top, y);
+		bottom = Math.max(bottom, y);
+	}));
+	if (right < 0) return {
+		x: 0,
+		y: 0,
+		side: GRID_SIZE
+	};
+	const side = Math.min(GRID_SIZE, Math.max(right - left, bottom - top) + 1 + margin);
+	const at = (lo, hi) => Math.max(0, Math.min(GRID_SIZE - side, Math.floor((lo + hi + 1 - side) / 2)));
+	return {
+		x: at(left, right),
+		y: at(top, bottom),
+		side
+	};
+}
 function toSvgString(input, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
 	const palette = withItems(options.palette ?? paletteOf(config), config);
-	const colors = paint(compose(config), config, palette);
 	const size = options.size ?? 128;
-	const pixelSize = size / GRID_SIZE;
+	const small = options.small ?? size <= SMALL_SIZE;
+	const colors = paint(compose(config), config, palette, small);
+	const box = small ? bounds(colors, options.square ? 0 : 3) : {
+		x: 0,
+		y: 0,
+		side: GRID_SIZE
+	};
+	const pixelSize = size / box.side;
 	const rects = [];
-	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
+	for (let y = 0; y < GRID_SIZE; y++) for (const run of rowRuns(colors, y)) rects.push(`<rect x="${(run.x - box.x) * pixelSize}" y="${(y - box.y) * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`);
 	const round = options.square ? "" : `<clipPath id="clip"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}"/></clipPath>`;
 	const groupOpen = options.square ? "<g>" : "<g clip-path=\"url(#clip)\">";
 	const labelled = typeof options.title === "string" && options.title.length > 0;
@@ -2408,5 +2438,5 @@ function voxelMesh(columns, cell = 1, options = {}) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, PINS, SHADE_COUNT, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, PINS, SHADE_COUNT, SMALL_SIZE, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

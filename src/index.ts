@@ -45,7 +45,7 @@ export { items, itemById, gameItems, freeItem, dress, withItems, inSeason, GAMES
 export type { Item, Slot, ItemGame } from "./items";
 export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from "./owned";
 export type { Owned, Finish, Grade } from "./owned";
-export { paint } from "./paint";
+export { paint, SMALL_SIZE } from "./paint";
 export { animate, frameAt, drawFrame, toAnimatedSvg, closeEyes, MOVES, HEADROOM, FRAME_WIDTH, FRAME_HEIGHT, EMOTE_UNLOCKS } from "./animate";
 export { PINS, MAX_PINS, pinById, tallyMarks, GOLD_RIM_DAYS } from "./pins";
 export type { Pin } from "./pins";
