@@ -259,7 +259,10 @@
   .cats button[aria-selected="true"] { background: var(--cat); color: #fff; text-shadow: var(--ts); box-shadow: 0 3px 0 color-mix(in srgb, var(--cat) 45%, #000); }
   .cats button[aria-selected="true"] .num { color: rgba(255,255,255,.85); }
   .ci { width: 20px; height: 20px; flex: none; }
-  .lk-main .filters { margin-bottom: 14px; }
+  .tools { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .sortby { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; color: var(--ink-3); }
+  .sortby select { height: 40px; padding: 0 10px; border-radius: 8px; border: 0; background: var(--panel-2); color: var(--ink); font-size: 16px; box-shadow: 0 3px 0 var(--edge); }
+  .u-acts { display: flex; gap: 8px; flex-wrap: wrap; }
   .inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .itw { position: relative; }
   .it { width: 100%; display: grid; gap: 4px; text-align: left; padding: 8px 8px 10px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); transition: transform .12s; min-width: 0; }
@@ -436,6 +439,46 @@
   .rz-x .souv, .rz-x .lcd { display: inline-flex; margin-bottom: 4px; }
   .rz-t b { font-size: 24px; line-height: 1.1; text-shadow: var(--ts); }
   .rz-t span { font-size: 16px; color: var(--ink-3); line-height: 1.25; }
+  .rz-rung canvas { width: 72px !important; height: 72px !important; object-fit: contain; box-sizing: content-box; }
+  .odds-chart { display: grid; gap: 8px; margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); }
+  .oc-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 110px; align-items: center; gap: 12px; font-size: 16px; }
+  .oc-row b { color: color-mix(in srgb, var(--g) 70%, #fff); }
+  .oc-bar { height: 20px; border-radius: 4px; background: var(--well); overflow: hidden; }
+  .oc-bar i { display: block; height: 100%; background: var(--g); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); }
+  .oc-row span { color: var(--ink-2); text-align: right; white-space: nowrap; }
+  .oc-note { font-size: 16px; color: var(--ink-3); }
+  .lab { display: grid; gap: 16px; padding: 16px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
+  .lab-copy { display: grid; grid-template-columns: 240px minmax(0, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .lab-pic { display: grid; place-items: center; aspect-ratio: 1; border-radius: 10px; background: var(--well); }
+  .lab-pic canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; }
+  .lab-form { display: grid; gap: 10px; }
+  .lab-form label { display: grid; gap: 4px; font-size: 16px; color: var(--ink-3); }
+  .lab-form select, .lab-form input[type=number] { height: 40px; padding: 0 10px; border-radius: 8px; border: 0; background: var(--well); color: var(--ink); font-size: 16px; }
+  .lab-f { display: flex; align-items: center; gap: 10px; }
+  .lab-f input { flex: 1; accent-color: var(--gold); }
+  .lab-f b { font-size: 24px; color: var(--ink); font-variant-numeric: tabular-nums; min-width: 84px; text-align: right; }
+  .lab-out { display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .lab-out .score { cursor: default; }
+  .lab-out .score b { font-size: 48px; }
+  .lab-pull { font-size: 16px; color: var(--gold); }
+  .lab-gf { display: flex; gap: 10px; max-width: 520px; }
+  .lab-gf .field { flex: 1; }
+  .lab-gf .btn { height: 56px; }
+  #lab-gout { margin-top: 16px; }
+  #lab-gout .odds-panel { box-shadow: none; background: var(--panel-2); }
+  .lab-msg { font-size: 24px; color: var(--ink-2); }
+  .traits-t { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .tr-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--panel); box-shadow: var(--lift); }
+  .tr-row svg { width: 32px; height: 32px; grid-row: span 2; color: var(--ink-2); }
+  .tr-row b { font-size: 24px; text-transform: capitalize; }
+  .tr-row em { font-style: normal; font-size: 16px; color: var(--ink-3); }
+  .tr-row span { grid-column: 2 / -1; font-size: 16px; color: var(--ink-2); }
+  .rz-extras { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important; }
+  .rz-x { grid-template-columns: 1fr auto; }
+  .rz-x h3 { grid-column: 1; }
+  .rz-x p { grid-column: 1 / -1; }
+  @media (max-width: 1000px) { .lab-copy { grid-template-columns: 200px minmax(0, 1fr); } .lab-out { grid-column: 1 / -1; } }
+  @media (max-width: 640px) { .lab-copy { grid-template-columns: 1fr; } .lab-pic { width: 200px; justify-self: center; } .oc-row { grid-template-columns: 88px minmax(0, 1fr) 88px; } .lab-gf { flex-direction: column; } }
   .rz-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .rz-extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
   .rz-x { background: var(--panel); box-shadow: var(--lift); border-radius: 12px; padding: 14px; display: grid; gap: 8px; align-content: start; }
@@ -780,7 +823,7 @@
     <div class="sec-h"><div><h2>Your locker</h2><p id="coll-sub">Tap a copy to put it on. Every one is one of a kind: its own finish, float and print.</p></div></div>
     <div class="locker">
       <div class="lk-guy"><div class="lk-stage" id="lk-stage"></div><div class="lk-slots" id="lk-slots"></div></div>
-      <div class="lk-main"><div class="cats" id="cats" role="tablist" aria-label="Categories"></div><div class="filters" id="filters"></div><div class="inv" id="grid"></div></div>
+      <div class="lk-main"><div class="cats" id="cats" role="tablist" aria-label="Categories"></div><div class="tools"><div class="filters" id="filters"></div><label class="sortby">Sort <select id="lk-sort" aria-label="Sort"></select></label></div><div class="inv" id="grid"></div></div>
     </div>
   </section>
 
@@ -809,14 +852,40 @@
     </div>
   </section>
   <section>
-    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><a class="btn ghost" id="u-market" href="#/market">On the market</a></div>
+    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-look" hidden>Change look</button><a class="btn ghost" id="u-dress" href="#/" hidden>Dress him</a><a class="btn ghost" id="u-market" href="#/market">On the market</a></div></div>
+    <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
   </section>
  </div>
 
  <div class="view" id="v-rarity" hidden>
   <section class="rz">
-    <div class="rz-sec"><h2>The ladder</h2><p>Every capsule rolls a grade. The rarer it is, the bigger the reveal.</p><div class="rz-ladder" id="rz-ladder"></div></div>
+    <div class="rz-sec"><h2>Test anything</h2><p>Pick any item, finish, float, print and effect, or look up a name, and see exactly how rare it is.</p>
+      <div class="lab">
+        <div class="filters" id="lab-tabs"><button type="button" data-lab="copy" aria-pressed="true">A copy</button><button type="button" data-lab="guy" aria-pressed="false">A guy</button></div>
+        <div class="lab-copy" id="lab-copy">
+          <div class="lab-pic"><canvas id="lab-cv" aria-hidden="true"></canvas></div>
+          <div class="lab-form">
+            <label>Item <select id="lab-item"></select></label>
+            <label>Finish <select id="lab-fin"></select></label>
+            <label>Float <span class="lab-f"><input type="range" id="lab-f" min="0" max="1" step="0.0001" value="0.05"><b id="lab-fv"></b></span></label>
+            <label>Print <input type="number" id="lab-p" min="0" max="999" value="123"></label>
+            <label>Effect <select id="lab-fx"></select></label>
+          </div>
+          <div class="lab-out">
+            <div class="badges" id="lab-badges"></div>
+            <div class="score"><span class="lbl">1 in</span><b id="lab-n"></b><span class="unit" id="lab-u"></span></div>
+            <p class="lab-pull" id="lab-pull"></p>
+            <div class="cn-list" id="lab-notes"></div>
+          </div>
+        </div>
+        <div class="lab-guy" id="lab-guy" hidden>
+          <form id="lab-gf" class="lab-gf" autocomplete="off"><label class="field"><span>@</span><input id="lab-name" maxlength="16" spellcheck="false" placeholder="any name" aria-label="Name"></label><button class="btn" type="submit">Look up</button></form>
+          <div id="lab-gout"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rz-sec"><h2>The ladder</h2><p>Every capsule rolls a grade. The rarer it is, the bigger the reveal.</p><div class="rz-ladder" id="rz-ladder"></div><div class="odds-chart" id="rz-odds"></div></div>
     <div class="rz-sec"><h2>Float</h2><p>Every copy rolls a float from 0, mint, to 1, battered. It never changes. Flashy finishes only come between 0 and 0.08.</p>
       <div class="rz-float"><div class="rz-pic"><canvas id="rz-fcv" aria-hidden="true"></canvas></div>
         <div><label class="rz-slide"><span>Drag the float</span><input type="range" id="rz-f" min="0" max="1" step="0.0001" value="0.0420"></label>
@@ -825,8 +894,8 @@
     <div class="rz-sec"><h2>★ Auras</h2><p>One capsule in a thousand, from any machine. An aura goes round your guy and moves with him. Its float thins it, its print sets its timing, and it has its own finishes.</p><div class="rz-grid" id="rz-auras"></div><div class="rz-chips" id="rz-afin"></div></div>
     <div class="rz-sec"><h2>Effects</h2><p>A rare layer on top of the finish. About one item in fifteen has one, and about one aura in three, so an aura's effect is its version. The last three are the rarest.</p><div class="rz-grid" id="rz-fx"></div><div class="rz-grid" id="rz-fxa" style="margin-top:12px"></div></div>
     <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different. Collectors look for these.</p><div class="rz-extras" id="rz-extras"></div></div>
-    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, make one copy of the next grade, from a game one of them came from. Trades stop at Grail: auras only come out of capsules.</p></div>
-    <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, and he never changes. Each part has its own odds; a few are chase parts, one guy in hundreds. One guy in 400 is Lucky, his colours turned round the wheel.</p><div class="rz-grid" id="rz-guys"></div></div>
+    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, go into the machine. Three times in four the next grade comes out, one time in five a dud at the same grade, one in twenty two grades up. Trades stop at Grail: auras only come out of capsules.</p></div>
+    <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, from twelve traits, each with its own odds. Multiply them and you get how rare he is.</p><div class="traits-t" id="rz-traits"></div></div>
   </section>
  </div>
  <div class="view" id="v-market" hidden>
@@ -1359,7 +1428,9 @@
     state.look = Object.keys(draft).length ? LG.encodeLook(draft) : '';
     if (isLive()) meApi('look', { look: state.look }).catch(e => toast(e.message));
     save(); SFX.equip(); $('lookd').close();
+    if (typeof lookFor !== 'undefined') lookFor[state.seed] = state.look;
     scored = false; renderAll(); score();
+    if (document.body.dataset.route === 'u') route();
   });
 
   /* ---------------------------------------------- the claim card */
@@ -2061,8 +2132,26 @@
   const icon = id => `<svg class="ci" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">${ICON[id]}</svg>`;
   const founderCopy = o => !!founderOf(state.seed) && (o.item === 'aura.origin' || (o.tally === 999 && o.print === 1 && o.finish === 'gold'));
   let filter = -1, cat = '';
+  // Ways to sort a collection; `at` is how new a copy is (bigger is newer).
+  const SORTS = [['rarest', 'Rarest'], ['newest', 'Newest'], ['float', 'Best float'], ['game', 'By game'], ['slot', 'By slot'], ['name', 'A to Z']];
+  const SLOT_ORDER = ['aura', 'skin', 'hat', 'frame', 'buddy'];
+  const rarer = (a, b) => gradeIdx(b.o) - gradeIdx(a.o) || LG.copyOneIn(b.o) - LG.copyOneIn(a.o);
+  function sortCopies(list, how) {
+    const by = {
+      rarest: rarer,
+      newest: (a, b) => b.at - a.at,
+      float: (a, b) => a.o.scuff - b.o.scuff,
+      game: (a, b) => LG.itemById(a.o.item).game.localeCompare(LG.itemById(b.o.item).game) || rarer(a, b),
+      slot: (a, b) => SLOT_ORDER.indexOf(LG.slotOf(a.o)) - SLOT_ORDER.indexOf(LG.slotOf(b.o)) || rarer(a, b),
+      name: (a, b) => LG.nameOf(a.o).localeCompare(LG.nameOf(b.o)),
+    }[how] || rarer;
+    return list.sort(by);
+  }
+  const sortOptions = cur => SORTS.map(([k, label]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${label}</option>`).join('');
+  let lkSort = 'rarest', uSort = 'rarest', uCat = '';
   function renderColl() {
-    const list = copies().sort((a, b) => gradeIdx(b.o) - gradeIdx(a.o) || LG.copyOneIn(b.o) - LG.copyOneIn(a.o));
+    const list = sortCopies(copies().map(c => ({ ...c, at: c.i })), lkSort);
+    $('lk-sort').innerHTML = sortOptions(lkSort);
     $('trade-sec').hidden = !state;
     if (!state) {
       $('cats').innerHTML = ''; $('filters').innerHTML = ''; $('lk-slots').innerHTML = ''; $('lk-stage').innerHTML = '';
@@ -2094,6 +2183,7 @@
     $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
     renderTrades();
   }
+  $('lk-sort').addEventListener('change', e => { lkSort = e.target.value; renderColl(); });
   $('cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = b.dataset.cat; filter = -1; renderColl(); } });
   $('lk-slots').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = cat === b.dataset.cat ? '' : b.dataset.cat; filter = -1; renderColl(); } });
   $('filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = +b.dataset.f; renderColl(); } });
@@ -2412,6 +2502,13 @@
     $('rz-ladder').innerHTML = LG.GRADES.map((g, k) => `<div class="rz-rung${k === 5 ? ' top' : ''}" style="--g:${g.color}"><canvas aria-hidden="true"></canvas><b>${esc(g.name)}</b><span>${pct(share(k))} of capsules<br>1 in ${fmt(100 / share(k))}</span></div>`).join('');
     $('rz-ladder').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, sample[k], seed, 96, 110); });
 
+    // How rare each grade is, on a log scale so an aura still shows.
+    const maxLog = Math.log10(100 / share(5));
+    $('rz-odds').innerHTML = LG.GRADES.map((g, k) => `<div class="oc-row" style="--g:${g.color}"><b>${esc(g.name)}</b><span class="oc-bar"><i style="width:${Math.max(3, (1 - Math.log10(100 / share(k)) / maxLog) * 100)}%"></i></span><span>${pct(share(k))} · 1 in ${fmt(100 / share(k))}</span></div>`).join('')
+      + '<p class="oc-note">Bars on a log scale: each step left is ten times rarer.</p>';
+    renderLab(seed);
+    renderTraitTable();
+
     // Float: drag it and watch the copy wear.
     const fcv = $('rz-fcv'), slide = $('rz-f');
     const setFloat = () => {
@@ -2463,10 +2560,73 @@
       ['Pull cost', `Every copy shows about how many tickets of capsules (${PRICE} each) it takes to pull one as good: its odds, in tickets.`],
     ].map(([h, p]) => `<div class="rz-x"><h3>${esc(h)}</h3><p>${p}</p></div>`).join('');
 
-    // A few guys, rarest first.
-    const guys = Array.from({ length: 6 }, () => { const s = LG.makeSeed(); return { s, cfg: LG.resolve(s) }; }).sort((a, b) => LG.guyOneIn(b.cfg) - LG.guyOneIn(a.cfg));
-    $('rz-guys').innerHTML = guys.map(g => `<div class="rz-t"><span class="pic"><canvas width="16" height="16" aria-hidden="true"></canvas></span><b>1 in ${fmt(LG.guyOneIn(g.cfg))}</b>${traitChips(g.cfg)}</div>`).join('');
-    $('rz-guys').querySelectorAll('canvas').forEach((c, k) => { paintCfg(c, guys[k].cfg); c.style.width = c.style.height = '96px'; });
+  }
+
+  // The twelve traits: how many ways each can go and how rare the rarest is, from a big deal.
+  let TRAIT_TABLE = null;
+  function renderTraitTable() {
+    if (!TRAIT_TABLE) {
+      const seen = {};
+      for (let i = 0; i < 6000; i++) for (const t of LG.traitOdds(LG.resolve(LG.makeSeed()))) {
+        const x = seen[t.slot] || (seen[t.slot] = new Map()); x.set(t.name, t.chance);
+      }
+      TRAIT_TABLE = Object.entries(seen).map(([slot, m]) => { const all = [...m].sort((a, b) => b[1] - a[1]); return { slot, n: all.length, common: all[0], rare: all[all.length - 1] }; });
+    }
+    $('rz-traits').innerHTML = TRAIT_TABLE.map(t => `<div class="tr-row">${(LG.TRAIT_ICONS || {})[t.slot] || ''}<b>${esc(t.slot)}</b><em>${t.n} kinds</em><span>${esc(cap(t.common[0]))} 1 in ${fmt(1 / t.common[1])} · rarest ${esc(t.rare[0])} 1 in ${fmt(1 / t.rare[1])}</span></div>`).join('');
+  }
+
+  // The lab: build any copy and read its odds, or look a name up.
+  let labReady = false;
+  function renderLab(seed) {
+    const item = $('lab-item'), fin = $('lab-fin'), f = $('lab-f'), pr = $('lab-p'), fx = $('lab-fx');
+    if (!labReady) {
+      labReady = true;
+      const groups = [...LG.GAMES, 'club'].map(g => [g, LG.gameItems(g).filter(i => i.slot !== 'aura')]).filter(([, l]) => l.length);
+      item.innerHTML = groups.map(([g, l]) => `<optgroup label="${esc(cap(g))}">${l.map(i => `<option value="${i.id}">${esc(i.name)} · ${i.slot}</option>`).join('')}</optgroup>`).join('')
+        + `<optgroup label="★ Auras">${LG.AURAS.map(a => `<option value="${a.id}">★ ${esc(a.name)}</option>`).join('')}</optgroup>`;
+      item.value = 'stackdle.block';
+      fx.innerHTML = '<option value="">None</option>' + LG.FX_IDS.map(id => `<option value="${id}">${esc(LG.EFFECTS[id].name)}</option>`).join('');
+      const fins = () => {
+        const aura = LG.slotOf({ item: item.value }) === 'aura', keep = fin.value;
+        const list = Object.entries(LG.FINISHES).filter(([, x]) => !!x.aura === aura);
+        fin.innerHTML = list.map(([id, x]) => `<option value="${id}">${esc(x.name)}</option>`).join('');
+        fin.value = list.some(([id]) => id === keep) ? keep : list[aura ? 0 : 3]?.[0] || list[0][0];
+      };
+      item.onchange = () => { fins(); draw(); };
+      fin.onchange = draw; f.oninput = draw; pr.oninput = draw; fx.onchange = draw;
+      fins();
+      $('lab-tabs').onclick = e => { const b = e.target.closest('[data-lab]'); if (!b) return; $('lab-tabs').querySelectorAll('[data-lab]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('lab-copy').hidden = b.dataset.lab !== 'copy'; $('lab-guy').hidden = b.dataset.lab !== 'guy'; };
+      $('lab-gf').onsubmit = e => { e.preventDefault(); lookUp(norm($('lab-name').value)); };
+    }
+    function draw() {
+      const x = LG.FINISHES[fin.value], [lo, hi] = x.scuffs;
+      f.min = lo; f.max = Math.min(1, hi);
+      const o = { item: item.value, finish: fin.value, scuff: Math.min(+f.max, Math.max(+f.min, +f.value)), print: Math.max(0, Math.min(999, Math.round(+pr.value || 0))), fx: fx.value || undefined };
+      const g = LG.gradeOf(o), w = LG.wearOf(o.scuff), n = LG.copyOneIn(o), [a, b] = split(n);
+      $('lab-fv').textContent = o.scuff.toFixed(4);
+      own($('lab-cv')); showItem($('lab-cv'), o, seed, 220, 220);
+      $('lab-badges').innerHTML = `<span class="bal" style="--b:${g.color}">${esc(g.name)}</span><span class="bal" style="--b:${WEAR_COLOURS[LG.WEAR.indexOf(w)]}">${w.name}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}`;
+      $('lab-n').textContent = a; $('lab-u').textContent = (b ? b + ' ' : '') + 'capsules';
+      $('lab-pull').textContent = `≈ ${fmt(n * PRICE)} tickets of capsules to pull one as good`;
+      const notes = LG.collectorNotes(o);
+      $('lab-notes').innerHTML = notes.length ? notes.map(t => `<div class="cn-i" style="--g:${g.color}"><b>${esc(t.name)}</b>${t.oneIn > 1 ? `<em>1 in ${fmt(t.oneIn)}</em>` : ''}<span>${esc(t.why)}</span></div>`).join('') : '<p class="cn-none">Nothing extra to chase. Try a float under 0.01, print 1 or 777, or an effect.</p>';
+    }
+    draw();
+  }
+  async function lookUp(key) {
+    const out = $('lab-gout');
+    if (!key) { out.innerHTML = ''; return; }
+    let seed = null, look = '';
+    try { const u = await getUser(key); seed = u.seed; look = u.look || ''; lookFor[seed] = look; }
+    catch (e) {
+      if (isLive()) { out.innerHTML = `<p class="lab-msg">@${esc(key)} isn't claimed yet. <a href="#/" class="odds-more">Claim it</a> and see who you get.</p>`; return; }
+      seed = key; // the demo deals a plain name the same guy every time
+    }
+    const cfg = guyConfig(seed), n = LG.guyOneIn(cfg), [a, b] = split(n);
+    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], { title: '@' + key, g: 4, corner: '1/1', bottom: cardTrait(cfg) }, false, 4))}</div></div>
+      <div class="scoring"><div class="tiles">${LG.traitOdds(cfg).map(x => traitTile(x, true)).join('')}</div>
+      <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b}</span></div><div class="meaning" id="lab-meaning"></div></div></div>`;
+    hydrate(out); meaning($('lab-meaning'), n);
   }
 
   function route() {
@@ -2554,18 +2714,30 @@
     $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
     meaning($('u-meaning'), LG.guyOneIn(cfg)); distChart($('u-dist'), LG.guyOneIn(cfg));
     const [a, b] = split(LG.guyOneIn(cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
-    userCopies = u.copies.map(c => ({ ...c, o: LG.decode(c.code) })).filter(c => c.o).sort((x, y) => gradeIdx(y.o) - gradeIdx(x.o) || LG.copyOneIn(y.o) - LG.copyOneIn(x.o));
+    userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
+    uCat = '';
+    $('u-look').hidden = !mine; $('u-dress').hidden = !mine;
     $('u-coll-h').textContent = mine ? 'Your collection' : 'Collection';
     $('u-coll-sub').textContent = `${userCopies.length} copies, ${userCopies.filter(c => !LG.itemById(c.o.item).free).length} from capsules.`;
     $('u-market').href = '#/market';
     $('u-market').onclick = () => { mf.key = key; };
-    $('u-grid').innerHTML = userCopies.map((c, i) => {
-      const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
-      return `<button class="cc card" type="button" data-u="${i}">${c.worn ? '<span class="pill tag on">ON</span>' : ''}
-        ${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one), userCopies.length > 24))}
-        <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : plainOf(c.o)))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
-    }).join('');
-    hydrate($('u-grid'));
+    const paint = () => {
+      sortCopies(userCopies, uSort);
+      $('u-sort').innerHTML = sortOptions(uSort);
+      $('u-cats').innerHTML = CATS.map(k => { const n = k.id ? userCopies.filter(c => LG.slotOf(c.o) === k.id).length : userCopies.length; return n || !k.id ? `<button type="button" data-c="${k.id}" aria-pressed="${uCat === k.id}">${k.name} <span class="num">${n}</span></button>` : ''; }).join('');
+      $('u-grid').innerHTML = userCopies.map((c, i) => {
+        if (uCat && LG.slotOf(c.o) !== uCat) return '';
+        const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
+        return `<button class="cc card" type="button" data-u="${i}">${c.worn ? '<span class="pill tag on">ON</span>' : ''}
+          ${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one), userCopies.length > 24))}
+          <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : plainOf(c.o)))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
+      }).join('');
+      hydrate($('u-grid'));
+    };
+    paint();
+    $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
+    $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
+    $('u-look').onclick = () => $('look-open').click();
     $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn }); };
   }
 
