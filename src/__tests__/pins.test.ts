@@ -80,7 +80,7 @@ describe('Lucky', () => {
     for (let i = 0; !name; i++) if (resolve('n' + i).lucky) name = 'n' + i;
     const c = resolve(name);
     expect(paletteOf(c).colors[1]).not.toBe(paletteOf({ ...c, lucky: false }).colors[1]);
-    expect(traitOdds(c).find(t => t.slot === 'variant')!.name).toBe('Lucky');
+    expect(traitOdds(c).find(t => t.slot === 'lucky')!.name).toBe('Lucky');
     expect(guyOneIn(c)).toBeGreaterThan(guyOneIn({ ...c, lucky: false }) * 300);
     const lum = (hex: string) => {
       const ch = (i: number) => { const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };

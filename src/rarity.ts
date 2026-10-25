@@ -1,7 +1,7 @@
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
-  bodyWeights, accessoryWeights, paletteWeights,
+  bodyWeights, accessoryWeights, paletteWeights, armWeights, footWeights, shadeWeights,
 } from './parts/weights';
 import { palettes } from './palette';
 import { gameItems, itemById } from './items';
@@ -15,15 +15,26 @@ import type { AvatarConfig } from './types';
  * How rare things are, as "one in N".
  *
  * A guy's rarity is the chance of rolling his exact combination of visible
- * traits — shape, eyes, mouth, cheeks, topper, markings, accessory and
- * colourway — so a laser-eyed guy in a crown is rarer than one with bean eyes
+ * traits — shape, eyes, mouth, cheeks, topper, markings, accessory, colourway,
+ * tone, arms, feet and whether he is Lucky — so a laser-eyed guy in a crown is rarer than one with bean eyes
  * and no hat. A copy's rarity is the chance a capsule gives exactly that: its
  * item, its finish, a print as special as its print, a scuff at least as low
  * as its scuff, and a tally if it has one.
  */
 
+/** The twelve traits, in the order `traitOdds` lists them. */
+export const TRAIT_SLOTS = [
+  'shape', 'eyes', 'mouth', 'cheeks', 'topper', 'markings', 'accessory', 'colour', 'tone', 'arms', 'feet', 'lucky',
+] as const;
+export type TraitSlot = (typeof TRAIT_SLOTS)[number];
+
+/** Names for the traits that are only an index: tone (`shade`), arms and feet. */
+export const TONE_NAMES = ['pastel', 'as picked', 'vivid'] as const;
+export const ARM_NAMES = ['none', 'by the sides', 'waving'] as const;
+export const FOOT_NAMES = ['nubs', 'tiptoes', 'wide', 'socks', 'tucked'] as const;
+
 export interface TraitOdds {
-  slot: string;
+  slot: TraitSlot;
   name: string;
   /** Chance of this trait, 0–1. */
   chance: number;
@@ -31,7 +42,7 @@ export interface TraitOdds {
 
 const share = (weights: number[], i: number) => weights[i] / weights.reduce((a, b) => a + b, 0);
 
-/** Each visible trait of a guy and how likely it was. */
+/** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 export function traitOdds(config: AvatarConfig): TraitOdds[] {
   return [
     { slot: 'shape', name: heads[config.head].name, chance: share(headWeights, config.head) },
@@ -42,7 +53,10 @@ export function traitOdds(config: AvatarConfig): TraitOdds[] {
     { slot: 'markings', name: bodies[config.body].name, chance: share(bodyWeights, config.body) },
     { slot: 'accessory', name: accessories[config.accessory].name, chance: share(accessoryWeights, config.accessory) },
     { slot: 'colour', name: palettes[config.palette].name, chance: share(paletteWeights, config.palette) },
-    { slot: 'variant', name: config.lucky ? 'Lucky' : 'regular', chance: config.lucky ? 1 / LUCKY_ODDS : 1 - 1 / LUCKY_ODDS },
+    { slot: 'tone', name: TONE_NAMES[config.shade], chance: share(shadeWeights, config.shade) },
+    { slot: 'arms', name: ARM_NAMES[config.arms], chance: share(armWeights, config.arms) },
+    { slot: 'feet', name: FOOT_NAMES[config.feet], chance: share(footWeights, config.feet) },
+    { slot: 'lucky', name: config.lucky ? 'Lucky' : 'regular', chance: config.lucky ? 1 / LUCKY_ODDS : 1 - 1 / LUCKY_ODDS },
   ];
 }
 
