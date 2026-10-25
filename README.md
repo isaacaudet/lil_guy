@@ -184,6 +184,10 @@ one rect per pixel.
 Pass `title` to give the SVG an accessible name; without it the SVG is marked
 decorative (`aria-hidden`), which is what you want beside a visible username.
 
+At 36px and under it draws for a small size (`small`): each eye solid, dark ink
+darker, the soft highlight back to the body colour, and a square avatar cropped
+to the guy so he fills it. Pass `small: false` to keep the full drawing.
+
 ### `toPng(input, options?)`
 
 Returns a PNG data URL. Browser only.
@@ -233,6 +237,7 @@ wearing sets how much:
 | Prized | and a ring in the grade's colour pulses round him |
 | Mythic | and sparkles, and a trail when he jumps |
 | ★ Grail | a gold ring, more sparkles and a gold trail |
+| ★ Aura | the aura itself, moving, in place of the ring |
 
 **In React**, `<LilGuyAnimated name={seed} move="cheer" equip={[copy]} />` plays a
 move with the same SVG, so no timer runs in React.
@@ -289,13 +294,13 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 
 | Slot | Values |
 |---|---|
-| `head` | `0-24` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, tower, gourd, and the rare flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart |
-| `eyes` | `0-16` beans, shiny, happy, sparkle, wink, glossy, excited, hearts, lashes, chill, side-eye, shades, star, squint, fired up, laser, cyclops |
-| `mouth` | `0-15` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum |
-| `cheeks` | `0-13` bare, blush, dot, rosy, freckles, scar, band-aid, war paint, whiskers, hearts, shine, stripes, stars, gold leaf |
-| `hair` | `0-29` whatever sits on top: ears, a sprout, a hat, a mohawk, headphones |
-| `body` | `0-13` markings: plain, belly, two tone, tabby, spots, star mark, heart mark, gleam, stripes, zigzag, split, moon mark, bolt mark, starry |
-| `accessory` | `0-13` glasses, scarf, collar, bow tie, bandana, star sticker, heart badge, monocle, eye patch, necklace, medal, flower pin, headband |
+| `head` | `0-31` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, tower, gourd, flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart, dumpling, tooth, star, acorn, gem, clover, disco; chase: gem, clover, disco |
+| `eyes` | `0-22` beans, shiny, happy, sparkle, wink, glossy, excited, hearts, lashes, chill, side-eye, shades, star, squint, fired up, laser, cyclops, sleepy, dizzy, anime, galaxy, diamond, dragon; chase: galaxy, diamond, dragon |
+| `mouth` | `0-21` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum, bunny, vampire, wide, gold tooth, grillz, mustache; chase: gold tooth, grillz, mustache |
+| `cheeks` | `0-18` bare, blush, dot, rosy, freckles, scar, band-aid, war paint, whiskers, hearts, shine, stripes, stars, gold leaf, flushed, shy, mole, jewels, rainbow; chase: jewels, rainbow |
+| `hair` | `0-36` toppers: none, cat ears, bear ears, bunny ears, bug antennae, horns, space buns, sprout, apple stem, flower, bow, crown, party hat, antenna, unicorn horn, star clip, tuft, chick tuft, beanie, cap, bob, mushroom, eggshell, frosting, leafy top, beret, witch hat, propeller, mohawk, headphones, cherries, flower crown, antlers, chef hat, laurel, star crown, on fire; chase: laurel, star crown, on fire |
+| `body` | `0-18` markings: plain, belly, two tone, tabby, spots, star mark, heart mark, gleam, stripes, zigzag, split, moon mark, bolt mark, starry, polka dots, blaze, sprinkles, kintsugi, gold dipped; chase: kintsugi, gold dipped |
+| `accessory` | `0-19` none, glasses, scarf, bell collar, bowtie, bandana, star sticker, heart badge, monocle, eye patch, necklace, medal, flower pin, headband, necktie, lei, goggles, gold chain, heart shades, masquerade; chase: gold chain, heart shades, masquerade |
 | `arms` | `0-2` none, by the sides, waving |
 | `feet` | `0-4` nubs, tiptoes, wide, socks, tucked |
 | `shade` | `0-2` pastel, as picked, vivid |
@@ -308,34 +313,39 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 
 The parts are exported (`heads`, `eyes`, `mouths`, `cheeks`, `hair`, `bodies`, `accessories`), each with a `name`, so you can list or label them.
 
+**The deal.** A seed from `makeSeed()` starts `3-` and is dealt from today's
+weights: a few simple, good-looking parts carry most guys, busier ones are
+uncommon, and the chase parts above turn up one guy in 300 to 1,000. Anything
+else (an older seed, a plain name) is dealt from `DEAL_2`, a frozen copy of the
+weights before deal 3, so adding parts never redraws a guy already dealt.
+`traitOdds(config)` gives each part's odds.
+
 ## Game items
 
 Every DLE Club game has things a player can wear, here and in every other game.
 The guy underneath — face, shape, colours — never changes, so a player is
 recognisable everywhere.
 
-| Game | Skins | Hats (first is free) | Frames |
-|---|---|---|---|
-| Amountle | Jar of gems, Crystal, Piggy bank | Gem, Gem crown, Big gem | Gem field, Coin pile |
-| Halfsies | Clay pot, Kitchen scale, Avocado half | Half pot, Scale dish, Pot helmet | Kitchen teal, Gingham |
-| Stackdle | Toy block, Triangle, Building brick | Little block, Tower, Ring | Toy box, Bricks |
-| Flipsies | Water bottle, Bullseye, Pancake stack | Bottle cap, Landed bottle, Bullseye beret | Bullseye, Waves |
-| Puttsies | Golf ball, Quilt pillow, Golf bag | Golf visor, Pin flag, Golf tam | Patchwork, Fairway |
-| Weighsies | Cheese wheel, Kettlebell, Anvil | Cheese wedge, Balance, Dumbbell | Lavender, Ruler |
-| Cutsies | Kiwi, Melon slice, Toast | Kiwi slice, Chef hat, Orange half | Kiwi slices, Melon seeds |
-| Tiltsies | Hamster ball, Hamster, Marble | Hamster ears, Hamster buddy, Sunflower seed | Toy maze, Spiral |
-| Trackdle | Racer, Traffic cone, Stopwatch | Pit cap, Race helmet, Trophy | Checkered flag, Tarmac |
+| Game | Skins | Hats (first is free) | Frames | Buddies |
+|---|---|---|---|---|
+| Amountle | Jar of gems, Crystal, Piggy bank, Gumball machine | Gem, Gem crown, Big gem, Coin stack | Gem field, Coin pile, Jelly beans | Gemling, Jelly bean, Piglet bank |
+| Halfsies | Clay pot, Kitchen scale, Avocado half, Lemon half | Half pot, Scale dish, Pot helmet, Half sandwich | Kitchen teal, Gingham, Half and half | Pea pod, Sunny egg, Berry half |
+| Stackdle | Toy block, Triangle, Building brick, Block stack | Little block, Tower, Ring, Arch | Toy box, Bricks, Blueprint | Cubelet, Pyramid, Brickling |
+| Flipsies | Water bottle, Bullseye, Pancake stack, Soda can | Bottle cap, Landed bottle, Bullseye beret, Flipped cup | Bullseye, Waves, Pool tiles | Droplet, Short stack, Rubber duck |
+| Puttsies | Golf ball, Quilt pillow, Golf bag, Windmill | Golf visor, Pin flag, Golf tam, Argyle bucket | Patchwork, Fairway, Putting green | Tee buddy, Gopher, Hazard frog |
+| Weighsies | Cheese wheel, Kettlebell, Anvil, Flour sack | Cheese wedge, Balance, Dumbbell, Feather | Lavender, Ruler, Scale dial | Mouse, Cheddar, Chick |
+| Cutsies | Kiwi, Melon slice, Toast, Strawberry | Kiwi slice, Chef hat, Orange half, Banana | Kiwi slices, Melon seeds, Cutting board | Seedling, Cherries, Pineapple |
+| Tiltsies | Hamster ball, Hamster, Marble, Acorn | Hamster ears, Hamster buddy, Sunflower seed, Hamster wheel | Toy maze, Spiral, Wood shavings | Hamlet, Rolly, Sunflower |
+| Trackdle | Racer, Traffic cone, Stopwatch, Tyre | Pit cap, Race helmet, Trophy, Race goggles | Checkered flag, Tarmac, Kerb | Turbo snail, Conelet, Go-kart |
 
 A **skin** turns the guy into the game's object and keeps his face.
 
-**Buddies.** Each game also has a buddy, a tiny pet that sits at the guy's
-feet, bottom right, in front of everything: Gemling, Pea pod, Cubelet,
-Droplet, Tee buddy, Mouse, Seedling, Hamlet and Turbo snail. Equip one like
-any item.
+**Buddies.** Each game has three buddies, tiny pets that sit at the guy's
+feet, bottom right, in front of everything, with their own outline. Equip one
+like any item.
 
-**Seasonal hats.** Club birthday (12–16 October), Pumpkin (20 October – 2
-November), Snow cap (15 December – 6 January) and Sweetheart (10–16
-February) only drop in their days: `inSeason(day)` lists what's dropping and
+**Seasonal hats.** Club birthday (12 October – 16 October), Pumpkin (20 October – 2 November), Snow cap (15 December – 6 January), Sweetheart (10 February – 16 February), New Year top hat (29 December – 2 January), Red lantern (20 January – 12 February), Shamrock (10 March – 18 March), Cherry blossom (19 March – 14 April), Painted egg (22 March – 25 April), Daisy chain (1 May – 31 May), Sun hat (14 June – 20 July), Fireworks (1 July – 7 July), Ice cream (1 August – 25 August), Maple leaf (20 September – 30 November), Turkey feathers (18 November – 30 November), Reindeer antlers (1 December – 24 December)
+only drop in their days: `inSeason(day)` lists what's dropping and
 `rollSeason(seed, day)` rolls one. A seasonal copy keeps its day (`~d2026-10-31`
 in its code) and its year in its name, so a 2026 Pumpkin is its own thing.
 
@@ -353,10 +363,31 @@ An item is a design. A copy someone owns is the item plus:
 | **Scuff** | 0–1, how worn it is. Mint in Box < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Mint in Box copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered comes in five tints the print picks (Steel, Rose, Emerald, Copper, Violet), and prints 661, 670, 321, 387 and 955 come out all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |
+| **Souvenir** | the day's free capsule for finishing every game is a souvenir of that day (`~s2026-10-25` in its code). No other capsule is one |
 | **Pins** | up to three, earned and stuck on: a gold star (a perfect day), a flame (a 7-day streak), a heart (100 days played), a bolt (fastest of the day), a crown (top of a board) and a leaf (a first week). The club grants them; they are drawn on the item's own pixels |
 
 Grades follow from the finish: Everyday, Special, Prized, Mythic (a famous
-print lifts a copy one grade), ★ Grail (Gold, with a sparkle).
+print lifts a copy one grade), ★ Grail (Gold, with a sparkle), and above them
+★ Aura.
+
+`collectorNotes(copy)` names what makes one copy the one people want: a 0.000
+or 0.00 float, max float, the best of a condition just over its line, a famous
+print, print #1 or #0, lucky, triple and straight print numbers, a souvenir, a
+tally and pins, each with about how many copies have it.
+
+### ★ Auras
+
+One capsule in a thousand (`AURA_ODDS`), from any machine, is an aura instead
+of the machine's item: an effect drawn in the empty pixels round the guy, never
+over him, that moves with him. There are fourteen (`AURAS`): flames, orbit,
+halo, sparkles, hearts, bubbles, rain cloud, lightning, music, snowfall,
+petals, galaxy, rainbow and glitch, and Origin, the founder's, which no capsule
+gives (`ONE_OF_ONE_AURAS`). An aura copy has its own finish: Classic (50%),
+Fade (22%), Frost (12%), Toxic (8%), Shadow (5%) and Deep sea Sapphire (1.5%),
+Ruby (1.2%) and Black pearl (0.3%). Its float shows (a battered aura flickers
+with gaps) and its print sets its timing. Wear one like any item
+(`equip: ['aura.flames~ruby~0.0123~7']`); still pictures draw it at a still
+moment, `animate` moves it.
 
 **Everyone gets one.** `starter(name, game)` is the copy of a game's free hat
 every player has from the start: plain, with a scuff and print taken from

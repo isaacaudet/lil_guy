@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime0 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/parts/art.d.ts
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -71,10 +71,14 @@ declare class Canvas {
  * Items: things a player earns or buys in a DLE Club game and wears
  * everywhere. Each game has
  *
- * - three skins, which turn the guy into one of the game's own objects (a jar,
+ * - four skins, which turn the guy into one of the game's own objects (a jar,
  *   a golf ball, a traffic cone) while keeping his face
- * - three hats, one of them free: every player has it from the start
- * - two frames, the backdrop behind him
+ * - four hats, one of them free: every player has it from the start
+ * - three frames, the backdrop behind him
+ * - three buddies, a tiny pet at his feet
+ *
+ * So each game's capsule machine holds thirteen. Lists are append-only: a
+ * saved copy stores its item's id, so an item is never renamed or removed.
  *
  * An item is the design. A copy someone owns adds a finish, a scuff and a
  * print number (see ./owned), which is what makes one copy worth more than
@@ -992,6 +996,11 @@ interface Pin {
   how: string;
   art: Stamp;
 }
+/**
+ * Each pin is its own silhouette, so the gold ones never read alike: a
+ * twinkling star, a zigzag bolt, a crown with a red jewel. Append only: copies
+ * store pin ids.
+ */
 declare const PINS: Pin[];
 /** A copy holds at most this many pins. */
 declare const MAX_PINS = 3;
@@ -1071,7 +1080,7 @@ declare function copyOneIn(o: Owned): number;
  * the parts can't silently turn a saved look into someone else.
  */
 /** A slot in a look code: its letter, its config key and its weights. */
-declare const SLOTS: readonly [readonly ["h", "head", number[]], readonly ["e", "eyes", number[]], readonly ["m", "mouth", number[]], readonly ["c", "cheeks", number[]], readonly ["t", "hair", number[]], readonly ["b", "body", number[]], readonly ["a", "accessory", number[]], readonly ["p", "palette", any[]]];
+declare const SLOTS: readonly [readonly ["h", "head", number[]], readonly ["e", "eyes", number[]], readonly ["m", "mouth", number[]], readonly ["c", "cheeks", number[]], readonly ["t", "hair", number[]], readonly ["b", "body", number[]], readonly ["a", "accessory", number[]], readonly ["p", "palette", number[]]];
 type LookSlot = (typeof SLOTS)[number][1];
 type Look = Partial<Record<LookSlot, number>>;
 /**
@@ -1157,7 +1166,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts

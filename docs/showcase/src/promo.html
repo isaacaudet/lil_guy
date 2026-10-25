@@ -641,7 +641,7 @@
   </section>
 
   <section id="maybe-sec">
-    <div class="sec-h"><div><h2>Who you could get</h2><p id="maybe-sub">Every name is dealt its own guy. Here are some of the ways it can go.</p></div><button class="btn ghost" type="button" id="maybe-more">Deal more</button></div>
+    <div class="sec-h"><div><h2>Who you could get</h2><p id="maybe-sub">Every name is dealt its own guy. The rarest 12 of 400 dealt just now.</p></div><button class="btn ghost" type="button" id="maybe-more">Deal more</button></div>
     <div class="maybe" id="maybe"></div>
   </section>
 
@@ -1076,7 +1076,7 @@
 
   /* ---------------------------------------------- your guy, scored like a hand: each trait a tile with its rarity,
    * triggering in turn and multiplying into one total */
-  const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 0, c: '#b26cbb' }];
+  const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 1 / 300, c: '#b26cbb' }, { name: 'Chase', min: 0, c: '#c98a1a' }];
   const tierOf = p => TIERS.find(x => p >= x.min);
   // A guy's rarest traits, rarest first: what to lead with on his card.
   const rarestOf = (cfg, n = 2, shapes = false) => LG.traitOdds(cfg).filter(t => (t.slot !== 'variant' || t.name === 'Lucky') && !(shapes && t.slot === 'colour')).sort((a, b) => a.chance - b.chance).slice(0, n);
@@ -1958,11 +1958,10 @@
   /* ---------------------------------------------- who you could get: a deal of guys from fresh names, some wearing
    * something a capsule could give them */
   function renderMaybe() {
-    const guys = Array.from({ length: 12 }, (_, i) => {
-      const seed = LG.makeSeed(), cfg = LG.resolve(seed);
-      const copies = i % 3 === 0 ? [LG.roll(seed, LG.GAMES[i % LG.GAMES.length])] : [];
-      return { seed, cfg, copies, n: LG.guyOneIn(cfg) };
-    }).sort((a, b) => b.n - a.n);
+    // Deal 400 and show the rarest 12, so the chase parts turn up.
+    const guys = Array.from({ length: 400 }, () => { const seed = LG.makeSeed(), cfg = LG.resolve(seed); return { seed, cfg, n: LG.guyOneIn(cfg) }; })
+      .sort((a, b) => b.n - a.n).slice(0, 12)
+      .map((g, i) => ({ ...g, copies: i % 3 === 0 ? [LG.roll(g.seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
     $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, { title: cardTrait(g.cfg), g: 0, corner: '', bottom: `1 in ${fmt(g.n)}` }, true))}</div>${traitChips(g.cfg)}</div>`).join('');
     hydrate($('maybe'));
   }
@@ -2026,7 +2025,7 @@
   /* ---------------------------------------------- inspect: the object on its own or on your guy, its float drawn
    * against every condition and against what its finish can roll, and its odds as tiles that multiply. */
   const WEAR_COLOURS = ['#3fbf8a', '#8fd65a', '#e2c94b', '#f19a3e', '#e5484d'];
-  const tierFor = n => n < 12 ? TIERS[0] : n < 30 ? TIERS[1] : n < 80 ? TIERS[2] : TIERS[3];
+  const tierFor = n => n < 12 ? TIERS[0] : n < 30 ? TIERS[1] : n < 80 ? TIERS[2] : n < 300 ? TIERS[3] : TIERS[4];
   function floatPanel(o) {
     const fin = LG.FINISHES[o.finish], [lo, hi] = fin.scuffs, wear = LG.wearOf(o.scuff), wi = LG.WEAR.indexOf(wear);
     let prev = 0;

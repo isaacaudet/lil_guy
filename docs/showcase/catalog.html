@@ -47,7 +47,7 @@
   .note p { margin: 0; color: var(--muted); font-size: 14px; }
   .note .fix { color: var(--ink); }
   .sev { font: 500 11px/1 var(--pixel); padding: 4px 6px; border-radius: 4px; justify-self: start; color: #fff; }
-  .sev.hi { background: #c2412e; } .sev.mid { background: #b07a12; } .sev.lo { background: #5d6b8a; }
+  .sev.done { background: #2f9b6e; } .sev.hi { background: #c2412e; } .sev.mid { background: #b07a12; } .sev.lo { background: #5d6b8a; }
 
   .bars { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; }
   .bar { display: grid; grid-template-columns: 104px minmax(0, 1fr) 150px; gap: 12px; align-items: center; font-size: 13.5px; }
@@ -118,13 +118,13 @@
 <div class="wrap">
   <header>
     <h1>Every lil guy part and how rare it is</h1>
-    <p class="lede">Every part a guy can be dealt, every item in the machines, every finish and condition, with real odds from the library. Rarest first in each slot. The last section proposes a tier above Grail.</p>
+    <p class="lede">Every part a guy can be dealt, every item in the machines, every finish and condition, with real odds from the library. Rarest first in each slot, then the ★ auras above Grail.</p>
     <nav id="nav"></nav>
     <div class="stats" id="stats"></div>
   </header>
 
   <section id="thin">
-    <div class="sh"><h2>Where it's thin</h2><p>What there isn't enough of, worst first.</p></div>
+    <div class="sh"><h2>What was thin</h2><p>What there wasn't enough of, and what's there now.</p></div>
     <div class="thin" id="thin-notes"></div>
     <div class="bars" id="bars" aria-label="Rarest option in each slot"></div>
   </section>
@@ -171,7 +171,7 @@
   const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
   const oneIn = p => `1 in ${1 / p < 9.95 ? +(1 / p).toFixed(1) : fmt(1 / p)}`;
   const idx = (list, name) => list.findIndex(x => x.name === name);
-  const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 0, c: '#b26cbb' }];
+  const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 1 / 300, c: '#b26cbb' }, { name: 'Chase', min: 1e-12, c: '#c98a1a' }, { name: 'Not dealt', min: 0, c: '#8a8496' }];
   const tierOf = p => TIERS.find(t => p >= t.min);
 
   // One test guy every option is drawn on: round, peach, plain, so the option is all you see.
@@ -192,7 +192,7 @@
   const specs = [];
   const cv = spec => { specs.push(spec); return `<canvas width="16" height="16" data-s="${specs.length - 1}" aria-hidden="true"></canvas>`; };
   const paintAll = () => document.querySelectorAll('canvas[data-s]').forEach(c => { put(c, colorsOf(specs[+c.dataset.s])); c.removeAttribute('data-s'); });
-  const tile = (name, p, canvas, extra = '') => { const t = tierOf(p); return `<div class="t${extra}">${canvas}<span class="n">${esc(name)}</span><span class="o">${oneIn(p)}<span class="chip" style="--k:${t.c}">${t.name}</span></span></div>`; };
+  const tile = (name, p, canvas, extra = '') => { const t = tierOf(p); return `<div class="t${extra}">${canvas}<span class="n">${esc(name)}</span><span class="o">${p ? oneIn(p) : 'retired'}<span class="chip" style="--k:${t.c}">${t.name}</span></span></div>`; };
 
   // Each option's chance, from the library's own weights.
   const SLOTS = [
@@ -205,8 +205,10 @@
     { id: 'accessories', title: 'Accessories', key: 'accessory', list: LG.accessories, odds: 'accessory' },
   ];
   const chanceOf = (slot, i) => LG.traitOdds({ ...LG.resolve('x'), [slot.key]: i }).find(t => t.slot === slot.odds).chance;
-  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: chanceOf(s, i) })).sort((a, b) => a.p - b.p);
-  const palOdds = LG.palettes.map((p, i) => ({ i, name: p.name, p: LG.traitOdds({ ...LG.resolve('x'), palette: i }).find(t => t.slot === 'colour').chance })).sort((a, b) => a.p - b.p);
+  // Rarest first; a part no longer dealt goes last.
+  const order = (a, b) => (a.p || 1) - (b.p || 1);
+  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: chanceOf(s, i) })).sort(order);
+  const palOdds = LG.palettes.map((p, i) => ({ i, name: p.name, p: LG.traitOdds({ ...LG.resolve('x'), palette: i }).find(t => t.slot === 'colour').chance })).sort(order);
   // Traits the seed rolls that aren't in the odds list (weights from parts/weights.ts).
   const share = w => w.map(x => x / w.reduce((a, b) => a + b, 0));
   const EXTRA = [
@@ -221,42 +223,43 @@
   const slotCount = slot => LG.GAMES.map(g => machine(g).filter(i => i.slot === slot).length);
   const combos = SLOTS.reduce((n, s) => n * s.list.length, 1) * LG.palettes.length * 3 * 5 * 3 * 2 * 2;
 
-  $('nav').innerHTML = [['thin', 'What\'s thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Auras']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
-  const rarestPart = Math.min(...SLOTS.map(s => s.options[0].p));
+  $('nav').innerHTML = [['thin', 'What was thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Auras']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
+  const rarestPart = Math.min(...SLOTS.map(s => s.options.find(o => o.p).p));
   $('stats').innerHTML = [
     [fmt(combos), 'different guys the parts can make'],
     [SLOTS.reduce((n, s) => n + s.list.length, 0) + LG.palettes.length, 'face and body parts, in 8 slots'],
     [LG.items.length, `items: ${LG.items.filter(i => i.free).length} free hats, ${LG.items.filter(i => !i.free && !i.season).length} in machines, ${LG.items.filter(i => i.season).length} seasonal`],
-    [oneIn(rarestPart), 'the rarest single part (apart from Lucky)'],
-    ['1 in 400', 'a ★ Grail copy, the top of the ladder today'],
+    [oneIn(rarestPart), 'the rarest single part'],
+    [oneIn(LG.AURA_ODDS), 'a ★ Aura, the top of the ladder'],
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${esc(s)}</span></div>`).join('');
 
   // ---------------------------------------------------------------- what's thin
   const buddies = slotCount('buddy')[0], hats = slotCount('hat')[0], frames = slotCount('frame')[0], skins = slotCount('skin')[0];
+  const chaseCount = SLOTS.reduce((n, sl) => n + sl.options.filter(o => o.p && o.p < 1 / 300).length, 0) + palOdds.filter(o => o.p && o.p < 1 / 300).length;
   $('thin-notes').innerHTML = [
-    ['hi', `One buddy per machine`, `Each game has ${buddies} buddy, so every buddy you pull from a machine is the same one: ${LG.items.filter(i => i.slot === 'buddy').length} buddies across all nine games.`, 'Three or four per game, and buddies are the easiest to draw (tiny, no fitting to a head).'],
-    ['hi', 'No chase parts', `The rarest face part is ${oneIn(rarestPart)}, and mouths, markings and accessories top out near 1 in 35. Nothing about a guy is rare enough to show off except Lucky.`, 'Two or three chase parts per slot at 1 in 300 to 1 in 1,000: a galaxy eye, a diamond shape, a gold tooth.'],
-    ['hi', 'Nothing above Grail', 'A Gold copy is the ceiling at 1 in 400 capsules, and with endless capsules people reach it fast.', 'A ★ Relic tier at about 1 in 1,000, with its own finishes (the section at the end).'],
-    ['mid', `Only ${machine('amountle').length} items per machine`, `${skins} skins, ${hats} hats, ${frames} frames and ${buddies} buddy per game. After a few dozen capsules a machine has nothing new, only finishes.`, 'Twelve to fifteen per machine, so a full set takes a while.'],
-    ['mid', `${LG.items.filter(i => i.season).length} seasonal hats`, 'Most of the year nothing is in season, so the seasonal machine is empty.', 'One per month at least, two a month around holidays.'],
-    ['lo', 'Rarity is flat inside a slot', 'Most options sit between 1 in 10 and 1 in 40, so "Rare" and "Uncommon" chips appear on nearly every guy and stop meaning much.', 'Fewer, more common everyday parts; the chase parts carry the rarity.'],
-  ].map(([sev, h, p, fix]) => `<div class="note"><span class="sev ${sev}">${sev === 'hi' ? 'Most needed' : sev === 'mid' ? 'Needed' : 'Nice to fix'}</span><h3>${esc(h)}</h3><p>${esc(p)}</p><p class="fix"><b>Add:</b> ${esc(fix)}</p></div>`).join('');
-  const barRows = [...SLOTS.map(s => [s.title, s.list.length, s.options[0]]), ['Colours', LG.palettes.length, palOdds[0]], ['Buddies', buddies, { name: 'per game', p: 1 / 8 }], ['Hats', hats, { name: 'per game', p: 2 / 8 }], ['Frames', frames, { name: 'per game', p: 2 / 8 }], ['Skins', skins, { name: 'per game', p: 3 / 8 }]];
+    ['Buddies', `${buddies} per machine now, ${LG.items.filter(i => i.slot === 'buddy').length} in all, each redrawn bolder and bigger so it reads at a glance.`, 'Was one per machine.'],
+    ['Chase parts', `${chaseCount} parts rarer than 1 in 300, up to ${oneIn(rarestPart)}: gem and disco shapes, galaxy and dragon eyes, a gold tooth, kintsugi, Opal and Obsidian colourways.`, 'Was nothing rarer than 1 in 77.'],
+    ['★ Auras', `A grade above Grail: one capsule in a thousand, ${LG.AURAS.length} auras, eight finishes (the section at the end).`, 'Was a Gold copy as the ceiling.'],
+    ['Items per machine', `${machine('amountle').length} per machine: ${skins} skins, ${hats} hats, ${frames} frames and ${buddies} buddies.`, 'Was 8.'],
+    ['Seasonal hats', `${LG.items.filter(i => i.season).length}, so something is in season every month, two at once round the big holidays.`, 'Was 4.'],
+    ['Rarity that means something', 'A few simple, good-looking parts carry most guys; busier ones are uncommon; chase parts carry the rarity. Weak parts were redrawn (bat, cactus, laser eyes, headphones, eye patch, the marks).', 'Was nearly everything between 1 in 10 and 1 in 40.'],
+  ].map(([h, p, was]) => `<div class="note"><span class="sev done">Done</span><h3>${esc(h)}</h3><p class="fix">${esc(p)}</p><p>${esc(was)}</p></div>`).join('');
+  const barRows = [...SLOTS.map(s => [s.title, s.list.length, s.options.find(o => o.p)]), ['Colours', LG.palettes.length, palOdds.find(o => o.p)], ['Buddies', buddies, null], ['Hats', hats, null], ['Frames', frames, null], ['Skins', skins, null]];
   const most = Math.max(...barRows.map(r => r[1]));
   $('bars').innerHTML = `<div class="bar" style="font-size:12px;color:var(--muted)"><span>Slot</span><span>Options</span><span>Rarest</span></div>` + barRows.map(([n, count, r]) =>
-    `<div class="bar"><b>${esc(n)}</b><span class="track" title="${count} options"><span class="fill${count < 5 ? ' low' : ''}" style="width:${(count / most) * 100}%"></span></span><span class="v">${count} · ${n === 'Buddies' || n === 'Hats' || n === 'Frames' || n === 'Skins' ? 'per machine' : `${esc(r.name)}, ${oneIn(r.p)}`}</span></div>`).join('');
+    `<div class="bar"><b>${esc(n)}</b><span class="track" title="${count} options"><span class="fill${count < 3 ? ' low' : ''}" style="width:${(count / most) * 100}%"></span></span><span class="v">${count} · ${n === 'Buddies' || n === 'Hats' || n === 'Frames' || n === 'Skins' ? 'per machine' : `${esc(r.name)}, ${oneIn(r.p)}`}</span></div>`).join('');
 
   // ---------------------------------------------------------------- the ladder
   const per = f => LG.FINISHES[f].odds / 100;
   const gradeP = g => g === 5 ? LG.AURA_ODDS : Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === g).reduce((a, f) => a + per(f), 0) * (1 - LG.AURA_ODDS);
   $('ladder-rungs').innerHTML = LG.GRADES.map((g, k) => `<div class="rung" style="background:${g.color}"><b>${esc(g.name)}</b><span>${oneIn(gradeP(k))} capsules</span><span>${k === 5 ? 'Any machine, its own finishes' : Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === k).map(f => LG.FINISHES[f].name).join(', ')}</span></div>`).join('')
 ;
-  $('tier-key').innerHTML = 'Parts are tiered by how often they turn up: ' + TIERS.map((t, k) => `<span><i style="background:${t.c}"></i>${t.name} ${k === 3 ? 'rarer than 1 in 80' : `to ${oneIn(t.min)}`}</span>`).join('');
+  $('tier-key').innerHTML = 'Parts are tiered by how often they turn up: ' + TIERS.slice(0, 5).map((t, k) => `<span><i style="background:${t.c}"></i>${t.name} ${k === 4 ? 'rarer than 1 in 300' : `to ${oneIn(t.min)}`}</span>`).join('');
 
   // ---------------------------------------------------------------- slots
   let html = '';
   for (const s of SLOTS) html += `<section id="${s.id}"><div class="sh"><h2>${s.title}</h2><p>${s.list.length} options, rarest first.</p></div><div class="grid">${s.options.map(o => tile(o.name, o.p, cv({ parts: { [s.key]: o.i, ...(s.key === 'head' ? { hair: 0 } : {}) } }))).join('')}</div></section>`;
-  html += `<section id="colours"><div class="sh"><h2>Colourways</h2><p>${LG.palettes.length} options, rarest first. The six night colours are the rarest.</p></div><div class="grid">${palOdds.map(o => tile(o.name, o.p, cv({ palette: o.i }))).join('')}</div></section>`;
+  html += `<section id="colours"><div class="sh"><h2>Colourways</h2><p>${LG.palettes.length} options, rarest first. The chase colourways (Opal, Obsidian, Aurora) are the rarest, then the night colours.</p></div><div class="grid">${palOdds.map(o => tile(o.name, o.p, cv({ palette: o.i }))).join('')}</div></section>`;
   html += `<section id="extras"><div class="sh"><h2>Body, tone and Lucky</h2><p>Rolled from the seed too. Lucky turns the colourway round the wheel.</p></div><div class="grid">${EXTRA.map(o => tile(o.name, o.p, cv({ parts: o.parts }))).join('')}</div></section>`;
   $('slots').innerHTML = html;
 
