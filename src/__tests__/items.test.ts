@@ -47,20 +47,35 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game three skins, three hats (one free), two frames and a buddy', () => {
+  it('gives every game four skins, four hats (one free), three frames and three buddies', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
       const count = (slot: string) => own.filter(i => i.slot === slot).length;
-      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([3, 3, 2, 1]);
+      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([4, 4, 3, 3]);
+      // A capsule machine holds everything but the free hat: 12 to 15 items.
+      expect(own.filter(i => !i.free).length).toBeGreaterThanOrEqual(12);
+      expect(own.filter(i => !i.free).length).toBeLessThanOrEqual(15);
       expect(own.filter(i => i.free).map(i => i.slot)).toEqual(['hat']);
       expect(freeItem(game).free).toBe(true);
+    }
+  });
+
+  it('keeps every item id it has ever had, in order', () => {
+    // Saved copies store item ids, and a capsule's roll reads each game's
+    // list in order: items are only ever added, after the ones before.
+    const first = [
+      'amountle.jar', 'halfsies.pot', 'stackdle.block', 'flipsies.bottle', 'puttsies.ball', 'weighsies.cheese', 'cutsies.kiwi', 'tiltsies.ball', 'trackdle.racer',
+    ];
+    expect(skins.slice(0, first.length).map(i => i.id)).toEqual(first);
+    for (const id of ['amountle.gemling', 'trackdle.snail', 'club.birthday', 'club.sweetheart', 'trackdle.tarmac', 'trackdle.trophy']) {
+      expect(itemById(id)).toBeDefined();
     }
   });
 
   it('lists a colour for every item colour its art uses', () => {
     for (const item of items) {
       for (const hex of item.colors) expect(hex).toMatch(/^#[0-9A-F]{6}$/);
-      const grid = guy({ skin: item.slot === 'skin' ? item.id : undefined, hat: item.slot === 'hat' ? item.id : undefined, frame: item.slot === 'frame' ? item.id : undefined });
+      const grid = guy({ [item.slot]: item.id });
       const palette = withItems(palettes[0], { ...BASE, [item.slot]: item.id });
       for (const v of grid.flat()) if (v) expect(palette.colors[v]).toBeDefined();
     }
@@ -165,6 +180,38 @@ describe('everything worn together', () => {
     const skinned = compose({ ...config, skin: skins[0].id });
     const face = (g: PixelGrid) => g.flat().filter(v => v === T.EYE).length;
     expect(face(skinned)).toBe(face(plain));
+  });
+});
+
+describe('buddies', () => {
+  const buddies = items.filter(i => i.slot === 'buddy');
+
+  it('fill their corner: at most 5x5, and at least 4 across and 4 tall', () => {
+    for (const b of buddies) {
+      const art = b.art!;
+      expect(art.length).toBeLessThanOrEqual(5);
+      expect(art.length).toBeGreaterThanOrEqual(4);
+      expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(5);
+      expect(Math.max(...art.map(r => r.length))).toBeGreaterThanOrEqual(4);
+      // Solid enough to read as a shape, not a scatter of pixels.
+      expect(art.flat().filter(Boolean).length).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  it('use a light, a mid and a dark tone of their own, so they read on light and dark guys alike', () => {
+    const lum = (hex: string) => {
+      const c = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+      return 0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2);
+    };
+    for (const b of buddies) {
+      const used = [...new Set(b.art!.flat().filter(t => t >= 101).map(t => b.colors[t - 101]))].map(lum);
+      expect(Math.max(...used) - Math.min(...used)).toBeGreaterThan(0.2);
+    }
+  });
+
+  it('are different drawings, one from another', () => {
+    const seen = new Set(buddies.map(b => JSON.stringify(b.art)));
+    expect(seen.size).toBe(buddies.length);
   });
 });
 

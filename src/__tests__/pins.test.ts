@@ -120,25 +120,43 @@ describe('emotes and the trail', () => {
 
 
 describe('buddies', () => {
-  test('one per game, drawn at his feet in front of him with an outline', () => {
-    for (const game of GAMES) expect(gameItems(game).filter(i => i.slot === 'buddy').length).toBe(1);
+  test('three per game, drawn at his feet in front of him with an outline', () => {
+    for (const game of GAMES) expect(gameItems(game).filter(i => i.slot === 'buddy').length).toBe(3);
     const bare = compose(dress(resolve('alice'), {}));
     const withBuddy = compose(dress(resolve('alice'), { equip: ['puttsies.tee'] }));
     const changed = withBuddy.flat().filter((t, i) => t !== bare.flat()[i]).length;
     expect(changed).toBeGreaterThan(8);
     expect(withBuddy.flat().some(t => t >= 50 && t < 60)).toBe(true);
-    // Only the bottom-right corner changes.
-    withBuddy.forEach((row, y) => row.forEach((t, x) => { if (t !== bare[y][x]) expect(x >= 9 && y >= 9).toBe(true); }));
+    // Only the bottom-right corner changes, whichever buddy it is.
+    for (const b of items.filter(i => i.slot === 'buddy')) {
+      const g = compose(dress(resolve('alice'), { equip: [b.id] }));
+      g.forEach((row, y) => row.forEach((t, x) => { if (t !== bare[y][x]) expect(x >= 9 && y >= 9).toBe(true); }));
+    }
   });
 });
 
 describe('seasonal items', () => {
   test('drop only in their days, across the new year too', () => {
-    expect(inSeason('2026-10-31').map(i => i.id)).toEqual(['club.pumpkin']);
-    expect(inSeason('2026-12-31').map(i => i.id)).toEqual(['club.snowcap']);
+    expect(inSeason('2026-10-31').map(i => i.id)).toEqual(['club.pumpkin', 'club.maple']);
+    expect(inSeason('2026-12-31').map(i => i.id)).toEqual(['club.snowcap', 'club.newyear']);
+    expect(inSeason('2027-01-01').map(i => i.id)).toEqual(['club.snowcap', 'club.newyear']);
     expect(inSeason('2027-01-03').map(i => i.id)).toEqual(['club.snowcap']);
-    expect(inSeason('2026-07-01')).toEqual([]);
+    expect(inSeason('2026-12-24').map(i => i.id)).toEqual(['club.snowcap', 'club.antlers']);
+    expect(inSeason('2026-07-04').map(i => i.id)).toEqual(['club.sunhat', 'club.sparkler']);
+    expect(inSeason('2026-03-17').map(i => i.id)).toEqual(['club.shamrock']);
+    expect(inSeason('2026-02-20')).toEqual([]);
     expect(items.filter(i => i.game === 'club').every(i => i.season)).toBe(true);
+  });
+
+  test('something drops every month, and two at once round the big holidays', () => {
+    const days = (month: number) => Array.from({ length: 28 }, (_, d) => `2026-${String(month).padStart(2, '0')}-${String(d + 1).padStart(2, '0')}`);
+    for (let m = 1; m <= 12; m++) expect(days(m).some(d => inSeason(d).length > 0)).toBe(true);
+    for (const day of ['2026-01-01', '2026-02-12', '2026-04-01', '2026-07-04', '2026-10-31', '2026-11-26', '2026-12-20']) {
+      expect(inSeason(day).length).toBeGreaterThanOrEqual(2);
+    }
+    const seasonal = items.filter(i => i.game === 'club');
+    expect(seasonal.length).toBeGreaterThanOrEqual(14);
+    for (const i of seasonal) expect([i.season!.from, i.season!.to].every(d => /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d))).toBe(true);
   });
 
   test('copies keep their day, in the code and the name', () => {
@@ -147,7 +165,7 @@ describe('seasonal items', () => {
     expect(o.date).toBe('2026-10-31');
     expect(decode(encode(o))).toEqual(o);
     expect(nameCopy(o).startsWith('2026 Pumpkin') || nameCopy(o).startsWith('Tallied 2026 Pumpkin')).toBe(true);
-    expect(rollSeason('s1', '2026-07-01')).toBeNull();
+    expect(rollSeason('s1', '2026-02-20')).toBeNull();
   });
 });
 
