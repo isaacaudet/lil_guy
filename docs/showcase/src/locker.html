@@ -818,8 +818,9 @@ void main() {
   }
 
   /* Each game's machine has its own look: capsules in the game's colours, a pattern on the body, a sign
-   * with the game's own icon (some of them moving) and a topper on the dome. Sprites are rows of letters
-   * from MPAL, drawn on the fine grid and centred on a point; '.' is see-through. */
+   * with the game's own icon (some of them moving) and a topper on the dome. Everything is drawn on one
+   * 80×112 grid, a canvas pixel per pixel, so nothing is finer or coarser than anything else. Sprites are
+   * rows of letters from MPAL centred on a point; '.' is see-through. */
   const MPAL = { k: [22, 18, 34], w: [252, 250, 244], W: [214, 206, 188], y: [255, 207, 92], Y: [196, 140, 30], o: [255, 150, 70], r: [232, 76, 82], R: [160, 40, 50],
     g: [110, 200, 110], G: [46, 128, 70], P: [196, 70, 128], b: [95, 180, 255], B: [40, 96, 180], p: [255, 126, 182], s: [205, 210, 226], S: [128, 134, 160], n: [176, 116, 64], N: [110, 70, 40], v: [170, 140, 255], t: [80, 214, 196], d: [24, 30, 46] };
   function sprite(hi, rows, cx, y0, dx = 0) {
@@ -830,22 +831,26 @@ void main() {
   function digits(hi, text, x0, y0, c, s = 1) {
     [...text].forEach((ch, i) => { const d = DIGIT[+ch]; if (!d) return; for (let k = 0; k < 15; k++) if (d[k] === '1') for (let j = 0; j < s * s; j++) hi.set(x0 + i * 4 * s + (k % 3) * s + (j % s), y0 + Math.floor(k / 3) * s + Math.floor(j / s), c); });
   }
+  // The sign's plate: x 20 to 59, y 56 to 67 in the sign's own coordinates (drawn 10 rows lower, on the body).
   const plate = (hi, fill) => { for (let y = 56; y <= 67; y++) for (let x = 20; x <= 59; x++) hi.set(x, y, typeof fill === 'function' ? fill(x, y) : fill); };
+  // The machine's parts, on the 80×112 grid. The coin slot sits at (54, 80) and the chute's mouth at
+  // (39, 99), the spots the reveal aims its coin and capsule at (40×56 halved).
+  const M = { DX: 40, DY: 35.5, DR: 25, BX0: 16, BX1: 63, BY0: 64, BY1: 102, SIGN: 10 };
   const THEMES = {
     amountle: { pile: ['#ff7eb6', '#ffd447', '#7fd1ff', '#9be37a', '#c79bff'], small: true,
-      body: (x, y, c) => (y % 4 === 1 && (x + (y % 8 < 4 ? 0 : 2)) % 4 === 0 ? blend(c, WHITE, 0.4) : c),
+      body: (x, y, c) => ((y - 64) % 6 === 3 && (x + ((y - 64) % 12 < 6 ? 0 : 3)) % 6 === 0 ? blend(c, WHITE, 0.4) : c),
       sign(hi, t) { plate(hi, MPAL.d); digits(hi, String(1000 + Math.floor(t * 7) % 9000).slice(-4), 23, 57, MPAL.y, 2); },
       top: ['......yyyy......', '....yyYYYYyy....', '...yYyyyyyyYy...', '...yYyYYYYyYy...', '...yYyyyyyyYy...', '....yyYYYYyy....', '..ssssssssssss..', '.sSsSsSsSsSsSsS.', '.sssssssssssssss', '..SSSSSSSSSSSS..'] },
     halfsies: { pile: ['#f2b066', '#fff1d6', '#ff8a5c', '#ffd28a'],
-      body: (x, y, c) => (x === 20 ? (y % 2 ? blend(c, INK, 0.45) : c) : x > 20 ? blend(c, WHITE, 0.55) : c),
+      body: (x, y, c) => (x === 40 ? (y % 2 ? blend(c, INK, 0.45) : c) : x > 40 ? blend(c, WHITE, 0.55) : c),
       sign(hi) { plate(hi, x => x < 40 ? MPAL.o : MPAL.w); digits(hi, '1', 28, 57, MPAL.w, 2); for (let k = 0; k < 10; k++) { hi.set(44 - Math.round(k / 2.5), 57 + k, MPAL.k); hi.set(45 - Math.round(k / 2.5), 57 + k, MPAL.k); } digits(hi, '2', 48, 57, MPAL.o, 2); },
       top: ['...oooo..WWWW...', '..oooooo.wwwwW..', '.ooooooo.wwwwwW.', '.ooooooo.wwwwwW.', '.ooooooo.wwwwwW.', '..oooooo.wwwwW..', '...oooo..WWWW...', '.....SSSSSS.....', '..SSSSSSSSSSSS..'] },
     stackdle: { pile: ['#ffd447', '#ff6b6b', '#5fb4ff', '#74d97c'],
-      body: (x, y, c) => { const row = Math.floor((y - 26) / 4); return (y - 26) % 4 === 3 || (x + (row % 2) * 3) % 6 === 0 ? blend(c, INK, 0.2) : c; },
+      body: (x, y, c) => { const row = Math.floor((y - 64) / 6); return (y - 64) % 6 === 5 || (x + (row % 2) * 5) % 10 === 0 ? blend(c, INK, 0.2) : c; },
       sign(hi) { plate(hi, MPAL.w); const B = ['...rrr...', '...rRr...', '...rrr...', '..bbbyyy.', '..bBbyYy.', '..bbbyyy.', '.gggpppbb', '.gGgpPpbB', '.gggpppbb']; for (const cx of [28, 40, 52]) sprite(hi, B, cx, 57); },
       top: ['.....rrr.....', '.....rRr.....', '.....rrr.....', '...bbbyyy....', '...bBbyYy....', '...bbbyyy....', '..gggpppbbb..', '..gGgpPpbBb..', '..gggpppbbb..', '.SSSSSSSSSSS.'] },
     flipsies: { pile: ['#5fb4ff', '#d8f0ff', '#ffd447', '#9bd2ff'],
-      body: (x, y, c) => (y >= 49 ? ((x * 7 + y * 3) % 11 === 0 ? MPAL.N : MPAL.n) : (x + y) % 7 === 0 ? blend(c, WHITE, 0.18) : c),
+      body: (x, y, c) => (y >= 94 ? ((x * 7 + y * 3) % 11 === 0 ? MPAL.N : MPAL.n) : (x + y) % 9 === 0 ? blend(c, WHITE, 0.18) : c),
       sign(hi, t) {
         plate(hi, MPAL.w);
         sprite(hi, ['...rrrr...', '.rrwwwwrr.', 'rrwwrrwwrr', 'rwwrrrrwwr', 'rwrrwwrrwr', 'rwwrrrrwwr', 'rrwwrrwwrr', '.rrwwwwrr.', '...rrrr...'], 50, 57);
@@ -854,7 +859,7 @@ void main() {
       },
       top: ['..ss..', '..bb..', '..bb..', '.bbbb.', 'bbbbbB', 'bwbbbB', 'bwbbbB', 'bbbbbB', '.BBBB.'] },
     puttsies: { pile: ['#74d97c', '#ffffff', '#ffd447', '#b6f0a0'],
-      body: (x, y, c) => (y >= 44 ? (Math.floor(x / 3) % 2 ? blend(c, INK, 0.12) : blend(c, WHITE, 0.1)) : c),
+      body: (x, y, c) => (y >= 80 ? (Math.floor(x / 4) % 2 ? blend(c, INK, 0.12) : blend(c, WHITE, 0.1)) : c),
       sign(hi, t) {
         plate(hi, (x, y) => (x + y) % 6 < 3 ? MPAL.g : [96, 186, 98]);
         sprite(hi, ['rrrr.', 'rrrrr', 'rrrr.', 'k....', 'k....', 'k....', 'k....', 'k....'], 54, 57);
@@ -864,7 +869,7 @@ void main() {
       },
       top: ['...wwww...', '..wwSwww..', '.wwwwwSww.', '.wSwwwwww.', '.wwwSwwSw.', '..wwwwww..', '...wwww...', '....nn....', '....nn....', '..nnnnnn..'] },
     weighsies: { pile: ['#a98bff', '#e0d6ff', '#ffd447', '#c7b6ff'],
-      body: (x, y, c) => ((x === 7 || x === 32) && y % 5 === 2 ? MPAL.s : y === 35 ? blend(c, INK, 0.2) : c),
+      body: (x, y, c) => ((x === 18 || x === 61) && y % 6 === 2 ? MPAL.s : y === 79 ? blend(c, INK, 0.2) : c),
       sign(hi, t) {
         plate(hi, MPAL.w);
         for (let a = 0; a <= Math.PI; a += 0.04) hi.set(40 + Math.round(Math.cos(Math.PI + a) * 17), 67 + Math.round(Math.sin(Math.PI + a) * 10), MPAL.S);
@@ -875,145 +880,169 @@ void main() {
       },
       top: ['........y........', '.......yYy.......', 'yyyyyyyyyyyyyyyyy', 's.......y.......s', 's.......y.......s', 's.......y.......s', 'Ss......y......sS', 'SSSs....y....sSSS', '.SS.....y.....SS.', '......yyyyy......'] },
     cutsies: { pile: ['#ff6b6b', '#86cf55', '#ffd447', '#ffb3a8'],
-      body: (x, y, c) => { const line = 52 - Math.round((x - 6) * 0.95); return y === line ? WHITE : y < line ? blend(c, WHITE, 0.16) : c; },
+      body: (x, y, c) => { const line = 100 - Math.round((x - 16) * 0.75); return y === line ? WHITE : y < line ? blend(c, WHITE, 0.16) : c; },
       sign(hi) { plate(hi, MPAL.w); const K = ['..GGGG..', '.GggggG.', 'GggkkggG', 'GgkwwkgG', 'GgkwwkgG', 'GggkkggG', '.GggggG.', '..GGGG..']; for (const cx of [27, 40, 53]) sprite(hi, K, cx, 58); },
       top: ['rrrrrrrrrrrrrrrr', 'rrkrrrrrkrrrrkrr', '.rrrrrkrrrrrrrr.', '..rrrrrrrrkrrr..', '...rrrrrrrrrr...', '....wwwwwwww....', '.....gggggg.....', '......GGGG......'] },
     tiltsies: { pile: ['#4fd6c4', '#ffffff', '#ffd447', '#a8f0e6'],
-      body: (x, y, c) => { const cx = Math.floor((x - 6) / 4), cy = Math.floor((y - 26) / 4); return ((x - 6) % 4 === 0 && strHash(`${cx}:${cy}`) % 3 === 0) || ((y - 26) % 4 === 0 && strHash(`${cy}:${cx}h`) % 3 === 0) ? blend(c, INK, 0.25) : c; },
+      body: (x, y, c) => { const cx = Math.floor((x - 16) / 6), cy = Math.floor((y - 64) / 6); return ((x - 16) % 6 === 0 && strHash(`${cx}:${cy}`) % 3 === 0) || ((y - 64) % 6 === 0 && strHash(`${cy}:${cx}h`) % 3 === 0) ? blend(c, INK, 0.25) : c; },
       sign(hi, t) {
         plate(hi, (x, y) => ((x - 20) % 8 === 0 && y < 64) || ((y - 56) % 6 === 0 && x % 5 !== 0) ? MPAL.S : MPAL.w);
         const k = (t * 0.5) % 1, bx = 23 + Math.round(34 * (k < 0.5 ? k * 2 : 2 - k * 2));
         sprite(hi, ['.tt.', 'tttt', 'tttt', '.tt.'], bx, 60);
       },
-      topFn(hi, t) { const s = Math.sin(t * 1.8); for (let x = -9; x <= 9; x++) { const y = 8 + Math.round(x * s * 0.25); hi.set(40 + x, y, MPAL.S); hi.set(40 + x, y + 1, MPAL.s); } sprite(hi, ['..wwww..', '.wwwwww.', 'wwwwwwww', 'wwwwwwww', '.wwwwww.', '..wwww..'], 40, 1 + Math.round(-s * 1.5), Math.round(s * 6)); } },
+      topFn(hi, t) { const s = Math.sin(t * 1.8); for (let x = -9; x <= 9; x++) { const y = 9 + Math.round(x * s * 0.25); hi.set(40 + x, y, MPAL.S); hi.set(40 + x, y + 1, MPAL.s); } sprite(hi, ['..wwww..', '.wwwwww.', 'wwwwwwww', 'wwwwwwww', '.wwwwww.', '..wwww..'], 40, 2 + Math.round(-s * 1.5), Math.round(s * 6)); } },
     trackdle: { pile: ['#ff8a3d', '#ffffff', '#2a2a2a', '#ffd447'],
-      body: (x, y, c) => (x >= 31 && x <= 33 ? ((x + y) % 2 ? MPAL.k : WHITE) : y === 26 || y === 27 ? WHITE : c),
-      sign(hi) { plate(hi, x => x < 36 ? MPAL.w : MPAL.w); for (let y = 56; y <= 67; y++) for (let x = 20; x <= 35; x++) hi.set(x, y, ((x >> 2) + (y >> 2)) % 2 ? MPAL.k : MPAL.w); digits(hi, '01', 41, 57, MPAL.r, 2); },
-      topFn(hi, t) { for (let y = 0; y < 10; y++) hi.set(31, y, MPAL.N), hi.set(32, y, MPAL.n); for (let x = 0; x < 15; x++) { const w = Math.round(Math.sin(t * 6 - x * 0.7) * 1.2); for (let y = 0; y < 6; y++) hi.set(33 + x, y + 1 + w, ((x >> 1) + (y >> 1)) % 2 ? MPAL.k : MPAL.w); } } },
+      body: (x, y, c) => (x >= 37 && x <= 42 ? (((x >> 1) + (y >> 1)) % 2 ? MPAL.k : WHITE) : y === 66 || y === 67 ? WHITE : c),
+      sign(hi) { plate(hi, MPAL.w); for (let y = 56; y <= 67; y++) for (let x = 20; x <= 35; x++) hi.set(x, y, ((x >> 2) + (y >> 2)) % 2 ? MPAL.k : MPAL.w); digits(hi, '01', 41, 57, MPAL.r, 2); },
+      topFn(hi, t) { for (let y = 0; y < 11; y++) hi.set(31, y, MPAL.N), hi.set(32, y, MPAL.n); for (let x = 0; x < 15; x++) { const w = Math.round(Math.sin(t * 6 - x * 0.7) * 1.2); for (let y = 0; y < 6; y++) hi.set(33 + x, y + 1 + w, ((x >> 1) + (y >> 1)) % 2 ? MPAL.k : MPAL.w); } } },
   };
 
-  /** A gacha machine, 40x56, drawn in its game's own look. */
+  /* One capsule in the dome, flat like a sticker: a pale clear top, a candy bottom, a white seam, a dark
+   * rim in its own colour, one hard glint and a shade on the bottom right. Back-row capsules sit dimmer. */
+  function ballPx(dx, dy, r, c, back, turn) {
+    const d = Math.hypot(dx, dy);
+    if (d > r) return null;
+    // `turn` tips the seam, so a pile of them tumbles every which way; the light stays top left.
+    const up = -dx * Math.sin(turn) + dy * Math.cos(turn);
+    let col;
+    if (d > r - 1) col = blend(c, INK, 0.55);
+    else if (Math.hypot(dx + r * 0.4, dy + r * 0.42) < r * 0.22) col = WHITE;
+    else if (Math.abs(up) < 0.6) col = blend(c, WHITE, 0.7);
+    else if (up < 0) col = blend(c, [240, 246, 255], 0.42);
+    else col = c;
+    if (dx + dy > r * 0.6 && d <= r - 1) col = blend(col, INK, 0.2);
+    return back ? blend(col, [46, 54, 92], 0.4) : col;
+  }
+
+  /** A gacha machine in its game's own look: a glass dome of capsules on a slim body with a sign, a
+   *  crank, a coin slot and a chute, standing on two feet. 40×56 to callers, drawn on an 80×112 grid. */
   function addMachine(canvas, game, hoverEl) {
-    const body = rgb(CANDY[game]);
-    const others = LG.GAMES.map(g => rgb(CANDY[g]));
-    // The dome: a glass ball centred over the body, its top fully inside the canvas.
-    const DX = 19.5, DY = 17, DR = 12.4;            // lower than the canvas top: the band above is the game's topper
-    // Capsules piled in the dome about two thirds full, in two layers: a dimmer back
-    // layer peeking between the front one. Drawn top to bottom so lower ones overlap.
-    const TH = THEMES[game] || {};
+    const body = rgb(CANDY[game]), TH = THEMES[game] || {};
+    const { DX, DY, DR, BX0, BX1, BY0, BY1 } = M;
+    // Capsules about two thirds up the dome, in two layers: a dimmer back one peeking between the front.
     const colours = (TH.pile || [CANDY[game]]).map(rgb);
-    const pile = [], sm = TH.small ? 0.72 : 1;
-    for (const back of [1, 0]) for (let row = 0; row < (TH.small ? 6 : 4); row++) {
-      const y = 19.5 - row * 5 * sm - back * 2.5 * sm;
-      for (let x = 7.5 + ((row + back) % 2) * 4 * sm; x <= 32; x += 8 * sm) {
-        if (Math.hypot(x - DX, y - DY) > DR - 3.2 * sm) continue;
-        const k = `${game}:${back}:${x}:${y}`;
-        pile.push({ x, y, back, r: (back ? 3.9 : 4.4) * sm, c: colours[strHash(k) % colours.length], jx: 0, jy: 0 });
+    // Packed from the glass's floor up: each row sits in the dips of the one below, and the glass clips
+    // the ones at the edge, so the dome reads full. The back layer only shows through the gaps.
+    const r0 = TH.small ? 4.4 : 5.6, pile = [], rowH = Math.round(r0 * 1.72), top = DY - DR * 0.18;
+    for (const back of [1, 0]) for (let row = 0; ; row++) {
+      const y = Math.round(DY + DR - r0 + 1 - row * rowH - back * rowH / 2);
+      if (y < top) break;
+      for (let x = DX - DR + ((row + back) % 2) * r0; x <= DX + DR; x += 2 * r0) {
+        if (Math.hypot(x - DX, y - DY) > DR + r0 * 0.2) continue;
+        let h = strHash(game) ^ Math.imul(Math.round(x) + 1, 73856093) ^ Math.imul(row + 1, 19349663) ^ Math.imul(back + 1, 83492791);
+        h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d); h = (h ^ (h >>> 12)) >>> 0;
+        pile.push({ x: Math.round(x), y, back, r: r0, c: colours[h % colours.length], turn: [0, Math.PI, Math.PI / 2, -Math.PI / 2, 0.7, -0.7, 2.4, -2.4][(h >> 8) % 8], jx: 0, jy: 0 });
       }
     }
     pile.sort((a, b) => b.back - a.back || a.y - b.y);
-    // One shaded capsule pixel: a sphere lit from the top left, clear tinted plastic
-    // over a coloured half, a pale seam between them and a hard white highlight.
-    const LIGHT = [-0.5, -0.62, 0.6];
-    function ballPx(dx, dy, r, c, dim) {
-      const nx = dx / r, ny = dy / r, r2 = nx * nx + ny * ny;
-      if (r2 > 1) return null;
-      const nz = Math.sqrt(1 - r2);
-      const lit = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]);
-      let base = ny < -0.12 ? blend(c, [236, 242, 255], 0.62) : Math.abs(ny + 0.06) <= 0.12 ? blend(c, WHITE, 0.45) : c;
-      let col = lit < 0.55 ? blend(base, INK, (0.55 - lit) * (ny < 0 ? 0.8 : 1.15)) : blend(base, WHITE, (lit - 0.55) * 0.55);
-      if (r2 > 0.78) col = blend(col, INK, 0.28);
-      if (Math.hypot(nx + 0.42, ny + 0.5) < 0.24) col = WHITE;
-      return dim ? blend(col, [40, 46, 78], 0.42) : col;
+
+    // Everything that never moves, drawn once: the body, its sign's frame, the collar and the feet.
+    const base = Px(80, 112);
+    const shadeBody = (x, y) => {
+      let c = body;
+      if (x >= BX1 - 2) c = blend(body, INK, 0.22); else if (x <= BX0 + 2) c = blend(body, WHITE, 0.28);
+      if (TH.body) c = TH.body(x, y, c);
+      if (y === BY0) c = blend(c, WHITE, 0.32);
+      if (y === BY1) c = blend(body, INK, 0.3);
+      return c;
+    };
+    for (let y = BY0; y <= BY1; y++) for (let x = BX0; x <= BX1; x++) {
+      const corner = (x === BX0 || x === BX1) && (y === BY0 || y === BY1);
+      if (!corner) base.set(x, y, shadeBody(x, y));
     }
+    // the sign's frame (the plate itself is drawn each frame, some signs move)
+    for (let x = 19; x <= 60; x++) { base.set(x, 65, INK); base.set(x, 78, INK); }
+    for (let y = 65; y <= 78; y++) { base.set(19, y, INK); base.set(60, y, INK); }
+    // the coin slot: a steel plate with a dark slit
+    for (let y = 80; y <= 91; y++) for (let x = 50; x <= 58; x++) {
+      const edge = x === 50 || x === 58 || y === 80 || y === 91;
+      base.set(x, y, edge ? [96, 102, 128] : x === 54 && y > 82 && y < 89 ? [16, 12, 24] : x < 53 && y < 85 ? [228, 232, 242] : [178, 184, 204]);
+    }
+    // the chute's frame
+    for (let y = 93; y <= 101; y++) for (let x = 29; x <= 50; x++) if (x === 29 || x === 50 || y === 93 || y === 101) base.set(x, y, blend(body, INK, 0.55));
+    // the collar under the dome: a steel band a little wider than the body
+    for (let y = 59; y <= 63; y++) for (let x = 13; x <= 66; x++) {
+      if ((x === 13 || x === 66) && (y === 59 || y === 63)) continue;
+      base.set(x, y, y === 59 ? [236, 240, 250] : y === 63 ? [120, 126, 152] : x <= 15 ? [222, 226, 238] : x >= 64 ? [150, 156, 180] : [196, 202, 220]);
+    }
+    // a short plinth on two feet
+    for (let y = 103; y <= 105; y++) for (let x = BX0 + 2; x <= BX1 - 2; x++) base.set(x, y, y === 103 ? [70, 66, 96] : [44, 38, 64]);
+    for (const x0 of [BX0 + 3, BX1 - 10]) for (let y = 106; y <= 109; y++) for (let x = x0; x <= x0 + 7; x++) base.set(x, y, y === 106 ? [70, 66, 96] : [36, 30, 52]);
+    // the glass, behind the capsules
+    const glass = [];
+    for (let y = 0; y < 60; y++) for (let x = 0; x < 80; x++) {
+      const d = Math.hypot(x + 0.5 - DX, y + 0.5 - DY);
+      if (d > DR) continue;
+      if (d > DR - 1) base.set(x, y, [222, 234, 252], 245);
+      else if (d > DR - 2) base.set(x, y, [150, 170, 214], 210);
+      else { base.set(x, y, [186, 212, 248], 46); glass.push([x, y, d, Math.atan2(y + 0.5 - DY, x + 0.5 - DX)]); }
+    }
+
     canvas.width = 80; canvas.height = 112;
     const ctx = canvas.getContext('2d');
+    const sign = { set: (x, y, c, a) => hi.set(x, y + M.SIGN, c, a) };
+    let hi = base, last = '', jig = 0;
     const st = {
       canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
-      jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
+      jiggle() { jig++; for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 3 | 0); } },
       tick(t) {
-        // Drawn at twice the pixel density: the body in 2×2 blocks, the glass and
-        // capsules on the fine grid, so the spheres can be shaded.
-        const hi = Px(80, 112);
-        const m = { set(x, y, c, a) { x = Math.round(x); y = Math.round(y); for (let j = 0; j < 4; j++) hi.set(x * 2 + (j & 1), y * 2 + (j >> 1), c, a); } };
-        const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
-        // body
-        for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
-          if ((x === 5 || x === 34) && (y === 25 || y === 53)) continue;
-          let c = body;
-          if (x >= 30) c = blend(body, INK, 0.22); else if (x <= 7) c = blend(body, WHITE, 0.28);
-          if (TH.body && y > 25 && y < 53 && x > 5 && x < 34) c = TH.body(x, y, c);
-          if (y === 25) c = blend(c, WHITE, 0.3);
-          m.set(x, y, c);
-        }
-        for (let x = 6; x <= 33; x++) { m.set(x, 54, [44, 38, 64]); m.set(x, 55, [30, 26, 46]); }
-        // the label: cream, with a strip of every game's colours
-        for (let y = 27; y <= 34; y++) for (let x = 9; x <= 30; x++) {
-          const edge = y === 27 || y === 34 || x === 9 || x === 30;
-          m.set(x, y, edge ? [214, 204, 182] : (y === 31 || y === 30) && x % 3 !== 0 ? others[Math.floor(x / 3) % others.length] : [250, 244, 228]);
-        }
-        if (TH.sign) TH.sign(hi, t);
-        // coin slot
-        for (let y = 37; y <= 46; y++) for (let x = 25; x <= 29; x++) {
-          const frame = x === 25 || x === 29 || y === 37 || y === 46;
-          m.set(x, y, frame ? [200, 205, 220] : x === 27 && y > 38 && y < 45 ? [16, 12, 24] : [150, 156, 178]);
-        }
-        // the crank
-        const cx = 14.5, cy = 41.5;
-        for (let y = 35; y <= 48; y++) for (let x = 8; x <= 21; x++) {
-          const d = Math.hypot(x - cx, y - cy);
-          if (d <= 5.6) m.set(x, y, d > 4.6 ? [140, 146, 170] : (x - cx + y - cy < -3 ? [246, 248, 252] : [222, 226, 238]));
-        }
-        const a = st.angle + (st.hover ? Math.sin(t * 7) * 0.22 : 0);
-        for (let k = -5; k <= 5; k += 0.5) {
-          const x = cx + Math.cos(a) * k, y = cy + Math.sin(a) * k;
-          m.set(x, y, [96, 102, 128]); m.set(x + Math.sin(a) * 0.7, y - Math.cos(a) * 0.7, [120, 126, 150]);
-        }
-        for (const k of [-5, 5]) m.set(cx + Math.cos(a) * k, cy + Math.sin(a) * k, blend(body, INK, 0.4));
-        // the chute and its flap
-        for (let y = 47; y <= 52; y++) for (let x = 12; x <= 27; x++) {
-          const frame = x === 12 || x === 27 || y === 47 || y === 52;
-          m.set(x, y, frame ? blend(body, INK, 0.5) : st.flap ? (y === 48 ? [60, 50, 80] : [14, 10, 22]) : y === 49 ? blend(body, WHITE, 0.2) : blend(body, INK, 0.3));
-        }
-        // the collar under the dome
-        for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
-        // the dome: glass, capsules, then the shine on the glass, then the cap (fine grid)
-        const cx2 = DX + 0.5, cy2 = DY + 0.5, glass = [];
-        const at = (X, Y) => [(X + 0.5) / 2, (Y + 0.5) / 2];
-        for (let Y = 0; Y <= 45; Y++) for (let X = 0; X < 80; X++) {
-          const [x, y] = at(X, Y), d = Math.hypot(x - cx2, y - cy2);
-          if (d > DR) continue;
-          if (d > DR - 0.55) hi.set(X, Y, [214, 228, 250], 240);
-          else if (d > DR - 1.05) hi.set(X, Y, [150, 170, 210], 200);
-          else { hi.set(X, Y, [190, 215, 250], 42); glass.push([X, Y, d, Math.atan2(y - cy2, x - cx2)]); }
-        }
+        // Pixel animation runs at twelve frames a second; a turn of the crank or a jiggle redraws at once.
+        const step = Math.floor(t * 12), a = st.angle + (st.hover ? Math.sin(step / 12 * 7) * 0.22 : 0);
+        const key = `${step}|${a.toFixed(3)}|${st.flap}|${jig}|${st.hover}`;
+        if (key === last) return;
+        last = key;
+        hi = Px(80, 112); hi.d.set(base.d);
+        // capsules, then the shine on the glass
         for (const p of pile) {
-          const px = p.x + 0.5 + p.jx, py = p.y + 0.5 + p.jy, R = Math.ceil(p.r * 2) + 1;
-          for (let Y = Math.floor(py * 2) - R; Y <= Math.floor(py * 2) + R; Y++) for (let X = Math.floor(px * 2) - R; X <= Math.floor(px * 2) + R; X++) {
-            const [x, y] = at(X, Y);
-            if (Y > 45 || Math.hypot(x - cx2, y - cy2) > DR - 1.1) continue;
-            const c = ballPx(x - px, y - py, p.r, p.c, p.back);
-            if (c) hi.set(X, Y, c);
+          const px = p.x + p.jx, py = p.y + p.jy, R = Math.ceil(p.r);
+          for (let y = py - R; y <= py + R; y++) for (let x = px - R; x <= px + R; x++) {
+            if (Math.hypot(x + 0.5 - DX, y + 0.5 - DY) > DR - 2) continue;
+            const c = ballPx(x - px, y - py, p.r, p.c, p.back, p.turn);
+            if (c) hi.set(x, y, c);
           }
         }
-        for (const [X, Y, d, side] of glass) {
-          if (d > DR - 2.6 && d <= DR - 1.6 && side < -1.85 && side > -2.95) hi.set(X, Y, WHITE, 170);
-          if (d > DR - 2.2 && d <= DR - 1.6 && side > -0.45 && side < 0.35) hi.set(X, Y, WHITE, 70);
-          if ((X + Y + 120 - sweep * 2) % 120 < 3) hi.set(X, Y, WHITE, 60);
+        const sweep = Math.floor(t * 18 + st.phase * 10) % 90;
+        for (const [x, y, d, side] of glass) {
+          if (d > DR - 5 && d <= DR - 3 && side < -1.8 && side > -2.9) hi.set(x, y, WHITE, 200);
+          if (d > DR - 4 && d <= DR - 3 && side > -0.5 && side < 0.3) hi.set(x, y, WHITE, 90);
+          if ((x + y + 180 - sweep * 2) % 180 < 2) hi.set(x, y, WHITE, 70);
         }
         if (TH.topFn) TH.topFn(hi, t);
-        else if (TH.top) sprite(hi, TH.top, 40, 0);
-        else for (let x = 16; x <= 23; x++) for (let y = 0; y <= 2; y++) {
-          if ((x === 16 || x === 23) && y === 0) continue;
-          m.set(x, y, y === 0 ? blend(body, WHITE, 0.35) : x <= 17 ? blend(body, WHITE, 0.2) : x >= 22 ? blend(body, INK, 0.25) : body);
+        else if (TH.top) sprite(hi, TH.top, 40, 11 - TH.top.length);
+        // the sign, and two lamps on the collar taking turns (quicker under the pointer)
+        if (TH.sign) TH.sign(sign, t);
+        const blink = Math.floor(t * (st.hover ? 6 : 2) + st.phase) % 2;
+        for (const [x0, on] of [[17, blink], [60, 1 - blink]]) for (let y = 60; y <= 62; y++) for (let x = x0; x <= x0 + 2; x++) {
+          hi.set(x, y, on ? (x === x0 && y === 60 ? WHITE : [255, 214, 92]) : [150, 110, 60]);
         }
+        // the crank: a steel disc with a handle across it and a knob in the body's colour at each end
+        const cx = 28, cy = 85.5;
+        for (let y = 78; y <= 93; y++) for (let x = 20; x <= 36; x++) {
+          const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+          if (d <= 7) hi.set(x, y, d > 6 ? [96, 102, 128] : x + y < cx + cy - 6 ? [246, 248, 252] : d > 4.5 ? [196, 202, 220] : [222, 226, 238]);
+        }
+        for (let k = -6; k <= 6; k += 0.5) {
+          const x = cx - 0.5 + Math.cos(a) * k, y = cy - 0.5 + Math.sin(a) * k;
+          hi.set(x, y, [70, 76, 104]); hi.set(x - Math.sin(a), y + Math.cos(a), [70, 76, 104]);
+        }
+        for (const k of [-6, 6]) {
+          const x = Math.round(cx - 0.5 + Math.cos(a) * k), y = Math.round(cy - 0.5 + Math.sin(a) * k);
+          for (const [ox, oy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) hi.set(x + ox - (Math.cos(a) < 0 ? 1 : 0), y + oy, ox + oy === 0 ? blend(body, WHITE, 0.4) : blend(body, INK, 0.15));
+        }
+        // the chute: a shut flap, or a dark mouth once it has let a capsule out
+        for (let y = 94; y <= 100; y++) for (let x = 30; x <= 49; x++) {
+          hi.set(x, y, st.flap ? (y === 94 ? [70, 60, 92] : [14, 10, 22]) : y === 94 ? blend(body, WHITE, 0.35) : y === 100 ? blend(body, INK, 0.4) : blend(body, INK, 0.18));
+        }
+        if (!st.flap) for (let x = 37; x <= 42; x++) hi.set(x, 97, blend(body, INK, 0.5));
         hi.outline(INK);
         ctx.putImageData(new ImageData(hi.d, 80, 112), 0, 0);
-        for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
+        for (const p of pile) { if (p.jx && Math.random() < 0.25) p.jx = 0; if (p.jy && Math.random() < 0.25) p.jy = 0; }
+        // Now and then a capsule settles by itself, so the dome is never quite still.
+        if (Math.random() < 0.02) { const p = pile[Math.random() * pile.length | 0]; p.jy = -1; }
       },
     };
     if (hoverEl) {
-      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; });
+      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; st.jiggle(); });
       hoverEl.addEventListener('pointerleave', () => { st.hover = 0; });
     }
     balls.add(st); st.tick(0);
