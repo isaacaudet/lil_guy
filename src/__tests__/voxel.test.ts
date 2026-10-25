@@ -39,7 +39,7 @@ describe('voxel', () => {
   });
 
   test('the mesh: whole triangles, one group a surface, normals agreeing with winding', () => {
-    const m = voxelMesh(voxelItem(crown), .1);
+    const m = voxelMesh(voxelItem(crown), .1, { smooth: false });
     expect(m.positions.length % 9).toBe(0);
     expect(m.groups.reduce((n, g) => n + g.count, 0)).toBe(m.positions.length / 3);
     for (let i = 0; i < m.positions.length; i += 9) {
@@ -53,6 +53,23 @@ describe('voxel', () => {
       expect(m.hull[i + k]).toBeGreaterThanOrEqual(m.min[k] - 1e-6);
       expect(m.hull[i + k]).toBeLessThanOrEqual(m.max[k] + 1e-6);
     }
+  });
+
+  test('smooth normals: unit length, the front facing out, the middle flatter than the edge', () => {
+    const frame = animate('mia', 'idle', { rarity: false }).frames[0];
+    const m = voxelMesh(voxelColumns(frame), 1);
+    const flat = voxelMesh(voxelColumns(frame), 1, { smooth: false });
+    expect(m.positions).toEqual(flat.positions);
+    let tilt = { middle: 0, edge: 0 }, seen = { middle: 0, edge: 0 };
+    const reach = Math.max(...Array.from(m.positions).filter((_, i) => i % 3 === 0).map(Math.abs));
+    for (let i = 0; i < m.normals.length; i += 3) {
+      expect(Math.hypot(m.normals[i], m.normals[i + 1], m.normals[i + 2])).toBeCloseTo(1, 4);
+      if (flat.normals[i + 2] !== 1) continue;
+      expect(m.normals[i + 2]).toBeGreaterThan(0);
+      const where = Math.abs(m.positions[i]) < 2 ? 'middle' : Math.abs(m.positions[i]) > reach - 1.5 ? 'edge' : null;
+      if (where) { tilt[where] += 1 - m.normals[i + 2]; seen[where]++; }
+    }
+    expect(tilt.edge / seen.edge).toBeGreaterThan(tilt.middle / seen.middle * 3);
   });
 
   test('faces between touching columns of one depth are left out', () => {

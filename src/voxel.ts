@@ -72,6 +72,8 @@ export interface VoxelColumn {
   back: string;
   slot: number;
   surface: Surface;
+  /** How far an eye or mouth stands proud of the body: left out of the mesh's shading. */
+  lift: number;
 }
 
 export interface VoxelOptions {
@@ -134,7 +136,7 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
     const px = x - W / 2 + .5, py = H / 2 - y - .5;
     if (s === 3) {
       // A frame stands behind him as a plate.
-      out.push({ x: px, y: py, z: -(deepest / 2 + .5), depth: .7, color: c, back: c, slot: s, surface });
+      out.push({ x: px, y: py, z: -(deepest / 2 + .5), depth: .7, color: c, back: c, slot: s, surface, lift: 0 });
       continue;
     }
     const { z0, z1 } = span[y][x]!;
@@ -146,7 +148,7 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
       const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dx, dy]) => { const n = C[y + dy]?.[x + dx]; return !!n && !feature(x + dx, y + dy) && lum(n) >= .22 && lum(n) <= .86; });
       if (around) back = C[y + around[1]][x + around[0]]!;
     }
-    out.push({ x: px, y: py, z: (z0 + z1) / 2, depth: z1 - z0, color: shade ? darken(c, 1 - shade * .045) : c, back, slot: s, surface });
+    out.push({ x: px, y: py, z: (z0 + z1) / 2, depth: z1 - z0, color: shade ? darken(c, 1 - shade * .045) : c, back, slot: s, surface, lift: feature(x, y) });
   }
   return out;
 }
@@ -202,17 +204,56 @@ const linear = (hex: string): [number, number, number] => {
   return [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => { const c = v / 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }) as [number, number, number];
 };
 
-/** Columns as one mesh, `cell` units a pixel, with faces between touching columns left out. */
-export function voxelMesh(columns: readonly VoxelColumn[], cell = 1): VoxelMesh {
+/**
+ * Columns as one mesh, `cell` units a pixel, with faces between touching
+ * columns left out. Normals come from a softened height map of the columns
+ * (eyes and mouth left out of it), so a figure shades as one domed, moulded
+ * toy with its edges rolling off round, while every pixel keeps its flat
+ * colour; `smooth: false` gives each face its own flat normal instead.
+ */
+export function voxelMesh(columns: readonly VoxelColumn[], cell = 1, options: { smooth?: boolean } = {}): VoxelMesh {
+  const smooth = options.smooth ?? true;
   const at = new Map<string, VoxelColumn>();
   for (const c of columns) at.set(`${c.x},${c.y}`, c);
+  // The body's surface by grid cell (a column's lower-left corner), softened over its 3x3; a frame's plate stays flat.
+  const OUTSIDE = -.6;
+  const body = new Map<string, number>();
+  for (const c of columns) if (c.slot !== 3) body.set(`${Math.floor(c.x)},${Math.floor(c.y)}`, (c.depth - c.lift) / 2);
+  const softened = new Map<string, number>();
+  const soft = (ix: number, iy: number) => {
+    const k = `${ix},${iy}`;
+    let v = softened.get(k);
+    if (v === undefined) {
+      v = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) v += body.get(`${ix + dx},${iy + dy}`) ?? OUTSIDE;
+      softened.set(k, v /= 9);
+    }
+    return v;
+  };
+  // The surface's normal at a grid corner (gx, gy), front (+1) or back (-1).
+  const surfaceNormal = (gx: number, gy: number, side: number): number[] => {
+    const dx = (soft(gx, gy - 1) + soft(gx, gy) - soft(gx - 1, gy - 1) - soft(gx - 1, gy)) / 2;
+    const dy = (soft(gx - 1, gy) + soft(gx, gy) - soft(gx - 1, gy - 1) - soft(gx, gy - 1)) / 2;
+    const l = Math.hypot(dx, dy, 1);
+    return [-dx / l, -dy / l, side / l];
+  };
   const key = (s: Surface) => `${s.kind}|${s.roughness}|${s.clearcoat}`;
   const bySurface = new Map<string, VoxelColumn[]>();
   for (const c of columns) { const k = key(c.surface); if (!bySurface.has(k)) bySurface.set(k, []); bySurface.get(k)!.push(c); }
 
   const pos: number[] = [], nor: number[] = [], col: number[] = [], groups: VoxelMesh['groups'] = [];
+  // `wall`: how much a side keeps its own facing over the surface's (the silhouette's sides; inner steps take none, so they never show as stripes).
+  let flat = false, wall = 0;
+  const shade = (p: number[], n: number[]) => {
+    if (!smooth || flat) return n;
+    const s = surfaceNormal(Math.round(p[0]), Math.round(p[1]), p[2] >= 0 ? 1 : -1);
+    if (!wall) return s;
+    const v = [s[0] + n[0] * wall, s[1] + n[1] * wall, s[2] + n[2] * wall], l = Math.hypot(v[0], v[1], v[2]);
+    return [v[0] / l, v[1] / l, v[2] / l];
+  };
   const quad = (a: number[], b: number[], c: number[], d: number[], n: number[], rgb: number[]) => {
-    for (const p of [a, b, c, a, c, d]) { pos.push(p[0] * cell, p[1] * cell, p[2] * cell); nor.push(...n); col.push(...rgb); }
+    const shaded = [a, b, c, d].map(p => shade(p, n));
+    for (const i of [0, 1, 2, 0, 2, 3]) { const p = [a, b, c, d][i]; pos.push(p[0] * cell, p[1] * cell, p[2] * cell); nor.push(...shaded[i]); col.push(...rgb); }
   };
   // The part of [z0, z1] a neighbour does not cover.
   const open = (z0: number, z1: number, n?: VoxelColumn): [number, number][] => {
@@ -228,12 +269,18 @@ export function voxelMesh(columns: readonly VoxelColumn[], cell = 1): VoxelMesh 
     for (const c of list) {
       const x0 = c.x - .5, x1 = c.x + .5, y0 = c.y - .5, y1 = c.y + .5, z0 = c.z - c.depth / 2, z1 = c.z + c.depth / 2;
       const face = linear(c.color), back = linear(c.back);
+      flat = c.slot === 3; wall = 0;
       quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], face);
       quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], back);
-      for (const [a, b] of open(z0, z1, at.get(`${c.x - 1},${c.y}`))) quad([x0, y0, a], [x0, y0, b], [x0, y1, b], [x0, y1, a], [-1, 0, 0], face);
-      for (const [a, b] of open(z0, z1, at.get(`${c.x + 1},${c.y}`))) quad([x1, y0, b], [x1, y0, a], [x1, y1, a], [x1, y1, b], [1, 0, 0], face);
-      for (const [a, b] of open(z0, z1, at.get(`${c.x},${c.y + 1}`))) quad([x0, y1, b], [x1, y1, b], [x1, y1, a], [x0, y1, a], [0, 1, 0], face);
-      for (const [a, b] of open(z0, z1, at.get(`${c.x},${c.y - 1}`))) quad([x0, y0, a], [x1, y0, a], [x1, y0, b], [x0, y0, b], [0, -1, 0], face);
+      const left = at.get(`${c.x - 1},${c.y}`), right = at.get(`${c.x + 1},${c.y}`), up = at.get(`${c.x},${c.y + 1}`), down = at.get(`${c.x},${c.y - 1}`);
+      wall = left ? 0 : .9;
+      for (const [a, b] of open(z0, z1, left)) quad([x0, y0, a], [x0, y0, b], [x0, y1, b], [x0, y1, a], [-1, 0, 0], face);
+      wall = right ? 0 : .9;
+      for (const [a, b] of open(z0, z1, right)) quad([x1, y0, b], [x1, y0, a], [x1, y1, a], [x1, y1, b], [1, 0, 0], face);
+      wall = up ? 0 : .9;
+      for (const [a, b] of open(z0, z1, up)) quad([x0, y1, b], [x1, y1, b], [x1, y1, a], [x0, y1, a], [0, 1, 0], face);
+      wall = down ? 0 : .9;
+      for (const [a, b] of open(z0, z1, down)) quad([x0, y0, a], [x1, y0, a], [x1, y0, b], [x0, y0, b], [0, -1, 0], face);
     }
     groups.push({ start, count: pos.length / 3 - start, surface: list[0].surface });
   }

@@ -2005,7 +2005,8 @@ function voxelColumns(frame, owned = {}, options = {}) {
 				color: c,
 				back: c,
 				slot: s,
-				surface
+				surface,
+				lift: 0
 			});
 			continue;
 		}
@@ -2033,7 +2034,8 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			color: shade ? darken(c, 1 - shade * .045) : c,
 			back,
 			slot: s,
-			surface
+			surface,
+			lift: feature(x, y)
 		});
 	}
 	return out;
@@ -2100,10 +2102,41 @@ const linear = (hex$1) => {
 		return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
 	});
 };
-/** Columns as one mesh, `cell` units a pixel, with faces between touching columns left out. */
-function voxelMesh(columns, cell = 1) {
+/**
+* Columns as one mesh, `cell` units a pixel, with faces between touching
+* columns left out. Normals come from a softened height map of the columns
+* (eyes and mouth left out of it), so a figure shades as one domed, moulded
+* toy with its edges rolling off round, while every pixel keeps its flat
+* colour; `smooth: false` gives each face its own flat normal instead.
+*/
+function voxelMesh(columns, cell = 1, options = {}) {
+	const smooth = options.smooth ?? true;
 	const at = new Map();
 	for (const c of columns) at.set(`${c.x},${c.y}`, c);
+	const OUTSIDE = -.6;
+	const body = new Map();
+	for (const c of columns) if (c.slot !== 3) body.set(`${Math.floor(c.x)},${Math.floor(c.y)}`, (c.depth - c.lift) / 2);
+	const softened = new Map();
+	const soft = (ix, iy) => {
+		const k = `${ix},${iy}`;
+		let v = softened.get(k);
+		if (v === void 0) {
+			v = 0;
+			for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) v += body.get(`${ix + dx},${iy + dy}`) ?? OUTSIDE;
+			softened.set(k, v /= 9);
+		}
+		return v;
+	};
+	const surfaceNormal = (gx, gy, side) => {
+		const dx = (soft(gx, gy - 1) + soft(gx, gy) - soft(gx - 1, gy - 1) - soft(gx - 1, gy)) / 2;
+		const dy = (soft(gx - 1, gy) + soft(gx, gy) - soft(gx - 1, gy - 1) - soft(gx, gy - 1)) / 2;
+		const l = Math.hypot(dx, dy, 1);
+		return [
+			-dx / l,
+			-dy / l,
+			side / l
+		];
+	};
 	const key = (s) => `${s.kind}|${s.roughness}|${s.clearcoat}`;
 	const bySurface = new Map();
 	for (const c of columns) {
@@ -2112,17 +2145,45 @@ function voxelMesh(columns, cell = 1) {
 		bySurface.get(k).push(c);
 	}
 	const pos = [], nor = [], col = [], groups = [];
+	let flat = false, wall = 0;
+	const shade = (p, n) => {
+		if (!smooth || flat) return n;
+		const s = surfaceNormal(Math.round(p[0]), Math.round(p[1]), p[2] >= 0 ? 1 : -1);
+		if (!wall) return s;
+		const v = [
+			s[0] + n[0] * wall,
+			s[1] + n[1] * wall,
+			s[2] + n[2] * wall
+		], l = Math.hypot(v[0], v[1], v[2]);
+		return [
+			v[0] / l,
+			v[1] / l,
+			v[2] / l
+		];
+	};
 	const quad = (a, b$1, c, d, n, rgb$1) => {
-		for (const p of [
+		const shaded = [
 			a,
 			b$1,
 			c,
-			a,
-			c,
 			d
+		].map((p) => shade(p, n));
+		for (const i of [
+			0,
+			1,
+			2,
+			0,
+			2,
+			3
 		]) {
+			const p = [
+				a,
+				b$1,
+				c,
+				d
+			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
-			nor.push(...n);
+			nor.push(...shaded[i]);
 			col.push(...rgb$1);
 		}
 	};
@@ -2138,6 +2199,8 @@ function voxelMesh(columns, cell = 1) {
 		for (const c of list) {
 			const x0 = c.x - .5, x1 = c.x + .5, y0 = c.y - .5, y1 = c.y + .5, z0 = c.z - c.depth / 2, z1 = c.z + c.depth / 2;
 			const face = linear(c.color), back = linear(c.back);
+			flat = c.slot === 3;
+			wall = 0;
 			quad([
 				x0,
 				y0,
@@ -2180,7 +2243,9 @@ function voxelMesh(columns, cell = 1) {
 				0,
 				-1
 			], back);
-			for (const [a, b$1] of open(z0, z1, at.get(`${c.x - 1},${c.y}`))) quad([
+			const left = at.get(`${c.x - 1},${c.y}`), right = at.get(`${c.x + 1},${c.y}`), up = at.get(`${c.x},${c.y + 1}`), down = at.get(`${c.x},${c.y - 1}`);
+			wall = left ? 0 : .9;
+			for (const [a, b$1] of open(z0, z1, left)) quad([
 				x0,
 				y0,
 				a
@@ -2201,7 +2266,8 @@ function voxelMesh(columns, cell = 1) {
 				0,
 				0
 			], face);
-			for (const [a, b$1] of open(z0, z1, at.get(`${c.x + 1},${c.y}`))) quad([
+			wall = right ? 0 : .9;
+			for (const [a, b$1] of open(z0, z1, right)) quad([
 				x1,
 				y0,
 				b$1
@@ -2222,7 +2288,8 @@ function voxelMesh(columns, cell = 1) {
 				0,
 				0
 			], face);
-			for (const [a, b$1] of open(z0, z1, at.get(`${c.x},${c.y + 1}`))) quad([
+			wall = up ? 0 : .9;
+			for (const [a, b$1] of open(z0, z1, up)) quad([
 				x0,
 				y1,
 				b$1
@@ -2243,7 +2310,8 @@ function voxelMesh(columns, cell = 1) {
 				1,
 				0
 			], face);
-			for (const [a, b$1] of open(z0, z1, at.get(`${c.x},${c.y - 1}`))) quad([
+			wall = down ? 0 : .9;
+			for (const [a, b$1] of open(z0, z1, down)) quad([
 				x0,
 				y0,
 				a

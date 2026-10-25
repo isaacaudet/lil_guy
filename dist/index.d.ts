@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime1 from "react/jsx-runtime";
+import * as react_jsx_runtime0 from "react/jsx-runtime";
 
 //#region src/parts/art.d.ts
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -1140,7 +1140,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -1210,6 +1210,8 @@ interface VoxelColumn {
   back: string;
   slot: number;
   surface: Surface;
+  /** How far an eye or mouth stands proud of the body: left out of the mesh's shading. */
+  lift: number;
 }
 interface VoxelOptions {
   /** An item on its own: shallow columns, nothing pushed forward. */
@@ -1240,8 +1242,16 @@ interface VoxelMesh {
   min: [number, number, number];
   max: [number, number, number];
 }
-/** Columns as one mesh, `cell` units a pixel, with faces between touching columns left out. */
-declare function voxelMesh(columns: readonly VoxelColumn[], cell?: number): VoxelMesh;
+/**
+ * Columns as one mesh, `cell` units a pixel, with faces between touching
+ * columns left out. Normals come from a softened height map of the columns
+ * (eyes and mouth left out of it), so a figure shades as one domed, moulded
+ * toy with its edges rolling off round, while every pixel keeps its flat
+ * colour; `smooth: false` gives each face its own flat normal instead.
+ */
+declare function voxelMesh(columns: readonly VoxelColumn[], cell?: number, options?: {
+  smooth?: boolean;
+}): VoxelMesh;
 
 //#endregion
 export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
