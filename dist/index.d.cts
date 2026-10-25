@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime1 from "react/jsx-runtime";
+import * as react_jsx_runtime0 from "react/jsx-runtime";
 
 //#region src/parts/art.d.ts
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
@@ -85,7 +85,7 @@ declare class Canvas {
  * This file only draws them. Who owns what, and what it costs, belongs to the
  * game or the club.
  */
-type Slot = 'skin' | 'hat' | 'frame' | 'buddy';
+type Slot = 'skin' | 'hat' | 'frame' | 'buddy' | 'aura';
 /** Which game an item belongs to; `club` items are seasonal and belong to no one game. */
 type ItemGame = GameId | 'club';
 interface Item {
@@ -157,7 +157,7 @@ declare function withItems(palette: Palette, config: AvatarConfig): Palette;
  * millions of values. Everything is deterministic from the stored numbers, so
  * a copy looks the same everywhere it is drawn.
  */
-type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold';
+type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold' | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl';
 interface Owned {
   item: string;
   finish: Finish;
@@ -171,6 +171,8 @@ interface Owned {
   pins?: string[];
   /** A seasonal copy's drop day, `YYYY-MM-DD`; it is part of what the copy is. */
   date?: string;
+  /** A souvenir: the day's free capsule for finishing every game, and that day. */
+  souvenir?: string;
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -192,6 +194,10 @@ declare const GRADES: readonly [{
   readonly id: "grail";
   readonly name: "★ Grail";
   readonly color: "#E4AE39";
+}, {
+  readonly id: "aura";
+  readonly name: "★ Aura";
+  readonly color: "#19D3C5";
 }];
 type Grade = (typeof GRADES)[number];
 /**
@@ -204,6 +210,7 @@ declare const FINISHES: Record<Finish, {
   grade: number;
   odds: number;
   scuffs: [number, number];
+  aura?: number;
 }>;
 /** Condition, by scuff, in the words toy collectors use. */
 declare const WEAR: readonly [{
@@ -352,8 +359,10 @@ interface AvatarConfig {
   frame?: string;
   /** A tiny pet that sits beside him. */
   buddy?: string;
+  /** An aura round him (see ./auras). */
+  aura?: string;
   /** The owned copies behind those items, if known: finish, scuff, print. */
-  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', Owned>>;
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy' | 'aura', Owned>>;
 }
 interface RenderOptions {
   size?: number;
@@ -672,6 +681,14 @@ declare function hashNth(input: string, index: number): number;
  */
 /** One name in this many gets the Lucky colour variant. */
 declare const LUCKY_ODDS = 400;
+/**
+ * Seeds made from deal 3 on start with this. They draw from today's parts and
+ * weights; anything else (an older seed, a plain name) draws from the frozen
+ * deal 2 tables, so a guy already dealt never changes when parts are added.
+ */
+declare const DEAL_PREFIX = "3-";
+/** Which deal an input draws from. */
+declare const dealOf: (input: string) => 2 | 3;
 declare function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig;
 
 //#endregion
@@ -922,7 +939,7 @@ declare const EMOTE_UNLOCKS: {
  */
 declare function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid;
 /** The order of `AnimationFrame.slots`, from 1. */
-declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy"];
+declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy", "aura"];
 /**
  * Builds the frames of a move for the guy `input` would render as. Takes the
  * same options as `toSvgString` (game, equip, parts, palette).
@@ -1058,8 +1075,8 @@ declare const SLOTS: readonly [readonly ["h", "head", number[]], readonly ["e", 
 type LookSlot = (typeof SLOTS)[number][1];
 type Look = Partial<Record<LookSlot, number>>;
 /**
- * A random seed to draw a new player's guy from, made once and kept. 12
- * characters of base 36, about 62 bits.
+ * A random seed to draw a new player's guy from, made once and kept: the deal
+ * prefix (`3-`), then 12 characters of base 36, about 62 bits.
  */
 declare function makeSeed(): string;
 /** Which options a player may pick in a slot: every common one, and their own. */
@@ -1140,7 +1157,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -1258,5 +1275,69 @@ declare function voxelMesh(columns: readonly VoxelColumn[], cell?: number, optio
 }): VoxelMesh;
 
 //#endregion
-export { AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/auras.d.ts
+/**
+ * Auras: the top of the ladder, above a Grail. An aura is an effect drawn in
+ * the empty pixels round a guy, never over him, so it shows on a board row as
+ * well as on a card, and it moves whenever he does.
+ *
+ * About one capsule in a thousand, from any machine, is an aura instead of the
+ * machine's own item (`AURA_ODDS`). A copy of one has a finish of its own (the
+ * aura finishes in ./owned), a float and a print like any copy, and here they
+ * show: a low float is a dense aura, a battered one flickers with gaps, and the
+ * print sets its timing and which way it turns.
+ */
+/** One capsule in this many is an aura. */
+declare const AURA_ODDS: number;
+/** A cell of an aura: where, and which of its colours (0 brightest). */
+type AuraCell = [x: number, y: number, k: number];
+/** Where the guy is: `true` for each pixel he covers. */
+type Mask = boolean[][];
+interface Aura extends Pick<Item, 'id' | 'name' | 'colors'> {
+  /** The cells to light at `t` ms, round the guy in `mask`. */
+  cells: (mask: Mask, t: number, print: number) => AuraCell[];
+  /** The moment a still picture shows. */
+  still: number;
+}
+declare const AURAS: Aura[];
+/**
+ * Auras no capsule gives: the founder's Origin, a gold halo with stars going
+ * round him and a shimmer in every colour. One of one.
+ */
+declare const ONE_OF_ONE_AURAS: Aura[];
+declare const auraById: (id: string | undefined) => Aura | undefined;
+/**
+ * An aura's cells round `mask` at `t`, only in empty pixels and inside the
+ * frame, thinned by the copy's float: a Mint in Box aura is whole, a battered
+ * one flickers with gaps.
+ */
+declare function auraCells(id: string, mask: Mask, t: number, copy?: Owned): AuraCell[];
+/**
+ * The colour of one aura cell in a finish. Fade runs its sunset down the aura
+ * and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
+ */
+declare function auraColor(id: string, k: number, finish: string, x: number, y: number, t: number): string;
+
+//#endregion
+//#region src/collector.d.ts
+/**
+ * What a collector looks for in a copy beyond its grade: the small facts that
+ * make two copies of the same item in the same finish worth different things.
+ * None of them change how rare the item is; they are why one copy of it is the
+ * one people want.
+ */
+interface Note {
+  id: string;
+  /** A short badge. */
+  name: string;
+  /** One line on why it matters. */
+  why: string;
+  /** About one copy in this many has it. */
+  oneIn: number;
+}
+/** Every note that applies to a copy, most wanted first. */
+declare function collectorNotes(o: Owned): Note[];
+
+//#endregion
+export { AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, Emote, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, Finish, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TraitOdds, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

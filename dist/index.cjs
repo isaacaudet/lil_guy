@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-BGzhks5u.cjs');
+const require_paint = require('./paint-CgNCRF9n.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -295,9 +295,10 @@ const FRAME_SLOTS = [
 	"skin",
 	"hat",
 	"frame",
-	"buddy"
+	"buddy",
+	"aura"
 ];
-const slotIndex = (t) => t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
+const slotIndex = (t) => t >= require_paint.LAYER.aura ? 5 : t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette, small = false) {
@@ -524,8 +525,10 @@ function animate(input, move, options = {}) {
 	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
 	const figure = {
 		...config,
-		frame: void 0
+		frame: void 0,
+		aura: void 0
 	};
+	const wornAura = require_paint.auraById(require_paint.itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
@@ -563,7 +566,7 @@ function animate(input, move, options = {}) {
 		const colors = require_paint.paint(tall, config, palette);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? require_paint.GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
-	const copies = Object.values(config.owned ?? {}).filter(Boolean);
+	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? require_paint.GRADES[grade].color : "#FFFFFF";
 	const seed = require_paint.hash(input) % 997;
@@ -571,7 +574,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (const beat of beats) {
-		const n = grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms / n);
 			slices.push({
@@ -582,7 +585,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const frames = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -637,7 +640,14 @@ function animate(input, move, options = {}) {
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
-		if (grade >= 2) {
+		if (wornAura) {
+			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
+			for (const [x, y, k] of require_paint.auraCells(wornAura.id, mask, t$1, copy)) layer[y][x] = {
+				c: copy ? require_paint.auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k],
+				item: false,
+				slot: 5
+			};
+		} else if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
@@ -645,7 +655,7 @@ function animate(input, move, options = {}) {
 				item: false
 			};
 		}
-		if (grade >= 3) {
+		if (grade >= 3 && !wornAura) {
 			const count$1 = grade === 4 ? 4 : 3;
 			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
@@ -1444,9 +1454,8 @@ function guyOneIn(config) {
 function copyOneIn(o) {
 	const item = require_paint.itemById(o.item);
 	if (!item) return Infinity;
-	const pool = require_paint.gameItems(item.game).filter((i) => !i.free).length;
 	const f = require_paint.FINISHES[o.finish];
-	let p = 1 / pool * (f.odds / 100);
+	let p = f.aura ? require_paint.AURA_ODDS * (1 / require_paint.AURAS.length) * (f.aura / 100) : 1 / require_paint.gameItems(item.game).filter((i) => !i.free && i.slot !== "aura").length * (f.odds / 100) * (item.game === "club" ? 1 : 1 - require_paint.AURA_ODDS);
 	if (require_paint.special(o) === "Deep Blue") p *= require_paint.DEEP_BLUE_PRINTS.length / 1e3;
 	else if (require_paint.special(o)) p *= 1 / 20;
 	const [lo, hi] = f.scuffs;
@@ -1518,23 +1527,24 @@ const SLOTS = [
 		require_paint.paletteWeights
 	]
 ];
-/** The weight below which a part counts as rare and can't be picked. */
-const RARE = 2;
+/** A part rarer than this (1 in 45) counts as rare and can't be picked. */
+const RARE = 1 / 45;
 /**
-* A random seed to draw a new player's guy from, made once and kept. 12
-* characters of base 36, about 62 bits.
+* A random seed to draw a new player's guy from, made once and kept: the deal
+* prefix (`3-`), then 12 characters of base 36, about 62 bits.
 */
 function makeSeed() {
 	const bytes = new Uint8Array(8);
 	globalThis.crypto.getRandomValues(bytes);
 	let n = 0n;
 	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
-	return n.toString(36).padStart(12, "0").slice(-12);
+	return require_paint.DEAL_PREFIX + n.toString(36).padStart(12, "0").slice(-12);
 }
 /** Which options a player may pick in a slot: every common one, and their own. */
 function pickable(own, slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
-	return weights.map((w, i) => i).filter((i) => weights[i] >= RARE || i === own[slot]);
+	const total = weights.reduce((a, b$1) => a + b$1, 0);
+	return weights.map((w, i) => i).filter((i) => weights[i] / total >= RARE || i === own[slot]);
 }
 /** Whether a look only uses parts this player may pick. */
 function allowed(own, look) {
@@ -2434,9 +2444,127 @@ function voxelMesh(columns, cell = 1, options = {}) {
 }
 
 //#endregion
+//#region src/collector.ts
+/** Prints people chase for the number alone. */
+const LUCKY_PRINTS = {
+	7: "Lucky 7",
+	100: "Century",
+	404: "Not found",
+	777: "Jackpot",
+	999: "Last print"
+};
+/** Every note that applies to a copy, most wanted first. */
+function collectorNotes(o) {
+	const notes = [];
+	const [lo, hi] = require_paint.FINISHES[o.finish].scuffs, span = hi - lo;
+	const share$1 = (a, b$1) => Math.max(1e-9, (Math.min(b$1, hi) - Math.max(a, lo)) / span);
+	if (o.scuff < .001) notes.push({
+		id: "triple-zero",
+		name: "0.000 float",
+		why: "Cleaner than a 0.001. Almost no copy of its finish is this clean.",
+		oneIn: 1 / share$1(0, .001)
+	});
+	else if (o.scuff < .01) notes.push({
+		id: "double-zero",
+		name: "0.00 float",
+		why: "A float under 0.01: near spotless.",
+		oneIn: 1 / share$1(0, .01)
+	});
+	if (o.scuff > .99 && hi >= 1) notes.push({
+		id: "max-float",
+		name: "Max float",
+		why: "As worn as a copy gets. Some collect the most battered.",
+		oneIn: 1 / share$1(.99, 1)
+	});
+	for (const w of require_paint.WEAR.slice(0, -1)) if (o.scuff >= w.max && o.scuff < w.max + .003) {
+		const next = require_paint.WEAR[require_paint.WEAR.indexOf(w) + 1];
+		notes.push({
+			id: "top-of-tier",
+			name: `Best ${next.name}`,
+			why: `Within 0.003 of ${w.name}: about as clean as ${next.name} gets.`,
+			oneIn: 1 / share$1(w.max, w.max + .003)
+		});
+	}
+	const famous = require_paint.special(o);
+	if (famous) notes.push({
+		id: "famous-print",
+		name: famous,
+		why: "A famous print: the pattern itself is rare, and lifts the copy a grade.",
+		oneIn: famous === "Deep Blue" ? 200 : 20
+	});
+	if (o.print === 1) notes.push({
+		id: "print-1",
+		name: "Print #1",
+		why: "The first print of any run.",
+		oneIn: 1e3
+	});
+	else if (o.print === 0) notes.push({
+		id: "print-0",
+		name: "Print #0",
+		why: "Print zero: the one before the first.",
+		oneIn: 1e3
+	});
+	else if (LUCKY_PRINTS[o.print]) notes.push({
+		id: "lucky-print",
+		name: `#${o.print} · ${LUCKY_PRINTS[o.print]}`,
+		why: "A print number people collect for itself.",
+		oneIn: 1e3
+	});
+	else if (o.print >= 111 && o.print % 111 === 0) notes.push({
+		id: "triple-print",
+		name: `#${o.print} · Triples`,
+		why: "Three of a kind in the print number.",
+		oneIn: 1e3 / 9
+	});
+	else if ([
+		123,
+		234,
+		345,
+		456,
+		567,
+		678,
+		789,
+		321,
+		432,
+		543,
+		654,
+		765,
+		876,
+		987
+	].includes(o.print)) notes.push({
+		id: "straight-print",
+		name: `#${o.print} · Straight`,
+		why: "A run in the print number.",
+		oneIn: 1e3 / 14
+	});
+	if (o.souvenir) notes.push({
+		id: "souvenir",
+		name: "Souvenir",
+		why: `From the free capsule for finishing every game on ${o.souvenir}. It can never be opened again.`,
+		oneIn: 1
+	});
+	if (o.tally !== void 0) notes.push({
+		id: "tally",
+		name: `Tally ${o.tally.toLocaleString("en-US")}`,
+		why: "Counts the days its owner finished their games wearing it. One copy in ten has one.",
+		oneIn: 10
+	});
+	if (o.pins?.length) notes.push({
+		id: "pins",
+		name: `${o.pins.length} pin${o.pins.length === 1 ? "" : "s"}`,
+		why: "Earned in the games and stuck on for good.",
+		oneIn: 1
+	});
+	return notes.sort((a, b$1) => b$1.oneIn - a.oneIn);
+}
+
+//#endregion
+exports.AURAS = require_paint.AURAS
+exports.AURA_ODDS = require_paint.AURA_ODDS
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
+exports.DEAL_PREFIX = require_paint.DEAL_PREFIX
 exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
@@ -2457,6 +2585,7 @@ exports.LilGuy = LilGuy
 exports.LilGuyAnimated = LilGuyAnimated
 exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
+exports.ONE_OF_ONE_AURAS = require_paint.ONE_OF_ONE_AURAS
 exports.PINS = require_paint.PINS
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.SMALL_SIZE = require_paint.SMALL_SIZE
@@ -2464,13 +2593,18 @@ exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
 exports.allowed = allowed
 exports.animate = animate
+exports.auraById = require_paint.auraById
+exports.auraCells = require_paint.auraCells
+exports.auraColor = require_paint.auraColor
 exports.bodies = require_paint.bodies
 exports.cheeks = require_paint.cheeks
 exports.closeEyes = closeEyes
+exports.collectorNotes = collectorNotes
 exports.compose = require_paint.compose
 exports.composeBase = require_paint.composeBase
 exports.copyOneIn = copyOneIn
 exports.createShine = createShine
+exports.dealOf = require_paint.dealOf
 exports.decode = require_paint.decode
 exports.decodeLook = decodeLook
 exports.drawFrame = drawFrame

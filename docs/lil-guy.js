@@ -211,6 +211,159 @@ const shadeWeights = [
 /** The night colourways (the last six) are half as common as the rest. */
 const paletteWeights = [...new Array(32).fill(2), ...new Array(6).fill(1)];
 /**
+* The deal before 3 (seeds without the `3-` prefix, and plain names). Frozen:
+* every guy already dealt from one of these keeps his parts, so these lists
+* never change, not even to add a part. New parts and new weights go in the
+* tables above, which only seeds made by `makeSeed` from deal 3 on read.
+*/
+const DEAL_2 = {
+	head: [
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		2,
+		2,
+		3,
+		2,
+		2,
+		4,
+		3,
+		1,
+		1,
+		1,
+		2,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1
+	],
+	eyes: [
+		10,
+		10,
+		8,
+		8,
+		4,
+		6,
+		4,
+		2,
+		4,
+		6,
+		4,
+		2,
+		2,
+		3,
+		2,
+		1,
+		1
+	],
+	mouth: [
+		10,
+		8,
+		6,
+		6,
+		4,
+		4,
+		4,
+		2,
+		2,
+		6,
+		2,
+		4,
+		4,
+		3,
+		2,
+		2
+	],
+	cheeks: [
+		10,
+		6,
+		4,
+		2,
+		4,
+		2,
+		2,
+		1,
+		3,
+		2,
+		3,
+		2,
+		1,
+		1
+	],
+	hair: [
+		9,
+		4,
+		4,
+		2,
+		2,
+		1,
+		2,
+		4,
+		2,
+		2,
+		2,
+		1,
+		1,
+		2,
+		1,
+		2,
+		3,
+		2,
+		2,
+		2,
+		2,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		2,
+		2
+	],
+	body: [
+		9,
+		2,
+		2,
+		2,
+		2,
+		1,
+		1,
+		2,
+		2,
+		2,
+		2,
+		1,
+		1,
+		1
+	],
+	accessory: [
+		12,
+		2,
+		2,
+		2,
+		1,
+		2,
+		1,
+		1,
+		1,
+		1,
+		2,
+		2,
+		2,
+		2
+	],
+	palette: [...new Array(32).fill(2), ...new Array(6).fill(1)]
+};
+/**
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
 */
@@ -236,21 +389,40 @@ function weightedPick(weights, hashValue) {
 */
 /** One name in this many gets the Lucky colour variant. */
 const LUCKY_ODDS = 400;
+/**
+* Seeds made from deal 3 on start with this. They draw from today's parts and
+* weights; anything else (an older seed, a plain name) draws from the frozen
+* deal 2 tables, so a guy already dealt never changes when parts are added.
+*/
+const DEAL_PREFIX = "3-";
+/** Which deal an input draws from. */
+const dealOf = (input) => input.startsWith(DEAL_PREFIX) ? 3 : 2;
+const DEAL_3 = {
+	head: headWeights,
+	eyes: eyeWeights,
+	mouth: mouthWeights,
+	cheeks: cheekWeights,
+	hair: hairWeights,
+	body: bodyWeights,
+	accessory: accessoryWeights,
+	palette: paletteWeights
+};
 function resolve(input, overrides) {
 	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
+	const w = dealOf(input) === 3 ? DEAL_3 : DEAL_2;
 	return {
-		head: overrides?.head ?? pick(0, headWeights),
-		eyes: overrides?.eyes ?? pick(1, eyeWeights),
-		mouth: overrides?.mouth ?? pick(2, mouthWeights),
-		hair: overrides?.hair ?? pick(3, hairWeights),
-		body: overrides?.body ?? pick(4, bodyWeights),
-		accessory: overrides?.accessory ?? pick(5, accessoryWeights),
-		palette: pick(6, paletteWeights),
+		head: overrides?.head ?? pick(0, w.head),
+		eyes: overrides?.eyes ?? pick(1, w.eyes),
+		mouth: overrides?.mouth ?? pick(2, w.mouth),
+		hair: overrides?.hair ?? pick(3, w.hair),
+		body: overrides?.body ?? pick(4, w.body),
+		accessory: overrides?.accessory ?? pick(5, w.accessory),
+		palette: pick(6, w.palette),
 		rotation: overrides?.rotation ?? hashNth(input, 7) % 9,
 		flip: overrides?.flip ?? hashNth(input, 8) % 2 === 1,
 		shade: overrides?.shade ?? pick(9, shadeWeights),
 		feet: overrides?.feet ?? pick(10, footWeights),
-		cheeks: overrides?.cheeks ?? pick(11, cheekWeights),
+		cheeks: overrides?.cheeks ?? pick(11, w.cheeks),
 		arms: overrides?.arms ?? pick(12, armWeights),
 		lucky: overrides?.lucky ?? hashNth(input, 13) % LUCKY_ODDS === 0
 	};
@@ -334,7 +506,8 @@ const LAYER = {
 	skin: 20,
 	hat: 30,
 	frame: 40,
-	buddy: 50
+	buddy: 50,
+	aura: 60
 };
 function stamp(rows) {
 	return rows.map((row) => [...row].map((ch) => {
@@ -1667,6 +1840,643 @@ var Canvas = class {
 };
 
 //#endregion
+//#region src/auras.ts
+/**
+* Auras: the top of the ladder, above a Grail. An aura is an effect drawn in
+* the empty pixels round a guy, never over him, so it shows on a board row as
+* well as on a card, and it moves whenever he does.
+*
+* About one capsule in a thousand, from any machine, is an aura instead of the
+* machine's own item (`AURA_ODDS`). A copy of one has a finish of its own (the
+* aura finishes in ./owned), a float and a print like any copy, and here they
+* show: a low float is a dense aura, a battered one flickers with gaps, and the
+* print sets its timing and which way it turns.
+*/
+/** One capsule in this many is an aura. */
+const AURA_ODDS = 1 / 1e3;
+/** A well-mixed number in [0, 1) from integers. */
+function noise(...n) {
+	let h = 2654435769;
+	for (const v of n) {
+		h = Math.imul(h ^ v, 2246822507);
+		h = Math.imul(h ^ h >>> 13, 3266489909);
+		h ^= h >>> 16;
+	}
+	return (h >>> 0) / 4294967296;
+}
+/** The guy's extent, and the top of each column. */
+function shape(mask) {
+	const h = mask.length, w = mask[0].length;
+	let top = h, bottom = -1, left = w, right = -1;
+	const tops = new Array(w).fill(-1);
+	mask.forEach((row, y) => row.forEach((on$1, x) => {
+		if (!on$1) return;
+		top = Math.min(top, y);
+		bottom = Math.max(bottom, y);
+		left = Math.min(left, x);
+		right = Math.max(right, x);
+		if (tops[x] < 0) tops[x] = y;
+	}));
+	return {
+		w,
+		h,
+		top,
+		bottom,
+		left,
+		right,
+		tops,
+		cx: (left + right) / 2,
+		cy: (top + bottom) / 2
+	};
+}
+/** Every empty cell within `reach` of the guy (by steps), with how far it is. */
+function ring(mask, reach) {
+	const h = mask.length, w = mask[0].length, out = [];
+	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+		if (mask[y][x]) continue;
+		let d = Infinity;
+		for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (mask[y + dy]?.[x + dx]) d = Math.min(d, Math.max(Math.abs(dx), Math.abs(dy)));
+		if (d <= reach) out.push([
+			x,
+			y,
+			d
+		]);
+	}
+	return out;
+}
+const plus = (x, y, k, arm = 1) => [
+	[
+		x,
+		y,
+		0
+	],
+	[
+		x - arm,
+		y,
+		k
+	],
+	[
+		x + arm,
+		y,
+		k
+	],
+	[
+		x,
+		y - arm,
+		k
+	],
+	[
+		x,
+		y + arm,
+		k
+	]
+];
+const wrap = (v, n) => (v % n + n) % n;
+const AURAS = [
+	{
+		id: "aura.flames",
+		name: "Flames",
+		colors: [
+			"#FFE27A",
+			"#FF8A2B",
+			"#E5484D"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), step = Math.floor(t / 110) + print, out = [];
+			s.tops.forEach((top, x) => {
+				if (top < 0) return;
+				const tall = 1 + Math.floor(noise(x, step) * 3.2);
+				for (let k = 1; k <= tall; k++) out.push([
+					x,
+					top - k,
+					Math.min(2, k - 1)
+				]);
+			});
+			mask.forEach((row, y) => row.forEach((on$1, x) => {
+				if (on$1) {
+					for (const dx of [-1, 1]) if (!row[x + dx] && noise(x + dx, y, step) > .86) out.push([
+						x + dx,
+						y - 1,
+						1
+					]);
+				}
+			}));
+			return out;
+		}
+	},
+	{
+		id: "aura.orbit",
+		name: "Orbit",
+		colors: [
+			"#FFFFFF",
+			"#FFD45C",
+			"#C98A1A"
+		],
+		still: 900,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [], turn = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+			for (let i = 0; i < 3; i++) {
+				const a = turn * t / 560 + i * 2.094 + print;
+				out.push(...plus(Math.round(s.w / 2 - .5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 1));
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.halo",
+		name: "Halo",
+		colors: [
+			"#FFFFFF",
+			"#FFD45C",
+			"#B97A10"
+		],
+		still: 0,
+		cells: (mask, t, print) => {
+			const s = shape(mask), y = Math.max(1, s.top - 2 - Math.floor((t + print * 7) / 400) % 2), x0 = Math.round(s.cx) - 3, glint = Math.floor(t / 160) % 8, out = [];
+			for (let x = x0; x <= x0 + 7; x++) out.push([
+				x,
+				y,
+				x - x0 === glint || x - x0 === glint + 1 ? 0 : 1
+			]);
+			for (let x = x0 + 1; x <= x0 + 6; x++) out.push([
+				x,
+				y + 1,
+				2
+			]);
+			return out;
+		}
+	},
+	{
+		id: "aura.sparkles",
+		name: "Sparkles",
+		colors: [
+			"#FFFFFF",
+			"#FFF3B0",
+			"#8FD8FF"
+		],
+		still: 500,
+		cells: (mask, t, print) => {
+			const near = ring(mask, 3), out = [];
+			for (let i = 0; i < 5; i++) {
+				const life = Math.floor((t + i * 173 + print * 11) / 520), phase = (t + i * 173 + print * 11) % 520 / 520;
+				const [x, y] = near[Math.floor(noise(i, life, print) * near.length)] ?? [0, 0];
+				out.push(...phase < .35 || phase > .85 ? [[
+					x,
+					y,
+					0
+				]] : plus(x, y, phase < .6 ? 1 : 2));
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.hearts",
+		name: "Hearts",
+		colors: [
+			"#FFC2D4",
+			"#FF5C8A",
+			"#C2335F"
+		],
+		still: 700,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [], lanes = [
+				0,
+				s.w - 3,
+				Math.round(s.w / 2) - 1
+			];
+			for (let i = 0; i < 3; i++) {
+				const span = i === 2 ? Math.max(3, s.top) : s.cy + 1, y = Math.round(span - wrap(Math.floor((t + i * 520 + print * 13) / 150), span + 3));
+				const x = lanes[i];
+				out.push([
+					x,
+					y,
+					1
+				], [
+					x + 2,
+					y,
+					1
+				], [
+					x,
+					y + 1,
+					1
+				], [
+					x + 1,
+					y + 1,
+					0
+				], [
+					x + 2,
+					y + 1,
+					1
+				], [
+					x + 1,
+					y + 2,
+					2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.bubbles",
+		name: "Bubbles",
+		colors: [
+			"#FFFFFF",
+			"#A9E4FF",
+			"#3E9BE0"
+		],
+		still: 400,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 4; i++) {
+				const x = [
+					0,
+					s.w - 3,
+					1,
+					s.w - 4
+				][i], y = s.h - 1 - wrap(Math.floor((t + i * 470 + print * 9) / 120), s.h + 3);
+				const big = i % 2 === 0;
+				if (big) out.push([
+					x + 1,
+					y,
+					1
+				], [
+					x,
+					y + 1,
+					2
+				], [
+					x + 2,
+					y + 1,
+					2
+				], [
+					x + 1,
+					y + 2,
+					1
+				], [
+					x + 1,
+					y + 1,
+					-1
+				]);
+				else out.push([
+					x,
+					y,
+					1
+				], [
+					x + 1,
+					y,
+					0
+				], [
+					x,
+					y + 1,
+					2
+				], [
+					x + 1,
+					y + 1,
+					1
+				]);
+			}
+			return out.filter((c) => c[2] >= 0);
+		}
+	},
+	{
+		id: "aura.storm",
+		name: "Rain cloud",
+		colors: [
+			"#F4F6FB",
+			"#B9C3D6",
+			"#4F8BE8"
+		],
+		still: 600,
+		cells: (mask, t, print) => {
+			const s = shape(mask), cy = Math.max(1, s.top - 3), x0 = Math.round(s.cx) - 3, out = [];
+			for (let x = x0 + 1; x <= x0 + 2; x++) out.push([
+				x,
+				cy - 2,
+				0
+			]);
+			for (let x = x0; x <= x0 + 5; x++) out.push([
+				x,
+				cy - 1,
+				0
+			]);
+			for (let x = x0 - 1; x <= x0 + 7; x++) out.push([
+				x,
+				cy,
+				1
+			]);
+			for (let i = 0; i < 4; i++) {
+				const x = x0 + 1 + (i * 2 + print) % 5, fall = wrap(Math.floor((t + i * 230) / 90), s.h - cy);
+				out.push([
+					x,
+					cy + 1 + fall,
+					2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.lightning",
+		name: "Lightning",
+		colors: [
+			"#FFFFFF",
+			"#8FD8FF",
+			"#7C5CFF"
+		],
+		still: 200,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [], beat = Math.floor((t + print * 31) / 110), flash = beat % 5;
+			if (flash === 4) return out;
+			for (const [side, x0] of [[0, 1], [1, s.w - 2]]) {
+				if ((beat + side) % 3 === 2) continue;
+				let x = x0;
+				for (let y = 0; y <= s.cy; y++) {
+					if (mask[y]?.[x]) break;
+					out.push([
+						x,
+						y,
+						flash === 0 ? 0 : 1
+					]);
+					if ((y + beat + side) % 3 === 0) {
+						x += side ? -1 : 1;
+						out.push([
+							x,
+							y,
+							2
+						]);
+					}
+				}
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.notes",
+		name: "Music",
+		colors: [
+			"#FFFFFF",
+			"#B9A4FF",
+			"#6A4BD8"
+		],
+		still: 500,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 2; i++) {
+				const y = Math.round(s.cy - wrap(Math.floor((t + i * 700 + print * 17) / 170), s.cy + 4));
+				const x = (i ? s.w - 4 : 0) + Math.floor(t / 340 + i) % 2;
+				out.push([
+					x + 1,
+					y,
+					1
+				], [
+					x + 2,
+					y,
+					1
+				], [
+					x + 1,
+					y + 1,
+					1
+				], [
+					x + 1,
+					y + 2,
+					1
+				], [
+					x,
+					y + 3,
+					2
+				], [
+					x + 1,
+					y + 3,
+					2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.snow",
+		name: "Snowfall",
+		colors: [
+			"#FFFFFF",
+			"#DCEEFF",
+			"#8FBCE8"
+		],
+		still: 800,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 12; i++) {
+				const fall = wrap(Math.floor((t + i * 311 + print * 7) / 170), s.h), x = wrap(Math.round(noise(i, print) * s.w + Math.sin((t + i * 400) / 600) * 1.2), s.w);
+				out.push([
+					x,
+					fall,
+					i % 3 === 0 ? 0 : i % 3
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.petals",
+		name: "Petals",
+		colors: [
+			"#FFE4EE",
+			"#FF9EC2",
+			"#E0558E"
+		],
+		still: 800,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 8; i++) {
+				const step = Math.floor((t + i * 377 + print * 5) / 150), y = wrap(step, s.h + 2) - 1, x = wrap(Math.round(noise(i, print) * s.w) - Math.floor(step / 2), s.w);
+				out.push([
+					x,
+					y,
+					1
+				], [
+					x + 1,
+					y + i % 2,
+					i % 2 ? 2 : 0
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.galaxy",
+		name: "Galaxy",
+		colors: [
+			"#FFFFFF",
+			"#7C5CFF",
+			"#2A1D5C"
+		],
+		still: 600,
+		cells: (mask, t, print) => {
+			const step = Math.floor(t / 200);
+			return ring(mask, 2).map(([x, y, d]) => [
+				x,
+				y,
+				noise(x, y, step, print) > .9 ? 0 : d === 1 ? 1 : 2
+			]);
+		}
+	},
+	{
+		id: "aura.rainbow",
+		name: "Rainbow",
+		colors: [
+			"#FF6B78",
+			"#FFB347",
+			"#FFE27A",
+			"#7DD87A",
+			"#5FB4FF",
+			"#B98CFF"
+		],
+		still: 0,
+		cells: (mask, t, print) => {
+			const s = shape(mask), cx = s.w / 2 - .5, cy = s.cy + 2, top = Math.max(0, s.top - 4), shift$1 = Math.floor(t / 200) + print, out = [];
+			for (let y = top; y < cy; y++) for (let x = 0; x < s.w; x++) {
+				const d = Math.hypot((x - cx) / (s.w / 2), (y - cy) / (cy - top));
+				if (d >= .74 && d <= 1) out.push([
+					x,
+					y,
+					wrap(Math.floor((1 - d) / .087) + shift$1, 6)
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.glitch",
+		name: "Glitch",
+		colors: [
+			"#FFFFFF",
+			"#2EF2FF",
+			"#FF3DCB"
+		],
+		still: 260,
+		cells: (mask, t, print) => {
+			const step = Math.floor((t + print * 13) / 120), out = [];
+			mask.forEach((row, y) => {
+				if (noise(y, step, print) < .55) return;
+				const shove = noise(y, step, 2) < .5 ? 1 : 2;
+				row.forEach((on$1, x) => {
+					if (!on$1) return;
+					if (!row[x - 1]) out.push([
+						x - shove,
+						y,
+						1
+					]);
+					if (!row[x + 1]) out.push([
+						x + shove,
+						y,
+						2
+					]);
+				});
+			});
+			return out;
+		}
+	}
+];
+/**
+* Auras no capsule gives: the founder's Origin, a gold halo with stars going
+* round him and a shimmer in every colour. One of one.
+*/
+const ONE_OF_ONE_AURAS = [{
+	id: "aura.origin",
+	name: "Origin",
+	colors: [
+		"#FFFFFF",
+		"#FFD45C",
+		"#B97A10"
+	],
+	still: 900,
+	cells: (mask, t, print) => [...AURAS.find((a) => a.id === "aura.halo").cells(mask, t, print), ...AURAS.find((a) => a.id === "aura.orbit").cells(mask, t, print)]
+}];
+const byId$1 = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map((a) => [a.id, a]));
+const auraById = (id) => id ? byId$1.get(id) : void 0;
+/**
+* An aura's cells round `mask` at `t`, only in empty pixels and inside the
+* frame, thinned by the copy's float: a Mint in Box aura is whole, a battered
+* one flickers with gaps.
+*/
+function auraCells(id, mask, t, copy) {
+	const aura = auraById(id);
+	if (!aura) return [];
+	const h = mask.length, w = mask[0].length, print = copy?.print ?? 0, scuff = copy?.scuff ?? 0;
+	const seen = new Set(), step = Math.floor(t / 150);
+	return aura.cells(mask, t, print).map(([x, y, k]) => [
+		Math.round(x),
+		Math.round(y),
+		k
+	]).filter(([x, y]) => {
+		if (x < 0 || y < 0 || x >= w || y >= h || mask[y][x] || seen.has(y * w + x)) return false;
+		seen.add(y * w + x);
+		return noise(x, y, step, print, 7) >= scuff * .45;
+	});
+}
+/** Each aura finish's three colours, brightest first; Classic keeps the aura's own. */
+const RAMPS = {
+	frost: [
+		"#FFFFFF",
+		"#BFE8FF",
+		"#6FB4F2"
+	],
+	toxic: [
+		"#F2FF9A",
+		"#7DFF4F",
+		"#1FA84A"
+	],
+	shadow: [
+		"#D9CCFF",
+		"#5B3FA8",
+		"#1C1233"
+	],
+	sapphire: [
+		"#D6E6FF",
+		"#2F6BFF",
+		"#0B2A8A"
+	],
+	ruby: [
+		"#FFD6DF",
+		"#E0204F",
+		"#6E0622"
+	],
+	pearl: [
+		"#EFE6FF",
+		"#6A54B8",
+		"#140F2A"
+	]
+};
+const FADE = [
+	"#FFE07A",
+	"#FF6FB5",
+	"#7C5CFF"
+];
+const hsl = (h, s, l) => {
+	const f = (n) => {
+		const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+		return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0");
+	};
+	return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+};
+/**
+* The colour of one aura cell in a finish. Fade runs its sunset down the aura
+* and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
+*/
+function auraColor(id, k, finish, x, y, t) {
+	const aura = auraById(id);
+	if (!aura) return "#FFFFFF";
+	if (finish === "fade") {
+		const i = wrap(Math.floor((y + x * .5 + t / 140) / 2), 3);
+		return k === 0 ? "#FFFFFF" : FADE[(i + k) % 3];
+	}
+	const ramp = RAMPS[finish];
+	if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
+	const glint = (finish === "sapphire" || finish === "ruby" || finish === "pearl") && noise(x, y, Math.floor(t / 180), 9) > .86;
+	if (glint) return finish === "pearl" ? hsl(wrap(x * 40 + y * 25 + t / 6, 360), .85, .7) : ramp[0];
+	return ramp[Math.min(2, k % 3)];
+}
+
+//#endregion
 //#region src/pins.ts
 const PINS = [
 	{
@@ -1858,6 +2668,11 @@ const GRADES = [
 		id: "grail",
 		name: "★ Grail",
 		color: "#E4AE39"
+	},
+	{
+		id: "aura",
+		name: "★ Aura",
+		color: "#19D3C5"
 	}
 ];
 /**
@@ -1907,6 +2722,62 @@ const FINISHES = {
 		grade: 4,
 		odds: .25,
 		scuffs: [0, .08]
+	},
+	"classic": {
+		name: "Classic",
+		grade: 5,
+		odds: 0,
+		aura: 50,
+		scuffs: [0, 1]
+	},
+	"fade": {
+		name: "Fade",
+		grade: 5,
+		odds: 0,
+		aura: 22,
+		scuffs: [0, 1]
+	},
+	"frost": {
+		name: "Frost",
+		grade: 5,
+		odds: 0,
+		aura: 12,
+		scuffs: [0, 1]
+	},
+	"toxic": {
+		name: "Toxic",
+		grade: 5,
+		odds: 0,
+		aura: 8,
+		scuffs: [0, 1]
+	},
+	"shadow": {
+		name: "Shadow",
+		grade: 5,
+		odds: 0,
+		aura: 5,
+		scuffs: [0, 1]
+	},
+	"sapphire": {
+		name: "Deep sea · Sapphire",
+		grade: 5,
+		odds: 0,
+		aura: 1.5,
+		scuffs: [0, 1]
+	},
+	"ruby": {
+		name: "Deep sea · Ruby",
+		grade: 5,
+		odds: 0,
+		aura: 1.2,
+		scuffs: [0, 1]
+	},
+	"pearl": {
+		name: "Deep sea · Black pearl",
+		grade: 5,
+		odds: 0,
+		aura: .3,
+		scuffs: [0, 1]
 	}
 };
 /** Condition, by scuff, in the words toy collectors use. */
@@ -2016,13 +2887,15 @@ function special(o) {
 	return void 0;
 }
 function gradeOf(o) {
+	if (FINISHES[o.finish].grade === 5) return GRADES[5];
 	return GRADES[Math.min(4, FINISHES[o.finish].grade + (special(o) ? 1 : 0))];
 }
 /** The name as it would show on an inventory card. */
 function nameOf(o) {
 	const item = itemById(o.item);
 	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
-	const tally = o.tally !== void 0 ? "Tallied " : "";
+	const tally = (o.souvenir ? "Souvenir " : "") + (o.tally !== void 0 ? "Tallied " : "");
+	if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
 	if (o.finish === "plain") return tally + base;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
 	return `${tally}${base} | ${look}`;
@@ -2042,6 +2915,7 @@ function encode(o) {
 	if (o.tally !== void 0) parts.push(`t${o.tally}`);
 	if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join("+")}`);
 	if (o.date) parts.push(`d${o.date}`);
+	if (o.souvenir) parts.push(`s${o.souvenir}`);
 	return parts.join("~");
 }
 function decode(s) {
@@ -2058,6 +2932,7 @@ function decode(s) {
 	for (const part of extra) {
 		if (part.startsWith("t") && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
 		if (part.startsWith("d") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
+		if (part.startsWith("s") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
 		if (part.startsWith("p")) {
 			const pins = part.slice(1).split("+").filter((id) => pinById(id)).slice(0, MAX_PINS);
 			if (pins.length) o.pins = pins;
@@ -2091,7 +2966,30 @@ function starter(name, game) {
 * drop time and stored with the copy — never from anything a player picks.
 */
 function roll(seed, game) {
+	if (unit(`${seed}|aura`) < AURA_ODDS) return rollAura(seed);
 	return rollFrom(gameItems(game).filter((i) => !i.free), seed);
+}
+/** An aura, from any machine: which one, its finish by share, any float, a print and maybe a tally. */
+function rollAura(seed) {
+	const aura = AURAS[hash(`${seed}|which`) % AURAS.length];
+	let r = unit(`${seed}|finish`) * 100;
+	let finish = "classic";
+	for (const [id, f] of Object.entries(FINISHES)) {
+		if (!f.aura) continue;
+		r -= f.aura;
+		if (r < 0) {
+			finish = id;
+			break;
+		}
+	}
+	const o = {
+		item: aura.id,
+		finish,
+		scuff: Math.round(unit(`${seed}|float`) * 1e7) / 1e7,
+		print: hash(`${seed}|pattern`) % 1e3
+	};
+	if (unit(`${seed}|stattrak`) < .1) o.tally = 0;
+	return o;
 }
 /**
 * A seasonal drop: one of the hats in season on `day` (`YYYY-MM-DD`), rolled
@@ -2229,6 +3127,14 @@ const PAINT = {
 			160
 		], .22);
 	},
+	"classic": (_x, _y, _l, _p, original) => original,
+	"fade": (_x, _y, _l, _p, original) => original,
+	"frost": (_x, _y, _l, _p, original) => original,
+	"toxic": (_x, _y, _l, _p, original) => original,
+	"shadow": (_x, _y, _l, _p, original) => original,
+	"sapphire": (_x, _y, _l, _p, original) => original,
+	"ruby": (_x, _y, _l, _p, original) => original,
+	"pearl": (_x, _y, _l, _p, original) => original,
 	"gold": (x, y, l) => {
 		if ((x + y) % 6 === 0 && l > .5) return rgb$1("#FFFBE6");
 		return l > .75 ? rgb$1("#FFF1B0") : l > .5 ? rgb$1("#F2C230") : l > .3 ? rgb$1("#C8901E") : rgb$1("#7A5212");
@@ -4054,6 +4960,13 @@ const items = [
 	...seasonal.map((i) => ({
 		...i,
 		slot: "hat"
+	})),
+	...[...AURAS, ...ONE_OF_ONE_AURAS].map(({ id, name, colors }) => ({
+		id,
+		name,
+		colors,
+		game: "club",
+		slot: "aura"
 	}))
 ];
 const byId = new Map(items.map((i) => [i.id, i]));
@@ -4121,7 +5034,8 @@ function withItems(palette, config) {
 		"skin",
 		"hat",
 		"frame",
-		"buddy"
+		"buddy",
+		"aura"
 	]) {
 		const item = itemById(config[slot]);
 		if (!item) continue;
@@ -4333,6 +5247,11 @@ function compose(config) {
 	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 	if (config.flip) for (const row of c.grid) row.reverse();
 	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
+	const aura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
+	if (aura) {
+		const mask = c.grid.map((row) => row.map(Boolean));
+		for (const [x, y, k] of auraCells(aura.id, mask, aura.still, config.owned?.aura)) c.grid[y][x] = LAYER.aura + k;
+	}
 	if (frame?.slot === "frame") {
 		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill(x, y) - 1;
 		const o = worn("frame");
@@ -4801,13 +5720,15 @@ function paletteOf(config) {
 */
 function paint(grid, config, palette, small = false) {
 	const state = { glint: false };
-	const slotOf$1 = (t) => t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+	const slotOf$1 = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+	const aura = auraById(config.aura);
 	if (small) ({grid, palette} = forSmall(grid, palette));
 	return grid.map((row, y) => row.map((token, x) => {
 		const color = token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
+		if (slot === "aura") return aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color;
 		return copy ? paintCell(color, x, y, copy, state) : color;
 	}));
 }
@@ -5158,9 +6079,10 @@ const FRAME_SLOTS = [
 	"skin",
 	"hat",
 	"frame",
-	"buddy"
+	"buddy",
+	"aura"
 ];
-const slotIndex = (t) => t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
+const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette, small = false) {
@@ -5387,8 +6309,10 @@ function animate(input, move, options = {}) {
 	const palette = withItems(options.palette ?? paletteOf(config), config);
 	const figure = {
 		...config,
-		frame: void 0
+		frame: void 0,
+		aura: void 0
 	};
+	const wornAura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
@@ -5426,7 +6350,7 @@ function animate(input, move, options = {}) {
 		const colors = paint(tall, config, palette);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
-	const copies = Object.values(config.owned ?? {}).filter(Boolean);
+	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => GRADES.findIndex((g) => g.id === gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? GRADES[grade].color : "#FFFFFF";
 	const seed = hash(input) % 997;
@@ -5434,7 +6358,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (const beat of beats) {
-		const n = grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms / n);
 			slices.push({
@@ -5445,7 +6369,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const frames$1 = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -5500,15 +6424,22 @@ function animate(input, move, options = {}) {
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
-		if (grade >= 2) {
+		if (wornAura) {
+			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
+			for (const [x, y, k] of auraCells(wornAura.id, mask, t$1, copy)) layer[y][x] = {
+				c: copy ? auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k],
+				item: false,
+				slot: 5
+			};
+		} else if (grade >= 2) {
 			const on$1 = Math.floor((t$1 + seed) / 320) % 2 === 0;
-			const ring = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix(gradeColor, "#000000", .35);
+			const ring$1 = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
-				c: ring,
+				c: ring$1,
 				item: false
 			};
 		}
-		if (grade >= 3) {
+		if (grade >= 3 && !wornAura) {
 			const count$1 = grade === 4 ? 4 : 3;
 			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
@@ -5816,9 +6747,8 @@ function guyOneIn(config) {
 function copyOneIn(o) {
 	const item = itemById(o.item);
 	if (!item) return Infinity;
-	const pool = gameItems(item.game).filter((i) => !i.free).length;
 	const f = FINISHES[o.finish];
-	let p = 1 / pool * (f.odds / 100);
+	let p = f.aura ? AURA_ODDS * (1 / AURAS.length) * (f.aura / 100) : 1 / gameItems(item.game).filter((i) => !i.free && i.slot !== "aura").length * (f.odds / 100) * (item.game === "club" ? 1 : 1 - AURA_ODDS);
 	if (special(o) === "Deep Blue") p *= DEEP_BLUE_PRINTS.length / 1e3;
 	else if (special(o)) p *= 1 / 20;
 	const [lo, hi] = f.scuffs;
@@ -5890,23 +6820,24 @@ const SLOTS = [
 		paletteWeights
 	]
 ];
-/** The weight below which a part counts as rare and can't be picked. */
-const RARE = 2;
+/** A part rarer than this (1 in 45) counts as rare and can't be picked. */
+const RARE = 1 / 45;
 /**
-* A random seed to draw a new player's guy from, made once and kept. 12
-* characters of base 36, about 62 bits.
+* A random seed to draw a new player's guy from, made once and kept: the deal
+* prefix (`3-`), then 12 characters of base 36, about 62 bits.
 */
 function makeSeed() {
 	const bytes = new Uint8Array(8);
 	globalThis.crypto.getRandomValues(bytes);
 	let n = 0n;
 	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
-	return n.toString(36).padStart(12, "0").slice(-12);
+	return DEAL_PREFIX + n.toString(36).padStart(12, "0").slice(-12);
 }
 /** Which options a player may pick in a slot: every common one, and their own. */
 function pickable(own$1, slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
-	return weights.map((w, i) => i).filter((i) => weights[i] >= RARE || i === own$1[slot]);
+	const total = weights.reduce((a, b$1) => a + b$1, 0);
+	return weights.map((w, i) => i).filter((i) => weights[i] / total >= RARE || i === own$1[slot]);
 }
 /** Whether a look only uses parts this player may pick. */
 function allowed(own$1, look) {
@@ -6758,6 +7689,124 @@ function voxelMesh(columns, cell = 1, options = {}) {
 }
 
 //#endregion
+//#region src/collector.ts
+/** Prints people chase for the number alone. */
+const LUCKY_PRINTS = {
+	7: "Lucky 7",
+	100: "Century",
+	404: "Not found",
+	777: "Jackpot",
+	999: "Last print"
+};
+/** Every note that applies to a copy, most wanted first. */
+function collectorNotes(o) {
+	const notes = [];
+	const [lo, hi] = FINISHES[o.finish].scuffs, span = hi - lo;
+	const share$1 = (a, b$1) => Math.max(1e-9, (Math.min(b$1, hi) - Math.max(a, lo)) / span);
+	if (o.scuff < .001) notes.push({
+		id: "triple-zero",
+		name: "0.000 float",
+		why: "Cleaner than a 0.001. Almost no copy of its finish is this clean.",
+		oneIn: 1 / share$1(0, .001)
+	});
+	else if (o.scuff < .01) notes.push({
+		id: "double-zero",
+		name: "0.00 float",
+		why: "A float under 0.01: near spotless.",
+		oneIn: 1 / share$1(0, .01)
+	});
+	if (o.scuff > .99 && hi >= 1) notes.push({
+		id: "max-float",
+		name: "Max float",
+		why: "As worn as a copy gets. Some collect the most battered.",
+		oneIn: 1 / share$1(.99, 1)
+	});
+	for (const w of WEAR.slice(0, -1)) if (o.scuff >= w.max && o.scuff < w.max + .003) {
+		const next = WEAR[WEAR.indexOf(w) + 1];
+		notes.push({
+			id: "top-of-tier",
+			name: `Best ${next.name}`,
+			why: `Within 0.003 of ${w.name}: about as clean as ${next.name} gets.`,
+			oneIn: 1 / share$1(w.max, w.max + .003)
+		});
+	}
+	const famous = special(o);
+	if (famous) notes.push({
+		id: "famous-print",
+		name: famous,
+		why: "A famous print: the pattern itself is rare, and lifts the copy a grade.",
+		oneIn: famous === "Deep Blue" ? 200 : 20
+	});
+	if (o.print === 1) notes.push({
+		id: "print-1",
+		name: "Print #1",
+		why: "The first print of any run.",
+		oneIn: 1e3
+	});
+	else if (o.print === 0) notes.push({
+		id: "print-0",
+		name: "Print #0",
+		why: "Print zero: the one before the first.",
+		oneIn: 1e3
+	});
+	else if (LUCKY_PRINTS[o.print]) notes.push({
+		id: "lucky-print",
+		name: `#${o.print} · ${LUCKY_PRINTS[o.print]}`,
+		why: "A print number people collect for itself.",
+		oneIn: 1e3
+	});
+	else if (o.print >= 111 && o.print % 111 === 0) notes.push({
+		id: "triple-print",
+		name: `#${o.print} · Triples`,
+		why: "Three of a kind in the print number.",
+		oneIn: 1e3 / 9
+	});
+	else if ([
+		123,
+		234,
+		345,
+		456,
+		567,
+		678,
+		789,
+		321,
+		432,
+		543,
+		654,
+		765,
+		876,
+		987
+	].includes(o.print)) notes.push({
+		id: "straight-print",
+		name: `#${o.print} · Straight`,
+		why: "A run in the print number.",
+		oneIn: 1e3 / 14
+	});
+	if (o.souvenir) notes.push({
+		id: "souvenir",
+		name: "Souvenir",
+		why: `From the free capsule for finishing every game on ${o.souvenir}. It can never be opened again.`,
+		oneIn: 1
+	});
+	if (o.tally !== void 0) notes.push({
+		id: "tally",
+		name: `Tally ${o.tally.toLocaleString("en-US")}`,
+		why: "Counts the days its owner finished their games wearing it. One copy in ten has one.",
+		oneIn: 10
+	});
+	if (o.pins?.length) notes.push({
+		id: "pins",
+		name: `${o.pins.length} pin${o.pins.length === 1 ? "" : "s"}`,
+		why: "Earned in the games and stuck on for good.",
+		oneIn: 1
+	});
+	return notes.sort((a, b$1) => b$1.oneIn - a.oneIn);
+}
+
+//#endregion
+exports.AURAS = AURAS
+exports.AURA_ODDS = AURA_ODDS
+exports.DEAL_PREFIX = DEAL_PREFIX
 exports.DEEP_BLUE_PRINTS = DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
@@ -6776,6 +7825,7 @@ exports.HEADROOM = HEADROOM
 exports.LUCKY_ODDS = LUCKY_ODDS
 exports.MAX_PINS = MAX_PINS
 exports.MOVES = MOVES
+exports.ONE_OF_ONE_AURAS = ONE_OF_ONE_AURAS
 exports.PINS = PINS
 exports.SHADE_COUNT = SHADE_COUNT
 exports.SMALL_SIZE = SMALL_SIZE
@@ -6783,13 +7833,18 @@ exports.WEAR = WEAR
 exports.accessories = accessories
 exports.allowed = allowed
 exports.animate = animate
+exports.auraById = auraById
+exports.auraCells = auraCells
+exports.auraColor = auraColor
 exports.bodies = bodies
 exports.cheeks = cheeks
 exports.closeEyes = closeEyes
+exports.collectorNotes = collectorNotes
 exports.compose = compose
 exports.composeBase = composeBase
 exports.copyOneIn = copyOneIn
 exports.createShine = createShine
+exports.dealOf = dealOf
 exports.decode = decode
 exports.decodeLook = decodeLook
 exports.drawFrame = drawFrame

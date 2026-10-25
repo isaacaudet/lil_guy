@@ -1,4 +1,4 @@
-import { DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, PINS, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-9J3dAm5P.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, FINISHES, FOOT_STYLES, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, freeItem, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems } from "./paint-CbtjuXdX.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -299,9 +299,10 @@ const FRAME_SLOTS = [
 	"skin",
 	"hat",
 	"frame",
-	"buddy"
+	"buddy",
+	"aura"
 ];
-const slotIndex = (t) => t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
+const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid, config, palette, small = false) {
@@ -528,8 +529,10 @@ function animate(input, move, options = {}) {
 	const palette = withItems(options.palette ?? paletteOf(config), config);
 	const figure = {
 		...config,
-		frame: void 0
+		frame: void 0,
+		aura: void 0
 	};
+	const wornAura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
@@ -567,7 +570,7 @@ function animate(input, move, options = {}) {
 		const colors = paint(tall, config, palette);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
-	const copies = Object.values(config.owned ?? {}).filter(Boolean);
+	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => GRADES.findIndex((g) => g.id === gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? GRADES[grade].color : "#FFFFFF";
 	const seed = hash(input) % 997;
@@ -575,7 +578,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (const beat of beats) {
-		const n = grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms / n);
 			slices.push({
@@ -586,7 +589,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const frames = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -641,7 +644,14 @@ function animate(input, move, options = {}) {
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
-		if (grade >= 2) {
+		if (wornAura) {
+			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
+			for (const [x, y, k] of auraCells(wornAura.id, mask, t$1, copy)) layer[y][x] = {
+				c: copy ? auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k],
+				item: false,
+				slot: 5
+			};
+		} else if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
@@ -649,7 +659,7 @@ function animate(input, move, options = {}) {
 				item: false
 			};
 		}
-		if (grade >= 3) {
+		if (grade >= 3 && !wornAura) {
 			const count$1 = grade === 4 ? 4 : 3;
 			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
 				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
@@ -1448,9 +1458,8 @@ function guyOneIn(config) {
 function copyOneIn(o) {
 	const item = itemById(o.item);
 	if (!item) return Infinity;
-	const pool = gameItems(item.game).filter((i) => !i.free).length;
 	const f = FINISHES[o.finish];
-	let p = 1 / pool * (f.odds / 100);
+	let p = f.aura ? AURA_ODDS * (1 / AURAS.length) * (f.aura / 100) : 1 / gameItems(item.game).filter((i) => !i.free && i.slot !== "aura").length * (f.odds / 100) * (item.game === "club" ? 1 : 1 - AURA_ODDS);
 	if (special(o) === "Deep Blue") p *= DEEP_BLUE_PRINTS.length / 1e3;
 	else if (special(o)) p *= 1 / 20;
 	const [lo, hi] = f.scuffs;
@@ -1522,23 +1531,24 @@ const SLOTS = [
 		paletteWeights
 	]
 ];
-/** The weight below which a part counts as rare and can't be picked. */
-const RARE = 2;
+/** A part rarer than this (1 in 45) counts as rare and can't be picked. */
+const RARE = 1 / 45;
 /**
-* A random seed to draw a new player's guy from, made once and kept. 12
-* characters of base 36, about 62 bits.
+* A random seed to draw a new player's guy from, made once and kept: the deal
+* prefix (`3-`), then 12 characters of base 36, about 62 bits.
 */
 function makeSeed() {
 	const bytes = new Uint8Array(8);
 	globalThis.crypto.getRandomValues(bytes);
 	let n = 0n;
 	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
-	return n.toString(36).padStart(12, "0").slice(-12);
+	return DEAL_PREFIX + n.toString(36).padStart(12, "0").slice(-12);
 }
 /** Which options a player may pick in a slot: every common one, and their own. */
 function pickable(own, slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
-	return weights.map((w, i) => i).filter((i) => weights[i] >= RARE || i === own[slot]);
+	const total = weights.reduce((a, b$1) => a + b$1, 0);
+	return weights.map((w, i) => i).filter((i) => weights[i] / total >= RARE || i === own[slot]);
 }
 /** Whether a look only uses parts this player may pick. */
 function allowed(own, look) {
@@ -2438,5 +2448,120 @@ function voxelMesh(columns, cell = 1, options = {}) {
 }
 
 //#endregion
-export { Avatar, AvatarFallback, AvatarImage, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, PINS, SHADE_COUNT, SMALL_SIZE, WEAR, accessories, allowed, animate, bodies, cheeks, closeEyes, compose, composeBase, copyOneIn, createShine, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/collector.ts
+/** Prints people chase for the number alone. */
+const LUCKY_PRINTS = {
+	7: "Lucky 7",
+	100: "Century",
+	404: "Not found",
+	777: "Jackpot",
+	999: "Last print"
+};
+/** Every note that applies to a copy, most wanted first. */
+function collectorNotes(o) {
+	const notes = [];
+	const [lo, hi] = FINISHES[o.finish].scuffs, span = hi - lo;
+	const share$1 = (a, b$1) => Math.max(1e-9, (Math.min(b$1, hi) - Math.max(a, lo)) / span);
+	if (o.scuff < .001) notes.push({
+		id: "triple-zero",
+		name: "0.000 float",
+		why: "Cleaner than a 0.001. Almost no copy of its finish is this clean.",
+		oneIn: 1 / share$1(0, .001)
+	});
+	else if (o.scuff < .01) notes.push({
+		id: "double-zero",
+		name: "0.00 float",
+		why: "A float under 0.01: near spotless.",
+		oneIn: 1 / share$1(0, .01)
+	});
+	if (o.scuff > .99 && hi >= 1) notes.push({
+		id: "max-float",
+		name: "Max float",
+		why: "As worn as a copy gets. Some collect the most battered.",
+		oneIn: 1 / share$1(.99, 1)
+	});
+	for (const w of WEAR.slice(0, -1)) if (o.scuff >= w.max && o.scuff < w.max + .003) {
+		const next = WEAR[WEAR.indexOf(w) + 1];
+		notes.push({
+			id: "top-of-tier",
+			name: `Best ${next.name}`,
+			why: `Within 0.003 of ${w.name}: about as clean as ${next.name} gets.`,
+			oneIn: 1 / share$1(w.max, w.max + .003)
+		});
+	}
+	const famous = special(o);
+	if (famous) notes.push({
+		id: "famous-print",
+		name: famous,
+		why: "A famous print: the pattern itself is rare, and lifts the copy a grade.",
+		oneIn: famous === "Deep Blue" ? 200 : 20
+	});
+	if (o.print === 1) notes.push({
+		id: "print-1",
+		name: "Print #1",
+		why: "The first print of any run.",
+		oneIn: 1e3
+	});
+	else if (o.print === 0) notes.push({
+		id: "print-0",
+		name: "Print #0",
+		why: "Print zero: the one before the first.",
+		oneIn: 1e3
+	});
+	else if (LUCKY_PRINTS[o.print]) notes.push({
+		id: "lucky-print",
+		name: `#${o.print} · ${LUCKY_PRINTS[o.print]}`,
+		why: "A print number people collect for itself.",
+		oneIn: 1e3
+	});
+	else if (o.print >= 111 && o.print % 111 === 0) notes.push({
+		id: "triple-print",
+		name: `#${o.print} · Triples`,
+		why: "Three of a kind in the print number.",
+		oneIn: 1e3 / 9
+	});
+	else if ([
+		123,
+		234,
+		345,
+		456,
+		567,
+		678,
+		789,
+		321,
+		432,
+		543,
+		654,
+		765,
+		876,
+		987
+	].includes(o.print)) notes.push({
+		id: "straight-print",
+		name: `#${o.print} · Straight`,
+		why: "A run in the print number.",
+		oneIn: 1e3 / 14
+	});
+	if (o.souvenir) notes.push({
+		id: "souvenir",
+		name: "Souvenir",
+		why: `From the free capsule for finishing every game on ${o.souvenir}. It can never be opened again.`,
+		oneIn: 1
+	});
+	if (o.tally !== void 0) notes.push({
+		id: "tally",
+		name: `Tally ${o.tally.toLocaleString("en-US")}`,
+		why: "Counts the days its owner finished their games wearing it. One copy in ten has one.",
+		oneIn: 10
+	});
+	if (o.pins?.length) notes.push({
+		id: "pins",
+		name: `${o.pins.length} pin${o.pins.length === 1 ? "" : "s"}`,
+		why: "Earned in the games and stuck on for good.",
+		oneIn: 1
+	});
+	return notes.sort((a, b$1) => b$1.oneIn - a.oneIn);
+}
+
+//#endregion
+export { AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EMOTE_UNLOCKS, FINISHES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, WEAR, accessories, allowed, animate, auraById, auraCells, auraColor, bodies, cheeks, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, frameAt, freeItem, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollSeason, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, traitOdds, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map
