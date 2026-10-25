@@ -61,4 +61,29 @@ export const cheeks: Cheeks[] = [
   cheeks_('gold leaf', [
     'yY......Yy',
   ]),
+  cheeks_('flushed', [
+    'cc......cc',
+    'cc......cc',
+  ]),
+  // Bashful little marks, drawn in blush.
+  cheeks_('shy', [
+    'c.c....c.c',
+    '.c......c.',
+  ]),
+  // A beauty mark on one side only.
+  cheeks_('mole', [
+    '..........',
+    '........m.',
+  ]),
+  // Chase cheeks, one guy in several hundred.
+  cheeks_('jewels', [
+    '.a......a.',
+    'awA....awA',
+    '.A......A.',
+  ]),
+  cheeks_('rainbow', [
+    'rr......rr',
+    'yy......yy',
+    'gg......gg',
+  ]),
 ];

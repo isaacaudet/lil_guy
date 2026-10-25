@@ -20,6 +20,12 @@ interface Colourway {
   body: string;
   accent: string;
   trim: string;
+  /**
+   * Token colours set by hand instead of worked out from the body. Only the
+   * chase colourways have them: an opal's shading runs through other colours,
+   * which is what makes it a jewel and not just a pale body.
+   */
+  tones?: Record<number, string>;
 }
 
 const COLOURWAYS: Colourway[] = [
@@ -62,7 +68,22 @@ const COLOURWAYS: Colourway[] = [
   { name: 'Oxblood',      body: '#8E2A3A', accent: '#F2C230', trim: '#FFF1D6' },
   { name: 'Forest',       body: '#2F6B4A', accent: '#F28A2E', trim: '#FFF1D6' },
   { name: 'Grape Soda',   body: '#6B3FA0', accent: '#3DE0B0', trim: '#FFE066' },
+  // Added with deal 3.
+  { name: 'Fuchsia',      body: '#F27ACF', accent: '#6FD6C2', trim: '#FFFFFF' },
+  { name: 'Lemon',        body: '#EEF07A', accent: '#8C7CF0', trim: '#FFFFFF' },
+  { name: 'Denim',        body: '#6A92E0', accent: '#FFB38A', trim: '#FFF3E0' },
+  { name: 'Ice',          body: '#D2F1FF', accent: '#FF8FB1', trim: '#7BB8FF' },
+  // Chase colourways, one guy in several hundred, each with its own shading.
+  { name: 'Opal',         body: '#F4F0FA', accent: '#7FE0C8', trim: '#FFB5D8',
+    tones: { 2: '#C9B8F0', 3: '#D4FFF2', 13: '#FFE0F0', 19: '#9FD8F0' } },
+  { name: 'Obsidian',     body: '#433B5E', accent: '#FFD45C', trim: '#FFE9A8',
+    tones: { 2: '#2A2440', 3: '#B79CFF', 13: '#5A4F7A', 19: '#1E1A2E' } },
+  { name: 'Aurora',       body: '#2E5878', accent: '#FF7AC8', trim: '#B8FFE0',
+    tones: { 2: '#3B3F86', 3: '#7DFFC8', 13: '#3E8A8C', 19: '#4A2F7A' } },
 ];
+
+/** Hand-set token colours by colourway name, applied over the derived ones. */
+const TONES = new Map(COLOURWAYS.filter(w => w.tones).map(w => [w.name, w.tones!]));
 
 // ---------------------------------------------------------------- colour math
 
@@ -187,6 +208,7 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
       17: goldShade,
       18: '#FF6B78',
       19: shadeOf(body, 0.24),
+      ...TONES.get(name),
     },
   };
 }

@@ -157,12 +157,15 @@ export const accessories: Accessory[] = [
     name: 'eye patch',
     layer: 'body',
     draw: c => {
-      // A strap across the forehead and a patch over the left eye.
-      // The strap spans the face only, so it never cuts off a claw or an arm.
-      const x = c.centred(glasses);
-      const top = c.eyeLine - 3;
-      for (let sx = x; sx < x + width(glasses); sx++) if (c.isBody(sx, top)) wear(c, sx, top, T.DEEP);
-      for (let y = c.eyeLine - 2; y <= c.eyeLine; y++) for (let dx = 0; dx < 4; dx++) wear(c, x + dx, y, T.OUTLINE);
+      // A rounded patch over the left eye, and a thin strap from it running
+      // up and away across the forehead. A strap straight across the top of
+      // the head read as a fringe of hair.
+      const x = c.centred(glasses), y = c.eyeLine;
+      for (const [dx, dy] of [[1, -2], [2, -2], [0, -1], [1, -1], [2, -1], [3, -1], [1, 0], [2, 0]]) wear(c, x + dx, y + dy, T.OUTLINE);
+      // The strap stops a row short of the top, where it would take the
+      // body cell that a topper's thin stalk is joined to.
+      for (let i = 1; c.isBody(x + 3 + i, y - 3 - i); i++) wear(c, x + 3 + i, y - 2 - i, T.OUTLINE);
+      if (c.isBody(x - 1, y - 1)) wear(c, x - 1, y - 1, T.OUTLINE);
     },
   },
 
@@ -207,6 +210,99 @@ export const accessories: Accessory[] = [
       const r = c.rows[y];
       if (!r) return;
       for (let x = r.left; x <= r.right; x++) c.set(x, y, x === r.right ? T.ACCENT_SHADE : T.ACCENT);
+    },
+  },
+
+  {
+    name: 'necktie',
+    layer: 'body',
+    draw: c => {
+      const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+      wear(c, x, y, T.ACCENT_SHADE);
+      wear(c, x + 1, y, T.ACCENT_SHADE);
+      for (let ty = y + 1; ty < c.bottom; ty++) { wear(c, x, ty, T.ACCENT); wear(c, x + 1, ty, T.ACCENT); }
+      wear(c, x, c.bottom, T.ACCENT_SHADE);
+      wear(c, x + 1, c.bottom, T.ACCENT_SHADE);
+    },
+  },
+
+  {
+    name: 'lei',
+    layer: 'body',
+    draw: c => {
+      // A garland of flowers in turn the accent, blush and gold, on leaves.
+      const y = c.eyeLine + 3;
+      const r = c.rows[y];
+      if (!r) return;
+      const flowers = [T.ACCENT, T.BLUSH, T.GOLD];
+      for (let x = r.left; x <= r.right; x++) {
+        const i = x - r.left;
+        wear(c, x, y, i % 2 ? T.LEAF : flowers[(i / 2) % 3]);
+      }
+    },
+  },
+
+  {
+    name: 'goggles',
+    layer: 'face',
+    draw: c => {
+      // Pushed up on the forehead: a strap round the head and two lenses.
+      const y = Math.max(c.crown + 1, c.eyeLine - 5);
+      const r = c.rows[y + 1];
+      if (!r) return;
+      for (let x = r.left; x <= r.right; x++) c.set(x, y + 1, T.DEEP);
+      const lens = stamp([
+        'wa....wa',
+        'aA....aA',
+      ]);
+      c.draw(lens, c.centred(lens), y, true);
+    },
+  },
+
+  // Chase accessories, one guy in several hundred.
+  {
+    name: 'gold chain',
+    layer: 'body',
+    draw: c => {
+      // A heavy gold chain and a big medallion with a glint.
+      const y = c.eyeLine + 3;
+      const r = c.rows[y];
+      if (!r) return;
+      for (let x = r.left; x <= r.right; x++) wear(c, x, y, (x - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);
+      const x = Math.floor(c.centre) - 1;
+      for (const [dx, dy, t] of [[-1, 1, T.GOLD], [0, 1, T.WHITE], [1, 1, T.GOLD], [2, 1, T.GOLD_SHADE], [0, 2, T.GOLD], [1, 2, T.GOLD_SHADE]] as const) {
+        if (c.isBody(x + dx, y + dy)) wear(c, x + dx, y + dy, t);
+      }
+    },
+  },
+
+  {
+    name: 'heart shades',
+    layer: 'face',
+    draw: c => {
+      const shades = stamp([
+        'r.r..r.r',
+        'rrrrrrrr',
+        'rwr..rwr',
+        '.r....r.',
+      ]);
+      c.draw(shades, c.centred(shades), c.eyeLine - 2);
+    },
+  },
+
+  {
+    name: 'masquerade',
+    layer: 'face',
+    draw: c => {
+      // A gold ball mask, its tips swept up past the eyes, with a jewel
+      // between them. Drawn before the eyes, which look out through it.
+      const mask = stamp([
+        'y........y',
+        'yy..yy..yy',
+        'yyyyrryyyy',
+        '.yyy..yyy.',
+      ]);
+      c.draw(mask, c.centred(mask), c.eyeLine - 2, true);
     },
   },
 ];

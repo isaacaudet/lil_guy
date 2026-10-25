@@ -41,7 +41,10 @@ describe('the picker', () => {
     const own = { ...resolve('x'), eyes: 0, head: 0 };
     expect(pickable(own, 'eyes')).not.toContain(laser);
     expect(pickable(own, 'head')).not.toContain(crab);
-    expect(pickable(own, 'eyes').every(i => eyeWeights[i] >= 2)).toBe(true);
+    // Common means at least 1 in 45 (`RARE` in look.ts); a part that is never
+    // dealt can't be picked either.
+    const total = eyeWeights.reduce((a, b) => a + b, 0);
+    expect(pickable(own, 'eyes').every(i => i === own.eyes || eyeWeights[i] / total >= 1 / 45)).toBe(true);
     const lucky = { ...own, eyes: laser, head: crab };
     expect(pickable(lucky, 'eyes')).toContain(laser);
     expect(pickable(lucky, 'head')).toContain(crab);

@@ -87,15 +87,51 @@ export const eyes: Eyes[] = [
     '.o....o.',
     'ee....ee',
   ]),
-  // Glowing, with a hot white core, so they read as lasers and not blush.
+  // A white-hot core and a flare streaking out to each side: a red patch
+  // with a white dot in it read as blush.
   eyes_('laser', [
-    '.r....r.',
-    'rwr..rwr',
-    '.r....r.',
+    '..r....r..',
+    'rrw....wrr',
+    '..r....r..',
   ]),
   eyes_('cyclops', [
     '.ww.',
     'weee',
     'eeee',
+  ]),
+  // Contented, eyes shut the other way up from happy.
+  eyes_('sleepy', [
+    'e.e....e.e',
+    '.e......e.',
+  ]),
+  // Spirals, each turning the other way.
+  eyes_('dizzy', [
+    '.ee....ee.',
+    'e.e....e.e',
+    'ee......ee',
+  ]),
+  // Big eyes under a lash line that sweeps in towards the nose.
+  eyes_('anime', [
+    '.eee..eee.',
+    '.we....we.',
+    '.ee....ee.',
+  ]),
+  // Chase eyes, one guy in several hundred. Each is a material, not a
+  // mood: a little night sky, a cut jewel in the accent, a dragon's gold.
+  // The galaxy is the one pair four wide: round, so it holds a sky.
+  eyes_('galaxy', [
+    '.ee....ee.',
+    'ewAe..ewAe',
+    '.Ay....Ay.',
+  ]),
+  eyes_('diamond', [
+    '.a......a.',
+    'awA....awA',
+    '.A......A.',
+  ]),
+  eyes_('dragon', [
+    '.y......y.',
+    'yey....yey',
+    'YeY....YeY',
   ]),
 ];
