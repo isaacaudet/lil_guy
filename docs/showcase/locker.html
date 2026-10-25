@@ -1560,7 +1560,7 @@ void main() {
     const S = 4;
     burst.width = Math.ceil(innerWidth / S); burst.height = Math.ceil(innerHeight / S);
     const cols = palette || [GRADE[g], '#ffffff', GRADE[g], g >= 3 ? '#ffcf5c' : '#c9d3ff'];
-    for (let i = 0, n = [26, 70, 130, 230, 420][g]; i < n; i++) {
+    for (let i = 0, n = [26, 70, 130, 230, 420, 600][g]; i < n; i++) {
       const a = Math.random() * Math.PI * 2, v = 0.5 + Math.random() * (1.4 + g * 0.7);
       bits.push({ x: x / S, y: y / S, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.9, life: 45 + Math.random() * (40 + g * 18), c: cols[i % 4], s: Math.random() < 0.25 ? 2 : 1 });
     }
@@ -1581,7 +1581,7 @@ void main() {
   async function unveil(o, g) {
     const res = $('result'), flip = $('flip'), front = $('reveal-card'), back = $('back'), shout = $('reveal-shout');
     res.style.setProperty('--grade', GRADE[g]);
-    res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.7][g]);
+    res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.7, 0.9][g]);
     res.classList.remove('go'); shout.classList.remove('slam'); shout.textContent = '';
     front.hidden = true; front.innerHTML = ''; back.hidden = false;
     $('reveal-name').textContent = ''; $('reveal-chips').innerHTML = ''; $('reveal-actions').hidden = true;
