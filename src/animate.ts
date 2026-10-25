@@ -8,6 +8,7 @@ import { GRADES, gradeOf } from './owned';
 import { LAYER, T } from './parts/art';
 import { hash } from './hash';
 import { auraById, auraCells, auraColor } from './auras';
+import { applyFx } from './effects';
 import type { AvatarConfig, Palette, PixelGrid, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -235,7 +236,7 @@ const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<
 
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
 function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false): Layer {
-  const colors = paint(grid, config, palette, small);
+  const colors = paint(grid, config, palette, small, false);
   const out = empty();
   grid.forEach((row, y) => row.forEach((t, x) => {
     const c = colors[y][x];
@@ -338,6 +339,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // The frame and any aura are drawn per frame round him, not into his poses.
   const figure: AvatarConfig = { ...config, frame: undefined, aura: undefined };
   const wornAura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
+  // Effects move, so a guy wearing one gets short frames like an aura's.
+  const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
+  const withFx = fxCopies.some(o => o?.fx);
 
   const grids = new Map<Pose, PixelGrid>();
   const grid = (pose: Pose): PixelGrid => {
@@ -371,7 +375,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   if (frameItem?.slot === 'frame') {
     const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) =>
       Array.from({ length: GRID_SIZE }, (_, x) => LAYER.frame + frameItem.fill!(x, y + 48) - 1));
-    const colors = paint(tall, config, palette);
+    const colors = paint(tall, config, palette, false, false);
     backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
   }
 
@@ -387,7 +391,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const slices: { beat: Beat; ms: number; t: number }[] = [];
   let t = 0;
   for (const beat of beats) {
-    const n = wornAura ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+    const n = wornAura || withFx ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
     for (let i = 0; i < n; i++) {
       const ms = Math.round(beat.ms / n);
       slices.push({ beat, ms, t });
@@ -462,8 +466,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       });
     }
 
-    const colors = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
+    const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
     const slots = layer.map((row, y) => row.map((cell, x) => (cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0)));
+    const colors = withFx ? applyFx(flat, slots, fxCopies, t) : flat;
     return { colors, ms, slots };
   });
 

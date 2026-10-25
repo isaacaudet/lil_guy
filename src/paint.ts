@@ -2,6 +2,7 @@ import { LAYER, T } from './parts/art';
 import { resolveColor, mix, contrast } from './palette';
 import { paintCell } from './owned';
 import { auraById, auraColor } from './auras';
+import { fxColor } from './effects';
 import type { AvatarConfig, Palette, PixelGrid } from './types';
 
 /**
@@ -9,7 +10,7 @@ import type { AvatarConfig, Palette, PixelGrid } from './types';
  * colour; a cell belonging to an owned item is repainted with that copy's
  * finish and wear.
  */
-export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false): (string | null)[][] {
+export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, still = true): (string | null)[][] {
   const state = { glint: false };
   const slotOf = (t: number) => (t >= LAYER.aura ? 'aura' : t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null);
   const aura = auraById(config.aura);
@@ -19,8 +20,10 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
     if (!color) return null;
     const slot = slotOf(token);
     const copy = slot ? config.owned?.[slot] : undefined;
-    if (slot === 'aura') return aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color;
-    return copy ? paintCell(color, x, y, copy, state) : color;
+    const painted = slot === 'aura' ? (aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color)
+      : copy ? paintCell(color, x, y, copy, state) : color;
+    // An effect, as it stands at the start; animate moves it instead.
+    return still && copy?.fx ? fxColor(painted, copy.fx, x, y, 0, copy.print) : painted;
   }));
 }
 

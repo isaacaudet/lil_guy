@@ -1,5 +1,6 @@
 import { hash } from './hash';
 import { AURAS, AURA_ODDS } from './auras';
+import { EFFECTS, FX_IDS, rollFx, type Fx } from './effects';
 import { gameItems, freeItem, inSeason, itemById, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
 import type { GameId } from './types';
@@ -43,6 +44,8 @@ export interface Owned {
   date?: string;
   /** A souvenir: the day's free capsule for finishing every game, and that day. */
   souvenir?: string;
+  /** A rare effect on top of the finish (see ./effects). */
+  fx?: Fx;
 }
 
 export const GRADES = [
@@ -139,7 +142,7 @@ export function gradeOf(o: Owned): Grade {
 export function nameOf(o: Owned): string {
   const item = itemById(o.item);
   const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
-  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.tally !== undefined ? 'Tallied ' : '');
+  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.fx ? `${EFFECTS[o.fx].name} ` : '') + (o.tally !== undefined ? 'Tallied ' : '');
   if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === 'classic' ? '' : ` | ${FINISHES[o.finish].name}`}`;
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
@@ -160,6 +163,7 @@ export function encode(o: Owned): string {
   if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join('+')}`);
   if (o.date) parts.push(`d${o.date}`);
   if (o.souvenir) parts.push(`s${o.souvenir}`);
+  if (o.fx) parts.push(`x${o.fx}`);
   return parts.join('~');
 }
 
@@ -173,6 +177,7 @@ export function decode(s: string): Owned | null {
     if (part.startsWith('t') && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
     if (part.startsWith('d') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
     if (part.startsWith('s') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
+    if (part.startsWith('x') && (FX_IDS as string[]).includes(part.slice(1))) o.fx = part.slice(1) as Fx;
     if (part.startsWith('p')) {
       const pins = part.slice(1).split('+').filter(id => pinById(id)).slice(0, MAX_PINS);
       if (pins.length) o.pins = pins;
@@ -227,6 +232,8 @@ function rollAura(seed: string): Owned {
   }
   const o: Owned = { item: aura.id, finish, scuff: Math.round(unit(`${seed}|float`) * 1e7) / 1e7, print: hash(`${seed}|pattern`) % 1000 };
   if (unit(`${seed}|stattrak`) < 0.1) o.tally = 0;
+  const fx = rollFx(unit(`${seed}|fx`), true);
+  if (fx) o.fx = fx;
   return o;
 }
 
@@ -255,6 +262,8 @@ function rollFrom(pool: Item[], seed: string): Owned {
   const print = hash(`${seed}|pattern`) % 1000;
   const o: Owned = { item: item.id, finish, scuff, print };
   if (unit(`${seed}|stattrak`) < 0.1) o.tally = 0;
+  const fx = rollFx(unit(`${seed}|fx`), false);
+  if (fx) o.fx = fx;
   return o;
 }
 

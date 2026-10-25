@@ -70,3 +70,4 @@ export type { VoxelColumn, VoxelMesh, VoxelSource, VoxelOptions, Surface, Surfac
 export { FRAME_SLOTS } from "./animate";
 export { AURAS, ONE_OF_ONE_AURAS, AURA_ODDS, auraById, auraCells, auraColor } from "./auras";
 export { collectorNotes, type Note } from "./collector";
+export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, type Fx, type Effect } from "./effects";

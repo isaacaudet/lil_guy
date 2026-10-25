@@ -6,6 +6,7 @@ import {
 import { palettes } from './palette';
 import { gameItems, itemById } from './items';
 import { AURAS, AURA_ODDS } from './auras';
+import { EFFECTS } from './effects';
 import { DEEP_BLUE_PRINTS, FINISHES, special, type Owned } from './owned';
 import { LUCKY_ODDS } from './resolve';
 import type { AvatarConfig } from './types';
@@ -68,5 +69,6 @@ export function copyOneIn(o: Owned): number {
   p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
 
   if (o.tally !== undefined) p *= 0.1;
+  if (o.fx) p *= 1 / EFFECTS[o.fx][f.aura ? 'aura' : 'item'];
   return 1 / p;
 }
