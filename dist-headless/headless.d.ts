@@ -897,6 +897,52 @@ declare function traitOdds(config: AvatarConfig): TraitOdds[];
 declare function guyOneIn(config: AvatarConfig): number;
 /** One in how many capsules for its game give a copy at least this good. */
 declare function copyOneIn(o: Owned): number;
+/** A guy's tiers, commonest first: each is the share of guys at least that rare. */
+declare const GUY_TIERS: readonly [{
+  readonly id: "common";
+  readonly name: "Common";
+  readonly top: 1;
+}, {
+  readonly id: "uncommon";
+  readonly name: "Uncommon";
+  readonly top: 0.5;
+}, {
+  readonly id: "rare";
+  readonly name: "Rare";
+  readonly top: 0.1;
+}, {
+  readonly id: "epic";
+  readonly name: "Epic";
+  readonly top: 0.01;
+}, {
+  readonly id: "legendary";
+  readonly name: "Legendary";
+  readonly top: 0.001;
+}, {
+  readonly id: "mythic";
+  readonly name: "Mythic";
+  readonly top: 0.0001;
+}];
+interface GuyRank {
+  /** The share of guys at least this rare, 0–1: 0.003 is the rarest 0.3%. */
+  top: number;
+  /** Index into `GUY_TIERS`, 0 Common to 5 Mythic. */
+  tier: number;
+  name: string;
+  /** "Top 0.3%", or "Common" for the commoner half. */
+  label: string;
+}
+/**
+ * What a guy's rank is measured on: the odds of his whole combination, with his
+ * single rarest trait counted twice. One standout (galaxy eyes, Lucky) is what
+ * people see as rare, more than a handful of slightly unusual picks.
+ */
+declare function guyScore(config: AvatarConfig): number;
+/**
+ * Where a guy stands among every guy dealt: "one in 56 billion" says every
+ * combination is unique, which they all are, so a card shows this instead.
+ */
+declare function guyRank(config: AvatarConfig): GuyRank;
 
 //#endregion
 //#region src/icons.d.ts
@@ -1116,7 +1162,7 @@ declare const auraById: (id: string | undefined) => Aura | undefined;
 /**
  * An aura's cells round `mask` at `t`, only in empty pixels and inside the
  * frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
- * one flickers with gaps.
+ * one flickers with gaps. A rarer finish adds more (`extras`).
  */
 declare function auraCells(id: string, mask: Mask, t: number, copy?: Owned): AuraCell[];
 /**
@@ -1280,4 +1326,4 @@ declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
 }, scale?: number): Uint8Array;
 
 //#endregion
-export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, CARD_HEIGHT, CARD_WIDTH, CardInput, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Frames, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, CARD_HEIGHT, CARD_WIDTH, CardInput, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Frames, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_TIERS, GameId, Grade, GuyRank, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };

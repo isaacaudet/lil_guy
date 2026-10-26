@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-BTKmPLGv.cjs');
+const require_paint = require('./paint-BEFv3bZ_.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -301,18 +301,78 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= require_paint.LAYER.aura ? 5 : t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette$1, small = false) {
+function painted(grid, config, palette$1, small = false, face = null) {
 	const colors = require_paint.paint(grid, config, palette$1, small, false);
 	const out = empty();
+	const eyeBox = face && {
+		top: face.top - 1,
+		bottom: face.line,
+		left: face.eyes[0].left - 1,
+		right: face.eyes[face.eyes.length - 1].right + 1
+	};
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
-		if (c) out[y + HEADROOM][x] = {
+		if (!c) return;
+		const cell = {
 			c,
 			item: t >= require_paint.LAYER.skin && t < require_paint.LAYER.frame || t >= require_paint.LAYER.buddy,
 			slot: slotIndex(t)
 		};
+		if (t === require_paint.T.BODY || t === require_paint.T.SHADE || t === require_paint.T.LIGHT) cell.body = true;
+		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
+		out[y + HEADROOM][x] = cell;
 	}));
 	return out;
+}
+const LIVE_EYE_TOKENS = [
+	require_paint.T.EYE,
+	require_paint.T.WHITE,
+	require_paint.T.ACCENT,
+	require_paint.T.ACCENT_SHADE,
+	require_paint.T.GOLD,
+	require_paint.T.GOLD_SHADE
+];
+/** Chase eyes that move: one guy in hundreds has them, so they should look it. */
+const LIVE_EYES = new Map([
+	"galaxy",
+	"diamond",
+	"dragon"
+].map((n) => [require_paint.eyes.findIndex((e) => e.name === n), n]));
+const hue = (h, s, l) => {
+	const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+	const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+	return "#" + [
+		f(0),
+		f(8),
+		f(4)
+	].map((v) => v.toString(16).padStart(2, "0")).join("");
+};
+/** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
+function luckyShimmer(layer, t, seed) {
+	const at = (t + seed) % 2200 / 2200 * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
+	layer.forEach((row, y) => row.forEach((cell, x) => {
+		if (!cell?.body) return;
+		const d = Math.abs(x + y * .8 - at);
+		if (d < 3) cell.c = mix$1(cell.c, hue((t / 5 + (x - y) * 22) % 360, .95, .68), d < 1.2 ? .6 : .3);
+	}));
+}
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder. */
+function liveEyes(layer, kind, t, seed) {
+	layer.forEach((row, y) => row.forEach((cell, x) => {
+		if (!cell?.eye) return;
+		const k = cell.eye;
+		if (kind === "galaxy") {
+			if (k === require_paint.T.WHITE) cell.c = (t / 160 + x * 3 + y * 2) % 5 < 1.2 ? "#FFFFFF" : "#CBB8FF";
+			else if (k !== require_paint.T.EYE) cell.c = hue(255 + 45 * Math.sin(t / 380 + x * .9 + y * .7), .8, .55);
+		} else if (kind === "diamond") {
+			const at = (t + seed) % 1400 / 1400 * 24 - 4, d = Math.abs(x - y * .5 - at);
+			if (k !== require_paint.T.EYE) cell.c = mix$1(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / 250 + x));
+			if (d < 1.5) cell.c = mix$1(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
+		} else if (kind === "dragon") {
+			const flash = (t + seed) % 2e3 < 160;
+			if (k === require_paint.T.GOLD || k === require_paint.T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$1(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / 260)));
+		}
+	}));
 }
 /** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
 function squash(layer, n) {
@@ -505,6 +565,13 @@ function emote(layer, kind, left, lift = 0) {
 		item: false
 	};
 }
+/** Where a Lucky guy's gold twinkles go. */
+const LUCKY_SPOTS = [
+	[2, 5],
+	[13, 4],
+	[14, 14],
+	[1, 15]
+];
 /** Where sparkles may go: around the guy, clear of him. */
 const SPARKLE_SPOTS = [
 	[2, 6],
@@ -531,6 +598,8 @@ function animate(input, move, options = {}) {
 	const wornAura = require_paint.auraById(require_paint.itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
+	const lucky = !!config.lucky && options.rarity !== false && !options.small;
+	const liveEye = options.small ? void 0 : LIVE_EYES.get(config.eyes);
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
@@ -558,7 +627,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small));
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -576,7 +645,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (const beat of beats) {
-		const n = wornAura || withFx ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		const n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms / n);
 			slices.push({
@@ -613,6 +682,11 @@ function animate(input, move, options = {}) {
 				else if (d < 2) cell.c = mix$1(cell.c, "#FFFFFF", .25);
 			}));
 		}
+		if (lucky) luckyShimmer(layer, t$1, seed);
+		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
+		if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
+			if ((t$1 / 260 + k * 1.3 + seed) % 3 < 1) twinkle(layer, x, y, "#FFFFFF", "#FFD45C");
+		});
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
 			const gold = palette$1.colors[require_paint.T.GOLD] ?? "#F2C230";
@@ -1397,6 +1471,39 @@ function getColor(colors, index) {
 }
 
 //#endregion
+//#region src/guy-rank.ts
+/** [a guy's `guyScore`, the share of guys scoring at least that], commonest first. */
+const GUY_RANK = [
+	[8.0421, 1],
+	[10.7729, .9],
+	[11.5867, .75],
+	[12.1793, .6],
+	[12.544, .5],
+	[12.9172, .4],
+	[13.3205, .3],
+	[13.547, .25],
+	[13.7991, .2],
+	[14.0979, .15],
+	[14.479, .1],
+	[14.7309, .075],
+	[15.062, .05],
+	[15.4589, .03],
+	[15.7604, .02],
+	[16.2643, .01],
+	[16.465, .0075],
+	[16.7411, .005],
+	[17.0756, .003],
+	[17.3223, .002],
+	[17.7234, .001],
+	[18.1205, 5e-4],
+	[18.6163, 2e-4],
+	[18.9523, 1e-4],
+	[19.3143, 5e-5],
+	[19.7576, 2e-5],
+	[20.4402, 1e-5]
+];
+
+//#endregion
 //#region src/rarity.ts
 /**
 * How rare things are, as "one in N".
@@ -1524,6 +1631,75 @@ function copyOneIn(o) {
 	if (o.tally !== void 0) p *= .1;
 	if (o.fx) p *= 1 / require_paint.EFFECTS[o.fx][f.aura ? "aura" : "item"];
 	return 1 / p;
+}
+/** A guy's tiers, commonest first: each is the share of guys at least that rare. */
+const GUY_TIERS = [
+	{
+		id: "common",
+		name: "Common",
+		top: 1
+	},
+	{
+		id: "uncommon",
+		name: "Uncommon",
+		top: .5
+	},
+	{
+		id: "rare",
+		name: "Rare",
+		top: .1
+	},
+	{
+		id: "epic",
+		name: "Epic",
+		top: .01
+	},
+	{
+		id: "legendary",
+		name: "Legendary",
+		top: .001
+	},
+	{
+		id: "mythic",
+		name: "Mythic",
+		top: 1e-4
+	}
+];
+/**
+* What a guy's rank is measured on: the odds of his whole combination, with his
+* single rarest trait counted twice. One standout (galaxy eyes, Lucky) is what
+* people see as rare, more than a handful of slightly unusual picks.
+*/
+function guyScore(config) {
+	const logs = traitOdds(config).map((t) => -Math.log10(t.chance));
+	return logs.reduce((a, b$1) => a + b$1, 0) + Math.max(...logs);
+}
+/**
+* Where a guy stands among every guy dealt: "one in 56 billion" says every
+* combination is unique, which they all are, so a card shows this instead.
+*/
+function guyRank(config) {
+	const v = guyScore(config), last = GUY_RANK[GUY_RANK.length - 1];
+	let top = 1;
+	if (v > last[0]) top = last[1] * 10 ** (last[0] - v);
+	else {
+		const i = GUY_RANK.findIndex(([a]) => v <= a);
+		if (i > 0) {
+			const [a, pa] = GUY_RANK[i - 1], [b$1, pb] = GUY_RANK[i];
+			top = 10 ** (Math.log10(pa) + (Math.log10(pb) - Math.log10(pa)) * (v - a) / (b$1 - a));
+		}
+	}
+	const rarest = Math.min(...traitOdds(config).map((t) => t.chance));
+	if (rarest < .005) top = Math.min(top, rarest * 3);
+	const pct = top * 100;
+	const shown = pct >= 10 ? Math.round(pct) : pct >= 1 ? +pct.toFixed(1) : +pct.toPrecision(2);
+	const tier = GUY_TIERS.reduce((k, t, i) => shown / 100 <= t.top ? i : k, 0);
+	return {
+		top,
+		tier,
+		name: GUY_TIERS[tier].name,
+		label: top > .5 ? "Common" : `Top ${shown}%`
+	};
 }
 
 //#endregion
@@ -5589,6 +5765,7 @@ exports.GAMES = require_paint.GAMES
 exports.GOLD_RIM_DAYS = require_paint.GOLD_RIM_DAYS
 exports.GRADES = require_paint.GRADES
 exports.GRID_SIZE = require_paint.GRID_SIZE
+exports.GUY_TIERS = GUY_TIERS
 exports.HEADROOM = HEADROOM
 exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
@@ -5644,6 +5821,8 @@ exports.getColor = getColor
 exports.getPalette = require_paint.getPalette
 exports.gradeOf = require_paint.gradeOf
 exports.guyOneIn = guyOneIn
+exports.guyRank = guyRank
+exports.guyScore = guyScore
 exports.hair = require_paint.hair
 exports.hash = require_paint.hash
 exports.hashNth = require_paint.hashNth

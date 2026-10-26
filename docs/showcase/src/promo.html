@@ -1090,7 +1090,7 @@
   const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   // The card a player keeps: drawn by the library, so the one on the page is the one they save.
-  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: [spec.label.bottom].filter(Boolean), grade: spec.grade ?? spec.label.g, move });
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? [spec.label.bottom].filter(Boolean), grade: spec.grade ?? spec.label.g, move });
   const libCards = new Set();
   function libCard(el, input) {
     const canvas = document.createElement('canvas');
@@ -1402,6 +1402,10 @@
   const rarestOf = (cfg, n = 2, shapes = false) => LG.traitOdds(cfg).filter(t => (t.slot !== 'lucky' || t.name === 'Lucky') && !(shapes && ['colour', 'tone', 'arms', 'feet'].includes(t.slot))).sort((a, b) => a.chance - b.chance).slice(0, n);
   // A card's title names the rarest thing you can see in his drawing, not his colourway.
   const cardTrait = cfg => traitWord(rarestOf(cfg, 1, true)[0]);
+  // A guy's card: his tier sets its grade, and it says where he stands ("Epic", "Top 0.3%").
+  const TIER_COLORS = LG.GRADES.map(g => g.color);
+  const rankText = r => r.label === r.name ? r.name : `${r.name} · ${r.label}`;
+  const guyLabel = (cfg, title, corner = '★') => { const r = LG.guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
   const traitWord = t => t.slot === 'lucky' ? 'Lucky' : t.slot === 'tone' ? cap(t.name) : t.slot === 'arms' ? (t.name === 'none' ? 'No arms' : cap(t.name)) : t.slot === 'feet' ? `${cap(t.name)} feet` : `${cap(t.name)} ${t.slot}`;
   const traitChips = (cfg, n = 2) => `<span class="tchips">${rarestOf(cfg, n).map(t => `<span class="tchip" style="--tier:${traitTier(t).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`).join('')}</span>`;
   // One trait as a Balatro card: its icon and slot, what he got, a paper box saying how rare.
@@ -1446,10 +1450,11 @@
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
-    const guyCard = cardInput(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
+    const guyCard = cardInput(cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, LG.guyRank(cfg).tier));
     libCard($('guy-stage'), guyCard);
     saveButtons($('guy-saves'), guyCard, state.key);
-    $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    const rank = LG.guyRank(cfg);
+    $('guy-badges').innerHTML = `<span class="bal" style="--b:${TIER_COLORS[rank.tier]}">${esc(rankText(rank))}</span><span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg);
     meaning($('guy-meaning'), LG.guyOneIn(cfg)); distChart($('guy-dist'), LG.guyOneIn(cfg));
@@ -1570,7 +1575,7 @@
     if (!state) { paintInto($('mark-guy'), 'lilguys', []); setFavicon(); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
     paintInto($('mark-guy'), state.seed, wornCodes()); setFavicon();
     $('me-name').textContent = '@' + state.key;
-    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '★', bottom: 'One of a kind' }, false, 4));
+    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, LG.guyRank(guyConfig(state.seed)).tier));
     hydrate($('me-card'));
     const n = LG.guyOneIn(guyConfig(state.seed));
     $('me-odds').textContent = `Dealt just for you. A guy like him turns up 1 in ${words(n)}.`;
@@ -2206,7 +2211,7 @@
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet him';
     const n = LG.guyOneIn(guyConfig(state.seed));
-    await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '★', bottom: 'One of a kind' }, false, 4))}</div>`,
+    await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, LG.guyRank(guyConfig(state.seed)).tier))}</div>`,
       'One of a kind!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`, true);
     $('rv-keep').focus();
     await new Promise(r => { closeHook = r; });
@@ -2497,7 +2502,7 @@
     const guys = Array.from({ length: 400 }, () => { const seed = LG.makeSeed(), cfg = LG.resolve(seed); return { seed, cfg, n: LG.guyOneIn(cfg) }; })
       .sort((a, b) => b.n - a.n).slice(0, 12)
       .map((g, i) => ({ ...g, copies: i % 3 === 0 ? [LG.roll(g.seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
-    $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, { title: cardTrait(g.cfg), g: 0, corner: '', bottom: `1 in ${fmt(g.n)}` }, true))}</div>${traitChips(g.cfg)}</div>`).join('');
+    $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, guyLabel(g.cfg, cardTrait(g.cfg), ''), true, LG.guyRank(g.cfg).tier))}</div>${traitChips(g.cfg)}</div>`).join('');
     hydrate($('maybe'));
   }
   $('maybe-more').addEventListener('click', renderMaybe);
@@ -2860,7 +2865,7 @@
       seed = key; // the demo deals a plain name the same guy every time
     }
     const cfg = guyConfig(seed), n = LG.guyOneIn(cfg), [a, b] = split(n);
-    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], { title: '@' + key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4))}</div></div>
+    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier))}</div></div>
       <div class="scoring"><div class="tiles">${LG.traitOdds(cfg).map(x => traitTile(x, true)).join('')}</div>
       <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b}</span></div><div class="meaning" id="lab-meaning"></div></div></div>`;
     hydrate(out); meaning($('lab-meaning'), n);
@@ -2926,7 +2931,7 @@
     $('guys-grid').innerHTML = list.map((g, i) => {
       const worn = (g.worn || []).map(LG.decode).filter(Boolean), best = g.best, bg = best ? LG.GRADES[best.grade] : null;
       return `<a class="gcard card" href="#/u/${esc(g.key)}">${guysSort === 'rarest' && !guysQ && i < 3 ? `<span class="rank">#${i + 1}</span>` : ''}
-        ${px(cardSpec(g.seed, worn, { title: '@' + g.key, g: best ? best.grade : 0, corner: '', bottom: esc(cardTrait(guyConfig(g.seed))) }, list.length > 30, best ? best.grade : undefined))}
+        ${px(cardSpec(g.seed, worn, { title: '@' + g.key, g: best ? best.grade : 0, corner: '', bottom: LG.guyRank(guyConfig(g.seed)).label }, list.length > 30, best ? best.grade : undefined))}
         <span><b>@${esc(g.key)}</b><small>A guy like him: 1 in ${words(g.oneIn)}</small></span>${traitChips(guyConfig(g.seed))}
         ${bg ? `<span class="bal" style="--b:${bg.color}">Best: ${esc(LG.nameOf(LG.decode(best.code)).split(' | ')[1] || bg.name)}</span>` : ''}</a>`;
     }).join('');
@@ -2946,10 +2951,11 @@
     $('page-kicker').textContent = mine ? 'You' : 'Player';
     $('page-title').textContent = '@' + key;
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
-    const uCard = cardInput(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), { title: '@' + key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
+    const uCard = cardInput(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier));
     libCard($('u-stage'), uCard);
     saveButtons($('u-saves'), uCard, key);
-    $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    const uRank = LG.guyRank(cfg);
+    $('u-badges').innerHTML = `<span class="bal" style="--b:${TIER_COLORS[uRank.tier]}">${esc(rankText(uRank))}</span><span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
     meaning($('u-meaning'), LG.guyOneIn(cfg)); distChart($('u-dist'), LG.guyOneIn(cfg));
