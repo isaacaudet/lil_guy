@@ -1229,7 +1229,49 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   };
   // GIFs take a moment to encode, so the button says so and the page paints first.
-  function saveButtons(el, input, name) {
+  /**
+   * The card exactly as the page shows it: the card's own canvas, drawn by its own shader at each moment, scaled up
+   * crisp, with its words laid over in the same font, size, colour and shadow (foil and gold titles moving as they do
+   * on the page). Returns frames for a GIF, or null when the card isn't on the page.
+   */
+  function pageCardFrames(host, scale = 12, n = 30, ms = 80) {
+    const canvas = host?.querySelector('canvas.px'), s = canvas && byCanvas.get(canvas), art = canvas?.closest('.art');
+    if (!s || !art) return null;
+    const W0 = canvas.width, H0 = canvas.height, W = W0 * scale, H = H0 * scale, k = W / art.offsetWidth;
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const ctx = out.getContext('2d', { willReadFrequently: true });
+    const words = [...art.querySelectorAll('.ov > span')].map(el => {
+      const cs = getComputedStyle(el), shadow = (cs.textShadow !== 'none' ? cs.textShadow : cs.filter).match(/(rgba?\([^)]*\))\s*0px\s*([\d.]+)px/);
+      return { el, text: el.textContent, x: el.offsetLeft * k, y: el.offsetTop * k, w: el.offsetWidth * k, h: el.offsetHeight * k,
+        size: parseFloat(cs.fontSize) * k, font: cs.fontFamily, color: cs.color, bg: cs.backgroundColor, radius: parseFloat(cs.borderTopLeftRadius) * k,
+        shadow: shadow ? { c: shadow[1], dy: parseFloat(shadow[2]) * k } : null,
+        foil: el.classList.contains('foil') ? ['#ff8fb1', '#ffe27a', '#8fffd2', '#8fb8ff', '#d79bff', '#ff8fb1'] : el.classList.contains('gold') ? ['#b8801c', '#ffe9a8', '#f2c230', '#fffbe6', '#c8901e', '#b8801c'] : null };
+    });
+    const frames = [];
+    for (let i = 0; i < n; i++) {
+      const t = 0.6 + i * ms / 1000;
+      draw(s, t);
+      ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = false; ctx.drawImage(canvas, 0, 0, W, H);
+      for (const w of words) {
+        if (w.bg && w.bg !== 'rgba(0, 0, 0, 0)') { ctx.fillStyle = w.bg; ctx.beginPath(); ctx.roundRect(w.x, w.y, w.w, w.h, w.radius); ctx.fill(); }
+        ctx.font = `${w.size}px ${w.font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const cx = w.x + w.w / 2, cy = w.y + w.h / 2;
+        if (w.shadow) { ctx.fillStyle = w.shadow.c; ctx.fillText(w.text, cx, cy + w.shadow.dy); }
+        if (w.foil) {
+          // The page slides a 300%-wide gradient across the words every 2.4 seconds.
+          const span = w.w * 3, off = ((t % 2.4) / 2.4) * span, g = ctx.createLinearGradient(w.x - off, 0, w.x - off + span * 2, 0);
+          [...w.foil, ...w.foil.slice(1)].forEach((c, j, a) => g.addColorStop(j / (a.length - 1), c));
+          ctx.fillStyle = g;
+        } else ctx.fillStyle = w.color;
+        ctx.fillText(w.text, cx, cy);
+      }
+      frames.push(new Uint8ClampedArray(ctx.getImageData(0, 0, W, H).data));
+    }
+    draw(s, performance.now() / 1000);
+    return { width: W, height: H, frames, delays: frames.map(() => ms) };
+  }
+
+  function saveButtons(el, input, name, host) {
     const base = fileName(name);
     el.innerHTML = '<span class="saves-h">Save</span><button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>';
     el.onclick = e => {
@@ -1238,8 +1280,10 @@
       const was = b.textContent; b.disabled = true; b.textContent = 'Making…';
       setTimeout(async () => {
         try {
-          if (b.dataset.save === 'gif') await saveFile(LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
-          else if (b.dataset.save === 'png') await saveFile(await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
+          // The card as the page shows it; the library's card only where the page has none.
+          const page = b.dataset.save === 'guy' ? null : pageCardFrames(host?.());
+          if (b.dataset.save === 'gif') await saveFile(page ? LG.encodeGif(page, 1) : LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
+          else if (b.dataset.save === 'png') await saveFile(page ? await LG.encodePng(page.frames[0], page.width, page.height, 1) : await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
           else await saveFile(LG.toGuyGif(input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16), base + '.gif', 'image/gif');
         } catch (err) { toast('Couldn\'t make that file: ' + err.message); }
         b.disabled = false; b.textContent = was;
@@ -1576,7 +1620,7 @@
     const cfg = guyConfig(state.seed);
     const guySpec = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, LG.guyRank(cfg).tier), guyCard = cardInput(guySpec);
     guyStage('guy-stage', state.seed, wornCodes(), guySpec);
-    saveButtons($('guy-saves'), guyCard, state.key);
+    saveButtons($('guy-saves'), guyCard, state.key, () => $('guy-stage'));
     const rank = LG.guyRank(cfg);
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, false)).join('');
@@ -2853,7 +2897,7 @@
       </div>`;
     const view = $('ins-view');
     const inspCard = cardInput(cardSpec(ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)));
-    saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`);
+    saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`, () => $('ins-view').querySelector('.card') ? $('ins-view') : null);
     const setView = v => {
       view.innerHTML = v === 'alone' ? '<div class="tilt"><div class="spin3d ins-spin"><canvas class="alone" aria-label="The item on its own"></canvas></div></div>'
         : '<div class="tilt"><div class="card"></div></div>';
@@ -3178,7 +3222,7 @@
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
     const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier), uCard = cardInput(uSpec);
     guyStage('u-stage', u.seed, worn, uSpec);
-    saveButtons($('u-saves'), uCard, key);
+    saveButtons($('u-saves'), uCard, key, () => $('u-stage'));
     const uRank = LG.guyRank(cfg);
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
