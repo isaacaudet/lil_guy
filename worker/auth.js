@@ -24,6 +24,22 @@ export async function googleAccount(credential, clientId, nonce, keys = googleKe
   return digest('google:' + payload.sub);
 }
 
+// DLE Club's sign-in (dle-club docs/accounts.md, Lil guys): on lilguys.dleclub.com a frame of
+// dleclub.com hands over a note naming the club player's Google sign-in as sha256("google:<sub>"),
+// the same hash googleAccount gives. It is signed with CLUB_SSO_SECRET, expires within minutes and
+// carries the nonce this browser's own sign-in started with.
+const fromBase64url = text => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - text.length % 4) % 4)), c => c.charCodeAt(0));
+export async function clubAccount(note, secret, nonce, now = Math.floor(Date.now() / 1000)) {
+  const parts = typeof note === 'string' && note.length < 1000 ? note.split('.') : [];
+  if (parts.length !== 2 || !/^[\w-]+$/.test(parts[0]) || !/^[\w-]{43}$/.test(parts[1])) throw new Error('Invalid club note');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+  if (!await crypto.subtle.verify('HMAC', key, fromBase64url(parts[1]), new TextEncoder().encode(parts[0]))) throw new Error('Invalid club note');
+  const claims = JSON.parse(new TextDecoder().decode(fromBase64url(parts[0])));
+  if (claims.v !== 1 || claims.aud !== 'lilguys' || claims.n !== nonce || !/^[a-f0-9]{64}$/.test(claims.a || '')) throw new Error('Invalid club note');
+  if (!(claims.exp > now && claims.exp <= now + 300)) throw new Error('Expired club note');
+  return claims.a;
+}
+
 export async function sessionAccount(request, env) {
   const value = readCookie(request, SESSION);
   if (!/^[a-f0-9]{64}$/.test(value || '')) return null;
@@ -42,15 +58,17 @@ export async function ownedName(request, env, key) {
   return env.DB.prepare('SELECT key, seed FROM names WHERE key = ? AND owner = ? AND account IS NULL').bind(key, await digest(token)).first();
 }
 
+const clubReady = env => typeof env.CLUB_SSO_SECRET === 'string' && env.CLUB_SSO_SECRET.length >= 32;
+
 export async function authApi(request, env, url, verify = googleAccount) {
   const action = url.pathname.slice('/api/auth/'.length), now = Math.floor(Date.now() / 1000);
   const clientId = env.GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID;
   if (action === 'session' && request.method === 'GET') {
     const session = await sessionAccount(request, env);
     const name = session ? await env.DB.prepare('SELECT key, seed, at FROM names WHERE account = ?').bind(session.account).first() : null;
-    return reply({ signedIn: !!session, name, clientId });
+    return reply({ signedIn: !!session, name, clientId, club: clubReady(env) });
   }
-  if (!['start', 'google', 'logout'].includes(action)) return reply({ error: 'Unknown endpoint' }, 404);
+  if (!['start', 'google', 'club', 'logout'].includes(action)) return reply({ error: 'Unknown endpoint' }, 404);
   if (request.method !== 'POST') return reply({ error: 'Method not allowed' }, 405);
   // These routes are only called by our own page. Require Origin even when a cookie is absent.
   if (request.headers.get('Origin') !== url.origin) return reply({ error: 'Same-origin request required' }, 403);
@@ -59,6 +77,7 @@ export async function authApi(request, env, url, verify = googleAccount) {
     if (value) await env.DB.prepare('DELETE FROM auth_sessions WHERE hash = ?').bind(await digest(value)).run();
     return reply({ signedIn: false }, 200, [cookie(SESSION, '', 0), cookie(NONCE, '', 0)]);
   }
+  if (action === 'club' && !clubReady(env)) return reply({ error: 'DLE Club sign-in is off' }, 503);
   const ip = request.headers.get('CF-Connecting-IP');
   if (!env.CLAIM_SALT || !ip) return reply({ error: 'Sign-in is temporarily unavailable' }, 503);
   const day = new Date().toISOString().slice(0, 10);
@@ -80,12 +99,13 @@ export async function authApi(request, env, url, verify = googleAccount) {
   let body;
   try { body = JSON.parse(text); } catch { return reply({ error: 'Invalid sign-in' }, 400); }
   const nonce = readCookie(request, NONCE);
-  if (!/^[a-f0-9]{64}$/.test(nonce || '') || typeof body?.credential !== 'string') return reply({ error: 'Start sign-in again' }, 401);
+  const proof = action === 'club' ? body?.note : body?.credential;
+  if (!/^[a-f0-9]{64}$/.test(nonce || '') || typeof proof !== 'string') return reply({ error: 'Start sign-in again' }, 401);
   const pending = await env.DB.prepare('SELECT hash FROM auth_nonces WHERE hash = ? AND expires > ?').bind(await digest(nonce), now).first();
   if (!pending) return reply({ error: 'Start sign-in again' }, 401);
   let account;
-  try { account = await verify(body.credential, clientId, nonce); }
-  catch { return reply({ error: 'Google sign-in could not be verified. Try again.' }, 401); }
+  try { account = action === 'club' ? await clubAccount(proof, env.CLUB_SSO_SECRET, nonce, now) : await verify(proof, clientId, nonce); }
+  catch { return reply({ error: action === 'club' ? 'DLE Club sign-in could not be verified.' : 'Google sign-in could not be verified. Try again.' }, 401); }
   const consumed = await env.DB.prepare('DELETE FROM auth_nonces WHERE hash = ? AND expires > ? RETURNING hash').bind(await digest(nonce), now).first();
   if (!consumed) return reply({ error: 'Start sign-in again' }, 401);
   const current = await sessionAccount(request, env);

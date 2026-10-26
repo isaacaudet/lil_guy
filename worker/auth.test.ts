@@ -142,3 +142,57 @@ test('auth attempts are limited separately from name claims; session cookie is n
   expect((await call('/names/mia', 'POST')).status).toBe(201);
   expect(JSON.stringify(env.db.query('SELECT * FROM claim_limits').all())).not.toContain('192.0.2.1');
 });
+
+// DLE Club's sign-in: dleclub.com's frame hands over a note signed like dle-club's api/_lib/lilguys-sso.js.
+const CLUB_SECRET = 'c'.repeat(48);
+const clubNote = async (nonce: string, account: string, { secret = CLUB_SECRET, exp = Math.floor(Date.now() / 1000) + 120, aud = 'lilguys' } = {}) => {
+  const { createHmac } = await import('node:crypto');
+  const body = Buffer.from(JSON.stringify({ v: 1, aud, a: account, n: nonce, exp })).toString('base64url');
+  return `${body}.${createHmac('sha256', secret).update(body).digest('base64url')}`;
+};
+async function clubLogin(account: string, options = {}, guest = {}) {
+  const s = await start();
+  return call('/auth/club', 'POST', { note: await clubNote(s.nonce, account, options), ...guest }, s.cookie);
+}
+
+test('a DLE Club note signs in as the same account a Google sign-in keeps', async () => {
+  env.CLUB_SSO_SECRET = CLUB_SECRET;
+  expect((await (await call('/auth/session')).json()).club).toBe(true);
+  const google = await login('account-a');
+  await call('/names/mia', 'POST', undefined, sessionCookie(google));
+  const club = await clubLogin(await digest('google:account-a'));
+  expect(club.status).toBe(200);
+  expect((await club.json()).name.key).toBe('mia');
+  const session = await (await call('/auth/session', 'GET', undefined, sessionCookie(club))).json();
+  expect(session.signedIn).toBe(true);
+  expect(session.name.key).toBe('mia');
+  // a club player new to lil guys signs in with no name yet, then claims one
+  const fresh = await clubLogin(await digest('google:account-b'));
+  expect((await fresh.json()).name).toBeNull();
+});
+
+test('a DLE Club note must be signed, in date, for this audience and for this browser’s unspent nonce', async () => {
+  env.CLUB_SSO_SECRET = CLUB_SECRET;
+  const account = await digest('google:account-a');
+  expect((await clubLogin(account, { secret: 'x'.repeat(48) })).status).toBe(401);
+  expect((await clubLogin(account, { exp: Math.floor(Date.now() / 1000) - 1 })).status).toBe(401);
+  expect((await clubLogin(account, { exp: Math.floor(Date.now() / 1000) + 3600 })).status).toBe(401);
+  expect((await clubLogin(account, { aud: 'amountle' })).status).toBe(401);
+  expect((await clubLogin('not-a-hash')).status).toBe(401);
+  // another browser's nonce, or one already spent
+  const mine = await start(), theirs = await start();
+  expect((await call('/auth/club', 'POST', { note: await clubNote(theirs.nonce, account) }, mine.cookie)).status).toBe(401);
+  const note = await clubNote(mine.nonce, account);
+  expect((await call('/auth/club', 'POST', { note }, mine.cookie)).status).toBe(200);
+  expect((await call('/auth/club', 'POST', { note }, mine.cookie)).status).toBe(401);
+  // from another site
+  expect((await call('/auth/club', 'POST', { note }, mine.cookie, { Origin: 'https://evil.test' })).status).toBe(403);
+});
+
+test('without the shared secret, DLE Club sign-in is off', async () => {
+  expect((await (await call('/auth/session')).json()).club).toBe(false);
+  const s = await start();
+  expect((await call('/auth/club', 'POST', { note: await clubNote(s.nonce, await digest('google:account-a')) }, s.cookie)).status).toBe(503);
+  env.CLUB_SSO_SECRET = 'short';
+  expect((await call('/auth/club', 'POST', { note: 'x.y' }, s.cookie)).status).toBe(503);
+});

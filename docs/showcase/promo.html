@@ -1883,6 +1883,44 @@ void main() {
     if (!r.ok) throw Object.assign(new Error(d.error || 'Could not sign in'), d, { status: r.status });
     return d;
   }
+  async function signedInAs(result) {
+    signedIn = result.signedIn; accountKey = result.name?.key || null; state = null;
+    if (result.name) { state = { key: result.name.key, seed: result.name.seed, copies: [] }; fromServer(await meApi('state')); }
+    save(); renderAll(); route();
+  }
+  // On lilguys.dleclub.com a browser signed in to DLE Club is signed in here too (dle-club
+  // docs/accounts.md, Lil guys): a hidden frame of dleclub.com, the same site, says whether it is,
+  // and for this browser's own sign-in nonce hands back a short signed note naming its Google account.
+  // Signing out here stops it until the next sign-in.
+  const CLUB = 'https://dleclub.com', CLUB_OFF = 'lilguys-club-off';
+  const clubHost = () => location.hostname === 'lilguys.dleclub.com';
+  function clubNote() {
+    return new Promise(resolve => {
+      const frame = document.createElement('iframe');
+      let done = false;
+      const finish = note => { if (done) return; done = true; clearTimeout(timer); removeEventListener('message', heard); frame.remove(); resolve(note); };
+      const timer = setTimeout(() => finish(null), 10000);
+      async function heard(e) {
+        if (e.origin !== CLUB || e.source !== frame.contentWindow || e.data?.type !== 'dleclub-sso') return;
+        if (!e.data.ready) return finish(typeof e.data.note === 'string' ? e.data.note : null);
+        if (!e.data.signedIn) return finish(null);
+        try { frame.contentWindow.postMessage({ type: 'lilguys-sso', nonce: (await accountApi('start')).nonce }, CLUB); }
+        catch { finish(null); }
+      }
+      addEventListener('message', heard);
+      frame.src = CLUB + '/api/club/lilguys-frame'; frame.title = 'DLE Club sign-in'; frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
+      frame.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+      document.body.appendChild(frame);
+    });
+  }
+  async function clubSignIn() {
+    try { if (localStorage.getItem(CLUB_OFF)) return; } catch {}
+    const note = await clubNote();
+    if (!note || signedIn) return;
+    const guest = state?.ownerToken ? { key: state.key, ownerToken: state.ownerToken } : {};
+    try { await signedInAs(await accountApi('club', { note, ...guest })); }
+    catch (e) { /* the Google button still works; a name kept by another account stays as it is */ }
+  }
   function renderAccount() {
     $('acct').hidden = !isLive();
     $('acct-btn').textContent = signedIn ? (accountKey ? '@' + accountKey : 'Account') : 'Sign in';
@@ -1915,9 +1953,9 @@ void main() {
           const result = await accountApi('google', { credential: r.credential, ...guest });
           // Choosing a saved account never destroys an unlinked browser claim. Sign-out brings it back.
           if (restoreSaved && state?.ownerToken) { try { localStorage.setItem(KEY + '-unlinked', JSON.stringify(state)); } catch {} }
-          signedIn = result.signedIn; accountKey = result.name?.key || null; restoreSaved = false; state = null;
-          if (result.name) { state = { key: result.name.key, seed: result.name.seed, copies: [] }; fromServer(await meApi('state')); }
-          save(); renderAll(); route();
+          try { localStorage.removeItem(CLUB_OFF); } catch {}
+          restoreSaved = false;
+          await signedInAs(result);
         } catch (e) {
           $('account-note').textContent = e.message;
           $('account-restore').hidden = !e.savedKey;
@@ -1938,6 +1976,7 @@ void main() {
   $('account-out').addEventListener('click', async () => {
     try {
       await accountApi('logout'); signedIn = false; accountKey = null; state = state?.ownerToken ? state : null;
+      if (clubHost()) { try { localStorage.setItem(CLUB_OFF, '1'); } catch {} }
       try { const previous = JSON.parse(localStorage.getItem(KEY + '-unlinked') || 'null'); if (previous?.ownerToken) state = previous; localStorage.removeItem(KEY + '-unlinked'); } catch {}
       window.google?.accounts?.id?.disableAutoSelect(); save(); renderAll(); route();
     } catch (e) { $('account-note').textContent = e.message; }
@@ -3990,6 +4029,7 @@ void main() {
         } else if (state?.ownerToken) {
           try { fromServer(await meApi('state')); } catch (e) { if (e.status === 401) { state = null; save(); } else throw e; }
         } else { state = null; save(); }
+        if (!signedIn && account.club && clubHost()) clubSignIn();
       } catch (e) { toast('Could not restore your account. Reload to try again.'); }
       }
       renderAll(); route();

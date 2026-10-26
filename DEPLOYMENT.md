@@ -1,8 +1,10 @@
 # Lil Guys promo
 
-The promo runs at https://lilguys.isaac-audet.workers.dev. Only the
+The promo runs at https://lilguys.dleclub.com (a Worker Custom Domain in
+`wrangler.jsonc`; dleclub.com's zone is on the same Cloudflare account, and the
+deploy makes its DNS record and certificate) and still at
+https://lilguys.isaac-audet.workers.dev. Only the
 `claude/compassionate-mayer-oigii3` branch is used for this deployment.
-No custom domain or DLE Club routes are configured.
 
 ## Build and deploy
 
@@ -22,6 +24,35 @@ The D1 database is dedicated to this promo. Two Worker secrets must be set:
 `CLAIM_SALT` (a random private salt) and `FOUNDER_SECRET` (the private founder
 reservation key). Neither belongs in this repository. Local testing uses an
 ignored `.dev.vars` file. Production secrets were uploaded with Wrangler.
+
+## DLE Club sign-in
+
+Lil guys and DLE Club share one sign-in. Both use the same Google client, and both
+keep a Google sign-in as `sha256("google:<sub>")`, so a Google account is the
+same account on either site. On lilguys.dleclub.com a browser already signed in
+to dleclub.com is signed in here by itself (dle-club `docs/accounts.md`, Lil guys):
+
+1. Signed out, the page frames `https://dleclub.com/api/club/lilguys-frame`, hidden.
+   The frame reads the club's own storage and says whether the browser is signed in.
+2. If it is, the page starts a sign-in (`POST /api/auth/start`, the nonce cookie as
+   for Google) and sends the nonce to the frame, which asks the club for a note:
+   the player's Google sign-in hash, the nonce and a two-minute expiry, HMAC-signed.
+3. `POST /api/auth/club {note}` checks the signature with `CLUB_SSO_SECRET`, the
+   expiry, the audience and that the nonce is this browser's and unspent, then
+   makes the usual session. An unlinked name claimed in this browser is linked as
+   with Google.
+
+Signing out here stops it until the next sign-in in this browser. A club player
+with no Google sign-in (a guest, or Apple only) stays signed out here. Without the
+secret, `GET /api/auth/session` says `club: false` and nothing is framed.
+
+To turn it on:
+
+- One random secret of at least 32 characters, set twice and never committed:
+  `npx wrangler secret put CLUB_SSO_SECRET` here, and `LILGUYS_SSO_SECRET` in the
+  dle-club Vercel project (Production). The club's half is a dle-club pull request.
+- Add `https://lilguys.dleclub.com` to the Google OAuth client's Authorized
+  JavaScript origins, so the Google button keeps working on the new host.
 
 ## Name claims
 
