@@ -415,16 +415,93 @@ const byId = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map(a => [a.id, a]));
 export const auraById = (id: string | undefined) => (id ? byId.get(id) : undefined);
 
 /**
+ * How much an aura copy does on top of its aura, by how rare its finish is
+ * among auras: 0 for Classic (half of all auras) up to 4 for Black pearl
+ * (three in a thousand); Origin, one of one, is 5 whatever its finish.
+ */
+const INTENSITY: Record<string, number> = { classic: 0, fade: 1, frost: 1, toxic: 2, shadow: 2, sapphire: 3, ruby: 3, pearl: 4 };
+export function auraIntensity(id: string, finish?: string): number {
+  if (ONE_OF_ONE_AURAS.some(a => a.id === id)) return 5;
+  return INTENSITY[finish ?? 'classic'] ?? 0;
+}
+
+const TAU = Math.PI * 2;
+const turn = (a: number) => { const v = ((a % TAU) + TAU) % TAU; return v > Math.PI ? v - TAU : v; };
+
+/**
+ * What a rarer aura adds round the guy, level by level, each in the aura's
+ * own colours: a twinkling haze (1), arcs of light running round him (2),
+ * sparks rising off him and a second ring turning the other way (3), stars
+ * in orbit (4), and for Origin a crown of rays that pulse above his head (5).
+ */
+function extras(mask: Mask, t: number, print: number, level: number): AuraCell[] {
+  if (level <= 0) return [];
+  const s = shape(mask), out: AuraCell[] = [], phase = noise(print, 3) * TAU;
+  const reach = level >= 3 ? 3 : 2, near = ring(mask, reach), beat = Math.floor(t / 110);
+  // A haze of twinkles a cell or two out, thicker the rarer.
+  const haze = [0, 0.07, 0.11, 0.15, 0.2, 0.26][level];
+  for (const [x, y, d] of near) {
+    const n = noise(x, y, beat, print, 31);
+    if (d >= 2 && n < haze) out.push([x, y, n < haze / 3 ? 0 : 1]);
+  }
+  // Arcs of light running round him on the outer ring; from level 3 a second set turning back.
+  if (level >= 2) {
+    const arcs = level >= 4 ? 3 : 2, speed = level >= 4 ? 300 : 420, a0 = t / speed + phase;
+    for (const [x, y, d] of near) {
+      if (d !== reach && !(level >= 3 && d === reach - 1)) continue;
+      const ang = Math.atan2((y - s.cy) * 1.2, x - s.cx);
+      for (let k = 0; k < arcs; k++) {
+        const fwd = Math.abs(turn(ang - a0 - (k * TAU) / arcs));
+        if (d === reach && fwd < 0.42) out.push([x, y, fwd < 0.16 ? 0 : 1]);
+        const back = Math.abs(turn(ang + a0 * 1.4 - (k * TAU) / arcs));
+        if (level >= 3 && d === reach - 1 && back < 0.3) out.push([x, y, back < 0.12 ? 0 : 2]);
+      }
+    }
+  }
+  // Sparks rising off him, swaying as they go.
+  if (level >= 3) {
+    const n = [0, 0, 0, 5, 7, 10][level], life = 1300;
+    for (let i = 0; i < n; i++) {
+      const at = t + (i * life) / n + print * 13, gen = Math.floor(at / life), f = (at % life) / life;
+      const x = s.left - 1 + Math.floor(noise(i, gen, print, 5) * (s.right - s.left + 3));
+      const y = s.bottom - Math.floor(f * (s.bottom - s.top + 5));
+      out.push([x + Math.round(Math.sin(at / 210 + i) * 0.7), y, f < 0.55 ? 0 : f < 0.8 ? 1 : 2]);
+    }
+  }
+  // Stars in orbit, a bright plus each.
+  if (level >= 4) {
+    const stars = level >= 5 ? 3 : 2, rx = (s.right - s.left) / 2 + 2.5, ry = (s.bottom - s.top) / 2 + 2;
+    for (let i = 0; i < stars; i++) {
+      const a = t / 520 + (i * TAU) / stars + phase;
+      out.push(...plus(s.cx + Math.cos(a) * rx, s.cy + Math.sin(a) * ry, 1));
+    }
+  }
+  // Origin: a glowing rim hugging him on the breath in, and a crown of rays
+  // above his head, pulsing out from the middle.
+  if (level >= 5) {
+    if (Math.sin(t / 260) > -0.2) for (const [x, y, d] of near) if (d === 1 && noise(x, y, Math.floor(t / 260)) < 0.7) out.push([x, y, 2]);
+    const pulse = (t / 90) % 6;
+    for (let r = 1; r <= 4; r++) for (const dx of [-3, -2, 0, 2, 3]) {
+      const x = Math.round(s.cx + dx * (1 + r * 0.25)), y = s.top - r;
+      const lit = Math.abs(r - pulse) < 1.2 || (dx === 0 && r <= 2);
+      if (lit && (dx === 0 || r >= 2)) out.push([x, y, Math.abs(r - pulse) < 0.6 ? 0 : 1]);
+    }
+  }
+  return out;
+}
+
+/**
  * An aura's cells round `mask` at `t`, only in empty pixels and inside the
  * frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
- * one flickers with gaps.
+ * one flickers with gaps. A rarer finish adds more (`extras`).
  */
 export function auraCells(id: string, mask: Mask, t: number, copy?: Owned): AuraCell[] {
   const aura = auraById(id);
   if (!aura) return [];
   const h = mask.length, w = mask[0].length, print = copy?.print ?? 0, scuff = copy?.scuff ?? 0;
   const seen = new Set<number>(), step = Math.floor(t / 150);
-  return aura.cells(mask, t, print).map(([x, y, k]): AuraCell => [Math.round(x), Math.round(y), k]).filter(([x, y]) => {
+  const cells = [...aura.cells(mask, t, print), ...extras(mask, t, print, auraIntensity(id, copy?.finish))];
+  return cells.map(([x, y, k]): AuraCell => [Math.round(x), Math.round(y), k]).filter(([x, y]) => {
     if (x < 0 || y < 0 || x >= w || y >= h || mask[y][x] || seen.has(y * w + x)) return false;
     seen.add(y * w + x);
     return noise(x, y, step, print, 7) >= scuff * 0.45;
@@ -457,6 +534,11 @@ const hsl = (h: number, s: number, l: number) => {
 export function auraColor(id: string, k: number, finish: string, x: number, y: number, t: number): string {
   const aura = auraById(id);
   if (!aura) return '#FFFFFF';
+  // A one of one keeps its own colours in any finish, glinting in every colour.
+  if (ONE_OF_ONE_AURAS.includes(aura)) {
+    if (noise(x, y, Math.floor(t / 160), 9) > 0.86) return hsl(wrap(x * 40 + y * 25 + t / 5, 360), 0.9, 0.72);
+    return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
+  }
   if (finish === 'fade') {
     const i = wrap(Math.floor((y + x * 0.5 + t / 140) / 2), 3);
     return k === 0 ? '#FFFFFF' : FADE[(i + k) % 3];
