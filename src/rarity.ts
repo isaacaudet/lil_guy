@@ -1,3 +1,4 @@
+import { GUY_RANK } from './guy-rank';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
@@ -86,4 +87,61 @@ export function copyOneIn(o: Owned): number {
   if (o.tally !== undefined) p *= 0.1;
   if (o.fx) p *= 1 / EFFECTS[o.fx][f.aura ? 'aura' : 'item'];
   return 1 / p;
+}
+
+/** A guy's tiers, commonest first: each is the share of guys at least that rare. */
+export const GUY_TIERS = [
+  { id: 'common', name: 'Common', top: 1 },
+  { id: 'uncommon', name: 'Uncommon', top: 0.5 },
+  { id: 'rare', name: 'Rare', top: 0.1 },
+  { id: 'epic', name: 'Epic', top: 0.01 },
+  { id: 'legendary', name: 'Legendary', top: 0.001 },
+  { id: 'mythic', name: 'Mythic', top: 0.0001 },
+] as const;
+
+export interface GuyRank {
+  /** The share of guys at least this rare, 0–1: 0.003 is the rarest 0.3%. */
+  top: number;
+  /** Index into `GUY_TIERS`, 0 Common to 5 Mythic. */
+  tier: number;
+  name: string;
+  /** "Top 0.3%", or "Common" for the commoner half. */
+  label: string;
+}
+
+/**
+ * What a guy's rank is measured on: the odds of his whole combination, with his
+ * single rarest trait counted twice. One standout (galaxy eyes, Lucky) is what
+ * people see as rare, more than a handful of slightly unusual picks.
+ */
+export function guyScore(config: AvatarConfig): number {
+  const logs = traitOdds(config).map(t => -Math.log10(t.chance));
+  return logs.reduce((a, b) => a + b, 0) + Math.max(...logs);
+}
+
+/**
+ * Where a guy stands among every guy dealt: "one in 56 billion" says every
+ * combination is unique, which they all are, so a card shows this instead.
+ */
+export function guyRank(config: AvatarConfig): GuyRank {
+  const v = guyScore(config), last = GUY_RANK[GUY_RANK.length - 1];
+  let top = 1;
+  if (v > last[0]) top = last[1] * 10 ** (last[0] - v);          // past the table: rarer by as much again
+  else {
+    const i = GUY_RANK.findIndex(([a]) => v <= a);
+    if (i > 0) {
+      // Between two points, on a log scale of the share.
+      const [a, pa] = GUY_RANK[i - 1], [b, pb] = GUY_RANK[i];
+      top = 10 ** (Math.log10(pa) + (Math.log10(pb) - Math.log10(pa)) * (v - a) / (b - a));
+    }
+  }
+  // A chase part (galaxy eyes, Lucky: rarer than 1 in 200) makes a guy rare
+  // however plain the rest of him is: few guys have any trait that rare.
+  const rarest = Math.min(...traitOdds(config).map(t => t.chance));
+  if (rarest < 0.005) top = Math.min(top, rarest * 3);
+  const pct = top * 100;
+  const shown = pct >= 10 ? Math.round(pct) : pct >= 1 ? +pct.toFixed(1) : +pct.toPrecision(2);
+  // The tier follows the share as shown, so a card never says "Top 0.1%" and Epic.
+  const tier = GUY_TIERS.reduce((k, t, i) => (shown / 100 <= t.top ? i : k), 0);
+  return { top, tier, name: GUY_TIERS[tier].name, label: top > 0.5 ? 'Common' : `Top ${shown}%` };
 }

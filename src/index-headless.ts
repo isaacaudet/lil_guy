@@ -23,7 +23,7 @@ export { toSvgString } from './render-string';
 export { toPng } from './export-png';
 
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from './utils/colors';
-export { traitOdds, guyOneIn, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from './rarity';
+export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, type GuyRank, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from './rarity';
 export type { TraitOdds, TraitSlot } from './rarity';
 export { TRAIT_ICONS, TIER_ICONS } from './icons';
 export type { Tier } from './icons';

@@ -1,7 +1,8 @@
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
-import { compose, composeBase } from './compose';
-import { heads, mouths } from './parts';
+import { compose, composeBase, faceOf } from './compose';
+import { heads, mouths, eyes as EYES } from './parts';
+import type { Face } from './parts/canvas';
 import { paint } from './paint';
 import { paletteOf } from './palette';
 import { GRADES, gradeOf } from './owned';
@@ -225,7 +226,8 @@ const mix = (a: string, b: string, t: number) => {
 
 // ---------------------------------------------------------------- frames
 
-interface Cell { c: string; item: boolean; slot?: number }
+/** `body`: the guy's own skin, which a Lucky shimmer crosses. `eye`: the token of an eye pixel, for eyes that move. */
+interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
@@ -235,14 +237,58 @@ const slotIndex = (t: number) => (t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t
 const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
 
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false): Layer {
+function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, face: Face | null = null): Layer {
   const colors = paint(grid, config, palette, small, false);
   const out = empty();
+  const eyeBox = face && { top: face.top - 1, bottom: face.line, left: face.eyes[0].left - 1, right: face.eyes[face.eyes.length - 1].right + 1 };
   grid.forEach((row, y) => row.forEach((t, x) => {
     const c = colors[y][x];
-    if (c) out[y + HEADROOM][x] = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy, slot: slotIndex(t) };
+    if (!c) return;
+    const cell: Cell = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy, slot: slotIndex(t) };
+    if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
+    if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
+    out[y + HEADROOM][x] = cell;
   }));
   return out;
+}
+
+const LIVE_EYE_TOKENS: number[] = [T.EYE, T.WHITE, T.ACCENT, T.ACCENT_SHADE, T.GOLD, T.GOLD_SHADE];
+/** Chase eyes that move: one guy in hundreds has them, so they should look it. */
+const LIVE_EYES = new Map(['galaxy', 'diamond', 'dragon'].map(n => [EYES.findIndex(e => e.name === n), n]));
+
+const hue = (h: number, s: number, l: number) => {
+  const k = (n: number) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = (n: number) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+  return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('');
+};
+
+/** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
+function luckyShimmer(layer: Layer, t: number, seed: number): void {
+  const at = ((t + seed) % 2200) / 2200 * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
+  layer.forEach((row, y) => row.forEach((cell, x) => {
+    if (!cell?.body) return;
+    const d = Math.abs(x + y * 0.8 - at);
+    if (d < 3) cell.c = mix(cell.c, hue((t / 5 + (x - y) * 22) % 360, 0.95, 0.68), d < 1.2 ? 0.6 : 0.3);
+  }));
+}
+
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder. */
+function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
+  layer.forEach((row, y) => row.forEach((cell, x) => {
+    if (!cell?.eye) return;
+    const k = cell.eye;
+    if (kind === 'galaxy') {
+      if (k === T.WHITE) cell.c = ((t / 160 + x * 3 + y * 2) % 5) < 1.2 ? '#FFFFFF' : '#CBB8FF';
+      else if (k !== T.EYE) cell.c = hue(255 + 45 * Math.sin(t / 380 + x * 0.9 + y * 0.7), 0.8, 0.55);
+    } else if (kind === 'diamond') {
+      const at = ((t + seed) % 1400) / 1400 * 24 - 4, d = Math.abs(x - y * 0.5 - at);
+      if (k !== T.EYE) cell.c = mix(cell.c, '#E6FCFF', 0.25 + 0.2 * Math.sin(t / 250 + x));
+      if (d < 1.5) cell.c = mix(cell.c, '#FFFFFF', d < 0.6 ? 0.9 : 0.5);
+    } else if (kind === 'dragon') {
+      const flash = ((t + seed) % 2000) < 160;
+      if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? '#FFF6B0' : mix(cell.c, '#FF4A1C', 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(t / 260)));
+    }
+  }));
 }
 
 /** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
@@ -326,6 +372,9 @@ function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
   for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = { c, item: false };
 }
 
+/** Where a Lucky guy's gold twinkles go. */
+const LUCKY_SPOTS: [number, number][] = [[2, 5], [13, 4], [14, 14], [1, 15]];
+
 /** Where sparkles may go: around the guy, clear of him. */
 const SPARKLE_SPOTS: [number, number][] = [[2, 6], [13, 8], [1, 13], [14, 15], [7, 1], [2, 18], [13, 2], [12, 18]];
 
@@ -342,6 +391,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // Effects move, so a guy wearing one gets short frames like an aura's.
   const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
   const withFx = fxCopies.some(o => o?.fx);
+  // Lucky guys and chase eyes move too, unless a still is asked for.
+  const lucky = !!config.lucky && options.rarity !== false && !options.small;
+  const liveEye = options.small ? undefined : LIVE_EYES.get(config.eyes);
 
   const grids = new Map<Pose, PixelGrid>();
   const grid = (pose: Pose): PixelGrid => {
@@ -365,7 +417,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
   const layers = new Map<Pose, Layer>();
   const layerOf = (pose: Pose) => {
-    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
+    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null));
     return layers.get(pose)!;
   };
 
@@ -391,7 +443,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const slices: { beat: Beat; ms: number; t: number }[] = [];
   let t = 0;
   for (const beat of beats) {
-    const n = wornAura || withFx ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+    const n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
     for (let i = 0; i < n; i++) {
       const ms = Math.round(beat.ms / n);
       slices.push({ beat, ms, t });
@@ -428,6 +480,12 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
         else if (d < 2) cell.c = mix(cell.c, '#FFFFFF', 0.25);
       }));
     }
+
+    if (lucky) luckyShimmer(layer, t, seed);
+    if (liveEye) liveEyes(layer, liveEye, t, seed);
+    if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
+      if (((t / 260 + k * 1.3 + seed) % 3) < 1) twinkle(layer, x, y, '#FFFFFF', '#FFD45C');
+    });
 
     const aura = grade >= 2 ? rim(layer) : [];
     if (beat.stars) {

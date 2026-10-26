@@ -262,7 +262,8 @@ export function luckyPalette(palette: Palette): Palette {
     let hue = (h + 150) % 360;
     const dark = l < 0.45;
     if (dark && hue >= 10 && hue <= 110) hue += 130;
-    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.min(0.85, s + 0.05), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.max(l, 0.66)]);
+    // Light ones go vivid, never pastel: a Lucky guy has to look it from across a page.
+    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.max(0.7, Math.min(0.92, s + 0.25)), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.min(Math.max(l, 0.6), 0.68)]);
   };
   const c = palette.colors;
   return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');

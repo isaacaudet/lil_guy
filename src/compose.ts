@@ -1,7 +1,7 @@
 import { RETIRED_EYES } from './parts/weights';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 import { LAYER, LOCAL, T } from './parts/art';
-import { Canvas } from './parts/canvas';
+import { Canvas, type Face } from './parts/canvas';
 import { itemById, type Item } from './items';
 import { auraById, auraCells } from './auras';
 import { goldRim, GOLD_RIM_DAYS, markItem } from './pins';
@@ -110,6 +110,13 @@ function claim(grid: PixelGrid, layer: number): void {
 function skinOf(config: AvatarConfig): Item | undefined {
   const item = itemById(config.skin);
   return item?.slot === 'skin' ? item : undefined;
+}
+
+/** Where a guy's eyes and mouth sit, for anything that moves them afterwards (animate). */
+export function faceOf(config: AvatarConfig): Face {
+  const c = startCanvas(config);
+  c.setFace(eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouths[config.mouth].art);
+  return c.face!;
 }
 
 function startCanvas(config: AvatarConfig): Canvas {
