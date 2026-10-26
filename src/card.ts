@@ -146,7 +146,7 @@ function inside(x: number, y: number, r = 7): boolean {
 const WIN = { left: 8, top: 26, right: 95, bottom: 113 };
 
 /** The card at `t` seconds, with the guy's frame `frame` in its window. */
-function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, t: number): Uint8ClampedArray {
+function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, t: number): Uint8ClampedArray {
   const s = new Surface();
   const gc: RGB = g >= 0 ? rgb(GRADES[g].color) : [120, 140, 170];
   // The face: cream, warmed by gold on a Grail, gone dark and pearly on an aura.
@@ -187,7 +187,8 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   const ox = Math.round((WIN.left + WIN.right + 1) / 2 - (FRAME_WIDTH * ZOOM) / 2), oy = WIN.bottom - 3 - FRAME_HEIGHT * ZOOM;
   // A sticker's edge round him, two card pixels of light, so his dark outline
   // never sinks into the window (on the Aura card's night window it did).
-  const solid = (gx: number, gy: number) => !!frame.colors[gy]?.[gx];
+  // An aura's own pixels are light, not part of him, so they get no edge.
+  const solid = (gx: number, gy: number) => !!frame.colors[gy]?.[gx] && frame.slots[gy]?.[gx] !== 5;
   const edge = g === 5 ? mix(tint, WHITE, 0.42) : mix(tint, WHITE, 0.55);
   for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
     const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((y - oy) / ZOOM);
@@ -206,6 +207,11 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
       s.set(cx, cy, [Math.min(255, Math.max(0, c[0])), Math.min(255, Math.max(0, c[1])), Math.min(255, Math.max(0, c[2]))]);
     }
   }));
+  // A rare aura's rings run past the frame's sides into the window's margins.
+  for (const [gx, gy, hex] of frame.outside ?? []) for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
+    const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+    if (cy > WIN.top && cy < WIN.bottom && cx > WIN.left && cx < WIN.right) s.set(cx, cy, rgb(hex));
+  }
   // Glass over the window: a soft glare that slides across now and then, on every card.
   const glare = ((t * 0.45) % 2.2) * 140 - 40;
   for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
