@@ -1,6 +1,7 @@
 import { resolve, DEAL_PREFIX } from './resolve';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights, bodyWeights, accessoryWeights, paletteWeights,
+  RETIRED_EYES,
 } from './parts/weights';
 import type { AvatarConfig } from './types';
 
@@ -57,7 +58,7 @@ export function makeSeed(): string {
 export function pickable(own: AvatarConfig, slot: LookSlot): number[] {
   const weights = SLOTS.find(s => s[1] === slot)![2];
   const total = weights.reduce((a, b) => a + b, 0);
-  return weights.map((w, i) => i).filter(i => weights[i] / total >= RARE || i === own[slot]);
+  return weights.map((w, i) => i).filter(i => (weights[i] / total >= RARE || i === own[slot]) && !(slot === 'eyes' && RETIRED_EYES.includes(i)));
 }
 
 /** Whether a look only uses parts this player may pick. */
@@ -82,6 +83,7 @@ export function decodeLook(code: string, own?: AvatarConfig): Look | null {
     const slot = SLOTS.find(s => s[0] === part[0]);
     const n = Number(part.slice(1));
     if (!slot || !/^\d{1,3}$/.test(part.slice(1)) || n >= slot[2].length) return null;
+    if (slot[1] === 'eyes' && RETIRED_EYES.includes(n)) continue;   // a retired part drops out; the rest of the look stays
     look[slot[1]] = n;
   }
   if (own && !allowed(own, look)) return null;

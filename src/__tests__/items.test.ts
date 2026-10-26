@@ -1,3 +1,4 @@
+import { RETIRED_EYES } from '../parts/weights';
 import { describe, expect, it } from 'bun:test';
 import { compose, ARM_STYLES, FOOT_STYLES } from '../compose';
 import { heads, eyes, mouths, hair, accessories } from '../parts';
@@ -102,6 +103,7 @@ describe('skins', () => {
     for (const skin of skins) {
       for (const hat of [undefined, ...hats.map(h => h.id)]) {
         for (let e = 0; e < eyes.length; e++) {
+          if (RETIRED_EYES.includes(e)) continue;
           const g = guy({ skin: skin.id, hat, eyes: e, mouth: 1 });
           const used = new Set(eyes[e].art.flat().filter(Boolean));
           const drawn = g.flat().filter(v => used.has(v)).length;

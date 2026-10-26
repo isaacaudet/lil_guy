@@ -74,3 +74,18 @@ describe('what is worn on the face fits it', () => {
     }
   });
 });
+
+describe('retired eyes', () => {
+  test('no seed, look or override shows a cyclops', () => {
+    const { resolve } = require('../resolve');
+    const { decodeLook, pickable } = require('../look');
+    const { compose } = require('../compose');
+    const { RETIRED_EYES } = require('../parts/weights');
+    for (let i = 0; i < 4000; i++) for (const seed of [`name${i}`, `3-seed${i}`]) expect(RETIRED_EYES).not.toContain(resolve(seed).eyes);
+    const own = resolve('maya');
+    expect(pickable(own, 'eyes')).not.toContain(16);
+    expect(decodeLook('2:e16.m1', own)).toEqual({ mouth: 1 });
+    const cyc = compose({ ...own, eyes: 16 }), beans = compose({ ...own, eyes: 0 });
+    expect(cyc).toEqual(beans);
+  });
+});

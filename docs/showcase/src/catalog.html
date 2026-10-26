@@ -202,7 +202,7 @@
   const chanceOf = (slot, i) => LG.traitOdds({ ...LG.resolve('x'), [slot.key]: i }).find(t => t.slot === slot.odds).chance;
   // Rarest first; a part no longer dealt goes last.
   const order = (a, b) => (a.p || 1) - (b.p || 1);
-  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: chanceOf(s, i) })).sort(order);
+  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: chanceOf(s, i) })).filter(o => !(s.key === 'eyes' && LG.RETIRED_EYES.includes(o.i))).sort(order);
   const palOdds = LG.palettes.map((p, i) => ({ i, name: p.name, p: LG.traitOdds({ ...LG.resolve('x'), palette: i }).find(t => t.slot === 'colour').chance })).sort(order);
   // Traits the seed rolls that aren't in the odds list (weights from parts/weights.ts).
   const share = w => w.map(x => x / w.reduce((a, b) => a + b, 0));
@@ -216,13 +216,13 @@
 
   const machine = g => LG.gameItems(g).filter(i => !i.free);
   const slotCount = slot => LG.GAMES.map(g => machine(g).filter(i => i.slot === slot).length);
-  const combos = SLOTS.reduce((n, s) => n * s.list.length, 1) * LG.palettes.length * 3 * 5 * 3 * 2 * 2;
+  const combos = SLOTS.reduce((n, s) => n * s.options.length, 1) * LG.palettes.length * 3 * 5 * 3 * 2 * 2;
 
   $('nav').innerHTML = [['thin', 'What was thin'], ['ladder', 'Ladder'], ...SLOTS.map(s => [s.id, s.title]), ['colours', 'Colours'], ['extras', 'Body'], ['items', 'Items'], ['finishes', 'Finishes'], ['relics', '★ Auras and effects']].map(([id, t]) => `<a href="#${id}">${t}</a>`).join('');
   const rarestPart = Math.min(...SLOTS.map(s => s.options.find(o => o.p).p));
   $('stats').innerHTML = [
     [fmt(combos), 'different guys the parts can make'],
-    [SLOTS.reduce((n, s) => n + s.list.length, 0) + LG.palettes.length, 'face and body parts, in 8 slots'],
+    [SLOTS.reduce((n, s) => n + s.options.length, 0) + LG.palettes.length, 'face and body parts, in 8 slots'],
     [LG.items.length, `items: ${LG.items.filter(i => i.free).length} free hats, ${LG.items.filter(i => !i.free && !i.season).length} in machines, ${LG.items.filter(i => i.season).length} seasonal`],
     [oneIn(rarestPart), 'the rarest single part'],
     [oneIn(LG.AURA_ODDS), 'a ★ Aura, the top of the ladder'],
@@ -239,7 +239,7 @@
     ['Seasonal hats', `${LG.items.filter(i => i.season).length}, so something is in season every month, two at once round the big holidays.`, 'Was 4.'],
     ['Rarity that means something', 'A few simple, good-looking parts carry most guys; busier ones are uncommon; chase parts carry the rarity. Weak parts were redrawn (bat, cactus, laser eyes, headphones, eye patch, the marks).', 'Was nearly everything between 1 in 10 and 1 in 40.'],
   ].map(([h, p, was]) => `<div class="note"><span class="sev done">Done</span><h3>${esc(h)}</h3><p class="fix">${esc(p)}</p><p>${esc(was)}</p></div>`).join('');
-  const barRows = [...SLOTS.map(s => [s.title, s.list.length, s.options.find(o => o.p)]), ['Colours', LG.palettes.length, palOdds.find(o => o.p)], ['Buddies', buddies, null], ['Hats', hats, null], ['Frames', frames, null], ['Skins', skins, null]];
+  const barRows = [...SLOTS.map(s => [s.title, s.options.length, s.options.find(o => o.p)]), ['Colours', LG.palettes.length, palOdds.find(o => o.p)], ['Buddies', buddies, null], ['Hats', hats, null], ['Frames', frames, null], ['Skins', skins, null]];
   const most = Math.max(...barRows.map(r => r[1]));
   $('bars').innerHTML = `<div class="bar" style="font-size:12px;color:var(--muted)"><span>Slot</span><span>Options</span><span>Rarest</span></div>` + barRows.map(([n, count, r]) =>
     `<div class="bar"><b>${esc(n)}</b><span class="track" title="${count} options"><span class="fill${count < 3 ? ' low' : ''}" style="width:${(count / most) * 100}%"></span></span><span class="v">${count} · ${n === 'Buddies' || n === 'Hats' || n === 'Frames' || n === 'Skins' ? 'per machine' : `${esc(r.name)}, ${oneIn(r.p)}`}</span></div>`).join('');
@@ -253,7 +253,7 @@
 
   // ---------------------------------------------------------------- slots
   let html = '';
-  for (const s of SLOTS) html += `<section id="${s.id}"><div class="sh"><h2>${s.title}</h2><p>${s.list.length} options, rarest first.</p></div><div class="grid">${s.options.map(o => tile(o.name, o.p, cv({ parts: { [s.key]: o.i, ...(s.key === 'head' ? { hair: 0 } : {}) } }))).join('')}</div></section>`;
+  for (const s of SLOTS) html += `<section id="${s.id}"><div class="sh"><h2>${s.title}</h2><p>${s.options.length} options, rarest first.</p></div><div class="grid">${s.options.map(o => tile(o.name, o.p, cv({ parts: { [s.key]: o.i, ...(s.key === 'head' ? { hair: 0 } : {}) } }))).join('')}</div></section>`;
   html += `<section id="colours"><div class="sh"><h2>Colourways</h2><p>${LG.palettes.length} options, rarest first. The chase colourways (Opal, Obsidian, Aurora) are the rarest, then the night colours.</p></div><div class="grid">${palOdds.map(o => tile(o.name, o.p, cv({ palette: o.i }))).join('')}</div></section>`;
   html += `<section id="extras"><div class="sh"><h2>Body, tone and Lucky</h2><p>Rolled from the seed too. Lucky turns the colourway round the wheel.</p></div><div class="grid">${EXTRA.map(o => tile(o.name, o.p, cv({ parts: o.parts }))).join('')}</div></section>`;
   $('slots').innerHTML = html;

@@ -296,6 +296,15 @@ export const DEAL_2 = {
  * Picks an index from a weight table using a hash value, so the result is
  * deterministic for a given input and the distribution follows the weights.
  */
+/**
+ * Eyes no guy has any more: never dealt, picked or drawn. They stay in their
+ * arrays (an index is what a saved look or game stores), so every other part
+ * keeps its place. 16 is the cyclops.
+ */
+export const RETIRED_EYES: readonly number[] = [16];
+/** A slot's weights with its retired parts at zero. */
+export const withoutRetired = (weights: readonly number[], retired: readonly number[]) => weights.map((x, i) => (retired.includes(i) ? 0 : x));
+
 export function weightedPick(weights: number[], hashValue: number): number {
   let total = 0;
   for (const w of weights) total += w;

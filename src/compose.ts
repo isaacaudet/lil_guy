@@ -1,3 +1,4 @@
+import { RETIRED_EYES } from './parts/weights';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 import { LAYER, LOCAL, T } from './parts/art';
 import { Canvas } from './parts/canvas';
@@ -180,7 +181,8 @@ export function compose(config: AvatarConfig): PixelGrid {
   }
 
   // The face goes where it always does; everything worn is fitted around it.
-  const eye = eyes[config.eyes].art, mouth = mouths[config.mouth].art;
+  // A config made without resolve can still name retired eyes; they draw as beans.
+  const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth = mouths[config.mouth].art;
   c.setFace(eye, mouth);
 
   // On a skin the player's face is what carries over; their ears, bow tie or

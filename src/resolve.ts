@@ -2,7 +2,7 @@ import { hashNth } from './hash';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
   bodyWeights, accessoryWeights, armWeights, footWeights, shadeWeights,
-  paletteWeights, weightedPick, DEAL_2,
+  paletteWeights, weightedPick, DEAL_2, RETIRED_EYES, withoutRetired,
 } from './parts/weights';
 import type { AvatarConfig, RenderOptions } from './types';
 
@@ -34,10 +34,13 @@ const DEAL_3 = {
 export function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig {
   const pick = (slot: number, weights: number[]): number => weightedPick(weights, hashNth(input, slot));
   const w = dealOf(input) === 3 ? DEAL_3 : DEAL_2;
+  // A guy whose eyes were retired draws again from the rest, so only he changes.
+  let eyes = overrides?.eyes ?? pick(1, w.eyes);
+  if (RETIRED_EYES.includes(eyes)) eyes = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
 
   return {
     head:      overrides?.head      ?? pick(0, w.head),
-    eyes:      overrides?.eyes      ?? pick(1, w.eyes),
+    eyes,
     mouth:     overrides?.mouth     ?? pick(2, w.mouth),
     hair:      overrides?.hair      ?? pick(3, w.hair),
     body:      overrides?.body      ?? pick(4, w.body),

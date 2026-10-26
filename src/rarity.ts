@@ -2,6 +2,7 @@ import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts'
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
   bodyWeights, accessoryWeights, paletteWeights, armWeights, footWeights, shadeWeights,
+  RETIRED_EYES, withoutRetired,
 } from './parts/weights';
 import { palettes } from './palette';
 import { gameItems, itemById } from './items';
@@ -46,7 +47,7 @@ const share = (weights: number[], i: number) => weights[i] / weights.reduce((a, 
 export function traitOdds(config: AvatarConfig): TraitOdds[] {
   return [
     { slot: 'shape', name: heads[config.head].name, chance: share(headWeights, config.head) },
-    { slot: 'eyes', name: eyes[config.eyes].name, chance: share(eyeWeights, config.eyes) },
+    { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes) },
     { slot: 'mouth', name: mouths[config.mouth].name, chance: share(mouthWeights, config.mouth) },
     { slot: 'cheeks', name: cheeks[config.cheeks].name, chance: share(cheekWeights, config.cheeks) },
     { slot: 'topper', name: hair[config.hair].name, chance: share(hairWeights, config.hair) },

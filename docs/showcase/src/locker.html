@@ -1136,7 +1136,7 @@ void main() {
     const rarest = {};
     for (const sl of SLOTS) {
       const ch = sl.list.map((_, i) => chanceOf(sl.slot, sl.key, i));
-      const min = Math.min(...ch);
+      const min = Math.min(...ch.filter(c => c > 0));
       rarest[sl.key] = ch.map((c, i) => [c, i]).filter(([c]) => c === min).map(([, i]) => i);
     }
     const frames = LG.items.filter(i => i.slot === 'frame');
@@ -1281,7 +1281,7 @@ void main() {
     const tiles = [];
     for (const s of SLOTS) {
       const ch = s.list.map((_, i) => chanceOf(s.slot, s.key, i));
-      const min = Math.min(...ch);
+      const min = Math.min(...ch.filter(c => c > 0));
       const picks = ch.map((c, i) => [c, i]).filter(([c]) => c === min).slice(0, s.slot === 'shape' ? 4 : 2);
       for (const [c, i] of picks) {
         const spec = s.key === 'palette' ? { name: 'demo', parts: DEMO, palette: i } : { name: 'demo', parts: { ...DEMO, [s.key]: i } };

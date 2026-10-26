@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-A99jbjkG.cjs');
+const require_paint = require('./paint-X5gVbAuf.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -1453,7 +1453,7 @@ function traitOdds(config) {
 		{
 			slot: "eyes",
 			name: require_paint.eyes[config.eyes].name,
-			chance: share(require_paint.eyeWeights, config.eyes)
+			chance: share(require_paint.withoutRetired(require_paint.eyeWeights, require_paint.RETIRED_EYES), config.eyes)
 		},
 		{
 			slot: "mouth",
@@ -1885,7 +1885,7 @@ function makeSeed() {
 function pickable(own, slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
 	const total = weights.reduce((a, b$1) => a + b$1, 0);
-	return weights.map((w, i) => i).filter((i) => weights[i] / total >= RARE || i === own[slot]);
+	return weights.map((w, i) => i).filter((i) => (weights[i] / total >= RARE || i === own[slot]) && !(slot === "eyes" && require_paint.RETIRED_EYES.includes(i)));
 }
 /** Whether a look only uses parts this player may pick. */
 function allowed(own, look) {
@@ -1907,6 +1907,7 @@ function decodeLook(code, own) {
 		const slot = SLOTS.find((s) => s[0] === part[0]);
 		const n = Number(part.slice(1));
 		if (!slot || !/^\d{1,3}$/.test(part.slice(1)) || n >= slot[2].length) return null;
+		if (slot[1] === "eyes" && require_paint.RETIRED_EYES.includes(n)) continue;
 		look[slot[1]] = n;
 	}
 	if (own && !allowed(own, look)) return null;
@@ -5596,6 +5597,7 @@ exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.ONE_OF_ONE_AURAS = require_paint.ONE_OF_ONE_AURAS
 exports.PINS = require_paint.PINS
+exports.RETIRED_EYES = require_paint.RETIRED_EYES
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.SMALL_SIZE = require_paint.SMALL_SIZE
 exports.TAG_MAX = TAG_MAX

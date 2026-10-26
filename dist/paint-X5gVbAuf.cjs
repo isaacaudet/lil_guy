@@ -480,6 +480,14 @@ const DEAL_2 = {
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
 */
+/**
+* Eyes no guy has any more: never dealt, picked or drawn. They stay in their
+* arrays (an index is what a saved look or game stores), so every other part
+* keeps its place. 16 is the cyclops.
+*/
+const RETIRED_EYES = [16];
+/** A slot's weights with its retired parts at zero. */
+const withoutRetired = (weights, retired) => weights.map((x, i) => retired.includes(i) ? 0 : x);
 function weightedPick(weights, hashValue) {
 	let total = 0;
 	for (const w of weights) total += w;
@@ -523,9 +531,11 @@ const DEAL_3 = {
 function resolve(input, overrides) {
 	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
 	const w = dealOf(input) === 3 ? DEAL_3 : DEAL_2;
+	let eyes$1 = overrides?.eyes ?? pick(1, w.eyes);
+	if (RETIRED_EYES.includes(eyes$1)) eyes$1 = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
 	return {
 		head: overrides?.head ?? pick(0, w.head),
-		eyes: overrides?.eyes ?? pick(1, w.eyes),
+		eyes: eyes$1,
 		mouth: overrides?.mouth ?? pick(2, w.mouth),
 		hair: overrides?.hair ?? pick(3, w.hair),
 		body: overrides?.body ?? pick(4, w.body),
@@ -8118,7 +8128,7 @@ function compose(config) {
 		arms(c, config.arms, T.BODY);
 		bodies[config.body].draw(c);
 	}
-	const eye = eyes[config.eyes].art, mouth$1 = mouths[config.mouth].art;
+	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
 	c.setFace(eye, mouth$1);
 	const before = c.grid.map((row) => [...row]);
 	const onTop = (draw) => {
@@ -8881,6 +8891,12 @@ Object.defineProperty(exports, 'PINS', {
     return PINS;
   }
 });
+Object.defineProperty(exports, 'RETIRED_EYES', {
+  enumerable: true,
+  get: function () {
+    return RETIRED_EYES;
+  }
+});
 Object.defineProperty(exports, 'SHADE_COUNT', {
   enumerable: true,
   get: function () {
@@ -9259,4 +9275,10 @@ Object.defineProperty(exports, 'withItems', {
     return withItems;
   }
 });
-//# sourceMappingURL=paint-A99jbjkG.cjs.map
+Object.defineProperty(exports, 'withoutRetired', {
+  enumerable: true,
+  get: function () {
+    return withoutRetired;
+  }
+});
+//# sourceMappingURL=paint-X5gVbAuf.cjs.map

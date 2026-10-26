@@ -459,6 +459,14 @@ const DEAL_2 = {
 * Picks an index from a weight table using a hash value, so the result is
 * deterministic for a given input and the distribution follows the weights.
 */
+/**
+* Eyes no guy has any more: never dealt, picked or drawn. They stay in their
+* arrays (an index is what a saved look or game stores), so every other part
+* keeps its place. 16 is the cyclops.
+*/
+const RETIRED_EYES = [16];
+/** A slot's weights with its retired parts at zero. */
+const withoutRetired = (weights, retired) => weights.map((x, i) => retired.includes(i) ? 0 : x);
 function weightedPick(weights, hashValue) {
 	let total = 0;
 	for (const w of weights) total += w;
@@ -502,9 +510,11 @@ const DEAL_3 = {
 function resolve(input, overrides) {
 	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
 	const w = dealOf(input) === 3 ? DEAL_3 : DEAL_2;
+	let eyes$1 = overrides?.eyes ?? pick(1, w.eyes);
+	if (RETIRED_EYES.includes(eyes$1)) eyes$1 = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
 	return {
 		head: overrides?.head ?? pick(0, w.head),
-		eyes: overrides?.eyes ?? pick(1, w.eyes),
+		eyes: eyes$1,
 		mouth: overrides?.mouth ?? pick(2, w.mouth),
 		hair: overrides?.hair ?? pick(3, w.hair),
 		body: overrides?.body ?? pick(4, w.body),
@@ -8093,7 +8103,7 @@ function compose(config) {
 		arms(c, config.arms, T.BODY);
 		bodies[config.body].draw(c);
 	}
-	const eye = eyes[config.eyes].art, mouth$1 = mouths[config.mouth].art;
+	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
 	c.setFace(eye, mouth$1);
 	const before = c.grid.map((row) => [...row]);
 	const onTop = (draw) => {
@@ -9713,7 +9723,7 @@ function traitOdds(config) {
 		{
 			slot: "eyes",
 			name: eyes[config.eyes].name,
-			chance: share(eyeWeights, config.eyes)
+			chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes)
 		},
 		{
 			slot: "mouth",
@@ -10145,7 +10155,7 @@ function makeSeed() {
 function pickable(own$1, slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
 	const total = weights.reduce((a, b$1) => a + b$1, 0);
-	return weights.map((w, i) => i).filter((i) => weights[i] / total >= RARE || i === own$1[slot]);
+	return weights.map((w, i) => i).filter((i) => (weights[i] / total >= RARE || i === own$1[slot]) && !(slot === "eyes" && RETIRED_EYES.includes(i)));
 }
 /** Whether a look only uses parts this player may pick. */
 function allowed(own$1, look) {
@@ -10167,6 +10177,7 @@ function decodeLook(code, own$1) {
 		const slot = SLOTS.find((s) => s[0] === part[0]);
 		const n = Number(part.slice(1));
 		if (!slot || !/^\d{1,3}$/.test(part.slice(1)) || n >= slot[2].length) return null;
+		if (slot[1] === "eyes" && RETIRED_EYES.includes(n)) continue;
 		look[slot[1]] = n;
 	}
 	if (own$1 && !allowed(own$1, look)) return null;
@@ -13774,4 +13785,4 @@ function toGuyGif(seed, move, options = {}, scale = 12) {
 }
 
 //#endregion
-export { ARM_NAMES, AURAS, AURA_ODDS, CARD_HEIGHT, CARD_WIDTH, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, AURAS, AURA_ODDS, CARD_HEIGHT, CARD_WIDTH, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };

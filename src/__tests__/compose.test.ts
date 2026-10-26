@@ -1,3 +1,4 @@
+import { RETIRED_EYES } from '../parts/weights';
 import { describe, expect, it } from 'bun:test';
 import { compose, ARM_STYLES, FOOT_STYLES } from '../compose';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from '../parts';
@@ -96,6 +97,7 @@ describe('compose', () => {
     for (let head = 0; head < heads.length; head++) {
       for (let h = 0; h < hair.length; h++) {
         for (let e = 0; e < eyes.length; e++) {
+          if (RETIRED_EYES.includes(e)) continue;
           const used = new Set(eyes[e].art.flat().filter(Boolean));
           const inked = (g: PixelGrid) => g.flat().filter(v => used.has(v)).length;
           const drawn = inked(guy({ head, hair: h, eyes: e, mouth: 1 }));
