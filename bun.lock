@@ -11,7 +11,6 @@
         "@types/react": "^19",
         "react": "^19",
         "react-dom": "^19",
-        "three": "0.170.0",
         "tsdown": "^0.9",
         "typescript": "^5.7",
       },
@@ -227,8 +226,6 @@
     "rolldown-plugin-dts": ["rolldown-plugin-dts@0.9.11", "", { "dependencies": { "@babel/generator": "^7.27.1", "@babel/parser": "^7.27.1", "@babel/types": "^7.27.1", "ast-kit": "^1.4.3", "debug": "^4.4.0", "dts-resolver": "^1.0.1", "get-tsconfig": "^4.10.0", "oxc-transform": "^0.67.0" }, "peerDependencies": { "rolldown": "^1.0.0-beta.7", "typescript": "^5.0.0" }, "optionalPeers": ["typescript"] }, "sha512-iCIRKmvPLwRV4UKSxhaBo+5wDkvc3+MFiqYYvu7sGLSohzxoDn9WEsjN3y7A6xg3aCuxHh6rlRp8xbX98r1rSg=="],
 
     "scheduler": ["scheduler@0.27.0", "", {}, "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q=="],
-
-    "three": ["three@0.170.0", "", {}, "sha512-FQK+LEpYc0fBD+J8g6oSEyyNzjp+Q7Ks1C568WWaoMRLW+TkNNWmenWeGgJjV105Gd+p/2ql1ZcjYvNiPZBhuQ=="],
 
     "tinyexec": ["tinyexec@1.0.2", "", {}, "sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg=="],
 
