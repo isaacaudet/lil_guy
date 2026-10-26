@@ -1277,12 +1277,12 @@ declare function encodePng(rgba: Uint8ClampedArray, width: number, height: numbe
  * shining on its own pixels, its effect playing, the card's face dressed for
  * the grade, and the words written in the club's pixel type.
  *
- * A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, four to each of the
+ * A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, six to each of the
  * guy's pixels, so a shine can sweep across a single pixel of a hat. Scale it
  * up by whole numbers to show it; `toCardGif` and `toCardPng` do that for you.
  */
-declare const CARD_WIDTH = 104;
-declare const CARD_HEIGHT = 168;
+declare const CARD_WIDTH = 140;
+declare const CARD_HEIGHT = 204;
 interface CardInput {
   /** The guy: a name or a seed, as for `animate`. */
   seed: string;

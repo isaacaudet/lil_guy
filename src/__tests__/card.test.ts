@@ -19,9 +19,15 @@ describe('cards', () => {
     const a = cardStill({ seed: 'maya', copies: [copy], title: 'A' }), b = cardStill({ seed: 'maya', copies: [copy], title: 'A' });
     expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true);
   });
-  test('long titles are cut to fit', () => {
-    expect(textWidth('Bubblegum mouth')).toBeGreaterThan(CARD_WIDTH - 16);
-    expect(() => cardStill({ seed: 'maya', title: 'A very long name for a card indeed' })).not.toThrow();
+  test('long words wrap and are never cut off', () => {
+    const long = 'A very long name for a card indeed';
+    expect(textWidth(long)).toBeGreaterThan(CARD_WIDTH);
+    // Changing the very last letter changes the card: the end is on it.
+    const a = cardStill({ seed: 'maya', title: long, lines: ['Mythic', 'prism · electric · 1 in 83.3M'] });
+    const b = cardStill({ seed: 'maya', title: long.slice(0, -1) + 'X', lines: ['Mythic', 'prism · electric · 1 in 83.3M'] });
+    const c = cardStill({ seed: 'maya', title: long, lines: ['Mythic', 'prism · electric · 1 in 83.3K'] });
+    expect(a).not.toEqual(b);
+    expect(a).not.toEqual(c);
   });
 });
 

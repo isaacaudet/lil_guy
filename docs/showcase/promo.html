@@ -192,7 +192,7 @@
   .guy-card { display: grid; justify-items: center; gap: 14px; align-content: start; }
   .guy-card > div:first-child { width: 100%; max-width: 280px; }
   .guy-card .badges { justify-content: center; }
-  canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 104 / 168; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); transition: transform .12s ease-out; }
+  canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); transition: transform .12s ease-out; }
   .saves { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .saves .btn { height: 36px; font-size: 16px; padding: 0 12px; border-radius: 8px; }
   .tt .ti { display: inline-flex; align-items: center; gap: 4px; filter: brightness(.8) saturate(1.2); }
@@ -1616,7 +1616,7 @@ void main() {
   const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   // The card a player keeps: drawn by the library, so the one on the page is the one they save.
-  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? [spec.label.bottom].filter(Boolean), grade: spec.grade ?? spec.label.g, move });
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, move });
   const libCards = new Set();
   function libCard(el, input) {
     const canvas = document.createElement('canvas');

@@ -552,10 +552,11 @@ export function auraCells(id: string, mask: Mask, t: number, copy?: Owned, pad =
 const RAMPS: Record<string, string[]> = {
   frost: ['#FFFFFF', '#BFE8FF', '#6FB4F2'],
   toxic: ['#F2FF9A', '#7DFF4F', '#1FA84A'],
-  shadow: ['#D9CCFF', '#5B3FA8', '#1C1233'],
-  sapphire: ['#D6E6FF', '#2F6BFF', '#0B2A8A'],
-  ruby: ['#FFD6DF', '#E0204F', '#6E0622'],
-  pearl: ['#EFE6FF', '#6A54B8', '#140F2A'],
+  // No near-black: a dark step showed as blotches on a light card and vanished on the night one.
+  shadow: ['#EEE8FF', '#A08AF2', '#6B54C9'],
+  sapphire: ['#E6F0FF', '#5C8DFF', '#2F5DE6'],
+  ruby: ['#FFE3EA', '#FF5279', '#CF1F48'],
+  pearl: ['#F6F0FF', '#CDBEFF', '#9A86E0'],
 };
 const FADE = ['#FFE07A', '#FF6FB5', '#7C5CFF'];
 
@@ -575,8 +576,11 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
   const aura = auraById(id);
   if (!aura) return '#FFFFFF';
   // A one of one keeps its own colours in any finish, glinting in every colour.
+  // Light runs across in one smooth band rather than random glints, as a
+  // Balatro foil does: rare looks rich, never noisy.
+  const sweep = wrap(x + y * 0.7 - t / 55, 26) < 1.6;
   if (ONE_OF_ONE_AURAS.includes(aura)) {
-    if (noise(x, y, Math.floor(t / 160), 9) > 0.86) return hsl(wrap(x * 40 + y * 25 + t / 5, 360), 0.9, 0.72);
+    if (sweep) return hsl(wrap((x + y) * 18 + t / 6, 360), 0.9, 0.78);
     return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
   }
   if (finish === 'fade') {
@@ -585,7 +589,8 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
   }
   const ramp = RAMPS[finish];
   if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-  const glint = (finish === 'sapphire' || finish === 'ruby' || finish === 'pearl') && noise(x, y, Math.floor(t / 180), 9) > 0.86;
-  if (glint) return finish === 'pearl' ? hsl(wrap(x * 40 + y * 25 + t / 6, 360), 0.85, 0.7) : ramp[0];
+  // Black pearl is nacre: a soft rainbow drifting along the aura, brighter where the light runs.
+  if (finish === 'pearl') return hsl(wrap((x + y) * 14 + t / 9, 360), 0.62, sweep ? 0.92 : [0.86, 0.76, 0.68][Math.min(2, k % 3)]);
+  if (sweep && (finish === 'sapphire' || finish === 'ruby')) return ramp[0];
   return ramp[Math.min(2, k % 3)];
 }
