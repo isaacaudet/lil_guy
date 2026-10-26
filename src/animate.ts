@@ -48,7 +48,17 @@ export interface AnimationFrame {
   slots: number[][];
   /** How long the frame shows. */
   ms: number;
+  /**
+   * A rare aura's cells that fall past the frame's sides, as `[x, y, colour]`
+   * with x from -AURA_PAD to FRAME_WIDTH + AURA_PAD - 1. Only there when there
+   * are some; a picture with room round the guy (a card) draws them, anything
+   * else can leave them out.
+   */
+  outside?: [number, number, string][];
 }
+
+/** How many columns past each side of the frame a rare aura may reach (`outside`). */
+export const AURA_PAD = 3;
 
 export interface Animation {
   move: Move;
@@ -505,11 +515,15 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     }
     if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
     if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t / 400) % 2);
+    const outside: [number, number, string][] = [];
     if (wornAura) {
-      // The aura, round him as he stands in this frame, in its finish.
+      // The aura, round him as he stands in this frame, in its finish. A rare
+      // one's rings run past the frame's sides; those cells ride along in `outside`.
       const copy = config.owned?.aura, mask = layer.map(row => row.map(Boolean));
-      for (const [x, y, k] of auraCells(wornAura.id, mask, t, copy)) {
-        layer[y][x] = { c: copy ? auraColor(wornAura.id, k, copy.finish, x, y, t) : wornAura.colors[k], item: false, slot: 5 };
+      for (const [x, y, k] of auraCells(wornAura.id, mask, t, copy, AURA_PAD)) {
+        const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t) : wornAura.colors[k];
+        if (x < 0 || x >= FRAME_WIDTH) outside.push([x, y, c]);
+        else layer[y][x] = { c, item: false, slot: 5 };
       }
     } else if (grade >= 2) {
       // A ring in the grade's colour, breathing in and out.
@@ -527,7 +541,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
     const slots = layer.map((row, y) => row.map((cell, x) => (cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0)));
     const colors = withFx ? applyFx(flat, slots, fxCopies, t) : flat;
-    return { colors, ms, slots };
+    return outside.length ? { colors, ms, slots, outside } : { colors, ms, slots };
   });
 
   return { move, width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, duration: t };
