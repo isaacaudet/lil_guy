@@ -96,6 +96,19 @@ function fit(s: string, width: number): string {
   return out.trimEnd() + '..';
 }
 
+/** Up to two lines that fit `width`: a lone line too long for one wraps at a space onto the second. */
+function wrap(lines: string[], width: number): string[] {
+  const out = lines.slice(0, 2);
+  if (out.length === 1 && textWidth(out[0]) > width) {
+    const words = out[0].split(' ');
+    for (let k = words.length - 1; k > 0; k--) {
+      const head = words.slice(0, k).join(' ');
+      if (textWidth(head) <= width) return [head, words.slice(k).join(' ')].map(l => fit(l, width));
+    }
+  }
+  return out.map(l => fit(l, width));
+}
+
 /** A drawing surface of RGBA card pixels. */
 class Surface {
   readonly px = new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
@@ -183,6 +196,12 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
       s.set(cx, cy, [Math.min(255, Math.max(0, c[0])), Math.min(255, Math.max(0, c[1])), Math.min(255, Math.max(0, c[2]))]);
     }
   }));
+  // Glass over the window: a soft glare that slides across now and then, on every card.
+  const glare = ((t * 0.45) % 2.2) * 140 - 40;
+  for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
+    const d = x + (y - WIN.top) * 0.6 - glare;
+    if (d > 0 && d < 10) s.set(x, y, mix(s.get(x, y), WHITE, d < 3 ? 0.22 : 0.1));
+  }
   // The corner tag over the window.
   if (input.corner) {
     const w = textWidth(input.corner) + 5, x0 = WIN.right - 2 - w, y0 = WIN.top + 3;
@@ -195,7 +214,7 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     for (let y = 118; y <= 123; y++) for (let x = x0; x <= x0 + 8; x++) if (!((x === x0 || x === x0 + 8) && (y === 118 || y === 123))) s.set(x, y, p <= g ? (y === 118 ? mix(gc, WHITE, 0.4) : gc) : RIM);
   }
   // The lines under the pips.
-  (input.lines ?? []).slice(0, 2).forEach((line, k) => {
+  wrap(input.lines ?? [], CARD_WIDTH - 14).forEach((line, k) => {
     const l = fit(line, CARD_WIDTH - 14);
     s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), 127 + k * 16, () => (g === 5 ? [220, 240, 255] : INK), g === 5 ? [10, 12, 24] : undefined);
   });
@@ -216,16 +235,27 @@ const cardGrade = (input: CardInput) => input.grade ?? (input.copies?.length ? M
  * the corners are transparent.
  */
 export function cardFrames(input: CardInput, ms = 80): Frames {
+  const card = cardPlayer(input, ms), frames: Uint8ClampedArray[] = [];
+  for (let i = 0; i < card.count; i++) frames.push(card.frame(i));
+  return { width: CARD_WIDTH, height: CARD_HEIGHT, frames, delays: frames.map(() => ms) };
+}
+
+/**
+ * A card to play on screen: each frame is drawn the first time it is asked
+ * for and kept, so a page can show a card at once and spread the work out.
+ */
+export function cardPlayer(input: CardInput, ms = 80) {
   const anim = animate(input.seed, input.move ?? 'idle', { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false });
-  const owned = ownedBySlot(input.copies ?? []);
-  const g = cardGrade(input);
-  const total = Math.max(2000, Math.min(anim.duration, 4800));
-  const frames: Uint8ClampedArray[] = [], delays: number[] = [];
-  for (let at = 0; at < total; at += ms) {
-    frames.push(drawCard(input, frameAt(anim, at), owned, g, at / 1000));
-    delays.push(ms);
-  }
-  return { width: CARD_WIDTH, height: CARD_HEIGHT, frames, delays };
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
+  const count = Math.ceil(Math.max(2000, Math.min(anim.duration, 4800)) / ms), cache: Uint8ClampedArray[] = [];
+  return {
+    width: CARD_WIDTH, height: CARD_HEIGHT, count, delay: ms,
+    /** The frame showing at `i` (wraps round). */
+    frame(i: number): Uint8ClampedArray {
+      const k = ((i % count) + count) % count;
+      return cache[k] ??= drawCard(input, frameAt(anim, k * ms), owned, g, (k * ms) / 1000);
+    },
+  };
 }
 
 /** The card standing still, for a picture. */

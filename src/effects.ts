@@ -121,12 +121,12 @@ export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, 
     case 'hearts':
       return hex(mix(c, [255, 140, 190], 0.14 + 0.08 * Math.sin(tt / 400 + x * 0.5)));
     case 'rime': {
-      // Frost grows in from the edges of the grid and melts back, in a slow breath.
-      const reach = 4 + 4 * Math.sin(tt / 1200), edge = Math.min(x, y, 15 - x, 15 - y);
-      const frost = edge < reach ? 1 - edge / Math.max(1, reach) : 0;
-      const n = noise(x, y, Math.floor(tt / 500), print);
-      if (frost > 0.3 && n > 0.86) return '#FFFFFF';
-      return hex(mix(c, [205, 235, 255], 0.75 * frost));
+      // Frost spreads over it from the top and melts back in a slow breath,
+      // ice crystals glinting in it.
+      const reach = 0.5 + 0.5 * Math.sin(tt / 900 - y * 0.35);
+      const n = noise(x, y, Math.floor(tt / 400), print);
+      if (reach > 0.35 && n > 0.72) return n > 0.9 ? '#FFFFFF' : '#DDF4FF';
+      return hex(mix(c, [190, 228, 255], 0.3 + 0.5 * reach));
     }
     case 'static': {
       // Now and then the colours split: red one way, blue the other.
@@ -176,11 +176,14 @@ export function applyFx(colors: (string | null)[][], slots: number[][], copies: 
       }
     }));
   });
-  // The edges of a copy: empty cells beside one of its pixels.
+  // The rim of a copy: its outline (the dark cells round it that aren't
+  // part of anything else) and empty cells touching it.
+  const dark = (c: string | null) => !!c && rgb(c).reduce((a, v) => a + v, 0) < 240;
   const edgeOf = (k: number) => {
     const cells: [number, number][] = [];
     slots.forEach((row, y) => row.forEach((s, x) => {
-      if (s || out[y][x]) return;
+      if (s === k + 1 || (s && s !== k + 1)) return;
+      if (out[y][x] && !dark(colors[y][x])) return;
       if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1)) cells.push([x, y]);
     }));
     return cells;
@@ -208,7 +211,13 @@ export function applyFx(colors: (string | null)[][], slots: number[][], copies: 
       for (const [x, y] of edgeOf(k)) { const n = noise(x, y, Math.floor(tt / 90)); if (n > 0.72) out[y][x] = n > 0.86 ? '#FFFFFF' : '#7FE8FF'; }
     }
     if (o.fx === 'bubbles') risers(o, k, 160, (x, y, step) => { if (y >= 0 && y < out.length && x < out[0].length && !out[y][x]) out[y][x] = step > 3 ? '#E8F8FF' : '#9ED8FF'; });
-    if (o.fx === 'hearts') risers(o, k, 200, (x, y) => { if (y >= 0 && y < out.length && x < out[0].length && !out[y][x]) out[y][x] = '#FF6FA8'; if (y >= 0 && x + 1 < out[0].length && !out[y][x + 1] && y < out.length) out[y][x + 1] = '#FF8FBE'; });
+    if (o.fx === 'hearts') risers(o, k, 220, (x, y) => {
+      // A three-pixel heart: two lobes and a point.
+      for (const [dx, dy, c] of [[-1, -1, '#FF8FBE'], [1, -1, '#FF6FA8'], [-1, 0, '#FF6FA8'], [0, 0, '#FF6FA8'], [1, 0, '#E0457F'], [0, 1, '#E0457F']] as const) {
+        const px = x + dx, py = y + dy;
+        if (py >= 0 && py < out.length && px >= 0 && px < out[0].length && !out[py][px]) out[py][px] = c;
+      }
+    });
     if (o.fx === 'static' && noise(Math.floor(tt / 90), o.print, 7) > 0.7) {
       // A row of the copy slips a pixel sideways.
       const yy = Math.floor(noise(Math.floor(tt / 90), o.print, 9) * out.length);

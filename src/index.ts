@@ -74,5 +74,5 @@ export { AURAS, ONE_OF_ONE_AURAS, AURA_ODDS, auraById, auraCells, auraColor } fr
 export { collectorNotes, type Note } from "./collector";
 export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, type Fx, type Effect } from "./effects";
 export { TAG_MAX, cleanTag, floatShare, tradeFloat, tradeGames, machineSet, setProgress } from "./collect";
-export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardStill, toCardGif, toCardPng, toGuyGif, textWidth, type CardInput } from "./card";
+export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardPlayer, cardStill, toCardGif, toCardPng, toGuyGif, textWidth, type CardInput } from "./card";
 export { encodeGif, encodePng, upscale, type Frames } from "./gif";
