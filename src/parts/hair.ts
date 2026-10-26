@@ -29,7 +29,11 @@ export function seat(c: Canvas, s: Stamp, x: number, sink = 1): void {
     if (t !== null) top = Math.min(top, t);
   });
   if (top === Infinity) top = c.crown;
-  c.draw(s, x, Math.max(1, top + sink - 1 - last));
+  // Lifted if it would come down past the floor: a tall hat on a short
+  // forehead sits higher rather than over the eyes.
+  let y = Math.max(1, top + sink - 1 - last);
+  if (y + last > c.floor) y = Math.max(1, c.floor - last);
+  c.draw(s, x, y);
 }
 
 export const mirror = (s: Stamp): Stamp => s.map(row => [...row].reverse());
@@ -58,9 +62,12 @@ export const pair = (name: string, rows: string[], inset = 0, sink = 1): Topper 
   };
 };
 
-/** Paints the top `n` rows of the head, shading the right-hand edge. */
+/**
+ * Paints the top `n` rows of the head, shading the right-hand edge. A point
+ * above them is painted too, so on a pointed head a beanie is pointed.
+ */
 export function capRows(c: Canvas, n: number, fill: number, shade: number): void {
-  for (let y = c.crown; y < c.crown + n; y++) {
+  for (let y = Math.min(c.tip, c.crown); y < Math.min(c.crown + n, c.floor + 1); y++) {
     c.paintRow(y, fill);
     const r = c.rows[y];
     if (r) c.set(r.right, y, shade);

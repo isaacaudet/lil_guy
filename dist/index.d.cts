@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime3 from "react/jsx-runtime";
+import * as react_jsx_runtime0 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -62,6 +62,17 @@ interface RowExtent {
   left: number;
   right: number;
 }
+/** Where the face landed, once compose has placed the eyes and mouth. */
+interface Face {
+  /** First and last row of the eyes. */
+  top: number;
+  line: number;
+  /** Each eye's columns, left to right: two for a pair, one for a cyclops. */
+  eyes: RowExtent[];
+  /** First and last row of the mouth. */
+  mouthTop: number;
+  mouthBottom: number;
+}
 /**
  * The grid a guy is being drawn on, plus the measurements every part needs to
  * sit properly on whichever shape it landed on: where the crown is, how wide
@@ -82,12 +93,49 @@ declare class Canvas {
   readonly eyeLine: number;
   /** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
   readonly centre: number;
+  /** The very top of the head at its middle (on a pointed head, the tip). Hats see `crown` as `hatTop`. */
+  readonly tip: number;
+  /** Where the eyes and mouth go; set by compose before anything is worn. */
+  face: Face | null;
   private readonly body;
   /**
    * The silhouette is everything the starting drawing covers — a plain body,
    * or a skin like a jar or a golf ball, which is drawn in its own colours.
    */
   constructor(grid: PixelGrid, eyeLine: number);
+  /**
+   * Places the face: the eye stamp's bottom row on the eye line, the mouth's
+   * top row just under it, both centred. Everything worn is fitted to this.
+   */
+  setFace(eye: Stamp, mouth: Stamp): void;
+  /**
+   * The lowest row a hat or topper may paint on the head: it stops at least one
+   * row above the eyes (two where the head has the room), so nothing worn on
+   * top ever covers the face.
+   */
+  get floor(): number;
+  /**
+   * The first row wide enough to wear a hat on. On a round head it is the
+   * crown; on a pointed one it is where the point has widened out, so a cap
+   * sits round the head instead of balancing on its tip.
+   */
+  get hatTop(): number;
+  /**
+   * The canvas as hats and toppers see it: its `crown` is `hatTop`, so every
+   * "a row under the crown" lands on the head and not on a point.
+   */
+  forHats(): Canvas;
+  /** A copy to try something on: the same measurements over its own grid. */
+  clone(): Canvas;
+  /**
+   * The same canvas with the head built up `k` rows into a dome, for a cap to
+   * wrap on a head with almost no forehead. Returns the dome's cells too, so
+   * whatever the cap leaves of them can be taken away again.
+   */
+  domed(k: number): {
+    canvas: Canvas;
+    dome: [number, number][];
+  };
   inside(x: number, y: number): boolean;
   /** Whether the bare silhouette covers this cell. */
   isBody(x: number, y: number): boolean;
@@ -111,9 +159,7 @@ declare class Canvas {
   centred(s: Stamp): number;
   /** Repaints every body cell in a row. */
   paintRow(y: number, token: number): void;
-}
-
-//#endregion
+} //#endregion
 //#region src/items.d.ts
 /**
  * Items: things a player earns or buys in a DLE Club game and wears
@@ -912,7 +958,8 @@ declare const bodies: Marking[];
  */
 interface Accessory {
   name: string;
-  layer: 'face' | 'body';
+  /** `face` goes on before the eyes, `over` after them (it covers an eye), `body` after the face. */
+  layer: 'face' | 'over' | 'body';
   draw: (c: Canvas) => void;
 }
 declare const accessories: Accessory[];
@@ -1232,7 +1279,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime3.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts

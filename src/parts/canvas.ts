@@ -7,6 +7,18 @@ export interface RowExtent {
   right: number;
 }
 
+/** Where the face landed, once compose has placed the eyes and mouth. */
+export interface Face {
+  /** First and last row of the eyes. */
+  top: number;
+  line: number;
+  /** Each eye's columns, left to right: two for a pair, one for a cyclops. */
+  eyes: RowExtent[];
+  /** First and last row of the mouth. */
+  mouthTop: number;
+  mouthBottom: number;
+}
+
 /**
  * The grid a guy is being drawn on, plus the measurements every part needs to
  * sit properly on whichever shape it landed on: where the crown is, how wide
@@ -27,6 +39,10 @@ export class Canvas {
   readonly eyeLine: number;
   /** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
   readonly centre: number;
+  /** The very top of the head at its middle (on a pointed head, the tip). Hats see `crown` as `hatTop`. */
+  readonly tip: number;
+  /** Where the eyes and mouth go; set by compose before anything is worn. */
+  face: Face | null = null;
   private readonly body: boolean[][];
 
   /**
@@ -48,9 +64,86 @@ export class Canvas {
     const mid = Math.floor(this.centre);
     const tops = [mid - 1, mid].map(x => this.topOf(x)).filter((y): y is number => y !== null);
     this.crown = tops.length ? Math.min(...tops) : this.rows.findIndex(r => r !== null);
+    this.tip = this.crown;
     let bottom = this.crown;
     this.rows.forEach((r, y) => { if (r) bottom = y; });
     this.bottom = bottom;
+  }
+
+  /**
+   * Places the face: the eye stamp's bottom row on the eye line, the mouth's
+   * top row just under it, both centred. Everything worn is fitted to this.
+   */
+  setFace(eye: Stamp, mouth: Stamp): void {
+    const x0 = this.centred(eye), top = this.eyeLine - eye.length + 1;
+    const cols: number[] = [];
+    for (let dx = 0; dx < width(eye); dx++) if (eye.some(row => row[dx])) cols.push(x0 + dx);
+    const eyes: RowExtent[] = [];
+    for (const x of cols) {
+      const last = eyes[eyes.length - 1];
+      if (last && x === last.right + 1) last.right = x; else eyes.push({ left: x, right: x });
+    }
+    const firstRow = eye.findIndex(row => row.some(Boolean));
+    this.face = { top: top + Math.max(0, firstRow), line: this.eyeLine, eyes, mouthTop: this.eyeLine + 1, mouthBottom: this.eyeLine + mouth.length };
+  }
+
+  /**
+   * The lowest row a hat or topper may paint on the head: it stops at least one
+   * row above the eyes (two where the head has the room), so nothing worn on
+   * top ever covers the face.
+   */
+  get floor(): number {
+    const top = this.face ? this.face.top : this.eyeLine - 2;
+    return Math.min(top - 1, Math.max(this.tip, top - 2));
+  }
+
+  /**
+   * The first row wide enough to wear a hat on. On a round head it is the
+   * crown; on a pointed one it is where the point has widened out, so a cap
+   * sits round the head instead of balancing on its tip.
+   */
+  get hatTop(): number {
+    for (let y = this.tip; y <= this.floor; y++) {
+      const r = this.rows[y];
+      if (r && r.right - r.left + 1 >= 6) return y;
+    }
+    return Math.min(this.tip, this.floor);
+  }
+
+  /**
+   * The canvas as hats and toppers see it: its `crown` is `hatTop`, so every
+   * "a row under the crown" lands on the head and not on a point.
+   */
+  forHats(): Canvas {
+    const view = Object.create(this) as Canvas;
+    // A row up where the forehead is short, so a band "a row under the crown" still lands above the floor.
+    Object.defineProperty(view, 'crown', { value: Math.max(this.tip, Math.min(this.hatTop, this.floor - 1)) });
+    return view;
+  }
+
+  /** A copy to try something on: the same measurements over its own grid. */
+  clone(): Canvas {
+    return Object.assign(Object.create(Canvas.prototype), this, { grid: this.grid.map(row => [...row]) });
+  }
+
+  /**
+   * The same canvas with the head built up `k` rows into a dome, for a cap to
+   * wrap on a head with almost no forehead. Returns the dome's cells too, so
+   * whatever the cap leaves of them can be taken away again.
+   */
+  domed(k: number): { canvas: Canvas; dome: [number, number][] } {
+    const grid = this.grid.map(row => [...row]), dome: [number, number][] = [];
+    const r = this.rows[this.tip];
+    if (r) for (let i = 1; i <= k && this.tip - i >= 1; i++) {
+      const left = r.left + i, right = r.right - i;
+      if (right - left < 1) break;
+      for (let x = left; x <= right; x++) { grid[this.tip - i][x] = 1; dome.push([x, this.tip - i]); }
+    }
+    const canvas = new Canvas(grid, this.eyeLine);
+    canvas.face = this.face;
+    // The dome is a stand-in: the floor stays where the real face puts it.
+    Object.defineProperty(canvas, 'floor', { value: this.floor });
+    return { canvas, dome };
   }
 
   inside(x: number, y: number): boolean {

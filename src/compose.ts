@@ -179,10 +179,41 @@ export function compose(config: AvatarConfig): PixelGrid {
     bodies[config.body].draw(c);
   }
 
+  // The face goes where it always does; everything worn is fitted around it.
+  const eye = eyes[config.eyes].art, mouth = mouths[config.mouth].art;
+  c.setFace(eye, mouth);
+
   // On a skin the player's face is what carries over; their ears, bow tie or
   // scarf would only clutter the object. Glasses stay — they are part of a face.
+  // Whatever goes on top never reaches the face: anything it paints on the
+  // head below the floor is taken back.
+  const before = c.grid.map(row => [...row]);
+  // A head with almost no forehead gets a dome to wear its cap on: a hat that
+  // paints the dome keeps what it painted, and one that only sits on top (a
+  // gem, a flag) is drawn on the real head instead.
+  const onTop = (draw: (c: Canvas) => void) => {
+    // Tries the head as it is and, where the forehead is short, the domed
+    // head, and keeps whichever shows more of the hat: a cap wraps the dome, a
+    // gem or a flag stays on the real head.
+    const tryOn = (domed: boolean) => {
+      const { canvas, dome } = domed ? c.domed(3 - (c.floor - c.tip + 1)) : { canvas: c.clone(), dome: [] as [number, number][] };
+      draw(canvas.forHats());
+      const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
+      for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
+      for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+        if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
+      }
+      let shown = 0;
+      canvas.grid.forEach((row, y) => row.forEach((v, x) => { if (v !== before[y][x]) shown++; }));
+      // A cap is one that covers most of the dome; anything else would float where the dome was.
+      return { grid: canvas.grid, shown, cap: dome.length > 0 && wrapped * 2 >= dome.length };
+    };
+    let best = tryOn(false);
+    if (c.floor - c.tip + 1 < 3) { const d = tryOn(true); if (d.cap && d.shown > best.shown) best = d; }
+    best.grid.forEach((row, y) => row.forEach((v, x) => { c.grid[y][x] = v; }));
+  };
   if (hat?.slot === 'hat') {
-    hat.draw!(c);
+    onTop(cv => hat.draw!(cv));
     claim(c.grid, LAYER.hat);
     // The hat casts a shadow on the head just under it, so it stands off a
     // body of the same colour (a gold trophy on a yellow guy).
@@ -191,7 +222,7 @@ export function compose(config: AvatarConfig): PixelGrid {
       if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
     }
   } else if (!skin) {
-    hair[config.hair].draw(c);
+    onTop(cv => hair[config.hair].draw(cv));
   }
 
   const accessory = accessories[config.accessory];
@@ -200,11 +231,10 @@ export function compose(config: AvatarConfig): PixelGrid {
   const line = c.eyeLine;
   const cheek = cheeks[config.cheeks].art;
   if (cheek.length) c.draw(cheek, c.centred(cheek), line + 1, true);
-  const eye = eyes[config.eyes].art;
   c.draw(eye, c.centred(eye), line - eye.length + 1, true);
-  const mouth = mouths[config.mouth].art;
   c.draw(mouth, c.centred(mouth), line + 1, true);
 
+  if (accessory.layer === 'over') accessory.draw(c);
   if (accessory.layer === 'body' && !skin) accessory.draw(c);
 
   // What the worn copies have collected: tally marks and pins on their own pixels.

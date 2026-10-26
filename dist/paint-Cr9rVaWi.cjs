@@ -649,7 +649,9 @@ function seat(c, s, x, sink = 1) {
 		if (t !== null) top = Math.min(top, t);
 	});
 	if (top === Infinity) top = c.crown;
-	c.draw(s, x, Math.max(1, top + sink - 1 - last));
+	let y = Math.max(1, top + sink - 1 - last);
+	if (y + last > c.floor) y = Math.max(1, c.floor - last);
+	c.draw(s, x, y);
 }
 const mirror = (s) => s.map((row) => [...row].reverse());
 /** A drawing centred on the crown, nudged `dx` columns to the right. */
@@ -677,9 +679,12 @@ const pair = (name, rows, inset = 0, sink = 1) => {
 		}
 	};
 };
-/** Paints the top `n` rows of the head, shading the right-hand edge. */
+/**
+* Paints the top `n` rows of the head, shading the right-hand edge. A point
+* above them is painted too, so on a pointed head a beanie is pointed.
+*/
 function capRows(c, n, fill, shade) {
-	for (let y = c.crown; y < c.crown + n; y++) {
+	for (let y = Math.min(c.tip, c.crown); y < Math.min(c.crown + n, c.floor + 1); y++) {
 		c.paintRow(y, fill);
 		const r = c.rows[y];
 		if (r) c.set(r.right, y, shade);
@@ -3921,10 +3926,10 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: (c) => {
-			const y = c.crown + 1;
-			c.paintRow(y, T.ACCENT);
+			const y = Math.min(c.crown + 1, c.floor);
+			capRows(c, y - c.crown + 1, T.ACCENT, T.ACCENT_SHADE);
 			const r = c.rows[y];
-			c.set(r.right, y, T.ACCENT_SHADE);
+			if (!r) return;
 			for (let x = r.right + 1; x <= Math.min(r.right + 2, 14); x++) c.set(x, y, T.ACCENT_SHADE);
 		}
 	},
@@ -6834,12 +6839,45 @@ const bodies = [
 
 //#endregion
 //#region src/parts/accessories.ts
-const glasses = stamp([
-	".oo....oo.",
-	"o..oooo..o",
-	"o..o..o..o",
-	".oo....oo."
-]);
+/**
+* The box round one eye that a lens frames: a column of glass either side of
+* the eye and a rim round that. Built from where the eyes really are, so any
+* eyes on any head sit in the middle of their lens.
+*/
+function lensBox(c, k) {
+	const f = c.face, e = f.eyes[k];
+	return {
+		left: e.left - 2,
+		right: e.right + 2,
+		top: f.top - 1,
+		bottom: f.line + 1
+	};
+}
+/** A rim round a box with its corners cut, so a lens reads round. */
+function rim(c, b, token, fill) {
+	for (let y = b.top; y <= b.bottom; y++) for (let x = b.left; x <= b.right; x++) {
+		const edgeX = x === b.left || x === b.right, edgeY = y === b.top || y === b.bottom;
+		if (edgeX && edgeY) continue;
+		if (edgeX || edgeY) c.set(x, y, token);
+		else if (fill !== void 0) c.set(x, y, fill);
+	}
+}
+/** Glasses that fit the eyes: a lens round each, a bridge, and arms to the side of the head. */
+function fittedGlasses(c, frame, glass, glint) {
+	const f = c.face;
+	if (!f || !f.eyes.length) return;
+	const boxes = f.eyes.map((_, k) => lensBox(c, k));
+	boxes.forEach((b) => {
+		rim(c, b, frame, glass);
+		c.set(b.left + 1, b.top + 1, glint);
+	});
+	if (boxes.length === 2) for (let x = boxes[0].right + 1; x < boxes[1].left; x++) c.set(x, f.top, frame);
+	const r = c.rows[f.top];
+	if (r) {
+		for (let x = r.left; x < boxes[0].left; x++) c.set(x, f.top, frame);
+		for (let x = boxes[boxes.length - 1].right + 1; x <= r.right; x++) c.set(x, f.top, frame);
+	}
+}
 const bowtie = stamp([
 	"aa..aa",
 	"aAxxAa",
@@ -6854,12 +6892,6 @@ const heart = stamp([
 	"r.r",
 	"rrr",
 	".r."
-]);
-const monocle = stamp([
-	".oo.",
-	"o..o",
-	"o..o",
-	".oo."
 ]);
 const flower = stamp([
 	".a.",
@@ -6880,7 +6912,7 @@ const accessories = [
 	{
 		name: "glasses",
 		layer: "face",
-		draw: (c) => c.draw(glasses, c.centred(glasses), c.eyeLine - 2)
+		draw: (c) => fittedGlasses(c, T.OUTLINE, T.LIGHT, T.WHITE)
 	},
 	{
 		name: "scarf",
@@ -6955,29 +6987,27 @@ const accessories = [
 		name: "monocle",
 		layer: "face",
 		draw: (c) => {
-			const x = c.centred(glasses) + 6;
-			c.draw(monocle, x, c.eyeLine - 2);
-			c.set(x + 3, c.eyeLine + 2, T.GOLD);
-			c.set(x + 3, c.eyeLine + 3, T.GOLD_SHADE);
+			const f = c.face;
+			if (!f || !f.eyes.length) return;
+			const b = lensBox(c, f.eyes.length - 1);
+			rim(c, b, T.GOLD, T.LIGHT);
+			c.set(b.left + 1, b.top + 1, T.WHITE);
+			for (let y = b.bottom + 1; y <= Math.min(b.bottom + 2, c.bottom); y++) c.set(b.right, y, y % 2 ? T.GOLD : T.GOLD_SHADE);
 		}
 	},
 	{
 		name: "eye patch",
-		layer: "body",
+		layer: "over",
 		draw: (c) => {
-			const x = c.centred(glasses), y = c.eyeLine;
-			for (const [dx, dy] of [
-				[1, -2],
-				[2, -2],
-				[0, -1],
-				[1, -1],
-				[2, -1],
-				[3, -1],
-				[1, 0],
-				[2, 0]
-			]) wear(c, x + dx, y + dy, T.OUTLINE);
-			for (let i = 1; c.isBody(x + 3 + i, y - 3 - i); i++) wear(c, x + 3 + i, y - 2 - i, T.OUTLINE);
-			if (c.isBody(x - 1, y - 1)) wear(c, x - 1, y - 1, T.OUTLINE);
+			const f = c.face;
+			if (!f || !f.eyes.length) return;
+			const e = f.eyes[0];
+			for (let y = f.top - 1; y <= f.line; y++) for (let x = e.left - 1; x <= e.right + 1; x++) {
+				const corner = (x === e.left - 1 || x === e.right + 1) && (y === f.top - 1 || y === f.line);
+				if (!corner) c.set(x, y, T.EYE);
+			}
+			c.set(e.left, f.top, T.DEEP);
+			for (let i = 1, x = e.right + 1, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.EYE);
 		}
 	},
 	{
@@ -7057,12 +7087,19 @@ const accessories = [
 		name: "goggles",
 		layer: "face",
 		draw: (c) => {
-			const y = Math.max(c.crown + 1, c.eyeLine - 5);
+			const f = c.face;
+			if (!f || !f.eyes.length) return;
+			const y = Math.max(c.tip + 1, f.top - 3);
 			const r = c.rows[y + 1];
 			if (!r) return;
 			for (let x = r.left; x <= r.right; x++) c.set(x, y + 1, T.DEEP);
-			const lens = stamp(["wa....wa", "aA....aA"]);
-			c.draw(lens, c.centred(lens), y, true);
+			for (const e of f.eyes) {
+				const x0 = e.left - (e.right - e.left < 1 ? 1 : 0), x1 = Math.max(e.right, x0 + 1);
+				for (let x = x0; x <= x1; x++) {
+					c.set(x, y, x === x0 ? T.WHITE : T.ACCENT);
+					c.set(x, y + 1, T.ACCENT_SHADE);
+				}
+			}
 		}
 	},
 	{
@@ -7110,28 +7147,43 @@ const accessories = [
 	},
 	{
 		name: "heart shades",
-		layer: "face",
+		layer: "over",
 		draw: (c) => {
-			const shades = stamp([
-				"r.r..r.r",
-				"rrrrrrrr",
-				"rwr..rwr",
-				".r....r."
+			const f = c.face;
+			if (!f || !f.eyes.length) return;
+			const heart$2 = stamp([
+				"r.r",
+				"rrr",
+				".r."
 			]);
-			c.draw(shades, c.centred(shades), c.eyeLine - 2);
+			const xs = f.eyes.map((e) => Math.round((e.left + e.right) / 2) - 1);
+			const y = f.line - 1;
+			for (const x of xs) {
+				heart$2.forEach((row, dy) => row.forEach((t, dx) => {
+					if (t) c.set(x + dx, y - 1 + dy, t);
+				}));
+				c.set(x, y, T.WHITE);
+			}
+			if (xs.length === 2) for (let x = xs[0] + 3; x < xs[1]; x++) c.set(x, y - 1, T.RED);
 		}
 	},
 	{
 		name: "masquerade",
 		layer: "face",
 		draw: (c) => {
-			const mask = stamp([
-				"y........y",
-				"yy..yy..yy",
-				"yyyyrryyyy",
-				".yyy..yyy."
-			]);
-			c.draw(mask, c.centred(mask), c.eyeLine - 2, true);
+			const f = c.face;
+			if (!f || !f.eyes.length) return;
+			const boxes = f.eyes.map((_, k) => lensBox(c, k));
+			for (const b of boxes) for (let y = b.top + 1; y < b.bottom; y++) for (let x = b.left; x <= b.right; x++) if (c.isBody(x, y)) c.set(x, y, T.GOLD);
+			const l = boxes[0].left, r = boxes[boxes.length - 1].right;
+			for (let x = l; x <= r; x++) if (c.isBody(x, f.line) && x > boxes[0].right && x < boxes[boxes.length - 1].left) c.set(x, f.line, T.GOLD_SHADE);
+			if (boxes.length === 2) {
+				const mid = Math.floor(c.centre);
+				c.set(mid - 1, f.top, T.RED);
+				c.set(mid, f.top, T.RED);
+			}
+			c.set(l, f.top - 1, T.GOLD);
+			c.set(r, f.top - 1, T.GOLD);
 		}
 	}
 ];
@@ -7146,7 +7198,7 @@ const accessories = [
 * Measurements are taken from the bare silhouette once, before anything is
 * worn, so a hat cannot change where the next part thinks the head is.
 */
-var Canvas = class {
+var Canvas = class Canvas {
 	grid;
 	/** Per-row span of the bare body, or null for rows it doesn't reach. */
 	rows;
@@ -7158,6 +7210,10 @@ var Canvas = class {
 	eyeLine;
 	/** Centre of the body, between two columns: 8 means the seam of 7 and 8. */
 	centre;
+	/** The very top of the head at its middle (on a pointed head, the tip). Hats see `crown` as `hatTop`. */
+	tip;
+	/** Where the eyes and mouth go; set by compose before anything is worn. */
+	face = null;
 	body;
 	/**
 	* The silhouette is everything the starting drawing covers — a plain body,
@@ -7179,11 +7235,96 @@ var Canvas = class {
 		const mid = Math.floor(this.centre);
 		const tops = [mid - 1, mid].map((x) => this.topOf(x)).filter((y) => y !== null);
 		this.crown = tops.length ? Math.min(...tops) : this.rows.findIndex((r) => r !== null);
+		this.tip = this.crown;
 		let bottom = this.crown;
 		this.rows.forEach((r, y) => {
 			if (r) bottom = y;
 		});
 		this.bottom = bottom;
+	}
+	/**
+	* Places the face: the eye stamp's bottom row on the eye line, the mouth's
+	* top row just under it, both centred. Everything worn is fitted to this.
+	*/
+	setFace(eye, mouth$1) {
+		const x0 = this.centred(eye), top = this.eyeLine - eye.length + 1;
+		const cols = [];
+		for (let dx = 0; dx < width(eye); dx++) if (eye.some((row) => row[dx])) cols.push(x0 + dx);
+		const eyes$1 = [];
+		for (const x of cols) {
+			const last = eyes$1[eyes$1.length - 1];
+			if (last && x === last.right + 1) last.right = x;
+			else eyes$1.push({
+				left: x,
+				right: x
+			});
+		}
+		const firstRow = eye.findIndex((row) => row.some(Boolean));
+		this.face = {
+			top: top + Math.max(0, firstRow),
+			line: this.eyeLine,
+			eyes: eyes$1,
+			mouthTop: this.eyeLine + 1,
+			mouthBottom: this.eyeLine + mouth$1.length
+		};
+	}
+	/**
+	* The lowest row a hat or topper may paint on the head: it stops at least one
+	* row above the eyes (two where the head has the room), so nothing worn on
+	* top ever covers the face.
+	*/
+	get floor() {
+		const top = this.face ? this.face.top : this.eyeLine - 2;
+		return Math.min(top - 1, Math.max(this.tip, top - 2));
+	}
+	/**
+	* The first row wide enough to wear a hat on. On a round head it is the
+	* crown; on a pointed one it is where the point has widened out, so a cap
+	* sits round the head instead of balancing on its tip.
+	*/
+	get hatTop() {
+		for (let y = this.tip; y <= this.floor; y++) {
+			const r = this.rows[y];
+			if (r && r.right - r.left + 1 >= 6) return y;
+		}
+		return Math.min(this.tip, this.floor);
+	}
+	/**
+	* The canvas as hats and toppers see it: its `crown` is `hatTop`, so every
+	* "a row under the crown" lands on the head and not on a point.
+	*/
+	forHats() {
+		const view = Object.create(this);
+		Object.defineProperty(view, "crown", { value: Math.max(this.tip, Math.min(this.hatTop, this.floor - 1)) });
+		return view;
+	}
+	/** A copy to try something on: the same measurements over its own grid. */
+	clone() {
+		return Object.assign(Object.create(Canvas.prototype), this, { grid: this.grid.map((row) => [...row]) });
+	}
+	/**
+	* The same canvas with the head built up `k` rows into a dome, for a cap to
+	* wrap on a head with almost no forehead. Returns the dome's cells too, so
+	* whatever the cap leaves of them can be taken away again.
+	*/
+	domed(k) {
+		const grid = this.grid.map((row) => [...row]), dome = [];
+		const r = this.rows[this.tip];
+		if (r) for (let i = 1; i <= k && this.tip - i >= 1; i++) {
+			const left = r.left + i, right = r.right - i;
+			if (right - left < 1) break;
+			for (let x = left; x <= right; x++) {
+				grid[this.tip - i][x] = 1;
+				dome.push([x, this.tip - i]);
+			}
+		}
+		const canvas = new Canvas(grid, this.eyeLine);
+		canvas.face = this.face;
+		Object.defineProperty(canvas, "floor", { value: this.floor });
+		return {
+			canvas,
+			dome
+		};
 	}
 	inside(x, y) {
 		return x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
@@ -7405,23 +7546,54 @@ function compose(config) {
 		arms(c, config.arms, T.BODY);
 		bodies[config.body].draw(c);
 	}
+	const eye = eyes[config.eyes].art, mouth$1 = mouths[config.mouth].art;
+	c.setFace(eye, mouth$1);
+	const before = c.grid.map((row) => [...row]);
+	const onTop = (draw) => {
+		const tryOn = (domed) => {
+			const { canvas, dome } = domed ? c.domed(3 - (c.floor - c.tip + 1)) : {
+				canvas: c.clone(),
+				dome: []
+			};
+			draw(canvas.forHats());
+			const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
+			for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
+			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
+			let shown = 0;
+			canvas.grid.forEach((row, y) => row.forEach((v, x) => {
+				if (v !== before[y][x]) shown++;
+			}));
+			return {
+				grid: canvas.grid,
+				shown,
+				cap: dome.length > 0 && wrapped * 2 >= dome.length
+			};
+		};
+		let best = tryOn(false);
+		if (c.floor - c.tip + 1 < 3) {
+			const d = tryOn(true);
+			if (d.cap && d.shown > best.shown) best = d;
+		}
+		best.grid.forEach((row, y) => row.forEach((v, x) => {
+			c.grid[y][x] = v;
+		}));
+	};
 	if (hat?.slot === "hat") {
-		hat.draw(c);
+		onTop((cv) => hat.draw(cv));
 		claim(c.grid, LAYER.hat);
 		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
 			const t = c.grid[y][x], below = c.grid[y + 1][x];
 			if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
 		}
-	} else if (!skin) hair[config.hair].draw(c);
+	} else if (!skin) onTop((cv) => hair[config.hair].draw(cv));
 	const accessory = accessories[config.accessory];
 	if (accessory.layer === "face") accessory.draw(c);
 	const line = c.eyeLine;
 	const cheek = cheeks[config.cheeks].art;
 	if (cheek.length) c.draw(cheek, c.centred(cheek), line + 1, true);
-	const eye = eyes[config.eyes].art;
 	c.draw(eye, c.centred(eye), line - eye.length + 1, true);
-	const mouth$1 = mouths[config.mouth].art;
 	c.draw(mouth$1, c.centred(mouth$1), line + 1, true);
+	if (accessory.layer === "over") accessory.draw(c);
 	if (accessory.layer === "body" && !skin) accessory.draw(c);
 	const worn = (slot) => itemById(config[slot])?.slot === slot ? config.owned?.[slot] : void 0;
 	for (const slot of ["skin", "hat"]) {
@@ -8515,4 +8687,4 @@ Object.defineProperty(exports, 'withItems', {
     return withItems;
   }
 });
-//# sourceMappingURL=paint-DC6_1Cfw.cjs.map
+//# sourceMappingURL=paint-Cr9rVaWi.cjs.map

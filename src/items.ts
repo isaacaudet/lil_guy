@@ -1010,10 +1010,12 @@ const hats: Omit<Item, 'slot'>[] = [
   {
     id: 'puttsies.visor', game: 'puttsies', name: 'Golf visor', free: true, colors: [],
     draw: c => {
-      const y = c.crown + 1;
-      c.paintRow(y, T.ACCENT);
-      const r = c.rows[y]!;
-      c.set(r.right, y, T.ACCENT_SHADE);
+      // A band round the top of the head with a peak out to the side: on a
+      // pointed or short head, the band takes the top of the head with it.
+      const y = Math.min(c.crown + 1, c.floor);
+      capRows(c, y - c.crown + 1, T.ACCENT, T.ACCENT_SHADE);
+      const r = c.rows[y];
+      if (!r) return;
       for (let x = r.right + 1; x <= Math.min(r.right + 2, 14); x++) c.set(x, y, T.ACCENT_SHADE);
     },
   },
