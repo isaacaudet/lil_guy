@@ -2,6 +2,7 @@ import { authApi, ownedName, sessionAccount } from './auth.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
+  cleanTag, tradeFloat,
 } from '../src/index-headless.ts';
 
 const json = (body, status = 200, extra = {}) => Response.json(body, {
@@ -23,7 +24,7 @@ export default {
 // The rules the page plays by, kept here so the server decides them: what a capsule costs, what a claim
 // starts with, what collecting the day's tickets gives, and which machine is free today. Tickets are
 // endless for now (the owner): capsules and seasonals cost nothing until there is something to earn them with.
-export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360, infinite: true, trade: 5 };
+export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360, infinite: true, trade: 5, swaps: 10 };
 // The founder never pays, whatever the rules say.
 const free = key => RULES.infinite || key === 'isaac';
 // Capsule luck: a player's first few capsules are each the best of a few rolls (weighted toward good, never
@@ -104,7 +105,9 @@ async function insertCopy(env, row, worn = 0) {
     .bind(row.key, row.code, row.item, row.game, row.slot, row.finish, row.grade, row.one_in, row.scuff, row.source, worn, at).run();
   return { ...row, id: r.meta.last_row_id, worn, at };
 }
-const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at });
+const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '' });
+// Copies that can change hands: not a starter, not the founder's.
+const MOVABLE = "source NOT IN ('starter', 'founder')";
 
 /** A claimed name's player record, made on first use: its tickets and its nine starters (the founder's flag too). */
 async function ensurePlayer(env, name) {
@@ -142,7 +145,10 @@ const owner = ownedName;
 async function meState(env, name) {
   const p = await ensurePlayer(env, name);
   const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy) };
+  const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
+    FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
+  return { key: name.key, seed: name.seed, look: p.look, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
+    swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
 /** Everything a signed-in owner does: read their state, open a capsule, collect the day's tickets, wear, change their look. */
@@ -205,17 +211,74 @@ async function me(request, env, key, action) {
     if (give.some(c => c.grade !== grade || c.worn || c.source === 'starter' || c.source === 'founder')) return json({ error: 'Trade five copies of one grade, none worn' }, 400);
     // A trade never makes an aura: they only come out of capsules.
     if (grade >= GRADES.findIndex(g => g.id === 'grail')) return json({ error: 'A Grail is as high as a trade goes' }, 400);
+    // The result comes from one of the inputs' machines, each as likely as its share of the five, and its float
+    // is the inputs' average place in their finishes (CS's rule), so clean inputs make a clean result.
     const game = give[Math.floor(Math.random() * give.length)].game;
     const out = tradeGrade(grade, Math.random(), GRADES.findIndex(g => g.id === 'grail'));
     let o = null;
     for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (GRADES.findIndex(g => g.id === gradeOf(r).id) === out.grade) { o = r; break; } }
     if (!o) return json({ error: 'Could not trade just now' }, 503);
+    o = { ...o, scuff: tradeFloat(give.map(c => ({ finish: c.finish, scuff: c.scuff })), o.finish) };
     const fits = `key = ? AND worn = 0 AND grade = ? AND source NOT IN ('starter', 'founder') AND id IN (${marks})`;
     const gone = await env.DB.prepare(`DELETE FROM copies WHERE ${fits} AND (SELECT COUNT(*) FROM copies WHERE ${fits}) = ?`)
       .bind(key, grade, ...ids, key, grade, ...ids, ids.length).run();
     if (gone.meta.changes !== ids.length) return json({ error: 'Those copies changed. Reload and try again.' }, 409);
     const copy = await insertCopy(env, copyRow(o, key, 'trade'));
     return json({ copy: publicCopy(copy), traded: ids, outcome: out.outcome }, 201);
+  }
+  if (action === 'tag') {
+    // A name tag on one of your copies; it stays with the copy wherever it goes. An empty tag takes it off.
+    const tag = cleanTag(typeof body.tag === 'string' ? body.tag : '');
+    if (tag === null) return json({ error: 'That tag can’t be used. Letters, numbers and simple punctuation, up to 20.' }, 400);
+    const r = await env.DB.prepare('UPDATE copies SET tag = ? WHERE id = ? AND key = ?').bind(tag, Number(body.id), key).run();
+    if (!r.meta.changes) return json({ error: 'Not your copy' }, 404);
+    return json({ id: Number(body.id), tag });
+  }
+  if (action === 'swap') {
+    // Offer one of your copies to another player, for one of theirs or as a gift. Nothing moves until they accept.
+    const to = String(body.to || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!/^[a-z0-9]{2,16}$/.test(to) || to === key) return json({ error: 'Pick another player' }, 400);
+    if (!(await env.DB.prepare('SELECT 1 FROM names WHERE key = ?').bind(to).first())) return json({ error: 'No one has claimed that name' }, 404);
+    const give = await env.DB.prepare(`SELECT id FROM copies WHERE id = ? AND key = ? AND worn = 0 AND ${MOVABLE}`).bind(Number(body.give), key).first();
+    if (!give) return json({ error: 'Offer one of your copies that isn’t worn or a starter' }, 400);
+    let want = null;
+    if (body.want != null) {
+      want = await env.DB.prepare(`SELECT id FROM copies WHERE id = ? AND key = ? AND ${MOVABLE}`).bind(Number(body.want), to).first();
+      if (!want) return json({ error: 'That copy isn’t theirs to swap' }, 400);
+    }
+    const open = await env.DB.prepare("SELECT COUNT(*) AS n FROM swaps WHERE from_key = ? AND state = 'open'").bind(key).first();
+    if (open.n >= RULES.swaps) return json({ error: `You have ${RULES.swaps} offers out. Wait for an answer or take one back.` }, 429);
+    const at = new Date().toISOString();
+    const r = await env.DB.prepare("INSERT INTO swaps(from_key, to_key, give, want, state, at) VALUES (?, ?, ?, ?, 'open', ?)").bind(key, to, give.id, want ? want.id : null, at).run();
+    return json({ id: r.meta.last_row_id, from: key, to, give: give.id, want: want ? want.id : null, at }, 201);
+  }
+  if (action === 'swap-accept') {
+    // Both copies move in one transaction, and only if both are still where the offer found them and unworn.
+    const id = Number(body.id), nonce = crypto.randomUUID();
+    const s = await env.DB.prepare("SELECT * FROM swaps WHERE id = ? AND to_key = ? AND state = 'open'").bind(id, key).first();
+    if (!s) return json({ error: 'That offer is gone' }, 404);
+    const ok = `EXISTS (SELECT 1 FROM copies WHERE id = swaps.give AND key = swaps.from_key AND worn = 0) AND (swaps.want IS NULL OR EXISTS (SELECT 1 FROM copies WHERE id = swaps.want AND key = swaps.to_key AND worn = 0))`;
+    const won = 'EXISTS (SELECT 1 FROM swaps WHERE id = ? AND nonce = ?)';
+    const moved = s.want ? [s.give, s.want] : [s.give];
+    const r = await env.DB.batch([
+      env.DB.prepare(`UPDATE swaps SET state = 'done', nonce = ? WHERE id = ? AND to_key = ? AND state = 'open' AND ${ok}`).bind(nonce, id, key),
+      env.DB.prepare(`UPDATE copies SET key = ?, worn = 0 WHERE id = ? AND ${won}`).bind(s.to_key, s.give, id, nonce),
+      env.DB.prepare(`UPDATE copies SET key = ?, worn = 0 WHERE id = ? AND ${won}`).bind(s.from_key, s.want ?? -1, id, nonce),
+      // Other open offers for either copy can no longer happen.
+      env.DB.prepare(`UPDATE swaps SET state = 'void' WHERE state = 'open' AND id <> ? AND (give IN (${moved.map(() => '?').join(',')}) OR want IN (${moved.map(() => '?').join(',')})) AND ${won}`).bind(id, ...moved, ...moved, id, nonce),
+    ]);
+    if (!r[0].meta.changes) {
+      await env.DB.prepare("UPDATE swaps SET state = 'void' WHERE id = ? AND state = 'open'").bind(id).run();
+      return json({ error: 'One of those copies has moved or is being worn, so the offer has lapsed.' }, 409);
+    }
+    return json({ id, done: true, got: s.give, gave: s.want });
+  }
+  if (action === 'swap-cancel') {
+    // The one who made an offer takes it back; the one it was made to turns it down.
+    const r = await env.DB.prepare("UPDATE swaps SET state = CASE WHEN from_key = ? THEN 'withdrawn' ELSE 'declined' END WHERE id = ? AND state = 'open' AND (from_key = ? OR to_key = ?)")
+      .bind(key, Number(body.id), key, key).run();
+    if (!r.meta.changes) return json({ error: 'That offer is gone' }, 404);
+    return json({ id: Number(body.id), done: false });
   }
   if (action === 'wear') {
     const slot = body.slot;
@@ -300,7 +363,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all();
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);

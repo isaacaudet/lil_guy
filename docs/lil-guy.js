@@ -10381,6 +10381,90 @@ function collectorNotes(o) {
 }
 
 //#endregion
+//#region src/collect.ts
+/**
+* What a collector does with copies beyond opening them: name one, put five
+* into a trade up, and fill a machine's set. The site and the Worker both use
+* these, so a tag, a trade's float and a set read the same everywhere.
+*/
+/** The longest name tag. */
+const TAG_MAX = 20;
+const TAG_CHARS = /^[A-Za-z0-9 '!?.&#-]+$/;
+const BLOCKED = [
+	"fuck",
+	"shit",
+	"cunt",
+	"nigg",
+	"fag",
+	"rape",
+	"nazi",
+	"hitler",
+	"porn",
+	"cock",
+	"dick",
+	"pussy",
+	"whore",
+	"slut",
+	"retard",
+	"kike",
+	"spic",
+	"chink",
+	"tranny"
+];
+/**
+* A name tag as it would be stored: spaces tidied, at most `TAG_MAX`
+* characters. `''` takes a tag off; null means it can't be used.
+*/
+function cleanTag(raw) {
+	const tag = String(raw ?? "").replace(/\s+/g, " ").trim();
+	if (!tag) return "";
+	if (tag.length > TAG_MAX || !TAG_CHARS.test(tag)) return null;
+	const letters = tag.toLowerCase().replace(/[^a-z]/g, "").replace(/0/g, "o");
+	if (BLOCKED.some((w) => letters.includes(w))) return null;
+	return tag;
+}
+/** Where a float sits within what its finish can roll, 0 (cleanest) to 1. */
+function floatShare(o) {
+	const [lo, hi] = FINISHES[o.finish].scuffs;
+	return hi > lo ? Math.min(1, Math.max(0, (o.scuff - lo) / (hi - lo))) : 0;
+}
+/**
+* A trade up's float, the way CS works it out: how clean each input is within
+* its own finish, averaged, then placed at the same point in the result's
+* finish. Five clean inputs make a clean result, whatever comes out.
+*/
+function tradeFloat(inputs, out) {
+	const avg = inputs.reduce((a, o) => a + floatShare(o), 0) / Math.max(1, inputs.length);
+	const [lo, hi] = FINISHES[out].scuffs;
+	return Math.round((lo + avg * (Math.min(1, hi) - lo)) * 1e7) / 1e7;
+}
+/** Which machine a trade up's result comes from: each game's share of the inputs. */
+function tradeGames(inputs) {
+	const share$1 = {};
+	for (const o of inputs) {
+		const g = itemById(o.item)?.game;
+		if (g) share$1[g] = (share$1[g] || 0) + 1 / inputs.length;
+	}
+	return share$1;
+}
+/** A machine's set: every item its capsules give (starters and auras aside). */
+function machineSet(game) {
+	return gameItems(game).filter((i) => !i.free && i.slot !== "aura");
+}
+/** How far a collection is through a machine's set: which of its items are owned, in any finish. */
+function setProgress(game, owned) {
+	const items$1 = machineSet(game), have = new Set(owned.map((o) => o.item));
+	const got = items$1.filter((i) => have.has(i.id));
+	return {
+		items: items$1,
+		have: new Set(got.map((i) => i.id)),
+		got: got.length,
+		total: items$1.length,
+		complete: got.length === items$1.length && items$1.length > 0
+	};
+}
+
+//#endregion
 exports.ARM_NAMES = ARM_NAMES
 exports.AURAS = AURAS
 exports.AURA_ODDS = AURA_ODDS
@@ -10410,6 +10494,7 @@ exports.ONE_OF_ONE_AURAS = ONE_OF_ONE_AURAS
 exports.PINS = PINS
 exports.SHADE_COUNT = SHADE_COUNT
 exports.SMALL_SIZE = SMALL_SIZE
+exports.TAG_MAX = TAG_MAX
 exports.TIER_ICONS = TIER_ICONS
 exports.TONE_NAMES = TONE_NAMES
 exports.TRAIT_ICONS = TRAIT_ICONS
@@ -10424,6 +10509,7 @@ exports.auraCells = auraCells
 exports.auraColor = auraColor
 exports.bodies = bodies
 exports.cheeks = cheeks
+exports.cleanTag = cleanTag
 exports.closeEyes = closeEyes
 exports.collectorNotes = collectorNotes
 exports.compose = compose
@@ -10438,6 +10524,7 @@ exports.dress = dress
 exports.encode = encode
 exports.encodeLook = encodeLook
 exports.eyes = eyes
+exports.floatShare = floatShare
 exports.frameAt = frameAt
 exports.freeItem = freeItem
 exports.fxColor = fxColor
@@ -10456,6 +10543,7 @@ exports.itemFrame = itemFrame
 exports.items = items
 exports.lookOf = lookOf
 exports.luckyPalette = luckyPalette
+exports.machineSet = machineSet
 exports.makeSeed = makeSeed
 exports.mouths = mouths
 exports.nameOf = nameOf
@@ -10471,6 +10559,7 @@ exports.resolveColor = resolveColor
 exports.roll = roll
 exports.rollFx = rollFx
 exports.rollSeason = rollSeason
+exports.setProgress = setProgress
 exports.shadePalette = shadePalette
 exports.shineData = shineData
 exports.slotOf = slotOf
@@ -10483,6 +10572,8 @@ exports.toAnimatedSvg = toAnimatedSvg
 exports.toPng = toPng
 exports.toShareSvg = toShareSvg
 exports.toSvgString = toSvgString
+exports.tradeFloat = tradeFloat
+exports.tradeGames = tradeGames
 exports.traitOdds = traitOdds
 exports.voxelColumns = voxelColumns
 exports.voxelItem = voxelItem

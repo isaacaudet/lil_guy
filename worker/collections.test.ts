@@ -7,7 +7,7 @@ import { decode, encode } from '../src/index-headless.ts';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
@@ -231,4 +231,80 @@ test('pity: after thirty capsules in a row below Prized the next is Prized or be
   const body: any = await (await call('/me/mia/open', 'POST', { game: 'stackdle' }, auth(c.owner))).json();
   expect(body.luck).toBeNull();
   expect(row()).toEqual({ opened: 25, dry: body.copy.grade >= 2 ? 0 : 30 });
+});
+
+const put = (key: string, grade = 0, scuff = 0.5, source = 'capsule') => Number(env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, ?, 'amountle.crown', 'amountle', 'hat', 'plain', ?, 100, ?, ?, 0, ?)`)
+  .run(key, encode({ item: 'amountle.crown', finish: 'plain', scuff, print: 1 }), grade, scuff, source, new Date().toISOString()).lastInsertRowid);
+const stateOf = async (key: string, owner: string) => (await (await call(`/me/${key}/state`, 'GET', undefined, auth(owner))).json()) as any;
+
+test('a name tag stays on its copy, only its owner can set it, and bad tags are refused', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  const id = put('mia');
+  expect((await call('/me/mia/tag', 'POST', { id, tag: '  Lucky   Visor ' }, auth(c.owner))).status).toBe(200);
+  expect((await stateOf('mia', c.owner)).copies.find((x: any) => x.id === id).tag).toBe('Lucky Visor');
+  expect((await call('/me/bo/tag', 'POST', { id, tag: 'Mine now' }, auth(b.owner))).status).toBe(404);
+  expect((await call('/me/mia/tag', 'POST', { id, tag: '<script>' }, auth(c.owner))).status).toBe(400);
+  expect((await call('/me/mia/tag', 'POST', { id, tag: 'x'.repeat(21) }, auth(c.owner))).status).toBe(400);
+  // Public pages see it too.
+  const pub: any = await (await call('/guys/mia')).json();
+  expect(pub.copies.find((x: any) => x.id === id).tag).toBe('Lucky Visor');
+});
+
+test('a trade up’s float comes from its inputs: five half-worn copies make a half-way result', async () => {
+  const c = await claim('mia');
+  const five = [0, 1, 2, 3, 4].map(() => put('mia', 0, 0.5));
+  const got: any = await (await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).json();
+  const o = decode(got.copy.code)!;
+  const [lo, hi] = ({ plain: [0, 1], tempered: [0, 1] } as any)[o.finish] || [0, 0.08];
+  expect(o.scuff).toBeCloseTo(lo + 0.5 * (hi - lo), 6);
+});
+
+test('a swap moves both copies only when accepted, and a gift moves one', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  const mine = put('mia'), theirs = put('bo');
+  const offer: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: mine, want: theirs }, auth(c.owner))).json();
+  expect(offer.id).toBeTruthy();
+  // Nothing has moved yet, and both see the offer.
+  expect((await stateOf('mia', c.owner)).copies.some((x: any) => x.id === mine)).toBe(true);
+  expect((await stateOf('bo', b.owner)).swaps[0].give.id).toBe(mine);
+  // Only the one it was made to can accept it.
+  expect((await call('/me/mia/swap-accept', 'POST', { id: offer.id }, auth(c.owner))).status).toBe(404);
+  expect((await call('/me/bo/swap-accept', 'POST', { id: offer.id }, auth(b.owner))).status).toBe(200);
+  expect((await stateOf('bo', b.owner)).copies.some((x: any) => x.id === mine)).toBe(true);
+  expect((await stateOf('mia', c.owner)).copies.some((x: any) => x.id === theirs)).toBe(true);
+  // A gift asks for nothing back.
+  const gift: any = await (await call('/me/bo/swap', 'POST', { to: 'mia', give: mine }, auth(b.owner))).json();
+  await call('/me/mia/swap-accept', 'POST', { id: gift.id }, auth(c.owner));
+  expect((await stateOf('mia', c.owner)).copies.some((x: any) => x.id === mine)).toBe(true);
+});
+
+test('swaps refuse starters, worn copies and stale offers, and either side can call one off', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  const starter = (await stateOf('mia', c.owner)).copies.find((x: any) => x.source === 'starter').id;
+  expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: starter }, auth(c.owner))).status).toBe(400);
+  expect((await call('/me/mia/swap', 'POST', { to: 'mia', give: put('mia') }, auth(c.owner))).status).toBe(400);
+  expect((await call('/me/mia/swap', 'POST', { to: 'nobody', give: put('mia') }, auth(c.owner))).status).toBe(404);
+  // Two offers for one copy: once one goes through, the other lapses.
+  const one = put('mia');
+  const a: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: one }, auth(c.owner))).json();
+  const d = await claim('di');
+  const z: any = await (await call('/me/mia/swap', 'POST', { to: 'di', give: one }, auth(c.owner))).json();
+  await call('/me/bo/swap-accept', 'POST', { id: a.id }, auth(b.owner));
+  expect((await call('/me/di/swap-accept', 'POST', { id: z.id }, auth(d.owner))).status).toBe(404);
+  // A copy put on after the offer stops it.
+  const worn = put('mia');
+  const w: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: worn }, auth(c.owner))).json();
+  await call('/me/mia/wear', 'POST', { slot: 'hat', id: worn }, auth(c.owner));
+  expect((await call('/me/bo/swap-accept', 'POST', { id: w.id }, auth(b.owner))).status).toBe(409);
+  expect((await stateOf('mia', c.owner)).copies.some((x: any) => x.id === worn)).toBe(true);
+  // Declined and withdrawn offers are gone for both.
+  const x: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).json();
+  expect((await call('/me/bo/swap-cancel', 'POST', { id: x.id }, auth(b.owner))).status).toBe(200);
+  expect((await stateOf('mia', c.owner)).swaps).toHaveLength(0);
+});
+
+test('a player can only have so many offers out', async () => {
+  const c = await claim('mia'); await claim('bo');
+  for (let i = 0; i < RULES.swaps; i++) expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).status).toBe(201);
+  expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).status).toBe(429);
 });

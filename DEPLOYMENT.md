@@ -68,6 +68,31 @@ Validated locally with `wrangler dev --local` and both migrations applied:
 - the Guys, profile and Pulls pages listed both, and a reload restored state from D1;
 - `bun test`: 142 pass, including the Worker's ten API tests.
 
+## Luck, name tags, swaps and sets (migrations 0005 and 0006)
+
+Apply both before deploying a Worker that reads them, or capsule opens, tags and
+swaps fail. `0005_luck.sql` adds the beginner's-luck and pity counters to
+`players`; `0006_tags_swaps.sql` adds `copies.tag` and the `swaps` table.
+
+- `POST /api/me/:key/tag {id, tag}`: a name tag on one of your copies (up to 20
+  letters, numbers and simple punctuation; a short word list is refused; `''`
+  takes it off). It stays on the copy when it changes hands.
+- `POST /api/me/:key/trade {ids}`: the result comes from one of the five inputs'
+  machines, each as likely as its share of the five, and its float is the
+  inputs' average place in their finishes placed in the result's finish
+  (`tradeFloat`). Usually the next grade, one in five a dud, one in twenty two up.
+- `POST /api/me/:key/swap {to, give, want|null}`: offer one of your copies for one
+  of theirs, or as a gift (`want: null`). Starters, the founder's copies and worn
+  copies can't be offered. At most 10 open offers each.
+- `POST /api/me/:key/swap-accept {id}`: only the player it was made to. Both copies
+  move in one transaction, and only if both are still where the offer found them
+  and unworn; otherwise the offer lapses (409). Other offers for either copy lapse.
+- `POST /api/me/:key/swap-cancel {id}`: the maker takes it back, the other side
+  turns it down.
+- `GET /api/me/:key/state` lists open offers both ways; every copy carries its tag.
+- Sets (every item a machine gives, in any finish) are worked out from a
+  collection on the page (`setProgress`); nothing is stored.
+
 ## Google sign-in (migration 0003)
 
 The live promo supports Google sign-in using Google Identity Services, as the club does.

@@ -20,8 +20,8 @@
   }
   * { box-sizing: border-box; }
   :root { font-synthesis: none; }
-  html { background: var(--bg); }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 24px/1.25 var(--pixel); -webkit-font-smoothing: none; -moz-osx-font-smoothing: grayscale; overflow-x: hidden;
+  html { background: var(--bg); overflow-x: clip; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 24px/1.25 var(--pixel); -webkit-font-smoothing: none; -moz-osx-font-smoothing: grayscale; overflow-x: clip;
     background-image: conic-gradient(from 270deg at 2px 2px, rgba(255,255,255,.035) 90deg, transparent 0); background-size: 32px 32px; }
   b, strong { font-weight: 400; }
   [hidden] { display: none !important; }
@@ -282,7 +282,9 @@
 
   /* trade up */
   .trades { display: grid; gap: 12px; }
-  .trade { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 16px; padding: 12px 14px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
+  .tr-btns { display: flex; gap: 8px; align-items: center; }
+  .trade .tr-math { grid-column: 1 / -1; }
+  .trade { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 12px 16px; padding: 12px 14px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
   .tr-give { display: flex; gap: 8px; flex-wrap: wrap; }
   .tr-c { width: 56px; height: 56px; border-radius: 8px; display: grid; place-items: center; background: var(--well); box-shadow: inset 0 -4px 0 var(--g); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .5s; }
   .tr-c.gap { background: none; box-shadow: inset 0 0 0 2px var(--panel-2); }
@@ -629,6 +631,58 @@
   @keyframes chdrop { 0% { transform: translateY(-70px) scale(2.2) rotate(-12deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
   .shout.big { font-size: 64px; min-height: 64px; }
 
+  /* name tags */
+  .tagged { color: var(--gold); }
+  .realname { display: block; font-size: 16px; color: var(--ink-3); margin-top: 2px; }
+  .tagf { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .tagf .field { flex: 1; min-width: 180px; height: 44px; }
+  .tagf .field input { font-size: 24px; }
+  .tagf .field span { font-size: 24px; }
+  /* sets */
+  .sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .set { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); position: relative; }
+  .set.done { box-shadow: 0 0 0 3px var(--gold), var(--lift); }
+  .set-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .set-h b { font-size: 24px; text-shadow: var(--ts); }
+  .set-h span { font-size: 16px; color: var(--ink-3); }
+  .set-bar { height: 8px; border-radius: 2px; background: var(--well); overflow: hidden; }
+  .set-bar i { display: block; height: 100%; background: var(--c); }
+  .set-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 4px; }
+  .set-items span { display: grid; place-items: center; aspect-ratio: 1; border-radius: 6px; background: var(--well); }
+  .set-items canvas { image-rendering: pixelated; max-width: 80%; max-height: 80%; }
+  .set-items .miss canvas { filter: brightness(0); opacity: .45; }
+  .set .badge-done { position: absolute; top: -10px; right: -6px; transform: rotate(5deg); }
+  .sets.small { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-bottom: 16px; }
+  .sets.small .set-items { display: none; }
+  /* trade-up picking */
+  .tr-pick { grid-column: 1 / -1; display: grid; gap: 8px; padding-top: 6px; }
+  .tr-pick .inv-mini { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tr-pick .tr-c { cursor: pointer; opacity: .5; }
+  .tr-pick .tr-c[aria-pressed="true"] { opacity: 1; box-shadow: inset 0 -4px 0 var(--g), 0 0 0 3px var(--gold); }
+  .tr-math { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 16px; color: var(--ink-2); }
+  .tr-math b { color: var(--ink); }
+  .tr-c small { position: absolute; left: 2px; bottom: 1px; font-size: 16px; line-height: 1; color: var(--ink-2); text-shadow: 0 1px 0 #000; }
+  .tr-c { position: relative; }
+  /* swaps */
+  .swaps { display: grid; gap: 10px; }
+  .swap { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); }
+  .swap .sw-c { display: grid; justify-items: center; gap: 2px; width: 88px; text-align: center; font-size: 16px; color: var(--ink-2); }
+  .swap .sw-c span { width: 64px; height: 64px; border-radius: 8px; background: var(--well); display: grid; place-items: center; }
+  .swap .sw-c canvas { image-rendering: pixelated; max-width: 52px; max-height: 52px; }
+  .swap .sw-c small { font-size: 16px; color: var(--ink-3); text-transform: uppercase; }
+  .swap .sw-c em { font-style: normal; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swap .sw-arrow { font-size: 32px; color: var(--ink-3); }
+  .swap .sw-who { font-size: 16px; color: var(--ink-2); }
+  .swap .sw-who b { font-size: 24px; color: var(--ink); display: block; }
+  .swap .sw-acts { display: flex; gap: 8px; }
+  .swapp { grid-template-columns: 1fr; max-width: 640px; }
+  .swapp .inv { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); max-height: 340px; overflow: auto; padding: 4px; }
+  .swapp .pickc { display: grid; justify-items: center; gap: 4px; padding: 6px 4px; border-radius: 10px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); font-size: 16px; text-align: center; }
+  .swapp .pickc span { height: 56px; display: grid; place-items: center; }
+  .swapp .pickc canvas { image-rendering: pixelated; max-width: 52px; max-height: 52px; }
+  .swapp .pickc em { font-style: normal; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swapp .pickc[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
+  @media (max-width: 760px) { .swap { grid-template-columns: auto auto auto; } .swap .sw-who, .swap .sw-acts { grid-column: 1 / -1; } }
   /* the trade-up machine: five copies in, a dial that could land on a dud, the next grade or two up */
   .tu { position: fixed; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px 16px; background: #0b0e18; }
   .tu-cap { font-size: 32px; text-shadow: var(--ts); text-align: center; }
@@ -828,9 +882,19 @@
     </div>
   </section>
 
+  <section id="sets-sec">
+    <div class="sec-h"><div><h2>Sets</h2><p>Every item a machine gives, in any finish. Fill one and it's yours for good: the set's badge shows on your page.</p></div></div>
+    <div class="sets" id="sets"></div>
+  </section>
+
   <section id="trade-sec">
     <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade into the machine. Usually one of the next grade comes out; sometimes a dud, now and then two grades up.</p></div></div>
     <div class="trades" id="trades"></div>
+  </section>
+
+  <section id="swap-sec">
+    <div class="sec-h"><div><h2>Swaps</h2><p>Offer a copy for one of a friend's, or give it to them. Nothing moves until they say yes.</p></div></div>
+    <div class="swaps" id="swaps"></div>
   </section>
  </div>
 
@@ -854,6 +918,7 @@
   </section>
   <section>
     <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-look" hidden>Change look</button><a class="btn ghost" id="u-dress" href="#/" hidden>Dress him</a><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a></div></div>
+    <div class="sets small" id="u-sets"></div>
     <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
   </section>
@@ -895,7 +960,7 @@
     <div class="rz-sec"><h2>★ Auras</h2><p>One capsule in a thousand, from any machine. An aura goes round your guy and moves with him. Its float thins it, its print sets its timing, and it has its own finishes.</p><div class="rz-grid" id="rz-auras"></div><div class="rz-chips" id="rz-afin"></div></div>
     <div class="rz-sec"><h2>Effects</h2><p>A rare layer on top of the finish. About one item in fifteen has one, and about one aura in three, so an aura's effect is its version. The last three are the rarest.</p><div class="rz-grid" id="rz-fx"></div><div class="rz-grid" id="rz-fxa" style="margin-top:12px"></div></div>
     <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different. Collectors look for these.</p><div class="rz-extras" id="rz-extras"></div></div>
-    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, go into the machine. Three times in four the next grade comes out, one time in five a dud at the same grade, one in twenty two grades up. Trades stop at Grail: auras only come out of capsules.</p></div>
+    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, go into the machine. Three times in four the next grade comes out, one time in five a dud at the same grade, one in twenty two grades up. Its float is the five's average place in their finishes, so clean inputs make a clean result, and it comes from one of their machines, each as likely as its share of the five. Trades stop at Grail: auras only come out of capsules.</p></div>
     <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, from twelve traits, each with its own odds. Multiply them and you get how rare he is.</p><div class="traits-t" id="rz-traits"></div></div>
   </section>
  </div>
@@ -945,6 +1010,7 @@
     </div>
   </div>
 </div>
+<dialog id="swapd" aria-labelledby="swap-h"><div class="insp swapp" id="swap-body"></div></dialog>
 <div class="tu" id="tu" hidden role="dialog" aria-modal="true" aria-label="Trade up">
   <p class="tu-cap" id="tu-cap"></p>
   <div class="tu-in" id="tu-in"></div>
@@ -1047,7 +1113,8 @@
     if (typeof s.infinite === 'boolean') INFINITE = s.infinite;
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', tickets: s.tickets, free: s.freeDay, checkin: s.checkinDay,
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
-      worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [] };
+      worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
+      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), swaps: s.swaps || [] };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   const wearLive = slot => { if (isLive() && state) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
@@ -1069,6 +1136,9 @@
       saving = saving.then(() => db.doc(`data/users/${uid}/promo`).set(body)).catch(() => {});
     }, 500);
   }
+  // A name tag shows in quotes in place of the item's name; the real name stays underneath.
+  const tagOf = code => state?.tags?.[code] || '';
+  const named = (title, tag) => tag ? `"${tag}"` : title;
   const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: LG.decode(code) })).filter(c => c.o) : [];
   const wornCodes = () => state ? Object.values(state.worn).filter(Boolean) : [];
   const wornCopies = () => wornCodes().map(LG.decode).filter(Boolean);
@@ -2180,12 +2250,14 @@
       return `<div class="itw"><button class="it" type="button" data-i="${c.i}" style="--cat:${k.c};--g:${g.color}" aria-pressed="${on}" aria-label="${on ? 'Take off' : 'Put on'} ${esc(LG.nameOf(c.o))}">
         ${on ? '<span class="pill tag on">ON</span>' : fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
         <span class="it-pic"><canvas aria-hidden="true"></canvas></span>
-        <span class="it-cat">${icon(it.slot)}${k.one}</span><b>${esc(title)}</b><span class="it-fin">${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o)))}</span>
+        <span class="it-cat">${icon(it.slot)}${k.one}</span><b class="${tagOf(c.code) ? 'tagged' : ''}">${esc(named(title, tagOf(c.code)))}</b><span class="it-fin">${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o)))}</span>
         <span class="it-wear">${esc(it.free ? 'Starter' : g.name)} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></button>
         <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button></div>`;
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
     $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
     renderTrades();
+    renderSets($('sets'), list.map(c => c.o), true);
+    renderSwaps();
   }
   $('lk-sort').addEventListener('change', e => { lkSort = e.target.value; renderColl(); });
   $('cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = b.dataset.cat; filter = -1; renderColl(); } });
@@ -2204,19 +2276,49 @@
   /* ---------------------------------------------- trade up: five of a grade (the least rare first) for one of the next */
   const TRADE = 5;
   const tradeable = g => copies().filter(c => !LG.itemById(c.o.item).free && !wornCodes().includes(c.code) && !founderCopy(c.o) && gradeIdx(c.o) === g).sort((a, b) => LG.copyOneIn(a.o) - LG.copyOneIn(b.o));
+  // Which five go in: the player picks, starting from the five least worth keeping. The float that comes out is
+  // the five's average place in their finishes (CS's rule), and the game is each game's share of the five.
+  const tradePick = {}, tradeOpen = {}, tradeTouched = {};
+  function picked(g) {
+    const all = tradeable(g), have = new Set(all.map(c => c.code));
+    // Until the player changes the pick, it is always the five least worth keeping.
+    if (!tradeTouched[g]) tradePick[g] = all.slice(0, TRADE).map(c => c.code);
+    tradePick[g] = tradePick[g].filter(code => have.has(code));
+    return tradePick[g].map(code => all.find(c => c.code === code));
+  }
+  function tradeMath(give) {
+    if (give.length < TRADE) return '';
+    const share = give.reduce((a, c) => a + LG.floatShare(c.o), 0) / give.length;
+    const games = Object.entries(LG.tradeGames(give.map(c => c.o))).sort((a, b) => b[1] - a[1]);
+    return `<div class="tr-math"><span>Float lands <b>${Math.round(share * 100)}%</b> into its finish's range: about <b>${LG.tradeFloat(give.map(c => c.o), 'plain').toFixed(3)}</b> if Plain, <b>${LG.tradeFloat(give.map(c => c.o), 'sunset').toFixed(4)}</b> if a flashy finish</span><span>From ${games.map(([gm, p]) => `<b>${cap(gm)}</b> ${Math.round(p * 100)}%`).join(', ')}</span></div>`;
+  }
   function renderTrades() {
     $('trades').innerHTML = [0, 1, 2, 3].map(g => {
-      const give = tradeable(g), from = LG.GRADES[g], to = LG.GRADES[g + 1];
-      const cells = Array.from({ length: TRADE }, (_, k) => give[k] ? `<span class="tr-c" style="--g:${from.color}"><canvas aria-hidden="true"></canvas></span>` : '<span class="tr-c gap"></span>').join('');
+      const all = tradeable(g), give = picked(g), from = LG.GRADES[g], to = LG.GRADES[g + 1];
+      const cells = Array.from({ length: TRADE }, (_, k) => give[k] ? `<span class="tr-c" style="--g:${from.color}"><canvas aria-hidden="true"></canvas><small>${give[k].o.scuff.toFixed(2)}</small></span>` : '<span class="tr-c gap"></span>').join('');
       return `<div class="trade" data-row="${g}"><div class="tr-give" aria-label="Five ${esc(from.name)} copies">${cells}</div><span class="tr-arrow">→</span>
         <span class="tr-get"><span class="bal" style="--b:${to.color}">${esc(to.name)}</span><small>${give.length} of ${TRADE} ${esc(from.name)}</small></span>
-        <button class="btn" type="button" data-trade="${g}"${give.length < TRADE ? ' disabled' : ''}>Trade up</button></div>`;
+        <span class="tr-btns"><button class="btn ghost small" type="button" data-choose="${g}"${all.length <= TRADE ? ' hidden' : ''}>${tradeOpen[g] ? 'Done' : `Choose (${all.length})`}</button><button class="btn" type="button" data-trade="${g}"${give.length < TRADE ? ' disabled' : ''}>Trade up</button></span>
+        ${tradeMath(give)}
+        ${tradeOpen[g] ? `<div class="tr-pick"><div class="inv-mini">${all.map(c => `<button class="tr-c" type="button" style="--g:${from.color}" data-pick="${g}" data-code="${esc(c.code)}" aria-pressed="${tradePick[g].includes(c.code)}" title="${esc(named(LG.nameOf(c.o).split(' | ')[0], tagOf(c.code)))} · float ${c.o.scuff.toFixed(4)}"><canvas aria-hidden="true"></canvas><small>${c.o.scuff.toFixed(2)}</small></button>`).join('')}</div></div>` : ''}</div>`;
     }).join('');
-    $('trades').querySelectorAll('[data-row]').forEach(row => { const give = tradeable(+row.dataset.row); row.querySelectorAll('.tr-c canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 44, 44)); });
+    $('trades').querySelectorAll('[data-row]').forEach(row => {
+      const g = +row.dataset.row, give = picked(g), all = tradeable(g);
+      row.querySelectorAll('.tr-give .tr-c canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 44, 44));
+      row.querySelectorAll('[data-pick] canvas').forEach(cv => showItem(cv, all.find(c => c.code === cv.parentElement.dataset.code).o, state.seed, 44, 44));
+    });
   }
   $('trades').addEventListener('click', async e => {
+    const ch = e.target.closest('[data-choose]');
+    if (ch) { const g = +ch.dataset.choose; tradeOpen[g] = !tradeOpen[g]; renderTrades(); return; }
+    const pk = e.target.closest('[data-pick]');
+    if (pk) {
+      const g = +pk.dataset.pick, code = pk.dataset.code, p = tradePick[g]; tradeTouched[g] = true;
+      if (p.includes(code)) p.splice(p.indexOf(code), 1); else { if (p.length >= TRADE) p.shift(); p.push(code); }
+      renderTrades(); return;
+    }
     const b = e.target.closest('[data-trade]'); if (!b || b.disabled) return;
-    const g = +b.dataset.trade, give = tradeable(g).slice(0, TRADE);
+    const g = +b.dataset.trade, give = picked(g);
     if (give.length < TRADE) return;
     $('trades').querySelectorAll('[data-trade]').forEach(x => { x.disabled = true; });
     // Ask for the result now; the machine plays while it comes back.
@@ -2229,8 +2331,72 @@
     const gone = new Set(give.map(c => c.code));
     state.copies = state.copies.filter(code => !gone.has(code));
     state.fresh = (state.fresh || []).filter(code => !gone.has(code));
+    delete tradePick[g]; delete tradeTouched[g];
     reveal(got.o, null, `Trade up · ${TRADE_WORDS[got.outcome]}`);
   });
+
+  /* ---------------------------------------------- sets: every item a machine gives, in any finish */
+  function renderSets(host, owned, full) {
+    const sets = LG.GAMES.map(g => ({ g, ...LG.setProgress(g, owned) })).sort((a, b) => (b.got / b.total) - (a.got / a.total));
+    host.innerHTML = sets.map(x => `<div class="set${x.complete ? ' done' : ''}" style="--c:${CANDY[x.g] || '#8b93aa'}">
+      ${x.complete ? '<span class="pill tag new badge-done">SET</span>' : ''}
+      <div class="set-h"><b>${cap(x.g)}</b><span>${x.got} of ${x.total}</span></div>
+      <div class="set-bar"><i style="width:${x.got / x.total * 100}%"></i></div>
+      ${full ? `<div class="set-items">${x.items.map(it => `<span class="${x.have.has(it.id) ? '' : 'miss'}" title="${esc(it.name)}${x.have.has(it.id) ? '' : ' · not yet'}"><canvas data-item="${it.id}" aria-hidden="true"></canvas></span>`).join('')}</div>` : ''}</div>`).join('');
+    if (full) host.querySelectorAll('canvas[data-item]').forEach(cv => showItem(cv, { item: cv.dataset.item, finish: 'plain', scuff: 0.05, print: 1 }, state?.seed || 'lilguys', 30, 30));
+    return sets.filter(x => x.complete).map(x => x.g);
+  }
+
+  /* ---------------------------------------------- swaps and gifts between players (live site only) */
+  function renderSwaps() {
+    const list = state?.swaps || [];
+    if (!isLive()) { $('swaps').innerHTML = '<div class="empty">Swaps and gifts happen between players on the live site. Open anyone\'s page, tap a copy and offer one of yours.</div>'; return; }
+    if (!list.length) { $('swaps').innerHTML = '<div class="empty">No offers right now. Open a player\'s page and tap one of their copies to offer a swap.</div>'; return; }
+    const cell = (x, label) => { const o = x && x.code ? LG.decode(x.code) : null; return o ? `<span class="sw-c"><small>${label}</small><span><canvas data-code="${esc(x.code)}" aria-hidden="true"></canvas></span><em>${esc(named(LG.nameOf(o).split(' | ')[0], x.tag))}</em></span>` : `<span class="sw-c"><small>${label}</small><span></span><em>Gone</em></span>`; };
+    $('swaps').innerHTML = list.map(x => {
+      const mine = x.from === state.key;
+      return `<div class="swap" data-s="${x.id}">${cell(x.give, mine ? 'You give' : 'You get')}<span class="sw-arrow">${x.want ? '⇄' : '→'}</span>${x.want ? cell(x.want, mine ? 'You get' : 'You give') : '<span class="sw-c"><small>Gift</small><span>GIFT</span><em>Nothing back</em></span>'}
+        <span class="sw-who">${mine ? `You offered <b>@${esc(x.to)}</b>` : `<b>@${esc(x.from)}</b> ${x.want ? 'offers this for yours' : 'is giving you this'}`}</span>
+        <span class="sw-acts">${mine ? '<button class="btn ghost small" type="button" data-sw="cancel">Take back</button>' : `<button class="btn green small" type="button" data-sw="accept">${x.want ? 'Swap' : 'Accept'}</button><button class="btn ghost small" type="button" data-sw="cancel">No thanks</button>`}</span></div>`;
+    }).join('');
+    $('swaps').querySelectorAll('canvas[data-code]').forEach(cv => showItem(cv, LG.decode(cv.dataset.code), state.seed, 52, 52));
+  }
+  async function refreshLive() { if (isLive() && state) { try { fromServer(await meApi('state')); } catch {} } renderAll(); }
+  $('swaps').addEventListener('click', async e => {
+    const b = e.target.closest('[data-sw]'); if (!b) return;
+    const id = +b.closest('[data-s]').dataset.s;
+    b.disabled = true;
+    try {
+      await meApi(b.dataset.sw === 'accept' ? 'swap-accept' : 'swap-cancel', { id });
+      if (b.dataset.sw === 'accept') { SFX.good(); toast('Done. It\'s in your locker.'); }
+    } catch (err) { toast(err.message); }
+    refreshLive();
+  });
+  // Make an offer: { to, want } asks for one of their copies in return for one of yours; { give } gives one away.
+  function swapDialog({ to = '', want = null, give = null }) {
+    const mineList = copies().filter(c => !LG.itemById(c.o.item).free && !wornCodes().includes(c.code) && !founderCopy(c.o));
+    let pick = give?.code || null;
+    const body = $('swap-body');
+    body.innerHTML = `<button class="close" type="button" id="swap-close" aria-label="Close">×</button>
+      <div><h3 id="swap-h">${want ? `Offer @${esc(to)} a swap` : 'Give it to a friend'}</h3>
+      ${want ? `<p class="fin">For their ${esc(named(LG.nameOf(LG.decode(want.code)).split(' | ')[0], want.tag))}. Pick one of yours to offer.</p>` : '<p class="fin">They get it when they accept. It keeps its float, print and name tag.</p>'}
+      ${want ? `<div class="inv" id="swap-pick" style="margin-top:14px">${mineList.length ? mineList.map(c => `<button class="pickc" type="button" data-code="${esc(c.code)}" aria-pressed="false"><span><canvas aria-hidden="true"></canvas></span><em>${esc(named(LG.nameOf(c.o).split(' | ')[0], tagOf(c.code)))}</em></button>`).join('') : '<div class="empty" style="grid-column:1/-1">Nothing to offer yet: starters and what you wear stay put.</div>'}</div>`
+        : `<label class="field" style="margin-top:14px"><span>@</span><input id="swap-to" maxlength="16" spellcheck="false" placeholder="their name" aria-label="Their name"></label>`}
+      <div class="look-actions"><button class="btn" type="button" id="swap-send" ${want ? 'disabled' : ''}>${want ? 'Send offer' : 'Send gift'}</button></div></div>`;
+    body.querySelectorAll('#swap-pick canvas').forEach(cv => showItem(cv, LG.decode(cv.closest('[data-code]').dataset.code), state.seed, 52, 52));
+    $('swap-pick')?.addEventListener('click', e => { const b = e.target.closest('[data-code]'); if (!b) return; pick = b.dataset.code; body.querySelectorAll('[data-code]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('swap-send').disabled = false; });
+    $('swap-close').addEventListener('click', () => $('swapd').close());
+    $('swap-send').addEventListener('click', async () => {
+      const target = want ? to : norm($('swap-to').value);
+      if (!target) { toast('Whose name?'); return; }
+      try {
+        await meApi('swap', { to: target, give: state.ids?.[pick], want: want ? want.id : null });
+        $('swapd').close(); SFX.equip(); toast(want ? `Offer sent to @${target}.` : `Gift sent to @${target}. It's theirs when they accept.`); refreshLive();
+      } catch (err) { toast(err.message); }
+    });
+    $('swapd').showModal();
+  }
+  $('swapd').addEventListener('click', e => { if (e.target === $('swapd')) $('swapd').close(); });
 
   // The demo's trade, with the server's odds: a dud one time in five, two grades up one in twenty, never past Grail.
   const TRADE_WORDS = { dud: 'A dud', up: 'One grade up', jump: 'Two grades up!' };
@@ -2240,6 +2406,7 @@
     const game = LG.itemById(give[strHash(`${state.seed}:${state.opened}`) % TRADE].o.item).game;
     let o;
     for (let i = 0; i < 50000; i++) { o = LG.roll(`${state.seed}:trade:${state.opened}:${i}`, game); if (gradeIdx(o) === out.grade) break; }
+    o = { ...o, scuff: LG.tradeFloat(give.map(c => c.o), o.finish) };
     state.opened++;
     return { o, outcome: out.outcome };
   }
@@ -2435,7 +2602,8 @@
     if (!o) return;
     const code = ctx.code;
     const g = LG.gradeOf(o), slot = LG.slotOf(o), on = ctx.mine && state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
-    const odds = LG.copyOneIn(o), item = LG.itemById(o.item);
+    const odds = LG.copyOneIn(o), item = LG.itemById(o.item), tag = ctx.mine ? tagOf(code) : ctx.tag || '';
+    const ownerLine = `<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`;
     const one = !!founderOf(ctx.seed) && (o.item === 'aura.origin' || (o.tally === 999 && o.print === 1 && o.finish === 'gold'));
     const others = ctx.mine ? wornCopies() : (ctx.worn || []).map(LG.decode).filter(Boolean);
     const caption = `@${ctx.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', the only one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
@@ -2448,12 +2616,14 @@
         <p class="ins-cap">#${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
       </div>
       <div>
-        <h3 id="insp-name">${esc(title)}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}${item.about ? `<p class="about">${esc(item.about)}</p>` : ''}
+        <h3 id="insp-name" class="${tag ? 'tagged' : ''}">${esc(named(title, tag))}${tag ? `<span class="realname">${esc(title)}</span>` : ''}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}${item.about ? `<p class="about">${esc(item.about)}</p>` : ''}
         <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ Only one' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
         ${floatPanel(o)}
         ${collectorPanel(o, g)}
         ${oddsBox(o, one)}
-        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button></div>` : `<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`}
+        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
+          <form class="tagf" id="insp-tagf" autocomplete="off"><label class="field"><span>"</span><input id="insp-tag" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" aria-label="Name tag"></label><button class="btn small" type="submit">${tag ? 'Change tag' : 'Add tag'}</button>${tag ? '<button class="btn ghost small" type="button" id="insp-untag">Take off</button>' : ''}</form>`
+          : state && isLive() && ctx.id && ctx.key !== state.key && !item.free && !one ? `<div class="ins-actions"><button class="btn" type="button" id="insp-ask">Offer a swap</button></div>${ownerLine}` : ownerLine}
         <details><summary>Share card</summary>
           <div class="share">
             <div class="svg">${LG.toShareSvg(ctx.seed, o, { name: '@' + ctx.key, config: guyConfig(ctx.seed) })}</div>
@@ -2476,7 +2646,20 @@
     view.addEventListener('pointerleave', () => { const tl = view.querySelector('.tilt'); if (tl) tl.style.transform = ''; });
     $('insp-close').addEventListener('click', () => $('insp').close());
     if (ctx.mine) $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else { state.worn[slot] = code; SFX.equip(); } wearLive(slot); save(); $('insp').close(); renderAll(); });
-    else $('insp-owner').addEventListener('click', () => $('insp').close());
+    if (ctx.mine) {
+      const setTag = async raw => {
+        const t = LG.cleanTag(raw);
+        if (t === null) { toast('That tag can\'t be used. Letters, numbers and simple punctuation, up to 20.'); return; }
+        if (isLive()) { try { await meApi('tag', { id: state.ids?.[code], tag: t }); } catch (err) { toast(err.message); return; } }
+        state.tags = { ...(state.tags || {}) }; if (t) state.tags[code] = t; else delete state.tags[code];
+        save(); SFX.equip(); renderColl(); inspectCopy(o, ctx);
+      };
+      $('insp-tagf').addEventListener('submit', e => { e.preventDefault(); setTag($('insp-tag').value); });
+      $('insp-untag')?.addEventListener('click', () => setTag(''));
+      $('insp-give')?.addEventListener('click', () => { $('insp').close(); swapDialog({ give: { id: state.ids?.[code], code } }); });
+    }
+    $('insp-ask')?.addEventListener('click', () => { $('insp').close(); swapDialog({ to: ctx.key, want: { id: ctx.id, code, tag } }); });
+    if (!ctx.mine) $('insp-owner').addEventListener('click', () => $('insp').close());
     $('insp-copy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
@@ -2670,7 +2853,7 @@
   }
   async function getUser(key) {
     if (isLive()) return getJSON('/guys/' + key);
-    if (state && key === state.key) return { key, seed: state.seed, look: state.look || '', copies: copies().map(c => ({ code: c.code, worn: wornCodes().includes(c.code) })) };
+    if (state && key === state.key) return { key, seed: state.seed, look: state.look || '', copies: copies().map(c => ({ code: c.code, worn: wornCodes().includes(c.code), tag: tagOf(c.code) })) };
     throw Object.assign(new Error('Only on the live site'), { status: 404 });
   }
   async function listMarket(f) {
@@ -2716,11 +2899,13 @@
     $('u-stage').innerHTML = px(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), { title: '@' + key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
     hydrate($('u-stage'));
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
     meaning($('u-meaning'), LG.guyOneIn(cfg)); distChart($('u-dist'), LG.guyOneIn(cfg));
     const [a, b] = split(LG.guyOneIn(cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
     userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
     uCat = '';
+    renderSets($('u-sets'), userCopies.map(c => c.o), false); setBadges();
     $('u-look').hidden = !mine; $('u-dress').hidden = !mine;
     $('u-coll-h').textContent = mine ? 'Your collection' : 'Collection';
     $('u-coll-sub').textContent = `${userCopies.length} copies, ${userCopies.filter(c => !LG.itemById(c.o.item).free).length} from capsules.`;
@@ -2735,7 +2920,7 @@
         const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
         return `<button class="cc card" type="button" data-u="${i}">${c.worn ? '<span class="pill tag on">ON</span>' : ''}
           ${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one), userCopies.length > 24))}
-          <span class="cc-cap"><b>${esc(title)}</b><span>${esc(look || (it.free ? 'Starter' : plainOf(c.o)))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
+          <span class="cc-cap"><b class="${c.tag ? 'tagged' : ''}">${esc(named(title, c.tag))}</b><span>${esc(look || (it.free ? 'Starter' : plainOf(c.o)))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
       }).join('');
       hydrate($('u-grid'));
     };
@@ -2743,7 +2928,7 @@
     $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
     $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
     $('u-look').onclick = () => $('look-open').click();
-    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn }); };
+    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag }); };
   }
 
   // Pulls: every copy anyone has opened, the object itself on show, filtered and sorted.
@@ -2780,13 +2965,13 @@
       const g = LG.GRADES[c.grade] || LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
       return `<button class="mcopy" type="button" data-m="${start + k}" style="--g:${g.color}">
         <span class="pic"><span class="bal" style="--b:${g.color}">${esc(c.one ? '★ Only one' : g.name)}</span><span class="one">${c.one ? 'Only one' : '1 in ' + fmt(c.oneIn ?? LG.copyOneIn(o))}</span><canvas aria-hidden="true"></canvas></span>
-        <span class="meta"><b>${esc(title)}</b><span>${esc(look || plainOf(o))} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</span><span class="mf"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></span>
-        <span class="own"><span>@${esc(c.key)}</span><em>${esc(LG.wearOf(o.scuff).name)}</em></span></span></button>`;
+        <span class="meta"><b class="${c.tag ? 'tagged' : ''}">${esc(named(title, c.tag))}</b><span>${esc(look || plainOf(o))} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</span><span class="mf"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></span>
+        <span class="own"><span>@${esc(c.key)}</span><em>${c.at ? new Date(c.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</em></span></span></button>`;
     }).join('');
     if (reset) $('m-grid').innerHTML = html; else $('m-grid').insertAdjacentHTML('beforeend', html);
     page.forEach((c, k) => { const el = $('m-grid').querySelector(`[data-m="${start + k}"] canvas`), o = LG.decode(c.code); if (el && o) showItem(el, o, c.seed, 150, 120); });
   }
-  $('m-grid').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const c = marketList[+b.dataset.m]; const mine = state && c.key === state.key; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(LG.decode(c.code), { code: c.code, key: c.key, seed: c.seed, mine: false }); });
+  $('m-grid').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const c = marketList[+b.dataset.m]; const mine = state && c.key === state.key; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(LG.decode(c.code), { code: c.code, key: c.key, seed: c.seed, mine: false, id: c.id, tag: c.tag }); });
 
   /* ---------------------------------------------- every finish: one of today's items in all seven, live */
   let finItem = null;
