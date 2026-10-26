@@ -341,7 +341,10 @@ async function stats(env) {
   const { results } = await env.DB.prepare("SELECT grade, COUNT(*) AS n FROM copies WHERE source <> 'starter' GROUP BY grade").all();
   const grades = [0, 0, 0, 0, 0];
   for (const r of results) grades[r.grade] = r.n;
-  return json({ players: players.n, copies: grades.reduce((a, b) => a + b, 0), grades, todayGame: todayGame(), rules: RULES });
+  // How many of each item in each finish have ever been pulled, for the Pulls page: [item, finish, n].
+  const byItem = await env.DB.prepare("SELECT item, finish, COUNT(*) AS n FROM copies WHERE source <> 'starter' GROUP BY item, finish").all();
+  const counts = byItem.results.map(r => [r.item, r.finish, r.n]);
+  return json({ players: players.n, copies: grades.reduce((a, b) => a + b, 0), grades, counts, todayGame: todayGame(), rules: RULES });
 }
 
 export async function api(request, env, url = new URL(request.url)) {

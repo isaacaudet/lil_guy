@@ -173,6 +173,13 @@
   .bal { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; font-size: 16px; line-height: 1; color: #fff; background: var(--b); box-shadow: 0 3px 0 color-mix(in srgb, var(--b) 50%, #000); text-shadow: 0 2px 0 rgba(0,0,0,.4); white-space: nowrap; }
   .bal.poly { background: linear-gradient(90deg, #ff6b9d, #ffb36b, #6bdcb8, #6bb4ff, #b06bff); box-shadow: 0 3px 0 #4a2e66; }
   @keyframes poly { to { background-position: 300% 0, 300% 0; } }
+  /* ★ Aura is the top grade, so it never sits still: wherever a grade colour shows (a pill, a bar, a border, a tint),
+     an aura's colour turns slowly round the spectrum instead of a flat teal, and its pills run a prism across them. */
+  @property --aura { syntax: '<color>'; inherits: true; initial-value: #19d3c5; }
+  @keyframes aura-turn { 0% { --aura: #19d3c5; } 20% { --aura: #5f8bff; } 40% { --aura: #c15cff; } 60% { --aura: #ff5fa8; } 80% { --aura: #ffc24d; } 100% { --aura: #19d3c5; } }
+  [style*="--g:#19D3C5"], [style*="--grade:#19D3C5"] { --g: var(--aura) !important; --grade: var(--aura) !important; animation: aura-turn 6s linear infinite; }
+  [style*="--b:#19D3C5"] { --b: var(--aura) !important; animation: aura-turn 6s linear infinite; }
+  .bal[style*="--b:#19D3C5"], .rz-rung .lad-pill.aura { background: linear-gradient(100deg, #19d3c5, #5f8bff, #c15cff, #ff5fa8, #ffc24d, #19d3c5) 0 0 / 300% 100%; box-shadow: 0 3px 0 #2a1f55; animation: aura-turn 6s linear infinite, foil 4s linear infinite; }
   .x { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--red); color: #fff; font-size: 16px; box-shadow: 0 3px 0 var(--red-d); text-shadow: 0 2px 0 rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .tt .foot .x { box-shadow: 0 2px 0 var(--red-d); height: 22px; }
   .popx { position: absolute; left: 50%; top: 0; font-size: 32px; line-height: 1; color: #fff; background: var(--red); padding: 4px 10px; border-radius: 8px; box-shadow: 0 4px 0 var(--red-d); text-shadow: var(--ts); pointer-events: none; animation: popx .85s cubic-bezier(.2,.9,.3,1) forwards; z-index: 6; white-space: nowrap; }
@@ -257,22 +264,33 @@
   .tag.dev { background: #ff6fa0; color: #2b0718; left: -6px; right: auto; transform: rotate(-5deg); }
 
   /* the locker */
-  .locker { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: start; }
-  .lk-guy { position: sticky; top: 16px; display: grid; gap: 12px; padding: 16px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
-  .lk-stage { display: grid; place-items: center; aspect-ratio: 1; border-radius: 10px; background: var(--well); }
-  .lk-stage svg { width: 82%; height: auto; image-rendering: pixelated; }
-  .lk-slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-  .lk-slot { display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 8px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); font-size: 16px; color: var(--ink-3); }
-  .lk-slot .pic { height: 40px; display: grid; place-items: center; }
-  .lk-slot canvas { image-rendering: pixelated; max-width: 40px; max-height: 40px; }
-  .lk-slot em { font-style: normal; color: var(--ink-3); font-size: 16px; height: 40px; display: grid; place-items: center; }
-  .lk-slot[aria-pressed="true"] { background: var(--cat); color: #fff; text-shadow: var(--ts); }
+  /* The locker: your guy on his stand, a row for each slot (its mark, what's in it, the piece itself), and beside
+     them every copy. A row or a tab narrows the copies to that slot. */
+  .locker { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .lk-guy { position: sticky; top: 16px; display: grid; gap: 14px; padding: 14px; border-radius: 14px; background: var(--panel); box-shadow: 0 6px 0 var(--edge); }
+  .lk-stage { position: relative; display: grid; place-items: center; aspect-ratio: 5 / 4; border-radius: 10px; background: var(--well); overflow: hidden; }
+  .lk-stage::before { content: ""; position: absolute; left: 18%; right: 18%; bottom: 9%; height: 9%; border-radius: 50%; background: rgba(0,0,0,.55); }
+  .lk-stage svg { position: relative; height: 92%; width: auto; image-rendering: pixelated; }
+  .lk-slots { display: grid; gap: 8px; }
+  .lk-slot { display: grid; grid-template-columns: 44px minmax(0, 1fr) 56px; align-items: center; gap: 10px; padding: 6px 6px 6px 8px; border-radius: 10px; text-align: left; background: var(--panel-2); box-shadow: 0 4px 0 var(--edge); transition: transform .1s; }
+  .lk-slot:hover { transform: translateY(-1px); }
+  .lk-slot .ico { display: grid; place-items: center; }
+  .lk-slot .ico .ci { width: 40px; height: 32px; }
+  .lk-slot .txt { min-width: 0; display: grid; }
+  .lk-slot .txt b { font-size: 24px; line-height: 1.25; color: var(--ink); }
+  .lk-slot .txt small { font-size: 16px; line-height: 1.25; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lk-slot .pic { width: 56px; height: 48px; border-radius: 8px; display: grid; place-items: center; background: var(--well); }
+  .lk-slot.vacant .pic { background: transparent; box-shadow: inset 0 0 0 2px var(--panel); }
+  .lk-slot.vacant .ico { opacity: .7; }
+  .lk-slot canvas { image-rendering: pixelated; max-width: 46px; max-height: 42px; }
+  .lk-slot[aria-pressed="true"] { background: color-mix(in srgb, var(--cat) 32%, var(--panel-2)); box-shadow: 0 0 0 3px var(--cat), 0 4px 0 var(--edge); }
   .cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .cats button { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 8px; border-radius: 8px; font-size: 24px; color: var(--ink-3); background: var(--panel); }
   .cats button .num { font-size: 16px; color: var(--ink-3); }
   .cats button[aria-selected="true"] { background: var(--cat); color: #fff; text-shadow: var(--ts); box-shadow: 0 3px 0 color-mix(in srgb, var(--cat) 45%, #000); }
   .cats button[aria-selected="true"] .num { color: rgba(255,255,255,.85); }
-  .ci { width: 20px; height: 20px; flex: none; }
+  .ci { width: 25px; height: 20px; flex: none; }
+  .cats button .ci { width: 30px; height: 24px; }
   .tools { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
   .sortby { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; color: var(--ink-3); }
   .sortby select { height: 40px; padding: 0 10px; border-radius: 8px; border: 0; background: var(--panel-2); color: var(--ink); font-size: 16px; box-shadow: 0 3px 0 var(--edge); }
@@ -286,7 +304,7 @@
   .it-pic::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--g); }
   .it-pic canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; filter: drop-shadow(0 4px 0 rgba(0,0,0,.4)); }
   .it-cat { justify-self: start; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 6px 0 4px; border-radius: 6px; background: var(--cat); color: #fff; font-size: 16px; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
-  .it-cat .ci { width: 16px; height: 16px; }
+  .it-cat .ci { width: 20px; height: 16px; }
   .it b { font-size: 24px; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .it-fin { font-size: 16px; color: color-mix(in srgb, var(--g) 65%, #fff); }
   .it-wear { font-size: 16px; color: var(--ink-3); }
@@ -431,13 +449,49 @@
   .rz { display: grid; gap: 64px; }
   .rz-sec h2 { font-size: 48px; }
   .rz-sec > p { margin: 8px 0 20px; color: var(--ink-2); font-size: 24px; max-width: 52ch; }
-  .rz-ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
-  .rz-rung { border-radius: 12px; padding: 12px; background: var(--panel); box-shadow: var(--lift); display: grid; gap: 6px; align-content: start; justify-items: center; text-align: center; position: relative; overflow: hidden; }
-  .rz-rung::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--g); }
-  .rz-rung b { font-size: 24px; color: color-mix(in srgb, var(--g) 70%, #fff); text-shadow: var(--ts); }
-  .rz-rung span { font-size: 16px; color: var(--ink-2); line-height: 1.25; }
-  .rz-rung canvas { image-rendering: pixelated; background: var(--well); border-radius: 8px; padding: 6px; max-width: 100%; }
-  .rz-rung.top { background: var(--panel-2); }
+  .rz-trade { display: grid; gap: 14px; padding: 16px; border-radius: 14px; background: var(--panel); box-shadow: 0 6px 0 var(--edge); }
+  .rt-from button { height: 36px; }
+  .rt-flow { display: grid; grid-template-columns: auto auto auto auto minmax(0, 1fr); align-items: center; gap: 14px; }
+  .rt-in { display: grid; grid-template-columns: repeat(5, 72px); gap: 8px; }
+  .rt-c { position: relative; display: grid; place-items: center; grid-template-rows: 1fr auto; height: 96px; padding: 6px 0 2px; border-radius: 8px; background: var(--well); border: 3px solid var(--g); box-shadow: 0 5px 0 color-mix(in srgb, var(--g) 30%, #05060c); animation: rt-feed 3s ease-in-out infinite; animation-delay: calc(var(--k) * .15s); }
+  .rt-c canvas { image-rendering: pixelated; width: 48px; height: 48px; object-fit: contain; }
+  .rt-c em { font-style: normal; font-size: 16px; line-height: 1.3; color: var(--ink-2); }
+  @keyframes rt-nudge { 0%, 55%, 100% { transform: none; } 70% { transform: translateY(-6px); } }
+  @keyframes rt-feed { 0%, 55%, 100% { transform: none; } 70% { transform: translate(6px, -6px) rotate(3deg); } 82% { transform: translateX(2px); } }
+  .rt-arrow { display: flex; gap: 4px; }
+  .rt-arrow i { width: 8px; height: 8px; background: var(--ink-3); animation: rt-dot 1.2s steps(1) infinite; }
+  .rt-arrow i:nth-child(2) { animation-delay: .2s; } .rt-arrow i:nth-child(3) { animation-delay: .4s; }
+  @keyframes rt-dot { 0% { background: var(--gold); } 40% { background: var(--ink-3); } }
+  .rt-mach { display: grid; justify-items: center; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--panel-2); box-shadow: 0 5px 0 var(--edge); text-align: center; }
+  .rt-mico .ci { width: 60px; height: 48px; animation: mbob 1.8s ease-in-out infinite; }
+  .rt-mach b { font-size: 24px; line-height: 1.3; }
+  .rt-mach small { font-size: 16px; color: var(--ink-3); }
+  .rt-outs { display: grid; gap: 8px; min-width: 0; }
+  .rt-o { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 10px 6px 6px; border-radius: 10px; background: var(--panel-2); border: 3px solid var(--g); box-shadow: 0 5px 0 color-mix(in srgb, var(--g) 30%, #05060c); }
+  .rt-op { display: grid; place-items: center; height: 56px; border-radius: 8px; background: var(--well); }
+  .rt-op canvas { image-rendering: pixelated; width: 44px; height: 44px; object-fit: contain; }
+  .rt-ot { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 4px 10px; min-width: 0; }
+  .rt-ot b { font-size: 32px; line-height: 1.1; }
+  .rt-ot small { font-size: 16px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rt-bar { grid-column: 1 / -1; height: 8px; border-radius: 2px; background: var(--well); overflow: hidden; }
+  .rt-bar i { display: block; height: 100%; background: var(--g); }
+  .rt-note { margin: 0; font-size: 16px; line-height: 1.4; color: var(--ink-2); }
+  @media (max-width: 1100px) { .rt-flow { grid-template-columns: 1fr; justify-items: center; } .rt-arrow { transform: rotate(90deg); } .rt-outs { width: 100%; } }
+  @media (max-width: 480px) { .rt-in { grid-template-columns: repeat(5, minmax(0, 52px)); gap: 6px; } .rt-c { height: 80px; animation-name: rt-nudge; } .rt-ot small { white-space: normal; } .rt-c canvas { width: 40px; height: 40px; } .rt-ot { grid-template-columns: auto auto; } .rt-ot small { grid-column: 1 / -1; } }
+  .rz-ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+  /* A grade as a card with depth: a flat face in its colour's frame, standing on a hard shadow, no gloss. Each
+     says what a capsule of that grade holds: the finishes, their float range, the print, the chance of an effect. */
+  .rz-rung { position: relative; display: grid; gap: 8px; align-content: start; padding: 10px; border-radius: 12px; text-align: center;
+    background: var(--panel); border: 3px solid var(--g); box-shadow: 0 8px 0 color-mix(in srgb, var(--g) 30%, #05060c); }
+  .rz-rung .lad-pill { justify-self: center; display: inline-flex; align-items: center; padding: 2px 10px 4px; border-radius: 6px; font-size: 24px; line-height: 1.2; color: #fff; background: var(--g); box-shadow: 0 3px 0 color-mix(in srgb, var(--g) 45%, #000); text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+  .rz-rung .pic { display: grid; place-items: center; aspect-ratio: 1; border-radius: 8px; background: var(--well); }
+  .rz-rung .pic canvas { image-rendering: pixelated; width: 72%; height: 72%; object-fit: contain; }
+  .rr-odds { font-size: 16px; line-height: 1.3; color: var(--ink); }
+  .rr-odds small { display: block; font-size: 16px; color: var(--ink-3); }
+  .rr-spec { display: grid; gap: 4px; margin: 0; padding: 8px; border-radius: 8px; background: var(--well); text-align: left; }
+  .rr-spec div { display: grid; gap: 0; }
+  .rr-spec dt { font-size: 16px; line-height: 1.25; color: var(--ink-3); }
+  .rr-spec dd { margin: 0; font-size: 16px; line-height: 1.25; color: var(--ink); }
   .rz-float { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: center; background: var(--panel); box-shadow: var(--lift); border-radius: 14px; padding: 18px; }
   .rz-pic { display: grid; place-items: center; aspect-ratio: 1; border-radius: 10px; background: var(--well); }
   .rz-pic canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; }
@@ -456,9 +510,8 @@
   .rz-x .souv, .rz-x .lcd { display: inline-flex; margin-bottom: 4px; }
   .rz-t b { font-size: 24px; line-height: 1.1; text-shadow: var(--ts); }
   .rz-t span { font-size: 16px; color: var(--ink-3); line-height: 1.25; }
-  .rz-rung canvas { width: 72px !important; height: 72px !important; object-fit: contain; box-sizing: content-box; }
   .odds-chart { display: grid; gap: 8px; margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); }
-  .oc-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 110px; align-items: center; gap: 12px; font-size: 16px; }
+  .oc-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) max-content; align-items: center; gap: 12px; font-size: 16px; }
   .oc-row b { color: color-mix(in srgb, var(--g) 70%, #fff); }
   .oc-bar { height: 20px; border-radius: 4px; background: var(--well); overflow: hidden; }
   .oc-bar i { display: block; height: 100%; background: var(--g); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); }
@@ -470,6 +523,25 @@
   .lab-pic canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; }
   .lab-form { display: grid; gap: 10px; }
   .lab-form label { display: grid; gap: 4px; font-size: 16px; color: var(--ink-3); }
+  .lab-find { grid-column: 1 / -1; display: grid; gap: 8px; }
+  .lab-findbar { display: flex; align-items: center; gap: 4px 12px; flex-wrap: wrap; }
+  .lab-q { flex: 1 1 240px; max-width: 420px; height: 48px; }
+  .lab-q span svg { width: 18px; height: 18px; }
+  .lab-q input { font-size: 24px; }
+  .lab-count { font-size: 16px; color: var(--ink-3); white-space: nowrap; }
+  .lab-chips { gap: 6px; }
+  .lab-chips button { height: 32px; padding: 0 10px; font-size: 16px; }
+  .lab-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 236px; overflow-y: auto; padding: 4px 4px 8px; border-radius: 10px; background: var(--well); }
+  .lab-it { display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border-radius: 8px; background: var(--panel); box-shadow: 0 3px 0 var(--edge); text-align: center; min-width: 0; }
+  .lab-it:hover { background: var(--panel-2); }
+  .lab-it[aria-selected="true"] { background: var(--panel-2); box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
+  .lab-it canvas { image-rendering: pixelated; width: 44px; height: 44px; object-fit: contain; }
+  .lab-it span { font-size: 16px; line-height: 1.2; color: var(--ink-2); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lab-it small { font-size: 16px; line-height: 1.2; color: var(--ink-3); }
+  .lab-none { grid-column: 1 / -1; padding: 16px; font-size: 16px; color: var(--ink-3); }
+  .lab-now { margin: 0; font-size: 24px; line-height: 1.3; color: var(--ink); }
+  .lab-now small { display: block; font-size: 16px; color: var(--ink-3); }
+  .lab-l { display: grid; gap: 6px; font-size: 16px; color: var(--ink-3); }
   .lab-form select, .lab-form input[type=number] { height: 40px; padding: 0 10px; border-radius: 8px; border: 0; background: var(--well); color: var(--ink); font-size: 16px; }
   .lab-f { display: flex; align-items: center; gap: 10px; }
   .lab-f input { flex: 1; accent-color: var(--gold); }
@@ -495,7 +567,7 @@
   .rz-x h3 { grid-column: 1; }
   .rz-x p { grid-column: 1 / -1; }
   @media (max-width: 1000px) { .lab-copy { grid-template-columns: 200px minmax(0, 1fr); } .lab-out { grid-column: 1 / -1; } }
-  @media (max-width: 640px) { .lab-copy { grid-template-columns: 1fr; } .lab-pic { width: 200px; justify-self: center; } .oc-row { grid-template-columns: 88px minmax(0, 1fr) 88px; } .lab-gf { flex-direction: column; } }
+  @media (max-width: 640px) { .lab-copy { grid-template-columns: 1fr; } .lab-pic { width: 200px; justify-self: center; } .oc-row { grid-template-columns: 76px minmax(0, 1fr) max-content; gap: 8px; } .lab-gf { flex-direction: column; } }
   .rz-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .rz-extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
   .rz-x { background: var(--panel); box-shadow: var(--lift); border-radius: 12px; padding: 14px; display: grid; gap: 8px; align-content: start; }
@@ -522,6 +594,8 @@
   .mcopy .meta { display: grid; gap: 2px; padding: 10px 12px 12px; }
   .mcopy .meta b { font-size: 24px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mcopy .meta span { font-size: 16px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mcopy .meta .m-pulled { font-size: 16px; color: var(--ink-2); }
+  .mcopy .meta .m-pulled b { color: var(--gold); font-weight: normal; }
   .mcopy .own { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; font-size: 16px; }
   .mcopy .own em { font-style: normal; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -666,7 +740,14 @@
   .set { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); position: relative; }
   .set.done { box-shadow: 0 0 0 3px var(--gold), var(--lift); }
   .set-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .set-h b { font-size: 24px; text-shadow: var(--ts); }
+  .set-h b { font-size: 24px; line-height: 1.3; text-shadow: var(--ts); }
+  .u-sets { margin-bottom: 20px; }
+  .u-sets-h { margin: 0 0 8px; font-size: 24px; line-height: 1.3; color: var(--ink); text-shadow: var(--ts); }
+  .u-sets .sets.small { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .u-sets .sets.small .set { gap: 4px; padding: 8px 10px 10px; }
+  .u-sets .sets.small .set-h b { font-size: 16px; }
+  .u-sets-more summary { cursor: pointer; width: max-content; padding: 2px 10px 4px; border-radius: 6px; font-size: 16px; line-height: 1.4; color: var(--ink-2); background: var(--panel); box-shadow: 0 3px 0 var(--edge); }
+  .u-sets-more[open] summary { margin-bottom: 10px; }
   .set-h span { font-size: 16px; color: var(--ink-3); }
   .set-bar { height: 8px; border-radius: 2px; background: var(--well); overflow: hidden; }
   .set-bar i { display: block; height: 100%; background: var(--c); }
@@ -742,7 +823,7 @@
     .ins-view { height: 280px; }
     .fins { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .insp > .art-col { width: 200px; justify-self: center; }
-    .rz-ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .rz-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 760px) {
     h1, .hero h1, .page-h h1 { font-size: 48px; }
@@ -756,8 +837,12 @@
     .maybe { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
     .mbc .tchip { white-space: normal; height: auto; padding: 2px 6px; justify-content: center; text-align: center; }
     .locker { grid-template-columns: minmax(0, 1fr); }
-    .lk-guy { position: static; grid-template-columns: 120px minmax(0, 1fr); align-items: center; }
-    .lk-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lk-guy { position: static; grid-template-columns: 128px minmax(0, 1fr); align-items: start; }
+    .lk-stage { aspect-ratio: 1; }
+    .lk-slot { grid-template-columns: 34px minmax(0, 1fr) 44px; gap: 8px; padding: 4px 4px 4px 6px; }
+    .lk-slot .ico .ci { width: 30px; height: 24px; }
+    .lk-slot .txt b { font-size: 16px; }
+    .lk-slot .pic { width: 44px; height: 36px; }
     .inv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .trade { grid-template-columns: minmax(0, 1fr) auto; }
     .tr-give { flex-wrap: nowrap; gap: 4px; } .tr-c { width: 40px; height: 40px; } .tr-c canvas { max-width: 32px; max-height: 32px; }
@@ -905,10 +990,6 @@
     </div>
   </section>
 
-  <section id="sets-sec">
-    <div class="sec-h"><div><h2>Sets</h2><p>Every item a machine gives, in any finish. Fill one and it's yours for good: the set's badge shows on your page.</p></div></div>
-    <div class="sets" id="sets"></div>
-  </section>
 
   <section id="trade-sec">
     <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade into the machine. Usually one of the next grade comes out; sometimes a dud, now and then two grades up.</p></div></div>
@@ -941,7 +1022,7 @@
   </section>
   <section>
     <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-look" hidden>Change look</button><a class="btn ghost" id="u-dress" href="#/" hidden>Dress him</a><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a></div></div>
-    <div class="sets small" id="u-sets"></div>
+    <div class="u-sets" id="u-sets-wrap"><p class="u-sets-h" id="u-sets-h"></p><div class="sets small" id="u-sets"></div><details class="u-sets-more" id="u-sets-more"><summary>Every item in every set</summary><div class="sets" id="u-sets-full"></div></details></div>
     <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
   </section>
@@ -953,13 +1034,19 @@
       <div class="lab">
         <div class="filters" id="lab-tabs"><button type="button" data-lab="copy" aria-pressed="true">A copy</button><button type="button" data-lab="guy" aria-pressed="false">A guy</button></div>
         <div class="lab-copy" id="lab-copy">
+          <div class="lab-find">
+            <div class="lab-findbar"><label class="field lab-q"><span aria-hidden="true"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" fill="currentColor"><path d="M2 0h3v1H2zM1 1h1v1H1zM5 1h1v1H5zM0 2h1v3H0zM6 2h1v3H6zM1 5h1v1H1zM5 5h1v1H5zM2 6h3v1H2zM6 6h1v1H6zM7 7h1v1H7zM8 8h1v1H8z"/></svg></span><input id="lab-q" type="search" placeholder="search any item" autocomplete="off" spellcheck="false" aria-label="Search items"></label><span class="lab-count" id="lab-count"></span></div>
+            <div class="filters lab-chips" id="lab-games" aria-label="Machine"></div>
+            <div class="filters lab-chips" id="lab-slots" aria-label="Slot"></div>
+            <div class="lab-items" id="lab-items" role="listbox" aria-label="Items"></div>
+          </div>
           <div class="lab-pic"><canvas id="lab-cv" aria-hidden="true"></canvas></div>
           <div class="lab-form">
-            <label>Item <select id="lab-item"></select></label>
-            <label>Finish <select id="lab-fin"></select></label>
+            <p class="lab-now" id="lab-now"></p>
+            <div class="lab-l">Finish <div class="filters lab-chips" id="lab-fin"></div></div>
             <label>Float <span class="lab-f"><input type="range" id="lab-f" min="0" max="1" step="0.0001" value="0.05"><b id="lab-fv"></b></span></label>
             <label>Print <input type="number" id="lab-p" min="0" max="999" value="123"></label>
-            <label>Effect <select id="lab-fx"></select></label>
+            <div class="lab-l">Effect <div class="filters lab-chips" id="lab-fx"></div></div>
           </div>
           <div class="lab-out">
             <div class="badges" id="lab-badges"></div>
@@ -983,7 +1070,7 @@
     <div class="rz-sec"><h2>★ Auras</h2><p>One capsule in a thousand, from any machine. An aura goes round your guy and moves with him. Its float thins it, its print sets its timing, and it has its own finishes.</p><div class="rz-grid" id="rz-auras"></div><div class="rz-chips" id="rz-afin"></div></div>
     <div class="rz-sec"><h2>Effects</h2><p>A rare layer on top of the finish. About one item in fifteen has one, and about one aura in three, so an aura's effect is its version. The last three are the rarest.</p><div class="rz-grid" id="rz-fx"></div><div class="rz-grid" id="rz-fxa" style="margin-top:12px"></div></div>
     <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different. Collectors look for these.</p><div class="rz-extras" id="rz-extras"></div></div>
-    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, go into the machine. Three times in four the next grade comes out, one time in five a dud at the same grade, one in twenty two grades up. Its float is the five's average place in their finishes, so clean inputs make a clean result, and it comes from one of their machines, each as likely as its share of the five. Trades stop at Grail: auras only come out of capsules.</p></div>
+    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, go into the machine. Three times in four the next grade comes out, one time in five a dud at the same grade, one in twenty two grades up. Its float is the five's average place in their finishes, so clean inputs make a clean result, and it comes from one of their machines, each as likely as its share of the five. Trades stop at Grail: auras only come out of capsules.</p><div class="rz-trade" id="rz-trade"></div></div>
     <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, from twelve traits, each with its own odds. Multiply them and you get how rare he is.</p><div class="traits-t" id="rz-traits"></div></div>
   </section>
  </div>
@@ -2794,17 +2881,32 @@ void main() {
 
   /* ---------------------------------------------- the locker: your guy and his four slots, and every copy sorted
    * into its category, each with its own colour and mark. Tapping a copy puts it on (or takes it off). */
+  // Each category's mark, drawn as pixel art on a 15 x 12 grid: o outline, c the category's colour, h its highlight,
+  // s its shade, w and g white and its shade, k ink. Drawn once per colour as crisp SVG rects.
   const ICON = {
-    '': '<path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/>',
-    skin: '<path d="M5 2h6v1h1v4h1v6H3V7h1V3h1z"/>',
-    hat: '<path d="M5 2h6v8h3v3H2v-3h3z"/>',
-    frame: '<path d="M2 2h12v12H2zm3 3v6h6V5z" fill-rule="evenodd"/>',
-    buddy: '<path d="M4 4h3v3H4zM9 4h3v3H9zM3 8h10v5H3z"/>',
-    aura: '<path d="M7 1h2v5h5v2H9v5H7V8H2V6h5zM2 1h2v2H2zM12 12h2v2h-2z"/>',
+    '': ["....ooooooo....", "..oohhcccccoo..", ".ohhcccccccccso", ".ohcccccccccso.", "ohcccccccccccso", "ooooooooooooooo", "owwwwwwwwwwwwgo", "owwwwwwwwwwwwgo", ".owwwwwwwwwwgo.", ".oogwwwwwwwggo.", "...ooggggggoo..", ".....ooooooo..."],
+    'skin': ["....ooooooo....", "...ohhccccco...", "..ohcccccccco..", ".ohccccccccccso", ".ohckkccccckkso", ".ohckwccccckwso", ".occcccccccccso", ".occcccokocccso", ".occcccccccccso", ".osccccccccccso", "..osssssssssso.", "...oo.ooo.oo..."],
+    'hat': [".....ooooo.....", "....ohhccco....", "....ohccccso...", "....ohccccso...", "....owwwwwgo...", "....occcccso...", "....occcccso...", ".oooocccccsoooo", "ohhhcccccccccco", "occcccccccccsso", ".oooooooooooooo", "..............."],
+    'frame': ["ooooooooooooooo", "ohhhhhhhhhhhhso", "ohooooooooooohs", "ohowwwwwwwwwoso", "ohowwwwwwwwwoso", "ohowwwkwwwwwoso", "ohowwwwwwkwwoso", "ohowwwwwwwwwoso", "ohowwwwwwwwwoso", "ohoooooooooooso", "ossssssssssssso", "ooooooooooooooo"],
+    'buddy': [".oo.......oo...", "ohco.....ocso..", "ohcco...occso..", "ohccooooocco...", ".ohcccccccsso..", ".ohckwccckwso..", ".occkkccckkso..", ".occccooocccso.", ".ohcccccccccso.", "..osccccccsso..", "...ooossooo....", "..............."],
+    'aura': ["......oo.......", ".....ohso......", "..o..ohso..o...", ".oho.ohso.oho..", "..ooohhssooo...", "oohhhhwwssssoo.", "ossssswwhhhhso.", "..ooosshhooo...", ".oso.oshho.oso.", "..o..oshho..o..", ".....oshho.....", "......oo......."],
   };
+  const iconCache = new Map();
+  const hexMix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
+  function pixIcon(id, color) {
+    const k = id + color;
+    if (!iconCache.has(k)) {
+      const c = id ? color : '#ff5f7e';
+      const pal = { o: '#141225', k: '#141225', c, h: hexMix(c, '#ffffff', .45), s: hexMix(c, '#000000', .3), w: '#faf8f0', g: '#c4c8d6' };
+      let r = '';
+      (ICON[id] || ICON['']).forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${pal[ch]}"/>`; }));
+      iconCache.set(k, `<svg class="ci" viewBox="0 0 15 12" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`);
+    }
+    return iconCache.get(k);
+  }
   const CATS = [{ id: '', name: 'All', one: 'capsule', c: '#5d6b8a' }, { id: 'skin', name: 'Skins', one: 'Skin', c: '#2f9b6e' }, { id: 'hat', name: 'Hats', one: 'Hat', c: '#d9702a' }, { id: 'frame', name: 'Frames', one: 'Frame', c: '#7a52d6' }, { id: 'buddy', name: 'Buddies', one: 'Buddy', c: '#cf4578' }, { id: 'aura', name: 'Auras', one: 'Aura', c: '#14a89c' }];
   const catOf = slot => CATS.find(c => c.id === slot) || CATS[0];
-  const icon = id => `<svg class="ci" viewBox="0 0 16 16" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">${ICON[id]}</svg>`;
+  const icon = id => pixIcon(id, catOf(id).c);
   const founderCopy = o => !!founderOf(state.seed) && (o.item === 'aura.origin' || (o.tally === 999 && o.print === 1 && o.finish === 'gold'));
   let filter = -1, cat = '';
   // Ways to sort a collection; `at` is how new a copy is (bigger is newer).
@@ -2835,11 +2937,13 @@ void main() {
     const worn = wornCodes(), fresh = state.fresh || [], devs = state.dev || [];
     // Your guy as he stands, and what's in each slot.
     $('lk-stage').innerHTML = animated(state.seed, 'dance', worn, 260);
-    $('lk-slots').innerHTML = ['skin', 'hat', 'frame', 'buddy', 'aura'].map(sl => {
-      const k = catOf(sl), code = state.worn[sl];
-      return `<button type="button" class="lk-slot" data-cat="${sl}" style="--cat:${k.c}" aria-pressed="${cat === sl}">${icon(sl)}<span class="pic">${code ? '<canvas aria-hidden="true"></canvas>' : '<em>empty</em>'}</span>${k.one}</button>`;
+    $('lk-slots').innerHTML = ['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => {
+      const k = catOf(sl), code = state.worn[sl], o = code && LG.decode(code), name = o ? LG.nameOf(o).split(' | ')[0] : '';
+      const have = list.filter(c => LG.slotOf(c.o) === sl).length;
+      return `<button type="button" class="lk-slot${o ? '' : ' vacant'}" data-cat="${sl}" style="--cat:${k.c}" aria-pressed="${cat === sl}" aria-label="${k.one}: ${esc(name || 'empty')}"><span class="ico">${icon(sl)}</span>`
+        + `<span class="txt"><b>${k.one}</b><small>${o ? esc(name) : have ? `${have} to try` : 'Empty'}</small></span><span class="pic">${o ? '<canvas aria-hidden="true"></canvas>' : ''}</span></button>`;
     }).join('');
-    $('lk-slots').querySelectorAll('[data-cat]').forEach(b => { const code = state.worn[b.dataset.cat], cv = b.querySelector('canvas'); if (code && cv) showItem(cv, LG.decode(code), state.seed, 40, 40); });
+    $('lk-slots').querySelectorAll('[data-cat]').forEach(b => { const code = state.worn[b.dataset.cat], cv = b.querySelector('canvas'); if (code && cv) showItem(cv, LG.decode(code), state.seed, 46, 42); });
     const inCat = list.filter(c => !cat || LG.slotOf(c.o) === cat);
     $('cats').innerHTML = CATS.map(k => `<button type="button" role="tab" data-cat="${k.id}" style="--cat:${k.c}" aria-selected="${cat === k.id}">${icon(k.id)}${k.name} <span class="num">${k.id ? list.filter(c => LG.slotOf(c.o) === k.id).length : list.length}</span></button>`).join('');
     const n = LG.GRADES.map(() => 0); inCat.forEach(c => n[gradeIdx(c.o)]++);
@@ -2857,7 +2961,6 @@ void main() {
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
     $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
     renderTrades();
-    renderSets($('sets'), list.map(c => c.o), true);
     renderSwaps();
   }
   $('lk-sort').addEventListener('change', e => { lkSort = e.target.value; renderColl(); });
@@ -3281,7 +3384,7 @@ void main() {
   const PAGES = {
     guys: ['Everyone', 'Every claimed guy', 'Each one dealt once, to one name. The rarest dealt guys come first.'],
     u: ['Player', '', ''],
-    pulls: ['Pulls', 'Everyone\'s pulls', 'Every capsule anyone has opened, rarest first.'],
+    pulls: ['Pulls', 'Everyone\'s pulls', 'Every capsule anyone has opened, rarest first, and how many of each have ever been pulled.'],
     rarity: ['Rarity', 'How rarity works', 'Grades, floats, prints, auras and what collectors look for, with the real odds.'],
   };
   /* ---------------------------------------------- the rarity page: everything that makes a copy rare or special,
@@ -3295,8 +3398,21 @@ void main() {
       { item: 'puttsies.ball', finish: 'nebula', scuff: 0.03, print: 41 }, { item: 'puttsies.ball', finish: 'prism', scuff: 0.02, print: 40 },
       { item: 'puttsies.ball', finish: 'gold', scuff: 0.01, print: 40 }, { item: 'aura.galaxy', finish: 'classic', scuff: 0.01, print: 4 },
     ];
-    $('rz-ladder').innerHTML = LG.GRADES.map((g, k) => `<div class="rz-rung${k === 5 ? ' top' : ''}" style="--g:${g.color}"><canvas aria-hidden="true"></canvas><b>${esc(g.name)}</b><span>${pct(share(k))} of capsules<br>1 in ${fmt(100 / share(k))}</span></div>`).join('');
-    $('rz-ladder').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, sample[k], seed, 96, 110); });
+    // What each grade holds: its finishes and their floats, the print, how often an effect comes with it.
+    const range = ([lo, hi]) => `${lo.toFixed(2)} to ${Math.min(1, hi).toFixed(2)}`;
+    const fxOdds = aura => 1 / LG.FX_IDS.reduce((a, id) => a + 1 / LG.EFFECTS[id][aura ? 'aura' : 'item'], 0);
+    const holds = k => {
+      const fins = Object.values(LG.FINISHES).filter(f => f.grade === k);
+      const spec = [['Finish', k === 5 ? `${fins.length} of their own, Classic to Black pearl` : fins.map(f => f.name).join(', ')],
+        ['Float', k === 5 ? '0.00 to 1.00, it thins the aura' : fins.map(f => fins.length > 1 ? `${f.name} ${range(f.scuffs)}` : range(f.scuffs)).join(', ')],
+        ['Print', k === 3 ? '0 to 999, or a Prized one on a famous print' : k === 5 ? '0 to 999, it sets the timing' : '0 to 999, a few are famous'],
+        ['Effect', `1 in ${fmt(fxOdds(k === 5))}`]];
+      if (k < 5) spec.push(['Tally', '1 in 10 count your days']);
+      return spec.map(([t, d]) => `<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join('');
+    };
+    $('rz-ladder').innerHTML = LG.GRADES.map((g, k) => `<div class="rz-rung" style="--g:${g.color}"><span class="lad-pill${k === 5 ? ' aura' : ''}">${esc(g.name)}</span><span class="pic"><canvas aria-hidden="true"></canvas></span>`
+      + `<span class="rr-odds">1 in ${fmt(100 / share(k))}<small>${pct(share(k))} of capsules</small></span><dl class="rr-spec">${holds(k)}</dl></div>`).join('');
+    $('rz-ladder').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, sample[k], seed, 120, 120); });
 
     // How rare each grade is, on a log scale so an aura still shows.
     const maxLog = Math.log10(100 / share(5));
@@ -3304,6 +3420,7 @@ void main() {
       + '<p class="oc-note">Bars on a log scale: each step left is ten times rarer.</p>';
     renderLab(seed);
     renderTraitTable();
+    renderTradeUp(seed);
 
     // Float: drag it and watch the copy wear.
     const fcv = $('rz-fcv'), slide = $('rz-f');
@@ -3358,6 +3475,34 @@ void main() {
 
   }
 
+  // Trade up, shown working: five copies of a grade go into the machine and one comes out, with the real odds of
+  // each outcome and the float it would get. Pick the grade going in.
+  let rtFrom = 0;
+  function renderTradeUp(seed) {
+    const host = $('rz-trade'); if (!host) return;
+    const finOf = k => Object.entries(LG.FINISHES).find(([, f]) => f.grade === k && !f.aura)[0];
+    const hats = LG.GAMES.map(g => LG.gameItems(g).find(i => !i.free && i.slot !== 'aura')).filter(Boolean).slice(0, 5);
+    const floats = [0.12, 0.31, 0.06, 0.44, 0.22];
+    const ins = hats.map((it, k) => { const f = finOf(rtFrom), [lo, hi] = LG.FINISHES[f].scuffs; return { item: it.id, finish: f, scuff: +(lo + (Math.min(1, hi) - lo) * floats[k]).toFixed(4), print: 10 + k * 37 }; });
+    const top = 4, jump = rtFrom + 2 <= top;
+    const outs = [[rtFrom, 0.2, 'A dud: the same grade'], [rtFrom + 1, jump ? 0.75 : 0.8, 'The next grade up'], ...(jump ? [[rtFrom + 2, 0.05, 'Two grades up']] : [])];
+    const g0 = LG.GRADES[rtFrom];
+    host.innerHTML = `<div class="filters rt-from" role="group" aria-label="Grade going in">${[0, 1, 2, 3].map(k => `<button type="button" data-rf="${k}" style="--g:${LG.GRADES[k].color}" aria-pressed="${k === rtFrom}"><i></i>Five ${esc(LG.GRADES[k].name)}</button>`).join('')}</div>
+      <div class="rt-flow">
+        <div class="rt-in">${ins.map((o, k) => `<span class="rt-c" style="--g:${g0.color};--k:${k}"><canvas aria-hidden="true"></canvas><em>${o.scuff.toFixed(2)}</em></span>`).join('')}</div>
+        <span class="rt-arrow" aria-hidden="true">${'<i></i>'.repeat(3)}</span>
+        <div class="rt-mach"><span class="rt-mico">${pixIcon('', '#ff5f7e')}</span><b>Trade up</b><small>five in, one out</small></div>
+        <span class="rt-arrow" aria-hidden="true">${'<i></i>'.repeat(3)}</span>
+        <div class="rt-outs">${outs.map(([k, p, label]) => { const g = LG.GRADES[k], f = finOf(k), fl = LG.tradeFloat(ins, f); return `<div class="rt-o" style="--g:${g.color}">
+          <span class="rt-op"><canvas aria-hidden="true" data-k="${k}" data-fl="${fl}"></canvas></span>
+          <span class="rt-ot"><span class="bal" style="--b:${g.color}">${esc(g.name)}</span><b>${Math.round(p * 100)}%</b><small>${label} · float ${fl.toFixed(4)}</small><span class="rt-bar"><i style="width:${p * 100}%"></i></span></span></div>`; }).join('')}</div>
+      </div>
+      <p class="rt-note">The result comes from one of the five's machines, and its float is the five's average place in their finishes (${Math.round(ins.reduce((a, o) => a + LG.floatShare(o), 0) / 5 * 100)}% of the way here), carried into the new finish. Clean in, clean out.</p>`;
+    host.querySelectorAll('.rt-in canvas').forEach((c, k) => { own(c); showItem(c, ins[k], seed, 64, 64); });
+    host.querySelectorAll('.rt-op canvas').forEach(c => { own(c); const k = +c.dataset.k; showItem(c, { ...ins[0], finish: finOf(k), scuff: +c.dataset.fl }, seed, 64, 64); });
+    host.querySelector('.rt-from').onclick = e => { const b = e.target.closest('[data-rf]'); if (b) { rtFrom = +b.dataset.rf; renderTradeUp(seed); } };
+  }
+
   // The twelve traits: how many ways each can go and how rare the rarest is, from a big deal.
   let TRAIT_TABLE = null;
   function renderTraitTable() {
@@ -3371,34 +3516,49 @@ void main() {
     $('rz-traits').innerHTML = TRAIT_TABLE.map(t => `<div class="tr-row">${(LG.TRAIT_ICONS || {})[t.slot] || ''}<b>${esc(t.slot)}</b><em>${t.n} kinds</em><span>${esc(cap(t.common[0]))} 1 in ${fmt(1 / t.common[1])} · rarest ${esc(t.rare[0])} 1 in ${fmt(1 / t.rare[1])}</span></div>`).join('');
   }
 
-  // The lab: build any copy and read its odds, or look a name up.
+  // The lab: find any item (search, or narrow by machine and slot), build a copy of it and read its odds, or look a name up.
   let labReady = false;
+  const lab = { item: 'stackdle.block', fin: 'nebula', fx: '', q: '', game: '', slot: '' };
   function renderLab(seed) {
-    const item = $('lab-item'), fin = $('lab-fin'), f = $('lab-f'), pr = $('lab-p'), fx = $('lab-fx');
+    const f = $('lab-f'), pr = $('lab-p');
+    const all = [...[...LG.GAMES, 'club'].flatMap(g => LG.gameItems(g).filter(i => i.slot !== 'aura')), ...LG.AURAS.map(a => LG.itemById(a.id))];
+    const isAura = id => LG.slotOf({ item: id }) === 'aura';
+    const chips = (host, list, cur, attr) => { $(host).innerHTML = list.map(([v, l, g]) => `<button type="button" data-${attr}="${v}"${g ? ` style="--g:${g}"` : ''} aria-pressed="${v === cur}">${g ? '<i></i>' : ''}${esc(l)}</button>`).join(''); };
+    function items() {
+      const q = lab.q.trim().toLowerCase();
+      const shown = all.filter(i => (!lab.game || (lab.game === 'aura' ? i.slot === 'aura' : i.game === lab.game && i.slot !== 'aura')) && (!lab.slot || i.slot === lab.slot)
+        && (!q || i.name.toLowerCase().includes(q) || i.game.includes(q) || i.slot.includes(q)));
+      $('lab-count').textContent = `${shown.length} of ${all.length} items`;
+      $('lab-items').innerHTML = shown.length ? shown.map(i => `<button type="button" class="lab-it" role="option" data-it="${i.id}" aria-selected="${i.id === lab.item}"><canvas aria-hidden="true"></canvas><span>${esc(i.slot === 'aura' ? '★ ' + i.name : i.name)}</span><small>${esc(i.slot === 'aura' ? 'aura' : cap(i.game) + ' ' + i.slot)}</small></button>`).join('')
+        : '<p class="lab-none">Nothing by that name. Try "cap", "gem" or a game.</p>';
+      $('lab-items').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: shown[k].id, finish: isAura(shown[k].id) ? 'classic' : 'plain', scuff: 0.05, print: 3 }, seed, 44, 44); });
+    }
+    function fins() {
+      const aura = isAura(lab.item), list = Object.entries(LG.FINISHES).filter(([, x]) => !!x.aura === aura);
+      if (!list.some(([id]) => id === lab.fin)) lab.fin = list[aura ? 0 : 3]?.[0] || list[0][0];
+      chips('lab-fin', list.map(([id, x]) => [id, x.name, LG.GRADES[x.grade].color]), lab.fin, 'fin');
+      chips('lab-fx', [['', 'None'], ...LG.FX_IDS.map(id => [id, LG.EFFECTS[id].name])], lab.fx, 'fx');
+    }
     if (!labReady) {
       labReady = true;
-      const groups = [...LG.GAMES, 'club'].map(g => [g, LG.gameItems(g).filter(i => i.slot !== 'aura')]).filter(([, l]) => l.length);
-      item.innerHTML = groups.map(([g, l]) => `<optgroup label="${esc(cap(g))}">${l.map(i => `<option value="${i.id}">${esc(i.name)} · ${i.slot}</option>`).join('')}</optgroup>`).join('')
-        + `<optgroup label="★ Auras">${LG.AURAS.map(a => `<option value="${a.id}">★ ${esc(a.name)}</option>`).join('')}</optgroup>`;
-      item.value = 'stackdle.block';
-      fx.innerHTML = '<option value="">None</option>' + LG.FX_IDS.map(id => `<option value="${id}">${esc(LG.EFFECTS[id].name)}</option>`).join('');
-      const fins = () => {
-        const aura = LG.slotOf({ item: item.value }) === 'aura', keep = fin.value;
-        const list = Object.entries(LG.FINISHES).filter(([, x]) => !!x.aura === aura);
-        fin.innerHTML = list.map(([id, x]) => `<option value="${id}">${esc(x.name)}</option>`).join('');
-        fin.value = list.some(([id]) => id === keep) ? keep : list[aura ? 0 : 3]?.[0] || list[0][0];
-      };
-      item.onchange = () => { fins(); draw(); };
-      fin.onchange = draw; f.oninput = draw; pr.oninput = draw; fx.onchange = draw;
-      fins();
+      chips('lab-games', [['', 'Every machine'], ...LG.GAMES.map(g => [g, cap(g)]), ['club', 'Club'], ['aura', '★ Auras']], lab.game, 'g');
+      chips('lab-slots', [['', 'Every slot'], ['hat', 'Hats'], ['skin', 'Skins'], ['frame', 'Frames'], ['buddy', 'Buddies']], lab.slot, 'sl');
+      $('lab-q').oninput = e => { lab.q = e.target.value; items(); };
+      $('lab-games').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; lab.game = b.dataset.g; $('lab-games').querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', x === b)); items(); };
+      $('lab-slots').onclick = e => { const b = e.target.closest('[data-sl]'); if (!b) return; lab.slot = b.dataset.sl; $('lab-slots').querySelectorAll('[data-sl]').forEach(x => x.setAttribute('aria-pressed', x === b)); items(); };
+      $('lab-items').onclick = e => { const b = e.target.closest('[data-it]'); if (!b) return; lab.item = b.dataset.it; $('lab-items').querySelectorAll('[data-it]').forEach(x => x.setAttribute('aria-selected', x === b)); fins(); draw(); };
+      $('lab-fin').onclick = e => { const b = e.target.closest('[data-fin]'); if (!b) return; lab.fin = b.dataset.fin; fins(); draw(); };
+      $('lab-fx').onclick = e => { const b = e.target.closest('[data-fx]'); if (!b) return; lab.fx = b.dataset.fx; fins(); draw(); };
+      f.oninput = draw; pr.oninput = draw;
       $('lab-tabs').onclick = e => { const b = e.target.closest('[data-lab]'); if (!b) return; $('lab-tabs').querySelectorAll('[data-lab]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('lab-copy').hidden = b.dataset.lab !== 'copy'; $('lab-guy').hidden = b.dataset.lab !== 'guy'; };
       $('lab-gf').onsubmit = e => { e.preventDefault(); lookUp(norm($('lab-name').value)); };
     }
     function draw() {
-      const x = LG.FINISHES[fin.value], [lo, hi] = x.scuffs;
+      const x = LG.FINISHES[lab.fin], [lo, hi] = x.scuffs, it = LG.itemById(lab.item);
       f.min = lo; f.max = Math.min(1, hi);
-      const o = { item: item.value, finish: fin.value, scuff: Math.min(+f.max, Math.max(+f.min, +f.value)), print: Math.max(0, Math.min(999, Math.round(+pr.value || 0))), fx: fx.value || undefined };
+      const o = { item: lab.item, finish: lab.fin, scuff: Math.min(+f.max, Math.max(+f.min, +f.value)), print: Math.max(0, Math.min(999, Math.round(+pr.value || 0))), fx: lab.fx || undefined };
       const g = LG.gradeOf(o), w = LG.wearOf(o.scuff), n = LG.copyOneIn(o), [a, b] = split(n);
+      $('lab-now').innerHTML = `${esc(it.slot === 'aura' ? '★ ' + it.name : it.name)}<small>${esc(it.slot === 'aura' ? 'Aura, from any machine' : cap(it.game) + ' ' + it.slot)}</small>`;
       $('lab-fv').textContent = o.scuff.toFixed(4);
       own($('lab-cv')); showItem($('lab-cv'), o, seed, 220, 220);
       $('lab-badges').innerHTML = `<span class="bal" style="--b:${g.color}">${esc(g.name)}</span><span class="bal" style="--b:${WEAR_COLOURS[LG.WEAR.indexOf(w)]}">${w.name}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}`;
@@ -3407,7 +3567,7 @@ void main() {
       const notes = LG.collectorNotes(o);
       $('lab-notes').innerHTML = notes.length ? notes.map(t => `<div class="cn-i" style="--g:${g.color}"><b>${esc(t.name)}</b>${t.oneIn > 1 ? `<em>1 in ${fmt(t.oneIn)}</em>` : ''}<span>${esc(t.why)}</span></div>`).join('') : '<p class="cn-none">Nothing extra to chase. Try a float under 0.01, print 1 or 777, or an effect.</p>';
     }
-    draw();
+    items(); fins(); draw();
   }
   async function lookUp(key) {
     const out = $('lab-gout');
@@ -3516,7 +3676,13 @@ void main() {
     const [a, b] = split(LG.guyOneIn(cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
     userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
     uCat = '';
-    renderSets($('u-sets'), userCopies.map(c => c.o), false); setBadges();
+    // Sets live here, on the player's own page: on yours with every item, ticked off; on anyone else's, just how far.
+    const setOwned = userCopies.map(c => c.o), more = $('u-sets-more');
+    renderSets($('u-sets'), setOwned, false); setBadges();
+    $('u-sets-h').textContent = 'Sets';
+    // The full item grid only on your own page, drawn when opened.
+    more.hidden = !mine; more.open = false; $('u-sets-full').innerHTML = '';
+    more.ontoggle = () => { if (more.open && !$('u-sets-full').childElementCount) renderSets($('u-sets-full'), setOwned, true); };
     $('u-look').hidden = !mine; $('u-dress').hidden = !mine;
     $('u-coll-h').textContent = mine ? 'Your collection' : 'Collection';
     $('u-coll-sub').textContent = `${userCopies.length} copies, ${userCopies.filter(c => !LG.itemById(c.o.item).free).length} from capsules.`;
@@ -3553,15 +3719,33 @@ void main() {
   $('m-slot').addEventListener('click', e => { const b = e.target.closest('[data-sl]'); if (!b) return; mf.slot = b.dataset.sl; $('m-slot').querySelectorAll('[data-sl]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
   for (const [id, k] of [['m-game', 'game'], ['m-finish', 'finish'], ['m-sort', 'sort']]) $(id).addEventListener('change', () => { mf[k] = $(id).value; renderMarket(true); });
   $('m-more').addEventListener('click', () => renderMarket(false));
+  // How many of each item, and of each item in each finish, have ever come out of a capsule (starters aside).
+  let pullCounts = new Map();
+  const countKey = (item, finish) => item + (finish ? '|' + finish : '');
+  function setCounts(rows) {
+    pullCounts = new Map();
+    for (const [item, finish, n] of rows) { pullCounts.set(countKey(item), (pullCounts.get(countKey(item)) || 0) + n); pullCounts.set(countKey(item, finish), (pullCounts.get(countKey(item, finish)) || 0) + n); }
+  }
   async function renderStats() {
     let s = null;
     if (isLive()) { try { s = await getJSON('/stats'); } catch (e) {} }
-    if (!s) { const n = LG.GRADES.map(() => 0); copies().filter(c => !LG.itemById(c.o.item).free).forEach(c => n[gradeIdx(c.o)]++); s = { players: state ? 1 : 0, copies: n.reduce((a, b) => a + b, 0), grades: n }; }
+    if (!s) {
+      const n = LG.GRADES.map(() => 0), mine = copies().filter(c => !LG.itemById(c.o.item).free), by = new Map();
+      mine.forEach(c => { n[gradeIdx(c.o)]++; const k = c.o.item + '|' + c.o.finish; by.set(k, (by.get(k) || 0) + 1); });
+      s = { players: state ? 1 : 0, copies: n.reduce((a, b) => a + b, 0), grades: n, counts: [...by].map(([k, v]) => [...k.split('|'), v]) };
+    }
+    setCounts(s.counts || []);
     $('m-stats').innerHTML = `<div class="mstat" style="--g:#5d6b8a"><b>${s.players.toLocaleString('en-US')}</b><span>guys claimed</span><i></i></div><div class="mstat" style="--g:#5d6b8a"><b>${s.copies.toLocaleString('en-US')}</b><span>copies opened</span><i></i></div>`
       + LG.GRADES.map((g, k) => `<div class="mstat" style="--g:${g.color}"><b>${(s.grades[k] || 0).toLocaleString('en-US')}</b><span>${esc(g.name)}${k ? '' : ' copies'}</span><i></i></div>`).join('');
   }
+  // "12 pulled · 3 in Gold": how many of this item anyone has ever pulled, and how many in this finish.
+  const pulledLine = o => {
+    const all = pullCounts.get(countKey(o.item)), here = pullCounts.get(countKey(o.item, o.finish));
+    if (!all) return '';
+    return `<span class="m-pulled"><b>${all.toLocaleString('en-US')}</b> ever pulled${here && here !== all ? ` · <b>${here.toLocaleString('en-US')}</b> ${esc(LG.FINISHES[o.finish].name)}` : here === all && all > 0 ? ` · all ${esc(LG.FINISHES[o.finish].name)}` : ''}</span>`;
+  };
   async function renderMarket(reset) {
-    if (reset) { mf.offset = 0; marketList = []; renderStats(); }
+    if (reset) { mf.offset = 0; marketList = []; await renderStats(); }
     if (mf.key) $('page-sub').textContent = `@${mf.key}'s copies. `;
     let page = [];
     try { page = await listMarket(mf); } catch (e) { $('m-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${esc(e.message)}</div>`; return; }
@@ -3577,7 +3761,7 @@ void main() {
       return `<button class="mcopy" type="button" data-m="${start + k}" style="--g:${g.color}">
         <span class="pic"><span class="bal" style="--b:${g.color}">${esc(c.one ? '★ Only one' : g.name)}</span><span class="one">${c.one ? 'Only one' : '1 in ' + fmt(c.oneIn ?? LG.copyOneIn(o))}</span><canvas aria-hidden="true"></canvas></span>
         <span class="meta"><b class="${c.tag ? 'tagged' : ''}">${esc(named(title, c.tag))}</b><span>${esc(look || plainOf(o))} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</span><span class="mf"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></span>
-        <span class="own"><span>@${esc(c.key)}</span><em>${c.at ? new Date(c.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</em></span></span></button>`;
+        ${pulledLine(o)}<span class="own"><span>@${esc(c.key)}</span><em>${c.at ? new Date(c.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</em></span></span></button>`;
     }).join('');
     if (reset) $('m-grid').innerHTML = html; else $('m-grid').insertAdjacentHTML('beforeend', html);
     page.forEach((c, k) => { const el = $('m-grid').querySelector(`[data-m="${start + k}"] canvas`), o = LG.decode(c.code); if (el && o) showItem(el, o, c.seed, 150, 120); });
