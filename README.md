@@ -379,10 +379,12 @@ tally and pins, each with about how many copies have it.
 
 One capsule in a thousand (`AURA_ODDS`), from any machine, is an aura instead
 of the machine's item: an effect drawn in the empty pixels round the guy, never
-over him, that moves with him. There are fourteen (`AURAS`): flames, orbit,
+over him, that moves with him. There are twenty-four (`AURAS`): flames, orbit,
 halo, sparkles, hearts, bubbles, rain cloud, lightning, music, snowfall,
-petals, galaxy, rainbow and glitch, and Origin, the founder's, which no capsule
-gives (`ONE_OF_ONE_AURAS`). An aura copy has its own finish: Classic (50%),
+petals, galaxy, rainbow, glitch, fireflies, neon, echo, comet, butterflies,
+aurora, data rain, vortex, fireworks and ripple, and Origin, the founder's,
+which no capsule gives (`ONE_OF_ONE_AURAS`). The list is append only: copies
+store an aura by id. An aura copy has its own finish: Classic (50%),
 Fade (22%), Frost (12%), Toxic (8%), Shadow (5%) and Deep sea Sapphire (1.5%),
 Ruby (1.2%) and Black pearl (0.3%). Its float shows (a battered aura flickers
 with gaps) and its print sets its timing. Wear one like any item

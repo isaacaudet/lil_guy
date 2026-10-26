@@ -246,6 +246,155 @@ export const AURAS: Aura[] = [
       return out;
     },
   },
+  // ---------------------------------------------------------------- added Oct 26, 2026 (append only)
+  {
+    id: 'aura.fireflies', name: 'Fireflies', colors: ['#FFFDE0', '#FFE45C', '#9ED45A'], still: 450,
+    cells: (mask, t, print) => {
+      // Warm dots that drift close round him and blink in their own time, glowing at the peak.
+      const near = ring(mask, 3), out: AuraCell[] = [];
+      for (let i = 0; i < 8; i++) {
+        const [ax, ay] = near[Math.floor(noise(i, print, 3) * near.length)] ?? [0, 0];
+        const x = ax + Math.round(Math.sin(t / 700 + i * 1.7) * 1.5), y = ay + Math.round(Math.cos(t / 900 + i * 2.3));
+        const phase = wrap(t + i * 397 + print * 29, 1600) / 1600;
+        if (phase > 0.65) continue;
+        out.push(...(phase > 0.15 && phase < 0.45 ? plus(x, y, 2) : [[x, y, 1] as AuraCell]));
+      }
+      return out;
+    },
+  },
+  {
+    id: 'aura.neon', name: 'Neon', colors: ['#FFFFFF', '#FF4FD8', '#7A2C9E'], still: 300,
+    cells: (mask, t, print) => {
+      // A neon tube a pixel off his outline: a hot spot runs round it, a few
+      // segments buzz out, and now and then the whole sign stutters.
+      const s = shape(mask), step = Math.floor((t + print * 17) / 90);
+      const tube = ring(mask, 1).map(([x, y]) => [x, y, Math.atan2(y - s.cy, x - s.cx)] as const).sort((a, b) => a[2] - b[2]);
+      if (noise(Math.floor(step / 3), print, 5) > 0.9) return tube.map(([x, y]): AuraCell => [x, y, 2]);
+      const hot = wrap(step, tube.length);
+      return tube.filter((_, i) => noise(Math.floor(i / 3), step, print) > 0.06).map(([x, y], i): AuraCell => [x, y, Math.abs(i - hot) <= 1 ? 0 : 1]);
+    },
+  },
+  {
+    id: 'aura.echo', name: 'Echo', colors: ['#EDE4FF', '#9B7CFF', '#3B2A73'], still: 400,
+    cells: (mask, t, print) => {
+      // Two shadows a step out of time sway out from behind him, one each side.
+      const sway = Math.round((Math.sin((t + print * 41) / 380) + 1) * 1.2) + 1, out: AuraCell[] = [];
+      mask.forEach((row, y) => row.forEach((on, x) => {
+        if (!on) return;
+        const edge = !mask[y - 1]?.[x];
+        out.push([x - sway, y - 1, edge ? 1 : 2], [x + sway, y - 1, edge ? 1 : 2]);
+      }));
+      return out;
+    },
+  },
+  {
+    id: 'aura.comet', name: 'Comet', colors: ['#FFFFFF', '#8FE3FF', '#4A6BD8'], still: 300,
+    cells: (mask, t, print) => {
+      // A bright comet races round him two pixels out, a long tail streaming behind it.
+      const s = shape(mask), turn = print % 2 ? -1 : 1;
+      const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x, y]) => [x, y, Math.atan2(y - s.cy, x - s.cx)] as const).sort((p, q) => p[2] - q[2]);
+      if (!track.length) return [];
+      const n = track.length, head = wrap(turn * Math.floor(t / 45) + print * 7, n), out: AuraCell[] = [];
+      for (let j = 10; j >= 1; j--) { const [x, y] = track[wrap(head - turn * j, n)]; out.push([x, y, j < 3 ? 0 : j < 6 ? 1 : 2]); }
+      const [x, y] = track[head];
+      out.push(...plus(x, y, 1));
+      return out;
+    },
+  },
+  {
+    id: 'aura.butterflies', name: 'Butterflies', colors: ['#FFF5D6', '#FF9F43', '#8A4DFF'], still: 0,
+    cells: (mask, t, print) => {
+      // Two butterflies flutter in loops by his shoulders, wings opening and closing.
+      const s = shape(mask), out: AuraCell[] = [];
+      for (let i = 0; i < 2; i++) {
+        const side = i ? 1 : -1, x = Math.round(s.w / 2 - 0.5 + side * (s.w / 2 - 2.5) + Math.sin(t / 800 + i * 3 + print) * 1.2);
+        const y = Math.round(Math.max(2, s.top) + Math.sin(t / 520 + i * 2.1 + print) * 1.5 + i * 3);
+        out.push([x, y, 0], [x, y + 1, 0]);
+        if (Math.floor((t + i * 60) / 140) % 2 === 0) {
+          // Open: an upper and a lower wing either side.
+          for (const d of [-1, 1]) out.push([x + d, y - 1, 1], [x + 2 * d, y - 1, 1], [x + d, y, 1], [x + 2 * d, y, 2], [x + d, y + 1, 2], [x + d, y + 2, 2]);
+        } else {
+          // Closed: both wings up over its back.
+          for (const d of [-1, 1]) out.push([x + d, y - 1, 1], [x + d, y - 2, 1], [x + d, y, 2]);
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: 'aura.aurora', name: 'Aurora', colors: ['#E6FFF4', '#3DF2B0', '#7C5CFF'], still: 700,
+    cells: (mask, t, print) => {
+      // Northern lights hang behind him from the top of the frame: streaks of
+      // green over violet that ripple, lengthen and fade, a glow running down them.
+      const s = shape(mask), out: AuraCell[] = [], step = Math.floor(t / 180);
+      for (let x = 0; x < s.w; x++) {
+        if (noise(x, Math.floor(step / 4), print) < 0.25) continue;
+        const start = 1 + Math.round((Math.sin(x * 0.7 + t / 700 + print) + 1) * 0.8);
+        const len = 2 + Math.round((Math.sin(x * 0.45 - t / 600 + print * 2) + 1) * 1.6);
+        const glow = start + wrap(Math.floor(t / 150) + x, len + 4);
+        for (let y = start; y < start + len; y++) out.push([x, y, y === glow ? 0 : y === start ? 2 : 1]);
+      }
+      return out;
+    },
+  },
+  {
+    id: 'aura.datarain', name: 'Data rain', colors: ['#E6FFE9', '#3CFF6B', '#0E7A2C'], still: 500,
+    cells: (mask, t, print) => {
+      // Green code streams down behind him, each column at its own speed, a bright glyph at its head.
+      const s = shape(mask), out: AuraCell[] = [];
+      for (let x = 0; x < s.w; x++) {
+        if (noise(x, print, 11) < 0.4) continue;
+        const speed = 70 + Math.floor(noise(x, print, 12) * 70), head = wrap(Math.floor((t + noise(x, print) * 3000) / speed), s.h + 8) - 2;
+        for (let j = 0; j < 5; j++) out.push([x, head - j, j === 0 ? 0 : j < 3 ? 1 : 2]);
+      }
+      return out;
+    },
+  },
+  {
+    id: 'aura.vortex', name: 'Vortex', colors: ['#FFFFFF', '#5FD3FF', '#3A3FD9'], still: 300,
+    cells: (mask, t, print) => {
+      // Three spiral arms wheel round him, tightest close in.
+      const s = shape(mask), turn = print % 2 ? -1 : 1, out: AuraCell[] = [];
+      for (const [x, y, d] of ring(mask, 4)) {
+        const a = Math.atan2(y - s.cy, x - s.cx) / (2 * Math.PI), r = Math.hypot(x - s.cx, y - s.cy);
+        const v = wrap(a * 3 + r * 0.3 - turn * t / 700 + print * 0.1, 1);
+        if (v < 0.24) out.push([x, y, v < 0.08 ? 0 : d <= 2 ? 1 : 2]);
+      }
+      return out;
+    },
+  },
+  {
+    id: 'aura.fireworks', name: 'Fireworks', colors: ['#FFFFFF', '#FF5C8A', '#FFD45C'], still: 650,
+    cells: (mask, t, print) => {
+      // Rockets climb the top corners and burst into stars that open out and fade.
+      const s = shape(mask), out: AuraCell[] = [];
+      for (let i = 0; i < 2; i++) {
+        const cycle = 1500, local = wrap(t + i * 750 + print * 37, cycle), shot = Math.floor((t + i * 750 + print * 37) / cycle);
+        const cx = i ? s.w - 3 - Math.floor(noise(shot, i) * 2) : 2 + Math.floor(noise(shot, i) * 2), cy = 2 + Math.floor(noise(shot, i, 2) * 3), p = local / cycle;
+        if (p < 0.2) { const y = Math.round(cy + (1 - p / 0.2) * 6); out.push([cx, y, 0], [cx, y + 1, 2]); continue; }
+        if (p > 0.85) continue;
+        const r = Math.min(3, 1 + Math.floor((p - 0.2) / 0.14)), k = p < 0.45 ? 0 : p < 0.65 ? 1 : 2;
+        out.push([cx, cy, k]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+          const reach = dx && dy ? Math.max(1, r - 1) : r;
+          out.push([cx + dx * reach, cy + dy * reach, k], ...(r > 1 && k < 2 ? [[cx + dx * (reach - 1), cy + dy * (reach - 1), 2] as AuraCell] : []));
+        }
+      }
+      return out;
+    },
+  },
+  {
+    id: 'aura.ripple', name: 'Ripple', colors: ['#FFFFFF', '#7FE3FF', '#2F7FD6'], still: 250,
+    cells: (mask, t, print) => {
+      // A ring of light rolls out from his outline like a ripple on a pond, fading as it goes.
+      const out: AuraCell[] = [], p = wrap(t + print * 23, 1100) / 1100, d = 1 + Math.floor(p * 3);
+      for (const [x, y, dd] of ring(mask, 3)) {
+        if (dd === d) out.push([x, y, d - 1]);
+        else if (dd === d - 1 && (x + y) % 2) out.push([x, y, 2]);
+      }
+      return out;
+    },
+  },
 ];
 
 /**
