@@ -1137,9 +1137,9 @@ const AURAS = [
 		],
 		still: 900,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], turn$2 = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+			const s = shape(mask), out = [], turn$1 = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
 			for (let i = 0; i < 3; i++) {
-				const a = turn$2 * t / 560 + i * 2.094 + print;
+				const a = turn$1 * t / 560 + i * 2.094 + print;
 				out.push(...plus(Math.round(s.w / 2 - .5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 1));
 			}
 			return out;
@@ -1628,16 +1628,16 @@ const AURAS = [
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), turn$2 = print % 2 ? -1 : 1;
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1;
 			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x$1, y$1]) => [
 				x$1,
 				y$1,
 				Math.atan2(y$1 - s.cy, x$1 - s.cx)
 			]).sort((p, q) => p[2] - q[2]);
 			if (!track.length) return [];
-			const n = track.length, head$1 = wrap(turn$2 * Math.floor(t / 45) + print * 7, n), out = [];
+			const n = track.length, head$1 = wrap(turn$1 * Math.floor(t / 45) + print * 7, n), out = [];
 			for (let j = 10; j >= 1; j--) {
-				const [x$1, y$1] = track[wrap(head$1 - turn$2 * j, n)];
+				const [x$1, y$1] = track[wrap(head$1 - turn$1 * j, n)];
 				out.push([
 					x$1,
 					y$1,
@@ -1772,10 +1772,10 @@ const AURAS = [
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), turn$2 = print % 2 ? -1 : 1, out = [];
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1, out = [];
 			for (const [x, y, d] of ring(mask, 4)) {
 				const a = Math.atan2(y - s.cy, x - s.cx) / (2 * Math.PI), r = Math.hypot(x - s.cx, y - s.cy);
-				const v = wrap(a * 3 + r * .3 - turn$2 * t / 700 + print * .1, 1);
+				const v = wrap(a * 3 + r * .3 - turn$1 * t / 700 + print * .1, 1);
 				if (v < .24) out.push([
 					x,
 					y,
@@ -1906,29 +1906,59 @@ function auraIntensity(id, finish) {
 	return INTENSITY[finish ?? "classic"] ?? 0;
 }
 const TAU = Math.PI * 2;
-const turn$1 = (a) => {
-	const v = (a % TAU + TAU) % TAU;
-	return v > Math.PI ? v - TAU : v;
-};
+/**
+* A closed loop one pixel wide round the guy, `gx` cells clear of his sides
+* and `gy` of his top and foot: a squarish ellipse (a superellipse, which
+* never cuts his box's corners), in order round it, with no doubled corners.
+*/
+function loop(s, gx, gy) {
+	const rx = (s.right - s.left) / 2 + gx, ry = (s.bottom - s.top) / 2 + gy, steps = 720;
+	const pts = [];
+	for (let i = 0; i < steps; i++) {
+		const a = i / steps * TAU, c = Math.cos(a), sn = Math.sin(a);
+		const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** .5), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** .5);
+		const last = pts[pts.length - 1];
+		if (!last || last[0] !== x || last[1] !== y) pts.push([x, y]);
+	}
+	while (pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) pts.pop();
+	const out = [];
+	pts.forEach((c, i) => {
+		const p = out[out.length - 1] ?? pts[pts.length - 1], n = pts[(i + 1) % pts.length];
+		const corner = (p[0] === c[0] || p[1] === c[1]) && (n[0] === c[0] || n[1] === c[1]) && p[0] !== n[0] && p[1] !== n[1];
+		if (!corner) out.push(c);
+	});
+	return out;
+}
+/**
+* `count` arcs evenly spaced round a loop, each `len` cells long, travelling
+* one cell every `speed` ms (`dir` 1 or -1): a bright head and a fading tail.
+*/
+function arcs(pts, t, count, len, speed, dir, offset) {
+	const n = pts.length, head$1 = Math.floor(t / speed) * dir + offset, out = [];
+	for (let k = 0; k < count; k++) for (let j = 0; j < len; j++) {
+		const [x, y] = pts[wrap(Math.round(head$1 + k * n / count) - j * dir, n)];
+		out.push([
+			x,
+			y,
+			j < 2 ? 0 : 1
+		]);
+	}
+	return out;
+}
 /**
 * What a rarer aura adds round the guy, level by level, each in the aura's
-* own colours: a twinkling haze (1), arcs of light running round him (2),
-* sparks rising off him and a second ring turning the other way (3), stars
-* in orbit (4), and for Origin a crown of rays that pulse above his head (5).
+* own colours: a twinkling haze (1), clean arcs of light running round a ring
+* (2), a second, wider ring turning the other way and sparks rising off him
+* (3), longer arcs and stars riding the outer ring (4), and for Origin a
+* glowing rim, a lit ring and a crown of rays pulsing over his head (5).
+* `mask` may be wider than the frame, so the rings can spread to the sides.
 */
 function extras(mask, t, print, level) {
 	if (level <= 0) return [];
-	const s = shape(mask), out = [], phase = noise$1(print, 3) * TAU;
-	const reach = level >= 3 ? 3 : 2, near = ring(mask, reach), beat = Math.floor(t / 110);
-	const haze = [
-		0,
-		.07,
-		.11,
-		.15,
-		.2,
-		.26
-	][level];
-	for (const [x, y, d] of near) {
+	const s = shape(mask), out = [], phase = noise$1(print, 3);
+	const beat = Math.floor(t / 110);
+	const haze = level === 1 ? .08 : 0;
+	for (const [x, y, d] of ring(mask, 3)) {
 		const n = noise$1(x, y, beat, print, 31);
 		if (d >= 2 && n < haze) out.push([
 			x,
@@ -1936,62 +1966,46 @@ function extras(mask, t, print, level) {
 			n < haze / 3 ? 0 : 1
 		]);
 	}
+	const gy = Math.min(2, s.top), inner = loop(s, 2, gy), outer = loop(s, 4, gy + 2);
 	if (level >= 2) {
-		const arcs = level >= 4 ? 3 : 2, speed = level >= 4 ? 300 : 420, a0 = t / speed + phase;
-		for (const [x, y, d] of near) {
-			if (d !== reach && !(level >= 3 && d === reach - 1)) continue;
-			const ang = Math.atan2((y - s.cy) * 1.2, x - s.cx);
-			for (let k = 0; k < arcs; k++) {
-				const fwd = Math.abs(turn$1(ang - a0 - k * TAU / arcs));
-				if (d === reach && fwd < .42) out.push([
-					x,
-					y,
-					fwd < .16 ? 0 : 1
-				]);
-				const back = Math.abs(turn$1(ang + a0 * 1.4 - k * TAU / arcs));
-				if (level >= 3 && d === reach - 1 && back < .3) out.push([
-					x,
-					y,
-					back < .12 ? 0 : 2
-				]);
-			}
-		}
+		const n = inner.length, long = level >= 4 ? .22 : .16;
+		if (level >= 5) for (let i = 0; i < inner.length; i += 2) out.push([
+			inner[i][0],
+			inner[i][1],
+			2
+		]);
+		out.push(...arcs(inner, t, level >= 4 ? 3 : 2, Math.max(3, Math.round(n * long)), 70, 1, phase * n));
 	}
 	if (level >= 3) {
-		const n = [
+		const n = outer.length;
+		out.push(...arcs(outer, t, 3, Math.max(3, Math.round(n * (level >= 4 ? .14 : .1))), 55, -1, phase * n * 2));
+		const count = [
 			0,
 			0,
 			0,
-			5,
-			7,
-			10
+			3,
+			4,
+			5
 		][level], life = 1300;
-		for (let i = 0; i < n; i++) {
-			const at = t + i * life / n + print * 13, gen = Math.floor(at / life), f = at % life / life;
-			const x = s.left - 1 + Math.floor(noise$1(i, gen, print, 5) * (s.right - s.left + 3));
+		for (let i = 0; i < count; i++) {
+			const at = t + i * life / count + print * 13, gen = Math.floor(at / life), f = at % life / life;
+			const x = s.left - 2 + Math.floor(noise$1(i, gen, print, 5) * (s.right - s.left + 5));
 			const y = s.bottom - Math.floor(f * (s.bottom - s.top + 5));
 			out.push([
 				x + Math.round(Math.sin(at / 210 + i) * .7),
 				y,
-				f < .55 ? 0 : f < .8 ? 1 : 2
+				f < .55 ? 0 : 1
 			]);
 		}
 	}
 	if (level >= 4) {
-		const stars = level >= 5 ? 3 : 2, rx = (s.right - s.left) / 2 + 2.5, ry = (s.bottom - s.top) / 2 + 2;
+		const stars = level >= 5 ? 3 : 2, n = outer.length;
 		for (let i = 0; i < stars; i++) {
-			const a = t / 520 + i * TAU / stars + phase;
-			out.push(...plus(s.cx + Math.cos(a) * rx, s.cy + Math.sin(a) * ry, 1));
+			const [x, y] = outer[wrap(Math.floor(t / 90) + Math.round(i * n / stars + phase * n), n)];
+			out.push(...plus(x, y, 1));
 		}
 	}
 	if (level >= 5) {
-		if (Math.sin(t / 260) > -.2) {
-			for (const [x, y, d] of near) if (d === 1 && noise$1(x, y, Math.floor(t / 260)) < .7) out.push([
-				x,
-				y,
-				2
-			]);
-		}
 		const pulse = t / 90 % 6;
 		for (let r = 1; r <= 4; r++) for (const dx of [
 			-3,
@@ -2012,23 +2026,35 @@ function extras(mask, t, print, level) {
 	return out;
 }
 /**
-* An aura's cells round `mask` at `t`, only in empty pixels and inside the
-* frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
-* one flickers with gaps. A rarer finish adds more (`extras`).
+* An aura's cells round `mask` at `t`, only in empty pixels, thinned by the
+* copy's float: a Box Fresh aura is whole, a battered one flickers with gaps.
+* A rarer finish adds more (`extras`). With `pad`, those extras may spread
+* that many columns past either side of the frame (x from -pad to
+* width + pad - 1), for a picture with room round the guy, like a card.
 */
-function auraCells(id, mask, t, copy) {
+function auraCells(id, mask, t, copy, pad = 0) {
 	const aura = auraById(id);
 	if (!aura) return [];
 	const h = mask.length, w = mask[0].length, print = copy?.print ?? 0, scuff = copy?.scuff ?? 0;
 	const seen = new Set(), step = Math.floor(t / 150);
-	const cells = [...aura.cells(mask, t, print), ...extras(mask, t, print, auraIntensity(id, copy?.finish))];
+	const wide = pad ? mask.map((row) => [
+		...new Array(pad).fill(false),
+		...row,
+		...new Array(pad).fill(false)
+	]) : mask;
+	const more = extras(wide, t, print, auraIntensity(id, copy?.finish)).map(([x, y, k]) => [
+		x - pad,
+		y,
+		k
+	]);
+	const cells = [...aura.cells(mask, t, print), ...more];
 	return cells.map(([x, y, k]) => [
 		Math.round(x),
 		Math.round(y),
 		k
 	]).filter(([x, y]) => {
-		if (x < 0 || y < 0 || x >= w || y >= h || mask[y][x] || seen.has(y * w + x)) return false;
-		seen.add(y * w + x);
+		if (x < -pad || y < 0 || x >= w + pad || y >= h || mask[y]?.[x] || seen.has(y * (w + 2 * pad) + x + pad)) return false;
+		seen.add(y * (w + 2 * pad) + x + pad);
 		return noise$1(x, y, step, print, 7) >= scuff * .45;
 	});
 }
@@ -8884,7 +8910,7 @@ function shadePalette(palette, shade) {
 * gold trim. Derived again, so the face and outline read as well as ever.
 */
 function luckyPalette(palette) {
-	const turn$2 = (hex$2) => {
+	const turn$1 = (hex$2) => {
 		const [h, s, l] = toHsl(hex$2);
 		let hue$1 = (h + 150) % 360;
 		const dark = l < .45;
@@ -8896,7 +8922,7 @@ function luckyPalette(palette) {
 		]);
 	};
 	const c = palette.colors;
-	return derive(`${palette.name} Lucky`, turn$2(c[1]), turn$2(c[10]), "#FFE9A8");
+	return derive(`${palette.name} Lucky`, turn$1(c[1]), turn$1(c[10]), "#FFE9A8");
 }
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
 function paletteOf(config) {
@@ -9549,4 +9575,4 @@ Object.defineProperty(exports, 'withoutRetired', {
     return withoutRetired;
   }
 });
-//# sourceMappingURL=paint-DZEvOzwR.cjs.map
+//# sourceMappingURL=paint-CkmJX8MZ.cjs.map

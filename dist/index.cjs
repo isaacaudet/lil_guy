@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-DZEvOzwR.cjs');
+const require_paint = require('./paint-CkmJX8MZ.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -35,6 +35,8 @@ const MOVES = [
 const HEADROOM = 4;
 const FRAME_WIDTH = require_paint.GRID_SIZE;
 const FRAME_HEIGHT = require_paint.GRID_SIZE + HEADROOM;
+/** How many columns past each side of the frame a rare aura may reach (`outside`). */
+const AURA_PAD = 3;
 /**
 * Emotes a player can show after a game, and how each is unlocked. The
 * moves use some on their own; `emote` in the options shows one over any move.
@@ -716,13 +718,22 @@ function animate(input, move, options = {}) {
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
+		const outside = [];
 		if (wornAura) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
-			for (const [x, y, k] of require_paint.auraCells(wornAura.id, mask, t$1, copy)) layer[y][x] = {
-				c: copy ? require_paint.auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k],
-				item: false,
-				slot: 5
-			};
+			for (const [x, y, k] of require_paint.auraCells(wornAura.id, mask, t$1, copy, AURA_PAD)) {
+				const c = copy ? require_paint.auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k];
+				if (x < 0 || x >= FRAME_WIDTH) outside.push([
+					x,
+					y,
+					c
+				]);
+				else layer[y][x] = {
+					c,
+					item: false,
+					slot: 5
+				};
+			}
 		} else if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix$1(gradeColor, "#000000", .35);
@@ -740,7 +751,12 @@ function animate(input, move, options = {}) {
 		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
 		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
 		const colors = withFx ? require_paint.applyFx(flat, slots, fxCopies, t$1) : flat;
-		return {
+		return outside.length ? {
+			colors,
+			ms,
+			slots,
+			outside
+		} : {
 			colors,
 			ms,
 			slots
@@ -5591,7 +5607,7 @@ function drawCard(input, frame, owned, g, t) {
 		s.set(x, y, c);
 	}
 	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - FRAME_WIDTH * ZOOM / 2), oy = WIN.bottom - 3 - FRAME_HEIGHT * ZOOM;
-	const solid = (gx, gy) => !!frame.colors[gy]?.[gx];
+	const solid = (gx, gy) => !!frame.colors[gy]?.[gx] && frame.slots[gy]?.[gx] !== 5;
 	const edge = g === 5 ? mix(tint, WHITE, .42) : mix(tint, WHITE, .55);
 	for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
 		const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((y - oy) / ZOOM);
@@ -5623,6 +5639,10 @@ function drawCard(input, frame, owned, g, t) {
 			]);
 		}
 	}));
+	for (const [gx, gy, hex$1] of frame.outside ?? []) for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
+		const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+		if (cy > WIN.top && cy < WIN.bottom && cx > WIN.left && cx < WIN.right) s.set(cx, cy, rgb(hex$1));
+	}
 	const glare = t * .45 % 2.2 * 140 - 40;
 	for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
 		const d = x + (y - WIN.top) * .6 - glare;

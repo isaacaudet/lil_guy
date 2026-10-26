@@ -743,7 +743,16 @@ interface AnimationFrame {
   slots: number[][];
   /** How long the frame shows. */
   ms: number;
+  /**
+   * A rare aura's cells that fall past the frame's sides, as `[x, y, colour]`
+   * with x from -AURA_PAD to FRAME_WIDTH + AURA_PAD - 1. Only there when there
+   * are some; a picture with room round the guy (a card) draws them, anything
+   * else can leave them out.
+   */
+  outside?: [number, number, string][];
 }
+/** How many columns past each side of the frame a rare aura may reach (`outside`). */
+
 interface Animation {
   move: Move;
   width: number;
@@ -1160,11 +1169,13 @@ declare const AURAS: Aura[];
 declare const ONE_OF_ONE_AURAS: Aura[];
 declare const auraById: (id: string | undefined) => Aura | undefined;
 /**
- * An aura's cells round `mask` at `t`, only in empty pixels and inside the
- * frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
- * one flickers with gaps. A rarer finish adds more (`extras`).
+ * An aura's cells round `mask` at `t`, only in empty pixels, thinned by the
+ * copy's float: a Box Fresh aura is whole, a battered one flickers with gaps.
+ * A rarer finish adds more (`extras`). With `pad`, those extras may spread
+ * that many columns past either side of the frame (x from -pad to
+ * width + pad - 1), for a picture with room round the guy, like a card.
  */
-declare function auraCells(id: string, mask: Mask, t: number, copy?: Owned): AuraCell[];
+declare function auraCells(id: string, mask: Mask, t: number, copy?: Owned, pad?: number): AuraCell[];
 /**
  * The colour of one aura cell in a finish. Fade runs its sunset down the aura
  * and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
