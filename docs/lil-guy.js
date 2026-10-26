@@ -1293,13 +1293,13 @@ const eyes = [
 	]),
 	eyes_("galaxy", [
 		".ee....ee.",
-		"ewAe..ewAe",
-		".Ay....Ay."
+		"eAwe..eAwe",
+		".yA....yA."
 	]),
 	eyes_("diamond", [
-		".a......a.",
-		"awA....awA",
-		".A......A."
+		".aa....aa.",
+		"awaA..awaA",
+		".AA....AA."
 	]),
 	eyes_("dragon", [
 		".y......y.",
@@ -8897,8 +8897,9 @@ function paint(grid, config, palette$1, small = false, still = true) {
 	if (small) ({grid, palette: palette$1} = forSmall(grid, palette$1));
 	const fp = facePlate(grid, palette$1);
 	if (fp) palette$1 = fp.palette;
+	const chase = chaseEyes(grid, config);
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token);
+		const color = chase?.[y][x] ?? (fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token));
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
@@ -8943,6 +8944,36 @@ function facePlate(grid, palette$1) {
 			}
 		}
 	};
+}
+/**
+* Chase eyes keep their own colours on every guy, so galaxy eyes are always a
+* galaxy: drawn in his accent they came out a different speck on each body.
+*/
+const CHASE_COLORS = {
+	galaxy: {
+		[T.EYE]: "#1C0E3D",
+		[T.WHITE]: "#FFFFFF",
+		[T.ACCENT_SHADE]: "#8A5CFF",
+		[T.GOLD]: "#FF8BE0"
+	},
+	diamond: {
+		[T.EYE]: "#0B2F4D",
+		[T.WHITE]: "#FFFFFF",
+		[T.ACCENT]: "#9EF0FF",
+		[T.ACCENT_SHADE]: "#2BA8E0"
+	},
+	dragon: {
+		[T.EYE]: "#240800",
+		[T.GOLD]: "#FFD23A",
+		[T.GOLD_SHADE]: "#FF5A14"
+	}
+};
+function chaseEyes(grid, config) {
+	const colors = CHASE_COLORS[eyes[config.eyes]?.name ?? ""];
+	if (!colors) return null;
+	const f = faceOf(config);
+	const left = f.eyes[0].left - 1, right = f.eyes[f.eyes.length - 1].right + 1;
+	return grid.map((row, y) => row.map((t, x) => y >= f.top - 1 && y <= f.line && x >= left && x <= right ? colors[t] : void 0));
 }
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 const SMALL_SIZE = 36;

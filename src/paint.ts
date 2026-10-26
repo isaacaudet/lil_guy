@@ -1,4 +1,6 @@
 import { LAYER, T } from './parts/art';
+import { eyes as eyeParts } from './parts';
+import { faceOf } from './compose';
 import { resolveColor, mix, contrast } from './palette';
 import { paintCell } from './owned';
 import { auraById, auraColor } from './auras';
@@ -17,8 +19,9 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
   if (small) ({ grid, palette } = forSmall(grid, palette));
   const fp = facePlate(grid, palette);
   if (fp) palette = fp.palette;
+  const chase = chaseEyes(grid, config);
   return grid.map((row, y) => row.map((token, x) => {
-    const color = fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
+    const color = chase?.[y][x] ?? (fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
     if (!color) return null;
     const slot = slotOf(token);
     const copy = slot ? config.owned?.[slot] : undefined;
@@ -49,6 +52,24 @@ function facePlate(grid: PixelGrid, palette: Palette): { plate: boolean[][]; pal
     && !((y === top || y === bottom) && (x <= left + 1 || x >= right - 1))));
   const dark = mix(resolveColor(palette, T.OUTLINE) ?? '#000000', '#000000', 0.3);
   return { plate, pale: mix(body, '#FFF1D6', 0.62), palette: { ...palette, colors: { ...palette.colors, [T.EYE]: dark, [T.MOUTH]: dark } } };
+}
+
+/**
+ * Chase eyes keep their own colours on every guy, so galaxy eyes are always a
+ * galaxy: drawn in his accent they came out a different speck on each body.
+ */
+const CHASE_COLORS: Record<string, Partial<Record<number, string>>> = {
+  galaxy: { [T.EYE]: '#1C0E3D', [T.WHITE]: '#FFFFFF', [T.ACCENT_SHADE]: '#8A5CFF', [T.GOLD]: '#FF8BE0' },
+  diamond: { [T.EYE]: '#0B2F4D', [T.WHITE]: '#FFFFFF', [T.ACCENT]: '#9EF0FF', [T.ACCENT_SHADE]: '#2BA8E0' },
+  dragon: { [T.EYE]: '#240800', [T.GOLD]: '#FFD23A', [T.GOLD_SHADE]: '#FF5A14' },
+};
+
+function chaseEyes(grid: PixelGrid, config: AvatarConfig): (string | undefined)[][] | null {
+  const colors = CHASE_COLORS[eyeParts[config.eyes]?.name ?? ''];
+  if (!colors) return null;
+  const f = faceOf(config);
+  const left = f.eyes[0].left - 1, right = f.eyes[f.eyes.length - 1].right + 1;
+  return grid.map((row, y) => row.map((t, x) => (y >= f.top - 1 && y <= f.line && x >= left && x <= right ? colors[t] : undefined)));
 }
 
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */

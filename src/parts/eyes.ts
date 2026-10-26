@@ -119,15 +119,17 @@ export const eyes: Eyes[] = [
   // Chase eyes, one guy in several hundred. Each is a material, not a
   // mood: a little night sky, a cut jewel in the accent, a dragon's gold.
   // The galaxy is the one pair four wide: round, so it holds a sky.
+  // A dark sphere with a nebula and a star in it.
   eyes_('galaxy', [
     '.ee....ee.',
-    'ewAe..ewAe',
-    '.Ay....Ay.',
+    'eAwe..eAwe',
+    '.yA....yA.',
   ]),
+  // A cut gem: pale table, deep pavilion, a glint.
   eyes_('diamond', [
-    '.a......a.',
-    'awA....awA',
-    '.A......A.',
+    '.aa....aa.',
+    'awaA..awaA',
+    '.AA....AA.',
   ]),
   eyes_('dragon', [
     '.y......y.',

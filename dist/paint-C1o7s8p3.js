@@ -7157,13 +7157,13 @@ const eyes = [
 	]),
 	eyes_("galaxy", [
 		".ee....ee.",
-		"ewAe..ewAe",
-		".Ay....Ay."
+		"eAwe..eAwe",
+		".yA....yA."
 	]),
 	eyes_("diamond", [
-		".a......a.",
-		"awA....awA",
-		".A......A."
+		".aa....aa.",
+		"awaA..awaA",
+		".AA....AA."
 	]),
 	eyes_("dragon", [
 		".y......y.",
@@ -8893,8 +8893,9 @@ function paint(grid, config, palette, small = false, still = true) {
 	if (small) ({grid, palette} = forSmall(grid, palette));
 	const fp = facePlate(grid, palette);
 	if (fp) palette = fp.palette;
+	const chase = chaseEyes(grid, config);
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
+		const color = chase?.[y][x] ?? (fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
@@ -8939,6 +8940,36 @@ function facePlate(grid, palette) {
 			}
 		}
 	};
+}
+/**
+* Chase eyes keep their own colours on every guy, so galaxy eyes are always a
+* galaxy: drawn in his accent they came out a different speck on each body.
+*/
+const CHASE_COLORS = {
+	galaxy: {
+		[T.EYE]: "#1C0E3D",
+		[T.WHITE]: "#FFFFFF",
+		[T.ACCENT_SHADE]: "#8A5CFF",
+		[T.GOLD]: "#FF8BE0"
+	},
+	diamond: {
+		[T.EYE]: "#0B2F4D",
+		[T.WHITE]: "#FFFFFF",
+		[T.ACCENT]: "#9EF0FF",
+		[T.ACCENT_SHADE]: "#2BA8E0"
+	},
+	dragon: {
+		[T.EYE]: "#240800",
+		[T.GOLD]: "#FFD23A",
+		[T.GOLD_SHADE]: "#FF5A14"
+	}
+};
+function chaseEyes(grid, config) {
+	const colors = CHASE_COLORS[eyes[config.eyes]?.name ?? ""];
+	if (!colors) return null;
+	const f = faceOf(config);
+	const left = f.eyes[0].left - 1, right = f.eyes[f.eyes.length - 1].right + 1;
+	return grid.map((row, y) => row.map((t, x) => y >= f.top - 1 && y <= f.line && x >= left && x <= right ? colors[t] : void 0));
 }
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 const SMALL_SIZE = 36;
@@ -8996,4 +9027,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems, withoutRetired };
-//# sourceMappingURL=paint-BASSfquy.js.map
+//# sourceMappingURL=paint-C1o7s8p3.js.map
