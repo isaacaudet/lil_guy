@@ -1118,18 +1118,17 @@ const hats: Omit<Item, 'slot'>[] = [
   {
     id: 'trackdle.helmet', game: 'trackdle', name: 'Race helmet',
     colors: ['#FF7A2F', '#D65A1C', '#FFFFFF', '#1C2733', '#6FA8D8'],
-    draw: c => {
-      capRows(c, 3, L(1), L(2));
-      const x = Math.floor(c.centre);
-      for (let y = c.crown; y < c.crown + 3; y++) { c.set(x - 1, y, L(3)); c.set(x, y, L(3)); }
-      const y = c.crown + 3;
-      const r = c.rows[y]!;
-      // The visor juts out a column where there is room for it.
-      for (let vx = r.left; vx <= Math.min(r.right + 1, 14); vx++) c.set(vx, y, L(4));
-      c.set(r.right - 1, y, L(5));
-      c.set(r.right, y, L(5));
-      if (r.left > 1) c.set(r.left - 1, y, L(1));
-    },
+    // A full-face racing helmet pushed up on the head: a tall shell with a
+    // racing stripe, and the visor along its rim with a glint. It sits up on
+    // the head rather than in it, so it reads whole on a head with no forehead.
+    draw: on([
+      '...11111...',
+      '..1133112..',
+      '.111331112.',
+      '.111331112.',
+      '.111331122.',
+      '44444445554',
+    ], 0, 2),
   },
   // Bigger third hats, one per game
   {

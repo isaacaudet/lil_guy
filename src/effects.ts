@@ -150,6 +150,15 @@ export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, 
   }
 }
 
+/** Under this many cells a copy is small: its effect is pushed harder and glows round it. */
+const SMALL_COPY = 80;
+/** An effect that darkens an item; on a small copy it keeps more of the item's colour. */
+const DARKENS: Fx[] = ['starlight'];
+/** Offsets within two cells, nearest first. */
+const NEAR2 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1], [2, 0], [-2, 0], [0, 2], [0, -2]];
+/** Effects that already draw round the item, so no halo. */
+const OWN_EDGE: Fx[] = ['neon', 'bubbles', 'hearts', 'embers'];
+
 /**
  * Applies the effects of the copies a frame shows: `slots` says which slot
  * each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
@@ -159,10 +168,31 @@ export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, 
 export function applyFx(colors: (string | null)[][], slots: number[][], copies: (({ fx?: Fx; print: number }) | undefined)[], t: number): (string | null)[][] {
   if (!copies.some(o => o?.fx)) return colors;
   const out = colors.map(row => [...row]);
+  // A small copy (a hat, a buddy) has only a few cells for its effect to show
+  // in, so there it is pushed harder; one that darkens (a night sky, a crust)
+  // keeps more of the item's own colour so the item still reads.
+  const size = copies.map((_, k) => slots.reduce((n, row) => n + row.filter(s => s === k + 1).length, 0));
+  const small = (k: number) => size[k] > 0 && size[k] < SMALL_COPY;
   slots.forEach((row, y) => row.forEach((s, x) => {
     const o = copies[s - 1];
-    if (s && o?.fx && colors[y][x]) out[y][x] = fxColor(colors[y][x]!, o.fx, x, y, t, o.print);
+    if (!s || !o?.fx || !colors[y][x]) return;
+    const fx = fxColor(colors[y][x]!, o.fx, x, y, t, o.print);
+    if (!small(s - 1)) { out[y][x] = fx; return; }
+    const a = rgb(colors[y][x]!), b = rgb(fx);
+    out[y][x] = hex(DARKENS.includes(o.fx) ? mix(a, b, 0.42) : mix(a, b, 1.5));
   }));
+  // Round a small copy, a halo of its effect twinkles in the empty cells beside it.
+  copies.forEach((o, k) => {
+    if (!o?.fx || !small(k) || OWN_EDGE.includes(o.fx)) return;
+    const beat = Math.floor((t + o.print * 37) / 140);
+    slots.forEach((row, y) => row.forEach((s, x) => {
+      if (s || colors[y][x]) return;
+      // Two cells out at most: an item's own outline sits between it and the empty cells.
+      const from = NEAR2.find(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1);
+      if (!from || noise(x, y, beat, o.print, 17) > 0.4) return;
+      out[y][x] = hex(mix(rgb(out[y + from[1]][x + from[0]]!), WHITE, 0.15));
+    }));
+  });
   copies.forEach((o, k) => {
     if (o?.fx !== 'pulse') return;
     // A glow in the copy's own colours round its edge, there on the breath in.
