@@ -449,6 +449,8 @@
   .rz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .rz-t { background: var(--panel); box-shadow: var(--lift); border-radius: 12px; padding: 10px; display: grid; gap: 6px; justify-items: center; text-align: center; align-content: start; }
   .rz-t .pic { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--well); overflow: hidden; }
+  /* Effects show on a mid-tone well, so a dark sky, a light frost and a neon edge all read. */
+  #rz-fx .pic, #rz-fxa .pic { background: #4d5878; }
   .rz-t canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; }
   #rz-guys canvas { width: 70% !important; height: auto !important; }
   .rz-t .tchips { justify-content: center; }
@@ -3078,7 +3080,8 @@ void main() {
     for (const [x, y] of edge) colors[y][x] = '#1a1626';
     let x0 = W, y0 = H, x1 = -1, y1 = -1;
     colors.forEach((row, y) => row.forEach((c, x) => { if (c) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }));
-    if (o.fx === 'embers' || o.fx === 'pulse') { y0 = Math.max(0, y0 - (o.fx === 'embers' ? 5 : 1)); x0 = Math.max(0, x0 - 1); x1 = Math.min(W - 1, x1 + 1); y1 = Math.min(H - 1, y1 + 1); }
+    // Room round it for what an effect draws outside the item: things rising off it, a tube or bolts round it.
+    if (o.fx) { const up = ['embers', 'bubbles', 'hearts'].includes(o.fx) ? 7 : o.fx === 'electric' ? 3 : 1; y0 = Math.max(0, y0 - up); x0 = Math.max(0, x0 - 1); x1 = Math.min(W - 1, x1 + 1); y1 = Math.min(H - 1, y1 + 1); }
     return { frame: { colors, slots, ms: 0 }, owned: { [slot]: o }, box: { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } };
   }
   function showItem(canvas, o, seed, maxW, maxH) {
@@ -3338,7 +3341,7 @@ void main() {
 
     // Every effect, on an item and on an aura.
     $('rz-fx').innerHTML = LG.FX_IDS.map(id => { const e = LG.EFFECTS[id]; return `<div class="rz-t"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(e.name)}</b><span>${esc(e.what)} 1 in ${fmt(e.item)} items.</span></div>`; }).join('');
-    $('rz-fx').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: k * 7, fx: LG.FX_IDS[k] }, seed, 120, 120); });
+    $('rz-fx').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: 'puttsies.ball', finish: 'plain', scuff: 0.02, print: k * 7, fx: LG.FX_IDS[k] }, seed, 120, 120); });
     $('rz-fxa').innerHTML = LG.FX_IDS.map(id => { const e = LG.EFFECTS[id]; return `<div class="rz-t"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(e.name)} ★ Galaxy</b><span>1 in ${fmt(e.aura)} auras</span></div>`; }).join('');
     $('rz-fxa').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: 'aura.galaxy', finish: 'classic', scuff: 0.02, print: k * 7, fx: LG.FX_IDS[k] }, seed, 110, 130); });
 

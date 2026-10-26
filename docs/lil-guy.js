@@ -1780,7 +1780,7 @@ const heart$1 = stamp([
 	"rrr",
 	".r."
 ]);
-const star$1 = stamp([
+const star$2 = stamp([
 	".y.",
 	"yyy",
 	".y."
@@ -1872,7 +1872,7 @@ const bodies = [
 	{
 		name: "star mark",
 		draw: (c) => {
-			mark(c, star$1);
+			mark(c, star$2);
 		}
 	},
 	{
@@ -2114,7 +2114,7 @@ const bowtie = stamp([
 	"aAxxAa",
 	"aa..aa"
 ]);
-const star = stamp([
+const star$1 = stamp([
 	".y.",
 	"yyy",
 	".y."
@@ -2199,7 +2199,7 @@ const accessories = [
 		layer: "body",
 		draw: (c) => {
 			const r = c.rows[c.eyeLine - 3];
-			if (r) c.draw(star, r.right - 3, c.eyeLine - 4, true);
+			if (r) c.draw(star$1, r.right - 3, c.eyeLine - 4, true);
 		}
 	},
 	{
@@ -2748,9 +2748,9 @@ const AURAS = [
 		],
 		still: 900,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], turn$1 = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+			const s = shape(mask), out = [], turn = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
 			for (let i = 0; i < 3; i++) {
-				const a = turn$1 * t / 560 + i * 2.094 + print;
+				const a = turn * t / 560 + i * 2.094 + print;
 				out.push(...plus(Math.round(s.w / 2 - .5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 1));
 			}
 			return out;
@@ -3079,17 +3079,68 @@ const AURAS = [
 		name: "Galaxy",
 		colors: [
 			"#FFFFFF",
-			"#7C5CFF",
-			"#2A1D5C"
+			"#A88BFF",
+			"#5B3FC8"
 		],
 		still: 600,
 		cells: (mask, t, print) => {
-			const step = Math.floor(t / 200);
-			return ring(mask, 2).map(([x, y, d]) => [
+			const s = shape(mask), out = [], turn = print % 2 ? -1 : 1;
+			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x, y]) => [
 				x,
 				y,
-				noise$1(x, y, step, print) > .9 ? 0 : d === 1 ? 1 : 2
-			]);
+				Math.atan2(y - s.cy, x - s.cx)
+			]).sort((a, b$1) => a[2] - b$1[2]);
+			const n = track.length;
+			for (let i = 0; i < 3 && n; i++) {
+				const [x, y] = track[wrap(turn * Math.floor(t / 120) + Math.round(i * n / 3) + print * 5, n)];
+				for (const [dx, dy, k] of [
+					[
+						0,
+						0,
+						1
+					],
+					[
+						1,
+						0,
+						2
+					],
+					[
+						0,
+						1,
+						2
+					],
+					[
+						-1,
+						0,
+						2
+					],
+					[
+						0,
+						-1,
+						2
+					],
+					[
+						1,
+						1,
+						2
+					]
+				]) out.push([
+					x + dx,
+					y + dy,
+					k
+				]);
+			}
+			const far = ring(mask, 4).filter(([, , d]) => d >= 3);
+			for (let i = 0; i < 4; i++) {
+				const life = 900, at = t + i * (life / 4) + print * 31, gen = Math.floor(at / life), f = at % life / life;
+				const [x, y] = far[Math.floor(noise$1(i, gen, print, 23) * far.length)] ?? [0, 0];
+				if (f < .75) out.push(...f > .2 && f < .55 ? plus(x, y, 1) : [[
+					x,
+					y,
+					0
+				]]);
+			}
+			return out;
 		}
 	},
 	{
@@ -3101,19 +3152,34 @@ const AURAS = [
 			"#FFE27A",
 			"#7DD87A",
 			"#5FB4FF",
-			"#B98CFF"
+			"#B98CFF",
+			"#FFFFFF"
 		],
 		still: 0,
 		cells: (mask, t, print) => {
-			const s = shape(mask), cx = s.w / 2 - .5, cy = s.cy + 2, top = Math.max(0, s.top - 4), shift$1 = Math.floor(t / 200) + print, out = [];
+			const s = shape(mask), cx = s.w / 2 - .5, cy = s.cy + 2, top = Math.max(0, s.top - 4), out = [];
+			const glint = wrap(Math.floor((t + print * 40) / 70), 40) - 6;
 			for (let y = top; y < cy; y++) for (let x = 0; x < s.w; x++) {
 				const d = Math.hypot((x - cx) / (s.w / 2), (y - cy) / (cy - top));
-				if (d >= .74 && d <= 1) out.push([
+				if (d < .74 || d > 1) continue;
+				const band = Math.min(5, Math.floor((1 - d) / .0435));
+				const along = Math.round(Math.atan2(cy - y, x - cx) / Math.PI * 30);
+				out.push([
 					x,
 					y,
-					wrap(Math.floor((1 - d) / .087) + shift$1, 6)
+					Math.abs(along - glint) <= 1 && band % 2 === 0 ? 6 : band
 				]);
 			}
+			for (const fx of [0, s.w - 3]) for (const [dx, dy] of [
+				[1, 0],
+				[0, 1],
+				[1, 1],
+				[2, 1]
+			]) out.push([
+				fx + dx,
+				cy - 1 + dy,
+				6
+			]);
 			return out;
 		}
 	},
@@ -3179,27 +3245,25 @@ const AURAS = [
 		colors: [
 			"#FFFFFF",
 			"#FF4FD8",
-			"#7A2C9E"
+			"#B23CE0"
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), step = Math.floor((t + print * 17) / 90);
+			const s = shape(mask);
 			const tube = ring(mask, 1).map(([x, y]) => [
 				x,
 				y,
 				Math.atan2(y - s.cy, x - s.cx)
 			]).sort((a, b$1) => a[2] - b$1[2]);
-			if (noise$1(Math.floor(step / 3), print, 5) > .9) return tube.map(([x, y]) => [
-				x,
-				y,
-				2
-			]);
-			const hot = wrap(step, tube.length);
-			return tube.filter((_, i) => noise$1(Math.floor(i / 3), step, print) > .06).map(([x, y], i) => [
-				x,
-				y,
-				Math.abs(i - hot) <= 1 ? 0 : 1
-			]);
+			const n = tube.length, hot = wrap(Math.floor((t + print * 17) / 60), n), breath = Math.sin((t + print * 11) / 420) > 0;
+			return tube.map(([x, y], i) => {
+				const d = Math.min(wrap(i - hot, n), wrap(hot - i, n));
+				return [
+					x,
+					y,
+					d <= 1 ? 0 : breath ? 1 : 2
+				];
+			});
 		}
 	},
 	{
@@ -3239,16 +3303,16 @@ const AURAS = [
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), turn$1 = print % 2 ? -1 : 1;
+			const s = shape(mask), turn = print % 2 ? -1 : 1;
 			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x$1, y$1]) => [
 				x$1,
 				y$1,
 				Math.atan2(y$1 - s.cy, x$1 - s.cx)
 			]).sort((p, q) => p[2] - q[2]);
 			if (!track.length) return [];
-			const n = track.length, head$1 = wrap(turn$1 * Math.floor(t / 45) + print * 7, n), out = [];
+			const n = track.length, head$1 = wrap(turn * Math.floor(t / 45) + print * 7, n), out = [];
 			for (let j = 10; j >= 1; j--) {
-				const [x$1, y$1] = track[wrap(head$1 - turn$1 * j, n)];
+				const [x$1, y$1] = track[wrap(head$1 - turn * j, n)];
 				out.push([
 					x$1,
 					y$1,
@@ -3331,20 +3395,28 @@ const AURAS = [
 		colors: [
 			"#E6FFF4",
 			"#3DF2B0",
-			"#7C5CFF"
+			"#9C7BFF"
 		],
 		still: 700,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], step = Math.floor(t / 180);
+			const s = shape(mask), out = [], fold = wrap((t + print * 60) / 140, s.w + 8) - 4;
 			for (let x = 0; x < s.w; x++) {
-				if (noise$1(x, Math.floor(step / 4), print) < .25) continue;
-				const start = 1 + Math.round((Math.sin(x * .7 + t / 700 + print) + 1) * .8);
-				const len = 2 + Math.round((Math.sin(x * .45 - t / 600 + print * 2) + 1) * 1.6);
-				const glow = start + wrap(Math.floor(t / 150) + x, len + 4);
-				for (let y = start; y < start + len; y++) out.push([
+				const y = 2 + Math.round(Math.sin(x * .55 + t / 420 + print) * 1.4);
+				const drape = 1 + Math.round((Math.sin(x * .9 - t / 300 + print * 2) + 1) * 1.2);
+				const bright = Math.abs(x - fold) < 1.2;
+				out.push([
+					x,
+					y - 1,
+					bright ? 0 : 1
+				], [
 					x,
 					y,
-					y === glow ? 0 : y === start ? 2 : 1
+					bright ? 0 : 1
+				]);
+				for (let j = 1; j <= drape; j++) out.push([
+					x,
+					y + j,
+					2
 				]);
 			}
 			return out;
@@ -3356,19 +3428,23 @@ const AURAS = [
 		colors: [
 			"#E6FFE9",
 			"#3CFF6B",
-			"#0E7A2C"
+			"#159A3C"
 		],
 		still: 500,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let x = 0; x < s.w; x++) {
-				if (noise$1(x, print, 11) < .4) continue;
-				const speed = 70 + Math.floor(noise$1(x, print, 12) * 70), head$1 = wrap(Math.floor((t + noise$1(x, print) * 3e3) / speed), s.h + 8) - 2;
-				for (let j = 0; j < 5; j++) out.push([
-					x,
-					head$1 - j,
-					j === 0 ? 0 : j < 3 ? 1 : 2
-				]);
+				if (noise$1(x, print, 11) < .15) continue;
+				const speed = 40 + Math.floor(noise$1(x, print, 12) * 50), len = 6 + Math.floor(noise$1(x, print, 13) * 4);
+				const head$1 = wrap(Math.floor((t + noise$1(x, print) * 3e3) / speed), s.h + len + 2) - 1;
+				for (let j = 0; j < len; j++) {
+					const glyph$1 = noise$1(x, head$1 - j, Math.floor(t / 160)) > .82;
+					out.push([
+						x,
+						head$1 - j,
+						j === 0 ? 0 : glyph$1 ? 0 : j < len / 2 ? 1 : 2
+					]);
+				}
 			}
 			return out;
 		}
@@ -3383,10 +3459,10 @@ const AURAS = [
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), turn$1 = print % 2 ? -1 : 1, out = [];
+			const s = shape(mask), turn = print % 2 ? -1 : 1, out = [];
 			for (const [x, y, d] of ring(mask, 4)) {
 				const a = Math.atan2(y - s.cy, x - s.cx) / (2 * Math.PI), r = Math.hypot(x - s.cx, y - s.cy);
-				const v = wrap(a * 3 + r * .3 - turn$1 * t / 700 + print * .1, 1);
+				const v = wrap(a * 3 + r * .3 - turn * t / 700 + print * .1, 1);
 				if (v < .24) out.push([
 					x,
 					y,
@@ -3518,121 +3594,126 @@ function auraIntensity(id, finish) {
 }
 const TAU = Math.PI * 2;
 /**
-* A closed loop one pixel wide round the guy, `gx` cells clear of his sides
-* and `gy` of his top and foot: a squarish ellipse (a superellipse, which
-* never cuts his box's corners), in order round it, with no doubled corners.
+* Points round the guy on a squarish ellipse, `gx` cells clear of his sides
+* and `gy` of his top and foot, in order: where a rarer aura's pieces ride.
 */
 function loop(s, gx, gy) {
 	const rx = (s.right - s.left) / 2 + gx, ry = (s.bottom - s.top) / 2 + gy, steps = 720;
 	const pts = [];
 	for (let i = 0; i < steps; i++) {
 		const a = i / steps * TAU, c = Math.cos(a), sn = Math.sin(a);
-		const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** .5), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** .5);
+		const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** .6), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** .6);
 		const last = pts[pts.length - 1];
 		if (!last || last[0] !== x || last[1] !== y) pts.push([x, y]);
 	}
-	while (pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) pts.pop();
-	const out = [];
-	pts.forEach((c, i) => {
-		const p = out[out.length - 1] ?? pts[pts.length - 1], n = pts[(i + 1) % pts.length];
-		const corner = (p[0] === c[0] || p[1] === c[1]) && (n[0] === c[0] || n[1] === c[1]) && p[0] !== n[0] && p[1] !== n[1];
-		if (!corner) out.push(c);
-	});
-	return out;
+	return pts;
+}
+/** A 2x2 orb: a bright corner, two mid, one deep. */
+const orb = (x, y) => [
+	[
+		x,
+		y,
+		0
+	],
+	[
+		x + 1,
+		y,
+		1
+	],
+	[
+		x,
+		y + 1,
+		1
+	],
+	[
+		x + 1,
+		y + 1,
+		2
+	]
+];
+/** A four-point sparkle, two cells each way: a white heart, bright arms, deep tips. */
+const star = (x, y) => [
+	...plus(x, y, 1),
+	[
+		x - 2,
+		y,
+		2
+	],
+	[
+		x + 2,
+		y,
+		2
+	],
+	[
+		x,
+		y - 2,
+		2
+	],
+	[
+		x,
+		y + 2,
+		2
+	]
+];
+/** A twinkle that opens and closes: a dot, a cross, a sparkle, a cross, a dot. */
+function twinkle$1(x, y, f, big) {
+	if (f < .18 || f > .82) return [[
+		x,
+		y,
+		1
+	]];
+	if (big && f > .38 && f < .62) return star(x, y);
+	return plus(x, y, 1);
 }
 /**
-* `count` arcs evenly spaced round a loop, each `len` cells long, travelling
-* one cell every `speed` ms (`dir` 1 or -1): a bright head and a fading tail.
-*/
-function arcs(pts, t, count$1, len, speed, dir, offset) {
-	const n = pts.length, head$1 = Math.floor(t / speed) * dir + offset, out = [];
-	for (let k = 0; k < count$1; k++) for (let j = 0; j < len; j++) {
-		const [x, y] = pts[wrap(Math.round(head$1 + k * n / count$1) - j * dir, n)];
-		out.push([
-			x,
-			y,
-			j < 2 ? 0 : 1
-		]);
-	}
-	return out;
-}
-/**
-* What a rarer aura adds round the guy, level by level, each in the aura's
-* own colours: a twinkling haze (1), clean arcs of light running round a ring
-* (2), a second, wider ring turning the other way and sparks rising off him
-* (3), longer arcs and stars riding the outer ring (4), and for Origin a
-* glowing rim, a lit ring and a crown of rays pulsing over his head (5).
-* `mask` may be wider than the frame, so the rings can spread to the sides.
+* What a rarer aura adds round the guy, in chunky pieces at his own pixel
+* size (no thin lines: a one-pixel line reads as drawn, not as pixel art):
+* twinkles that open into crosses (1), two orbs circling him (2), sparkles
+* opening on the other side (3), more of both and bigger (4, and Origin's
+* 5). Pieces may sit past the
+* frame's sides when `mask` is padded, so a card shows them whole.
 */
 function extras(mask, t, print, level) {
 	if (level <= 0) return [];
 	const s = shape(mask), out = [], phase = noise$1(print, 3);
-	const beat = Math.floor(t / 110);
-	const haze = level === 1 ? .08 : 0;
-	for (const [x, y, d] of ring(mask, 3)) {
-		const n = noise$1(x, y, beat, print, 31);
-		if (d >= 2 && n < haze) out.push([
-			x,
-			y,
-			n < haze / 3 ? 0 : 1
-		]);
+	const gy = Math.min(2, s.top), inner = loop(s, 3, gy), outer = loop(s, 5, gy + 1);
+	const twinkles = [
+		0,
+		2,
+		2,
+		3,
+		4,
+		4
+	][level], life = 1100;
+	for (let i = 0; i < twinkles; i++) {
+		const at = t + i * life / twinkles + print * 29, gen = Math.floor(at / life), f = at % life / life;
+		const [x, y] = outer[Math.floor(noise$1(i, gen, print, 41) * outer.length)];
+		out.push(...twinkle$1(x, y, f, level >= 3));
 	}
-	const gy = Math.min(2, s.top), inner = loop(s, 2, gy), outer = loop(s, 4, gy + 2);
-	if (level >= 2) {
-		const n = inner.length, long = level >= 4 ? .22 : .16;
-		if (level >= 5) for (let i = 0; i < inner.length; i += 2) out.push([
-			inner[i][0],
-			inner[i][1],
-			2
-		]);
-		out.push(...arcs(inner, t, level >= 4 ? 3 : 2, Math.max(3, Math.round(n * long)), 70, 1, phase * n));
+	const orbs = [
+		0,
+		0,
+		2,
+		2,
+		3,
+		3
+	][level];
+	for (let i = 0; i < orbs; i++) {
+		const n = inner.length, [x, y] = inner[wrap(Math.floor(t / 26) + Math.round(i * n / orbs + phase * n), n)];
+		out.push(...orb(x - 1, y - 1));
 	}
-	if (level >= 3) {
-		const n = outer.length;
-		out.push(...arcs(outer, t, 3, Math.max(3, Math.round(n * (level >= 4 ? .14 : .1))), 55, -1, phase * n * 2));
-		const count$1 = [
-			0,
-			0,
-			0,
-			3,
-			4,
-			5
-		][level], life = 1300;
-		for (let i = 0; i < count$1; i++) {
-			const at = t + i * life / count$1 + print * 13, gen = Math.floor(at / life), f = at % life / life;
-			const x = s.left - 2 + Math.floor(noise$1(i, gen, print, 5) * (s.right - s.left + 5));
-			const y = s.bottom - Math.floor(f * (s.bottom - s.top + 5));
-			out.push([
-				x + Math.round(Math.sin(at / 210 + i) * .7),
-				y,
-				f < .55 ? 0 : 1
-			]);
-		}
-	}
-	if (level >= 4) {
-		const stars = level >= 5 ? 3 : 2, n = outer.length;
-		for (let i = 0; i < stars; i++) {
-			const [x, y] = outer[wrap(Math.floor(t / 90) + Math.round(i * n / stars + phase * n), n)];
-			out.push(...plus(x, y, 1));
-		}
-	}
-	if (level >= 5) {
-		const pulse = t / 90 % 6;
-		for (let r = 1; r <= 4; r++) for (const dx of [
-			-3,
-			-2,
-			0,
-			2,
-			3
-		]) {
-			const x = Math.round(s.cx + dx * (1 + r * .25)), y = s.top - r;
-			const lit = Math.abs(r - pulse) < 1.2 || dx === 0 && r <= 2;
-			if (lit && (dx === 0 || r >= 2)) out.push([
-				x,
-				y,
-				Math.abs(r - pulse) < .6 ? 0 : 1
-			]);
-		}
+	const sparks = [
+		0,
+		0,
+		0,
+		2,
+		3,
+		3
+	][level];
+	for (let i = 0; i < sparks; i++) {
+		const n = outer.length, [x, y] = outer[wrap(-Math.floor(t / 34) + Math.round(i * n / sparks + phase * n * 2), n)];
+		const open = wrap(t / 600 + i * .37, 1) < .5;
+		out.push(...open ? star(x, y) : plus(x, y, 1));
 	}
 	return out;
 }
@@ -3869,14 +3950,6 @@ const hue$1 = (h, s = .9, l = .65) => {
 		f(4)
 	];
 };
-/** A colour turned round the wheel by `deg`, keeping how light and how strong it is. */
-function turn(c, deg) {
-	const [r, g, b$1] = c.map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), l = (max + min) / 2, d = max - min;
-	if (d < .04) return c;
-	const s = d / (1 - Math.abs(2 * l - 1));
-	const h = max === r ? 60 * ((g - b$1) / d % 6) : max === g ? 60 * ((b$1 - r) / d + 2) : 60 * ((r - g) / d + 4);
-	return hue$1((h + deg + 720) % 360, Math.min(1, s), l);
-}
 /** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
 function fxColor(color, fx, x, y, t, print = 0) {
 	const c = rgb$3(color), tt = t + print * 37;
@@ -3894,39 +3967,41 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			}
 			return noise(x, y, Math.floor(tt / 140)) > .94 ? "#FFFFFF" : color;
 		}
-		case "pulse": return hex$2(mix$4(c, Math.sin(tt / 260) > 0 ? WHITE$1 : [
-			0,
-			0,
-			0
-		], .4 * Math.abs(Math.sin(tt / 260))));
+		case "pulse": {
+			const b$1 = Math.sin(tt / 260);
+			return hex$2(mix$4(c, b$1 > 0 ? WHITE$1 : [
+				0,
+				0,
+				0
+			], (b$1 > 0 ? .45 : .14) * Math.abs(b$1)));
+		}
 		case "holo": return hex$2(mix$4(c, hue$1(((x * 22 + y * 14 + tt / 5) % 360 + 360) % 360), .45));
 		case "chroma": {
-			const turned = turn(c, tt / 9 + x * 6);
-			return turned === c ? hex$2(mix$4(c, hue$1(((tt / 9 + x * 6) % 360 + 360) % 360, .9, .6), .45)) : hex$2(turned);
+			const h = ((tt / 7 + (x + y) * 14) % 360 + 360) % 360, l = (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
+			return hex$2(mix$4(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
 		}
 		case "starlight": {
-			const n = noise(x, y, Math.floor(tt / 220), print);
 			const night = mix$4(mix$4(c, [
-				26,
+				24,
 				18,
-				70
-			], .62), [
-				90,
-				60,
-				200
-			], .12 * (1 + Math.sin(tt / 700 + x * .6 + y)));
-			return n > .92 ? "#FFFFFF" : n > .84 ? hex$2(mix$4(night, [
+				66
+			], .6), [
+				110,
+				70,
+				220
+			], .16 * (1 + Math.sin(tt / 700 + x * .5 + y * .3)));
+			return noise(x, y, print) > .93 ? hex$2(mix$4(night, [
+				210,
 				200,
-				180,
 				255
-			], .7)) : hex$2(night);
+			], .55)) : hex$2(night);
 		}
 		case "embers": return hex$2(mix$4(c, [
 			255,
-			140,
-			60
-		], .12 + .1 * Math.sin(tt / 180 + x)));
-		case "neon": return hex$2(mix$4(c, hue$1((tt / 12 % 360 + 360) % 360, 1, .62), .18));
+			120,
+			40
+		], .16 + .14 * Math.max(0, Math.sin(tt / 140 + x * 1.3 - y * .8))));
+		case "neon": return hex$2(mix$4(c, hue$1((tt / 14 % 360 + 360) % 360, 1, .62), .2 + .08 * Math.sin(tt / 380)));
 		case "bubbles": return hex$2(mix$4(c, [
 			190,
 			235,
@@ -3948,22 +4023,25 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			], .3 + .5 * reach));
 		}
 		case "static": {
-			const burst = noise(Math.floor(tt / 90), print, 7) > .7;
-			if (!burst) return y % 2 ? hex$2(mix$4(c, [
+			const roll$1 = tt / 70 % 24 - 4, burst = noise(Math.floor(tt / 90), print, 7) > .62;
+			if (burst) {
+				const r = noise(x, y, Math.floor(tt / 60));
+				return r > .8 ? "#FFFFFF" : hex$2(mix$4(c, r > .45 ? [
+					255,
+					60,
+					90
+				] : [
+					60,
+					200,
+					255
+				], .55));
+			}
+			if (Math.abs(y - roll$1) < 1) return hex$2(mix$4(c, WHITE$1, .45));
+			return y % 2 ? hex$2(mix$4(c, [
 				0,
 				0,
 				0
-			], .12)) : color;
-			const r = noise(x, y, Math.floor(tt / 60));
-			return r > .85 ? "#FFFFFF" : hex$2(mix$4(c, r > .5 ? [
-				255,
-				60,
-				90
-			] : [
-				60,
-				200,
-				255
-			], .45));
+			], .16)) : color;
 		}
 		case "lava": {
 			const flow = Math.sin(y * 1.1 + tt / 220 + Math.sin(x * .9 + tt / 700) * 2);
@@ -3987,12 +4065,18 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			], .6)) : hex$2(crust);
 		}
 		case "electric": {
-			const flash = noise(Math.floor(tt / 120), print, 11) > .82;
-			return flash ? hex$2(mix$4(c, WHITE$1, .65)) : hex$2(mix$4(c, [
-				120,
-				190,
+			const flash = noise(Math.floor(tt / 120), print, 11) > .8;
+			if (flash) return hex$2(mix$4(c, WHITE$1, .7));
+			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / 90)) > .93;
+			return vein ? hex$2(mix$4(c, [
+				200,
+				240,
 				255
-			], .16));
+			], .75)) : hex$2(mix$4(c, [
+				110,
+				180,
+				255
+			], .22));
 		}
 	}
 }
@@ -4020,28 +4104,332 @@ const OWN_EDGE = [
 	"neon",
 	"bubbles",
 	"hearts",
-	"embers"
+	"embers",
+	"electric",
+	"rime",
+	"starlight"
 ];
+/** The aura's slot in a frame (FRAME_SLOTS order, from 1). */
+const AURA_SLOT = 5;
+/** A cross: a centre and its four neighbours. */
+const cross = (a, b$1) => [
+	[
+		0,
+		0,
+		a
+	],
+	[
+		1,
+		0,
+		b$1
+	],
+	[
+		-1,
+		0,
+		b$1
+	],
+	[
+		0,
+		1,
+		b$1
+	],
+	[
+		0,
+		-1,
+		b$1
+	]
+];
+/**
+* What an effect looks like round an aura's wearer, in chunky pieces at his
+* pixel size, `f` (0 to 1) through each piece's life: what makes an aura with
+* an effect look special at a glance, not only recoloured.
+*/
+function signature(fx, f, t, i) {
+	const rainbow = (o) => hex$2(hue$1(((t / 8 + i * 90 + o) % 360 + 360) % 360, 1, .62));
+	switch (fx) {
+		case "shimmer": return {
+			cells: f < .3 || f > .7 ? [[
+				0,
+				0,
+				"#FFFFFF"
+			]] : cross("#FFFFFF", "#CDEBFF"),
+			rise: 0
+		};
+		case "pulse": {
+			const on$1 = Math.sin(t / 260) > 0;
+			return {
+				cells: [
+					[
+						0,
+						0,
+						on$1 ? "#FFFFFF" : "#C9B8FF"
+					],
+					[
+						1,
+						0,
+						on$1 ? "#C9B8FF" : "#8E72FF"
+					],
+					[
+						0,
+						1,
+						on$1 ? "#C9B8FF" : "#8E72FF"
+					],
+					[
+						1,
+						1,
+						"#8E72FF"
+					]
+				],
+				rise: 0
+			};
+		}
+		case "holo":
+		case "chroma": return {
+			cells: cross(rainbow(0), rainbow(60)),
+			rise: 0
+		};
+		case "neon": return {
+			cells: cross("#FFFFFF", rainbow(0)),
+			rise: 0
+		};
+		case "bubbles": return {
+			cells: [
+				[
+					0,
+					0,
+					"#FFFFFF"
+				],
+				[
+					1,
+					0,
+					"#9ED8FF"
+				],
+				[
+					0,
+					1,
+					"#9ED8FF"
+				],
+				[
+					1,
+					1,
+					"#5FB8F0"
+				]
+			],
+			rise: 6
+		};
+		case "hearts": return {
+			cells: [
+				[
+					-1,
+					-1,
+					"#FF8FBE"
+				],
+				[
+					1,
+					-1,
+					"#FF8FBE"
+				],
+				[
+					-1,
+					0,
+					"#FF5C9A"
+				],
+				[
+					0,
+					0,
+					"#FF5C9A"
+				],
+				[
+					1,
+					0,
+					"#FF5C9A"
+				],
+				[
+					0,
+					1,
+					"#E0457F"
+				]
+			],
+			rise: 5
+		};
+		case "rime": return {
+			cells: [
+				...cross("#FFFFFF", "#BFE6FF"),
+				[
+					-1,
+					-1,
+					"#E6F6FF"
+				],
+				[
+					1,
+					1,
+					"#E6F6FF"
+				],
+				[
+					1,
+					-1,
+					"#E6F6FF"
+				],
+				[
+					-1,
+					1,
+					"#E6F6FF"
+				]
+			].filter((_, k) => f > .3 && f < .7 || k < 5),
+			rise: -3
+		};
+		case "embers": return {
+			cells: [[
+				0,
+				0,
+				f < .5 ? "#FFF2A8" : "#FF7A1A"
+			], [
+				0,
+				1,
+				f < .5 ? "#FFC53D" : "#C2412E"
+			]],
+			rise: 7
+		};
+		case "static": return {
+			cells: f % .25 < .12 ? [
+				[
+					0,
+					0,
+					"#FF3D6E"
+				],
+				[
+					1,
+					0,
+					"#FF3D6E"
+				],
+				[
+					2,
+					0,
+					"#3DD8FF"
+				]
+			] : [[
+				0,
+				0,
+				"#3DD8FF"
+			], [
+				-1,
+				0,
+				"#FFFFFF"
+			]],
+			rise: 0
+		};
+		case "lava": return {
+			cells: [
+				[
+					0,
+					0,
+					"#FFE27A"
+				],
+				[
+					1,
+					0,
+					"#FF8A2B"
+				],
+				[
+					0,
+					1,
+					"#FF8A2B"
+				],
+				[
+					1,
+					1,
+					"#C2412E"
+				]
+			],
+			rise: 4
+		};
+		case "starlight": return {
+			cells: f > .35 && f < .65 ? [
+				...cross("#FFFFFF", "#C9BEFF"),
+				[
+					2,
+					0,
+					"#8E72FF"
+				],
+				[
+					-2,
+					0,
+					"#8E72FF"
+				],
+				[
+					0,
+					2,
+					"#8E72FF"
+				],
+				[
+					0,
+					-2,
+					"#8E72FF"
+				]
+			] : cross("#FFFFFF", "#8E72FF"),
+			rise: 0
+		};
+		case "electric": return {
+			cells: f % .3 < .15 ? [
+				[
+					0,
+					0,
+					"#FFFFFF"
+				],
+				[
+					1,
+					1,
+					"#7FE8FF"
+				],
+				[
+					0,
+					2,
+					"#FFFFFF"
+				],
+				[
+					1,
+					3,
+					"#7FE8FF"
+				]
+			] : [],
+			rise: 0
+		};
+	}
+}
 /**
 * Applies the effects of the copies a frame shows: `slots` says which slot
 * each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
-* `FRAME_SLOTS`), `copies` the copy in each slot. Embers also send sparks up
-* into the empty pixels above their copy.
+* `FRAME_SLOTS`), `copies` the copy in each slot. Some effects also draw in
+* the empty pixels round their copy: bubbles, hearts and embers rise off it,
+* a neon tube and electric bolts run round it.
+*
+* On an aura the effect is an accent, not a flood: the aura's own pieces take
+* it, nothing is drawn round its scattered cells, and its signature (hearts,
+* bubbles, sparks, a strike) rises off it more sparingly than off an item.
 */
 function applyFx(colors, slots, copies, t) {
 	if (!copies.some((o) => o?.fx)) return colors;
 	const out = colors.map((row) => [...row]);
+	const H = out.length, W = out[0].length;
+	const empty$1 = (x, y) => y >= 0 && y < H && x >= 0 && x < W && !out[y][x];
+	const put = (x, y, c) => {
+		if (empty$1(x, y)) out[y][x] = c;
+	};
 	const size = copies.map((_, k) => slots.reduce((n, row) => n + row.filter((s) => s === k + 1).length, 0));
-	const small = (k) => size[k] > 0 && size[k] < SMALL_COPY;
+	const small = (k) => k + 1 !== AURA_SLOT && size[k] > 0 && size[k] < SMALL_COPY;
 	slots.forEach((row, y) => row.forEach((s, x) => {
 		const o = copies[s - 1];
 		if (!s || !o?.fx || !colors[y][x]) return;
 		const fx = fxColor(colors[y][x], o.fx, x, y, t, o.print);
+		const a = rgb$3(colors[y][x]), b$1 = rgb$3(fx);
+		if (s === AURA_SLOT) {
+			out[y][x] = fx;
+			return;
+		}
 		if (!small(s - 1)) {
 			out[y][x] = fx;
 			return;
 		}
-		const a = rgb$3(colors[y][x]), b$1 = rgb$3(fx);
 		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$4(a, b$1, .42) : mix$4(a, b$1, 1.5));
 	}));
 	copies.forEach((o, k) => {
@@ -4054,12 +4442,22 @@ function applyFx(colors, slots, copies, t) {
 			out[y][x] = hex$2(mix$4(rgb$3(out[y + from[1]][x + from[0]]), WHITE$1, .15));
 		}));
 	});
-	copies.forEach((o, k) => {
-		if (o?.fx !== "pulse") return;
-		const breath = Math.sin((t + o.print * 37) / 260);
-		if (breath < .2) return;
+	const cellsOf = (k) => {
+		const c = [];
 		slots.forEach((row, y) => row.forEach((s, x) => {
-			if (s !== k + 1 || !colors[y][x]) return;
+			if (s === k + 1 && colors[y][x]) c.push([x, y]);
+		}));
+		return c;
+	};
+	const dark = (c) => !!c && rgb$3(c).reduce((a, v) => a + v, 0) < 240;
+	const edgeOf = (k) => {
+		const outside = slots.map((row) => row.map(() => false)), queue = [];
+		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x === 0 || y === 0 || x === W - 1 || y === H - 1) && slots[y][x] !== k + 1) {
+			outside[y][x] = true;
+			queue.push([x, y]);
+		}
+		while (queue.length) {
+			const [x, y] = queue.pop();
 			for (const [dx, dy] of [
 				[1, 0],
 				[-1, 0],
@@ -4067,16 +4465,15 @@ function applyFx(colors, slots, copies, t) {
 				[0, -1]
 			]) {
 				const nx = x + dx, ny = y + dy;
-				if (ny >= 0 && ny < out.length && nx >= 0 && nx < out[0].length && !out[ny][nx]) out[ny][nx] = hex$2(mix$4(rgb$3(colors[y][x]), WHITE$1, .25 + .3 * breath));
+				if (nx < 0 || ny < 0 || nx >= W || ny >= H || outside[ny][nx] || slots[ny][nx] === k + 1) continue;
+				if (out[ny][nx] && slots[ny][nx] && !dark(colors[ny][nx])) continue;
+				outside[ny][nx] = true;
+				queue.push([nx, ny]);
 			}
-		}));
-	});
-	const dark = (c) => !!c && rgb$3(c).reduce((a, v) => a + v, 0) < 240;
-	const edgeOf = (k) => {
+		}
 		const cells = [];
 		slots.forEach((row, y) => row.forEach((s, x) => {
-			if (s === k + 1 || s && s !== k + 1) return;
-			if (out[y][x] && !dark(colors[y][x])) return;
+			if (s || !outside[y][x]) return;
 			if ([
 				[1, 0],
 				[-1, 0],
@@ -4086,32 +4483,115 @@ function applyFx(colors, slots, copies, t) {
 		}));
 		return cells;
 	};
-	const risers = (o, k, spacing, draw) => {
+	const depth = (k) => {
+		const d = new Map(), own$1 = cellsOf(k), mine = new Set(own$1.map(([x, y]) => y * W + x));
+		for (const [x, y] of own$1) {
+			let best = 9;
+			for (let r = 1; r < 9 && best === 9; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === r && !mine.has((y + dy) * W + x + dx)) best = Math.min(best, r);
+			d.set(y * W + x, best);
+		}
+		return d;
+	};
+	const risers = (o, k, spacing, rise, share$1, draw) => {
 		const tops = new Map();
 		slots.forEach((row, y) => row.forEach((s, x) => {
-			if (s === k + 1 && !tops.has(x)) tops.set(x, y);
+			if (s === k + 1 && colors[y][x] && !tops.has(x)) tops.set(x, y);
 		}));
 		for (const [x, top] of tops) {
-			if (noise(x, o.print, 5) > .35) continue;
-			const step = Math.floor((t + noise(x, o.print) * 2400) / spacing) % 9;
-			if (step < 6) draw(x + (step % 4 === 3 ? 1 : 0), top - 1 - step, step);
+			if (noise(x, o.print, 5) > share$1) continue;
+			const step = Math.floor((t + noise(x, o.print) * 4e3) / spacing) % (rise + 3);
+			if (step < rise) draw(x + (Math.floor(step / 2) % 2 ? 1 : 0), top - 1 - step, step);
 		}
 	};
 	copies.forEach((o, k) => {
 		if (!o?.fx) return;
-		const tt = t + o.print * 37;
-		if (o.fx === "neon") {
-			if (noise(Math.floor(tt / 130), o.print, 3) > .93) return;
-			for (const [x, y] of edgeOf(k)) out[y][x] = hex$2(hue$1(((tt / 12 + (x + y) * 8) % 360 + 360) % 360, 1, .6));
+		const tt = t + o.print * 37, aura = k + 1 === AURA_SLOT;
+		if (o.fx === "pulse" && !aura) {
+			const breath = Math.sin(tt / 260);
+			if (breath > .2) for (const [x, y] of cellsOf(k)) for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) put(x + dx, y + dy, hex$2(mix$4(rgb$3(colors[y][x]), WHITE$1, .25 + .3 * breath)));
 		}
-		if (o.fx === "electric" && noise(Math.floor(tt / 90), o.print, 13) > .6) for (const [x, y] of edgeOf(k)) {
-			const n = noise(x, y, Math.floor(tt / 90));
-			if (n > .72) out[y][x] = n > .86 ? "#FFFFFF" : "#7FE8FF";
+		if (o.fx === "neon" && !aura) {
+			const glow = .55 + .1 * Math.sin(tt / 380), rim$2 = edgeOf(k);
+			for (const [x, y] of rim$2) out[y][x] = hex$2(hue$1(((tt / 10 + (x + y) * 10) % 360 + 360) % 360, 1, glow));
+			for (const [x, y] of rim$2) for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) put(x + dx, y + dy, hex$2(hue$1(((tt / 10 + (x + y) * 10) % 360 + 360) % 360, .9, .32)));
 		}
-		if (o.fx === "bubbles") risers(o, k, 160, (x, y, step) => {
-			if (y >= 0 && y < out.length && x < out[0].length && !out[y][x]) out[y][x] = step > 3 ? "#E8F8FF" : "#9ED8FF";
+		if (o.fx === "rime") {
+			const reach = 1 + 1.6 * (.5 + .5 * Math.sin(tt / 900));
+			for (const [key, d] of depth(k)) {
+				const x = key % W, y = Math.floor(key / W);
+				if (d > reach) continue;
+				const glint = noise(x, y, Math.floor(tt / 300), o.print) > .82;
+				out[y][x] = glint ? "#FFFFFF" : hex$2(mix$4(rgb$3(out[y][x]), [
+					214,
+					240,
+					255
+				], aura ? .5 : d <= 1 ? .85 : .6));
+			}
+			if (!aura) {
+				for (const [x, y] of edgeOf(k)) if (noise(x, y, Math.floor(tt / 300), 3) > .7 && out[y][x] && dark(colors[y][x] ?? "#000000")) out[y][x] = "#BFE6FF";
+			}
+		}
+		if (o.fx === "starlight") {
+			const deep = depth(k), inner = [...deep].filter(([, d]) => d >= 2).map(([key]) => key);
+			for (let i = 0; i < 3 && inner.length; i++) {
+				const life = 1e3, at = tt + i * 333, gen = Math.floor(at / life), f = at % life / life;
+				const key = inner[Math.floor(noise(i, gen, o.print, 9) * inner.length)], x = key % W, y = Math.floor(key / W);
+				if (f > .8) continue;
+				out[y][x] = "#FFFFFF";
+				if (f > .25 && f < .6) {
+					for (const [dx, dy] of [
+						[1, 0],
+						[-1, 0],
+						[0, 1],
+						[0, -1]
+					]) if (deep.has((y + dy) * W + x + dx)) out[y + dy][x + dx] = "#C9BEFF";
+				}
+			}
+			const shot = tt % 2600 / 2600;
+			if (shot < .25) for (const [key] of deep) {
+				const x = key % W, y = Math.floor(key / W);
+				const d = x - y - (shot * 40 - 12);
+				if (d >= 0 && d < 1) out[y][x] = "#FFFFFF";
+				else if (d >= 1 && d < 2.5) out[y][x] = "#B9A8FF";
+			}
+		}
+		if (o.fx === "electric") {
+			const beat = Math.floor(tt / 90);
+			if (noise(beat, o.print, 13) > .45) {
+				const rim$2 = edgeOf(k);
+				for (let b$1 = 0; b$1 < (aura ? 1 : 2) && rim$2.length; b$1++) {
+					let [x, y] = rim$2[Math.floor(noise(beat, b$1, o.print) * rim$2.length)];
+					const sx = noise(beat, b$1, 2) > .5 ? 1 : -1;
+					for (let j = 0; j < 4; j++) {
+						if (j && !empty$1(x, y)) break;
+						if (j) out[y][x] = j < 2 ? "#FFFFFF" : "#7FE8FF";
+						x += j % 2 ? sx : 0;
+						y -= j % 2 ? 0 : 1;
+					}
+				}
+			}
+		}
+		if (o.fx === "bubbles") risers(o, k, aura ? 200 : 150, 6, aura ? .3 : .55, (x, y, step) => {
+			if (step >= 5) {
+				put(x, y, "#E8F8FF");
+				return;
+			}
+			put(x, y, "#FFFFFF");
+			put(x + 1, y, "#9ED8FF");
+			put(x, y + 1, "#9ED8FF");
+			put(x + 1, y + 1, "#5FB8F0");
 		});
-		if (o.fx === "hearts") risers(o, k, 220, (x, y) => {
+		if (o.fx === "hearts") risers(o, k, aura ? 260 : 210, 6, aura ? .25 : .45, (x, y) => {
 			for (const [dx, dy, c] of [
 				[
 					-1,
@@ -4121,54 +4601,71 @@ function applyFx(colors, slots, copies, t) {
 				[
 					1,
 					-1,
-					"#FF6FA8"
+					"#FF8FBE"
 				],
 				[
 					-1,
 					0,
-					"#FF6FA8"
+					"#FF5C9A"
 				],
 				[
 					0,
 					0,
-					"#FF6FA8"
+					"#FF5C9A"
 				],
 				[
 					1,
 					0,
-					"#E0457F"
+					"#FF5C9A"
 				],
 				[
 					0,
 					1,
 					"#E0457F"
 				]
-			]) {
-				const px = x + dx, py = y + dy;
-				if (py >= 0 && py < out.length && px >= 0 && px < out[0].length && !out[py][px]) out[py][px] = c;
-			}
+			]) put(x + dx, y + dy, c);
 		});
-		if (o.fx === "static" && noise(Math.floor(tt / 90), o.print, 7) > .7) {
-			const yy = Math.floor(noise(Math.floor(tt / 90), o.print, 9) * out.length);
-			const row = out[yy], dir = noise(Math.floor(tt / 90), 1) > .5 ? 1 : -1, copy = [...row];
-			slots[yy].forEach((s, x) => {
-				if (s === k + 1 && copy[x]) {
-					const nx = x + dir;
-					if (nx >= 0 && nx < row.length) row[nx] = copy[x];
+		if (o.fx === "embers") risers(o, k, aura ? 120 : 100, 6, aura ? .35 : .6, (x, y, step) => {
+			const c = step < 2 ? ["#FFF2A8", "#FFC53D"] : step < 4 ? ["#FFC53D", "#FF7A1A"] : ["#FF7A1A", "#C2412E"];
+			put(x, y, c[0]);
+			put(x, y + 1, c[1]);
+		});
+		if (aura) {
+			const spots = [];
+			for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+				if (out[y][x]) continue;
+				let near = 9;
+				for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+					const c = slots[y + dy]?.[x + dx];
+					if (colors[y + dy]?.[x + dx] && c !== AURA_SLOT) near = Math.min(near, Math.max(Math.abs(dx), Math.abs(dy)));
 				}
-			});
+				if (near >= 2 && near <= 3) spots.push([x, y]);
+			}
+			const life = 1200;
+			for (let i = 0; i < 3 && spots.length; i++) {
+				const at = tt + i * life / 3, gen = Math.floor(at / life), f = at % life / life;
+				if (f > .85) continue;
+				const [x, y] = spots[Math.floor(noise(i, gen, o.print, 51) * spots.length)], sg = signature(o.fx, f, tt, i);
+				const dy = -Math.round(f * sg.rise);
+				for (const [cx, cy, c] of sg.cells) put(x + cx, y + cy + dy, c);
+			}
 		}
-	});
-	copies.forEach((o, k) => {
-		if (o?.fx !== "embers") return;
-		const tops = new Map();
-		slots.forEach((row, y) => row.forEach((s, x) => {
-			if (s === k + 1 && !tops.has(x)) tops.set(x, y);
-		}));
-		for (const [x, top] of tops) {
-			if (noise(x, o.print, 3) > .45) continue;
-			const rise = 5, step = Math.floor((t + noise(x, o.print) * 900) / 110) % (rise + 3), y = top - 1 - step;
-			if (step < rise && y >= 0 && !out[y][x]) out[y][x] = step < 2 ? "#FFE27A" : step < 4 ? "#FF8A2B" : "#C2412E";
+		if (o.fx === "static" && noise(Math.floor(tt / 90), o.print, 7) > .6) {
+			const yy = Math.floor(noise(Math.floor(tt / 90), o.print, 9) * H), dir = noise(Math.floor(tt / 90), 1) > .5 ? 1 : -1;
+			for (const r of [yy, yy + 1]) {
+				if (r >= H) continue;
+				const row = out[r], copy = [...row];
+				slots[r].forEach((s, x) => {
+					if (s === k + 1 && copy[x]) {
+						const nx = x + dir;
+						if (nx >= 0 && nx < W) row[nx] = copy[x];
+					}
+				});
+			}
+			if (!aura) for (const [x, y] of cellsOf(k)) {
+				if (empty$1(x - 1, y)) out[y][x - 1] = "#FF3D6E";
+				if (empty$1(x + 1, y)) out[y][x + 1] = "#3DD8FF";
+			}
 		}
 	});
 	return out;
@@ -8967,7 +9464,7 @@ function shadePalette(palette$1, shade) {
 * gold trim. Derived again, so the face and outline read as well as ever.
 */
 function luckyPalette(palette$1) {
-	const turn$1 = (hex$3) => {
+	const turn = (hex$3) => {
 		const [h, s, l] = toHsl(hex$3);
 		let hue$2 = (h + 150) % 360;
 		const dark = l < .45;
@@ -8979,7 +9476,7 @@ function luckyPalette(palette$1) {
 		]);
 	};
 	const c = palette$1.colors;
-	return derive(`${palette$1.name} Lucky`, turn$1(c[1]), turn$1(c[10]), "#FFE9A8");
+	return derive(`${palette$1.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
 }
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
 function paletteOf(config) {
@@ -13901,7 +14398,7 @@ function shine(c, o, gx, gy, cx, cy, t) {
 	if (f < 0) return c;
 	const d = (cx + cy) / ZOOM, h = hash$1(gx, gy, o.print);
 	const band = 1 - Math.min(1, Math.max(0, Math.abs(((d - t * 10 + o.print) % 58 + 58) % 58 - 29) - .5));
-	const twinkle$1 = (h * 13 + t * .37) % 1 > .965 ? 1 : 0;
+	const twinkle$2 = (h * 13 + t * .37) % 1 > .965 ? 1 : 0;
 	const coat = Math.min(1, Math.max(0, 1 - o.scuff * 1.4)) * (h >= o.scuff * .55 ? 1 : 0);
 	const add = (v, k = 1) => [
 		c[0] + v * 255 * k,
@@ -13923,14 +14420,14 @@ function shine(c, o, gx, gy, cx, cy, t) {
 				tint[2] + band * 127 * coat
 			];
 		}
-		case 2: return add(twinkle$1 * .55 * coat + band * .25 * coat);
+		case 2: return add(twinkle$2 * .55 * coat + band * .25 * coat);
 		case 3: {
 			const s = hueShift(c, (t * .9 + d * .22) * coat);
 			return mix(s, [
 				255,
 				255,
 				255
-			], twinkle$1 * coat);
+			], twinkle$2 * coat);
 		}
 		case 4: {
 			const rain = hsv(((d * .07 - t * .3 + o.print * .013) % 1 + 1) % 1, .65, 1);
@@ -13955,9 +14452,9 @@ function shine(c, o, gx, gy, cx, cy, t) {
 			];
 		}
 		default: return [
-			c[0] + band * .7 * coat * 255 + twinkle$1 * .6 * coat * 255,
-			c[1] + band * .7 * coat * 255 + twinkle$1 * .54 * coat * 255,
-			c[2] + band * .7 * coat * 255 + twinkle$1 * .3 * coat * 255
+			c[0] + band * .7 * coat * 255 + twinkle$2 * .6 * coat * 255,
+			c[1] + band * .7 * coat * 255 + twinkle$2 * .54 * coat * 255,
+			c[2] + band * .7 * coat * 255 + twinkle$2 * .3 * coat * 255
 		];
 	}
 }

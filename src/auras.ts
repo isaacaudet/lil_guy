@@ -212,21 +212,41 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.galaxy', name: 'Galaxy', colors: ['#FFFFFF', '#7C5CFF', '#2A1D5C'], still: 600,
+    id: 'aura.galaxy', name: 'Galaxy', colors: ['#FFFFFF', '#A88BFF', '#5B3FC8'], still: 600,
     cells: (mask, t, print) => {
-      const step = Math.floor(t / 200);
-      return ring(mask, 2).map(([x, y, d]): AuraCell => [x, y, noise(x, y, step, print) > 0.9 ? 0 : d === 1 ? 1 : 2]);
+      // Clouds of nebula, each a soft clump of violet with a lit core, wheel
+      // slowly round him two cells out, and stars twinkle open between them.
+      const s = shape(mask), out: AuraCell[] = [], turn = print % 2 ? -1 : 1;
+      const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x, y]) => [x, y, Math.atan2(y - s.cy, x - s.cx)] as const).sort((a, b) => a[2] - b[2]);
+      const n = track.length;
+      for (let i = 0; i < 3 && n; i++) {
+        const [x, y] = track[wrap(turn * Math.floor(t / 120) + Math.round((i * n) / 3) + print * 5, n)];
+        for (const [dx, dy, k] of [[0, 0, 1], [1, 0, 2], [0, 1, 2], [-1, 0, 2], [0, -1, 2], [1, 1, 2]] as const) out.push([x + dx, y + dy, k]);
+      }
+      const far = ring(mask, 4).filter(([, , d]) => d >= 3);
+      for (let i = 0; i < 4; i++) {
+        const life = 900, at = t + i * (life / 4) + print * 31, gen = Math.floor(at / life), f = (at % life) / life;
+        const [x, y] = far[Math.floor(noise(i, gen, print, 23) * far.length)] ?? [0, 0];
+        if (f < 0.75) out.push(...(f > 0.2 && f < 0.55 ? plus(x, y, 1) : [[x, y, 0] as AuraCell]));
+      }
+      return out;
     },
   },
   {
-    id: 'aura.rainbow', name: 'Rainbow', colors: ['#FF6B78', '#FFB347', '#FFE27A', '#7DD87A', '#5FB4FF', '#B98CFF'], still: 0,
+    id: 'aura.rainbow', name: 'Rainbow', colors: ['#FF6B78', '#FFB347', '#FFE27A', '#7DD87A', '#5FB4FF', '#B98CFF', '#FFFFFF'], still: 0,
     cells: (mask, t, print) => {
-      // An arch from shoulder to shoulder over his head, three bands at a time, the colours running round it.
-      const s = shape(mask), cx = s.w / 2 - 0.5, cy = s.cy + 2, top = Math.max(0, s.top - 4), shift = Math.floor(t / 200) + print, out: AuraCell[] = [];
+      // An arch from shoulder to shoulder over his head in six clean bands, a
+      // glint running along it, and a puff of cloud at each foot.
+      const s = shape(mask), cx = s.w / 2 - 0.5, cy = s.cy + 2, top = Math.max(0, s.top - 4), out: AuraCell[] = [];
+      const glint = wrap(Math.floor((t + print * 40) / 70), 40) - 6;
       for (let y = top; y < cy; y++) for (let x = 0; x < s.w; x++) {
         const d = Math.hypot((x - cx) / (s.w / 2), (y - cy) / (cy - top));
-        if (d >= 0.74 && d <= 1) out.push([x, y, wrap(Math.floor((1 - d) / 0.087) + shift, 6)]);
+        if (d < 0.74 || d > 1) continue;
+        const band = Math.min(5, Math.floor((1 - d) / 0.0435));
+        const along = Math.round(Math.atan2(cy - y, x - cx) / Math.PI * 30);
+        out.push([x, y, Math.abs(along - glint) <= 1 && band % 2 === 0 ? 6 : band]);
       }
+      for (const fx of [0, s.w - 3]) for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [2, 1]]) out.push([fx + dx, cy - 1 + dy, 6]);
       return out;
     },
   },
@@ -263,15 +283,17 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.neon', name: 'Neon', colors: ['#FFFFFF', '#FF4FD8', '#7A2C9E'], still: 300,
+    id: 'aura.neon', name: 'Neon', colors: ['#FFFFFF', '#FF4FD8', '#B23CE0'], still: 300,
     cells: (mask, t, print) => {
-      // A neon tube a pixel off his outline: a hot spot runs round it, a few
-      // segments buzz out, and now and then the whole sign stutters.
-      const s = shape(mask), step = Math.floor((t + print * 17) / 90);
+      // A neon tube a pixel off his outline, always lit: it breathes between
+      // pink and violet, and a white-hot run of light travels round it.
+      const s = shape(mask);
       const tube = ring(mask, 1).map(([x, y]) => [x, y, Math.atan2(y - s.cy, x - s.cx)] as const).sort((a, b) => a[2] - b[2]);
-      if (noise(Math.floor(step / 3), print, 5) > 0.9) return tube.map(([x, y]): AuraCell => [x, y, 2]);
-      const hot = wrap(step, tube.length);
-      return tube.filter((_, i) => noise(Math.floor(i / 3), step, print) > 0.06).map(([x, y], i): AuraCell => [x, y, Math.abs(i - hot) <= 1 ? 0 : 1]);
+      const n = tube.length, hot = wrap(Math.floor((t + print * 17) / 60), n), breath = Math.sin((t + print * 11) / 420) > 0;
+      return tube.map(([x, y], i): AuraCell => {
+        const d = Math.min(wrap(i - hot, n), wrap(hot - i, n));
+        return [x, y, d <= 1 ? 0 : breath ? 1 : 2];
+      });
     },
   },
   {
@@ -322,30 +344,35 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.aurora', name: 'Aurora', colors: ['#E6FFF4', '#3DF2B0', '#7C5CFF'], still: 700,
+    id: 'aura.aurora', name: 'Aurora', colors: ['#E6FFF4', '#3DF2B0', '#9C7BFF'], still: 700,
     cells: (mask, t, print) => {
-      // Northern lights hang behind him from the top of the frame: streaks of
-      // green over violet that ripple, lengthen and fade, a glow running down them.
-      const s = shape(mask), out: AuraCell[] = [], step = Math.floor(t / 180);
+      // A ribbon of northern light across the top of the frame, rippling: green
+      // on top, a violet drape under it, and a bright fold travelling along.
+      const s = shape(mask), out: AuraCell[] = [], fold = wrap((t + print * 60) / 140, s.w + 8) - 4;
       for (let x = 0; x < s.w; x++) {
-        if (noise(x, Math.floor(step / 4), print) < 0.25) continue;
-        const start = 1 + Math.round((Math.sin(x * 0.7 + t / 700 + print) + 1) * 0.8);
-        const len = 2 + Math.round((Math.sin(x * 0.45 - t / 600 + print * 2) + 1) * 1.6);
-        const glow = start + wrap(Math.floor(t / 150) + x, len + 4);
-        for (let y = start; y < start + len; y++) out.push([x, y, y === glow ? 0 : y === start ? 2 : 1]);
+        const y = 2 + Math.round(Math.sin(x * 0.55 + t / 420 + print) * 1.4);
+        const drape = 1 + Math.round((Math.sin(x * 0.9 - t / 300 + print * 2) + 1) * 1.2);
+        const bright = Math.abs(x - fold) < 1.2;
+        out.push([x, y - 1, bright ? 0 : 1], [x, y, bright ? 0 : 1]);
+        for (let j = 1; j <= drape; j++) out.push([x, y + j, 2]);
       }
       return out;
     },
   },
   {
-    id: 'aura.datarain', name: 'Data rain', colors: ['#E6FFE9', '#3CFF6B', '#0E7A2C'], still: 500,
+    id: 'aura.datarain', name: 'Data rain', colors: ['#E6FFE9', '#3CFF6B', '#159A3C'], still: 500,
     cells: (mask, t, print) => {
-      // Green code streams down behind him, each column at its own speed, a bright glyph at its head.
+      // Green code pours down behind him in nearly every column, each at its
+      // own speed, long trails under a white glyph at the head that flickers.
       const s = shape(mask), out: AuraCell[] = [];
       for (let x = 0; x < s.w; x++) {
-        if (noise(x, print, 11) < 0.4) continue;
-        const speed = 70 + Math.floor(noise(x, print, 12) * 70), head = wrap(Math.floor((t + noise(x, print) * 3000) / speed), s.h + 8) - 2;
-        for (let j = 0; j < 5; j++) out.push([x, head - j, j === 0 ? 0 : j < 3 ? 1 : 2]);
+        if (noise(x, print, 11) < 0.15) continue;
+        const speed = 40 + Math.floor(noise(x, print, 12) * 50), len = 6 + Math.floor(noise(x, print, 13) * 4);
+        const head = wrap(Math.floor((t + noise(x, print) * 3000) / speed), s.h + len + 2) - 1;
+        for (let j = 0; j < len; j++) {
+          const glyph = noise(x, head - j, Math.floor(t / 160)) > 0.82;
+          out.push([x, head - j, j === 0 ? 0 : glyph ? 0 : j < len / 2 ? 1 : 2]);
+        }
       }
       return out;
     },
@@ -428,100 +455,63 @@ export function auraIntensity(id: string, finish?: string): number {
 const TAU = Math.PI * 2;
 
 /**
- * A closed loop one pixel wide round the guy, `gx` cells clear of his sides
- * and `gy` of his top and foot: a squarish ellipse (a superellipse, which
- * never cuts his box's corners), in order round it, with no doubled corners.
+ * Points round the guy on a squarish ellipse, `gx` cells clear of his sides
+ * and `gy` of his top and foot, in order: where a rarer aura's pieces ride.
  */
 function loop(s: ReturnType<typeof shape>, gx: number, gy: number): [number, number][] {
   const rx = (s.right - s.left) / 2 + gx, ry = (s.bottom - s.top) / 2 + gy, steps = 720;
   const pts: [number, number][] = [];
   for (let i = 0; i < steps; i++) {
     const a = (i / steps) * TAU, c = Math.cos(a), sn = Math.sin(a);
-    const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** 0.5), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** 0.5);
+    const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** 0.6), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** 0.6);
     const last = pts[pts.length - 1];
     if (!last || last[0] !== x || last[1] !== y) pts.push([x, y]);
   }
-  while (pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) pts.pop();
-  // Drop the inside pixel of every L-shaped step, so the line is one pixel wide throughout.
-  const out: [number, number][] = [];
-  pts.forEach((c, i) => {
-    const p = out[out.length - 1] ?? pts[pts.length - 1], n = pts[(i + 1) % pts.length];
-    const corner = (p[0] === c[0] || p[1] === c[1]) && (n[0] === c[0] || n[1] === c[1]) && p[0] !== n[0] && p[1] !== n[1];
-    if (!corner) out.push(c);
-  });
-  return out;
+  return pts;
+}
+
+/** A 2x2 orb: a bright corner, two mid, one deep. */
+const orb = (x: number, y: number): AuraCell[] => [[x, y, 0], [x + 1, y, 1], [x, y + 1, 1], [x + 1, y + 1, 2]];
+/** A four-point sparkle, two cells each way: a white heart, bright arms, deep tips. */
+const star = (x: number, y: number): AuraCell[] => [...plus(x, y, 1), [x - 2, y, 2], [x + 2, y, 2], [x, y - 2, 2], [x, y + 2, 2]];
+/** A twinkle that opens and closes: a dot, a cross, a sparkle, a cross, a dot. */
+function twinkle(x: number, y: number, f: number, big: boolean): AuraCell[] {
+  if (f < 0.18 || f > 0.82) return [[x, y, 1]];
+  if (big && f > 0.38 && f < 0.62) return star(x, y);
+  return plus(x, y, 1);
 }
 
 /**
- * `count` arcs evenly spaced round a loop, each `len` cells long, travelling
- * one cell every `speed` ms (`dir` 1 or -1): a bright head and a fading tail.
- */
-function arcs(pts: [number, number][], t: number, count: number, len: number, speed: number, dir: 1 | -1, offset: number): AuraCell[] {
-  const n = pts.length, head = Math.floor(t / speed) * dir + offset, out: AuraCell[] = [];
-  for (let k = 0; k < count; k++) for (let j = 0; j < len; j++) {
-    const [x, y] = pts[wrap(Math.round(head + (k * n) / count) - j * dir, n)];
-    // Head and body only in the two bright colours: a finish's third can be near black.
-    out.push([x, y, j < 2 ? 0 : 1]);
-  }
-  return out;
-}
-
-/**
- * What a rarer aura adds round the guy, level by level, each in the aura's
- * own colours: a twinkling haze (1), clean arcs of light running round a ring
- * (2), a second, wider ring turning the other way and sparks rising off him
- * (3), longer arcs and stars riding the outer ring (4), and for Origin a
- * glowing rim, a lit ring and a crown of rays pulsing over his head (5).
- * `mask` may be wider than the frame, so the rings can spread to the sides.
+ * What a rarer aura adds round the guy, in chunky pieces at his own pixel
+ * size (no thin lines: a one-pixel line reads as drawn, not as pixel art):
+ * twinkles that open into crosses (1), two orbs circling him (2), sparkles
+ * opening on the other side (3), more of both and bigger (4, and Origin's
+ * 5). Pieces may sit past the
+ * frame's sides when `mask` is padded, so a card shows them whole.
  */
 function extras(mask: Mask, t: number, print: number, level: number): AuraCell[] {
   if (level <= 0) return [];
   const s = shape(mask), out: AuraCell[] = [], phase = noise(print, 3);
-  const beat = Math.floor(t / 110);
-  // A haze of twinkles a cell or two out, thicker the rarer.
-  // From level 2 the rings take over, so the haze stays a level-1 thing.
-  const haze = level === 1 ? 0.08 : 0;
-  for (const [x, y, d] of ring(mask, 3)) {
-    const n = noise(x, y, beat, print, 31);
-    if (d >= 2 && n < haze) out.push([x, y, n < haze / 3 ? 0 : 1]);
+  const gy = Math.min(2, s.top), inner = loop(s, 3, gy), outer = loop(s, 5, gy + 1);
+  // Twinkles a few cells out, each opening and closing in its own time.
+  const twinkles = [0, 2, 2, 3, 4, 4][level], life = 1100;
+  for (let i = 0; i < twinkles; i++) {
+    const at = t + (i * life) / twinkles + print * 29, gen = Math.floor(at / life), f = (at % life) / life;
+    const [x, y] = outer[Math.floor(noise(i, gen, print, 41) * outer.length)];
+    out.push(...twinkle(x, y, f, level >= 3));
   }
-  // The rings, the outer always two cells clear of the inner. The inner keeps
-  // under the frame's top where it can; the outer may run out of sight up there.
-  const gy = Math.min(2, s.top), inner = loop(s, 2, gy), outer = loop(s, 4, gy + 2);
-  if (level >= 2) {
-    const n = inner.length, long = level >= 4 ? 0.22 : 0.16;
-    // Origin's inner ring is lit all the way round, dimly, under its arcs.
-    if (level >= 5) for (let i = 0; i < inner.length; i += 2) out.push([inner[i][0], inner[i][1], 2]);
-    out.push(...arcs(inner, t, level >= 4 ? 3 : 2, Math.max(3, Math.round(n * long)), 70, 1, phase * n));
+  // Orbs riding the inner path, evenly spaced, slowly.
+  const orbs = [0, 0, 2, 2, 3, 3][level];
+  for (let i = 0; i < orbs; i++) {
+    const n = inner.length, [x, y] = inner[wrap(Math.floor(t / 26) + Math.round((i * n) / orbs + phase * n), n)];
+    out.push(...orb(x - 1, y - 1));
   }
-  if (level >= 3) {
-    const n = outer.length;
-    out.push(...arcs(outer, t, 3, Math.max(3, Math.round(n * (level >= 4 ? 0.14 : 0.1))), 55, -1, phase * n * 2));
-    // Sparks rising off him, swaying as they go.
-    const count = [0, 0, 0, 3, 4, 5][level], life = 1300;
-    for (let i = 0; i < count; i++) {
-      const at = t + (i * life) / count + print * 13, gen = Math.floor(at / life), f = (at % life) / life;
-      const x = s.left - 2 + Math.floor(noise(i, gen, print, 5) * (s.right - s.left + 5));
-      const y = s.bottom - Math.floor(f * (s.bottom - s.top + 5));
-      out.push([x + Math.round(Math.sin(at / 210 + i) * 0.7), y, f < 0.55 ? 0 : 1]);
-    }
-  }
-  // Stars riding the outer ring, a bright plus each.
-  if (level >= 4) {
-    const stars = level >= 5 ? 3 : 2, n = outer.length;
-    for (let i = 0; i < stars; i++) {
-      const [x, y] = outer[wrap(Math.floor(t / 90) + Math.round((i * n) / stars + phase * n), n)];
-      out.push(...plus(x, y, 1));
-    }
-  }
-  // Origin: a crown of rays above his head, pulsing out from the middle.
-  if (level >= 5) {
-    const pulse = (t / 90) % 6;
-    for (let r = 1; r <= 4; r++) for (const dx of [-3, -2, 0, 2, 3]) {
-      const x = Math.round(s.cx + dx * (1 + r * 0.25)), y = s.top - r;
-      const lit = Math.abs(r - pulse) < 1.2 || (dx === 0 && r <= 2);
-      if (lit && (dx === 0 || r >= 2)) out.push([x, y, Math.abs(r - pulse) < 0.6 ? 0 : 1]);
-    }
+  // From level 3, sparkles riding the outer path the other way, opening as they go.
+  const sparks = [0, 0, 0, 2, 3, 3][level];
+  for (let i = 0; i < sparks; i++) {
+    const n = outer.length, [x, y] = outer[wrap(-Math.floor(t / 34) + Math.round((i * n) / sparks + phase * n * 2), n)];
+    const open = wrap(t / 600 + i * 0.37, 1) < 0.5;
+    out.push(...(open ? star(x, y) : plus(x, y, 1)));
   }
   return out;
 }

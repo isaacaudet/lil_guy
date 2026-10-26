@@ -48,8 +48,13 @@ declare function fxColor(color: string, fx: Fx, x: number, y: number, t: number,
 /**
  * Applies the effects of the copies a frame shows: `slots` says which slot
  * each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
- * `FRAME_SLOTS`), `copies` the copy in each slot. Embers also send sparks up
- * into the empty pixels above their copy.
+ * `FRAME_SLOTS`), `copies` the copy in each slot. Some effects also draw in
+ * the empty pixels round their copy: bubbles, hearts and embers rise off it,
+ * a neon tube and electric bolts run round it.
+ *
+ * On an aura the effect is an accent, not a flood: the aura's own pieces take
+ * it, nothing is drawn round its scattered cells, and its signature (hearts,
+ * bubbles, sparks, a strike) rises off it more sparingly than off an item.
  */
 declare function applyFx(colors: (string | null)[][], slots: number[][], copies: (({
   fx?: Fx;
@@ -60,7 +65,8 @@ declare function applyFx(colors: (string | null)[][], slots: number[][], copies:
 //#region src/parts/art.d.ts
 
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
-type Stamp = number[][]; //#endregion
+type Stamp = number[][];
+//#endregion
 //#region src/parts/canvas.d.ts
 interface RowExtent {
   left: number;
