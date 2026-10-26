@@ -56,7 +56,7 @@ describe('auras', () => {
     }
   });
 
-  test('a worn-out aura shows fewer cells than a mint one', () => {
+  test('a worn-out aura shows fewer cells than a fresh one', () => {
     const mask = compose(resolve('maya')).map(r => r.map(Boolean));
     const count = (scuff: number) => [0, 200, 400, 600, 800].reduce((n, t) => n + auraCells('aura.galaxy', mask, t, { item: 'aura.galaxy', finish: 'classic', scuff, print: 1 }).length, 0);
     expect(count(0.95)).toBeLessThan(count(0.01) * 0.8);

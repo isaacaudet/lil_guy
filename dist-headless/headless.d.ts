@@ -126,6 +126,8 @@ interface Item {
   game: ItemGame;
   slot: Slot;
   name: string;
+  /** One line on what it is, for items that don't explain themselves. */
+  about?: string;
   /** The hat every player has in this game from the start. */
   free?: boolean;
   /** Colours for the art's `1`–`9`. */
@@ -177,7 +179,7 @@ declare function withItems(palette: Palette, config: AvatarConfig): Palette;
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
  *   Prism, Negative and Gold are progressively rarer
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
- *   battered. The condition (Mint in Box … Battered) is a range of it, and
+ *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
  * - a **print** number between 0 and 999: where the finish lands. Most prints
  *   are ordinary; a few are famous (a Deep Blue Tempered, a Red Giant or
@@ -248,8 +250,8 @@ declare const FINISHES: Record<Finish, {
 }>;
 /** Condition, by scuff, in the words toy collectors use. */
 declare const WEAR: readonly [{
-  readonly name: "Mint in Box";
-  readonly short: "MIB";
+  readonly name: "Box Fresh";
+  readonly short: "BF";
   readonly max: 0.07;
 }, {
   readonly name: "Like New";
@@ -269,8 +271,8 @@ declare const WEAR: readonly [{
   readonly max: 1.01;
 }];
 declare function wearOf(scuff: number): {
-  readonly name: "Mint in Box";
-  readonly short: "MIB";
+  readonly name: "Box Fresh";
+  readonly short: "BF";
   readonly max: 0.07;
 } | {
   readonly name: "Like New";
@@ -310,7 +312,7 @@ declare function decode(s: string): Owned | null;
 /**
  * The copy every player has from the start: their game's free hat, plain, with
  * a scuff and print taken from their name. Everyone gets one, and everyone's
- * is a little different — a lucky name gets a 0.003 Mint in Box.
+ * is a little different — a lucky name gets a 0.003 Box Fresh.
  */
 declare function starter(name: string, game: GameId): Owned;
 /**
@@ -335,7 +337,7 @@ declare function slotOf(o: Owned): Slot | undefined;
 /**
  * Paints one cell of an owned item: its finish, then its wear. Chips land in
  * places fixed by the print, so a copy always wears the same way, and how many
- * show is the scuff. `glint` is set once the first Mint in Box glint has been
+ * show is the scuff. `glint` is set once the first Box Fresh glint has been
  * placed.
  */
 /**
@@ -1049,7 +1051,7 @@ declare const ONE_OF_ONE_AURAS: Aura[];
 declare const auraById: (id: string | undefined) => Aura | undefined;
 /**
  * An aura's cells round `mask` at `t`, only in empty pixels and inside the
- * frame, thinned by the copy's float: a Mint in Box aura is whole, a battered
+ * frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
  * one flickers with gaps.
  */
 declare function auraCells(id: string, mask: Mask, t: number, copy?: Owned): AuraCell[];

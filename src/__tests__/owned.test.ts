@@ -22,7 +22,7 @@ describe('owned copies', () => {
   });
 
   it('name the condition from the scuff', () => {
-    expect([0.01, 0.1, 0.2, 0.4, 0.9].map(f => wearOf(f).short)).toEqual(['MIB', 'LN', 'PW', 'WL', 'BT']);
+    expect([0.01, 0.1, 0.2, 0.4, 0.9].map(f => wearOf(f).short)).toEqual(['BF', 'LN', 'PW', 'WL', 'BT']);
     expect(wearOf(1).short).toBe('BT');
   });
 

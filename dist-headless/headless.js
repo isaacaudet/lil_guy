@@ -3001,7 +3001,7 @@ const byId$1 = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map((a) => [a.id, a]));
 const auraById = (id) => id ? byId$1.get(id) : void 0;
 /**
 * An aura's cells round `mask` at `t`, only in empty pixels and inside the
-* frame, thinned by the copy's float: a Mint in Box aura is whole, a battered
+* frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
 * one flickers with gaps.
 */
 function auraCells(id, mask, t, copy) {
@@ -3654,8 +3654,8 @@ const FINISHES = {
 /** Condition, by scuff, in the words toy collectors use. */
 const WEAR = [
 	{
-		name: "Mint in Box",
-		short: "MIB",
+		name: "Box Fresh",
+		short: "BF",
 		max: .07
 	},
 	{
@@ -3820,7 +3820,7 @@ function unit(seed) {
 /**
 * The copy every player has from the start: their game's free hat, plain, with
 * a scuff and print taken from their name. Everyone gets one, and everyone's
-* is a little different — a lucky name gets a 0.003 Mint in Box.
+* is a little different — a lucky name gets a 0.003 Box Fresh.
 */
 function starter(name, game) {
 	return {
@@ -4021,7 +4021,7 @@ const PRIMER = rgb$1("#8B9097");
 /**
 * Paints one cell of an owned item: its finish, then its wear. Chips land in
 * places fixed by the print, so a copy always wears the same way, and how many
-* show is the scuff. `glint` is set once the first Mint in Box glint has been
+* show is the scuff. `glint` is set once the first Box Fresh glint has been
 * placed.
 */
 function paintCell(color, x, y, o, state) {
@@ -4268,6 +4268,7 @@ const skins = [
 		id: "cutsies.kiwi",
 		game: "cutsies",
 		name: "Kiwi",
+		about: "Turns your guy into a fuzzy brown kiwi, cut open on top.",
 		eyes: 10,
 		limb: 1,
 		colors: [
@@ -5433,6 +5434,7 @@ const hats = [
 		game: "cutsies",
 		name: "Kiwi slice",
 		free: true,
+		about: "A round of kiwi worn like a beret. Cutsies is the slicing game.",
 		colors: [
 			"#86CF55",
 			"#C9F08F",
@@ -5441,20 +5443,29 @@ const hats = [
 			"#9C6E43"
 		],
 		draw: on([
-			".1111.",
-			"134431",
-			".5555."
+			".55555.",
+			"5131315",
+			"5324235",
+			"5131315",
+			".55555."
 		])
 	},
 	{
 		id: "cutsies.chef",
 		game: "cutsies",
 		name: "Chef hat",
-		colors: ["#FFFFFF", "#DCE3EC"],
+		about: "A chef's tall white toque, for the one who does the cutting in Cutsies.",
+		colors: [
+			"#FFFFFF",
+			"#DCE3EC",
+			"#B9C4D2"
+		],
 		draw: on([
-			".1111.",
-			"111112",
-			".2222."
+			".11.111.",
+			"11111112",
+			"11111122",
+			".111112.",
+			".333333."
 		])
 	},
 	{
@@ -5909,11 +5920,14 @@ const frames = [
 		id: "cutsies.slices",
 		game: "cutsies",
 		name: "Kiwi slices",
+		about: "A wooden chopping board with a kiwi sliced at each corner.",
 		colors: [
-			"#9CC8F0",
+			"#D9A066",
 			"#86CF55",
 			"#2A1B10",
-			"#7A5432"
+			"#7A5432",
+			"#F1F7D4",
+			"#BE8650"
 		],
 		fill: (x, y) => {
 			for (const [kx, ky] of [
@@ -5922,12 +5936,13 @@ const frames = [
 				[13, 2],
 				[2, 13]
 			]) {
-				const d = Math.abs(x - kx) + Math.abs(y - ky);
-				if (d === 0) return 3;
-				if (d === 1) return 2;
-				if (d === 2 && x !== kx && y !== ky) return 4;
+				const d2 = (x - kx) ** 2 + (y - ky) ** 2;
+				if (d2 === 0) return 5;
+				if (d2 === 2) return 3;
+				if (d2 <= 4) return 2;
+				if (d2 <= 6) return 4;
 			}
-			return 1;
+			return (y + (x >> 2)) % 5 === 0 ? 6 : 1;
 		}
 	},
 	{
@@ -6354,6 +6369,7 @@ const buddies = [
 		id: "cutsies.seedling",
 		game: "cutsies",
 		name: "Seedling",
+		about: "A sprout in a clay pot that follows you around. It came from a kiwi seed.",
 		colors: [
 			"#7DD87A",
 			"#3E9A4C",

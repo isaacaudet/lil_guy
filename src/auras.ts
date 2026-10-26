@@ -267,7 +267,7 @@ export const auraById = (id: string | undefined) => (id ? byId.get(id) : undefin
 
 /**
  * An aura's cells round `mask` at `t`, only in empty pixels and inside the
- * frame, thinned by the copy's float: a Mint in Box aura is whole, a battered
+ * frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
  * one flickers with gaps.
  */
 export function auraCells(id: string, mask: Mask, t: number, copy?: Owned): AuraCell[] {

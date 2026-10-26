@@ -37,9 +37,9 @@ ignored `.dev.vars` file. Production secrets were uploaded with Wrangler.
   secret-salted daily digest is retained in D1. Old digest rows are removed on
   the next accepted claim attempt. Owner tokens are hashed before storage.
 
-## Collections and the market (migration 0002)
+## Collections and Pulls (migration 0002)
 
-Every copy is rolled and stored by the Worker, so what the market shows is what
+Every copy is rolled and stored by the Worker, so what the Pulls page shows is what
 capsules really gave. Apply `migrations/0002_collections.sql` (the deploy commands
 above apply every pending migration) before deploying a Worker that reads it.
 
@@ -61,11 +61,11 @@ above apply every pending migration) before deploying a Worker that reads it.
     copy from a capsule (starters aside).
   - `GET /api/stats`: claims, copies and counts by grade.
 - Releasing a name (`DELETE /api/names/:key`) deletes its player record and copies.
-- Nothing is for sale. Dev drops (the `rarest` easter egg) only work in the demo.
+- Nothing is bought or sold. Dev drops (the `rarest` easter egg) only work in the demo.
 
 Validated locally with `wrangler dev --local` and both migrations applied:
 - two players claimed, opened free and paid capsules, and collected tickets;
-- the Guys, profile and Market pages listed both, and a reload restored state from D1;
+- the Guys, profile and Pulls pages listed both, and a reload restored state from D1;
 - `bun test`: 142 pass, including the Worker's ten API tests.
 
 ## Google sign-in (migration 0003)

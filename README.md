@@ -359,8 +359,8 @@ An item is a design. A copy someone owns is the item plus:
 
 | | |
 |---|---|
-| **Finish** | Plain (79.87%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Gold (0.25%), Negative (0.2%). Everything but Plain and Tempered only comes Mint in Box or Like New |
-| **Scuff** | 0–1, how worn it is. Mint in Box < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Mint in Box copy keeps a glint |
+| **Finish** | Plain (79.87%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Gold (0.25%), Negative (0.2%). Everything but Plain and Tempered only comes Box Fresh or Like New |
+| **Scuff** | 0–1, how worn it is. Box Fresh < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Box Fresh copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered comes in five tints the print picks (Steel, Rose, Emerald, Copper, Violet), and prints 661, 670, 321, 387 and 955 come out all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |
 | **Souvenir** | the day's free capsule for finishing every game is a souvenir of that day (`~s2026-10-25` in its code). No other capsule is one |
@@ -392,7 +392,7 @@ moment, `animate` moves it.
 **Everyone gets one.** `starter(name, game)` is the copy of a game's free hat
 every player has from the start: plain, with a scuff and print taken from
 their name, so everyone's is a little different and a lucky name gets a
-Mint in Box. `roll(seed, game)` opens a capsule. The seed decides everything,
+Box Fresh. `roll(seed, game)` opens a capsule. The seed decides everything,
 so in production it must be made on the server at drop time and stored with
 the copy.
 
@@ -406,7 +406,7 @@ const saved = encode(copy);          // "puttsies.ball~nebula~0.0123456~20"
 encode({ ...copy, tally: 412, pins: ["star", "flame"] });
                                      // "…~20~t412~pstar+flame"
 nameOf(copy);                        // "Golf ball | Red Giant"
-wearOf(copy.scuff).name;             // "Mint in Box"
+wearOf(copy.scuff).name;             // "Box Fresh"
 gradeOf(copy).name;                  // "Mythic"
 
 toSvgString("alice", { game: "puttsies" });         // wears her own free visor
@@ -428,8 +428,8 @@ a famous print if it has one, a scuff at least that low, and a tally.
 | Copy | One in |
 |---|---|
 | A plain drop, Played With | ~20 |
-| Sunset, Mint in Box | ~250 |
-| Gold, Mint in Box | ~1,500 |
+| Sunset, Box Fresh | ~250 |
+| Gold, Box Fresh | ~1,500 |
 | Nebula Red Giant / Blue Moon / Black Hole | ~12,500–25,000 |
 | Tempered Deep Blue | ~1 million |
 | Tallied Deep Blue at 0.002 | ~300 million |

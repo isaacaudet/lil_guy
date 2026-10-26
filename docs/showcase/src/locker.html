@@ -650,7 +650,7 @@ void main() {
   /** The words on an item's card: its name, its print, its grade and how rare it is. */
   const itemLabel = (o, starter, one) => {
     const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), bottom: one ? '★ 1 of 1' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
   function mount(canvas, spec) {
@@ -1187,7 +1187,7 @@ void main() {
     // Put it next to what names actually reach.
     let bestName = 0;
     for (let n = 0; n < 200000; n++) bestName = Math.max(bestName, LG.guyOneIn(LG.resolve('u' + n)));
-    $('cool-lede').insertAdjacentHTML('afterend', `<p>Every guy here is 1 in ${big(guys[0].guy)}. The rarest of 200,000 real names is 1 in ${big(bestName)}, so no player is likely to ever have one. The frames are the rarest copies a capsule can give: Mint in Box at a scuff of 0.0000000, famous prints, and a tally.</p>`);
+    $('cool-lede').insertAdjacentHTML('afterend', `<p>Every guy here is 1 in ${big(guys[0].guy)}. The rarest of 200,000 real names is 1 in ${big(bestName)}, so no player is likely to ever have one. The frames are the rarest copies a capsule can give: Box Fresh at a scuff of 0.0000000, famous prints, and a tally.</p>`);
   }
 
   /* ------------------------------------------------ the player */
@@ -1320,7 +1320,7 @@ void main() {
       <span class="badge${c.fresh && !worn ? ' new' : ''}"${worn || c.fresh ? '' : ' hidden'}>${worn ? 'Worn' : 'New'}</span>
       ${o.tally !== undefined ? `<span class="tally">Tally ${o.tally}</span>` : ''}
       <span class="meta"><span class="h">${esc(LG.nameOf(o))}</span><span class="chips">${chipsFor(o)}</span>
-      <span class="sub">${cap(c.game)} · ${c.one ? '<b>1 of 1</b>' : c.source === 'Starter' ? 'Free starter' : `1 in <b>${fmt(oneIn(c))}</b>`}</span></span>
+      <span class="sub">${cap(c.game)} · ${c.one ? '<b>Only one</b>' : c.source === 'Starter' ? 'Free starter' : `1 in <b>${fmt(oneIn(c))}</b>`}</span></span>
     </button>`;
   }
   function renderLocker() {
@@ -1351,7 +1351,7 @@ void main() {
         ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span><button class="x" type="button" data-off="${slot}" aria-label="Take off ${esc(LG.nameOf(c.o))}">×</button>`
         : `<span class="v empty">Empty</span><span></span>`}</div>`;
     };
-    $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>1 of 1</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
+    $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>Only one</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
       <div class="slots">${row('skin')}${row('hat')}${row('frame')}</div>`;
     hydrate($('dress'));
     renderMoves();
@@ -1396,7 +1396,7 @@ void main() {
           ${dt('Print', 'print', 4)}<dd><b>#${o.print}</b>${fam ? ` <span class="chip grade" style="--grade:#4B69FF">${esc(fam)}</span>` : ''}<small>${fam ? 'One of the famous prints.' : 'Where the shine and the scuffs land, 0 to 999.'}${o.finish === 'nebula' && !fam ? ' On Nebula it also picks the pattern in the name.' : ''}</small></dd>
           ${dt('Tally', 'tally', 5)}<dd>${o.tally !== undefined ? `<b>${o.tally} days</b><small>Days finished wearing it. Shows as "Tallied" in the name${o.tally >= 365 ? ', and a year of days has turned its outline gold' : o.tally >= 100 ? ', and as four marks on the item' : o.tally >= 30 ? ', and as two marks on the item' : ''}.</small>` : '<b>None</b><small>One copy in ten keeps a tally.</small>'}</dd>
           ${dt('Pins')}<dd>${o.pins?.length ? o.pins.map(id => { const pn = LG.PINS.find(x => x.id === id); return `<b>${esc(pn.name)}</b><small>${esc(pn.how)}</small>`; }).join('') : '<b>None yet</b><small>Earned in the games, up to three.</small>'}</dd>
-          ${dt('Rarity')}<dd>${c.one ? '<b>1 of 1</b><small>The only one. It exists because it was given, not rolled.</small>' : c.source === 'Starter' ? '<b>Free</b><small>Every player has one; the name decides its scuff and print.</small>' : `<b>1 in ${fmt(LG.copyOneIn(o))}</b><small>Capsules for ${cap(c.game)} that give this item, this finish${fam ? ', a famous print' : ''}, a scuff this low${o.tally !== undefined ? ' and a tally' : ''}.</small>`}</dd>
+          ${dt('Rarity')}<dd>${c.one ? '<b>Only one</b><small>The only one. It exists because it was given, not rolled.</small>' : c.source === 'Starter' ? '<b>Free</b><small>Every player has one; the name decides its scuff and print.</small>' : `<b>1 in ${fmt(LG.copyOneIn(o))}</b><small>Capsules for ${cap(c.game)} that give this item, this finish${fam ? ', a famous print' : ''}, a scuff this low${o.tally !== undefined ? ' and a tally' : ''}.</small>`}</dd>
           ${dt('Made from')}<dd><code>${esc(c.from || c.source)}</code><small>${c.source === 'Starter' ? 'The same name always gets the same starter, in every game.' : 'The same seed always opens the same copy.'}</small></dd>
           ${dt('Code')}<dd><code id="code">${esc(code)}</code><button class="btn ghost copybtn" type="button" id="copy-code">Copy</button><small>All a copy is: item~finish~scuff~print, plus ~t and the tally.</small></dd>
         </dl>

@@ -152,7 +152,7 @@
       <div class="live" id="fx-items"></div>
       <div class="live" id="fx-auras"></div>
       <div class="scroll"><table id="fx-table" style="background:#221c30;border-color:#352c48;color:#f2eee6"></table></div>
-      <div><h3>The founder, one of one</h3><p>A clean guy in a crown, wearing the Origin aura, which no capsule gives (with the Gold flag in his locker).</p></div>
+      <div><h3>The founder, one of a kind</h3><p>A clean guy in a crown, wearing the Origin aura, which no capsule gives (with the Gold flag in his locker).</p></div>
       <div class="vs" id="vs"></div>
     </div>
   </section>
@@ -269,7 +269,7 @@
   // ---------------------------------------------------------------- finishes, prints, wear, earned
   const sample = f => cv({ equip: [LG.encode({ item: 'stackdle.block', finish: f, scuff: 0.02, print: 40 })] });
   $('fin-table').innerHTML = `<tr><th></th><th>Finish</th><th>Grade</th><th>Chance a capsule</th><th>Condition range</th></tr>` + Object.entries(LG.FINISHES).filter(([, x]) => !x.aura).map(([f, x]) =>
-    `<tr><td>${sample(f)}</td><td><b>${esc(x.name)}</b></td><td><span class="chip" style="--k:${LG.GRADES[x.grade].color}">${esc(LG.GRADES[x.grade].name)}</span></td><td class="num">${x.odds}% · ${oneIn(x.odds / 100)}</td><td class="num">${x.scuffs[1] < 1 ? 'Mint in Box to Like New' : 'any'}</td></tr>`).join('');
+    `<tr><td>${sample(f)}</td><td><b>${esc(x.name)}</b></td><td><span class="chip" style="--k:${LG.GRADES[x.grade].color}">${esc(LG.GRADES[x.grade].name)}</span></td><td class="num">${x.odds}% · ${oneIn(x.odds / 100)}</td><td class="num">${x.scuffs[1] < 1 ? 'Box Fresh to Like New' : 'any'}</td></tr>`).join('');
   const nebula = per('nebula'), tempered = per('tempered');
   $('print-table').innerHTML = `<tr><th></th><th>Famous print</th><th>What it is</th><th>Chance a capsule</th></tr>` + [
     ['tempered', LG.DEEP_BLUE_PRINTS[0], 'Deep Blue', `Tempered with one of ${LG.DEEP_BLUE_PRINTS.length} prints of 1,000: all blue, one grade up`, tempered * LG.DEEP_BLUE_PRINTS.length / 1000],
@@ -301,7 +301,7 @@
   $('auras').innerHTML = LG.AURAS.map((a, k) => { const [fid, f] = finishes[k % finishes.length]; return fig({ name: names[k % names.length], equip: [LG.encode({ item: a.id, finish: fid, scuff: 0.01, print: k })] }, `★ ${a.name}`, f.name); }).join('');
   $('relic-table').innerHTML = `<tr><th style="color:#b9b1c9">Aura finish</th><th style="color:#b9b1c9">Of auras</th><th style="color:#b9b1c9">A given aura in it</th></tr>` +
     finishes.map(([, f]) => `<tr><td><b>${esc(f.name)}</b></td><td class="num">${f.aura}%</td><td class="num">${oneIn(LG.AURA_ODDS / LG.AURAS.length * f.aura / 100)} capsules</td></tr>`).join('') +
-    `<tr><td><b>Origin</b></td><td class="num">one of one</td><td class="num">the founder's</td></tr>`;
+    `<tr><td><b>Origin</b></td><td class="num">only one</td><td class="num">the founder's</td></tr>`;
   $('fx-items').innerHTML = LG.FX_IDS.map((id, k) => fig({ name: names[k], equip: [LG.encode({ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: k, fx: id })] }, LG.EFFECTS[id].name, 'Sunset Toy block')).join('');
   $('fx-auras').innerHTML = LG.FX_IDS.map((id, k) => fig({ name: names[k + 1], equip: [LG.encode({ item: LG.AURAS[(k * 5 + 2) % LG.AURAS.length].id, finish: 'classic', scuff: 0.02, print: k, fx: id })] }, `${LG.EFFECTS[id].name} ★ ${LG.AURAS[(k * 5 + 2) % LG.AURAS.length].name}`, '')).join('');
   $('fx-table').innerHTML = `<tr><th style="color:#b9b1c9">Effect</th><th style="color:#b9b1c9">What it does</th><th style="color:#b9b1c9">Items</th><th style="color:#b9b1c9">Auras</th></tr>` +

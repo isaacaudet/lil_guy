@@ -13,7 +13,7 @@ import type { GameId } from './types';
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
  *   Prism, Negative and Gold are progressively rarer
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
- *   battered. The condition (Mint in Box … Battered) is a range of it, and
+ *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
  * - a **print** number between 0 and 999: where the finish lands. Most prints
  *   are ordinary; a few are famous (a Deep Blue Tempered, a Red Giant or
@@ -85,7 +85,7 @@ export const FINISHES: Record<Finish, { name: string; grade: number; odds: numbe
 
 /** Condition, by scuff, in the words toy collectors use. */
 export const WEAR = [
-  { name: 'Mint in Box', short: 'MIB', max: 0.07 },
+  { name: 'Box Fresh', short: 'BF', max: 0.07 },
   { name: 'Like New', short: 'LN', max: 0.15 },
   { name: 'Played With', short: 'PW', max: 0.38 },
   { name: 'Well Loved', short: 'WL', max: 0.45 },
@@ -196,7 +196,7 @@ function unit(seed: string): number {
 /**
  * The copy every player has from the start: their game's free hat, plain, with
  * a scuff and print taken from their name. Everyone gets one, and everyone's
- * is a little different — a lucky name gets a 0.003 Mint in Box.
+ * is a little different — a lucky name gets a 0.003 Box Fresh.
  */
 export function starter(name: string, game: GameId): Owned {
   return {
@@ -359,7 +359,7 @@ const PRIMER = rgb('#8B9097');
 /**
  * Paints one cell of an owned item: its finish, then its wear. Chips land in
  * places fixed by the print, so a copy always wears the same way, and how many
- * show is the scuff. `glint` is set once the first Mint in Box glint has been
+ * show is the scuff. `glint` is set once the first Box Fresh glint has been
  * placed.
  */
 export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }): string {

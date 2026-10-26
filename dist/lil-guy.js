@@ -3005,7 +3005,7 @@ const byId$1 = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map((a) => [a.id, a]));
 const auraById = (id) => id ? byId$1.get(id) : void 0;
 /**
 * An aura's cells round `mask` at `t`, only in empty pixels and inside the
-* frame, thinned by the copy's float: a Mint in Box aura is whole, a battered
+* frame, thinned by the copy's float: a Box Fresh aura is whole, a battered
 * one flickers with gaps.
 */
 function auraCells(id, mask, t, copy) {
@@ -3658,8 +3658,8 @@ const FINISHES = {
 /** Condition, by scuff, in the words toy collectors use. */
 const WEAR = [
 	{
-		name: "Mint in Box",
-		short: "MIB",
+		name: "Box Fresh",
+		short: "BF",
 		max: .07
 	},
 	{
@@ -3824,7 +3824,7 @@ function unit(seed) {
 /**
 * The copy every player has from the start: their game's free hat, plain, with
 * a scuff and print taken from their name. Everyone gets one, and everyone's
-* is a little different — a lucky name gets a 0.003 Mint in Box.
+* is a little different — a lucky name gets a 0.003 Box Fresh.
 */
 function starter(name, game) {
 	return {
@@ -4025,7 +4025,7 @@ const PRIMER = rgb$1("#8B9097");
 /**
 * Paints one cell of an owned item: its finish, then its wear. Chips land in
 * places fixed by the print, so a copy always wears the same way, and how many
-* show is the scuff. `glint` is set once the first Mint in Box glint has been
+* show is the scuff. `glint` is set once the first Box Fresh glint has been
 * placed.
 */
 function paintCell(color, x, y, o, state) {
