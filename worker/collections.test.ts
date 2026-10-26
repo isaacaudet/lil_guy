@@ -133,6 +133,9 @@ test('everyone is public: guys, profiles, the market and stats, without owner to
   const s: any = await (await call('/stats')).json();
   expect(s.players).toBe(2);
   expect(s.copies).toBe(1);
+  // Every pulled item in every finish is counted (starters aside), for the Pulls page.
+  expect(s.counts).toHaveLength(1);
+  expect(s.counts[0][2]).toBe(1);
 });
 
 test('letting a name go takes its collection with it; the founder holds the one of one', async () => {
