@@ -1628,7 +1628,13 @@ void main() {
     canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
   }
   const fileName = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lil-guy';
-  const saveFile = (bytes, name, type) => {
+  // Inside claude.ai the page can't download on its own, so it asks the viewer to save there.
+  const saveFile = async (bytes, name, type) => {
+    const dl = window.claude?.use ? await window.claude.use('downloads') : null;
+    if (dl) {
+      try { await dl.save({ filename: name, data: new Blob([bytes], { type }) }); } catch (err) { if (err?.code !== 'declined') toast('Couldn\'t save that file here.'); }
+      return;
+    }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([bytes], { type })); a.download = name;
     document.body.append(a); a.click(); a.remove();
@@ -1644,9 +1650,9 @@ void main() {
       const was = b.textContent; b.disabled = true; b.textContent = 'Making…';
       setTimeout(async () => {
         try {
-          if (b.dataset.save === 'gif') saveFile(LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
-          else if (b.dataset.save === 'png') saveFile(await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
-          else saveFile(LG.toGuyGif(input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16), base + '.gif', 'image/gif');
+          if (b.dataset.save === 'gif') await saveFile(LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
+          else if (b.dataset.save === 'png') await saveFile(await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
+          else await saveFile(LG.toGuyGif(input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16), base + '.gif', 'image/gif');
         } catch (err) { toast('Couldn\'t make that file: ' + err.message); }
         b.disabled = false; b.textContent = was;
       }, 30);
