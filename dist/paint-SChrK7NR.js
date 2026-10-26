@@ -1,28 +1,3 @@
-"use strict";
-//#region rolldown:runtime
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __copyProps = (to, from, except, desc) => {
-	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
-		key = keys[i];
-		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
-			get: ((k) => from[k]).bind(null, key),
-			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
-		});
-	}
-	return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
-	value: mod,
-	enumerable: true
-}) : target, mod));
-
-//#endregion
-
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -1526,6 +1501,337 @@ const AURAS = [
 			});
 			return out;
 		}
+	},
+	{
+		id: "aura.fireflies",
+		name: "Fireflies",
+		colors: [
+			"#FFFDE0",
+			"#FFE45C",
+			"#9ED45A"
+		],
+		still: 450,
+		cells: (mask, t, print) => {
+			const near = ring(mask, 3), out = [];
+			for (let i = 0; i < 8; i++) {
+				const [ax, ay] = near[Math.floor(noise$1(i, print, 3) * near.length)] ?? [0, 0];
+				const x = ax + Math.round(Math.sin(t / 700 + i * 1.7) * 1.5), y = ay + Math.round(Math.cos(t / 900 + i * 2.3));
+				const phase = wrap(t + i * 397 + print * 29, 1600) / 1600;
+				if (phase > .65) continue;
+				out.push(...phase > .15 && phase < .45 ? plus(x, y, 2) : [[
+					x,
+					y,
+					1
+				]]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.neon",
+		name: "Neon",
+		colors: [
+			"#FFFFFF",
+			"#FF4FD8",
+			"#7A2C9E"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), step = Math.floor((t + print * 17) / 90);
+			const tube = ring(mask, 1).map(([x, y]) => [
+				x,
+				y,
+				Math.atan2(y - s.cy, x - s.cx)
+			]).sort((a, b) => a[2] - b[2]);
+			if (noise$1(Math.floor(step / 3), print, 5) > .9) return tube.map(([x, y]) => [
+				x,
+				y,
+				2
+			]);
+			const hot = wrap(step, tube.length);
+			return tube.filter((_, i) => noise$1(Math.floor(i / 3), step, print) > .06).map(([x, y], i) => [
+				x,
+				y,
+				Math.abs(i - hot) <= 1 ? 0 : 1
+			]);
+		}
+	},
+	{
+		id: "aura.echo",
+		name: "Echo",
+		colors: [
+			"#EDE4FF",
+			"#9B7CFF",
+			"#3B2A73"
+		],
+		still: 400,
+		cells: (mask, t, print) => {
+			const sway = Math.round((Math.sin((t + print * 41) / 380) + 1) * 1.2) + 1, out = [];
+			mask.forEach((row, y) => row.forEach((on$1, x) => {
+				if (!on$1) return;
+				const edge = !mask[y - 1]?.[x];
+				out.push([
+					x - sway,
+					y - 1,
+					edge ? 1 : 2
+				], [
+					x + sway,
+					y - 1,
+					edge ? 1 : 2
+				]);
+			}));
+			return out;
+		}
+	},
+	{
+		id: "aura.comet",
+		name: "Comet",
+		colors: [
+			"#FFFFFF",
+			"#8FE3FF",
+			"#4A6BD8"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1;
+			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x$1, y$1]) => [
+				x$1,
+				y$1,
+				Math.atan2(y$1 - s.cy, x$1 - s.cx)
+			]).sort((p, q) => p[2] - q[2]);
+			if (!track.length) return [];
+			const n = track.length, head$1 = wrap(turn$1 * Math.floor(t / 45) + print * 7, n), out = [];
+			for (let j = 10; j >= 1; j--) {
+				const [x$1, y$1] = track[wrap(head$1 - turn$1 * j, n)];
+				out.push([
+					x$1,
+					y$1,
+					j < 3 ? 0 : j < 6 ? 1 : 2
+				]);
+			}
+			const [x, y] = track[head$1];
+			out.push(...plus(x, y, 1));
+			return out;
+		}
+	},
+	{
+		id: "aura.butterflies",
+		name: "Butterflies",
+		colors: [
+			"#FFF5D6",
+			"#FF9F43",
+			"#8A4DFF"
+		],
+		still: 0,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 2; i++) {
+				const side = i ? 1 : -1, x = Math.round(s.w / 2 - .5 + side * (s.w / 2 - 2.5) + Math.sin(t / 800 + i * 3 + print) * 1.2);
+				const y = Math.round(Math.max(2, s.top) + Math.sin(t / 520 + i * 2.1 + print) * 1.5 + i * 3);
+				out.push([
+					x,
+					y,
+					0
+				], [
+					x,
+					y + 1,
+					0
+				]);
+				if (Math.floor((t + i * 60) / 140) % 2 === 0) for (const d of [-1, 1]) out.push([
+					x + d,
+					y - 1,
+					1
+				], [
+					x + 2 * d,
+					y - 1,
+					1
+				], [
+					x + d,
+					y,
+					1
+				], [
+					x + 2 * d,
+					y,
+					2
+				], [
+					x + d,
+					y + 1,
+					2
+				], [
+					x + d,
+					y + 2,
+					2
+				]);
+				else for (const d of [-1, 1]) out.push([
+					x + d,
+					y - 1,
+					1
+				], [
+					x + d,
+					y - 2,
+					1
+				], [
+					x + d,
+					y,
+					2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.aurora",
+		name: "Aurora",
+		colors: [
+			"#E6FFF4",
+			"#3DF2B0",
+			"#7C5CFF"
+		],
+		still: 700,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [], step = Math.floor(t / 180);
+			for (let x = 0; x < s.w; x++) {
+				if (noise$1(x, Math.floor(step / 4), print) < .25) continue;
+				const start = 1 + Math.round((Math.sin(x * .7 + t / 700 + print) + 1) * .8);
+				const len = 2 + Math.round((Math.sin(x * .45 - t / 600 + print * 2) + 1) * 1.6);
+				const glow = start + wrap(Math.floor(t / 150) + x, len + 4);
+				for (let y = start; y < start + len; y++) out.push([
+					x,
+					y,
+					y === glow ? 0 : y === start ? 2 : 1
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.datarain",
+		name: "Data rain",
+		colors: [
+			"#E6FFE9",
+			"#3CFF6B",
+			"#0E7A2C"
+		],
+		still: 500,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let x = 0; x < s.w; x++) {
+				if (noise$1(x, print, 11) < .4) continue;
+				const speed = 70 + Math.floor(noise$1(x, print, 12) * 70), head$1 = wrap(Math.floor((t + noise$1(x, print) * 3e3) / speed), s.h + 8) - 2;
+				for (let j = 0; j < 5; j++) out.push([
+					x,
+					head$1 - j,
+					j === 0 ? 0 : j < 3 ? 1 : 2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.vortex",
+		name: "Vortex",
+		colors: [
+			"#FFFFFF",
+			"#5FD3FF",
+			"#3A3FD9"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1, out = [];
+			for (const [x, y, d] of ring(mask, 4)) {
+				const a = Math.atan2(y - s.cy, x - s.cx) / (2 * Math.PI), r = Math.hypot(x - s.cx, y - s.cy);
+				const v = wrap(a * 3 + r * .3 - turn$1 * t / 700 + print * .1, 1);
+				if (v < .24) out.push([
+					x,
+					y,
+					v < .08 ? 0 : d <= 2 ? 1 : 2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.fireworks",
+		name: "Fireworks",
+		colors: [
+			"#FFFFFF",
+			"#FF5C8A",
+			"#FFD45C"
+		],
+		still: 650,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 2; i++) {
+				const cycle = 1500, local = wrap(t + i * 750 + print * 37, cycle), shot = Math.floor((t + i * 750 + print * 37) / cycle);
+				const cx = i ? s.w - 3 - Math.floor(noise$1(shot, i) * 2) : 2 + Math.floor(noise$1(shot, i) * 2), cy = 2 + Math.floor(noise$1(shot, i, 2) * 3), p = local / cycle;
+				if (p < .2) {
+					const y = Math.round(cy + (1 - p / .2) * 6);
+					out.push([
+						cx,
+						y,
+						0
+					], [
+						cx,
+						y + 1,
+						2
+					]);
+					continue;
+				}
+				if (p > .85) continue;
+				const r = Math.min(3, 1 + Math.floor((p - .2) / .14)), k = p < .45 ? 0 : p < .65 ? 1 : 2;
+				out.push([
+					cx,
+					cy,
+					k
+				]);
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1],
+					[1, 1],
+					[-1, 1],
+					[1, -1],
+					[-1, -1]
+				]) {
+					const reach = dx && dy ? Math.max(1, r - 1) : r;
+					out.push([
+						cx + dx * reach,
+						cy + dy * reach,
+						k
+					], ...r > 1 && k < 2 ? [[
+						cx + dx * (reach - 1),
+						cy + dy * (reach - 1),
+						2
+					]] : []);
+				}
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.ripple",
+		name: "Ripple",
+		colors: [
+			"#FFFFFF",
+			"#7FE3FF",
+			"#2F7FD6"
+		],
+		still: 250,
+		cells: (mask, t, print) => {
+			const out = [], p = wrap(t + print * 23, 1100) / 1100, d = 1 + Math.floor(p * 3);
+			for (const [x, y, dd] of ring(mask, 3)) if (dd === d) out.push([
+				x,
+				y,
+				d - 1
+			]);
+			else if (dd === d - 1 && (x + y) % 2) out.push([
+				x,
+				y,
+				2
+			]);
+			return out;
+		}
 	}
 ];
 /**
@@ -1649,11 +1955,35 @@ const EFFECTS = {
 		item: 150,
 		aura: 25
 	},
+	neon: {
+		name: "Neon",
+		what: "A buzzing neon edge runs round it, changing colour.",
+		item: 250,
+		aura: 30
+	},
+	bubbles: {
+		name: "Bubbles",
+		what: "Bubbles wobble up off it.",
+		item: 350,
+		aura: 40
+	},
+	hearts: {
+		name: "Hearts",
+		what: "Little hearts float up off it.",
+		item: 500,
+		aura: 60
+	},
 	chroma: {
 		name: "Chroma",
 		what: "Its colours cycle round the rainbow.",
 		item: 600,
 		aura: 80
+	},
+	rime: {
+		name: "Rime",
+		what: "Frost creeps over it from the edges and melts away.",
+		item: 800,
+		aura: 100
 	},
 	embers: {
 		name: "Embers",
@@ -1661,11 +1991,29 @@ const EFFECTS = {
 		item: 1e3,
 		aura: 150
 	},
+	static: {
+		name: "Static",
+		what: "It glitches: rows slip sideways and its colours split.",
+		item: 1200,
+		aura: 200
+	},
+	lava: {
+		name: "Lava",
+		what: "Molten light flows up through it under a dark crust.",
+		item: 1800,
+		aura: 300
+	},
 	starlight: {
 		name: "Starlight",
 		what: "Stars twinkle inside it, like a night sky.",
 		item: 2500,
 		aura: 400
+	},
+	electric: {
+		name: "Electric",
+		what: "Lightning crackles round it and it flashes white.",
+		item: 4e3,
+		aura: 600
 	}
 };
 const FX_IDS = Object.keys(EFFECTS);
@@ -1771,6 +2119,74 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			140,
 			60
 		], .12 + .1 * Math.sin(tt / 180 + x)));
+		case "neon": return hex$1(mix$2(c, hue((tt / 12 % 360 + 360) % 360, 1, .62), .18));
+		case "bubbles": return hex$1(mix$2(c, [
+			190,
+			235,
+			255
+		], .1 + .08 * Math.sin(tt / 300 + y)));
+		case "hearts": return hex$1(mix$2(c, [
+			255,
+			140,
+			190
+		], .14 + .08 * Math.sin(tt / 400 + x * .5)));
+		case "rime": {
+			const reach = .5 + .5 * Math.sin(tt / 900 - y * .35);
+			const n = noise(x, y, Math.floor(tt / 400), print);
+			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
+			return hex$1(mix$2(c, [
+				190,
+				228,
+				255
+			], .3 + .5 * reach));
+		}
+		case "static": {
+			const burst = noise(Math.floor(tt / 90), print, 7) > .7;
+			if (!burst) return y % 2 ? hex$1(mix$2(c, [
+				0,
+				0,
+				0
+			], .12)) : color;
+			const r = noise(x, y, Math.floor(tt / 60));
+			return r > .85 ? "#FFFFFF" : hex$1(mix$2(c, r > .5 ? [
+				255,
+				60,
+				90
+			] : [
+				60,
+				200,
+				255
+			], .45));
+		}
+		case "lava": {
+			const flow = Math.sin(y * 1.1 + tt / 220 + Math.sin(x * .9 + tt / 700) * 2);
+			const crust = mix$2(c, [
+				40,
+				18,
+				12
+			], .55);
+			return flow > .55 ? hex$1(mix$2([
+				255,
+				120,
+				30
+			], [
+				255,
+				230,
+				120
+			], (flow - .55) * 2.2)) : flow > .25 ? hex$1(mix$2(crust, [
+				220,
+				70,
+				20
+			], .6)) : hex$1(crust);
+		}
+		case "electric": {
+			const flash = noise(Math.floor(tt / 120), print, 11) > .82;
+			return flash ? hex$1(mix$2(c, WHITE, .65)) : hex$1(mix$2(c, [
+				120,
+				190,
+				255
+			], .16));
+		}
 	}
 }
 /**
@@ -1802,6 +2218,94 @@ function applyFx(colors, slots, copies, t) {
 				if (ny >= 0 && ny < out.length && nx >= 0 && nx < out[0].length && !out[ny][nx]) out[ny][nx] = hex$1(mix$2(rgb$1(colors[y][x]), WHITE, .25 + .3 * breath));
 			}
 		}));
+	});
+	const dark = (c) => !!c && rgb$1(c).reduce((a, v) => a + v, 0) < 240;
+	const edgeOf = (k) => {
+		const cells = [];
+		slots.forEach((row, y) => row.forEach((s, x) => {
+			if (s === k + 1 || s && s !== k + 1) return;
+			if (out[y][x] && !dark(colors[y][x])) return;
+			if ([
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			].some(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1)) cells.push([x, y]);
+		}));
+		return cells;
+	};
+	const risers = (o, k, spacing, draw) => {
+		const tops = new Map();
+		slots.forEach((row, y) => row.forEach((s, x) => {
+			if (s === k + 1 && !tops.has(x)) tops.set(x, y);
+		}));
+		for (const [x, top] of tops) {
+			if (noise(x, o.print, 5) > .35) continue;
+			const step = Math.floor((t + noise(x, o.print) * 2400) / spacing) % 9;
+			if (step < 6) draw(x + (step % 4 === 3 ? 1 : 0), top - 1 - step, step);
+		}
+	};
+	copies.forEach((o, k) => {
+		if (!o?.fx) return;
+		const tt = t + o.print * 37;
+		if (o.fx === "neon") {
+			if (noise(Math.floor(tt / 130), o.print, 3) > .93) return;
+			for (const [x, y] of edgeOf(k)) out[y][x] = hex$1(hue(((tt / 12 + (x + y) * 8) % 360 + 360) % 360, 1, .6));
+		}
+		if (o.fx === "electric" && noise(Math.floor(tt / 90), o.print, 13) > .6) for (const [x, y] of edgeOf(k)) {
+			const n = noise(x, y, Math.floor(tt / 90));
+			if (n > .72) out[y][x] = n > .86 ? "#FFFFFF" : "#7FE8FF";
+		}
+		if (o.fx === "bubbles") risers(o, k, 160, (x, y, step) => {
+			if (y >= 0 && y < out.length && x < out[0].length && !out[y][x]) out[y][x] = step > 3 ? "#E8F8FF" : "#9ED8FF";
+		});
+		if (o.fx === "hearts") risers(o, k, 220, (x, y) => {
+			for (const [dx, dy, c] of [
+				[
+					-1,
+					-1,
+					"#FF8FBE"
+				],
+				[
+					1,
+					-1,
+					"#FF6FA8"
+				],
+				[
+					-1,
+					0,
+					"#FF6FA8"
+				],
+				[
+					0,
+					0,
+					"#FF6FA8"
+				],
+				[
+					1,
+					0,
+					"#E0457F"
+				],
+				[
+					0,
+					1,
+					"#E0457F"
+				]
+			]) {
+				const px = x + dx, py = y + dy;
+				if (py >= 0 && py < out.length && px >= 0 && px < out[0].length && !out[py][px]) out[py][px] = c;
+			}
+		});
+		if (o.fx === "static" && noise(Math.floor(tt / 90), o.print, 7) > .7) {
+			const yy = Math.floor(noise(Math.floor(tt / 90), o.print, 9) * out.length);
+			const row = out[yy], dir = noise(Math.floor(tt / 90), 1) > .5 ? 1 : -1, copy = [...row];
+			slots[yy].forEach((s, x) => {
+				if (s === k + 1 && copy[x]) {
+					const nx = x + dir;
+					if (nx >= 0 && nx < row.length) row[nx] = copy[x];
+				}
+			});
+		}
 	});
 	copies.forEach((o, k) => {
 		if (o?.fx !== "embers") return;
@@ -3806,11 +4310,12 @@ const hats = [
 		game: "amountle",
 		name: "Gem",
 		free: true,
-		colors: [],
+		colors: ["#E3E7EE", "#9AA3B2"],
 		draw: on([
-			".xa.",
-			"aaaA",
-			".aA."
+			"..waaA..",
+			".waaaaA.",
+			"..aaAA..",
+			"121aA121"
 		])
 	},
 	{
@@ -3824,10 +4329,12 @@ const hats = [
 			"#A6F4EA"
 		],
 		draw: on([
-			"1.1.1",
-			"14341",
-			"22222"
-		])
+			"1...4...1",
+			"11.141.11",
+			"111111111",
+			"134313431",
+			"222222222"
+		], 0, 2)
 	},
 	{
 		id: "halfsies.bowl",
@@ -3836,9 +4343,10 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			".aaaa.",
-			"axxxxA",
-			"AAAAAA"
+			"....AA....",
+			"..xaaaaA..",
+			".xaaaaaaA.",
+			"AAAAAAAAAA"
 		])
 	},
 	{
@@ -3848,12 +4356,14 @@ const hats = [
 		colors: [
 			"#FFFFFF",
 			"#D9DEE6",
-			"#2B2F38"
+			"#2B2F38",
+			"#7DF0A0"
 		],
 		draw: on([
-			"11111111",
-			".222222.",
-			"...33..."
+			"...11...",
+			".211112.",
+			"21111112",
+			"33433433"
 		])
 	},
 	{
@@ -3863,10 +4373,10 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			"xxxxA",
-			"aaaaA",
-			"ayaaA",
-			"aaaaA"
+			".xA..xA.",
+			"xaaaaaaA",
+			"aaaaaaaA",
+			"AAAAAAAA"
 		])
 	},
 	{
@@ -3882,12 +4392,12 @@ const hats = [
 			"#4A84E0"
 		],
 		draw: on([
-			".12..",
-			".12..",
-			"..34.",
-			"..34.",
-			"55556"
-		])
+			"...112..",
+			"..33334.",
+			"..33334.",
+			".555556.",
+			".555556."
+		], 0, 2)
 	},
 	{
 		id: "flipsies.cap",
@@ -3896,9 +4406,9 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			".xxxx.",
-			"xaaaax",
-			"aAaAaA"
+			".xaaaaA.",
+			"xaaaaaaA",
+			"aAaAaAaA"
 		])
 	},
 	{
@@ -3912,11 +4422,11 @@ const hats = [
 			"#FFFFFF"
 		],
 		draw: on([
-			".33.",
-			".11.",
-			"1112",
-			"4442",
-			"1112"
+			".333.",
+			".111.",
+			"11112",
+			"44442",
+			"11112"
 		])
 	},
 	{
@@ -3940,13 +4450,18 @@ const hats = [
 		colors: [
 			"#8A8F99",
 			"#E5484D",
-			"#B8313A"
+			"#B8313A",
+			"#7ED957",
+			"#4CAF50",
+			"#2E7D32"
 		],
 		draw: on([
-			"1222",
-			"1223",
-			"1..."
-		], 1)
+			"....1222",
+			"....1223",
+			"....1...",
+			".4441445",
+			"55555556"
+		])
 	},
 	{
 		id: "weighsies.wedge",
@@ -3959,9 +4474,11 @@ const hats = [
 			"#B8761A"
 		],
 		draw: on([
-			"...11",
-			".1131",
-			"11122"
+			"......1.",
+			"....1111",
+			"..113111",
+			"11111131",
+			"22222222"
 		])
 	},
 	{
@@ -3969,14 +4486,16 @@ const hats = [
 		game: "weighsies",
 		name: "Balance",
 		colors: [
-			"#2B2F38",
-			"#FFFFFF",
-			"#D9DEE6"
+			"#E8B84A",
+			"#B9852A",
+			"#FFF1B0"
 		],
 		draw: on([
-			"22.1.22",
-			"3111113",
-			"...1..."
+			"....3....",
+			"311111112",
+			"1...1...1",
+			"322.1.322",
+			"...112..."
 		])
 	},
 	{
@@ -4024,7 +4543,11 @@ const hats = [
 		name: "Hamster ears",
 		free: true,
 		colors: ["#EDB57D", "#FFB3A7"],
-		draw: onPair(["11", "12"], 1)
+		draw: onPair([
+			"11.",
+			"121",
+			"111"
+		], 0)
 	},
 	{
 		id: "tiltsies.buddy",
@@ -4033,13 +4556,15 @@ const hats = [
 		colors: [
 			"#EDB57D",
 			"#FFE7CB",
-			"#2A1B10"
+			"#2A1B10",
+			"#FF9AA4"
 		],
 		draw: on([
-			"1...1",
-			"11111",
-			"13131",
-			".222."
+			"1.....1",
+			"1111111",
+			"1311131",
+			"1124211",
+			".22222."
 		])
 	},
 	{
@@ -4088,14 +4613,17 @@ const hats = [
 		colors: [
 			"#3FD1C1",
 			"#1F9C90",
-			"#A6F4EA"
+			"#A6F4EA",
+			"#FFD25A",
+			"#E0A62E"
 		],
 		draw: on([
-			".331.",
-			"33111",
-			"31112",
-			".112."
-		])
+			"..33112..",
+			".3311112.",
+			"..11112..",
+			"...112...",
+			"444454444"
+		], 0, 2)
 	},
 	{
 		id: "halfsies.helmet",
@@ -4125,10 +4653,9 @@ const hats = [
 		name: "Ring",
 		colors: ["#FF8FB1", "#E0628A"],
 		draw: on([
-			".11.",
-			"1..2",
-			"1..2",
-			".22."
+			".211112.",
+			"21111112",
+			"22222222"
 		])
 	},
 	{
@@ -4141,10 +4668,12 @@ const hats = [
 			"#E5484D"
 		],
 		draw: on([
-			".1111.",
-			"123321",
-			".2222."
-		], 1)
+			"....3....",
+			"..22222..",
+			".2211122.",
+			"221131122",
+			".2211122."
+		], 0, 2)
 	},
 	{
 		id: "puttsies.tam",
@@ -4157,21 +4686,25 @@ const hats = [
 			"#E5484D"
 		],
 		draw: on([
-			"..33..",
-			".1411.",
-			"141141",
-			"222222"
+			"...33...",
+			".111111.",
+			"14111141",
+			"22222222"
 		])
 	},
 	{
 		id: "weighsies.dumbbell",
 		game: "weighsies",
 		name: "Dumbbell",
-		colors: ["#4A4E5E", "#9AA0A8"],
+		colors: [
+			"#4A4E5E",
+			"#9AA0A8",
+			"#D9DEE6"
+		],
 		draw: on([
-			"1.....1",
-			"1222221",
-			"1.....1"
+			"13.....13",
+			"112222211",
+			"11.....11"
 		])
 	},
 	{
@@ -4185,9 +4718,10 @@ const hats = [
 			"#FFF1D6"
 		],
 		draw: on([
-			".1111.",
-			"111112",
-			"343434"
+			"..3111..",
+			".311111.",
+			"31111112",
+			"43434343"
 		])
 	},
 	{
@@ -4196,11 +4730,12 @@ const hats = [
 		name: "Sunflower seed",
 		colors: ["#3A3A42", "#E8E4DA"],
 		draw: on([
-			".1.",
-			"121",
-			"121",
-			"121"
-		], 2)
+			"...1...",
+			"..121..",
+			".12121.",
+			"1212121",
+			"1111111"
+		], 0, 2)
 	},
 	{
 		id: "trackdle.trophy",
@@ -4251,12 +4786,12 @@ const hats = [
 			"#B07444"
 		],
 		draw: on([
-			"6.....",
-			"61....",
-			"6531..",
-			"64351.",
-			"666666"
-		])
+			"66......",
+			"6116....",
+			"653316..",
+			"6443516.",
+			"66666666"
+		], 0, 2)
 	},
 	{
 		id: "stackdle.arch",
@@ -4301,10 +4836,10 @@ const hats = [
 			"#E5484D"
 		],
 		draw: on([
-			"..1311..",
-			".141141.",
-			".311311.",
-			"22222222"
+			"...1311...",
+			"..141141..",
+			"..311311..",
+			"2222222222"
 		])
 	},
 	{
@@ -4314,15 +4849,16 @@ const hats = [
 		colors: [
 			"#E6DCFF",
 			"#B39EEC",
-			"#7A5FD0"
+			"#7A5FD0",
+			"#4A4E5E"
 		],
 		draw: on([
-			"...11",
-			"..121",
-			".121.",
-			"121..",
-			"3...."
-		], 1)
+			"......11",
+			".....121",
+			"....121.",
+			"...121..",
+			"44434444"
+		])
 	},
 	{
 		id: "cutsies.banana",
@@ -4335,9 +4871,10 @@ const hats = [
 			"#6A4A1E"
 		],
 		draw: on([
-			"4.....4",
-			"23...31",
-			".21111."
+			"4.......4",
+			"13.....31",
+			".1333331.",
+			"..22222.."
 		])
 	},
 	{
@@ -4347,15 +4884,16 @@ const hats = [
 		colors: [
 			"#C9CED8",
 			"#8A93A3",
-			"#EDB57D"
+			"#EDB57D",
+			"#2A1B10"
 		],
 		draw: on([
-			".111.",
-			"12.21",
-			"1.3.1",
-			"12.21",
-			".111."
-		])
+			".11111.",
+			"1.2.2.1",
+			"1.343.1",
+			"1.333.1",
+			".11111."
+		], 0, 2)
 	},
 	{
 		id: "trackdle.goggles",
@@ -5316,11 +5854,12 @@ const seasonal = [
 			"#FF6FA0"
 		],
 		draw: on([
-			"..3..",
-			".121.",
-			".212.",
-			"12121"
-		])
+			"...3...",
+			"..121..",
+			"..212..",
+			".12121.",
+			"2121212"
+		], 0, 2)
 	},
 	{
 		id: "club.pumpkin",
@@ -5333,14 +5872,16 @@ const seasonal = [
 		colors: [
 			"#FF8A2B",
 			"#D9661A",
-			"#4FAE5C"
+			"#4FAE5C",
+			"#FFB866"
 		],
 		draw: on([
-			"..3..",
-			"11211",
-			"11211",
-			".111."
-		])
+			"...33...",
+			".412214.",
+			"41121121",
+			"11121121",
+			".222222."
+		], 0, 2)
 	},
 	{
 		id: "club.snowcap",
@@ -5356,11 +5897,12 @@ const seasonal = [
 			"#FFFFFF"
 		],
 		draw: on([
-			"....3",
-			"..11.",
-			".112.",
-			"33333"
-		])
+			"......33",
+			"....112.",
+			"..11112.",
+			".111112.",
+			"33333333"
+		], 0, 2)
 	},
 	{
 		id: "club.sweetheart",
@@ -5376,10 +5918,11 @@ const seasonal = [
 			"#FFC2D4"
 		],
 		draw: on([
-			"11.11",
-			"13112",
-			".112.",
-			"..2.."
+			".11..11.",
+			"13111112",
+			"11111112",
+			".111112.",
+			"..1122.."
 		])
 	},
 	{
@@ -5398,11 +5941,11 @@ const seasonal = [
 			"#5FB4FF"
 		],
 		draw: on([
-			"4...5",
-			".112.",
-			".112.",
-			".333.",
-			"11112"
+			"...4.5...",
+			"..11112..",
+			"..11112..",
+			"..33333..",
+			"111111112"
 		])
 	},
 	{
@@ -5420,12 +5963,12 @@ const seasonal = [
 			"#FF8A80"
 		],
 		draw: on([
-			"..3..",
-			".333.",
-			"41112",
-			"41112",
-			".333."
-		])
+			"...3...",
+			".33333.",
+			"4111112",
+			"4111112",
+			".33333."
+		], 0, 2)
 	},
 	{
 		id: "club.shamrock",
@@ -5438,14 +5981,17 @@ const seasonal = [
 		colors: [
 			"#4FBF5C",
 			"#2E8E3E",
-			"#A8EBA8"
+			"#F2C230",
+			"#2B2F38",
+			"#A8EBA8",
+			"#B98A1A"
 		],
 		draw: on([
-			"..31..",
-			"3.11.3",
-			"112211",
-			".1.21.",
-			"...2.."
+			"..11112..",
+			"..15112..",
+			"..44344..",
+			".1111112.",
+			"111111112"
 		])
 	},
 	{
@@ -5460,14 +6006,13 @@ const seasonal = [
 			"#FFB3D1",
 			"#F07AA8",
 			"#FFF4A0",
-			"#FFFFFF"
+			"#FFFFFF",
+			"#5FBF6A"
 		],
 		draw: on([
-			".4.1.",
-			"11211",
-			".232.",
-			"11211",
-			".1.1."
+			".4..4..4.",
+			"131131131",
+			"525525525"
 		])
 	},
 	{
@@ -5486,12 +6031,12 @@ const seasonal = [
 			"#E6DCFF"
 		],
 		draw: on([
-			".51.",
-			"5112",
-			"3434",
-			"1112",
-			".22."
-		])
+			"..51..",
+			".5112.",
+			"511112",
+			"343434",
+			"111112"
+		], 0, 2)
 	},
 	{
 		id: "club.daisy",
@@ -5508,9 +6053,9 @@ const seasonal = [
 			"#DCE3EC"
 		],
 		draw: on([
-			".1...1.",
-			"121.121",
-			".43334."
+			".1..1..1.",
+			"121121121",
+			"343343343"
 		])
 	},
 	{
@@ -5529,6 +6074,7 @@ const seasonal = [
 		],
 		draw: on([
 			"...4112...",
+			"...1112...",
 			"...3333...",
 			"2111111112"
 		])
@@ -5549,12 +6095,12 @@ const seasonal = [
 			"#8A93A3"
 		],
 		draw: on([
-			"2.1.3",
-			".414.",
-			"14441",
-			".424.",
-			"..5.."
-		])
+			"2..1..3",
+			".2.1.3.",
+			"..444..",
+			"1444442",
+			"..555.."
+		], 0, 2)
 	},
 	{
 		id: "club.icecream",
@@ -5572,12 +6118,12 @@ const seasonal = [
 			"#FFE3EE"
 		],
 		draw: on([
-			"..3..",
-			".343.",
-			"34343",
-			"51111",
-			"1.1.2"
-		])
+			"...3...",
+			"..343..",
+			".34343.",
+			"1111112",
+			"5111112"
+		], 0, 2)
 	},
 	{
 		id: "club.maple",
@@ -5594,11 +6140,11 @@ const seasonal = [
 			"#8A5A32"
 		],
 		draw: on([
-			"..3..",
-			"3.1.1",
-			"11311",
-			".111.",
-			"..4.."
+			"....1....",
+			"1.11311.1",
+			"111131111",
+			".1131311.",
+			"..2.4.2.."
 		])
 	},
 	{
@@ -5617,10 +6163,10 @@ const seasonal = [
 			"#B07444"
 		],
 		draw: on([
-			"1.2.1",
-			"12321",
-			"23432",
-			".454."
+			"1.2.3.2.1",
+			"121323121",
+			".2133312.",
+			"..44544.."
 		])
 	},
 	{
@@ -5637,11 +6183,12 @@ const seasonal = [
 			"#E5484D"
 		],
 		draw: onPair([
-			"1..",
-			"1.1",
-			"111",
-			".2."
-		], 1)
+			"1.1.",
+			"1.1.",
+			".11.",
+			"..11",
+			"..2."
+		], 0)
 	}
 ];
 /** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
@@ -8207,484 +8754,5 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-Object.defineProperty(exports, 'AURAS', {
-  enumerable: true,
-  get: function () {
-    return AURAS;
-  }
-});
-Object.defineProperty(exports, 'AURA_ODDS', {
-  enumerable: true,
-  get: function () {
-    return AURA_ODDS;
-  }
-});
-Object.defineProperty(exports, 'DEAL_PREFIX', {
-  enumerable: true,
-  get: function () {
-    return DEAL_PREFIX;
-  }
-});
-Object.defineProperty(exports, 'DEEP_BLUE_PRINTS', {
-  enumerable: true,
-  get: function () {
-    return DEEP_BLUE_PRINTS;
-  }
-});
-Object.defineProperty(exports, 'EFFECTS', {
-  enumerable: true,
-  get: function () {
-    return EFFECTS;
-  }
-});
-Object.defineProperty(exports, 'FINISHES', {
-  enumerable: true,
-  get: function () {
-    return FINISHES;
-  }
-});
-Object.defineProperty(exports, 'FOOT_STYLES', {
-  enumerable: true,
-  get: function () {
-    return FOOT_STYLES;
-  }
-});
-Object.defineProperty(exports, 'FX_IDS', {
-  enumerable: true,
-  get: function () {
-    return FX_IDS;
-  }
-});
-Object.defineProperty(exports, 'GAMES', {
-  enumerable: true,
-  get: function () {
-    return GAMES;
-  }
-});
-Object.defineProperty(exports, 'GOLD_RIM_DAYS', {
-  enumerable: true,
-  get: function () {
-    return GOLD_RIM_DAYS;
-  }
-});
-Object.defineProperty(exports, 'GRADES', {
-  enumerable: true,
-  get: function () {
-    return GRADES;
-  }
-});
-Object.defineProperty(exports, 'GRID_SIZE', {
-  enumerable: true,
-  get: function () {
-    return GRID_SIZE;
-  }
-});
-Object.defineProperty(exports, 'LAYER', {
-  enumerable: true,
-  get: function () {
-    return LAYER;
-  }
-});
-Object.defineProperty(exports, 'LUCKY_ODDS', {
-  enumerable: true,
-  get: function () {
-    return LUCKY_ODDS;
-  }
-});
-Object.defineProperty(exports, 'MAX_PINS', {
-  enumerable: true,
-  get: function () {
-    return MAX_PINS;
-  }
-});
-Object.defineProperty(exports, 'ONE_OF_ONE_AURAS', {
-  enumerable: true,
-  get: function () {
-    return ONE_OF_ONE_AURAS;
-  }
-});
-Object.defineProperty(exports, 'PINS', {
-  enumerable: true,
-  get: function () {
-    return PINS;
-  }
-});
-Object.defineProperty(exports, 'SHADE_COUNT', {
-  enumerable: true,
-  get: function () {
-    return SHADE_COUNT;
-  }
-});
-Object.defineProperty(exports, 'SMALL_SIZE', {
-  enumerable: true,
-  get: function () {
-    return SMALL_SIZE;
-  }
-});
-Object.defineProperty(exports, 'T', {
-  enumerable: true,
-  get: function () {
-    return T;
-  }
-});
-Object.defineProperty(exports, 'WEAR', {
-  enumerable: true,
-  get: function () {
-    return WEAR;
-  }
-});
-Object.defineProperty(exports, '__toESM', {
-  enumerable: true,
-  get: function () {
-    return __toESM;
-  }
-});
-Object.defineProperty(exports, 'accessories', {
-  enumerable: true,
-  get: function () {
-    return accessories;
-  }
-});
-Object.defineProperty(exports, 'accessoryWeights', {
-  enumerable: true,
-  get: function () {
-    return accessoryWeights;
-  }
-});
-Object.defineProperty(exports, 'applyFx', {
-  enumerable: true,
-  get: function () {
-    return applyFx;
-  }
-});
-Object.defineProperty(exports, 'armWeights', {
-  enumerable: true,
-  get: function () {
-    return armWeights;
-  }
-});
-Object.defineProperty(exports, 'auraById', {
-  enumerable: true,
-  get: function () {
-    return auraById;
-  }
-});
-Object.defineProperty(exports, 'auraCells', {
-  enumerable: true,
-  get: function () {
-    return auraCells;
-  }
-});
-Object.defineProperty(exports, 'auraColor', {
-  enumerable: true,
-  get: function () {
-    return auraColor;
-  }
-});
-Object.defineProperty(exports, 'bodies', {
-  enumerable: true,
-  get: function () {
-    return bodies;
-  }
-});
-Object.defineProperty(exports, 'bodyWeights', {
-  enumerable: true,
-  get: function () {
-    return bodyWeights;
-  }
-});
-Object.defineProperty(exports, 'cheekWeights', {
-  enumerable: true,
-  get: function () {
-    return cheekWeights;
-  }
-});
-Object.defineProperty(exports, 'cheeks', {
-  enumerable: true,
-  get: function () {
-    return cheeks;
-  }
-});
-Object.defineProperty(exports, 'compose', {
-  enumerable: true,
-  get: function () {
-    return compose;
-  }
-});
-Object.defineProperty(exports, 'composeBase', {
-  enumerable: true,
-  get: function () {
-    return composeBase;
-  }
-});
-Object.defineProperty(exports, 'dealOf', {
-  enumerable: true,
-  get: function () {
-    return dealOf;
-  }
-});
-Object.defineProperty(exports, 'decode', {
-  enumerable: true,
-  get: function () {
-    return decode;
-  }
-});
-Object.defineProperty(exports, 'dress', {
-  enumerable: true,
-  get: function () {
-    return dress;
-  }
-});
-Object.defineProperty(exports, 'encode', {
-  enumerable: true,
-  get: function () {
-    return encode;
-  }
-});
-Object.defineProperty(exports, 'eyeWeights', {
-  enumerable: true,
-  get: function () {
-    return eyeWeights;
-  }
-});
-Object.defineProperty(exports, 'eyes', {
-  enumerable: true,
-  get: function () {
-    return eyes;
-  }
-});
-Object.defineProperty(exports, 'footWeights', {
-  enumerable: true,
-  get: function () {
-    return footWeights;
-  }
-});
-Object.defineProperty(exports, 'freeItem', {
-  enumerable: true,
-  get: function () {
-    return freeItem;
-  }
-});
-Object.defineProperty(exports, 'fxColor', {
-  enumerable: true,
-  get: function () {
-    return fxColor;
-  }
-});
-Object.defineProperty(exports, 'gameItems', {
-  enumerable: true,
-  get: function () {
-    return gameItems;
-  }
-});
-Object.defineProperty(exports, 'getPalette', {
-  enumerable: true,
-  get: function () {
-    return getPalette;
-  }
-});
-Object.defineProperty(exports, 'gradeOf', {
-  enumerable: true,
-  get: function () {
-    return gradeOf;
-  }
-});
-Object.defineProperty(exports, 'hair', {
-  enumerable: true,
-  get: function () {
-    return hair;
-  }
-});
-Object.defineProperty(exports, 'hairWeights', {
-  enumerable: true,
-  get: function () {
-    return hairWeights;
-  }
-});
-Object.defineProperty(exports, 'hash', {
-  enumerable: true,
-  get: function () {
-    return hash;
-  }
-});
-Object.defineProperty(exports, 'hashNth', {
-  enumerable: true,
-  get: function () {
-    return hashNth;
-  }
-});
-Object.defineProperty(exports, 'headWeights', {
-  enumerable: true,
-  get: function () {
-    return headWeights;
-  }
-});
-Object.defineProperty(exports, 'heads', {
-  enumerable: true,
-  get: function () {
-    return heads;
-  }
-});
-Object.defineProperty(exports, 'inSeason', {
-  enumerable: true,
-  get: function () {
-    return inSeason;
-  }
-});
-Object.defineProperty(exports, 'itemById', {
-  enumerable: true,
-  get: function () {
-    return itemById;
-  }
-});
-Object.defineProperty(exports, 'items', {
-  enumerable: true,
-  get: function () {
-    return items;
-  }
-});
-Object.defineProperty(exports, 'luckyPalette', {
-  enumerable: true,
-  get: function () {
-    return luckyPalette;
-  }
-});
-Object.defineProperty(exports, 'mouthWeights', {
-  enumerable: true,
-  get: function () {
-    return mouthWeights;
-  }
-});
-Object.defineProperty(exports, 'mouths', {
-  enumerable: true,
-  get: function () {
-    return mouths;
-  }
-});
-Object.defineProperty(exports, 'nameOf', {
-  enumerable: true,
-  get: function () {
-    return nameOf;
-  }
-});
-Object.defineProperty(exports, 'nebulaPhase', {
-  enumerable: true,
-  get: function () {
-    return nebulaPhase;
-  }
-});
-Object.defineProperty(exports, 'paint', {
-  enumerable: true,
-  get: function () {
-    return paint;
-  }
-});
-Object.defineProperty(exports, 'paletteOf', {
-  enumerable: true,
-  get: function () {
-    return paletteOf;
-  }
-});
-Object.defineProperty(exports, 'paletteWeights', {
-  enumerable: true,
-  get: function () {
-    return paletteWeights;
-  }
-});
-Object.defineProperty(exports, 'palettes', {
-  enumerable: true,
-  get: function () {
-    return palettes;
-  }
-});
-Object.defineProperty(exports, 'pinById', {
-  enumerable: true,
-  get: function () {
-    return pinById;
-  }
-});
-Object.defineProperty(exports, 'resolve', {
-  enumerable: true,
-  get: function () {
-    return resolve;
-  }
-});
-Object.defineProperty(exports, 'resolveColor', {
-  enumerable: true,
-  get: function () {
-    return resolveColor;
-  }
-});
-Object.defineProperty(exports, 'roll', {
-  enumerable: true,
-  get: function () {
-    return roll;
-  }
-});
-Object.defineProperty(exports, 'rollFx', {
-  enumerable: true,
-  get: function () {
-    return rollFx;
-  }
-});
-Object.defineProperty(exports, 'rollSeason', {
-  enumerable: true,
-  get: function () {
-    return rollSeason;
-  }
-});
-Object.defineProperty(exports, 'shadePalette', {
-  enumerable: true,
-  get: function () {
-    return shadePalette;
-  }
-});
-Object.defineProperty(exports, 'shadeWeights', {
-  enumerable: true,
-  get: function () {
-    return shadeWeights;
-  }
-});
-Object.defineProperty(exports, 'slotOf', {
-  enumerable: true,
-  get: function () {
-    return slotOf;
-  }
-});
-Object.defineProperty(exports, 'special', {
-  enumerable: true,
-  get: function () {
-    return special;
-  }
-});
-Object.defineProperty(exports, 'starter', {
-  enumerable: true,
-  get: function () {
-    return starter;
-  }
-});
-Object.defineProperty(exports, 'tallyMarks', {
-  enumerable: true,
-  get: function () {
-    return tallyMarks;
-  }
-});
-Object.defineProperty(exports, 'temperTint', {
-  enumerable: true,
-  get: function () {
-    return temperTint;
-  }
-});
-Object.defineProperty(exports, 'wearOf', {
-  enumerable: true,
-  get: function () {
-    return wearOf;
-  }
-});
-Object.defineProperty(exports, 'withItems', {
-  enumerable: true,
-  get: function () {
-    return withItems;
-  }
-});
-//# sourceMappingURL=paint-Cr9rVaWi.cjs.map
+export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems };
+//# sourceMappingURL=paint-SChrK7NR.js.map

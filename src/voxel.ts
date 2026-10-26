@@ -52,6 +52,15 @@ const SURFACES: Record<SurfaceKind, Omit<Surface, 'kind'>> = {
   prism:    { roughness: .12, metalness: .35, clearcoat: 1,   clearcoatRoughness: .04, iridescence: 1, sheen: 0, glow: 0 },
   negative: { roughness: .1,  metalness: .2,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: 0, sheen: 0, glow: .2 },
   gold:     { roughness: .16, metalness: 1,   clearcoat: .5,  clearcoatRoughness: .08, iridescence: 0, sheen: 0, glow: 0 },
+  // An aura's own finishes: glowing light, never a solid thing.
+  classic:  { roughness: .3,  metalness: 0,   clearcoat: .6,  clearcoatRoughness: .2,  iridescence: 0,  sheen: 0, glow: .7 },
+  fade:     { roughness: .2,  metalness: .1,  clearcoat: .9,  clearcoatRoughness: .1,  iridescence: .5, sheen: 0, glow: .6 },
+  frost:    { roughness: .1,  metalness: .2,  clearcoat: 1,   clearcoatRoughness: .04, iridescence: .3, sheen: 0, glow: .5 },
+  toxic:    { roughness: .25, metalness: 0,   clearcoat: .8,  clearcoatRoughness: .12, iridescence: 0,  sheen: 0, glow: .9 },
+  shadow:   { roughness: .4,  metalness: .3,  clearcoat: .5,  clearcoatRoughness: .2,  iridescence: 0,  sheen: 0, glow: .3 },
+  sapphire: { roughness: .1,  metalness: .4,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: .2, sheen: 0, glow: .6 },
+  ruby:     { roughness: .1,  metalness: .4,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: .2, sheen: 0, glow: .6 },
+  pearl:    { roughness: .08, metalness: .5,  clearcoat: 1,   clearcoatRoughness: .02, iridescence: .6, sheen: 0, glow: .3 },
 };
 
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
@@ -96,7 +105,7 @@ const darken = (hex: string, k: number) => {
 
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
 function inset(w: number, h: number, inside: (x: number, y: number) => boolean): number[][] {
-  const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => inside(x, y) ? 99 : 0));
+  const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x): number => inside(x, y) ? 99 : 0));
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y - 1]?.[x] ?? 0) + 1, (d[y][x - 1] ?? 0) + 1);
   for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y + 1]?.[x] ?? 0) + 1, (d[y][x + 1] ?? 0) + 1);
   return d;
@@ -176,7 +185,7 @@ export function voxelColumns(frame: VoxelSource, owned: Partial<Record<Slot, Own
   return out;
 }
 
-const SLOT_TOKENS: Record<Slot, [number, number]> = { skin: [LAYER.skin, LAYER.hat], hat: [LAYER.hat, LAYER.frame], frame: [LAYER.frame, LAYER.buddy], buddy: [LAYER.buddy, LAYER.buddy + 10] };
+const SLOT_TOKENS: Record<Slot, [number, number]> = { skin: [LAYER.skin, LAYER.hat], hat: [LAYER.hat, LAYER.frame], frame: [LAYER.frame, LAYER.buddy], buddy: [LAYER.buddy, LAYER.aura], aura: [LAYER.aura, LAYER.aura + 10] };
 
 /** One copy on its own, cut out of a guy wearing it: a 16×16 frame with only the item's pixels. */
 export function itemFrame(o: Owned, seed = 'display stand'): VoxelSource {

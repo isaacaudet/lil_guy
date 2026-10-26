@@ -192,6 +192,9 @@
   .guy-card { display: grid; justify-items: center; gap: 14px; align-content: start; }
   .guy-card > div:first-child { width: 100%; max-width: 280px; }
   .guy-card .badges { justify-content: center; }
+  canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 104 / 168; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); transition: transform .12s ease-out; }
+  .saves { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .saves .btn { height: 36px; font-size: 16px; padding: 0 12px; border-radius: 8px; }
   .tt .ti { display: inline-flex; align-items: center; gap: 4px; filter: brightness(.8) saturate(1.2); }
   .tt .ti svg { width: 12px; height: 12px; }
   .meaning { display: grid; gap: 4px; padding: 12px 14px; border-radius: 10px; background: var(--paper); color: var(--paper-ink); font-size: 24px; line-height: 1.25; }
@@ -345,7 +348,7 @@
   .ins-view { display: grid; place-items: center; height: 340px; perspective: 900px; }
   .ins-view .tilt { transition: transform .12s ease-out; transform-style: preserve-3d; filter: drop-shadow(0 12px 0 rgba(0,0,0,.4)); }
   .ins-view canvas.alone { display: block; image-rendering: pixelated; max-width: 100%; }
-  .ins-view .card { width: 220px; }
+  .ins-view .card { width: 200px; }
   .ins-cap { text-align: center; font-size: 16px; color: var(--ink-3); }
   .fl { margin: 18px 0 0; padding: 16px; border-radius: 12px; background: var(--panel-2); box-shadow: var(--lift); }
   .fl-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -848,7 +851,7 @@
   <section id="guy-sec" hidden>
     <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them and this is how rare he is.</p></div><button class="btn" type="button" id="look-open">Change look</button></div>
     <div class="odds-panel">
-      <div class="stage guy-card"><div id="guy-stage"></div><span class="badges" id="guy-badges"></span></div>
+      <div class="stage guy-card"><div id="guy-stage"></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
       <div class="scoring">
         <div class="tiles" id="tiles"></div>
         <div class="score" id="score" role="button" tabindex="0" aria-label="Count again"><canvas class="fire" id="fire" width="96" height="32" aria-hidden="true"></canvas><span class="lbl">1 in</span><b id="total">1</b><span class="unit" id="unit"></span></div>
@@ -916,7 +919,7 @@
 
  <div class="view" id="v-u" hidden>
   <section class="odds-panel profile">
-    <div class="stage guy-card"><div id="u-stage"></div><div class="badges" id="u-badges"></div></div>
+    <div class="stage guy-card"><div id="u-stage"></div><div class="badges" id="u-badges"></div><div class="saves" id="u-saves"></div></div>
     <div class="scoring">
       <div class="tiles" id="u-tiles"></div>
       <div class="score"><span class="lbl">1 in</span><b id="u-total"></b><span class="unit" id="u-unit"></span></div>
@@ -1612,6 +1615,43 @@ void main() {
   const lookFor = {};                                  // other people's picked looks, by seed
   const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
+  // The card a player keeps: drawn by the library, so the one on the page is the one they save.
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: [spec.label.bottom].filter(Boolean), grade: spec.grade ?? spec.label.g, move });
+  const libCards = new Set();
+  function libCard(el, input) {
+    const canvas = document.createElement('canvas');
+    canvas.width = LG.CARD_WIDTH; canvas.height = LG.CARD_HEIGHT; canvas.className = 'libcard';
+    canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `${input.title} card`);
+    el.replaceChildren(canvas);
+    libCards.add({ canvas, ctx: canvas.getContext('2d'), p: LG.cardPlayer(input), start: performance.now(), last: -1 });
+    canvas.addEventListener('pointermove', e => { const r = canvas.getBoundingClientRect(); canvas.style.transform = `perspective(700px) rotateY(${((e.clientX - r.left) / r.width - 0.5) * 18}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 14}deg)`; });
+    canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
+  }
+  const fileName = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lil-guy';
+  const saveFile = (bytes, name, type) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([bytes], { type })); a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  };
+  // GIFs take a moment to encode, so the button says so and the page paints first.
+  function saveButtons(el, input, name) {
+    const base = fileName(name);
+    el.innerHTML = '<button class="btn small" type="button" data-save="gif">Save card GIF</button><button class="btn small ghost" type="button" data-save="png">Save PNG</button><button class="btn small ghost" type="button" data-save="guy">Save guy GIF</button>';
+    el.onclick = e => {
+      const b = e.target.closest('[data-save]');
+      if (!b || b.disabled) return;
+      const was = b.textContent; b.disabled = true; b.textContent = 'Making…';
+      setTimeout(async () => {
+        try {
+          if (b.dataset.save === 'gif') saveFile(LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
+          else if (b.dataset.save === 'png') saveFile(await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
+          else saveFile(LG.toGuyGif(input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16), base + '.gif', 'image/gif');
+        } catch (err) { toast('Couldn\'t make that file: ' + err.message); }
+        b.disabled = false; b.textContent = was;
+      }, 30);
+    };
+  }
   const animated = (seed, move, equip, size, emote) => { const c = guyConfig(seed); return LG.toAnimatedSvg(seed, move, { size, equip, emote, parts: partsOf(c), palette: LG.paletteOf(c) }); };
   const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
 
@@ -1926,8 +1966,9 @@ void main() {
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
-    $('guy-stage').innerHTML = px(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
-    hydrate($('guy-stage'));
+    const guyCard = cardInput(cardSpec(state.seed, wornCopies(), { title: '@' + state.key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
+    libCard($('guy-stage'), guyCard);
+    saveButtons($('guy-saves'), guyCard, state.key);
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg);
@@ -3140,6 +3181,7 @@ void main() {
         <div class="ins-tabs" role="group" aria-label="View"><button type="button" data-v="alone" aria-pressed="true">On its own</button><button type="button" data-v="guy" aria-pressed="false">On your guy</button></div>
         <div class="ins-view" id="ins-view"></div>
         <p class="ins-cap">#${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
+        <div class="saves" id="insp-saves"></div>
       </div>
       <div>
         <h3 id="insp-name" class="${tag ? 'tagged' : ''}">${esc(named(title, tag))}${tag ? `<span class="realname">${esc(title)}</span>` : ''}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}${item.about ? `<p class="about">${esc(item.about)}</p>` : ''}
@@ -3158,10 +3200,12 @@ void main() {
         </details>
       </div>`;
     const view = $('ins-view');
+    const inspCard = cardInput(cardSpec(ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)));
+    saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`);
     const setView = v => {
       view.innerHTML = v === 'alone' ? '<div class="tilt"><canvas class="alone" aria-label="The item on its own"></canvas></div>'
-        : `<div class="tilt"><div class="card">${px(cardSpec(ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)))}</div></div>`;
-      if (v === 'alone') showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); else hydrate(view);
+        : '<div class="tilt"><div class="card"></div></div>';
+      if (v === 'alone') showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); else libCard(view.querySelector('.card'), inspCard);
       $('insp-body').querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
     };
     setView('alone');
@@ -3422,8 +3466,9 @@ void main() {
     $('page-kicker').textContent = mine ? 'You' : 'Player';
     $('page-title').textContent = '@' + key;
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
-    $('u-stage').innerHTML = px(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), { title: '@' + key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
-    hydrate($('u-stage'));
+    const uCard = cardInput(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), { title: '@' + key, g: 4, corner: '★', bottom: cardTrait(cfg) }, false, 4));
+    libCard($('u-stage'), uCard);
+    saveButtons($('u-saves'), uCard, key);
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
@@ -3588,6 +3633,12 @@ void main() {
       if (!s.canvas.isConnected) { shows.delete(s); continue; }
       if (!onScreen(s.canvas) || (s.drawn && !s.moves)) continue;
       drawShow(s, now); s.drawn = true;
+    }
+    for (const s of libCards) {
+      if (!s.canvas.isConnected) { libCards.delete(s); continue; }
+      if (!onScreen(s.canvas)) continue;
+      const i = Math.floor((now - s.start) / s.p.delay);
+      if (i !== s.last) { s.ctx.putImageData(new ImageData(s.p.frame(i), LG.CARD_WIDTH, LG.CARD_HEIGHT), 0, 0); s.last = i; }
     }
     fireTick();
     if (bandPaint) bandPaint.draw(now);

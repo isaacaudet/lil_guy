@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-Cr9rVaWi.cjs');
+const require_paint = require('./paint-A99jbjkG.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -276,14 +276,14 @@ function glance(grid, config, dx) {
 	}
 	return out;
 }
-const rgb = (h) => [
+const rgb$1 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix = (a, b$1, t) => {
-	const x = rgb(a), y = rgb(b$1);
+const mix$1 = (a, b$1, t) => {
+	const x = rgb$1(a), y = rgb$1(b$1);
 	return hex([
 		0,
 		1,
@@ -301,8 +301,8 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= require_paint.LAYER.aura ? 5 : t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette, small = false) {
-	const colors = require_paint.paint(grid, config, palette, small, false);
+function painted(grid, config, palette$1, small = false) {
+	const colors = require_paint.paint(grid, config, palette$1, small, false);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -522,7 +522,7 @@ const SPARKLE_SPOTS = [
 */
 function animate(input, move, options = {}) {
 	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
-	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
+	const palette$1 = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
 	const figure = {
 		...config,
 		frame: void 0,
@@ -558,14 +558,14 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small));
 		return layers.get(pose);
 	};
 	let backdrop = null;
 	const frameItem = require_paint.itemById(config.frame);
 	if (frameItem?.slot === "frame") {
 		const tall = Array.from({ length: require_paint.GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: require_paint.GRID_SIZE }, (_$1, x) => require_paint.LAYER.frame + frameItem.fill(x, y + 48) - 1));
-		const colors = require_paint.paint(tall, config, palette, false, false);
+		const colors = require_paint.paint(tall, config, palette$1, false, false);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? require_paint.GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
 	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
@@ -587,7 +587,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 && !wornAura ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix$1(gradeColor, "#000000", .2), mix$1(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const frames = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -609,13 +609,13 @@ function animate(input, move, options = {}) {
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
-				if (d < 1) cell.c = mix(cell.c, "#FFFFFF", .65);
-				else if (d < 2) cell.c = mix(cell.c, "#FFFFFF", .25);
+				if (d < 1) cell.c = mix$1(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix$1(cell.c, "#FFFFFF", .25);
 			}));
 		}
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
-			const gold = palette.colors[require_paint.T.GOLD] ?? "#F2C230";
+			const gold = palette$1.colors[require_paint.T.GOLD] ?? "#F2C230";
 			twinkle(layer, 2, 3, "#FFFFFF", gold);
 			twinkle(layer, 13, 2, "#FFFFFF", gold);
 			if (Math.floor(t$1 / 120) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
@@ -651,7 +651,7 @@ function animate(input, move, options = {}) {
 			};
 		} else if (grade >= 2) {
 			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
-			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix(gradeColor, "#000000", .35);
+			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix$1(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
 				c: ring,
 				item: false
@@ -861,12 +861,12 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 			game,
 			equip
 		}, name);
-		const palette = require_paint.withItems(customPalette ?? require_paint.paletteOf(cfg), cfg);
+		const palette$1 = require_paint.withItems(customPalette ?? require_paint.paletteOf(cfg), cfg);
 		const grid = require_paint.compose(cfg);
 		const hv = require_paint.hash(name);
 		const toRects = (source, keyPrefix) => {
 			const out = [];
-			const colors$1 = require_paint.paint(source, cfg, palette, typeof size === "number" && size <= require_paint.SMALL_SIZE);
+			const colors$1 = require_paint.paint(source, cfg, palette$1, typeof size === "number" && size <= require_paint.SMALL_SIZE);
 			for (let y = 0; y < require_paint.GRID_SIZE; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) {
 				const color = colors$1[y][x];
 				if (color) out.push(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(
@@ -888,7 +888,7 @@ const LilGuy = react.forwardRef(({ name, size = 40, shape = "circle", variant = 
 		return {
 			rects: toRects(grid, ""),
 			shutRects: toRects(shut, "s"),
-			bgColor: palette.colors[3],
+			bgColor: palette$1.colors[3],
 			config: cfg,
 			hashValue: hv
 		};
@@ -1273,10 +1273,10 @@ function bounds(colors, margin) {
 }
 function toSvgString(input, options = {}) {
 	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
-	const palette = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
+	const palette$1 = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
 	const size = options.size ?? 128;
 	const small = options.small ?? size <= require_paint.SMALL_SIZE;
-	const colors = require_paint.paint(require_paint.compose(config), config, palette, small);
+	const colors = require_paint.paint(require_paint.compose(config), config, palette$1, small);
 	const box = small ? bounds(colors, options.square ? 0 : 3) : {
 		x: 0,
 		y: 0,
@@ -1392,8 +1392,8 @@ const DEFAULT_COLORS_DARK = [
 const FALLBACK_COLOR = "#ec4899";
 /** Get a color from an array by index (wraps around) */
 function getColor(colors, index) {
-	const palette = colors.length > 0 ? colors : DEFAULT_COLORS;
-	return palette[index % palette.length] ?? FALLBACK_COLOR;
+	const palette$1 = colors.length > 0 ? colors : DEFAULT_COLORS;
+	return palette$1[index % palette$1.length] ?? FALLBACK_COLOR;
 }
 
 //#endregion
@@ -2257,6 +2257,78 @@ const SURFACES = {
 		iridescence: 0,
 		sheen: 0,
 		glow: 0
+	},
+	classic: {
+		roughness: .3,
+		metalness: 0,
+		clearcoat: .6,
+		clearcoatRoughness: .2,
+		iridescence: 0,
+		sheen: 0,
+		glow: .7
+	},
+	fade: {
+		roughness: .2,
+		metalness: .1,
+		clearcoat: .9,
+		clearcoatRoughness: .1,
+		iridescence: .5,
+		sheen: 0,
+		glow: .6
+	},
+	frost: {
+		roughness: .1,
+		metalness: .2,
+		clearcoat: 1,
+		clearcoatRoughness: .04,
+		iridescence: .3,
+		sheen: 0,
+		glow: .5
+	},
+	toxic: {
+		roughness: .25,
+		metalness: 0,
+		clearcoat: .8,
+		clearcoatRoughness: .12,
+		iridescence: 0,
+		sheen: 0,
+		glow: .9
+	},
+	shadow: {
+		roughness: .4,
+		metalness: .3,
+		clearcoat: .5,
+		clearcoatRoughness: .2,
+		iridescence: 0,
+		sheen: 0,
+		glow: .3
+	},
+	sapphire: {
+		roughness: .1,
+		metalness: .4,
+		clearcoat: 1,
+		clearcoatRoughness: .03,
+		iridescence: .2,
+		sheen: 0,
+		glow: .6
+	},
+	ruby: {
+		roughness: .1,
+		metalness: .4,
+		clearcoat: 1,
+		clearcoatRoughness: .03,
+		iridescence: .2,
+		sheen: 0,
+		glow: .6
+	},
+	pearl: {
+		roughness: .08,
+		metalness: .5,
+		clearcoat: 1,
+		clearcoatRoughness: .02,
+		iridescence: .6,
+		sheen: 0,
+		glow: .3
 	}
 };
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
@@ -2278,8 +2350,8 @@ const darken = (hex$1, k) => {
 	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
 };
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
-function inset(w, h, inside) {
-	const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_$1, x) => inside(x, y) ? 99 : 0));
+function inset(w, h, inside$1) {
+	const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_$1, x) => inside$1(x, y) ? 99 : 0));
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y - 1]?.[x] ?? 0) + 1, (d[y][x - 1] ?? 0) + 1);
 	for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y + 1]?.[x] ?? 0) + 1, (d[y][x + 1] ?? 0) + 1);
 	return d;
@@ -2379,13 +2451,13 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		const color = shade ? darken(c, 1 - shade * .045) : c;
 		let side = color;
 		if (lum(c) < .3 && (s === 4 ? buddy[y][x] : figure[y][x]) === 1) {
-			const inside = [
+			const inside$1 = [
 				[1, 0],
 				[-1, 0],
 				[0, 1],
 				[0, -1]
 			].map(([dx, dy]) => C[y + dy]?.[x + dx]).filter((n) => !!n && lum(n) >= .3);
-			if (inside.length) side = darken(inside[0], .92);
+			if (inside$1.length) side = darken(inside$1[0], .92);
 		}
 		out.push({
 			x: px,
@@ -2406,7 +2478,8 @@ const SLOT_TOKENS = {
 	skin: [require_paint.LAYER.skin, require_paint.LAYER.hat],
 	hat: [require_paint.LAYER.hat, require_paint.LAYER.frame],
 	frame: [require_paint.LAYER.frame, require_paint.LAYER.buddy],
-	buddy: [require_paint.LAYER.buddy, require_paint.LAYER.buddy + 10]
+	buddy: [require_paint.LAYER.buddy, require_paint.LAYER.aura],
+	aura: [require_paint.LAYER.aura, require_paint.LAYER.aura + 10]
 };
 /** One copy on its own, cut out of a guy wearing it: a 16×16 frame with only the item's pixels. */
 function itemFrame(o, seed = "display stand") {
@@ -2523,7 +2596,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			v[2] / l
 		];
 	};
-	const quad = (a, b$1, c, d, n, rgb$1) => {
+	const quad = (a, b$1, c, d, n, rgb$2) => {
 		const shaded = [
 			a,
 			b$1,
@@ -2546,7 +2619,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
 			nor.push(...shaded[i]);
-			col.push(...rgb$1);
+			col.push(...rgb$2);
 		}
 	};
 	const open = (z0, z1, n) => {
@@ -2563,7 +2636,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			const face = linear(c.color), back = linear(c.back), side = linear(c.side ?? c.color);
 			flat = c.slot === 3;
 			wall = 0;
-			const RIM = .4, rim$1 = z1 - RIM;
+			const RIM$1 = .4, rim$1 = z1 - RIM$1;
 			const wallQuads = (spans, corners, n) => {
 				for (const [a, b$1] of spans) {
 					if (c.side === void 0 || c.side === c.color || b$1 <= rim$1) {
@@ -2993,12 +3066,2510 @@ function setProgress(game, owned) {
 }
 
 //#endregion
+//#region src/font.ts
+const GLYPHS = {
+	"0": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"1": [7, [
+		0,
+		0,
+		12,
+		15,
+		15,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"2": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		48,
+		48,
+		56,
+		28,
+		14,
+		7,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"3": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		48,
+		28,
+		60,
+		48,
+		48,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"4": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		48,
+		48,
+		48,
+		0,
+		0,
+		0
+	]],
+	"5": [7, [
+		0,
+		0,
+		63,
+		63,
+		3,
+		3,
+		31,
+		63,
+		48,
+		48,
+		48,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"6": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		3,
+		31,
+		63,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"7": [7, [
+		0,
+		0,
+		63,
+		63,
+		48,
+		48,
+		56,
+		24,
+		28,
+		12,
+		12,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"8": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		30,
+		63,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"9": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	" ": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"!": [3, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"\"": [6, [
+		0,
+		0,
+		27,
+		27,
+		18,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"#": [8, [
+		0,
+		0,
+		54,
+		54,
+		54,
+		127,
+		127,
+		54,
+		127,
+		127,
+		54,
+		54,
+		54,
+		0,
+		0,
+		0
+	]],
+	"$": [7, [
+		0,
+		0,
+		12,
+		12,
+		62,
+		63,
+		3,
+		31,
+		62,
+		48,
+		63,
+		31,
+		12,
+		12,
+		0,
+		0
+	]],
+	"%": [7, [
+		0,
+		0,
+		0,
+		0,
+		3,
+		51,
+		56,
+		28,
+		14,
+		7,
+		51,
+		48,
+		0,
+		0,
+		0,
+		0
+	]],
+	"&": [10, [
+		0,
+		0,
+		60,
+		126,
+		102,
+		102,
+		126,
+		447,
+		507,
+		243,
+		115,
+		511,
+		478,
+		0,
+		0,
+		0
+	]],
+	"'": [3, [
+		0,
+		0,
+		3,
+		3,
+		2,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"(": [5, [
+		0,
+		0,
+		14,
+		15,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		15,
+		14,
+		0
+	]],
+	")": [5, [
+		0,
+		0,
+		7,
+		15,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		15,
+		7,
+		0
+	]],
+	"*": [6, [
+		0,
+		0,
+		27,
+		31,
+		14,
+		31,
+		27,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"+": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		12,
+		12,
+		63,
+		63,
+		12,
+		12,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	",": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		2,
+		0,
+		0
+	]],
+	"-": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	".": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"/": [7, [
+		0,
+		0,
+		48,
+		48,
+		56,
+		24,
+		28,
+		12,
+		14,
+		6,
+		7,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	":": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	";": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		2,
+		0,
+		0
+	]],
+	"<": [6, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		24,
+		28,
+		14,
+		7,
+		7,
+		14,
+		28,
+		24,
+		0,
+		0,
+		0
+	]],
+	"=": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	">": [6, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		7,
+		14,
+		28,
+		28,
+		14,
+		7,
+		3,
+		0,
+		0,
+		0
+	]],
+	"?": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		48,
+		56,
+		28,
+		12,
+		12,
+		0,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"@": [10, [
+		0,
+		0,
+		124,
+		254,
+		455,
+		499,
+		507,
+		475,
+		507,
+		243,
+		7,
+		510,
+		508,
+		0,
+		0,
+		0
+	]],
+	"A": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		63,
+		63,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"B": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		63,
+		31,
+		51,
+		51,
+		51,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"C": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"D": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"E": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		31,
+		31,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"F": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		31,
+		31,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"G": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		59,
+		59,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"H": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		63,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"I": [7, [
+		0,
+		0,
+		63,
+		63,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"J": [7, [
+		0,
+		0,
+		63,
+		63,
+		48,
+		48,
+		48,
+		48,
+		48,
+		48,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"K": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		59,
+		31,
+		15,
+		31,
+		59,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"L": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"M": [9, [
+		0,
+		0,
+		127,
+		255,
+		219,
+		219,
+		219,
+		219,
+		219,
+		219,
+		219,
+		195,
+		195,
+		0,
+		0,
+		0
+	]],
+	"N": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"O": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"P": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		63,
+		31,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"Q": [8, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		59,
+		127,
+		110,
+		0,
+		0,
+		0
+	]],
+	"R": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		63,
+		31,
+		59,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"S": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		31,
+		62,
+		48,
+		48,
+		48,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"T": [7, [
+		0,
+		0,
+		63,
+		63,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"U": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"V": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		12,
+		0,
+		0,
+		0
+	]],
+	"W": [9, [
+		0,
+		0,
+		195,
+		195,
+		195,
+		195,
+		219,
+		219,
+		219,
+		219,
+		219,
+		255,
+		126,
+		0,
+		0,
+		0
+	]],
+	"X": [8, [
+		0,
+		0,
+		99,
+		99,
+		99,
+		119,
+		62,
+		28,
+		62,
+		119,
+		99,
+		99,
+		99,
+		0,
+		0,
+		0
+	]],
+	"Y": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		12,
+		12,
+		12,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"Z": [7, [
+		0,
+		0,
+		63,
+		63,
+		56,
+		24,
+		28,
+		12,
+		14,
+		6,
+		7,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"[": [5, [
+		0,
+		0,
+		15,
+		15,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		15,
+		15,
+		0
+	]],
+	"\\": [7, [
+		0,
+		0,
+		3,
+		3,
+		7,
+		6,
+		14,
+		12,
+		28,
+		24,
+		56,
+		48,
+		48,
+		0,
+		0,
+		0
+	]],
+	"]": [5, [
+		0,
+		0,
+		15,
+		15,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		15,
+		15,
+		0
+	]],
+	"^": [7, [
+		0,
+		0,
+		12,
+		30,
+		63,
+		51,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"_": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"`": [5, [
+		6,
+		8,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"a": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		31,
+		63,
+		48,
+		62,
+		63,
+		51,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"b": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"c": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"d": [7, [
+		0,
+		0,
+		48,
+		48,
+		48,
+		62,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"e": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		63,
+		63,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"f": [7, [
+		0,
+		0,
+		60,
+		62,
+		6,
+		31,
+		31,
+		6,
+		6,
+		6,
+		6,
+		6,
+		6,
+		0,
+		0,
+		0
+	]],
+	"g": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		63,
+		31
+	]],
+	"h": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"i": [3, [
+		0,
+		0,
+		3,
+		3,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"j": [5, [
+		0,
+		0,
+		12,
+		12,
+		0,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		15,
+		7
+	]],
+	"k": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		31,
+		63,
+		51,
+		63,
+		31,
+		59,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"l": [3, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"m": [9, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		127,
+		255,
+		219,
+		219,
+		219,
+		219,
+		219,
+		219,
+		0,
+		0,
+		0
+	]],
+	"n": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"o": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"p": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		31,
+		3,
+		3,
+		3
+	]],
+	"q": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		48,
+		48
+	]],
+	"r": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		59,
+		63,
+		7,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"s": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		62,
+		63,
+		3,
+		31,
+		62,
+		48,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"t": [7, [
+		0,
+		0,
+		6,
+		6,
+		6,
+		63,
+		63,
+		6,
+		6,
+		6,
+		6,
+		62,
+		60,
+		0,
+		0,
+		0
+	]],
+	"u": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"v": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		12,
+		0,
+		0,
+		0
+	]],
+	"w": [9, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		195,
+		219,
+		219,
+		219,
+		219,
+		219,
+		255,
+		126,
+		0,
+		0,
+		0
+	]],
+	"x": [8, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		99,
+		119,
+		62,
+		28,
+		28,
+		62,
+		119,
+		99,
+		0,
+		0,
+		0
+	]],
+	"y": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		63,
+		31
+	]],
+	"z": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		56,
+		28,
+		14,
+		7,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"{": [6, [
+		0,
+		0,
+		28,
+		30,
+		6,
+		6,
+		6,
+		7,
+		3,
+		6,
+		6,
+		6,
+		6,
+		30,
+		28,
+		0
+	]],
+	"|": [3, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0
+	]],
+	"}": [6, [
+		0,
+		0,
+		7,
+		15,
+		12,
+		12,
+		12,
+		28,
+		24,
+		12,
+		12,
+		12,
+		12,
+		15,
+		7,
+		0
+	]],
+	"~": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		6,
+		47,
+		61,
+		24,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]]
+};
+
+//#endregion
+//#region src/gif.ts
+/** Each pixel made a `scale` by `scale` block. */
+function upscale(rgba, width, height, scale) {
+	if (scale === 1) return rgba;
+	const W = width * scale, out = new Uint8ClampedArray(W * height * scale * 4);
+	for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+		const i = (y * width + x) * 4;
+		for (let dy = 0; dy < scale; dy++) for (let dx = 0; dx < scale; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale + dy) * W + x * scale + dx) * 4);
+	}
+	return out;
+}
+/**
+* Up to 255 colours that stand for every opaque pixel across the frames: all
+* of them when there are that few, else a median cut weighted by how much
+* each colour is used.
+*/
+function palette(frames) {
+	const counts = new Map();
+	for (const f of frames) for (let i = 0; i < f.length; i += 4) {
+		if (f[i + 3] < 128) continue;
+		const c = f[i] << 16 | f[i + 1] << 8 | f[i + 2];
+		counts.set(c, (counts.get(c) || 0) + 1);
+	}
+	const all = [...counts.entries()];
+	if (all.length <= 255) return all.map(([c]) => c);
+	const ch = (c, k) => c >> 16 - 8 * k & 255;
+	const range = (box, k) => {
+		let lo = 255, hi = 0;
+		for (const [c] of box) {
+			const v = ch(c, k);
+			if (v < lo) lo = v;
+			if (v > hi) hi = v;
+		}
+		return hi - lo;
+	};
+	let boxes = [all];
+	while (boxes.length < 255) {
+		let best = -1, bk = 0, bw = -1;
+		boxes.forEach((box$1, i) => {
+			if (box$1.length < 2) return;
+			for (let k = 0; k < 3; k++) {
+				const w = range(box$1, k) * Math.log2(1 + box$1.reduce((a, [, n]) => a + n, 0));
+				if (w > bw) {
+					bw = w;
+					best = i;
+					bk = k;
+				}
+			}
+		});
+		if (best < 0) break;
+		const box = boxes[best].sort((a, b$1) => ch(a[0], bk) - ch(b$1[0], bk));
+		const total = box.reduce((a, [, n]) => a + n, 0);
+		let run = 0, cut = 1;
+		for (let i = 0; i < box.length - 1; i++) {
+			run += box[i][1];
+			if (run >= total / 2) {
+				cut = i + 1;
+				break;
+			}
+		}
+		boxes.splice(best, 1, box.slice(0, cut), box.slice(cut));
+	}
+	return boxes.map((box) => {
+		let r = 0, g = 0, b$1 = 0, n = 0;
+		for (const [c, k] of box) {
+			r += ch(c, 0) * k;
+			g += ch(c, 1) * k;
+			b$1 += ch(c, 2) * k;
+			n += k;
+		}
+		return Math.round(r / n) << 16 | Math.round(g / n) << 8 | Math.round(b$1 / n);
+	});
+}
+/** LZW-compresses colour indices into GIF data sub-blocks. */
+function lzw(indices, minCode, out) {
+	const clear = 1 << minCode, end = clear + 1;
+	let size = minCode + 1, next = end + 1, dict = new Map();
+	let bits = 0, acc = 0;
+	const block = [];
+	const emit = (code) => {
+		acc |= code << bits;
+		bits += size;
+		while (bits >= 8) {
+			block.push(acc & 255);
+			acc >>= 8;
+			bits -= 8;
+			if (block.length === 255) {
+				out.push(255, ...block);
+				block.length = 0;
+			}
+		}
+	};
+	emit(clear);
+	let prefix = indices[0];
+	for (let i = 1; i < indices.length; i++) {
+		const k = indices[i], key = prefix << 8 | k, hit = dict.get(key);
+		if (hit !== void 0) {
+			prefix = hit;
+			continue;
+		}
+		emit(prefix);
+		if (next < 4096) {
+			dict.set(key, next++);
+			if (next > 1 << size && size < 12) size++;
+		} else {
+			emit(clear);
+			dict = new Map();
+			size = minCode + 1;
+			next = end + 1;
+		}
+		prefix = k;
+	}
+	emit(prefix);
+	emit(end);
+	if (bits > 0) block.push(acc & 255);
+	if (block.length) out.push(block.length, ...block);
+	out.push(0);
+}
+/**
+* An animated GIF that loops forever. Transparent pixels stay transparent
+* (each frame clears to them), so a guy can be saved without a background.
+*/
+function encodeGif(input, scale = 1) {
+	const W = input.width * scale, H = input.height * scale;
+	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale));
+	const colours = palette(frames);
+	const table = [0, ...colours];
+	let bitsPer = 1;
+	while (1 << bitsPer < table.length) bitsPer++;
+	const out = [];
+	const word = (n) => out.push(n & 255, n >> 8 & 255);
+	out.push(...[..."GIF89a"].map((c) => c.charCodeAt(0)));
+	word(W);
+	word(H);
+	out.push(128 | bitsPer - 1 << 4 | bitsPer - 1, 0, 0);
+	for (let i = 0; i < 1 << bitsPer; i++) {
+		const c = table[i] ?? 0;
+		out.push(c >> 16 & 255, c >> 8 & 255, c & 255);
+	}
+	out.push(33, 255, 11, ...[..."NETSCAPE2.0"].map((c) => c.charCodeAt(0)), 3, 1, 0, 0, 0);
+	const nearest = new Map();
+	const indexOf = (c) => {
+		let i = nearest.get(c);
+		if (i !== void 0) return i;
+		let best = 1, bd = Infinity;
+		for (let k = 1; k < table.length; k++) {
+			const p = table[k], dr = (c >> 16 & 255) - (p >> 16 & 255), dg = (c >> 8 & 255) - (p >> 8 & 255), db = (c & 255) - (p & 255);
+			const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+			if (d < bd) {
+				bd = d;
+				best = k;
+				if (!d) break;
+			}
+		}
+		nearest.set(c, best);
+		return best;
+	};
+	frames.forEach((f, n) => {
+		const delay = Math.max(2, Math.round((input.delays[n] ?? 80) / 10));
+		out.push(33, 249, 4, 9);
+		word(delay);
+		out.push(0, 0);
+		out.push(44);
+		word(0);
+		word(0);
+		word(W);
+		word(H);
+		out.push(0);
+		const idx = new Uint8Array(W * H);
+		for (let i = 0, p = 0; i < f.length; i += 4, p++) idx[p] = f[i + 3] < 128 ? 0 : indexOf(f[i] << 16 | f[i + 1] << 8 | f[i + 2]);
+		const min = Math.max(2, bitsPer);
+		out.push(min);
+		lzw(idx, min, out);
+	});
+	out.push(59);
+	return new Uint8Array(out);
+}
+const CRC = (() => {
+	const t = new Uint32Array(256);
+	for (let n = 0; n < 256; n++) {
+		let c = n;
+		for (let k = 0; k < 8; k++) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+		t[n] = c >>> 0;
+	}
+	return t;
+})();
+const crc32 = (bytes) => {
+	let c = 4294967295;
+	for (const b$1 of bytes) c = CRC[(c ^ b$1) & 255] ^ c >>> 8;
+	return (c ^ 4294967295) >>> 0;
+};
+/** zlib-wrapped deflate: compressed where the runtime has CompressionStream, else stored. */
+async function zlib(raw) {
+	if (typeof CompressionStream !== "undefined") {
+		const stream = new Blob([raw]).stream().pipeThrough(new CompressionStream("deflate"));
+		return new Uint8Array(await new Response(stream).arrayBuffer());
+	}
+	const out = [120, 1];
+	for (let i = 0; i < raw.length; i += 65535) {
+		const n = Math.min(65535, raw.length - i);
+		out.push(i + n >= raw.length ? 1 : 0, n & 255, n >> 8, ~n & 255, ~n >> 8 & 255);
+		for (let k = 0; k < n; k++) out.push(raw[i + k]);
+	}
+	let a = 1, b$1 = 0;
+	for (const v of raw) {
+		a = (a + v) % 65521;
+		b$1 = (b$1 + a) % 65521;
+	}
+	out.push(b$1 >> 8, b$1 & 255, a >> 8, a & 255);
+	return new Uint8Array(out);
+}
+/** A PNG of one RGBA frame, scaled up by whole pixels. */
+async function encodePng(rgba, width, height, scale = 1) {
+	const W = width * scale, H = height * scale, px = upscale(rgba, width, height, scale);
+	const raw = new Uint8Array((W * 4 + 1) * H);
+	for (let y = 0; y < H; y++) {
+		raw[y * (W * 4 + 1)] = 0;
+		raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
+	}
+	const chunk = (type, data) => {
+		const body = new Uint8Array(4 + data.length);
+		body.set([...type].map((c$1) => c$1.charCodeAt(0)));
+		body.set(data, 4);
+		const len = data.length, c = crc32(body);
+		return [
+			len >>> 24,
+			len >>> 16 & 255,
+			len >>> 8 & 255,
+			len & 255,
+			...body,
+			c >>> 24,
+			c >>> 16 & 255,
+			c >>> 8 & 255,
+			c & 255
+		];
+	};
+	const ihdr = new Uint8Array([
+		W >>> 24,
+		W >>> 16 & 255,
+		W >>> 8 & 255,
+		W & 255,
+		H >>> 24,
+		H >>> 16 & 255,
+		H >>> 8 & 255,
+		H & 255,
+		8,
+		6,
+		0,
+		0,
+		0
+	]);
+	return new Uint8Array([
+		137,
+		80,
+		78,
+		71,
+		13,
+		10,
+		26,
+		10,
+		...chunk("IHDR", ihdr),
+		...chunk("IDAT", await zlib(raw)),
+		...chunk("IEND", new Uint8Array())
+	]);
+}
+
+//#endregion
+//#region src/card.ts
+/**
+* Trading cards, drawn by the library so every game, the site and an export
+* show the same card: a guy wearing his copies, moving, each copy's finish
+* shining on its own pixels, its effect playing, the card's face dressed for
+* the grade, and the words written in the club's pixel type.
+*
+* A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, four to each of the
+* guy's pixels, so a shine can sweep across a single pixel of a hat. Scale it
+* up by whole numbers to show it; `toCardGif` and `toCardPng` do that for you.
+*/
+const CARD_WIDTH = 104;
+const CARD_HEIGHT = 168;
+const ZOOM = 4;
+const rgb = (h) => [
+	parseInt(h.slice(1, 3), 16),
+	parseInt(h.slice(3, 5), 16),
+	parseInt(h.slice(5, 7), 16)
+];
+const mix = (a, b$1, t) => [
+	a[0] + (b$1[0] - a[0]) * t,
+	a[1] + (b$1[1] - a[1]) * t,
+	a[2] + (b$1[2] - a[2]) * t
+];
+const hsv = (h, s, v) => {
+	const f = (n) => {
+		const k = (n + h * 6) % 6;
+		return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+	};
+	return [
+		f(5) * 255,
+		f(3) * 255,
+		f(1) * 255
+	];
+};
+function hueShift(c, a) {
+	const y = .299 * c[0] + .587 * c[1] + .114 * c[2], i = .596 * c[0] - .274 * c[1] - .322 * c[2], q = .211 * c[0] - .523 * c[1] + .312 * c[2];
+	const h = Math.atan2(q, i) + a, ch = Math.hypot(i, q), I = ch * Math.cos(h), Q = ch * Math.sin(h);
+	return [
+		y + .956 * I + .621 * Q,
+		y - .272 * I - .647 * Q,
+		y - 1.106 * I + 1.703 * Q
+	];
+}
+const hash$1 = (x, y, p) => {
+	const s = Math.sin(x * 127.1 + y * 311.7 + p * .731) * 43758.5453;
+	return s - Math.floor(s);
+};
+const FINISHES$1 = [
+	"plain",
+	"sunset",
+	"tempered",
+	"nebula",
+	"prism",
+	"negative",
+	"gold"
+];
+/**
+* One card pixel of a copy in its finish at time `t` seconds: the same
+* shine the site's shader gives, worked out here so it can be saved.
+* `gx, gy` is the guy pixel (what twinkles), `cx, cy` the card pixel (what a
+* sweep crosses), so light runs smoothly over a single pixel of a hat.
+*/
+function shine(c, o, gx, gy, cx, cy, t) {
+	const f = FINISHES$1.indexOf(o.finish);
+	if (f < 0) return c;
+	const d = (cx + cy) / ZOOM, h = hash$1(gx, gy, o.print);
+	const band = 1 - Math.min(1, Math.max(0, Math.abs(((d - t * 10 + o.print) % 58 + 58) % 58 - 29) - .5));
+	const twinkle$1 = (h * 13 + t * .37) % 1 > .965 ? 1 : 0;
+	const coat = Math.min(1, Math.max(0, 1 - o.scuff * 1.4)) * (h >= o.scuff * .55 ? 1 : 0);
+	const add = (v, k = 1) => [
+		c[0] + v * 255 * k,
+		c[1] + v * 255 * k,
+		c[2] + v * 255 * k
+	];
+	switch (f) {
+		case 0: return o.scuff <= .07 ? add(band * .45) : c;
+		case 1: {
+			const s = .5 + .5 * Math.sin(d * .8 - t * 3 + o.print);
+			const tint = mix(c, [
+				c[0] * .86 + 20,
+				c[1] * .96 + 20,
+				c[2] * 1.18 + 20
+			], .4 * s * coat);
+			return [
+				tint[0] + band * 127 * coat,
+				tint[1] + band * 127 * coat,
+				tint[2] + band * 127 * coat
+			];
+		}
+		case 2: return add(twinkle$1 * .55 * coat + band * .25 * coat);
+		case 3: {
+			const s = hueShift(c, (t * .9 + d * .22) * coat);
+			return mix(s, [
+				255,
+				255,
+				255
+			], twinkle$1 * coat);
+		}
+		case 4: {
+			const rain = hsv(((d * .07 - t * .3 + o.print * .013) % 1 + 1) % 1, .65, 1);
+			const m = mix(c, [
+				c[0] * .45 + rain[0] * .75,
+				c[1] * .45 + rain[1] * .75,
+				c[2] * .45 + rain[2] * .75
+			], .6 * coat);
+			const row = (gy + Math.floor(t * 10)) % 3 < .5 ? 1.12 : 1;
+			return [
+				m[0] * row,
+				m[1] * row,
+				m[2] * row
+			];
+		}
+		case 5: {
+			const w = .07 * Math.sin(t * 2 + d * .5) * coat * 255;
+			return [
+				c[0] + .28 * 255 * band * coat + w,
+				c[1] + .12 * 255 * band * coat + w,
+				c[2] + .45 * 255 * band * coat + w
+			];
+		}
+		default: return [
+			c[0] + band * .7 * coat * 255 + twinkle$1 * .6 * coat * 255,
+			c[1] + band * .7 * coat * 255 + twinkle$1 * .54 * coat * 255,
+			c[2] + band * .7 * coat * 255 + twinkle$1 * .3 * coat * 255
+		];
+	}
+}
+const EXTRA = {
+	"·": [5, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		6,
+		6,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"★": [9, [
+		0,
+		0,
+		0,
+		8,
+		8,
+		28,
+		127,
+		62,
+		28,
+		54,
+		34,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"#": [8, [
+		0,
+		0,
+		0,
+		0,
+		18,
+		18,
+		63,
+		18,
+		18,
+		63,
+		18,
+		18,
+		0,
+		0,
+		0,
+		0
+	]]
+};
+const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
+/** How wide a line of text is, in pixels. */
+const textWidth = (s) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
+/** The longest start of `s` that fits `width`, with a dot dot when it was cut. */
+function fit(s, width) {
+	if (textWidth(s) <= width) return s;
+	let out = s;
+	while (out.length > 1 && textWidth(out + "..") > width) out = out.slice(0, -1);
+	return out.trimEnd() + "..";
+}
+/** Up to two lines that fit `width`: a lone line too long for one wraps at a space onto the second. */
+function wrap(lines, width) {
+	const out = lines.slice(0, 2);
+	if (out.length === 1 && textWidth(out[0]) > width) {
+		const words = out[0].split(" ");
+		for (let k = words.length - 1; k > 0; k--) {
+			const head = words.slice(0, k).join(" ");
+			if (textWidth(head) <= width) return [head, words.slice(k).join(" ")].map((l) => fit(l, width));
+		}
+	}
+	return out.map((l) => fit(l, width));
+}
+/** A drawing surface of RGBA card pixels. */
+var Surface = class {
+	px = new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
+	set(x, y, c, a = 255) {
+		if (x < 0 || y < 0 || x >= CARD_WIDTH || y >= CARD_HEIGHT) return;
+		const i = (y * CARD_WIDTH + x) * 4;
+		this.px[i] = c[0];
+		this.px[i + 1] = c[1];
+		this.px[i + 2] = c[2];
+		this.px[i + 3] = a;
+	}
+	get(x, y) {
+		const i = (y * CARD_WIDTH + x) * 4;
+		return [
+			this.px[i],
+			this.px[i + 1],
+			this.px[i + 2]
+		];
+	}
+	opaque(x, y) {
+		return this.px[(y * CARD_WIDTH + x) * 4 + 3] > 0;
+	}
+	/** Text with a hard drop shadow, its colour picked per pixel so foil can run along it. */
+	text(s, x, top, colour, shadow) {
+		const draw = (ox, oy, col) => {
+			let cx = ox;
+			for (const ch of s) {
+				const [adv, rows] = glyph(ch);
+				rows.forEach((bits, dy) => {
+					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
+				});
+				cx += adv;
+			}
+		};
+		if (shadow) draw(x, top + 1, () => shadow);
+		draw(x, top, colour);
+	}
+};
+const EDGE = [
+	30,
+	34,
+	56
+], CREAM = [
+	242,
+	236,
+	221
+], RIM = [
+	207,
+	199,
+	180
+], INK = [
+	58,
+	51,
+	82
+], WHITE = [
+	255,
+	255,
+	255
+];
+/** Whether a card pixel is inside the rounded card. */
+function inside(x, y, r = 7) {
+	const cx = x < r ? r - x : x > CARD_WIDTH - 1 - r ? x - (CARD_WIDTH - 1 - r) : 0;
+	const cy = y < r ? r - y : y > CARD_HEIGHT - 1 - r ? y - (CARD_HEIGHT - 1 - r) : 0;
+	return cx * cx + cy * cy <= r * r;
+}
+const WIN = {
+	left: 8,
+	top: 26,
+	right: 95,
+	bottom: 113
+};
+/** The card at `t` seconds, with the guy's frame `frame` in its window. */
+function drawCard(input, frame, owned, g, t) {
+	const s = new Surface();
+	const gc = g >= 0 ? rgb(require_paint.GRADES[g].color) : [
+		120,
+		140,
+		170
+	];
+	const sweep = (x, y, speed = 9, w = 10) => Math.max(0, 1 - Math.abs((((x + y) * .5 - t * speed * 6) % 140 + 140) % 140 - 70) / w);
+	const face = (x, y) => {
+		let c = g === 5 ? mix([
+			22,
+			26,
+			44
+		], hsv((x + y) / 260 + t * .05, .35, .45), .35) : g === 4 ? mix(CREAM, [
+			255,
+			214,
+			120
+		], .38) : CREAM;
+		if (g >= 1) c = mix(c, WHITE, sweep(x, y) * (g >= 3 ? .55 : .3));
+		return c;
+	};
+	for (let y = 0; y < CARD_HEIGHT; y++) for (let x = 0; x < CARD_WIDTH; x++) {
+		if (!inside(x, y)) continue;
+		const edge = !inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y - 2) || !inside(x, y + 2);
+		let border = g >= 0 ? mix(gc, EDGE, .35) : EDGE;
+		if (g === 3) border = hueShift(gc, t * 1.4 + (x + y) * .05);
+		if (g === 5) border = hsv(((x + y) / 120 + t * .3) % 1, .6, .95);
+		s.set(x, y, edge ? border : face(x, y));
+	}
+	const band = g >= 3 ? [
+		30,
+		26,
+		52
+	] : g >= 0 ? mix(gc, [
+		24,
+		22,
+		44
+	], .3) : [
+		58,
+		66,
+		100
+	];
+	for (let y = 6; y <= 22; y++) for (let x = 6; x < CARD_WIDTH - 6; x++) if (inside(x, y, 9)) s.set(x, y, y === 6 ? mix(band, WHITE, .3) : y === 22 ? mix(band, [
+		0,
+		0,
+		0
+	], .35) : band);
+	const foil = (x, y) => g === 4 ? mix([
+		196,
+		136,
+		32
+	], [
+		255,
+		246,
+		200
+	], .5 + .5 * Math.sin(x * .18 - t * 4 + y * .1)) : g >= 3 ? hsv(((x * .012 - t * .35) % 1 + 1) % 1, .45, 1) : WHITE;
+	const title = fit(input.title, CARD_WIDTH - 16);
+	s.text(title, Math.floor((CARD_WIDTH - textWidth(title)) / 2), 8, foil, [
+		16,
+		12,
+		32
+	]);
+	const tint = g === 5 ? [
+		26,
+		34,
+		52
+	] : mix(CREAM, gc, g >= 0 ? .3 : .14);
+	for (let y = WIN.top; y <= WIN.bottom; y++) for (let x = WIN.left; x <= WIN.right; x++) {
+		const rim$1 = x === WIN.left || x === WIN.right || y === WIN.top || y === WIN.bottom;
+		const depth = (y - WIN.top) / (WIN.bottom - WIN.top);
+		let c = rim$1 ? g === 5 ? [
+			60,
+			80,
+			110
+		] : RIM : mix(tint, mix(tint, [
+			20,
+			24,
+			40
+		], .5), depth * .35);
+		const fx = (x - (WIN.left + WIN.right) / 2) / 30, fy = (y - (WIN.bottom - 9)) / 4;
+		if (!rim$1 && fx * fx + fy * fy < 1) c = mix(c, [
+			0,
+			0,
+			0
+		], .18 * (1 - fx * fx - fy * fy));
+		s.set(x, y, c);
+	}
+	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - FRAME_WIDTH * ZOOM / 2), oy = WIN.bottom - 3 - FRAME_HEIGHT * ZOOM;
+	frame.colors.forEach((row, gy) => row.forEach((hex$1, gx) => {
+		if (!hex$1) return;
+		const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0;
+		for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
+			const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+			if (cy <= WIN.top || cy >= WIN.bottom || cx <= WIN.left || cx >= WIN.right) continue;
+			let c = rgb(hex$1);
+			if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
+			s.set(cx, cy, [
+				Math.min(255, Math.max(0, c[0])),
+				Math.min(255, Math.max(0, c[1])),
+				Math.min(255, Math.max(0, c[2]))
+			]);
+		}
+	}));
+	const glare = t * .45 % 2.2 * 140 - 40;
+	for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
+		const d = x + (y - WIN.top) * .6 - glare;
+		if (d > 0 && d < 10) s.set(x, y, mix(s.get(x, y), WHITE, d < 3 ? .22 : .1));
+	}
+	if (input.corner) {
+		const w = textWidth(input.corner) + 5, x0 = WIN.right - 2 - w, y0 = WIN.top + 3;
+		for (let y = y0; y < y0 + 13; y++) for (let x = x0; x < x0 + w; x++) if (!((x === x0 || x === x0 + w - 1) && (y === y0 || y === y0 + 12))) s.set(x, y, [
+			20,
+			18,
+			38
+		]);
+		s.text(input.corner, x0 + 3, y0 - 2, () => WHITE);
+	}
+	if (g >= 0) for (let p = 0; p < 6; p++) {
+		const x0 = 19 + p * 11;
+		for (let y = 118; y <= 123; y++) for (let x = x0; x <= x0 + 8; x++) if (!((x === x0 || x === x0 + 8) && (y === 118 || y === 123))) s.set(x, y, p <= g ? y === 118 ? mix(gc, WHITE, .4) : gc : RIM);
+	}
+	wrap(input.lines ?? [], CARD_WIDTH - 14).forEach((line, k) => {
+		const l = fit(line, CARD_WIDTH - 14);
+		s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), 127 + k * 16, () => g === 5 ? [
+			220,
+			240,
+			255
+		] : INK, g === 5 ? [
+			10,
+			12,
+			24
+		] : void 0);
+	});
+	if (g >= 3) for (let k = 0; k < 6; k++) {
+		const x = Math.floor(hash$1(k, 1, 9) * (CARD_WIDTH - 12)) + 6, y = Math.floor(hash$1(k, 2, 9) * (CARD_HEIGHT - 12)) + 6, on = (hash$1(k, 3, 9) + t * .5) % 1 < .18;
+		if (on && s.opaque(x, y)) for (const [dx, dy] of [
+			[0, 0],
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		]) s.set(x + dx, y + dy, dx || dy ? mix(s.get(x + dx, y + dy), WHITE, .6) : WHITE);
+	}
+	return s.px;
+}
+/** The grade a card shows: the one given, or the rarest copy's. */
+const cardGrade = (input) => input.grade ?? (input.copies?.length ? Math.max(...input.copies.map((o) => require_paint.GRADES.findIndex((x) => x.id === require_paint.gradeOf(o).id))) : -1);
+/**
+* The card as frames, `ms` apart, covering one loop of his move (at least two
+* seconds, so a shine gets across). Every frame is the whole card in RGBA;
+* the corners are transparent.
+*/
+function cardFrames(input, ms = 80) {
+	const card = cardPlayer(input, ms), frames = [];
+	for (let i = 0; i < card.count; i++) frames.push(card.frame(i));
+	return {
+		width: CARD_WIDTH,
+		height: CARD_HEIGHT,
+		frames,
+		delays: frames.map(() => ms)
+	};
+}
+/**
+* A card to play on screen: each frame is drawn the first time it is asked
+* for and kept, so a page can show a card at once and spread the work out.
+*/
+function cardPlayer(input, ms = 80) {
+	const anim = animate(input.seed, input.move ?? "idle", {
+		parts: input.parts,
+		palette: input.palette,
+		equip: (input.copies ?? []).map(require_paint.encode),
+		rarity: false
+	});
+	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
+	const count$1 = Math.ceil(Math.max(2e3, Math.min(anim.duration, 4800)) / ms), cache = [];
+	return {
+		width: CARD_WIDTH,
+		height: CARD_HEIGHT,
+		count: count$1,
+		delay: ms,
+		frame(i) {
+			const k = (i % count$1 + count$1) % count$1;
+			return cache[k] ??= drawCard(input, frameAt(anim, k * ms), owned, g, k * ms / 1e3);
+		}
+	};
+}
+/** The card standing still, for a picture. */
+function cardStill(input, t = .6) {
+	const anim = animate(input.seed, input.move ?? "idle", {
+		parts: input.parts,
+		palette: input.palette,
+		equip: (input.copies ?? []).map(require_paint.encode),
+		rarity: false
+	});
+	return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t);
+}
+/** The copies by the slot each is worn in (later ones win, as `dress` does). */
+function ownedBySlot(copies) {
+	const out = {};
+	for (const o of copies) {
+		const slot = require_paint.itemById(o.item)?.slot;
+		if (slot) out[slot] = o;
+	}
+	return out;
+}
+/** The card as a looping GIF, each card pixel `scale` by `scale`. */
+function toCardGif(input, scale = 3) {
+	return encodeGif(cardFrames(input), scale);
+}
+/** The card as a PNG, each card pixel `scale` by `scale`. */
+function toCardPng(input, scale = 4) {
+	return encodePng(cardStill(input), CARD_WIDTH, CARD_HEIGHT, scale);
+}
+/**
+* The guy on his own as a looping GIF: his move with everything he wears,
+* effects and auras moving, on a transparent background or `background`.
+*/
+function toGuyGif(seed, move, options = {}, scale = 12) {
+	const anim = animate(seed, move, options), bg = options.background ? rgb(options.background) : null;
+	const frames = anim.frames.map((f) => {
+		const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
+		f.colors.forEach((row, y) => row.forEach((c, x) => {
+			const v = c ? rgb(c) : bg;
+			if (v) px.set([...v, 255], (y * FRAME_WIDTH + x) * 4);
+		}));
+		return px;
+	});
+	return encodeGif({
+		width: FRAME_WIDTH,
+		height: FRAME_HEIGHT,
+		frames,
+		delays: anim.frames.map((f) => f.ms)
+	}, scale);
+}
+
+//#endregion
 exports.ARM_NAMES = ARM_NAMES
 exports.AURAS = require_paint.AURAS
 exports.AURA_ODDS = require_paint.AURA_ODDS
 exports.Avatar = Avatar
 exports.AvatarFallback = AvatarFallback
 exports.AvatarImage = AvatarImage
+exports.CARD_HEIGHT = CARD_HEIGHT
+exports.CARD_WIDTH = CARD_WIDTH
 exports.DEAL_PREFIX = require_paint.DEAL_PREFIX
 exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
@@ -3041,6 +5612,9 @@ exports.auraById = require_paint.auraById
 exports.auraCells = require_paint.auraCells
 exports.auraColor = require_paint.auraColor
 exports.bodies = require_paint.bodies
+exports.cardFrames = cardFrames
+exports.cardPlayer = cardPlayer
+exports.cardStill = cardStill
 exports.cheeks = require_paint.cheeks
 exports.cleanTag = cleanTag
 exports.closeEyes = closeEyes
@@ -3055,7 +5629,9 @@ exports.decodeLook = decodeLook
 exports.drawFrame = drawFrame
 exports.dress = require_paint.dress
 exports.encode = require_paint.encode
+exports.encodeGif = encodeGif
 exports.encodeLook = encodeLook
+exports.encodePng = encodePng
 exports.eyes = require_paint.eyes
 exports.floatShare = floatShare
 exports.frameAt = frameAt
@@ -3102,13 +5678,18 @@ exports.starter = require_paint.starter
 exports.surfaceOf = surfaceOf
 exports.tallyMarks = require_paint.tallyMarks
 exports.temperTint = require_paint.temperTint
+exports.textWidth = textWidth
 exports.toAnimatedSvg = toAnimatedSvg
+exports.toCardGif = toCardGif
+exports.toCardPng = toCardPng
+exports.toGuyGif = toGuyGif
 exports.toPng = toPng
 exports.toShareSvg = toShareSvg
 exports.toSvgString = toSvgString
 exports.tradeFloat = tradeFloat
 exports.tradeGames = tradeGames
 exports.traitOdds = traitOdds
+exports.upscale = upscale
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
 exports.voxelColumns = voxelColumns

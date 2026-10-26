@@ -2678,7 +2678,7 @@ const plus = (x, y, k, arm = 1) => [
 		k
 	]
 ];
-const wrap = (v, n) => (v % n + n) % n;
+const wrap$1 = (v, n) => (v % n + n) % n;
 const AURAS = [
 	{
 		id: "aura.flames",
@@ -2793,7 +2793,7 @@ const AURAS = [
 				Math.round(s.w / 2) - 1
 			];
 			for (let i = 0; i < 3; i++) {
-				const span = i === 2 ? Math.max(3, s.top) : s.cy + 1, y = Math.round(span - wrap(Math.floor((t + i * 520 + print * 13) / 150), span + 3));
+				const span = i === 2 ? Math.max(3, s.top) : s.cy + 1, y = Math.round(span - wrap$1(Math.floor((t + i * 520 + print * 13) / 150), span + 3));
 				const x = lanes[i];
 				out.push([
 					x,
@@ -2841,7 +2841,7 @@ const AURAS = [
 					s.w - 3,
 					1,
 					s.w - 4
-				][i], y = s.h - 1 - wrap(Math.floor((t + i * 470 + print * 9) / 120), s.h + 3);
+				][i], y = s.h - 1 - wrap$1(Math.floor((t + i * 470 + print * 9) / 120), s.h + 3);
 				const big = i % 2 === 0;
 				if (big) out.push([
 					x + 1,
@@ -2912,7 +2912,7 @@ const AURAS = [
 				1
 			]);
 			for (let i = 0; i < 4; i++) {
-				const x = x0 + 1 + (i * 2 + print) % 5, fall = wrap(Math.floor((t + i * 230) / 90), s.h - cy);
+				const x = x0 + 1 + (i * 2 + print) % 5, fall = wrap$1(Math.floor((t + i * 230) / 90), s.h - cy);
 				out.push([
 					x,
 					cy + 1 + fall,
@@ -2969,7 +2969,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
-				const y = Math.round(s.cy - wrap(Math.floor((t + i * 700 + print * 17) / 170), s.cy + 4));
+				const y = Math.round(s.cy - wrap$1(Math.floor((t + i * 700 + print * 17) / 170), s.cy + 4));
 				const x = (i ? s.w - 4 : 0) + Math.floor(t / 340 + i) % 2;
 				out.push([
 					x + 1,
@@ -3012,7 +3012,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 12; i++) {
-				const fall = wrap(Math.floor((t + i * 311 + print * 7) / 170), s.h), x = wrap(Math.round(noise$1(i, print) * s.w + Math.sin((t + i * 400) / 600) * 1.2), s.w);
+				const fall = wrap$1(Math.floor((t + i * 311 + print * 7) / 170), s.h), x = wrap$1(Math.round(noise$1(i, print) * s.w + Math.sin((t + i * 400) / 600) * 1.2), s.w);
 				out.push([
 					x,
 					fall,
@@ -3034,7 +3034,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 8; i++) {
-				const step = Math.floor((t + i * 377 + print * 5) / 150), y = wrap(step, s.h + 2) - 1, x = wrap(Math.round(noise$1(i, print) * s.w) - Math.floor(step / 2), s.w);
+				const step = Math.floor((t + i * 377 + print * 5) / 150), y = wrap$1(step, s.h + 2) - 1, x = wrap$1(Math.round(noise$1(i, print) * s.w) - Math.floor(step / 2), s.w);
 				out.push([
 					x,
 					y,
@@ -3085,7 +3085,7 @@ const AURAS = [
 				if (d >= .74 && d <= 1) out.push([
 					x,
 					y,
-					wrap(Math.floor((1 - d) / .087) + shift$1, 6)
+					wrap$1(Math.floor((1 - d) / .087) + shift$1, 6)
 				]);
 			}
 			return out;
@@ -3119,6 +3119,337 @@ const AURAS = [
 					]);
 				});
 			});
+			return out;
+		}
+	},
+	{
+		id: "aura.fireflies",
+		name: "Fireflies",
+		colors: [
+			"#FFFDE0",
+			"#FFE45C",
+			"#9ED45A"
+		],
+		still: 450,
+		cells: (mask, t, print) => {
+			const near = ring(mask, 3), out = [];
+			for (let i = 0; i < 8; i++) {
+				const [ax, ay] = near[Math.floor(noise$1(i, print, 3) * near.length)] ?? [0, 0];
+				const x = ax + Math.round(Math.sin(t / 700 + i * 1.7) * 1.5), y = ay + Math.round(Math.cos(t / 900 + i * 2.3));
+				const phase = wrap$1(t + i * 397 + print * 29, 1600) / 1600;
+				if (phase > .65) continue;
+				out.push(...phase > .15 && phase < .45 ? plus(x, y, 2) : [[
+					x,
+					y,
+					1
+				]]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.neon",
+		name: "Neon",
+		colors: [
+			"#FFFFFF",
+			"#FF4FD8",
+			"#7A2C9E"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), step = Math.floor((t + print * 17) / 90);
+			const tube = ring(mask, 1).map(([x, y]) => [
+				x,
+				y,
+				Math.atan2(y - s.cy, x - s.cx)
+			]).sort((a, b$1) => a[2] - b$1[2]);
+			if (noise$1(Math.floor(step / 3), print, 5) > .9) return tube.map(([x, y]) => [
+				x,
+				y,
+				2
+			]);
+			const hot = wrap$1(step, tube.length);
+			return tube.filter((_, i) => noise$1(Math.floor(i / 3), step, print) > .06).map(([x, y], i) => [
+				x,
+				y,
+				Math.abs(i - hot) <= 1 ? 0 : 1
+			]);
+		}
+	},
+	{
+		id: "aura.echo",
+		name: "Echo",
+		colors: [
+			"#EDE4FF",
+			"#9B7CFF",
+			"#3B2A73"
+		],
+		still: 400,
+		cells: (mask, t, print) => {
+			const sway = Math.round((Math.sin((t + print * 41) / 380) + 1) * 1.2) + 1, out = [];
+			mask.forEach((row, y) => row.forEach((on$1, x) => {
+				if (!on$1) return;
+				const edge = !mask[y - 1]?.[x];
+				out.push([
+					x - sway,
+					y - 1,
+					edge ? 1 : 2
+				], [
+					x + sway,
+					y - 1,
+					edge ? 1 : 2
+				]);
+			}));
+			return out;
+		}
+	},
+	{
+		id: "aura.comet",
+		name: "Comet",
+		colors: [
+			"#FFFFFF",
+			"#8FE3FF",
+			"#4A6BD8"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1;
+			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x$1, y$1]) => [
+				x$1,
+				y$1,
+				Math.atan2(y$1 - s.cy, x$1 - s.cx)
+			]).sort((p, q) => p[2] - q[2]);
+			if (!track.length) return [];
+			const n = track.length, head$1 = wrap$1(turn$1 * Math.floor(t / 45) + print * 7, n), out = [];
+			for (let j = 10; j >= 1; j--) {
+				const [x$1, y$1] = track[wrap$1(head$1 - turn$1 * j, n)];
+				out.push([
+					x$1,
+					y$1,
+					j < 3 ? 0 : j < 6 ? 1 : 2
+				]);
+			}
+			const [x, y] = track[head$1];
+			out.push(...plus(x, y, 1));
+			return out;
+		}
+	},
+	{
+		id: "aura.butterflies",
+		name: "Butterflies",
+		colors: [
+			"#FFF5D6",
+			"#FF9F43",
+			"#8A4DFF"
+		],
+		still: 0,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 2; i++) {
+				const side = i ? 1 : -1, x = Math.round(s.w / 2 - .5 + side * (s.w / 2 - 2.5) + Math.sin(t / 800 + i * 3 + print) * 1.2);
+				const y = Math.round(Math.max(2, s.top) + Math.sin(t / 520 + i * 2.1 + print) * 1.5 + i * 3);
+				out.push([
+					x,
+					y,
+					0
+				], [
+					x,
+					y + 1,
+					0
+				]);
+				if (Math.floor((t + i * 60) / 140) % 2 === 0) for (const d of [-1, 1]) out.push([
+					x + d,
+					y - 1,
+					1
+				], [
+					x + 2 * d,
+					y - 1,
+					1
+				], [
+					x + d,
+					y,
+					1
+				], [
+					x + 2 * d,
+					y,
+					2
+				], [
+					x + d,
+					y + 1,
+					2
+				], [
+					x + d,
+					y + 2,
+					2
+				]);
+				else for (const d of [-1, 1]) out.push([
+					x + d,
+					y - 1,
+					1
+				], [
+					x + d,
+					y - 2,
+					1
+				], [
+					x + d,
+					y,
+					2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.aurora",
+		name: "Aurora",
+		colors: [
+			"#E6FFF4",
+			"#3DF2B0",
+			"#7C5CFF"
+		],
+		still: 700,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [], step = Math.floor(t / 180);
+			for (let x = 0; x < s.w; x++) {
+				if (noise$1(x, Math.floor(step / 4), print) < .25) continue;
+				const start = 1 + Math.round((Math.sin(x * .7 + t / 700 + print) + 1) * .8);
+				const len = 2 + Math.round((Math.sin(x * .45 - t / 600 + print * 2) + 1) * 1.6);
+				const glow = start + wrap$1(Math.floor(t / 150) + x, len + 4);
+				for (let y = start; y < start + len; y++) out.push([
+					x,
+					y,
+					y === glow ? 0 : y === start ? 2 : 1
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.datarain",
+		name: "Data rain",
+		colors: [
+			"#E6FFE9",
+			"#3CFF6B",
+			"#0E7A2C"
+		],
+		still: 500,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let x = 0; x < s.w; x++) {
+				if (noise$1(x, print, 11) < .4) continue;
+				const speed = 70 + Math.floor(noise$1(x, print, 12) * 70), head$1 = wrap$1(Math.floor((t + noise$1(x, print) * 3e3) / speed), s.h + 8) - 2;
+				for (let j = 0; j < 5; j++) out.push([
+					x,
+					head$1 - j,
+					j === 0 ? 0 : j < 3 ? 1 : 2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.vortex",
+		name: "Vortex",
+		colors: [
+			"#FFFFFF",
+			"#5FD3FF",
+			"#3A3FD9"
+		],
+		still: 300,
+		cells: (mask, t, print) => {
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1, out = [];
+			for (const [x, y, d] of ring(mask, 4)) {
+				const a = Math.atan2(y - s.cy, x - s.cx) / (2 * Math.PI), r = Math.hypot(x - s.cx, y - s.cy);
+				const v = wrap$1(a * 3 + r * .3 - turn$1 * t / 700 + print * .1, 1);
+				if (v < .24) out.push([
+					x,
+					y,
+					v < .08 ? 0 : d <= 2 ? 1 : 2
+				]);
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.fireworks",
+		name: "Fireworks",
+		colors: [
+			"#FFFFFF",
+			"#FF5C8A",
+			"#FFD45C"
+		],
+		still: 650,
+		cells: (mask, t, print) => {
+			const s = shape(mask), out = [];
+			for (let i = 0; i < 2; i++) {
+				const cycle = 1500, local = wrap$1(t + i * 750 + print * 37, cycle), shot = Math.floor((t + i * 750 + print * 37) / cycle);
+				const cx = i ? s.w - 3 - Math.floor(noise$1(shot, i) * 2) : 2 + Math.floor(noise$1(shot, i) * 2), cy = 2 + Math.floor(noise$1(shot, i, 2) * 3), p = local / cycle;
+				if (p < .2) {
+					const y = Math.round(cy + (1 - p / .2) * 6);
+					out.push([
+						cx,
+						y,
+						0
+					], [
+						cx,
+						y + 1,
+						2
+					]);
+					continue;
+				}
+				if (p > .85) continue;
+				const r = Math.min(3, 1 + Math.floor((p - .2) / .14)), k = p < .45 ? 0 : p < .65 ? 1 : 2;
+				out.push([
+					cx,
+					cy,
+					k
+				]);
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1],
+					[1, 1],
+					[-1, 1],
+					[1, -1],
+					[-1, -1]
+				]) {
+					const reach = dx && dy ? Math.max(1, r - 1) : r;
+					out.push([
+						cx + dx * reach,
+						cy + dy * reach,
+						k
+					], ...r > 1 && k < 2 ? [[
+						cx + dx * (reach - 1),
+						cy + dy * (reach - 1),
+						2
+					]] : []);
+				}
+			}
+			return out;
+		}
+	},
+	{
+		id: "aura.ripple",
+		name: "Ripple",
+		colors: [
+			"#FFFFFF",
+			"#7FE3FF",
+			"#2F7FD6"
+		],
+		still: 250,
+		cells: (mask, t, print) => {
+			const out = [], p = wrap$1(t + print * 23, 1100) / 1100, d = 1 + Math.floor(p * 3);
+			for (const [x, y, dd] of ring(mask, 3)) if (dd === d) out.push([
+				x,
+				y,
+				d - 1
+			]);
+			else if (dd === d - 1 && (x + y) % 2) out.push([
+				x,
+				y,
+				2
+			]);
 			return out;
 		}
 	}
@@ -3213,13 +3544,13 @@ function auraColor(id, k, finish, x, y, t) {
 	const aura = auraById(id);
 	if (!aura) return "#FFFFFF";
 	if (finish === "fade") {
-		const i = wrap(Math.floor((y + x * .5 + t / 140) / 2), 3);
+		const i = wrap$1(Math.floor((y + x * .5 + t / 140) / 2), 3);
 		return k === 0 ? "#FFFFFF" : FADE[(i + k) % 3];
 	}
 	const ramp = RAMPS[finish];
 	if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
 	const glint = (finish === "sapphire" || finish === "ruby" || finish === "pearl") && noise$1(x, y, Math.floor(t / 180), 9) > .86;
-	if (glint) return finish === "pearl" ? hsl(wrap(x * 40 + y * 25 + t / 6, 360), .85, .7) : ramp[0];
+	if (glint) return finish === "pearl" ? hsl(wrap$1(x * 40 + y * 25 + t / 6, 360), .85, .7) : ramp[0];
 	return ramp[Math.min(2, k % 3)];
 }
 
@@ -3244,11 +3575,35 @@ const EFFECTS = {
 		item: 150,
 		aura: 25
 	},
+	neon: {
+		name: "Neon",
+		what: "A buzzing neon edge runs round it, changing colour.",
+		item: 250,
+		aura: 30
+	},
+	bubbles: {
+		name: "Bubbles",
+		what: "Bubbles wobble up off it.",
+		item: 350,
+		aura: 40
+	},
+	hearts: {
+		name: "Hearts",
+		what: "Little hearts float up off it.",
+		item: 500,
+		aura: 60
+	},
 	chroma: {
 		name: "Chroma",
 		what: "Its colours cycle round the rainbow.",
 		item: 600,
 		aura: 80
+	},
+	rime: {
+		name: "Rime",
+		what: "Frost creeps over it from the edges and melts away.",
+		item: 800,
+		aura: 100
 	},
 	embers: {
 		name: "Embers",
@@ -3256,11 +3611,29 @@ const EFFECTS = {
 		item: 1e3,
 		aura: 150
 	},
+	static: {
+		name: "Static",
+		what: "It glitches: rows slip sideways and its colours split.",
+		item: 1200,
+		aura: 200
+	},
+	lava: {
+		name: "Lava",
+		what: "Molten light flows up through it under a dark crust.",
+		item: 1800,
+		aura: 300
+	},
 	starlight: {
 		name: "Starlight",
 		what: "Stars twinkle inside it, like a night sky.",
 		item: 2500,
 		aura: 400
+	},
+	electric: {
+		name: "Electric",
+		what: "Lightning crackles round it and it flashes white.",
+		item: 4e3,
+		aura: 600
 	}
 };
 const FX_IDS = Object.keys(EFFECTS);
@@ -3273,18 +3646,18 @@ function rollFx(u, aura) {
 	}
 	return void 0;
 }
-const rgb$2 = (h) => [
+const rgb$3 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$3 = (a, b$1, t) => [
+const mix$4 = (a, b$1, t) => [
 	0,
 	1,
 	2
 ].map((i) => a[i] + (b$1[i] - a[i]) * t);
-const WHITE = [
+const WHITE$1 = [
 	255,
 	255,
 	255
@@ -3319,14 +3692,14 @@ function turn(c, deg) {
 }
 /** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
 function fxColor(color, fx, x, y, t, print = 0) {
-	const c = rgb$2(color), tt = t + print * 37;
+	const c = rgb$3(color), tt = t + print * 37;
 	switch (fx) {
 		case "shimmer": {
 			const at = tt % 900 / 900 * 34 - 8;
 			for (const band of [at, at - 14]) {
 				const d = x + y - band;
 				if (d >= 0 && d < 1.5) return "#FFFFFF";
-				if (d >= -1.5 && d < 0) return hex$2(mix$3(c, [
+				if (d >= -1.5 && d < 0) return hex$2(mix$4(c, [
 					150,
 					220,
 					255
@@ -3334,19 +3707,19 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			}
 			return noise(x, y, Math.floor(tt / 140)) > .94 ? "#FFFFFF" : color;
 		}
-		case "pulse": return hex$2(mix$3(c, Math.sin(tt / 260) > 0 ? WHITE : [
+		case "pulse": return hex$2(mix$4(c, Math.sin(tt / 260) > 0 ? WHITE$1 : [
 			0,
 			0,
 			0
 		], .4 * Math.abs(Math.sin(tt / 260))));
-		case "holo": return hex$2(mix$3(c, hue(((x * 22 + y * 14 + tt / 5) % 360 + 360) % 360), .45));
+		case "holo": return hex$2(mix$4(c, hue(((x * 22 + y * 14 + tt / 5) % 360 + 360) % 360), .45));
 		case "chroma": {
 			const turned = turn(c, tt / 9 + x * 6);
-			return turned === c ? hex$2(mix$3(c, hue(((tt / 9 + x * 6) % 360 + 360) % 360, .9, .6), .45)) : hex$2(turned);
+			return turned === c ? hex$2(mix$4(c, hue(((tt / 9 + x * 6) % 360 + 360) % 360, .9, .6), .45)) : hex$2(turned);
 		}
 		case "starlight": {
 			const n = noise(x, y, Math.floor(tt / 220), print);
-			const night = mix$3(mix$3(c, [
+			const night = mix$4(mix$4(c, [
 				26,
 				18,
 				70
@@ -3355,17 +3728,85 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				60,
 				200
 			], .12 * (1 + Math.sin(tt / 700 + x * .6 + y)));
-			return n > .92 ? "#FFFFFF" : n > .84 ? hex$2(mix$3(night, [
+			return n > .92 ? "#FFFFFF" : n > .84 ? hex$2(mix$4(night, [
 				200,
 				180,
 				255
 			], .7)) : hex$2(night);
 		}
-		case "embers": return hex$2(mix$3(c, [
+		case "embers": return hex$2(mix$4(c, [
 			255,
 			140,
 			60
 		], .12 + .1 * Math.sin(tt / 180 + x)));
+		case "neon": return hex$2(mix$4(c, hue((tt / 12 % 360 + 360) % 360, 1, .62), .18));
+		case "bubbles": return hex$2(mix$4(c, [
+			190,
+			235,
+			255
+		], .1 + .08 * Math.sin(tt / 300 + y)));
+		case "hearts": return hex$2(mix$4(c, [
+			255,
+			140,
+			190
+		], .14 + .08 * Math.sin(tt / 400 + x * .5)));
+		case "rime": {
+			const reach = .5 + .5 * Math.sin(tt / 900 - y * .35);
+			const n = noise(x, y, Math.floor(tt / 400), print);
+			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
+			return hex$2(mix$4(c, [
+				190,
+				228,
+				255
+			], .3 + .5 * reach));
+		}
+		case "static": {
+			const burst = noise(Math.floor(tt / 90), print, 7) > .7;
+			if (!burst) return y % 2 ? hex$2(mix$4(c, [
+				0,
+				0,
+				0
+			], .12)) : color;
+			const r = noise(x, y, Math.floor(tt / 60));
+			return r > .85 ? "#FFFFFF" : hex$2(mix$4(c, r > .5 ? [
+				255,
+				60,
+				90
+			] : [
+				60,
+				200,
+				255
+			], .45));
+		}
+		case "lava": {
+			const flow = Math.sin(y * 1.1 + tt / 220 + Math.sin(x * .9 + tt / 700) * 2);
+			const crust = mix$4(c, [
+				40,
+				18,
+				12
+			], .55);
+			return flow > .55 ? hex$2(mix$4([
+				255,
+				120,
+				30
+			], [
+				255,
+				230,
+				120
+			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$4(crust, [
+				220,
+				70,
+				20
+			], .6)) : hex$2(crust);
+		}
+		case "electric": {
+			const flash = noise(Math.floor(tt / 120), print, 11) > .82;
+			return flash ? hex$2(mix$4(c, WHITE$1, .65)) : hex$2(mix$4(c, [
+				120,
+				190,
+				255
+			], .16));
+		}
 	}
 }
 /**
@@ -3394,9 +3835,97 @@ function applyFx(colors, slots, copies, t) {
 				[0, -1]
 			]) {
 				const nx = x + dx, ny = y + dy;
-				if (ny >= 0 && ny < out.length && nx >= 0 && nx < out[0].length && !out[ny][nx]) out[ny][nx] = hex$2(mix$3(rgb$2(colors[y][x]), WHITE, .25 + .3 * breath));
+				if (ny >= 0 && ny < out.length && nx >= 0 && nx < out[0].length && !out[ny][nx]) out[ny][nx] = hex$2(mix$4(rgb$3(colors[y][x]), WHITE$1, .25 + .3 * breath));
 			}
 		}));
+	});
+	const dark = (c) => !!c && rgb$3(c).reduce((a, v) => a + v, 0) < 240;
+	const edgeOf = (k) => {
+		const cells = [];
+		slots.forEach((row, y) => row.forEach((s, x) => {
+			if (s === k + 1 || s && s !== k + 1) return;
+			if (out[y][x] && !dark(colors[y][x])) return;
+			if ([
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			].some(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1)) cells.push([x, y]);
+		}));
+		return cells;
+	};
+	const risers = (o, k, spacing, draw) => {
+		const tops = new Map();
+		slots.forEach((row, y) => row.forEach((s, x) => {
+			if (s === k + 1 && !tops.has(x)) tops.set(x, y);
+		}));
+		for (const [x, top] of tops) {
+			if (noise(x, o.print, 5) > .35) continue;
+			const step = Math.floor((t + noise(x, o.print) * 2400) / spacing) % 9;
+			if (step < 6) draw(x + (step % 4 === 3 ? 1 : 0), top - 1 - step, step);
+		}
+	};
+	copies.forEach((o, k) => {
+		if (!o?.fx) return;
+		const tt = t + o.print * 37;
+		if (o.fx === "neon") {
+			if (noise(Math.floor(tt / 130), o.print, 3) > .93) return;
+			for (const [x, y] of edgeOf(k)) out[y][x] = hex$2(hue(((tt / 12 + (x + y) * 8) % 360 + 360) % 360, 1, .6));
+		}
+		if (o.fx === "electric" && noise(Math.floor(tt / 90), o.print, 13) > .6) for (const [x, y] of edgeOf(k)) {
+			const n = noise(x, y, Math.floor(tt / 90));
+			if (n > .72) out[y][x] = n > .86 ? "#FFFFFF" : "#7FE8FF";
+		}
+		if (o.fx === "bubbles") risers(o, k, 160, (x, y, step) => {
+			if (y >= 0 && y < out.length && x < out[0].length && !out[y][x]) out[y][x] = step > 3 ? "#E8F8FF" : "#9ED8FF";
+		});
+		if (o.fx === "hearts") risers(o, k, 220, (x, y) => {
+			for (const [dx, dy, c] of [
+				[
+					-1,
+					-1,
+					"#FF8FBE"
+				],
+				[
+					1,
+					-1,
+					"#FF6FA8"
+				],
+				[
+					-1,
+					0,
+					"#FF6FA8"
+				],
+				[
+					0,
+					0,
+					"#FF6FA8"
+				],
+				[
+					1,
+					0,
+					"#E0457F"
+				],
+				[
+					0,
+					1,
+					"#E0457F"
+				]
+			]) {
+				const px = x + dx, py = y + dy;
+				if (py >= 0 && py < out.length && px >= 0 && px < out[0].length && !out[py][px]) out[py][px] = c;
+			}
+		});
+		if (o.fx === "static" && noise(Math.floor(tt / 90), o.print, 7) > .7) {
+			const yy = Math.floor(noise(Math.floor(tt / 90), o.print, 9) * out.length);
+			const row = out[yy], dir = noise(Math.floor(tt / 90), 1) > .5 ? 1 : -1, copy = [...row];
+			slots[yy].forEach((s, x) => {
+				if (s === k + 1 && copy[x]) {
+					const nx = x + dir;
+					if (nx >= 0 && nx < row.length) row[nx] = copy[x];
+				}
+			});
+		}
 	});
 	copies.forEach((o, k) => {
 		if (o?.fx !== "embers") return;
@@ -3621,10 +4150,10 @@ function markItem(grid, slot, copy) {
 			placed.push([x, y]);
 		}));
 		for (const [x, y] of placed) taken.add(y * GRID_SIZE + x);
-		const inside = (x, y) => frame || N4.every(([dx, dy]) => at(x + dx, y + dy) !== 0);
+		const inside$1 = (x, y) => frame || N4.every(([dx, dy]) => at(x + dx, y + dy) !== 0);
 		for (const [x, y] of placed) for (const [dx, dy] of N4) {
 			const nx = x + dx, ny = y + dy;
-			if (own(slot, at(nx, ny)) && inside(nx, ny)) grid[ny][nx] = T.OUTLINE;
+			if (own(slot, at(nx, ny)) && inside$1(nx, ny)) grid[ny][nx] = T.OUTLINE;
 			taken.add(ny * GRID_SIZE + nx);
 		}
 	});
@@ -4048,13 +4577,13 @@ function rollFrom(pool, seed) {
 function slotOf(o) {
 	return itemById(o.item)?.slot;
 }
-const rgb$1 = (h) => [
+const rgb$2 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$2 = (a, b$1, t) => [
+const mix$3 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -4078,11 +4607,11 @@ function cellNoise(...n) {
 */
 const shaded = (c, l) => {
 	const t = Math.max(0, Math.min(1, (l - .15) / .75));
-	return t < .5 ? mix$2(mix$2(c, [
+	return t < .5 ? mix$3(mix$3(c, [
 		0,
 		0,
 		0
-	], .5), c, t * 2) : mix$2(c, mix$2(c, [
+	], .5), c, t * 2) : mix$3(c, mix$3(c, [
 		255,
 		255,
 		255
@@ -4092,13 +4621,13 @@ const PAINT = {
 	"plain": (_x, _y, _l, _p, original) => original,
 	"sunset": (x, y, l, p) => {
 		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
-		const c = t < .5 ? mix$2(rgb$1("#F5C542"), rgb$1("#E55AA8"), t * 2) : mix$2(rgb$1("#E55AA8"), rgb$1("#7A4BE0"), (t - .5) * 2);
+		const c = t < .5 ? mix$3(rgb$2("#F5C542"), rgb$2("#E55AA8"), t * 2) : mix$3(rgb$2("#E55AA8"), rgb$2("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
 	"tempered": (x, y, l, p) => {
 		const stops = TINTS[temperTint(p)];
 		const band = Math.floor(((x + y + p % 11) % 12 + 12) % 12 / 3);
-		return shaded(rgb$1(stops[[
+		return shaded(rgb$2(stops[[
 			0,
 			1,
 			2,
@@ -4107,13 +4636,13 @@ const PAINT = {
 	},
 	"nebula": (x, y, l, p) => {
 		const phase = nebulaPhase(p);
-		const base = phase === "Red Giant" ? rgb$1("#D0102E") : phase === "Blue Moon" ? rgb$1("#1E4FE8") : phase === "Black Hole" ? rgb$1("#2A1E3A") : rgb$1([
+		const base = phase === "Red Giant" ? rgb$2("#D0102E") : phase === "Blue Moon" ? rgb$2("#1E4FE8") : phase === "Black Hole" ? rgb$2("#2A1E3A") : rgb$2([
 			"#8A2AB0",
 			"#3A2AB0",
 			"#2A6AB0",
 			"#B02A8A"
 		][p % 4]);
-		const c = cellNoise(p, x, y, 2) < .2 ? mix$2(base, rgb$1("#FFD6F0"), .55) : base;
+		const c = cellNoise(p, x, y, 2) < .2 ? mix$3(base, rgb$2("#FFD6F0"), .55) : base;
 		return shaded(c, l);
 	},
 	"prism": (x, y, l, p) => {
@@ -4127,7 +4656,7 @@ const PAINT = {
 			k(8) * 255,
 			k(4) * 255
 		];
-		return mix$2(shaded(c, l), [
+		return mix$3(shaded(c, l), [
 			255,
 			255,
 			255
@@ -4139,7 +4668,7 @@ const PAINT = {
 			255 - original[1],
 			255 - original[2]
 		];
-		return mix$2(inverted, [
+		return mix$3(inverted, [
 			92,
 			52,
 			160
@@ -4154,11 +4683,11 @@ const PAINT = {
 	"ruby": (_x, _y, _l, _p, original) => original,
 	"pearl": (_x, _y, _l, _p, original) => original,
 	"gold": (x, y, l) => {
-		if ((x + y) % 6 === 0 && l > .5) return rgb$1("#FFFBE6");
-		return l > .75 ? rgb$1("#FFF1B0") : l > .5 ? rgb$1("#F2C230") : l > .3 ? rgb$1("#C8901E") : rgb$1("#7A5212");
+		if ((x + y) % 6 === 0 && l > .5) return rgb$2("#FFFBE6");
+		return l > .75 ? rgb$2("#FFF1B0") : l > .5 ? rgb$2("#F2C230") : l > .3 ? rgb$2("#C8901E") : rgb$2("#7A5212");
 	}
 };
-const PRIMER = rgb$1("#8B9097");
+const PRIMER = rgb$2("#8B9097");
 /**
 * Paints one cell of an owned item: its finish, then its wear. Chips land in
 * places fixed by the print, so a copy always wears the same way, and how many
@@ -4166,10 +4695,10 @@ const PRIMER = rgb$1("#8B9097");
 * placed.
 */
 function paintCell(color, x, y, o, state) {
-	const original = rgb$1(color);
+	const original = rgb$2(color);
 	let c = PAINT[o.finish](x, y, lum$1(original), o.print, original);
-	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$2(PRIMER, c, .25);
-	c = mix$2(c, [
+	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$3(PRIMER, c, .25);
+	c = mix$3(c, [
 		120,
 		116,
 		112
@@ -5397,11 +5926,12 @@ const hats = [
 		game: "amountle",
 		name: "Gem",
 		free: true,
-		colors: [],
+		colors: ["#E3E7EE", "#9AA3B2"],
 		draw: on([
-			".xa.",
-			"aaaA",
-			".aA."
+			"..waaA..",
+			".waaaaA.",
+			"..aaAA..",
+			"121aA121"
 		])
 	},
 	{
@@ -5415,10 +5945,12 @@ const hats = [
 			"#A6F4EA"
 		],
 		draw: on([
-			"1.1.1",
-			"14341",
-			"22222"
-		])
+			"1...4...1",
+			"11.141.11",
+			"111111111",
+			"134313431",
+			"222222222"
+		], 0, 2)
 	},
 	{
 		id: "halfsies.bowl",
@@ -5427,9 +5959,10 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			".aaaa.",
-			"axxxxA",
-			"AAAAAA"
+			"....AA....",
+			"..xaaaaA..",
+			".xaaaaaaA.",
+			"AAAAAAAAAA"
 		])
 	},
 	{
@@ -5439,12 +5972,14 @@ const hats = [
 		colors: [
 			"#FFFFFF",
 			"#D9DEE6",
-			"#2B2F38"
+			"#2B2F38",
+			"#7DF0A0"
 		],
 		draw: on([
-			"11111111",
-			".222222.",
-			"...33..."
+			"...11...",
+			".211112.",
+			"21111112",
+			"33433433"
 		])
 	},
 	{
@@ -5454,10 +5989,10 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			"xxxxA",
-			"aaaaA",
-			"ayaaA",
-			"aaaaA"
+			".xA..xA.",
+			"xaaaaaaA",
+			"aaaaaaaA",
+			"AAAAAAAA"
 		])
 	},
 	{
@@ -5473,12 +6008,12 @@ const hats = [
 			"#4A84E0"
 		],
 		draw: on([
-			".12..",
-			".12..",
-			"..34.",
-			"..34.",
-			"55556"
-		])
+			"...112..",
+			"..33334.",
+			"..33334.",
+			".555556.",
+			".555556."
+		], 0, 2)
 	},
 	{
 		id: "flipsies.cap",
@@ -5487,9 +6022,9 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			".xxxx.",
-			"xaaaax",
-			"aAaAaA"
+			".xaaaaA.",
+			"xaaaaaaA",
+			"aAaAaAaA"
 		])
 	},
 	{
@@ -5503,11 +6038,11 @@ const hats = [
 			"#FFFFFF"
 		],
 		draw: on([
-			".33.",
-			".11.",
-			"1112",
-			"4442",
-			"1112"
+			".333.",
+			".111.",
+			"11112",
+			"44442",
+			"11112"
 		])
 	},
 	{
@@ -5531,13 +6066,18 @@ const hats = [
 		colors: [
 			"#8A8F99",
 			"#E5484D",
-			"#B8313A"
+			"#B8313A",
+			"#7ED957",
+			"#4CAF50",
+			"#2E7D32"
 		],
 		draw: on([
-			"1222",
-			"1223",
-			"1..."
-		], 1)
+			"....1222",
+			"....1223",
+			"....1...",
+			".4441445",
+			"55555556"
+		])
 	},
 	{
 		id: "weighsies.wedge",
@@ -5550,9 +6090,11 @@ const hats = [
 			"#B8761A"
 		],
 		draw: on([
-			"...11",
-			".1131",
-			"11122"
+			"......1.",
+			"....1111",
+			"..113111",
+			"11111131",
+			"22222222"
 		])
 	},
 	{
@@ -5560,14 +6102,16 @@ const hats = [
 		game: "weighsies",
 		name: "Balance",
 		colors: [
-			"#2B2F38",
-			"#FFFFFF",
-			"#D9DEE6"
+			"#E8B84A",
+			"#B9852A",
+			"#FFF1B0"
 		],
 		draw: on([
-			"22.1.22",
-			"3111113",
-			"...1..."
+			"....3....",
+			"311111112",
+			"1...1...1",
+			"322.1.322",
+			"...112..."
 		])
 	},
 	{
@@ -5615,7 +6159,11 @@ const hats = [
 		name: "Hamster ears",
 		free: true,
 		colors: ["#EDB57D", "#FFB3A7"],
-		draw: onPair(["11", "12"], 1)
+		draw: onPair([
+			"11.",
+			"121",
+			"111"
+		], 0)
 	},
 	{
 		id: "tiltsies.buddy",
@@ -5624,13 +6172,15 @@ const hats = [
 		colors: [
 			"#EDB57D",
 			"#FFE7CB",
-			"#2A1B10"
+			"#2A1B10",
+			"#FF9AA4"
 		],
 		draw: on([
-			"1...1",
-			"11111",
-			"13131",
-			".222."
+			"1.....1",
+			"1111111",
+			"1311131",
+			"1124211",
+			".22222."
 		])
 	},
 	{
@@ -5679,14 +6229,17 @@ const hats = [
 		colors: [
 			"#3FD1C1",
 			"#1F9C90",
-			"#A6F4EA"
+			"#A6F4EA",
+			"#FFD25A",
+			"#E0A62E"
 		],
 		draw: on([
-			".331.",
-			"33111",
-			"31112",
-			".112."
-		])
+			"..33112..",
+			".3311112.",
+			"..11112..",
+			"...112...",
+			"444454444"
+		], 0, 2)
 	},
 	{
 		id: "halfsies.helmet",
@@ -5716,10 +6269,9 @@ const hats = [
 		name: "Ring",
 		colors: ["#FF8FB1", "#E0628A"],
 		draw: on([
-			".11.",
-			"1..2",
-			"1..2",
-			".22."
+			".211112.",
+			"21111112",
+			"22222222"
 		])
 	},
 	{
@@ -5732,10 +6284,12 @@ const hats = [
 			"#E5484D"
 		],
 		draw: on([
-			".1111.",
-			"123321",
-			".2222."
-		], 1)
+			"....3....",
+			"..22222..",
+			".2211122.",
+			"221131122",
+			".2211122."
+		], 0, 2)
 	},
 	{
 		id: "puttsies.tam",
@@ -5748,21 +6302,25 @@ const hats = [
 			"#E5484D"
 		],
 		draw: on([
-			"..33..",
-			".1411.",
-			"141141",
-			"222222"
+			"...33...",
+			".111111.",
+			"14111141",
+			"22222222"
 		])
 	},
 	{
 		id: "weighsies.dumbbell",
 		game: "weighsies",
 		name: "Dumbbell",
-		colors: ["#4A4E5E", "#9AA0A8"],
+		colors: [
+			"#4A4E5E",
+			"#9AA0A8",
+			"#D9DEE6"
+		],
 		draw: on([
-			"1.....1",
-			"1222221",
-			"1.....1"
+			"13.....13",
+			"112222211",
+			"11.....11"
 		])
 	},
 	{
@@ -5776,9 +6334,10 @@ const hats = [
 			"#FFF1D6"
 		],
 		draw: on([
-			".1111.",
-			"111112",
-			"343434"
+			"..3111..",
+			".311111.",
+			"31111112",
+			"43434343"
 		])
 	},
 	{
@@ -5787,11 +6346,12 @@ const hats = [
 		name: "Sunflower seed",
 		colors: ["#3A3A42", "#E8E4DA"],
 		draw: on([
-			".1.",
-			"121",
-			"121",
-			"121"
-		], 2)
+			"...1...",
+			"..121..",
+			".12121.",
+			"1212121",
+			"1111111"
+		], 0, 2)
 	},
 	{
 		id: "trackdle.trophy",
@@ -5842,12 +6402,12 @@ const hats = [
 			"#B07444"
 		],
 		draw: on([
-			"6.....",
-			"61....",
-			"6531..",
-			"64351.",
-			"666666"
-		])
+			"66......",
+			"6116....",
+			"653316..",
+			"6443516.",
+			"66666666"
+		], 0, 2)
 	},
 	{
 		id: "stackdle.arch",
@@ -5892,10 +6452,10 @@ const hats = [
 			"#E5484D"
 		],
 		draw: on([
-			"..1311..",
-			".141141.",
-			".311311.",
-			"22222222"
+			"...1311...",
+			"..141141..",
+			"..311311..",
+			"2222222222"
 		])
 	},
 	{
@@ -5905,15 +6465,16 @@ const hats = [
 		colors: [
 			"#E6DCFF",
 			"#B39EEC",
-			"#7A5FD0"
+			"#7A5FD0",
+			"#4A4E5E"
 		],
 		draw: on([
-			"...11",
-			"..121",
-			".121.",
-			"121..",
-			"3...."
-		], 1)
+			"......11",
+			".....121",
+			"....121.",
+			"...121..",
+			"44434444"
+		])
 	},
 	{
 		id: "cutsies.banana",
@@ -5926,9 +6487,10 @@ const hats = [
 			"#6A4A1E"
 		],
 		draw: on([
-			"4.....4",
-			"23...31",
-			".21111."
+			"4.......4",
+			"13.....31",
+			".1333331.",
+			"..22222.."
 		])
 	},
 	{
@@ -5938,15 +6500,16 @@ const hats = [
 		colors: [
 			"#C9CED8",
 			"#8A93A3",
-			"#EDB57D"
+			"#EDB57D",
+			"#2A1B10"
 		],
 		draw: on([
-			".111.",
-			"12.21",
-			"1.3.1",
-			"12.21",
-			".111."
-		])
+			".11111.",
+			"1.2.2.1",
+			"1.343.1",
+			"1.333.1",
+			".11111."
+		], 0, 2)
 	},
 	{
 		id: "trackdle.goggles",
@@ -6907,11 +7470,12 @@ const seasonal = [
 			"#FF6FA0"
 		],
 		draw: on([
-			"..3..",
-			".121.",
-			".212.",
-			"12121"
-		])
+			"...3...",
+			"..121..",
+			"..212..",
+			".12121.",
+			"2121212"
+		], 0, 2)
 	},
 	{
 		id: "club.pumpkin",
@@ -6924,14 +7488,16 @@ const seasonal = [
 		colors: [
 			"#FF8A2B",
 			"#D9661A",
-			"#4FAE5C"
+			"#4FAE5C",
+			"#FFB866"
 		],
 		draw: on([
-			"..3..",
-			"11211",
-			"11211",
-			".111."
-		])
+			"...33...",
+			".412214.",
+			"41121121",
+			"11121121",
+			".222222."
+		], 0, 2)
 	},
 	{
 		id: "club.snowcap",
@@ -6947,11 +7513,12 @@ const seasonal = [
 			"#FFFFFF"
 		],
 		draw: on([
-			"....3",
-			"..11.",
-			".112.",
-			"33333"
-		])
+			"......33",
+			"....112.",
+			"..11112.",
+			".111112.",
+			"33333333"
+		], 0, 2)
 	},
 	{
 		id: "club.sweetheart",
@@ -6967,10 +7534,11 @@ const seasonal = [
 			"#FFC2D4"
 		],
 		draw: on([
-			"11.11",
-			"13112",
-			".112.",
-			"..2.."
+			".11..11.",
+			"13111112",
+			"11111112",
+			".111112.",
+			"..1122.."
 		])
 	},
 	{
@@ -6989,11 +7557,11 @@ const seasonal = [
 			"#5FB4FF"
 		],
 		draw: on([
-			"4...5",
-			".112.",
-			".112.",
-			".333.",
-			"11112"
+			"...4.5...",
+			"..11112..",
+			"..11112..",
+			"..33333..",
+			"111111112"
 		])
 	},
 	{
@@ -7011,12 +7579,12 @@ const seasonal = [
 			"#FF8A80"
 		],
 		draw: on([
-			"..3..",
-			".333.",
-			"41112",
-			"41112",
-			".333."
-		])
+			"...3...",
+			".33333.",
+			"4111112",
+			"4111112",
+			".33333."
+		], 0, 2)
 	},
 	{
 		id: "club.shamrock",
@@ -7029,14 +7597,17 @@ const seasonal = [
 		colors: [
 			"#4FBF5C",
 			"#2E8E3E",
-			"#A8EBA8"
+			"#F2C230",
+			"#2B2F38",
+			"#A8EBA8",
+			"#B98A1A"
 		],
 		draw: on([
-			"..31..",
-			"3.11.3",
-			"112211",
-			".1.21.",
-			"...2.."
+			"..11112..",
+			"..15112..",
+			"..44344..",
+			".1111112.",
+			"111111112"
 		])
 	},
 	{
@@ -7051,14 +7622,13 @@ const seasonal = [
 			"#FFB3D1",
 			"#F07AA8",
 			"#FFF4A0",
-			"#FFFFFF"
+			"#FFFFFF",
+			"#5FBF6A"
 		],
 		draw: on([
-			".4.1.",
-			"11211",
-			".232.",
-			"11211",
-			".1.1."
+			".4..4..4.",
+			"131131131",
+			"525525525"
 		])
 	},
 	{
@@ -7077,12 +7647,12 @@ const seasonal = [
 			"#E6DCFF"
 		],
 		draw: on([
-			".51.",
-			"5112",
-			"3434",
-			"1112",
-			".22."
-		])
+			"..51..",
+			".5112.",
+			"511112",
+			"343434",
+			"111112"
+		], 0, 2)
 	},
 	{
 		id: "club.daisy",
@@ -7099,9 +7669,9 @@ const seasonal = [
 			"#DCE3EC"
 		],
 		draw: on([
-			".1...1.",
-			"121.121",
-			".43334."
+			".1..1..1.",
+			"121121121",
+			"343343343"
 		])
 	},
 	{
@@ -7120,6 +7690,7 @@ const seasonal = [
 		],
 		draw: on([
 			"...4112...",
+			"...1112...",
 			"...3333...",
 			"2111111112"
 		])
@@ -7140,12 +7711,12 @@ const seasonal = [
 			"#8A93A3"
 		],
 		draw: on([
-			"2.1.3",
-			".414.",
-			"14441",
-			".424.",
-			"..5.."
-		])
+			"2..1..3",
+			".2.1.3.",
+			"..444..",
+			"1444442",
+			"..555.."
+		], 0, 2)
 	},
 	{
 		id: "club.icecream",
@@ -7163,12 +7734,12 @@ const seasonal = [
 			"#FFE3EE"
 		],
 		draw: on([
-			"..3..",
-			".343.",
-			"34343",
-			"51111",
-			"1.1.2"
-		])
+			"...3...",
+			"..343..",
+			".34343.",
+			"1111112",
+			"5111112"
+		], 0, 2)
 	},
 	{
 		id: "club.maple",
@@ -7185,11 +7756,11 @@ const seasonal = [
 			"#8A5A32"
 		],
 		draw: on([
-			"..3..",
-			"3.1.1",
-			"11311",
-			".111.",
-			"..4.."
+			"....1....",
+			"1.11311.1",
+			"111131111",
+			".1131311.",
+			"..2.4.2.."
 		])
 	},
 	{
@@ -7208,10 +7779,10 @@ const seasonal = [
 			"#B07444"
 		],
 		draw: on([
-			"1.2.1",
-			"12321",
-			"23432",
-			".454."
+			"1.2.3.2.1",
+			"121323121",
+			".2133312.",
+			"..44544.."
 		])
 	},
 	{
@@ -7228,11 +7799,12 @@ const seasonal = [
 			"#E5484D"
 		],
 		draw: onPair([
-			"1..",
-			"1.1",
-			"111",
-			".2."
-		], 1)
+			"1.1.",
+			"1.1.",
+			".11.",
+			"..11",
+			"..2."
+		], 0)
 	}
 ];
 /** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
@@ -7329,8 +7901,8 @@ function contrast$1(a, b$1) {
 	return (hi + .05) / (lo + .05);
 }
 /** Adds the equipped items' own colours to a palette. */
-function withItems(palette, config) {
-	const colors = { ...palette.colors };
+function withItems(palette$1, config) {
+	const colors = { ...palette$1.colors };
 	for (const slot of [
 		"skin",
 		"hat",
@@ -7350,7 +7922,7 @@ function withItems(palette, config) {
 		}
 	}
 	return {
-		name: palette.name,
+		name: palette$1.name,
 		colors
 	};
 }
@@ -7968,7 +8540,7 @@ function fromHsl([h, s, l]) {
 	];
 	return rgbToHex((r + m) * 255, (g + m) * 255, (b$1 + m) * 255);
 }
-function mix$1(a, b$1, amount) {
+function mix$2(a, b$1, amount) {
 	const [ar, ag, ab] = hexToRgb(a);
 	const [br, bg, bb] = hexToRgb(b$1);
 	return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
@@ -8029,7 +8601,7 @@ function derive(name, body, accent, trim) {
 		colors: {
 			1: body,
 			2: shadeOf(body),
-			3: mix$1(body, "#FFFFFF", .55),
+			3: mix$2(body, "#FFFFFF", .55),
 			4: outline$1,
 			5: ink,
 			6: "#FFFFFF",
@@ -8039,7 +8611,7 @@ function derive(name, body, accent, trim) {
 			10: accent,
 			11: shadeOf(accent),
 			12: trim,
-			13: mix$1(body, "#FFFBF0", .6),
+			13: mix$2(body, "#FFFBF0", .6),
 			14: "#7DD87A",
 			15: "#4FAE5C",
 			16: gold,
@@ -8054,9 +8626,9 @@ const palettes = COLOURWAYS.map((w) => derive(w.name, w.body, w.accent, w.trim))
 function getPalette(index) {
 	return palettes[index % palettes.length];
 }
-function resolveColor(palette, token) {
+function resolveColor(palette$1, token) {
 	if (token === 0) return null;
-	return palette.colors[token] ?? null;
+	return palette$1.colors[token] ?? null;
 }
 /** Tones a colourway can be worn in: pastel, as picked, vivid. */
 const SHADE_COUNT = 3;
@@ -8067,10 +8639,10 @@ const SHADE_COUNT = 3;
 * the outline, shading and blush are worked out again from the result, so a
 * toned palette is as coherent as the original.
 */
-function shadePalette(palette, shade) {
-	if (shade === 1) return palette;
+function shadePalette(palette$1, shade) {
+	if (shade === 1) return palette$1;
 	const tone = (hex$3) => {
-		if (shade === 0) return mix$1(hex$3, "#FFFFFF", .3);
+		if (shade === 0) return mix$2(hex$3, "#FFFFFF", .3);
 		const [h, s, l] = toHsl(hex$3);
 		return fromHsl([
 			h,
@@ -8078,14 +8650,14 @@ function shadePalette(palette, shade) {
 			l > .4 ? l - .08 : l
 		]);
 	};
-	const c = palette.colors;
-	return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
+	const c = palette$1.colors;
+	return derive(palette$1.name, tone(c[1]), tone(c[10]), c[12]);
 }
 /**
 * The Lucky variant: the same colourway turned round the colour wheel, with
 * gold trim. Derived again, so the face and outline read as well as ever.
 */
-function luckyPalette(palette) {
+function luckyPalette(palette$1) {
 	const turn$1 = (hex$3) => {
 		const [h, s, l] = toHsl(hex$3);
 		let hue$1 = (h + 150) % 360;
@@ -8097,8 +8669,8 @@ function luckyPalette(palette) {
 			dark ? Math.min(Math.max(l, .22), .28) : Math.max(l, .66)
 		]);
 	};
-	const c = palette.colors;
-	return derive(`${palette.name} Lucky`, turn$1(c[1]), turn$1(c[10]), "#FFE9A8");
+	const c = palette$1.colors;
+	return derive(`${palette$1.name} Lucky`, turn$1(c[1]), turn$1(c[10]), "#FFE9A8");
 }
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
 function paletteOf(config) {
@@ -8113,13 +8685,13 @@ function paletteOf(config) {
 * colour; a cell belonging to an owned item is repainted with that copy's
 * finish and wear.
 */
-function paint(grid, config, palette, small = false, still = true) {
+function paint(grid, config, palette$1, small = false, still = true) {
 	const state = { glint: false };
 	const slotOf$1 = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	const aura = auraById(config.aura);
-	if (small) ({grid, palette} = forSmall(grid, palette));
+	if (small) ({grid, palette: palette$1} = forSmall(grid, palette$1));
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token);
+		const color = token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token);
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
@@ -8136,25 +8708,25 @@ const SMALL_SIZE = 36;
 * out. Small, each eye is solid, the highlight goes back to the body colour,
 * and dark ink goes darker still. Nothing moves, so he is the same guy.
 */
-function forSmall(grid, palette) {
+function forSmall(grid, palette$1) {
 	const eyeAt = (x, y) => grid[y]?.[x] === T.EYE;
 	const out = grid.map((row, y) => row.map((t, x) => {
 		if (t === T.WHITE && (eyeAt(x - 1, y) || eyeAt(x + 1, y) || eyeAt(x, y - 1) || eyeAt(x, y + 1))) return T.EYE;
 		if (t === T.LIGHT) return T.BODY;
 		return t;
 	}));
-	const ink = palette.colors[T.EYE];
+	const ink = palette$1.colors[T.EYE];
 	if (!ink || contrast("#FFFFFF", ink) < 3) return {
 		grid: out,
-		palette
+		palette: palette$1
 	};
-	const deep = mix$1(ink, "#000000", .45);
+	const deep = mix$2(ink, "#000000", .45);
 	return {
 		grid: out,
 		palette: {
-			...palette,
+			...palette$1,
 			colors: {
-				...palette.colors,
+				...palette$1.colors,
 				[T.EYE]: deep,
 				[T.MOUTH]: deep
 			}
@@ -8166,8 +8738,8 @@ function forSmall(grid, palette) {
 * melts into the skin and leaves the eye a bitten-off L, so there it is a
 * pale tint of the eye instead: the eye keeps its whole shape and still shines.
 */
-function catchlight(grid, x, y, palette) {
-	const white = resolveColor(palette, T.WHITE);
+function catchlight(grid, x, y, palette$1) {
+	const white = resolveColor(palette$1, T.WHITE);
 	const near = [
 		[x - 1, y],
 		[x + 1, y],
@@ -8175,10 +8747,10 @@ function catchlight(grid, x, y, palette) {
 		[x, y + 1]
 	].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
 	if (!white || !near.includes(T.EYE)) return white;
-	const ink = resolveColor(palette, T.EYE);
+	const ink = resolveColor(palette$1, T.EYE);
 	if (!ink || contrast(white, ink) < 3) return white;
-	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette, t) ?? "#000000") < 1.6);
-	return pale ? mix$1(ink, white, .6) : white;
+	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette$1, t) ?? "#000000") < 1.6);
+	return pale ? mix$2(ink, white, .6) : white;
 }
 
 //#endregion
@@ -8455,14 +9027,14 @@ function glance(grid, config, dx) {
 	}
 	return out;
 }
-const rgb = (h) => [
+const rgb$1 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix = (a, b$1, t) => {
-	const x = rgb(a), y = rgb(b$1);
+const mix$1 = (a, b$1, t) => {
+	const x = rgb$1(a), y = rgb$1(b$1);
 	return hex([
 		0,
 		1,
@@ -8480,8 +9052,8 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette, small = false) {
-	const colors = paint(grid, config, palette, small, false);
+function painted(grid, config, palette$1, small = false) {
+	const colors = paint(grid, config, palette$1, small, false);
 	const out = empty();
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const c = colors[y][x];
@@ -8701,7 +9273,7 @@ const SPARKLE_SPOTS = [
 */
 function animate(input, move, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
-	const palette = withItems(options.palette ?? paletteOf(config), config);
+	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
 	const figure = {
 		...config,
 		frame: void 0,
@@ -8737,14 +9309,14 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small));
+		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small));
 		return layers.get(pose);
 	};
 	let backdrop = null;
 	const frameItem = itemById(config.frame);
 	if (frameItem?.slot === "frame") {
 		const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: GRID_SIZE }, (_$1, x) => LAYER.frame + frameItem.fill(x, y + 48) - 1));
-		const colors = paint(tall, config, palette, false, false);
+		const colors = paint(tall, config, palette$1, false, false);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
 	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
@@ -8766,7 +9338,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 && !wornAura ? [mix(gradeColor, "#000000", .2), mix(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix$1(gradeColor, "#000000", .2), mix$1(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const frames$1 = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -8788,13 +9360,13 @@ function animate(input, move, options = {}) {
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
-				if (d < 1) cell.c = mix(cell.c, "#FFFFFF", .65);
-				else if (d < 2) cell.c = mix(cell.c, "#FFFFFF", .25);
+				if (d < 1) cell.c = mix$1(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix$1(cell.c, "#FFFFFF", .25);
 			}));
 		}
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
-			const gold = palette.colors[T.GOLD] ?? "#F2C230";
+			const gold = palette$1.colors[T.GOLD] ?? "#F2C230";
 			twinkle(layer, 2, 3, "#FFFFFF", gold);
 			twinkle(layer, 13, 2, "#FFFFFF", gold);
 			if (Math.floor(t$1 / 120) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
@@ -8830,7 +9402,7 @@ function animate(input, move, options = {}) {
 			};
 		} else if (grade >= 2) {
 			const on$1 = Math.floor((t$1 + seed) / 320) % 2 === 0;
-			const ring$1 = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix(gradeColor, "#000000", .35);
+			const ring$1 = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix$1(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
 				c: ring$1,
 				item: false
@@ -8989,10 +9561,10 @@ function bounds(colors, margin) {
 }
 function toSvgString(input, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
-	const palette = withItems(options.palette ?? paletteOf(config), config);
+	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
 	const size = options.size ?? 128;
 	const small = options.small ?? size <= SMALL_SIZE;
-	const colors = paint(compose(config), config, palette, small);
+	const colors = paint(compose(config), config, palette$1, small);
 	const box = small ? bounds(colors, options.square ? 0 : 3) : {
 		x: 0,
 		y: 0,
@@ -9080,8 +9652,8 @@ const DEFAULT_COLORS_DARK = [
 const FALLBACK_COLOR = "#ec4899";
 /** Get a color from an array by index (wraps around) */
 function getColor(colors, index) {
-	const palette = colors.length > 0 ? colors : DEFAULT_COLORS;
-	return palette[index % palette.length] ?? FALLBACK_COLOR;
+	const palette$1 = colors.length > 0 ? colors : DEFAULT_COLORS;
+	return palette$1[index % palette$1.length] ?? FALLBACK_COLOR;
 }
 
 //#endregion
@@ -9897,6 +10469,78 @@ const SURFACES = {
 		iridescence: 0,
 		sheen: 0,
 		glow: 0
+	},
+	classic: {
+		roughness: .3,
+		metalness: 0,
+		clearcoat: .6,
+		clearcoatRoughness: .2,
+		iridescence: 0,
+		sheen: 0,
+		glow: .7
+	},
+	fade: {
+		roughness: .2,
+		metalness: .1,
+		clearcoat: .9,
+		clearcoatRoughness: .1,
+		iridescence: .5,
+		sheen: 0,
+		glow: .6
+	},
+	frost: {
+		roughness: .1,
+		metalness: .2,
+		clearcoat: 1,
+		clearcoatRoughness: .04,
+		iridescence: .3,
+		sheen: 0,
+		glow: .5
+	},
+	toxic: {
+		roughness: .25,
+		metalness: 0,
+		clearcoat: .8,
+		clearcoatRoughness: .12,
+		iridescence: 0,
+		sheen: 0,
+		glow: .9
+	},
+	shadow: {
+		roughness: .4,
+		metalness: .3,
+		clearcoat: .5,
+		clearcoatRoughness: .2,
+		iridescence: 0,
+		sheen: 0,
+		glow: .3
+	},
+	sapphire: {
+		roughness: .1,
+		metalness: .4,
+		clearcoat: 1,
+		clearcoatRoughness: .03,
+		iridescence: .2,
+		sheen: 0,
+		glow: .6
+	},
+	ruby: {
+		roughness: .1,
+		metalness: .4,
+		clearcoat: 1,
+		clearcoatRoughness: .03,
+		iridescence: .2,
+		sheen: 0,
+		glow: .6
+	},
+	pearl: {
+		roughness: .08,
+		metalness: .5,
+		clearcoat: 1,
+		clearcoatRoughness: .02,
+		iridescence: .6,
+		sheen: 0,
+		glow: .3
 	}
 };
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
@@ -9918,8 +10562,8 @@ const darken = (hex$3, k) => {
 	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
 };
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
-function inset(w, h, inside) {
-	const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_$1, x) => inside(x, y) ? 99 : 0));
+function inset(w, h, inside$1) {
+	const d = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_$1, x) => inside$1(x, y) ? 99 : 0));
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y - 1]?.[x] ?? 0) + 1, (d[y][x - 1] ?? 0) + 1);
 	for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) if (d[y][x]) d[y][x] = Math.min(d[y][x], (d[y + 1]?.[x] ?? 0) + 1, (d[y][x + 1] ?? 0) + 1);
 	return d;
@@ -10019,13 +10663,13 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		const color = shade ? darken(c, 1 - shade * .045) : c;
 		let side = color;
 		if (lum(c) < .3 && (s === 4 ? buddy[y][x] : figure[y][x]) === 1) {
-			const inside = [
+			const inside$1 = [
 				[1, 0],
 				[-1, 0],
 				[0, 1],
 				[0, -1]
 			].map(([dx, dy]) => C[y + dy]?.[x + dx]).filter((n) => !!n && lum(n) >= .3);
-			if (inside.length) side = darken(inside[0], .92);
+			if (inside$1.length) side = darken(inside$1[0], .92);
 		}
 		out.push({
 			x: px,
@@ -10046,7 +10690,8 @@ const SLOT_TOKENS = {
 	skin: [LAYER.skin, LAYER.hat],
 	hat: [LAYER.hat, LAYER.frame],
 	frame: [LAYER.frame, LAYER.buddy],
-	buddy: [LAYER.buddy, LAYER.buddy + 10]
+	buddy: [LAYER.buddy, LAYER.aura],
+	aura: [LAYER.aura, LAYER.aura + 10]
 };
 /** One copy on its own, cut out of a guy wearing it: a 16×16 frame with only the item's pixels. */
 function itemFrame(o, seed = "display stand") {
@@ -10163,7 +10808,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			v[2] / l
 		];
 	};
-	const quad = (a, b$1, c, d, n, rgb$3) => {
+	const quad = (a, b$1, c, d, n, rgb$4) => {
 		const shaded$1 = [
 			a,
 			b$1,
@@ -10186,7 +10831,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
 			nor.push(...shaded$1[i]);
-			col.push(...rgb$3);
+			col.push(...rgb$4);
 		}
 	};
 	const open = (z0, z1, n) => {
@@ -10203,7 +10848,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			const face = linear(c.color), back = linear(c.back), side = linear(c.side ?? c.color);
 			flat = c.slot === 3;
 			wall = 0;
-			const RIM = .4, rim$2 = z1 - RIM;
+			const RIM$1 = .4, rim$2 = z1 - RIM$1;
 			const wallQuads = (spans, corners, n) => {
 				for (const [a, b$1] of spans) {
 					if (c.side === void 0 || c.side === c.color || b$1 <= rim$2) {
@@ -10633,4 +11278,2500 @@ function setProgress(game, owned) {
 }
 
 //#endregion
-export { ARM_NAMES, AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/font.ts
+const GLYPHS = {
+	"0": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"1": [7, [
+		0,
+		0,
+		12,
+		15,
+		15,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"2": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		48,
+		48,
+		56,
+		28,
+		14,
+		7,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"3": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		48,
+		28,
+		60,
+		48,
+		48,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"4": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		48,
+		48,
+		48,
+		0,
+		0,
+		0
+	]],
+	"5": [7, [
+		0,
+		0,
+		63,
+		63,
+		3,
+		3,
+		31,
+		63,
+		48,
+		48,
+		48,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"6": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		3,
+		31,
+		63,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"7": [7, [
+		0,
+		0,
+		63,
+		63,
+		48,
+		48,
+		56,
+		24,
+		28,
+		12,
+		12,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"8": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		30,
+		63,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"9": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	" ": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"!": [3, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"\"": [6, [
+		0,
+		0,
+		27,
+		27,
+		18,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"#": [8, [
+		0,
+		0,
+		54,
+		54,
+		54,
+		127,
+		127,
+		54,
+		127,
+		127,
+		54,
+		54,
+		54,
+		0,
+		0,
+		0
+	]],
+	"$": [7, [
+		0,
+		0,
+		12,
+		12,
+		62,
+		63,
+		3,
+		31,
+		62,
+		48,
+		63,
+		31,
+		12,
+		12,
+		0,
+		0
+	]],
+	"%": [7, [
+		0,
+		0,
+		0,
+		0,
+		3,
+		51,
+		56,
+		28,
+		14,
+		7,
+		51,
+		48,
+		0,
+		0,
+		0,
+		0
+	]],
+	"&": [10, [
+		0,
+		0,
+		60,
+		126,
+		102,
+		102,
+		126,
+		447,
+		507,
+		243,
+		115,
+		511,
+		478,
+		0,
+		0,
+		0
+	]],
+	"'": [3, [
+		0,
+		0,
+		3,
+		3,
+		2,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"(": [5, [
+		0,
+		0,
+		14,
+		15,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		15,
+		14,
+		0
+	]],
+	")": [5, [
+		0,
+		0,
+		7,
+		15,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		15,
+		7,
+		0
+	]],
+	"*": [6, [
+		0,
+		0,
+		27,
+		31,
+		14,
+		31,
+		27,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"+": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		12,
+		12,
+		63,
+		63,
+		12,
+		12,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	",": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		2,
+		0,
+		0
+	]],
+	"-": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	".": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"/": [7, [
+		0,
+		0,
+		48,
+		48,
+		56,
+		24,
+		28,
+		12,
+		14,
+		6,
+		7,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	":": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	";": [3, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		0,
+		0,
+		0,
+		0,
+		3,
+		3,
+		2,
+		0,
+		0
+	]],
+	"<": [6, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		24,
+		28,
+		14,
+		7,
+		7,
+		14,
+		28,
+		24,
+		0,
+		0,
+		0
+	]],
+	"=": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	">": [6, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		3,
+		7,
+		14,
+		28,
+		28,
+		14,
+		7,
+		3,
+		0,
+		0,
+		0
+	]],
+	"?": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		48,
+		56,
+		28,
+		12,
+		12,
+		0,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"@": [10, [
+		0,
+		0,
+		124,
+		254,
+		455,
+		499,
+		507,
+		475,
+		507,
+		243,
+		7,
+		510,
+		508,
+		0,
+		0,
+		0
+	]],
+	"A": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		63,
+		63,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"B": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		63,
+		31,
+		51,
+		51,
+		51,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"C": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"D": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"E": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		31,
+		31,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"F": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		31,
+		31,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"G": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		59,
+		59,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"H": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		63,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"I": [7, [
+		0,
+		0,
+		63,
+		63,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"J": [7, [
+		0,
+		0,
+		63,
+		63,
+		48,
+		48,
+		48,
+		48,
+		48,
+		48,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"K": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		59,
+		31,
+		15,
+		31,
+		59,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"L": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"M": [9, [
+		0,
+		0,
+		127,
+		255,
+		219,
+		219,
+		219,
+		219,
+		219,
+		219,
+		219,
+		195,
+		195,
+		0,
+		0,
+		0
+	]],
+	"N": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"O": [7, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"P": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		63,
+		31,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"Q": [8, [
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		59,
+		127,
+		110,
+		0,
+		0,
+		0
+	]],
+	"R": [7, [
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		63,
+		31,
+		59,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"S": [7, [
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		31,
+		62,
+		48,
+		48,
+		48,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"T": [7, [
+		0,
+		0,
+		63,
+		63,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"U": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"V": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		12,
+		0,
+		0,
+		0
+	]],
+	"W": [9, [
+		0,
+		0,
+		195,
+		195,
+		195,
+		195,
+		219,
+		219,
+		219,
+		219,
+		219,
+		255,
+		126,
+		0,
+		0,
+		0
+	]],
+	"X": [8, [
+		0,
+		0,
+		99,
+		99,
+		99,
+		119,
+		62,
+		28,
+		62,
+		119,
+		99,
+		99,
+		99,
+		0,
+		0,
+		0
+	]],
+	"Y": [7, [
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		12,
+		12,
+		12,
+		12,
+		12,
+		0,
+		0,
+		0
+	]],
+	"Z": [7, [
+		0,
+		0,
+		63,
+		63,
+		56,
+		24,
+		28,
+		12,
+		14,
+		6,
+		7,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"[": [5, [
+		0,
+		0,
+		15,
+		15,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		15,
+		15,
+		0
+	]],
+	"\\": [7, [
+		0,
+		0,
+		3,
+		3,
+		7,
+		6,
+		14,
+		12,
+		28,
+		24,
+		56,
+		48,
+		48,
+		0,
+		0,
+		0
+	]],
+	"]": [5, [
+		0,
+		0,
+		15,
+		15,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		15,
+		15,
+		0
+	]],
+	"^": [7, [
+		0,
+		0,
+		12,
+		30,
+		63,
+		51,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"_": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"`": [5, [
+		6,
+		8,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"a": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		31,
+		63,
+		48,
+		62,
+		63,
+		51,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"b": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"c": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		62,
+		63,
+		3,
+		3,
+		3,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"d": [7, [
+		0,
+		0,
+		48,
+		48,
+		48,
+		62,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"e": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		63,
+		63,
+		3,
+		63,
+		62,
+		0,
+		0,
+		0
+	]],
+	"f": [7, [
+		0,
+		0,
+		60,
+		62,
+		6,
+		31,
+		31,
+		6,
+		6,
+		6,
+		6,
+		6,
+		6,
+		0,
+		0,
+		0
+	]],
+	"g": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		63,
+		31
+	]],
+	"h": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"i": [3, [
+		0,
+		0,
+		3,
+		3,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"j": [5, [
+		0,
+		0,
+		12,
+		12,
+		0,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		12,
+		15,
+		7
+	]],
+	"k": [7, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		31,
+		63,
+		51,
+		63,
+		31,
+		59,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"l": [3, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"m": [9, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		127,
+		255,
+		219,
+		219,
+		219,
+		219,
+		219,
+		219,
+		0,
+		0,
+		0
+	]],
+	"n": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		31,
+		63,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		0,
+		0,
+		0
+	]],
+	"o": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"p": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		31,
+		3,
+		3,
+		3
+	]],
+	"q": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		30,
+		63,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		48,
+		48
+	]],
+	"r": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		59,
+		63,
+		7,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0,
+		0,
+		0
+	]],
+	"s": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		62,
+		63,
+		3,
+		31,
+		62,
+		48,
+		63,
+		31,
+		0,
+		0,
+		0
+	]],
+	"t": [7, [
+		0,
+		0,
+		6,
+		6,
+		6,
+		63,
+		63,
+		6,
+		6,
+		6,
+		6,
+		62,
+		60,
+		0,
+		0,
+		0
+	]],
+	"u": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		0,
+		0,
+		0
+	]],
+	"v": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		30,
+		12,
+		0,
+		0,
+		0
+	]],
+	"w": [9, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		195,
+		219,
+		219,
+		219,
+		219,
+		219,
+		255,
+		126,
+		0,
+		0,
+		0
+	]],
+	"x": [8, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		99,
+		119,
+		62,
+		28,
+		28,
+		62,
+		119,
+		99,
+		0,
+		0,
+		0
+	]],
+	"y": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		51,
+		51,
+		51,
+		51,
+		51,
+		51,
+		63,
+		62,
+		48,
+		63,
+		31
+	]],
+	"z": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		63,
+		63,
+		56,
+		28,
+		14,
+		7,
+		63,
+		63,
+		0,
+		0,
+		0
+	]],
+	"{": [6, [
+		0,
+		0,
+		28,
+		30,
+		6,
+		6,
+		6,
+		7,
+		3,
+		6,
+		6,
+		6,
+		6,
+		30,
+		28,
+		0
+	]],
+	"|": [3, [
+		0,
+		0,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		3,
+		0
+	]],
+	"}": [6, [
+		0,
+		0,
+		7,
+		15,
+		12,
+		12,
+		12,
+		28,
+		24,
+		12,
+		12,
+		12,
+		12,
+		15,
+		7,
+		0
+	]],
+	"~": [7, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		6,
+		47,
+		61,
+		24,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]]
+};
+
+//#endregion
+//#region src/gif.ts
+/** Each pixel made a `scale` by `scale` block. */
+function upscale(rgba, width$1, height, scale) {
+	if (scale === 1) return rgba;
+	const W = width$1 * scale, out = new Uint8ClampedArray(W * height * scale * 4);
+	for (let y = 0; y < height; y++) for (let x = 0; x < width$1; x++) {
+		const i = (y * width$1 + x) * 4;
+		for (let dy = 0; dy < scale; dy++) for (let dx = 0; dx < scale; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale + dy) * W + x * scale + dx) * 4);
+	}
+	return out;
+}
+/**
+* Up to 255 colours that stand for every opaque pixel across the frames: all
+* of them when there are that few, else a median cut weighted by how much
+* each colour is used.
+*/
+function palette(frames$1) {
+	const counts = new Map();
+	for (const f of frames$1) for (let i = 0; i < f.length; i += 4) {
+		if (f[i + 3] < 128) continue;
+		const c = f[i] << 16 | f[i + 1] << 8 | f[i + 2];
+		counts.set(c, (counts.get(c) || 0) + 1);
+	}
+	const all = [...counts.entries()];
+	if (all.length <= 255) return all.map(([c]) => c);
+	const ch = (c, k) => c >> 16 - 8 * k & 255;
+	const range = (box, k) => {
+		let lo = 255, hi = 0;
+		for (const [c] of box) {
+			const v = ch(c, k);
+			if (v < lo) lo = v;
+			if (v > hi) hi = v;
+		}
+		return hi - lo;
+	};
+	let boxes = [all];
+	while (boxes.length < 255) {
+		let best = -1, bk = 0, bw = -1;
+		boxes.forEach((box$1, i) => {
+			if (box$1.length < 2) return;
+			for (let k = 0; k < 3; k++) {
+				const w = range(box$1, k) * Math.log2(1 + box$1.reduce((a, [, n]) => a + n, 0));
+				if (w > bw) {
+					bw = w;
+					best = i;
+					bk = k;
+				}
+			}
+		});
+		if (best < 0) break;
+		const box = boxes[best].sort((a, b$1) => ch(a[0], bk) - ch(b$1[0], bk));
+		const total = box.reduce((a, [, n]) => a + n, 0);
+		let run = 0, cut = 1;
+		for (let i = 0; i < box.length - 1; i++) {
+			run += box[i][1];
+			if (run >= total / 2) {
+				cut = i + 1;
+				break;
+			}
+		}
+		boxes.splice(best, 1, box.slice(0, cut), box.slice(cut));
+	}
+	return boxes.map((box) => {
+		let r = 0, g = 0, b$1 = 0, n = 0;
+		for (const [c, k] of box) {
+			r += ch(c, 0) * k;
+			g += ch(c, 1) * k;
+			b$1 += ch(c, 2) * k;
+			n += k;
+		}
+		return Math.round(r / n) << 16 | Math.round(g / n) << 8 | Math.round(b$1 / n);
+	});
+}
+/** LZW-compresses colour indices into GIF data sub-blocks. */
+function lzw(indices, minCode, out) {
+	const clear = 1 << minCode, end = clear + 1;
+	let size = minCode + 1, next = end + 1, dict = new Map();
+	let bits = 0, acc = 0;
+	const block = [];
+	const emit = (code) => {
+		acc |= code << bits;
+		bits += size;
+		while (bits >= 8) {
+			block.push(acc & 255);
+			acc >>= 8;
+			bits -= 8;
+			if (block.length === 255) {
+				out.push(255, ...block);
+				block.length = 0;
+			}
+		}
+	};
+	emit(clear);
+	let prefix = indices[0];
+	for (let i = 1; i < indices.length; i++) {
+		const k = indices[i], key = prefix << 8 | k, hit = dict.get(key);
+		if (hit !== void 0) {
+			prefix = hit;
+			continue;
+		}
+		emit(prefix);
+		if (next < 4096) {
+			dict.set(key, next++);
+			if (next > 1 << size && size < 12) size++;
+		} else {
+			emit(clear);
+			dict = new Map();
+			size = minCode + 1;
+			next = end + 1;
+		}
+		prefix = k;
+	}
+	emit(prefix);
+	emit(end);
+	if (bits > 0) block.push(acc & 255);
+	if (block.length) out.push(block.length, ...block);
+	out.push(0);
+}
+/**
+* An animated GIF that loops forever. Transparent pixels stay transparent
+* (each frame clears to them), so a guy can be saved without a background.
+*/
+function encodeGif(input, scale = 1) {
+	const W = input.width * scale, H = input.height * scale;
+	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale));
+	const colours = palette(frames$1);
+	const table = [0, ...colours];
+	let bitsPer = 1;
+	while (1 << bitsPer < table.length) bitsPer++;
+	const out = [];
+	const word = (n) => out.push(n & 255, n >> 8 & 255);
+	out.push(...[..."GIF89a"].map((c) => c.charCodeAt(0)));
+	word(W);
+	word(H);
+	out.push(128 | bitsPer - 1 << 4 | bitsPer - 1, 0, 0);
+	for (let i = 0; i < 1 << bitsPer; i++) {
+		const c = table[i] ?? 0;
+		out.push(c >> 16 & 255, c >> 8 & 255, c & 255);
+	}
+	out.push(33, 255, 11, ...[..."NETSCAPE2.0"].map((c) => c.charCodeAt(0)), 3, 1, 0, 0, 0);
+	const nearest = new Map();
+	const indexOf = (c) => {
+		let i = nearest.get(c);
+		if (i !== void 0) return i;
+		let best = 1, bd = Infinity;
+		for (let k = 1; k < table.length; k++) {
+			const p = table[k], dr = (c >> 16 & 255) - (p >> 16 & 255), dg = (c >> 8 & 255) - (p >> 8 & 255), db = (c & 255) - (p & 255);
+			const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+			if (d < bd) {
+				bd = d;
+				best = k;
+				if (!d) break;
+			}
+		}
+		nearest.set(c, best);
+		return best;
+	};
+	frames$1.forEach((f, n) => {
+		const delay = Math.max(2, Math.round((input.delays[n] ?? 80) / 10));
+		out.push(33, 249, 4, 9);
+		word(delay);
+		out.push(0, 0);
+		out.push(44);
+		word(0);
+		word(0);
+		word(W);
+		word(H);
+		out.push(0);
+		const idx = new Uint8Array(W * H);
+		for (let i = 0, p = 0; i < f.length; i += 4, p++) idx[p] = f[i + 3] < 128 ? 0 : indexOf(f[i] << 16 | f[i + 1] << 8 | f[i + 2]);
+		const min = Math.max(2, bitsPer);
+		out.push(min);
+		lzw(idx, min, out);
+	});
+	out.push(59);
+	return new Uint8Array(out);
+}
+const CRC = (() => {
+	const t = new Uint32Array(256);
+	for (let n = 0; n < 256; n++) {
+		let c = n;
+		for (let k = 0; k < 8; k++) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+		t[n] = c >>> 0;
+	}
+	return t;
+})();
+const crc32 = (bytes) => {
+	let c = 4294967295;
+	for (const b$1 of bytes) c = CRC[(c ^ b$1) & 255] ^ c >>> 8;
+	return (c ^ 4294967295) >>> 0;
+};
+/** zlib-wrapped deflate: compressed where the runtime has CompressionStream, else stored. */
+async function zlib(raw) {
+	if (typeof CompressionStream !== "undefined") {
+		const stream = new Blob([raw]).stream().pipeThrough(new CompressionStream("deflate"));
+		return new Uint8Array(await new Response(stream).arrayBuffer());
+	}
+	const out = [120, 1];
+	for (let i = 0; i < raw.length; i += 65535) {
+		const n = Math.min(65535, raw.length - i);
+		out.push(i + n >= raw.length ? 1 : 0, n & 255, n >> 8, ~n & 255, ~n >> 8 & 255);
+		for (let k = 0; k < n; k++) out.push(raw[i + k]);
+	}
+	let a = 1, b$1 = 0;
+	for (const v of raw) {
+		a = (a + v) % 65521;
+		b$1 = (b$1 + a) % 65521;
+	}
+	out.push(b$1 >> 8, b$1 & 255, a >> 8, a & 255);
+	return new Uint8Array(out);
+}
+/** A PNG of one RGBA frame, scaled up by whole pixels. */
+async function encodePng(rgba, width$1, height, scale = 1) {
+	const W = width$1 * scale, H = height * scale, px = upscale(rgba, width$1, height, scale);
+	const raw = new Uint8Array((W * 4 + 1) * H);
+	for (let y = 0; y < H; y++) {
+		raw[y * (W * 4 + 1)] = 0;
+		raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
+	}
+	const chunk = (type, data) => {
+		const body = new Uint8Array(4 + data.length);
+		body.set([...type].map((c$1) => c$1.charCodeAt(0)));
+		body.set(data, 4);
+		const len = data.length, c = crc32(body);
+		return [
+			len >>> 24,
+			len >>> 16 & 255,
+			len >>> 8 & 255,
+			len & 255,
+			...body,
+			c >>> 24,
+			c >>> 16 & 255,
+			c >>> 8 & 255,
+			c & 255
+		];
+	};
+	const ihdr = new Uint8Array([
+		W >>> 24,
+		W >>> 16 & 255,
+		W >>> 8 & 255,
+		W & 255,
+		H >>> 24,
+		H >>> 16 & 255,
+		H >>> 8 & 255,
+		H & 255,
+		8,
+		6,
+		0,
+		0,
+		0
+	]);
+	return new Uint8Array([
+		137,
+		80,
+		78,
+		71,
+		13,
+		10,
+		26,
+		10,
+		...chunk("IHDR", ihdr),
+		...chunk("IDAT", await zlib(raw)),
+		...chunk("IEND", new Uint8Array())
+	]);
+}
+
+//#endregion
+//#region src/card.ts
+/**
+* Trading cards, drawn by the library so every game, the site and an export
+* show the same card: a guy wearing his copies, moving, each copy's finish
+* shining on its own pixels, its effect playing, the card's face dressed for
+* the grade, and the words written in the club's pixel type.
+*
+* A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, four to each of the
+* guy's pixels, so a shine can sweep across a single pixel of a hat. Scale it
+* up by whole numbers to show it; `toCardGif` and `toCardPng` do that for you.
+*/
+const CARD_WIDTH = 104;
+const CARD_HEIGHT = 168;
+const ZOOM = 4;
+const rgb = (h) => [
+	parseInt(h.slice(1, 3), 16),
+	parseInt(h.slice(3, 5), 16),
+	parseInt(h.slice(5, 7), 16)
+];
+const mix = (a, b$1, t) => [
+	a[0] + (b$1[0] - a[0]) * t,
+	a[1] + (b$1[1] - a[1]) * t,
+	a[2] + (b$1[2] - a[2]) * t
+];
+const hsv = (h, s, v) => {
+	const f = (n) => {
+		const k = (n + h * 6) % 6;
+		return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+	};
+	return [
+		f(5) * 255,
+		f(3) * 255,
+		f(1) * 255
+	];
+};
+function hueShift(c, a) {
+	const y = .299 * c[0] + .587 * c[1] + .114 * c[2], i = .596 * c[0] - .274 * c[1] - .322 * c[2], q = .211 * c[0] - .523 * c[1] + .312 * c[2];
+	const h = Math.atan2(q, i) + a, ch = Math.hypot(i, q), I = ch * Math.cos(h), Q = ch * Math.sin(h);
+	return [
+		y + .956 * I + .621 * Q,
+		y - .272 * I - .647 * Q,
+		y - 1.106 * I + 1.703 * Q
+	];
+}
+const hash$1 = (x, y, p) => {
+	const s = Math.sin(x * 127.1 + y * 311.7 + p * .731) * 43758.5453;
+	return s - Math.floor(s);
+};
+const FINISHES$1 = [
+	"plain",
+	"sunset",
+	"tempered",
+	"nebula",
+	"prism",
+	"negative",
+	"gold"
+];
+/**
+* One card pixel of a copy in its finish at time `t` seconds: the same
+* shine the site's shader gives, worked out here so it can be saved.
+* `gx, gy` is the guy pixel (what twinkles), `cx, cy` the card pixel (what a
+* sweep crosses), so light runs smoothly over a single pixel of a hat.
+*/
+function shine(c, o, gx, gy, cx, cy, t) {
+	const f = FINISHES$1.indexOf(o.finish);
+	if (f < 0) return c;
+	const d = (cx + cy) / ZOOM, h = hash$1(gx, gy, o.print);
+	const band = 1 - Math.min(1, Math.max(0, Math.abs(((d - t * 10 + o.print) % 58 + 58) % 58 - 29) - .5));
+	const twinkle$1 = (h * 13 + t * .37) % 1 > .965 ? 1 : 0;
+	const coat = Math.min(1, Math.max(0, 1 - o.scuff * 1.4)) * (h >= o.scuff * .55 ? 1 : 0);
+	const add = (v, k = 1) => [
+		c[0] + v * 255 * k,
+		c[1] + v * 255 * k,
+		c[2] + v * 255 * k
+	];
+	switch (f) {
+		case 0: return o.scuff <= .07 ? add(band * .45) : c;
+		case 1: {
+			const s = .5 + .5 * Math.sin(d * .8 - t * 3 + o.print);
+			const tint = mix(c, [
+				c[0] * .86 + 20,
+				c[1] * .96 + 20,
+				c[2] * 1.18 + 20
+			], .4 * s * coat);
+			return [
+				tint[0] + band * 127 * coat,
+				tint[1] + band * 127 * coat,
+				tint[2] + band * 127 * coat
+			];
+		}
+		case 2: return add(twinkle$1 * .55 * coat + band * .25 * coat);
+		case 3: {
+			const s = hueShift(c, (t * .9 + d * .22) * coat);
+			return mix(s, [
+				255,
+				255,
+				255
+			], twinkle$1 * coat);
+		}
+		case 4: {
+			const rain = hsv(((d * .07 - t * .3 + o.print * .013) % 1 + 1) % 1, .65, 1);
+			const m = mix(c, [
+				c[0] * .45 + rain[0] * .75,
+				c[1] * .45 + rain[1] * .75,
+				c[2] * .45 + rain[2] * .75
+			], .6 * coat);
+			const row = (gy + Math.floor(t * 10)) % 3 < .5 ? 1.12 : 1;
+			return [
+				m[0] * row,
+				m[1] * row,
+				m[2] * row
+			];
+		}
+		case 5: {
+			const w = .07 * Math.sin(t * 2 + d * .5) * coat * 255;
+			return [
+				c[0] + .28 * 255 * band * coat + w,
+				c[1] + .12 * 255 * band * coat + w,
+				c[2] + .45 * 255 * band * coat + w
+			];
+		}
+		default: return [
+			c[0] + band * .7 * coat * 255 + twinkle$1 * .6 * coat * 255,
+			c[1] + band * .7 * coat * 255 + twinkle$1 * .54 * coat * 255,
+			c[2] + band * .7 * coat * 255 + twinkle$1 * .3 * coat * 255
+		];
+	}
+}
+const EXTRA = {
+	"·": [5, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		6,
+		6,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"★": [9, [
+		0,
+		0,
+		0,
+		8,
+		8,
+		28,
+		127,
+		62,
+		28,
+		54,
+		34,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"#": [8, [
+		0,
+		0,
+		0,
+		0,
+		18,
+		18,
+		63,
+		18,
+		18,
+		63,
+		18,
+		18,
+		0,
+		0,
+		0,
+		0
+	]]
+};
+const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
+/** How wide a line of text is, in pixels. */
+const textWidth = (s) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
+/** The longest start of `s` that fits `width`, with a dot dot when it was cut. */
+function fit(s, width$1) {
+	if (textWidth(s) <= width$1) return s;
+	let out = s;
+	while (out.length > 1 && textWidth(out + "..") > width$1) out = out.slice(0, -1);
+	return out.trimEnd() + "..";
+}
+/** Up to two lines that fit `width`: a lone line too long for one wraps at a space onto the second. */
+function wrap(lines, width$1) {
+	const out = lines.slice(0, 2);
+	if (out.length === 1 && textWidth(out[0]) > width$1) {
+		const words = out[0].split(" ");
+		for (let k = words.length - 1; k > 0; k--) {
+			const head$1 = words.slice(0, k).join(" ");
+			if (textWidth(head$1) <= width$1) return [head$1, words.slice(k).join(" ")].map((l) => fit(l, width$1));
+		}
+	}
+	return out.map((l) => fit(l, width$1));
+}
+/** A drawing surface of RGBA card pixels. */
+var Surface = class {
+	px = new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
+	set(x, y, c, a = 255) {
+		if (x < 0 || y < 0 || x >= CARD_WIDTH || y >= CARD_HEIGHT) return;
+		const i = (y * CARD_WIDTH + x) * 4;
+		this.px[i] = c[0];
+		this.px[i + 1] = c[1];
+		this.px[i + 2] = c[2];
+		this.px[i + 3] = a;
+	}
+	get(x, y) {
+		const i = (y * CARD_WIDTH + x) * 4;
+		return [
+			this.px[i],
+			this.px[i + 1],
+			this.px[i + 2]
+		];
+	}
+	opaque(x, y) {
+		return this.px[(y * CARD_WIDTH + x) * 4 + 3] > 0;
+	}
+	/** Text with a hard drop shadow, its colour picked per pixel so foil can run along it. */
+	text(s, x, top, colour, shadow) {
+		const draw = (ox, oy, col) => {
+			let cx = ox;
+			for (const ch of s) {
+				const [adv, rows] = glyph(ch);
+				rows.forEach((bits, dy) => {
+					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
+				});
+				cx += adv;
+			}
+		};
+		if (shadow) draw(x, top + 1, () => shadow);
+		draw(x, top, colour);
+	}
+};
+const EDGE = [
+	30,
+	34,
+	56
+], CREAM = [
+	242,
+	236,
+	221
+], RIM = [
+	207,
+	199,
+	180
+], INK = [
+	58,
+	51,
+	82
+], WHITE = [
+	255,
+	255,
+	255
+];
+/** Whether a card pixel is inside the rounded card. */
+function inside(x, y, r = 7) {
+	const cx = x < r ? r - x : x > CARD_WIDTH - 1 - r ? x - (CARD_WIDTH - 1 - r) : 0;
+	const cy = y < r ? r - y : y > CARD_HEIGHT - 1 - r ? y - (CARD_HEIGHT - 1 - r) : 0;
+	return cx * cx + cy * cy <= r * r;
+}
+const WIN = {
+	left: 8,
+	top: 26,
+	right: 95,
+	bottom: 113
+};
+/** The card at `t` seconds, with the guy's frame `frame` in its window. */
+function drawCard(input, frame, owned, g, t) {
+	const s = new Surface();
+	const gc = g >= 0 ? rgb(GRADES[g].color) : [
+		120,
+		140,
+		170
+	];
+	const sweep = (x, y, speed = 9, w = 10) => Math.max(0, 1 - Math.abs((((x + y) * .5 - t * speed * 6) % 140 + 140) % 140 - 70) / w);
+	const face = (x, y) => {
+		let c = g === 5 ? mix([
+			22,
+			26,
+			44
+		], hsv((x + y) / 260 + t * .05, .35, .45), .35) : g === 4 ? mix(CREAM, [
+			255,
+			214,
+			120
+		], .38) : CREAM;
+		if (g >= 1) c = mix(c, WHITE, sweep(x, y) * (g >= 3 ? .55 : .3));
+		return c;
+	};
+	for (let y = 0; y < CARD_HEIGHT; y++) for (let x = 0; x < CARD_WIDTH; x++) {
+		if (!inside(x, y)) continue;
+		const edge = !inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y - 2) || !inside(x, y + 2);
+		let border = g >= 0 ? mix(gc, EDGE, .35) : EDGE;
+		if (g === 3) border = hueShift(gc, t * 1.4 + (x + y) * .05);
+		if (g === 5) border = hsv(((x + y) / 120 + t * .3) % 1, .6, .95);
+		s.set(x, y, edge ? border : face(x, y));
+	}
+	const band = g >= 3 ? [
+		30,
+		26,
+		52
+	] : g >= 0 ? mix(gc, [
+		24,
+		22,
+		44
+	], .3) : [
+		58,
+		66,
+		100
+	];
+	for (let y = 6; y <= 22; y++) for (let x = 6; x < CARD_WIDTH - 6; x++) if (inside(x, y, 9)) s.set(x, y, y === 6 ? mix(band, WHITE, .3) : y === 22 ? mix(band, [
+		0,
+		0,
+		0
+	], .35) : band);
+	const foil = (x, y) => g === 4 ? mix([
+		196,
+		136,
+		32
+	], [
+		255,
+		246,
+		200
+	], .5 + .5 * Math.sin(x * .18 - t * 4 + y * .1)) : g >= 3 ? hsv(((x * .012 - t * .35) % 1 + 1) % 1, .45, 1) : WHITE;
+	const title = fit(input.title, CARD_WIDTH - 16);
+	s.text(title, Math.floor((CARD_WIDTH - textWidth(title)) / 2), 8, foil, [
+		16,
+		12,
+		32
+	]);
+	const tint = g === 5 ? [
+		26,
+		34,
+		52
+	] : mix(CREAM, gc, g >= 0 ? .3 : .14);
+	for (let y = WIN.top; y <= WIN.bottom; y++) for (let x = WIN.left; x <= WIN.right; x++) {
+		const rim$2 = x === WIN.left || x === WIN.right || y === WIN.top || y === WIN.bottom;
+		const depth = (y - WIN.top) / (WIN.bottom - WIN.top);
+		let c = rim$2 ? g === 5 ? [
+			60,
+			80,
+			110
+		] : RIM : mix(tint, mix(tint, [
+			20,
+			24,
+			40
+		], .5), depth * .35);
+		const fx = (x - (WIN.left + WIN.right) / 2) / 30, fy = (y - (WIN.bottom - 9)) / 4;
+		if (!rim$2 && fx * fx + fy * fy < 1) c = mix(c, [
+			0,
+			0,
+			0
+		], .18 * (1 - fx * fx - fy * fy));
+		s.set(x, y, c);
+	}
+	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - FRAME_WIDTH * ZOOM / 2), oy = WIN.bottom - 3 - FRAME_HEIGHT * ZOOM;
+	frame.colors.forEach((row, gy) => row.forEach((hex$3, gx) => {
+		if (!hex$3) return;
+		const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0;
+		for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
+			const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+			if (cy <= WIN.top || cy >= WIN.bottom || cx <= WIN.left || cx >= WIN.right) continue;
+			let c = rgb(hex$3);
+			if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
+			s.set(cx, cy, [
+				Math.min(255, Math.max(0, c[0])),
+				Math.min(255, Math.max(0, c[1])),
+				Math.min(255, Math.max(0, c[2]))
+			]);
+		}
+	}));
+	const glare = t * .45 % 2.2 * 140 - 40;
+	for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
+		const d = x + (y - WIN.top) * .6 - glare;
+		if (d > 0 && d < 10) s.set(x, y, mix(s.get(x, y), WHITE, d < 3 ? .22 : .1));
+	}
+	if (input.corner) {
+		const w = textWidth(input.corner) + 5, x0 = WIN.right - 2 - w, y0 = WIN.top + 3;
+		for (let y = y0; y < y0 + 13; y++) for (let x = x0; x < x0 + w; x++) if (!((x === x0 || x === x0 + w - 1) && (y === y0 || y === y0 + 12))) s.set(x, y, [
+			20,
+			18,
+			38
+		]);
+		s.text(input.corner, x0 + 3, y0 - 2, () => WHITE);
+	}
+	if (g >= 0) for (let p = 0; p < 6; p++) {
+		const x0 = 19 + p * 11;
+		for (let y = 118; y <= 123; y++) for (let x = x0; x <= x0 + 8; x++) if (!((x === x0 || x === x0 + 8) && (y === 118 || y === 123))) s.set(x, y, p <= g ? y === 118 ? mix(gc, WHITE, .4) : gc : RIM);
+	}
+	wrap(input.lines ?? [], CARD_WIDTH - 14).forEach((line, k) => {
+		const l = fit(line, CARD_WIDTH - 14);
+		s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), 127 + k * 16, () => g === 5 ? [
+			220,
+			240,
+			255
+		] : INK, g === 5 ? [
+			10,
+			12,
+			24
+		] : void 0);
+	});
+	if (g >= 3) for (let k = 0; k < 6; k++) {
+		const x = Math.floor(hash$1(k, 1, 9) * (CARD_WIDTH - 12)) + 6, y = Math.floor(hash$1(k, 2, 9) * (CARD_HEIGHT - 12)) + 6, on$1 = (hash$1(k, 3, 9) + t * .5) % 1 < .18;
+		if (on$1 && s.opaque(x, y)) for (const [dx, dy] of [
+			[0, 0],
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		]) s.set(x + dx, y + dy, dx || dy ? mix(s.get(x + dx, y + dy), WHITE, .6) : WHITE);
+	}
+	return s.px;
+}
+/** The grade a card shows: the one given, or the rarest copy's. */
+const cardGrade = (input) => input.grade ?? (input.copies?.length ? Math.max(...input.copies.map((o) => GRADES.findIndex((x) => x.id === gradeOf(o).id))) : -1);
+/**
+* The card as frames, `ms` apart, covering one loop of his move (at least two
+* seconds, so a shine gets across). Every frame is the whole card in RGBA;
+* the corners are transparent.
+*/
+function cardFrames(input, ms = 80) {
+	const card = cardPlayer(input, ms), frames$1 = [];
+	for (let i = 0; i < card.count; i++) frames$1.push(card.frame(i));
+	return {
+		width: CARD_WIDTH,
+		height: CARD_HEIGHT,
+		frames: frames$1,
+		delays: frames$1.map(() => ms)
+	};
+}
+/**
+* A card to play on screen: each frame is drawn the first time it is asked
+* for and kept, so a page can show a card at once and spread the work out.
+*/
+function cardPlayer(input, ms = 80) {
+	const anim = animate(input.seed, input.move ?? "idle", {
+		parts: input.parts,
+		palette: input.palette,
+		equip: (input.copies ?? []).map(encode),
+		rarity: false
+	});
+	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
+	const count$1 = Math.ceil(Math.max(2e3, Math.min(anim.duration, 4800)) / ms), cache = [];
+	return {
+		width: CARD_WIDTH,
+		height: CARD_HEIGHT,
+		count: count$1,
+		delay: ms,
+		frame(i) {
+			const k = (i % count$1 + count$1) % count$1;
+			return cache[k] ??= drawCard(input, frameAt(anim, k * ms), owned, g, k * ms / 1e3);
+		}
+	};
+}
+/** The card standing still, for a picture. */
+function cardStill(input, t = .6) {
+	const anim = animate(input.seed, input.move ?? "idle", {
+		parts: input.parts,
+		palette: input.palette,
+		equip: (input.copies ?? []).map(encode),
+		rarity: false
+	});
+	return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t);
+}
+/** The copies by the slot each is worn in (later ones win, as `dress` does). */
+function ownedBySlot(copies) {
+	const out = {};
+	for (const o of copies) {
+		const slot = itemById(o.item)?.slot;
+		if (slot) out[slot] = o;
+	}
+	return out;
+}
+/** The card as a looping GIF, each card pixel `scale` by `scale`. */
+function toCardGif(input, scale = 3) {
+	return encodeGif(cardFrames(input), scale);
+}
+/** The card as a PNG, each card pixel `scale` by `scale`. */
+function toCardPng(input, scale = 4) {
+	return encodePng(cardStill(input), CARD_WIDTH, CARD_HEIGHT, scale);
+}
+/**
+* The guy on his own as a looping GIF: his move with everything he wears,
+* effects and auras moving, on a transparent background or `background`.
+*/
+function toGuyGif(seed, move, options = {}, scale = 12) {
+	const anim = animate(seed, move, options), bg = options.background ? rgb(options.background) : null;
+	const frames$1 = anim.frames.map((f) => {
+		const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
+		f.colors.forEach((row, y) => row.forEach((c, x) => {
+			const v = c ? rgb(c) : bg;
+			if (v) px.set([...v, 255], (y * FRAME_WIDTH + x) * 4);
+		}));
+		return px;
+	});
+	return encodeGif({
+		width: FRAME_WIDTH,
+		height: FRAME_HEIGHT,
+		frames: frames$1,
+		delays: anim.frames.map((f) => f.ms)
+	}, scale);
+}
+
+//#endregion
+export { ARM_NAMES, AURAS, AURA_ODDS, CARD_HEIGHT, CARD_WIDTH, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, HEADROOM, LUCKY_ODDS, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, SHADE_COUNT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };

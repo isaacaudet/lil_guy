@@ -1,14 +1,16 @@
 //#region src/effects.d.ts
 /**
  * Effects: a rare layer a copy can roll on top of its finish, the way a knife
- * has its phase. Any copy from a capsule can have one; an aura is far more
- * likely to, so aura effects make a ladder of their own. Three are versions
- * (Shimmer, Pulse, Holo) and three are rarer (Chroma, Embers, Starlight).
+ * has its phase. Every copy from a capsule rolls once for one, on its own,
+ * whatever its finish or grade; an aura is far more likely to get one, so aura
+ * effects make a ladder of their own. They run from Shimmer, one copy in 25,
+ * to Electric, one in 4,000. Listed commonest first; new ones are added in
+ * their place on the ladder (copies keep the effect they rolled).
  *
  * An effect moves in `animate`, and shows in a still picture as it stands at
  * the start. It never changes the item's own drawing, only how it shines.
  */
-type Fx = 'shimmer' | 'pulse' | 'holo' | 'chroma' | 'embers' | 'starlight';
+type Fx = 'shimmer' | 'pulse' | 'holo' | 'neon' | 'bubbles' | 'hearts' | 'chroma' | 'rime' | 'embers' | 'static' | 'lava' | 'starlight' | 'electric';
 interface Effect {
   name: string;
   /** One line on what it does. */
@@ -1171,4 +1173,97 @@ declare function setProgress(game: ItemGame, owned: Owned[]): {
 };
 
 //#endregion
-export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeLook, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, toAnimatedSvg, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/gif.d.ts
+/**
+ * Animated GIFs and PNGs from RGBA frames, with no dependencies, so a card or
+ * a guy can be saved anywhere the library runs (a browser, a game's server,
+ * a script). Pixel art stays crisp: frames are scaled up by whole pixels,
+ * never smoothed.
+ */
+interface Frames {
+  width: number;
+  height: number;
+  /** RGBA, `width * height * 4` bytes each. Alpha under 128 is transparent. */
+  frames: Uint8ClampedArray[];
+  /** How long each frame shows, in milliseconds. */
+  delays: number[];
+}
+/** Each pixel made a `scale` by `scale` block. */
+declare function upscale(rgba: Uint8ClampedArray, width: number, height: number, scale: number): Uint8ClampedArray;
+/**
+ * An animated GIF that loops forever. Transparent pixels stay transparent
+ * (each frame clears to them), so a guy can be saved without a background.
+ */
+declare function encodeGif(input: Frames, scale?: number): Uint8Array;
+/** A PNG of one RGBA frame, scaled up by whole pixels. */
+declare function encodePng(rgba: Uint8ClampedArray, width: number, height: number, scale?: number): Promise<Uint8Array>;
+
+//#endregion
+//#region src/card.d.ts
+/**
+ * Trading cards, drawn by the library so every game, the site and an export
+ * show the same card: a guy wearing his copies, moving, each copy's finish
+ * shining on its own pixels, its effect playing, the card's face dressed for
+ * the grade, and the words written in the club's pixel type.
+ *
+ * A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, four to each of the
+ * guy's pixels, so a shine can sweep across a single pixel of a hat. Scale it
+ * up by whole numbers to show it; `toCardGif` and `toCardPng` do that for you.
+ */
+declare const CARD_WIDTH = 104;
+declare const CARD_HEIGHT = 168;
+interface CardInput {
+  /** The guy: a name or a seed, as for `animate`. */
+  seed: string;
+  /** His parts and colours when they aren't the ones the seed deals (a picked look). */
+  parts?: AnimateOptions['parts'];
+  palette?: AnimateOptions['palette'];
+  /** What he wears. The rarest sets the card's grade unless `grade` says. */
+  copies?: Owned[];
+  /** Across the top band. */
+  title: string;
+  /** A tag in the window's top-right corner, such as a print number. */
+  corner?: string;
+  /** Up to two lines under the grade pips. */
+  lines?: string[];
+  /** 0 Everyday to 5 Aura; -1 for a plain card. */
+  grade?: number;
+  /** How he moves on the card. Default `idle`. */
+  move?: Move;
+}
+/** How wide a line of text is, in pixels. */
+declare const textWidth: (s: string) => number;
+/**
+ * The card as frames, `ms` apart, covering one loop of his move (at least two
+ * seconds, so a shine gets across). Every frame is the whole card in RGBA;
+ * the corners are transparent.
+ */
+declare function cardFrames(input: CardInput, ms?: number): Frames;
+/**
+ * A card to play on screen: each frame is drawn the first time it is asked
+ * for and kept, so a page can show a card at once and spread the work out.
+ */
+declare function cardPlayer(input: CardInput, ms?: number): {
+  width: number;
+  height: number;
+  count: number;
+  delay: number;
+  /** The frame showing at `i` (wraps round). */
+  frame(i: number): Uint8ClampedArray;
+};
+/** The card standing still, for a picture. */
+declare function cardStill(input: CardInput, t?: number): Uint8ClampedArray;
+/** The card as a looping GIF, each card pixel `scale` by `scale`. */
+declare function toCardGif(input: CardInput, scale?: number): Uint8Array;
+/** The card as a PNG, each card pixel `scale` by `scale`. */
+declare function toCardPng(input: CardInput, scale?: number): Promise<Uint8Array>;
+/**
+ * The guy on his own as a looping GIF: his move with everything he wears,
+ * effects and auras moving, on a transparent background or `background`.
+ */
+declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
+  background?: string;
+}, scale?: number): Uint8Array;
+
+//#endregion
+export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, CARD_HEIGHT, CARD_WIDTH, CardInput, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Frames, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GameId, Grade, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
