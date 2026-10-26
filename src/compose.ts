@@ -1,6 +1,6 @@
 import { RETIRED_EYES } from './parts/weights';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
-import { LAYER, LOCAL, T } from './parts/art';
+import { LAYER, LOCAL, T, width, type Stamp } from './parts/art';
 import { Canvas, type Face } from './parts/canvas';
 import { itemById, type Item } from './items';
 import { auraById, auraCells } from './auras';
@@ -157,6 +157,61 @@ function sparkle(grid: PixelGrid): void {
   }
 }
 
+/** The cells the eyes and mouth cover, as `y * GRID_SIZE + x`. */
+function faceCells(c: Canvas, eye: Stamp, mouth: Stamp): Set<number> {
+  const face = new Set<number>();
+  const mark = (s: Stamp, x0: number, y0: number) => s.forEach((row, dy) => row.forEach((t, dx) => { if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx); }));
+  mark(eye, c.centred(eye), c.eyeLine - eye.length + 1);
+  mark(mouth, c.centred(mouth), c.eyeLine + 1);
+  return face;
+}
+
+const touches = (face: Set<number>, x: number, y: number) => {
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * GRID_SIZE + x + dx)) return true;
+  return false;
+};
+
+/**
+ * Cheeks, kept off the face: each side slides out (up to three columns, or
+ * a row lower) to where the most of it shows without touching an eye or the mouth. Patterns
+ * (whiskers, stars, a scar) keep clear of the face diagonally too and off the
+ * body's edge, where a dark one would read as the outline; a plain blush may
+ * sit diagonally by an eye, as a blush does.
+ */
+function placeCheeks(c: Canvas, cheek: Stamp, face: Set<number>): void {
+  const w = width(cheek), x0 = c.centred(cheek), y0 = c.eyeLine + 1, half = Math.floor(w / 2);
+  const side = (x: number, y: number) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
+  const inner = (x: number, y: number) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
+  const ok = (x: number, y: number, t: number) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x)
+    && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
+  for (const [from, to, dir] of [[0, half, -1], [w - half, w, 1]] as const) {
+    let best: [number, number, number][] = [];
+    // Out first, then a row lower where a wide mouth leaves no room beside it.
+    for (const down of [0, 1]) for (let shift = 0; shift <= 3; shift++) {
+      const cells: [number, number, number][] = [];
+      cheek.forEach((row, dy) => { for (let dx = from; dx < to; dx++) { const x = x0 + dx + dir * shift, y = y0 + dy + down; if (row[dx] && ok(x, y, row[dx])) cells.push([x, y, row[dx]]); } });
+      if (cells.length > best.length) best = cells;
+    }
+    for (const [x, y, t] of best) c.set(x, y, t);
+  }
+}
+
+/**
+ * The face is a few pixels; a marking that runs into them turns it into a
+ * smudge. So any patterned skin pixel touching the eyes or mouth (diagonals
+ * too) goes back to plain skin. Things worn on the face stay.
+ */
+function clearFace(c: Canvas, face: Set<number>, bare: PixelGrid, worn: boolean[][]): void {
+  for (const k of face) {
+    const fx = k % GRID_SIZE, fy = Math.floor(k / GRID_SIZE);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const x = fx + dx, y = fy + dy;
+      if (!c.isBody(x, y) || face.has(y * GRID_SIZE + x) || worn[y][x]) continue;
+      if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== bare[y][x]) c.grid[y][x] = bare[y][x];
+    }
+  }
+}
+
 /**
  * Composes every part into one 16x16 grid of colour tokens.
  *
@@ -188,8 +243,10 @@ export function compose(config: AvatarConfig): PixelGrid {
     light(c);
     if (heads[config.head].feet) feet(c, config.feet, T.BODY);
     arms(c, config.arms, T.BODY);
-    bodies[config.body].draw(c);
   }
+  // The skin as it is before any pattern: what the face's surround goes back to.
+  const bare = c.grid.map(row => [...row]);
+  if (!skin) bodies[config.body].draw(c);
 
 
   // On a skin the player's face is what carries over; their ears, bow tie or
@@ -235,11 +292,15 @@ export function compose(config: AvatarConfig): PixelGrid {
   }
 
   const accessory = accessories[config.accessory];
+  const preFace = c.grid.map(row => [...row]);
   if (accessory.layer === 'face') accessory.draw(c);
+  const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 
   const line = c.eyeLine;
   const cheek = cheeks[config.cheeks].art;
-  if (cheek.length) c.draw(cheek, c.centred(cheek), line + 1, true);
+  const face = faceCells(c, eye, mouth);
+  clearFace(c, face, bare, onFace);
+  if (cheek.length) placeCheeks(c, cheek, face);
   c.draw(eye, c.centred(eye), line - eye.length + 1, true);
   c.draw(mouth, c.centred(mouth), line + 1, true);
 

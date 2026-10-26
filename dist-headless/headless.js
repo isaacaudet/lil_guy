@@ -8295,6 +8295,74 @@ function sparkle(grid) {
 		}
 	}
 }
+/** The cells the eyes and mouth cover, as `y * GRID_SIZE + x`. */
+function faceCells(c, eye, mouth$1) {
+	const face = new Set();
+	const mark$1 = (s, x0, y0) => s.forEach((row, dy) => row.forEach((t, dx) => {
+		if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx);
+	}));
+	mark$1(eye, c.centred(eye), c.eyeLine - eye.length + 1);
+	mark$1(mouth$1, c.centred(mouth$1), c.eyeLine + 1);
+	return face;
+}
+const touches = (face, x, y) => {
+	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * GRID_SIZE + x + dx)) return true;
+	return false;
+};
+/**
+* Cheeks, kept off the face: each side slides out (up to three columns, or
+* a row lower) to where the most of it shows without touching an eye or the mouth. Patterns
+* (whiskers, stars, a scar) keep clear of the face diagonally too and off the
+* body's edge, where a dark one would read as the outline; a plain blush may
+* sit diagonally by an eye, as a blush does.
+*/
+function placeCheeks(c, cheek, face) {
+	const w = width(cheek), x0 = c.centred(cheek), y0 = c.eyeLine + 1, half = Math.floor(w / 2);
+	const side = (x, y) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
+	const inner = (x, y) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
+	const ok = (x, y, t) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x) && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
+	for (const [from, to, dir] of [[
+		0,
+		half,
+		-1
+	], [
+		w - half,
+		w,
+		1
+	]]) {
+		let best = [];
+		for (const down of [0, 1]) for (let shift$1 = 0; shift$1 <= 3; shift$1++) {
+			const cells = [];
+			cheek.forEach((row, dy) => {
+				for (let dx = from; dx < to; dx++) {
+					const x = x0 + dx + dir * shift$1, y = y0 + dy + down;
+					if (row[dx] && ok(x, y, row[dx])) cells.push([
+						x,
+						y,
+						row[dx]
+					]);
+				}
+			});
+			if (cells.length > best.length) best = cells;
+		}
+		for (const [x, y, t] of best) c.set(x, y, t);
+	}
+}
+/**
+* The face is a few pixels; a marking that runs into them turns it into a
+* smudge. So any patterned skin pixel touching the eyes or mouth (diagonals
+* too) goes back to plain skin. Things worn on the face stay.
+*/
+function clearFace(c, face, bare, worn) {
+	for (const k of face) {
+		const fx = k % GRID_SIZE, fy = Math.floor(k / GRID_SIZE);
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+			const x = fx + dx, y = fy + dy;
+			if (!c.isBody(x, y) || face.has(y * GRID_SIZE + x) || worn[y][x]) continue;
+			if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== bare[y][x]) c.grid[y][x] = bare[y][x];
+		}
+	}
+}
 /**
 * Composes every part into one 16x16 grid of colour tokens.
 *
@@ -8321,8 +8389,9 @@ function compose(config) {
 		light(c);
 		if (heads[config.head].feet) feet(c, config.feet, T.BODY);
 		arms(c, config.arms, T.BODY);
-		bodies[config.body].draw(c);
 	}
+	const bare = c.grid.map((row) => [...row]);
+	if (!skin) bodies[config.body].draw(c);
 	const before = c.grid.map((row) => [...row]);
 	const onTop = (draw) => {
 		const tryOn = (domed) => {
@@ -8362,10 +8431,14 @@ function compose(config) {
 		}
 	} else if (!skin) onTop((cv) => hair[config.hair].draw(cv));
 	const accessory = accessories[config.accessory];
+	const preFace = c.grid.map((row) => [...row]);
 	if (accessory.layer === "face") accessory.draw(c);
+	const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 	const line = c.eyeLine;
 	const cheek = cheeks[config.cheeks].art;
-	if (cheek.length) c.draw(cheek, c.centred(cheek), line + 1, true);
+	const face = faceCells(c, eye, mouth$1);
+	clearFace(c, face, bare, onFace);
+	if (cheek.length) placeCheeks(c, cheek, face);
 	c.draw(eye, c.centred(eye), line - eye.length + 1, true);
 	c.draw(mouth$1, c.centred(mouth$1), line + 1, true);
 	if (accessory.layer === "over") accessory.draw(c);
