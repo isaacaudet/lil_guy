@@ -349,6 +349,7 @@
   .ins-view .tilt { transition: transform .12s ease-out; transform-style: preserve-3d; filter: drop-shadow(0 12px 0 rgba(0,0,0,.4)); }
   .ins-view canvas.alone { display: block; image-rendering: pixelated; max-width: 100%; }
   .ins-view .card { width: 200px; }
+  .ins-view .ins-spin { width: 300px; height: 300px; }
   .ins-cap { text-align: center; font-size: 16px; color: var(--ink-3); }
   .fl { margin: 18px 0 0; padding: 16px; border-radius: 12px; background: var(--panel-2); box-shadow: var(--lift); }
   .fl-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -584,6 +585,17 @@
   .result.withinfo .rv-actions { grid-column: 1 / -1; }
   .won-art { width: 280px; height: 280px; display: grid; place-items: center; }
   .won-art canvas { image-rendering: pixelated; max-width: 100%; max-height: 100%; filter: drop-shadow(0 10px 0 rgba(0,0,0,.45)); }
+  /* The won item turning: a flat turntable straight away, the 3D model over it once three.js is in. */
+  .spin3d { position: relative; width: 100%; height: 100%; display: grid; place-items: center; perspective: 800px; }
+  .spin3d canvas.alone { animation: turntable 3.2s ease-in-out infinite; }
+  .spin3d canvas.gl { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; image-rendering: auto; filter: none; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .spin3d.gl-on canvas.gl { opacity: 1; }
+  .spin3d.gl-on canvas.alone { visibility: hidden; animation: none; }
+  /* Eased each half, so it lingers facing front and back and hurries past its edge. */
+  @keyframes turntable { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+  .won-cap { margin: 6px 0 0; text-align: center; display: grid; gap: 6px; justify-items: center; }
+  .won-cap b { font-size: 24px; line-height: 1.05; text-shadow: var(--ts); color: var(--ink); }
+  .won-cap span { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   .won-info { text-align: left; display: grid; gap: 10px; padding: 16px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); color: var(--ink); position: relative; overflow: hidden; }
   .won-info::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--grade); }
   /* every stat lands at once, each with its own pop */
@@ -1036,6 +1048,10 @@
 </div>
 <div class="toast" id="toast" hidden role="status"></div>
 
+<script type="importmap">{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }</script>
 <script src="../lil-guy.js"></script>
 <script>window.LG = window.LilGuy;</script>
 <script>
@@ -2697,7 +2713,7 @@ void main() {
     }
     flip.classList.remove('squash', 'tremble');
     const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
-    const alone = front.querySelector('canvas.alone'); if (alone && won) showItem(alone, won, state.seed, 260, 260);
+    const alone = front.querySelector('canvas.alone'); if (alone && won) { showItem(alone, won, state.seed, 260, 260); spinItem(alone.parentElement, won, state.seed, true); }
     if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
     else shout.textContent = shoutText;
     res.classList.add('go');
@@ -2722,9 +2738,12 @@ void main() {
     $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
     const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
+    loadThree();
     $('reelwrap').hidden = true;
     if (g) { await gacha(g); await reel(o, g); await holdFor(gr); $('reelwrap').hidden = true; }
-    await unveil(gr, `<div class="won-art"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div>`,
+    const [wonTitle, wonLook] = LG.nameOf(o).split(' | ');
+    await unveil(gr, `<div class="won-art"><div class="spin3d"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div></div>
+      <p class="won-cap"><b>${esc(wonTitle)}</b><span><span class="bal" style="--b:${grade.color}">${esc(grade.name)}</span><span class="bal" style="--b:#5d6b8a">${esc(wonLook || LG.FINISHES[o.finish].name)}</span>${o.fx ? `<span class="bal poly">${esc(LG.EFFECTS[o.fx].name)}</span>` : ''}</span></p>`,
       (o.fx ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!'),
       LG.nameOf(o), how, false, !!g, o);
     $('rv-again').hidden = !g;
@@ -3075,6 +3094,94 @@ void main() {
     shows.add(s); drawShow(s, performance.now());
     return s;
   }
+  /* ---------------------------------------------- the item turning in 3D: the library's voxel columns as rounded
+   * boxes, one instanced mesh a surface, lit like the voxel page. three.js comes from the CDN on the first pull;
+   * until it's in (or where WebGL won't start) the flat picture turns on a CSS turntable instead. */
+  let threeP = null;
+  const loadThree = () => threeP ??= Promise.all([import('three'), import('three/addons/geometries/RoundedBoxGeometry.js'), import('three/addons/environments/RoomEnvironment.js')])
+    .then(([T, rb, re]) => ({ T, RoundedBoxGeometry: rb.RoundedBoxGeometry, RoomEnvironment: re.RoomEnvironment })).catch(() => null);
+  let spinning = null;
+  function spinItem(host, o, seed, fresh) {
+    if (!host || LG.slotOf(o) === 'aura') { host?.querySelector('canvas.alone')?.style.setProperty('animation', 'none'); return; }   // an aura only shows round the guy
+    loadThree().then(lib => { if (lib && host.isConnected) try { spin3d(lib, host, o, seed, fresh); } catch (e) { /* the flat turntable stays */ } });
+  }
+  function spin3d({ T, RoundedBoxGeometry, RoomEnvironment }, host, o, seed, fresh) {
+    spinning?.stop();
+    const canvas = document.createElement('canvas'); canvas.className = 'gl'; canvas.setAttribute('aria-hidden', 'true');
+    host.append(canvas);
+    const renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+    renderer.toneMapping = T.NeutralToneMapping; renderer.toneMappingExposure = 1.05;
+    const pm = new T.PMREMGenerator(renderer), env = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
+    const scene = new T.Scene(); scene.environment = env;
+    const g = LG.gradeOf(o), clock = { value: 0 };
+    const key = new T.DirectionalLight('#fff3df', 2.6); key.position.set(-7, 12, 14);
+    const rim = new T.DirectionalLight(g.color, 3); rim.position.set(9, 5, -11);
+    scene.add(key, rim, new T.HemisphereLight('#c4d4ff', '#2b2018', .5));
+    // Columns from the frame the flat picture comes from, so the effect can move on the same cells.
+    const src = LG.itemFrame(o, seed), slot = LG.slotOf(o), cols = LG.voxelColumns(src, { [slot]: o }, { item: true });
+    const W = src.colors[0].length, H = src.colors.length;
+    const mats = new Map(), box = new RoundedBoxGeometry(1, 1, 1, 2, .11);
+    const material = s => {
+      const k = `${s.kind}|${s.roughness}|${s.clearcoat}`;
+      if (mats.has(k)) return mats.get(k);
+      const m = new T.MeshPhysicalMaterial({ roughness: s.roughness, metalness: s.metalness, clearcoat: s.clearcoat, clearcoatRoughness: s.clearcoatRoughness,
+        iridescence: s.iridescence, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820], sheen: s.sheen, sheenRoughness: .3, sheenColor: new T.Color('#ffc59a') });
+      if (s.glow) {
+        m.onBeforeCompile = sh => { sh.uniforms.uT = clock; sh.fragmentShader = 'uniform float uT;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ${s.glow.toFixed(2)} * (0.7 + 0.3 * sin(uT * 2.2 + vViewPosition.y * 0.6));`); };
+        m.customProgramCacheKey = () => 'glow' + s.glow;
+      }
+      mats.set(k, m); return m;
+    };
+    const model = new T.Group(), meshes = [], by = new Map();
+    for (const c of cols) { const m = material(c.surface); if (!by.has(m)) by.set(m, []); by.get(m).push(c); }
+    const mtx = new T.Matrix4(), pos = new T.Vector3(), q = new T.Quaternion(), sc = new T.Vector3(), col = new T.Color();
+    for (const [m, list] of by) {
+      const mesh = new T.InstancedMesh(box, m, list.length);
+      list.forEach((c, i) => { mesh.setMatrixAt(i, mtx.compose(pos.set(c.x, c.y, c.z), q, sc.set(1, 1, c.depth))); mesh.setColorAt(i, col.set(c.color)); });
+      model.add(mesh); meshes.push({ mesh, list });
+    }
+    const bounds = new T.Box3().setFromObject(model), size = bounds.getSize(new T.Vector3()), mid = bounds.getCenter(new T.Vector3());
+    model.position.set(-mid.x, -mid.y, -mid.z);
+    const turn = new T.Group(); turn.add(model); scene.add(turn);
+    const camera = new T.PerspectiveCamera(26, 1, .5, 300);
+    const r = Math.max(size.x, size.y, size.z) / 2 + .6, dist = r / Math.sin(T.MathUtils.degToRad(12.5));
+    camera.position.set(0, dist * .18, dist); camera.lookAt(0, 0, 0);
+    // An effect moves over the item: the same cells the flat picture recolours, read back onto the columns.
+    const fxOwned = LG.FRAME_SLOTS.map(sl => (sl === slot ? o : undefined));
+    const cellOf = c => [Math.round(c.x + W / 2 - .5), Math.round(H / 2 - c.y - .5)];
+    let lastFx = -1, size0 = '';
+    const t0 = performance.now();
+    let raf = 0, alive = true;
+    const stop = () => { if (!alive) return; alive = false; cancelAnimationFrame(raf); renderer.dispose(); renderer.forceContextLoss(); env.dispose(); box.dispose(); mats.forEach(m => m.dispose()); if (spinning?.stop === stop) spinning = null; };
+    const tick = now => {
+      if (!alive) return;
+      // Gone, or no longer drawn (the reveal closed, inspect shut): let the context go.
+      if (!host.isConnected || !host.getClientRects().length) { stop(); return; }
+      raf = requestAnimationFrame(tick);
+      const w = host.clientWidth, h = host.clientHeight, sz = w + 'x' + h;
+      if (!w || !h) return;
+      if (sz !== size0) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); size0 = sz; }
+      const t = (now - t0) / 1000;
+      clock.value = t;
+      // A fresh pull spins in twice and lands facing you, then turns steadily; inspect just turns. The turn lingers facing
+      // front and back and hurries past the edges, where a flat piece of pixel art is only a sliver.
+      const settle = fresh ? 4 * Math.PI * (1 - Math.exp(-t * 2.6)) : 0, u = Math.max(0, t - (fresh ? 1.3 : 0)) * .8;
+      turn.rotation.y = settle + u - .38 * Math.sin(2 * u);
+      turn.position.y = Math.sin(t * 1.6) * .25;
+      turn.rotation.x = Math.sin(t * .9) * .06;
+      if (o.fx && now - lastFx > 80) {
+        lastFx = now;
+        const fx = LG.applyFx(src.colors, src.slots, fxOwned, now);
+        for (const { mesh, list } of meshes) { list.forEach((c, i) => { const [x, y] = cellOf(c); const v = fx[y]?.[x]; if (v) mesh.setColorAt(i, col.set(v)); }); mesh.instanceColor.needsUpdate = true; }
+      }
+      renderer.render(scene, camera);
+      if (!host.classList.contains('gl-on')) host.classList.add('gl-on');
+    };
+    raf = requestAnimationFrame(tick);
+    spinning = { stop };
+  }
   function drawShow(s, now) {
     const { x, y, w, h } = s.box;
     s.ctx.clearRect(0, 0, w, h);
@@ -3214,9 +3321,9 @@ void main() {
     const inspCard = cardInput(cardSpec(ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)));
     saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`);
     const setView = v => {
-      view.innerHTML = v === 'alone' ? '<div class="tilt"><canvas class="alone" aria-label="The item on its own"></canvas></div>'
+      view.innerHTML = v === 'alone' ? '<div class="tilt"><div class="spin3d ins-spin"><canvas class="alone" aria-label="The item on its own"></canvas></div></div>'
         : '<div class="tilt"><div class="card"></div></div>';
-      if (v === 'alone') showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); else libCard(view.querySelector('.card'), inspCard);
+      if (v === 'alone') { showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); spinItem(view.querySelector('.spin3d'), o, ctx.seed, false); } else libCard(view.querySelector('.card'), inspCard);
       $('insp-body').querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
     };
     setView('alone');
