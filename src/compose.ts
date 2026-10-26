@@ -164,6 +164,10 @@ export function compose(config: AvatarConfig): PixelGrid {
   const hat = itemById(config.hat);
   const frame = itemById(config.frame);
   const c = startCanvas(config);
+  // The face goes where it always does; everything else, markings included, is fitted around it.
+  // A config made without resolve can still name retired eyes; they draw as beans.
+  const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth = mouths[config.mouth].art;
+  c.setFace(eye, mouth);
 
   // A skin is drawn already shaded, in its own material, and carries no
   // markings. Its arms and feet, if it has any, take one of its colours.
@@ -180,10 +184,6 @@ export function compose(config: AvatarConfig): PixelGrid {
     bodies[config.body].draw(c);
   }
 
-  // The face goes where it always does; everything worn is fitted around it.
-  // A config made without resolve can still name retired eyes; they draw as beans.
-  const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth = mouths[config.mouth].art;
-  c.setFace(eye, mouth);
 
   // On a skin the player's face is what carries over; their ears, bow tie or
   // scarf would only clutter the object. Glasses stay — they are part of a face.

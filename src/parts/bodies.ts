@@ -1,4 +1,4 @@
-import { stamp, T } from './art';
+import { stamp, T, type Stamp } from './art';
 import type { Canvas } from './canvas';
 
 /**
@@ -37,11 +37,19 @@ const bolt = stamp([
 ]);
 
 /**
- * The top row of a mark on the forehead: a row under the crown, where the head
- * is wide enough to hold it. Measured from the eyes it ran off the top of
- * round heads and was cut in half.
+ * The top row of a 3-row mark: a row under the crown, where the head is wide
+ * enough to hold it, as long as it stays a clear row above the eyes. On a head
+ * with no forehead to spare it goes on the belly under the mouth instead; on
+ * one with neither, it isn't drawn (a mark between the eyes reads as a face).
  */
-const forehead = (c: Canvas) => c.crown + 1;
+const forehead = (c: Canvas): number | null => {
+  const f = c.face;
+  if (!f) return c.crown + 1;
+  if (c.crown + 1 + 2 <= f.top - 2) return c.crown + 1;
+  const belly = f.mouthBottom + 2;
+  return belly + 2 <= c.bottom - 1 ? belly : null;
+};
+const mark = (c: Canvas, s: Stamp) => { const y = forehead(c); if (y !== null) c.draw(s, Math.floor(c.centre) - 1, y, true); };
 
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c: Canvas, x: number, y: number, token: number): void {
@@ -101,14 +109,14 @@ export const bodies: Marking[] = [
   {
     name: 'star mark',
     draw: c => {
-      c.draw(star, Math.floor(c.centre) - 1, forehead(c), true);
+      mark(c, star);
     },
   },
 
   {
     name: 'heart mark',
     draw: c => {
-      c.draw(heart, Math.floor(c.centre) - 1, forehead(c), true);
+      mark(c, heart);
     },
   },
 
@@ -161,14 +169,14 @@ export const bodies: Marking[] = [
   {
     name: 'moon mark',
     draw: c => {
-      c.draw(moon, Math.floor(c.centre) - 1, forehead(c), true);
+      mark(c, moon);
     },
   },
 
   {
     name: 'bolt mark',
     draw: c => {
-      c.draw(bolt, Math.floor(c.centre) - 1, forehead(c), true);
+      mark(c, bolt);
     },
   },
 

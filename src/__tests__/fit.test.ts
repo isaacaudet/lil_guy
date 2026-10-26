@@ -65,12 +65,14 @@ describe('what is worn on the face fits it', () => {
     }
     expect(bad).toEqual([]);
   });
-  test('glasses rims sit round both eyes on every head', () => {
+  test('glasses rims sit round both eyes on every head, in a colour the eyes stand out from', () => {
     const g = find(accessories, 'glasses');
     for (const head of heads.keys()) {
       const grid = compose({ ...base, head, accessory: g, ...faces[0] });
-      const rimmed = grid.flat().filter(v => v === T.OUTLINE).length - compose({ ...base, head, ...faces[0] }).flat().filter(v => v === T.OUTLINE).length;
+      const rimmed = grid.flat().filter(v => v === T.ACCENT_SHADE).length - compose({ ...base, head, ...faces[0] }).flat().filter(v => v === T.ACCENT_SHADE).length;
       expect(rimmed).toBeGreaterThan(10);
+      // Each eye cell is still an eye: the frame goes round it, never on it.
+      expect(grid.flat().filter(v => v === T.EYE).length).toBe(compose({ ...base, head, ...faces[0] }).flat().filter(v => v === T.EYE).length);
     }
   });
 });

@@ -88,7 +88,7 @@ export const accessories: Accessory[] = [
   {
     name: 'glasses',
     layer: 'face',
-    draw: c => fittedGlasses(c, T.OUTLINE, T.LIGHT, T.WHITE),
+    draw: c => fittedGlasses(c, T.ACCENT_SHADE, undefined, T.WHITE),
   },
 
   {
@@ -275,14 +275,14 @@ export const accessories: Accessory[] = [
     name: 'goggles',
     layer: 'face',
     draw: c => {
-      // Pushed up on the forehead, just above the brow: a strap round the head
-      // and two round lenses over where the eyes are.
+      // Pushed up on the forehead, a clear row above the eyes: a strap round
+      // the head and two round lenses over where the eyes are. On a head with
+      // no forehead to spare they sit up on top of it, never across the eyes.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      const y = Math.max(c.tip + 1, f.top - 3);
+      const y = Math.max(1, f.top - 3);
       const r = c.rows[y + 1];
-      if (!r) return;
-      for (let x = r.left; x <= r.right; x++) c.set(x, y + 1, T.DEEP);
+      if (r) for (let x = r.left; x <= r.right; x++) if (c.isBody(x, y + 1)) c.set(x, y + 1, T.DEEP);
       for (const e of f.eyes) {
         const x0 = e.left - (e.right - e.left < 1 ? 1 : 0), x1 = Math.max(e.right, x0 + 1);
         for (let x = x0; x <= x1; x++) { c.set(x, y, x === x0 ? T.WHITE : T.ACCENT); c.set(x, y + 1, T.ACCENT_SHADE); }

@@ -170,8 +170,12 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
   const outline = fromHsl([outlineHue, 0.42, toHsl(body)[2] >= 0.5 ? 0.3 : toHsl(body)[2] * 0.25]);
   // Dark eyes on most bodies; on a body too dark for them, the eyes and mouth
   // glow a light cream instead, which reads as a look rather than a mistake.
-  const dark = fromHsl([outlineHue, 0.38, 0.14]);
-  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark : '#FFF1D6';
+  // Cream is only for the truly dark: on a mid tone like cobalt, cream eyes
+  // ran into a mustache or a pair of glasses and the face became one pale
+  // blob, so there the eyes go a deeper near-black first.
+  const dark = fromHsl([outlineHue, 0.38, 0.14]), deeper = fromHsl([outlineHue, 0.4, 0.06]);
+  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark
+    : contrast(deeper, body) >= 3.9 ? deeper : '#FFF1D6';
 
   // A rosy pink, deepened until it reads on this body.
   let blush = '#FF8FA8';

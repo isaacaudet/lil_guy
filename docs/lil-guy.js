@@ -1796,11 +1796,22 @@ const bolt = stamp([
 	"y.."
 ]);
 /**
-* The top row of a mark on the forehead: a row under the crown, where the head
-* is wide enough to hold it. Measured from the eyes it ran off the top of
-* round heads and was cut in half.
+* The top row of a 3-row mark: a row under the crown, where the head is wide
+* enough to hold it, as long as it stays a clear row above the eyes. On a head
+* with no forehead to spare it goes on the belly under the mouth instead; on
+* one with neither, it isn't drawn (a mark between the eyes reads as a face).
 */
-const forehead = (c) => c.crown + 1;
+const forehead = (c) => {
+	const f = c.face;
+	if (!f) return c.crown + 1;
+	if (c.crown + 1 + 2 <= f.top - 2) return c.crown + 1;
+	const belly = f.mouthBottom + 2;
+	return belly + 2 <= c.bottom - 1 ? belly : null;
+};
+const mark = (c, s) => {
+	const y = forehead(c);
+	if (y !== null) c.draw(s, Math.floor(c.centre) - 1, y, true);
+};
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c, x, y, token) {
 	if (c.isBody(x, y)) c.set(x, y, token);
@@ -1861,13 +1872,13 @@ const bodies = [
 	{
 		name: "star mark",
 		draw: (c) => {
-			c.draw(star$1, Math.floor(c.centre) - 1, forehead(c), true);
+			mark(c, star$1);
 		}
 	},
 	{
 		name: "heart mark",
 		draw: (c) => {
-			c.draw(heart$1, Math.floor(c.centre) - 1, forehead(c), true);
+			mark(c, heart$1);
 		}
 	},
 	{
@@ -1913,13 +1924,13 @@ const bodies = [
 	{
 		name: "moon mark",
 		draw: (c) => {
-			c.draw(moon, Math.floor(c.centre) - 1, forehead(c), true);
+			mark(c, moon);
 		}
 	},
 	{
 		name: "bolt mark",
 		draw: (c) => {
-			c.draw(bolt, Math.floor(c.centre) - 1, forehead(c), true);
+			mark(c, bolt);
 		}
 	},
 	{
@@ -2132,7 +2143,7 @@ const accessories = [
 	{
 		name: "glasses",
 		layer: "face",
-		draw: (c) => fittedGlasses(c, T.OUTLINE, T.LIGHT, T.WHITE)
+		draw: (c) => fittedGlasses(c, T.ACCENT_SHADE, void 0, T.WHITE)
 	},
 	{
 		name: "scarf",
@@ -2309,10 +2320,11 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const y = Math.max(c.tip + 1, f.top - 3);
+			const y = Math.max(1, f.top - 3);
 			const r = c.rows[y + 1];
-			if (!r) return;
-			for (let x = r.left; x <= r.right; x++) c.set(x, y + 1, T.DEEP);
+			if (r) {
+				for (let x = r.left; x <= r.right; x++) if (c.isBody(x, y + 1)) c.set(x, y + 1, T.DEEP);
+			}
 			for (const e of f.eyes) {
 				const x0 = e.left - (e.right - e.left < 1 ? 1 : 0), x1 = Math.max(e.right, x0 + 1);
 				for (let x = x0; x <= x1; x++) {
@@ -8095,6 +8107,8 @@ function compose(config) {
 	const hat = itemById(config.hat);
 	const frame = itemById(config.frame);
 	const c = startCanvas(config);
+	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
+	c.setFace(eye, mouth$1);
 	if (skin) {
 		if (skin.limb) {
 			const limb = LAYER.skin + skin.limb - 1;
@@ -8107,8 +8121,6 @@ function compose(config) {
 		arms(c, config.arms, T.BODY);
 		bodies[config.body].draw(c);
 	}
-	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
-	c.setFace(eye, mouth$1);
 	const before = c.grid.map((row) => [...row]);
 	const onTop = (draw) => {
 		const tryOn = (domed) => {
@@ -8601,8 +8613,12 @@ function derive(name, body, accent, trim) {
 		outlineHue,
 		.38,
 		.14
+	]), deeper = fromHsl([
+		outlineHue,
+		.4,
+		.06
 	]);
-	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : "#FFF1D6";
+	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : contrast(deeper, body) >= 3.9 ? deeper : "#FFF1D6";
 	let blush = "#FF8FA8";
 	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
 	let tongue = "#FF6B88";
