@@ -36,11 +36,21 @@ const cards = locker.slice(locker.indexOf('  const compile = (gl, vs, fs) => {')
 
 const LOAD = '<script src="../lil-guy.js"></script>\n<script>window.LG = window.LilGuy;</script>';
 
+// The pages' 3D: the slice of three.js they use, bundled and inlined as a module, so nothing comes from a
+// CDN. A module runs after the page has parsed, so it never holds up first paint; it announces itself with
+// a `lg-three` event. Kept on disk too, for the artifact inliner.
+const built = await Bun.build({ entrypoints: [new URL('three-entry.js', SRC).pathname], minify: true, format: 'esm' });
+if (!built.success) throw new AggregateError(built.logs, 'three bundle failed');
+const three = await built.outputs[0].text();
+if (three.includes('</script')) throw new Error('three bundle would close its script tag');
+await Bun.write(new URL('three-bundle.js', OUT), three);
+
 for (const file of readdirSync(SRC).filter(f => f.endsWith('.html'))) {
   const body = (await Bun.file(new URL(file, SRC)).text())
     .replace('<script>/*LIB*/</script>', () => LOAD)
     .replace('/*MACHINE*/', () => machine)
-    .replace('/*CARDS*/', () => cards);
+    .replace('/*CARDS*/', () => cards)
+    .replace('<script type="module">/*THREE*/</script>', () => `<script type="module">${three}</script>`);
   const page = `<!doctype html>
 <html lang="en">
 <head>
