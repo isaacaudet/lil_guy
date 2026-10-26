@@ -70,7 +70,11 @@
   .site-nav a:hover { color: var(--ink); }
   .site-nav a[aria-current="page"] { background: var(--panel-2); color: var(--ink); box-shadow: 0 3px 0 var(--edge); }
   .site-header .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .wallet { height: 40px; padding: 0 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; font-size: 24px; background: var(--well); color: var(--gold); text-shadow: var(--ts); font-variant-numeric: tabular-nums; }
+  /* Tickets: a lifted gold-edged chip like the other header buttons, the ticket drawn big and the count beside it. */
+  .wallet { height: 40px; padding: 0 12px 0 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; font-size: 24px; line-height: 1;
+    background: var(--panel-2); box-shadow: 0 3px 0 var(--edge), inset 0 0 0 2px rgba(228, 174, 57, .35); color: #ffe7a6; text-shadow: var(--ts); font-variant-numeric: tabular-nums; }
+  .wallet .tk { width: 22px; height: 14px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.5)); }
+  .wallet .inf { width: 27px; height: 15px; shape-rendering: crispEdges; filter: drop-shadow(0 2px 0 rgba(0,0,0,.6)); }
   .devpill { height: 40px; border-radius: 8px; padding: 0 12px; font-size: 16px; background: var(--gold); color: #2a1a00; box-shadow: 0 3px 0 var(--gold-d); }
   .acct { position: relative; }
   .acct-btn { height: 40px; padding: 0 12px; border-radius: 8px; font-size: 24px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); color: var(--ink); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -110,7 +114,7 @@
   .claim .fine { margin: 14px 0 0; font-size: 16px; line-height: 1.35; color: var(--ink-3); }
   .mine { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 20px; align-items: center; }
   .mine .who { display: grid; gap: 8px; min-width: 0; }
-  .mine .who h3 { font-size: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mine .who h3 { font-size: 32px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mine .who p { font-size: 16px; color: var(--ink-2); line-height: 1.35; }
   .mine-actions { display: flex; gap: 8px; margin-top: 18px; }
   .mine-actions .btn { flex: 1; margin: 0; }
@@ -133,13 +137,13 @@
   canvas.px { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(var(--sx, 0px) 8px 0 rgba(5, 7, 16, .5)); }
   .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
   .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
-    font-size: 8.6cqw; line-height: 1; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
+    font-size: min(8.6cqw, calc(78cqw / (var(--n, 1) * .46))); line-height: 1.25; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
   .ov .t.foil, .ov .t.gold { color: transparent; -webkit-background-clip: text; background-clip: text; text-shadow: none; background-size: 300% 100%; animation: foil 2.4s linear infinite; filter: drop-shadow(0 .6cqw 0 rgba(10, 8, 24, .7)); }
   .ov .t.foil { background-image: linear-gradient(90deg, #ff8fb1, #ffe27a, #8fffd2, #8fb8ff, #d79bff, #ff8fb1); }
   .ov .t.gold { background-image: linear-gradient(90deg, #b8801c, #ffe9a8, #f2c230, #fffbe6, #c8901e, #b8801c); }
   @keyframes foil { to { background-position: 300% 0; } }
   .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
-  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: 6.6cqw; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
+  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: min(6.6cqw, calc(84cqw / (var(--n, 1) * .46))); line-height: 1.25; color: #3a3352; white-space: nowrap; overflow: hidden; }
 
   /* ------------------------------------------------------------ sections */
   main { display: grid; gap: 80px; padding-top: 24px; padding-bottom: 96px; }
@@ -195,8 +199,9 @@
   .gview > div:last-child { width: 100%; }
   /* The 3D guy takes the card's shape, so switching never moves the page. */
   canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); transition: transform .12s ease-out; }
-  .saves { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  .saves .btn { height: 36px; font-size: 16px; padding: 0 12px; border-radius: 8px; }
+  .saves { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 280px; }
+  .saves-h { grid-column: 1 / -1; font-size: 16px; color: var(--ink-3); text-align: center; }
+  .saves .btn { height: 36px; font-size: 16px; padding: 0 6px; border-radius: 8px; white-space: nowrap; }
   .tt .ti { display: inline-flex; align-items: center; gap: 4px; filter: brightness(.8) saturate(1.2); }
   .tt .ti svg { width: 12px; height: 12px; }
   .meaning { display: grid; gap: 4px; padding: 12px 14px; border-radius: 10px; background: var(--paper); color: var(--paper-ink); font-size: 24px; line-height: 1.25; }
@@ -297,7 +302,7 @@
   .it-pic canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; filter: drop-shadow(0 4px 0 rgba(0,0,0,.4)); }
   .it-cat { justify-self: start; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 6px 0 4px; border-radius: 6px; background: var(--cat); color: #fff; font-size: 16px; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
   .it-cat .ci { width: 20px; height: 16px; }
-  .it b { font-size: 24px; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .it b { font-size: 24px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .it-fin { font-size: 16px; color: color-mix(in srgb, var(--g) 65%, #fff); }
   .it-wear { font-size: 16px; color: var(--ink-3); }
   .it .tag { top: -8px; right: -6px; }
@@ -320,7 +325,8 @@
 
   /* who you could get */
   .maybe { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 18px 14px; }
-  .mbc { display: grid; gap: 8px; align-content: start; }
+  .mbc { display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .mbc .tchip { max-width: 100%; white-space: normal; height: auto; min-height: 24px; text-align: center; justify-content: center; }
   .mbc .tchips { justify-content: center; }
   .tchips { display: flex; flex-wrap: wrap; gap: 6px; }
   .tchip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border-radius: 6px; font-size: 16px; color: #fff; background: color-mix(in srgb, var(--tier) 30%, var(--panel-2)); white-space: nowrap; }
@@ -608,14 +614,18 @@
   .look-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
   /* ------------------------------------------------------------ the drop */
-  .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: #0b0e18; color: var(--ink); padding: 24px 16px; }
+  /* Scrolls when the win is taller than the screen (a phone, a short laptop): the content starts at the top
+     instead of being centred off both edges, and the backdrop stays put behind it. */
+  .reveal { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; background: #0b0e18; color: var(--ink); padding: 72px 16px 24px; }
+  .reveal > .stage2 { margin: auto; }
+  .reveal .paint, .reveal #burst, .reveal .flash { position: fixed; }
   .reveal .paint { opacity: .9; }
   .paint { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; z-index: 0; }
   #burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; z-index: 2; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 4; }
   .flash.on { animation: flash .5s cubic-bezier(.2,.8,.2,1) 1; }
   @keyframes flash { 0% { opacity: var(--v, .85) } 100% { opacity: 0 } }
-  .rv-ctl { position: absolute; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
+  .rv-ctl { position: fixed; z-index: 5; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
   .rv-ctl button { height: 40px; padding: 0 14px; border-radius: 8px; font-size: 16px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); color: var(--ink); }
   .stage2 { position: relative; z-index: 3; display: grid; justify-items: center; gap: 14px; width: min(1040px, 100%); }
   .gacha { position: relative; width: 300px; height: 440px; }
@@ -644,7 +654,7 @@
   .flip.tremble { animation: tremble .09s steps(2) infinite; }
   @keyframes tremble { 0% { translate: calc(var(--amp) * -1) 0 } 50% { translate: var(--amp) calc(var(--amp) * -.6) } 100% { translate: 0 var(--amp) } }
   .flip canvas.back { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(0 8px 0 rgba(5,7,16,.55)) drop-shadow(0 0 var(--glow, 0px) var(--grade)); transition: filter .9s; }
-  .shout { font-size: 48px; color: var(--grade); margin: 0; min-height: 48px; line-height: 1; text-shadow: 0 4px 0 rgba(0,0,0,.6); }
+  .shout { font-size: 40px; color: var(--grade); margin: 0; min-height: 40px; line-height: 1.2; text-shadow: 0 4px 0 rgba(0,0,0,.6); text-wrap: balance; text-align: center; max-width: 100%; }
   .shout.slam { animation: slam .55s cubic-bezier(.2,1.5,.35,1) 1; }
   @keyframes slam { 0% { scale: 2.6; opacity: 0 } 100% { scale: 1; opacity: 1 } }
   .rv-name { font-size: 32px; margin: 0; text-shadow: var(--ts); }
@@ -654,13 +664,14 @@
   .result.withinfo .won-info { grid-column: 2; grid-row: 2; }
   .result.withinfo .rv-name, .result.withinfo .rv-sub { display: none; }
   .result.withinfo .rv-actions { grid-column: 1 / -1; }
-  .won-art { width: 280px; height: 280px; display: grid; place-items: center; }
+  .won-art { width: min(280px, 100%); aspect-ratio: 1; display: grid; place-items: center; }
   .won-art canvas { image-rendering: pixelated; max-width: 100%; max-height: 100%; filter: drop-shadow(0 10px 0 rgba(0,0,0,.45)); }
-  /* The won item turning: a flat turntable straight away, the 3D model over it once three.js is in. */
-  .spin3d { position: relative; width: 100%; height: 100%; display: grid; place-items: center; perspective: 800px; }
-  .spin3d canvas.alone { animation: turntable 3.2s ease-in-out infinite; }
-  /* Eased each half, so it lingers facing front and back and hurries past its edge. */
-  @keyframes turntable { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+  /* The won item: it turns once into place and then holds still, facing you. In the reveal the card already
+     spins or rises in, so the item itself stays put. */
+  .spin3d { position: relative; width: 100%; height: 100%; display: grid; grid-template: 100% / 100%; place-items: center; perspective: 800px; }
+  .spin3d canvas.alone { animation: turnin .9s cubic-bezier(.2,.9,.25,1) 1 both; }
+  .won-art .spin3d canvas.alone { animation: none; }
+  @keyframes turnin { from { transform: rotateY(-360deg) scale(.85); } to { transform: none; } }
   .won-cap { margin: 6px 0 0; text-align: center; display: grid; gap: 6px; justify-items: center; }
   .won-cap b { font-size: 24px; line-height: 1.05; text-shadow: var(--ts); color: var(--ink); }
   .won-cap span { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
@@ -720,7 +731,7 @@
   @keyframes spiny { 0% { transform: perspective(900px) translateY(60px) rotateY(0deg) scale(.4); opacity: 0; } 20% { opacity: 1; } 100% { transform: perspective(900px) rotateY(var(--turns, 360deg)) scale(1); opacity: 1; } }
   .shout .ch { display: inline-block; animation: chdrop .5s cubic-bezier(.2,1.6,.4,1) backwards; animation-delay: calc(var(--i) * 60ms); }
   @keyframes chdrop { 0% { transform: translateY(-70px) scale(2.2) rotate(-12deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
-  .shout.big { font-size: 64px; min-height: 64px; }
+  .shout.big { font-size: 48px; min-height: 48px; }
 
   /* name tags */
   .tagged { color: var(--gold); }
@@ -870,7 +881,9 @@
     .mine .who h3 { font-size: 24px; }
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .fins { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .shout.big { font-size: 48px; }
+    .shout { font-size: 32px; min-height: 32px; } .shout.big { font-size: 32px; min-height: 32px; }
+    .reveal { padding-top: 64px; }
+    .result.withinfo .won-cap { display: none; }
     .mcard .body { padding: 10px; gap: 8px; } .mcard h3 { font-size: 24px; } .mcard .play { width: 34px; height: 34px; }
   }
 </style>
@@ -1218,7 +1231,7 @@
   // GIFs take a moment to encode, so the button says so and the page paints first.
   function saveButtons(el, input, name) {
     const base = fileName(name);
-    el.innerHTML = '<button class="btn small" type="button" data-save="gif">Save card GIF</button><button class="btn small ghost" type="button" data-save="png">Save PNG</button><button class="btn small ghost" type="button" data-save="guy">Save guy GIF</button>';
+    el.innerHTML = '<span class="saves-h">Save</span><button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>';
     el.onclick = e => {
       const b = e.target.closest('[data-save]');
       if (!b || b.disabled) return;
@@ -1546,13 +1559,14 @@
   }
   const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
   let scored = false, scoring = false;
-  /** A guy's stage: his card, drawn by the library. Only rebuilt when he or what he wears changes. */
+  /** A guy's stage: the same card the Guys page draws (it reads best), only rebuilt when he or what he wears changes. */
   const guyViews = {};
-  function guyStage(id, seed, codes, card) {
-    const host = $(id), key = `${seed}|${lookFor[seed] ?? ''}|${state?.seed === seed ? state.look : ''}|${codes.join(',')}|${JSON.stringify(card)}`;
+  function guyStage(id, seed, codes, spec) {
+    const host = $(id), key = `${seed}|${lookFor[seed] ?? ''}|${state?.seed === seed ? state.look : ''}|${codes.join(',')}|${JSON.stringify(spec.label)}`;
     if (guyViews[id] === key && host.querySelector('canvas')) return;
     guyViews[id] = key;
-    libCard(host, card);
+    host.innerHTML = `<div class="card">${px(spec)}</div>`;
+    hydrate(host);
   }
 
   function renderGuy() {
@@ -1560,11 +1574,11 @@
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
-    const guyCard = cardInput(cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, LG.guyRank(cfg).tier));
-    guyStage('guy-stage', state.seed, wornCodes(), guyCard);
+    const guySpec = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, LG.guyRank(cfg).tier), guyCard = cardInput(guySpec);
+    guyStage('guy-stage', state.seed, wornCodes(), guySpec);
     saveButtons($('guy-saves'), guyCard, state.key);
     const rank = LG.guyRank(cfg);
-    $('guy-badges').innerHTML = `<span class="bal" style="--b:${TIER_COLORS[rank.tier]}">${esc(rankText(rank))}</span><span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg);
     meaning($('guy-meaning'), LG.guyOneIn(cfg)); distChart($('guy-dist'), LG.guyOneIn(cfg));
@@ -1671,12 +1685,30 @@
 
   /* ---------------------------------------------- the claim card */
   // The tab's icon is the guy in the corner, in whole pixels.
+  /**
+   * The tab icon: the guy's own pixels as an SVG, cropped to him, one pixel of air round him, on a dark rounded
+   * tile so he reads on a light or a dark tab bar. Runs of a colour are one rect, so edges stay crisp at 16 and 32.
+   */
   function setFavicon() {
-    const src = $('mark-guy'), c = document.createElement('canvas'); c.width = c.height = 64;
-    const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(src, 0, 0, 64, 64);
+    const src = $('mark-guy'), W = src.width, H = src.height, d = src.getContext('2d').getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 127) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    if (x1 < 0) return;
+    const side = Math.max(x1 - x0, y1 - y0) + 1, S = side + 2, ox = 1 + Math.floor((side - (x1 - x0 + 1)) / 2) - x0, oy = 1 + (side - (y1 - y0 + 1)) - y0;
+    const hex = i => '#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('');
+    let rects = '';
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1;) {
+      const i = (y * W + x) * 4;
+      if (d[i + 3] <= 127) { x++; continue; }
+      const c = hex(i); let n = 1;
+      while (x + n <= x1 && d[(y * W + x + n) * 4 + 3] > 127 && hex((y * W + x + n) * 4) === c) n++;
+      rects += `<rect x="${x + ox}" y="${y + oy}" width="${n}" height="1" fill="${c}"/>`;
+      x += n;
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" shape-rendering="crispEdges"><rect width="${S}" height="${S}" rx="${S / 6}" fill="#1b1f33"/>${rects}</svg>`;
     let link = document.querySelector('link[rel="icon"]');
     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-    link.type = 'image/png'; link.href = c.toDataURL('image/png');
+    link.type = 'image/svg+xml'; link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
   function renderClaim() {
     renderAccount();
@@ -1758,7 +1790,9 @@
     if (state.tickets < price) { state.tickets += 600; SFX.earn(); toast('Out of tickets, so here are 600 more. They\'re pretend.'); }
     state.tickets -= price;
   }
-  function renderWallet() { if (state) $('wallet').textContent = INFINITE ? '∞' : state.tickets.toLocaleString('en-US'); }
+  // The pixel font has no ∞, so endless tickets draw one in its own pixels.
+  const INF_SVG = '<svg class="inf" viewBox="0 0 9 5" role="img" aria-label="unlimited"><path fill="currentColor" d="M1 0h2v1H1zM6 0h2v1H6zM0 1h1v3H0zM3 1h1v1H3zM5 1h1v1H5zM8 1h1v3H8zM4 2h1v1H4zM3 3h1v1H3zM5 3h1v1H5zM1 4h2v1H1zM6 4h2v1H6z"/></svg>';
+  function renderWallet() { if (!state) return; if (INFINITE) { $('wallet').innerHTML = INF_SVG; $('wallet-pill').title = 'Tickets: unlimited for now'; } else { $('wallet').textContent = state.tickets.toLocaleString('en-US'); $('wallet-pill').title = 'Tickets'; } }
 
   /* ---------------------------------------------- dev drops: an easter egg.
    * Type "rarest" anywhere, or tap the lil guys mark five times. Every capsule then gives the rarest,
@@ -2281,7 +2315,7 @@
     }
     flip.classList.remove('squash', 'tremble');
     const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
-    const alone = front.querySelector('canvas.alone'); if (alone && won) { showItem(alone, won, state.seed, 260, 260); spinItem(alone.parentElement, won); }
+    const alone = front.querySelector('canvas.alone'); if (alone && won) { const fit = alone.closest('.won-art')?.clientWidth || 260; showItem(alone, won, state.seed, fit, fit); spinItem(alone.parentElement, won); }
     if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
     else shout.textContent = shoutText;
     res.classList.add('go');
@@ -3142,11 +3176,11 @@
     $('page-kicker').textContent = mine ? 'You' : 'Player';
     $('page-title').textContent = '@' + key;
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
-    const uCard = cardInput(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier));
-    guyStage('u-stage', u.seed, worn, uCard);
+    const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier), uCard = cardInput(uSpec);
+    guyStage('u-stage', u.seed, worn, uSpec);
     saveButtons($('u-saves'), uCard, key);
     const uRank = LG.guyRank(cfg);
-    $('u-badges').innerHTML = `<span class="bal" style="--b:${TIER_COLORS[uRank.tier]}">${esc(rankText(uRank))}</span><span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
     meaning($('u-meaning'), LG.guyOneIn(cfg)); distChart($('u-dist'), LG.guyOneIn(cfg));
