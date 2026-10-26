@@ -8891,14 +8891,54 @@ function paint(grid, config, palette$1, small = false, still = true) {
 	const slotOf$1 = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	const aura = auraById(config.aura);
 	if (small) ({grid, palette: palette$1} = forSmall(grid, palette$1));
+	const fp = facePlate(grid, palette$1);
+	if (fp) palette$1 = fp.palette;
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token);
+		const color = fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token);
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
 		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
 		return still && copy?.fx ? fxColor(painted$1, copy.fx, x, y, 0, copy.print) : painted$1;
 	}));
+}
+/**
+* On a body too dark for dark eyes, the face gets a lighter patch round the
+* eyes and mouth (as a penguin or a panda has) and the eyes stay dark on it:
+* cream eyes straight on a dark skin smudged into it at any size.
+*/
+function facePlate(grid, palette$1) {
+	const ink = resolveColor(palette$1, T.EYE), body = resolveColor(palette$1, T.BODY);
+	if (!ink || !body || contrast(ink, "#000000") <= 10) return null;
+	let top = 99, bottom = -1, left = 99, right = -1;
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		if (t === T.EYE || t === T.MOUTH) {
+			top = Math.min(top, y);
+			bottom = Math.max(bottom, y);
+			left = Math.min(left, x);
+			right = Math.max(right, x);
+		}
+	}));
+	if (bottom < 0) return null;
+	top -= 1;
+	bottom += 1;
+	left -= 1;
+	right += 1;
+	const skin = (t) => t === T.BODY || t === T.SHADE || t === T.LIGHT;
+	const plate = grid.map((row, y) => row.map((t, x) => skin(t) && y >= top && y <= bottom && x >= left && x <= right && !((y === top || y === bottom) && (x <= left + 1 || x >= right - 1))));
+	const dark = mix$2(resolveColor(palette$1, T.OUTLINE) ?? "#000000", "#000000", .3);
+	return {
+		plate,
+		pale: mix$2(body, "#FFF1D6", .62),
+		palette: {
+			...palette$1,
+			colors: {
+				...palette$1.colors,
+				[T.EYE]: dark,
+				[T.MOUTH]: dark
+			}
+		}
+	};
 }
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 const SMALL_SIZE = 36;
@@ -13939,11 +13979,11 @@ function drawCard(input, frame, owned, g, t) {
 	};
 	for (let y = 0; y < CARD_HEIGHT; y++) for (let x = 0; x < CARD_WIDTH; x++) {
 		if (!inside(x, y)) continue;
-		const edge = !inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y - 2) || !inside(x, y + 2);
+		const edge$1 = !inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y - 2) || !inside(x, y + 2);
 		let border = g >= 0 ? mix(gc, EDGE, .35) : EDGE;
 		if (g === 3) border = hueShift(gc, t * 1.4 + (x + y) * .05);
 		if (g === 5) border = hsv(((x + y) / 120 + t * .3) % 1, .6, .95);
-		s.set(x, y, edge ? border : face(x, y));
+		s.set(x, y, edge$1 ? border : face(x, y));
 	}
 	const band = g >= 3 ? [
 		30,
@@ -14004,6 +14044,23 @@ function drawCard(input, frame, owned, g, t) {
 		s.set(x, y, c);
 	}
 	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - FRAME_WIDTH * ZOOM / 2), oy = WIN.bottom - 3 - FRAME_HEIGHT * ZOOM;
+	const solid = (gx, gy) => !!frame.colors[gy]?.[gx];
+	const edge = g === 5 ? mix(tint, WHITE, .42) : mix(tint, WHITE, .55);
+	for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
+		const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((y - oy) / ZOOM);
+		if (solid(gx, gy)) continue;
+		const near = [
+			[2, 0],
+			[-2, 0],
+			[0, 2],
+			[0, -2],
+			[1, 1],
+			[1, -1],
+			[-1, 1],
+			[-1, -1]
+		].some(([dx, dy]) => solid(Math.floor((x + dx - ox) / ZOOM), Math.floor((y + dy - oy) / ZOOM)));
+		if (near) s.set(x, y, edge);
+	}
 	frame.colors.forEach((row, gy) => row.forEach((hex$3, gx) => {
 		if (!hex$3) return;
 		const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0;

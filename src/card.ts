@@ -185,6 +185,16 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   }
   // The guy, four card pixels to each of his.
   const ox = Math.round((WIN.left + WIN.right + 1) / 2 - (FRAME_WIDTH * ZOOM) / 2), oy = WIN.bottom - 3 - FRAME_HEIGHT * ZOOM;
+  // A sticker's edge round him, two card pixels of light, so his dark outline
+  // never sinks into the window (on the Aura card's night window it did).
+  const solid = (gx: number, gy: number) => !!frame.colors[gy]?.[gx];
+  const edge = g === 5 ? mix(tint, WHITE, 0.42) : mix(tint, WHITE, 0.55);
+  for (let y = WIN.top + 1; y < WIN.bottom; y++) for (let x = WIN.left + 1; x < WIN.right; x++) {
+    const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((y - oy) / ZOOM);
+    if (solid(gx, gy)) continue;
+    const near = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].some(([dx, dy]) => solid(Math.floor((x + dx - ox) / ZOOM), Math.floor((y + dy - oy) / ZOOM)));
+    if (near) s.set(x, y, edge);
+  }
   frame.colors.forEach((row, gy) => row.forEach((hex, gx) => {
     if (!hex) return;
     const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : undefined;
