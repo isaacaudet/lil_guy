@@ -184,6 +184,14 @@
   .guy-card { display: grid; justify-items: center; gap: 14px; align-content: start; }
   .guy-card > div:first-child { width: 100%; max-width: 280px; }
   .guy-card .badges { justify-content: center; }
+  .gview { display: grid; gap: 10px; justify-items: center; width: 100%; }
+  .gview > div:last-child { width: 100%; }
+  .gview .gv-tabs { justify-self: center; }
+  /* The 3D guy takes the card's shape, so switching never moves the page. */
+  .fig3d { position: relative; width: 100%; aspect-ratio: 140 / 204; touch-action: pan-y; cursor: grab; }
+  .fig3d canvas.gl { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .25s; }
+  .fig3d.gl-on canvas.gl { opacity: 1; }
+  .ins-view .fig3d { width: 220px; }
   canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); transition: transform .12s ease-out; }
   .saves { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .saves .btn { height: 36px; font-size: 16px; padding: 0 12px; border-radius: 8px; }
@@ -855,7 +863,7 @@
   <section id="guy-sec" hidden>
     <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them and this is how rare he is.</p></div><button class="btn" type="button" id="look-open">Change look</button></div>
     <div class="odds-panel">
-      <div class="stage guy-card"><div id="guy-stage"></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
+      <div class="stage guy-card"><div class="gview"><div class="ins-tabs gv-tabs" role="group" aria-label="View" id="guy-tabs"><button type="button" data-v="3d" aria-pressed="true">3D</button><button type="button" data-v="card" aria-pressed="false">Card</button></div><div id="guy-stage"></div></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
       <div class="scoring">
         <div class="tiles" id="tiles"></div>
         <div class="score" id="score" role="button" tabindex="0" aria-label="Count again"><canvas class="fire" id="fire" width="96" height="32" aria-hidden="true"></canvas><span class="lbl">1 in</span><b id="total">1</b><span class="unit" id="unit"></span></div>
@@ -923,7 +931,7 @@
 
  <div class="view" id="v-u" hidden>
   <section class="odds-panel profile">
-    <div class="stage guy-card"><div id="u-stage"></div><div class="badges" id="u-badges"></div><div class="saves" id="u-saves"></div></div>
+    <div class="stage guy-card"><div class="gview"><div class="ins-tabs gv-tabs" role="group" aria-label="View" id="u-tabs"><button type="button" data-v="3d" aria-pressed="true">3D</button><button type="button" data-v="card" aria-pressed="false">Card</button></div><div id="u-stage"></div></div><div class="badges" id="u-badges"></div><div class="saves" id="u-saves"></div></div>
     <div class="scoring">
       <div class="tiles" id="u-tiles"></div>
       <div class="score"><span class="lbl">1 in</span><b id="u-total"></b><span class="unit" id="u-unit"></span></div>
@@ -1040,10 +1048,7 @@
 </div>
 <div class="toast" id="toast" hidden role="status"></div>
 
-<script type="importmap">{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-} }</script>
+<script type="module">/*THREE*/</script>
 <script>/*LIB*/</script>
 <script>
 (() => {
@@ -1461,13 +1466,31 @@
   }
   const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
   let scored = false, scoring = false;
+  /** A guy's stage: his 3D figure turning, or his card. The 3D is only rebuilt when he or what he wears changes. */
+  const guyViews = {};
+  function guyStage(id, tabsId, seed, codes, card, accent) {
+    const host = $(id), key = `${seed}|${lookFor[seed] ?? ''}|${state?.seed === seed ? state.look : ''}|${codes.join(',')}|${JSON.stringify(card)}`;
+    const v = guyViews[id] ??= { view: '3d' };
+    const show = view => {
+      v.view = view;
+      $(tabsId).querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === view));
+      if (view === 'card') { v.key = null; libCard(host, card); return; }
+      if (v.key === key && host.querySelector('.fig3d.gl-on')) return;
+      v.key = key;
+      host.innerHTML = '<div class="fig3d" role="img" aria-label="Your guy in 3D, drag to turn"></div>';
+      spinGuy(host.firstChild, seed, codes, accent, () => show('card'));
+    };
+    $(tabsId).onclick = e => { const b = e.target.closest('[data-v]'); if (b) show(b.dataset.v); };
+    show(v.view);
+  }
+
   function renderGuy() {
     $('guy-sec').hidden = !state;
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
     const guyCard = cardInput(cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, LG.guyRank(cfg).tier));
-    libCard($('guy-stage'), guyCard);
+    guyStage('guy-stage', 'guy-tabs', state.seed, wornCodes(), guyCard, TIER_COLORS[LG.guyRank(cfg).tier]);
     saveButtons($('guy-saves'), guyCard, state.key);
     const rank = LG.guyRank(cfg);
     $('guy-badges').innerHTML = `<span class="bal" style="--b:${TIER_COLORS[rank.tier]}">${esc(rankText(rank))}</span><span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
@@ -2568,93 +2591,192 @@
     shows.add(s); drawShow(s, performance.now());
     return s;
   }
-  /* ---------------------------------------------- the item turning in 3D: the library's voxel columns as rounded
-   * boxes, one instanced mesh a surface, lit like the voxel page. three.js comes from the CDN on the first pull;
-   * until it's in (or where WebGL won't start) the flat picture turns on a CSS turntable instead. */
+  /* ---------------------------------------------- 3D: the library's voxel meshes, drawn the way Amountle's jar draws
+   * its lil guys: pillow-round, at most five voxels deep, shaded like moulded vinyl, every pixel its own flat colour,
+   * each copy's pixels on its finish's surface. three.js is bundled into the page (no CDN); until its module has run,
+   * or where WebGL won't start, the flat picture stays (an item turns on a CSS turntable, a guy keeps his card). */
   let threeP = null;
-  const loadThree = () => threeP ??= Promise.all([import('three'), import('three/addons/geometries/RoundedBoxGeometry.js'), import('three/addons/environments/RoomEnvironment.js')])
-    .then(([T, rb, re]) => ({ T, RoundedBoxGeometry: rb.RoundedBoxGeometry, RoomEnvironment: re.RoomEnvironment })).catch(() => null);
-  let spinning = null;
-  function spinItem(host, o, seed, fresh) {
-    if (!host || LG.slotOf(o) === 'aura') { host?.querySelector('canvas.alone')?.style.setProperty('animation', 'none'); return; }   // an aura only shows round the guy
-    loadThree().then(lib => { if (lib && host.isConnected) try { spin3d(lib, host, o, seed, fresh); } catch (e) { /* the flat turntable stays */ } });
+  const loadThree = () => threeP ??= new Promise(res => {
+    if (window.LGThree) return res(window.LGThree);
+    addEventListener('lg-three', () => res(window.LGThree), { once: true });
+    setTimeout(() => res(window.LGThree || null), 10000);
+  });
+  const DEEP = 5;
+  const surfaceMats = new Map(), glowClock = { value: 0 };
+  function surfaceMat(T, s) {
+    const k = `${s.kind}|${s.roughness}|${s.clearcoat}`;
+    if (surfaceMats.has(k)) return surfaceMats.get(k);
+    const m = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: s.roughness, metalness: s.metalness, clearcoat: s.clearcoat, clearcoatRoughness: s.clearcoatRoughness,
+      iridescence: s.iridescence, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820], sheen: s.sheen, sheenRoughness: .3, sheenColor: new T.Color('#ffc59a') });
+    if (s.glow) {
+      // Lit from inside: its own colours added back as light, breathing up the piece.
+      m.onBeforeCompile = sh => { sh.uniforms.uT = glowClock; sh.fragmentShader = 'uniform float uT;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ${s.glow.toFixed(2)} * (0.7 + 0.3 * sin(uT * 2.2 + vViewPosition.y * 0.6));`); };
+      m.customProgramCacheKey = () => 'glow' + s.glow;
+    }
+    surfaceMats.set(k, m); return m;
   }
-  function spin3d({ T, RoundedBoxGeometry, RoomEnvironment }, host, o, seed, fresh) {
-    spinning?.stop();
+  /** A library voxel mesh as a three.js mesh, one material per surface group. */
+  function meshOf(T, vm) {
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.BufferAttribute(vm.positions, 3));
+    g.setAttribute('normal', new T.BufferAttribute(vm.normals, 3));
+    g.setAttribute('color', new T.BufferAttribute(vm.colors, 3));
+    vm.groups.forEach((gr, i) => g.addGroup(gr.start, gr.count, i));
+    return new T.Mesh(g, vm.groups.map(gr => surfaceMat(T, gr.surface)));
+  }
+  // Soft round shadow under a figure.
+  let blobTex = null;
+  const blob = T => {
+    if (!blobTex) {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 2, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+      blobTex = new T.CanvasTexture(c);
+    }
+    const m = new T.Mesh(new T.CircleGeometry(1, 40), new T.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; return m;
+  };
+
+  /**
+   * A turning 3D view in `host`. `make(T)` returns `{ object, size, floor?, tick?(now) }`: the object centred on
+   * the origin, its size (x, y, z) to frame, and where its feet are for the shadow. `fresh` spins it in twice and
+   * lands it facing you. Dragging turns it by hand. Stops itself (and frees its context) once the host is gone.
+   */
+  function view3d(lib, host, make, { accent = '#4b69ff', fresh = false, sway = 0, onFail } = {}) {
+    const { T, RoomEnvironment } = lib;
+    host.querySelector('canvas.gl')?.remove();
     const canvas = document.createElement('canvas'); canvas.className = 'gl'; canvas.setAttribute('aria-hidden', 'true');
     host.append(canvas);
-    const renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    let renderer;
+    try {
+      renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    } catch (e) { canvas.remove(); onFail?.(); return null; }
     renderer.setPixelRatio(Math.min(2, devicePixelRatio));
-    renderer.toneMapping = T.NeutralToneMapping; renderer.toneMappingExposure = 1.05;
+    renderer.toneMapping = T.NeutralToneMapping; renderer.toneMappingExposure = 1;
     const pm = new T.PMREMGenerator(renderer), env = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
-    const scene = new T.Scene(); scene.environment = env;
-    const g = LG.gradeOf(o), clock = { value: 0 };
-    const key = new T.DirectionalLight('#fff3df', 2.6); key.position.set(-7, 12, 14);
-    const rim = new T.DirectionalLight(g.color, 3); rim.position.set(9, 5, -11);
-    scene.add(key, rim, new T.HemisphereLight('#c4d4ff', '#2b2018', .5));
-    // Columns from the frame the flat picture comes from, so the effect can move on the same cells.
-    const src = LG.itemFrame(o, seed), slot = LG.slotOf(o), cols = LG.voxelColumns(src, { [slot]: o }, { item: true });
-    const W = src.colors[0].length, H = src.colors.length;
-    const mats = new Map(), box = new RoundedBoxGeometry(1, 1, 1, 2, .11);
-    const material = s => {
-      const k = `${s.kind}|${s.roughness}|${s.clearcoat}`;
-      if (mats.has(k)) return mats.get(k);
-      const m = new T.MeshPhysicalMaterial({ roughness: s.roughness, metalness: s.metalness, clearcoat: s.clearcoat, clearcoatRoughness: s.clearcoatRoughness,
-        iridescence: s.iridescence, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820], sheen: s.sheen, sheenRoughness: .3, sheenColor: new T.Color('#ffc59a') });
-      if (s.glow) {
-        m.onBeforeCompile = sh => { sh.uniforms.uT = clock; sh.fragmentShader = 'uniform float uT;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>',
-          `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ${s.glow.toFixed(2)} * (0.7 + 0.3 * sin(uT * 2.2 + vViewPosition.y * 0.6));`); };
-        m.customProgramCacheKey = () => 'glow' + s.glow;
-      }
-      mats.set(k, m); return m;
-    };
-    const model = new T.Group(), meshes = [], by = new Map();
-    for (const c of cols) { const m = material(c.surface); if (!by.has(m)) by.set(m, []); by.get(m).push(c); }
-    const mtx = new T.Matrix4(), pos = new T.Vector3(), q = new T.Quaternion(), sc = new T.Vector3(), col = new T.Color();
-    for (const [m, list] of by) {
-      const mesh = new T.InstancedMesh(box, m, list.length);
-      list.forEach((c, i) => { mesh.setMatrixAt(i, mtx.compose(pos.set(c.x, c.y, c.z), q, sc.set(1, 1, c.depth))); mesh.setColorAt(i, col.set(c.color)); });
-      model.add(mesh); meshes.push({ mesh, list });
-    }
-    const bounds = new T.Box3().setFromObject(model), size = bounds.getSize(new T.Vector3()), mid = bounds.getCenter(new T.Vector3());
-    model.position.set(-mid.x, -mid.y, -mid.z);
-    const turn = new T.Group(); turn.add(model); scene.add(turn);
-    const camera = new T.PerspectiveCamera(26, 1, .5, 300);
-    const r = Math.max(size.x, size.y, size.z) / 2 + .6, dist = r / Math.sin(T.MathUtils.degToRad(12.5));
-    camera.position.set(0, dist * .18, dist); camera.lookAt(0, 0, 0);
-    // An effect moves over the item: the same cells the flat picture recolours, read back onto the columns.
-    const fxOwned = LG.FRAME_SLOTS.map(sl => (sl === slot ? o : undefined));
-    const cellOf = c => [Math.round(c.x + W / 2 - .5), Math.round(H / 2 - c.y - .5)];
-    let lastFx = -1, size0 = '';
+    // A softer room than the voxel page's, so a pale body keeps its colour instead of going white.
+    const scene = new T.Scene(); scene.environment = env; scene.environmentIntensity = .7;
+    const key = new T.DirectionalLight('#fff3df', 2.4); key.position.set(-7, 12, 14);
+    const rim = new T.DirectionalLight(accent, 2.6); rim.position.set(9, 5, -11);
+    scene.add(key, rim, new T.HemisphereLight('#c4d4ff', '#2b2018', .55));
+    const made = make(T), turn = new T.Group(); turn.add(made.object); scene.add(turn);
+    const { size } = made;
+    if (made.floor !== undefined) { const sh = blob(T); sh.scale.setScalar(Math.max(size.x, size.z) * .62); sh.position.y = made.floor - .05; scene.add(sh); }
+    const camera = new T.PerspectiveCamera(24, 1, .5, 400);
+    const r = Math.hypot(size.x, size.y) / 2 + .8, dist = r / Math.sin(12 * Math.PI / 180);
+    camera.position.set(0, dist * .2, dist); camera.lookAt(0, 0, 0);
+    let drag = null, spunBy = 0;
+    const down = e => { drag = { x: e.clientX, by: spunBy }; host.setPointerCapture?.(e.pointerId); };
+    const move = e => { if (drag) spunBy = drag.by + (e.clientX - drag.x) / 70; };
+    const up = () => { drag = null; };
+    host.addEventListener('pointerdown', down); host.addEventListener('pointermove', move); host.addEventListener('pointerup', up); host.addEventListener('pointercancel', up);
     const t0 = performance.now();
-    let raf = 0, alive = true;
-    const stop = () => { if (!alive) return; alive = false; cancelAnimationFrame(raf); renderer.dispose(); renderer.forceContextLoss(); env.dispose(); box.dispose(); mats.forEach(m => m.dispose()); if (spinning?.stop === stop) spinning = null; };
+    let raf = 0, alive = true, size0 = '';
+    const stop = () => {
+      if (!alive) return; alive = false; cancelAnimationFrame(raf);
+      host.removeEventListener('pointerdown', down); host.removeEventListener('pointermove', move); host.removeEventListener('pointerup', up); host.removeEventListener('pointercancel', up);
+      renderer.dispose(); renderer.forceContextLoss(); env.dispose();
+      scene.traverse(o => { if (o.isMesh) { o.geometry.dispose(); } });
+      views.delete(stop);
+    };
+    views.add(stop);
+    // Browsers keep only so many WebGL contexts: the oldest views give theirs up first.
+    while (views.size > 6) [...views][0]();
     const tick = now => {
       if (!alive) return;
-      // Gone, or no longer drawn (the reveal closed, inspect shut): let the context go.
-      if (!host.isConnected || !host.getClientRects().length) { stop(); return; }
+      // Gone (the reveal moved on, inspect redrawn): let the context go. Hidden for now (another page, the
+      // reveal over it): wait without drawing, so it's there when it shows again.
+      if (!host.isConnected) { stop(); return; }
       raf = requestAnimationFrame(tick);
+      if (!host.getClientRects().length) return;
       const w = host.clientWidth, h = host.clientHeight, sz = w + 'x' + h;
       if (!w || !h) return;
       if (sz !== size0) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); size0 = sz; }
       const t = (now - t0) / 1000;
-      clock.value = t;
-      // A fresh pull spins in twice and lands facing you, then turns steadily; inspect just turns. The turn lingers facing
-      // front and back and hurries past the edges, where a flat piece of pixel art is only a sliver.
-      const settle = fresh ? 4 * Math.PI * (1 - Math.exp(-t * 2.6)) : 0, u = Math.max(0, t - (fresh ? 1.3 : 0)) * .8;
-      turn.rotation.y = settle + u - .38 * Math.sin(2 * u);
-      turn.position.y = Math.sin(t * 1.6) * .25;
-      turn.rotation.x = Math.sin(t * .9) * .06;
-      if (o.fx && now - lastFx > 80) {
-        lastFx = now;
-        const fx = LG.applyFx(src.colors, src.slots, fxOwned, now);
-        for (const { mesh, list } of meshes) { list.forEach((c, i) => { const [x, y] = cellOf(c); const v = fx[y]?.[x]; if (v) mesh.setColorAt(i, col.set(v)); }); mesh.instanceColor.needsUpdate = true; }
-      }
+      glowClock.value = t;
+      // Lingers facing front and back and hurries past the edges, where a flat piece of pixel art is a sliver.
+      // A guy sways rather than turning his back on you; an item turns all the way round.
+      const settle = fresh ? 4 * Math.PI * (1 - Math.exp(-t * 2.6)) : 0, u = Math.max(0, t - (fresh ? 1.3 : 0)) * .7;
+      turn.rotation.y = settle + (sway ? sway * Math.sin(t * .8) : u - .42 * Math.sin(2 * u)) + spunBy;
+      turn.position.y = Math.sin(t * 1.6) * .2;
+      made.tick?.(now);
       renderer.render(scene, camera);
       if (!host.classList.contains('gl-on')) host.classList.add('gl-on');
     };
     raf = requestAnimationFrame(tick);
-    spinning = { stop };
+    return { stop };
+  }
+  const views = new Set();
+
+  /** One copy on its own, from the frame the flat picture comes from, so its effect moves on the same cells. */
+  function itemModel(o, seed) {
+    return T => {
+      const src = LG.itemFrame(o, seed), slot = LG.slotOf(o), owned = { [slot]: o };
+      const cols = LG.voxelColumns(src, owned, { item: true, deepest: DEEP });
+      const mesh = meshOf(T, LG.voxelMesh(cols, 1));
+      const g = mesh.geometry; g.computeBoundingBox();
+      const size = g.boundingBox.getSize(new T.Vector3()), mid = g.boundingBox.getCenter(new T.Vector3());
+      mesh.position.set(-mid.x, -mid.y, -mid.z);
+      const W = src.colors[0].length, H = src.colors.length;
+      const cellOf = c => [Math.round(c.x + W / 2 - .5), Math.round(H / 2 - c.y - .5)];
+      const fxOwned = LG.FRAME_SLOTS.map(sl => (sl === slot ? o : undefined));
+      let lastFx = -1;
+      const object = new T.Group(); object.add(mesh);
+      return {
+        object, size,
+        tick: o.fx ? now => {
+          if (now - lastFx < 90) return;
+          lastFx = now;
+          const fx = LG.applyFx(src.colors, src.slots, fxOwned, now);
+          // A side that matched its face still does, so the mesh keeps the same vertices and only its colours change.
+          const recoloured = cols.map(c => { const [x, y] = cellOf(c); const v = fx[y]?.[x]; return v ? { ...c, color: v, side: c.side === c.color ? v : c.side } : c; });
+          const next = LG.voxelMesh(recoloured, 1).colors, arr = g.attributes.color.array;
+          if (next.length === arr.length) { arr.set(next); g.attributes.color.needsUpdate = true; }
+        } : undefined,
+      };
+    };
+  }
+
+  /** A whole guy wearing his copies, idling: every pose of the move built once, one shown at a time. */
+  function guyModel(seed, codes, cfg) {
+    return T => {
+      const anim = LG.animate(seed, 'idle', { parts: cfg ? partsOf(cfg) : undefined, palette: cfg ? LG.paletteOf(cfg) : undefined, equip: codes, rarity: false });
+      const owned = LG.ownedOf(codes), byKey = new Map(), meshes = [];
+      const object = new T.Group();
+      let lo = null, hi = null;
+      for (const f of anim.frames) {
+        const k = f.colors.map(r => r.join(',')).join('|');
+        if (!byKey.has(k)) {
+          const vm = LG.voxelMesh(LG.voxelColumns(f, owned, { deepest: DEEP }), 1);
+          const m = meshOf(T, vm); m.visible = false; object.add(m);
+          byKey.set(k, m);
+          if (!lo) { lo = vm.min; hi = vm.max; }
+        }
+        meshes.push(byKey.get(k));
+      }
+      // Centred on the first pose, so a hop leaves the ground instead of the ground moving.
+      const mid = [0, 1, 2].map(a => (lo[a] + hi[a]) / 2);
+      object.children.forEach(m => m.position.set(-mid[0], -mid[1], -mid[2]));
+      let shown = null;
+      return {
+        object, size: { x: hi[0] - lo[0], y: hi[1] - lo[1], z: hi[2] - lo[2] }, floor: lo[1] - mid[1],
+        tick: now => { const m = meshes[anim.frames.indexOf(LG.frameAt(anim, now))]; if (m !== shown) { if (shown) shown.visible = false; m.visible = true; shown = m; } },
+      };
+    };
+  }
+
+  function spinItem(host, o, seed, fresh) {
+    if (!host || LG.slotOf(o) === 'aura') { host?.querySelector('canvas.alone')?.style.setProperty('animation', 'none'); return; }   // an aura only shows round the guy
+    loadThree().then(lib => { if (lib && host.isConnected) try { view3d(lib, host, itemModel(o, seed), { accent: LG.gradeOf(o).color, fresh }); } catch (e) { /* the flat turntable stays */ } });
+  }
+  /** A guy in 3D in `host`; `fallback` runs when there is no 3D to be had. */
+  function spinGuy(host, seed, codes, accent, fallback) {
+    loadThree().then(lib => {
+      if (!host.isConnected) return;
+      if (!lib) { fallback(); return; }
+      try { if (!view3d(lib, host, guyModel(seed, codes, guyConfig(seed)), { accent, sway: .55, onFail: fallback })) fallback(); } catch (e) { fallback(); }
+    });
   }
   function drawShow(s, now) {
     const { x, y, w, h } = s.box;
@@ -2770,7 +2892,7 @@
     $('insp-body').style.setProperty('--g', g.color);
     $('insp-body').innerHTML = `<button class="close" type="button" id="insp-close" aria-label="Close">×</button>
       <div class="ins-stage">
-        <div class="ins-tabs" role="group" aria-label="View"><button type="button" data-v="alone" aria-pressed="true">On its own</button><button type="button" data-v="guy" aria-pressed="false">On your guy</button></div>
+        <div class="ins-tabs" role="group" aria-label="View"><button type="button" data-v="alone" aria-pressed="true">On its own</button><button type="button" data-v="guy" aria-pressed="false">On your guy</button><button type="button" data-v="3d" aria-pressed="false">3D</button></div>
         <div class="ins-view" id="ins-view"></div>
         <p class="ins-cap">#${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
         <div class="saves" id="insp-saves"></div>
@@ -2796,8 +2918,10 @@
     saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`);
     const setView = v => {
       view.innerHTML = v === 'alone' ? '<div class="tilt"><div class="spin3d ins-spin"><canvas class="alone" aria-label="The item on its own"></canvas></div></div>'
-        : '<div class="tilt"><div class="card"></div></div>';
-      if (v === 'alone') { showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); spinItem(view.querySelector('.spin3d'), o, ctx.seed, false); } else libCard(view.querySelector('.card'), inspCard);
+        : v === '3d' ? '<div class="fig3d" role="img" aria-label="Wearing it, in 3D"></div>' : '<div class="tilt"><div class="card"></div></div>';
+      if (v === 'alone') { showItem(view.querySelector('canvas'), o, ctx.seed, 300, 300); spinItem(view.querySelector('.spin3d'), o, ctx.seed, false); }
+      else if (v === '3d') spinGuy(view.querySelector('.fig3d'), ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o].map(LG.encode), g.color, () => setView('guy'));
+      else libCard(view.querySelector('.card'), inspCard);
       $('insp-body').querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
     };
     setView('alone');
@@ -3059,7 +3183,7 @@
     $('page-title').textContent = '@' + key;
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
     const uCard = cardInput(cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier));
-    libCard($('u-stage'), uCard);
+    guyStage('u-stage', 'u-tabs', u.seed, worn, uCard, TIER_COLORS[LG.guyRank(cfg).tier]);
     saveButtons($('u-saves'), uCard, key);
     const uRank = LG.guyRank(cfg);
     $('u-badges').innerHTML = `<span class="bal" style="--b:${TIER_COLORS[uRank.tier]}">${esc(rankText(uRank))}</span><span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
