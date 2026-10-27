@@ -85,13 +85,14 @@ describe('animate', () => {
 
   test('a blink only changes the eyes', () => {
     // One-row eyes (a squint, shades) are already a line, so some guys don't change.
+    // The eyes are ink, shine and the accent's colour low in them (10, 11).
     let changed = 0;
     for (const name of NAMES) {
       const config = dress(resolve(name), {}, name);
       const grid = compose(config);
       const shut = closeEyes(grid, config);
       shut.forEach((row, y) => row.forEach((t, x) => {
-        if (t !== grid[y][x]) { changed++; expect([5, 6]).toContain(grid[y][x]); }
+        if (t !== grid[y][x]) { changed++; expect([5, 6, 10, 11]).toContain(grid[y][x]); }
       }));
     }
     expect(changed).toBeGreaterThan(0);

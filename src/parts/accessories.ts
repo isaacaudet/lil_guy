@@ -212,15 +212,23 @@ export const accessories: Accessory[] = [
     name: 'monocle',
     layer: 'face',
     draw: c => {
-      // A round gold rim fitted close round the right eye, a glint on it, and
-      // a fine chain swinging down from its outer side.
+      // A round gold rim close round the right eye, its lower edge in shadow and a
+      // glint on its top, the eye clear through the glass, and a gold chain
+      // swinging down from its outer side in links.
       const f = c.face;
       if (!f || !f.eyes.length) return;
       const e = f.eyes[f.eyes.length - 1];
       const b = { left: e.left - 1, right: e.right + 1, top: f.top - 1, bottom: f.line + 1 };
-      rim(c, b, T.GOLD, T.LIGHT);
+      for (let y = b.top; y <= b.bottom; y++) for (let x = b.left; x <= b.right; x++) {
+        const edgeX = x === b.left || x === b.right, edgeY = y === b.top || y === b.bottom;
+        if (edgeX && edgeY) continue;
+        if (edgeX || edgeY) c.set(x, y, y === b.bottom || x === b.right ? T.GOLD_SHADE : T.GOLD);
+      }
       c.set(b.left + 1, b.top, T.WHITE);
-      for (let y = b.top + 2, x = b.right + 1; y <= Math.min(b.bottom + 2, c.bottom); y++, x += y % 2) c.set(x, y, y % 2 ? T.GOLD_SHADE : T.GOLD);
+      for (let i = 0, x = b.right + 1, y = b.bottom; y <= c.bottom && c.isBody(x, y); i++, y++) {
+        c.set(x, y, i % 2 ? T.GOLD : T.GOLD_SHADE);
+        if (i === 1 && c.isBody(x + 1, y + 1)) x++;
+      }
     },
   },
 
@@ -229,8 +237,8 @@ export const accessories: Accessory[] = [
     layer: 'over',
     draw: c => {
       // A pirate's patch: a rounded dark pad over the left eye with a sheen on
-      // it, so it reads as worn and not as a hole, and a thin strap running
-      // from its top corners out to either side of the head.
+      // it, its strap running from the pad's top corner up across the brow,
+      // and from its outer side straight out to the edge of the head.
       const f = c.face;
       if (!f || !f.eyes.length) return;
       const e = f.eyes[0], b = { left: e.left - 1, right: e.right + 1, top: f.top - 1, bottom: f.line };
@@ -239,16 +247,8 @@ export const accessories: Accessory[] = [
         if (!corner && c.isBody(x, y)) c.set(x, y, T.OUTLINE);
       }
       c.set(b.left + 1, b.top + 1, T.DEEP);
-      // The strap climbs a row at a time out to the head's edge on both sides.
-      const strap = (x0: number, y0: number, dx: number) => {
-        for (let i = 0; ; i++) {
-          const x = x0 + dx * i, y = y0 - (i >> 1);
-          if (!c.isBody(x, y) || y <= c.tip) return;
-          c.set(x, y, T.OUTLINE);
-        }
-      };
-      strap(b.left - 1, b.top, -1);
-      strap(b.right + 1, b.top - 1, 1);
+      for (let x = b.right, y = b.top - 1; y >= b.top - 3 && c.isBody(x, y); x++, y--) c.set(x, y, T.OUTLINE);
+      for (let x = b.left - 1, y = b.top + 1; c.isBody(x, y); x--) c.set(x, y, T.OUTLINE);
     },
   },
 
@@ -268,15 +268,16 @@ export const accessories: Accessory[] = [
     name: 'medal',
     layer: 'body',
     draw: c => {
-      // Pinned on the chest's side, as a medal is, where it never touches the face: a striped
-      // ribbon over a gold disc with a glint. Under the mouth it read as a tongue.
-      // Where a narrow body has no room for the tall one, a shorter ribbon, then a cell nearer the face.
-      const tall = [[T.ACCENT, T.ACCENT_SHADE], [T.ACCENT, T.ACCENT_SHADE], [T.WHITE, T.GOLD], [T.GOLD_SHADE, T.GOLD_SHADE]];
-      const short = [tall[0], tall[2], tall[3]];
-      let art = tall, at = clearSpot(c, 2, 4, 1, c.eyeLine + 1);
-      if (!at) { art = short; at = clearSpot(c, 2, 3) ?? clearSpot(c, 2, 3, 0); }
-      if (!at) return;
-      art.forEach((row, dy) => row.forEach((t, dx) => c.set(at[0] + dx, at[1] + dy, t)));
+      // Pinned on the chest's side, where it never touches the face: a striped
+      // ribbon over a round gold disc with a glint. Under the mouth it read as a tongue.
+      // Smaller where a narrow body has no room for it.
+      const sizes = [stamp(['aAa', '.y.', 'ywY', '.Y.']), stamp(['.A.', 'ywY', '.Y.']), stamp(['aA', 'wy', 'yY'])];
+      for (const art of sizes) {
+        const at = clearSpot(c, art[0].length, art.length, 1, c.eyeLine + 1) ?? clearSpot(c, art[0].length, art.length);
+        if (at) { c.draw(art, at[0], at[1]); return; }
+      }
+      const at = clearSpot(c, 2, 3, 0);
+      if (at) c.draw(sizes[2], at[0], at[1]);
     },
   },
 

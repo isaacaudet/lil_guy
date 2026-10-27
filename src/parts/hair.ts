@@ -142,9 +142,10 @@ export const hair: Topper[] = [
     '..o..',
   ]),
 
-  // Little devil's horns, curving up and out from a broad base.
+  // Little devil's horns, set apart and curving up and out, their tips pale
+  // as a horn's are: red ones that met in the middle read as a crown.
   pair('horns', [
-    'r..',
+    'w..',
     'r..',
     'rr.',
     '.rr',
@@ -286,15 +287,12 @@ export const hair: Topper[] = [
     ['..rrrr..', '.rwwrrr.', 'rrrrrwwr', 'rrrrrrrr'],
   ], 2),
 
-  {
-    name: 'eggshell',
-    draw: c => {
-      // The top of a broken shell, its edge cracked into points.
-      capRows(c, 2, T.WHITE, T.WHITE);
-      const r = c.rows[c.crown + 2];
-      if (r) for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 2, T.WHITE);
-    },
-  },
+  // The top of a broken egg worn as a cap: a tall white dome, shaded on its
+  // right, its edge cracked into points that bite into the head.
+  hat('eggshell', [
+    ['....ww....', '..wwwwww..', '.wwwwwwwh.', 'wwwwwwwwhh', 'w.ww.ww.wh'],
+    ['...ww...', '.wwwwww.', 'wwwwwwhh', 'w.ww.w.h'],
+  ], 2),
 
   // A dollop of icing, dripping, with sprinkles and a cherry on top.
   hat('frosting', [
@@ -313,14 +311,17 @@ export const hair: Topper[] = [
 
   // A floppy beret slumped to one side, with a stalk on top.
   hat('beret', [
-    ['......A...', '...aaaaaa.', '.aaaaaaaaA', 'AaaaaaaaA.'],
-    ['.....A..', '..aaaaa.', 'aaaaaaaA', 'AaaaaaA.'],
-  ], 1),
+    ['....A.....', '..aaaaaa..', '.aaaaaaaaa', 'aAAAAAAAaa', '........aA'],
+    ['...A....', '.aaaaaa.', 'aaaaaaaa', 'AAAAAAaa', '......aA'],
+  ], 2),
 
   // A tall pointed hat, its tip bent over, a buckled band, and a wide brim.
+  // A tall hat in the accent's deep shade, its tip bent over, a buckled band
+  // and a brim wider than the head. In the outline's dark it read as part of the head.
   hat('witch hat', [
-    ['......aA..', '.....aaA..', '....aaaA..', '....aaaA..', '...xxyxx..', 'aaaaaaaaaA'],
-    ['.....aA.', '....aaA.', '...aaaA.', '...aaaA.', '..xxyxx.', 'aaaaaaaA'],
+    ['........AA..', '......aAA...', '.....aAAA...', '....xxyxx...', 'aAAAAAAAAAAA'],
+    ['.......AA.', '.....aAA..', '....aAAA..', '...xxyxx..', 'aAAAAAAAAA'],
+    ['......A.', '....aAA.', '...aAA..', '..xxyxx.', 'aAAAAAAA'],
   ], 1),
 
   {

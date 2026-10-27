@@ -77,7 +77,7 @@ export class Canvas {
    * top row just under it, both centred. Everything worn is fitted to this.
    */
   setFace(eye: Stamp, mouth: Stamp): void {
-    const x0 = this.centred(eye), top = this.eyeLine - eye.length + 1;
+    const x0 = this.centred(eye);
     const cols: number[] = [];
     for (let dx = 0; dx < width(eye); dx++) if (eye.some(row => row[dx])) cols.push(x0 + dx);
     const eyes: RowExtent[] = [];
@@ -87,29 +87,57 @@ export class Canvas {
     }
     const firstRow = eye.findIndex(row => row.some(Boolean));
     const m = this.placeMouth(eye, mouth);
-    this.face = { top: top + Math.max(0, firstRow), line: this.eyeLine, eyes, mouthTop: m.top, mouthBottom: m.top + m.art.length - 1, mouth: m.art };
+    const top = m.line - eye.length + 1;
+    this.face = { top: top + Math.max(0, firstRow), line: m.line, eyes, mouthTop: m.top, mouthBottom: m.top + m.art.length - 1, mouth: m.art };
   }
 
   /**
    * The mouth's top row goes just under the eyes, unless a pixel of it would
-   * sit right under an eye: eyes that run into a mouth turn a face into one
-   * shape (an H, a box), and it stops reading as eyes and a mouth. Then the
-   * mouth drops a row where the head has room for it, with a column of face
-   * either side. Where it hasn't (a heart's point, a bat), it stays put:
-   * taking the corners off a smile left a frown.
+   * sit beside or under an eye pixel: eyes that run into a mouth turn a face
+   * into one shape (an H, a box), and it stops reading as eyes and a mouth. A
+   * corner touch is fine. Then the mouth drops a row or two where the head has
+   * room for it, with a column of face either side if it can. Where it hasn't
+   * (a heart's point, a car's bumper), the eyes go up a row instead.
    */
-  private placeMouth(eye: Stamp, mouth: Stamp): { top: number; art: Stamp } {
+  private placeMouth(eye: Stamp, mouth: Stamp): { top: number; line: number; art: Stamp } {
     const ex = this.centred(eye), mx = this.centred(mouth), w = width(mouth);
-    const under = new Set<number>();
-    eye[eye.length - 1].forEach((t, dx) => { if (t) under.add(ex + dx); });
-    const top = this.eyeLine + 1;
-    if (!mouth[0].some((t, dx) => t && under.has(mx + dx))) return { top, art: mouth };
-    // Every pixel of it on the face, with a column of face beyond each end (a tooth's roots split low down).
-    const fits = mouth.every((row, dy) => {
-      const y = top + 1 + dy;
-      return this.isBody(mx - 1, y) && this.isBody(mx + w, y) && row.every((t, dx) => !t || this.isBody(mx + dx, y));
+    const eyeAt = (line: number) => {
+      const at = new Set<number>(), ey = line - eye.length + 1;
+      eye.forEach((row, dy) => row.forEach((t, dx) => { if (t && this.isBody(ex + dx, ey + dy)) at.add((ey + dy) * 64 + ex + dx); }));
+      return at;
+    };
+    // No mouth pixel beside or under an eye pixel.
+    const clear = (at: Set<number>, top: number) => mouth.every((row, dy) => row.every((t, dx) => {
+      const x = mx + dx, y = top + dy;
+      return !t || !this.isBody(x, y) || ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ox, oy]) => at.has((y + oy) * 64 + x + ox));
+    }));
+    // Every pixel of it on the face, and with `margin` a column of face beyond each end (a tooth's roots split low down).
+    const fits = (top: number, margin: boolean) => mouth.every((row, dy) => {
+      const y = top + dy;
+      if (!row.some(Boolean)) return true;
+      return (!margin || (this.isBody(mx - 1, y) && this.isBody(mx + w, y))) && row.every((t, dx) => !t || this.isBody(mx + dx, y));
     });
-    return { top: fits ? top + 1 : top, art: mouth };
+    // Raised eyes must still be whole on the face, with a row of it above them.
+    const eyesFit = (line: number) => {
+      const ey = line - eye.length + 1;
+      return eye.every((row, dy) => row.every((t, dx) => !t || (this.isBody(ex + dx, ey + dy) && this.isBody(ex + dx, ey + dy - 1))));
+    };
+    const line = this.eyeLine, top = line + 1, here = eyeAt(line);
+    if (clear(here, top)) return { top, line, art: mouth };
+    for (const margin of [true, false]) for (const drop of [1, 2]) {
+      if (clear(here, top + drop) && fits(top + drop, margin)) return { top: top + drop, line, art: mouth };
+    }
+    if (eyesFit(line - 1)) {
+      const up = eyeAt(line - 1);
+      for (const drop of [0, 1]) if (clear(up, top + drop) && fits(top + drop, false)) return { top: top + drop, line: line - 1, art: mouth };
+    }
+    // A head with no room either way (a jellybean, a car): the corners of the
+    // mouth's top row that would touch an eye are left off.
+    const art = mouth.map((row, dy) => row.map((t, dx) => {
+      const x = mx + dx, y = top + dy;
+      return [[1, 0], [-1, 0], [0, -1]].some(([ox, oy]) => here.has((y + oy) * 64 + x + ox)) ? 0 : t;
+    }));
+    return { top, line, art };
   }
 
   /**
