@@ -1,8 +1,10 @@
 // Every modifier (topper, accessory, cheeks, markings, hat, buddy) on every head: lists what floats free,
 // is cut at the grid's edge, splits into pieces or barely shows, for a person to look at. Not a test:
 // small things (an antenna, a medal) show few pixels on purpose, and outline-coloured parts read as gaps.
+// "hat chopped" is the exception, on every head and skin: a hat that loses pixels it drew (fit.test.ts
+// fails on it). A hat taller than the room above the face (four rows on most heads) is squeezed to it.
 //   bun scripts/fit-check.ts
-import { compose } from '../src/compose';
+import { compose, hatCut } from '../src/compose';
 import { heads, eyes, mouths, hair, accessories, cheeks, bodies } from '../src/parts';
 import { items } from '../src/items';
 import { T } from '../src/parts/art';
@@ -25,6 +27,7 @@ for (const c of cases) for (let h = 0; h < heads.length; h++) {
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] !== bare[y][x] && g[y][x] !== 0 && g[y][x] !== T.OUTLINE) diff.push([x, y]);
   const tag = `${c.kind}: ${c.name} on ${heads[h].name}`;
   if (c.kind === 'frame') continue;
+  if (c.kind === 'hat' && hatCut({ ...cfg, ...c.change })) flag('hat chopped', tag);
   if (c.kind !== 'markings' && c.kind !== 'cheeks' && diff.length < 5) { flag('barely shows', `${tag} (${diff.length})`); continue; }
   if (diff.some(([x, y]) => x === 0 || x === N - 1 || y === 0)) flag('cut at the edge', tag);
   // Islands of the new pixels (8-connected), and whether each touches what was already there.
@@ -46,6 +49,9 @@ for (const c of cases) for (let h = 0; h < heads.length; h++) {
   }
   if (floating) flag('floats', tag);
   if (islands > (c.kind === 'markings' || c.kind === 'cheeks' || c.kind === 'accessory' ? 99 : 2)) flag('splits', `${tag} (${islands})`);
+}
+for (const c of cases.filter(c => c.kind === 'hat')) for (const skin of items.filter((i: any) => i.slot === 'skin')) {
+  if (hatCut({ ...base, skin: skin.id, ...c.change })) flag('hat chopped', `hat: ${c.name} on ${skin.id}`);
 }
 for (const [k, v] of Object.entries(issues)) { console.log(`\n## ${k}: ${v.length}`); const by: Record<string, number> = {}; v.forEach(s => { const m = s.split(' on ')[0]; by[m] = (by[m] || 0) + 1; }); console.log(Object.entries(by).sort((a, b) => b[1] - a[1]).map(([m, n]) => `${m} ×${n}`).join('\n')); }
 

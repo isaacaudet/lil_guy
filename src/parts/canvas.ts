@@ -200,7 +200,11 @@ export class Canvas {
    */
   set(x: number, y: number, token: number): void {
     if (x > 0 && y > 0 && x < GRID_SIZE - 1 && y < GRID_SIZE - 1) this.grid[y][x] = token;
+    else if (token) this.refused++;
   }
+
+  /** Pixels `set` turned away at the border: what a part lost off the edge (`hatCut` counts them). */
+  refused = 0;
 
   /** First row the bare body covers in this column, or null. */
   topOf(x: number): number | null {

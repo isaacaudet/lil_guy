@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { animate, closeEyes, drawFrame, frameAt, toAnimatedSvg, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM } from '../animate';
-import { compose } from '../compose';
+import { buddyOf, compose } from '../compose';
+import { T } from '../parts/art';
 import { resolve } from '../resolve';
 import { dress, withItems } from '../items';
 import { paint } from '../paint';
@@ -48,6 +49,30 @@ describe('animate', () => {
     const rest = animate('luna', 'blink', { equip: ['trackdle.flag'] }).frames[0].colors;
     const s = still('luna', { equip: ['trackdle.flag'] });
     for (let y = 0; y < GRID_SIZE; y++) expect(rest[y + HEADROOM]).toEqual(s[y]);
+  });
+
+  test('a buddy stays on the floor while he moves, and off his face', () => {
+    const wrong: string[] = [];
+    for (const name of NAMES) for (const buddy of ['amountle.gemling', 'flipsies.goldfish', 'trackdle.tyres', 'weighsies.cat']) {
+      const config = dress(resolve(name), { equip: [buddy] }, name);
+      const palette = withItems(shadePalette(getPalette(config.palette), config.shade), config);
+      const spot = buddyOf(config)!, foot = new Set(spot.cells.map(([x, y]) => (y + HEADROOM) * GRID_SIZE + x));
+      const ink = new Set([palette.colors[T.EYE], palette.colors[T.MOUTH]]);
+      const s = still(name, { equip: [buddy] });
+      const rest = animate(name, 'blink', { equip: [buddy] }).frames[0].colors;
+      for (let y = 0; y < GRID_SIZE; y++) expect(rest[y + HEADROOM]).toEqual(s[y]);
+      for (const move of MOVES) for (const [k, f] of animate(name, move, { equip: [buddy], rarity: false }).frames.entries()) {
+        f.slots.forEach((row, y) => row.forEach((slot, x) => {
+          if (slot !== 4) return;
+          if (!foot.has(y * GRID_SIZE + x) || f.colors[y][x] !== s[y - HEADROOM]?.[x]) wrong.push(`${name} ${buddy} ${move} ${k}: moved at ${x},${y}`);
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            const c = f.colors[y + dy]?.[x + dx];
+            if (c && ink.has(c) && f.slots[y + dy][x + dx] === 0 && !foot.has((y + dy) * GRID_SIZE + x + dx)) wrong.push(`${name} ${buddy} ${move} ${k}: by his face at ${x},${y}`);
+          }
+        }));
+      }
+    }
+    expect([...new Set(wrong)]).toEqual([]);
   });
 
   test('a hop goes up into the headroom', () => {

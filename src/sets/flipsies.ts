@@ -1,12 +1,11 @@
-import { grid16, on, pet, type MachineSet } from '../item-art';
+import { grid16, on, pet, sit, type MachineSet } from '../item-art';
 import { stamp } from '../parts/art';
 import type { Canvas } from '../parts/canvas';
-import { seat } from '../parts/hair';
 
 /** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
 const perch = (rows: string[], sink = 1) => {
   const s = stamp(rows);
-  return (c: Canvas) => seat(c, s, c.centred(s), sink);
+  return (c: Canvas) => sit(c, s, 0, sink);
 };
 
 /**

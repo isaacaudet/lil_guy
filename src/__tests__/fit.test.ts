@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { compose } from '../compose';
+import { compose, hatCut } from '../compose';
 import { heads, eyes, mouths, hair, accessories } from '../parts';
 import { items } from '../items';
 import { T } from '../parts/art';
@@ -52,6 +52,26 @@ describe('every hat shows', () => {
       }
     }
     expect(thin).toEqual([]);
+  });
+});
+
+describe('hats are never chopped', () => {
+  test('every hat on every head and skin keeps every pixel it draws: too tall or wide for the room, it is fitted', () => {
+    const cut: string[] = [];
+    for (const b of bodies) for (const f of faces) for (const flip of [false, true]) for (const h of hats) {
+      const n = hatCut({ ...b, ...f, flip, hat: h.id });
+      if (n) cut.push(`${h.id} on ${label(b)} (${n})`);
+    }
+    expect([...new Set(cut)]).toEqual([]);
+  }, 60_000);
+  test('a hat fitted to a short room keeps its brim and its top', () => {
+    const { squeeze } = require('../item-art');
+    const { stamp } = require('../parts/art');
+    const top = stamp(['.33.', '.33.', '.33.', '4444', '1111']);
+    const fitted = squeeze(top, 2);
+    expect(fitted.length).toBe(3);
+    expect(fitted[fitted.length - 1]).toEqual(top[4]);
+    expect(fitted[fitted.length - 2]).toEqual(top[3]);
   });
 });
 
