@@ -348,17 +348,27 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.aurora', name: 'Aurora', colors: ['#E6FFF4', '#3DF2B0', '#9C7BFF'], still: 700,
+    id: 'aura.aurora', name: 'Aurora', colors: ['#F2FFF8', '#46F0B4', '#2BB59A', '#8A6BFF'], still: 700,
     cells: (mask, t, print) => {
-      // A ribbon of northern light across the top of the frame, rippling: green
-      // on top, a violet drape under it, and a bright fold travelling along.
-      const s = shape(mask), out: AuraCell[] = [], fold = wrap((t + print * 60) / steps(140, s.w + 8), s.w + 8) - 4;
+      // A curtain of northern light across the sky behind him: violet high up,
+      // green at its wavy hem, brighter and dimmer rays drifting along it, a
+      // bright fold running along the hem, and a star or two above.
+      const s = shape(mask), out: AuraCell[] = [], d = print % 2 ? 1 : -1;
+      const fold = wrap((t + print * 90) / steps(90, s.w + 10), s.w + 10) - 5;
       for (let x = 0; x < s.w; x++) {
-        const y = 2 + Math.round(Math.sin(x * 0.55 + t / wave(420) + print) * 1.4);
-        const drape = 1 + Math.round((Math.sin(x * 0.9 - t / wave(300) + print * 2) + 1) * 1.2);
-        const bright = Math.abs(x - fold) < 1.2;
-        out.push([x, y - 1, bright ? 0 : 1], [x, y, bright ? 0 : 1]);
-        for (let j = 1; j <= drape; j++) out.push([x, y + j, 2]);
+        const hem = Math.round(3.4 + Math.sin(x * 0.42 + d * t / wave(520) + print) * 1.3 + Math.sin(x * 1.1 - t / wave(330)) * 0.6);
+        const ray = Math.sin(x * 1.25 + d * t / wave(260) + print * 0.7);
+        for (let y = 0; y <= hem; y++) {
+          const up = hem - y;
+          // A dim ray leaves only its hem; a bright one runs up into violet.
+          if (ray < -0.2 && up > 1) continue;
+          const k = up === 0 ? (Math.abs(x - fold) < 1.5 ? 0 : 1) : up === 1 ? (ray > 0.5 ? 1 : 2) : up === 2 ? 2 : 3;
+          out.push([x, y, k]);
+        }
+      }
+      for (let i = 0; i < 2; i++) {
+        const x = Math.floor(noise(i, print, 41) * s.w);
+        if (Math.sin(t / wave(240) + i * 2.1) > 0.3) out.push([x, 0, 0]);
       }
       return out;
     },
@@ -415,13 +425,29 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.ripple', name: 'Ripple', colors: ['#FFFFFF', '#7FE3FF', '#2F7FD6'], still: 250,
+    id: 'aura.ripple', name: 'Ripple', colors: ['#FFFFFF', '#A6EEFF', '#4FB8F2', '#2F6FC8'], still: 250,
     cells: (mask, t, print) => {
-      // A ring of light rolls out from his outline like a ripple on a pond, fading as it goes.
-      const out: AuraCell[] = [], p = cycle(t + print * 23, 1100), d = 1 + Math.floor(p * 3);
-      for (const [x, y, dd] of ring(mask, 3)) {
-        if (dd === d) out.push([x, y, d - 1]);
-        else if (dd === d - 1 && (x + y) % 2) out.push([x, y, 2]);
+      // Rings of light spread out from him like ripples on a pond: round, two
+      // at a time, bright and pale close in and fading to deep blue as they
+      // widen, with a glint here and there catching the light.
+      const out: AuraCell[] = [], reach = 6;
+      const h = mask.length, w = mask[0].length;
+      const p = cycle(t + print * 23, 1600), rings = [p, wrap(p + 0.5, 1)].map(q => 0.8 + q * reach);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (mask[y][x]) continue;
+        let d = Infinity;
+        for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
+          if (mask[y + dy]?.[x + dx]) d = Math.min(d, Math.hypot(dx, dy));
+        }
+        for (const r of rings) {
+          if (Math.abs(d - r) > 0.5) continue;
+          const k = r < 2.2 ? 1 : r < 3.8 ? 2 : 3;
+          // The outer ring breaks up as it fades.
+          if (k === 3 && (x + y) % 2) continue;
+          // The first ring is dotted, so it reads as water leaving him rather than an outline.
+          if (r < 1.6 && (x + y + tick(t, 200)) % 2) continue;
+          out.push([x, y, k === 1 && noise(x, y, tick(t, 400)) > 0.86 ? 0 : k]);
+        }
       }
       return out;
     },
