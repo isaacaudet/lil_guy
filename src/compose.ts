@@ -166,7 +166,7 @@ function extrasOf(config: AvatarConfig, c: Canvas): { pattern: boolean; cheeks: 
   let marks = cheek.art.length > 0;
   const top = itemById(config.hat)?.slot === 'hat' || (config.hair !== 0 && !EARED.has(heads[config.head].name));
   const worn = config.accessory !== 0;
-  const small = c.bottom - c.crown + 1 <= 8, limit = small ? 1 : 2;
+  const small = c.bottom - c.crown + 1 <= 8, limit = small ? 2 : 3;
   // One quiet mark (a belly, a star, a split) doesn't crowd a full-size head: it only counts on a small one.
   const quiet = pattern && !SCATTERED.has(body) && body !== 'starry' && !small;
   const count = () => [top, worn, pattern && !quiet, marks].filter(Boolean).length;
