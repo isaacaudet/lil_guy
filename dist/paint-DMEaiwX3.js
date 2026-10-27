@@ -9927,6 +9927,7 @@ function catchlight(grid, x, y, palette) {
 	].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
 	if (!white || !near.includes(T.EYE)) return white;
 	const ink = resolveColor(palette, T.EYE);
+	if (ink && contrast(ink, "#000000") > 10) return resolveColor(palette, T.OUTLINE) ?? "#000000";
 	if (!ink || contrast(white, ink) < 3) return white;
 	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette, t) ?? "#000000") < 1.6);
 	return pale ? mix(ink, white, .6) : white;
@@ -9934,4 +9935,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems, withoutRetired };
-//# sourceMappingURL=paint-DqtHBCdx.js.map
+//# sourceMappingURL=paint-DMEaiwX3.js.map

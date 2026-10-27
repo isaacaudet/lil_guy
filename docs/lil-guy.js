@@ -9931,6 +9931,7 @@ function catchlight(grid, x, y, palette$1) {
 	].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
 	if (!white || !near.includes(T.EYE)) return white;
 	const ink = resolveColor(palette$1, T.EYE);
+	if (ink && contrast(ink, "#000000") > 10) return resolveColor(palette$1, T.OUTLINE) ?? "#000000";
 	if (!ink || contrast(white, ink) < 3) return white;
 	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette$1, t) ?? "#000000") < 1.6);
 	return pale ? mix$2(ink, white, .6) : white;

@@ -9952,6 +9952,7 @@ function catchlight(grid, x, y, palette) {
 	].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
 	if (!white || !near.includes(T.EYE)) return white;
 	const ink = resolveColor(palette, T.EYE);
+	if (ink && contrast(ink, "#000000") > 10) return resolveColor(palette, T.OUTLINE) ?? "#000000";
 	if (!ink || contrast(white, ink) < 3) return white;
 	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette, t) ?? "#000000") < 1.6);
 	return pale ? mix(ink, white, .6) : white;
@@ -10456,4 +10457,4 @@ Object.defineProperty(exports, 'withoutRetired', {
     return withoutRetired;
   }
 });
-//# sourceMappingURL=paint-AIl1gSbl.cjs.map
+//# sourceMappingURL=paint-Dp_ZbFbU.cjs.map

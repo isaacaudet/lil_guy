@@ -81,6 +81,9 @@ function catchlight(grid: PixelGrid, x: number, y: number, palette: Palette): st
   const near = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
   if (!white || !near.includes(T.EYE)) return white;
   const ink = resolveColor(palette, T.EYE);
+  // On a dark skin the eye is light, and a white shine beside it only made a pale blob: there the
+  // shine is a dark pupil, which is what tells you it's an eye.
+  if (ink && contrast(ink, '#000000') > 10) return resolveColor(palette, T.OUTLINE) ?? '#000000';
   if (!ink || contrast(white, ink) < 3) return white;
   const pale = near.some(t => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette, t) ?? '#000000') < 1.6);
   return pale ? mix(ink, white, 0.6) : white;
