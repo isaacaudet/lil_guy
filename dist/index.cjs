@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-DjM9TtWP.cjs');
+const require_paint = require('./paint-4kY1ojYb.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -1667,13 +1667,13 @@ function copyOneIn(o) {
 	const item = require_paint.itemById(o.item);
 	if (!item) return Infinity;
 	const f = require_paint.FINISHES[o.finish];
-	let p = f.aura ? require_paint.AURA_ODDS * (1 / require_paint.AURAS.length) * (f.aura / 100) : 1 / require_paint.gameItems(item.game).filter((i) => !i.free && i.slot !== "aura").length * (f.odds / 100) * (item.game === "club" ? 1 : 1 - require_paint.AURA_ODDS);
+	let p = f.aura ? require_paint.AURA_ODDS * (1 / require_paint.AURAS.length) * (f.aura / 100) : require_paint.itemWeight(item) / require_paint.gameItems(item.game).filter((i) => !i.free && i.slot !== "aura").reduce((a, i) => a + require_paint.itemWeight(i), 0) * (f.odds / 100) * (item.game === "club" ? 1 : 1 - require_paint.AURA_ODDS);
 	if (require_paint.special(o) === "Deep Blue") p *= require_paint.DEEP_BLUE_PRINTS.length / 1e3;
 	else if (require_paint.special(o)) p *= 1 / 20;
 	const [lo, hi] = f.scuffs;
 	p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
 	if (o.tally !== void 0) p *= .1;
-	if (o.fx) p *= 1 / require_paint.EFFECTS[o.fx][f.aura ? "aura" : "item"];
+	if (o.fx && o.fx !== item.signature) p *= 1 / require_paint.EFFECTS[o.fx][f.aura ? "aura" : "item"];
 	return 1 / p;
 }
 /** A guy's tiers, commonest first: each is the share of guys at least that rare. */
@@ -3344,7 +3344,14 @@ function collectorNotes(o) {
 		why: "A run in the print number.",
 		oneIn: 1e3 / 14
 	});
-	if (o.fx) {
+	const own = require_paint.itemById(o.item)?.signature;
+	if (o.fx && o.fx === own) notes.push({
+		id: "signature",
+		name: `${require_paint.EFFECTS[o.fx].name} · showpiece`,
+		why: `${require_paint.EFFECTS[o.fx].what} Every copy of this showpiece has it.`,
+		oneIn: 1
+	});
+	else if (o.fx) {
 		const e = require_paint.EFFECTS[o.fx];
 		notes.push({
 			id: "effect",
@@ -6882,6 +6889,7 @@ exports.RETIRED_EYES = require_paint.RETIRED_EYES
 exports.SHADER_FINISHES = SHADER_FINISHES
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.SHINE_FRAGMENT = SHINE_FRAGMENT
+exports.SHOWPIECE_WEIGHT = require_paint.SHOWPIECE_WEIGHT
 exports.SMALL_SIZE = require_paint.SMALL_SIZE
 exports.TAG_MAX = TAG_MAX
 exports.TIER_ICONS = TIER_ICONS
@@ -6952,6 +6960,7 @@ exports.inSeason = require_paint.inSeason
 exports.isMove = isMove
 exports.itemById = require_paint.itemById
 exports.itemFrame = itemFrame
+exports.itemWeight = require_paint.itemWeight
 exports.items = require_paint.items
 exports.lookOf = lookOf
 exports.luckyPalette = require_paint.luckyPalette

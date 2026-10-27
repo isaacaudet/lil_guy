@@ -261,7 +261,13 @@
   .mach-it canvas { image-rendering: pixelated; }
   .mach-it b { font-size: 18px; line-height: 1.2; }
   .mach-it small { font-size: 14px; color: var(--ink-3); }
-  .mach-it.have small { color: var(--green, #5fd38d); }
+  .mach-it.have small:last-child { color: var(--green, #5fd38d); }
+  .mach-it.star { grid-column: span 2; background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 26%, var(--panel-2)), var(--panel-2)); box-shadow: 0 0 0 2px var(--gold), 0 3px 0 var(--edge); }
+  .mach-it.star .pic { height: 150px; }
+  .mach-it.star b { font-size: 24px; }
+  .showp-h { color: var(--gold); }
+  .bal.showp { --b: var(--gold); color: #2a1c00; text-shadow: none; }
+  .m-star { color: var(--gold); }
   .mcard.today .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
   .mcard.today h3 { font-size: 32px; }
   .mcard .flag { position: absolute; left: 12px; top: 12px; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-d); text-shadow: var(--ts); }
@@ -1899,19 +1905,21 @@
   /** What a machine holds: every item with what you have of it, and the odds of each finish on any one of them. */
   function showInside(g) {
     const its = LG.gameItems(g).filter(x => !x.free), owned = state ? copies() : [];
-    const each = (1 - LG.AURA_ODDS) / its.length;
+    const total = its.reduce((a, x) => a + LG.itemWeight(x), 0), oneIn = x => Math.round(total / LG.itemWeight(x) / (1 - LG.AURA_ODDS));
+    const star = its.find(x => x.showpiece), plain = its.find(x => !x.showpiece);
     const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
     const set = state ? LG.setProgress(g, owned.map(c => c.o)) : null;
-    const slots = ['skin', 'hat', 'frame', 'buddy'].filter(sl => its.some(x => x.slot === sl));
+    const slots = ['showpiece', 'skin', 'hat', 'frame', 'buddy'].filter(sl => its.some(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece));
+    const inSlot = sl => its.filter(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece);
     $('mach-body').innerHTML = `<button class="close" type="button" aria-label="Close">×</button>
       <div class="mach-head"><h3 id="mach-h">${cap(g)} machine</h3>
-        <p>${its.length} items, each 1 in ${Math.round(1 / each)} capsules. ${set ? `You have ${set.got} of ${set.total}${set.complete ? ': set complete' : ''}.` : ''}</p></div>
+        <p>${its.length} items. Each is 1 in ${oneIn(plain)} capsules${star ? `, the showpiece 1 in ${oneIn(star)}` : ''}. ${set ? `You have ${set.got} of ${set.total}${set.complete ? ': set complete' : ''}.` : ''}</p></div>
       <div class="mach-fins">${order.map(f => { const fin = LG.FINISHES[f], gr = LG.GRADES[fin.grade]; return `<span style="--g:${gr.color}"><i></i>${fin.name}<b>${fin.odds >= 1 ? Math.round(fin.odds) : +fin.odds.toPrecision(2)}%</b></span>`; }).join('')}<span style="--g:${LG.GRADES[5].color}"><i></i>★ Any aura<b>${+(LG.AURA_ODDS * 100).toFixed(2)}%</b></span></div>
-      ${slots.map(sl => `<h4 class="mach-sl" style="--cat:${catOf(sl).c}">${icon(sl)}${catOf(sl).name}</h4><div class="mach-grid">${its.filter(x => x.slot === sl).map(x => {
+      ${slots.map(sl => `${sl === 'showpiece' ? `<h4 class="mach-sl showp-h">★ Showpiece</h4>` : `<h4 class="mach-sl" style="--cat:${catOf(sl).c}">${icon(sl)}${catOf(sl).name}</h4>`}<div class="mach-grid">${inSlot(sl).map(x => {
         const n = owned.filter(c => c.o.item === x.id).length;
-        return `<div class="mach-it${n ? ' have' : ''}" data-it="${x.id}"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(x.name)}</b><small>${n ? `You have ${n}` : 'Not yet'}</small></div>`;
+        return `<div class="mach-it${n ? ' have' : ''}${x.showpiece ? ' star' : ''}" data-it="${x.id}"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(x.name)}</b>${x.showpiece ? `<small>${esc(x.about || '')} Always ${esc(LG.EFFECTS[x.signature].name)}.</small>` : ''}<small>${n ? `You have ${n}` : 'Not yet'}</small></div>`;
       }).join('')}</div>`).join('')}`;
-    $('mach-body').querySelectorAll('.mach-it').forEach(el => showItem(el.querySelector('canvas'), { item: el.dataset.it, finish: 'plain', scuff: 0.2, print: 7 }, state ? state.seed : 'machine', 88, 72));
+    $('mach-body').querySelectorAll('.mach-it').forEach(el => { const x = LG.itemById(el.dataset.it); showItem(el.querySelector('canvas'), { item: x.id, finish: 'plain', scuff: 0.02, print: 7, ...(x.signature ? { fx: x.signature } : {}) }, state ? state.seed : 'machine', x.showpiece ? 160 : 88, x.showpiece ? 140 : 72); });
     $('machd').showModal();
   }
   $('machd').addEventListener('click', e => { if (e.target === $('machd') || e.target.closest('.close')) $('machd').close(); });
@@ -1921,11 +1929,11 @@
     $('odds').innerHTML = LG.GRADES.map((g, k) => `<span style="--g:${g.color}"><i></i>${g.name} <b>${odds[k] >= 1 ? odds[k].toFixed(0) : +odds[k].toFixed(2)}%</b></span>`).join('') + '<a class="odds-more" href="#/rarity">How rarity works →</a>';
     const order = [todayGame, ...LG.GAMES.filter(g => g !== todayGame)];
     $('machines').innerHTML = order.map((g, i) => {
-      const n = LG.gameItems(g).filter(it => !it.free).length;
+      const n = LG.gameItems(g).filter(it => !it.free).length, star = LG.gameItems(g).find(it => it.showpiece);
       const first = i === 0, free = first && state && state.free !== today;
       return `<div class="mwrap${first ? ' today' : ''}"><button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
+        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
@@ -2535,13 +2543,14 @@
     rush = false;
     $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
-    const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o);
+    const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o), sp = !!LG.itemById(o.item)?.showpiece;
     $('reelwrap').hidden = true;
     if (g) { await gacha(g); await reel(o, g); await holdFor(gr); $('reelwrap').hidden = true; }
     const [wonTitle, wonLook] = LG.nameOf(o).split(' | ');
-    await unveil(gr, `<div class="won-art"><div class="spin3d"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div></div>
-      <p class="won-cap"><b>${esc(wonTitle)}</b><span><span class="bal" style="--b:${grade.color}">${esc(grade.name)}</span><span class="bal" style="--b:#5d6b8a">${esc(wonLook || LG.FINISHES[o.finish].name)}</span>${o.fx ? `<span class="bal poly">${esc(LG.EFFECTS[o.fx].name)}</span>` : ''}</span></p>`,
-      (o.fx ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!'),
+    // A showpiece lands like a Mythic at least, whatever its finish.
+    await unveil(sp ? Math.max(gr, 3) : gr, `<div class="won-art"><div class="spin3d"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div></div>
+      <p class="won-cap"><b>${esc(wonTitle)}</b><span>${sp ? '<span class="bal showp">★ Showpiece</span>' : ''}<span class="bal" style="--b:${grade.color}">${esc(grade.name)}</span><span class="bal" style="--b:#5d6b8a">${esc(wonLook || LG.FINISHES[o.finish].name)}</span>${o.fx ? `<span class="bal poly">${esc(LG.EFFECTS[o.fx].name)}</span>` : ''}</span></p>`,
+      sp ? '★ SHOWPIECE ★' : (o.fx ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!'),
       LG.nameOf(o), how, false, !!g, o);
     $('rv-again').hidden = !g;
     $('rv-wear').focus();
@@ -2673,7 +2682,7 @@
       return `<div class="itw"><button class="it" type="button" data-i="${c.i}" style="--cat:${k.c};--g:${g.color}" aria-pressed="${on}" aria-label="${on ? 'Take off' : swap ? 'Swap in' : 'Wear'} ${esc(LG.nameOf(c.o))}">
         ${!on && fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
         <span class="it-pic"><canvas aria-hidden="true"></canvas></span>
-        <span class="it-cat">${icon(it.slot)}${k.one}</span><b class="${tagOf(c.code) ? 'tagged' : ''}">${esc(named(title, tagOf(c.code)))}</b><span class="it-fin">${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o)))}</span>
+        <span class="it-cat">${icon(it.slot)}${k.one}</span>${it.showpiece ? '<span class="bal showp">★ Showpiece</span>' : ''}<b class="${tagOf(c.code) ? 'tagged' : ''}">${esc(named(title, tagOf(c.code)))}</b><span class="it-fin">${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o)))}</span>
         <span class="it-wear">${esc(it.free ? 'Starter' : g.name)} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span>
         <span class="it-act">${on ? '✓ Wearing' : swap ? 'Swap in' : 'Wear'}</span></button>
         <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button></div>`;

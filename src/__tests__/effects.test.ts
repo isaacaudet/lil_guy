@@ -1,3 +1,4 @@
+import { itemById } from '../items';
 import { describe, expect, test } from 'bun:test';
 import { EFFECTS, FX_IDS, rollFx, applyFx } from '../effects';
 import { roll, encode, decode, nameOf } from '../owned';
@@ -14,7 +15,8 @@ describe('effects', () => {
     expect(count(true)).toBeCloseTo(expected(true), 3);
     expect(count(true)).toBeGreaterThan(count(false) * 4);
     let fx = 0;
-    for (let i = 0; i < 20000; i++) if (roll(`fx-${i}`, 'puttsies').fx) fx++;
+    // A showpiece always carries its own effect; the rolled ones are on everything else.
+    for (let i = 0; i < 20000; i++) { const o = roll(`fx-${i}`, 'puttsies'); if (o.fx && o.fx !== itemById(o.item)?.signature) fx++; }
     expect(fx / 20000).toBeGreaterThan(expected(false) * 0.7);
     expect(fx / 20000).toBeLessThan(expected(false) * 1.4);
   });

@@ -48,11 +48,12 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game four skins, four hats (one free), three frames and three buddies', () => {
+  it('gives every game four skins and a showpiece, four hats (one free), three frames and three buddies', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
-      const count = (slot: string) => own.filter(i => i.slot === slot).length;
+      const count = (slot: string) => own.filter(i => i.slot === slot && !i.showpiece).length;
       expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([4, 4, 3, 3]);
+      expect(own.filter(i => i.showpiece).map(i => i.slot)).toEqual(['skin']);
       // A capsule machine holds everything but the free hat: 12 to 15 items.
       expect(own.filter(i => !i.free).length).toBeGreaterThanOrEqual(12);
       expect(own.filter(i => !i.free).length).toBeLessThanOrEqual(15);
@@ -141,6 +142,8 @@ describe('skins', () => {
       for (const p of palettes) for (let shade = 0; shade < SHADE_COUNT; shade++) {
         const ink = withItems(shadePalette(p, shade), { ...BASE, skin: skin.id }).colors[T.EYE];
         for (const token of under) {
+          // The guy's own colours (a Cyborg's human half) are legible by the palette's own rules.
+          if (token < 101) continue;
           const hex = skin.colors[token - 101];
           if (contrast(ink, hex) < 3.5) wrong.push(`${skin.id} colour ${token - 100} vs ${p.name}/${shade}`);
         }

@@ -9,7 +9,7 @@ export { compose, composeBase, FOOT_STYLES, shows } from './compose';
 
 export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPalette, paletteOf } from './palette';
 export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
-export { items, itemById, gameItems, freeItem, dress, withItems, inSeason, GAMES } from './items';
+export { items, itemById, gameItems, freeItem, dress, withItems, inSeason, GAMES, SHOWPIECE_WEIGHT, itemWeight } from './items';
 export type { Item, Slot, ItemGame } from './items';
 export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
 export type { Owned, Finish, Grade } from './owned';

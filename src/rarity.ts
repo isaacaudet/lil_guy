@@ -6,7 +6,7 @@ import {
   RETIRED_EYES, withoutRetired,
 } from './parts/weights';
 import { palettes } from './palette';
-import { gameItems, itemById } from './items';
+import { gameItems, itemById, itemWeight } from './items';
 import { AURAS, AURA_ODDS } from './auras';
 import { EFFECTS } from './effects';
 import { DEEP_BLUE_PRINTS, FINISHES, special, type Owned } from './owned';
@@ -77,7 +77,7 @@ export function copyOneIn(o: Owned): number {
   const f = FINISHES[o.finish];
   // An aura comes from any capsule: this aura, in this finish.
   let p = f.aura ? AURA_ODDS * (1 / AURAS.length) * (f.aura / 100)
-    : (1 / gameItems(item.game).filter(i => !i.free && i.slot !== 'aura').length) * (f.odds / 100) * (item.game === 'club' ? 1 : 1 - AURA_ODDS);
+    : (itemWeight(item) / gameItems(item.game).filter(i => !i.free && i.slot !== 'aura').reduce((a, i) => a + itemWeight(i), 0)) * (f.odds / 100) * (item.game === 'club' ? 1 : 1 - AURA_ODDS);
 
   // The print only matters when it is one of the famous ones.
   if (special(o) === 'Deep Blue') p *= DEEP_BLUE_PRINTS.length / 1000;
@@ -88,7 +88,8 @@ export function copyOneIn(o: Owned): number {
   p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
 
   if (o.tally !== undefined) p *= 0.1;
-  if (o.fx) p *= 1 / EFFECTS[o.fx][f.aura ? 'aura' : 'item'];
+  // A showpiece always has its own effect; only a different one is the lucky roll.
+  if (o.fx && o.fx !== item.signature) p *= 1 / EFFECTS[o.fx][f.aura ? 'aura' : 'item'];
   return 1 / p;
 }
 

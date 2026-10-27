@@ -1,5 +1,6 @@
 import { FINISHES, WEAR, special, type Owned } from './owned';
 import { EFFECTS } from './effects';
+import { itemById } from './items';
 
 /**
  * What a collector looks for in a copy beyond its grade: the small facts that
@@ -48,7 +49,9 @@ export function collectorNotes(o: Owned): Note[] {
   else if ([123, 234, 345, 456, 567, 678, 789, 321, 432, 543, 654, 765, 876, 987].includes(o.print)) notes.push({ id: 'straight-print', name: `#${o.print} · Straight`, why: 'A run in the print number.', oneIn: 1000 / 14 });
 
   // An effect on top of the finish.
-  if (o.fx) { const e = EFFECTS[o.fx]; notes.push({ id: 'effect', name: e.name, why: `${e.what} An effect on top of its finish.`, oneIn: FINISHES[o.finish].aura ? e.aura : e.item }); }
+  const own = itemById(o.item)?.signature;
+  if (o.fx && o.fx === own) notes.push({ id: 'signature', name: `${EFFECTS[o.fx].name} · showpiece`, why: `${EFFECTS[o.fx].what} Every copy of this showpiece has it.`, oneIn: 1 });
+  else if (o.fx) { const e = EFFECTS[o.fx]; notes.push({ id: 'effect', name: e.name, why: `${e.what} An effect on top of its finish.`, oneIn: FINISHES[o.finish].aura ? e.aura : e.item }); }
 
   // What happened to it.
   if (o.souvenir) notes.push({ id: 'souvenir', name: 'Souvenir', why: `From the free capsule for finishing every game on ${o.souvenir}. It can never be opened again.`, oneIn: 1 });

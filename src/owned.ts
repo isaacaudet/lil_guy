@@ -1,7 +1,7 @@
 import { hash } from './hash';
 import { AURAS, AURA_ODDS } from './auras';
 import { EFFECTS, FX_IDS, rollFx, type Fx } from './effects';
-import { gameItems, freeItem, inSeason, itemById, type Item, type Slot } from './items';
+import { gameItems, freeItem, inSeason, itemById, itemWeight, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
 import type { GameId } from './types';
 
@@ -142,7 +142,7 @@ export function gradeOf(o: Owned): Grade {
 export function nameOf(o: Owned): string {
   const item = itemById(o.item);
   const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
-  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.fx ? `${EFFECTS[o.fx].name} ` : '') + (o.tally !== undefined ? 'Tallied ' : '');
+  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : '') + (o.tally !== undefined ? 'Tallied ' : '');
   if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === 'classic' ? '' : ` | ${FINISHES[o.finish].name}`}`;
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
@@ -248,7 +248,12 @@ export function rollSeason(seed: string, day: string): Owned | null {
 }
 
 function rollFrom(pool: Item[], seed: string): Owned {
-  const item = pool[hash(`${seed}|item`) % pool.length];
+  // A plain pool draws evenly as it always has; one with a showpiece weighs it lighter.
+  let item = pool[hash(`${seed}|item`) % pool.length];
+  if (pool.some(i => i.showpiece)) {
+    let r = unit(`${seed}|item`) * pool.reduce((a, i) => a + itemWeight(i), 0);
+    item = pool.find(i => (r -= itemWeight(i)) < 0) ?? pool[pool.length - 1];
+  }
 
   let r = unit(`${seed}|finish`) * 100;
   let finish: Finish = 'plain';
@@ -262,7 +267,7 @@ function rollFrom(pool: Item[], seed: string): Owned {
   const print = hash(`${seed}|pattern`) % 1000;
   const o: Owned = { item: item.id, finish, scuff, print };
   if (unit(`${seed}|stattrak`) < 0.1) o.tally = 0;
-  const fx = rollFx(unit(`${seed}|fx`), false);
+  const fx = rollFx(unit(`${seed}|fx`), false) ?? item.signature;
   if (fx) o.fx = fx;
   return o;
 }

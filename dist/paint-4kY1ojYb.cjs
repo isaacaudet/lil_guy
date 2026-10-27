@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -3830,7 +3855,7 @@ function gradeOf(o) {
 function nameOf(o) {
 	const item = itemById(o.item);
 	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
-	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Tallied " : "");
+	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Tallied " : "");
 	if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
 	if (o.finish === "plain") return tally + base;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
@@ -3944,7 +3969,11 @@ function rollSeason(seed, day) {
 	};
 }
 function rollFrom(pool, seed) {
-	const item = pool[hash(`${seed}|item`) % pool.length];
+	let item = pool[hash(`${seed}|item`) % pool.length];
+	if (pool.some((i) => i.showpiece)) {
+		let r$1 = unit(`${seed}|item`) * pool.reduce((a, i) => a + itemWeight(i), 0);
+		item = pool.find((i) => (r$1 -= itemWeight(i)) < 0) ?? pool[pool.length - 1];
+	}
 	let r = unit(`${seed}|finish`) * 100;
 	let finish = "plain";
 	for (const [id, f] of Object.entries(FINISHES)) {
@@ -3964,7 +3993,7 @@ function rollFrom(pool, seed) {
 		print
 	};
 	if (unit(`${seed}|stattrak`) < .1) o.tally = 0;
-	const fx = rollFx(unit(`${seed}|fx`), false);
+	const fx = rollFx(unit(`${seed}|fx`), false) ?? item.signature;
 	if (fx) o.fx = fx;
 	return o;
 }
@@ -7201,9 +7230,368 @@ function inSeason(day) {
 	const md = (typeof day === "string" ? day : day.toISOString()).slice(5, 10);
 	return items.filter((i) => i.season && (i.season.from <= i.season.to ? md >= i.season.from && md <= i.season.to : md >= i.season.from || md <= i.season.to));
 }
+/**
+* One per machine: a whole new character, drawn bigger and bolder than the
+* rest, rarer than any other item in its machine (`SHOWPIECE_WEIGHT`), and
+* every copy moves with its own effect (`signature`).
+*/
+const showpieces = [
+	{
+		id: "amountle.dragon",
+		game: "amountle",
+		name: "Dragon",
+		eyes: 8,
+		limb: 2,
+		showpiece: true,
+		signature: "lava",
+		about: "Guards the jar.",
+		colors: [
+			"#3BB273",
+			"#25814F",
+			"#86E3AE",
+			"#FFE29A",
+			"#FFF6DC",
+			"#9B6BE0",
+			"#6A44B0",
+			"#E8C25A",
+			"#FF8A3D"
+		],
+		outline: "#123F27",
+		art: grid16("dragon", [
+			"................",
+			"....5......5....",
+			"....55....55....",
+			".....311112.....",
+			".66.31111112.66.",
+			".67311111111276.",
+			".66311111111266.",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...3114444112...",
+			"...3144444412.2.",
+			"....24444442.22.",
+			".....222222.....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "stackdle.robot",
+		game: "stackdle",
+		name: "Robot",
+		eyes: 8,
+		limb: 2,
+		showpiece: true,
+		signature: "electric",
+		about: "Built one block at a time.",
+		colors: [
+			"#B8C4D6",
+			"#7C8AA3",
+			"#E6EEF8",
+			"#FF4D5E",
+			"#4FD1FF",
+			"#FFD447",
+			"#3A4258",
+			"#FFFFFF"
+		],
+		outline: "#2A3044",
+		art: grid16("robot", [
+			"................",
+			".......4........",
+			".......7........",
+			"...3333333332...",
+			"..731111111127..",
+			"..731111111127..",
+			"..731111111127..",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...2222222222...",
+			"...2575645752...",
+			"...2222222222...",
+			"....77....77....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "flipsies.shark",
+		game: "flipsies",
+		name: "Shark",
+		eyes: 8,
+		limb: 2,
+		showpiece: true,
+		signature: "bubbles",
+		about: "Lands every flip.",
+		colors: [
+			"#5B8DB8",
+			"#3E6A91",
+			"#9CC4E4",
+			"#F2F7FB",
+			"#2E5272",
+			"#D7E6F2"
+		],
+		outline: "#1B3550",
+		art: grid16("shark", [
+			"................",
+			".......5........",
+			"......55........",
+			".....355........",
+			"....31111112....",
+			"...3111111112...",
+			"...3111111112...",
+			"..53111111112...",
+			"..53111111112...",
+			"...3144444412...",
+			".2231444444125..",
+			".22.24444442.55.",
+			".....244442.....",
+			"......2222......",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "weighsies.knight",
+		game: "weighsies",
+		name: "Knight",
+		eyes: 8,
+		limb: 2,
+		showpiece: true,
+		signature: "shimmer",
+		about: "Armour weighs a ton.",
+		colors: [
+			"#C9D3E0",
+			"#8A97AB",
+			"#F2F6FB",
+			"#E5484D",
+			"#A82E33",
+			"#FFE6CC",
+			"#FFC93C",
+			"#3A4258"
+		],
+		outline: "#272D3D",
+		art: grid16("knight", [
+			"................",
+			".......44.......",
+			"......4554......",
+			"....33171112....",
+			"...3111711112...",
+			"..311117111112..",
+			"..316666666612..",
+			"..316666666612..",
+			"..316666666612..",
+			"..316666666612..",
+			"..311666666112..",
+			"..311666666112..",
+			"...2777777772...",
+			"....22222222....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "tiltsies.astronaut",
+		game: "tiltsies",
+		name: "Astronaut",
+		eyes: 8,
+		limb: 1,
+		showpiece: true,
+		signature: "starlight",
+		about: "Rolls in zero gravity.",
+		colors: [
+			"#F4F6FA",
+			"#C3CAD6",
+			"#FFFFFF",
+			"#CFEAFF",
+			"#7FB8E8",
+			"#FF8A3D",
+			"#3A4258",
+			"#E5484D",
+			"#3A6FE0"
+		],
+		outline: "#2B3346",
+		art: grid16("astronaut", [
+			"................",
+			".......8........",
+			".......7........",
+			"....33111112....",
+			"...3155555512...",
+			"..315444444512..",
+			"..354344444451..",
+			"..354444444451..",
+			"..354444444451..",
+			"..354444444451..",
+			"..315444444512..",
+			"..611544445116..",
+			"..611191111116..",
+			"....22222222....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "trackdle.rocket",
+		game: "trackdle",
+		name: "Rocket",
+		eyes: 9,
+		showpiece: true,
+		signature: "embers",
+		about: "Fastest lap ever.",
+		colors: [
+			"#F4F6FA",
+			"#C3CAD6",
+			"#FFFFFF",
+			"#E5484D",
+			"#A82E33",
+			"#FF8A3D",
+			"#FFD447",
+			"#3A6FE0",
+			"#FFF3B0"
+		],
+		outline: "#3A1418",
+		art: grid16("rocket", [
+			"................",
+			".......44.......",
+			"......4445......",
+			".....444445.....",
+			"....31111112....",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			".4.3111111112.5.",
+			".443111111112.5.",
+			".44.31111112..5.",
+			".....676676.....",
+			"......6766......",
+			"................"
+		])
+	},
+	{
+		id: "puttsies.ufo",
+		game: "puttsies",
+		name: "UFO",
+		eyes: 7,
+		showpiece: true,
+		signature: "neon",
+		about: "Hole in one, from orbit.",
+		colors: [
+			"#C9F7EA",
+			"#8ED9C6",
+			"#FFFFFF",
+			"#A9B4C8",
+			"#6E7A93",
+			"#E6ECF5",
+			"#FFD447",
+			"#FF7AA8",
+			"#6BE07B"
+		],
+		outline: "#283147",
+		art: grid16("ufo", [
+			"................",
+			"................",
+			".....311112.....",
+			"....31111112....",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"..611111111116..",
+			".66666666666665.",
+			".47448449447445.",
+			".55555555555555.",
+			"...5........5...",
+			"................",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "cutsies.ninja",
+		game: "cutsies",
+		name: "Ninja",
+		eyes: 9,
+		limb: 4,
+		showpiece: true,
+		signature: "static",
+		about: "Slices before you see it.",
+		colors: [
+			"#FFE0C2",
+			"#1A1B2C",
+			"#4A4E6E",
+			"#2B2D42",
+			"#E5484D",
+			"#A82E33",
+			"#C9D3E0"
+		],
+		outline: "#0E0F1A",
+		art: grid16("ninja", [
+			"................",
+			"................",
+			".....344442.....",
+			"....34444442....",
+			"...5555555555...",
+			"...666666666656.",
+			"...344444444265.",
+			"...3111111112.6.",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...3411111142...",
+			"...3474444442...",
+			"....22222222....",
+			"................",
+			"................"
+		])
+	},
+	{
+		id: "halfsies.cyborg",
+		game: "halfsies",
+		name: "Cyborg",
+		eyes: 8,
+		limb: 2,
+		showpiece: true,
+		signature: "holo",
+		about: "Half of you, upgraded.",
+		colors: [
+			"#B8C4D6",
+			"#7C8AA3",
+			"#E6EEF8",
+			"#4FD1FF",
+			"#FF4D5E",
+			"#FF4D5E"
+		],
+		outline: "#2A3044",
+		art: grid16("cyborg", [
+			"................",
+			"................",
+			"................",
+			".....hh#3311....",
+			"....h###31111...",
+			"...h####3116122.",
+			"...#####31111...",
+			"...#####31111...",
+			"...#####31111...",
+			"...#####31111...",
+			"...s####31111...",
+			"...s####311612..",
+			"....ss##31112...",
+			".....sss2222....",
+			"................",
+			"................"
+		])
+	}
+];
 /** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
 const items = [
 	...skins.map((i) => ({
+		...i,
+		slot: "skin"
+	})),
+	...showpieces.map((i) => ({
 		...i,
 		slot: "skin"
 	})),
@@ -7246,6 +7634,10 @@ const GAMES = [
 	"tiltsies",
 	"trackdle"
 ];
+/** How often a showpiece comes out of its machine, against 1 for every other item. */
+const SHOWPIECE_WEIGHT = .5;
+/** An item's weight in its machine's draw. */
+const itemWeight = (item) => item.showpiece ? SHOWPIECE_WEIGHT : 1;
 /** A game's items. */
 function gameItems(game) {
 	return items.filter((i) => i.game === game);
@@ -10030,5 +10422,562 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-D9fE5DYw.js.map
+Object.defineProperty(exports, 'AURAS', {
+  enumerable: true,
+  get: function () {
+    return AURAS;
+  }
+});
+Object.defineProperty(exports, 'AURA_ODDS', {
+  enumerable: true,
+  get: function () {
+    return AURA_ODDS;
+  }
+});
+Object.defineProperty(exports, 'DEAL_PREFIX', {
+  enumerable: true,
+  get: function () {
+    return DEAL_PREFIX;
+  }
+});
+Object.defineProperty(exports, 'DEEP_BLUE_PRINTS', {
+  enumerable: true,
+  get: function () {
+    return DEEP_BLUE_PRINTS;
+  }
+});
+Object.defineProperty(exports, 'EFFECTS', {
+  enumerable: true,
+  get: function () {
+    return EFFECTS;
+  }
+});
+Object.defineProperty(exports, 'FINISHES', {
+  enumerable: true,
+  get: function () {
+    return FINISHES;
+  }
+});
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'FX_IDS', {
+  enumerable: true,
+  get: function () {
+    return FX_IDS;
+  }
+});
+Object.defineProperty(exports, 'GAMES', {
+  enumerable: true,
+  get: function () {
+    return GAMES;
+  }
+});
+Object.defineProperty(exports, 'GOLD_RIM_DAYS', {
+  enumerable: true,
+  get: function () {
+    return GOLD_RIM_DAYS;
+  }
+});
+Object.defineProperty(exports, 'GRADES', {
+  enumerable: true,
+  get: function () {
+    return GRADES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'LAYER', {
+  enumerable: true,
+  get: function () {
+    return LAYER;
+  }
+});
+Object.defineProperty(exports, 'LOOP_MS', {
+  enumerable: true,
+  get: function () {
+    return LOOP_MS;
+  }
+});
+Object.defineProperty(exports, 'LUCKY_ODDS', {
+  enumerable: true,
+  get: function () {
+    return LUCKY_ODDS;
+  }
+});
+Object.defineProperty(exports, 'MAX_PINS', {
+  enumerable: true,
+  get: function () {
+    return MAX_PINS;
+  }
+});
+Object.defineProperty(exports, 'ONE_OF_ONE_AURAS', {
+  enumerable: true,
+  get: function () {
+    return ONE_OF_ONE_AURAS;
+  }
+});
+Object.defineProperty(exports, 'PINS', {
+  enumerable: true,
+  get: function () {
+    return PINS;
+  }
+});
+Object.defineProperty(exports, 'RETIRED_EYES', {
+  enumerable: true,
+  get: function () {
+    return RETIRED_EYES;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, 'SHOWPIECE_WEIGHT', {
+  enumerable: true,
+  get: function () {
+    return SHOWPIECE_WEIGHT;
+  }
+});
+Object.defineProperty(exports, 'SMALL_SIZE', {
+  enumerable: true,
+  get: function () {
+    return SMALL_SIZE;
+  }
+});
+Object.defineProperty(exports, 'T', {
+  enumerable: true,
+  get: function () {
+    return T;
+  }
+});
+Object.defineProperty(exports, 'WEAR', {
+  enumerable: true,
+  get: function () {
+    return WEAR;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'accessoryWeights', {
+  enumerable: true,
+  get: function () {
+    return accessoryWeights;
+  }
+});
+Object.defineProperty(exports, 'applyFx', {
+  enumerable: true,
+  get: function () {
+    return applyFx;
+  }
+});
+Object.defineProperty(exports, 'armWeights', {
+  enumerable: true,
+  get: function () {
+    return armWeights;
+  }
+});
+Object.defineProperty(exports, 'auraById', {
+  enumerable: true,
+  get: function () {
+    return auraById;
+  }
+});
+Object.defineProperty(exports, 'auraCells', {
+  enumerable: true,
+  get: function () {
+    return auraCells;
+  }
+});
+Object.defineProperty(exports, 'auraColor', {
+  enumerable: true,
+  get: function () {
+    return auraColor;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'bodyWeights', {
+  enumerable: true,
+  get: function () {
+    return bodyWeights;
+  }
+});
+Object.defineProperty(exports, 'cheekWeights', {
+  enumerable: true,
+  get: function () {
+    return cheekWeights;
+  }
+});
+Object.defineProperty(exports, 'cheeks', {
+  enumerable: true,
+  get: function () {
+    return cheeks;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'cycle', {
+  enumerable: true,
+  get: function () {
+    return cycle;
+  }
+});
+Object.defineProperty(exports, 'dealOf', {
+  enumerable: true,
+  get: function () {
+    return dealOf;
+  }
+});
+Object.defineProperty(exports, 'decode', {
+  enumerable: true,
+  get: function () {
+    return decode;
+  }
+});
+Object.defineProperty(exports, 'dress', {
+  enumerable: true,
+  get: function () {
+    return dress;
+  }
+});
+Object.defineProperty(exports, 'encode', {
+  enumerable: true,
+  get: function () {
+    return encode;
+  }
+});
+Object.defineProperty(exports, 'eyeWeights', {
+  enumerable: true,
+  get: function () {
+    return eyeWeights;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'faceOf', {
+  enumerable: true,
+  get: function () {
+    return faceOf;
+  }
+});
+Object.defineProperty(exports, 'fit', {
+  enumerable: true,
+  get: function () {
+    return fit;
+  }
+});
+Object.defineProperty(exports, 'fitLoop', {
+  enumerable: true,
+  get: function () {
+    return fitLoop;
+  }
+});
+Object.defineProperty(exports, 'footWeights', {
+  enumerable: true,
+  get: function () {
+    return footWeights;
+  }
+});
+Object.defineProperty(exports, 'freeItem', {
+  enumerable: true,
+  get: function () {
+    return freeItem;
+  }
+});
+Object.defineProperty(exports, 'fxColor', {
+  enumerable: true,
+  get: function () {
+    return fxColor;
+  }
+});
+Object.defineProperty(exports, 'gameItems', {
+  enumerable: true,
+  get: function () {
+    return gameItems;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'gradeOf', {
+  enumerable: true,
+  get: function () {
+    return gradeOf;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hairWeights', {
+  enumerable: true,
+  get: function () {
+    return hairWeights;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'headWeights', {
+  enumerable: true,
+  get: function () {
+    return headWeights;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'inSeason', {
+  enumerable: true,
+  get: function () {
+    return inSeason;
+  }
+});
+Object.defineProperty(exports, 'itemById', {
+  enumerable: true,
+  get: function () {
+    return itemById;
+  }
+});
+Object.defineProperty(exports, 'itemWeight', {
+  enumerable: true,
+  get: function () {
+    return itemWeight;
+  }
+});
+Object.defineProperty(exports, 'items', {
+  enumerable: true,
+  get: function () {
+    return items;
+  }
+});
+Object.defineProperty(exports, 'luckyPalette', {
+  enumerable: true,
+  get: function () {
+    return luckyPalette;
+  }
+});
+Object.defineProperty(exports, 'mouthWeights', {
+  enumerable: true,
+  get: function () {
+    return mouthWeights;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'nameOf', {
+  enumerable: true,
+  get: function () {
+    return nameOf;
+  }
+});
+Object.defineProperty(exports, 'nebulaPhase', {
+  enumerable: true,
+  get: function () {
+    return nebulaPhase;
+  }
+});
+Object.defineProperty(exports, 'paint', {
+  enumerable: true,
+  get: function () {
+    return paint;
+  }
+});
+Object.defineProperty(exports, 'paletteOf', {
+  enumerable: true,
+  get: function () {
+    return paletteOf;
+  }
+});
+Object.defineProperty(exports, 'paletteWeights', {
+  enumerable: true,
+  get: function () {
+    return paletteWeights;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'pinById', {
+  enumerable: true,
+  get: function () {
+    return pinById;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'roll', {
+  enumerable: true,
+  get: function () {
+    return roll;
+  }
+});
+Object.defineProperty(exports, 'rollFx', {
+  enumerable: true,
+  get: function () {
+    return rollFx;
+  }
+});
+Object.defineProperty(exports, 'rollSeason', {
+  enumerable: true,
+  get: function () {
+    return rollSeason;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+Object.defineProperty(exports, 'shadeWeights', {
+  enumerable: true,
+  get: function () {
+    return shadeWeights;
+  }
+});
+Object.defineProperty(exports, 'shows', {
+  enumerable: true,
+  get: function () {
+    return shows;
+  }
+});
+Object.defineProperty(exports, 'slotOf', {
+  enumerable: true,
+  get: function () {
+    return slotOf;
+  }
+});
+Object.defineProperty(exports, 'special', {
+  enumerable: true,
+  get: function () {
+    return special;
+  }
+});
+Object.defineProperty(exports, 'starter', {
+  enumerable: true,
+  get: function () {
+    return starter;
+  }
+});
+Object.defineProperty(exports, 'steps', {
+  enumerable: true,
+  get: function () {
+    return steps;
+  }
+});
+Object.defineProperty(exports, 'tallyMarks', {
+  enumerable: true,
+  get: function () {
+    return tallyMarks;
+  }
+});
+Object.defineProperty(exports, 'temperTint', {
+  enumerable: true,
+  get: function () {
+    return temperTint;
+  }
+});
+Object.defineProperty(exports, 'wave', {
+  enumerable: true,
+  get: function () {
+    return wave;
+  }
+});
+Object.defineProperty(exports, 'wearOf', {
+  enumerable: true,
+  get: function () {
+    return wearOf;
+  }
+});
+Object.defineProperty(exports, 'withItems', {
+  enumerable: true,
+  get: function () {
+    return withItems;
+  }
+});
+Object.defineProperty(exports, 'withoutRetired', {
+  enumerable: true,
+  get: function () {
+    return withoutRetired;
+  }
+});
+Object.defineProperty(exports, 'wrap', {
+  enumerable: true,
+  get: function () {
+    return wrap$1;
+  }
+});
+//# sourceMappingURL=paint-4kY1ojYb.cjs.map

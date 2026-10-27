@@ -3,6 +3,7 @@ import type { Canvas } from './parts/canvas';
 import { capRows, mirror, seat } from './parts/hair';
 import { decode, starter } from './owned';
 import { AURAS, ONE_OF_ONE_AURAS } from './auras';
+import type { Fx } from './effects';
 import type { AvatarConfig, GameId, Palette, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -58,6 +59,10 @@ export interface Item {
   draw?: (c: Canvas) => void;
   /** Frames: which of the item's colours fills a background cell. */
   fill?: (x: number, y: number) => number;
+  /** A machine's showpiece: its standout item, rarer than the rest. */
+  showpiece?: boolean;
+  /** A showpiece's own effect: every copy of it moves this way. */
+  signature?: Fx;
   /** Seasonal items: the days of the year they drop, as `MM-DD`, inclusive. */
   season?: { from: string; to: string };
 }
@@ -1953,9 +1958,236 @@ export function inSeason(day: string | Date): Item[] {
     : md >= i.season.from || md <= i.season.to));
 }
 
+// ---------------------------------------------------------------- showpieces
+
+/**
+ * One per machine: a whole new character, drawn bigger and bolder than the
+ * rest, rarer than any other item in its machine (`SHOWPIECE_WEIGHT`), and
+ * every copy moves with its own effect (`signature`).
+ */
+const showpieces: Omit<Item, 'slot'>[] = [
+  {
+    id: 'amountle.dragon', game: 'amountle', name: 'Dragon', eyes: 8, limb: 2, showpiece: true, signature: 'lava',
+    about: 'Guards the jar.',
+    colors: ['#3BB273', '#25814F', '#86E3AE', '#FFE29A', '#FFF6DC', '#9B6BE0', '#6A44B0', '#E8C25A', '#FF8A3D'],
+    outline: '#123F27',
+    art: grid16('dragon', [
+      '................',
+      '....5......5....',
+      '....55....55....',
+      '.....311112.....',
+      '.66.31111112.66.',
+      '.67311111111276.',
+      '.66311111111266.',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3114444112...',
+      '...3144444412.2.',
+      '....24444442.22.',
+      '.....222222.....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'stackdle.robot', game: 'stackdle', name: 'Robot', eyes: 8, limb: 2, showpiece: true, signature: 'electric',
+    about: 'Built one block at a time.',
+    colors: ['#B8C4D6', '#7C8AA3', '#E6EEF8', '#FF4D5E', '#4FD1FF', '#FFD447', '#3A4258', '#FFFFFF'],
+    outline: '#2A3044',
+    art: grid16('robot', [
+      '................',
+      '.......4........',
+      '.......7........',
+      '...3333333332...',
+      '..731111111127..',
+      '..731111111127..',
+      '..731111111127..',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...2222222222...',
+      '...2575645752...',
+      '...2222222222...',
+      '....77....77....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'flipsies.shark', game: 'flipsies', name: 'Shark', eyes: 8, limb: 2, showpiece: true, signature: 'bubbles',
+    about: 'Lands every flip.',
+    colors: ['#5B8DB8', '#3E6A91', '#9CC4E4', '#F2F7FB', '#2E5272', '#D7E6F2'],
+    outline: '#1B3550',
+    art: grid16('shark', [
+      '................',
+      '.......5........',
+      '......55........',
+      '.....355........',
+      '....31111112....',
+      '...3111111112...',
+      '...3111111112...',
+      '..53111111112...',
+      '..53111111112...',
+      '...3144444412...',
+      '.2231444444125..',
+      '.22.24444442.55.',
+      '.....244442.....',
+      '......2222......',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'weighsies.knight', game: 'weighsies', name: 'Knight', eyes: 8, limb: 2, showpiece: true, signature: 'shimmer',
+    about: 'Armour weighs a ton.',
+    colors: ['#C9D3E0', '#8A97AB', '#F2F6FB', '#E5484D', '#A82E33', '#FFE6CC', '#FFC93C', '#3A4258'],
+    outline: '#272D3D',
+    art: grid16('knight', [
+      '................',
+      '.......44.......',
+      '......4554......',
+      '....33171112....',
+      '...3111711112...',
+      '..311117111112..',
+      '..316666666612..',
+      '..316666666612..',
+      '..316666666612..',
+      '..316666666612..',
+      '..311666666112..',
+      '..311666666112..',
+      '...2777777772...',
+      '....22222222....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'tiltsies.astronaut', game: 'tiltsies', name: 'Astronaut', eyes: 8, limb: 1, showpiece: true, signature: 'starlight',
+    about: 'Rolls in zero gravity.',
+    colors: ['#F4F6FA', '#C3CAD6', '#FFFFFF', '#CFEAFF', '#7FB8E8', '#FF8A3D', '#3A4258', '#E5484D', '#3A6FE0'],
+    outline: '#2B3346',
+    art: grid16('astronaut', [
+      '................',
+      '.......8........',
+      '.......7........',
+      '....33111112....',
+      '...3155555512...',
+      '..315444444512..',
+      '..354344444451..',
+      '..354444444451..',
+      '..354444444451..',
+      '..354444444451..',
+      '..315444444512..',
+      '..611544445116..',
+      '..611191111116..',
+      '....22222222....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'trackdle.rocket', game: 'trackdle', name: 'Rocket', eyes: 9, showpiece: true, signature: 'embers',
+    about: 'Fastest lap ever.',
+    colors: ['#F4F6FA', '#C3CAD6', '#FFFFFF', '#E5484D', '#A82E33', '#FF8A3D', '#FFD447', '#3A6FE0', '#FFF3B0'],
+    outline: '#3A1418',
+    art: grid16('rocket', [
+      '................',
+      '.......44.......',
+      '......4445......',
+      '.....444445.....',
+      '....31111112....',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '.4.3111111112.5.',
+      '.443111111112.5.',
+      '.44.31111112..5.',
+      '.....676676.....',
+      '......6766......',
+      '................',
+    ]),
+  },
+  {
+    id: 'puttsies.ufo', game: 'puttsies', name: 'UFO', eyes: 7, showpiece: true, signature: 'neon',
+    about: 'Hole in one, from orbit.',
+    colors: ['#C9F7EA', '#8ED9C6', '#FFFFFF', '#A9B4C8', '#6E7A93', '#E6ECF5', '#FFD447', '#FF7AA8', '#6BE07B'],
+    outline: '#283147',
+    art: grid16('ufo', [
+      '................',
+      '................',
+      '.....311112.....',
+      '....31111112....',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '..611111111116..',
+      '.66666666666665.',
+      '.47448449447445.',
+      '.55555555555555.',
+      '...5........5...',
+      '................',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'cutsies.ninja', game: 'cutsies', name: 'Ninja', eyes: 9, limb: 4, showpiece: true, signature: 'static',
+    about: 'Slices before you see it.',
+    colors: ['#FFE0C2', '#1A1B2C', '#4A4E6E', '#2B2D42', '#E5484D', '#A82E33', '#C9D3E0'],
+    outline: '#0E0F1A',
+    art: grid16('ninja', [
+      '................',
+      '................',
+      '.....344442.....',
+      '....34444442....',
+      '...5555555555...',
+      '...666666666656.',
+      '...344444444265.',
+      '...3111111112.6.',
+      '...3111111112...',
+      '...3111111112...',
+      '...3111111112...',
+      '...3411111142...',
+      '...3474444442...',
+      '....22222222....',
+      '................',
+      '................',
+    ]),
+  },
+  {
+    id: 'halfsies.cyborg', game: 'halfsies', name: 'Cyborg', eyes: 8, limb: 2, showpiece: true, signature: 'holo',
+    about: 'Half of you, upgraded.',
+    colors: ['#B8C4D6', '#7C8AA3', '#E6EEF8', '#4FD1FF', '#FF4D5E', '#FF4D5E'],
+    outline: '#2A3044',
+    art: grid16('cyborg', [
+      '................',
+      '................',
+      '................',
+      '.....hh#3311....',
+      '....h###31111...',
+      '...h####3116122.',
+      '...#####31111...',
+      '...#####31111...',
+      '...#####31111...',
+      '...#####31111...',
+      '...s####31111...',
+      '...s####311612..',
+      '....ss##31112...',
+      '.....sss2222....',
+      '................',
+      '................',
+    ]),
+  },
+];
+
 /** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
 export const items: Item[] = [
   ...skins.map(i => ({ ...i, slot: 'skin' as const })),
+  ...showpieces.map(i => ({ ...i, slot: 'skin' as const })),
   ...hats.map(i => ({ ...i, slot: 'hat' as const })),
   ...frames.map(i => ({ ...i, slot: 'frame' as const })),
   ...buddies.map(i => ({ ...i, slot: 'buddy' as const })),
@@ -1974,6 +2206,12 @@ export const GAMES: GameId[] = [
   'amountle', 'halfsies', 'stackdle', 'flipsies', 'puttsies',
   'weighsies', 'cutsies', 'tiltsies', 'trackdle',
 ];
+
+/** How often a showpiece comes out of its machine, against 1 for every other item. */
+export const SHOWPIECE_WEIGHT = 0.5;
+
+/** An item's weight in its machine's draw. */
+export const itemWeight = (item: Item): number => (item.showpiece ? SHOWPIECE_WEIGHT : 1);
 
 /** A game's items. */
 export function gameItems(game: ItemGame): Item[] {

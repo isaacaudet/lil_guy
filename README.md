@@ -381,7 +381,7 @@ recognisable everywhere.
 | Tiltsies | Hamster ball, Hamster, Marble, Acorn | Hamster ears, Hamster buddy, Sunflower seed, Hamster wheel | Toy maze, Spiral, Wood shavings | Hamlet, Rolly, Sunflower |
 | Trackdle | Racer, Traffic cone, Stopwatch, Tyre | Pit cap, Race helmet, Trophy, Race goggles | Checkered flag, Tarmac, Kerb | Turbo snail, Conelet, Go-kart |
 
-A **skin** turns the guy into the game's object and keeps its face.
+A **skin** turns the guy into the game's object and keeps its face. Each machine also holds one **showpiece** (`showpiece: true`): a whole new character (a dragon, a robot, a rocket…), coming out at half an ordinary item's weight (`SHOWPIECE_WEIGHT`), every copy moving with its own effect (`signature`), which is neither in its name nor its odds.
 
 **Buddies.** Each game has three buddies, tiny pets that sit at the guy's
 feet, bottom right, in front of everything, with their own outline. Equip one
