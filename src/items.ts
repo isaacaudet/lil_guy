@@ -936,64 +936,67 @@ const skins: Omit<Item, 'slot'>[] = [
 const hats: Omit<Item, 'slot'>[] = [
   // Amountle
   {
-    id: 'amountle.gem', game: 'amountle', name: 'Gem', free: true, colors: ['#E3E7EE', '#9AA3B2'],
+    id: 'amountle.gem', game: 'amountle', name: 'Gem band', free: true, colors: ['#E3E7EE', '#9AA3B2', '#FFFFFF'],
     draw: on([
-      '..waaA..',
-      '.waaaaA.',
-      '..aaAA..',
-      '121aA121',
-    ]),
+      '...wwaA...',
+      '..wwaaaA..',
+      '.waaaaaaA.',
+      '...aaAA...',
+      '3121aA1212',
+    ], 0, 2),
   },
   {
-    id: 'amountle.crown', game: 'amountle', name: 'Gem crown', 
-    colors: ['#FFD25A', '#E0A62E', '#3FD1C1', '#A6F4EA'],
+    id: 'amountle.crown', game: 'amountle', name: 'Jewelled crown',
+    colors: ['#FFD25A', '#D99A1E', '#3FD1C1', '#A6F4EA', '#E5484D', '#FFF1B0', '#FF9EA1'],
     draw: on([
-      '1...4...1',
-      '11.141.11',
-      '111111111',
-      '134313431',
-      '222222222',
+      '6....7....6',
+      '1...656...2',
+      '16.61112.12',
+      '64311511432',
+      '22222222222',
     ], 0, 2),
   },
   // Halfsies
   {
-    id: 'halfsies.bowl', game: 'halfsies', name: 'Half pot', free: true, colors: [],
+    id: 'halfsies.bowl', game: 'halfsies', name: 'Bandana', free: true, colors: [],
     draw: on([
-      '....AA....',
-      '..xaaaaA..',
-      '.xaaaaaaA.',
-      'AAAAAAAAAA',
-    ]),
+      '...waaaA....',
+      '..waawaaA.aA',
+      '.waaaaawaAA.',
+      'waawaaaawaAA',
+    ], 0, 2),
   },
   {
-    id: 'halfsies.scale', game: 'halfsies', name: 'Scale dish', 
-    colors: ['#FFFFFF', '#D9DEE6', '#2B2F38', '#7DF0A0'],
+    id: 'halfsies.scale', game: 'halfsies', name: 'Hatchling',
+    colors: ['#FFF6E6', '#DCC8A6', '#FFFFFF', '#B08A5A', '#FFF1A0', '#FFD23A', '#2A1B10', '#FF8A2B', '#E0A010'],
     draw: on([
-      '...11...',
-      '.211112.',
-      '21111112',
-      '33433433',
-    ]),
+      '...5669...',
+      '...67698..',
+      '3.319191.2',
+      '3141111412',
+      '.21122112.',
+    ], 0, 2),
   },
   // Stackdle
   {
-    id: 'stackdle.cube', game: 'stackdle', name: 'Little block', free: true, colors: [],
+    id: 'stackdle.cube', game: 'stackdle', name: 'Brick cap', free: true, colors: [],
     draw: on([
-      '.xA..xA.',
-      'xaaaaaaA',
-      'aaaaaaaA',
-      'AAAAAAAA',
-    ]),
+      '.wA..wA..wA.',
+      'waaaaaaaaaaA',
+      'aaaaaaaaaaaA',
+      'aaaaaaaaaaAA',
+      'AAAAAAAAAAAA',
+    ], 0, 2),
   },
   {
-    id: 'stackdle.tower', game: 'stackdle', name: 'Tower',
-    colors: ['#FF8FB1', '#E0628A', '#FFB03B', '#E58A1F', '#6FA8FF', '#4A84E0'],
+    id: 'stackdle.tower', game: 'stackdle', name: 'Block tower',
+    colors: ['#FF8FB1', '#D9557F', '#FFB03B', '#D97A12', '#6FA8FF', '#3F6FD0', '#FFD6E2', '#FFE0A0', '#C8DEFF'],
     draw: on([
-      '...112..',
-      '..33334.',
-      '..33334.',
-      '.555556.',
-      '.555556.',
+      '..9556..',
+      '..5556..',
+      '71128334',
+      '11123334',
+      '22224444',
     ], 0, 2),
   },
   // Flipsies
@@ -1137,37 +1140,36 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // Bigger third hats, one per game
   {
-    id: 'amountle.cluster', game: 'amountle', name: 'Big gem',
-    colors: ['#3FD1C1', '#1F9C90', '#A6F4EA', '#FFD25A', '#E0A62E'],
+    id: 'amountle.cluster', game: 'amountle', name: 'Crystal crest',
+    colors: ['#B98AF5', '#7A4FD0', '#EBDDFF', '#3FD1C1', '#1F9C90', '#C8FFF7', '#FFD25A', '#D99A1E', '#FFF1B0'],
     draw: on([
-      '..33112..',
-      '.3311112.',
-      '..11112..',
-      '...112...',
-      '444454444',
+      '.....3.....',
+      '..6..31..6.',
+      '.645.312.45',
+      '64453112645',
+      '99777777778',
     ], 0, 2),
   },
   {
-    id: 'halfsies.helmet', game: 'halfsies', name: 'Pot helmet',
-    colors: ['#E07B4C', '#B85A34', '#F4A77C', '#5E2A1C', '#F6DCBB'],
-    draw: c => {
-      capRows(c, 2, L(1), L(2));
-      const r = c.rows[c.crown + 2]!;
-      for (let x = r.left - 1; x <= r.right + 1; x++) c.set(x, c.crown + 2, (x - r.left) % 2 ? L(5) : L(4));
-      const x = Math.floor(c.centre);
-      if (c.crown > 1) {
-        c.set(x - 1, c.crown - 1, L(3));
-        c.set(x, c.crown - 1, L(1));
-      }
-    },
+    id: 'halfsies.helmet', game: 'halfsies', name: 'Saucepan',
+    colors: ['#E07B4C', '#A9532E', '#FFB088', '#2B2B33', '#4E4E5A'],
+    draw: on([
+      '.3331112....',
+      '.3111112....',
+      '.3111112....',
+      '.3111112....',
+      '333333332554',
+    ], 1, 2),
   },
   {
-    id: 'stackdle.ring', game: 'stackdle', name: 'Ring',
-    colors: ['#FF8FB1', '#E0628A'],
+    id: 'stackdle.ring', game: 'stackdle', name: 'Ring stacker',
+    colors: ['#FF5C6A', '#C22E3E', '#FFB03B', '#D97A12', '#7DD87A', '#3E9A4C', '#5C9BFF', '#2F64C8', '#FFE066'],
     draw: on([
-      '.211112.',
-      '21111112',
-      '22222222',
+      '....99....',
+      '...1112...',
+      '..333334..',
+      '.55555556.',
+      '7777777778',
     ]),
   },
   {
@@ -1234,36 +1236,70 @@ const hats: Omit<Item, 'slot'>[] = [
   },
   // A fourth hat for every game
   {
-    id: 'amountle.coin-stack', game: 'amountle', name: 'Coin stack',
-    colors: ['#FFD25A', '#E0A62E', '#FFF1B0', '#B8781A'],
+    id: 'amountle.coin-stack', game: 'amountle', name: 'Pirate hat',
+    colors: ['#3E3852', '#221E30', '#625A80', '#FFD25A', '#C98A1A', '#FFFFFF'],
     draw: on([
-      '.3311.',
-      '.4242.',
-      '33111.',
-      '42424.',
-      '.33111',
-      '.42424',
-    ]),
-  },
-  {
-    id: 'halfsies.sandwich', game: 'halfsies', name: 'Half sandwich',
-    colors: ['#F6DCA8', '#D9A866', '#7DD87A', '#E5484D', '#FFE38F', '#B07444'],
-    draw: on([
-      '66......',
-      '6116....',
-      '653316..',
-      '6443516.',
-      '66666666',
+      '..3111112..',
+      '.316666612.',
+      '43162626124',
+      '.431666124.',
+      '..4444445..',
     ], 0, 2),
   },
   {
-    id: 'stackdle.arch', game: 'stackdle', name: 'Arch',
-    colors: ['#6FA8FF', '#4A84E0', '#B5D3FF'],
+    id: 'amountle.gumball-dome', game: 'amountle', name: 'Gumball dome',
+    colors: ['#E5484D', '#A8283A', '#FF8A8E', '#FFD25A', '#3FD1C1', '#5C9BFF', '#FFFFFF', '#BFE6F5', '#FF6FC8'],
     draw: on([
-      '3311112',
-      '3111112',
-      '11...12',
-    ]),
+      '...7888...',
+      '..849568..',
+      '.86594548.',
+      '3111111112',
+      '.21144112.',
+    ], 0, 2),
+  },
+  {
+    id: 'halfsies.sandwich', game: 'halfsies', name: 'Melon helmet',
+    colors: ['#4FAE5C', '#2E7D3A', '#9EE08A', '#F0435A', '#FFF4E0', '#2A1B10', '#C22E40'],
+    draw: on([
+      '..3212121..',
+      '.321212122.',
+      '55555555555',
+      '44644464447',
+      '74447444677',
+    ], 0, 2),
+  },
+  {
+    id: 'halfsies.half-moon', game: 'halfsies', name: 'Half moon helm',
+    colors: ['#3A4A6B', '#222C44', '#5E7096', '#FFD25A', '#D99A1E', '#FFF1B0', '#E5484D'],
+    draw: on([
+      '6....31....4',
+      '46..3112..45',
+      '.4664774445.',
+      '331111111122',
+      '222222222222',
+    ], 0, 2),
+  },
+  {
+    id: 'stackdle.arch', game: 'stackdle', name: 'Castle keep',
+    colors: ['#B5BCC8', '#7E8696', '#E3E7EE', '#E5484D', '#B02A35', '#3A3F4A'],
+    draw: on([
+      '31.31.31.12',
+      '31111411112',
+      '31611511612',
+      '22222422222',
+      '22222222222',
+    ], 0, 2),
+  },
+  {
+    id: 'stackdle.hardhat', game: 'stackdle', name: 'Hard hat',
+    colors: ['#FFC93A', '#D9921A', '#FFE9A0', '#4A4E5E', '#FFFFFF'],
+    draw: on([
+      '....3311....',
+      '..33111112..',
+      '.3114551112.',
+      '.3111111112.',
+      '322222222222',
+    ], 0, 2),
   },
   {
     id: 'flipsies.cup', game: 'flipsies', name: 'Flipped cup',
@@ -1560,34 +1596,33 @@ const pet = (name: string, rows: string[]): Stamp => {
  */
 const buddies: Omit<Item, 'slot'>[] = [
   {
-    id: 'amountle.gemling', game: 'amountle', name: 'Gemling', colors: ['#3FD1C1', '#1F9C90', '#C8FFF7'],
+    id: 'amountle.gemling', game: 'amountle', name: 'Gemling', colors: ['#3FD1C1', '#1F9C90', '#C8FFF7', '#137068', '#FFFFFF'],
     art: pet('gemling', [
-      '.3331.',
-      '311112',
-      '1o11o2',
-      '311112',
-      '.1122.',
-      '..22..',
+      '..531.',
+      '.33112',
+      '.31112',
+      '.1o1o2',
+      '..124.',
     ]),
   },
   {
-    id: 'halfsies.pea', game: 'halfsies', name: 'Pea pod', colors: ['#7CC45A', '#3E8A2A', '#C6F59A', '#2E6B20'],
-    art: pet('pea pod', [
-      '...4.',
-      '.334.',
-      '31112',
-      '1o1o2',
-      '.122.',
+    id: 'halfsies.pea', game: 'halfsies', name: 'Toaster', colors: ['#C9D1DC', '#7E8898', '#F2F5F9', '#E8B060', '#B07A30', '#2B2F38'],
+    art: pet('toaster', [
+      '.4545.',
+      '.33332',
+      '611112',
+      '.1o1o2',
+      '.62226',
     ]),
   },
   {
-    id: 'stackdle.cubelet', game: 'stackdle', name: 'Cubelet', colors: ['#FFB03B', '#D97A12', '#FFE0A0'],
+    id: 'stackdle.cubelet', game: 'stackdle', name: 'Cubelet', colors: ['#FFB03B', '#D97A12', '#FFE0A0', '#A85A0A'],
     art: pet('cubelet', [
-      '33332',
-      '31112',
-      '1o1o2',
-      '11112',
-      '22222',
+      '..333.',
+      '.33334',
+      '.11112',
+      '.1o1o2',
+      '.22224',
     ]),
   },
   {
@@ -1653,63 +1688,93 @@ const buddies: Omit<Item, 'slot'>[] = [
 
   // More buddies for every game.
   {
-    id: 'amountle.jellybean', game: 'amountle', name: 'Jelly bean', colors: ['#FF5C8A', '#C93A66', '#FFC2D4'],
-    art: pet('jelly bean', [
-      '.31..',
-      '3111.',
-      '1o1o1',
-      '11112',
-      '.222.',
+    id: 'amountle.jellybean', game: 'amountle', name: 'Gummy bear', colors: ['#FF5C6A', '#B8283A', '#FFB0B6'],
+    art: pet('gummy bear', [
+      '.3..3.',
+      '.31112',
+      '311112',
+      '.1o1o2',
+      '.13332',
     ]),
   },
   {
-    id: 'amountle.piglet', game: 'amountle', name: 'Piglet bank', colors: ['#FFA3C0', '#E5799C', '#FFD2E0', '#F2C230', '#C8406E'],
-    art: pet('piglet bank', [
-      '2.4.2',
-      '31112',
-      '1o1o2',
-      '13312',
-      '.2.2.',
+    id: 'amountle.piglet', game: 'amountle', name: 'Piggy bank', colors: ['#FFA3C0', '#D9658C', '#FFD2E0', '#FFE066', '#D9A21E', '#B8406E'],
+    art: pet('piggy bank', [
+      '.2.45.',
+      '.31112',
+      '311112',
+      '.1o1o2',
+      '.16662',
     ]),
   },
   {
-    id: 'halfsies.yolk', game: 'halfsies', name: 'Sunny egg', colors: ['#FFFFFF', '#D5DBE3', '#FFC93A', '#E59A12'],
+    id: 'amountle.mimic', game: 'amountle', name: 'Mimic chest', colors: ['#B86B32', '#6E3A18', '#E59A55', '#FFD25A', '#C98A1A', '#3A1020', '#FFFFFF'],
+    art: pet('mimic chest', [
+      '.3112.',
+      '.31112',
+      '344542',
+      '.1o1o2',
+      '.76767',
+    ]),
+  },
+  {
+    id: 'halfsies.yolk', game: 'halfsies', name: 'Sunny egg', colors: ['#FFFFFF', '#C9D1DC', '#FFC93A', '#E58A12', '#FFF2B8'],
     art: pet('sunny egg', [
-      '.11..',
-      '13331',
-      '1o3o1',
-      '13342',
-      '.122.',
+      '..111.',
+      '.11111',
+      '115331',
+      '.3o3o4',
+      '.13342',
     ]),
   },
   {
-    id: 'halfsies.berry', game: 'halfsies', name: 'Berry half', colors: ['#F0435A', '#B82A40', '#FFC2CC', '#5CB85C'],
-    art: pet('berry half', [
-      '.444.',
-      '13331',
-      '1o3o2',
-      '.132.',
-      '..2..',
+    id: 'halfsies.berry', game: 'halfsies', name: 'Strawberry', colors: ['#F0435A', '#A82238', '#FF9AAA', '#5CB85C', '#2E7D3A', '#FFE7A0'],
+    art: pet('strawberry', [
+      '.4545.',
+      '.31112',
+      '316162',
+      '.1o1o2',
+      '..162.',
     ]),
   },
   {
-    id: 'stackdle.pyramid', game: 'stackdle', name: 'Pyramid', colors: ['#FF8FB1', '#D9557F', '#FFC9DA'],
-    art: pet('pyramid', [
-      '..3..',
-      '.312.',
-      '.312.',
-      '3o1o2',
-      '11122',
+    id: 'halfsies.avo', game: 'halfsies', name: 'Avo', colors: ['#D8EE8A', '#9CCB4A', '#2E5A1E', '#A0602E', '#6A3A18', '#D99060'],
+    art: pet('avo', [
+      '..233.',
+      '.21113',
+      '211113',
+      '.2o1o3',
+      '.26443',
     ]),
   },
   {
-    id: 'stackdle.brickling', game: 'stackdle', name: 'Brickling', colors: ['#5C9BFF', '#2F64C8', '#B5D3FF'],
+    id: 'stackdle.pyramid', game: 'stackdle', name: 'Ziggurat', colors: ['#FF8FB1', '#D9557F', '#FFC9DA', '#FFD25A', '#A83A60'],
+    art: pet('ziggurat', [
+      '...4..',
+      '..312.',
+      '.33332',
+      '.1o1o2',
+      '.25552',
+    ]),
+  },
+  {
+    id: 'stackdle.brickling', game: 'stackdle', name: 'Brickling', colors: ['#5C9BFF', '#2F64C8', '#B5D3FF', '#1E3F8A'],
     art: pet('brickling', [
-      '.3.3.',
-      '33332',
-      '1o1o2',
-      '11112',
-      '22222',
+      '.3..3.',
+      '.33332',
+      '.11112',
+      '.1o1o2',
+      '.22224',
+    ]),
+  },
+  {
+    id: 'stackdle.wobble', game: 'stackdle', name: 'Wobble', colors: ['#7DD87A', '#3E9A4C', '#C6F5B0', '#FFD84A', '#D9A21E', '#FF6F91', '#C93A66'],
+    art: pet('wobble', [
+      '..67..',
+      '.4445.',
+      '311112',
+      '.1o1o2',
+      '.2222.',
     ]),
   },
   {
