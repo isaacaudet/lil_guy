@@ -12,7 +12,7 @@ https://lilguys.isaac-audet.workers.dev. Only the
 bun install
 bun run showcase
 bash scripts/build-site.sh
-npx wrangler d1 migrations apply lilguys-names --remote   # through 0008_craft
+npx wrangler d1 migrations apply lilguys-names --remote   # through 0009_card_stats
 npx wrangler deploy
 ```
 
@@ -233,3 +233,17 @@ numbered by the `craft` counter, and `…/paint { id, paint }` paints a hat or a
 buddy for `PAINT_COST` (a reclaimed); `paint: null` scrapes it off for free.
 `GET …/state` includes `metal`. Until 0008 is applied these answer 503 and
 nothing else changes.
+
+## Card stats (migration 0009)
+
+Each copy counts the days it's worn (`worn_since`, `worn_days`, `worn_last` on
+`copies`; a stint is banked when it comes off) and, while worn, its owner's DLE
+Club days (`copy_days`: games finished and the day's club score). On a state read
+or a wear, at most every ten minutes (`players.club_read`), the Worker asks
+`https://dleclub.com/api/club/lilguys-stats` for the name's Google sign-in's days,
+signed with `CLUB_SSO_SECRET` (dle-club's `LILGUYS_SSO_SECRET`, the same value).
+`CLUB_STATS` overrides that URL. The club side ships in dle-club's lil guys
+sign-in PR. Copies carry `stats: { worn, games, best }` in `GET …/state` and
+`GET /api/guys/:key`, and a Strange copy's tally becomes the days its owner
+finished club games in it. Names without a Google sign-in count days worn only.
+Before 0009 is applied, there are no stats and nothing else changes.

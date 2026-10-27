@@ -544,18 +544,21 @@ void main() {
     return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
   };
   /**
-   * Where an item sits in its machine's set ("07/16"), as a card's set number does, then its craft number and a
-   * Strange copy's tally of days finished: the small line by the set's symbol.
+   * The small line by the set's symbol, as on a sports card: where the item sits in its machine's set ("07/16"),
+   * its craft number, and the copy's stats from the server (days worn, best club score), or a Strange tally.
    */
-  const setLine = o => {
+  const setLine = (o, stats) => {
     const it = LG.itemById(o.item), set = it && it.game !== 'club' ? LG.gameItems(it.game) : null;
     const pad = n => String(n).padStart(2, '0');
-    return [set ? `${pad(set.indexOf(it) + 1)}/${pad(set.length)}` : '', o.craft !== undefined ? `Craft #${o.craft}` : '', o.tally !== undefined ? `${o.tally} day${o.tally === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+    const kept = stats && stats.worn ? [`${stats.worn}d worn`, stats.best ? `best ${stats.best}` : ''] : [o.tally !== undefined ? `${o.tally} day${o.tally === 1 ? '' : 's'}` : ''];
+    return [set ? `${pad(set.indexOf(it) + 1)}/${pad(set.length)}` : '', o.craft !== undefined ? `Craft #${o.craft}` : '', ...kept].filter(Boolean).join(' · ');
   };
+  // A page that knows copies' stats (the live site's locker) says so here.
+  const statsFor = o => (typeof window.cardStats === 'function' ? window.cardStats(o) : null);
   /** The words on an item's card: its name, its print, its grade and how rare it is. */
-  const itemLabel = (o, starter, one) => {
+  const itemLabel = (o, starter, one, stats = statsFor(o)) => {
     const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), set: setLine(o), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), set: setLine(o, stats), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
   function mount(canvas, spec) {

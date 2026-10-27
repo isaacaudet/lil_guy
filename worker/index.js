@@ -1,5 +1,6 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked } from './baked.js';
+import { putOn, readClub, takeOff, withStats } from './card-stats.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
@@ -133,7 +134,7 @@ async function insertCopy(env, row, worn = 0) {
     .bind(row.key, row.code, row.item, row.game, row.slot, row.finish, row.grade, row.one_in, row.scuff, row.source, worn, at).run();
   return { ...row, id: r.meta.last_row_id, worn, at };
 }
-const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '' });
+const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '', ...(c.stats ? { stats: c.stats } : {}) });
 // Copies that can change hands: not a starter, not the founder's.
 const MOVABLE = "source NOT IN ('starter', 'founder')";
 
@@ -173,7 +174,10 @@ const owner = ownedName;
 
 async function meState(env, name) {
   const p = await ensurePlayer(env, name);
-  const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all();
+  // The card stats: count whatever is on, and credit the owner's club days to it.
+  await putOn(env, name.key, today());
+  await readClub(env, name.key);
+  const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all()).results, today());
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
   return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
@@ -319,8 +323,12 @@ async function me(request, env, key, action) {
       const c = await env.DB.prepare('SELECT id FROM copies WHERE id = ? AND key = ? AND slot = ?').bind(Number(body.id), key, slot).first();
       if (!c) return json({ error: 'Not your copy' }, 404);
     }
+    // What comes off takes its club days and its days worn with it; what goes on starts counting today.
+    await readClub(env, key);
+    await takeOff(env, key, day, slot);
     await env.DB.prepare('UPDATE copies SET worn = 0 WHERE key = ? AND slot = ?').bind(key, slot).run();
     if (body.id != null) await env.DB.prepare('UPDATE copies SET worn = 1 WHERE id = ? AND key = ?').bind(Number(body.id), key).run();
+    await putOn(env, key, day);
     return json({ ok: true });
   }
   // Crafting, as in TF2: smelt copies into metal, craft the item you want, paint a hat or a buddy.
@@ -445,7 +453,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const name = await env.DB.prepare('SELECT key, seed, at FROM names WHERE key = ?').bind(profile[1]).first();
     if (!name) return json({ error: 'Not claimed' }, 404);
     const p = await ensurePlayer(env, name);
-    const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all();
+    const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all()).results, today());
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
   const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|paint)$/.exec(url.pathname);

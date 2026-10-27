@@ -269,6 +269,8 @@ A card is a trading card. Its window shimmers in its copy's finish's own foil
 sunburst), with the print picking one of four variants. Mythic and up, and
 every showpiece, are full-art: the machine's scene fills the card and the guy
 stands free of a window. An item's card carries its machine's set symbol.
+On lilguys.dleclub.com each copy also keeps stats, as a sports card does:
+days worn and, while worn, DLE Club games finished and the best club day.
 
 ```html
 <!-- Any page: the picture from the lil guys Worker, no library on the page (1.7 KB gzipped). -->
