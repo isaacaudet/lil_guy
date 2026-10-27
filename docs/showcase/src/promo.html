@@ -125,11 +125,13 @@
   .hand-h .kicker { margin: 0; }
   .hand-h p { font-size: 16px; color: var(--ink-3); }
   .hand { position: relative; z-index: 2; display: flex; justify-content: center; padding: 28px 0 56px; }
-  /* The slot is the hover target and never moves; only the card inside it lifts. A slot that lifted
-     itself slid out from under a pointer near its edge, dropped, and was hovered again: a twitch. */
+  /* The slot's own box is the only hover target and never moves; only the card inside it lifts (and
+     takes no pointer). A hover area that moved with the card slid out from under a pointer near its
+     edge, dropped, and was hovered again: a twitch. The strip above a hovered slot keeps its lifted top. */
   .hand > .slot { flex: none; width: 150px; margin-left: -34px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; position: relative; z-index: var(--z); }
   .hand > .slot:first-child { margin-left: 0; }
-  .hand > .slot > .lift { transform-origin: 50% 120%; transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+  .hand > .slot > .lift { transform-origin: 50% 120%; transition: transform .2s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+  .hand > .slot:hover::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 30px; }
   .hand > .slot:hover, .hand > .slot:focus-within { z-index: 30; }
   .hand > .slot:hover > .lift, .hand > .slot:focus-within > .lift { transform: translateY(-26px) rotate(calc(-1 * var(--r))); }
   /* the name under a card on hover: a Balatro tag, never clipped */
