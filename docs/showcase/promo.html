@@ -423,6 +423,23 @@
 
   /* ------------------------------------------------------------ dialogs */
   dialog { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(920px, calc(100vw - 32px)); max-width: none; }
+  .insp.retp { grid-template-columns: minmax(0, 1fr); width: min(560px, calc(100vw - 32px)); justify-items: center; text-align: center; gap: 16px; }
+  .retp h3 { padding: 0 52px; }
+  .ret-pair { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .ret-pair figure { margin: 0; display: grid; justify-items: center; gap: 8px; }
+  .ret-pair figcaption { font-size: 18px; color: var(--ink-2); }
+  .ret-old { display: block; width: 104px; height: 104px; opacity: .7; filter: grayscale(.6); }
+  .ret-old svg { display: block; width: 100%; height: 100%; }
+  .ret-arrow { font-size: 36px; color: var(--ink-2); animation: ret-in .3s .35s backwards; }
+  .ret-now { animation: ret-pop .5s .6s cubic-bezier(.3,1.6,.5,1) backwards; }
+  .ret-now .card { width: 180px; }
+  .ret-q { margin: 0; font-size: 20px; color: var(--ink-2); }
+  .ret-feel, .ret-go { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .ret-feel .btn svg { width: 22px; height: 22px; }
+  .ret-feel .btn[aria-pressed="true"] { --c: var(--green); --d: var(--green-d); }
+  .ret-feel .btn.sad[aria-pressed="true"] { --c: var(--blue); --d: var(--blue-d); }
+  @keyframes ret-in { from { opacity: 0; } }
+  @keyframes ret-pop { from { transform: scale(.4); opacity: 0; } }
   dialog::backdrop { background: rgba(5,6,12,.78); }
   .insp { background: var(--panel); border-radius: 16px; box-shadow: var(--lift); padding: 24px; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
   .insp .close { position: absolute; z-index: 2; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 8px; background: var(--red); box-shadow: 0 3px 0 var(--red-d); color: #fff; display: grid; place-items: center; font-size: 32px; line-height: 1; text-shadow: var(--ts); }
@@ -1262,6 +1279,7 @@
     </div>
   </div>
 </div>
+<dialog id="retd" aria-labelledby="ret-h"><div class="insp retp" id="ret-body"></div></dialog>
 <dialog id="machd" aria-labelledby="mach-h"><div class="insp machp" id="mach-body"></div></dialog>
 <dialog id="swapd" aria-labelledby="swap-h"><div class="insp swapp" id="swap-body"></div></dialog>
 <div class="tu" id="tu" hidden role="dialog" aria-modal="true" aria-label="Trade up">
@@ -1940,7 +1958,7 @@
   async function signedInAs(result) {
     signedIn = result.signedIn; accountKey = result.name?.key || null; state = null;
     if (result.name) { state = { key: result.name.key, seed: result.name.seed, copies: [] }; fromServer(await meApi('state')); }
-    save(); renderAll(); route();
+    save(); renderAll(); route(); retireNext();
   }
   // On lilguys.dleclub.com a browser signed in to DLE Club is signed in here too (dle-club
   // docs/accounts.md, Lil guys): a hidden frame of dleclub.com, the same site, says whether it is,
@@ -2136,6 +2154,7 @@
     watchNames();
     await dropName();
     renderAll();
+    showRetired();
   }
   $('claim-f').addEventListener('submit', e => { e.preventDefault(); const key = norm($('name').value); if (key.length >= 2 && !$('claim-btn').disabled) { $('claim-btn').disabled = true; claim(key); } });
   $('reset').addEventListener('click', async () => {
@@ -2409,7 +2428,7 @@
     link.type = 'image/svg+xml'; link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
   /** The games that send players here to claim, and where to send them back. */
-  const BACK_TO = { amountle: ['Back to Amountle', 'https://amountle.dev/'] };
+  const BACK_TO = { amountle: ['Back to Amountle', 'https://amountle.dev/'], dleclub: ['Back to DLE Club', 'https://dleclub.com/'], weighsies: ['Back to Weighsies', 'https://weighsies.dev/'], puttsies: ['Back to Puttsies', 'https://puttsies.dev/'], halfsies: ['Back to Halfsies', 'https://halfsies.dev/'], flipsies: ['Back to Flipsies', 'https://flipsies.dev/'], stackdle: ['Back to Stackdle', 'https://stackdle.dev/'] };
   function renderBack() {
     let from = null;
     try { from = BACK_TO[sessionStorage.getItem('lil-guys-from')] || null; } catch (e) {}
@@ -4302,6 +4321,18 @@
 
   renderHand();
   renderMaybe();
+  // A club player whose old lil guy is retired comes here from dleclub.com or a game
+  // (?retire=<old look>&was=<old name>&claim=<name>&from=<game>): the drop turns over his new guy (claiming first if he has no name
+  // here yet), then the old one beside the new, the old one's picture to save, and how he feels about it.
+  const RETIRE = 'lil-guys-retire';
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has('retire')) {
+      sessionStorage.setItem(RETIRE, JSON.stringify({ look: q.get('retire'), was: q.get('was') || '', name: norm(q.get('claim') || '') }));
+      q.delete('retire'); q.delete('was');
+      history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash);
+    }
+  } catch (e) {}
   // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
   // fills the box, and once it is theirs a button takes them back to the game.
   try {
@@ -4313,6 +4344,69 @@
       history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash);
     }
   } catch (e) {}
+  const retiring = () => { try { return JSON.parse(sessionStorage.getItem(RETIRE)); } catch (e) { return null; } };
+  /** A retiring player with a name already plays the drop for his guy now; one without claims first. */
+  async function retireNext() {
+    if (!retiring()) return;
+    if (!state) { $('claim-btn').textContent = 'Roll my new lil guy'; return; }
+    if (retireNext.ran) return;
+    retireNext.ran = true;
+    await dropName();
+    renderAll();
+    showRetired();
+  }
+  // The old guy as the club drew him, from dleclub.com, which keeps that library as it was.
+  const oldGuy = (name, look, size) => import(CLUB + '/club/old-look.js').then(m => m.oldFaceSvg(name, look, size), () => '');
+  // The old guy's picture with his name under it, saved as a PNG.
+  function saveOld(svg, name, button) {
+    const img = new Image(), url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#11151b'; ctx.fillRect(0, 0, 512, 600);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, 512, 512);
+      URL.revokeObjectURL(url);
+      ctx.fillStyle = '#f4efe6'; ctx.font = '40px m6x11plus, "Pixelify Sans", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('@' + name, 256, 568);
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = `${name}-old-lil-guy.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+        button.textContent = 'Saved';
+      });
+    };
+    img.src = url;
+  }
+  const FACE = { happy: '<path d="M7 14c1.2 1.6 2.9 2.4 5 2.4s3.8-.8 5-2.4"/>', sad: '<path d="M7 17c1.2-1.6 2.9-2.4 5-2.4s3.8.8 5 2.4"/>' };
+  const feelIcon = f => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="8.5" cy="9.5" r="1" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1" fill="currentColor"/>${FACE[f]}</svg>`;
+  /** The old guy beside the new, once the drop has turned the new one over. */
+  async function showRetired() {
+    const r = retiring();
+    if (!r || !state) return;
+    try { sessionStorage.removeItem(RETIRE); } catch (e) {}
+    const name = r.name || state.key, svg = await oldGuy(r.was || name, r.look, 160);
+    $('ret-body').innerHTML = `<button class="close" type="button" aria-label="Close">×</button>
+      <h3 id="ret-h">Meet your new lil guy</h3>
+      <div class="ret-pair">${svg ? `<figure><span class="ret-old">${svg}</span><figcaption>Retired</figcaption></figure><span class="ret-arrow" aria-hidden="true">→</span>` : ''}
+        <figure class="ret-now"><div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div><figcaption>Yours now</figcaption></figure></div>
+      <p class="ret-q">How do you feel about him?</p>
+      <div class="ret-feel"><button class="btn ghost small" type="button" data-feel="happy" aria-pressed="false">${feelIcon('happy')}Happy</button><button class="btn ghost small sad" type="button" data-feel="sad" aria-pressed="false">${feelIcon('sad')}Sad</button></div>
+      <div class="ret-go">${svg ? '<button class="btn ghost" type="button" id="ret-save">Save old one</button>' : ''}<button class="btn cream" type="button" id="ret-done">Get new one</button></div>`;
+    hydrate($('ret-body'));
+    $('ret-body').querySelectorAll('[data-feel]').forEach(b => b.addEventListener('click', () => {
+      $('ret-body').querySelectorAll('[data-feel]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+      (b.dataset.feel === 'happy' ? SFX.good : SFX.bad)();
+      if (isLive()) meApi('feel', { feel: b.dataset.feel }).catch(() => {});
+    }));
+    $('ret-save')?.addEventListener('click', e => saveOld(svg, name, e.currentTarget));
+    const done = () => { $('retd').close(); SFX.equip(); };
+    $('ret-done').addEventListener('click', done);
+    $('ret-body').querySelector('.close').addEventListener('click', () => $('retd').close());
+    $('retd').showModal();
+    $('ret-done').focus();
+  }
   renderFins();
   renderAll();
   route();
@@ -4337,7 +4431,7 @@
         if (!signedIn && account.club && clubHost()) clubSignIn();
       } catch (e) { toast('Could not restore your account. Reload to try again.'); }
       }
-      renderAll(); route();
+      renderAll(); route(); retireNext();
       return;
     }
     backendReady = true;
