@@ -105,6 +105,8 @@ above apply every pending migration) before deploying a Worker that reads it.
 - Public, never with owner tokens:
   - `GET /api/guys?sort=rarest|recent&q=`: every guy with what it wears and its best copy.
   - `GET /api/guys/:key`: one player's guy and collection.
+  - `POST /api/club/guys {a, t}`: for dleclub.com only, signed with `CLUB_SSO_SECRET` (`X-Club-Signature`, HMAC-SHA256 of `guys.<t>.<a joined by commas>`, at most five minutes old): each linked Google sign-in's name, his parts as drawn and the codes of the copies he has on, so the club draws him as he is here.
+  - `GET /api/club/named?n=<names>`: public, any origin, cached a minute: up to 100 claimed names' parts as drawn and the codes of the copies each has on, so Twitch chat in the club's gauntlet, parties, Amountle and Weighsies draws a chatter with a name here as he is here.
   - `GET /api/market?grade=&game=&slot=&finish=&key=&sort=rarest|float|newest`: every
     copy from a capsule (starters aside).
   - `GET /api/stats`: claims, copies and counts by grade.
