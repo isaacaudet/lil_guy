@@ -42,11 +42,11 @@ export const cheeks: Cheeks[] = [
     '..........',
     'rr......rr',
   ]),
-  // Three a side, fanning out from the cheek, in the face's ink.
+  // Two fine strokes a side, in the outline's colour: in the face's ink they were a smudge.
   cheeks_('whiskers', [
-    'm........m',
-    'mmm....mmm',
-    'm........m',
+    'oo......oo',
+    '..........',
+    'oo......oo',
   ]),
   cheeks_('hearts', [
     'r.r....r.r',

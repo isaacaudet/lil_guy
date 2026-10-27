@@ -39,9 +39,11 @@ export const mouths: Mouth[] = [
     'mmmmmm',
     '.mttm.',
   ]),
+  // Open, a tongue in it and one fang hanging from the top.
   mouth('fang', [
-    'm..m',
-    '.mw.',
+    'mmmm',
+    'mwtm',
+    '.mm.',
   ]),
   // Lopsided, and a row lower than the rest, clear of the eyes.
   mouth('smirk', [
@@ -70,16 +72,16 @@ export const mouths: Mouth[] = [
     'mmmm',
     '..t.',
   ]),
-  // A small, closed smile: a plain line read as bored.
+  // A level line over a soft pink lip: content, not bored.
   mouth('flat', [
-    'm...m',
-    '.mmm.',
+    'mmmm',
+    '.tt.',
   ]),
-  // Teeth clenched in a big, sheepish grin.
+  // Teeth clenched in a big, sheepish grin: one white bar, rounded off.
   mouth('gritted', [
-    'mmmmmm',
-    'mwmwmw',
-    'mmmmmm',
+    '.mmmm.',
+    'mwwwwm',
+    '.mmmm.',
   ]),
   // Blowing a round pink bubble, with a shine on it.
   mouth('bubblegum', [

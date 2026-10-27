@@ -206,7 +206,7 @@ function sparkle(grid: PixelGrid): void {
 function faceCells(c: Canvas, eye: Stamp, mouth: Stamp): Set<number> {
   const face = new Set<number>();
   const mark = (s: Stamp, x0: number, y0: number) => s.forEach((row, dy) => row.forEach((t, dx) => { if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx); }));
-  mark(eye, c.centred(eye), c.eyeLine - eye.length + 1);
+  mark(eye, c.centred(eye), c.face!.line - eye.length + 1);
   mark(c.face!.mouth, c.centred(mouth), c.face!.mouthTop);
   return face;
 }
@@ -224,7 +224,7 @@ const touches = (face: Set<number>, x: number, y: number) => {
  * sit diagonally by an eye, as a blush does.
  */
 function placeCheeks(c: Canvas, cheek: Stamp, face: Set<number>): void {
-  const w = width(cheek), x0 = c.centred(cheek), y0 = c.eyeLine + 1, half = Math.floor(w / 2);
+  const w = width(cheek), x0 = c.centred(cheek), y0 = c.face!.line + 1, half = Math.floor(w / 2);
   const side = (x: number, y: number) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
   const inner = (x: number, y: number) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
   const ok = (x: number, y: number, t: number) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x)
@@ -343,7 +343,7 @@ export function compose(config: AvatarConfig): PixelGrid {
   if (accessory.layer === 'face') accessory.draw(c);
   const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 
-  const line = c.eyeLine;
+  const line = c.face!.line;
   const cheek = skin || extras.cheeks ? cheeks[config.cheeks].art : [];
   const face = faceCells(c, eye, mouth);
   clearFace(c, face, bare, onFace);

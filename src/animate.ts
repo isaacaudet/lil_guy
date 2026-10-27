@@ -2,7 +2,7 @@ import { cycle, fit, fitLoop, LOOP_MS, steps, wave, wrap } from './loop';
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
 import { compose, composeBase, faceOf } from './compose';
-import { heads, mouths, eyes as EYES } from './parts';
+import { mouths, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -190,12 +190,6 @@ const BEATS: Record<Move, (canWave: boolean) => Beat[]> = {
 
 const EYE_TOKENS = new Set<number>([T.EYE, T.WHITE]);
 
-/** The row the bottom of the eyes sits on, for this guy's shape or skin. */
-function eyeLineOf(config: AvatarConfig): number {
-  const skin = itemById(config.skin);
-  return skin?.slot === 'skin' ? skin.eyes! : heads[config.head].eyes;
-}
-
 /** The bare body, mirrored the same way as the finished guy. */
 function bareOf(config: AvatarConfig): PixelGrid {
   const bare = composeBase(config);
@@ -203,12 +197,23 @@ function bareOf(config: AvatarConfig): PixelGrid {
   return bare;
 }
 
-/** Eye pixels: eye ink and eye shine in the rows the eyes are drawn on. */
+/** The colour low in an eye (shiny, sparkle, beans): part of the eye, so it shuts with it. */
+const IRIS_TOKENS = new Set<number>([T.ACCENT, T.ACCENT_SHADE]);
+
+/**
+ * Eye pixels: eye ink and eye shine in the rows the eyes are drawn on, and
+ * the colour in them within the eyes' own columns (a frame round them stays).
+ */
 function eyeCells(grid: PixelGrid, config: AvatarConfig): [number, number][] {
-  const line = eyeLineOf(config);
+  const face = faceOf(config);
+  const cols = new Set<number>();
+  for (const e of face.eyes) for (let x = e.left; x <= e.right; x++) cols.add(config.flip ? GRID_SIZE - 1 - x : x);
   const out: [number, number][] = [];
-  for (let y = Math.max(0, line - 3); y <= line; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) if (EYE_TOKENS.has(grid[y][x])) out.push([x, y]);
+  for (let y = Math.max(0, face.line - 3); y <= face.line; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      const t = grid[y][x];
+      if (EYE_TOKENS.has(t) || (y >= face.top && cols.has(x) && IRIS_TOKENS.has(t))) out.push([x, y]);
+    }
   }
   return out;
 }

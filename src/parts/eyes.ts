@@ -8,7 +8,13 @@ import { stamp, type Stamp } from './art';
  * Every pair keeps the same spacing — the inner edges four columns apart —
  * which is the wide-set look that reads as friendly. Any eye with a solid
  * dark area gets a white catchlight: a flat dark square with no shine is what
- * made the old set look dead-eyed.
+ * made the old set look dead-eyed. Most also carry a pixel of the accent low
+ * in the eye, a little colour on the far side from the shine, so a face isn't
+ * only black dots.
+ *
+ * An eye's bottom row stays on the outer columns where it can (the inner
+ * edges four apart): the mouth goes just under it, and a mouth pixel right
+ * under an eye pixel makes them one shape (compose then has to move it).
  */
 export interface Eyes {
   name: string;
@@ -19,14 +25,15 @@ const eyes_ = (name: string, rows: string[]): Eyes => ({ name, art: stamp(rows) 
 
 export const eyes: Eyes[] = [
   // Sat a row up, with a row of face under them, so no mouth ever runs into them.
+  // Each bean's lower half catches a little colour.
   eyes_('beans', [
     'e....e',
-    'e....e',
+    'A....A',
     '......',
   ]),
   eyes_('shiny', [
     'we....we',
-    'ee....ee',
+    'eA....Ae',
   ]),
   // Shut and smiling: two soft arches.
   eyes_('happy', [
@@ -36,16 +43,16 @@ export const eyes: Eyes[] = [
   eyes_('sparkle', [
     'we....we',
     'ee....ee',
-    'ee....ee',
+    'eA....Ae',
   ]),
   eyes_('wink', [
     'we....e.',
-    'ee...e.e',
+    'eA...e.e',
   ]),
   eyes_('glossy', [
     'we....we',
     'ee....ee',
-    'ew....ew',
+    'Aw....Aw',
   ]),
   eyes_('excited', [
     'e......e',
@@ -67,17 +74,18 @@ export const eyes: Eyes[] = [
   eyes_('chill', [
     'ss....ss',
     'we....ew',
-    'ee....ee',
+    'eA....Ae',
   ]),
   eyes_('side-eye', [
     'ss....ss',
     'ew....ew',
-    'ee....ee',
+    'Ae....Ae',
   ]),
-  // Two small lenses on a bridge: wide ones angled in read as a scowl, and a full bar as a mask.
+  // Shades: a bar across the brow, tinted lenses under it.
   eyes_('shades', [
-    'weeeewee',
-    'eee..eee',
+    '.eeeeeeee.',
+    'eAAe..eAAe',
+    '.ee....ee.',
   ]),
   eyes_('star', [
     '.y....y.',
@@ -85,27 +93,26 @@ export const eyes: Eyes[] = [
     '.y....y.',
   ]),
   // Edgier, and rarer still.
-  // Narrowed under a heavy lid, a glint in each corner.
+  // Narrowed under a heavy lid, a glint of colour in each.
   eyes_('squint', [
     'eee..eee',
-    'wee..eew',
+    'eA....Ae',
   ]),
-  // A flame burning in each eye.
+  // Brows flaring up like flames, a spark burning in each eye.
   eyes_('fired up', [
-    '.y....y.',
-    'yry..yry',
-    'ere..ere',
+    '.r......r.',
+    'rre....err',
+    '.ey....ye.',
   ]),
-  // A white-hot core and a flare streaking out to each side: a red patch
-  // with a white dot in it read as blush.
+  // A dark ring round a burning core, and a red flare shooting out of each side.
   eyes_('laser', [
-    '..r....r..',
-    'rrw....wrr',
-    '..r....r..',
+    '.ee....ee.',
+    'rey....yer',
+    '.ee....ee.',
   ]),
   eyes_('cyclops', [
     '.ww.',
-    'weee',
+    'weAe',
     'eeee',
   ]),
   // Contented, eyes shut the other way up from happy, two pixels thick.
@@ -121,9 +128,9 @@ export const eyes: Eyes[] = [
   ]),
   // Big eyes with a lash flicked out at the side, a shine, and a coloured iris.
   eyes_('anime', [
-    '.eee..eee.',
-    'eewe..ewee',
-    '.eae..eae.',
+    '.ee....ee.',
+    'eew....wee',
+    '.aA....Aa.',
   ]),
   // Chase eyes, one guy in several hundred. Each is a material, not a
   // mood: a little night sky, a cut jewel in the accent, a dragon's gold.
