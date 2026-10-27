@@ -43,7 +43,9 @@ export const mouths: Mouth[] = [
     'm..m',
     '.mw.',
   ]),
+  // Lopsided, and a row lower than the rest, clear of the eyes.
   mouth('smirk', [
+    '....',
     '...m',
     'mmm.',
   ]),
@@ -55,10 +57,10 @@ export const mouths: Mouth[] = [
   mouth('tiny', [
     '.mm.',
   ]),
+  // A wavy, giddy line.
   mouth('wobble', [
-    'm.mm.m',
-    '.m..m.',
-    '..tt..',
+    'm.m.m.',
+    '.m.m.m',
   ]),
   mouth('toothy', [
     'mwwwwm',
@@ -73,47 +75,50 @@ export const mouths: Mouth[] = [
     'm...m',
     '.mmm.',
   ]),
-  // A big cheesy grin, all teeth. (Two solid rows of ink read as a block.)
+  // Teeth clenched in a big, sheepish grin.
   mouth('gritted', [
-    'm....m',
-    'mwwwwm',
-    '.mmmm.',
+    'mmmmmm',
+    'mwmwmw',
+    'mmmmmm',
   ]),
-  // A round pink bubble with a shine, beside a small mouth.
+  // Blowing a round pink bubble, with a shine on it.
   mouth('bubblegum', [
-    '...cc.',
-    'mm.cwc',
-    '...cc.',
+    '.cccc.',
+    'cwcccc',
+    '.cccc.',
   ]),
   // Buck teeth, framed by the mouth so they show on a white guy too.
   mouth('bunny', [
     'mmmm',
     'mwwm',
   ]),
+  // A grin with two fangs at its corners.
   mouth('vampire', [
     'm....m',
+    'mwmmwm',
     '.mmmm.',
-    '.w..w.',
   ]),
   mouth('wide', [
     'm....m',
     '.mmmm.',
   ]),
   // Chase mouths, one guy in several hundred.
+  // An open grin, one of its teeth gold.
   mouth('gold tooth', [
-    'mmmmmm',
+    'm....m',
     'mwwywm',
     '.mmmm.',
   ]),
+  // A grin full of gold.
   mouth('grillz', [
     'mmmmmm',
-    'mywyym',
+    'myYyYm',
     '.mmmm.',
   ]),
-  // A curled handlebar in the face's ink, so a dark guy's is a dashing white.
+  // A handlebar curled up at both ends, in the face's ink, so a dark guy's is a dashing white.
   mouth('mustache', [
     'mm..mm',
-    'm.mm.m',
-    '..tt..',
+    'mmmmmm',
+    '..mm..',
   ]),
 ];

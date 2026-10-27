@@ -12,29 +12,29 @@ export interface Marking {
   draw: (c: Canvas) => void;
 }
 
-const heart = stamp([
-  'r.r',
-  'rrr',
-  '.r.',
-]);
+/** Each single mark, biggest first: a smaller body gets the smaller one. */
+const heart = [
+  ['r.r', 'rrr', '.r.'],
+  ['r.r', '.r.'],
+].map(stamp);
 
-const star = stamp([
-  '.y.',
-  'yyy',
-  '.y.',
-]);
+const star = [
+  ['.y.', 'ywy', '.y.'],
+  ['.y.', 'yyy', '.y.'],
+  ['y'],
+].map(stamp);
 
-const moon = stamp([
-  '.yy',
-  'y..',
-  '.yy',
-]);
+const moon = [
+  ['.yy', 'y..', 'y..', '.yy'],
+  ['.yy', 'y..', '.yy'],
+  ['.y', 'y.', '.y'],
+].map(stamp);
 
-const bolt = stamp([
-  '..y',
-  'yyy',
-  'y..',
-]);
+const bolt = [
+  ['..y', '.yy', 'yyy', 'yy.', 'y..'],
+  ['..y', 'yyy', 'y..'],
+  ['.y', 'yy', 'y.'],
+].map(stamp);
 
 /** The cells the eyes and mouth take, as `y * 64 + x`. */
 const faceOf = (c: Canvas): Set<number> => {
@@ -47,25 +47,35 @@ const faceOf = (c: Canvas): Set<number> => {
 };
 
 /**
- * Where a 3x3 mark goes: every pixel on the body with body either side, and a
- * clear pixel from the eyes and mouth, so it never reads as part of the face.
- * Under the mouth first, then low on either side, then the forehead (where
- * hair or a hat would most often cover it). On a head with room for none it
- * isn't drawn.
+ * Where a mark goes: every pixel on the body (with body either side, unless
+ * `loose`), and a clear pixel from the eyes and mouth, so it never reads as
+ * part of the face. Under the mouth first, then low on either side, then the
+ * forehead (where hair or a hat would most often cover it).
  */
-const spotFor = (c: Canvas, s: Stamp): [number, number] | null => {
+const spotFor = (c: Canvas, s: Stamp, loose = false): [number, number] | null => {
   const face = faceOf(c);
-  const inside = (x: number, y: number) => c.isBody(x, y) && c.isBody(x - 1, y) && c.isBody(x + 1, y);
+  const inside = (x: number, y: number) => c.isBody(x, y) && (loose || (c.isBody(x - 1, y) && c.isBody(x + 1, y)));
   const nearFace = (x: number, y: number) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * 64 + x + dx)) return true; return false; };
   const fits = (x0: number, y0: number) => s.every((row, dy) => row.every((t, dx) => !t || (inside(x0 + dx, y0 + dy) && !nearFace(x0 + dx, y0 + dy))));
-  const mid = Math.floor(c.centre) - 1, f = c.face;
+  const w = s[0].length, h = s.length, mid = Math.floor(c.centre) - Math.floor(w / 2), f = c.face;
   const tries: [number, number][] = [];
-  if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - 3; y++) tries.push([mid, y]);
-  if (f) for (let y = c.bottom - 3; y >= f.top; y--) for (let off = 3; off <= 6; off++) tries.push([mid + off, y], [mid - off, y]);
-  for (let y = c.crown; y <= (f ? f.top - 3 : c.crown + 1); y++) tries.push([mid, y]);
+  if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - h + 1; y++) tries.push([mid, y], [mid - 1, y], [mid + 1, y]);
+  if (f) for (let y = c.bottom - h + 1; y >= f.top; y--) for (let off = 2; off <= 6; off++) tries.push([mid + off, y], [mid - off, y]);
+  for (let y = c.crown; y <= (f ? f.top - h : c.crown + 1); y++) for (const off of [0, -2, 2, -3, 3]) tries.push([mid + off, y]);
   return tries.find(([x, y]) => fits(x, y)) ?? null;
 };
-const mark = (c: Canvas, s: Stamp) => { const at = spotFor(c, s); if (at) c.draw(s, at[0], at[1], true); };
+
+/**
+ * A mark drawn as big as there's room for: the full one, else a smaller one
+ * of the same thing, so a small body still shows its mark.
+ */
+const mark = (c: Canvas, sizes: Stamp[]) => {
+  // Each size first well inside the body, then out to its edge.
+  for (const loose of [false, true]) for (const s of sizes) {
+    const at = spotFor(c, s, loose);
+    if (at) { c.draw(s, at[0], at[1], true); return; }
+  }
+};
 
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c: Canvas, x: number, y: number, token: number): void {

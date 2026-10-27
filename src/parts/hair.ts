@@ -74,6 +74,43 @@ export function capRows(c: Canvas, n: number, fill: number, shade: number): void
   }
 }
 
+/** The first row from the crown down at least `min` wide: where a hat's band goes. Never past the floor. */
+function brow(c: Canvas, min = 6): number {
+  for (let y = c.crown; y <= c.floor; y++) {
+    const r = c.rows[y];
+    if (r && r.right - r.left + 1 >= min) return y;
+  }
+  return Math.min(c.crown, c.floor);
+}
+
+/** How wide the head is on a row. */
+const across = (c: Canvas, y: number) => { const r = c.rows[y]; return r ? r.right - r.left + 1 : 0; };
+
+/**
+ * Draws a hat centred with its bottom row on row `y`: pushed down where it
+ * would leave the grid, and never past the floor, where it would reach the eyes.
+ */
+function wear(c: Canvas, s: Stamp, y: number, dx = 0): void {
+  let top = Math.max(1, y - s.length + 1);
+  if (top + s.length - 1 > c.floor) top = Math.max(1, c.floor - s.length + 1);
+  c.draw(s, c.centred(s) + dx, top);
+}
+
+/** Picks the widest drawing that fits on a row the given width across, so a hat suits a narrow head and a wide one. */
+const fitted = (sizes: Stamp[], room: number): Stamp => sizes.find(s => width(s) <= room) ?? sizes[sizes.length - 1];
+
+/** A hat drawn in a few widths, worn with its bottom row a row into the head. */
+const hat = (name: string, sizes: string[][], sink = 1, dx = 0): Topper => {
+  const stamps = sizes.map(stamp);
+  return {
+    name,
+    draw: c => {
+      const y = Math.min(brow(c) + sink - 1, c.floor);
+      wear(c, fitted(stamps, across(c, y) + 2), y, dx);
+    },
+  };
+};
+
 export const hair: Topper[] = [
   { name: 'none', draw: () => {} },
 
@@ -96,17 +133,22 @@ export const hair: Topper[] = [
     '##',
   ], 1),
 
+  // Two feelers, curling outwards, each tipped with a round bobble.
   pair('bug antennae', [
-    'a..',
-    '.o.',
-    '..o',
-  ], 1),
+    'wa...',
+    'aA...',
+    '.oo..',
+    '..o..',
+    '..o..',
+  ]),
 
+  // Little devil's horns, curving up and out from a broad base.
   pair('horns', [
-    'x.',
-    'xx',
-    'xx',
-  ], 1),
+    'r..',
+    'r..',
+    'rr.',
+    '.rr',
+  ]),
 
   pair('space buns', [
     'aa',
@@ -138,35 +180,44 @@ export const hair: Topper[] = [
     'a...a',
   ], 3),
 
-  centre('crown', [
-    'y.y.y',
-    'yyyyy',
-    'YYrYY',
+  // A gold crown with three points and a jewel in its band, as wide as the head it's on.
+  hat('crown', [
+    ['y..yy..y', 'yyyyyyyy', 'YYYrrYYY'],
+    ['y.yy.y', 'yyyyyy', 'YYrrYY'],
   ]),
 
-  centre('party hat', [
-    '..x..',
-    '.aaA.',
-    '.xxx.',
-    'aaaAa',
-  ]),
+  // A striped cone with a pompom, worn at a jaunty tilt.
+  hat('party hat', [[
+    '..xx..',
+    '..aA..',
+    '.axaA.',
+    '.aaaA.',
+    'axaxaA',
+  ]], 1),
 
+  // A short stalk with a glowing bobble.
   centre('antenna', [
-    'aa',
+    'wa',
     'aA',
-    'o.',
-  ], 1),
+    '.o',
+    '.o',
+  ], 0),
 
+  // A spiralled golden horn.
   centre('unicorn horn', [
     '.y',
     'yY',
+    'Yy',
     'yY',
-  ]),
+    'Yy',
+  ], 0, 2),
 
+  // A five-pointed star clipped in at the side.
   centre('star clip', [
-    '.y.',
-    'yyy',
-    '.y.',
+    '..y..',
+    'yyyyy',
+    '.ywY.',
+    '.Y.Y.',
   ], -3),
 
   centre('tuft', [
@@ -209,141 +260,111 @@ export const hair: Topper[] = [
   {
     name: 'bob',
     draw: c => {
-      capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
-      const r = c.rows[c.crown + 2]!;
-      // A fringe: every other column hangs one row lower.
-      for (let x = r.left; x <= r.right; x++) {
-        if ((x - r.left) % 3 !== 1) c.set(x, c.crown + 2, T.ACCENT);
+      // A glossy bob: the top of the head in hair with a shine, a blunt
+      // fringe cut straight across, and the sides falling past it.
+      const fringe = Math.min(c.crown + 2, c.floor);
+      for (let y = Math.min(c.tip, c.crown); y <= fringe; y++) {
+        c.paintRow(y, T.ACCENT);
+        const r = c.rows[y];
+        if (r) { c.set(r.left - 1, y, T.ACCENT); c.set(r.right + 1, y, T.ACCENT_SHADE); c.set(r.right, y, T.ACCENT_SHADE); }
       }
-      c.set(r.left, c.crown + 3, T.ACCENT);
-      c.set(r.right, c.crown + 3, T.ACCENT_SHADE);
+      const r = c.rows[c.crown + 1];
+      if (r) { c.set(r.left + 2, c.crown, T.LIGHT); c.set(r.left + 3, c.crown, T.LIGHT); }
+      // The sides hang down outside the face to the eyes.
+      for (let y = fringe + 1; y <= c.eyeLine; y++) {
+        const row = c.rows[y];
+        if (!row) continue;
+        c.set(row.left - 1, y, T.ACCENT);
+        c.set(row.right + 1, y, T.ACCENT_SHADE);
+      }
     },
   },
 
-  {
-    name: 'mushroom',
-    draw: c => {
-      capRows(c, 3, T.RED, T.RED);
-      const r = c.rows[c.crown + 2]!;
-      c.set(r.left - 1, c.crown + 2, T.RED);
-      c.set(r.right + 1, c.crown + 2, T.RED);
-      const x = Math.floor(c.centre);
-      c.set(x - 3, c.crown + 1, T.WHITE);
-      c.set(x, c.crown, T.WHITE);
-      c.set(x + 2, c.crown + 2, T.WHITE);
-    },
-  },
+  // A toadstool cap: red, spotted white, overhanging the head.
+  hat('mushroom', [
+    ['...rrrr...', '.rrwwrrrr.', 'rwwrrrrwwr', 'rrrrrrrrrr'],
+    ['..rrrr..', '.rwwrrr.', 'rrrrrwwr', 'rrrrrrrr'],
+  ], 2),
 
   {
     name: 'eggshell',
     draw: c => {
+      // The top of a broken shell, its edge cracked into points.
       capRows(c, 2, T.WHITE, T.WHITE);
-      const r = c.rows[c.crown + 2]!;
-      for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 2, T.WHITE);
+      const r = c.rows[c.crown + 2];
+      if (r) for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 2, T.WHITE);
     },
   },
 
-  {
-    name: 'frosting',
-    draw: c => {
-      capRows(c, 2, T.TRIM, T.TRIM);
-      const r = c.rows[c.crown + 2]!;
-      c.set(r.left + 1, c.crown + 2, T.TRIM);
-      c.set(r.left + 4, c.crown + 2, T.TRIM);
-      c.set(r.right - 2, c.crown + 2, T.TRIM);
-      c.set(r.right - 2, c.crown + 3, T.TRIM);
-      const x = Math.floor(c.centre);
-      c.set(x - 3, c.crown + 1, T.ACCENT);
-      c.set(x - 1, c.crown, T.GOLD);
-      c.set(x + 1, c.crown + 1, T.LEAF);
-      c.set(x + 3, c.crown, T.ACCENT);
-    },
-  },
+  // A dollop of icing, dripping, with sprinkles and a cherry on top.
+  hat('frosting', [
+    ['.....r...', '....r....', '.xxxrxx..', 'xxaxxxgxx', 'xxxxyxxxx', 'x.xx.xx.x', 'x..x..x..'],
+    ['....r..', '...r...', '.xxrxx.', 'xaxxxgx', 'xxxyxxx', 'x.xx.xx', 'x..x...'],
+  ], 4),
 
-  {
-    name: 'leafy top',
-    draw: c => {
-      c.paintRow(c.crown, T.LEAF);
-      const r = c.rows[c.crown + 1]!;
-      for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 1, T.LEAF_SHADE);
-      const x = Math.floor(c.centre);
-      c.set(x, c.crown - 1, T.LEAF);
-      if (c.crown > 2) c.set(x - 1, c.crown - 2, T.LEAF);
-    },
-  },
+  // A pineapple's crown: a fan of spiky leaves.
+  hat('leafy top', [[
+    '..g..g..',
+    'g.gG.G.g',
+    '.gGgGgG.',
+    '..gGgG..',
+    '...gG...',
+  ]], 1),
 
-  {
-    name: 'beret',
-    draw: c => {
-      capRows(c, 1, T.ACCENT, T.ACCENT);
-      const r = c.rows[c.crown]!;
-      c.set(r.left - 1, c.crown, T.ACCENT);
-      c.set(r.left - 2, c.crown + 1, T.ACCENT_SHADE);
-      c.set(r.left - 1, c.crown + 1, T.ACCENT_SHADE);
-      for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.ACCENT);
-      if (c.crown > 2) c.set(Math.floor(c.centre), c.crown - 2, T.ACCENT_SHADE);
-    },
-  },
+  // A floppy beret slumped to one side, with a stalk on top.
+  hat('beret', [
+    ['......A...', '...aaaaaa.', '.aaaaaaaaA', 'AaaaaaaaA.'],
+    ['.....A..', '..aaaaa.', 'aaaaaaaA', 'AaaaaaA.'],
+  ], 1),
 
-  {
-    name: 'witch hat',
-    draw: c => {
-      const cone = stamp([
-        '..aa.',
-        '.aaA.',
-        '.xxx.',
-        'aaaaA',
-      ]);
-      seat(c, cone, c.centred(cone));
-      const r = c.rows[c.crown]!;
-      for (let x = r.left - 1; x <= r.right + 1; x++) c.set(x, c.crown, T.ACCENT);
-    },
-  },
+  // A tall pointed hat, its tip bent over, a buckled band, and a wide brim.
+  hat('witch hat', [
+    ['......aA..', '.....aaA..', '....aaaA..', '....aaaA..', '...xxyxx..', 'aaaaaaaaaA'],
+    ['.....aA.', '....aaA.', '...aaaA.', '...aaaA.', '..xxyxx.', 'aaaaaaaA'],
+  ], 1),
 
   {
     name: 'propeller',
     draw: c => {
+      // A beanie in two colours with a propeller spinning on a post on top.
       capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
       c.paintRow(c.crown + 1, T.TRIM);
       const prop = stamp([
-        'xxoaa',
-        '..o..',
+        'xxyaa',
+        '..y..',
       ]);
-      // On a tall head there's no room above, so the propeller sits lower.
-      c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
+      const x = c.centred(prop) + 1, top = c.topOf(x + 2) ?? c.crown;
+      c.draw(prop, x, Math.max(1, top - 2));
     },
   },
-  centre('mohawk', [
-    '.aa.',
-    '.aA.',
-    '.aA.',
-    'aaAA',
-  ]),
+
+  {
+    name: 'mohawk',
+    draw: c => {
+      // A strip of hair down the middle of the head, standing up in spikes.
+      const mid = Math.floor(c.centre);
+      for (let y = c.crown; y <= c.floor; y++) for (let x = mid - 2; x <= mid + 1; x++) if (c.isBody(x, y)) c.set(x, y, x === mid + 1 ? T.ACCENT_SHADE : T.ACCENT);
+      const top = c.topOf(mid) ?? c.crown;
+      c.draw(stamp(['.a.a.', 'aa.aA', 'aaaAA']), mid - 3, Math.max(1, top - 3));
+    },
+  },
 
   {
     name: 'headphones',
     draw: c => {
-      // Big cups over the ears, standing out past the sides of the head, and
-      // a band in the accent's shade hugging the top of the head between
-      // them. A band in the outline colour and one-pixel cups melted into
-      // the head.
-      const cup = c.eyeLine - 3;
-      const r = c.rows[cup + 1]!;
-      const [left, right] = [r.left, r.right];
-      for (let y = cup; y < cup + 3; y++) {
-        c.set(left - 1, y, T.ACCENT_SHADE);
-        c.set(left, y, T.ACCENT);
-        c.set(right, y, T.ACCENT);
-        c.set(right + 1, y, T.ACCENT_SHADE);
+      // A band arched over the head and a big cushioned cup on each side of
+      // its top, where they never reach the face.
+      const y = brow(c), r = c.rows[y]!;
+      const top = Math.max(1, y - 2);
+      for (let x = r.left + 1; x <= r.right - 1; x++) c.set(x, top, T.ACCENT_SHADE);
+      for (const [x, dir] of [[r.left - 1, 1], [r.right + 1, -1]] as const) {
+        for (let dy = 0; dy < 3; dy++) {
+          const cy = top + 1 + dy;
+          c.set(x, cy, T.ACCENT);
+          c.set(x + dir, cy, dy === 1 ? T.TRIM : T.ACCENT);
+        }
+        c.set(x, top, T.ACCENT_SHADE);
       }
-      for (let y = c.crown; y < cup; y++) {
-        const row = c.rows[y];
-        if (!row) continue;
-        c.set(row.left - 1, y, T.ACCENT_SHADE);
-        c.set(row.right + 1, y, T.ACCENT_SHADE);
-      }
-      const top = c.rows[c.crown]!;
-      for (let x = top.left; x <= top.right; x++) c.set(x, c.crown - 1, T.ACCENT_SHADE);
     },
   },
 
@@ -357,68 +378,55 @@ export const hair: Topper[] = [
   {
     name: 'flower crown',
     draw: c => {
-      // Leaves along the top of the head, following its curve, and a flower
-      // every third column, in turn the accent, gold and blush.
-      const r = c.rows[c.crown + 1]!;
-      const flowers = [T.ACCENT, T.GOLD, T.BLUSH];
-      for (let x = r.left; x <= r.right; x++) {
+      // A garland of leaves round the top of the head, following its curve.
+      const y = brow(c), r = c.rows[y]!;
+      for (let x = r.left - 1; x <= r.right + 1; x++) {
         const top = c.topOf(x);
-        if (top === null) continue;
-        c.set(x, top, T.LEAF);
-        if ((x - r.left) % 3 === 1) c.set(x, top - 1, flowers[Math.floor((x - r.left) / 3) % 3]);
+        c.set(x, top === null || top > y ? y : top, (x + y) % 2 ? T.LEAF : T.LEAF_SHADE);
       }
+      // A flower either side, petals round a gold heart, and a bud in the middle.
+      const mid = Math.floor(c.centre);
+      for (const fx of [mid - 3, mid + 2]) {
+        const fy = Math.min(c.topOf(fx) ?? y, y) - 1;
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1]]) c.set(fx + dx, fy + dy, T.ACCENT);
+        c.set(fx, fy, T.GOLD);
+      }
+      for (const bx of [mid - 1, mid]) c.set(bx, Math.min(c.topOf(bx) ?? y, y) - 1, T.BLUSH);
     },
   },
 
-  pair('antlers', [
-    'x.x',
-    'xx.',
-    '.x.',
+  {
+    name: 'antlers',
+    draw: c => {
+      // A pair of antlers, each a beam with two tines, rising from either side of the top of the head.
+      const y = brow(c), r = c.rows[y]!;
+      const left = stamp(['Y..y', 'Y..Y', '.YYY', '...Y']);
+      seat(c, left, r.left - 2);
+      seat(c, mirror(left), r.right - 1);
+    },
+  },
+
+  // A puffed chef's toque on a pleated band.
+  hat('chef hat', [
+    ['.ww.ww..', 'wwwwwwww', 'wwwwwwwh', '.wwwwwh.', '.xhxhxh.'],
   ], 1),
 
-  centre('chef hat', [
-    '.ww.ww.',
-    'wwwwwww',
-    'wwwwwww',
-    '.xxxxx.',
-  ]),
-
   // Chase toppers, one guy in several hundred.
-  {
-    name: 'laurel',
-    draw: c => {
-      // A victor's wreath in gold: leaves along the top of the head, open
-      // at the middle, running down past its sides.
-      const r = c.rows[c.crown + 1]!;
-      const mid = Math.floor(c.centre);
-      for (let x = r.left; x <= r.right; x++) {
-        if (x === mid - 1 || x === mid) continue;
-        const top = c.topOf(x);
-        if (top === null) continue;
-        c.set(x, top - 1, T.GOLD_SHADE);
-        // Each leaf's tip points out and away from the middle.
-        if ((x - r.left) % 2 === 0) c.set(x + (x < mid ? -1 : 1), top - 2, T.GOLD);
-      }
-      for (let dy = 1; dy <= 3; dy++) {
-        const row = c.rows[c.crown + dy];
-        if (!row) continue;
-        c.set(row.left - 1, c.crown + dy, dy % 2 ? T.GOLD : T.GOLD_SHADE);
-        c.set(row.right + 1, c.crown + dy, dy % 2 ? T.GOLD : T.GOLD_SHADE);
-      }
-    },
-  },
+  // A victor's wreath: two leafy sprays meeting at the front over gold berries.
+  hat('laurel', [
+    ['.gy....yg.', 'gGyg..gyGg', 'G.gGyyGg.G'],
+    ['.g....g.', 'gGy..yGg', 'GgGyyGgG'],
+  ], 1),
 
-  centre('star crown', [
-    '....y....',
-    '.y.yyy.y.',
-    'yyy.y.yyy',
-    '.y.....y.',
-  ], 0, 0),
+  // A tiara: a big gold star in the middle of a silver band, a little one either side where there's room.
+  hat('star crown', [
+    ['.....yy.....', '....yyyy....', '.y.yywyyy.y.', 'yyy.yyyy.yyy', '.y..y..y..y.', 'xxxxxxxxxxxx'],
+    ['...yy...', '..ywyy..', '.yyyyyy.', '..yyyy..', '.xyxxyx.'],
+  ], 1),
 
-  centre('on fire', [
-    '...y...',
-    '..yr.y.',
-    '.yrry..',
-    'yrryrry',
-  ]),
+  // Flames licking up off the head: red outside, gold within, white-hot at the heart.
+  hat('on fire', [
+    ['.....r....', '....rr..r.', '.r..ryr.rr', '.rr.ryyrry', 'rryrryyyyr', 'ryyyywwyyr'],
+    ['....r...', '...rr.r.', '.r.ryrrr', 'rrrryyyr', 'ryyywwyr'],
+  ], 2),
 ];

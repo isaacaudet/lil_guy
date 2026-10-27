@@ -18,18 +18,20 @@ export interface Eyes {
 const eyes_ = (name: string, rows: string[]): Eyes => ({ name, art: stamp(rows) });
 
 export const eyes: Eyes[] = [
+  // Sat a row up, with a row of face under them, so no mouth ever runs into them.
   eyes_('beans', [
     'e....e',
     'e....e',
+    '......',
   ]),
   eyes_('shiny', [
     'we....we',
     'ee....ee',
   ]),
-  // Shut and smiling, drawn two pixels thick so they read as happy, not as a line.
+  // Shut and smiling: two soft arches.
   eyes_('happy', [
-    'eee..eee',
-    'e.e..e.e',
+    '.ee....ee.',
+    'e..e..e..e',
   ]),
   eyes_('sparkle', [
     'we....we',
@@ -50,10 +52,10 @@ export const eyes: Eyes[] = [
     '.e....e.',
     'e......e',
   ]),
-  // Each with a glint, so they read as eyes and not as red spots on the skin.
+  // Each with a glint on its lobe, so they read as eyes and not as red spots on the skin.
   eyes_('hearts', [
-    'r.r..r.r',
-    'wrr..wrr',
+    'w.r..w.r',
+    'rrr..rrr',
     '.r....r.',
   ]),
   eyes_('lashes', [
@@ -83,15 +85,16 @@ export const eyes: Eyes[] = [
     '.y....y.',
   ]),
   // Edgier, and rarer still.
-  // Two solid squares: a single row of ink read as asleep.
+  // Narrowed under a heavy lid, a glint in each corner.
   eyes_('squint', [
-    'ee....ee',
-    'ee....ee',
+    'eee..eee',
+    'wee..eew',
   ]),
+  // A flame burning in each eye.
   eyes_('fired up', [
-    'o......o',
-    '.o....o.',
-    'ee....ee',
+    '.y....y.',
+    'yry..yry',
+    'ere..ere',
   ]),
   // A white-hot core and a flare streaking out to each side: a red patch
   // with a white dot in it read as blush.
@@ -110,32 +113,32 @@ export const eyes: Eyes[] = [
     'e.e....e.e',
     'eee....eee',
   ]),
-  // Spirals, each turning the other way.
+  // Seeing stars: two crosses.
   eyes_('dizzy', [
-    '.ee....ee.',
-    'e.e....e.e',
-    'ee......ee',
+    'e.e..e.e',
+    '.e....e.',
+    'e.e..e.e',
   ]),
-  // Big eyes under a lash line that sweeps in towards the nose.
+  // Big eyes with a lash flicked out at the side, a shine, and a coloured iris.
   eyes_('anime', [
     '.eee..eee.',
-    '.we....we.',
-    '.ee....ee.',
+    'eewe..ewee',
+    '.eae..eae.',
   ]),
   // Chase eyes, one guy in several hundred. Each is a material, not a
   // mood: a little night sky, a cut jewel in the accent, a dragon's gold.
   // The galaxy is the one pair four wide: round, so it holds a sky.
-  // A dark sphere with a nebula and a star in it.
+  // A dark sphere with a purple nebula swirling through it, a pink star and a white one.
   eyes_('galaxy', [
-    '.ee....ee.',
-    'eAwe..eAwe',
-    '.yA....yA.',
+    '.ew....we.',
+    'eAye..eyAe',
+    '.Ae....eA.',
   ]),
-  // A cut gem: pale table, deep pavilion, a glint.
+  // A cut gem: a pale crown with a sparkle, a deep pavilion, a dark point.
   eyes_('diamond', [
-    '.aa....aa.',
-    'awaA..awaA',
-    '.AA....AA.',
+    '.wa....wa.',
+    'aaAe..aaAe',
+    '.eA....eA.',
   ]),
   eyes_('dragon', [
     '.y......y.',

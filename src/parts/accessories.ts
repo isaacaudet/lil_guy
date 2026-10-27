@@ -95,6 +95,15 @@ function nearFace(c: Canvas, x: number, y: number, gap = 1): boolean {
   return false;
 }
 
+/** Whether a cell is on or next to the mouth. */
+function nearMouth(c: Canvas, x: number, y: number): boolean {
+  const f = c.face;
+  if (!f) return false;
+  const mx = c.centred(f.mouth);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (f.mouth[y + dy - f.mouthTop]?.[x + dx - mx]) return true;
+  return false;
+}
+
 /**
  * Where a `w` by `h` piece goes on the chest: every cell on the body and a cell clear of the face. Low on the wearer's right first, then their left, then under the mouth.
  */
@@ -177,6 +186,10 @@ export const accessories: Accessory[] = [
     name: 'star sticker',
     layer: 'body',
     draw: c => {
+      // Stuck on the body low down, clear of the face and of anything worn on the head.
+      // Where the body has no room, it goes up on the forehead's corner instead.
+      const at = clearSpot(c, 3, 3, 1, c.eyeLine + 1) ?? clearSpot(c, 3, 3);
+      if (at) { c.draw(star, at[0], at[1], true); return; }
       const r = c.rows[c.eyeLine - 3];
       if (r) c.draw(star, r.right - 3, c.eyeLine - 4, true);
     },
@@ -199,13 +212,15 @@ export const accessories: Accessory[] = [
     name: 'monocle',
     layer: 'face',
     draw: c => {
-      // A gold rim round the right eye, on a chain that hangs from it.
+      // A round gold rim fitted close round the right eye, a glint on it, and
+      // a fine chain swinging down from its outer side.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      const b = lensBox(c, f.eyes.length - 1);
+      const e = f.eyes[f.eyes.length - 1];
+      const b = { left: e.left - 1, right: e.right + 1, top: f.top - 1, bottom: f.line + 1 };
       rim(c, b, T.GOLD, T.LIGHT);
-      c.set(b.left + 1, b.top + 1, T.WHITE);
-      for (let y = b.bottom + 1; y <= Math.min(b.bottom + 2, c.bottom); y++) c.set(b.right, y, y % 2 ? T.GOLD : T.GOLD_SHADE);
+      c.set(b.left + 1, b.top, T.WHITE);
+      for (let y = b.top + 2, x = b.right + 1; y <= Math.min(b.bottom + 2, c.bottom); y++, x += y % 2) c.set(x, y, y % 2 ? T.GOLD_SHADE : T.GOLD);
     },
   },
 
@@ -213,14 +228,27 @@ export const accessories: Accessory[] = [
     name: 'eye patch',
     layer: 'over',
     draw: c => {
-      // A pirate's patch: a dark pad over the left eye, a cell bigger than it all round on the outside
-      // with a glint so it reads as worn, not as a hole, and a strap running up across the forehead.
+      // A pirate's patch: a rounded dark pad over the left eye with a sheen on
+      // it, so it reads as worn and not as a hole, and a thin strap running
+      // from its top corners out to either side of the head.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      const e = f.eyes[0], left = e.left - 1, top = f.top - 1;
-      for (let y = top; y <= f.line; y++) for (let x = left; x <= e.right; x++) if (c.isBody(x, y)) c.set(x, y, T.EYE);
-      if (c.isBody(left, top)) c.set(left, top, T.WHITE);
-      for (let i = 1, x = e.right, y = top; c.isBody(x + i, y - i + 1) && y - i + 1 > c.tip; i++) c.set(x + i, y - i + 1, T.EYE);
+      const e = f.eyes[0], b = { left: e.left - 1, right: e.right + 1, top: f.top - 1, bottom: f.line };
+      for (let y = b.top; y <= b.bottom; y++) for (let x = b.left; x <= b.right; x++) {
+        const corner = (x === b.left || x === b.right) && (y === b.top || y === b.bottom);
+        if (!corner && c.isBody(x, y)) c.set(x, y, T.OUTLINE);
+      }
+      c.set(b.left + 1, b.top + 1, T.DEEP);
+      // The strap climbs a row at a time out to the head's edge on both sides.
+      const strap = (x0: number, y0: number, dx: number) => {
+        for (let i = 0; ; i++) {
+          const x = x0 + dx * i, y = y0 - (i >> 1);
+          if (!c.isBody(x, y) || y <= c.tip) return;
+          c.set(x, y, T.OUTLINE);
+        }
+      };
+      strap(b.left - 1, b.top, -1);
+      strap(b.right + 1, b.top - 1, 1);
     },
   },
 
@@ -313,17 +341,19 @@ export const accessories: Accessory[] = [
     name: 'goggles',
     layer: 'face',
     draw: c => {
-      // Pushed up on the forehead, a clear row above the eyes: a strap round
-      // the head and two round lenses over where the eyes are. On a head with
-      // no forehead to spare they sit up on top of it, never across the eyes.
+      // Pushed up on the forehead: a strap round the head a clear row above
+      // the eyes, and on it a rimmed, tinted lens over each eye with a glint.
+      // On a short forehead the lenses stand up off the top of the head, as
+      // goggles pushed up do.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      const y = Math.max(1, f.top - 3);
-      const r = c.rows[y + 1];
-      if (r) for (let x = r.left; x <= r.right; x++) if (c.isBody(x, y + 1)) c.set(x, y + 1, T.DEEP);
+      const y = Math.max(3, f.top - 2), r = c.rows[y];
+      if (r) for (let x = r.left - 1; x <= r.right + 1; x++) c.set(x, y, T.DEEP);
       for (const e of f.eyes) {
-        const x0 = e.left - (e.right - e.left < 1 ? 1 : 0), x1 = Math.max(e.right, x0 + 1);
-        for (let x = x0; x <= x1; x++) { c.set(x, y, x === x0 ? T.WHITE : T.ACCENT); c.set(x, y + 1, T.ACCENT_SHADE); }
+        const x0 = e.left - 1;
+        c.set(x0 + 1, y - 2, T.ACCENT_SHADE); c.set(x0 + 2, y - 2, T.ACCENT_SHADE);
+        c.set(x0, y - 1, T.ACCENT_SHADE); c.set(x0 + 1, y - 1, T.WHITE); c.set(x0 + 2, y - 1, T.ACCENT); c.set(x0 + 3, y - 1, T.ACCENT_SHADE);
+        c.set(x0, y, T.ACCENT_SHADE); c.set(x0 + 1, y, T.ACCENT); c.set(x0 + 2, y, T.ACCENT); c.set(x0 + 3, y, T.ACCENT_SHADE);
       }
     },
   },
@@ -333,15 +363,18 @@ export const accessories: Accessory[] = [
     name: 'gold chain',
     layer: 'body',
     draw: c => {
-      // A heavy gold chain and a big medallion with a glint.
-      const y = c.neck;
-      const r = c.rows[y];
+      // A heavy gold chain hanging in a curve from the neck, its links in two
+      // golds, and a big medallion with a glint where it dips lowest.
+      const y = c.neck, r = c.rows[y];
       if (!r) return;
-      for (let x = r.left; x <= r.right; x++) wear(c, x, y, (x - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);
-      const x = Math.floor(c.centre) - 1;
-      for (const [dx, dy, t] of [[-1, 1, T.GOLD], [0, 1, T.WHITE], [1, 1, T.GOLD], [2, 1, T.GOLD_SHADE], [0, 2, T.GOLD], [1, 2, T.GOLD_SHADE]] as const) {
-        if (c.isBody(x + dx, y + dy)) wear(c, x + dx, y + dy, t);
+      const mid = Math.floor(c.centre), dip = Math.max(0, Math.min(2, c.bottom - y - 2));
+      for (let x = r.left; x <= r.right; x++) {
+        const k = Math.min(x - r.left, r.right - x), cy = y + Math.min(dip, k >> 1);
+        if (c.isBody(x, cy)) wear(c, x, cy, x % 2 ? T.GOLD_SHADE : T.GOLD);
       }
+      const ym = y + dip + 1;
+      const medallion: [number, number, number][] = [[-2, 0, T.GOLD_SHADE], [-1, 0, T.WHITE], [0, 0, T.GOLD], [1, 0, T.GOLD_SHADE], [-1, 1, T.GOLD], [0, 1, T.GOLD_SHADE]];
+      for (const [dx, dy, t] of medallion) if (c.isBody(mid + dx, ym + dy)) wear(c, mid + dx, ym + dy, t);
     },
   },
 
@@ -349,14 +382,20 @@ export const accessories: Accessory[] = [
     name: 'heart shades',
     layer: 'over',
     draw: c => {
-      // A red heart over each eye, a glint in each, and a bar between them.
+      // Heart-shaped sunglasses: dark lenses in red heart frames, a glint on
+      // each, a bridge between them and arms out to the sides of the head.
       const f = c.face;
-      if (!f || !f.eyes.length) return;
-      const heart = stamp(['r.r', 'rrr', '.r.']);
-      const xs = f.eyes.map(e => Math.round((e.left + e.right) / 2) - 1);
-      const y = f.line - 1;
-      for (const x of xs) { heart.forEach((row, dy) => row.forEach((t, dx) => { if (t) c.set(x + dx, y - 1 + dy, t); })); c.set(x, y, T.WHITE); }
-      if (xs.length === 2) for (let x = xs[0] + 3; x < xs[1]; x++) c.set(x, y - 1, T.RED);
+      if (f?.eyes.length !== 2) return;
+      const frame = stamp(['rr.rr', 'rwoor', '.ror.']);
+      const top = f.line - 2;
+      const xs = [f.eyes[0].left - 2, f.eyes[1].right - 2];
+      for (const x of xs) frame.forEach((row, dy) => row.forEach((t, dx) => { if (t) c.set(x + dx, top + dy, t); }));
+      for (let x = xs[0] + 5; x < xs[1]; x++) c.set(x, top + 1, T.RED);
+      const r = c.rows[top];
+      if (r) for (let x = r.left; x < xs[0]; x++) c.set(x, top, T.RED);
+      if (r) for (let x = xs[1] + 5; x <= r.right; x++) c.set(x, top, T.RED);
+      // The point of each heart, where it keeps clear of the mouth.
+      for (const x of xs) if (!nearMouth(c, x + 2, top + 3)) c.set(x + 2, top + 3, T.RED);
     },
   },
 
@@ -365,15 +404,21 @@ export const accessories: Accessory[] = [
     layer: 'face',
     draw: c => {
       // A gold ball mask round the eyes, its tips swept up at the sides, a
-      // jewel between them. Drawn before the eyes, which look out through it.
+      // ruby between the eyes and a feather rising from one side. Drawn before
+      // the eyes, which look out through it.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      const boxes = f.eyes.map((_, k) => lensBox(c, k));
-      for (const b of boxes) for (let y = b.top + 1; y < b.bottom; y++) for (let x = b.left; x <= b.right; x++) if (c.isBody(x, y)) c.set(x, y, T.GOLD);
-      const l = boxes[0].left, r = boxes[boxes.length - 1].right;
-      for (let x = l; x <= r; x++) if (c.isBody(x, f.line) && x > boxes[0].right && x < boxes[boxes.length - 1].left) c.set(x, f.line, T.GOLD_SHADE);
-      if (boxes.length === 2) { const mid = Math.floor(c.centre); c.set(mid - 1, f.top, T.RED); c.set(mid, f.top, T.RED); }
-      c.set(l, f.top - 1, T.GOLD); c.set(r, f.top - 1, T.GOLD);
+      const L = f.eyes[0].left - 2, R = f.eyes[f.eyes.length - 1].right + 2, mid = Math.floor(c.centre);
+      for (let y = f.top - 1; y <= f.line; y++) for (let x = L; x <= R; x++) {
+        // A dip in its lower edge over the nose.
+        if (y === f.line && (x === mid - 1 || x === mid)) continue;
+        if (c.isBody(x, y)) c.set(x, y, y === f.line ? T.GOLD_SHADE : T.GOLD);
+      }
+      c.set(L, f.top - 2, T.GOLD); c.set(L - 1, f.top - 3, T.GOLD);
+      c.set(R, f.top - 2, T.GOLD); c.set(R + 1, f.top - 3, T.GOLD);
+      c.set(L + 1, f.top - 1, T.WHITE);
+      if (f.eyes.length === 2) { c.set(mid - 1, f.top - 1, T.RED); c.set(mid, f.top - 1, T.RED); }
+      c.set(R, f.top - 3, T.ACCENT); c.set(R, f.top - 4, T.ACCENT); c.set(R - 1, f.top - 5, T.ACCENT_SHADE);
     },
   },
 ];
