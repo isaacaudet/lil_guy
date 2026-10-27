@@ -1,5 +1,6 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked } from './baked.js';
+import { clubGuys, namedGuys } from './club-guys.js';
 import { putOn, readClub, takeOff, withStats } from './card-stats.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
@@ -454,6 +455,8 @@ async function stats(env) {
 
 export async function api(request, env, url = new URL(request.url)) {
   if (url.pathname.startsWith('/api/auth/')) return authApi(request, env, url);
+  if (url.pathname === '/api/club/guys') return clubGuys(request, env, guyOf);
+  if (url.pathname === '/api/club/named') return namedGuys(request, env, guyOf, url);
   if (request.method === 'GET' && url.pathname === '/api/names') {
     const limit = Math.min(12, Math.max(1, Number.parseInt(url.searchParams.get('recent') || '12') || 12));
     const { results } = await env.DB.prepare('SELECT key, seed, at FROM names ORDER BY at DESC LIMIT ?').bind(limit).all();
