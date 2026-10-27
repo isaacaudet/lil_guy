@@ -120,8 +120,8 @@ describe('emotes and the trail', () => {
 
 
 describe('buddies', () => {
-  test('three per game, drawn at his feet in front of him with an outline', () => {
-    for (const game of GAMES) expect(gameItems(game).filter(i => i.slot === 'buddy').length).toBe(3);
+  test('three or four per game, drawn at the guy\'s feet in front, with an outline', () => {
+    for (const game of GAMES) { const n = gameItems(game).filter(i => i.slot === 'buddy').length; expect(n).toBeGreaterThanOrEqual(3); expect(n).toBeLessThanOrEqual(4); }
     const bare = compose(dress(resolve('alice'), {}));
     const withBuddy = compose(dress(resolve('alice'), { equip: ['puttsies.tee'] }));
     const changed = withBuddy.flat().filter((t, i) => t !== bare.flat()[i]).length;
