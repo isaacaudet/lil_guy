@@ -2958,6 +2958,191 @@ var Canvas = class Canvas {
 };
 
 //#endregion
+//#region src/item-art.ts
+const grid16 = (name, rows) => {
+	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
+	return stamp(rows);
+};
+/** How many cells a row spans, first filled to last. */
+const span = (row) => {
+	const xs = row.map((t, i) => t ? i : -1).filter((i) => i >= 0);
+	return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0;
+};
+/**
+* A hat made `d` columns wider (or narrower), the way a cap stretches: the
+* plainest columns, each the same as the one beside it, are repeated or taken
+* out, a side at a time from the middle outwards, so a buckle, a jewel or a
+* crown's points stay as drawn.
+*/
+function elastic(s, d) {
+	let out = s.map((r) => [...r]);
+	for (let k = 0; k < Math.abs(d); k++) {
+		const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
+		const cost = (x) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
+		let best = -1, bestCost = Infinity, bestDist = Infinity;
+		for (let x = 2; x <= w - 3; x++) {
+			if (left ? x > mid : x < mid) continue;
+			const c = cost(x), dist = Math.abs(x - mid);
+			if (c < bestCost || c === bestCost && dist < bestDist) {
+				best = x;
+				bestCost = c;
+				bestDist = dist;
+			}
+		}
+		if (best < 0) break;
+		out = out.map((r) => {
+			const row = [...r];
+			if (d < 0) row.splice(best, 1);
+			else row.splice(best, 0, row[best]);
+			return row;
+		});
+	}
+	return out;
+}
+/**
+* Puts a hat on, fitted to the head the way a cap fits. A hat that rests
+* across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
+* comes down to the forehead line and is stretched to the head's width there,
+* a cell of brim either side, so it sits on a narrow head and a wide one
+* alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+*/
+function wear(c, s, dx, sink) {
+	const last = s.length - 1, bottom = span(s[last]);
+	if (bottom < 8) {
+		seat(c, s, c.centred(s) + dx, sink);
+		return;
+	}
+	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
+	const head$1 = r ? r.right - r.left + 1 : 10;
+	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
+	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const y = Math.max(1, c.floor - last);
+	c.draw(fitted, c.centred(fitted) + dx, y);
+	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
+}
+const on = (rows, dx = 0, sink = 1) => {
+	const s = stamp(rows);
+	return (c) => wear(c, s, dx, sink);
+};
+const onPair = (rows, inset$1 = 0) => {
+	const left = stamp(rows);
+	const right = mirror(left);
+	return (c) => {
+		const r = c.rows[c.shoulder()];
+		seat(c, left, r.left + inset$1);
+		seat(c, right, r.right - inset$1 - width(right) + 1);
+	};
+};
+/**
+* A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
+* pixel round it for its outline). `o` is an eye, in the guy's outline
+* colour, so it stays dark whatever finish the buddy has.
+*/
+const pet = (name, rows) => {
+	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
+	return stamp(rows);
+};
+
+//#endregion
+//#region src/sets/amountle.ts
+/** Amountle's machine: what it adds, retires and redraws (see MachineSet). */
+const set$8 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/halfsies.ts
+/** Halfsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$7 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/stackdle.ts
+/** Stackdle's machine: what it adds, retires and redraws (see MachineSet). */
+const set$6 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/flipsies.ts
+/** Flipsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$5 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/puttsies.ts
+/** Puttsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$4 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/weighsies.ts
+/** Weighsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$3 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/cutsies.ts
+/** Cutsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$2 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/tiltsies.ts
+/** Tiltsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$1 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/trackdle.ts
+/** Trackdle's machine: what it adds, retires and redraws (see MachineSet). */
+const set = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/index.ts
+/**
+* Each machine's set, one file a machine, so every game's things are drawn
+* from what is really in that game and kept in one place.
+*/
+const SETS = {
+	amountle: set$8,
+	halfsies: set$7,
+	stackdle: set$6,
+	flipsies: set$5,
+	puttsies: set$4,
+	weighsies: set$3,
+	cutsies: set$2,
+	tiltsies: set$1,
+	trackdle: set
+};
+
+//#endregion
 //#region src/loop.ts
 /**
 * Everything that moves on its own clock (auras, effects, finishes, a Lucky
@@ -5294,10 +5479,10 @@ function markItem(grid, slot, copy) {
 */
 function goldRim(grid, slot) {
 	const edge = (x, y) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
-	const set = [];
+	const set$9 = [];
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		if (slot === "frame") {
-			if (own("frame", t) && edge(x, y)) set.push([x, y]);
+			if (own("frame", t) && edge(x, y)) set$9.push([x, y]);
 			return;
 		}
 		if (t !== T.OUTLINE) return;
@@ -5307,9 +5492,9 @@ function goldRim(grid, slot) {
 			[-1, 0],
 			[0, 1],
 			[0, -1]
-		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set.push([x, y]);
+		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set$9.push([x, y]);
 	}));
-	for (const [x, y] of set) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+	for (const [x, y] of set$9) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
 }
 
 //#endregion
@@ -5389,14 +5574,14 @@ const mix$5 = (a, b$1, t) => a.map((v, i) => v + (b$1[i] - v) * t);
 function painted(colors, paint$1) {
 	const p = paint$1 && PAINTS[paint$1];
 	if (!p || !colors.length) return colors;
-	const base = rgb$5(p.hex), main = light$1(rgb$5(colors[0]));
+	const base$1 = rgb$5(p.hex), main = light$1(rgb$5(colors[0]));
 	return colors.map((hex$3) => {
 		const d = light$1(rgb$5(hex$3)) - main;
-		return toHex(d >= 0 ? mix$5(base, [
+		return toHex(d >= 0 ? mix$5(base$1, [
 			255,
 			255,
 			255
-		], Math.min(1, d * 1.5)) : mix$5(base, [
+		], Math.min(1, d * 1.5)) : mix$5(base$1, [
 			0,
 			0,
 			0
@@ -5656,12 +5841,12 @@ function gradeOf(o) {
 /** The name as it would show on an inventory card. */
 function nameOf(o) {
 	const item = itemById(o.item);
-	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
+	const base$1 = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
 	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Strange " : "");
-	if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
-	if (o.finish === "plain") return tally + base;
+	if (FINISHES[o.finish].aura) return `${tally}★ ${base$1}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
+	if (o.finish === "plain") return tally + base$1;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
-	return `${tally}${base} | ${look}`;
+	return `${tally}${base$1} | ${look}`;
 }
 /**
 * A copy as one short string, to store or put in a URL:
@@ -5866,13 +6051,13 @@ const PAINT = {
 	},
 	"nebula": (x, y, l, p) => {
 		const phase = nebulaPhase(p);
-		const base = phase === "Red Giant" ? rgb$4("#D0102E") : phase === "Blue Moon" ? rgb$4("#1E4FE8") : phase === "Black Hole" ? rgb$4("#2A1E3A") : rgb$4([
+		const base$1 = phase === "Red Giant" ? rgb$4("#D0102E") : phase === "Blue Moon" ? rgb$4("#1E4FE8") : phase === "Black Hole" ? rgb$4("#2A1E3A") : rgb$4([
 			"#8A2AB0",
 			"#3A2AB0",
 			"#2A6AB0",
 			"#B02A8A"
 		][p % 4]);
-		const c = cellNoise(p, x, y, 2) < .2 ? mix$4(base, rgb$4("#FFD6F0"), .55) : base;
+		const c = cellNoise(p, x, y, 2) < .2 ? mix$4(base$1, rgb$4("#FFD6F0"), .55) : base$1;
 		return shaded(c, l);
 	},
 	"prism": (x, y, l, p) => {
@@ -5946,80 +6131,6 @@ function paintCell(color, x, y, o, state) {
 
 //#endregion
 //#region src/items.ts
-const grid16 = (name, rows) => {
-	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
-	return stamp(rows);
-};
-/** How many cells a row spans, first filled to last. */
-const span = (row) => {
-	const xs = row.map((t, i) => t ? i : -1).filter((i) => i >= 0);
-	return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0;
-};
-/**
-* A hat made `d` columns wider (or narrower), the way a cap stretches: the
-* plainest columns, each the same as the one beside it, are repeated or taken
-* out, a side at a time from the middle outwards, so a buckle, a jewel or a
-* crown's points stay as drawn.
-*/
-function elastic(s, d) {
-	let out = s.map((r) => [...r]);
-	for (let k = 0; k < Math.abs(d); k++) {
-		const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
-		const cost = (x) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
-		let best = -1, bestCost = Infinity, bestDist = Infinity;
-		for (let x = 2; x <= w - 3; x++) {
-			if (left ? x > mid : x < mid) continue;
-			const c = cost(x), dist = Math.abs(x - mid);
-			if (c < bestCost || c === bestCost && dist < bestDist) {
-				best = x;
-				bestCost = c;
-				bestDist = dist;
-			}
-		}
-		if (best < 0) break;
-		out = out.map((r) => {
-			const row = [...r];
-			if (d < 0) row.splice(best, 1);
-			else row.splice(best, 0, row[best]);
-			return row;
-		});
-	}
-	return out;
-}
-/**
-* Puts a hat on, fitted to the head the way a cap fits. A hat that rests
-* across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
-* comes down to the forehead line and is stretched to the head's width there,
-* a cell of brim either side, so it sits on a narrow head and a wide one
-* alike. A small thing that stands on top (a gem, a flag) sits on the crown.
-*/
-function wear(c, s, dx, sink) {
-	const last = s.length - 1, bottom = span(s[last]);
-	if (bottom < 8) {
-		seat(c, s, c.centred(s) + dx, sink);
-		return;
-	}
-	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
-	const head$1 = r ? r.right - r.left + 1 : 10;
-	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
-	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
-	const y = Math.max(1, c.floor - last);
-	c.draw(fitted, c.centred(fitted) + dx, y);
-	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
-}
-const on = (rows, dx = 0, sink = 1) => {
-	const s = stamp(rows);
-	return (c) => wear(c, s, dx, sink);
-};
-const onPair = (rows, inset$1 = 0) => {
-	const left = stamp(rows);
-	const right = mirror(left);
-	return (c) => {
-		const r = c.rows[c.shoulder()];
-		seat(c, left, r.left + inset$1);
-		seat(c, right, r.right - inset$1 - width(right) + 1);
-	};
-};
 const skins = [
 	{
 		id: "amountle.jar",
@@ -8514,15 +8625,6 @@ const frames = [
 	}
 ];
 /**
-* A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
-* pixel round it for its outline). `o` is an eye, in the guy's outline
-* colour, so it stays dark whatever finish the buddy has.
-*/
-const pet = (name, rows) => {
-	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
-	return stamp(rows);
-};
-/**
 * A pet that sits at the guy's feet, bottom right, in front of everything but
 * the face. Each is a bold shape of its own with a lit side, a shaded side and
 * a face, filling as much of its 6x5 as it can, so it reads at a glance on any
@@ -9939,7 +10041,7 @@ const showpieces = [
 	}
 ];
 /** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
-const items = [
+const base = [
 	...skins.map((i) => ({
 		...i,
 		slot: "skin"
@@ -9972,6 +10074,19 @@ const items = [
 		slot: "aura"
 	}))
 ];
+/** Every item: the first lists, each machine's set laid over them (redraws, retirements), then its new items. */
+const items = (() => {
+	const sets = Object.values(SETS);
+	const out = base.map((i) => {
+		const set$9 = sets.find((st) => st.redraw[i.id] || st.retire.includes(i.id));
+		return set$9 ? {
+			...i,
+			...set$9.redraw[i.id],
+			...set$9.retire.includes(i.id) ? { retired: true } : {}
+		} : i;
+	});
+	return [...out, ...sets.flatMap((st) => st.add)];
+})();
 const byId = new Map(items.map((i) => [i.id, i]));
 function itemById(id) {
 	return id ? byId.get(id) : void 0;
@@ -10001,15 +10116,15 @@ const GAMES = [
 ];
 /** How often a showpiece comes out of its machine, against 1 for every other item. */
 const SHOWPIECE_WEIGHT = .5;
-/** An item's weight in its machine's draw. */
-const itemWeight = (item) => item.showpiece ? SHOWPIECE_WEIGHT : 1;
-/** A game's items. */
+/** An item's weight in its machine's draw: none once it's retired. */
+const itemWeight = (item) => item.retired ? 0 : item.showpiece ? SHOWPIECE_WEIGHT : 1;
+/** A game's items: what its machine holds now. Retired ones are left out; `itemById` still finds them. */
 function gameItems(game) {
-	return items.filter((i) => i.game === game);
+	return items.filter((i) => i.game === game && !i.retired);
 }
 /** The hat every player wears in a game until they put something else on. */
 function freeItem(game) {
-	return items.find((i) => i.game === game && i.free);
+	return items.find((i) => i.game === game && i.free && !i.retired) ?? items.find((i) => i.game === game && i.free);
 }
 /**
 * Puts items on a resolved guy. Naming a game puts on that game's free hat —
@@ -10631,11 +10746,11 @@ function light(c) {
 function feet(c, style, limb) {
 	const spec = FOOT_STYLES[style];
 	if (!spec) return;
-	const base = c.rows[c.bottom];
-	if (!base) return;
+	const base$1 = c.rows[c.bottom];
+	if (!base$1) return;
 	const y = c.bottom + 1;
 	const mid = Math.floor(c.centre);
-	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base.left && x <= base.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
+	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base$1.left && x <= base$1.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
 }
 function arms(c, style, limb) {
 	const pose = ARM_STYLES[style];
@@ -11700,8 +11815,8 @@ function animate(input, move, options = {}) {
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
-			const base = compose(figure);
-			grids.set(pose, pose === "base" ? base : pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "laugh" ? compose({
+			const base$1 = compose(figure);
+			grids.set(pose, pose === "base" ? base$1 : pose === "shut" ? closeEyes(base$1, config) : pose === "left" ? glance(base$1, config, -1) : pose === "right" ? glance(base$1, config, 1) : pose === "laugh" ? compose({
 				...figure,
 				mouth: mouthIndex("laugh")
 			}) : pose === "laughWave" ? compose({
@@ -13586,9 +13701,9 @@ function itemFrame(o, seed = "display stand") {
 		"frame",
 		"buddy"
 	].indexOf(slot) + 1;
-	const base = resolve(seed);
+	const base$1 = resolve(seed);
 	const draw = (equip) => {
-		const cfg = dress(base, { equip });
+		const cfg = dress(base$1, { equip });
 		const grid = compose(cfg);
 		return {
 			grid,
@@ -16877,12 +16992,12 @@ function cardFace(spec) {
 	const owned = config.owned ?? {};
 	const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
 	const last = copies[copies.length - 1], lastItem = last ? itemById(last.item) : void 0;
-	const set = spec.set ?? (lastItem && lastItem.game !== "club" ? lastItem.game : void 0);
+	const set$9 = spec.set ?? (lastItem && lastItem.game !== "club" ? lastItem.game : void 0);
 	const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish)) : 0;
-	const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$2 = new Uint8Array(W * H * 4);
+	const base$1 = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$2 = new Uint8Array(W * H * 4);
 	const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
 		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
-		base.set([
+		base$1.set([
 			c[0],
 			c[1],
 			c[2],
@@ -16952,7 +17067,7 @@ function cardFace(spec) {
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
 		put(x + 5, y + 11, rgb$1(hex$3), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
-	const mark$1 = set ? SET_COLORS[set] : void 0;
+	const mark$1 = set$9 ? SET_COLORS[set$9] : void 0;
 	if (mark$1) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb$1(mark$1), [
 		255,
 		255,
@@ -16968,7 +17083,7 @@ function cardFace(spec) {
 	}
 	else for (let x = 8; x <= 17; x++) put(x, 31, rim$2, 1);
 	return {
-		base,
+		base: base$1,
 		kind,
 		noise: noise$2,
 		grade: g,

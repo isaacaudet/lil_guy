@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -1217,6 +1242,195 @@ const hair = [
 		"yrryrry"
 	])
 ];
+
+//#endregion
+//#region src/types.ts
+const GRID_SIZE = 16;
+
+//#endregion
+//#region src/item-art.ts
+const grid16 = (name, rows) => {
+	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
+	return stamp(rows);
+};
+/** How many cells a row spans, first filled to last. */
+const span = (row) => {
+	const xs = row.map((t, i) => t ? i : -1).filter((i) => i >= 0);
+	return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0;
+};
+/**
+* A hat made `d` columns wider (or narrower), the way a cap stretches: the
+* plainest columns, each the same as the one beside it, are repeated or taken
+* out, a side at a time from the middle outwards, so a buckle, a jewel or a
+* crown's points stay as drawn.
+*/
+function elastic(s, d) {
+	let out = s.map((r) => [...r]);
+	for (let k = 0; k < Math.abs(d); k++) {
+		const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
+		const cost = (x) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
+		let best = -1, bestCost = Infinity, bestDist = Infinity;
+		for (let x = 2; x <= w - 3; x++) {
+			if (left ? x > mid : x < mid) continue;
+			const c = cost(x), dist = Math.abs(x - mid);
+			if (c < bestCost || c === bestCost && dist < bestDist) {
+				best = x;
+				bestCost = c;
+				bestDist = dist;
+			}
+		}
+		if (best < 0) break;
+		out = out.map((r) => {
+			const row = [...r];
+			if (d < 0) row.splice(best, 1);
+			else row.splice(best, 0, row[best]);
+			return row;
+		});
+	}
+	return out;
+}
+/**
+* Puts a hat on, fitted to the head the way a cap fits. A hat that rests
+* across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
+* comes down to the forehead line and is stretched to the head's width there,
+* a cell of brim either side, so it sits on a narrow head and a wide one
+* alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+*/
+function wear$1(c, s, dx, sink) {
+	const last = s.length - 1, bottom = span(s[last]);
+	if (bottom < 8) {
+		seat(c, s, c.centred(s) + dx, sink);
+		return;
+	}
+	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
+	const head$1 = r ? r.right - r.left + 1 : 10;
+	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
+	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const y = Math.max(1, c.floor - last);
+	c.draw(fitted, c.centred(fitted) + dx, y);
+	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
+}
+const on = (rows, dx = 0, sink = 1) => {
+	const s = stamp(rows);
+	return (c) => wear$1(c, s, dx, sink);
+};
+const onPair = (rows, inset = 0) => {
+	const left = stamp(rows);
+	const right = mirror(left);
+	return (c) => {
+		const r = c.rows[c.shoulder()];
+		seat(c, left, r.left + inset);
+		seat(c, right, r.right - inset - width(right) + 1);
+	};
+};
+/**
+* A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
+* pixel round it for its outline). `o` is an eye, in the guy's outline
+* colour, so it stays dark whatever finish the buddy has.
+*/
+const pet = (name, rows) => {
+	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
+	return stamp(rows);
+};
+
+//#endregion
+//#region src/sets/amountle.ts
+/** Amountle's machine: what it adds, retires and redraws (see MachineSet). */
+const set$8 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/halfsies.ts
+/** Halfsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$7 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/stackdle.ts
+/** Stackdle's machine: what it adds, retires and redraws (see MachineSet). */
+const set$6 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/flipsies.ts
+/** Flipsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$5 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/puttsies.ts
+/** Puttsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$4 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/weighsies.ts
+/** Weighsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$3 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/cutsies.ts
+/** Cutsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$2 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/tiltsies.ts
+/** Tiltsies's machine: what it adds, retires and redraws (see MachineSet). */
+const set$1 = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/trackdle.ts
+/** Trackdle's machine: what it adds, retires and redraws (see MachineSet). */
+const set = {
+	add: [],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
+//#region src/sets/index.ts
+/**
+* Each machine's set, one file a machine, so every game's things are drawn
+* from what is really in that game and kept in one place.
+*/
+const SETS = {
+	amountle: set$8,
+	halfsies: set$7,
+	stackdle: set$6,
+	flipsies: set$5,
+	puttsies: set$4,
+	weighsies: set$3,
+	cutsies: set$2,
+	tiltsies: set$1,
+	trackdle: set
+};
 
 //#endregion
 //#region src/loop.ts
@@ -3334,10 +3548,6 @@ function applyFx(colors, slots, copies, t) {
 }
 
 //#endregion
-//#region src/types.ts
-const GRID_SIZE = 16;
-
-//#endregion
 //#region src/pins.ts
 /**
 * Each pin is its own silhouette, so the gold ones never read alike: a
@@ -3559,10 +3769,10 @@ function markItem(grid, slot, copy) {
 */
 function goldRim(grid, slot) {
 	const edge = (x, y) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
-	const set = [];
+	const set$9 = [];
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		if (slot === "frame") {
-			if (own("frame", t) && edge(x, y)) set.push([x, y]);
+			if (own("frame", t) && edge(x, y)) set$9.push([x, y]);
 			return;
 		}
 		if (t !== T.OUTLINE) return;
@@ -3572,9 +3782,9 @@ function goldRim(grid, slot) {
 			[-1, 0],
 			[0, 1],
 			[0, -1]
-		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set.push([x, y]);
+		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set$9.push([x, y]);
 	}));
-	for (const [x, y] of set) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+	for (const [x, y] of set$9) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
 }
 
 //#endregion
@@ -3654,14 +3864,14 @@ const mix$2 = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 function painted(colors, paint$1) {
 	const p = paint$1 && PAINTS[paint$1];
 	if (!p || !colors.length) return colors;
-	const base = rgb$1(p.hex), main = light$1(rgb$1(colors[0]));
+	const base$1 = rgb$1(p.hex), main = light$1(rgb$1(colors[0]));
 	return colors.map((hex$2) => {
 		const d = light$1(rgb$1(hex$2)) - main;
-		return toHex(d >= 0 ? mix$2(base, [
+		return toHex(d >= 0 ? mix$2(base$1, [
 			255,
 			255,
 			255
-		], Math.min(1, d * 1.5)) : mix$2(base, [
+		], Math.min(1, d * 1.5)) : mix$2(base$1, [
 			0,
 			0,
 			0
@@ -3921,12 +4131,12 @@ function gradeOf(o) {
 /** The name as it would show on an inventory card. */
 function nameOf(o) {
 	const item = itemById(o.item);
-	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
+	const base$1 = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
 	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Strange " : "");
-	if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
-	if (o.finish === "plain") return tally + base;
+	if (FINISHES[o.finish].aura) return `${tally}★ ${base$1}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
+	if (o.finish === "plain") return tally + base$1;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
-	return `${tally}${base} | ${look}`;
+	return `${tally}${base$1} | ${look}`;
 }
 /**
 * A copy as one short string, to store or put in a URL:
@@ -4131,13 +4341,13 @@ const PAINT = {
 	},
 	"nebula": (x, y, l, p) => {
 		const phase = nebulaPhase(p);
-		const base = phase === "Red Giant" ? rgb("#D0102E") : phase === "Blue Moon" ? rgb("#1E4FE8") : phase === "Black Hole" ? rgb("#2A1E3A") : rgb([
+		const base$1 = phase === "Red Giant" ? rgb("#D0102E") : phase === "Blue Moon" ? rgb("#1E4FE8") : phase === "Black Hole" ? rgb("#2A1E3A") : rgb([
 			"#8A2AB0",
 			"#3A2AB0",
 			"#2A6AB0",
 			"#B02A8A"
 		][p % 4]);
-		const c = cellNoise(p, x, y, 2) < .2 ? mix$1(base, rgb("#FFD6F0"), .55) : base;
+		const c = cellNoise(p, x, y, 2) < .2 ? mix$1(base$1, rgb("#FFD6F0"), .55) : base$1;
 		return shaded(c, l);
 	},
 	"prism": (x, y, l, p) => {
@@ -4211,80 +4421,6 @@ function paintCell(color, x, y, o, state) {
 
 //#endregion
 //#region src/items.ts
-const grid16 = (name, rows) => {
-	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
-	return stamp(rows);
-};
-/** How many cells a row spans, first filled to last. */
-const span = (row) => {
-	const xs = row.map((t, i) => t ? i : -1).filter((i) => i >= 0);
-	return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0;
-};
-/**
-* A hat made `d` columns wider (or narrower), the way a cap stretches: the
-* plainest columns, each the same as the one beside it, are repeated or taken
-* out, a side at a time from the middle outwards, so a buckle, a jewel or a
-* crown's points stay as drawn.
-*/
-function elastic(s, d) {
-	let out = s.map((r) => [...r]);
-	for (let k = 0; k < Math.abs(d); k++) {
-		const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
-		const cost = (x) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
-		let best = -1, bestCost = Infinity, bestDist = Infinity;
-		for (let x = 2; x <= w - 3; x++) {
-			if (left ? x > mid : x < mid) continue;
-			const c = cost(x), dist = Math.abs(x - mid);
-			if (c < bestCost || c === bestCost && dist < bestDist) {
-				best = x;
-				bestCost = c;
-				bestDist = dist;
-			}
-		}
-		if (best < 0) break;
-		out = out.map((r) => {
-			const row = [...r];
-			if (d < 0) row.splice(best, 1);
-			else row.splice(best, 0, row[best]);
-			return row;
-		});
-	}
-	return out;
-}
-/**
-* Puts a hat on, fitted to the head the way a cap fits. A hat that rests
-* across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
-* comes down to the forehead line and is stretched to the head's width there,
-* a cell of brim either side, so it sits on a narrow head and a wide one
-* alike. A small thing that stands on top (a gem, a flag) sits on the crown.
-*/
-function wear$1(c, s, dx, sink) {
-	const last = s.length - 1, bottom = span(s[last]);
-	if (bottom < 8) {
-		seat(c, s, c.centred(s) + dx, sink);
-		return;
-	}
-	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
-	const head$1 = r ? r.right - r.left + 1 : 10;
-	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
-	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
-	const y = Math.max(1, c.floor - last);
-	c.draw(fitted, c.centred(fitted) + dx, y);
-	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
-}
-const on = (rows, dx = 0, sink = 1) => {
-	const s = stamp(rows);
-	return (c) => wear$1(c, s, dx, sink);
-};
-const onPair = (rows, inset = 0) => {
-	const left = stamp(rows);
-	const right = mirror(left);
-	return (c) => {
-		const r = c.rows[c.shoulder()];
-		seat(c, left, r.left + inset);
-		seat(c, right, r.right - inset - width(right) + 1);
-	};
-};
 const skins = [
 	{
 		id: "amountle.jar",
@@ -6779,15 +6915,6 @@ const frames = [
 	}
 ];
 /**
-* A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
-* pixel round it for its outline). `o` is an eye, in the guy's outline
-* colour, so it stays dark whatever finish the buddy has.
-*/
-const pet = (name, rows) => {
-	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
-	return stamp(rows);
-};
-/**
 * A pet that sits at the guy's feet, bottom right, in front of everything but
 * the face. Each is a bold shape of its own with a lit side, a shaded side and
 * a face, filling as much of its 6x5 as it can, so it reads at a glance on any
@@ -8204,7 +8331,7 @@ const showpieces = [
 	}
 ];
 /** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
-const items = [
+const base = [
 	...skins.map((i) => ({
 		...i,
 		slot: "skin"
@@ -8237,6 +8364,19 @@ const items = [
 		slot: "aura"
 	}))
 ];
+/** Every item: the first lists, each machine's set laid over them (redraws, retirements), then its new items. */
+const items = (() => {
+	const sets = Object.values(SETS);
+	const out = base.map((i) => {
+		const set$9 = sets.find((st) => st.redraw[i.id] || st.retire.includes(i.id));
+		return set$9 ? {
+			...i,
+			...set$9.redraw[i.id],
+			...set$9.retire.includes(i.id) ? { retired: true } : {}
+		} : i;
+	});
+	return [...out, ...sets.flatMap((st) => st.add)];
+})();
 const byId = new Map(items.map((i) => [i.id, i]));
 function itemById(id) {
 	return id ? byId.get(id) : void 0;
@@ -8266,15 +8406,15 @@ const GAMES = [
 ];
 /** How often a showpiece comes out of its machine, against 1 for every other item. */
 const SHOWPIECE_WEIGHT = .5;
-/** An item's weight in its machine's draw. */
-const itemWeight = (item) => item.showpiece ? SHOWPIECE_WEIGHT : 1;
-/** A game's items. */
+/** An item's weight in its machine's draw: none once it's retired. */
+const itemWeight = (item) => item.retired ? 0 : item.showpiece ? SHOWPIECE_WEIGHT : 1;
+/** A game's items: what its machine holds now. Retired ones are left out; `itemById` still finds them. */
 function gameItems(game) {
-	return items.filter((i) => i.game === game);
+	return items.filter((i) => i.game === game && !i.retired);
 }
 /** The hat every player wears in a game until they put something else on. */
 function freeItem(game) {
-	return items.find((i) => i.game === game && i.free);
+	return items.find((i) => i.game === game && i.free && !i.retired) ?? items.find((i) => i.game === game && i.free);
 }
 /**
 * Puts items on a resolved guy. Naming a game puts on that game's free hat —
@@ -10627,11 +10767,11 @@ function light(c) {
 function feet(c, style, limb) {
 	const spec = FOOT_STYLES[style];
 	if (!spec) return;
-	const base = c.rows[c.bottom];
-	if (!base) return;
+	const base$1 = c.rows[c.bottom];
+	if (!base$1) return;
 	const y = c.bottom + 1;
 	const mid = Math.floor(c.centre);
-	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base.left && x <= base.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
+	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base$1.left && x <= base$1.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
 }
 function arms(c, style, limb) {
 	const pose = ARM_STYLES[style];
@@ -11094,5 +11234,592 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-BqtYCmLj.js.map
+Object.defineProperty(exports, 'AURAS', {
+  enumerable: true,
+  get: function () {
+    return AURAS;
+  }
+});
+Object.defineProperty(exports, 'AURA_ODDS', {
+  enumerable: true,
+  get: function () {
+    return AURA_ODDS;
+  }
+});
+Object.defineProperty(exports, 'DEAL_PREFIX', {
+  enumerable: true,
+  get: function () {
+    return DEAL_PREFIX;
+  }
+});
+Object.defineProperty(exports, 'DEEP_BLUE_PRINTS', {
+  enumerable: true,
+  get: function () {
+    return DEEP_BLUE_PRINTS;
+  }
+});
+Object.defineProperty(exports, 'EFFECTS', {
+  enumerable: true,
+  get: function () {
+    return EFFECTS;
+  }
+});
+Object.defineProperty(exports, 'FINISHES', {
+  enumerable: true,
+  get: function () {
+    return FINISHES;
+  }
+});
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'FX_IDS', {
+  enumerable: true,
+  get: function () {
+    return FX_IDS;
+  }
+});
+Object.defineProperty(exports, 'GAMES', {
+  enumerable: true,
+  get: function () {
+    return GAMES;
+  }
+});
+Object.defineProperty(exports, 'GOLD_RIM_DAYS', {
+  enumerable: true,
+  get: function () {
+    return GOLD_RIM_DAYS;
+  }
+});
+Object.defineProperty(exports, 'GRADES', {
+  enumerable: true,
+  get: function () {
+    return GRADES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'LAYER', {
+  enumerable: true,
+  get: function () {
+    return LAYER;
+  }
+});
+Object.defineProperty(exports, 'LOOP_MS', {
+  enumerable: true,
+  get: function () {
+    return LOOP_MS;
+  }
+});
+Object.defineProperty(exports, 'LUCKY_ODDS', {
+  enumerable: true,
+  get: function () {
+    return LUCKY_ODDS;
+  }
+});
+Object.defineProperty(exports, 'MAX_PINS', {
+  enumerable: true,
+  get: function () {
+    return MAX_PINS;
+  }
+});
+Object.defineProperty(exports, 'ONE_OF_ONE_AURAS', {
+  enumerable: true,
+  get: function () {
+    return ONE_OF_ONE_AURAS;
+  }
+});
+Object.defineProperty(exports, 'PAINTABLE', {
+  enumerable: true,
+  get: function () {
+    return PAINTABLE;
+  }
+});
+Object.defineProperty(exports, 'PAINTS', {
+  enumerable: true,
+  get: function () {
+    return PAINTS;
+  }
+});
+Object.defineProperty(exports, 'PAINT_IDS', {
+  enumerable: true,
+  get: function () {
+    return PAINT_IDS;
+  }
+});
+Object.defineProperty(exports, 'PINS', {
+  enumerable: true,
+  get: function () {
+    return PINS;
+  }
+});
+Object.defineProperty(exports, 'RETIRED_EYES', {
+  enumerable: true,
+  get: function () {
+    return RETIRED_EYES;
+  }
+});
+Object.defineProperty(exports, 'SET_COLORS', {
+  enumerable: true,
+  get: function () {
+    return SET_COLORS;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, 'SHOWPIECE_WEIGHT', {
+  enumerable: true,
+  get: function () {
+    return SHOWPIECE_WEIGHT;
+  }
+});
+Object.defineProperty(exports, 'SMALL_SIZE', {
+  enumerable: true,
+  get: function () {
+    return SMALL_SIZE;
+  }
+});
+Object.defineProperty(exports, 'T', {
+  enumerable: true,
+  get: function () {
+    return T;
+  }
+});
+Object.defineProperty(exports, 'WEAR', {
+  enumerable: true,
+  get: function () {
+    return WEAR;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'accessoryWeights', {
+  enumerable: true,
+  get: function () {
+    return accessoryWeights;
+  }
+});
+Object.defineProperty(exports, 'applyFx', {
+  enumerable: true,
+  get: function () {
+    return applyFx;
+  }
+});
+Object.defineProperty(exports, 'armWeights', {
+  enumerable: true,
+  get: function () {
+    return armWeights;
+  }
+});
+Object.defineProperty(exports, 'auraById', {
+  enumerable: true,
+  get: function () {
+    return auraById;
+  }
+});
+Object.defineProperty(exports, 'auraCells', {
+  enumerable: true,
+  get: function () {
+    return auraCells;
+  }
+});
+Object.defineProperty(exports, 'auraColor', {
+  enumerable: true,
+  get: function () {
+    return auraColor;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'bodyWeights', {
+  enumerable: true,
+  get: function () {
+    return bodyWeights;
+  }
+});
+Object.defineProperty(exports, 'cheekWeights', {
+  enumerable: true,
+  get: function () {
+    return cheekWeights;
+  }
+});
+Object.defineProperty(exports, 'cheeks', {
+  enumerable: true,
+  get: function () {
+    return cheeks;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'cycle', {
+  enumerable: true,
+  get: function () {
+    return cycle;
+  }
+});
+Object.defineProperty(exports, 'dealOf', {
+  enumerable: true,
+  get: function () {
+    return dealOf;
+  }
+});
+Object.defineProperty(exports, 'decode', {
+  enumerable: true,
+  get: function () {
+    return decode;
+  }
+});
+Object.defineProperty(exports, 'dress', {
+  enumerable: true,
+  get: function () {
+    return dress;
+  }
+});
+Object.defineProperty(exports, 'encode', {
+  enumerable: true,
+  get: function () {
+    return encode;
+  }
+});
+Object.defineProperty(exports, 'eyeWeights', {
+  enumerable: true,
+  get: function () {
+    return eyeWeights;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'faceOf', {
+  enumerable: true,
+  get: function () {
+    return faceOf;
+  }
+});
+Object.defineProperty(exports, 'fit', {
+  enumerable: true,
+  get: function () {
+    return fit;
+  }
+});
+Object.defineProperty(exports, 'fitLoop', {
+  enumerable: true,
+  get: function () {
+    return fitLoop;
+  }
+});
+Object.defineProperty(exports, 'footWeights', {
+  enumerable: true,
+  get: function () {
+    return footWeights;
+  }
+});
+Object.defineProperty(exports, 'freeItem', {
+  enumerable: true,
+  get: function () {
+    return freeItem;
+  }
+});
+Object.defineProperty(exports, 'fxColor', {
+  enumerable: true,
+  get: function () {
+    return fxColor;
+  }
+});
+Object.defineProperty(exports, 'gameItems', {
+  enumerable: true,
+  get: function () {
+    return gameItems;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'gradeOf', {
+  enumerable: true,
+  get: function () {
+    return gradeOf;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hairWeights', {
+  enumerable: true,
+  get: function () {
+    return hairWeights;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'headWeights', {
+  enumerable: true,
+  get: function () {
+    return headWeights;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'inSeason', {
+  enumerable: true,
+  get: function () {
+    return inSeason;
+  }
+});
+Object.defineProperty(exports, 'itemById', {
+  enumerable: true,
+  get: function () {
+    return itemById;
+  }
+});
+Object.defineProperty(exports, 'itemWeight', {
+  enumerable: true,
+  get: function () {
+    return itemWeight;
+  }
+});
+Object.defineProperty(exports, 'items', {
+  enumerable: true,
+  get: function () {
+    return items;
+  }
+});
+Object.defineProperty(exports, 'luckyPalette', {
+  enumerable: true,
+  get: function () {
+    return luckyPalette;
+  }
+});
+Object.defineProperty(exports, 'mouthWeights', {
+  enumerable: true,
+  get: function () {
+    return mouthWeights;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'nameOf', {
+  enumerable: true,
+  get: function () {
+    return nameOf;
+  }
+});
+Object.defineProperty(exports, 'nebulaPhase', {
+  enumerable: true,
+  get: function () {
+    return nebulaPhase;
+  }
+});
+Object.defineProperty(exports, 'paint', {
+  enumerable: true,
+  get: function () {
+    return paint;
+  }
+});
+Object.defineProperty(exports, 'painted', {
+  enumerable: true,
+  get: function () {
+    return painted;
+  }
+});
+Object.defineProperty(exports, 'paletteOf', {
+  enumerable: true,
+  get: function () {
+    return paletteOf;
+  }
+});
+Object.defineProperty(exports, 'paletteWeights', {
+  enumerable: true,
+  get: function () {
+    return paletteWeights;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'pinById', {
+  enumerable: true,
+  get: function () {
+    return pinById;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'roll', {
+  enumerable: true,
+  get: function () {
+    return roll;
+  }
+});
+Object.defineProperty(exports, 'rollFx', {
+  enumerable: true,
+  get: function () {
+    return rollFx;
+  }
+});
+Object.defineProperty(exports, 'rollSeason', {
+  enumerable: true,
+  get: function () {
+    return rollSeason;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+Object.defineProperty(exports, 'shadeWeights', {
+  enumerable: true,
+  get: function () {
+    return shadeWeights;
+  }
+});
+Object.defineProperty(exports, 'shows', {
+  enumerable: true,
+  get: function () {
+    return shows;
+  }
+});
+Object.defineProperty(exports, 'slotOf', {
+  enumerable: true,
+  get: function () {
+    return slotOf;
+  }
+});
+Object.defineProperty(exports, 'special', {
+  enumerable: true,
+  get: function () {
+    return special;
+  }
+});
+Object.defineProperty(exports, 'starter', {
+  enumerable: true,
+  get: function () {
+    return starter;
+  }
+});
+Object.defineProperty(exports, 'steps', {
+  enumerable: true,
+  get: function () {
+    return steps;
+  }
+});
+Object.defineProperty(exports, 'tallyMarks', {
+  enumerable: true,
+  get: function () {
+    return tallyMarks;
+  }
+});
+Object.defineProperty(exports, 'temperTint', {
+  enumerable: true,
+  get: function () {
+    return temperTint;
+  }
+});
+Object.defineProperty(exports, 'wave', {
+  enumerable: true,
+  get: function () {
+    return wave;
+  }
+});
+Object.defineProperty(exports, 'wearOf', {
+  enumerable: true,
+  get: function () {
+    return wearOf;
+  }
+});
+Object.defineProperty(exports, 'withItems', {
+  enumerable: true,
+  get: function () {
+    return withItems;
+  }
+});
+Object.defineProperty(exports, 'withoutRetired', {
+  enumerable: true,
+  get: function () {
+    return withoutRetired;
+  }
+});
+Object.defineProperty(exports, 'wrap', {
+  enumerable: true,
+  get: function () {
+    return wrap$1;
+  }
+});
+//# sourceMappingURL=paint-C76O_DiI.cjs.map
