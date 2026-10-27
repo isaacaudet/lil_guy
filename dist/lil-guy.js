@@ -1137,17 +1137,17 @@ const heads = [
 		"........#.......",
 		".......##.......",
 		"......####......",
-		"......####......",
-		".....######.....",
-		"..#..######..#..",
-		"..##.######.##..",
-		"..############..",
-		"..############..",
-		"..############..",
-		"..############..",
-		"...##########...",
-		"....########....",
-		".....######.....",
+		"....#.####.#....",
+		"...##.#hh#.##...",
+		"..###.#hh#.###..",
+		"..####hhhh####..",
+		".####hhhhhh####.",
+		"..##hhhhhhhh##..",
+		"..##hhhhhhhh##..",
+		"..##hhhhhhhh##..",
+		"...#hhhhhhhh#...",
+		"....hhhhhhhh....",
+		".....hhhhhh.....",
 		"................"
 	]),
 	head("jellyfish", 7, false, [
@@ -1161,11 +1161,11 @@ const heads = [
 		"..############..",
 		"..############..",
 		"..############..",
-		"..############..",
-		"..#.##.##.##.#..",
-		"..#..#.##.#..#..",
-		".#...#....#...#.",
-		".#....#..#....#.",
+		".##############.",
+		".#.##s####s##.#.",
+		"..#....##....#..",
+		"...#...##...#...",
+		"..#....##....#..",
 		"................"
 	]),
 	head("octopus", 8, false, [
@@ -1174,43 +1174,43 @@ const heads = [
 		".....######.....",
 		"....########....",
 		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
 		"..############..",
-		"..##.##..##.##..",
-		".##..#....#..##.",
-		".#............#.",
+		"..############..",
+		"..############..",
+		"..############..",
+		"..############..",
+		"..############..",
+		".##############.",
+		".#.##.####.##.#.",
+		".#..#.#..#.#..#.",
+		".....#....#.....",
 		"................"
 	]),
 	head("robot", 8, true, [
 		"................",
+		".......hh.......",
+		".......ss.......",
+		"..############..",
+		"..############..",
+		"..#hhhhhhhhhh#..",
+		".s#hhhhhhhhhh#s.",
+		".s#hhhhhhhhhh#s.",
+		".s#hhhhhhhhhh#s.",
+		"..#hhhhhhhhhh#..",
+		"..#hhhhhhhhhh#..",
+		"..############..",
+		"..############..",
 		"................",
-		"................",
-		"...##########...",
-		"..############..",
-		"..############..",
-		"..############..",
-		".##############.",
-		".##############.",
-		"..############..",
-		"..############..",
-		"..############..",
-		"...##########...",
-		".....######.....",
 		"................",
 		"................"
 	]),
 	head("cactus", 10, true, [
 		"................",
 		"......####......",
-		".....######.....",
-		"....########....",
-		"....########....",
-		".##.########.##.",
+		".....#s##s#.....",
+		"....##s##s##....",
+		".#..##s##s##..#.",
+		".##.##s##s##.##.",
 		".##.########.##.",
 		".##.########.##.",
 		".##############.",
@@ -1222,21 +1222,21 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("saucer", 8, false, [
-		"................",
+	head("saucer", 7, false, [
 		"................",
 		"................",
 		".....######.....",
 		"....########....",
 		"...##########...",
 		"...##########...",
-		"...##########...",
-		"...##########...",
-		"...##########...",
-		".##############.",
-		".##############.",
 		"..############..",
-		"....#......#....",
+		"..############..",
+		"..############..",
+		"..############..",
+		".##############.",
+		".#h##h####h##h#.",
+		"..ssssssssssss..",
+		"....s......s....",
 		"................",
 		"................"
 	]),
@@ -1258,20 +1258,20 @@ const heads = [
 		"......####......",
 		"................"
 	]),
-	head("toadstool", 7, true, [
-		"................",
+	head("toadstool", 10, true, [
 		"................",
 		".....######.....",
+		"...##h####h##...",
+		"..##hhh##hhh##..",
+		".####h####h####.",
+		".##############.",
+		".ssssssssssssss.",
+		"...##########...",
 		"...##########...",
 		"..############..",
-		".##############.",
-		".##############.",
-		".##############.",
 		"..############..",
-		"....########....",
-		"....########....",
-		"....########....",
-		"....########....",
+		"..############..",
+		"...##########...",
 		"...##########...",
 		"................",
 		"................"
@@ -1279,17 +1279,17 @@ const heads = [
 	head("bat", 8, false, [
 		"................",
 		"................",
-		".#............#.",
-		".##..........##.",
-		".###.#....#.###.",
-		".###.##..##.###.",
-		".##.########.##.",
-		".##############.",
-		".##############.",
-		".##############.",
-		".#.#.######.#.#.",
+		".s............s.",
+		".ss..#....#..ss.",
+		".sss.##..##.sss.",
+		".sss.######.sss.",
+		".ss##########ss.",
+		".ss##########ss.",
+		".ss##########ss.",
+		".ss##########ss.",
+		".s.s.######.s.s.",
 		".....######.....",
-		"................",
+		"......####......",
 		"................",
 		"................",
 		"................"
@@ -1297,11 +1297,11 @@ const heads = [
 	head("crab", 9, false, [
 		"................",
 		"................",
-		"................",
-		".##..........##.",
 		".#.#........#.#.",
-		"..##........##..",
-		"...##.####.##...",
+		".###........###.",
+		"..#..........#..",
+		"..##.######.##..",
+		"...##########...",
 		"..############..",
 		"..############..",
 		".##############.",
@@ -1316,11 +1316,11 @@ const heads = [
 		"................",
 		"................",
 		"................",
-		"...####..####...",
-		"..############..",
-		"..############..",
-		"..############..",
-		"..############..",
+		"...###....###...",
+		"..#####..#####..",
+		".##############.",
+		".##############.",
+		".##############.",
 		"..############..",
 		"...##########...",
 		"....########....",
@@ -1351,55 +1351,55 @@ const heads = [
 	head("tooth", 8, false, [
 		"................",
 		"................",
-		"................",
-		"..####....####..",
-		"..############..",
+		"..###......###..",
+		".######..######.",
+		".##############.",
 		"..############..",
 		"..############..",
 		"..############..",
 		"..############..",
 		"..############..",
 		"...##########...",
-		"...##########...",
-		"...####..####...",
-		"...###....###...",
-		"....#......#....",
+		"....########....",
+		"....###..###....",
+		"....##....##....",
+		".....#....#.....",
 		"................"
 	]),
 	head("star", 8, false, [
 		"................",
 		".......##.......",
 		"......####......",
-		"......####......",
 		".....######.....",
+		".##############.",
 		".##############.",
 		"..############..",
 		"...##########...",
 		"...##########...",
 		"...##########...",
-		"....########....",
-		"...##########...",
-		"..#####..#####..",
-		"..####....####..",
-		".###........###.",
+		"..############..",
+		"..############..",
+		".######..######.",
+		".####......####.",
+		".##..........##.",
 		"................"
 	]),
-	head("acorn", 9, true, [
+	head("acorn", 10, false, [
 		"................",
-		"................",
-		".......##.......",
-		".....######.....",
-		"...#s#s##s#s#...",
-		".#s#s#s##s#s#s#.",
-		".##############.",
-		"...##########...",
-		"...##########...",
-		"...##########...",
+		".........#......",
+		".....ssssss.....",
+		"...sss#ss#sss...",
+		"..s#ssssssss#s..",
+		".sss#ss##ss#sss.",
+		".dddddddddddddd.",
+		"..############..",
+		"..############..",
+		"..############..",
+		"..############..",
+		"..############..",
 		"...##########...",
 		"....########....",
-		".....######.....",
 		"......####......",
-		"................",
 		"................"
 	]),
 	head("gem", 8, false, [
@@ -1413,46 +1413,46 @@ const heads = [
 		"..############..",
 		"...##########...",
 		"...##########...",
-		"....########....",
-		".....######.....",
-		"......####......",
+		"....#s####s#....",
+		".....#s##s#.....",
+		"......#ss#......",
 		".......##.......",
 		"................",
 		"................"
 	]),
-	head("clover", 8, false, [
+	head("clover", 7, false, [
 		"................",
-		"...###....###...",
-		"..#####..#####..",
+		"..####....####..",
 		".######..######.",
+		".######..######.",
+		".######ss######.",
 		".##############.",
-		".##############.",
-		"..############..",
 		"...##########...",
 		"...##########...",
-		"..############..",
 		".##############.",
 		".##############.",
+		".######ss######.",
 		".######..######.",
-		"..#####..#####..",
-		"...###....###...",
+		"..####.##.####..",
+		"........#.......",
+		".........#......",
 		"................"
 	]),
 	head("disco", 8, true, [
 		"................",
 		"................",
 		"................",
-		".....##hh##.....",
+		".....hh##hh.....",
 		"....h##hh##h....",
-		"...##hh##hh##...",
-		"..h##hh##hh##h..",
-		"..#hh##hh##hh#..",
-		"..#hh##hh##hh#..",
-		"..h##hh##hh##h..",
-		"..h##hh##hh##h..",
-		"..#hh##hh##hh#..",
 		"...hh##hh##hh...",
-		"....#hh##hh#....",
+		"..#hh######hh#..",
+		"..h##########h..",
+		"..h##########h..",
+		"..#s########s#..",
+		"..s##########s..",
+		"..#ss######ss#..",
+		"...ss##ss##ss...",
+		"....#ss##ss#....",
 		"................",
 		"................"
 	])
@@ -1465,9 +1465,13 @@ const eyes_ = (name, rows) => ({
 	art: stamp(rows)
 });
 const eyes = [
-	eyes_("beans", ["e....e", "e....e"]),
+	eyes_("beans", [
+		"e....e",
+		"e....e",
+		"......"
+	]),
 	eyes_("shiny", ["we....we", "ee....ee"]),
-	eyes_("happy", ["eee..eee", "e.e..e.e"]),
+	eyes_("happy", [".ee....ee.", "e..e..e..e"]),
 	eyes_("sparkle", [
 		"we....we",
 		"ee....ee",
@@ -1485,8 +1489,8 @@ const eyes = [
 		"e......e"
 	]),
 	eyes_("hearts", [
-		"r.r..r.r",
-		"wrr..wrr",
+		"w.r..w.r",
+		"rrr..rrr",
 		".r....r."
 	]),
 	eyes_("lashes", [
@@ -1510,11 +1514,11 @@ const eyes = [
 		"yyy..yyy",
 		".y....y."
 	]),
-	eyes_("squint", ["ee....ee", "ee....ee"]),
+	eyes_("squint", ["eee..eee", "wee..eew"]),
 	eyes_("fired up", [
-		"o......o",
-		".o....o.",
-		"ee....ee"
+		".y....y.",
+		"yry..yry",
+		"ere..ere"
 	]),
 	eyes_("laser", [
 		"..r....r..",
@@ -1528,24 +1532,24 @@ const eyes = [
 	]),
 	eyes_("sleepy", ["e.e....e.e", "eee....eee"]),
 	eyes_("dizzy", [
-		".ee....ee.",
-		"e.e....e.e",
-		"ee......ee"
+		"e.e..e.e",
+		".e....e.",
+		"e.e..e.e"
 	]),
 	eyes_("anime", [
 		".eee..eee.",
-		".we....we.",
-		".ee....ee."
+		"eewe..ewee",
+		".eae..eae."
 	]),
 	eyes_("galaxy", [
-		".ee....ee.",
-		"eAwe..eAwe",
-		".yA....yA."
+		".ew....we.",
+		"eAye..eyAe",
+		".Ae....eA."
 	]),
 	eyes_("diamond", [
-		".aa....aa.",
-		"awaA..awaA",
-		".AA....AA."
+		".wa....wa.",
+		"aaAe..aaAe",
+		".eA....eA."
 	]),
 	eyes_("dragon", [
 		".y......y.",
@@ -1576,52 +1580,52 @@ const mouths = [
 	]),
 	mouth("grin", ["mmmmmm", ".mttm."]),
 	mouth("fang", ["m..m", ".mw."]),
-	mouth("smirk", ["...m", "mmm."]),
+	mouth("smirk", [
+		"....",
+		"...m",
+		"mmm."
+	]),
 	mouth("ooh", [
 		".mm.",
 		"mttm",
 		".mm."
 	]),
 	mouth("tiny", [".mm."]),
-	mouth("wobble", [
-		"m.mm.m",
-		".m..m.",
-		"..tt.."
-	]),
+	mouth("wobble", ["m.m.m.", ".m.m.m"]),
 	mouth("toothy", ["mwwwwm", ".mmmm."]),
 	mouth("tongue out", ["mmmm", "..t."]),
 	mouth("flat", ["m...m", ".mmm."]),
 	mouth("gritted", [
-		"m....m",
-		"mwwwwm",
-		".mmmm."
+		"mmmmmm",
+		"mwmwmw",
+		"mmmmmm"
 	]),
 	mouth("bubblegum", [
-		"...cc.",
-		"mm.cwc",
-		"...cc."
+		".cccc.",
+		"cwcccc",
+		".cccc."
 	]),
 	mouth("bunny", ["mmmm", "mwwm"]),
 	mouth("vampire", [
 		"m....m",
-		".mmmm.",
-		".w..w."
+		"mwmmwm",
+		".mmmm."
 	]),
 	mouth("wide", ["m....m", ".mmmm."]),
 	mouth("gold tooth", [
-		"mmmmmm",
+		"m....m",
 		"mwwywm",
 		".mmmm."
 	]),
 	mouth("grillz", [
 		"mmmmmm",
-		"mywyym",
+		"myYyYm",
 		".mmmm."
 	]),
 	mouth("mustache", [
 		"mm..mm",
-		"m.mm.m",
-		"..tt.."
+		"mmmmmm",
+		"..mm.."
 	])
 ];
 
@@ -1638,9 +1642,17 @@ const cheeks = [
 	cheeks_("rosy", ["cc......cc", ".c......c."]),
 	cheeks_("freckles", ["c.c....c.c"]),
 	cheeks_("scar", [".......o..", "........o."]),
-	cheeks_("band-aid", [".......xx."]),
-	cheeks_("war paint", ["rr......rr"]),
-	cheeks_("whiskers", ["mm......mm"]),
+	cheeks_("band-aid", ["......xxc.", ".......cxx"]),
+	cheeks_("war paint", [
+		"rr......rr",
+		"..........",
+		"rr......rr"
+	]),
+	cheeks_("whiskers", [
+		"m........m",
+		"mmm....mmm",
+		"m........m"
+	]),
 	cheeks_("hearts", ["r.r....r.r", ".r......r."]),
 	cheeks_("shine", ["ww......ww"]),
 	cheeks_("stripes", ["AA......AA", ".AA....AA."]),
@@ -1649,7 +1661,7 @@ const cheeks = [
 		"yyy....yyy",
 		".y......y."
 	]),
-	cheeks_("gold leaf", ["yY......Yy"]),
+	cheeks_("gold leaf", [".y......y.", "yYw....wYy"]),
 	cheeks_("flushed", ["cc......cc", "cc......cc"]),
 	cheeks_("shy", ["c.c....c.c", ".c......c."]),
 	cheeks_("mole", ["..........", "........m."]),
@@ -1722,6 +1734,41 @@ function capRows(c, n, fill, shade) {
 		if (r) c.set(r.right, y, shade);
 	}
 }
+/** The first row from the crown down at least `min` wide: where a hat's band goes. Never past the floor. */
+function brow(c, min = 6) {
+	for (let y = c.crown; y <= c.floor; y++) {
+		const r = c.rows[y];
+		if (r && r.right - r.left + 1 >= min) return y;
+	}
+	return Math.min(c.crown, c.floor);
+}
+/** How wide the head is on a row. */
+const across = (c, y) => {
+	const r = c.rows[y];
+	return r ? r.right - r.left + 1 : 0;
+};
+/**
+* Draws a hat centred with its bottom row on row `y`: pushed down where it
+* would leave the grid, and never past the floor, where it would reach the eyes.
+*/
+function wear$2(c, s, y, dx = 0) {
+	let top = Math.max(1, y - s.length + 1);
+	if (top + s.length - 1 > c.floor) top = Math.max(1, c.floor - s.length + 1);
+	c.draw(s, c.centred(s) + dx, top);
+}
+/** Picks the widest drawing that fits on a row the given width across, so a hat suits a narrow head and a wide one. */
+const fitted = (sizes, room) => sizes.find((s) => width(s) <= room) ?? sizes[sizes.length - 1];
+/** A hat drawn in a few widths, worn with its bottom row a row into the head. */
+const hat = (name, sizes, sink = 1, dx = 0) => {
+	const stamps = sizes.map(stamp);
+	return {
+		name,
+		draw: (c) => {
+			const y = Math.min(brow(c) + sink - 1, c.floor);
+			wear$2(c, fitted(stamps, across(c, y) + 2), y, dx);
+		}
+	};
+};
 const hair = [
 	{
 		name: "none",
@@ -1744,15 +1791,18 @@ const hair = [
 		"##"
 	], 1),
 	pair("bug antennae", [
-		"a..",
-		".o.",
-		"..o"
-	], 1),
+		"wa...",
+		"aA...",
+		".oo..",
+		"..o..",
+		"..o.."
+	]),
 	pair("horns", [
-		"x.",
-		"xx",
-		"xx"
-	], 1),
+		"r..",
+		"r..",
+		"rr.",
+		".rr"
+	]),
 	pair("space buns", [
 		"aa",
 		"aA",
@@ -1778,31 +1828,40 @@ const hair = [
 		"aaAaa",
 		"a...a"
 	], 3),
-	centre("crown", [
-		"y.y.y",
-		"yyyyy",
-		"YYrYY"
-	]),
-	centre("party hat", [
-		"..x..",
-		".aaA.",
-		".xxx.",
-		"aaaAa"
-	]),
+	hat("crown", [[
+		"y..yy..y",
+		"yyyyyyyy",
+		"YYYrrYYY"
+	], [
+		"y.yy.y",
+		"yyyyyy",
+		"YYrrYY"
+	]]),
+	hat("party hat", [[
+		"..xx..",
+		"..aA..",
+		".axaA.",
+		".aaaA.",
+		"axaxaA"
+	]], 1),
 	centre("antenna", [
-		"aa",
+		"wa",
 		"aA",
-		"o."
-	], 1),
+		".o",
+		".o"
+	], 0),
 	centre("unicorn horn", [
 		".y",
 		"yY",
-		"yY"
-	]),
+		"Yy",
+		"yY",
+		"Yy"
+	], 0, 2),
 	centre("star clip", [
-		".y.",
-		"yyy",
-		".y."
+		"..y..",
+		"yyyyy",
+		".ywY.",
+		".Y.Y."
 	], -3),
 	centre("tuft", [
 		"#.",
@@ -1837,122 +1896,135 @@ const hair = [
 	{
 		name: "bob",
 		draw: (c) => {
-			capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
-			const r = c.rows[c.crown + 2];
-			for (let x = r.left; x <= r.right; x++) if ((x - r.left) % 3 !== 1) c.set(x, c.crown + 2, T.ACCENT);
-			c.set(r.left, c.crown + 3, T.ACCENT);
-			c.set(r.right, c.crown + 3, T.ACCENT_SHADE);
+			const fringe = Math.min(c.crown + 2, c.floor);
+			for (let y = Math.min(c.tip, c.crown); y <= fringe; y++) {
+				c.paintRow(y, T.ACCENT);
+				const r$1 = c.rows[y];
+				if (r$1) {
+					c.set(r$1.left - 1, y, T.ACCENT);
+					c.set(r$1.right + 1, y, T.ACCENT_SHADE);
+					c.set(r$1.right, y, T.ACCENT_SHADE);
+				}
+			}
+			const r = c.rows[c.crown + 1];
+			if (r) {
+				c.set(r.left + 2, c.crown, T.LIGHT);
+				c.set(r.left + 3, c.crown, T.LIGHT);
+			}
+			for (let y = fringe + 1; y <= c.eyeLine; y++) {
+				const row = c.rows[y];
+				if (!row) continue;
+				c.set(row.left - 1, y, T.ACCENT);
+				c.set(row.right + 1, y, T.ACCENT_SHADE);
+			}
 		}
 	},
-	{
-		name: "mushroom",
-		draw: (c) => {
-			capRows(c, 3, T.RED, T.RED);
-			const r = c.rows[c.crown + 2];
-			c.set(r.left - 1, c.crown + 2, T.RED);
-			c.set(r.right + 1, c.crown + 2, T.RED);
-			const x = Math.floor(c.centre);
-			c.set(x - 3, c.crown + 1, T.WHITE);
-			c.set(x, c.crown, T.WHITE);
-			c.set(x + 2, c.crown + 2, T.WHITE);
-		}
-	},
+	hat("mushroom", [[
+		"...rrrr...",
+		".rrwwrrrr.",
+		"rwwrrrrwwr",
+		"rrrrrrrrrr"
+	], [
+		"..rrrr..",
+		".rwwrrr.",
+		"rrrrrwwr",
+		"rrrrrrrr"
+	]], 2),
 	{
 		name: "eggshell",
 		draw: (c) => {
 			capRows(c, 2, T.WHITE, T.WHITE);
 			const r = c.rows[c.crown + 2];
-			for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 2, T.WHITE);
+			if (r) for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 2, T.WHITE);
 		}
 	},
-	{
-		name: "frosting",
-		draw: (c) => {
-			capRows(c, 2, T.TRIM, T.TRIM);
-			const r = c.rows[c.crown + 2];
-			c.set(r.left + 1, c.crown + 2, T.TRIM);
-			c.set(r.left + 4, c.crown + 2, T.TRIM);
-			c.set(r.right - 2, c.crown + 2, T.TRIM);
-			c.set(r.right - 2, c.crown + 3, T.TRIM);
-			const x = Math.floor(c.centre);
-			c.set(x - 3, c.crown + 1, T.ACCENT);
-			c.set(x - 1, c.crown, T.GOLD);
-			c.set(x + 1, c.crown + 1, T.LEAF);
-			c.set(x + 3, c.crown, T.ACCENT);
-		}
-	},
-	{
-		name: "leafy top",
-		draw: (c) => {
-			c.paintRow(c.crown, T.LEAF);
-			const r = c.rows[c.crown + 1];
-			for (let x$1 = r.left; x$1 <= r.right; x$1 += 2) c.set(x$1, c.crown + 1, T.LEAF_SHADE);
-			const x = Math.floor(c.centre);
-			c.set(x, c.crown - 1, T.LEAF);
-			if (c.crown > 2) c.set(x - 1, c.crown - 2, T.LEAF);
-		}
-	},
-	{
-		name: "beret",
-		draw: (c) => {
-			capRows(c, 1, T.ACCENT, T.ACCENT);
-			const r = c.rows[c.crown];
-			c.set(r.left - 1, c.crown, T.ACCENT);
-			c.set(r.left - 2, c.crown + 1, T.ACCENT_SHADE);
-			c.set(r.left - 1, c.crown + 1, T.ACCENT_SHADE);
-			for (let x = r.left; x <= r.right; x++) c.set(x, c.crown - 1, T.ACCENT);
-			if (c.crown > 2) c.set(Math.floor(c.centre), c.crown - 2, T.ACCENT_SHADE);
-		}
-	},
-	{
-		name: "witch hat",
-		draw: (c) => {
-			const cone = stamp([
-				"..aa.",
-				".aaA.",
-				".xxx.",
-				"aaaaA"
-			]);
-			seat(c, cone, c.centred(cone));
-			const r = c.rows[c.crown];
-			for (let x = r.left - 1; x <= r.right + 1; x++) c.set(x, c.crown, T.ACCENT);
-		}
-	},
+	hat("frosting", [[
+		".....r...",
+		"....r....",
+		".xxxrxx..",
+		"xxaxxxgxx",
+		"xxxxyxxxx",
+		"x.xx.xx.x",
+		"x..x..x.."
+	], [
+		"....r..",
+		"...r...",
+		".xxrxx.",
+		"xaxxxgx",
+		"xxxyxxx",
+		"x.xx.xx",
+		"x..x..."
+	]], 4),
+	hat("leafy top", [[
+		"..g..g..",
+		"g.gG.G.g",
+		".gGgGgG.",
+		"..gGgG..",
+		"...gG..."
+	]], 1),
+	hat("beret", [[
+		"......A...",
+		"...aaaaaa.",
+		".aaaaaaaaA",
+		"AaaaaaaaA."
+	], [
+		".....A..",
+		"..aaaaa.",
+		"aaaaaaaA",
+		"AaaaaaA."
+	]], 1),
+	hat("witch hat", [[
+		"......aA..",
+		".....aaA..",
+		"....aaaA..",
+		"....aaaA..",
+		"...xxyxx..",
+		"aaaaaaaaaA"
+	], [
+		".....aA.",
+		"....aaA.",
+		"...aaaA.",
+		"...aaaA.",
+		"..xxyxx.",
+		"aaaaaaaA"
+	]], 1),
 	{
 		name: "propeller",
 		draw: (c) => {
 			capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
 			c.paintRow(c.crown + 1, T.TRIM);
-			const prop = stamp(["xxoaa", "..o.."]);
-			c.draw(prop, c.centred(prop), Math.max(1, c.crown - 2));
+			const prop = stamp(["xxyaa", "..y.."]);
+			const x = c.centred(prop) + 1, top = c.topOf(x + 2) ?? c.crown;
+			c.draw(prop, x, Math.max(1, top - 2));
 		}
 	},
-	centre("mohawk", [
-		".aa.",
-		".aA.",
-		".aA.",
-		"aaAA"
-	]),
+	{
+		name: "mohawk",
+		draw: (c) => {
+			const mid = Math.floor(c.centre);
+			for (let y = c.crown; y <= c.floor; y++) for (let x = mid - 2; x <= mid + 1; x++) if (c.isBody(x, y)) c.set(x, y, x === mid + 1 ? T.ACCENT_SHADE : T.ACCENT);
+			const top = c.topOf(mid) ?? c.crown;
+			c.draw(stamp([
+				".a.a.",
+				"aa.aA",
+				"aaaAA"
+			]), mid - 3, Math.max(1, top - 3));
+		}
+	},
 	{
 		name: "headphones",
 		draw: (c) => {
-			const cup = c.eyeLine - 3;
-			const r = c.rows[cup + 1];
-			const [left, right] = [r.left, r.right];
-			for (let y = cup; y < cup + 3; y++) {
-				c.set(left - 1, y, T.ACCENT_SHADE);
-				c.set(left, y, T.ACCENT);
-				c.set(right, y, T.ACCENT);
-				c.set(right + 1, y, T.ACCENT_SHADE);
+			const y = brow(c), r = c.rows[y];
+			const top = Math.max(1, y - 2);
+			for (let x = r.left + 1; x <= r.right - 1; x++) c.set(x, top, T.ACCENT_SHADE);
+			for (const [x, dir] of [[r.left - 1, 1], [r.right + 1, -1]]) {
+				for (let dy = 0; dy < 3; dy++) {
+					const cy = top + 1 + dy;
+					c.set(x, cy, T.ACCENT);
+					c.set(x + dir, cy, dy === 1 ? T.TRIM : T.ACCENT);
+				}
+				c.set(x, top, T.ACCENT_SHADE);
 			}
-			for (let y = c.crown; y < cup; y++) {
-				const row = c.rows[y];
-				if (!row) continue;
-				c.set(row.left - 1, y, T.ACCENT_SHADE);
-				c.set(row.right + 1, y, T.ACCENT_SHADE);
-			}
-			const top = c.rows[c.crown];
-			for (let x = top.left; x <= top.right; x++) c.set(x, c.crown - 1, T.ACCENT_SHADE);
 		}
 	},
 	centre("cherries", [
@@ -1964,87 +2036,142 @@ const hair = [
 	{
 		name: "flower crown",
 		draw: (c) => {
-			const r = c.rows[c.crown + 1];
-			const flowers = [
-				T.ACCENT,
-				T.GOLD,
-				T.BLUSH
-			];
-			for (let x = r.left; x <= r.right; x++) {
+			const y = brow(c), r = c.rows[y];
+			for (let x = r.left - 1; x <= r.right + 1; x++) {
 				const top = c.topOf(x);
-				if (top === null) continue;
-				c.set(x, top, T.LEAF);
-				if ((x - r.left) % 3 === 1) c.set(x, top - 1, flowers[Math.floor((x - r.left) / 3) % 3]);
+				c.set(x, top === null || top > y ? y : top, (x + y) % 2 ? T.LEAF : T.LEAF_SHADE);
 			}
-		}
-	},
-	pair("antlers", [
-		"x.x",
-		"xx.",
-		".x."
-	], 1),
-	centre("chef hat", [
-		".ww.ww.",
-		"wwwwwww",
-		"wwwwwww",
-		".xxxxx."
-	]),
-	{
-		name: "laurel",
-		draw: (c) => {
-			const r = c.rows[c.crown + 1];
 			const mid = Math.floor(c.centre);
-			for (let x = r.left; x <= r.right; x++) {
-				if (x === mid - 1 || x === mid) continue;
-				const top = c.topOf(x);
-				if (top === null) continue;
-				c.set(x, top - 1, T.GOLD_SHADE);
-				if ((x - r.left) % 2 === 0) c.set(x + (x < mid ? -1 : 1), top - 2, T.GOLD);
+			for (const fx of [mid - 3, mid + 2]) {
+				const fy = Math.min(c.topOf(fx) ?? y, y) - 1;
+				for (const [dx, dy] of [
+					[-1, 0],
+					[1, 0],
+					[0, -1]
+				]) c.set(fx + dx, fy + dy, T.ACCENT);
+				c.set(fx, fy, T.GOLD);
 			}
-			for (let dy = 1; dy <= 3; dy++) {
-				const row = c.rows[c.crown + dy];
-				if (!row) continue;
-				c.set(row.left - 1, c.crown + dy, dy % 2 ? T.GOLD : T.GOLD_SHADE);
-				c.set(row.right + 1, c.crown + dy, dy % 2 ? T.GOLD : T.GOLD_SHADE);
-			}
+			for (const bx of [mid - 1, mid]) c.set(bx, Math.min(c.topOf(bx) ?? y, y) - 1, T.BLUSH);
 		}
 	},
-	centre("star crown", [
-		"....y....",
-		".y.yyy.y.",
-		"yyy.y.yyy",
-		".y.....y."
-	], 0, 0),
-	centre("on fire", [
-		"...y...",
-		"..yr.y.",
-		".yrry..",
-		"yrryrry"
-	])
+	{
+		name: "antlers",
+		draw: (c) => {
+			const y = brow(c), r = c.rows[y];
+			const left = stamp([
+				"Y..y",
+				"Y..Y",
+				".YYY",
+				"...Y"
+			]);
+			seat(c, left, r.left - 2);
+			seat(c, mirror(left), r.right - 1);
+		}
+	},
+	hat("chef hat", [[
+		".ww.ww..",
+		"wwwwwwww",
+		"wwwwwwwh",
+		".wwwwwh.",
+		".xhxhxh."
+	]], 1),
+	hat("laurel", [[
+		".gy....yg.",
+		"gGyg..gyGg",
+		"G.gGyyGg.G"
+	], [
+		".g....g.",
+		"gGy..yGg",
+		"GgGyyGgG"
+	]], 1),
+	hat("star crown", [[
+		".....yy.....",
+		"....yyyy....",
+		".y.yywyyy.y.",
+		"yyy.yyyy.yyy",
+		".y..y..y..y.",
+		"xxxxxxxxxxxx"
+	], [
+		"...yy...",
+		"..ywyy..",
+		".yyyyyy.",
+		"..yyyy..",
+		".xyxxyx."
+	]], 1),
+	hat("on fire", [[
+		".....r....",
+		"....rr..r.",
+		".r..ryr.rr",
+		".rr.ryyrry",
+		"rryrryyyyr",
+		"ryyyywwyyr"
+	], [
+		"....r...",
+		"...rr.r.",
+		".r.ryrrr",
+		"rrrryyyr",
+		"ryyywwyr"
+	]], 2)
 ];
 
 //#endregion
 //#region src/parts/bodies.ts
-const heart$1 = stamp([
+/** Each single mark, biggest first: a smaller body gets the smaller one. */
+const heart$1 = [[
 	"r.r",
 	"rrr",
 	".r."
-]);
-const star$2 = stamp([
-	".y.",
-	"yyy",
-	".y."
-]);
-const moon = stamp([
-	".yy",
-	"y..",
-	".yy"
-]);
-const bolt = stamp([
-	"..y",
-	"yyy",
-	"y.."
-]);
+], ["r.r", ".r."]].map(stamp);
+const star$2 = [
+	[
+		".y.",
+		"ywy",
+		".y."
+	],
+	[
+		".y.",
+		"yyy",
+		".y."
+	],
+	["y"]
+].map(stamp);
+const moon = [
+	[
+		".yy",
+		"y..",
+		"y..",
+		".yy"
+	],
+	[
+		".yy",
+		"y..",
+		".yy"
+	],
+	[
+		".y",
+		"y.",
+		".y"
+	]
+].map(stamp);
+const bolt = [
+	[
+		"..y",
+		".yy",
+		"yyy",
+		"yy.",
+		"y.."
+	],
+	[
+		"..y",
+		"yyy",
+		"y.."
+	],
+	[
+		".y",
+		"yy",
+		"y."
+	]
+].map(stamp);
 /** The cells the eyes and mouth take, as `y * 64 + x`. */
 const faceOf$1 = (c) => {
 	const f = c.face, out = new Set();
@@ -2057,30 +2184,44 @@ const faceOf$1 = (c) => {
 	return out;
 };
 /**
-* Where a 3x3 mark goes: every pixel on the body with body either side, and a
-* clear pixel from the eyes and mouth, so it never reads as part of the face.
-* Under the mouth first, then low on either side, then the forehead (where
-* hair or a hat would most often cover it). On a head with room for none it
-* isn't drawn.
+* Where a mark goes: every pixel on the body (with body either side, unless
+* `loose`), and a clear pixel from the eyes and mouth, so it never reads as
+* part of the face. Under the mouth first, then low on either side, then the
+* forehead (where hair or a hat would most often cover it).
 */
-const spotFor = (c, s) => {
+const spotFor = (c, s, loose = false) => {
 	const face = faceOf$1(c);
-	const inside$1 = (x, y) => c.isBody(x, y) && c.isBody(x - 1, y) && c.isBody(x + 1, y);
+	const inside$1 = (x, y) => c.isBody(x, y) && (loose || c.isBody(x - 1, y) && c.isBody(x + 1, y));
 	const nearFace$1 = (x, y) => {
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * 64 + x + dx)) return true;
 		return false;
 	};
 	const fits = (x0, y0) => s.every((row, dy) => row.every((t, dx) => !t || inside$1(x0 + dx, y0 + dy) && !nearFace$1(x0 + dx, y0 + dy)));
-	const mid = Math.floor(c.centre) - 1, f = c.face;
+	const w = s[0].length, h = s.length, mid = Math.floor(c.centre) - Math.floor(w / 2), f = c.face;
 	const tries = [];
-	if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - 3; y++) tries.push([mid, y]);
-	if (f) for (let y = c.bottom - 3; y >= f.top; y--) for (let off = 3; off <= 6; off++) tries.push([mid + off, y], [mid - off, y]);
-	for (let y = c.crown; y <= (f ? f.top - 3 : c.crown + 1); y++) tries.push([mid, y]);
+	if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - h + 1; y++) tries.push([mid, y], [mid - 1, y], [mid + 1, y]);
+	if (f) for (let y = c.bottom - h + 1; y >= f.top; y--) for (let off = 2; off <= 6; off++) tries.push([mid + off, y], [mid - off, y]);
+	for (let y = c.crown; y <= (f ? f.top - h : c.crown + 1); y++) for (const off of [
+		0,
+		-2,
+		2,
+		-3,
+		3
+	]) tries.push([mid + off, y]);
 	return tries.find(([x, y]) => fits(x, y)) ?? null;
 };
-const mark = (c, s) => {
-	const at = spotFor(c, s);
-	if (at) c.draw(s, at[0], at[1], true);
+/**
+* A mark drawn as big as there's room for: the full one, else a smaller one
+* of the same thing, so a small body still shows its mark.
+*/
+const mark = (c, sizes) => {
+	for (const loose of [false, true]) for (const s of sizes) {
+		const at = spotFor(c, s, loose);
+		if (at) {
+			c.draw(s, at[0], at[1], true);
+			return;
+		}
+	}
 };
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c, x, y, token) {
@@ -2416,6 +2557,14 @@ function nearFace(c, x, y, gap = 1) {
 	}
 	return false;
 }
+/** Whether a cell is on or next to the mouth. */
+function nearMouth(c, x, y) {
+	const f = c.face;
+	if (!f) return false;
+	const mx = c.centred(f.mouth);
+	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (f.mouth[y + dy - f.mouthTop]?.[x + dx - mx]) return true;
+	return false;
+}
 /**
 * Where a `w` by `h` piece goes on the chest: every cell on the body and a cell clear of the face. Low on the wearer's right first, then their left, then under the mouth.
 */
@@ -2494,6 +2643,11 @@ const accessories = [
 		name: "star sticker",
 		layer: "body",
 		draw: (c) => {
+			const at = clearSpot(c, 3, 3, 1, c.eyeLine + 1) ?? clearSpot(c, 3, 3);
+			if (at) {
+				c.draw(star$1, at[0], at[1], true);
+				return;
+			}
 			const r = c.rows[c.eyeLine - 3];
 			if (r) c.draw(star$1, r.right - 3, c.eyeLine - 4, true);
 		}
@@ -2516,10 +2670,16 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const b$1 = lensBox(c, f.eyes.length - 1);
+			const e = f.eyes[f.eyes.length - 1];
+			const b$1 = {
+				left: e.left - 1,
+				right: e.right + 1,
+				top: f.top - 1,
+				bottom: f.line + 1
+			};
 			rim$1(c, b$1, T.GOLD, T.LIGHT);
-			c.set(b$1.left + 1, b$1.top + 1, T.WHITE);
-			for (let y = b$1.bottom + 1; y <= Math.min(b$1.bottom + 2, c.bottom); y++) c.set(b$1.right, y, y % 2 ? T.GOLD : T.GOLD_SHADE);
+			c.set(b$1.left + 1, b$1.top, T.WHITE);
+			for (let y = b$1.top + 2, x = b$1.right + 1; y <= Math.min(b$1.bottom + 2, c.bottom); y++, x += y % 2) c.set(x, y, y % 2 ? T.GOLD_SHADE : T.GOLD);
 		}
 	},
 	{
@@ -2528,10 +2688,26 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const e = f.eyes[0], left = e.left - 1, top = f.top - 1;
-			for (let y = top; y <= f.line; y++) for (let x = left; x <= e.right; x++) if (c.isBody(x, y)) c.set(x, y, T.EYE);
-			if (c.isBody(left, top)) c.set(left, top, T.WHITE);
-			for (let i = 1, x = e.right, y = top; c.isBody(x + i, y - i + 1) && y - i + 1 > c.tip; i++) c.set(x + i, y - i + 1, T.EYE);
+			const e = f.eyes[0], b$1 = {
+				left: e.left - 1,
+				right: e.right + 1,
+				top: f.top - 1,
+				bottom: f.line
+			};
+			for (let y = b$1.top; y <= b$1.bottom; y++) for (let x = b$1.left; x <= b$1.right; x++) {
+				const corner = (x === b$1.left || x === b$1.right) && (y === b$1.top || y === b$1.bottom);
+				if (!corner && c.isBody(x, y)) c.set(x, y, T.OUTLINE);
+			}
+			c.set(b$1.left + 1, b$1.top + 1, T.DEEP);
+			const strap = (x0, y0, dx) => {
+				for (let i = 0;; i++) {
+					const x = x0 + dx * i, y = y0 - (i >> 1);
+					if (!c.isBody(x, y) || y <= c.tip) return;
+					c.set(x, y, T.OUTLINE);
+				}
+			};
+			strap(b$1.left - 1, b$1.top, -1);
+			strap(b$1.right + 1, b$1.top - 1, 1);
 		}
 	},
 	{
@@ -2627,17 +2803,20 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const y = Math.max(1, f.top - 3);
-			const r = c.rows[y + 1];
-			if (r) {
-				for (let x = r.left; x <= r.right; x++) if (c.isBody(x, y + 1)) c.set(x, y + 1, T.DEEP);
-			}
+			const y = Math.max(3, f.top - 2), r = c.rows[y];
+			if (r) for (let x = r.left - 1; x <= r.right + 1; x++) c.set(x, y, T.DEEP);
 			for (const e of f.eyes) {
-				const x0 = e.left - (e.right - e.left < 1 ? 1 : 0), x1 = Math.max(e.right, x0 + 1);
-				for (let x = x0; x <= x1; x++) {
-					c.set(x, y, x === x0 ? T.WHITE : T.ACCENT);
-					c.set(x, y + 1, T.ACCENT_SHADE);
-				}
+				const x0 = e.left - 1;
+				c.set(x0 + 1, y - 2, T.ACCENT_SHADE);
+				c.set(x0 + 2, y - 2, T.ACCENT_SHADE);
+				c.set(x0, y - 1, T.ACCENT_SHADE);
+				c.set(x0 + 1, y - 1, T.WHITE);
+				c.set(x0 + 2, y - 1, T.ACCENT);
+				c.set(x0 + 3, y - 1, T.ACCENT_SHADE);
+				c.set(x0, y, T.ACCENT_SHADE);
+				c.set(x0 + 1, y, T.ACCENT);
+				c.set(x0 + 2, y, T.ACCENT);
+				c.set(x0 + 3, y, T.ACCENT_SHADE);
 			}
 		}
 	},
@@ -2645,12 +2824,35 @@ const accessories = [
 		name: "gold chain",
 		layer: "body",
 		draw: (c) => {
-			const y = c.neck;
-			const r = c.rows[y];
+			const y = c.neck, r = c.rows[y];
 			if (!r) return;
-			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear$1(c, x$1, y, (x$1 - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);
-			const x = Math.floor(c.centre) - 1;
-			for (const [dx, dy, t] of [
+			const mid = Math.floor(c.centre), dip = Math.max(0, Math.min(2, c.bottom - y - 2));
+			for (let x = r.left; x <= r.right; x++) {
+				const k = Math.min(x - r.left, r.right - x), cy = y + Math.min(dip, k >> 1);
+				if (c.isBody(x, cy)) wear$1(c, x, cy, x % 2 ? T.GOLD_SHADE : T.GOLD);
+			}
+			const ym = y + dip + 1;
+			const medallion = [
+				[
+					-2,
+					0,
+					T.GOLD_SHADE
+				],
+				[
+					-1,
+					0,
+					T.WHITE
+				],
+				[
+					0,
+					0,
+					T.GOLD
+				],
+				[
+					1,
+					0,
+					T.GOLD_SHADE
+				],
 				[
 					-1,
 					1,
@@ -2659,29 +2861,10 @@ const accessories = [
 				[
 					0,
 					1,
-					T.WHITE
-				],
-				[
-					1,
-					1,
-					T.GOLD
-				],
-				[
-					2,
-					1,
-					T.GOLD_SHADE
-				],
-				[
-					0,
-					2,
-					T.GOLD
-				],
-				[
-					1,
-					2,
 					T.GOLD_SHADE
 				]
-			]) if (c.isBody(x + dx, y + dy)) wear$1(c, x + dx, y + dy, t);
+			];
+			for (const [dx, dy, t] of medallion) if (c.isBody(mid + dx, ym + dy)) wear$1(c, mid + dx, ym + dy, t);
 		}
 	},
 	{
@@ -2689,21 +2872,22 @@ const accessories = [
 		layer: "over",
 		draw: (c) => {
 			const f = c.face;
-			if (!f || !f.eyes.length) return;
-			const heart$2 = stamp([
-				"r.r",
-				"rrr",
-				".r."
+			if (f?.eyes.length !== 2) return;
+			const frame = stamp([
+				"rr.rr",
+				"rwoor",
+				".ror."
 			]);
-			const xs = f.eyes.map((e) => Math.round((e.left + e.right) / 2) - 1);
-			const y = f.line - 1;
-			for (const x of xs) {
-				heart$2.forEach((row, dy) => row.forEach((t, dx) => {
-					if (t) c.set(x + dx, y - 1 + dy, t);
-				}));
-				c.set(x, y, T.WHITE);
-			}
-			if (xs.length === 2) for (let x = xs[0] + 3; x < xs[1]; x++) c.set(x, y - 1, T.RED);
+			const top = f.line - 2;
+			const xs = [f.eyes[0].left - 2, f.eyes[1].right - 2];
+			for (const x of xs) frame.forEach((row, dy) => row.forEach((t, dx) => {
+				if (t) c.set(x + dx, top + dy, t);
+			}));
+			for (let x = xs[0] + 5; x < xs[1]; x++) c.set(x, top + 1, T.RED);
+			const r = c.rows[top];
+			if (r) for (let x = r.left; x < xs[0]; x++) c.set(x, top, T.RED);
+			if (r) for (let x = xs[1] + 5; x <= r.right; x++) c.set(x, top, T.RED);
+			for (const x of xs) if (!nearMouth(c, x + 2, top + 3)) c.set(x + 2, top + 3, T.RED);
 		}
 	},
 	{
@@ -2712,17 +2896,23 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const boxes = f.eyes.map((_, k) => lensBox(c, k));
-			for (const b$1 of boxes) for (let y = b$1.top + 1; y < b$1.bottom; y++) for (let x = b$1.left; x <= b$1.right; x++) if (c.isBody(x, y)) c.set(x, y, T.GOLD);
-			const l = boxes[0].left, r = boxes[boxes.length - 1].right;
-			for (let x = l; x <= r; x++) if (c.isBody(x, f.line) && x > boxes[0].right && x < boxes[boxes.length - 1].left) c.set(x, f.line, T.GOLD_SHADE);
-			if (boxes.length === 2) {
-				const mid = Math.floor(c.centre);
-				c.set(mid - 1, f.top, T.RED);
-				c.set(mid, f.top, T.RED);
+			const L = f.eyes[0].left - 2, R = f.eyes[f.eyes.length - 1].right + 2, mid = Math.floor(c.centre);
+			for (let y = f.top - 1; y <= f.line; y++) for (let x = L; x <= R; x++) {
+				if (y === f.line && (x === mid - 1 || x === mid)) continue;
+				if (c.isBody(x, y)) c.set(x, y, y === f.line ? T.GOLD_SHADE : T.GOLD);
 			}
-			c.set(l, f.top - 1, T.GOLD);
-			c.set(r, f.top - 1, T.GOLD);
+			c.set(L, f.top - 2, T.GOLD);
+			c.set(L - 1, f.top - 3, T.GOLD);
+			c.set(R, f.top - 2, T.GOLD);
+			c.set(R + 1, f.top - 3, T.GOLD);
+			c.set(L + 1, f.top - 1, T.WHITE);
+			if (f.eyes.length === 2) {
+				c.set(mid - 1, f.top - 1, T.RED);
+				c.set(mid, f.top - 1, T.RED);
+			}
+			c.set(R, f.top - 3, T.ACCENT);
+			c.set(R, f.top - 4, T.ACCENT);
+			c.set(R - 1, f.top - 5, T.ACCENT_SHADE);
 		}
 	}
 ];
@@ -3015,9 +3205,9 @@ function wear(c, s, dx, sink) {
 	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
 	const head$1 = r ? r.right - r.left + 1 : 10;
 	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
-	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const fitted$1 = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
 	const y = Math.max(1, c.floor - last);
-	c.draw(fitted, c.centred(fitted) + dx, y);
+	c.draw(fitted$1, c.centred(fitted$1) + dx, y);
 	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
 }
 const on = (rows, dx = 0, sink = 1) => {
@@ -3045,83 +3235,3276 @@ const pet = (name, rows) => {
 
 //#endregion
 //#region src/sets/amountle.ts
-/** Amountle's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Amountle's machine: the jars, the jellybeans in today's jar and the
+* winners club's crown. Every item is something in the game.
+*/
 const set$8 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "amountle.bean",
+			game: "amountle",
+			slot: "skin",
+			name: "Jellybean",
+			eyes: 8,
+			colors: [
+				"#FF6F9C",
+				"#D9466F",
+				"#FFB3CB",
+				"#FFFFFF",
+				"#B02E55"
+			],
+			outline: "#6E1634",
+			art: grid16("jellybean", [
+				"................",
+				"................",
+				"................",
+				"..3344..........",
+				".334411.........",
+				".3311111........",
+				".31111111111....",
+				".1111111111112..",
+				".21111111111112.",
+				".22111111111112.",
+				"..2211111111132.",
+				"....22111111122.",
+				".......2222222..",
+				"................",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "amountle.todays-jar",
+			game: "amountle",
+			slot: "skin",
+			name: "Today’s jar",
+			eyes: 7,
+			showpiece: true,
+			signature: "holo",
+			about: "One guess a day.",
+			colors: [
+				"#EAF7F8",
+				"#BFE1E7",
+				"#FFFFFF",
+				"#FF5C8A",
+				"#FFD447",
+				"#3FD1C1",
+				"#8C7CF0",
+				"#FF8A3D",
+				"#7DD87A"
+			],
+			outline: "#2F6870",
+			art: grid16("todays jar", [
+				"................",
+				"................",
+				"....22222222....",
+				"....31111112....",
+				"...3111111112...",
+				"..311111111112..",
+				".34411111111882.",
+				".31511111111192.",
+				".36511111111792.",
+				".36177188155712.",
+				".39914416619982.",
+				".31551771441662.",
+				"..881991551772..",
+				"...2441661882...",
+				"....22222222....",
+				"................"
+			])
+		},
+		{
+			id: "amountle.lid",
+			game: "amountle",
+			slot: "hat",
+			name: "Jar lid",
+			colors: [
+				"#FFD25A",
+				"#C98A1A",
+				"#FFF1B0",
+				"#8A5A10"
+			],
+			draw: on([
+				"..33333333..",
+				".3111111112.",
+				"141414141412",
+				"242424242424"
+			], 0, 2)
+		},
+		{
+			id: "amountle.gem-pile",
+			game: "amountle",
+			slot: "hat",
+			name: "Gem pile",
+			colors: [
+				"#3FD1C1",
+				"#1F9C90",
+				"#A6F4EA",
+				"#FFFFFF",
+				"#DCE2EA",
+				"#FFB3CB",
+				"#FF6F9C",
+				"#A9B3C2",
+				"#C94B76"
+			],
+			draw: on([
+				"....666....",
+				".45o779o31.",
+				".58o779o12.",
+				"31o45o31o45",
+				"12o58o12o58"
+			], 0, 2)
+		},
+		{
+			id: "amountle.coin",
+			game: "amountle",
+			slot: "hat",
+			name: "Gold coin",
+			colors: [
+				"#FFD25A",
+				"#C98A1A",
+				"#FFF1B0",
+				"#7A4A08",
+				"#A86E12"
+			],
+			draw: on([
+				".3314.",
+				"311125",
+				"311214",
+				"312215",
+				"112224",
+				".1224."
+			], 1, 2)
+		},
+		{
+			id: "amountle.play-coin",
+			game: "amountle",
+			slot: "buddy",
+			name: "Play coin",
+			colors: [
+				"#FFFFFF",
+				"#C9D1DC",
+				"#EEF2F7",
+				"#2F7BF5",
+				"#8A95A8"
+			],
+			art: pet("play coin", [
+				".3311.",
+				"314112",
+				"314412",
+				"314122",
+				".1225."
+			])
+		},
+		{
+			id: "amountle.candy-corn",
+			game: "amountle",
+			slot: "buddy",
+			name: "Candy corn",
+			colors: [
+				"#FFF6E0",
+				"#E6D6B8",
+				"#FF7A2E",
+				"#D9561A",
+				"#FFC23A",
+				"#E09A12"
+			],
+			art: pet("candy corn", [
+				"...1..",
+				"..112.",
+				".3334.",
+				".55556",
+				"555566"
+			])
+		},
+		{
+			id: "amountle.jar-glass",
+			game: "amountle",
+			slot: "frame",
+			name: "Jar glass",
+			colors: [
+				"#D9F1EF",
+				"#F4FCFB",
+				"#C8E8E5"
+			],
+			fill: (x, y) => {
+				const d = (x + y) % 16;
+				return d === 4 || d === 5 ? 2 : d === 7 ? 3 : 1;
+			}
+		},
+		{
+			id: "amountle.shelf",
+			game: "amountle",
+			slot: "frame",
+			name: "Shelf",
+			colors: [
+				"#FFF6E6",
+				"#D9A877",
+				"#B98552",
+				"#FFD25A",
+				"#3FD1C1"
+			],
+			fill: (x, y) => {
+				const r = y % 8;
+				if (r === 7) return 3;
+				if (r === 6) return x % 4 === 1 ? (x + y) % 8 === 1 || (x + y) % 8 === 7 ? 4 : 5 : 2;
+				return 1;
+			}
+		}
+	],
+	retire: [
+		"amountle.piggy",
+		"amountle.dragon",
+		"amountle.cluster",
+		"amountle.coin-stack",
+		"amountle.gumball-dome",
+		"amountle.sparkle",
+		"amountle.coins",
+		"amountle.piglet",
+		"amountle.mimic"
+	],
+	redraw: {
+		"amountle.gem": { draw: on([
+			"....wwaA....",
+			"...waaaaA...",
+			"....aaAA....",
+			".....aA.....",
+			"312121212123"
+		], 0, 2) },
+		"amountle.jar": { art: grid16("jar", [
+			"................",
+			"................",
+			"....44444444....",
+			"....45454545....",
+			"...3111111112...",
+			"...3111111112...",
+			"...3111111112...",
+			"...6111111117...",
+			"...7111111118...",
+			"...6861186168...",
+			"...7686768676...",
+			"...6878687868...",
+			"...5767576757...",
+			"....55555555....",
+			"................",
+			"................"
+		]) },
+		"amountle.crown": {
+			name: "Winners crown",
+			colors: [
+				"#FFD25A",
+				"#D99A1E",
+				"#FFF1B0",
+				"#A8700E"
+			],
+			draw: on([
+				"3....3....3",
+				"13..313..12",
+				"11131113112",
+				"11111111112",
+				"22222222224"
+			], 0, 2)
+		},
+		"amountle.beans": {
+			colors: [
+				"#FFF6E6",
+				"#FF5C8A",
+				"#FFD447",
+				"#3FD1C1",
+				"#8C7CF0",
+				"#C9416A",
+				"#D9A21E",
+				"#1F9C90",
+				"#5E4EC0"
+			],
+			fill: (x, y) => {
+				const beans = [
+					[
+						1,
+						1,
+						2
+					],
+					[
+						12,
+						2,
+						3
+					],
+					[
+						0,
+						10,
+						4
+					],
+					[
+						13,
+						12,
+						5
+					]
+				];
+				const tx = x % 16, ty = y % 16;
+				for (const [bx, by, c] of beans) {
+					if (ty === by && (tx === bx + 1 || tx === bx + 2)) return c;
+					if (ty === by + 1 && (tx === bx || tx === bx + 1)) return c + 4;
+				}
+				return 1;
+			}
+		}
+	}
 };
 
 //#endregion
 //#region src/sets/halfsies.ts
-/** Halfsies's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Halfsies's machine: the knife, things cut down the middle, the stamp a
+* perfect cut gets, the weekend's thirds and the Sunday kebab.
+*/
 const set$7 = {
-	add: [],
-	retire: [],
+	add: [
+		{
+			id: "halfsies.burger",
+			game: "halfsies",
+			slot: "skin",
+			name: "Burger half",
+			eyes: 7,
+			colors: [
+				"#EFA352",
+				"#C47A30",
+				"#FFC98A",
+				"#FFF6DC",
+				"#7DC24A",
+				"#FFC93A",
+				"#8A4A26",
+				"#5A2E16",
+				"#FBE3B8"
+			],
+			outline: "#4A2410",
+			art: grid16("burger half", [
+				"................",
+				"................",
+				"......33333339..",
+				"...33411411119..",
+				"..311114111119..",
+				".3111111111119..",
+				".1111111111119..",
+				".2111111111119..",
+				".2222222222229..",
+				".5555555555555..",
+				".6666666666666..",
+				".7777777777777..",
+				".8888888888888..",
+				"..111111111119..",
+				"...22222222222..",
+				"................"
+			])
+		},
+		{
+			id: "halfsies.trophy",
+			game: "halfsies",
+			slot: "skin",
+			name: "Trophy half",
+			eyes: 7,
+			colors: [
+				"#F5C33B",
+				"#C8901E",
+				"#FFE58A",
+				"#8A5A10",
+				"#F4F4F2",
+				"#C9CFDA",
+				"#FFFFFF",
+				"#E3E7EE",
+				"#FFF0B8"
+			],
+			outline: "#6A4208",
+			art: grid16("trophy half", [
+				"................",
+				"................",
+				"...33339........",
+				".111311993333...",
+				".14131199111111.",
+				".14131199111141.",
+				".22131199111141.",
+				"...231199111222.",
+				"...2211991112...",
+				"....221991122...",
+				".....2299122....",
+				"......29922.....",
+				"....555892......",
+				"...666688555....",
+				"........86666...",
+				"................"
+			])
+		},
+		{
+			id: "halfsies.perfect-split",
+			game: "halfsies",
+			slot: "skin",
+			name: "Perfect split",
+			eyes: 8,
+			showpiece: true,
+			signature: "shimmer",
+			about: "Fifty-fifty, to the gram.",
+			colors: [
+				"#FFD25A",
+				"#D99A1E",
+				"#FFF1B0"
+			],
+			art: grid16("perfect split", [
+				"................",
+				"................",
+				"................",
+				"....h#3.........",
+				"..hh##1o3##.....",
+				".h####1o1###s...",
+				".#####1o1####s..",
+				".#####1o1####s..",
+				".#####1o1####s..",
+				".#####1o1####s..",
+				".#####1o1####s..",
+				".s####1o1####s..",
+				"..s###2o1###ss..",
+				"....ss2o2ssss...",
+				"........2ss.....",
+				"................"
+			])
+		},
+		{
+			id: "halfsies.knife",
+			game: "halfsies",
+			slot: "hat",
+			name: "Knife",
+			free: true,
+			colors: [
+				"#DDE3EA",
+				"#9AA3B2",
+				"#FFFFFF",
+				"#3A2A22",
+				"#C9CFDA",
+				"#5A4436"
+			],
+			draw: on([
+				".....33333333.",
+				"65656211111111",
+				"44444222222..."
+			], 0, 2)
+		},
+		{
+			id: "halfsies.star",
+			game: "halfsies",
+			slot: "hat",
+			name: "Gold star",
+			colors: [
+				"#FFD25A",
+				"#D99A1E",
+				"#FFF1B0"
+			],
+			draw: on([
+				"...3...",
+				"..331..",
+				"3331112",
+				".33112.",
+				".31.12.",
+				".1...2."
+			], 0, 2)
+		},
+		{
+			id: "halfsies.stamp",
+			game: "halfsies",
+			slot: "hat",
+			name: "Perfect stamp",
+			colors: [
+				"#E5484D",
+				"#A82238",
+				"#FF8A8E",
+				"#C98A50",
+				"#E8B47A",
+				"#8A5A2A"
+			],
+			draw: on([
+				"..554..",
+				"...46..",
+				"5444446",
+				"3111112",
+				"1222222"
+			], 0, 2)
+		},
+		{
+			id: "halfsies.thirds",
+			game: "halfsies",
+			slot: "hat",
+			name: "Thirds cake",
+			colors: [
+				"#F2B95A",
+				"#C98A34",
+				"#FFF4DC",
+				"#F0DDB8",
+				"#E5484D"
+			],
+			draw: on([
+				"...3o55o3...",
+				".3333oo3334.",
+				"33533o333534",
+				"11111o111112",
+				"22222o222222"
+			], 0, 2)
+		},
+		{
+			id: "halfsies.kebab",
+			game: "halfsies",
+			slot: "hat",
+			name: "Kebab skewer",
+			colors: [
+				"#B0643A",
+				"#7A3E1E",
+				"#D88A5A",
+				"#5CB85C",
+				"#2E7D3A",
+				"#F0433A",
+				"#A82020",
+				"#FF9A8A",
+				"#C9CFDA"
+			],
+			draw: on([
+				"..3111.45.866..",
+				"993111945966699",
+				"..1222.55.677.."
+			], 0, 2)
+		},
+		{
+			id: "halfsies.balance",
+			game: "halfsies",
+			slot: "buddy",
+			name: "Mini balance",
+			colors: [
+				"#F7F4EE",
+				"#CFC6B6",
+				"#FFFFFF",
+				"#A9B3C2",
+				"#6A7385",
+				"#E8392B",
+				"#FDFCF8",
+				"#2B2B30"
+			],
+			art: pet("mini balance", [
+				"344344",
+				".8..8.",
+				"117712",
+				"116712",
+				".8888."
+			])
+		},
+		{
+			id: "halfsies.cake",
+			game: "halfsies",
+			slot: "buddy",
+			name: "Cake slice",
+			colors: [
+				"#F5C86A",
+				"#C9953A",
+				"#FFFFFF",
+				"#E8D6C4",
+				"#E5484D",
+				"#D9283A"
+			],
+			art: pet("cake slice", [
+				"....36",
+				"..3334",
+				".11112",
+				"555555",
+				"111112"
+			])
+		},
+		{
+			id: "halfsies.cut-line",
+			game: "halfsies",
+			slot: "frame",
+			name: "Dashed cut line",
+			colors: ["#F5D76E", "#E2BE4E"],
+			fill: (x, y) => (x - y + 32) % 8 === 0 && x % 4 < 2 ? 2 : 1
+		}
+	],
+	retire: [
+		"halfsies.pot",
+		"halfsies.kitchen-scale",
+		"halfsies.cyborg",
+		"halfsies.bowl",
+		"halfsies.scale",
+		"halfsies.helmet",
+		"halfsies.sandwich",
+		"halfsies.half-moon",
+		"halfsies.gingham",
+		"halfsies.pea",
+		"halfsies.berry"
+	],
 	redraw: {}
 };
 
 //#endregion
 //#region src/sets/stackdle.ts
-/** Stackdle's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Stackdle's machine: its real pieces in their own colours, and the climb
+* from the valley up past the clouds into space.
+*/
 const set$6 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "stackdle.wedge",
+			game: "stackdle",
+			slot: "skin",
+			name: "Wedge",
+			eyes: 11,
+			colors: [
+				"#5FE0B4",
+				"#34A985",
+				"#A8F7DC",
+				"#24785E"
+			],
+			outline: "#17533F",
+			art: grid16("wedge", [
+				"................",
+				"................",
+				"...3............",
+				"..331...........",
+				".33111..........",
+				".311111.........",
+				".3111111........",
+				".31111111.......",
+				".311111111......",
+				".31111111112....",
+				".311111111112...",
+				".3111111111112..",
+				".31111111111124.",
+				".11111111111124.",
+				".22222222222244.",
+				"................"
+			])
+		},
+		{
+			id: "stackdle.keystone",
+			game: "stackdle",
+			slot: "skin",
+			name: "Keystone",
+			eyes: 8,
+			colors: [
+				"#F88F7B",
+				"#D9705C",
+				"#FFBFAF",
+				"#B85D4A"
+			],
+			outline: "#6E2A1C",
+			art: grid16("keystone", [
+				"................",
+				"................",
+				"................",
+				"....33333333....",
+				"....31111114....",
+				"...3111111114...",
+				"...3111111114...",
+				"...3111111114...",
+				"..311111111114..",
+				"..311111111114..",
+				"..311111111114..",
+				".31111111111114.",
+				".11111111111114.",
+				".22222222222224.",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "stackdle.arch-piece",
+			game: "stackdle",
+			slot: "skin",
+			name: "Arch",
+			eyes: 7,
+			colors: [
+				"#F6C768",
+				"#DBAD4A",
+				"#FFE3A0",
+				"#9E7E2D"
+			],
+			outline: "#5E4A12",
+			art: grid16("arch", [
+				"................",
+				"................",
+				".....333333.....",
+				"...3311111122...",
+				"..311111111112..",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".31111#..#11112.",
+				".3111.#..#.1112.",
+				".2224.s..s.4224.",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "stackdle.big-l",
+			game: "stackdle",
+			slot: "skin",
+			name: "Big L",
+			eyes: 10,
+			colors: [
+				"#3A82FF",
+				"#1F5FD6",
+				"#8DB8FF",
+				"#123F9C"
+			],
+			outline: "#0B2A6E",
+			art: grid16("big l", [
+				"................",
+				"................",
+				".3333332........",
+				".3111112........",
+				".3111112........",
+				".3111112........",
+				".3111112........",
+				".3111112........",
+				".31111113333332.",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".22222222222224.",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "stackdle.sky-tower",
+			game: "stackdle",
+			slot: "skin",
+			name: "Sky tower",
+			eyes: 8,
+			showpiece: true,
+			signature: "starlight",
+			about: "Stacked past the clouds.",
+			colors: [
+				"#FBD123",
+				"#D9A80E",
+				"#FFE98A",
+				"#FA7158",
+				"#C94E3A",
+				"#1B2A5E",
+				"#FFF6C8",
+				"#2F7BFF",
+				"#5EE4AC"
+			],
+			outline: "#0E1636",
+			art: grid16("sky tower", [
+				"................",
+				"......67........",
+				".....6666.......",
+				"....667666.9....",
+				"...766666.999...",
+				"..33333333333...",
+				"..11111111112...",
+				"..11111111112...",
+				"..11111111112...",
+				"..22222222222...",
+				".888444444445...",
+				".888555555555...",
+				".88888888888888.",
+				".88888888888888.",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "stackdle.little-block",
+			game: "stackdle",
+			slot: "hat",
+			name: "Little block",
+			free: true,
+			colors: [
+				"#8ED68A",
+				"#5A9E5E",
+				"#C4EDBF"
+			],
+			draw: on([
+				"333332",
+				"111112",
+				"111112",
+				"111112",
+				"222222"
+			], 0, 2)
+		},
+		{
+			id: "stackdle.crescent",
+			game: "stackdle",
+			slot: "hat",
+			name: "Balanced crescent",
+			colors: [
+				"#7FC5F5",
+				"#4F8BB5",
+				"#BDE3FB"
+			],
+			draw: on([
+				".33331",
+				"311...",
+				"112...",
+				".12222"
+			], 0, 1)
+		},
+		{
+			id: "stackdle.bolt",
+			game: "stackdle",
+			slot: "hat",
+			name: "Bolt piece",
+			colors: [
+				"#B890F8",
+				"#7453B2",
+				"#DCC6FF"
+			],
+			draw: on([
+				"3331..",
+				"1112..",
+				"..12..",
+				"..1331",
+				"..1122"
+			], 0, 2)
+		},
+		{
+			id: "stackdle.clouds",
+			game: "stackdle",
+			slot: "hat",
+			name: "Cloud ring",
+			colors: [
+				"#F4F8FD",
+				"#BFD3EC",
+				"#FFFFFF"
+			],
+			draw: on([
+				"..33....33..",
+				".3113..3113.",
+				"311113311112",
+				".2222222222."
+			], 0, 2)
+		},
+		{
+			id: "stackdle.stairs",
+			game: "stackdle",
+			slot: "buddy",
+			name: "Stairs",
+			colors: [
+				"#F6C768",
+				"#9E7E2D",
+				"#FFE3A0"
+			],
+			art: pet("stairs", [
+				"33....",
+				"12....",
+				"1233..",
+				"1112..",
+				"111133"
+			])
+		},
+		{
+			id: "stackdle.penguin",
+			game: "stackdle",
+			slot: "buddy",
+			name: "Little penguin",
+			colors: [
+				"#2B2F3A",
+				"#15181F",
+				"#FFFFFF",
+				"#D6DCE6",
+				"#FF9A2E",
+				"#D9701A"
+			],
+			art: pet("little penguin", [
+				".1111.",
+				"13o3o1",
+				"133531",
+				"133341",
+				"55..55"
+			])
+		},
+		{
+			id: "stackdle.valley",
+			game: "stackdle",
+			slot: "frame",
+			name: "Valley sky",
+			colors: [
+				"#DBE8F8",
+				"#CDE1F7",
+				"#BCD7F6",
+				"#A9CDF5",
+				"#FFFFFF",
+				"#EEF4FC"
+			],
+			fill: (x, y) => {
+				const tx = x % 16, ty = y % 16;
+				if (ty === 2 && tx >= 2 && tx <= 3) return 5;
+				if (ty === 3 && tx >= 1 && tx <= 5) return tx === 5 ? 6 : 5;
+				return Math.floor(ty / 4) + 1;
+			}
+		},
+		{
+			id: "stackdle.ruler",
+			game: "stackdle",
+			slot: "frame",
+			name: "Height ruler",
+			colors: ["#F3EFE6", "#DCD3C2"],
+			fill: (x, y) => {
+				const tx = x % 16, ty = y % 16;
+				if (ty === 0 && tx <= 3) return 2;
+				if (ty % 4 === 0 && tx <= 1) return 2;
+				return 1;
+			}
+		},
+		{
+			id: "stackdle.space",
+			game: "stackdle",
+			slot: "frame",
+			name: "Space",
+			colors: [
+				"#0A1531",
+				"#FFF6C8",
+				"#8FA3D9"
+			],
+			fill: (x, y) => {
+				const tx = x % 16, ty = y % 16;
+				if (tx === 2 && ty === 2) return 2;
+				if (tx === 14 && ty === 13) return 3;
+				return 1;
+			}
+		}
+	],
+	retire: [
+		"stackdle.block",
+		"stackdle.triangle",
+		"stackdle.brick",
+		"stackdle.stack",
+		"stackdle.robot",
+		"stackdle.cube",
+		"stackdle.ring",
+		"stackdle.arch",
+		"stackdle.hardhat",
+		"stackdle.toybox",
+		"stackdle.bricks",
+		"stackdle.blueprint",
+		"stackdle.pyramid",
+		"stackdle.brickling"
+	],
+	redraw: {
+		"stackdle.tower": { draw: on([
+			".9556.",
+			".5566.",
+			"711834",
+			"122344"
+		], 0, 2) },
+		"stackdle.cubelet": { name: "Block" },
+		"stackdle.wobble": {
+			name: "Ball",
+			colors: [
+				"#F49AB4",
+				"#C9607E",
+				"#FFD6E2",
+				"#FFF6E6",
+				"#E8D3B4",
+				"#9E3F5C"
+			],
+			art: pet("ball", [
+				"..331.",
+				"633112",
+				".44445",
+				"61o1o2",
+				"..122."
+			])
+		}
+	}
 };
 
 //#endregion
 //#region src/sets/flipsies.ts
-/** Flipsies's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Flipsies's machine: the things you flip (a water bottle, a soup can, a
+* rubber duck, a die, the moai) and the kitchen and living room they land in.
+*/
 const set$5 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "flipsies.rubber-duck",
+			game: "flipsies",
+			slot: "skin",
+			name: "Rubber duck",
+			eyes: 9,
+			colors: [
+				"#FFD84A",
+				"#E0A820",
+				"#FFF1A8",
+				"#FF7A1A",
+				"#C9520C"
+			],
+			outline: "#7A4A06",
+			art: grid16("rubber duck", [
+				"................",
+				"................",
+				"................",
+				"......331111....",
+				".....31111112...",
+				".....311111112..",
+				".3..3111111112..",
+				".33.3111111112..",
+				".11311111111244.",
+				".31111111111255.",
+				".31111111111112.",
+				".31112222111112.",
+				"..311111111112..",
+				"...2222222222...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "flipsies.die",
+			game: "flipsies",
+			slot: "skin",
+			name: "Giant die",
+			eyes: 8,
+			colors: [
+				"#FBFCFE",
+				"#AEB8C8",
+				"#E2E8F1",
+				"#2B2F38",
+				"#FFFFFF"
+			],
+			outline: "#3A4150",
+			art: grid16("giant die", [
+				"................",
+				"................",
+				"....3333333333..",
+				"...33333433332..",
+				"..333333333322..",
+				"..141111114122..",
+				"..111111111122..",
+				"..111111111242..",
+				"..111111111122..",
+				"..111111111122..",
+				"..111111111122..",
+				"..111111111242..",
+				"..141111114122..",
+				"..11111111112...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "flipsies.moai",
+			game: "flipsies",
+			slot: "skin",
+			name: "Moai",
+			eyes: 8,
+			showpiece: true,
+			signature: "lava",
+			colors: [
+				"#ADA195",
+				"#857A6E",
+				"#CDC3B6",
+				"#5E544B",
+				"#968A7D"
+			],
+			outline: "#3A322B",
+			art: grid16("moai", [
+				"................",
+				".....311112.....",
+				"....31151112....",
+				"...3111111152...",
+				"...3333333332...",
+				"...2444444442...",
+				"...3113511112...",
+				"...3113511112...",
+				"...3133551112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3115555112...",
+				"...3111111112...",
+				"...3111111152...",
+				"....22222222....",
+				"................"
+			])
+		},
+		{
+			id: "flipsies.pancake-hat",
+			game: "flipsies",
+			slot: "hat",
+			name: "Short stack",
+			colors: [
+				"#F7C873",
+				"#D9933F",
+				"#FDE3A7",
+				"#7A3410",
+				"#FFF27A"
+			],
+			draw: on([
+				"...55..",
+				".34443.",
+				"2111114",
+				"3333334",
+				"2111112"
+			])
+		},
+		{
+			id: "flipsies.toast",
+			game: "flipsies",
+			slot: "hat",
+			name: "Buttered toast",
+			colors: [
+				"#F0CB8C",
+				"#A8642A",
+				"#E3B06A",
+				"#FFEC8A",
+				"#F2C94A"
+			],
+			draw: on([
+				"..22222222..",
+				".2111111112.",
+				"211114511112",
+				".2111551112.",
+				".2222222222."
+			])
+		},
+		{
+			id: "flipsies.popcorn",
+			game: "flipsies",
+			slot: "hat",
+			name: "Popcorn bucket",
+			colors: [
+				"#E5484D",
+				"#B83236",
+				"#FFF8EE",
+				"#E3D9C8",
+				"#FFFFFF",
+				"#F3DE96"
+			],
+			draw: on([
+				"...5.55.5...",
+				"..5565556...",
+				".5655565556.",
+				"131313131312",
+				".1313131312.",
+				".1313131312."
+			])
+		},
+		{
+			id: "flipsies.lampshade",
+			game: "flipsies",
+			slot: "hat",
+			name: "Lampshade",
+			colors: [
+				"#F2703F",
+				"#C24E26",
+				"#FFA27A",
+				"#34343C",
+				"#FFE9A8"
+			],
+			draw: on([
+				"...4...",
+				"...4...",
+				".33112.",
+				"3111112",
+				".55555."
+			])
+		},
+		{
+			id: "flipsies.ring-mat",
+			game: "flipsies",
+			slot: "frame",
+			name: "Ring mat",
+			colors: ["#E6F1FA", "#D3E5F4"],
+			fill: (x, y) => Math.round(Math.hypot(x - 7.5, y - 9)) % 4 === 0 ? 2 : 1
+		},
+		{
+			id: "flipsies.cork",
+			game: "flipsies",
+			slot: "frame",
+			name: "Cork coaster",
+			colors: [
+				"#DDB98E",
+				"#C79C6C",
+				"#ECD2AE"
+			],
+			fill: (x, y) => (x * 7 + y * 13) % 11 === 0 ? 2 : (x * 5 + y * 3) % 13 === 0 ? 3 : 1
+		},
+		{
+			id: "flipsies.books",
+			game: "flipsies",
+			slot: "frame",
+			name: "Book spines",
+			colors: [
+				"#B6C6DF",
+				"#E0B8B1",
+				"#BCD4B4",
+				"#ECDFB4",
+				"#A1B4D2",
+				"#D3A49C",
+				"#A6C59E",
+				"#DECE9B"
+			],
+			fill: (x, y) => {
+				const spines = [
+					3,
+					2,
+					3,
+					3,
+					2,
+					3
+				];
+				let left = 0, i = 0;
+				while (left + spines[i % spines.length] <= x) left += spines[i++ % spines.length];
+				const book = i % 4;
+				return y === 2 || y === 13 ? book + 5 : book + 1;
+			}
+		},
+		{
+			id: "flipsies.goldfish",
+			game: "flipsies",
+			slot: "buddy",
+			name: "Goldfish",
+			colors: [
+				"#FF8A2B",
+				"#D45F10",
+				"#FFC27A",
+				"#3A1A0A"
+			],
+			art: pet("goldfish", [
+				"...33.",
+				"2.3113",
+				".21141",
+				"2.1112",
+				"...22."
+			])
+		},
+		{
+			id: "flipsies.ketchup",
+			game: "flipsies",
+			slot: "buddy",
+			name: "Ketchup",
+			colors: [
+				"#E5383D",
+				"#A8202A",
+				"#FF8A8A",
+				"#FFFFFF",
+				"#C9D1DC"
+			],
+			art: pet("ketchup", [
+				"..45..",
+				"..31..",
+				".3112.",
+				".3112.",
+				".3122."
+			])
+		},
+		{
+			id: "flipsies.mug",
+			game: "flipsies",
+			slot: "buddy",
+			name: "Coffee mug",
+			colors: [
+				"#FBF6EC",
+				"#D8CDBB",
+				"#7A4A2A",
+				"#E5484D"
+			],
+			art: pet("coffee mug", [
+				"..1332",
+				"221112",
+				"2.1412",
+				"221112",
+				"..2222"
+			])
+		},
+		{
+			id: "flipsies.toaster",
+			game: "flipsies",
+			slot: "buddy",
+			name: "Toaster",
+			colors: [
+				"#D3DAE4",
+				"#8A95A6",
+				"#F4F7FA",
+				"#F5C77E",
+				"#2B2F38",
+				"#C98A40"
+			],
+			art: pet("toaster", [
+				"..66..",
+				".6446.",
+				"311112",
+				"311115",
+				"222222"
+			])
+		}
+	],
+	retire: [
+		"flipsies.bullseye",
+		"flipsies.pancakes",
+		"flipsies.shark",
+		"flipsies.landed",
+		"flipsies.beret",
+		"flipsies.cup",
+		"flipsies.fin",
+		"flipsies.target",
+		"flipsies.waves",
+		"flipsies.tiles",
+		"flipsies.droplet",
+		"flipsies.shortstack",
+		"flipsies.duck",
+		"flipsies.whale"
+	],
+	redraw: {
+		"flipsies.bottle": {
+			colors: [
+				"#DDF0FB",
+				"#A9D4EE",
+				"#FFFFFF",
+				"#2F6FD6",
+				"#1D4E9E",
+				"#6CBCEB",
+				"#3E8FD3",
+				"#B5E2F8"
+			],
+			outline: "#2A5A8C",
+			art: grid16("water bottle", [
+				"................",
+				".....444445.....",
+				".....454545.....",
+				"......3112......",
+				"......3112......",
+				"....31111112....",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...8888888882...",
+				"...6666666667...",
+				"....66666677....",
+				"................",
+				"................"
+			])
+		},
+		"flipsies.can": {
+			name: "Soup can",
+			eyes: 7,
+			colors: [
+				"#E5484D",
+				"#B83236",
+				"#FF7A7E",
+				"#D7DCE4",
+				"#9AA0A8",
+				"#F6EEDC",
+				"#DCCFB0",
+				"#F2B830"
+			],
+			outline: "#5A1A22",
+			art: grid16("soup can", [
+				"................",
+				"......454.......",
+				"...4445.54445...",
+				"...5555555555...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...3111111112...",
+				"...8888888888...",
+				"...6666886667...",
+				"...4444444445...",
+				"....55555555....",
+				"................"
+			])
+		}
+	}
 };
 
 //#endregion
 //#region src/sets/puttsies.ts
-/** Puttsies's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Puttsies's machine: the balls you earn (the golf ball, the eight ball) and
+* the household holes you putt through (the quilt, the windmill, the toy
+* train, the sleeping cat, the snail shell, the sprinkles).
+*/
 const set$4 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "puttsies.eight-ball",
+			game: "puttsies",
+			slot: "skin",
+			name: "Eight ball",
+			eyes: 11,
+			colors: [
+				"#2A2D36",
+				"#15171C",
+				"#4C5262",
+				"#F7F4EA",
+				"#D9D3C4",
+				"#1E2028"
+			],
+			outline: "#0E0F13",
+			art: grid16("eight ball", [
+				"................",
+				".....111111.....",
+				"....11444111....",
+				"...1346664111...",
+				"..131464641112..",
+				".11314666411122.",
+				".13114646411122.",
+				".11114666411112.",
+				".11111444111112.",
+				".11111111111122.",
+				".11111111111122.",
+				"..221111111122..",
+				"...2211111122...",
+				"....22211222....",
+				".....222222.....",
+				"................"
+			])
+		},
+		{
+			id: "puttsies.train",
+			game: "puttsies",
+			slot: "skin",
+			name: "Toy train",
+			eyes: 9,
+			showpiece: true,
+			signature: "embers",
+			about: "The Sunday boss.",
+			colors: [
+				"#E5484D",
+				"#B83236",
+				"#FF8A8A",
+				"#2B2F38",
+				"#8A93A3",
+				"#F2C230",
+				"#FFF1C2"
+			],
+			outline: "#3A1418",
+			art: grid16("toy train", [
+				"................",
+				".........4444...",
+				".444444...44....",
+				"..3112....44....",
+				"..3772..6644....",
+				"..377233333335..",
+				"..311211111115..",
+				"..311111111115..",
+				"..311111111115..",
+				"..3111111111154.",
+				"..3111111111154.",
+				"..311111111115..",
+				".44444444444444.",
+				"..454..454.454..",
+				"...4....4...4...",
+				"................"
+			])
+		},
+		{
+			id: "puttsies.top-hat",
+			game: "puttsies",
+			slot: "hat",
+			name: "Magic top hat",
+			colors: [
+				"#2B2F38",
+				"#1A1D24",
+				"#4A5060",
+				"#C9364A",
+				"#FFFFFF"
+			],
+			draw: on([
+				"....3112.5..",
+				"....3112.5..",
+				"....31121...",
+				"....44441...",
+				".3111111112."
+			])
+		},
+		{
+			id: "puttsies.cat",
+			game: "puttsies",
+			slot: "hat",
+			name: "Sleeping cat",
+			colors: [
+				"#E08A3C",
+				"#B5612A",
+				"#F2B07A",
+				"#9C4318",
+				"#FFF0DC",
+				"#3A2A22",
+				"#E9838A"
+			],
+			draw: on([
+				"1...1.......",
+				"11111333....",
+				"161611414.2.",
+				"11711141412.",
+				".5111111122."
+			])
+		},
+		{
+			id: "puttsies.snail",
+			game: "puttsies",
+			slot: "hat",
+			name: "Snail shell",
+			colors: [
+				"#FF8A6E",
+				"#D9604A",
+				"#FFC2B0",
+				"#A8402F",
+				"#C2B79C",
+				"#948A70",
+				"#2B2F38"
+			],
+			draw: on([
+				".3112...7.7.",
+				"314412..5.5.",
+				"141342..555.",
+				"1444125555..",
+				"655555555556"
+			])
+		},
+		{
+			id: "puttsies.picnic",
+			game: "puttsies",
+			slot: "frame",
+			name: "Picnic check",
+			colors: [
+				"#FFF6F2",
+				"#F6D2CE",
+				"#EBADA7"
+			],
+			fill: (x, y) => Math.floor(x / 2) % 2 + Math.floor(y / 2) % 2 + 1
+		},
+		{
+			id: "puttsies.dimples",
+			game: "puttsies",
+			slot: "frame",
+			name: "Dimples",
+			colors: [
+				"#F6F1E6",
+				"#D8CFBD",
+				"#FFFFFF"
+			],
+			fill: (x, y) => {
+				const dimple = (dx, dy) => (y - dy) % 4 === 1 && (x - dx + ((y - dy) % 8 === 1 ? 0 : 2)) % 4 === 1;
+				return dimple(0, 0) ? 2 : dimple(1, 1) ? 3 : 1;
+			}
+		},
+		{
+			id: "puttsies.cup-flag",
+			game: "puttsies",
+			slot: "buddy",
+			name: "Flag in the cup",
+			colors: [
+				"#FF6B5E",
+				"#D9483C",
+				"#FFF3DC",
+				"#22252C",
+				"#6E7685",
+				"#7CC46A"
+			],
+			art: pet("flag in the cup", [
+				"..3111",
+				"..312.",
+				"..3...",
+				"6.3.66",
+				"654445"
+			])
+		},
+		{
+			id: "puttsies.donut",
+			game: "puttsies",
+			slot: "buddy",
+			name: "Sprinkles donut",
+			colors: [
+				"#FF9EC4",
+				"#E06A98",
+				"#FFE066",
+				"#6FC3FF",
+				"#FFFFFF",
+				"#E3A35E",
+				"#B87634"
+			],
+			art: pet("sprinkles donut", [
+				"..113.",
+				".14115",
+				"311.12",
+				"613112",
+				".6677."
+			])
+		},
+		{
+			id: "puttsies.windup",
+			game: "puttsies",
+			slot: "buddy",
+			name: "Wind-up mouse",
+			colors: [
+				"#B9C0CE",
+				"#7E879A",
+				"#E3E7EE",
+				"#FF9EBB",
+				"#E0B040",
+				"#9A7420"
+			],
+			art: pet("wind-up mouse", [
+				"..33..",
+				".3443.",
+				".31115",
+				"1o1116",
+				"41.2.."
+			])
+		},
+		{
+			id: "puttsies.blocks",
+			game: "puttsies",
+			slot: "buddy",
+			name: "Toy blocks",
+			colors: [
+				"#E5484D",
+				"#B83236",
+				"#4C8DF6",
+				"#2F64C8",
+				"#FFD447",
+				"#D9A21E"
+			],
+			art: pet("toy blocks", [
+				"..556.",
+				"..556.",
+				"112334",
+				"112334",
+				"222444"
+			])
+		}
+	],
+	retire: [
+		"puttsies.bag",
+		"puttsies.ufo",
+		"puttsies.flag",
+		"puttsies.tam",
+		"puttsies.argyle",
+		"puttsies.fairway",
+		"puttsies.green",
+		"puttsies.tee",
+		"puttsies.gopher",
+		"puttsies.frog",
+		"puttsies.turtle"
+	],
+	redraw: { "puttsies.pillow": {
+		colors: [
+			"#F7B7B0",
+			"#B9E3A8",
+			"#B3D4F5",
+			"#FBE3A1",
+			"#E59A92",
+			"#94C985",
+			"#8DB8E6",
+			"#E9C979"
+		],
+		outline: "#6E3E3A",
+		art: grid16("quilt pillow", [
+			"................",
+			"................",
+			"..5.11112222.6..",
+			"...1111122226...",
+			"..111111222226..",
+			"..111111222226..",
+			"..111111222226..",
+			"..111111222226..",
+			"..333333444448..",
+			"..333333444448..",
+			"..333333444448..",
+			"..333333444448..",
+			"...7333344448...",
+			"..7.77778888.8..",
+			"................",
+			"................"
+		])
+	} }
 };
 
 //#endregion
 //#region src/sets/weighsies.ts
-/** Weighsies's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Weighsies's machine: the scale itself, and the things it weighs (a gold
+* bar, a basketball, a kettlebell, a grand piano, an apple, the Great
+* Pyramid, the Eiffel Tower, a cat, a whale, a T. rex, a pigeon).
+*/
 const set$3 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "weighsies.gold-bar",
+			game: "weighsies",
+			slot: "skin",
+			name: "Gold bar",
+			eyes: 9,
+			colors: [
+				"#F2C230",
+				"#C8901E",
+				"#FFE07A",
+				"#FFFFFF",
+				"#E0A92A",
+				"#FFD54A"
+			],
+			outline: "#7A5212",
+			art: grid16("gold bar", [
+				"................",
+				"................",
+				"................",
+				"................",
+				"....33333333....",
+				"...3333433333...",
+				"...6666666666...",
+				"..311111111112..",
+				"..311111111112..",
+				"..311111111112..",
+				".31111111111112.",
+				".31111111111112.",
+				".22222222222222.",
+				"................",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "weighsies.basketball",
+			game: "weighsies",
+			slot: "skin",
+			name: "Basketball",
+			eyes: 9,
+			colors: [
+				"#F07A2E",
+				"#C85A1A",
+				"#FFA466",
+				"#2B2420"
+			],
+			outline: "#5A2A10",
+			art: grid16("basketball", [
+				"................",
+				".....114111.....",
+				"...1141411411...",
+				"..114114111411..",
+				"..141134111141..",
+				".11413141111422.",
+				".14111111111142.",
+				".14111111111142.",
+				".14111111111142.",
+				".14111111111142.",
+				".14111111111142.",
+				"..141111111142..",
+				"..142111111242..",
+				"...2422412242...",
+				".....224222.....",
+				"................"
+			])
+		},
+		{
+			id: "weighsies.piano",
+			game: "weighsies",
+			slot: "skin",
+			name: "Grand piano",
+			eyes: 7,
+			colors: [
+				"#23252C",
+				"#121318",
+				"#5A6070",
+				"#F7F5EE",
+				"#C9C5BA",
+				"#D9A63A"
+			],
+			outline: "#08090C",
+			art: grid16("grand piano", [
+				"................",
+				"............11..",
+				"........11133...",
+				"....11113333....",
+				".66666666666662.",
+				".11111111111112.",
+				".11111111111112.",
+				".11111111111112.",
+				".11111111111112.",
+				".11111111111112.",
+				".44244244244245.",
+				".44444444444445.",
+				"..2.....2....2..",
+				"..2.....2....2..",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "weighsies.kitchen-scale",
+			game: "weighsies",
+			slot: "skin",
+			name: "Kitchen scale",
+			eyes: 8,
+			showpiece: true,
+			signature: "pulse",
+			about: "Weighs everything.",
+			colors: [
+				"#FFF8E8",
+				"#E8DCC0",
+				"#2F4FA8",
+				"#C9D6F5",
+				"#E5484D",
+				"#F6EBD2",
+				"#D8C8A6",
+				"#1F3478"
+			],
+			outline: "#16224A",
+			art: grid16("kitchen scale", [
+				"................",
+				"................",
+				".....334433.....",
+				"....43111134....",
+				"...3111115113...",
+				"..331111511133..",
+				"..411111111114..",
+				"..311111111113..",
+				"..311111111113..",
+				"..311111111113..",
+				".66661111116666.",
+				"..771111111177..",
+				"....33111133....",
+				".....888888.....",
+				"....66666667....",
+				"................"
+			])
+		},
+		{
+			id: "weighsies.scale-pan",
+			game: "weighsies",
+			slot: "hat",
+			name: "Scale pan",
+			free: true,
+			colors: [
+				"#F6EBD2",
+				"#D8C8A6",
+				"#FFFFFF",
+				"#E5484D",
+				"#B83236",
+				"#FF8A8A"
+			],
+			draw: on([
+				"....664....",
+				"....445....",
+				"....445....",
+				".311111112.",
+				"..2222222.."
+			])
+		},
+		{
+			id: "weighsies.apple",
+			game: "weighsies",
+			slot: "hat",
+			name: "Apple",
+			colors: [
+				"#E5383D",
+				"#A8202A",
+				"#FF8A8A",
+				"#4FAE5C",
+				"#2E7D3A",
+				"#6A3A18"
+			],
+			draw: on([
+				"...645",
+				".3161.",
+				"311112",
+				"311112",
+				".1122."
+			], 0, 2)
+		},
+		{
+			id: "weighsies.topknot",
+			game: "weighsies",
+			slot: "hat",
+			name: "Sumo topknot",
+			colors: [
+				"#22242C",
+				"#14151A",
+				"#4A4E5E",
+				"#F2E6D0"
+			],
+			draw: on([
+				".3312.",
+				"311112",
+				".2112.",
+				"..44..",
+				"..12.."
+			], 0, 2)
+		},
+		{
+			id: "weighsies.pyramid",
+			game: "weighsies",
+			slot: "hat",
+			name: "Great Pyramid",
+			colors: [
+				"#F2D08A",
+				"#B98A48",
+				"#FFE6B0",
+				"#D9B26E",
+				"#96692E"
+			],
+			draw: on([
+				"...3...",
+				"..312..",
+				".44352.",
+				"3113225"
+			], 0, 2)
+		},
+		{
+			id: "weighsies.eiffel",
+			game: "weighsies",
+			slot: "hat",
+			name: "Eiffel Tower",
+			colors: [
+				"#A8683A",
+				"#6E4020",
+				"#D99A5E"
+			],
+			draw: on([
+				"..3..",
+				".313.",
+				".1.2.",
+				".333.",
+				"31.12"
+			])
+		},
+		{
+			id: "weighsies.pennies",
+			game: "weighsies",
+			slot: "frame",
+			name: "Pennies",
+			colors: [
+				"#FBF3E4",
+				"#D9946A",
+				"#EDB892",
+				"#B87450"
+			],
+			fill: (x, y) => {
+				const row = Math.floor(y / 6), cx = x - row % 2 * 3, dx = (cx % 6 + 6) % 6, dy = y % 6;
+				if (dx === 2 && dy === 2) return 3;
+				if (dx === 2 && dy === 1 || dx === 1 && dy === 2) return 3;
+				if (dx === 3 && dy === 2 || dx === 2 && dy === 3) return 2;
+				if (dx === 3 && dy === 3) return 4;
+				if (dx === 3 && dy === 1 || dx === 1 && dy === 3) return 2;
+				return 1;
+			}
+		},
+		{
+			id: "weighsies.blocks",
+			game: "weighsies",
+			slot: "frame",
+			name: "Weigh-in blocks",
+			colors: [
+				"#F3F0E8",
+				"#F2A19B",
+				"#DB7C76",
+				"#A8DBA2",
+				"#7FC078"
+			],
+			fill: (x, y) => {
+				for (const [bx, by, red] of [
+					[
+						1,
+						1,
+						1
+					],
+					[
+						12,
+						0,
+						0
+					],
+					[
+						14,
+						5,
+						1
+					],
+					[
+						0,
+						8,
+						0
+					],
+					[
+						13,
+						11,
+						0
+					],
+					[
+						2,
+						13,
+						1
+					],
+					[
+						7,
+						14,
+						0
+					]
+				]) if (x >= bx && x <= bx + 1 && y >= by && y <= by + 1) return red ? y === by ? 2 : 3 : y === by ? 4 : 5;
+				return 1;
+			}
+		},
+		{
+			id: "weighsies.cat",
+			game: "weighsies",
+			slot: "buddy",
+			name: "House cat",
+			colors: [
+				"#F29A4A",
+				"#C46A24",
+				"#FFE0B8",
+				"#FFC98A"
+			],
+			art: pet("house cat", [
+				"...1.1",
+				"...1o1",
+				"..1113",
+				".12113",
+				"222233"
+			])
+		},
+		{
+			id: "weighsies.whale",
+			game: "weighsies",
+			slot: "buddy",
+			name: "Lil whale",
+			colors: [
+				"#5DBEFC",
+				"#2F8FD0",
+				"#A8DEFF",
+				"#E6F6FF",
+				"#BFEAFF"
+			],
+			art: pet("lil whale", [
+				"...5.5",
+				"....5.",
+				"..3311",
+				"3311o1",
+				".44442"
+			])
+		},
+		{
+			id: "weighsies.trex",
+			game: "weighsies",
+			slot: "buddy",
+			name: "Baby T. rex",
+			colors: [
+				"#5CC46A",
+				"#2F8A44",
+				"#B5F0A8"
+			],
+			art: pet("baby t. rex", [
+				"...111",
+				"...1o1",
+				"..1113",
+				"21111.",
+				"2.2.2."
+			])
+		},
+		{
+			id: "weighsies.pigeon",
+			game: "weighsies",
+			slot: "buddy",
+			name: "Pigeon",
+			colors: [
+				"#A9B0BC",
+				"#7A8292",
+				"#D0D5DD",
+				"#7A6EA8",
+				"#3A3A40",
+				"#E86A6A"
+			],
+			art: pet("pigeon", [
+				"...31.",
+				"...1o5",
+				"..4413",
+				"211221",
+				"..6.6."
+			])
+		}
+	],
+	retire: [
+		"weighsies.cheese",
+		"weighsies.anvil",
+		"weighsies.flour",
+		"weighsies.knight",
+		"weighsies.wedge",
+		"weighsies.scale",
+		"weighsies.dumbbell",
+		"weighsies.feather",
+		"weighsies.laurel",
+		"weighsies.ruler",
+		"weighsies.dial",
+		"weighsies.mouse",
+		"weighsies.cheddar",
+		"weighsies.chick",
+		"weighsies.elephant"
+	],
+	redraw: { "weighsies.kettlebell": {
+		colors: [
+			"#3D74E0",
+			"#2752B0",
+			"#7FA3F0",
+			"#2B2F38",
+			"#5A6070",
+			"#343844",
+			"#8A93A3"
+		],
+		outline: "#101A38",
+		art: grid16("kettlebell", [
+			"................",
+			".....775555.....",
+			"....75....66....",
+			"....55....66....",
+			"....55....66....",
+			"....55111166....",
+			"....11111111....",
+			"...3111111112...",
+			"..331111111122..",
+			"..311111111112..",
+			"..111111111112..",
+			"..111111111112..",
+			"...1111111112...",
+			"...1211111122...",
+			"....22222222....",
+			"................"
+		]),
+		eyes: 9
+	} }
 };
 
 //#endregion
 //#region src/sets/cutsies.ts
-/** Cutsies's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Cutsies' machine: the food it slices, the chef's knife hand and the
+* chopping board. Colours follow the game's own objects (public/objects).
+*/
 const set$2 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "cutsies.donut",
+			game: "cutsies",
+			slot: "skin",
+			name: "Frosted donut",
+			eyes: 9,
+			colors: [
+				"#FF8FB8",
+				"#E0679A",
+				"#FFC2DA",
+				"#E3A866",
+				"#B97A3E",
+				"#F2C98E",
+				"#8A5428",
+				"#5CC8F0",
+				"#FFE066"
+			],
+			outline: "#7A3A2A",
+			art: grid16("donut", [
+				"................",
+				"................",
+				"................",
+				"....33333333....",
+				"..339177771182..",
+				".31111166111112.",
+				".31111111111112.",
+				".39111111111182.",
+				".31111111111112.",
+				".31811111111912.",
+				".21111111111112.",
+				".54411441441145.",
+				"..555455545555..",
+				"...5555555555...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "cutsies.nigiri",
+			game: "cutsies",
+			slot: "skin",
+			name: "Salmon nigiri",
+			eyes: 10,
+			colors: [
+				"#FFFDF6",
+				"#E6E0D2",
+				"#F7F3EA",
+				"#FF8A5B",
+				"#E0663A",
+				"#FFD6BF",
+				"#FFAB82"
+			],
+			outline: "#7A3A24",
+			art: grid16("nigiri", [
+				"................",
+				"................",
+				"................",
+				"....764446444...",
+				"..776444644465..",
+				".74644464446445.",
+				".46444644464445.",
+				".55555555555555.",
+				".52222222222225.",
+				"..311111111112..",
+				"..311111111112..",
+				"..311111111112..",
+				"..311111111112..",
+				"..322222222222..",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "cutsies.watermelon",
+			game: "cutsies",
+			slot: "skin",
+			name: "Giant watermelon",
+			eyes: 8,
+			showpiece: true,
+			signature: "pulse",
+			about: "A whole watermelon, with the one cut that counts.",
+			colors: [
+				"#A8DB7A",
+				"#4E9E3A",
+				"#D2F0A8",
+				"#2F6E2E",
+				"#2F6E2E",
+				"#F2454E"
+			],
+			outline: "#1F4A22",
+			art: grid16("melon", [
+				"................",
+				"................",
+				"................",
+				"....12211221....",
+				"..666666666666..",
+				".32112211221124.",
+				".32112211221124.",
+				".32112211221124.",
+				".32112211221124.",
+				".32112211221124.",
+				".32112211221124.",
+				".32112211221124.",
+				"..442211221144..",
+				"....44444444....",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "cutsies.flag",
+			game: "cutsies",
+			slot: "hat",
+			name: "“You” flag",
+			free: true,
+			about: "The cocktail stick flag that marks your slice on the board.",
+			colors: [
+				"#E8D2A8",
+				"#FFFFFF",
+				"#DDE3EA"
+			],
+			draw: on([
+				"122222",
+				"12aa23",
+				"133333",
+				"1.....",
+				"1....."
+			], 2)
+		},
+		{
+			id: "cutsies.toadstool",
+			game: "cutsies",
+			slot: "hat",
+			name: "Toadstool",
+			colors: [
+				"#E8483B",
+				"#B8302A",
+				"#FFFFFF",
+				"#FFF1DC",
+				"#FF7A6E"
+			],
+			draw: on([
+				"....5111....",
+				"..51133112..",
+				".5111111332.",
+				"533111111122",
+				"444444444444"
+			])
+		},
+		{
+			id: "cutsies.peel",
+			game: "cutsies",
+			slot: "hat",
+			name: "Banana peel",
+			colors: [
+				"#FFD84A",
+				"#E0A920",
+				"#FFF3C4",
+				"#7A5230"
+			],
+			draw: on([
+				".....44.....",
+				"....1122....",
+				"..11333222..",
+				".113.33.322.",
+				"14...33...42"
+			])
+		},
+		{
+			id: "cutsies.cupcake",
+			game: "cutsies",
+			slot: "hat",
+			name: "Cupcake top",
+			colors: [
+				"#FF9EC4",
+				"#E0679A",
+				"#FFD0E2",
+				"#E5243B",
+				"#FF8A96",
+				"#5C8A2E"
+			],
+			draw: on([
+				".....45.....",
+				"....3442....",
+				"...311112...",
+				"..32222222..",
+				".3111111112."
+			])
+		},
+		{
+			id: "cutsies.lineup",
+			game: "cutsies",
+			slot: "frame",
+			name: "Slice line-up",
+			colors: [
+				"#FFE4DC",
+				"#FFC7B5",
+				"#FFB39C"
+			],
+			fill: (x, y) => {
+				const slices = [
+					[
+						3,
+						2.5,
+						2.1
+					],
+					[
+						8,
+						2.5,
+						1.6
+					],
+					[
+						12,
+						2.5,
+						1.1
+					],
+					[
+						3,
+						13,
+						2.1
+					],
+					[
+						8,
+						13,
+						1.6
+					],
+					[
+						12,
+						13,
+						1.1
+					]
+				];
+				for (const [cx, cy, r] of slices) {
+					const d = Math.hypot(x - cx, y - cy);
+					if (d <= r - .6) return 2;
+					if (d <= r + .4) return 3;
+				}
+				return 1;
+			}
+		},
+		{
+			id: "cutsies.pear",
+			game: "cutsies",
+			slot: "buddy",
+			name: "Pear",
+			colors: [
+				"#C6E05A",
+				"#93B33A",
+				"#E8F59A",
+				"#7A5230",
+				"#5CA83A"
+			],
+			art: pet("pear", [
+				"...45.",
+				"..31..",
+				".3112.",
+				"311112",
+				".3122."
+			])
+		},
+		{
+			id: "cutsies.tomato",
+			game: "cutsies",
+			slot: "buddy",
+			name: "Tomato",
+			colors: [
+				"#EE3B33",
+				"#B8241F",
+				"#FF8A80",
+				"#4FA93A"
+			],
+			art: pet("tomato", [
+				"..44..",
+				".34441",
+				"311112",
+				"311112",
+				".1122."
+			])
+		},
+		{
+			id: "cutsies.corn",
+			game: "cutsies",
+			slot: "buddy",
+			name: "Corn cob",
+			colors: [
+				"#FFD23F",
+				"#E0A620",
+				"#FFEC99",
+				"#7CC24A",
+				"#4E8A2E"
+			],
+			art: pet("corn cob", [
+				"..3131",
+				".41212",
+				"443131",
+				".51212",
+				"..5..."
+			])
+		},
+		{
+			id: "cutsies.eggplant",
+			game: "cutsies",
+			slot: "buddy",
+			name: "Eggplant",
+			colors: [
+				"#8A55C8",
+				"#5A2E8C",
+				"#C49BEF",
+				"#5CA83A",
+				"#3E7A26"
+			],
+			art: pet("eggplant", [
+				"5.....",
+				"44331.",
+				"443111",
+				".31111",
+				"..1122"
+			])
+		}
+	],
+	retire: [
+		"cutsies.melon",
+		"cutsies.toast",
+		"cutsies.ninja",
+		"cutsies.slice",
+		"cutsies.orange",
+		"cutsies.banana",
+		"cutsies.kabuto",
+		"cutsies.slices",
+		"cutsies.seedling",
+		"cutsies.cherries",
+		"cutsies.pineapple",
+		"cutsies.shadow"
+	],
+	redraw: {
+		"cutsies.chef": {
+			draw: on([
+				".33.333.33.",
+				"33333333312",
+				".311111122.",
+				"..1212121..",
+				"..4444444.."
+			]),
+			colors: [
+				"#F7F9FC",
+				"#D5DCE6",
+				"#FFFFFF",
+				"#B9C4D2"
+			]
+		},
+		"cutsies.board": { name: "Chopping board" },
+		"cutsies.seeds": {
+			colors: [
+				"#FF9DAF",
+				"#3A1E1A",
+				"#FFC2CC"
+			],
+			fill: (x, y) => {
+				const row = Math.floor(y / 4), sx = (x + row % 2 * 2) % 4;
+				if (sx === 1 && y % 4 === 1) return 2;
+				if (sx === 1 && y % 4 === 2) return 3;
+				return 1;
+			}
+		}
+	}
 };
 
 //#endregion
 //#region src/sets/tiltsies.ts
-/** Tiltsies's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Tiltsies' machine: its own hamsters (Biscuit, Mochi, Pebble, Custard) and
+* the balls they roll in, the pieces on the course and the seeds on it.
+* Colours follow the game's hamster.ts and its course.
+*/
 const set$1 = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "tiltsies.biscuit",
+			game: "tiltsies",
+			slot: "skin",
+			name: "Biscuit",
+			eyes: 8,
+			limb: 2,
+			about: "The golden classic, the hamster everyone starts with.",
+			colors: [
+				"#E9B88A",
+				"#C98A55",
+				"#F6D2AE",
+				"#FF9AA4",
+				"#FFF1DE",
+				"#EBD3B4"
+			],
+			outline: "#5A3418",
+			art: grid16("biscuit", [
+				"................",
+				"................",
+				"...22......22...",
+				"..2442....2442..",
+				"..243111111342..",
+				"..311111111112..",
+				".31111111111112.",
+				".31111111111112.",
+				".31111111111112.",
+				".31115555551112.",
+				".31155555555112.",
+				".21155555555112.",
+				"..215555555512..",
+				"...2266666622...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "tiltsies.candy",
+			game: "tiltsies",
+			slot: "skin",
+			name: "Candy ball",
+			eyes: 8,
+			colors: [
+				"#FF9FB0",
+				"#FFF1F3",
+				"#FFFFFF",
+				"#E06F86"
+			],
+			outline: "#9A3048",
+			art: grid16("candy ball", [
+				"................",
+				"................",
+				".....312221.....",
+				"....33222111....",
+				"...3332211122...",
+				"..333221112221..",
+				"..122211122214..",
+				"..222111222114..",
+				"..221112221114..",
+				"..211122211124..",
+				"..111222111224..",
+				"...1222111224...",
+				"....22111224....",
+				".....144444.....",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "tiltsies.starry",
+			game: "tiltsies",
+			slot: "skin",
+			name: "Starry ball",
+			eyes: 8,
+			colors: [
+				"#BFE2FF",
+				"#8CC7F5",
+				"#F4FAFF",
+				"#D4ECFF",
+				"#2A5B86",
+				"#FFC93A"
+			],
+			outline: "#2A5B86",
+			art: grid16("starry ball", [
+				"................",
+				"................",
+				".....611111.....",
+				"....66611116....",
+				"...3361111666...",
+				"..333111111611..",
+				"..111111111112..",
+				"..111111111112..",
+				"..511111111112..",
+				"..111111111162..",
+				"..161111111666..",
+				"...6611111116...",
+				"....11111112....",
+				".....122222.....",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "tiltsies.golden",
+			game: "tiltsies",
+			slot: "skin",
+			name: "Golden seed",
+			eyes: 10,
+			showpiece: true,
+			signature: "shimmer",
+			about: "The rare seed on a course, in gold.",
+			colors: [
+				"#F2B530",
+				"#C98A12",
+				"#FFE07A",
+				"#FFF3C0"
+			],
+			outline: "#6A4508",
+			art: grid16("golden seed", [
+				"................",
+				".......34.......",
+				"......3114......",
+				"......3114......",
+				".....314114.....",
+				".....314114.....",
+				"....31141142....",
+				"....31141142....",
+				"...3111111112...",
+				"..311111111112..",
+				"..311111111112..",
+				"..311111111112..",
+				"..311111111112..",
+				"...2111111112...",
+				"....22222222....",
+				"................"
+			])
+		},
+		{
+			id: "tiltsies.bow",
+			game: "tiltsies",
+			slot: "hat",
+			name: "Mochi’s bow",
+			colors: [
+				"#E8483B",
+				"#B8302A",
+				"#FF8A80",
+				"#8A1E18"
+			],
+			draw: on([
+				"11...11",
+				"1311131",
+				"1114111",
+				"12.4.21",
+				"..2.2.."
+			], -3)
+		},
+		{
+			id: "tiltsies.sprout",
+			game: "tiltsies",
+			slot: "hat",
+			name: "Pebble’s sprout",
+			colors: [
+				"#6CC24A",
+				"#3E8A2E",
+				"#B4EA8A",
+				"#5A9A3A"
+			],
+			draw: on([
+				"33...12",
+				"3314122",
+				".11412.",
+				"...4...",
+				"...4..."
+			])
+		},
+		{
+			id: "tiltsies.daisy",
+			game: "tiltsies",
+			slot: "hat",
+			name: "Custard’s daisy",
+			colors: [
+				"#FFFFFF",
+				"#DCE3EA",
+				"#FFC93A",
+				"#E0A010"
+			],
+			draw: on([
+				".1.1.",
+				"11311",
+				".343.",
+				"11411",
+				".2.2."
+			], 3)
+		},
+		{
+			id: "tiltsies.tiles",
+			game: "tiltsies",
+			slot: "frame",
+			name: "Course tiles",
+			colors: ["#F4EBD6", "#DDEBCB"],
+			fill: (x, y) => (Math.floor(x / 4) + Math.floor(y / 4)) % 2 ? 2 : 1
+		},
+		{
+			id: "tiltsies.sky",
+			game: "tiltsies",
+			slot: "frame",
+			name: "Cloudy sky",
+			colors: [
+				"#BFE6FF",
+				"#EAF7FF",
+				"#D6EFFF"
+			],
+			fill: (x, y) => {
+				const puffs = [
+					[
+						1.5,
+						3.6,
+						1.6
+					],
+					[
+						3.8,
+						2.6,
+						2.1
+					],
+					[
+						6.2,
+						3.4,
+						1.5
+					]
+				];
+				const inside$1 = (cx, cy, r) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
+				if (y <= 4 && puffs.some(([cx, cy, r]) => inside$1(cx, cy, r))) return y === 4 ? 3 : 2;
+				return 1;
+			}
+		},
+		{
+			id: "tiltsies.trail",
+			game: "tiltsies",
+			slot: "frame",
+			name: "Seed trail",
+			colors: [
+				"#F6EFDF",
+				"#8A7A68",
+				"#D9CDB8"
+			],
+			fill: (x, y) => {
+				const k = (x + 3 * y) % 10;
+				return k === 0 ? 2 : k === 8 ? 3 : 1;
+			}
+		},
+		{
+			id: "tiltsies.sunseed",
+			game: "tiltsies",
+			slot: "buddy",
+			name: "Sunflower seed",
+			colors: [
+				"#3A3530",
+				"#6B635A",
+				"#E8DCC0"
+			],
+			art: pet("sunflower seed", [
+				".111..",
+				"13331.",
+				"111111",
+				"13331.",
+				".111.."
+			])
+		},
+		{
+			id: "tiltsies.bumper",
+			game: "tiltsies",
+			slot: "buddy",
+			name: "Bumper",
+			colors: [
+				"#E8392B",
+				"#A8231A",
+				"#FF7A6E",
+				"#FFFFFF",
+				"#DDE3EA"
+			],
+			art: pet("bumper", [
+				".3311.",
+				"311112",
+				"444445",
+				"311112",
+				".2222."
+			])
+		},
+		{
+			id: "tiltsies.spring",
+			game: "tiltsies",
+			slot: "buddy",
+			name: "Spring",
+			colors: [
+				"#FF8A3D",
+				"#B85A1C",
+				"#F4EBD6",
+				"#C9BC9C"
+			],
+			art: pet("spring", [
+				"333333",
+				".4444.",
+				"..11..",
+				".1..1.",
+				"..11.."
+			])
+		},
+		{
+			id: "tiltsies.ghost",
+			game: "tiltsies",
+			slot: "buddy",
+			name: "Ghost",
+			about: "Your best run, rolling along beside you.",
+			colors: [
+				"#9DB8D6",
+				"#EEF5FD",
+				"#D8C0A8",
+				"#FFFFFF"
+			],
+			art: pet("ghost", [
+				".1241.",
+				"132231",
+				"133331",
+				"233332",
+				".1221."
+			])
+		}
+	],
+	retire: [
+		"tiltsies.hamster",
+		"tiltsies.marble",
+		"tiltsies.acorn",
+		"tiltsies.astronaut",
+		"tiltsies.seed",
+		"tiltsies.wheel",
+		"tiltsies.ufo",
+		"tiltsies.maze",
+		"tiltsies.spiral",
+		"tiltsies.bedding",
+		"tiltsies.hamlet",
+		"tiltsies.rolly",
+		"tiltsies.sunflower",
+		"tiltsies.hedgehog"
+	],
+	redraw: { "tiltsies.buddy": {
+		colors: [
+			"#E9B88A",
+			"#C98A55",
+			"#FFF1DE",
+			"#FF9AA4",
+			"#2A1B10"
+		],
+		draw: on([
+			".24....42.",
+			".11111112.",
+			"1151111512",
+			"1113443122",
+			".33333332."
+		])
+	} }
 };
 
 //#endregion
 //#region src/sets/trackdle.ts
-/** Trackdle's machine: what it adds, retires and redraws (see MachineSet). */
+/**
+* Trackdle's machine: its die-cast cars and what stands round the track.
+* The livery is the game's own: Tangerine #ED6137 with cream #FFF4DC stripes,
+* toy-black tyres, orange ramps with a cream chevron, a cream band on a cone.
+*/
 const set = {
-	add: [],
-	retire: [],
-	redraw: {}
+	add: [
+		{
+			id: "trackdle.coupe",
+			game: "trackdle",
+			slot: "skin",
+			name: "Coupe",
+			eyes: 7,
+			about: "The starter car, No. 07, in Tangerine with cream stripes.",
+			colors: [
+				"#ED6137",
+				"#B8441F",
+				"#F7905F",
+				"#FFF4DC",
+				"#CFE6EE",
+				"#D93A2B",
+				"#23262D",
+				"#6B7380",
+				"#FFE7A0"
+			],
+			outline: "#5A1E0C",
+			art: grid16("coupe", [
+				"................",
+				"................",
+				"................",
+				".....4444444....",
+				"...3155555551...",
+				".7315555555551..",
+				".3115555555551..",
+				".31155555555144.",
+				".61111111114419.",
+				".31111111117412.",
+				".22772222227722.",
+				"..7887....7887..",
+				"..7887....7887..",
+				"...77......77...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "trackdle.van",
+			game: "trackdle",
+			slot: "skin",
+			name: "Surf van",
+			eyes: 8,
+			colors: [
+				"#E8692F",
+				"#B34A1C",
+				"#F79461",
+				"#FFF4DC",
+				"#E3D3B0",
+				"#2E3E4E",
+				"#23262D",
+				"#6B7380",
+				"#8FB3C9"
+			],
+			outline: "#5A1E0C",
+			art: grid16("surf van", [
+				"................",
+				"................",
+				"..444444444444..",
+				".44444444444445.",
+				".31661666616662.",
+				".31691666619662.",
+				".31111111111112.",
+				".31111111111114.",
+				".31111111111112.",
+				".31111111111112.",
+				".22222222222222.",
+				".27777222277772.",
+				"..7887....7887..",
+				"...77......77...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "trackdle.buggy",
+			game: "trackdle",
+			slot: "skin",
+			name: "Dune buggy",
+			eyes: 8,
+			colors: [
+				"#E8692F",
+				"#B34A1C",
+				"#F79461",
+				"#FFF4DC",
+				"#E3D3B0",
+				"#2E3E4E",
+				"#23262D",
+				"#8A929E",
+				"#C9CFD8"
+			],
+			outline: "#4A1A0A",
+			art: grid16("dune buggy", [
+				"................",
+				"................",
+				"....9999999.....",
+				"....9.9...9.....",
+				"....9..9...9....",
+				"...9....9...9...",
+				"..311111111112..",
+				".31111111111112.",
+				".31111111111114.",
+				".31111111111112.",
+				".27772222227772.",
+				".77877222277877.",
+				".78787....78787.",
+				".77877....77877.",
+				"..777......777..",
+				"................"
+			])
+		},
+		{
+			id: "trackdle.formula",
+			game: "trackdle",
+			slot: "skin",
+			name: "Formula 07",
+			eyes: 9,
+			showpiece: true,
+			signature: "embers",
+			about: "Open wheels, a wing at each end, No. 07.",
+			colors: [
+				"#ED6137",
+				"#B8441F",
+				"#F7905F",
+				"#FFF4DC",
+				"#2B2F38",
+				"#23262D",
+				"#4A505B"
+			],
+			outline: "#3A1408",
+			art: grid16("formula 07", [
+				"................",
+				"..544444444445..",
+				"......3112......",
+				".666..3442..666.",
+				".67655317255676.",
+				".676.311112.676.",
+				".66631111112666.",
+				"...3111111112...",
+				"...5311111115...",
+				".66631111111666.",
+				".67631111111676.",
+				".67622111122676.",
+				".66622222222666.",
+				"....54444445....",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "trackdle.lights",
+			game: "trackdle",
+			slot: "hat",
+			name: "Start lights",
+			colors: [
+				"#2A2D33",
+				"#4A505B",
+				"#FF3B30",
+				"#FFB3A8",
+				"#B3141C",
+				"#8A929E"
+			],
+			draw: on([
+				"2222222222",
+				"1431431431",
+				"1351351351",
+				"1111111111",
+				"....66...."
+			])
+		},
+		{
+			id: "trackdle.spoiler",
+			game: "trackdle",
+			slot: "hat",
+			name: "Rear spoiler",
+			colors: [
+				"#ED6137",
+				"#B8441F",
+				"#F7905F",
+				"#2B2F38",
+				"#FFF4DC"
+			],
+			draw: on([
+				"4..........4",
+				"433333333334",
+				"422222222224",
+				"4..4....4..4",
+				"...4....4..."
+			])
+		},
+		{
+			id: "trackdle.surfboard",
+			game: "trackdle",
+			slot: "hat",
+			name: "Surfboard",
+			colors: [
+				"#FFF4DC",
+				"#E3CFA6",
+				"#ED6137",
+				"#B8441F"
+			],
+			draw: on([
+				"..1..",
+				".131.",
+				"11311",
+				"11311",
+				"11311",
+				"11311",
+				".232."
+			], 3)
+		},
+		{
+			id: "trackdle.finish",
+			game: "trackdle",
+			slot: "hat",
+			name: "Finish flag",
+			colors: [
+				"#23262D",
+				"#F4F4F4",
+				"#9AA3AE",
+				"#F2C230"
+			],
+			draw: on([
+				"4........",
+				"311221122",
+				"311221122",
+				"322112211",
+				"322112211",
+				"3........",
+				"3........"
+			], 3)
+		},
+		{
+			id: "trackdle.boost",
+			game: "trackdle",
+			slot: "frame",
+			name: "Boost pad",
+			colors: ["#143049", "#9C8545"],
+			fill: (x, y) => {
+				for (const cy of [
+					2,
+					7,
+					12
+				]) for (const cx of [2, 13]) {
+					const dx = x - cx, dy = y - cy;
+					if (Math.abs(dy) <= 1 && (dx === -Math.abs(dy) || dx === 1 - Math.abs(dy))) return 2;
+				}
+				return 1;
+			}
+		},
+		{
+			id: "trackdle.tyres",
+			game: "trackdle",
+			slot: "buddy",
+			name: "Tyre stack",
+			colors: [
+				"#3A3F48",
+				"#5C6370",
+				"#23262D",
+				"#C9CFD8"
+			],
+			art: pet("tyre stack", [
+				".1111.",
+				"134431",
+				"211112",
+				"134431",
+				".1111."
+			])
+		},
+		{
+			id: "trackdle.ramp",
+			game: "trackdle",
+			slot: "buddy",
+			name: "Jump ramp",
+			colors: [
+				"#F2683F",
+				"#B8441F",
+				"#FF9A6E",
+				"#FFF4DC"
+			],
+			art: pet("jump ramp", [
+				"....12",
+				"...112",
+				"..1412",
+				".11142",
+				"111412"
+			])
+		},
+		{
+			id: "trackdle.cactus",
+			game: "trackdle",
+			slot: "buddy",
+			name: "Saguaro",
+			colors: [
+				"#4F9B62",
+				"#2F6B40",
+				"#8ED07A",
+				"#E8C98F",
+				"#C9A26A"
+			],
+			art: pet("saguaro", [
+				"..31.1",
+				"3.31.1",
+				"333111",
+				"..31..",
+				".4445."
+			])
+		}
+	],
+	retire: [
+		"trackdle.racer",
+		"trackdle.stopwatch",
+		"trackdle.tyre",
+		"trackdle.rocket",
+		"trackdle.helmet",
+		"trackdle.trophy",
+		"trackdle.goggles",
+		"trackdle.f1",
+		"trackdle.flag",
+		"trackdle.snail",
+		"trackdle.kart",
+		"trackdle.hare"
+	],
+	redraw: {
+		"trackdle.conelet": {
+			colors: [
+				"#FF8A3D",
+				"#D9621E",
+				"#FFF4DC",
+				"#FFB27A",
+				"#A8461A"
+			],
+			art: pet("conelet", [
+				"..41..",
+				".4112.",
+				".3333.",
+				"4o11o2",
+				"555555"
+			])
+		},
+		"trackdle.cone": {
+			eyes: 10,
+			colors: [
+				"#FF8A3D",
+				"#D9621E",
+				"#FFF4DC",
+				"#FFB27A",
+				"#2B2F38",
+				"#E6D5B3"
+			],
+			art: grid16("traffic cone", [
+				"................",
+				".......41.......",
+				"......4112......",
+				"......4112......",
+				".....333336.....",
+				".....411112.....",
+				"....41111112....",
+				"....41111112....",
+				"....33333336....",
+				"...3333333336...",
+				"...3333333336...",
+				"..411111111112..",
+				"..411111111112..",
+				".22222222222222.",
+				"................",
+				"................"
+			])
+		}
+	}
 };
 
 //#endregion
@@ -5398,9 +8781,9 @@ function markItem(grid, slot, copy) {
 		const row = cells.filter(([, cy]) => cy === y).map(([x]) => x).sort((a, b$1) => a - b$1);
 		for (let i = 1; i < row.length - 1 && marks > 0; i += 2, marks--) grid[y][row[i]] = T.WHITE;
 	}
-	const frame = slot === "frame", hat = slot === "hat";
+	const frame = slot === "frame", hat$1 = slot === "hat";
 	const at = (x, y) => grid[y]?.[x] ?? 0;
-	const air = (x, y) => hat && at(x, y) === 0 && x > 0 && y > 0 && x < GRID_SIZE - 1 && y < GRID_SIZE - 1;
+	const air = (x, y) => hat$1 && at(x, y) === 0 && x > 0 && y > 0 && x < GRID_SIZE - 1 && y < GRID_SIZE - 1;
 	const taken = new Set();
 	const corners = frame ? [
 		[
@@ -5458,7 +8841,7 @@ function markItem(grid, slot, copy) {
 				else lost++;
 				for (const [nx, ny] of N4) {
 					const n = at(x + nx, y + ny);
-					if (FACE.has(n) || hat && n !== 0 && n !== T.OUTLINE && !own(slot, n) && !taken.has((y + ny) * GRID_SIZE + x + nx)) crowded++;
+					if (FACE.has(n) || hat$1 && n !== 0 && n !== T.OUTLINE && !own(slot, n) && !taken.has((y + ny) * GRID_SIZE + x + nx)) crowded++;
 				}
 			}));
 			if (!onItem || inAir > onItem) continue;
@@ -10866,7 +14249,7 @@ function extrasOf(config, c) {
 	let marks = cheek.art.length > 0;
 	const top = itemById(config.hat)?.slot === "hat" || config.hair !== 0 && !EARED.has(heads[config.head].name);
 	const worn = config.accessory !== 0;
-	const small = c.bottom - c.crown + 1 <= 8, limit = small ? 1 : 2;
+	const small = c.bottom - c.crown + 1 <= 8, limit = small ? 2 : 3;
 	const quiet = pattern && !SCATTERED.has(body) && body !== "starry" && !small;
 	const count$1 = () => [
 		top,
@@ -10991,7 +14374,7 @@ function clearFace(c, face, bare, worn) {
 */
 function compose(config) {
 	const skin = skinOf(config);
-	const hat = itemById(config.hat);
+	const hat$1 = itemById(config.hat);
 	const frame = itemById(config.frame);
 	const c = startCanvas(config);
 	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
@@ -11040,8 +14423,8 @@ function compose(config) {
 			c.grid[y][x] = v;
 		}));
 	};
-	if (hat?.slot === "hat") {
-		onTop((cv) => hat.draw(cv));
+	if (hat$1?.slot === "hat") {
+		onTop((cv) => hat$1.draw(cv));
 		claim(c.grid, LAYER.hat);
 		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
 			const t = c.grid[y][x], below = c.grid[y + 1][x];
@@ -13584,12 +16967,12 @@ const SURFACES = {
 };
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
 function surfaceOf(kind, scuff = 0) {
-	const s = SURFACES[kind], wear$2 = Math.round(Math.min(1, Math.max(0, scuff)) * 10) / 10;
+	const s = SURFACES[kind], wear$3 = Math.round(Math.min(1, Math.max(0, scuff)) * 10) / 10;
 	return {
 		kind,
 		...s,
-		roughness: Math.min(1, +(s.roughness + wear$2 * .55).toFixed(3)),
-		clearcoat: +(s.clearcoat * (1 - wear$2)).toFixed(3)
+		roughness: Math.min(1, +(s.roughness + wear$3 * .55).toFixed(3)),
+		clearcoat: +(s.clearcoat * (1 - wear$3)).toFixed(3)
 	};
 }
 const lum = (hex$3) => {

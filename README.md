@@ -379,25 +379,27 @@ Every DLE Club game has things a player can wear, here and in every other game.
 The guy underneath — face, shape, colours — never changes, so a player is
 recognisable everywhere.
 
-| Game | Skins | Hats (first is free) | Frames | Buddies |
-|---|---|---|---|---|
-| Amountle | Jar of gems, Crystal, Piggy bank, Gumball machine | Gem, Gem crown, Big gem, Coin stack | Gem field, Coin pile, Jelly beans | Gemling, Jelly bean, Piglet bank |
-| Halfsies | Clay pot, Kitchen scale, Avocado half, Lemon half | Half pot, Scale dish, Pot helmet, Half sandwich | Kitchen teal, Gingham, Half and half | Pea pod, Sunny egg, Berry half |
-| Stackdle | Toy block, Triangle, Building brick, Block stack | Little block, Tower, Ring, Arch | Toy box, Bricks, Blueprint | Cubelet, Pyramid, Brickling |
-| Flipsies | Water bottle, Bullseye, Pancake stack, Soda can | Bottle cap, Landed bottle, Bullseye beret, Flipped cup | Bullseye, Waves, Pool tiles | Droplet, Short stack, Rubber duck |
-| Puttsies | Golf ball, Quilt pillow, Golf bag, Windmill | Golf visor, Pin flag, Golf tam, Argyle bucket | Patchwork, Fairway, Putting green | Tee buddy, Gopher, Hazard frog |
-| Weighsies | Cheese wheel, Kettlebell, Anvil, Flour sack | Cheese wedge, Balance, Dumbbell, Feather | Lavender, Ruler, Scale dial | Mouse, Cheddar, Chick |
-| Cutsies | Kiwi, Melon slice, Toast, Strawberry | Kiwi slice, Chef hat, Orange half, Banana | Kiwi slices, Melon seeds, Cutting board | Seedling, Cherries, Pineapple |
-| Tiltsies | Hamster ball, Hamster, Marble, Acorn | Hamster ears, Hamster buddy, Sunflower seed, Hamster wheel | Toy maze, Spiral, Wood shavings | Hamlet, Rolly, Sunflower |
-| Trackdle | Racer, Traffic cone, Stopwatch, Tyre | Pit cap, Race helmet, Trophy, Race goggles | Checkered flag, Tarmac, Kerb | Turbo snail, Conelet, Go-kart |
+| Game | Skins | Showpiece | Hats (first is free) | Frames | Buddies |
+|---|---|---|---|---|---|
+| Amountle | Jar of gems, Crystal, Gumball machine, Jellybean | Today’s jar | Gem band, Winners crown, Jar lid, Gem pile, Gold coin | Jelly beans, Jar glass, Shelf | Gemling, Gummy bear, Play coin, Candy corn |
+| Halfsies | Avocado half, Lemon half, Burger half, Trophy half | Perfect split | Knife, Gold star, Perfect stamp, Thirds cake, Kebab skewer | Kitchen teal, Half and half, Dashed cut line | Sunny egg, Avo, Mini balance, Cake slice |
+| Stackdle | Wedge, Keystone, Arch, Big L | Sky tower | Little block, Block tower, Balanced crescent, Bolt piece, Cloud ring | Valley sky, Height ruler, Space | Block, Ball, Stairs, Little penguin |
+| Flipsies | Water bottle, Soup can, Rubber duck, Giant die | Moai | Bottle cap, Short stack, Buttered toast, Popcorn bucket, Lampshade | Ring mat, Cork coaster, Book spines | Goldfish, Ketchup, Coffee mug, Toaster |
+| Puttsies | Golf ball, Quilt pillow, Windmill, Eight ball | Toy train | Golf cap, Hole-in-one crown, Magic top hat, Sleeping cat, Snail shell | Patchwork, Picnic check, Dimples | Flag in the cup, Sprinkles donut, Wind-up mouse, Toy blocks |
+| Weighsies | Kettlebell, Gold bar, Basketball, Grand piano | Kitchen scale | Scale pan, Apple, Sumo topknot, Great Pyramid, Eiffel Tower | Lavender, Pennies, Weigh-in blocks | House cat, Lil whale, Baby T. rex, Pigeon |
+| Cutsies | Kiwi, Strawberry, Frosted donut, Salmon nigiri | Giant watermelon | “You” flag, Chef's toque, Toadstool, Banana peel, Cupcake top | Melon seeds, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
+| Tiltsies | Hamster ball, Biscuit, Candy ball, Starry ball | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Custard’s daisy | Course tiles, Cloudy sky, Seed trail | Sunflower seed, Bumper, Spring, Ghost |
+| Trackdle | Traffic cone, Coupe, Surf van, Dune buggy | Formula 07 | Pit cap, Start lights, Rear spoiler, Surfboard, Finish flag | Tarmac, Kerb, Boost pad | Conelet, Tyre stack, Jump ramp, Saguaro |
 
-A **skin** turns the guy into the game's object and keeps its face. Each machine also holds one **showpiece** (`showpiece: true`): a whole new character (a dragon, a robot, a rocket…), coming out at half an ordinary item's weight (`SHOWPIECE_WEIGHT`), every copy moving with its own effect (`signature`), which is neither in its name nor its odds.
+Items a machine no longer gives stay in `src/sets/<game>.ts` as `retire`: copies already owned keep drawing, capsules and crafting skip them.
 
-A capsule can also unlock a rare **face part** (`rollPart`, one capsule in `PART_ODDS`): one of the parts a picker locks, rarer ones less often. Pass a player's earned parts (`unlocksOf(codes)`) to `pickable`, `allowed`, `decodeLook` and `lookOf` and they can pick it; a guy's rarity stays the deal's.
+A **skin** turns the guy into the game's object and keeps its face. Each machine also holds one **showpiece** (`showpiece: true`): a whole new character (a moai, a toy train, Formula 07…), coming out at half an ordinary item's weight (`SHOWPIECE_WEIGHT`), every copy moving with its own effect (`signature`), which is neither in its name nor its odds.
+
+Every capsule also unlocks a **part** the player doesn't have yet (`rollPart`, any slot, head and colours included), rarer ones less often; metal crafts a chosen one (`partCost`). Pass a player's earned parts (`unlocksOf(codes)`) to `pickable`, `allowed`, `decodeLook` and `lookOf` and they can pick it; a guy's rarity stays the deal's.
 
 **Crafting, as in TF2** (`src/craft.ts`, `src/paints.ts`): a copy smelts into metal (`smeltValue`, in scrap: three scrap a reclaimed, three reclaimed a refined, written `2.44 ref` by `metalText`), a refined crafts the exact item you want (`craftCopy`, Plain, with a craft number), and a reclaimed paints a hat or a buddy (`paint` on the copy, twelve paints from A Lack of Hue to Pink as Heck, keeping the item's light and shade). A copy with a tally is a Strange one.
 
-**Buddies.** Each game has three buddies, tiny pets that sit at the guy's
+**Buddies.** Each game has four buddies, tiny pets that sit at the guy's
 feet, bottom right, in front of everything, with their own outline. Equip one
 like any item.
 
