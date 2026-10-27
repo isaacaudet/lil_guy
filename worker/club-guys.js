@@ -45,3 +45,26 @@ export async function clubGuys(request, env, guyOf) {
   for (const n of names) guys[n.account] = { key: n.key, parts: guyOf(n.seed, n.look), worn: worn.filter(c => c.key === n.key).map(c => c.code) };
   return Response.json({ guys }, { headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 }
+
+/**
+ * GET /api/club/named?n=a,b: the guys Twitch chat and the club's games draw by name, for names that are
+ * claimed here: each one's parts as drawn and the codes of the copies he has on. Public and cached for a
+ * minute, readable from any page, since a name's guy is on show here already. Names not claimed are left out.
+ */
+export async function namedGuys(request, env, guyOf, url = new URL(request.url)) {
+  const headers = { 'Cache-Control': 'public, max-age=60', 'Access-Control-Allow-Origin': '*', 'X-Content-Type-Options': 'nosniff' };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET' } });
+  if (request.method !== 'GET') return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'GET' } });
+  const asked = [...new Set((url.searchParams.get('n') || '').toLowerCase().split(',').filter(n => /^[a-z0-9]{2,16}$/.test(n)))];
+  if (!asked.length || asked.length > MAX_ASKED) return Response.json({ error: 'Bad ask' }, { status: 400, headers });
+  const marks = asked.map(() => '?').join(',');
+  const { results: names } = await env.DB.prepare(`SELECT n.key, n.seed, COALESCE(p.look, '') AS look FROM names n LEFT JOIN players p ON p.key = n.key
+    WHERE n.key IN (${marks})`).bind(...asked).all();
+  const keys = names.map(n => n.key);
+  const { results: worn } = keys.length
+    ? await env.DB.prepare(`SELECT key, code FROM copies WHERE worn = 1 AND key IN (${keys.map(() => '?').join(',')}) ORDER BY id`).bind(...keys).all()
+    : { results: [] };
+  const guys = {};
+  for (const n of names) guys[n.key] = { parts: guyOf(n.seed, n.look), worn: worn.filter(c => c.key === n.key).map(c => c.code) };
+  return Response.json({ guys }, { headers });
+}

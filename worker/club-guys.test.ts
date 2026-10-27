@@ -48,3 +48,17 @@ test('an ask needs the club’s signature and must be fresh', async () => {
   env.CLUB_SSO_SECRET = '';
   expect((await ask([A], { secret: 'z'.repeat(40) })).status).toBe(503);
 });
+
+test('Twitch chat and the games read claimed names’ guys, publicly', async () => {
+  await claim('mia');
+  const r = await call('/club/named?n=Mia,nobody,x');
+  expect(r.status).toBe(200);
+  expect(r.headers.get('Access-Control-Allow-Origin')).toBe('*');
+  const { guys } = (await r.json()) as any;
+  expect(Object.keys(guys)).toEqual(['mia']);
+  expect(typeof guys.mia.parts.head).toBe('number');
+  const worn = env.db.prepare("SELECT code FROM copies WHERE key = 'mia' AND worn = 1 ORDER BY id").all().map((c: any) => c.code);
+  expect(guys.mia.worn).toEqual(worn);
+  expect((await call('/club/named?n=')).status).toBe(400);
+  expect((await call('/club/named?n=mia', 'POST')).status).toBe(405);
+});
