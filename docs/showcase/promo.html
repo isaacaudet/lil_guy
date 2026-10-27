@@ -1063,7 +1063,7 @@
             <div id="me-card"></div>
             <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span><p id="me-odds"></p></div>
           </div>
-          <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button></div>
+          <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button><a class="btn" id="go-back" hidden></a></div>
           <div class="claim-foot"><button class="linkish" type="button" id="save-google" hidden>Save with Google</button><button class="linkish" type="button" id="reset">Let the name go</button></div>
         </div>
       </div>
@@ -2404,8 +2404,17 @@
     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     link.type = 'image/svg+xml'; link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
+  /** The games that send players here to claim, and where to send them back. */
+  const BACK_TO = { amountle: ['Back to Amountle', 'https://amountle.dev/'] };
+  function renderBack() {
+    let from = null;
+    try { from = BACK_TO[sessionStorage.getItem('lil-guys-from')] || null; } catch (e) {}
+    $('go-back').hidden = !(from && state);
+    if (from) { $('go-back').textContent = from[0]; $('go-back').href = from[1]; }
+  }
   function renderClaim() {
     renderAccount();
+    renderBack();
     $('claim-form').hidden = !!state; $('claim-mine').hidden = !state;
     $('wallet-pill').hidden = !state;
     if (!state) { paintInto($('mark-guy'), 'lilguys', []); setFavicon(); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
@@ -4289,6 +4298,17 @@
 
   renderHand();
   renderMaybe();
+  // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
+  // fills the box, and once it is theirs a button takes them back to the game.
+  try {
+    const q = new URLSearchParams(location.search), asked = q.get('claim'), from = q.get('from');
+    if (asked !== null || from !== null) {
+      if (BACK_TO[from]) sessionStorage.setItem('lil-guys-from', from);
+      if (asked && !state) { $('name').value = norm(asked).slice(0, 16); setTimeout(() => $('claim').scrollIntoView({ block: 'center' }), 60); }
+      q.delete('claim'); q.delete('from');
+      history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash);
+    }
+  } catch (e) {}
   renderFins();
   renderAll();
   route();
