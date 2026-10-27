@@ -383,11 +383,11 @@ recognisable everywhere.
 |---|---|---|---|---|---|
 | Amountle | Jar of gems, Crystal, Gumball machine, Jellybean | Today’s jar | Gem band, Winners crown, Jar lid, Gem pile, Gold coin | Jelly beans, Jar glass, Shelf | Gemling, Gummy bear, Play coin, Candy corn |
 | Halfsies | Avocado half, Lemon half, Burger half, Trophy half | Perfect split | Knife, Gold star, Perfect stamp, Thirds cake, Kebab skewer | Kitchen teal, Half and half, Dashed cut line | Sunny egg, Avo, Mini balance, Cake slice |
-| Stackdle | Wedge, Keystone, Arch, Big L | Sky tower | Little block, Block tower, Balanced crescent, Bolt piece, Cloud ring | Valley sky, Height ruler, Space | Block, Ball, Stairs, Little penguin |
+| Stackdle | Wedge, Keystone, Arch, Big L | Sky tower | Little block, Block tower, Balanced diamond, Bolt piece, Cloud ring | Valley sky, Height ruler, Space | Block, Ball, Stairs, Little penguin |
 | Flipsies | Water bottle, Soup can, Rubber duck, Giant die | Moai | Bottle cap, Short stack, Buttered toast, Popcorn bucket, Lampshade | Ring mat, Cork coaster, Book spines | Goldfish, Ketchup, Coffee mug, Toaster |
 | Puttsies | Golf ball, Quilt pillow, Windmill, Eight ball | Toy train | Golf cap, Hole-in-one crown, Magic top hat, Sleeping cat, Snail shell | Patchwork, Picnic check, Dimples | Flag in the cup, Sprinkles donut, Wind-up mouse, Toy blocks |
 | Weighsies | Kettlebell, Gold bar, Basketball, Grand piano | Kitchen scale | Scale pan, Apple, Sumo topknot, Great Pyramid, Eiffel Tower | Lavender, Pennies, Weigh-in blocks | House cat, Lil whale, Baby T. rex, Pigeon |
-| Cutsies | Kiwi, Strawberry, Frosted donut, Salmon nigiri | Giant watermelon | “You” flag, Chef's toque, Toadstool, Banana peel, Cupcake top | Melon seeds, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
+| Cutsies | Kiwi, Strawberry, Frosted donut, Salmon nigiri | Giant watermelon | “You” flag, Chef's toque, Toadstool, Cut banana, Cupcake top | Melon seeds, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
 | Tiltsies | Hamster ball, Biscuit, Candy ball, Starry ball | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Custard’s daisy | Course tiles, Cloudy sky, Seed trail | Sunflower seed, Bumper, Spring, Ghost |
 | Trackdle | Traffic cone, Coupe, Surf van, Dune buggy | Formula 07 | Pit cap, Start lights, Rear spoiler, Surfboard, Finish flag | Tarmac, Kerb, Boost pad | Conelet, Tyre stack, Jump ramp, Saguaro |
 

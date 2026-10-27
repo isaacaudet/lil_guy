@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('../paint-bXuB95a4.cjs');
+const require_paint = require('../paint-DmEQP17W.cjs');
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 const next_og = require_paint.__toESM(require("next/og"));
 

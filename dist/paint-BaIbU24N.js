@@ -1798,26 +1798,27 @@ const set$7 = {
 			signature: "shimmer",
 			about: "Fifty-fifty, to the gram.",
 			colors: [
-				"#FFD25A",
-				"#D99A1E",
-				"#FFF1B0"
+				"#FFC93A",
+				"#D9901A",
+				"#FFF1B0",
+				"#FFFFFF"
 			],
 			art: grid16("perfect split", [
 				"................",
-				"................",
-				"................",
-				"....h#3.........",
-				"..hh##1o3##.....",
-				".h####1o1###s...",
-				".#####1o1####s..",
-				".#####1o1####s..",
-				".#####1o1####s..",
-				".#####1o1####s..",
-				".#####1o1####s..",
-				".s####1o1####s..",
-				"..s###2o1###ss..",
-				"....ss2o2ssss...",
-				"........2ss.....",
+				".....h1.........",
+				"...hh#1.........",
+				"..h###1..3h.....",
+				".h####1..1hh#...",
+				".#####1..1####..",
+				".#####1441####s.",
+				".#####1441####s.",
+				".#####1441####s.",
+				".s####1441####s.",
+				"..s###1441####s.",
+				"...ss#1441####s.",
+				".....s2..1###s..",
+				".........2sss...",
+				".........2s.....",
 				"................"
 			])
 		},
@@ -1939,7 +1940,7 @@ const set$7 = {
 				"#2B2B30"
 			],
 			art: pet("mini balance", [
-				"344344",
+				"144144",
 				".8..8.",
 				"117712",
 				"116712",
@@ -2191,17 +2192,18 @@ const set$6 = {
 			id: "stackdle.crescent",
 			game: "stackdle",
 			slot: "hat",
-			name: "Balanced crescent",
+			name: "Balanced diamond",
 			colors: [
-				"#7FC5F5",
-				"#4F8BB5",
-				"#BDE3FB"
+				"#668ACB",
+				"#45649E",
+				"#A9C2EE"
 			],
 			draw: on([
-				".33331",
-				"311...",
-				"112...",
-				".12222"
+				"..331..",
+				".33112.",
+				"3311122",
+				"..312..",
+				"...2..."
 			], 0, 1)
 		},
 		{
@@ -2215,12 +2217,12 @@ const set$6 = {
 				"#DCC6FF"
 			],
 			draw: on([
-				"3331..",
-				"1112..",
-				"..12..",
-				"..1331",
-				"..1122"
-			], 0, 2)
+				".......331",
+				".......112",
+				"3333333112",
+				"1111111222",
+				"122......."
+			], 0, 1)
 		},
 		{
 			id: "stackdle.clouds",
@@ -2376,6 +2378,11 @@ const set$6 = {
 
 //#endregion
 //#region src/sets/flipsies.ts
+/** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
+const perch = (rows, sink = 1) => {
+	const s = stamp(rows);
+	return (c) => seat(c, s, c.centred(s), sink);
+};
 /**
 * Flipsies's machine: the things you flip (a water bottle, a soup can, a
 * rubber duck, a die, the moai) and the kitchen and living room they land in.
@@ -2490,17 +2497,17 @@ const set$5 = {
 			name: "Short stack",
 			colors: [
 				"#F7C873",
-				"#D9933F",
+				"#C98236",
 				"#FDE3A7",
-				"#7A3410",
+				"#9A4416",
 				"#FFF27A"
 			],
-			draw: on([
-				"...55..",
-				".34443.",
-				"2111114",
-				"3333334",
-				"2111112"
+			draw: perch([
+				"...5555...",
+				".33444333.",
+				"1114111412",
+				".22242222.",
+				"1111111112"
 			])
 		},
 		{
@@ -2554,16 +2561,16 @@ const set$5 = {
 				"#F2703F",
 				"#C24E26",
 				"#FFA27A",
-				"#34343C",
-				"#FFE9A8"
+				"#6E6E78",
+				"#FFF3B0"
 			],
 			draw: on([
-				"...4...",
-				"...4...",
-				".33112.",
-				"3111112",
-				".55555."
-			])
+				"....4....",
+				"..33112..",
+				".3311112.",
+				"311111122",
+				"...555..."
+			], 0, 1)
 		},
 		{
 			id: "flipsies.ring-mat",
@@ -3215,19 +3222,19 @@ const set$3 = {
 			art: grid16("kitchen scale", [
 				"................",
 				"................",
-				".....334433.....",
-				"....43111134....",
-				"...3111115113...",
-				"..331111511133..",
-				"..411111111114..",
-				"..311111111113..",
-				"..311111111113..",
-				"..311111111113..",
-				".66661111116666.",
-				"..771111111177..",
-				"....33111133....",
-				".....888888.....",
-				"....66666667....",
+				".66666666666666.",
+				"...7777777777...",
+				"...3344444433...",
+				"..334815518433..",
+				"..341111111143..",
+				"..341111111143..",
+				"..341111111143..",
+				"..341111111143..",
+				"..334111111433..",
+				"..333444444333..",
+				"...8888888888...",
+				"..66........66..",
+				"................",
 				"................"
 			])
 		},
@@ -3694,20 +3701,21 @@ const set$2 = {
 			id: "cutsies.peel",
 			game: "cutsies",
 			slot: "hat",
-			name: "Banana peel",
+			name: "Cut banana",
 			colors: [
-				"#FFD84A",
-				"#E0A920",
-				"#FFF3C4",
-				"#7A5230"
+				"#FFE04A",
+				"#D9A11E",
+				"#FFF6D2",
+				"#5C3A1E",
+				"#9A8A3A",
+				"#FFF19A"
 			],
 			draw: on([
-				".....44.....",
-				"....1122....",
-				"..11333222..",
-				".113.33.322.",
-				"14...33...42"
-			])
+				".........54",
+				"......6612.",
+				"..3666112..",
+				".3311122..."
+			], 0, 1)
 		},
 		{
 			id: "cutsies.cupcake",
@@ -4116,8 +4124,18 @@ const set$1 = {
 			game: "tiltsies",
 			slot: "frame",
 			name: "Course tiles",
-			colors: ["#F4EBD6", "#DDEBCB"],
-			fill: (x, y) => (Math.floor(x / 4) + Math.floor(y / 4)) % 2 ? 2 : 1
+			colors: [
+				"#F4EBD6",
+				"#C6E0AE",
+				"#9DB487",
+				"#FFFBF0"
+			],
+			fill: (x, y) => {
+				const tx = x % 4, ty = y % 4;
+				if (tx === 3 || ty === 3) return 3;
+				if (tx === 0 && ty === 0) return 4;
+				return (Math.floor(x / 4) + Math.floor(y / 4)) % 2 ? 2 : 1;
+			}
 		},
 		{
 			id: "tiltsies.sky",
@@ -4472,12 +4490,12 @@ const set = {
 				"#FFF4DC"
 			],
 			draw: on([
-				"4..........4",
-				"433333333334",
-				"422222222224",
-				"4..4....4..4",
-				"...4....4..."
-			])
+				"44........44",
+				"445555555544",
+				"441111111144",
+				".....44.....",
+				".....44....."
+			], 0, 1)
 		},
 		{
 			id: "trackdle.surfboard",
@@ -14607,4 +14625,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-ixHPcwU7.js.map
+//# sourceMappingURL=paint-BaIbU24N.js.map
