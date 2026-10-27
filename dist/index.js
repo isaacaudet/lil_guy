@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-BAnlpDG8.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-BqtYCmLj.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -5926,7 +5926,17 @@ function drawCard(input, frame, owned, g, t) {
 	const textW = CARD_WIDTH - SIDE * 2 - 6;
 	const pill = input.lines?.[0], subs = (input.lines ?? []).slice(1).flatMap((l) => wrapText(l, textW));
 	const titles = wrapText(input.title, textW);
-	let y = CARD_HEIGHT - SIDE - 2 - subs.length * LINE;
+	const lastItem = input.copies?.length ? itemById(input.copies[input.copies.length - 1].item) : void 0;
+	const markHex = lastItem ? SET_COLORS[lastItem.game] : void 0;
+	const foots = [];
+	for (const part of (input.footer ?? "").split(" · ").filter(Boolean)) {
+		const k = foots.length - 1, w = k <= 0 ? textW - 14 : textW;
+		if (k >= 0 && textWidth(`${foots[k]} · ${part}`) <= w) foots[k] += ` · ${part}`;
+		else if (foots.length < 2 && textWidth(part) <= textW) foots.push(part);
+		else break;
+	}
+	const footH = foots.length ? foots.length * LINE : markHex ? LINE : 0;
+	let y = CARD_HEIGHT - SIDE - 2 - footH - subs.length * LINE;
 	const subTop = y;
 	const pillTop = pill ? y -= 17 : y;
 	y -= 4 + titles.length * LINE;
@@ -6148,6 +6158,27 @@ function drawCard(input, frame, owned, g, t) {
 		200,
 		230
 	] : mix(INK, CREAM, .25)));
+	const footTop = CARD_HEIGHT - SIDE - 2 - footH;
+	foots.forEach((l, k) => s.text(l, SIDE + 3, footTop + k * LINE - 1, () => night ? [
+		170,
+		180,
+		215
+	] : mix(INK, CREAM, .4)));
+	if (markHex) {
+		const m = rgb$2(markHex), x0 = CARD_WIDTH - SIDE - 12, y0 = footTop + 1;
+		for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
+			const rim$1 = x === 0 || yy === 0 || x === 8 || yy === 8;
+			s.set(x0 + x, y0 + yy, rim$1 ? mix(m, [
+				10,
+				10,
+				20
+			], .55) : x === 1 || yy === 1 ? mix(m, WHITE, .45) : x === 7 || yy === 7 ? mix(m, [
+				0,
+				0,
+				0
+			], .3) : m);
+		}
+	}
 	return s.px;
 }
 /** The grade a card shows: the one given, or the rarest copy's. */
@@ -6392,7 +6423,25 @@ function cardFace(spec) {
 		0
 	], .35) : y === 2 ? lip : band$1, 1);
 	if (!full) for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, x === 3 || y === 9 || x === 22 || y === 28 ? rim$1 : win, 2);
-	const gy = full ? 7 : 11;
+	const gy = full ? 5 : 11;
+	if (full) {
+		const feet = gy + grid.reduce((m, row, y) => row.some(Boolean) ? y : m, 0) + 1;
+		for (let y = feet - 1; y <= feet + 1; y++) for (let x = 6; x <= 19; x++) {
+			const d = ((x - 12.5) / 7) ** 2 + ((y - feet) / 1.6) ** 2;
+			if (d < 1) {
+				const i = (y * W + x) * 4;
+				base.set(blend([
+					base[i],
+					base[i + 1],
+					base[i + 2]
+				], [
+					8,
+					6,
+					20
+				], .45 * (1 - d)), i);
+			}
+		}
+	}
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const hex$1 = colors[y][x];
 		if (!hex$1) return;
@@ -6401,7 +6450,7 @@ function cardFace(spec) {
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
 		put(x + 5, y + gy, rgb$1(hex$1), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
-	const mark = set ? gameItems(set).find((i) => i.slot === "skin")?.colors[0] : void 0;
+	const mark = set ? SET_COLORS[set] : void 0;
 	if (mark) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb$1(mark), [
 		255,
 		255,

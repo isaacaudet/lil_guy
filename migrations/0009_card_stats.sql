@@ -14,3 +14,12 @@ CREATE TABLE IF NOT EXISTS copy_days (
 );
 -- When the owner's club days were last read, in ms.
 ALTER TABLE players ADD COLUMN club_read INTEGER NOT NULL DEFAULT 0;
+-- Each copy's place in its item's run, counted when it's made, so the first 100 of an item are its
+-- 1st edition and a copy can say "#37 of this item". Starters and the founder's copies have none.
+-- Copies made before this are numbered in the order they were made; the count carries on from there.
+ALTER TABLE copies ADD COLUMN pull INTEGER NOT NULL DEFAULT 0;
+UPDATE copies SET pull = (SELECT COUNT(*) FROM copies c2 WHERE c2.item = copies.item AND c2.id <= copies.id
+  AND c2.source NOT IN ('starter', 'founder') AND c2.one_in > 0)
+  WHERE source NOT IN ('starter', 'founder') AND one_in > 0;
+INSERT INTO counters(name, n) SELECT 'pull:' || item, MAX(pull) FROM copies WHERE pull > 0 GROUP BY item
+  ON CONFLICT(name) DO UPDATE SET n = MAX(n, excluded.n);

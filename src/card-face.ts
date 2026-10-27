@@ -1,6 +1,6 @@
 import { compose } from './compose';
 import { clamp, distance, finishColor, fract, holoColor, mod, GLSL_COMMON, GLSL_PRECISION, hueShift, loopSeconds, mix, noiseOf, SHADER_FINISHES, smoothstep, step, toByte, type Vec3 } from './finish-shader';
-import { dress, gameItems, itemById, withItems } from './items';
+import { dress, gameItems, itemById, SET_COLORS, withItems } from './items';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -125,8 +125,16 @@ export function cardFace(spec: FaceSpec): CardFace {
     put(x, y, y === 7 ? (g >= 3 ? gc : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
   }
   if (!full) for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : win, 2);
-  // A full-art guy stands higher, free of a window, his hat at the title band.
-  const gy = full ? 7 : 11;
+  // A full-art guy stands higher, free of a window, the top of the hat poking up into the title band
+  // (its words sit in the band's top half there), on a soft shadow so the guy stands on the scene.
+  const gy = full ? 5 : 11;
+  if (full) {
+    const feet = gy + grid.reduce((m, row, y) => (row.some(Boolean) ? y : m), 0) + 1;
+    for (let y = feet - 1; y <= feet + 1; y++) for (let x = 6; x <= 19; x++) {
+      const d = ((x - 12.5) / 7) ** 2 + ((y - feet) / 1.6) ** 2;
+      if (d < 1) { const i = (y * W + x) * 4; base.set(blend([base[i], base[i + 1], base[i + 2]], [8, 6, 20], 0.45 * (1 - d)), i); }
+    }
+  }
   grid.forEach((row, y) => row.forEach((t, x) => {
     const hex = colors[y][x];
     if (!hex) return;
@@ -136,7 +144,7 @@ export function cardFace(spec: FaceSpec): CardFace {
     put(x + 5, y + gy, rgb(hex), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
   }));
   // The set's symbol, bottom right: a small badge in the machine's colour.
-  const mark = set ? gameItems(set as never).find(i => i.slot === 'skin')?.colors[0] : undefined;
+  const mark = set ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
   if (mark) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb(mark), [255, 255, 255], 0.5) : x === 22 || y === 39 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), 1);
   if (g >= 0) for (let p = 0; p < 5; p++) {
     const x0 = 6 + p * 3;

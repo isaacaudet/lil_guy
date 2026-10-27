@@ -132,9 +132,24 @@ async function insertCopy(env, row, worn = 0) {
   const at = new Date().toISOString();
   const r = await env.DB.prepare('INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(row.key, row.code, row.item, row.game, row.slot, row.finish, row.grade, row.one_in, row.scuff, row.source, worn, at).run();
-  return { ...row, id: r.meta.last_row_id, worn, at };
+  const id = r.meta.last_row_id;
+  return { ...row, id, worn, at, pull: await numberCopy(env, row, id) };
 }
-const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '', ...(c.stats ? { stats: c.stats } : {}) });
+/**
+ * A new copy's place in its item's run (migrations/0009): the first 100 of an item are its 1st
+ * edition. Starters and the founder's copies aren't counted. Before 0009, none.
+ */
+async function numberCopy(env, row, id) {
+  if (row.source === 'starter' || row.source === 'founder' || !(row.one_in > 0)) return 0;
+  try {
+    // Only count once the column is there, so the run never skips numbers while 0009 waits.
+    await env.DB.prepare('SELECT pull FROM copies WHERE id = ?').bind(id).first();
+    const c = await env.DB.prepare('INSERT INTO counters(name, n) VALUES (?, 1) ON CONFLICT(name) DO UPDATE SET n = n + 1 RETURNING n').bind(`pull:${row.item}`).first();
+    await env.DB.prepare('UPDATE copies SET pull = ? WHERE id = ?').bind(c.n, id).run();
+    return c.n;
+  } catch { return 0; }
+}
+const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '', ...(c.pull ? { pull: c.pull } : {}), ...(c.stats ? { stats: c.stats } : {}) });
 // Copies that can change hands: not a starter, not the founder's.
 const MOVABLE = "source NOT IN ('starter', 'founder')";
 

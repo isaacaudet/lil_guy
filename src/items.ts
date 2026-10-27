@@ -2457,6 +2457,9 @@ export function itemById(id: string | undefined): Item | undefined {
   return id ? byId.get(id) : undefined;
 }
 
+/** Each machine's own colour: its set symbol on a card, as the site's machines are painted. */
+export const SET_COLORS: Record<GameId, string> = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+
 export const GAMES: GameId[] = [
   'amountle', 'halfsies', 'stackdle', 'flipsies', 'puttsies',
   'weighsies', 'cutsies', 'tiltsies', 'trackdle',

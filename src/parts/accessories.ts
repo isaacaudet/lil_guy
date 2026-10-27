@@ -82,6 +82,34 @@ function wear(c: Canvas, x: number, y: number, token: number): void {
   c.set(x, y, token);
 }
 
+/** Whether a cell is on or next to an eye or the mouth. */
+function nearFace(c: Canvas, x: number, y: number, gap = 1): boolean {
+  const f = c.face;
+  if (!f) return false;
+  const mx = c.centred(f.mouth);
+  for (let dy = -gap; dy <= gap; dy++) for (let dx = -gap; dx <= gap; dx++) {
+    const px = x + dx, py = y + dy;
+    if (py >= f.top && py <= f.line && f.eyes.some(e => px >= e.left && px <= e.right)) return true;
+    if (f.mouth[py - f.mouthTop]?.[px - mx]) return true;
+  }
+  return false;
+}
+
+/**
+ * Where a `w` by `h` piece goes on the chest: every cell on the body and a cell clear of the face. Low on the wearer's right first, then their left, then under the mouth.
+ */
+function clearSpot(c: Canvas, w: number, h: number, gap = 1, top = c.eyeLine - 1): [number, number] | null {
+  const mid = Math.floor(c.centre) - 1;
+  const fits = (x0: number, y0: number) => {
+    for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) if (!c.isBody(x0 + dx, y0 + dy) || nearFace(c, x0 + dx, y0 + dy, gap)) return false;
+    return true;
+  };
+  const tries: [number, number][] = [];
+  for (let off = 2; off <= 6; off++) for (let y = c.bottom - h + 1; y >= top; y--) tries.push([mid + off, y], [mid - off + 2 - w, y]);
+  for (let y = (c.face?.mouthBottom ?? c.eyeLine) + 2; y <= c.bottom - h + 1; y++) tries.push([mid, y]);
+  return tries.find(([x, y]) => fits(x, y)) ?? null;
+}
+
 export const accessories: Accessory[] = [
   { name: 'none', layer: 'body', draw: () => {} },
 
@@ -212,15 +240,15 @@ export const accessories: Accessory[] = [
     name: 'medal',
     layer: 'body',
     draw: c => {
-      // A gold disc on a ribbon, a row clear of the mouth so it never reads as a tongue.
-      const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
-      const disc = Math.min(y + 1, c.bottom - 1);
-      // The ribbon splays out to either side above it, a V, not a strip under the mouth.
-      if (disc > y) { wear(c, x - 1, y, T.ACCENT); wear(c, x + 2, y, T.ACCENT_SHADE); }
-      wear(c, x, disc, T.GOLD);
-      wear(c, x + 1, disc, T.GOLD_SHADE);
-      wear(c, x, disc + 1, T.GOLD_SHADE);
-      wear(c, x + 1, disc + 1, T.GOLD_SHADE);
+      // Pinned on the chest's side, as a medal is, where it never touches the face: a striped
+      // ribbon over a gold disc with a glint. Under the mouth it read as a tongue.
+      // Where a narrow body has no room for the tall one, a shorter ribbon, then a cell nearer the face.
+      const tall = [[T.ACCENT, T.ACCENT_SHADE], [T.ACCENT, T.ACCENT_SHADE], [T.WHITE, T.GOLD], [T.GOLD_SHADE, T.GOLD_SHADE]];
+      const short = [tall[0], tall[2], tall[3]];
+      let art = tall, at = clearSpot(c, 2, 4, 1, c.eyeLine + 1);
+      if (!at) { art = short; at = clearSpot(c, 2, 3) ?? clearSpot(c, 2, 3, 0); }
+      if (!at) return;
+      art.forEach((row, dy) => row.forEach((t, dx) => c.set(at[0] + dx, at[1] + dy, t)));
     },
   },
 
@@ -248,14 +276,20 @@ export const accessories: Accessory[] = [
     name: 'necktie',
     layer: 'body',
     draw: c => {
-      // A knot a row clear of the mouth, then the tie down to the bottom, a little wider at its tip.
-      const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
-      if (y > c.bottom - 1) return;
-      wear(c, x, y, T.ACCENT_SHADE);
-      wear(c, x + 1, y, T.ACCENT_SHADE);
-      for (let ty = y + 1; ty < c.bottom; ty++) { wear(c, x, ty, T.ACCENT); wear(c, x + 1, ty, T.ACCENT_SHADE); }
-      wear(c, x, c.bottom, T.ACCENT);
-      wear(c, x + 1, c.bottom, T.ACCENT);
+      // A dark tie with the accent striped across it, knotted between the two points of a white
+      // collar a row clear of the mouth, and hanging a row past the bottom: under a mouth, a
+      // tie in the accent colour read as a tongue.
+      // Where the mouth reaches the bottom row but one, the knot goes right under it.
+      const low = c.face?.mouthBottom ?? 0, x = Math.floor(c.centre) - 1, y = Math.min(Math.max(c.neck, low + 2), c.bottom);
+      if (y <= low) return;
+      for (const cx of [x - 1, x + 2]) if (c.isBody(cx, y) && !nearFace(c, cx, y)) c.set(cx, y, T.WHITE);
+      wear(c, x, y, T.EYE);
+      wear(c, x + 1, y, T.EYE);
+      for (let ty = y + 1; ty <= c.bottom + 1; ty++) {
+        const k = ty - y;
+        wear(c, x, ty, k % 2 ? T.ACCENT : T.EYE);
+        wear(c, x + 1, ty, k % 2 ? T.EYE : T.ACCENT);
+      }
     },
   },
 

@@ -4,7 +4,7 @@ import { cycle, fit, fitLoop, LOOP_MS, wave, wrap } from './loop';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { GLYPHS, FONT_BASELINE, FONT_HEIGHT } from './font';
 import { encodeGif, encodePng, type Frames } from './gif';
-import { itemById } from './items';
+import { itemById, SET_COLORS } from './items';
 
 /**
  * Trading cards, drawn by the library so every game, the site and an export
@@ -34,6 +34,12 @@ export interface CardInput {
   corner?: string;
   /** Up to two lines under the grade pips. */
   lines?: string[];
+  /**
+   * The small lines at the foot, beside the set's symbol, as on a sports card: the set number, a 1st
+   * edition, a craft number, stats. Wrapped at its " · " parts, two lines at most (the first beside
+   * the symbol); parts past that are left off.
+   */
+  footer?: string;
   /** 0 Everyday to 5 Aura; -1 for a plain card. */
   grade?: number;
   /** How he moves on the card. Default `idle`. */
@@ -165,8 +171,20 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   const textW = CARD_WIDTH - SIDE * 2 - 6;
   const pill = input.lines?.[0], subs = (input.lines ?? []).slice(1).flatMap(l => wrapText(l, textW));
   const titles = wrapText(input.title, textW);
+  // The set's symbol: the machine of the last copy worn, as the page's card face shows it.
+  const lastItem = input.copies?.length ? itemById(input.copies[input.copies.length - 1].item) : undefined;
+  const markHex = lastItem ? SET_COLORS[lastItem.game as keyof typeof SET_COLORS] : undefined;
+  // Two lines at most, its parts kept whole, beside the symbol.
+  const foots: string[] = [];
+  for (const part of (input.footer ?? '').split(' · ').filter(Boolean)) {
+    const k = foots.length - 1, w = k <= 0 ? textW - 14 : textW;
+    if (k >= 0 && textWidth(`${foots[k]} · ${part}`) <= w) foots[k] += ` · ${part}`;
+    else if (foots.length < 2 && textWidth(part) <= textW) foots.push(part);
+    else break;
+  }
+  const footH = foots.length ? foots.length * LINE : markHex ? LINE : 0;
   // From the foot up.
-  let y = CARD_HEIGHT - SIDE - 2 - subs.length * LINE;
+  let y = CARD_HEIGHT - SIDE - 2 - footH - subs.length * LINE;
   const subTop = y;
   const pillTop = pill ? (y -= 17) : y;
   y -= 4 + titles.length * LINE;
@@ -287,6 +305,16 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     s.text(pill, x0 + 7, pillTop - 1, () => WHITE, mix(fill, [0, 0, 0], 0.5));
   }
   subs.forEach((l, k) => s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), subTop + k * LINE - 2, () => (night ? [190, 200, 230] : mix(INK, CREAM, 0.25))));
+  // The foot: the set line on the left, the set's symbol on the right.
+  const footTop = CARD_HEIGHT - SIDE - 2 - footH;
+  foots.forEach((l, k) => s.text(l, SIDE + 3, footTop + k * LINE - 1, () => (night ? [170, 180, 215] : mix(INK, CREAM, 0.4))));
+  if (markHex) {
+    const m = rgb(markHex), x0 = CARD_WIDTH - SIDE - 12, y0 = footTop + 1;
+    for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
+      const rim = x === 0 || yy === 0 || x === 8 || yy === 8;
+      s.set(x0 + x, y0 + yy, rim ? mix(m, [10, 10, 20], 0.55) : x === 1 || yy === 1 ? mix(m, WHITE, 0.45) : x === 7 || yy === 7 ? mix(m, [0, 0, 0], 0.3) : m);
+    }
+  }
   return s.px;
 }
 

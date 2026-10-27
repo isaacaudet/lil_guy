@@ -2066,11 +2066,11 @@ const faceOf$1 = (c) => {
 const spotFor = (c, s) => {
 	const face = faceOf$1(c);
 	const inside$1 = (x, y) => c.isBody(x, y) && c.isBody(x - 1, y) && c.isBody(x + 1, y);
-	const nearFace = (x, y) => {
+	const nearFace$1 = (x, y) => {
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * 64 + x + dx)) return true;
 		return false;
 	};
-	const fits = (x0, y0) => s.every((row, dy) => row.every((t, dx) => !t || inside$1(x0 + dx, y0 + dy) && !nearFace(x0 + dx, y0 + dy)));
+	const fits = (x0, y0) => s.every((row, dy) => row.every((t, dx) => !t || inside$1(x0 + dx, y0 + dy) && !nearFace$1(x0 + dx, y0 + dy)));
 	const mid = Math.floor(c.centre) - 1, f = c.face;
 	const tries = [];
 	if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - 3; y++) tries.push([mid, y]);
@@ -2404,6 +2404,32 @@ function wear$1(c, x, y, token) {
 	if (c.get(x, y) === T.MOUTH || c.get(x, y) === T.TONGUE) return;
 	c.set(x, y, token);
 }
+/** Whether a cell is on or next to an eye or the mouth. */
+function nearFace(c, x, y, gap = 1) {
+	const f = c.face;
+	if (!f) return false;
+	const mx = c.centred(f.mouth);
+	for (let dy = -gap; dy <= gap; dy++) for (let dx = -gap; dx <= gap; dx++) {
+		const px = x + dx, py = y + dy;
+		if (py >= f.top && py <= f.line && f.eyes.some((e) => px >= e.left && px <= e.right)) return true;
+		if (f.mouth[py - f.mouthTop]?.[px - mx]) return true;
+	}
+	return false;
+}
+/**
+* Where a `w` by `h` piece goes on the chest: every cell on the body and a cell clear of the face. Low on the wearer's right first, then their left, then under the mouth.
+*/
+function clearSpot(c, w, h, gap = 1, top = c.eyeLine - 1) {
+	const mid = Math.floor(c.centre) - 1;
+	const fits = (x0, y0) => {
+		for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) if (!c.isBody(x0 + dx, y0 + dy) || nearFace(c, x0 + dx, y0 + dy, gap)) return false;
+		return true;
+	};
+	const tries = [];
+	for (let off = 2; off <= 6; off++) for (let y = c.bottom - h + 1; y >= top; y--) tries.push([mid + off, y], [mid - off + 2 - w, y]);
+	for (let y = (c.face?.mouthBottom ?? c.eyeLine) + 2; y <= c.bottom - h + 1; y++) tries.push([mid, y]);
+	return tries.find(([x, y]) => fits(x, y)) ?? null;
+}
 const accessories = [
 	{
 		name: "none",
@@ -2523,16 +2549,24 @@ const accessories = [
 		name: "medal",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
-			const disc = Math.min(y + 1, c.bottom - 1);
-			if (disc > y) {
-				wear$1(c, x - 1, y, T.ACCENT);
-				wear$1(c, x + 2, y, T.ACCENT_SHADE);
+			const tall = [
+				[T.ACCENT, T.ACCENT_SHADE],
+				[T.ACCENT, T.ACCENT_SHADE],
+				[T.WHITE, T.GOLD],
+				[T.GOLD_SHADE, T.GOLD_SHADE]
+			];
+			const short = [
+				tall[0],
+				tall[2],
+				tall[3]
+			];
+			let art = tall, at = clearSpot(c, 2, 4, 1, c.eyeLine + 1);
+			if (!at) {
+				art = short;
+				at = clearSpot(c, 2, 3) ?? clearSpot(c, 2, 3, 0);
 			}
-			wear$1(c, x, disc, T.GOLD);
-			wear$1(c, x + 1, disc, T.GOLD_SHADE);
-			wear$1(c, x, disc + 1, T.GOLD_SHADE);
-			wear$1(c, x + 1, disc + 1, T.GOLD_SHADE);
+			if (!at) return;
+			art.forEach((row, dy) => row.forEach((t, dx) => c.set(at[0] + dx, at[1] + dy, t)));
 		}
 	},
 	{
@@ -2557,16 +2591,16 @@ const accessories = [
 		name: "necktie",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
-			if (y > c.bottom - 1) return;
-			wear$1(c, x, y, T.ACCENT_SHADE);
-			wear$1(c, x + 1, y, T.ACCENT_SHADE);
-			for (let ty = y + 1; ty < c.bottom; ty++) {
-				wear$1(c, x, ty, T.ACCENT);
-				wear$1(c, x + 1, ty, T.ACCENT_SHADE);
+			const low = c.face?.mouthBottom ?? 0, x = Math.floor(c.centre) - 1, y = Math.min(Math.max(c.neck, low + 2), c.bottom);
+			if (y <= low) return;
+			for (const cx of [x - 1, x + 2]) if (c.isBody(cx, y) && !nearFace(c, cx, y)) c.set(cx, y, T.WHITE);
+			wear$1(c, x, y, T.EYE);
+			wear$1(c, x + 1, y, T.EYE);
+			for (let ty = y + 1; ty <= c.bottom + 1; ty++) {
+				const k = ty - y;
+				wear$1(c, x, ty, k % 2 ? T.ACCENT : T.EYE);
+				wear$1(c, x + 1, ty, k % 2 ? T.EYE : T.ACCENT);
 			}
-			wear$1(c, x, c.bottom, T.ACCENT);
-			wear$1(c, x + 1, c.bottom, T.ACCENT);
 		}
 	},
 	{
@@ -9942,6 +9976,18 @@ const byId = new Map(items.map((i) => [i.id, i]));
 function itemById(id) {
 	return id ? byId.get(id) : void 0;
 }
+/** Each machine's own colour: its set symbol on a card, as the site's machines are painted. */
+const SET_COLORS = {
+	amountle: "#ff7eb6",
+	halfsies: "#f2b066",
+	stackdle: "#ffd447",
+	flipsies: "#5fb4ff",
+	puttsies: "#74d97c",
+	weighsies: "#a98bff",
+	cutsies: "#ff6b6b",
+	tiltsies: "#4fd6c4",
+	trackdle: "#ff8a3d"
+};
 const GAMES = [
 	"amountle",
 	"halfsies",
@@ -16432,7 +16478,17 @@ function drawCard(input, frame, owned, g, t) {
 	const textW = CARD_WIDTH - SIDE * 2 - 6;
 	const pill = input.lines?.[0], subs = (input.lines ?? []).slice(1).flatMap((l) => wrapText(l, textW));
 	const titles = wrapText(input.title, textW);
-	let y = CARD_HEIGHT - SIDE - 2 - subs.length * LINE;
+	const lastItem = input.copies?.length ? itemById(input.copies[input.copies.length - 1].item) : void 0;
+	const markHex = lastItem ? SET_COLORS[lastItem.game] : void 0;
+	const foots = [];
+	for (const part of (input.footer ?? "").split(" · ").filter(Boolean)) {
+		const k = foots.length - 1, w = k <= 0 ? textW - 14 : textW;
+		if (k >= 0 && textWidth(`${foots[k]} · ${part}`) <= w) foots[k] += ` · ${part}`;
+		else if (foots.length < 2 && textWidth(part) <= textW) foots.push(part);
+		else break;
+	}
+	const footH = foots.length ? foots.length * LINE : markHex ? LINE : 0;
+	let y = CARD_HEIGHT - SIDE - 2 - footH - subs.length * LINE;
 	const subTop = y;
 	const pillTop = pill ? y -= 17 : y;
 	y -= 4 + titles.length * LINE;
@@ -16654,6 +16710,27 @@ function drawCard(input, frame, owned, g, t) {
 		200,
 		230
 	] : mix(INK, CREAM, .25)));
+	const footTop = CARD_HEIGHT - SIDE - 2 - footH;
+	foots.forEach((l, k) => s.text(l, SIDE + 3, footTop + k * LINE - 1, () => night ? [
+		170,
+		180,
+		215
+	] : mix(INK, CREAM, .4)));
+	if (markHex) {
+		const m = rgb$2(markHex), x0 = CARD_WIDTH - SIDE - 12, y0 = footTop + 1;
+		for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
+			const rim$2 = x === 0 || yy === 0 || x === 8 || yy === 8;
+			s.set(x0 + x, y0 + yy, rim$2 ? mix(m, [
+				10,
+				10,
+				20
+			], .55) : x === 1 || yy === 1 ? mix(m, WHITE, .45) : x === 7 || yy === 7 ? mix(m, [
+				0,
+				0,
+				0
+			], .3) : m);
+		}
+	}
 	return s.px;
 }
 /** The grade a card shows: the one given, or the rarest copy's. */
@@ -16898,7 +16975,25 @@ function cardFace(spec) {
 		0
 	], .35) : y === 2 ? lip : band$1, 1);
 	if (!full) for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, x === 3 || y === 9 || x === 22 || y === 28 ? rim$2 : win, 2);
-	const gy = full ? 7 : 11;
+	const gy = full ? 5 : 11;
+	if (full) {
+		const feet$1 = gy + grid.reduce((m, row, y) => row.some(Boolean) ? y : m, 0) + 1;
+		for (let y = feet$1 - 1; y <= feet$1 + 1; y++) for (let x = 6; x <= 19; x++) {
+			const d = ((x - 12.5) / 7) ** 2 + ((y - feet$1) / 1.6) ** 2;
+			if (d < 1) {
+				const i = (y * W + x) * 4;
+				base.set(blend([
+					base[i],
+					base[i + 1],
+					base[i + 2]
+				], [
+					8,
+					6,
+					20
+				], .45 * (1 - d)), i);
+			}
+		}
+	}
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const hex$3 = colors[y][x];
 		if (!hex$3) return;
@@ -16907,7 +17002,7 @@ function cardFace(spec) {
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
 		put(x + 5, y + gy, rgb$1(hex$3), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
-	const mark$1 = set ? gameItems(set).find((i) => i.slot === "skin")?.colors[0] : void 0;
+	const mark$1 = set ? SET_COLORS[set] : void 0;
 	if (mark$1) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb$1(mark$1), [
 		255,
 		255,

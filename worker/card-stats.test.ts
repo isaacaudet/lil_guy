@@ -1,6 +1,7 @@
 import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { api } from './index.js';
+import { decode } from '../src/index-headless.ts';
 import { readClub, statsSignature, READ_EVERY } from './card-stats.js';
 import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -101,4 +102,32 @@ test('no club sign-in or no secret: nothing is asked', async () => {
 test('signatures match the club’s', async () => {
   const sig = await statsSignature('k'.repeat(40), 'cd'.repeat(32), '2026-10-01', 123);
   expect(sig).toBe(createHmac('sha256', 'k'.repeat(40)).update(`stats.${'cd'.repeat(32)}.2026-10-01.123`).digest('base64url'));
+});
+
+test('every copy pulled is numbered in its item’s run; starters aren’t, and the numbers never repeat', async () => {
+  const c = await claim('mia');
+  const s = await state(c);
+  expect(s.copies.every((x: any) => x.pull === undefined)).toBe(true);
+  const got: any[] = [];
+  for (let i = 0; i < 12; i++) got.push(((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).copy);
+  const byItem: Record<string, number[]> = {};
+  for (const x of got) (byItem[decode(x.code)!.item] ??= []).push(x.pull);
+  for (const pulls of Object.values(byItem)) expect(pulls).toEqual(pulls.map((_, i) => i + 1));
+  // The state carries them too.
+  const after = await state(c);
+  expect(after.copies.filter((x: any) => x.pull).length).toBe(got.filter(x => x.pull).length);
+});
+
+test('copies made before 0009 are numbered in the order they were made, and the count carries on', async () => {
+  const { Database } = await import('bun:sqlite');
+  const db = new Database(':memory:');
+  const all = ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql'];
+  for (const m of all) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  const add = (item: string, source: string, one_in: number) => db.prepare("INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, at) VALUES ('k', 'x', ?, 'g', 'hat', 'plain', 0, ?, 0.1, ?, 't')").run(item, one_in, source);
+  add('a', 'capsule', 10); add('b', 'capsule', 10); add('a', 'starter', 0); add('a', 'capsule', 10); add('a', 'founder', 1e15);
+  db.exec(readFileSync(new URL('../migrations/0009_card_stats.sql', import.meta.url), 'utf8'));
+  expect(db.prepare('SELECT item, source, pull FROM copies ORDER BY id').all()).toEqual([
+    { item: 'a', source: 'capsule', pull: 1 }, { item: 'b', source: 'capsule', pull: 1 }, { item: 'a', source: 'starter', pull: 0 },
+    { item: 'a', source: 'capsule', pull: 2 }, { item: 'a', source: 'founder', pull: 0 }]);
+  expect(db.prepare("SELECT name, n FROM counters ORDER BY name").all()).toEqual([{ name: 'pull:a', n: 2 }, { name: 'pull:b', n: 1 }]);
 });

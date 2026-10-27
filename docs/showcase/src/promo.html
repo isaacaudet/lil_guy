@@ -153,6 +153,9 @@
   .ov .t.on-light:not(.foil):not(.gold) { color: #2a2340; text-shadow: 0 .6cqw 0 rgba(255, 255, 255, .45); }
   .ov .t.on-light.foil, .ov .t.on-light.gold { filter: drop-shadow(.4cqw 0 0 #1a1530) drop-shadow(-.4cqw 0 0 #1a1530) drop-shadow(0 .4cqw 0 #1a1530) drop-shadow(0 -.4cqw 0 #1a1530); }
   .ov .n { position: absolute; left: 9%; right: 22%; top: 88.3%; height: 6.6%; display: flex; align-items: center; font-size: 4.2cqw; line-height: 1; color: #6a6284; white-space: nowrap; overflow: hidden; }
+  @container (max-width: 170px) { .ov .n .x { display: none; } }
+  /* A full-art card's title sits in the top half of its band: the guy's hat pokes up into the bottom half. */
+  .ov.full .t { top: 4.8%; height: 7.1%; font-size: min(7cqw, calc(70cqw / (var(--n, 1) * .46))); }
   .ov .n.on-dark { color: #d9d2f0; text-shadow: 0 .4cqw 0 rgba(10, 8, 24, .6); }
   .ov .b.on-dark { color: #f4efff; text-shadow: 0 .5cqw 0 rgba(10, 8, 24, .6); }
 
@@ -1338,7 +1341,7 @@
   LG.defineLilGuy();
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   // The card a player keeps: drawn by the library, so the one on the page is the one they save.
-  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, move });
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set ? setText(spec.label.set) || undefined : undefined, move });
   const libCards = new Set();
   function libCard(el, input) {
     const canvas = document.createElement('canvas');
@@ -1376,7 +1379,7 @@
     const ctx = out.getContext('2d', { willReadFrequently: true });
     const words = [...art.querySelectorAll('.ov > span')].map(el => {
       const cs = getComputedStyle(el), shadow = (cs.textShadow !== 'none' ? cs.textShadow : cs.filter).match(/(rgba?\([^)]*\))\s*0px\s*([\d.]+)px/);
-      return { el, text: el.textContent, x: el.offsetLeft * k, y: el.offsetTop * k, w: el.offsetWidth * k, h: el.offsetHeight * k,
+      return { el, text: [...el.childNodes].filter(n => n.nodeType === 3 || getComputedStyle(n).display !== 'none').map(n => n.textContent).join(''), x: el.offsetLeft * k, y: el.offsetTop * k, w: el.offsetWidth * k, h: el.offsetHeight * k,
         size: parseFloat(cs.fontSize) * k, font: cs.fontFamily, color: cs.color, bg: cs.backgroundColor, radius: parseFloat(cs.borderTopLeftRadius) * k,
         shadow: shadow ? { c: shadow[1], dy: parseFloat(shadow[2]) * k } : null,
         foil: el.classList.contains('foil') ? ['#ff8fb1', '#ffe27a', '#8fffd2', '#8fb8ff', '#d79bff', '#ff8fb1'] : el.classList.contains('gold') ? ['#b8801c', '#ffe9a8', '#f2c230', '#fffbe6', '#c8901e', '#b8801c'] : null };
@@ -1431,8 +1434,8 @@
    * Kept in the page's database when this view has one (your own private row), else in this browser. */
   const KEY = 'lil-guys-promo-v2';
   let state = null, db = null, uid = null, owner = false;
-  // Cards show a copy's stats where the server sent them (locker.html, setLine).
-  window.cardStats = o => { const code = LG.encode(o); return state?.stats?.[code] ?? null; };
+  // Cards show a copy's stats and place in its run where the server sent them (locker.html, setLine).
+  window.cardAbout = o => { const code = LG.encode(o); return { stats: state?.stats?.[code], pull: state?.pulls?.[code] }; };
   // Outside claude.ai (the Cloudflare deploy) names live behind the Worker's /api/names instead (DEPLOYMENT.md).
   let backendReady = false, signedIn = false, accountKey = null;
   // The live site: no artifact database, but the Worker's API. It rolls every capsule and keeps every collection.
@@ -1454,7 +1457,7 @@
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', tickets: s.tickets, free: s.freeDay, checkin: s.checkinDay,
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
-      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
+      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), pulls: Object.fromEntries(s.copies.filter(c => c.pull).map(c => [c.code, c.pull])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   const wearLive = slot => { if (isLive() && state) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
@@ -3227,7 +3230,7 @@
     const code = ctx.code;
     const g = LG.gradeOf(o), slot = LG.slotOf(o), on = ctx.mine && state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
     const odds = LG.copyOneIn(o), item = LG.itemById(o.item), tag = ctx.mine ? tagOf(code) : ctx.tag || '';
-    const st = ctx.stats ?? (ctx.mine ? state.stats?.[code] : null);
+    const st = ctx.stats ?? (ctx.mine ? state.stats?.[code] : null), pull = ctx.pull ?? (ctx.mine ? state.pulls?.[code] : null);
     const ownerLine = `<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`;
     const one = !!founderOf(ctx.seed) && (o.item === 'aura.origin' || (o.tally === 999 && o.print === 1 && o.finish === 'gold'));
     const others = ctx.mine ? wornCopies() : (ctx.worn || []).map(LG.decode).filter(Boolean);
@@ -3243,7 +3246,7 @@
       </div>
       <div>
         <h3 id="insp-name" class="${tag ? 'tagged' : ''}">${esc(named(title, tag))}${tag ? `<span class="realname">${esc(title)}</span>` : ''}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}${item.about ? `<p class="about">${esc(item.about)}</p>` : ''}
-        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ Only one' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
+        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ Only one' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${pull ? `<span class="bal" style="--b:${pull <= FIRST_EDITION ? '#c8901e' : '#5d6b8a'}">${pull <= FIRST_EDITION ? '1st edition · ' : ''}#${pull.toLocaleString('en-US')} of this item</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
         ${st ? `<div class="ins-stats"><span><b>${st.worn}</b>day${st.worn === 1 ? '' : 's'} worn</span><span><b>${st.games}</b>club game${st.games === 1 ? '' : 's'}</span><span><b>${st.best || '—'}</b>best club day</span></div>` : ''}
         ${floatPanel(o)}
         ${collectorPanel(o, g)}
@@ -3625,7 +3628,7 @@
         if (uCat && LG.slotOf(c.o) !== uCat) return '';
         const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | ');
         return `<button class="cc card" type="button" data-u="${i}">${c.worn ? '<span class="pill tag on">ON</span>' : ''}
-          ${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one, c.stats), userCopies.length > 24))}
+          ${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one, { stats: c.stats, pull: c.pull }), userCopies.length > 24))}
           <span class="cc-cap"><b class="${c.tag ? 'tagged' : ''}">${esc(named(title, c.tag))}</b><span>${esc(look || (it.free ? 'Starter' : plainOf(c.o)))} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span></span></button>`;
       }).join('');
       hydrate($('u-grid'));
@@ -3634,7 +3637,7 @@
     $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
     $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
     $('u-look').onclick = () => $('look-open').click();
-    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats }); };
+    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); };
   }
 
   // Pulls: every copy anyone has opened, the object itself on show, filtered and sorted.
@@ -3698,7 +3701,7 @@
     if (reset) $('m-grid').innerHTML = html; else $('m-grid').insertAdjacentHTML('beforeend', html);
     page.forEach((c, k) => { const el = $('m-grid').querySelector(`[data-m="${start + k}"] canvas`), o = LG.decode(c.code); if (el && o) showItem(el, o, c.seed, 150, 120); });
   }
-  $('m-grid').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const c = marketList[+b.dataset.m]; const mine = state && c.key === state.key; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(LG.decode(c.code), { code: c.code, key: c.key, seed: c.seed, mine: false, id: c.id, tag: c.tag, stats: c.stats }); });
+  $('m-grid').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const c = marketList[+b.dataset.m]; const mine = state && c.key === state.key; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(LG.decode(c.code), { code: c.code, key: c.key, seed: c.seed, mine: false, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); });
 
   /* ---------------------------------------------- every finish: one of today's items in all seven, live */
   let finItem = null;

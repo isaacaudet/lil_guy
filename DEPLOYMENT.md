@@ -246,4 +246,8 @@ signed with `CLUB_SSO_SECRET` (dle-club's `LILGUYS_SSO_SECRET`, the same value).
 sign-in PR. Copies carry `stats: { worn, games, best }` in `GET …/state` and
 `GET /api/guys/:key`, and a Strange copy's tally becomes the days its owner
 finished club games in it. Names without a Google sign-in count days worn only.
+0009 also numbers each copy in its item's run (`copies.pull`, counted by
+`counters` row `pull:<item>`; copies made before it are numbered in the order
+they were made): the first 100 of an item are its 1st edition, and copies carry
+`pull` in the same reads. Starters and the founder's copies have none.
 Before 0009 is applied, there are no stats and nothing else changes.
