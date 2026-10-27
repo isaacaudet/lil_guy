@@ -133,9 +133,13 @@
   .hand-h .kicker { margin: 0; }
   .hand-h p { font-size: 16px; color: var(--ink-3); }
   .hand { position: relative; z-index: 2; display: flex; justify-content: center; padding: 28px 0 56px; }
-  .hand > .slot { flex: none; width: 150px; margin-left: -34px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; transition: transform .2s cubic-bezier(.2,.8,.2,1); position: relative; z-index: var(--z); }
+  /* The slot is the hover target and never moves; only the card inside it lifts. A slot that lifted
+     itself slid out from under a pointer near its edge, dropped, and was hovered again: a twitch. */
+  .hand > .slot { flex: none; width: 150px; margin-left: -34px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; position: relative; z-index: var(--z); }
   .hand > .slot:first-child { margin-left: 0; }
-  .hand > .slot:hover, .hand > .slot:focus-within { transform: translateY(calc(var(--y) - 26px)) rotate(0deg); z-index: 30; }
+  .hand > .slot > .lift { transform-origin: 50% 120%; transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+  .hand > .slot:hover, .hand > .slot:focus-within { z-index: 30; }
+  .hand > .slot:hover > .lift, .hand > .slot:focus-within > .lift { transform: translateY(-26px) rotate(calc(-1 * var(--r))); }
   /* the name under a card on hover: a Balatro tag, never clipped */
   .hand > .slot small { position: absolute; left: 50%; top: calc(100% + 8px); translate: -50% 0; padding: 4px 8px; border-radius: 6px; background: var(--paper); color: var(--paper-ink); box-shadow: 0 3px 0 var(--edge); font-size: 16px; opacity: 0; transition: opacity .15s; white-space: nowrap; pointer-events: none; }
   .hand > .slot:hover small, .hand > .slot:focus-within small { opacity: 1; }
@@ -2014,7 +2018,7 @@ void main() {
     const mid = (order.length - 1) / 2;
     $('hand').innerHTML = order.map((o, i) => {
       const d = i - mid;
-      return `<div class="slot" style="--r:${d * 5}deg;--y:${Math.round(d * d * 4)}px;--z:${20 - Math.round(Math.abs(d) * 2)}" tabindex="0">${px(cardSpec(HAND_GUYS[i], [o], itemLabel(o)))}<small>${esc(LG.nameOf(o).replace(' | ', ' · '))}</small></div>`;
+      return `<div class="slot" style="--r:${d * 5}deg;--y:${Math.round(d * d * 4)}px;--z:${20 - Math.round(Math.abs(d) * 2)}" tabindex="0"><div class="lift">${px(cardSpec(HAND_GUYS[i], [o], itemLabel(o)))}</div><small>${esc(LG.nameOf(o).replace(' | ', ' · '))}</small></div>`;
     }).join('');
     hydrate($('hand'));
     $('hand-note').textContent = `Out of 12,000 capsules opened just now, the rarest was 1 in ${words(LG.copyOneIn(hand.at(-1)))}.`;
