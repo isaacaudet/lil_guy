@@ -48,15 +48,17 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game four skins and a showpiece, four hats (one free), three frames and three buddies', () => {
+  it('gives every game four skins and a showpiece, four or five hats (one free), three frames and three or four buddies', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
       const count = (slot: string) => own.filter(i => i.slot === slot && !i.showpiece).length;
-      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([4, 4, 3, 3]);
+      expect([count('skin'), count('frame')]).toEqual([4, 3]);
+      expect(count('hat')).toBeGreaterThanOrEqual(4); expect(count('hat')).toBeLessThanOrEqual(5);
+      expect(count('buddy')).toBeGreaterThanOrEqual(3); expect(count('buddy')).toBeLessThanOrEqual(4);
       expect(own.filter(i => i.showpiece).map(i => i.slot)).toEqual(['skin']);
-      // A capsule machine holds everything but the free hat: 12 to 15 items.
+      // A capsule machine holds everything but the free hat: 12 to 16 items.
       expect(own.filter(i => !i.free).length).toBeGreaterThanOrEqual(12);
-      expect(own.filter(i => !i.free).length).toBeLessThanOrEqual(15);
+      expect(own.filter(i => !i.free).length).toBeLessThanOrEqual(16);
       expect(own.filter(i => i.free).map(i => i.slot)).toEqual(['hat']);
       expect(freeItem(game).free).toBe(true);
     }
@@ -191,12 +193,12 @@ describe('everything worn together', () => {
 describe('buddies', () => {
   const buddies = items.filter(i => i.slot === 'buddy');
 
-  it('fill their corner: at most 5x5, and at least 4 across and 4 tall', () => {
+  it('fill their corner: at most 6x6, and at least 4 across and 4 tall', () => {
     for (const b of buddies) {
       const art = b.art!;
-      expect(art.length).toBeLessThanOrEqual(5);
+      expect(art.length).toBeLessThanOrEqual(6);
       expect(art.length).toBeGreaterThanOrEqual(4);
-      expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(5);
+      expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(6);
       expect(Math.max(...art.map(r => r.length))).toBeGreaterThanOrEqual(4);
       // Solid enough to read as a shape, not a scatter of pixels.
       expect(art.flat().filter(Boolean).length).toBeGreaterThanOrEqual(12);

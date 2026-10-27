@@ -1548,25 +1548,26 @@ const frames: Omit<Item, 'slot'>[] = [
  * colour, so it stays dark whatever finish the buddy has.
  */
 const pet = (name: string, rows: string[]): Stamp => {
-  if (rows.length > 5 || rows.some(r => r.length > 5)) throw new Error(`Buddy "${name}" must fit in 5x5`);
+  if (rows.length > 6 || rows.some(r => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6x6`);
   return stamp(rows);
 };
 
 /**
- * A tiny pet that sits at his feet, bottom right, in front of everything.
- * Each is a bold shape of its own (a gem, a drop, a bean, a cone) with a lit
- * side, a shaded side and a face, filling as much of its 5x5 as it can, so it
- * reads at a glance on any guy and any frame.
+ * A pet that sits at the guy's feet, bottom right, in front of everything but
+ * the face. Each is a bold shape of its own with a lit side, a shaded side and
+ * a face, filling as much of its 6x6 as it can, so it reads at a glance on any
+ * guy and any frame.
  */
 const buddies: Omit<Item, 'slot'>[] = [
   {
     id: 'amountle.gemling', game: 'amountle', name: 'Gemling', colors: ['#3FD1C1', '#1F9C90', '#C8FFF7'],
     art: pet('gemling', [
-      '.333.',
-      '31112',
-      '1o1o2',
-      '.112.',
-      '..2..',
+      '.3331.',
+      '311112',
+      '1o11o2',
+      '311112',
+      '.1122.',
+      '..22..',
     ]),
   },
   {
