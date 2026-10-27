@@ -1369,24 +1369,71 @@ function elastic(s, d) {
 	return out;
 }
 /**
+* A hat made `d` rows shorter, the way `elastic` makes one narrower: the
+* plainest row, the one most like the row under it, comes out, again and
+* again. The bottom row (the brim, the band, what it stands on) always stays,
+* so a top hat loses a row of its crown and a gem a row of its facets, and
+* neither is ever chopped off at the brim.
+*/
+function squeeze(s, d) {
+	let out = s.map((r) => [...r]);
+	for (let k = 0; k < d && out.length > 1; k++) {
+		const w = width(out), mid = (out.length - 2) / 2;
+		const cost = (y) => {
+			let n = 0;
+			for (let x = 0; x < w; x++) if ((out[y][x] ?? 0) !== (out[y + 1][x] ?? 0)) n++;
+			return n;
+		};
+		let best = 0, bestCost = Infinity;
+		for (let y = 0; y < out.length - 1; y++) {
+			const c = cost(y);
+			if (c < bestCost || c === bestCost && Math.abs(y - mid) < Math.abs(best - mid)) {
+				best = y;
+				bestCost = c;
+			}
+		}
+		out.splice(best, 1);
+	}
+	return out;
+}
+/**
+* A hat fitted to the room above the face: rows 1 to the floor (row 0 is the
+* grid's border, where nothing gets an outline), and 14 columns. Most heads
+* leave four rows, and a hat drawn taller is squeezed to them rather than
+* having the rows that don't fit cut off.
+*/
+const fitRoom = (c, s) => {
+	const room = Math.max(1, c.floor);
+	const tall = s.length > room ? squeeze(s, s.length - room) : s;
+	const over = width(tall) - (GRID_SIZE - 2);
+	return over > 0 ? elastic(tall, -over) : tall;
+};
+/** Seats a small hat on the crown, as `seat` does, once it fits the room (`fitRoom`). */
+const sit = (c, s, dx = 0, sink = 1) => {
+	const fitted$1 = fitRoom(c, s);
+	const x = Math.max(1, Math.min(GRID_SIZE - 1 - width(fitted$1), c.centred(fitted$1) + dx));
+	seat(c, fitted$1, x, sink);
+};
+/**
 * Puts a hat on, fitted to the head the way a cap fits. A hat that rests
 * across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
 * comes down to the forehead line and is stretched to the head's width there,
 * a cell of brim either side, so it sits on a narrow head and a wide one
 * alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+* Either is first fitted to the room above the face (`fitRoom`).
 */
 function wear$1(c, s, dx, sink) {
-	const last = s.length - 1, bottom = span(s[last]);
-	if (bottom < 8) {
-		seat(c, s, c.centred(s) + dx, sink);
+	if (span(s[s.length - 1]) < 8) {
+		sit(c, s, dx, sink);
 		return;
 	}
+	const tall = fitRoom(c, s), last = tall.length - 1, bottom = span(tall[last]);
 	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
 	const head$1 = r ? r.right - r.left + 1 : 10;
 	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
-	const fitted$1 = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const fitted$1 = elastic(tall, Math.max(-4, Math.min(4, want - bottom, GRID_SIZE - 2 - width(tall))));
 	const y = Math.max(1, c.floor - last);
-	c.draw(fitted$1, c.centred(fitted$1) + dx, y);
+	c.draw(fitted$1, Math.max(1, Math.min(GRID_SIZE - 1 - width(fitted$1), c.centred(fitted$1) + dx)), y);
 	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
 }
 const on = (rows, dx = 0, sink = 1) => {
@@ -1397,18 +1444,28 @@ const onPair = (rows, inset = 0) => {
 	const left = stamp(rows);
 	const right = mirror(left);
 	return (c) => {
-		const r = c.rows[c.shoulder()];
-		seat(c, left, r.left + inset);
-		seat(c, right, r.right - inset - width(right) + 1);
+		const r = c.rows[c.shoulder()], l = fitRoom(c, left), rr = fitRoom(c, right);
+		seat(c, l, r.left + inset);
+		seat(c, rr, r.right - inset - width(rr) + 1);
 	};
 };
 /**
-* A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
-* pixel round it for its outline). `o` is an eye, in the guy's outline
-* colour, so it stays dark whatever finish the buddy has.
+* The biggest a buddy is drawn: its art, inside the outline compose gives it.
+* It stands in front of the guy in his bottom-right corner (no head leaves
+* room beside him; see `buddySpot` in ./compose), and this is as big as it
+* gets there without coming up to his face.
+*/
+const BUDDY_BOX = {
+	width: 6,
+	height: 5
+};
+/**
+* A buddy's drawing: at most `BUDDY_BOX`, with a pixel round it for its
+* outline. `o` is an eye, in the guy's outline colour, so it stays dark
+* whatever finish the buddy has.
 */
 const pet = (name, rows) => {
-	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
+	if (rows.length > BUDDY_BOX.height || rows.some((r) => r.length > BUDDY_BOX.width)) throw new Error(`Buddy "${name}" must fit in ${BUDDY_BOX.width} across and ${BUDDY_BOX.height} tall`);
 	return stamp(rows);
 };
 
@@ -2406,7 +2463,7 @@ const set$6 = {
 /** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
 const perch = (rows, sink = 1) => {
 	const s = stamp(rows);
-	return (c) => seat(c, s, c.centred(s), sink);
+	return (c) => sit(c, s, 0, sink);
 };
 /**
 * Flipsies's machine: the things you flip (a water bottle, a soup can, a
@@ -4777,6 +4834,93 @@ function fitLoop(duration) {
 }
 
 //#endregion
+//#region src/sparkle.ts
+const DOT_DEEP = [[
+	0,
+	0,
+	2
+]];
+const DOT = [[
+	0,
+	0,
+	1
+]];
+const CROSS = [
+	[
+		0,
+		0,
+		0
+	],
+	[
+		-1,
+		0,
+		1
+	],
+	[
+		1,
+		0,
+		1
+	],
+	[
+		0,
+		-1,
+		1
+	],
+	[
+		0,
+		1,
+		1
+	]
+];
+const GLINT = [
+	[
+		0,
+		0,
+		0
+	],
+	[
+		-1,
+		-1,
+		2
+	],
+	[
+		1,
+		1,
+		2
+	],
+	[
+		1,
+		-1,
+		2
+	],
+	[
+		-1,
+		1,
+		2
+	]
+];
+/**
+* The sparkle `f` of the way through its life (0 to 1), as cells round its
+* centre. Outside 0 to 1 it isn't there.
+*/
+function sparkleAt(f) {
+	if (f < 0 || f >= 1) return [];
+	return f < .16 ? DOT_DEEP : f < .32 ? DOT : f < .6 ? CROSS : f < .78 ? GLINT : f < .9 ? DOT : DOT_DEEP;
+}
+/** The room a sparkle needs at its biggest: its centre and the cells beside and across from it. */
+const SPARKLE_REACH = [
+	[0, 0],
+	[-1, 0],
+	[1, 0],
+	[0, -1],
+	[0, 1],
+	[-1, -1],
+	[1, 1],
+	[1, -1],
+	[-1, 1]
+];
+
+//#endregion
 //#region src/auras.ts
 /**
 * Auras: the top of the ladder, above a Grail. An aura is an effect drawn in
@@ -4930,11 +5074,11 @@ const AURAS = [
 		],
 		still: 0,
 		cells: (mask, t, print) => {
-			const s = shape(mask), y = Math.max(1, s.top - 2 - Math.floor((t + print * 7) / steps(400, 2)) % 2), x0 = Math.round(s.cx) - 3, glint = Math.floor(t / steps(160, 8)) % 8, out = [];
+			const s = shape(mask), y = Math.max(1, s.top - 2 - Math.floor((t + print * 7) / steps(400, 2)) % 2), x0 = Math.round(s.cx) - 3, glint$1 = Math.floor(t / steps(160, 8)) % 8, out = [];
 			for (let x = x0; x <= x0 + 7; x++) out.push([
 				x,
 				y,
-				x - x0 === glint || x - x0 === glint + 1 ? 0 : 1
+				x - x0 === glint$1 || x - x0 === glint$1 + 1 ? 0 : 1
 			]);
 			for (let x = x0 + 1; x <= x0 + 6; x++) out.push([
 				x,
@@ -4958,11 +5102,7 @@ const AURAS = [
 			for (let i = 0; i < 5; i++) {
 				const at = t + i * 173 + print * 11, life = tick(at, 520), phase = cycle(at, 520);
 				const [x, y] = near[Math.floor(noise$1(i, life, print) * near.length)] ?? [0, 0];
-				out.push(...phase < .35 || phase > .85 ? [[
-					x,
-					y,
-					0
-				]] : plus(x, y, phase < .6 ? 1 : 2));
+				out.push(...glint(x, y, phase));
 			}
 			return out;
 		}
@@ -5300,11 +5440,7 @@ const AURAS = [
 			for (let i = 0; i < 4; i++) {
 				const life = fit(900), at = t + i * (life / 4) + print * 31, gen = tick(at, 900), f = cycle(at, 900);
 				const [x, y] = far[Math.floor(noise$1(i, gen, print, 23) * far.length)] ?? [0, 0];
-				if (f < .75) out.push(...f > .2 && f < .55 ? plus(x, y, 1) : [[
-					x,
-					y,
-					0
-				]]);
+				if (f < .75) out.push(...glint(x, y, f / .75));
 			}
 			return out;
 		}
@@ -5324,7 +5460,7 @@ const AURAS = [
 		still: 0,
 		cells: (mask, t, print) => {
 			const s = shape(mask), cx = s.w / 2 - .5, cy = s.cy + 2, top = Math.max(0, s.top - 4), out = [];
-			const glint = wrap(Math.floor((t + print * 40) / steps(70, 40)), 40) - 6;
+			const glint$1 = wrap(Math.floor((t + print * 40) / steps(70, 40)), 40) - 6;
 			for (let y = top; y < cy; y++) for (let x = 0; x < s.w; x++) {
 				const d = Math.hypot((x - cx) / (s.w / 2), (y - cy) / (cy - top));
 				if (d < .74 || d > 1) continue;
@@ -5333,7 +5469,7 @@ const AURAS = [
 				out.push([
 					x,
 					y,
-					Math.abs(along - glint) <= 1 && band % 2 === 0 ? 6 : band
+					Math.abs(along - glint$1) <= 1 && band % 2 === 0 ? 6 : band
 				]);
 			}
 			for (const fx of [0, s.w - 3]) for (const [dx, dy] of [
@@ -5409,26 +5545,33 @@ const AURAS = [
 		id: "aura.neon",
 		name: "Neon",
 		colors: [
-			"#FFFFFF",
-			"#FF4FD8",
-			"#B23CE0"
+			"#FFE3F4",
+			"#FF3FA4",
+			"#8A1F62"
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask);
-			const tube = ring(mask, 1).map(([x, y]) => [
-				x,
-				y,
-				Math.atan2(y - s.cy, x - s.cx)
-			]).sort((a, b) => a[2] - b[2]);
-			const n = tube.length, hot = wrap(Math.floor((t + print * 17) / steps(60, n)), n), breath = Math.sin((t + print * 11) / wave(420)) > 0;
-			return tube.map(([x, y], i) => {
-				const d = Math.min(wrap(i - hot, n), wrap(hot - i, n));
-				return [
+			const s = shape(mask), beat = tick(t + print * 53, 90), n = Math.round(LOOP_MS / fit(90));
+			const since = Math.min(...[1, 2].map((k) => wrap(beat - Math.floor(noise$1(print, k) * n), n)));
+			const off = since === 2 || since === 4, dim = since <= 5 && !off;
+			const stretch = Math.floor(noise$1(print, 3) * 4);
+			return ring(mask, 2).flatMap(([x, y, d]) => {
+				if (off) return d === 1 ? [[
 					x,
 					y,
-					d <= 1 ? 0 : breath ? 1 : 2
-				];
+					2
+				]] : [];
+				const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU + .5, 1) * 4);
+				if (dim && quarter === stretch) return d === 1 ? [[
+					x,
+					y,
+					1
+				]] : [];
+				return [[
+					x,
+					y,
+					d === 1 ? 0 : 1
+				]];
 			});
 		}
 	},
@@ -5811,64 +5954,35 @@ const orb = (x, y) => [
 		2
 	]
 ];
-/** A four-point sparkle, two cells each way: a white heart, bright arms, deep tips. */
-const star$2 = (x, y) => [
-	...plus(x, y, 1),
-	[
-		x - 2,
-		y,
-		2
-	],
-	[
-		x + 2,
-		y,
-		2
-	],
-	[
-		x,
-		y - 2,
-		2
-	],
-	[
-		x,
-		y + 2,
-		2
-	]
-];
-/** A twinkle that opens and closes: a dot, a cross, a sparkle, a cross, a dot. */
-function twinkle(x, y, f, big) {
-	if (f < .18 || f > .82) return [[
-		x,
-		y,
-		1
-	]];
-	if (big && f > .38 && f < .62) return star$2(x, y);
-	return plus(x, y, 1);
-}
+/** A sparkle (./sparkle) as aura cells: its heart, arms and edges are the aura's colours 0, 1 and 2. */
+const glint = (x, y, f) => sparkleAt(f).map(([dx, dy, k]) => [
+	x + dx,
+	y + dy,
+	k
+]);
 /**
 * What a rarer aura adds round the guy, in chunky pieces at his own pixel
 * size (no thin lines: a one-pixel line reads as drawn, not as pixel art):
-* twinkles that open into crosses (1), two orbs circling him (2), sparkles
-* opening on the other side (3), more of both and bigger (4, and Origin's
-* 5). Pieces may sit past the
-* frame's sides when `mask` is padded, so a card shows them whole.
+* a sparkle opening now and then a few cells out (1), two orbs circling him
+* (2), more of both (3, 4, and Origin's 5). Pieces may sit past the frame's
+* sides when `mask` is padded, so a card shows them whole.
 */
 function extras(mask, t, print, level) {
 	if (level <= 0) return [];
 	const s = shape(mask), out = [], phase = noise$1(print, 3);
-	const gy = Math.min(2, s.top), inner = loop(s, 3, gy), outer = loop(s, 5, gy + 1);
-	const twinkles = [
+	const gy = Math.min(2, s.top), inner = loop(s, 3, gy), near = loop(s, 4, gy);
+	const runs = [
 		0,
+		1,
+		1,
 		2,
 		2,
-		3,
-		4,
-		4
-	][level], life = fit(1100);
-	for (let i = 0; i < twinkles; i++) {
-		const at = t + i * life / twinkles + print * 29, gen = tick(at, 1100), f = cycle(at, 1100);
-		const [x, y] = outer[Math.floor(noise$1(i, gen, print, 41) * outer.length)];
-		out.push(...twinkle(x, y, f, level >= 3));
+		3
+	][level], life = fit(1300);
+	for (let i = 0; i < runs; i++) {
+		const at = t + i * life / runs + print * 29, gen = tick(at, 1300), f = cycle(at, 1300) / .55;
+		const [x, y] = near[Math.floor(noise$1(i, gen, print, 41) * near.length)];
+		if (f < 1) out.push(...glint(x, y, f));
 	}
 	const orbs = [
 		0,
@@ -5881,19 +5995,6 @@ function extras(mask, t, print, level) {
 	for (let i = 0; i < orbs; i++) {
 		const n = inner.length, [x, y] = inner[wrap(Math.floor(t / steps(26, n)) + Math.round(i * n / orbs + phase * n), n)];
 		out.push(...orb(x - 1, y - 1));
-	}
-	const sparks = [
-		0,
-		0,
-		0,
-		2,
-		3,
-		3
-	][level];
-	for (let i = 0; i < sparks; i++) {
-		const n = outer.length, [x, y] = outer[wrap(-Math.floor(t / steps(34, n)) + Math.round(i * n / sparks + phase * n * 2), n)];
-		const open = wrap(t / fit(600) + i * .37, 1) < .5;
-		out.push(...open ? star$2(x, y) : plus(x, y, 1));
 	}
 	return out;
 }
@@ -5968,6 +6069,51 @@ const FADE = [
 	"#FF6FB5",
 	"#7C5CFF"
 ];
+/**
+* Neon is one colour a copy: the finish's own (Frost ice blue, Toxic acid
+* green and so on), or for Classic, Fade and Black pearl one the print deals
+* from a sign maker's tubes. Its core, its colour, and the bare glass when it
+* flickers off.
+*/
+const NEON_TUBES = {
+	classic: [
+		"#FF3FA4",
+		"#2FD9FF",
+		"#FF5A3C",
+		"#B45CFF",
+		"#3DFF8F",
+		"#FFC23A"
+	],
+	fade: [
+		"#FF6A4D",
+		"#FF4F9A",
+		"#FFB23A"
+	],
+	frost: ["#7FD8FF"],
+	toxic: ["#9DFF3A"],
+	shadow: ["#9A6BFF"],
+	sapphire: ["#3D7BFF"],
+	ruby: ["#FF2D55"],
+	pearl: [
+		"#C9A2FF",
+		"#FF9EC9",
+		"#7FF5D2"
+	]
+};
+function neonRamp(finish, print) {
+	const tubes = NEON_TUBES[finish] ?? NEON_TUBES.classic, c = tubes[print % tubes.length];
+	const rgb$3 = [
+		1,
+		3,
+		5
+	].map((i) => parseInt(c.slice(i, i + 2), 16));
+	const to = (target, a) => "#" + rgb$3.map((v) => Math.round(v + (target - v) * a).toString(16).padStart(2, "0")).join("").toUpperCase();
+	return [
+		to(255, .35),
+		to(15, .38),
+		to(25, .72)
+	];
+}
 const hsl = (h, s, l) => {
 	const f = (n) => {
 		const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -5979,9 +6125,10 @@ const hsl = (h, s, l) => {
 * The colour of one aura cell in a finish. Fade runs its sunset down the aura
 * and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
 */
-function auraColor(id, k, finish, x, y, t) {
+function auraColor(id, k, finish, x, y, t, print = 0) {
 	const aura = auraById(id);
 	if (!aura) return "#FFFFFF";
+	if (id === "aura.neon") return neonRamp(finish, print)[Math.min(2, k)];
 	const sweep = wrap(x + y * .7 - t / steps(55, 26), 26) < 1.6;
 	if (ONE_OF_ONE_AURAS.includes(aura)) {
 		if (sweep) return hsl(wrap((x + y) * 18 + t * 360 / fit(2160), 360), .9, .78);
@@ -5993,10 +6140,10 @@ function auraColor(id, k, finish, x, y, t) {
 	}
 	const ramp = RAMPS[finish];
 	if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-	if (finish === "pearl") return hsl(wrap((x + y) * 14 + t * 360 / fit(3240), 360), .62, sweep ? .92 : [
+	if (finish === "pearl") return hsl(wrap(275 + 55 * Math.sin((x + y) * .35 + t / wave(520)), 360), .5, sweep ? .93 : [
 		.86,
 		.76,
-		.68
+		.66
 	][Math.min(2, k % 3)]);
 	if (sweep && (finish === "sapphire" || finish === "ruby")) return ramp[0];
 	return ramp[Math.min(2, k % 3)];
@@ -6710,8 +6857,8 @@ function applyFx(colors, slots, copies, t) {
 			for (const [key, d] of depth(k)) {
 				const x = key % W, y = Math.floor(key / W);
 				if (d > reach) continue;
-				const glint = noise(x, y, tick(tt, 300), o.print) > .82;
-				out[y][x] = glint ? "#FFFFFF" : hex$1(mix$3(rgb$2(out[y][x]), [
+				const glint$1 = noise(x, y, tick(tt, 300), o.print) > .82;
+				out[y][x] = glint$1 ? "#FFFFFF" : hex$1(mix$3(rgb$2(out[y][x]), [
 					214,
 					240,
 					255
@@ -12983,13 +13130,13 @@ function rim(c, b, token, fill) {
 	}
 }
 /** Glasses that fit the eyes: a lens round each, a bridge, and arms to the side of the head. */
-function fittedGlasses(c, frame, glass, glint) {
+function fittedGlasses(c, frame, glass, glint$1) {
 	const f = c.face;
 	if (!f || !f.eyes.length) return;
 	const boxes = f.eyes.map((_, k) => lensBox(c, k));
 	boxes.forEach((b) => {
 		rim(c, b, frame, glass);
-		c.set(b.left + 1, b.top + 1, glint);
+		c.set(b.left + 1, b.top + 1, glint$1);
 	});
 	if (boxes.length === 2) for (let x = boxes[0].right + 1; x < boxes[1].left; x++) c.set(x, f.top, frame);
 	const r = c.rows[f.top];
@@ -13588,7 +13735,10 @@ var Canvas = class Canvas {
 	*/
 	set(x, y, token) {
 		if (x > 0 && y > 0 && x < GRID_SIZE - 1 && y < GRID_SIZE - 1) this.grid[y][x] = token;
+		else if (token) this.refused++;
 	}
+	/** Pixels `set` turned away at the border: what a part lost off the edge (`hatCut` counts them). */
+	refused = 0;
 	/** First row the bare body covers in this column, or null. */
 	topOf(x) {
 		for (let y = 0; y < GRID_SIZE; y++) if (this.isBody(x, y)) return y;
@@ -14403,6 +14553,73 @@ function clearFace(c, face, bare, worn) {
 	}
 }
 /**
+* Where a buddy stands, on a picture whose cells `taken` marks as his (in any
+* frame of any move: `roomFor` grows the still to cover them). It stands on
+* the floor, right then left, as close to its corner as it can while a clear
+* pixel, diagonals included, runs between its outline and him.
+*
+* Where there is no such spot, it stands in front of him in the bottom-right
+* corner, as it always has, with its own outline, leaving out any pixel that
+* would touch his eyes or mouth (`face`). That is every head and skin there is
+* today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
+* needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
+* only comes true on a picture wider than his own.
+*/
+function buddySpot(art, taken, face = () => false) {
+	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
+	const at = (x0, y0$1) => {
+		const cells = [];
+		const on$1 = (x, y) => (art[y - y0$1]?.[x - x0] ?? 0) !== 0;
+		for (let y = y0$1 - 1; y <= y0$1 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) if (on$1(x, y)) cells.push([
+			x,
+			y,
+			art[y - y0$1][x - x0]
+		]);
+		else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) cells.push([
+			x,
+			y,
+			T.OUTLINE
+		]);
+		return cells;
+	};
+	const clear = (cells) => cells.every(([x, y]) => {
+		if (x < 0 || y < 0 || x >= W || y >= H) return false;
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (taken[y + dy]?.[x + dx]) return false;
+		return true;
+	});
+	const y0 = H - 1 - h;
+	for (let k = 0; k + w + 2 <= W; k++) for (const x0 of [W - 1 - w - k, 1 + k]) {
+		const cells = at(x0, y0);
+		if (clear(cells)) return {
+			cells,
+			apart: true
+		};
+	}
+	const corner = at(W - 1 - w, y0).filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && !face(x, y));
+	return {
+		cells: corner,
+		apart: false
+	};
+}
+/**
+* The cells a guy may cover in any frame of any move, from his still: an arm
+* out at either side and a step sideways (two columns), down two rows where a
+* squash lowers him, and turned round in his sixteen columns. A buddy stays
+* on the floor (./animate), so this is all it has to keep clear of.
+*/
+function roomFor(still) {
+	const H = still.length, W = still[0].length;
+	const out = still.map((row) => row.map(() => false));
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		if (!still[y][x] && !(x < GRID_SIZE && still[y][GRID_SIZE - 1 - x])) continue;
+		for (let dy = 0; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+			const yy = y + dy, xx = x + dx;
+			if (yy < H && xx >= 0 && xx < W) out[yy][xx] = true;
+		}
+	}
+	return out;
+}
+/**
 * Composes every part into one 16x16 grid of colour tokens.
 *
 * The order matters and is the same for every guy: the lit body and its
@@ -14412,6 +14629,19 @@ function clearFace(c, face, bare, worn) {
 * drawn around the finished shape so hats, ears and arms all get one too.
 */
 function compose(config) {
+	return build(config);
+}
+/**
+* The buddy a guy wears, where it stands in his still (`cells`, art in its
+* own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
+* ./animate can stand it on the floor while he moves.
+*/
+function buddyOf(config) {
+	const report = { hatCut: 0 };
+	build(config, report);
+	return report.buddy;
+}
+function build(config, report) {
 	const skin = skinOf(config);
 	const hat$1 = itemById(config.hat);
 	const frame = itemById(config.frame);
@@ -14439,17 +14669,24 @@ function compose(config) {
 				canvas: c.clone(),
 				dome: []
 			};
-			draw(canvas.forHats());
+			const view = canvas.forHats();
+			view.refused = 0;
+			draw(view);
+			let cut = view.refused;
 			const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
 			for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
-			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
-			let shown = 0;
+			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) {
+				canvas.grid[y][x] = before[y][x];
+				cut++;
+			}
+			let shown$1 = 0;
 			canvas.grid.forEach((row, y) => row.forEach((v, x) => {
-				if (v !== before[y][x]) shown++;
+				if (v !== before[y][x]) shown$1++;
 			}));
 			return {
 				grid: canvas.grid,
-				shown,
+				shown: shown$1,
+				cut,
 				cap: dome.length > 0 && wrapped * 2 >= dome.length
 			};
 		};
@@ -14461,9 +14698,11 @@ function compose(config) {
 		best.grid.forEach((row, y) => row.forEach((v, x) => {
 			c.grid[y][x] = v;
 		}));
+		return best.cut;
 	};
 	if (hat$1?.slot === "hat") {
-		onTop((cv) => hat$1.draw(cv));
+		const cut = onTop((cv) => hat$1.draw(cv));
+		if (report) report.hatCut = cut;
 		claim(c.grid, LAYER.hat);
 		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
 			const t = c.grid[y][x], below = c.grid[y + 1][x];
@@ -14491,6 +14730,9 @@ function compose(config) {
 	outline(c.grid);
 	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 	if (config.flip) for (const row of c.grid) row.reverse();
+	const buddy = itemById(config.buddy);
+	const shown = new Set([...face].map((k) => config.flip ? k - k % GRID_SIZE + GRID_SIZE - 1 - k % GRID_SIZE : k));
+	const spot = buddy?.slot === "buddy" ? buddySpot(buddy.art, roomFor(c.grid.map((row) => row.map(Boolean))), (x, y) => touches(shown, x, y)) : void 0;
 	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
 	const aura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	if (aura) {
@@ -14505,19 +14747,12 @@ function compose(config) {
 			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
 		}
 	}
-	const buddy = itemById(config.buddy);
-	if (buddy?.slot === "buddy") {
-		const art = buddy.art, h = art.length, w = Math.max(...art.map((r) => r.length));
-		const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
-		const on$1 = (x, y) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
-		for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
-			if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
-			if (touches(face, x, y)) continue;
-			if (on$1(x, y)) {
-				const t = art[y - y0][x - x0];
-				c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
-			} else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) c.grid[y][x] = T.OUTLINE;
-		}
+	if (spot) {
+		for (const [x, y, t] of spot.cells) c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+		if (report) report.buddy = {
+			...spot,
+			face: shown
+		};
 	}
 	return c.grid;
 }
@@ -14559,7 +14794,7 @@ function paint(grid, config, palette, small = false, still = true) {
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
-		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
+		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color : copy ? paintCell(color, x, y, copy, state) : color;
 		return still && copy?.fx ? fxColor(painted$1, copy.fx, x, y, 0, copy.print) : painted$1;
 	}));
 }
@@ -14727,6 +14962,12 @@ Object.defineProperty(exports, 'LAYER', {
     return LAYER;
   }
 });
+Object.defineProperty(exports, 'LOCAL', {
+  enumerable: true,
+  get: function () {
+    return LOCAL;
+  }
+});
 Object.defineProperty(exports, 'LOOP_MS', {
   enumerable: true,
   get: function () {
@@ -14805,6 +15046,12 @@ Object.defineProperty(exports, 'SMALL_SIZE', {
     return SMALL_SIZE;
   }
 });
+Object.defineProperty(exports, 'SPARKLE_REACH', {
+  enumerable: true,
+  get: function () {
+    return SPARKLE_REACH;
+  }
+});
 Object.defineProperty(exports, 'T', {
   enumerable: true,
   get: function () {
@@ -14875,6 +15122,12 @@ Object.defineProperty(exports, 'bodyWeights', {
   enumerable: true,
   get: function () {
     return bodyWeights;
+  }
+});
+Object.defineProperty(exports, 'buddyOf', {
+  enumerable: true,
+  get: function () {
+    return buddyOf;
   }
 });
 Object.defineProperty(exports, 'cheekWeights', {
@@ -15177,6 +15430,12 @@ Object.defineProperty(exports, 'slotOf', {
     return slotOf;
   }
 });
+Object.defineProperty(exports, 'sparkleAt', {
+  enumerable: true,
+  get: function () {
+    return sparkleAt;
+  }
+});
 Object.defineProperty(exports, 'special', {
   enumerable: true,
   get: function () {
@@ -15205,6 +15464,12 @@ Object.defineProperty(exports, 'temperTint', {
   enumerable: true,
   get: function () {
     return temperTint;
+  }
+});
+Object.defineProperty(exports, 'tick', {
+  enumerable: true,
+  get: function () {
+    return tick;
   }
 });
 Object.defineProperty(exports, 'wave', {
@@ -15237,4 +15502,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-DmEQP17W.cjs.map
+//# sourceMappingURL=paint-Sab-qQE_.cjs.map

@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-DmEQP17W.cjs');
+const require_paint = require('./paint-Sab-qQE_.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -18,6 +18,13 @@ const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 * from Special up a shine sweeps across the item, from Prized up a ring in the
 * grade's colour pulses around the guy, and Mythic and Grail copies throw off
 * sparkles.
+*
+* Each guy keeps his own time. His idle is dealt from his name like his parts
+* are: how many breaths he takes in a loop, where in it he starts, and his
+* habits (a blink or a double blink, a glance, a smile, an "ooh", a little
+* hop). The same guy always moves the same way, and two guys side by side are
+* never in step. A squash never cuts his face: rows are only lost or repeated
+* below his mouth or above his eyes, and a guy with no room there bobs instead.
 */
 const MOVES = [
 	"idle",
@@ -98,18 +105,116 @@ const HOP = [
 	b("base", 100, { squash: 2 }),
 	b("base", 80, { squash: 1 })
 ];
-const BEATS = {
-	idle: () => [
-		b("base", 700),
-		b("base", 500, { squash: 1 }),
-		b("base", 700),
-		b("shut", 120),
-		b("base", 480),
-		b("base", 500, { squash: 1 })
+/** A well-mixed number in [0, 1) from integers. */
+function noise(...n) {
+	let h = 2654435769;
+	for (const v of n) {
+		h = Math.imul(h ^ v, 2246822507);
+		h = Math.imul(h ^ h >>> 13, 3266489909);
+		h ^= h >>> 16;
+	}
+	return (h >>> 0) / 4294967296;
+}
+const rollsOf = (input) => {
+	const h = require_paint.hash(`${input}|rhythm`);
+	return (k) => noise(h, k);
+};
+/** Little things a guy does between breaths. Each guy has a few of them as his habits. */
+const ACTS = {
+	blink: [b("shut", 130)],
+	double: [
+		b("shut", 100),
+		b("base", 110),
+		b("shut", 110)
 	],
-	blink: () => [b("base", 2400), b("shut", 140)],
+	glanceLeft: [b("left", 520)],
+	glanceRight: [b("right", 520)],
+	around: [
+		b("left", 320),
+		b("base", 90),
+		b("right", 320)
+	],
+	smile: [b("smile", 580)],
+	content: [b("content", 640)],
+	ooh: [b("ooh", 380)],
+	blep: [b("blep", 460)],
+	hop: [
+		b("base", 80, { squash: 1 }),
+		b("base", 90, { dy: -1 }),
+		b("base", 130, { dy: -2 }),
+		b("base", 90, { dy: -1 }),
+		b("base", 80, { squash: 1 })
+	]
+};
+const pick = (r, list) => list[Math.min(list.length - 1, Math.floor(r * list.length))];
+const actMs = (act) => ACTS[act].reduce((n, x) => n + x.ms, 0);
+/**
+* His idle, one LOOP_MS long, dealt from his name: three to five breaths (his
+* tempo), each a rest and a dip or, for a floater, a lift; his habits in some
+* of the rests; and the loop turned to start partway through a rest, so guys
+* dealt the same tempo still breathe at different moments. It always starts
+* on his still pose.
+*/
+function idleBeats(g) {
+	const r = g.roll;
+	const breaths = pick(r(1), [
+		3,
+		4,
+		4,
+		5
+	]), floater = r(2) < .3;
+	const habits = [r(3) < .35 ? "double" : "blink"];
+	if (r(4) < .7) habits.push(pick(r(5), [
+		"glanceLeft",
+		"glanceRight",
+		"around"
+	]));
+	if (g.mouthy && r(6) < .75) habits.push(pick(r(7), [
+		"smile",
+		"smile",
+		"content",
+		"content",
+		"ooh",
+		"blep"
+	]));
+	if (r(8) < .25) habits.push("hop");
+	const count$1 = Math.min(breaths, habits.length, 2 + (r(9) < .45 ? 1 : 0));
+	const salt = Math.floor(r(10) * 1e9);
+	const order = Array.from({ length: breaths }, (_, i) => i).sort((a, c) => noise(a, salt) - noise(c, salt));
+	const doing = new Map(habits.slice(0, count$1).map((act, i) => [order[i], act]));
+	const lap = [];
+	for (let i = 0; i < breaths; i++) {
+		const ms = Math.round((i + 1) * require_paint.LOOP_MS / breaths) - Math.round(i * require_paint.LOOP_MS / breaths);
+		const dip = Math.round(ms * (.3 + .1 * r(11 + i))), rest$1 = ms - dip, act = doing.get(i);
+		if (act && actMs(act) + 160 <= rest$1) {
+			const lead = Math.round((rest$1 - actMs(act)) * (.3 + .4 * r(20 + i)));
+			lap.push(b("base", lead), ...ACTS[act], b("base", rest$1 - lead - actMs(act)));
+		} else lap.push(b("base", rest$1));
+		lap.push(b("base", dip, floater ? { dy: -1 } : { squash: 1 }));
+	}
+	const rests = lap.map((x, i) => [x, i]).filter(([x]) => x.pose === "base" && !x.squash && !x.dy && x.ms >= 200);
+	const [rest, at] = pick(r(30), rests);
+	const cut = Math.round(rest.ms * (.2 + .6 * r(31)));
+	return [
+		b("base", rest.ms - cut),
+		...lap.slice(at + 1),
+		...lap.slice(0, at),
+		b("base", cut)
+	];
+}
+const BEATS = {
+	idle: idleBeats,
+	blink: ({ roll: roll$1 }) => {
+		const wait = 1800 + Math.round(roll$1(40) * 1600);
+		return roll$1(41) < .3 ? [
+			b("base", wait),
+			b("shut", 100),
+			b("base", 110),
+			b("shut", 120)
+		] : [b("base", wait), b("shut", 140)];
+	},
 	hop: () => [...HOP, b("base", 700)],
-	wave: (canWave) => canWave ? [
+	wave: ({ canWave }) => canWave ? [
 		b("wave", 220),
 		b("sides", 200),
 		b("wave", 220),
@@ -123,19 +228,25 @@ const BEATS = {
 		b("base", 200),
 		b("base", 700)
 	],
-	look: () => [
-		b("base", 500),
-		b("left", 700, {
-			emote: "question",
-			left: true
-		}),
-		b("base", 250),
-		b("right", 700, { emote: "question" }),
-		b("base", 250),
-		b("shut", 120),
-		b("base", 400)
-	],
-	cheer: (canWave) => {
+	look: ({ roll: roll$1 }) => {
+		const [first, second] = roll$1(42) < .5 ? ["left", "right"] : ["right", "left"];
+		return [
+			b("base", 500),
+			b(first, 700, {
+				emote: "question",
+				left: first === "left"
+			}),
+			b("base", 250),
+			b(second, 700, {
+				emote: "question",
+				left: second === "left"
+			}),
+			b("base", 250),
+			b("shut", 120),
+			b("base", 400)
+		];
+	},
+	cheer: ({ canWave }) => {
 		const arm = canWave ? "laughWave" : "laugh";
 		const up = [
 			b("laugh", 80, { squash: 1 }),
@@ -177,28 +288,31 @@ const BEATS = {
 		}),
 		b("base", 500, { squash: 1 })
 	],
-	dance: () => [
-		b("laugh", 180, {
-			dx: -1,
-			squash: 1,
-			emote: "note",
-			left: true
-		}),
-		b("base", 180, {
-			emote: "note",
-			left: true
-		}),
-		b("laugh", 180, {
-			dx: 1,
-			squash: 1,
-			turn: true,
-			emote: "note"
-		}),
-		b("base", 180, {
-			turn: true,
-			emote: "note"
-		})
-	],
+	dance: ({ roll: roll$1 }) => {
+		const ms = 150 + 10 * Math.floor(roll$1(43) * 7);
+		return [
+			b("laugh", ms, {
+				dx: -1,
+				squash: 1,
+				emote: "note",
+				left: true
+			}),
+			b("base", ms, {
+				emote: "note",
+				left: true
+			}),
+			b("laugh", ms, {
+				dx: 1,
+				squash: 1,
+				turn: true,
+				emote: "note"
+			}),
+			b("base", ms, {
+				turn: true,
+				emote: "note"
+			})
+		];
+	},
 	squish: () => [
 		b("ooh", 90, {
 			squash: 2,
@@ -215,24 +329,27 @@ const BEATS = {
 		b("base", 70, { squash: -1 }),
 		b("base", 700)
 	],
-	sleep: () => [
-		b("shut", 1100, {
-			squash: 1,
-			emote: "zzz"
-		}),
-		b("shut", 1100, {
-			emote: "zzz",
-			rise: true
-		}),
-		b("shut", 1100, {
-			squash: 1,
-			emote: "zzz"
-		}),
-		b("shut", 1100, {
-			emote: "zzz",
-			rise: true
-		})
-	]
+	sleep: ({ roll: roll$1 }) => {
+		const ms = 1e3 + 50 * Math.floor(roll$1(44) * 6);
+		return [
+			b("shut", ms, {
+				squash: 1,
+				emote: "zzz"
+			}),
+			b("shut", ms, {
+				emote: "zzz",
+				rise: true
+			}),
+			b("shut", ms, {
+				squash: 1,
+				emote: "zzz"
+			}),
+			b("shut", ms, {
+				emote: "zzz",
+				rise: true
+			})
+		];
+	}
 };
 const EYE_TOKENS = new Set([require_paint.T.EYE, require_paint.T.WHITE]);
 /** The row the bottom of the eyes sits on, for this guy's shape or skin. */
@@ -303,7 +420,7 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= require_paint.LAYER.aura ? 5 : t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted$1(grid, config, palette$1, small = false, face = null) {
+function painted$1(grid, config, palette$1, small = false, face = null, mouth) {
 	const colors = require_paint.paint(grid, config, palette$1, small, false);
 	const out = empty();
 	const eyeBox = face && {
@@ -321,6 +438,7 @@ function painted$1(grid, config, palette$1, small = false, face = null) {
 			slot: slotIndex(t)
 		};
 		if (t === require_paint.T.BODY || t === require_paint.T.SHADE || t === require_paint.T.LIGHT) cell.body = true;
+		if (mouth?.has(y * require_paint.GRID_SIZE + x)) cell.face = true;
 		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
 		out[y + HEADROOM][x] = cell;
 	}));
@@ -376,19 +494,14 @@ function liveEyes(layer, kind, t, seed) {
 		}
 	}));
 }
-/** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
-function squash(layer, n) {
-	if (!n) return layer;
-	let last = -1, first = -1;
-	layer.forEach((row, y) => {
-		if (row.some(Boolean)) {
-			if (first < 0) first = y;
-			last = y;
-		}
-	});
-	if (last < 0) return layer;
-	const r = Math.max(first + 2, last - 3);
-	const rows = layer.map((row) => [...row]);
+/**
+* Loses `n` rows ending at row `r` (or, for a negative `n`, repeats row `r`);
+* everything above follows. `r` comes from `squashPlan`, so it is never a row
+* of his face.
+*/
+function squash(layer, s) {
+	if (!s) return layer;
+	const { n, row: r } = s, rows = layer.map((row) => [...row]);
 	if (n > 0) {
 		const blank = Array.from({ length: n }, () => new Array(FRAME_WIDTH).fill(null));
 		return [
@@ -403,6 +516,19 @@ function squash(layer, n) {
 		...Array.from({ length: k }, () => [...rows[r]]),
 		...rows.slice(r + 1)
 	];
+}
+/**
+* His buddy, standing where it stands in the still: on the floor, whatever
+* he does. In front of him (no room beside him; see `buddySpot`), it leaves
+* out any pixel next to his eyes or mouth in this frame.
+*/
+function standBuddy(layer, buddy, apart) {
+	const nearFace = (x, y) => {
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.face) return true;
+		return false;
+	};
+	const keep = buddy.filter(([x, y]) => apart || !nearFace(x, y));
+	for (const [x, y, cell] of keep) layer[y][x] = { ...cell };
 }
 function shift(layer, dx, dy) {
 	const out = empty();
@@ -427,41 +553,66 @@ function rim(layer) {
 	}
 	return out;
 }
-/** A four-point twinkle, only where there is nothing. */
-function twinkle(layer, x, y, centre, arms) {
-	const cells = [
-		[
-			x,
-			y,
-			centre
-		],
-		[
-			x - 1,
-			y,
-			arms
-		],
-		[
-			x + 1,
-			y,
-			arms
-		],
-		[
-			x,
-			y - 1,
-			arms
-		],
-		[
-			x,
-			y + 1,
-			arms
-		]
-	];
-	if (!cells.every(([cx, cy]) => cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx])) return;
-	for (const [cx, cy, c] of cells) layer[cy][cx] = {
-		c,
-		item: false
-	};
+/** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
+function sparkle(layer, x, y, f, colors) {
+	for (const [dx, dy, k] of require_paint.sparkleAt(f)) {
+		const cx = x + dx, cy = y + dy;
+		if (cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = {
+			c: colors[k],
+			item: false
+		};
+	}
 }
+/**
+* Where sparkles may open: empty cells near the guy, with room all round for
+* the sparkle at its biggest, two or three cells off him and no lower than his
+* middle (`above` rows from his top at most, when given). None in the frame's
+* edge cells, so nothing sits stuck in a corner.
+*/
+function sparkleSpots(layer, above = Infinity) {
+	let top = FRAME_HEIGHT, bottom = -1;
+	layer.forEach((row, y) => {
+		if (row.some(Boolean)) {
+			top = Math.min(top, y);
+			bottom = y;
+		}
+	});
+	const out = [];
+	const near = (x, y, d) => {
+		for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) if (layer[y + dy]?.[x + dx]) return true;
+		return false;
+	};
+	for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < FRAME_WIDTH - 1; x++) {
+		if (y > Math.min((top + bottom) / 2, top + above)) continue;
+		if (require_paint.SPARKLE_REACH.some(([dx, dy]) => layer[y + dy][x + dx])) continue;
+		if (!near(x, y, 1) && near(x, y, 3)) out.push([x, y]);
+	}
+	return out;
+}
+/**
+* One sparkle at a time from a run of them: every `period` ms (fitted to
+* LOOP_MS) one opens at a spot dealt from `salt`, lives `life` of the period
+* and is gone for the rest. `at` is the clock with this run's own phase.
+*/
+function sparkleRun(layer, spots, at, period, life, salt, colors) {
+	if (!spots.length) return;
+	const f = require_paint.cycle(at, period) / life;
+	if (f >= 1) return;
+	const [x, y] = spots[Math.floor(noise(require_paint.tick(at, period), salt) * spots.length)];
+	sparkle(layer, x, y, f, colors);
+}
+/** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
+const sparkleIn = (color) => [
+	"#FFFFFF",
+	mix$2(color, "#FFFFFF", .45),
+	color
+];
+/** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
+const GOLD_SPARKLE = [
+	"#FFFFFF",
+	"#FFF0B8",
+	"#F5C342"
+];
 const mouthIndex = (name) => Math.max(0, require_paint.mouths.findIndex((m) => m.name === name));
 /** `#` is the emote's colour, `+` its second colour. */
 const EMOTES = {
@@ -567,71 +718,210 @@ function emote(layer, kind, left, lift = 0) {
 		item: false
 	};
 }
-/** Where a Lucky guy's gold twinkles go. */
-const LUCKY_SPOTS = [
-	[2, 5],
-	[13, 4],
-	[14, 14],
-	[1, 15]
+/** Mouths a guy keeps whatever he is doing, because they are who he is. */
+const SIGNATURE_MOUTHS = new Set([
+	"beak",
+	"fang",
+	"gritted",
+	"bubblegum",
+	"vampire",
+	"gold tooth",
+	"grillz",
+	"mustache"
+]);
+/** The mouth a pose wears, when it isn't his own. */
+function poseMouth(pose, own) {
+	if (pose === "laugh" || pose === "laughWave") return mouthIndex("laugh");
+	if (pose === "frown") return mouthIndex("wobble");
+	if (pose === "ooh") return mouthIndex("ooh");
+	if (pose === "blep") return mouthIndex("blep");
+	if (pose === "smile" || pose === "content") return own === mouthIndex("smile") ? mouthIndex("grin") : mouthIndex("smile");
+	return void 0;
+}
+const POSES = [
+	"base",
+	"shut",
+	"left",
+	"right",
+	"wave",
+	"sides",
+	"laugh",
+	"laughWave",
+	"frown",
+	"ooh",
+	"smile",
+	"content",
+	"blep"
 ];
-/** Where sparkles may go: around the guy, clear of him. */
-const SPARKLE_SPOTS = [
-	[2, 6],
-	[13, 8],
-	[1, 13],
-	[14, 15],
-	[7, 1],
-	[2, 18],
-	[13, 2],
-	[12, 18]
-];
+/**
+* The guy as he is drawn into his poses: dressed, without the frame and aura
+* (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
+* frame too). `grid` builds each pose once.
+*/
+function poser(input, options) {
+	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
+	const owned = config.owned && Object.fromEntries(Object.entries(config.owned).map(([slot, o]) => [slot, o?.finish === "gold" ? {
+		...o,
+		finish: "plain"
+	} : o]));
+	const figure = {
+		...config,
+		frame: void 0,
+		aura: void 0,
+		buddy: void 0,
+		owned
+	};
+	const grids = new Map();
+	const grid = (pose) => {
+		if (!grids.has(pose)) {
+			const base = require_paint.compose(figure), mouth = poseMouth(pose, config.mouth);
+			const worn = mouth === void 0 ? base : require_paint.compose({
+				...figure,
+				mouth,
+				arms: pose === "laughWave" ? 2 : figure.arms
+			});
+			grids.set(pose, pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "frown" || pose === "content" ? closeEyes(worn, config) : pose === "wave" || pose === "sides" ? require_paint.compose({
+				...figure,
+				arms: pose === "wave" ? 2 : 1
+			}) : worn);
+		}
+		return grids.get(pose);
+	};
+	return {
+		config,
+		figure,
+		grid
+	};
+}
+/** Tokens that make a face: eye ink and shine, the mouth and its tongue. */
+const FACE_TOKENS = new Set([
+	require_paint.T.EYE,
+	require_paint.T.WHITE,
+	require_paint.T.MOUTH,
+	require_paint.T.TONGUE
+]);
+/**
+* Where a guy squashes: for `n` rows lost (or, negative, repeated), the frame
+* row the squash ends on, or null when he has no room for it. His face (from
+* the top of his eyes to the foot of any mouth he pulls, and any row with eye
+* or mouth pixels) is never touched. Rows go from his body between the mouth
+* and the feet, nearest four rows up from his foot; failing that from his head
+* above the eyes; failing that one row fewer, or none.
+*/
+function squashPlan(config, figure, grid) {
+	const base = grid("base");
+	let first = -1, last = -1;
+	base.forEach((row, y) => {
+		if (row.some(Boolean)) {
+			if (first < 0) first = y;
+			last = y;
+		}
+	});
+	const face = new Set();
+	let top = require_paint.GRID_SIZE, bottom = -1;
+	for (const pose of POSES) {
+		const f = require_paint.faceOf({
+			...figure,
+			mouth: poseMouth(pose, config.mouth) ?? figure.mouth
+		});
+		top = Math.min(top, f.top);
+		bottom = Math.max(bottom, f.line, f.mouthBottom);
+		for (const [y, row] of grid(pose).entries()) if (row.some((t) => FACE_TOKENS.has(t))) face.add(y);
+	}
+	for (let y = top; y <= bottom; y++) face.add(y);
+	const free = (y) => y > first && y < last && !face.has(y);
+	const plans = new Map();
+	const at = (n) => {
+		if (!n) return null;
+		if (plans.has(n)) return plans.get(n);
+		const k = Math.abs(n), fits = (r$1) => (n > 0 ? Array.from({ length: k }, (_, i) => r$1 - i) : [r$1]).every(free);
+		const below = Array.from({ length: Math.max(0, last - bottom) }, (_, i) => bottom + 1 + i).filter(fits).sort((p, q) => Math.abs(p - (last - 3)) - Math.abs(q - (last - 3)));
+		const above = Array.from({ length: Math.max(0, top - first) }, (_, i) => top - 1 - i).filter(fits);
+		const r = below[0] ?? above[0];
+		const plan = r !== void 0 ? {
+			n,
+			row: r + HEADROOM
+		} : at(n - Math.sign(n));
+		plans.set(n, plan);
+		return plan;
+	};
+	return {
+		at,
+		face: [...face].sort((p, q) => p - q).map((y) => y + HEADROOM)
+	};
+}
+/**
+* What each squash in his moves does to the guy `input` would render as: the
+* frame rows it takes out (or, for a negative one, repeats), or null where he
+* has no room and bobs instead; and the rows of his face, which it never touches.
+*/
+function squashRows(input, options = {}) {
+	const { config, figure, grid } = poser(input, options);
+	const plan = squashPlan(config, figure, grid), rows = {};
+	for (const n of [
+		-2,
+		-1,
+		1,
+		2
+	]) {
+		const s = plan.at(n);
+		rows[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
+	}
+	return {
+		face: plan.face,
+		rows
+	};
+}
 /**
 * Builds the frames of a move for the guy `input` would render as. Takes the
 * same options as `toSvgString` (game, equip, parts, palette).
 */
 function animate(input, move, options = {}) {
-	const config = require_paint.dress(require_paint.resolve(input, options.parts), options, input);
+	const { config, figure, grid } = poser(input, options);
 	const palette$1 = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
-	const figure = {
+	const spot = require_paint.itemById(config.buddy)?.slot === "buddy" ? require_paint.buddyOf({
 		...config,
 		frame: void 0,
 		aura: void 0
-	};
+	}) : void 0;
 	const wornAura = require_paint.auraById(require_paint.itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
 	const lucky = !!config.lucky && options.rarity !== false && !options.small;
 	const liveEye = options.small ? void 0 : LIVE_EYES.get(config.eyes);
-	const grids = new Map();
-	const grid = (pose) => {
-		if (!grids.has(pose)) {
-			const base = require_paint.compose(figure);
-			grids.set(pose, pose === "base" ? base : pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "laugh" ? require_paint.compose({
-				...figure,
-				mouth: mouthIndex("laugh")
-			}) : pose === "laughWave" ? require_paint.compose({
-				...figure,
-				mouth: mouthIndex("laugh"),
-				arms: 2
-			}) : pose === "frown" ? closeEyes(require_paint.compose({
-				...figure,
-				mouth: mouthIndex("wobble")
-			}), config) : pose === "ooh" ? require_paint.compose({
-				...figure,
-				mouth: mouthIndex("ooh")
-			}) : require_paint.compose({
-				...figure,
-				arms: pose === "wave" ? 2 : 1
-			}));
-		}
-		return grids.get(pose);
-	};
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
+	const plan = squashPlan(config, figure, grid);
+	const FACE_TOKENS$1 = new Set([
+		require_paint.T.EYE,
+		require_paint.T.WHITE,
+		require_paint.T.MOUTH,
+		require_paint.T.TONGUE
+	]);
+	const faceIn = (pose) => {
+		if (!spot) return void 0;
+		const out = new Set(spot.face), g = grid(pose), base = grid("base");
+		g.forEach((row, y) => row.forEach((t$1, x) => {
+			if (FACE_TOKENS$1.has(t$1) && t$1 !== base[y][x]) out.add(y * require_paint.GRID_SIZE + x);
+		}));
+		return out;
+	};
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null));
+		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null, faceIn(pose)));
 		return layers.get(pose);
 	};
+	const buddyCells = [];
+	if (spot) {
+		const only = Array.from({ length: require_paint.GRID_SIZE }, () => new Array(require_paint.GRID_SIZE).fill(0));
+		for (const [x, y, t$1] of spot.cells) only[y][x] = t$1 >= require_paint.LOCAL ? t$1 - require_paint.LOCAL + require_paint.LAYER.buddy : t$1;
+		painted$1(only, config, palette$1, !!options.small).forEach((row, y) => row.forEach((cell, x) => {
+			if (cell) buddyCells.push([
+				x,
+				y,
+				cell
+			]);
+		}));
+	}
 	let backdrop = null;
 	const frameItem = require_paint.itemById(config.frame);
 	if (frameItem?.slot === "frame") {
@@ -643,15 +933,26 @@ function animate(input, move, options = {}) {
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? require_paint.GRADES[grade].color : "#FFFFFF";
 	const seed = require_paint.hash(input) % 997;
-	const beats = BEATS[move](canWave);
-	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || options.emote);
+	const best = copies.reduce((a, o) => !a || require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id) > require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(a).id) ? o : a, void 0);
+	const phase = best ? best.print * 37 : seed;
+	const goldCopy = options.small ? void 0 : Object.values(config.owned ?? {}).find((o) => o?.finish === "gold");
+	const goldMark = !!goldCopy && !wornAura && grade < 3;
+	const roll$1 = rollsOf(input);
+	const mouthy = !SIGNATURE_MOUTHS.has(require_paint.mouths[config.mouth]?.name ?? "") && JSON.stringify(grid("smile")) !== JSON.stringify(grid("base"));
+	const beats = BEATS[move]({
+		roll: roll$1,
+		canWave,
+		mouthy
+	});
+	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote);
+	const spots = sparkleSpots(layerOf("base")), headSpots = sparkleSpots(layerOf("base"), 3);
 	const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
 	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0), span = loop ? lapMs * loop.repeats : 0;
 	const clock = (ms) => loop ? ms * loop.turns * require_paint.LOOP_MS % (require_paint.LOOP_MS * span) / span : ms;
 	const slices = [];
 	let t = 0;
 	for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
-		let n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		let n = wornAura || withFx || lucky || liveEye || goldMark ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
@@ -669,8 +970,14 @@ function animate(input, move, options = {}) {
 	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row].reverse());
-		layer = squash(layer, beat.squash ?? 0);
-		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		const squashed = plan.at(beat.squash ?? 0);
+		layer = squash(layer, squashed);
+		const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
+		layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
+		if (buddyCells.length) {
+			layer = layer.map((row) => [...row]);
+			standBuddy(layer, buddyCells, spot.apart);
+		}
 		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
 		if (trailFrom.length && (beat.dy ?? 0) < 0) behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
@@ -682,7 +989,7 @@ function animate(input, move, options = {}) {
 		behind.unshift(figure$1);
 		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
-			const at = require_paint.cycle(t$1 + seed, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+			const at = require_paint.cycle(t$1 + phase, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
@@ -692,15 +999,12 @@ function animate(input, move, options = {}) {
 		}
 		if (lucky) luckyShimmer(layer, t$1, seed);
 		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
-		if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
-			if (require_paint.wrap(t$1 / require_paint.steps(260, 3) + k * 1.3 + seed, 3) < 1) twinkle(layer, x, y, "#FFFFFF", "#FFD45C");
-		});
+		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, spots, t$1 + seed * 7, 2300, .4, seed, GOLD_SPARKLE);
+		if (goldMark) sparkleRun(layer, spots, t$1 + goldCopy.print * 37, 2600, .4, goldCopy.print, GOLD_SPARKLE);
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
-			const gold = palette$1.colors[require_paint.T.GOLD] ?? "#F2C230";
-			twinkle(layer, 2, 3, "#FFFFFF", gold);
-			twinkle(layer, 13, 2, "#FFFFFF", gold);
-			if (Math.floor(require_paint.wrap(t$1, require_paint.fit(240)) / (require_paint.fit(240) / 2)) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
+			const gold = sparkleIn(palette$1.colors[require_paint.T.GOLD] ?? "#F2C230");
+			for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t$1 + i * require_paint.fit(360) / 2 + seed, 360, 1, seed + i, gold);
 		}
 		if (beat.drop) {
 			let top = -1;
@@ -728,7 +1032,7 @@ function animate(input, move, options = {}) {
 		if (wornAura) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
 			for (const [x, y, k] of require_paint.auraCells(wornAura.id, mask, t$1, copy, AURA_PAD)) {
-				const c = copy ? require_paint.auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k];
+				const c = copy ? require_paint.auraColor(wornAura.id, k, copy.finish, x, y, t$1 + copy.print * 37, copy.print) : wornAura.colors[k];
 				if (x < 0 || x >= FRAME_WIDTH) outside.push([
 					x,
 					y,
@@ -749,10 +1053,8 @@ function animate(input, move, options = {}) {
 			};
 		}
 		if (grade >= 3 && !wornAura) {
-			const count$1 = grade === 4 ? 4 : 3;
-			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
-				if (require_paint.wrap(t$1 / require_paint.steps(240, 4) + k * 1.7 + seed, 4) < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
-			});
+			const colors$1 = grade === 4 ? GOLD_SPARKLE : sparkleIn(gradeColor), count$1 = grade === 4 ? 2 : 1;
+			for (let i = 0; i < count$1; i++) sparkleRun(layer, spots, t$1 + phase + i * require_paint.fit(1700) / count$1, 1700, .5, phase + i, colors$1);
 		}
 		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
 		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
@@ -2404,13 +2706,13 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);
   else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }
   else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;
-  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22 + fract(print * 0.618) * TAU) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
   else if (finish < 4.5) {
     vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));
     c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);
     c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);
   }
-  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;
+  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;
   else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
   return c;
 }
@@ -2484,7 +2786,7 @@ const band = (d, time, print) => 1 - clamp(Math.abs(mod(d - time * 10 + print, 6
 /** `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES. */
 function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	const b$1 = band(d, time, print);
-	const twinkle$1 = step(.965, fract(h * 13 + time / 3));
+	const twinkle = step(.965, fract(h * 13 + time / 3));
 	const coat = clamp(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
 	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
 	if (finish < 1.5) {
@@ -2495,12 +2797,12 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 			1.18
 		]), .08), .4 * s * coat), b$1 * .5 * coat);
 	}
-	if (finish < 2.5) return add(c, twinkle$1 * .55 * coat + b$1 * .25 * coat);
-	if (finish < 3.5) return mix$1(hueShift(c, (time * TAU / 6 + d * .22) * coat), [
+	if (finish < 2.5) return add(c, twinkle * .55 * coat + b$1 * .25 * coat);
+	if (finish < 3.5) return mix$1(hueShift(c, (time * TAU / 6 + d * .22 + fract(print * .618) * TAU) * coat), [
 		1,
 		1,
 		1
-	], twinkle$1 * coat);
+	], twinkle * coat);
 	if (finish < 4.5) {
 		const rain = hsv$1([
 			fract(d * .07 - time / 3 + print * .013),
@@ -2514,12 +2816,12 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.28,
 		.12,
 		.45
-	], b$1 * coat)), .07 * Math.sin(time * TAU / 3 + d * .5) * coat);
+	], b$1 * coat)), .07 * Math.sin(time * TAU / 3 + d * .5 + fract(print * .618) * TAU) * coat);
 	return add(add(c, b$1 * .7 * coat), scale([
 		1,
 		.9,
 		.5
-	], twinkle$1 * .6 * coat));
+	], twinkle * .6 * coat));
 }
 /** `holoColor` from GLSL_COMMON: a card's foil pattern for a finish (an index in SHADER_FINISHES), its variant `v` 0–3, at cell `p` round `o`. */
 function holoColor(c, holo, v, p, o, h, time) {
@@ -2599,7 +2901,7 @@ const loopSeconds = (ms) => mod(ms, require_paint.LOOP_MS) / 1e3;
 function shineData(frame, owned = {}) {
 	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
 	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-	const noise = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const noise$1 = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
 	frame.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
 		const i = (y * FRAME_WIDTH + x) * 4;
@@ -2620,13 +2922,13 @@ function shineData(frame, owned = {}) {
 				print,
 				255
 			], i);
-			noise[i] = noiseOf(x, y, print * 4);
+			noise$1[i] = noiseOf(x, y, print * 4);
 		}
 	}));
 	return {
 		colors,
 		info,
-		noise
+		noise: noise$1
 	};
 }
 /** Whether any pixel of the frame belongs to a copy with a finish that shimmers. */
@@ -2636,7 +2938,7 @@ const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) 
 * running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
 */
 function shineFrame(frame, owned, ms) {
-	const { colors, info, noise } = shineData(frame, owned);
+	const { colors, info, noise: noise$1 } = shineData(frame, owned);
 	const out = new Uint8ClampedArray(colors);
 	const time = loopSeconds(ms);
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
@@ -2647,7 +2949,7 @@ function shineFrame(frame, owned, ms) {
 			colors[i] / 255,
 			colors[i + 1] / 255,
 			colors[i + 2] / 255
-		], finish, info[i + 1] / 255, noise[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
+		], finish, info[i + 1] / 255, noise$1[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
 		out[i] = toByte(c[0]);
 		out[i + 1] = toByte(c[1]);
 		out[i + 2] = toByte(c[2]);
@@ -2731,11 +3033,11 @@ function createShine(canvas) {
 	return {
 		canvas: target,
 		draw(frame, owned, ms) {
-			const { colors, info, noise } = shineData(frame, owned);
+			const { colors, info, noise: noise$1 } = shineData(frame, owned);
 			[
 				colors,
 				info,
-				noise
+				noise$1
 			].forEach((bytes, unit) => {
 				gl.activeTexture(gl.TEXTURE0 + unit);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
@@ -5921,6 +6223,12 @@ const EDGE = [
 	255,
 	255
 ];
+/** The club's midnight navy, the aura card's ground. */
+const NIGHT = [
+	17,
+	21,
+	27
+];
 /** Whether a card pixel is inside the rounded card. */
 function inside(x, y, r = 7) {
 	const cx = x < r ? r - x : x > CARD_WIDTH - 1 - r ? x - (CARD_WIDTH - 1 - r) : 0;
@@ -5936,10 +6244,12 @@ const SIDE = 8, LINE = 13;
 * window takes the rest, so the card is mostly him. The rarer the card, the
 * more it does, one smooth effect at a time, as Balatro's editions do: a sheen
 * on the border, foil bands, a holographic face, then a gold card he rises out
-* of, then the night card with stars and a colour-turning edge.
+* of, then the aura card: midnight, its window dark round a soft pool of teal
+* so his aura glows, its edge the grade's teal.
 */
 function drawCard(input, frame, owned, g, t) {
-	const tm = t * 1e3;
+	const lastCopy = input.copies?.[input.copies.length - 1];
+	const tm = t * 1e3 + (lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6e3, 0));
 	const s = new Surface();
 	const gc = g >= 0 ? rgb$2(require_paint.GRADES[g].color) : [
 		120,
@@ -5972,11 +6282,7 @@ function drawCard(input, frame, owned, g, t) {
 	};
 	const night = g === 5, gold = g === 4, soul = g >= 4;
 	const face = (x, y$1) => {
-		if (night) return mix([
-			20,
-			22,
-			40
-		], hsv(require_paint.wrap((x + y$1) / 300 + tm / require_paint.fit(25e3), 1), .4, .5), .22);
+		if (night) return mix(NIGHT, mix(NIGHT, gc, .18), 1 - y$1 / CARD_HEIGHT);
 		if (gold) return mix(mix(CREAM, [
 			255,
 			206,
@@ -6003,7 +6309,7 @@ function drawCard(input, frame, owned, g, t) {
 			236,
 			170
 		], .5 + .5 * Math.sin((x - yy) * .06 + tm / require_paint.wave(1e3 / 2.4)));
-		if (night) border = hsv(require_paint.wrap((x + yy) / 160 + tm / require_paint.fit(1e3 / .12), 1), .55, .98);
+		if (night) border = mix(mix(mix(gc, NIGHT, .45), gc, .5 + .5 * Math.sin((x - yy) * .025)), WHITE, sheen(x, yy) * .5);
 		const rim$1 = !inside(x - 1, yy) || !inside(x + 1, yy) || !inside(x, yy - 1) || !inside(x, yy + 1);
 		s.set(x, yy, rim$1 ? mix(border, [
 			10,
@@ -6012,27 +6318,23 @@ function drawCard(input, frame, owned, g, t) {
 		], .55) : edge ? border : face(x, yy));
 	}
 	const tint = night ? [
-		16,
-		20,
-		38
+		12,
+		15,
+		22
 	] : mix(CREAM, gc, g >= 0 ? .28 : .14);
-	const stars = night ? Array.from({ length: 14 }, (_, k) => [
-		WIN.left + 3 + Math.floor(hash$1(k, 4, 2) * (WIN.right - WIN.left - 6)),
-		WIN.top + 3 + Math.floor(hash$1(k, 5, 2) * (WIN.bottom - WIN.top - 6)),
-		hash$1(k, 6, 2)
-	]) : [];
+	const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * .45;
 	for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
 		const rim$1 = x === WIN.left || x === WIN.right || yy === WIN.top || yy === WIN.bottom;
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top);
-		let c = rim$1 ? night ? [
-			70,
-			86,
-			120
-		] : mix(RIM, gc, .25) : mix(tint, mix(tint, [
+		let c = rim$1 ? night ? mix(gc, NIGHT, .55) : mix(RIM, gc, .25) : mix(tint, mix(tint, [
 			20,
 			24,
 			40
 		], .5), depth * .3);
+		if (!rim$1 && night) {
+			const r = Math.hypot((x - wcx) / 70, (yy - wcy) / 80);
+			c = mix(tint, mix(NIGHT, gc, .22), Math.max(0, 1 - r) ** 2);
+		}
 		if (!rim$1 && g === 2) c = mix(c, [
 			226,
 			238,
@@ -6045,28 +6347,6 @@ function drawCard(input, frame, owned, g, t) {
 			0
 		], (soul ? .12 : .18) * (1 - fx * fx - fy * fy));
 		s.set(x, yy, c);
-	}
-	for (const [x, yy, ph] of stars) {
-		const on = Math.sin(tm / require_paint.wave(1e3 / 2.2) + ph * 20) > .2;
-		s.set(x, yy, on ? [
-			255,
-			255,
-			240
-		] : [
-			120,
-			130,
-			170
-		]);
-		if (on && ph > .6) for (const [dx, dy] of [
-			[1, 0],
-			[-1, 0],
-			[0, 1],
-			[0, -1]
-		]) s.set(x + dx, yy + dy, [
-			150,
-			160,
-			210
-		]);
 	}
 	let topRow = FRAME_HEIGHT, botRow = 0;
 	frame.colors.forEach((row, gy) => {
@@ -6148,7 +6428,11 @@ function drawCard(input, frame, owned, g, t) {
 		96,
 		56,
 		0
-	], .5 + .5 * Math.sin(x * .15 - tm / require_paint.wave(1e3 / 3) + yy * .1)) : night ? hsv(require_paint.wrap(x * .01 - tm / require_paint.fit(4e3), 1), .35, 1) : ink;
+	], .5 + .5 * Math.sin(x * .15 - tm / require_paint.wave(1e3 / 3) + yy * .1)) : night ? mix([
+		226,
+		236,
+		240
+	], mix(gc, WHITE, .35), .5 + .5 * Math.sin(x * .08 - tm / require_paint.wave(1e3 / 1.5))) : ink;
 	titles.forEach((l, k) => s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), titleTop + k * LINE - 1, foil, night ? [
 		8,
 		8,
@@ -6156,7 +6440,7 @@ function drawCard(input, frame, owned, g, t) {
 	] : void 0));
 	if (pill) {
 		const w = textWidth(pill) + 14, x0 = Math.floor((CARD_WIDTH - w) / 2);
-		const fill = night ? hsv(require_paint.wrap(tm / require_paint.fit(1e3 / .12), 1), .45, .85) : g >= 0 ? gc : [
+		const fill = night ? mix(gc, NIGHT, .2) : g >= 0 ? gc : [
 			120,
 			130,
 			150
@@ -6350,7 +6634,7 @@ function cardFace(spec) {
 	const last = copies[copies.length - 1], lastItem = last ? require_paint.itemById(last.item) : void 0;
 	const set = spec.set ?? (lastItem && lastItem.game !== "club" ? lastItem.game : void 0);
 	const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish)) : 0;
-	const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise = new Uint8Array(W * H * 4);
+	const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$1 = new Uint8Array(W * H * 4);
 	const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
 		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
 		base.set([
@@ -6365,27 +6649,36 @@ function cardFace(spec) {
 			Math.round(sc * 255),
 			print
 		], i);
-		noise[i] = noiseOf(x, y, print * 4);
+		noise$1[i] = noiseOf(x, y, print * 4);
 	};
-	const edge = [
-		34,
-		38,
-		58
-	], cream = [
-		242,
-		236,
-		221
-	], rim$1 = [
-		207,
-		199,
-		180
-	];
 	const gc = g >= 0 ? rgb$1(require_paint.GRADES[Math.min(g, require_paint.GRADES.length - 1)].color) : spec.tint ? rgb$1(spec.tint) : [
 		120,
 		140,
 		170
 	];
-	const win = blend(cream, gc, g >= 0 ? .28 : spec.tint ? .3 : .14);
+	const aura = g >= 5, night = [
+		17,
+		21,
+		27
+	];
+	const edge = aura ? blend(gc, night, .35) : [
+		34,
+		38,
+		58
+	], cream = aura ? night : [
+		242,
+		236,
+		221
+	], rim$1 = aura ? blend(gc, night, .6) : [
+		207,
+		199,
+		180
+	];
+	const win = aura ? [
+		12,
+		15,
+		22
+	] : blend(cream, gc, g >= 0 ? .28 : spec.tint ? .3 : .14);
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
 		if (cx + cy < 2) continue;
@@ -6441,7 +6734,7 @@ function cardFace(spec) {
 	return {
 		base,
 		kind,
-		noise,
+		noise: noise$1,
 		grade: g,
 		negative: copies.some((o) => o.finish === "negative"),
 		seed: last ? last.print : 0,
@@ -6489,7 +6782,7 @@ function cardFaceAt(f, ms, hover) {
 			} else if (grade > 2.5 && grade < 3.5) {
 				if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * .18);
 				c = c.map((v) => v + wide * .12);
-			} else if (grade > 3.5) {
+			} else if (grade > 3.5 && grade < 4.5) {
 				if (k < 1.5) c = mix$1(c, [
 					1,
 					.82,
@@ -6500,7 +6793,11 @@ function cardFaceAt(f, ms, hover) {
 					.95,
 					.7
 				], step(.965, fract(h * 13 + time / 3)) * .8);
-			}
+			} else if (grade > 4.5 && k < 1.5) c = mix$1(c, [
+				.62,
+				.96,
+				.92
+			], wide * .45);
 		}
 		if (hover && hover.strength > 0) {
 			const at = [(x + .5) / W, (y + .5) / H];
@@ -6544,7 +6841,8 @@ void main() {
     if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
     else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
     else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
-    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+    else if (grade > 3.5 && grade < 4.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+    else if (grade > 4.5 && k < 1.5) c = mix(c, vec3(0.62, 0.96, 0.92), wide * 0.45);
   }
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
@@ -6712,7 +7010,7 @@ function defineLilGuy(options = {}) {
 	const host = options.host?.replace(/\/+$/, "");
 	const playing = new Set();
 	let ticking = false;
-	const tick = (now) => {
+	const tick$1 = (now) => {
 		ticking = playing.size > 0;
 		if (!ticking) return;
 		for (const p of playing) {
@@ -6730,13 +7028,13 @@ function defineLilGuy(options = {}) {
 				p.el.paint(k);
 			}
 		}
-		requestAnimationFrame(tick);
+		requestAnimationFrame(tick$1);
 	};
 	const play = (p) => {
 		playing.add(p);
 		if (!ticking) {
 			ticking = true;
-			requestAnimationFrame(tick);
+			requestAnimationFrame(tick$1);
 		}
 	};
 	const seen = typeof IntersectionObserver !== "undefined" ? new IntersectionObserver((es) => es.forEach((e) => e.target.visible(e.isIntersecting)), { rootMargin: "100px" }) : null;
@@ -7421,6 +7719,7 @@ exports.shows = require_paint.shows
 exports.slotOf = require_paint.slotOf
 exports.smeltValue = smeltValue
 exports.special = require_paint.special
+exports.squashRows = squashRows
 exports.starter = require_paint.starter
 exports.surfaceOf = surfaceOf
 exports.tallyMarks = require_paint.tallyMarks

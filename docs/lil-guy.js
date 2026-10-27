@@ -753,25 +753,25 @@ const DEAL_4 = {
 	palette: paletteWeights
 };
 function resolve(input, overrides) {
-	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
+	const pick$1 = (slot, weights) => weightedPick(weights, hashNth(input, slot));
 	const deal = dealOf(input);
 	const w = deal === 4 ? DEAL_4 : deal === 3 ? DEAL_3 : DEAL_2;
-	let eyes$1 = overrides?.eyes ?? pick(1, w.eyes);
+	let eyes$1 = overrides?.eyes ?? pick$1(1, w.eyes);
 	if (RETIRED_EYES.includes(eyes$1)) eyes$1 = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
 	return {
-		head: overrides?.head ?? pick(0, w.head),
+		head: overrides?.head ?? pick$1(0, w.head),
 		eyes: eyes$1,
-		mouth: overrides?.mouth ?? pick(2, w.mouth),
-		hair: overrides?.hair ?? pick(3, w.hair),
-		body: overrides?.body ?? pick(4, w.body),
-		accessory: overrides?.accessory ?? pick(5, w.accessory),
-		palette: pick(6, w.palette),
+		mouth: overrides?.mouth ?? pick$1(2, w.mouth),
+		hair: overrides?.hair ?? pick$1(3, w.hair),
+		body: overrides?.body ?? pick$1(4, w.body),
+		accessory: overrides?.accessory ?? pick$1(5, w.accessory),
+		palette: pick$1(6, w.palette),
 		rotation: overrides?.rotation ?? hashNth(input, 7) % 9,
 		flip: overrides?.flip ?? hashNth(input, 8) % 2 === 1,
-		shade: overrides?.shade ?? pick(9, shadeWeights),
-		feet: overrides?.feet ?? pick(10, footWeights),
-		cheeks: overrides?.cheeks ?? pick(11, w.cheeks),
-		arms: overrides?.arms ?? pick(12, armWeights),
+		shade: overrides?.shade ?? pick$1(9, shadeWeights),
+		feet: overrides?.feet ?? pick$1(10, footWeights),
+		cheeks: overrides?.cheeks ?? pick$1(11, w.cheeks),
+		arms: overrides?.arms ?? pick$1(12, armWeights),
 		lucky: overrides?.lucky ?? hashNth(input, 13) % LUCKY_ODDS === 0
 	};
 }
@@ -2122,7 +2122,7 @@ const heart$1 = [[
 	"rrr",
 	".r."
 ], ["r.r", ".r."]].map(stamp);
-const star$2 = [
+const star$1 = [
 	[
 		".y.",
 		"ywy",
@@ -2283,7 +2283,7 @@ const bodies = [
 	{
 		name: "star mark",
 		draw: (c) => {
-			mark(c, star$2);
+			mark(c, star$1);
 		}
 	},
 	{
@@ -2505,13 +2505,13 @@ function rim$1(c, b$1, token, fill) {
 	}
 }
 /** Glasses that fit the eyes: a lens round each, a bridge, and arms to the side of the head. */
-function fittedGlasses(c, frame, glass, glint) {
+function fittedGlasses(c, frame, glass, glint$1) {
 	const f = c.face;
 	if (!f || !f.eyes.length) return;
 	const boxes = f.eyes.map((_, k) => lensBox(c, k));
 	boxes.forEach((b$1) => {
 		rim$1(c, b$1, frame, glass);
-		c.set(b$1.left + 1, b$1.top + 1, glint);
+		c.set(b$1.left + 1, b$1.top + 1, glint$1);
 	});
 	if (boxes.length === 2) for (let x = boxes[0].right + 1; x < boxes[1].left; x++) c.set(x, f.top, frame);
 	const r = c.rows[f.top];
@@ -2525,7 +2525,7 @@ const bowtie = stamp([
 	"aAxxAa",
 	"aa..aa"
 ]);
-const star$1 = stamp([
+const star = stamp([
 	".y.",
 	"yyy",
 	".y."
@@ -2645,11 +2645,11 @@ const accessories = [
 		draw: (c) => {
 			const at = clearSpot(c, 3, 3, 1, c.eyeLine + 1) ?? clearSpot(c, 3, 3);
 			if (at) {
-				c.draw(star$1, at[0], at[1], true);
+				c.draw(star, at[0], at[1], true);
 				return;
 			}
 			const r = c.rows[c.eyeLine - 3];
-			if (r) c.draw(star$1, r.right - 3, c.eyeLine - 4, true);
+			if (r) c.draw(star, r.right - 3, c.eyeLine - 4, true);
 		}
 	},
 	{
@@ -3110,7 +3110,10 @@ var Canvas = class Canvas {
 	*/
 	set(x, y, token) {
 		if (x > 0 && y > 0 && x < GRID_SIZE - 1 && y < GRID_SIZE - 1) this.grid[y][x] = token;
+		else if (token) this.refused++;
 	}
+	/** Pixels `set` turned away at the border: what a part lost off the edge (`hatCut` counts them). */
+	refused = 0;
 	/** First row the bare body covers in this column, or null. */
 	topOf(x) {
 		for (let y = 0; y < GRID_SIZE; y++) if (this.isBody(x, y)) return y;
@@ -3190,24 +3193,71 @@ function elastic(s, d) {
 	return out;
 }
 /**
+* A hat made `d` rows shorter, the way `elastic` makes one narrower: the
+* plainest row, the one most like the row under it, comes out, again and
+* again. The bottom row (the brim, the band, what it stands on) always stays,
+* so a top hat loses a row of its crown and a gem a row of its facets, and
+* neither is ever chopped off at the brim.
+*/
+function squeeze(s, d) {
+	let out = s.map((r) => [...r]);
+	for (let k = 0; k < d && out.length > 1; k++) {
+		const w = width(out), mid = (out.length - 2) / 2;
+		const cost = (y) => {
+			let n = 0;
+			for (let x = 0; x < w; x++) if ((out[y][x] ?? 0) !== (out[y + 1][x] ?? 0)) n++;
+			return n;
+		};
+		let best = 0, bestCost = Infinity;
+		for (let y = 0; y < out.length - 1; y++) {
+			const c = cost(y);
+			if (c < bestCost || c === bestCost && Math.abs(y - mid) < Math.abs(best - mid)) {
+				best = y;
+				bestCost = c;
+			}
+		}
+		out.splice(best, 1);
+	}
+	return out;
+}
+/**
+* A hat fitted to the room above the face: rows 1 to the floor (row 0 is the
+* grid's border, where nothing gets an outline), and 14 columns. Most heads
+* leave four rows, and a hat drawn taller is squeezed to them rather than
+* having the rows that don't fit cut off.
+*/
+const fitRoom = (c, s) => {
+	const room = Math.max(1, c.floor);
+	const tall = s.length > room ? squeeze(s, s.length - room) : s;
+	const over = width(tall) - (GRID_SIZE - 2);
+	return over > 0 ? elastic(tall, -over) : tall;
+};
+/** Seats a small hat on the crown, as `seat` does, once it fits the room (`fitRoom`). */
+const sit = (c, s, dx = 0, sink = 1) => {
+	const fitted$1 = fitRoom(c, s);
+	const x = Math.max(1, Math.min(GRID_SIZE - 1 - width(fitted$1), c.centred(fitted$1) + dx));
+	seat(c, fitted$1, x, sink);
+};
+/**
 * Puts a hat on, fitted to the head the way a cap fits. A hat that rests
 * across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
 * comes down to the forehead line and is stretched to the head's width there,
 * a cell of brim either side, so it sits on a narrow head and a wide one
 * alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+* Either is first fitted to the room above the face (`fitRoom`).
 */
 function wear(c, s, dx, sink) {
-	const last = s.length - 1, bottom = span(s[last]);
-	if (bottom < 8) {
-		seat(c, s, c.centred(s) + dx, sink);
+	if (span(s[s.length - 1]) < 8) {
+		sit(c, s, dx, sink);
 		return;
 	}
+	const tall = fitRoom(c, s), last = tall.length - 1, bottom = span(tall[last]);
 	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
 	const head$1 = r ? r.right - r.left + 1 : 10;
 	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
-	const fitted$1 = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const fitted$1 = elastic(tall, Math.max(-4, Math.min(4, want - bottom, GRID_SIZE - 2 - width(tall))));
 	const y = Math.max(1, c.floor - last);
-	c.draw(fitted$1, c.centred(fitted$1) + dx, y);
+	c.draw(fitted$1, Math.max(1, Math.min(GRID_SIZE - 1 - width(fitted$1), c.centred(fitted$1) + dx)), y);
 	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
 }
 const on = (rows, dx = 0, sink = 1) => {
@@ -3218,18 +3268,28 @@ const onPair = (rows, inset$1 = 0) => {
 	const left = stamp(rows);
 	const right = mirror(left);
 	return (c) => {
-		const r = c.rows[c.shoulder()];
-		seat(c, left, r.left + inset$1);
-		seat(c, right, r.right - inset$1 - width(right) + 1);
+		const r = c.rows[c.shoulder()], l = fitRoom(c, left), rr = fitRoom(c, right);
+		seat(c, l, r.left + inset$1);
+		seat(c, rr, r.right - inset$1 - width(rr) + 1);
 	};
 };
 /**
-* A buddy's drawing: at most 5x5, the corner the guy leaves it (with a
-* pixel round it for its outline). `o` is an eye, in the guy's outline
-* colour, so it stays dark whatever finish the buddy has.
+* The biggest a buddy is drawn: its art, inside the outline compose gives it.
+* It stands in front of the guy in his bottom-right corner (no head leaves
+* room beside him; see `buddySpot` in ./compose), and this is as big as it
+* gets there without coming up to his face.
+*/
+const BUDDY_BOX = {
+	width: 6,
+	height: 5
+};
+/**
+* A buddy's drawing: at most `BUDDY_BOX`, with a pixel round it for its
+* outline. `o` is an eye, in the guy's outline colour, so it stays dark
+* whatever finish the buddy has.
 */
 const pet = (name, rows) => {
-	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
+	if (rows.length > BUDDY_BOX.height || rows.some((r) => r.length > BUDDY_BOX.width)) throw new Error(`Buddy "${name}" must fit in ${BUDDY_BOX.width} across and ${BUDDY_BOX.height} tall`);
 	return stamp(rows);
 };
 
@@ -4227,7 +4287,7 @@ const set$6 = {
 /** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
 const perch = (rows, sink = 1) => {
 	const s = stamp(rows);
-	return (c) => seat(c, s, c.centred(s), sink);
+	return (c) => sit(c, s, 0, sink);
 };
 /**
 * Flipsies's machine: the things you flip (a water bottle, a soup can, a
@@ -6598,6 +6658,93 @@ function fitLoop(duration) {
 }
 
 //#endregion
+//#region src/sparkle.ts
+const DOT_DEEP = [[
+	0,
+	0,
+	2
+]];
+const DOT = [[
+	0,
+	0,
+	1
+]];
+const CROSS = [
+	[
+		0,
+		0,
+		0
+	],
+	[
+		-1,
+		0,
+		1
+	],
+	[
+		1,
+		0,
+		1
+	],
+	[
+		0,
+		-1,
+		1
+	],
+	[
+		0,
+		1,
+		1
+	]
+];
+const GLINT = [
+	[
+		0,
+		0,
+		0
+	],
+	[
+		-1,
+		-1,
+		2
+	],
+	[
+		1,
+		1,
+		2
+	],
+	[
+		1,
+		-1,
+		2
+	],
+	[
+		-1,
+		1,
+		2
+	]
+];
+/**
+* The sparkle `f` of the way through its life (0 to 1), as cells round its
+* centre. Outside 0 to 1 it isn't there.
+*/
+function sparkleAt(f) {
+	if (f < 0 || f >= 1) return [];
+	return f < .16 ? DOT_DEEP : f < .32 ? DOT : f < .6 ? CROSS : f < .78 ? GLINT : f < .9 ? DOT : DOT_DEEP;
+}
+/** The room a sparkle needs at its biggest: its centre and the cells beside and across from it. */
+const SPARKLE_REACH = [
+	[0, 0],
+	[-1, 0],
+	[1, 0],
+	[0, -1],
+	[0, 1],
+	[-1, -1],
+	[1, 1],
+	[1, -1],
+	[-1, 1]
+];
+
+//#endregion
 //#region src/auras.ts
 /**
 * Auras: the top of the ladder, above a Grail. An aura is an effect drawn in
@@ -6613,7 +6760,7 @@ function fitLoop(duration) {
 /** One capsule in this many is an aura. */
 const AURA_ODDS = 1 / 1e3;
 /** A well-mixed number in [0, 1) from integers. */
-function noise$1(...n) {
+function noise$2(...n) {
 	let h = 2654435769;
 	for (const v of n) {
 		h = Math.imul(h ^ v, 2246822507);
@@ -6704,7 +6851,7 @@ const AURAS = [
 			const s = shape(mask), step$1 = tick(t, 110) + print, out = [];
 			s.tops.forEach((top, x) => {
 				if (top < 0) return;
-				const tall = 1 + Math.floor(noise$1(x, step$1) * 3.2);
+				const tall = 1 + Math.floor(noise$2(x, step$1) * 3.2);
 				for (let k = 1; k <= tall; k++) out.push([
 					x,
 					top - k,
@@ -6713,7 +6860,7 @@ const AURAS = [
 			});
 			mask.forEach((row, y) => row.forEach((on$1, x) => {
 				if (on$1) {
-					for (const dx of [-1, 1]) if (!row[x + dx] && noise$1(x + dx, y, step$1) > .86) out.push([
+					for (const dx of [-1, 1]) if (!row[x + dx] && noise$2(x + dx, y, step$1) > .86) out.push([
 						x + dx,
 						y - 1,
 						1
@@ -6751,11 +6898,11 @@ const AURAS = [
 		],
 		still: 0,
 		cells: (mask, t, print) => {
-			const s = shape(mask), y = Math.max(1, s.top - 2 - Math.floor((t + print * 7) / steps(400, 2)) % 2), x0 = Math.round(s.cx) - 3, glint = Math.floor(t / steps(160, 8)) % 8, out = [];
+			const s = shape(mask), y = Math.max(1, s.top - 2 - Math.floor((t + print * 7) / steps(400, 2)) % 2), x0 = Math.round(s.cx) - 3, glint$1 = Math.floor(t / steps(160, 8)) % 8, out = [];
 			for (let x = x0; x <= x0 + 7; x++) out.push([
 				x,
 				y,
-				x - x0 === glint || x - x0 === glint + 1 ? 0 : 1
+				x - x0 === glint$1 || x - x0 === glint$1 + 1 ? 0 : 1
 			]);
 			for (let x = x0 + 1; x <= x0 + 6; x++) out.push([
 				x,
@@ -6778,12 +6925,8 @@ const AURAS = [
 			const near = ring(mask, 3), out = [];
 			for (let i = 0; i < 5; i++) {
 				const at = t + i * 173 + print * 11, life = tick(at, 520), phase = cycle(at, 520);
-				const [x, y] = near[Math.floor(noise$1(i, life, print) * near.length)] ?? [0, 0];
-				out.push(...phase < .35 || phase > .85 ? [[
-					x,
-					y,
-					0
-				]] : plus(x, y, phase < .6 ? 1 : 2));
+				const [x, y] = near[Math.floor(noise$2(i, life, print) * near.length)] ?? [0, 0];
+				out.push(...glint(x, y, phase));
 			}
 			return out;
 		}
@@ -7023,7 +7166,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 12; i++) {
-				const fall = wrap(Math.floor((t + i * 311 + print * 7) / steps(170, s.h)), s.h), x = wrap(Math.round(noise$1(i, print) * s.w + Math.sin((t + i * 400) / wave(600)) * 1.2), s.w);
+				const fall = wrap(Math.floor((t + i * 311 + print * 7) / steps(170, s.h)), s.h), x = wrap(Math.round(noise$2(i, print) * s.w + Math.sin((t + i * 400) / wave(600)) * 1.2), s.w);
 				out.push([
 					x,
 					fall,
@@ -7047,7 +7190,7 @@ const AURAS = [
 			for (let i = 0; i < 8; i++) {
 				const fallN = s.h + 2, at = Math.floor((t + i * 377 + print * 5) / steps(150, fallN)), step$1 = wrap(at, fallN), y = step$1 - 1;
 				const gen = wrap(Math.floor(at / fallN), Math.round(LOOP_MS / (steps(150, fallN) * fallN)));
-				const x = wrap(Math.round(noise$1(i, print, gen) * s.w) - Math.floor(step$1 / 2), s.w);
+				const x = wrap(Math.round(noise$2(i, print, gen) * s.w) - Math.floor(step$1 / 2), s.w);
 				out.push([
 					x,
 					y,
@@ -7120,12 +7263,8 @@ const AURAS = [
 			const far = ring(mask, 4).filter(([, , d]) => d >= 3);
 			for (let i = 0; i < 4; i++) {
 				const life = fit(900), at = t + i * (life / 4) + print * 31, gen = tick(at, 900), f = cycle(at, 900);
-				const [x, y] = far[Math.floor(noise$1(i, gen, print, 23) * far.length)] ?? [0, 0];
-				if (f < .75) out.push(...f > .2 && f < .55 ? plus(x, y, 1) : [[
-					x,
-					y,
-					0
-				]]);
+				const [x, y] = far[Math.floor(noise$2(i, gen, print, 23) * far.length)] ?? [0, 0];
+				if (f < .75) out.push(...glint(x, y, f / .75));
 			}
 			return out;
 		}
@@ -7145,7 +7284,7 @@ const AURAS = [
 		still: 0,
 		cells: (mask, t, print) => {
 			const s = shape(mask), cx = s.w / 2 - .5, cy = s.cy + 2, top = Math.max(0, s.top - 4), out = [];
-			const glint = wrap(Math.floor((t + print * 40) / steps(70, 40)), 40) - 6;
+			const glint$1 = wrap(Math.floor((t + print * 40) / steps(70, 40)), 40) - 6;
 			for (let y = top; y < cy; y++) for (let x = 0; x < s.w; x++) {
 				const d = Math.hypot((x - cx) / (s.w / 2), (y - cy) / (cy - top));
 				if (d < .74 || d > 1) continue;
@@ -7154,7 +7293,7 @@ const AURAS = [
 				out.push([
 					x,
 					y,
-					Math.abs(along - glint) <= 1 && band$1 % 2 === 0 ? 6 : band$1
+					Math.abs(along - glint$1) <= 1 && band$1 % 2 === 0 ? 6 : band$1
 				]);
 			}
 			for (const fx of [0, s.w - 3]) for (const [dx, dy] of [
@@ -7182,8 +7321,8 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const step$1 = tick(t + print * 13, 120), out = [];
 			mask.forEach((row, y) => {
-				if (noise$1(y, step$1, print) < .55) return;
-				const shove = noise$1(y, step$1, 2) < .5 ? 1 : 2;
+				if (noise$2(y, step$1, print) < .55) return;
+				const shove = noise$2(y, step$1, 2) < .5 ? 1 : 2;
 				row.forEach((on$1, x) => {
 					if (!on$1) return;
 					if (!row[x - 1]) out.push([
@@ -7213,7 +7352,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const near = ring(mask, 3), out = [];
 			for (let i = 0; i < 8; i++) {
-				const [ax, ay] = near[Math.floor(noise$1(i, print, 3) * near.length)] ?? [0, 0];
+				const [ax, ay] = near[Math.floor(noise$2(i, print, 3) * near.length)] ?? [0, 0];
 				const x = ax + Math.round(Math.sin(t / wave(700) + i * 1.7) * 1.5), y = ay + Math.round(Math.cos(t / wave(900) + i * 2.3));
 				const phase = cycle(t + i * 397 + print * 29, 1600);
 				if (phase > .65) continue;
@@ -7230,26 +7369,33 @@ const AURAS = [
 		id: "aura.neon",
 		name: "Neon",
 		colors: [
-			"#FFFFFF",
-			"#FF4FD8",
-			"#B23CE0"
+			"#FFE3F4",
+			"#FF3FA4",
+			"#8A1F62"
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask);
-			const tube = ring(mask, 1).map(([x, y]) => [
-				x,
-				y,
-				Math.atan2(y - s.cy, x - s.cx)
-			]).sort((a, b$1) => a[2] - b$1[2]);
-			const n = tube.length, hot = wrap(Math.floor((t + print * 17) / steps(60, n)), n), breath = Math.sin((t + print * 11) / wave(420)) > 0;
-			return tube.map(([x, y], i) => {
-				const d = Math.min(wrap(i - hot, n), wrap(hot - i, n));
-				return [
+			const s = shape(mask), beat = tick(t + print * 53, 90), n = Math.round(LOOP_MS / fit(90));
+			const since = Math.min(...[1, 2].map((k) => wrap(beat - Math.floor(noise$2(print, k) * n), n)));
+			const off = since === 2 || since === 4, dim = since <= 5 && !off;
+			const stretch = Math.floor(noise$2(print, 3) * 4);
+			return ring(mask, 2).flatMap(([x, y, d]) => {
+				if (off) return d === 1 ? [[
 					x,
 					y,
-					d <= 1 ? 0 : breath ? 1 : 2
-				];
+					2
+				]] : [];
+				const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU$1 + .5, 1) * 4);
+				if (dim && quarter === stretch) return d === 1 ? [[
+					x,
+					y,
+					1
+				]] : [];
+				return [[
+					x,
+					y,
+					d === 1 ? 0 : 1
+				]];
 			});
 		}
 	},
@@ -7404,7 +7550,7 @@ const AURAS = [
 				}
 			}
 			for (let i = 0; i < 2; i++) {
-				const x = Math.floor(noise$1(i, print, 41) * s.w);
+				const x = Math.floor(noise$2(i, print, 41) * s.w);
 				if (Math.sin(t / wave(240) + i * 2.1) > .3) out.push([
 					x,
 					0,
@@ -7426,11 +7572,11 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let x = 0; x < s.w; x++) {
-				if (noise$1(x, print, 11) < .15) continue;
-				const speed = 40 + Math.floor(noise$1(x, print, 12) * 50), len = 6 + Math.floor(noise$1(x, print, 13) * 4);
-				const head$1 = wrap(Math.floor((t + noise$1(x, print) * 3e3) / steps(speed, s.h + len + 2)), s.h + len + 2) - 1;
+				if (noise$2(x, print, 11) < .15) continue;
+				const speed = 40 + Math.floor(noise$2(x, print, 12) * 50), len = 6 + Math.floor(noise$2(x, print, 13) * 4);
+				const head$1 = wrap(Math.floor((t + noise$2(x, print) * 3e3) / steps(speed, s.h + len + 2)), s.h + len + 2) - 1;
 				for (let j = 0; j < len; j++) {
-					const glyph$1 = noise$1(x, head$1 - j, tick(t, 160)) > .82;
+					const glyph$1 = noise$2(x, head$1 - j, tick(t, 160)) > .82;
 					out.push([
 						x,
 						head$1 - j,
@@ -7477,7 +7623,7 @@ const AURAS = [
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
 				const cycle$1 = fit(1500), local = wrap(t + i * 750 + print * 37, cycle$1), shot = tick(t + i * 750 + print * 37, 1500);
-				const cx = i ? s.w - 3 - Math.floor(noise$1(shot, i) * 2) : 2 + Math.floor(noise$1(shot, i) * 2), cy = 2 + Math.floor(noise$1(shot, i, 2) * 3), p = local / cycle$1;
+				const cx = i ? s.w - 3 - Math.floor(noise$2(shot, i) * 2) : 2 + Math.floor(noise$2(shot, i) * 2), cy = 2 + Math.floor(noise$2(shot, i, 2) * 3), p = local / cycle$1;
 				if (p < .2) {
 					const y = Math.round(cy + (1 - p / .2) * 6);
 					out.push([
@@ -7549,7 +7695,7 @@ const AURAS = [
 					out.push([
 						x,
 						y,
-						k === 1 && noise$1(x, y, tick(t, 400)) > .86 ? 0 : k
+						k === 1 && noise$2(x, y, tick(t, 400)) > .86 ? 0 : k
 					]);
 				}
 			}
@@ -7632,64 +7778,35 @@ const orb = (x, y) => [
 		2
 	]
 ];
-/** A four-point sparkle, two cells each way: a white heart, bright arms, deep tips. */
-const star = (x, y) => [
-	...plus(x, y, 1),
-	[
-		x - 2,
-		y,
-		2
-	],
-	[
-		x + 2,
-		y,
-		2
-	],
-	[
-		x,
-		y - 2,
-		2
-	],
-	[
-		x,
-		y + 2,
-		2
-	]
-];
-/** A twinkle that opens and closes: a dot, a cross, a sparkle, a cross, a dot. */
-function twinkle$1(x, y, f, big) {
-	if (f < .18 || f > .82) return [[
-		x,
-		y,
-		1
-	]];
-	if (big && f > .38 && f < .62) return star(x, y);
-	return plus(x, y, 1);
-}
+/** A sparkle (./sparkle) as aura cells: its heart, arms and edges are the aura's colours 0, 1 and 2. */
+const glint = (x, y, f) => sparkleAt(f).map(([dx, dy, k]) => [
+	x + dx,
+	y + dy,
+	k
+]);
 /**
 * What a rarer aura adds round the guy, in chunky pieces at his own pixel
 * size (no thin lines: a one-pixel line reads as drawn, not as pixel art):
-* twinkles that open into crosses (1), two orbs circling him (2), sparkles
-* opening on the other side (3), more of both and bigger (4, and Origin's
-* 5). Pieces may sit past the
-* frame's sides when `mask` is padded, so a card shows them whole.
+* a sparkle opening now and then a few cells out (1), two orbs circling him
+* (2), more of both (3, 4, and Origin's 5). Pieces may sit past the frame's
+* sides when `mask` is padded, so a card shows them whole.
 */
 function extras(mask, t, print, level) {
 	if (level <= 0) return [];
-	const s = shape(mask), out = [], phase = noise$1(print, 3);
-	const gy = Math.min(2, s.top), inner = loop(s, 3, gy), outer = loop(s, 5, gy + 1);
-	const twinkles = [
+	const s = shape(mask), out = [], phase = noise$2(print, 3);
+	const gy = Math.min(2, s.top), inner = loop(s, 3, gy), near = loop(s, 4, gy);
+	const runs$1 = [
 		0,
+		1,
+		1,
 		2,
 		2,
-		3,
-		4,
-		4
-	][level], life = fit(1100);
-	for (let i = 0; i < twinkles; i++) {
-		const at = t + i * life / twinkles + print * 29, gen = tick(at, 1100), f = cycle(at, 1100);
-		const [x, y] = outer[Math.floor(noise$1(i, gen, print, 41) * outer.length)];
-		out.push(...twinkle$1(x, y, f, level >= 3));
+		3
+	][level], life = fit(1300);
+	for (let i = 0; i < runs$1; i++) {
+		const at = t + i * life / runs$1 + print * 29, gen = tick(at, 1300), f = cycle(at, 1300) / .55;
+		const [x, y] = near[Math.floor(noise$2(i, gen, print, 41) * near.length)];
+		if (f < 1) out.push(...glint(x, y, f));
 	}
 	const orbs = [
 		0,
@@ -7702,19 +7819,6 @@ function extras(mask, t, print, level) {
 	for (let i = 0; i < orbs; i++) {
 		const n = inner.length, [x, y] = inner[wrap(Math.floor(t / steps(26, n)) + Math.round(i * n / orbs + phase * n), n)];
 		out.push(...orb(x - 1, y - 1));
-	}
-	const sparks = [
-		0,
-		0,
-		0,
-		2,
-		3,
-		3
-	][level];
-	for (let i = 0; i < sparks; i++) {
-		const n = outer.length, [x, y] = outer[wrap(-Math.floor(t / steps(34, n)) + Math.round(i * n / sparks + phase * n * 2), n)];
-		const open = wrap(t / fit(600) + i * .37, 1) < .5;
-		out.push(...open ? star(x, y) : plus(x, y, 1));
 	}
 	return out;
 }
@@ -7748,7 +7852,7 @@ function auraCells(id, mask, t, copy, pad = 0) {
 	]).filter(([x, y]) => {
 		if (x < -pad || y < 0 || x >= w + pad || y >= h || mask[y]?.[x] || seen.has(y * (w + 2 * pad) + x + pad)) return false;
 		seen.add(y * (w + 2 * pad) + x + pad);
-		return noise$1(x, y, step$1, print, 7) >= scuff * .45;
+		return noise$2(x, y, step$1, print, 7) >= scuff * .45;
 	});
 }
 /** Each aura finish's three colours, brightest first; Classic keeps the aura's own. */
@@ -7789,6 +7893,51 @@ const FADE = [
 	"#FF6FB5",
 	"#7C5CFF"
 ];
+/**
+* Neon is one colour a copy: the finish's own (Frost ice blue, Toxic acid
+* green and so on), or for Classic, Fade and Black pearl one the print deals
+* from a sign maker's tubes. Its core, its colour, and the bare glass when it
+* flickers off.
+*/
+const NEON_TUBES = {
+	classic: [
+		"#FF3FA4",
+		"#2FD9FF",
+		"#FF5A3C",
+		"#B45CFF",
+		"#3DFF8F",
+		"#FFC23A"
+	],
+	fade: [
+		"#FF6A4D",
+		"#FF4F9A",
+		"#FFB23A"
+	],
+	frost: ["#7FD8FF"],
+	toxic: ["#9DFF3A"],
+	shadow: ["#9A6BFF"],
+	sapphire: ["#3D7BFF"],
+	ruby: ["#FF2D55"],
+	pearl: [
+		"#C9A2FF",
+		"#FF9EC9",
+		"#7FF5D2"
+	]
+};
+function neonRamp(finish, print) {
+	const tubes = NEON_TUBES[finish] ?? NEON_TUBES.classic, c = tubes[print % tubes.length];
+	const rgb$7 = [
+		1,
+		3,
+		5
+	].map((i) => parseInt(c.slice(i, i + 2), 16));
+	const to = (target, a) => "#" + rgb$7.map((v) => Math.round(v + (target - v) * a).toString(16).padStart(2, "0")).join("").toUpperCase();
+	return [
+		to(255, .35),
+		to(15, .38),
+		to(25, .72)
+	];
+}
 const hsl = (h, s, l) => {
 	const f = (n) => {
 		const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -7800,9 +7949,10 @@ const hsl = (h, s, l) => {
 * The colour of one aura cell in a finish. Fade runs its sunset down the aura
 * and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
 */
-function auraColor(id, k, finish, x, y, t) {
+function auraColor(id, k, finish, x, y, t, print = 0) {
 	const aura = auraById(id);
 	if (!aura) return "#FFFFFF";
+	if (id === "aura.neon") return neonRamp(finish, print)[Math.min(2, k)];
 	const sweep = wrap(x + y * .7 - t / steps(55, 26), 26) < 1.6;
 	if (ONE_OF_ONE_AURAS.includes(aura)) {
 		if (sweep) return hsl(wrap((x + y) * 18 + t * 360 / fit(2160), 360), .9, .78);
@@ -7814,10 +7964,10 @@ function auraColor(id, k, finish, x, y, t) {
 	}
 	const ramp = RAMPS[finish];
 	if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-	if (finish === "pearl") return hsl(wrap((x + y) * 14 + t * 360 / fit(3240), 360), .62, sweep ? .92 : [
+	if (finish === "pearl") return hsl(wrap(275 + 55 * Math.sin((x + y) * .35 + t / wave(520)), 360), .5, sweep ? .93 : [
 		.86,
 		.76,
-		.68
+		.66
 	][Math.min(2, k % 3)]);
 	if (sweep && (finish === "sapphire" || finish === "ruby")) return ramp[0];
 	return ramp[Math.min(2, k % 3)];
@@ -7931,7 +8081,7 @@ const WHITE$1 = [
 	255,
 	255
 ];
-function noise(...n) {
+function noise$1(...n) {
 	let h = 2654435769;
 	for (const v of n) {
 		h = Math.imul(h ^ v, 2246822507);
@@ -7966,7 +8116,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 					255
 				], .75));
 			}
-			return noise(x, y, tick(tt, 140)) > .94 ? "#FFFFFF" : color;
+			return noise$1(x, y, tick(tt, 140)) > .94 ? "#FFFFFF" : color;
 		}
 		case "pulse": {
 			const b$1 = Math.sin(tt / wave(260));
@@ -7991,7 +8141,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				70,
 				220
 			], .16 * (1 + Math.sin(tt / wave(700) + x * .5 + y * .3)));
-			return noise(x, y, print) > .93 ? hex$2(mix$6(night, [
+			return noise$1(x, y, print) > .93 ? hex$2(mix$6(night, [
 				210,
 				200,
 				255
@@ -8015,7 +8165,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		], .14 + .08 * Math.sin(tt / wave(400) + x * .5)));
 		case "rime": {
 			const reach = .5 + .5 * Math.sin(tt / wave(900) - y * .35);
-			const n = noise(x, y, tick(tt, 400), print);
+			const n = noise$1(x, y, tick(tt, 400), print);
 			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
 			return hex$2(mix$6(c, [
 				190,
@@ -8024,9 +8174,9 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			], .3 + .5 * reach));
 		}
 		case "static": {
-			const roll$1 = cycle(tt, 70 * 24) * 24 - 4, burst = noise(tick(tt, 90), print, 7) > .62;
+			const roll$1 = cycle(tt, 70 * 24) * 24 - 4, burst = noise$1(tick(tt, 90), print, 7) > .62;
 			if (burst) {
-				const r = noise(x, y, tick(tt, 60));
+				const r = noise$1(x, y, tick(tt, 60));
 				return r > .8 ? "#FFFFFF" : hex$2(mix$6(c, r > .45 ? [
 					255,
 					60,
@@ -8066,7 +8216,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			], .6)) : hex$2(crust);
 		}
 		case "electric": {
-			const flash = noise(tick(tt, 120), print, 11) > .8;
+			const flash = noise$1(tick(tt, 120), print, 11) > .8;
 			if (flash) return hex$2(mix$6(c, WHITE$1, .7));
 			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / wave(90))) > .93;
 			return vein ? hex$2(mix$6(c, [
@@ -8439,7 +8589,7 @@ function applyFx(colors, slots, copies, t) {
 		slots.forEach((row, y) => row.forEach((s, x) => {
 			if (s || colors[y][x]) return;
 			const from = NEAR2.find(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1);
-			if (!from || noise(x, y, beat, o.print, 17) > .4) return;
+			if (!from || noise$1(x, y, beat, o.print, 17) > .4) return;
 			out[y][x] = hex$2(mix$6(rgb$6(out[y + from[1]][x + from[0]]), WHITE$1, .15));
 		}));
 	});
@@ -8499,8 +8649,8 @@ function applyFx(colors, slots, copies, t) {
 			if (s === k + 1 && colors[y][x] && !tops.has(x)) tops.set(x, y);
 		}));
 		for (const [x, top] of tops) {
-			if (noise(x, o.print, 5) > share$1) continue;
-			const step$1 = wrap$1(Math.floor((t + noise(x, o.print) * 4e3) / steps(spacing, rise + 3)), rise + 3);
+			if (noise$1(x, o.print, 5) > share$1) continue;
+			const step$1 = wrap$1(Math.floor((t + noise$1(x, o.print) * 4e3) / steps(spacing, rise + 3)), rise + 3);
 			if (step$1 < rise) draw(x + (Math.floor(step$1 / 2) % 2 ? 1 : 0), top - 1 - step$1, step$1);
 		}
 	};
@@ -8531,22 +8681,22 @@ function applyFx(colors, slots, copies, t) {
 			for (const [key, d] of depth(k)) {
 				const x = key % W, y = Math.floor(key / W);
 				if (d > reach) continue;
-				const glint = noise(x, y, tick(tt, 300), o.print) > .82;
-				out[y][x] = glint ? "#FFFFFF" : hex$2(mix$6(rgb$6(out[y][x]), [
+				const glint$1 = noise$1(x, y, tick(tt, 300), o.print) > .82;
+				out[y][x] = glint$1 ? "#FFFFFF" : hex$2(mix$6(rgb$6(out[y][x]), [
 					214,
 					240,
 					255
 				], aura ? .5 : d <= 1 ? .85 : .6));
 			}
 			if (!aura) {
-				for (const [x, y] of edgeOf(k)) if (noise(x, y, tick(tt, 300), 3) > .7 && out[y][x] && dark(colors[y][x] ?? "#000000")) out[y][x] = "#BFE6FF";
+				for (const [x, y] of edgeOf(k)) if (noise$1(x, y, tick(tt, 300), 3) > .7 && out[y][x] && dark(colors[y][x] ?? "#000000")) out[y][x] = "#BFE6FF";
 			}
 		}
 		if (o.fx === "starlight") {
 			const deep = depth(k), inner = [...deep].filter(([, d]) => d >= 2).map(([key]) => key);
 			for (let i = 0; i < 3 && inner.length; i++) {
 				const at = tt + i * 333, gen = tick(at, 1e3), f = cycle(at, 1e3);
-				const key = inner[Math.floor(noise(i, gen, o.print, 9) * inner.length)], x = key % W, y = Math.floor(key / W);
+				const key = inner[Math.floor(noise$1(i, gen, o.print, 9) * inner.length)], x = key % W, y = Math.floor(key / W);
 				if (f > .8) continue;
 				out[y][x] = "#FFFFFF";
 				if (f > .25 && f < .6) {
@@ -8568,11 +8718,11 @@ function applyFx(colors, slots, copies, t) {
 		}
 		if (o.fx === "electric") {
 			const beat = tick(tt, 90);
-			if (noise(beat, o.print, 13) > .45) {
+			if (noise$1(beat, o.print, 13) > .45) {
 				const rim$2 = edgeOf(k);
 				for (let b$1 = 0; b$1 < (aura ? 1 : 2) && rim$2.length; b$1++) {
-					let [x, y] = rim$2[Math.floor(noise(beat, b$1, o.print) * rim$2.length)];
-					const sx = noise(beat, b$1, 2) > .5 ? 1 : -1;
+					let [x, y] = rim$2[Math.floor(noise$1(beat, b$1, o.print) * rim$2.length)];
+					const sx = noise$1(beat, b$1, 2) > .5 ? 1 : -1;
 					for (let j = 0; j < 4; j++) {
 						if (j && !empty$1(x, y)) break;
 						if (j) out[y][x] = j < 2 ? "#FFFFFF" : "#7FE8FF";
@@ -8646,13 +8796,13 @@ function applyFx(colors, slots, copies, t) {
 			for (let i = 0; i < 3 && spots.length; i++) {
 				const at = tt + i * life / 3, gen = tick(at, 1200), f = cycle(at, 1200);
 				if (f > .85) continue;
-				const [x, y] = spots[Math.floor(noise(i, gen, o.print, 51) * spots.length)], sg = signature(o.fx, f, tt, i);
+				const [x, y] = spots[Math.floor(noise$1(i, gen, o.print, 51) * spots.length)], sg = signature(o.fx, f, tt, i);
 				const dy = -Math.round(f * sg.rise);
 				for (const [cx, cy, c] of sg.cells) put(x + cx, y + cy + dy, c);
 			}
 		}
-		if (o.fx === "static" && noise(tick(tt, 90), o.print, 7) > .6) {
-			const yy = Math.floor(noise(tick(tt, 90), o.print, 9) * H), dir = noise(tick(tt, 90), 1) > .5 ? 1 : -1;
+		if (o.fx === "static" && noise$1(tick(tt, 90), o.print, 7) > .6) {
+			const yy = Math.floor(noise$1(tick(tt, 90), o.print, 9) * H), dir = noise$1(tick(tt, 90), 1) > .5 ? 1 : -1;
 			for (const r of [yy, yy + 1]) {
 				if (r >= H) continue;
 				const row = out[r], copy = [...row];
@@ -14298,7 +14448,7 @@ function composeBase(config) {
 * A four-point twinkle in a corner the guy leaves empty: the mark of a Gold
 * finish. Top right first, then top left.
 */
-function sparkle(grid) {
+function sparkle$1(grid) {
 	for (const [x, y] of [[13, 2], [2, 2]]) {
 		const cells = [
 			[x, y],
@@ -14382,6 +14532,73 @@ function clearFace(c, face, bare, worn) {
 	}
 }
 /**
+* Where a buddy stands, on a picture whose cells `taken` marks as his (in any
+* frame of any move: `roomFor` grows the still to cover them). It stands on
+* the floor, right then left, as close to its corner as it can while a clear
+* pixel, diagonals included, runs between its outline and him.
+*
+* Where there is no such spot, it stands in front of him in the bottom-right
+* corner, as it always has, with its own outline, leaving out any pixel that
+* would touch his eyes or mouth (`face`). That is every head and skin there is
+* today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
+* needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
+* only comes true on a picture wider than his own.
+*/
+function buddySpot(art, taken, face = () => false) {
+	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
+	const at = (x0, y0$1) => {
+		const cells = [];
+		const on$1 = (x, y) => (art[y - y0$1]?.[x - x0] ?? 0) !== 0;
+		for (let y = y0$1 - 1; y <= y0$1 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) if (on$1(x, y)) cells.push([
+			x,
+			y,
+			art[y - y0$1][x - x0]
+		]);
+		else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) cells.push([
+			x,
+			y,
+			T.OUTLINE
+		]);
+		return cells;
+	};
+	const clear = (cells) => cells.every(([x, y]) => {
+		if (x < 0 || y < 0 || x >= W || y >= H) return false;
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (taken[y + dy]?.[x + dx]) return false;
+		return true;
+	});
+	const y0 = H - 1 - h;
+	for (let k = 0; k + w + 2 <= W; k++) for (const x0 of [W - 1 - w - k, 1 + k]) {
+		const cells = at(x0, y0);
+		if (clear(cells)) return {
+			cells,
+			apart: true
+		};
+	}
+	const corner = at(W - 1 - w, y0).filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && !face(x, y));
+	return {
+		cells: corner,
+		apart: false
+	};
+}
+/**
+* The cells a guy may cover in any frame of any move, from his still: an arm
+* out at either side and a step sideways (two columns), down two rows where a
+* squash lowers him, and turned round in his sixteen columns. A buddy stays
+* on the floor (./animate), so this is all it has to keep clear of.
+*/
+function roomFor(still) {
+	const H = still.length, W = still[0].length;
+	const out = still.map((row) => row.map(() => false));
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		if (!still[y][x] && !(x < GRID_SIZE && still[y][GRID_SIZE - 1 - x])) continue;
+		for (let dy = 0; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+			const yy = y + dy, xx = x + dx;
+			if (yy < H && xx >= 0 && xx < W) out[yy][xx] = true;
+		}
+	}
+	return out;
+}
+/**
 * Composes every part into one 16x16 grid of colour tokens.
 *
 * The order matters and is the same for every guy: the lit body and its
@@ -14391,6 +14608,19 @@ function clearFace(c, face, bare, worn) {
 * drawn around the finished shape so hats, ears and arms all get one too.
 */
 function compose(config) {
+	return build(config);
+}
+/**
+* The buddy a guy wears, where it stands in his still (`cells`, art in its
+* own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
+* ./animate can stand it on the floor while he moves.
+*/
+function buddyOf(config) {
+	const report = { hatCut: 0 };
+	build(config, report);
+	return report.buddy;
+}
+function build(config, report) {
 	const skin = skinOf(config);
 	const hat$1 = itemById(config.hat);
 	const frame = itemById(config.frame);
@@ -14418,17 +14648,24 @@ function compose(config) {
 				canvas: c.clone(),
 				dome: []
 			};
-			draw(canvas.forHats());
+			const view = canvas.forHats();
+			view.refused = 0;
+			draw(view);
+			let cut = view.refused;
 			const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
 			for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
-			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
-			let shown = 0;
+			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) {
+				canvas.grid[y][x] = before[y][x];
+				cut++;
+			}
+			let shown$1 = 0;
 			canvas.grid.forEach((row, y) => row.forEach((v, x) => {
-				if (v !== before[y][x]) shown++;
+				if (v !== before[y][x]) shown$1++;
 			}));
 			return {
 				grid: canvas.grid,
-				shown,
+				shown: shown$1,
+				cut,
 				cap: dome.length > 0 && wrapped * 2 >= dome.length
 			};
 		};
@@ -14440,9 +14677,11 @@ function compose(config) {
 		best.grid.forEach((row, y) => row.forEach((v, x) => {
 			c.grid[y][x] = v;
 		}));
+		return best.cut;
 	};
 	if (hat$1?.slot === "hat") {
-		onTop((cv) => hat$1.draw(cv));
+		const cut = onTop((cv) => hat$1.draw(cv));
+		if (report) report.hatCut = cut;
 		claim(c.grid, LAYER.hat);
 		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
 			const t = c.grid[y][x], below = c.grid[y + 1][x];
@@ -14470,7 +14709,10 @@ function compose(config) {
 	outline(c.grid);
 	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 	if (config.flip) for (const row of c.grid) row.reverse();
-	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
+	const buddy = itemById(config.buddy);
+	const shown = new Set([...face].map((k) => config.flip ? k - k % GRID_SIZE + GRID_SIZE - 1 - k % GRID_SIZE : k));
+	const spot = buddy?.slot === "buddy" ? buddySpot(buddy.art, roomFor(c.grid.map((row) => row.map(Boolean))), (x, y) => touches(shown, x, y)) : void 0;
+	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle$1(c.grid);
 	const aura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	if (aura) {
 		const mask = c.grid.map((row) => row.map(Boolean));
@@ -14484,19 +14726,12 @@ function compose(config) {
 			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
 		}
 	}
-	const buddy = itemById(config.buddy);
-	if (buddy?.slot === "buddy") {
-		const art = buddy.art, h = art.length, w = Math.max(...art.map((r) => r.length));
-		const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
-		const on$1 = (x, y) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
-		for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
-			if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
-			if (touches(face, x, y)) continue;
-			if (on$1(x, y)) {
-				const t = art[y - y0][x - x0];
-				c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
-			} else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) c.grid[y][x] = T.OUTLINE;
-		}
+	if (spot) {
+		for (const [x, y, t] of spot.cells) c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+		if (report) report.buddy = {
+			...spot,
+			face: shown
+		};
 	}
 	return c.grid;
 }
@@ -14538,7 +14773,7 @@ function paint(grid, config, palette$1, small = false, still = true) {
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
-		const painted$2 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
+		const painted$2 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color : copy ? paintCell(color, x, y, copy, state) : color;
 		return still && copy?.fx ? fxColor(painted$2, copy.fx, x, y, 0, copy.print) : painted$2;
 	}));
 }
@@ -14643,6 +14878,13 @@ function catchlight(grid, x, y, palette$1) {
 * from Special up a shine sweeps across the item, from Prized up a ring in the
 * grade's colour pulses around the guy, and Mythic and Grail copies throw off
 * sparkles.
+*
+* Each guy keeps his own time. His idle is dealt from his name like his parts
+* are: how many breaths he takes in a loop, where in it he starts, and his
+* habits (a blink or a double blink, a glance, a smile, an "ooh", a little
+* hop). The same guy always moves the same way, and two guys side by side are
+* never in step. A squash never cuts his face: rows are only lost or repeated
+* below his mouth or above his eyes, and a guy with no room there bobs instead.
 */
 const MOVES = [
 	"idle",
@@ -14723,18 +14965,116 @@ const HOP = [
 	b("base", 100, { squash: 2 }),
 	b("base", 80, { squash: 1 })
 ];
-const BEATS = {
-	idle: () => [
-		b("base", 700),
-		b("base", 500, { squash: 1 }),
-		b("base", 700),
-		b("shut", 120),
-		b("base", 480),
-		b("base", 500, { squash: 1 })
+/** A well-mixed number in [0, 1) from integers. */
+function noise(...n) {
+	let h = 2654435769;
+	for (const v of n) {
+		h = Math.imul(h ^ v, 2246822507);
+		h = Math.imul(h ^ h >>> 13, 3266489909);
+		h ^= h >>> 16;
+	}
+	return (h >>> 0) / 4294967296;
+}
+const rollsOf = (input) => {
+	const h = hash(`${input}|rhythm`);
+	return (k) => noise(h, k);
+};
+/** Little things a guy does between breaths. Each guy has a few of them as his habits. */
+const ACTS = {
+	blink: [b("shut", 130)],
+	double: [
+		b("shut", 100),
+		b("base", 110),
+		b("shut", 110)
 	],
-	blink: () => [b("base", 2400), b("shut", 140)],
+	glanceLeft: [b("left", 520)],
+	glanceRight: [b("right", 520)],
+	around: [
+		b("left", 320),
+		b("base", 90),
+		b("right", 320)
+	],
+	smile: [b("smile", 580)],
+	content: [b("content", 640)],
+	ooh: [b("ooh", 380)],
+	blep: [b("blep", 460)],
+	hop: [
+		b("base", 80, { squash: 1 }),
+		b("base", 90, { dy: -1 }),
+		b("base", 130, { dy: -2 }),
+		b("base", 90, { dy: -1 }),
+		b("base", 80, { squash: 1 })
+	]
+};
+const pick = (r, list) => list[Math.min(list.length - 1, Math.floor(r * list.length))];
+const actMs = (act) => ACTS[act].reduce((n, x) => n + x.ms, 0);
+/**
+* His idle, one LOOP_MS long, dealt from his name: three to five breaths (his
+* tempo), each a rest and a dip or, for a floater, a lift; his habits in some
+* of the rests; and the loop turned to start partway through a rest, so guys
+* dealt the same tempo still breathe at different moments. It always starts
+* on his still pose.
+*/
+function idleBeats(g) {
+	const r = g.roll;
+	const breaths = pick(r(1), [
+		3,
+		4,
+		4,
+		5
+	]), floater = r(2) < .3;
+	const habits = [r(3) < .35 ? "double" : "blink"];
+	if (r(4) < .7) habits.push(pick(r(5), [
+		"glanceLeft",
+		"glanceRight",
+		"around"
+	]));
+	if (g.mouthy && r(6) < .75) habits.push(pick(r(7), [
+		"smile",
+		"smile",
+		"content",
+		"content",
+		"ooh",
+		"blep"
+	]));
+	if (r(8) < .25) habits.push("hop");
+	const count$1 = Math.min(breaths, habits.length, 2 + (r(9) < .45 ? 1 : 0));
+	const salt = Math.floor(r(10) * 1e9);
+	const order = Array.from({ length: breaths }, (_, i) => i).sort((a, c) => noise(a, salt) - noise(c, salt));
+	const doing = new Map(habits.slice(0, count$1).map((act, i) => [order[i], act]));
+	const lap = [];
+	for (let i = 0; i < breaths; i++) {
+		const ms = Math.round((i + 1) * LOOP_MS / breaths) - Math.round(i * LOOP_MS / breaths);
+		const dip = Math.round(ms * (.3 + .1 * r(11 + i))), rest$1 = ms - dip, act = doing.get(i);
+		if (act && actMs(act) + 160 <= rest$1) {
+			const lead = Math.round((rest$1 - actMs(act)) * (.3 + .4 * r(20 + i)));
+			lap.push(b("base", lead), ...ACTS[act], b("base", rest$1 - lead - actMs(act)));
+		} else lap.push(b("base", rest$1));
+		lap.push(b("base", dip, floater ? { dy: -1 } : { squash: 1 }));
+	}
+	const rests = lap.map((x, i) => [x, i]).filter(([x]) => x.pose === "base" && !x.squash && !x.dy && x.ms >= 200);
+	const [rest, at] = pick(r(30), rests);
+	const cut = Math.round(rest.ms * (.2 + .6 * r(31)));
+	return [
+		b("base", rest.ms - cut),
+		...lap.slice(at + 1),
+		...lap.slice(0, at),
+		b("base", cut)
+	];
+}
+const BEATS = {
+	idle: idleBeats,
+	blink: ({ roll: roll$1 }) => {
+		const wait = 1800 + Math.round(roll$1(40) * 1600);
+		return roll$1(41) < .3 ? [
+			b("base", wait),
+			b("shut", 100),
+			b("base", 110),
+			b("shut", 120)
+		] : [b("base", wait), b("shut", 140)];
+	},
 	hop: () => [...HOP, b("base", 700)],
-	wave: (canWave) => canWave ? [
+	wave: ({ canWave }) => canWave ? [
 		b("wave", 220),
 		b("sides", 200),
 		b("wave", 220),
@@ -14748,19 +15088,25 @@ const BEATS = {
 		b("base", 200),
 		b("base", 700)
 	],
-	look: () => [
-		b("base", 500),
-		b("left", 700, {
-			emote: "question",
-			left: true
-		}),
-		b("base", 250),
-		b("right", 700, { emote: "question" }),
-		b("base", 250),
-		b("shut", 120),
-		b("base", 400)
-	],
-	cheer: (canWave) => {
+	look: ({ roll: roll$1 }) => {
+		const [first, second] = roll$1(42) < .5 ? ["left", "right"] : ["right", "left"];
+		return [
+			b("base", 500),
+			b(first, 700, {
+				emote: "question",
+				left: first === "left"
+			}),
+			b("base", 250),
+			b(second, 700, {
+				emote: "question",
+				left: second === "left"
+			}),
+			b("base", 250),
+			b("shut", 120),
+			b("base", 400)
+		];
+	},
+	cheer: ({ canWave }) => {
 		const arm = canWave ? "laughWave" : "laugh";
 		const up = [
 			b("laugh", 80, { squash: 1 }),
@@ -14802,28 +15148,31 @@ const BEATS = {
 		}),
 		b("base", 500, { squash: 1 })
 	],
-	dance: () => [
-		b("laugh", 180, {
-			dx: -1,
-			squash: 1,
-			emote: "note",
-			left: true
-		}),
-		b("base", 180, {
-			emote: "note",
-			left: true
-		}),
-		b("laugh", 180, {
-			dx: 1,
-			squash: 1,
-			turn: true,
-			emote: "note"
-		}),
-		b("base", 180, {
-			turn: true,
-			emote: "note"
-		})
-	],
+	dance: ({ roll: roll$1 }) => {
+		const ms = 150 + 10 * Math.floor(roll$1(43) * 7);
+		return [
+			b("laugh", ms, {
+				dx: -1,
+				squash: 1,
+				emote: "note",
+				left: true
+			}),
+			b("base", ms, {
+				emote: "note",
+				left: true
+			}),
+			b("laugh", ms, {
+				dx: 1,
+				squash: 1,
+				turn: true,
+				emote: "note"
+			}),
+			b("base", ms, {
+				turn: true,
+				emote: "note"
+			})
+		];
+	},
 	squish: () => [
 		b("ooh", 90, {
 			squash: 2,
@@ -14840,24 +15189,27 @@ const BEATS = {
 		b("base", 70, { squash: -1 }),
 		b("base", 700)
 	],
-	sleep: () => [
-		b("shut", 1100, {
-			squash: 1,
-			emote: "zzz"
-		}),
-		b("shut", 1100, {
-			emote: "zzz",
-			rise: true
-		}),
-		b("shut", 1100, {
-			squash: 1,
-			emote: "zzz"
-		}),
-		b("shut", 1100, {
-			emote: "zzz",
-			rise: true
-		})
-	]
+	sleep: ({ roll: roll$1 }) => {
+		const ms = 1e3 + 50 * Math.floor(roll$1(44) * 6);
+		return [
+			b("shut", ms, {
+				squash: 1,
+				emote: "zzz"
+			}),
+			b("shut", ms, {
+				emote: "zzz",
+				rise: true
+			}),
+			b("shut", ms, {
+				squash: 1,
+				emote: "zzz"
+			}),
+			b("shut", ms, {
+				emote: "zzz",
+				rise: true
+			})
+		];
+	}
 };
 const EYE_TOKENS = new Set([T.EYE, T.WHITE]);
 /** The row the bottom of the eyes sits on, for this guy's shape or skin. */
@@ -14928,7 +15280,7 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted$1(grid, config, palette$1, small = false, face = null) {
+function painted$1(grid, config, palette$1, small = false, face = null, mouth$1) {
 	const colors = paint(grid, config, palette$1, small, false);
 	const out = empty();
 	const eyeBox = face && {
@@ -14946,6 +15298,7 @@ function painted$1(grid, config, palette$1, small = false, face = null) {
 			slot: slotIndex(t)
 		};
 		if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
+		if (mouth$1?.has(y * GRID_SIZE + x)) cell.face = true;
 		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
 		out[y + HEADROOM][x] = cell;
 	}));
@@ -15001,19 +15354,14 @@ function liveEyes(layer, kind, t, seed) {
 		}
 	}));
 }
-/** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
-function squash(layer, n) {
-	if (!n) return layer;
-	let last = -1, first = -1;
-	layer.forEach((row, y) => {
-		if (row.some(Boolean)) {
-			if (first < 0) first = y;
-			last = y;
-		}
-	});
-	if (last < 0) return layer;
-	const r = Math.max(first + 2, last - 3);
-	const rows = layer.map((row) => [...row]);
+/**
+* Loses `n` rows ending at row `r` (or, for a negative `n`, repeats row `r`);
+* everything above follows. `r` comes from `squashPlan`, so it is never a row
+* of his face.
+*/
+function squash(layer, s) {
+	if (!s) return layer;
+	const { n, row: r } = s, rows = layer.map((row) => [...row]);
 	if (n > 0) {
 		const blank = Array.from({ length: n }, () => new Array(FRAME_WIDTH).fill(null));
 		return [
@@ -15028,6 +15376,19 @@ function squash(layer, n) {
 		...Array.from({ length: k }, () => [...rows[r]]),
 		...rows.slice(r + 1)
 	];
+}
+/**
+* His buddy, standing where it stands in the still: on the floor, whatever
+* he does. In front of him (no room beside him; see `buddySpot`), it leaves
+* out any pixel next to his eyes or mouth in this frame.
+*/
+function standBuddy(layer, buddy, apart) {
+	const nearFace$1 = (x, y) => {
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.face) return true;
+		return false;
+	};
+	const keep = buddy.filter(([x, y]) => apart || !nearFace$1(x, y));
+	for (const [x, y, cell] of keep) layer[y][x] = { ...cell };
 }
 function shift(layer, dx, dy) {
 	const out = empty();
@@ -15052,41 +15413,66 @@ function rim(layer) {
 	}
 	return out;
 }
-/** A four-point twinkle, only where there is nothing. */
-function twinkle(layer, x, y, centre$1, arms$1) {
-	const cells = [
-		[
-			x,
-			y,
-			centre$1
-		],
-		[
-			x - 1,
-			y,
-			arms$1
-		],
-		[
-			x + 1,
-			y,
-			arms$1
-		],
-		[
-			x,
-			y - 1,
-			arms$1
-		],
-		[
-			x,
-			y + 1,
-			arms$1
-		]
-	];
-	if (!cells.every(([cx, cy]) => cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx])) return;
-	for (const [cx, cy, c] of cells) layer[cy][cx] = {
-		c,
-		item: false
-	};
+/** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
+function sparkle(layer, x, y, f, colors) {
+	for (const [dx, dy, k] of sparkleAt(f)) {
+		const cx = x + dx, cy = y + dy;
+		if (cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = {
+			c: colors[k],
+			item: false
+		};
+	}
 }
+/**
+* Where sparkles may open: empty cells near the guy, with room all round for
+* the sparkle at its biggest, two or three cells off him and no lower than his
+* middle (`above` rows from his top at most, when given). None in the frame's
+* edge cells, so nothing sits stuck in a corner.
+*/
+function sparkleSpots(layer, above = Infinity) {
+	let top = FRAME_HEIGHT, bottom = -1;
+	layer.forEach((row, y) => {
+		if (row.some(Boolean)) {
+			top = Math.min(top, y);
+			bottom = y;
+		}
+	});
+	const out = [];
+	const near = (x, y, d) => {
+		for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) if (layer[y + dy]?.[x + dx]) return true;
+		return false;
+	};
+	for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < FRAME_WIDTH - 1; x++) {
+		if (y > Math.min((top + bottom) / 2, top + above)) continue;
+		if (SPARKLE_REACH.some(([dx, dy]) => layer[y + dy][x + dx])) continue;
+		if (!near(x, y, 1) && near(x, y, 3)) out.push([x, y]);
+	}
+	return out;
+}
+/**
+* One sparkle at a time from a run of them: every `period` ms (fitted to
+* LOOP_MS) one opens at a spot dealt from `salt`, lives `life` of the period
+* and is gone for the rest. `at` is the clock with this run's own phase.
+*/
+function sparkleRun(layer, spots, at, period, life, salt, colors) {
+	if (!spots.length) return;
+	const f = cycle(at, period) / life;
+	if (f >= 1) return;
+	const [x, y] = spots[Math.floor(noise(tick(at, period), salt) * spots.length)];
+	sparkle(layer, x, y, f, colors);
+}
+/** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
+const sparkleIn = (color) => [
+	"#FFFFFF",
+	mix$2(color, "#FFFFFF", .45),
+	color
+];
+/** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
+const GOLD_SPARKLE = [
+	"#FFFFFF",
+	"#FFF0B8",
+	"#F5C342"
+];
 const mouthIndex = (name) => Math.max(0, mouths.findIndex((m) => m.name === name));
 /** `#` is the emote's colour, `+` its second colour. */
 const EMOTES = {
@@ -15192,71 +15578,210 @@ function emote(layer, kind, left, lift = 0) {
 		item: false
 	};
 }
-/** Where a Lucky guy's gold twinkles go. */
-const LUCKY_SPOTS = [
-	[2, 5],
-	[13, 4],
-	[14, 14],
-	[1, 15]
+/** Mouths a guy keeps whatever he is doing, because they are who he is. */
+const SIGNATURE_MOUTHS = new Set([
+	"beak",
+	"fang",
+	"gritted",
+	"bubblegum",
+	"vampire",
+	"gold tooth",
+	"grillz",
+	"mustache"
+]);
+/** The mouth a pose wears, when it isn't his own. */
+function poseMouth(pose, own$1) {
+	if (pose === "laugh" || pose === "laughWave") return mouthIndex("laugh");
+	if (pose === "frown") return mouthIndex("wobble");
+	if (pose === "ooh") return mouthIndex("ooh");
+	if (pose === "blep") return mouthIndex("blep");
+	if (pose === "smile" || pose === "content") return own$1 === mouthIndex("smile") ? mouthIndex("grin") : mouthIndex("smile");
+	return void 0;
+}
+const POSES = [
+	"base",
+	"shut",
+	"left",
+	"right",
+	"wave",
+	"sides",
+	"laugh",
+	"laughWave",
+	"frown",
+	"ooh",
+	"smile",
+	"content",
+	"blep"
 ];
-/** Where sparkles may go: around the guy, clear of him. */
-const SPARKLE_SPOTS = [
-	[2, 6],
-	[13, 8],
-	[1, 13],
-	[14, 15],
-	[7, 1],
-	[2, 18],
-	[13, 2],
-	[12, 18]
-];
+/**
+* The guy as he is drawn into his poses: dressed, without the frame and aura
+* (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
+* frame too). `grid` builds each pose once.
+*/
+function poser(input, options) {
+	const config = dress(resolve(input, options.parts), options, input);
+	const owned = config.owned && Object.fromEntries(Object.entries(config.owned).map(([slot, o]) => [slot, o?.finish === "gold" ? {
+		...o,
+		finish: "plain"
+	} : o]));
+	const figure = {
+		...config,
+		frame: void 0,
+		aura: void 0,
+		buddy: void 0,
+		owned
+	};
+	const grids = new Map();
+	const grid = (pose) => {
+		if (!grids.has(pose)) {
+			const base$1 = compose(figure), mouth$1 = poseMouth(pose, config.mouth);
+			const worn = mouth$1 === void 0 ? base$1 : compose({
+				...figure,
+				mouth: mouth$1,
+				arms: pose === "laughWave" ? 2 : figure.arms
+			});
+			grids.set(pose, pose === "shut" ? closeEyes(base$1, config) : pose === "left" ? glance(base$1, config, -1) : pose === "right" ? glance(base$1, config, 1) : pose === "frown" || pose === "content" ? closeEyes(worn, config) : pose === "wave" || pose === "sides" ? compose({
+				...figure,
+				arms: pose === "wave" ? 2 : 1
+			}) : worn);
+		}
+		return grids.get(pose);
+	};
+	return {
+		config,
+		figure,
+		grid
+	};
+}
+/** Tokens that make a face: eye ink and shine, the mouth and its tongue. */
+const FACE_TOKENS = new Set([
+	T.EYE,
+	T.WHITE,
+	T.MOUTH,
+	T.TONGUE
+]);
+/**
+* Where a guy squashes: for `n` rows lost (or, negative, repeated), the frame
+* row the squash ends on, or null when he has no room for it. His face (from
+* the top of his eyes to the foot of any mouth he pulls, and any row with eye
+* or mouth pixels) is never touched. Rows go from his body between the mouth
+* and the feet, nearest four rows up from his foot; failing that from his head
+* above the eyes; failing that one row fewer, or none.
+*/
+function squashPlan(config, figure, grid) {
+	const base$1 = grid("base");
+	let first = -1, last = -1;
+	base$1.forEach((row, y) => {
+		if (row.some(Boolean)) {
+			if (first < 0) first = y;
+			last = y;
+		}
+	});
+	const face = new Set();
+	let top = GRID_SIZE, bottom = -1;
+	for (const pose of POSES) {
+		const f = faceOf({
+			...figure,
+			mouth: poseMouth(pose, config.mouth) ?? figure.mouth
+		});
+		top = Math.min(top, f.top);
+		bottom = Math.max(bottom, f.line, f.mouthBottom);
+		for (const [y, row] of grid(pose).entries()) if (row.some((t) => FACE_TOKENS.has(t))) face.add(y);
+	}
+	for (let y = top; y <= bottom; y++) face.add(y);
+	const free = (y) => y > first && y < last && !face.has(y);
+	const plans = new Map();
+	const at = (n) => {
+		if (!n) return null;
+		if (plans.has(n)) return plans.get(n);
+		const k = Math.abs(n), fits = (r$1) => (n > 0 ? Array.from({ length: k }, (_, i) => r$1 - i) : [r$1]).every(free);
+		const below = Array.from({ length: Math.max(0, last - bottom) }, (_, i) => bottom + 1 + i).filter(fits).sort((p, q) => Math.abs(p - (last - 3)) - Math.abs(q - (last - 3)));
+		const above = Array.from({ length: Math.max(0, top - first) }, (_, i) => top - 1 - i).filter(fits);
+		const r = below[0] ?? above[0];
+		const plan = r !== void 0 ? {
+			n,
+			row: r + HEADROOM
+		} : at(n - Math.sign(n));
+		plans.set(n, plan);
+		return plan;
+	};
+	return {
+		at,
+		face: [...face].sort((p, q) => p - q).map((y) => y + HEADROOM)
+	};
+}
+/**
+* What each squash in his moves does to the guy `input` would render as: the
+* frame rows it takes out (or, for a negative one, repeats), or null where he
+* has no room and bobs instead; and the rows of his face, which it never touches.
+*/
+function squashRows(input, options = {}) {
+	const { config, figure, grid } = poser(input, options);
+	const plan = squashPlan(config, figure, grid), rows = {};
+	for (const n of [
+		-2,
+		-1,
+		1,
+		2
+	]) {
+		const s = plan.at(n);
+		rows[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
+	}
+	return {
+		face: plan.face,
+		rows
+	};
+}
 /**
 * Builds the frames of a move for the guy `input` would render as. Takes the
 * same options as `toSvgString` (game, equip, parts, palette).
 */
 function animate(input, move, options = {}) {
-	const config = dress(resolve(input, options.parts), options, input);
+	const { config, figure, grid } = poser(input, options);
 	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
-	const figure = {
+	const spot = itemById(config.buddy)?.slot === "buddy" ? buddyOf({
 		...config,
 		frame: void 0,
 		aura: void 0
-	};
+	}) : void 0;
 	const wornAura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
 	const lucky = !!config.lucky && options.rarity !== false && !options.small;
 	const liveEye = options.small ? void 0 : LIVE_EYES.get(config.eyes);
-	const grids = new Map();
-	const grid = (pose) => {
-		if (!grids.has(pose)) {
-			const base$1 = compose(figure);
-			grids.set(pose, pose === "base" ? base$1 : pose === "shut" ? closeEyes(base$1, config) : pose === "left" ? glance(base$1, config, -1) : pose === "right" ? glance(base$1, config, 1) : pose === "laugh" ? compose({
-				...figure,
-				mouth: mouthIndex("laugh")
-			}) : pose === "laughWave" ? compose({
-				...figure,
-				mouth: mouthIndex("laugh"),
-				arms: 2
-			}) : pose === "frown" ? closeEyes(compose({
-				...figure,
-				mouth: mouthIndex("wobble")
-			}), config) : pose === "ooh" ? compose({
-				...figure,
-				mouth: mouthIndex("ooh")
-			}) : compose({
-				...figure,
-				arms: pose === "wave" ? 2 : 1
-			}));
-		}
-		return grids.get(pose);
-	};
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
+	const plan = squashPlan(config, figure, grid);
+	const FACE_TOKENS$1 = new Set([
+		T.EYE,
+		T.WHITE,
+		T.MOUTH,
+		T.TONGUE
+	]);
+	const faceIn = (pose) => {
+		if (!spot) return void 0;
+		const out = new Set(spot.face), g = grid(pose), base$1 = grid("base");
+		g.forEach((row, y) => row.forEach((t$1, x) => {
+			if (FACE_TOKENS$1.has(t$1) && t$1 !== base$1[y][x]) out.add(y * GRID_SIZE + x);
+		}));
+		return out;
+	};
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null));
+		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, faceIn(pose)));
 		return layers.get(pose);
 	};
+	const buddyCells = [];
+	if (spot) {
+		const only = Array.from({ length: GRID_SIZE }, () => new Array(GRID_SIZE).fill(0));
+		for (const [x, y, t$1] of spot.cells) only[y][x] = t$1 >= LOCAL ? t$1 - LOCAL + LAYER.buddy : t$1;
+		painted$1(only, config, palette$1, !!options.small).forEach((row, y) => row.forEach((cell, x) => {
+			if (cell) buddyCells.push([
+				x,
+				y,
+				cell
+			]);
+		}));
+	}
 	let backdrop = null;
 	const frameItem = itemById(config.frame);
 	if (frameItem?.slot === "frame") {
@@ -15268,15 +15793,26 @@ function animate(input, move, options = {}) {
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => GRADES.findIndex((g) => g.id === gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? GRADES[grade].color : "#FFFFFF";
 	const seed = hash(input) % 997;
-	const beats = BEATS[move](canWave);
-	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || options.emote);
+	const best = copies.reduce((a, o) => !a || GRADES.findIndex((g) => g.id === gradeOf(o).id) > GRADES.findIndex((g) => g.id === gradeOf(a).id) ? o : a, void 0);
+	const phase = best ? best.print * 37 : seed;
+	const goldCopy = options.small ? void 0 : Object.values(config.owned ?? {}).find((o) => o?.finish === "gold");
+	const goldMark = !!goldCopy && !wornAura && grade < 3;
+	const roll$1 = rollsOf(input);
+	const mouthy = !SIGNATURE_MOUTHS.has(mouths[config.mouth]?.name ?? "") && JSON.stringify(grid("smile")) !== JSON.stringify(grid("base"));
+	const beats = BEATS[move]({
+		roll: roll$1,
+		canWave,
+		mouthy
+	});
+	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote);
+	const spots = sparkleSpots(layerOf("base")), headSpots = sparkleSpots(layerOf("base"), 3);
 	const loop$1 = options.loop, laps = loop$1 ? loop$1.repeats + 1 : 1;
 	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0), span$1 = loop$1 ? lapMs * loop$1.repeats : 0;
 	const clock = (ms) => loop$1 ? ms * loop$1.turns * LOOP_MS % (LOOP_MS * span$1) / span$1 : ms;
 	const slices = [];
 	let t = 0;
 	for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
-		let n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		let n = wornAura || withFx || lucky || liveEye || goldMark ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		if (loop$1?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
@@ -15294,8 +15830,14 @@ function animate(input, move, options = {}) {
 	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row].reverse());
-		layer = squash(layer, beat.squash ?? 0);
-		layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+		const squashed = plan.at(beat.squash ?? 0);
+		layer = squash(layer, squashed);
+		const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
+		layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
+		if (buddyCells.length) {
+			layer = layer.map((row) => [...row]);
+			standBuddy(layer, buddyCells, spot.apart);
+		}
 		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
 		if (trailFrom.length && (beat.dy ?? 0) < 0) behind.forEach((past, k) => past.forEach((row, y) => row.forEach((cell, x) => {
@@ -15307,7 +15849,7 @@ function animate(input, move, options = {}) {
 		behind.unshift(figure$1);
 		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
-			const at = cycle(t$1 + seed, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+			const at = cycle(t$1 + phase, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
@@ -15317,15 +15859,12 @@ function animate(input, move, options = {}) {
 		}
 		if (lucky) luckyShimmer(layer, t$1, seed);
 		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
-		if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
-			if (wrap$1(t$1 / steps(260, 3) + k * 1.3 + seed, 3) < 1) twinkle(layer, x, y, "#FFFFFF", "#FFD45C");
-		});
+		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, spots, t$1 + seed * 7, 2300, .4, seed, GOLD_SPARKLE);
+		if (goldMark) sparkleRun(layer, spots, t$1 + goldCopy.print * 37, 2600, .4, goldCopy.print, GOLD_SPARKLE);
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
-			const gold = palette$1.colors[T.GOLD] ?? "#F2C230";
-			twinkle(layer, 2, 3, "#FFFFFF", gold);
-			twinkle(layer, 13, 2, "#FFFFFF", gold);
-			if (Math.floor(wrap$1(t$1, fit(240)) / (fit(240) / 2)) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
+			const gold = sparkleIn(palette$1.colors[T.GOLD] ?? "#F2C230");
+			for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t$1 + i * fit(360) / 2 + seed, 360, 1, seed + i, gold);
 		}
 		if (beat.drop) {
 			let top = -1;
@@ -15353,7 +15892,7 @@ function animate(input, move, options = {}) {
 		if (wornAura) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
 			for (const [x, y, k] of auraCells(wornAura.id, mask, t$1, copy, AURA_PAD)) {
-				const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t$1) : wornAura.colors[k];
+				const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t$1 + copy.print * 37, copy.print) : wornAura.colors[k];
 				if (x < 0 || x >= FRAME_WIDTH) outside.push([
 					x,
 					y,
@@ -15374,10 +15913,8 @@ function animate(input, move, options = {}) {
 			};
 		}
 		if (grade >= 3 && !wornAura) {
-			const count$1 = grade === 4 ? 4 : 3;
-			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
-				if (wrap$1(t$1 / steps(240, 4) + k * 1.7 + seed, 4) < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
-			});
+			const colors$1 = grade === 4 ? GOLD_SPARKLE : sparkleIn(gradeColor), count$1 = grade === 4 ? 2 : 1;
+			for (let i = 0; i < count$1; i++) sparkleRun(layer, spots, t$1 + phase + i * fit(1700) / count$1, 1700, .5, phase + i, colors$1);
 		}
 		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
 		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0));
@@ -16490,13 +17027,13 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);
   else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }
   else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;
-  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22 + fract(print * 0.618) * TAU) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
   else if (finish < 4.5) {
     vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));
     c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);
     c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);
   }
-  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;
+  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;
   else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
   return c;
 }
@@ -16570,7 +17107,7 @@ const band = (d, time, print) => 1 - clamp(Math.abs(mod(d - time * 10 + print, 6
 /** `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES. */
 function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	const b$1 = band(d, time, print);
-	const twinkle$2 = step(.965, fract(h * 13 + time / 3));
+	const twinkle = step(.965, fract(h * 13 + time / 3));
 	const coat = clamp(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
 	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
 	if (finish < 1.5) {
@@ -16581,12 +17118,12 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 			1.18
 		]), .08), .4 * s * coat), b$1 * .5 * coat);
 	}
-	if (finish < 2.5) return add(c, twinkle$2 * .55 * coat + b$1 * .25 * coat);
-	if (finish < 3.5) return mix$1(hueShift(c, (time * TAU / 6 + d * .22) * coat), [
+	if (finish < 2.5) return add(c, twinkle * .55 * coat + b$1 * .25 * coat);
+	if (finish < 3.5) return mix$1(hueShift(c, (time * TAU / 6 + d * .22 + fract(print * .618) * TAU) * coat), [
 		1,
 		1,
 		1
-	], twinkle$2 * coat);
+	], twinkle * coat);
 	if (finish < 4.5) {
 		const rain = hsv$1([
 			fract(d * .07 - time / 3 + print * .013),
@@ -16600,12 +17137,12 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.28,
 		.12,
 		.45
-	], b$1 * coat)), .07 * Math.sin(time * TAU / 3 + d * .5) * coat);
+	], b$1 * coat)), .07 * Math.sin(time * TAU / 3 + d * .5 + fract(print * .618) * TAU) * coat);
 	return add(add(c, b$1 * .7 * coat), scale([
 		1,
 		.9,
 		.5
-	], twinkle$2 * .6 * coat));
+	], twinkle * .6 * coat));
 }
 /** `holoColor` from GLSL_COMMON: a card's foil pattern for a finish (an index in SHADER_FINISHES), its variant `v` 0–3, at cell `p` round `o`. */
 function holoColor(c, holo, v, p, o, h, time) {
@@ -16685,7 +17222,7 @@ const loopSeconds = (ms) => mod(ms, LOOP_MS) / 1e3;
 function shineData(frame, owned = {}) {
 	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
 	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-	const noise$2 = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const noise$3 = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
 	frame.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
 		const i = (y * FRAME_WIDTH + x) * 4;
@@ -16706,13 +17243,13 @@ function shineData(frame, owned = {}) {
 				print,
 				255
 			], i);
-			noise$2[i] = noiseOf(x, y, print * 4);
+			noise$3[i] = noiseOf(x, y, print * 4);
 		}
 	}));
 	return {
 		colors,
 		info,
-		noise: noise$2
+		noise: noise$3
 	};
 }
 /** Whether any pixel of the frame belongs to a copy with a finish that shimmers. */
@@ -16722,7 +17259,7 @@ const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) 
 * running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
 */
 function shineFrame(frame, owned, ms) {
-	const { colors, info, noise: noise$2 } = shineData(frame, owned);
+	const { colors, info, noise: noise$3 } = shineData(frame, owned);
 	const out = new Uint8ClampedArray(colors);
 	const time = loopSeconds(ms);
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
@@ -16733,7 +17270,7 @@ function shineFrame(frame, owned, ms) {
 			colors[i] / 255,
 			colors[i + 1] / 255,
 			colors[i + 2] / 255
-		], finish, info[i + 1] / 255, noise$2[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
+		], finish, info[i + 1] / 255, noise$3[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
 		out[i] = toByte(c[0]);
 		out[i + 1] = toByte(c[1]);
 		out[i + 2] = toByte(c[2]);
@@ -16817,11 +17354,11 @@ function createShine(canvas) {
 	return {
 		canvas: target,
 		draw(frame, owned, ms) {
-			const { colors, info, noise: noise$2 } = shineData(frame, owned);
+			const { colors, info, noise: noise$3 } = shineData(frame, owned);
 			[
 				colors,
 				info,
-				noise$2
+				noise$3
 			].forEach((bytes, unit$1) => {
 				gl.activeTexture(gl.TEXTURE0 + unit$1);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit$1]);
@@ -17043,24 +17580,24 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		front[y][x] = t / 2 + lift;
 		deepest = Math.max(deepest, t);
 	}
-	let squeeze = 1;
+	let squeeze$1 = 1;
 	if (options.deepest) {
 		let lo = Infinity, hi = -Infinity;
 		for (const row of span$1) for (const s of row) if (s) {
 			lo = Math.min(lo, s.z0);
 			hi = Math.max(hi, s.z1);
 		}
-		if (hi - lo > options.deepest) squeeze = options.deepest / (hi - lo);
+		if (hi - lo > options.deepest) squeeze$1 = options.deepest / (hi - lo);
 	}
-	if (squeeze < 1) {
+	if (squeeze$1 < 1) {
 		for (const row of span$1) for (const s of row) if (s) {
-			s.z0 *= squeeze;
-			s.z1 *= squeeze;
+			s.z0 *= squeeze$1;
+			s.z1 *= squeeze$1;
 		}
 		for (const row of front) row.forEach((v, x) => {
-			row[x] = v * squeeze;
+			row[x] = v * squeeze$1;
 		});
-		deepest *= squeeze;
+		deepest *= squeeze$1;
 	}
 	const out = [];
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -17121,7 +17658,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			side,
 			slot: s,
 			surface,
-			lift: feature(x, y) * squeeze
+			lift: feature(x, y) * squeeze$1
 		});
 	}
 	return out;
@@ -20007,6 +20544,12 @@ const EDGE = [
 	255,
 	255
 ];
+/** The club's midnight navy, the aura card's ground. */
+const NIGHT = [
+	17,
+	21,
+	27
+];
 /** Whether a card pixel is inside the rounded card. */
 function inside(x, y, r = 7) {
 	const cx = x < r ? r - x : x > CARD_WIDTH - 1 - r ? x - (CARD_WIDTH - 1 - r) : 0;
@@ -20022,10 +20565,12 @@ const SIDE = 8, LINE = 13;
 * window takes the rest, so the card is mostly him. The rarer the card, the
 * more it does, one smooth effect at a time, as Balatro's editions do: a sheen
 * on the border, foil bands, a holographic face, then a gold card he rises out
-* of, then the night card with stars and a colour-turning edge.
+* of, then the aura card: midnight, its window dark round a soft pool of teal
+* so his aura glows, its edge the grade's teal.
 */
 function drawCard(input, frame, owned, g, t) {
-	const tm = t * 1e3;
+	const lastCopy = input.copies?.[input.copies.length - 1];
+	const tm = t * 1e3 + (lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6e3, 0));
 	const s = new Surface();
 	const gc = g >= 0 ? rgb$2(GRADES[g].color) : [
 		120,
@@ -20058,11 +20603,7 @@ function drawCard(input, frame, owned, g, t) {
 	};
 	const night = g === 5, gold = g === 4, soul = g >= 4;
 	const face = (x, y$1) => {
-		if (night) return mix([
-			20,
-			22,
-			40
-		], hsv(wrap$1((x + y$1) / 300 + tm / fit(25e3), 1), .4, .5), .22);
+		if (night) return mix(NIGHT, mix(NIGHT, gc, .18), 1 - y$1 / CARD_HEIGHT);
 		if (gold) return mix(mix(CREAM, [
 			255,
 			206,
@@ -20089,7 +20630,7 @@ function drawCard(input, frame, owned, g, t) {
 			236,
 			170
 		], .5 + .5 * Math.sin((x - yy) * .06 + tm / wave(1e3 / 2.4)));
-		if (night) border = hsv(wrap$1((x + yy) / 160 + tm / fit(1e3 / .12), 1), .55, .98);
+		if (night) border = mix(mix(mix(gc, NIGHT, .45), gc, .5 + .5 * Math.sin((x - yy) * .025)), WHITE, sheen(x, yy) * .5);
 		const rim$2 = !inside(x - 1, yy) || !inside(x + 1, yy) || !inside(x, yy - 1) || !inside(x, yy + 1);
 		s.set(x, yy, rim$2 ? mix(border, [
 			10,
@@ -20098,27 +20639,23 @@ function drawCard(input, frame, owned, g, t) {
 		], .55) : edge ? border : face(x, yy));
 	}
 	const tint = night ? [
-		16,
-		20,
-		38
+		12,
+		15,
+		22
 	] : mix(CREAM, gc, g >= 0 ? .28 : .14);
-	const stars = night ? Array.from({ length: 14 }, (_, k) => [
-		WIN.left + 3 + Math.floor(hash$1(k, 4, 2) * (WIN.right - WIN.left - 6)),
-		WIN.top + 3 + Math.floor(hash$1(k, 5, 2) * (WIN.bottom - WIN.top - 6)),
-		hash$1(k, 6, 2)
-	]) : [];
+	const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * .45;
 	for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
 		const rim$2 = x === WIN.left || x === WIN.right || yy === WIN.top || yy === WIN.bottom;
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top);
-		let c = rim$2 ? night ? [
-			70,
-			86,
-			120
-		] : mix(RIM, gc, .25) : mix(tint, mix(tint, [
+		let c = rim$2 ? night ? mix(gc, NIGHT, .55) : mix(RIM, gc, .25) : mix(tint, mix(tint, [
 			20,
 			24,
 			40
 		], .5), depth * .3);
+		if (!rim$2 && night) {
+			const r = Math.hypot((x - wcx) / 70, (yy - wcy) / 80);
+			c = mix(tint, mix(NIGHT, gc, .22), Math.max(0, 1 - r) ** 2);
+		}
 		if (!rim$2 && g === 2) c = mix(c, [
 			226,
 			238,
@@ -20131,28 +20668,6 @@ function drawCard(input, frame, owned, g, t) {
 			0
 		], (soul ? .12 : .18) * (1 - fx * fx - fy * fy));
 		s.set(x, yy, c);
-	}
-	for (const [x, yy, ph] of stars) {
-		const on$1 = Math.sin(tm / wave(1e3 / 2.2) + ph * 20) > .2;
-		s.set(x, yy, on$1 ? [
-			255,
-			255,
-			240
-		] : [
-			120,
-			130,
-			170
-		]);
-		if (on$1 && ph > .6) for (const [dx, dy] of [
-			[1, 0],
-			[-1, 0],
-			[0, 1],
-			[0, -1]
-		]) s.set(x + dx, yy + dy, [
-			150,
-			160,
-			210
-		]);
 	}
 	let topRow = FRAME_HEIGHT, botRow = 0;
 	frame.colors.forEach((row, gy) => {
@@ -20234,7 +20749,11 @@ function drawCard(input, frame, owned, g, t) {
 		96,
 		56,
 		0
-	], .5 + .5 * Math.sin(x * .15 - tm / wave(1e3 / 3) + yy * .1)) : night ? hsv(wrap$1(x * .01 - tm / fit(4e3), 1), .35, 1) : ink;
+	], .5 + .5 * Math.sin(x * .15 - tm / wave(1e3 / 3) + yy * .1)) : night ? mix([
+		226,
+		236,
+		240
+	], mix(gc, WHITE, .35), .5 + .5 * Math.sin(x * .08 - tm / wave(1e3 / 1.5))) : ink;
 	titles.forEach((l, k) => s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), titleTop + k * LINE - 1, foil, night ? [
 		8,
 		8,
@@ -20242,7 +20761,7 @@ function drawCard(input, frame, owned, g, t) {
 	] : void 0));
 	if (pill) {
 		const w = textWidth(pill) + 14, x0 = Math.floor((CARD_WIDTH - w) / 2);
-		const fill = night ? hsv(wrap$1(tm / fit(1e3 / .12), 1), .45, .85) : g >= 0 ? gc : [
+		const fill = night ? mix(gc, NIGHT, .2) : g >= 0 ? gc : [
 			120,
 			130,
 			150
@@ -20436,7 +20955,7 @@ function cardFace(spec) {
 	const last = copies[copies.length - 1], lastItem = last ? itemById(last.item) : void 0;
 	const set$9 = spec.set ?? (lastItem && lastItem.game !== "club" ? lastItem.game : void 0);
 	const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish)) : 0;
-	const base$1 = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$2 = new Uint8Array(W * H * 4);
+	const base$1 = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$3 = new Uint8Array(W * H * 4);
 	const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
 		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
 		base$1.set([
@@ -20451,27 +20970,36 @@ function cardFace(spec) {
 			Math.round(sc * 255),
 			print
 		], i);
-		noise$2[i] = noiseOf(x, y, print * 4);
+		noise$3[i] = noiseOf(x, y, print * 4);
 	};
-	const edge = [
-		34,
-		38,
-		58
-	], cream = [
-		242,
-		236,
-		221
-	], rim$2 = [
-		207,
-		199,
-		180
-	];
 	const gc = g >= 0 ? rgb$1(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb$1(spec.tint) : [
 		120,
 		140,
 		170
 	];
-	const win = blend(cream, gc, g >= 0 ? .28 : spec.tint ? .3 : .14);
+	const aura = g >= 5, night = [
+		17,
+		21,
+		27
+	];
+	const edge = aura ? blend(gc, night, .35) : [
+		34,
+		38,
+		58
+	], cream = aura ? night : [
+		242,
+		236,
+		221
+	], rim$2 = aura ? blend(gc, night, .6) : [
+		207,
+		199,
+		180
+	];
+	const win = aura ? [
+		12,
+		15,
+		22
+	] : blend(cream, gc, g >= 0 ? .28 : spec.tint ? .3 : .14);
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
 		if (cx + cy < 2) continue;
@@ -20527,7 +21055,7 @@ function cardFace(spec) {
 	return {
 		base: base$1,
 		kind,
-		noise: noise$2,
+		noise: noise$3,
 		grade: g,
 		negative: copies.some((o) => o.finish === "negative"),
 		seed: last ? last.print : 0,
@@ -20575,7 +21103,7 @@ function cardFaceAt(f, ms, hover) {
 			} else if (grade > 2.5 && grade < 3.5) {
 				if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * .18);
 				c = c.map((v) => v + wide * .12);
-			} else if (grade > 3.5) {
+			} else if (grade > 3.5 && grade < 4.5) {
 				if (k < 1.5) c = mix$1(c, [
 					1,
 					.82,
@@ -20586,7 +21114,11 @@ function cardFaceAt(f, ms, hover) {
 					.95,
 					.7
 				], step(.965, fract(h * 13 + time / 3)) * .8);
-			}
+			} else if (grade > 4.5 && k < 1.5) c = mix$1(c, [
+				.62,
+				.96,
+				.92
+			], wide * .45);
 		}
 		if (hover && hover.strength > 0) {
 			const at = [(x + .5) / W, (y + .5) / H];
@@ -20630,7 +21162,8 @@ void main() {
     if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
     else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
     else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
-    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+    else if (grade > 3.5 && grade < 4.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+    else if (grade > 4.5 && k < 1.5) c = mix(c, vec3(0.62, 0.96, 0.92), wide * 0.45);
   }
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
@@ -21501,6 +22034,7 @@ exports.shows = shows
 exports.slotOf = slotOf
 exports.smeltValue = smeltValue
 exports.special = special
+exports.squashRows = squashRows
 exports.starter = starter
 exports.surfaceOf = surfaceOf
 exports.tallyMarks = tallyMarks
