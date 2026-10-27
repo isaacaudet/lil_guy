@@ -16,4 +16,11 @@ export default defineConfig([
     globalName: "LilGuy",
     outDir: "dist",
   },
+  {
+    entry: { "lil-guy-element": "src/element-entry.ts" },
+    format: ["iife"],
+    globalName: "LilGuyElement",
+    outDir: "dist",
+    minify: true,
+  },
 ]);

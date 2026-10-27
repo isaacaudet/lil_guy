@@ -3001,10 +3001,10 @@ const AURAS = [
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), step = Math.floor(t / 110) + print, out = [];
+			const s = shape(mask), step$1 = Math.floor(t / 110) + print, out = [];
 			s.tops.forEach((top, x) => {
 				if (top < 0) return;
-				const tall = 1 + Math.floor(noise$1(x, step) * 3.2);
+				const tall = 1 + Math.floor(noise$1(x, step$1) * 3.2);
 				for (let k = 1; k <= tall; k++) out.push([
 					x,
 					top - k,
@@ -3013,7 +3013,7 @@ const AURAS = [
 			});
 			mask.forEach((row, y) => row.forEach((on$1, x) => {
 				if (on$1) {
-					for (const dx of [-1, 1]) if (!row[x + dx] && noise$1(x + dx, y, step) > .86) out.push([
+					for (const dx of [-1, 1]) if (!row[x + dx] && noise$1(x + dx, y, step$1) > .86) out.push([
 						x + dx,
 						y - 1,
 						1
@@ -3345,7 +3345,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 8; i++) {
-				const step = Math.floor((t + i * 377 + print * 5) / 150), y = wrap(step, s.h + 2) - 1, x = wrap(Math.round(noise$1(i, print) * s.w) - Math.floor(step / 2), s.w);
+				const step$1 = Math.floor((t + i * 377 + print * 5) / 150), y = wrap(step$1, s.h + 2) - 1, x = wrap(Math.round(noise$1(i, print) * s.w) - Math.floor(step$1 / 2), s.w);
 				out.push([
 					x,
 					y,
@@ -3447,12 +3447,12 @@ const AURAS = [
 			for (let y = top; y < cy; y++) for (let x = 0; x < s.w; x++) {
 				const d = Math.hypot((x - cx) / (s.w / 2), (y - cy) / (cy - top));
 				if (d < .74 || d > 1) continue;
-				const band = Math.min(5, Math.floor((1 - d) / .0435));
+				const band$1 = Math.min(5, Math.floor((1 - d) / .0435));
 				const along = Math.round(Math.atan2(cy - y, x - cx) / Math.PI * 30);
 				out.push([
 					x,
 					y,
-					Math.abs(along - glint) <= 1 && band % 2 === 0 ? 6 : band
+					Math.abs(along - glint) <= 1 && band$1 % 2 === 0 ? 6 : band$1
 				]);
 			}
 			for (const fx of [0, s.w - 3]) for (const [dx, dy] of [
@@ -3478,10 +3478,10 @@ const AURAS = [
 		],
 		still: 260,
 		cells: (mask, t, print) => {
-			const step = Math.floor((t + print * 13) / 120), out = [];
+			const step$1 = Math.floor((t + print * 13) / 120), out = [];
 			mask.forEach((row, y) => {
-				if (noise$1(y, step, print) < .55) return;
-				const shove = noise$1(y, step, 2) < .5 ? 1 : 2;
+				if (noise$1(y, step$1, print) < .55) return;
+				const shove = noise$1(y, step$1, 2) < .5 ? 1 : 2;
 				row.forEach((on$1, x) => {
 					if (!on$1) return;
 					if (!row[x - 1]) out.push([
@@ -3877,7 +3877,7 @@ function auraIntensity(id, finish) {
 	if (ONE_OF_ONE_AURAS.some((a) => a.id === id)) return 5;
 	return INTENSITY[finish ?? "classic"] ?? 0;
 }
-const TAU = Math.PI * 2;
+const TAU$1 = Math.PI * 2;
 /**
 * Points round the guy on a squarish ellipse, `gx` cells clear of his sides
 * and `gy` of his top and foot, in order: where a rarer aura's pieces ride.
@@ -3886,7 +3886,7 @@ function loop(s, gx, gy) {
 	const rx = (s.right - s.left) / 2 + gx, ry = (s.bottom - s.top) / 2 + gy, steps = 720;
 	const pts = [];
 	for (let i = 0; i < steps; i++) {
-		const a = i / steps * TAU, c = Math.cos(a), sn = Math.sin(a);
+		const a = i / steps * TAU$1, c = Math.cos(a), sn = Math.sin(a);
 		const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** .6), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** .6);
 		const last = pts[pts.length - 1];
 		if (!last || last[0] !== x || last[1] !== y) pts.push([x, y]);
@@ -4013,7 +4013,7 @@ function auraCells(id, mask, t, copy, pad = 0) {
 	const aura = auraById(id);
 	if (!aura) return [];
 	const h = mask.length, w = mask[0].length, print = copy?.print ?? 0, scuff = copy?.scuff ?? 0;
-	const seen = new Set(), step = Math.floor(t / 150);
+	const seen = new Set(), step$1 = Math.floor(t / 150);
 	const wide = pad ? mask.map((row) => [
 		...new Array(pad).fill(false),
 		...row,
@@ -4032,7 +4032,7 @@ function auraCells(id, mask, t, copy, pad = 0) {
 	]).filter(([x, y]) => {
 		if (x < -pad || y < 0 || x >= w + pad || y >= h || mask[y]?.[x] || seen.has(y * (w + 2 * pad) + x + pad)) return false;
 		seen.add(y * (w + 2 * pad) + x + pad);
-		return noise$1(x, y, step, print, 7) >= scuff * .45;
+		return noise$1(x, y, step$1, print, 7) >= scuff * .45;
 	});
 }
 /** Each aura finish's three colours, brightest first; Classic keeps the aura's own. */
@@ -4199,13 +4199,13 @@ function rollFx(u, aura) {
 	}
 	return void 0;
 }
-const rgb$3 = (h) => [
+const rgb$5 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$4 = (a, b$1, t) => [
+const mix$5 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -4237,14 +4237,14 @@ const hue$1 = (h, s = .9, l = .65) => {
 };
 /** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
 function fxColor(color, fx, x, y, t, print = 0) {
-	const c = rgb$3(color), tt = t + print * 37;
+	const c = rgb$5(color), tt = t + print * 37;
 	switch (fx) {
 		case "shimmer": {
 			const at = tt % 900 / 900 * 34 - 8;
-			for (const band of [at, at - 14]) {
-				const d = x + y - band;
+			for (const band$1 of [at, at - 14]) {
+				const d = x + y - band$1;
 				if (d >= 0 && d < 1.5) return "#FFFFFF";
-				if (d >= -1.5 && d < 0) return hex$2(mix$4(c, [
+				if (d >= -1.5 && d < 0) return hex$2(mix$5(c, [
 					150,
 					220,
 					255
@@ -4254,19 +4254,19 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "pulse": {
 			const b$1 = Math.sin(tt / 260);
-			return hex$2(mix$4(c, b$1 > 0 ? WHITE$1 : [
+			return hex$2(mix$5(c, b$1 > 0 ? WHITE$1 : [
 				0,
 				0,
 				0
 			], (b$1 > 0 ? .45 : .14) * Math.abs(b$1)));
 		}
-		case "holo": return hex$2(mix$4(c, hue$1(((x * 22 + y * 14 + tt / 5) % 360 + 360) % 360), .45));
+		case "holo": return hex$2(mix$5(c, hue$1(((x * 22 + y * 14 + tt / 5) % 360 + 360) % 360), .45));
 		case "chroma": {
 			const h = ((tt / 7 + (x + y) * 14) % 360 + 360) % 360, l = (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
-			return hex$2(mix$4(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
+			return hex$2(mix$5(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
 		}
 		case "starlight": {
-			const night = mix$4(mix$4(c, [
+			const night = mix$5(mix$5(c, [
 				24,
 				18,
 				66
@@ -4275,24 +4275,24 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				70,
 				220
 			], .16 * (1 + Math.sin(tt / 700 + x * .5 + y * .3)));
-			return noise(x, y, print) > .93 ? hex$2(mix$4(night, [
+			return noise(x, y, print) > .93 ? hex$2(mix$5(night, [
 				210,
 				200,
 				255
 			], .55)) : hex$2(night);
 		}
-		case "embers": return hex$2(mix$4(c, [
+		case "embers": return hex$2(mix$5(c, [
 			255,
 			120,
 			40
 		], .16 + .14 * Math.max(0, Math.sin(tt / 140 + x * 1.3 - y * .8))));
-		case "neon": return hex$2(mix$4(c, hue$1((tt / 14 % 360 + 360) % 360, 1, .62), .2 + .08 * Math.sin(tt / 380)));
-		case "bubbles": return hex$2(mix$4(c, [
+		case "neon": return hex$2(mix$5(c, hue$1((tt / 14 % 360 + 360) % 360, 1, .62), .2 + .08 * Math.sin(tt / 380)));
+		case "bubbles": return hex$2(mix$5(c, [
 			190,
 			235,
 			255
 		], .1 + .08 * Math.sin(tt / 300 + y)));
-		case "hearts": return hex$2(mix$4(c, [
+		case "hearts": return hex$2(mix$5(c, [
 			255,
 			140,
 			190
@@ -4301,7 +4301,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const reach = .5 + .5 * Math.sin(tt / 900 - y * .35);
 			const n = noise(x, y, Math.floor(tt / 400), print);
 			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
-			return hex$2(mix$4(c, [
+			return hex$2(mix$5(c, [
 				190,
 				228,
 				255
@@ -4311,7 +4311,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const roll$1 = tt / 70 % 24 - 4, burst = noise(Math.floor(tt / 90), print, 7) > .62;
 			if (burst) {
 				const r = noise(x, y, Math.floor(tt / 60));
-				return r > .8 ? "#FFFFFF" : hex$2(mix$4(c, r > .45 ? [
+				return r > .8 ? "#FFFFFF" : hex$2(mix$5(c, r > .45 ? [
 					255,
 					60,
 					90
@@ -4321,8 +4321,8 @@ function fxColor(color, fx, x, y, t, print = 0) {
 					255
 				], .55));
 			}
-			if (Math.abs(y - roll$1) < 1) return hex$2(mix$4(c, WHITE$1, .45));
-			return y % 2 ? hex$2(mix$4(c, [
+			if (Math.abs(y - roll$1) < 1) return hex$2(mix$5(c, WHITE$1, .45));
+			return y % 2 ? hex$2(mix$5(c, [
 				0,
 				0,
 				0
@@ -4330,12 +4330,12 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "lava": {
 			const flow = Math.sin(y * 1.1 + tt / 220 + Math.sin(x * .9 + tt / 700) * 2);
-			const crust = mix$4(c, [
+			const crust = mix$5(c, [
 				40,
 				18,
 				12
 			], .55);
-			return flow > .55 ? hex$2(mix$4([
+			return flow > .55 ? hex$2(mix$5([
 				255,
 				120,
 				30
@@ -4343,7 +4343,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				255,
 				230,
 				120
-			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$4(crust, [
+			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$5(crust, [
 				220,
 				70,
 				20
@@ -4351,13 +4351,13 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "electric": {
 			const flash = noise(Math.floor(tt / 120), print, 11) > .8;
-			if (flash) return hex$2(mix$4(c, WHITE$1, .7));
+			if (flash) return hex$2(mix$5(c, WHITE$1, .7));
 			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / 90)) > .93;
-			return vein ? hex$2(mix$4(c, [
+			return vein ? hex$2(mix$5(c, [
 				200,
 				240,
 				255
-			], .75)) : hex$2(mix$4(c, [
+			], .75)) : hex$2(mix$5(c, [
 				110,
 				180,
 				255
@@ -4706,7 +4706,7 @@ function applyFx(colors, slots, copies, t) {
 		const o = copies[s - 1];
 		if (!s || !o?.fx || !colors[y][x]) return;
 		const fx = fxColor(colors[y][x], o.fx, x, y, t, o.print);
-		const a = rgb$3(colors[y][x]), b$1 = rgb$3(fx);
+		const a = rgb$5(colors[y][x]), b$1 = rgb$5(fx);
 		if (s === AURA_SLOT) {
 			out[y][x] = fx;
 			return;
@@ -4715,7 +4715,7 @@ function applyFx(colors, slots, copies, t) {
 			out[y][x] = fx;
 			return;
 		}
-		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$4(a, b$1, .42) : mix$4(a, b$1, 1.5));
+		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$5(a, b$1, .42) : mix$5(a, b$1, 1.5));
 	}));
 	copies.forEach((o, k) => {
 		if (!o?.fx || !small(k) || OWN_EDGE.includes(o.fx)) return;
@@ -4724,7 +4724,7 @@ function applyFx(colors, slots, copies, t) {
 			if (s || colors[y][x]) return;
 			const from = NEAR2.find(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1);
 			if (!from || noise(x, y, beat, o.print, 17) > .4) return;
-			out[y][x] = hex$2(mix$4(rgb$3(out[y + from[1]][x + from[0]]), WHITE$1, .15));
+			out[y][x] = hex$2(mix$5(rgb$5(out[y + from[1]][x + from[0]]), WHITE$1, .15));
 		}));
 	});
 	const cellsOf = (k) => {
@@ -4734,7 +4734,7 @@ function applyFx(colors, slots, copies, t) {
 		}));
 		return c;
 	};
-	const dark = (c) => !!c && rgb$3(c).reduce((a, v) => a + v, 0) < 240;
+	const dark = (c) => !!c && rgb$5(c).reduce((a, v) => a + v, 0) < 240;
 	const edgeOf = (k) => {
 		const outside = slots.map((row) => row.map(() => false)), queue = [];
 		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x === 0 || y === 0 || x === W - 1 || y === H - 1) && slots[y][x] !== k + 1) {
@@ -4784,8 +4784,8 @@ function applyFx(colors, slots, copies, t) {
 		}));
 		for (const [x, top] of tops) {
 			if (noise(x, o.print, 5) > share$1) continue;
-			const step = Math.floor((t + noise(x, o.print) * 4e3) / spacing) % (rise + 3);
-			if (step < rise) draw(x + (Math.floor(step / 2) % 2 ? 1 : 0), top - 1 - step, step);
+			const step$1 = Math.floor((t + noise(x, o.print) * 4e3) / spacing) % (rise + 3);
+			if (step$1 < rise) draw(x + (Math.floor(step$1 / 2) % 2 ? 1 : 0), top - 1 - step$1, step$1);
 		}
 	};
 	copies.forEach((o, k) => {
@@ -4798,7 +4798,7 @@ function applyFx(colors, slots, copies, t) {
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$2(mix$4(rgb$3(colors[y][x]), WHITE$1, .25 + .3 * breath)));
+			]) put(x + dx, y + dy, hex$2(mix$5(rgb$5(colors[y][x]), WHITE$1, .25 + .3 * breath)));
 		}
 		if (o.fx === "neon" && !aura) {
 			const glow = .55 + .1 * Math.sin(tt / 380), rim$2 = edgeOf(k);
@@ -4816,7 +4816,7 @@ function applyFx(colors, slots, copies, t) {
 				const x = key % W, y = Math.floor(key / W);
 				if (d > reach) continue;
 				const glint = noise(x, y, Math.floor(tt / 300), o.print) > .82;
-				out[y][x] = glint ? "#FFFFFF" : hex$2(mix$4(rgb$3(out[y][x]), [
+				out[y][x] = glint ? "#FFFFFF" : hex$2(mix$5(rgb$5(out[y][x]), [
 					214,
 					240,
 					255
@@ -4866,8 +4866,8 @@ function applyFx(colors, slots, copies, t) {
 				}
 			}
 		}
-		if (o.fx === "bubbles") risers(o, k, aura ? 200 : 150, 6, aura ? .3 : .55, (x, y, step) => {
-			if (step >= 5) {
+		if (o.fx === "bubbles") risers(o, k, aura ? 200 : 150, 6, aura ? .3 : .55, (x, y, step$1) => {
+			if (step$1 >= 5) {
 				put(x, y, "#E8F8FF");
 				return;
 			}
@@ -4910,8 +4910,8 @@ function applyFx(colors, slots, copies, t) {
 				]
 			]) put(x + dx, y + dy, c);
 		});
-		if (o.fx === "embers") risers(o, k, aura ? 120 : 100, 6, aura ? .35 : .6, (x, y, step) => {
-			const c = step < 2 ? ["#FFF2A8", "#FFC53D"] : step < 4 ? ["#FFC53D", "#FF7A1A"] : ["#FF7A1A", "#C2412E"];
+		if (o.fx === "embers") risers(o, k, aura ? 120 : 100, 6, aura ? .35 : .6, (x, y, step$1) => {
+			const c = step$1 < 2 ? ["#FFF2A8", "#FFC53D"] : step$1 < 4 ? ["#FFC53D", "#FF7A1A"] : ["#FF7A1A", "#C2412E"];
 			put(x, y, c[0]);
 			put(x, y + 1, c[1]);
 		});
@@ -5591,13 +5591,13 @@ function rollFrom(pool, seed) {
 function slotOf(o) {
 	return itemById(o.item)?.slot;
 }
-const rgb$2 = (h) => [
+const rgb$4 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$3 = (a, b$1, t) => [
+const mix$4 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -5621,11 +5621,11 @@ function cellNoise(...n) {
 */
 const shaded = (c, l) => {
 	const t = Math.max(0, Math.min(1, (l - .15) / .75));
-	return t < .5 ? mix$3(mix$3(c, [
+	return t < .5 ? mix$4(mix$4(c, [
 		0,
 		0,
 		0
-	], .5), c, t * 2) : mix$3(c, mix$3(c, [
+	], .5), c, t * 2) : mix$4(c, mix$4(c, [
 		255,
 		255,
 		255
@@ -5635,28 +5635,28 @@ const PAINT = {
 	"plain": (_x, _y, _l, _p, original) => original,
 	"sunset": (x, y, l, p) => {
 		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
-		const c = t < .5 ? mix$3(rgb$2("#F5C542"), rgb$2("#E55AA8"), t * 2) : mix$3(rgb$2("#E55AA8"), rgb$2("#7A4BE0"), (t - .5) * 2);
+		const c = t < .5 ? mix$4(rgb$4("#F5C542"), rgb$4("#E55AA8"), t * 2) : mix$4(rgb$4("#E55AA8"), rgb$4("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
 	"tempered": (x, y, l, p) => {
 		const stops = TINTS[temperTint(p)];
-		const band = Math.floor(((x + y + p % 11) % 12 + 12) % 12 / 3);
-		return shaded(rgb$2(stops[[
+		const band$1 = Math.floor(((x + y + p % 11) % 12 + 12) % 12 / 3);
+		return shaded(rgb$4(stops[[
 			0,
 			1,
 			2,
 			1
-		][band]]), l);
+		][band$1]]), l);
 	},
 	"nebula": (x, y, l, p) => {
 		const phase = nebulaPhase(p);
-		const base = phase === "Red Giant" ? rgb$2("#D0102E") : phase === "Blue Moon" ? rgb$2("#1E4FE8") : phase === "Black Hole" ? rgb$2("#2A1E3A") : rgb$2([
+		const base = phase === "Red Giant" ? rgb$4("#D0102E") : phase === "Blue Moon" ? rgb$4("#1E4FE8") : phase === "Black Hole" ? rgb$4("#2A1E3A") : rgb$4([
 			"#8A2AB0",
 			"#3A2AB0",
 			"#2A6AB0",
 			"#B02A8A"
 		][p % 4]);
-		const c = cellNoise(p, x, y, 2) < .2 ? mix$3(base, rgb$2("#FFD6F0"), .55) : base;
+		const c = cellNoise(p, x, y, 2) < .2 ? mix$4(base, rgb$4("#FFD6F0"), .55) : base;
 		return shaded(c, l);
 	},
 	"prism": (x, y, l, p) => {
@@ -5670,7 +5670,7 @@ const PAINT = {
 			k(8) * 255,
 			k(4) * 255
 		];
-		return mix$3(shaded(c, l), [
+		return mix$4(shaded(c, l), [
 			255,
 			255,
 			255
@@ -5682,7 +5682,7 @@ const PAINT = {
 			255 - original[1],
 			255 - original[2]
 		];
-		return mix$3(inverted, [
+		return mix$4(inverted, [
 			92,
 			52,
 			160
@@ -5697,11 +5697,11 @@ const PAINT = {
 	"ruby": (_x, _y, _l, _p, original) => original,
 	"pearl": (_x, _y, _l, _p, original) => original,
 	"gold": (x, y, l) => {
-		if ((x + y) % 6 === 0 && l > .5) return rgb$2("#FFFBE6");
-		return l > .75 ? rgb$2("#FFF1B0") : l > .5 ? rgb$2("#F2C230") : l > .3 ? rgb$2("#C8901E") : rgb$2("#7A5212");
+		if ((x + y) % 6 === 0 && l > .5) return rgb$4("#FFFBE6");
+		return l > .75 ? rgb$4("#FFF1B0") : l > .5 ? rgb$4("#F2C230") : l > .3 ? rgb$4("#C8901E") : rgb$4("#7A5212");
 	}
 };
-const PRIMER = rgb$2("#8B9097");
+const PRIMER = rgb$4("#8B9097");
 /**
 * Paints one cell of an owned item: its finish, then its wear. Chips land in
 * places fixed by the print, so a copy always wears the same way, and how many
@@ -5709,10 +5709,10 @@ const PRIMER = rgb$2("#8B9097");
 * placed.
 */
 function paintCell(color, x, y, o, state) {
-	const original = rgb$2(color);
+	const original = rgb$4(color);
 	let c = PAINT[o.finish](x, y, lum$1(original), o.print, original);
-	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$3(PRIMER, c, .25);
-	c = mix$3(c, [
+	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$4(PRIMER, c, .25);
+	c = mix$4(c, [
 		120,
 		116,
 		112
@@ -9295,7 +9295,7 @@ function fromHsl([h, s, l]) {
 	];
 	return rgbToHex((r + m) * 255, (g + m) * 255, (b$1 + m) * 255);
 }
-function mix$2(a, b$1, amount) {
+function mix$3(a, b$1, amount) {
 	const [ar, ag, ab] = hexToRgb(a);
 	const [br, bg, bb] = hexToRgb(b$1);
 	return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
@@ -9360,7 +9360,7 @@ function derive(name, body, accent, trim) {
 		colors: {
 			1: body,
 			2: shadeOf(body),
-			3: mix$2(body, "#FFFFFF", .55),
+			3: mix$3(body, "#FFFFFF", .55),
 			4: outline$1,
 			5: ink,
 			6: "#FFFFFF",
@@ -9370,7 +9370,7 @@ function derive(name, body, accent, trim) {
 			10: accent,
 			11: shadeOf(accent),
 			12: trim,
-			13: mix$2(body, "#FFFBF0", .6),
+			13: mix$3(body, "#FFFBF0", .6),
 			14: "#7DD87A",
 			15: "#4FAE5C",
 			16: gold,
@@ -9401,7 +9401,7 @@ const SHADE_COUNT = 3;
 function shadePalette(palette$1, shade) {
 	if (shade === 1) return palette$1;
 	const tone = (hex$3) => {
-		if (shade === 0) return mix$2(hex$3, "#FFFFFF", .3);
+		if (shade === 0) return mix$3(hex$3, "#FFFFFF", .3);
 		const [h, s, l] = toHsl(hex$3);
 		return fromHsl([
 			h,
@@ -9903,7 +9903,7 @@ function forSmall(grid, palette$1) {
 		grid: out,
 		palette: palette$1
 	};
-	const deep = mix$2(ink, "#000000", .45);
+	const deep = mix$3(ink, "#000000", .45);
 	return {
 		grid: out,
 		palette: {
@@ -9934,7 +9934,7 @@ function catchlight(grid, x, y, palette$1) {
 	if (ink && contrast(ink, "#000000") > 10) return resolveColor(palette$1, T.OUTLINE) ?? "#000000";
 	if (!ink || contrast(white, ink) < 3) return white;
 	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette$1, t) ?? "#000000") < 1.6);
-	return pale ? mix$2(ink, white, .6) : white;
+	return pale ? mix$3(ink, white, .6) : white;
 }
 
 //#endregion
@@ -10213,14 +10213,14 @@ function glance(grid, config, dx) {
 	}
 	return out;
 }
-const rgb$1 = (h) => [
+const rgb$3 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$1 = (a, b$1, t) => {
-	const x = rgb$1(a), y = rgb$1(b$1);
+const mix$2 = (a, b$1, t) => {
+	const x = rgb$3(a), y = rgb$3(b$1);
 	return hex([
 		0,
 		1,
@@ -10290,7 +10290,7 @@ function luckyShimmer(layer, t, seed) {
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		if (!cell?.body) return;
 		const d = Math.abs(x + y * .8 - at);
-		if (d < 3) cell.c = mix$1(cell.c, hue((t / 5 + (x - y) * 22) % 360, .95, .68), d < 1.2 ? .6 : .3);
+		if (d < 3) cell.c = mix$2(cell.c, hue((t / 5 + (x - y) * 22) % 360, .95, .68), d < 1.2 ? .6 : .3);
 	}));
 }
 /** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder. */
@@ -10303,11 +10303,11 @@ function liveEyes(layer, kind, t, seed) {
 			else if (k !== T.EYE) cell.c = hue(255 + 45 * Math.sin(t / 380 + x * .9 + y * .7), .8, .55);
 		} else if (kind === "diamond") {
 			const at = (t + seed) % 1400 / 1400 * 24 - 4, d = Math.abs(x - y * .5 - at);
-			if (k !== T.EYE) cell.c = mix$1(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / 250 + x));
-			if (d < 1.5) cell.c = mix$1(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
+			if (k !== T.EYE) cell.c = mix$2(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / 250 + x));
+			if (d < 1.5) cell.c = mix$2(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
 		} else if (kind === "dragon") {
 			const flash = (t + seed) % 2e3 < 160;
-			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$1(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / 260)));
+			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / 260)));
 		}
 	}));
 }
@@ -10593,7 +10593,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 && !wornAura ? [mix$1(gradeColor, "#000000", .2), mix$1(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix$2(gradeColor, "#000000", .2), mix$2(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const frames$1 = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -10615,8 +10615,8 @@ function animate(input, move, options = {}) {
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
-				if (d < 1) cell.c = mix$1(cell.c, "#FFFFFF", .65);
-				else if (d < 2) cell.c = mix$1(cell.c, "#FFFFFF", .25);
+				if (d < 1) cell.c = mix$2(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix$2(cell.c, "#FFFFFF", .25);
 			}));
 		}
 		if (lucky) luckyShimmer(layer, t$1, seed);
@@ -10671,7 +10671,7 @@ function animate(input, move, options = {}) {
 			}
 		} else if (grade >= 2) {
 			const on$1 = Math.floor((t$1 + seed) / 320) % 2 === 0;
-			const ring$1 = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix$1(gradeColor, "#000000", .35);
+			const ring$1 = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix$2(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
 				c: ring$1,
 				item: false
@@ -10716,11 +10716,11 @@ function frameAt(animation, ms, once = false) {
 	return frames$1[frames$1.length - 1];
 }
 /** Draws a frame at (x, y), each pixel `scale` units square. */
-function drawFrame(ctx, frame, x = 0, y = 0, scale = 1) {
+function drawFrame(ctx, frame, x = 0, y = 0, scale$1 = 1) {
 	frame.colors.forEach((row, py) => row.forEach((c, px) => {
 		if (!c) return;
 		ctx.fillStyle = c;
-		ctx.fillRect(x + px * scale, y + py * scale, scale, scale);
+		ctx.fillRect(x + px * scale$1, y + py * scale$1, scale$1, scale$1);
 	}));
 }
 function runs(row) {
@@ -11614,6 +11614,167 @@ function toShareSvg(input, copy, options = {}) {
 }
 
 //#endregion
+//#region src/finish-shader.ts
+/**
+* The finishes' shimmer, written twice: as GLSL for a page or a game that has
+* WebGL, and as plain code that gives the same colours anywhere (a server, a
+* test, a browser without WebGL). Both read the same inputs: a pixel's colour,
+* its copy's finish, scuff and print, a fixed noise value for the pixel, and
+* the time. Two things keep them the same:
+*
+* - Nothing random is computed on the GPU. A sine hash comes out differently
+*   on every graphics card, so each pixel's noise is made here (`noiseOf`) and
+*   handed to the shader in a texture.
+* - Every movement repeats in `LOOP_MS`, so a baked loop closes without a jump
+*   and the GPU never sees a large time.
+*
+* `scripts/verify-shaders.mjs` runs the GLSL in a browser and checks it
+* against the plain code, pixel by pixel.
+*/
+const LOOP_MS = 6e3;
+/** The finishes in the order the shaders number them. */
+const SHADER_FINISHES = [
+	"plain",
+	"sunset",
+	"tempered",
+	"nebula",
+	"prism",
+	"negative",
+	"gold"
+];
+/** A pixel's noise, 0 to 255: the same for a cell and print everywhere. */
+const noiseOf = (x, y, print) => hash(`noise|${x}|${y}|${print}`) & 255;
+/** Highest precision the device has: mediump is 16-bit on phones, too coarse for the bands. */
+const GLSL_PRECISION = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n";
+const GLSL_COMMON = `
+const float TAU = 6.28318530718;
+vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+vec3 hueShift(vec3 c, float a) {
+  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+  vec3 yiq = toYIQ * c;
+  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
+  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+}
+float band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }
+vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {
+  float b = band(d, time, print);
+  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));
+  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
+  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);
+  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }
+  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;
+  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+  else if (finish < 4.5) {
+    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));
+    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);
+    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);
+  }
+  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;
+  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
+  return c;
+}
+`;
+const TAU = Math.PI * 2;
+const fract = (x) => x - Math.floor(x);
+const mod = (x, y) => x - y * Math.floor(x / y);
+const clamp = (x, a, b$1) => Math.min(Math.max(x, a), b$1);
+const step = (edge, x) => x < edge ? 0 : 1;
+const smoothstep = (a, b$1, x) => {
+	const t = clamp((x - a) / (b$1 - a), 0, 1);
+	return t * t * (3 - 2 * t);
+};
+const distance = (a, b$1) => Math.hypot(a[0] - b$1[0], a[1] - b$1[1]);
+const mix$1 = (a, b$1, t) => [
+	a[0] + (b$1[0] - a[0]) * t,
+	a[1] + (b$1[1] - a[1]) * t,
+	a[2] + (b$1[2] - a[2]) * t
+];
+const add = (a, k) => typeof k === "number" ? [
+	a[0] + k,
+	a[1] + k,
+	a[2] + k
+] : [
+	a[0] + k[0],
+	a[1] + k[1],
+	a[2] + k[2]
+];
+const scale = (a, k) => typeof k === "number" ? [
+	a[0] * k,
+	a[1] * k,
+	a[2] * k
+] : [
+	a[0] * k[0],
+	a[1] * k[1],
+	a[2] * k[2]
+];
+function hsv$1(c) {
+	const p = [
+		1,
+		2 / 3,
+		1 / 3
+	].map((o) => Math.abs(fract(c[0] + o) * 6 - 3));
+	return p.map((v) => c[2] * (1 + (clamp(v - 1, 0, 1) - 1) * c[1]));
+}
+function hueShift$1(c, a) {
+	const y = .299 * c[0] + .587 * c[1] + .114 * c[2];
+	const i = .596 * c[0] - .274 * c[1] - .322 * c[2];
+	const q = .211 * c[0] - .523 * c[1] + .312 * c[2];
+	const h = Math.atan2(q, i) + a, ch = Math.hypot(i, q);
+	const I = ch * Math.cos(h), Q = ch * Math.sin(h);
+	return [
+		y + .956 * I + .621 * Q,
+		y - .272 * I - .647 * Q,
+		y - 1.106 * I + 1.703 * Q
+	];
+}
+const band = (d, time, print) => 1 - clamp(Math.abs(mod(d - time * 10 + print, 60) - 30) - .5, 0, 1);
+/** `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES. */
+function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
+	const b$1 = band(d, time, print);
+	const twinkle$2 = step(.965, fract(h * 13 + time / 3));
+	const coat = clamp(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
+	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
+	if (finish < 1.5) {
+		const s = .5 + .5 * Math.sin(d * .8 - time * TAU / 2 + print);
+		return add(mix$1(c, add(scale(c, [
+			.86,
+			.96,
+			1.18
+		]), .08), .4 * s * coat), b$1 * .5 * coat);
+	}
+	if (finish < 2.5) return add(c, twinkle$2 * .55 * coat + b$1 * .25 * coat);
+	if (finish < 3.5) return mix$1(hueShift$1(c, (time * TAU / 6 + d * .22) * coat), [
+		1,
+		1,
+		1
+	], twinkle$2 * coat);
+	if (finish < 4.5) {
+		const rain = hsv$1([
+			fract(d * .07 - time / 3 + print * .013),
+			.65,
+			1
+		]);
+		const out = mix$1(c, add(scale(c, .45), scale(rain, .75)), .6 * coat);
+		return scale(out, 1 + .12 * scan * step(mod(row + Math.floor(time * 10), 3), .5));
+	}
+	if (finish < 5.5) return add(add(c, scale([
+		.28,
+		.12,
+		.45
+	], b$1 * coat)), .07 * Math.sin(time * TAU / 3 + d * .5) * coat);
+	return add(add(c, b$1 * .7 * coat), scale([
+		1,
+		.9,
+		.5
+	], twinkle$2 * .6 * coat));
+}
+/** A colour channel as the GPU stores it. */
+const toByte = (v) => Math.round(clamp(v, 0, 1) * 255);
+/** Loop time in seconds: what the shaders are given. */
+const loopSeconds = (ms) => mod(ms, LOOP_MS) / 1e3;
+
+//#endregion
 //#region src/shine.ts
 /**
 * The finishes, moving: a WebGL shader that runs each worn copy's finish on
@@ -11626,22 +11787,15 @@ function toShareSvg(input, copy, options = {}) {
 * `drawImage` into that guy's own 2D canvas. Without WebGL `createShine`
 * returns null; draw the frame's colours as they are.
 */
-const FINISH_ORDER = [
-	"plain",
-	"sunset",
-	"tempered",
-	"nebula",
-	"prism",
-	"negative",
-	"gold"
-];
 /**
-* A frame as the shader reads it: its colours, and for each pixel the finish,
-* scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+* A frame as the shader reads it: its colours; for each pixel the finish,
+* scuff and print of the copy it belongs to; and each pixel's noise. Three
+* RGBA byte arrays, 16×20.
 */
 function shineData(frame, owned = {}) {
 	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
 	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const noise$2 = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
 	frame.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
 		const i = (y * FRAME_WIDTH + x) * 4;
@@ -11653,33 +11807,56 @@ function shineData(frame, owned = {}) {
 		], i);
 		const slot = frame.slots[y][x];
 		const copy = slot ? owned?.[FRAME_SLOTS[slot - 1]] : void 0;
-		if (copy) info.set([
-			(FINISH_ORDER.indexOf(copy.finish) + 1) * 32,
-			Math.round(copy.scuff * 255),
-			Math.floor(copy.print / 4),
-			255
-		], i);
+		const finish = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1;
+		if (copy && finish >= 0) {
+			const print = Math.floor(copy.print / 4);
+			info.set([
+				(finish + 1) * 32,
+				Math.round(copy.scuff * 255),
+				print,
+				255
+			], i);
+			noise$2[i] = noiseOf(x, y, print * 4);
+		}
 	}));
 	return {
 		colors,
-		info
+		info,
+		noise: noise$2
 	};
 }
-const VERTEX = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
-const FRAGMENT = `
-precision mediump float;
-varying vec2 uv;
-uniform sampler2D base, info;
-uniform float time;
-float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
-vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
-vec3 hueShift(vec3 c, float a) {
-  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
-  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
-  vec3 yiq = toYIQ * c;
-  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
-  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
+/** Whether any pixel of the frame belongs to a copy with a finish that shimmers. */
+const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) => slot > 0 && SHADER_FINISHES.includes(owned?.[FRAME_SLOTS[slot - 1]]?.finish)));
+/**
+* The shader's picture, in plain code: the frame with each copy's finish
+* running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
+*/
+function shineFrame(frame, owned, ms) {
+	const { colors, info, noise: noise$2 } = shineData(frame, owned);
+	const out = new Uint8ClampedArray(colors);
+	const time = loopSeconds(ms);
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
+		const i = (y * FRAME_WIDTH + x) * 4;
+		if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
+		const finish = Math.floor(info[i] / 32 + .5) - 1;
+		const c = finishColor([
+			colors[i] / 255,
+			colors[i + 1] / 255,
+			colors[i + 2] / 255
+		], finish, info[i + 1] / 255, noise$2[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
+		out[i] = toByte(c[0]);
+		out[i + 1] = toByte(c[1]);
+		out[i + 2] = toByte(c[2]);
+	}
+	return out;
 }
+const VERTEX$1 = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
+/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds. */
+const SHINE_FRAGMENT = `${GLSL_PRECISION}
+varying vec2 uv;
+uniform sampler2D base, info, noise;
+uniform float time;
+${GLSL_COMMON}
 void main() {
   vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
   vec2 cell = floor(uv * res);
@@ -11689,20 +11866,7 @@ void main() {
   vec3 c = b.rgb;
   vec4 k = texture2D(info, at);
   float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;
-  if (k.a > 0.5 && finish >= 0.0) {
-    float scuff = k.g, print = floor(k.b * 255.0 + 0.5) * 4.0;
-    float d = cell.x + cell.y, h = hash(cell, print);
-    float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
-    float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
-    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
-    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
-    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
-    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
-    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
-    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); }
-    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
-    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
-  }
+  if (k.a > 0.5 && finish >= 0.0) c = finishColor(c, finish, k.g, texture2D(noise, at).r, cell.x + cell.y, cell.y, floor(k.b * 255.0 + 0.5) * 4.0, time, 0.0);
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
 /** One shader to share across a page or a game, or null without WebGL. */
@@ -11723,8 +11887,8 @@ function createShine(canvas) {
 		return s;
 	};
 	const program = gl.createProgram();
-	gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
-	gl.attachShader(program, shader(gl.FRAGMENT_SHADER, FRAGMENT));
+	gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX$1));
+	gl.attachShader(program, shader(gl.FRAGMENT_SHADER, SHINE_FRAGMENT));
 	gl.linkProgram(program);
 	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
 	gl.useProgram(program);
@@ -11744,6 +11908,7 @@ function createShine(canvas) {
 	gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
 	gl.uniform1i(gl.getUniformLocation(program, "base"), 0);
 	gl.uniform1i(gl.getUniformLocation(program, "info"), 1);
+	gl.uniform1i(gl.getUniformLocation(program, "noise"), 2);
 	const time = gl.getUniformLocation(program, "time");
 	gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 	const texture = (unit$1) => {
@@ -11754,17 +11919,25 @@ function createShine(canvas) {
 		for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
 		return t;
 	};
-	const textures = [texture(0), texture(1)];
+	const textures = [
+		texture(0),
+		texture(1),
+		texture(2)
+	];
 	return {
 		canvas: target,
 		draw(frame, owned, ms) {
-			const { colors, info } = shineData(frame, owned);
-			[colors, info].forEach((bytes, unit$1) => {
+			const { colors, info, noise: noise$2 } = shineData(frame, owned);
+			[
+				colors,
+				info,
+				noise$2
+			].forEach((bytes, unit$1) => {
 				gl.activeTexture(gl.TEXTURE0 + unit$1);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit$1]);
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 			});
-			gl.uniform1f(time, ms / 1e3);
+			gl.uniform1f(time, loopSeconds(ms));
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -12185,7 +12358,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			v[2] / l
 		];
 	};
-	const quad = (a, b$1, c, d, n, rgb$4) => {
+	const quad = (a, b$1, c, d, n, rgb$6) => {
 		const shaded$1 = [
 			a,
 			b$1,
@@ -12208,7 +12381,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
 			nor.push(...shaded$1[i]);
-			col.push(...rgb$4);
+			col.push(...rgb$6);
 		}
 	};
 	const open = (z0, z1, n) => {
@@ -14372,12 +14545,12 @@ const GLYPHS = {
 //#endregion
 //#region src/gif.ts
 /** Each pixel made a `scale` by `scale` block. */
-function upscale(rgba, width$1, height, scale) {
-	if (scale === 1) return rgba;
-	const W = width$1 * scale, out = new Uint8ClampedArray(W * height * scale * 4);
+function upscale(rgba, width$1, height, scale$1) {
+	if (scale$1 === 1) return rgba;
+	const W = width$1 * scale$1, out = new Uint8ClampedArray(W * height * scale$1 * 4);
 	for (let y = 0; y < height; y++) for (let x = 0; x < width$1; x++) {
 		const i = (y * width$1 + x) * 4;
-		for (let dy = 0; dy < scale; dy++) for (let dx = 0; dx < scale; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale + dy) * W + x * scale + dx) * 4);
+		for (let dy = 0; dy < scale$1; dy++) for (let dx = 0; dx < scale$1; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale$1 + dy) * W + x * scale$1 + dx) * 4);
 	}
 	return out;
 }
@@ -14492,9 +14665,9 @@ function lzw(indices, minCode, out) {
 * An animated GIF that loops forever. Transparent pixels stay transparent
 * (each frame clears to them), so a guy can be saved without a background.
 */
-function encodeGif(input, scale = 1) {
-	const W = input.width * scale, H = input.height * scale;
-	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale));
+function encodeGif(input, scale$1 = 1) {
+	const W = input.width * scale$1, H = input.height * scale$1;
+	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
 	const colours = palette(frames$1);
 	const table = [0, ...colours];
 	let bitsPer = 1;
@@ -14581,47 +14754,75 @@ async function zlib(raw) {
 	out.push(b$1 >> 8, b$1 & 255, a >> 8, a & 255);
 	return new Uint8Array(out);
 }
-/** A PNG of one RGBA frame, scaled up by whole pixels. */
-async function encodePng(rgba, width$1, height, scale = 1) {
-	const W = width$1 * scale, H = height * scale, px = upscale(rgba, width$1, height, scale);
-	const raw = new Uint8Array((W * 4 + 1) * H);
-	for (let y = 0; y < H; y++) {
-		raw[y * (W * 4 + 1)] = 0;
-		raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
+const concat = (parts) => {
+	const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+	let at = 0;
+	for (const p of parts) {
+		out.set(p, at);
+		at += p.length;
 	}
-	const chunk = (type, data) => {
-		const body = new Uint8Array(4 + data.length);
-		body.set([...type].map((c$1) => c$1.charCodeAt(0)));
-		body.set(data, 4);
-		const len = data.length, c = crc32(body);
-		return [
-			len >>> 24,
-			len >>> 16 & 255,
-			len >>> 8 & 255,
-			len & 255,
-			...body,
-			c >>> 24,
-			c >>> 16 & 255,
-			c >>> 8 & 255,
-			c & 255
-		];
+	return out;
+};
+const u32 = (n) => new Uint8Array([
+	n >>> 24,
+	n >>> 16 & 255,
+	n >>> 8 & 255,
+	n & 255
+]);
+const u16 = (n) => new Uint8Array([n >>> 8 & 255, n & 255]);
+function chunk(type, data) {
+	const body = concat([new Uint8Array([...type].map((c) => c.charCodeAt(0))), data]);
+	return concat([
+		u32(data.length),
+		body,
+		u32(crc32(body))
+	]);
+}
+/**
+* The PNG layout for a set of frames: indexed (a palette and its transparency)
+* when they use 256 colours or fewer, which pixel art nearly always does and
+* which packs several times smaller, else full RGBA.
+*/
+function layout(frames$1) {
+	const key = (px, i) => px[i + 3] < 128 ? -1 : px[i] << 16 | px[i + 1] << 8 | px[i + 2];
+	const index = new Map([[-1, 0]]);
+	for (const px of frames$1) for (let i = 0; i < px.length && index.size <= 256; i += 4) {
+		const k = key(px, i);
+		if (!index.has(k)) index.set(k, index.size);
+	}
+	if (index.size > 256) return {
+		indexed: false,
+		colours: [],
+		rows: (px, W, H) => {
+			const raw = new Uint8Array((W * 4 + 1) * H);
+			for (let y = 0; y < H; y++) raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
+			return raw;
+		}
 	};
-	const ihdr = new Uint8Array([
-		W >>> 24,
-		W >>> 16 & 255,
-		W >>> 8 & 255,
-		W & 255,
-		H >>> 24,
-		H >>> 16 & 255,
-		H >>> 8 & 255,
-		H & 255,
+	return {
+		indexed: true,
+		colours: [...index.keys()],
+		rows: (px, W, H) => {
+			const raw = new Uint8Array((W + 1) * H);
+			for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) raw[y * (W + 1) + 1 + x] = index.get(key(px, (y * W + x) * 4));
+			return raw;
+		}
+	};
+}
+async function png(input, scale$1, animated) {
+	const W = input.width * scale$1, H = input.height * scale$1;
+	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
+	const { indexed, colours, rows } = layout(frames$1);
+	const head$1 = new Uint8Array([
+		...u32(W),
+		...u32(H),
 		8,
-		6,
+		indexed ? 3 : 6,
 		0,
 		0,
 		0
 	]);
-	return new Uint8Array([
+	const parts = [new Uint8Array([
 		137,
 		80,
 		78,
@@ -14629,11 +14830,57 @@ async function encodePng(rgba, width$1, height, scale = 1) {
 		13,
 		10,
 		26,
-		10,
-		...chunk("IHDR", ihdr),
-		...chunk("IDAT", await zlib(raw)),
-		...chunk("IEND", new Uint8Array())
-	]);
+		10
+	]), chunk("IHDR", head$1)];
+	if (indexed) {
+		parts.push(chunk("PLTE", new Uint8Array(colours.flatMap((k) => k < 0 ? [
+			0,
+			0,
+			0
+		] : [
+			k >> 16,
+			k >> 8 & 255,
+			k & 255
+		]))));
+		parts.push(chunk("tRNS", new Uint8Array([0])));
+	}
+	let seq = 0;
+	if (animated) parts.push(chunk("acTL", concat([u32(frames$1.length), u32(0)])));
+	for (let i = 0; i < frames$1.length; i++) {
+		if (animated) parts.push(chunk("fcTL", concat([
+			u32(seq++),
+			u32(W),
+			u32(H),
+			u32(0),
+			u32(0),
+			u16(Math.max(1, Math.round(input.delays[i] ?? 100))),
+			u16(1e3),
+			new Uint8Array([0, 0])
+		])));
+		const data = await zlib(rows(frames$1[i], W, H));
+		parts.push(i === 0 ? chunk("IDAT", data) : chunk("fdAT", concat([u32(seq++), data])));
+		if (!animated) break;
+	}
+	parts.push(chunk("IEND", new Uint8Array()));
+	return concat(parts);
+}
+/** A PNG of one RGBA frame, scaled up by whole pixels. */
+function encodePng(rgba, width$1, height, scale$1 = 1) {
+	return png({
+		width: width$1,
+		height,
+		frames: [rgba],
+		delays: [0]
+	}, scale$1, false);
+}
+/**
+* An animated PNG of the frames, looping for ever. Browsers play it in a plain
+* `<img>` with no script, keep its transparency whole, and a still viewer
+* shows its first frame. Scale it up by whole pixels here, or in CSS with
+* `image-rendering: pixelated`.
+*/
+function encodeApng(input, scale$1 = 1) {
+	return png(input, scale$1, true);
 }
 
 //#endregion
@@ -14651,7 +14898,7 @@ async function encodePng(rgba, width$1, height, scale = 1) {
 const CARD_WIDTH = 140;
 const CARD_HEIGHT = 204;
 const ZOOM = 6;
-const rgb = (h) => [
+const rgb$2 = (h) => [
 	parseInt(h.slice(1, 3), 16),
 	parseInt(h.slice(3, 5), 16),
 	parseInt(h.slice(5, 7), 16)
@@ -14704,16 +14951,16 @@ function shine(c, o, gx, gy, cx, cy, t) {
 	const f = FINISHES$1.indexOf(o.finish);
 	if (f < 0) return c;
 	const d = (cx + cy) / ZOOM, h = hash$1(gx, gy, o.print);
-	const band = 1 - Math.min(1, Math.max(0, Math.abs(((d - t * 10 + o.print) % 58 + 58) % 58 - 29) - .5));
+	const band$1 = 1 - Math.min(1, Math.max(0, Math.abs(((d - t * 10 + o.print) % 58 + 58) % 58 - 29) - .5));
 	const twinkle$2 = (h * 13 + t * .37) % 1 > .965 ? 1 : 0;
 	const coat = Math.min(1, Math.max(0, 1 - o.scuff * 1.4)) * (h >= o.scuff * .55 ? 1 : 0);
-	const add = (v, k = 1) => [
+	const add$1 = (v, k = 1) => [
 		c[0] + v * 255 * k,
 		c[1] + v * 255 * k,
 		c[2] + v * 255 * k
 	];
 	switch (f) {
-		case 0: return o.scuff <= .07 ? add(band * .45) : c;
+		case 0: return o.scuff <= .07 ? add$1(band$1 * .45) : c;
 		case 1: {
 			const s = .5 + .5 * Math.sin(d * .8 - t * 3 + o.print);
 			const tint = mix(c, [
@@ -14722,12 +14969,12 @@ function shine(c, o, gx, gy, cx, cy, t) {
 				c[2] * 1.18 + 20
 			], .4 * s * coat);
 			return [
-				tint[0] + band * 127 * coat,
-				tint[1] + band * 127 * coat,
-				tint[2] + band * 127 * coat
+				tint[0] + band$1 * 127 * coat,
+				tint[1] + band$1 * 127 * coat,
+				tint[2] + band$1 * 127 * coat
 			];
 		}
-		case 2: return add(twinkle$2 * .55 * coat + band * .25 * coat);
+		case 2: return add$1(twinkle$2 * .55 * coat + band$1 * .25 * coat);
 		case 3: {
 			const s = hueShift(c, (t * .9 + d * .22) * coat);
 			return mix(s, [
@@ -14753,15 +15000,15 @@ function shine(c, o, gx, gy, cx, cy, t) {
 		case 5: {
 			const w = .07 * Math.sin(t * 2 + d * .5) * coat * 255;
 			return [
-				c[0] + .28 * 255 * band * coat + w,
-				c[1] + .12 * 255 * band * coat + w,
-				c[2] + .45 * 255 * band * coat + w
+				c[0] + .28 * 255 * band$1 * coat + w,
+				c[1] + .12 * 255 * band$1 * coat + w,
+				c[2] + .45 * 255 * band$1 * coat + w
 			];
 		}
 		default: return [
-			c[0] + band * .7 * coat * 255 + twinkle$2 * .6 * coat * 255,
-			c[1] + band * .7 * coat * 255 + twinkle$2 * .54 * coat * 255,
-			c[2] + band * .7 * coat * 255 + twinkle$2 * .3 * coat * 255
+			c[0] + band$1 * .7 * coat * 255 + twinkle$2 * .6 * coat * 255,
+			c[1] + band$1 * .7 * coat * 255 + twinkle$2 * .54 * coat * 255,
+			c[2] + band$1 * .7 * coat * 255 + twinkle$2 * .3 * coat * 255
 		];
 	}
 }
@@ -14939,7 +15186,7 @@ const SIDE = 8, LINE = 13;
 */
 function drawCard(input, frame, owned, g, t) {
 	const s = new Surface();
-	const gc = g >= 0 ? rgb(GRADES[g].color) : [
+	const gc = g >= 0 ? rgb$2(GRADES[g].color) : [
 		120,
 		140,
 		170
@@ -15096,7 +15343,7 @@ function drawCard(input, frame, owned, g, t) {
 		for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
 			const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
 			if (!clip(cx, cy)) continue;
-			let c = rgb(hex$3);
+			let c = rgb$2(hex$3);
 			if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
 			s.set(cx, cy, [
 				Math.min(255, Math.max(0, c[0])),
@@ -15107,7 +15354,7 @@ function drawCard(input, frame, owned, g, t) {
 	}));
 	for (const [gx, gy, hex$3] of frame.outside ?? []) for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
 		const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
-		if (clip(cx, cy)) s.set(cx, cy, rgb(hex$3));
+		if (clip(cx, cy)) s.set(cx, cy, rgb$2(hex$3));
 	}
 	const glare = t * .45 % 2.2 * 180 - 50;
 	for (let yy = WIN.top + 1; yy < WIN.bottom; yy++) for (let x = WIN.left + 1; x < WIN.right; x++) {
@@ -15232,23 +15479,23 @@ function ownedBySlot(copies) {
 	return out;
 }
 /** The card as a looping GIF, each card pixel `scale` by `scale`. */
-function toCardGif(input, scale = 3) {
-	return encodeGif(cardFrames(input), scale);
+function toCardGif(input, scale$1 = 3) {
+	return encodeGif(cardFrames(input), scale$1);
 }
 /** The card as a PNG, each card pixel `scale` by `scale`. */
-function toCardPng(input, scale = 4) {
-	return encodePng(cardStill(input), CARD_WIDTH, CARD_HEIGHT, scale);
+function toCardPng(input, scale$1 = 4) {
+	return encodePng(cardStill(input), CARD_WIDTH, CARD_HEIGHT, scale$1);
 }
 /**
 * The guy on his own as a looping GIF: his move with everything he wears,
 * effects and auras moving, on a transparent background or `background`.
 */
-function toGuyGif(seed, move, options = {}, scale = 12) {
-	const anim = animate(seed, move, options), bg = options.background ? rgb(options.background) : null;
+function toGuyGif(seed, move, options = {}, scale$1 = 12) {
+	const anim = animate(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
 	const frames$1 = anim.frames.map((f) => {
 		const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
 		f.colors.forEach((row, y) => row.forEach((c, x) => {
-			const v = c ? rgb(c) : bg;
+			const v = c ? rgb$2(c) : bg;
 			if (v) px.set([...v, 255], (y * FRAME_WIDTH + x) * 4);
 		}));
 		return px;
@@ -15258,13 +15505,781 @@ function toGuyGif(seed, move, options = {}, scale = 12) {
 		height: FRAME_HEIGHT,
 		frames: frames$1,
 		delays: anim.frames.map((f) => f.ms)
-	}, scale);
+	}, scale$1);
+}
+
+//#endregion
+//#region src/card-face.ts
+/**
+* The trading card a guy or an item is shown on: a 26×42 face, its window
+* tinted by grade, the guy standing in it, grade pips under him. The face
+* shimmers by grade (a sheen, foil, holo, gold) and each worn copy's pixels by
+* their finish, all in `LOOP_MS`. Its words (name, print, odds) are the page's
+* to write over it.
+*
+* The face is built once (`cardFace`), then drawn at a time either by the GPU
+* (`CARD_FRAGMENT`, `createCardShader`) or in plain code (`cardFaceAt`), with
+* the same result.
+*/
+const FACE_WIDTH = 26;
+const FACE_HEIGHT = 42;
+const rgb$1 = (s) => [
+	parseInt(s.slice(1, 3), 16),
+	parseInt(s.slice(3, 5), 16),
+	parseInt(s.slice(5, 7), 16)
+];
+const blend = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
+const gradeIndex = (o) => GRADES.findIndex((g) => g.id === gradeOf(o).id);
+/** The card's face, ready to draw at any time. */
+function cardFace(spec) {
+	const W = FACE_WIDTH, H = FACE_HEIGHT;
+	const copies = spec.copies ?? [];
+	const r = resolve(spec.name, spec.parts);
+	if (spec.palette !== void 0) r.palette = spec.palette;
+	const config = dress(r, { equip: copies.map(encode) });
+	const grid = compose(config);
+	const colors = paint(grid, config, withItems(paletteOf(config), config));
+	const owned = config.owned ?? {};
+	const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
+	const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$2 = new Uint8Array(W * H * 4);
+	const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
+		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
+		base.set([
+			c[0],
+			c[1],
+			c[2],
+			255
+		], i);
+		kind.set([
+			Math.round(k / 4 * 255),
+			(fi + 1) * 32,
+			Math.round(sc * 255),
+			print
+		], i);
+		noise$2[i] = noiseOf(x, y, print * 4);
+	};
+	const edge = [
+		34,
+		38,
+		58
+	], cream = [
+		242,
+		236,
+		221
+	], rim$2 = [
+		207,
+		199,
+		180
+	];
+	const gc = g >= 0 ? rgb$1(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb$1(spec.tint) : [
+		120,
+		140,
+		170
+	];
+	const win = blend(cream, gc, g >= 0 ? .28 : spec.tint ? .3 : .14);
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+		if (cx + cy < 2) continue;
+		put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
+	}
+	const band$1 = g >= 3 ? [
+		30,
+		26,
+		52
+	] : g >= 0 ? blend(gc, [
+		24,
+		22,
+		44
+	], .3) : [
+		58,
+		66,
+		100
+	];
+	const lip = g >= 3 ? gc : blend(band$1, [
+		255,
+		255,
+		255
+	], .25);
+	for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) put(x, y, y === 7 ? g >= 3 ? gc : blend(band$1, [
+		0,
+		0,
+		0
+	], .35) : y === 2 ? lip : band$1, 1);
+	for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, x === 3 || y === 9 || x === 22 || y === 28 ? rim$2 : win, 2);
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		const hex$3 = colors[y][x];
+		if (!hex$3) return;
+		const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+		const o = slot ? owned[slot] : void 0;
+		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
+		put(x + 5, y + 11, rgb$1(hex$3), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
+	}));
+	if (g >= 0) for (let p = 0; p < 5; p++) {
+		const x0 = 6 + p * 3;
+		for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim$2, 1);
+	}
+	else for (let x = 8; x <= 17; x++) put(x, 31, rim$2, 1);
+	return {
+		base,
+		kind,
+		noise: noise$2,
+		grade: g,
+		negative: copies.some((o) => o.finish === "negative"),
+		seed: copies.length ? copies[copies.length - 1].print : 0
+	};
+}
+/** Whether a face changes over time at all: a plain card with no finishes is one picture. */
+const faceMoves = (f) => f.grade >= 0 || f.negative || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+/** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
+function cardFaceAt(f, ms, hover) {
+	const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
+	const time = loopSeconds(ms), grade = f.grade;
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const i = (y * W + x) * 4;
+		if (f.base[i + 3] < 128) continue;
+		let c = [
+			f.base[i] / 255,
+			f.base[i + 1] / 255,
+			f.base[i + 2] / 255
+		];
+		const k = Math.floor(f.kind[i] / 255 * 4 + .5), finish = Math.floor(f.kind[i + 1] / 32 + .5) - 1;
+		const scuff = f.kind[i + 2] / 255, print = f.kind[i + 3] * 4, h = f.noise[i] / 255, d = x + y;
+		const wide = 1 - clamp(Math.abs(mod(d - time * 10 + f.seed, 60) - 30) / 3, 0, 1);
+		if (k > 3.5 && finish >= 0) c = finishColor(c, finish, scuff, h, d, y, print, time, 1);
+		else if (k < 2.5) {
+			if (f.negative) c = mix$1([
+				1 - c[0],
+				1 - c[1],
+				1 - c[2]
+			], [
+				.36,
+				.2,
+				.62
+			], .25);
+			if (grade > .5 && grade < 1.5) c = c.map((v) => v + wide * .08);
+			else if (grade > 1.5 && grade < 2.5) {
+				const s = .5 + .5 * Math.sin(d * .55 - time * Math.PI * 2 / 3);
+				c = mix$1(c, [
+					c[0] * .82 + .06,
+					c[1] * .94 + .06,
+					c[2] * 1.2 + .06
+				], .45 * s).map((v) => v + wide * .12);
+			} else if (grade > 2.5 && grade < 3.5) {
+				if (k > 1.5) c = hueShift$1(c, time * Math.PI * 2 / 6 + d * .18);
+				c = c.map((v) => v + wide * .12);
+			} else if (grade > 3.5) {
+				if (k < 1.5) c = mix$1(c, [
+					1,
+					.82,
+					.36
+				], .35 + .2 * wide);
+				c = mix$1(c, [
+					1,
+					.95,
+					.7
+				], step(.965, fract(h * 13 + time / 3)) * .8);
+			}
+		}
+		if (hover && hover.strength > 0) {
+			const at = [(x + .5) / W, (y + .5) / H];
+			const light$1 = (1 - smoothstep(0, .34, distance(at, [hover.x, hover.y]))) * .35 * hover.strength;
+			c = c.map((v) => v + light$1);
+		}
+		out.set([
+			toByte(c[0]),
+			toByte(c[1]),
+			toByte(c[2]),
+			255
+		], i);
+	}
+	return out;
+}
+/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise` from `cardFace`. */
+const CARD_FRAGMENT = `${GLSL_PRECISION}
+varying vec2 uv;
+uniform sampler2D base, kind, noise;
+uniform float time, hover, grade, neg, seed;
+uniform vec2 light;
+${GLSL_COMMON}
+void main() {
+  vec2 res = vec2(${FACE_WIDTH}.0, ${FACE_HEIGHT}.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 kd = texture2D(kind, at);
+  float k = floor(kd.r * 4.0 + 0.5);
+  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
+  float print = floor(kd.a * 255.0 + 0.5) * 4.0;
+  float h = texture2D(noise, at).r;
+  float d = cell.x + cell.y;
+  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 60.0) - 30.0) / 3.0, 0.0, 1.0);
+  if (k > 3.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, d, cell.y, print, time, 1.0);
+  else if (k < 2.5) {
+    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
+    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
+    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
+    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
+    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+  }
+  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+const VERTEX = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
+/** One card shader to share across a page or a game, or null without WebGL. */
+function createCardShader(canvas) {
+	const target = canvas ?? (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(FACE_WIDTH, FACE_HEIGHT) : typeof document !== "undefined" ? document.createElement("canvas") : null);
+	if (!target) return null;
+	target.width = FACE_WIDTH;
+	target.height = FACE_HEIGHT;
+	const gl = target.getContext("webgl", {
+		premultipliedAlpha: false,
+		preserveDrawingBuffer: true
+	});
+	if (!gl) return null;
+	const shader = (type, source) => {
+		const s = gl.createShader(type);
+		gl.shaderSource(s, source);
+		gl.compileShader(s);
+		return s;
+	};
+	const program = gl.createProgram();
+	gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
+	gl.attachShader(program, shader(gl.FRAGMENT_SHADER, CARD_FRAGMENT));
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+	gl.useProgram(program);
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+		-1,
+		-1,
+		1,
+		-1,
+		-1,
+		1,
+		1,
+		1
+	]), gl.STATIC_DRAW);
+	const p = gl.getAttribLocation(program, "p");
+	gl.enableVertexAttribArray(p);
+	gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+	const u = Object.fromEntries([
+		"base",
+		"kind",
+		"noise",
+		"time",
+		"hover",
+		"grade",
+		"neg",
+		"seed",
+		"light"
+	].map((n) => [n, gl.getUniformLocation(program, n)]));
+	gl.uniform1i(u.base, 0);
+	gl.uniform1i(u.kind, 1);
+	gl.uniform1i(u.noise, 2);
+	gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
+	const textures = [
+		0,
+		1,
+		2
+	].map((unit$1) => {
+		const t = gl.createTexture();
+		gl.activeTexture(gl.TEXTURE0 + unit$1);
+		gl.bindTexture(gl.TEXTURE_2D, t);
+		for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.NEAREST);
+		for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
+		return t;
+	});
+	return {
+		canvas: target,
+		draw(face, ms, hover) {
+			[
+				face.base,
+				face.kind,
+				face.noise
+			].forEach((bytes, unit$1) => {
+				gl.activeTexture(gl.TEXTURE0 + unit$1);
+				gl.bindTexture(gl.TEXTURE_2D, textures[unit$1]);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FACE_WIDTH, FACE_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+			});
+			gl.uniform1f(u.time, loopSeconds(ms));
+			gl.uniform1f(u.grade, face.grade);
+			gl.uniform1f(u.neg, face.negative ? 1 : 0);
+			gl.uniform1f(u.seed, face.seed);
+			gl.uniform1f(u.hover, hover?.strength ?? 0);
+			gl.uniform2f(u.light, hover?.x ?? .5, hover?.y ?? .3);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		}
+	};
+}
+
+//#endregion
+//#region src/guy-code.ts
+/**
+* A guy as an address carries him, and the art version every address names.
+* Kept apart from the renderer so a page that only shows guys from the lil
+* guys Worker (`<lil-guy>` with a host) can build their addresses without
+* shipping the library.
+*/
+/**
+* Bumped whenever the art changes. It is part of every baked image's address,
+* so a redraw reaches every board at once and an old address keeps its picture.
+*/
+const ART_VERSION = 1;
+const PART_KEYS = [
+	"head",
+	"eyes",
+	"mouth",
+	"cheeks",
+	"hair",
+	"body",
+	"accessory",
+	"arms",
+	"feet",
+	"shade",
+	"flip",
+	"lucky",
+	"rotation"
+];
+/** A spec as a short, address-safe code. Anything that draws the same guy gives the same code. */
+function guyCode(spec) {
+	const parts = spec.parts && Object.keys(spec.parts).length ? PART_KEYS.map((k) => {
+		const v = spec.parts[k];
+		return v === void 0 ? "" : typeof v === "boolean" ? v ? "t" : "f" : String(v);
+	}).join(".") : void 0;
+	const short = {
+		s: spec.seed,
+		p: parts,
+		c: spec.palette,
+		e: spec.equip?.length ? spec.equip : void 0,
+		g: spec.grade,
+		t: spec.tint
+	};
+	const json = JSON.stringify(short);
+	const bytes = new TextEncoder().encode(json);
+	let bin = "";
+	for (const b$1 of bytes) bin += String.fromCharCode(b$1);
+	return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+/** A baked guy's size, and a card's. */
+const BAKED_SIZE = {
+	guy: {
+		width: 22,
+		height: 20
+	},
+	card: {
+		width: 26,
+		height: 42
+	}
+};
+
+//#endregion
+//#region src/element.ts
+/** Defines `<lil-guy>` (once per tag). */
+function defineLilGuy(options = {}) {
+	const tag = options.tag ?? "lil-guy";
+	if (typeof customElements === "undefined" || customElements.get(tag)) return;
+	const host = options.host?.replace(/\/+$/, "");
+	const playing = new Set();
+	let ticking = false;
+	const tick = (now) => {
+		ticking = playing.size > 0;
+		if (!ticking) return;
+		for (const p of playing) {
+			if (!p.el.isConnected) {
+				playing.delete(p);
+				continue;
+			}
+			let t = (now - p.start) % p.total, k = 0;
+			while (k < p.frames.delays.length - 1 && t >= p.frames.delays[k]) {
+				t -= p.frames.delays[k];
+				k++;
+			}
+			if (k !== p.shown) {
+				p.shown = k;
+				p.el.paint(k);
+			}
+		}
+		requestAnimationFrame(tick);
+	};
+	const play = (p) => {
+		playing.add(p);
+		if (!ticking) {
+			ticking = true;
+			requestAnimationFrame(tick);
+		}
+	};
+	const seen = typeof IntersectionObserver !== "undefined" ? new IntersectionObserver((es) => es.forEach((e) => e.target.visible(e.isIntersecting)), { rootMargin: "100px" }) : null;
+	const baked = new Map();
+	class LilGuyElement extends HTMLElement {
+		static observedAttributes = [
+			"name",
+			"seed",
+			"code",
+			"view",
+			"size",
+			"label"
+		];
+		_spec = null;
+		player = null;
+		canvas = null;
+		onScreen = !seen;
+		/** The guy as a spec, instead of a `code` attribute. */
+		get spec() {
+			return this._spec;
+		}
+		set spec(v) {
+			this._spec = v;
+			this.render();
+		}
+		connectedCallback() {
+			this.style.display ||= "inline-block";
+			this.style.lineHeight = "0";
+			seen?.observe(this);
+			this.render();
+		}
+		disconnectedCallback() {
+			seen?.unobserve(this);
+			if (this.player) playing.delete(this.player);
+		}
+		attributeChangedCallback() {
+			if (this.isConnected) this.render();
+		}
+		/** What the guy is: a code, or `@name` for a claimed one. */
+		who() {
+			if (this._spec) return guyCode(this._spec);
+			const code = this.getAttribute("code"), name = this.getAttribute("name"), seed = this.getAttribute("seed");
+			if (code) return code;
+			if (name) return "@" + name.toLowerCase();
+			return seed ? guyCode({ seed }) : null;
+		}
+		visible(on$1) {
+			this.onScreen = on$1;
+			if (!this.player) {
+				if (on$1) this.render();
+				return;
+			}
+			if (on$1) play(this.player);
+			else playing.delete(this.player);
+		}
+		paint(k) {
+			const p = this.player, c = this.canvas;
+			if (!p || !c) return;
+			c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(p.frames.frames[k]), p.frames.width, p.frames.height), 0, 0);
+		}
+		render() {
+			const who = this.who(), view = this.getAttribute("view") || "idle";
+			const size = Math.max(1, Math.min(32, Math.round(Number(this.getAttribute("size")) || 4)));
+			const box = view.startsWith("card") ? BAKED_SIZE.card : BAKED_SIZE.guy;
+			const label = this.getAttribute("label");
+			if (label) {
+				this.setAttribute("role", "img");
+				this.setAttribute("aria-label", label);
+			} else this.setAttribute("aria-hidden", "true");
+			if (this.player) {
+				playing.delete(this.player);
+				this.player = null;
+			}
+			if (!who) {
+				this.replaceChildren();
+				return;
+			}
+			const style = `width:${box.width * size}px;height:${box.height * size}px;image-rendering:pixelated;image-rendering:crisp-edges`;
+			if (host) {
+				const img = document.createElement("img");
+				img.src = `${host}/g/${ART_VERSION}/${who}/${view}.png`;
+				img.alt = "";
+				img.decoding = "async";
+				img.loading = "lazy";
+				img.style.cssText = style;
+				this.replaceChildren(img);
+				return;
+			}
+			if (!options.bake || who.startsWith("@")) {
+				this.replaceChildren();
+				return;
+			}
+			if (!this.onScreen) {
+				this.replaceChildren();
+				this.canvas = null;
+				return;
+			}
+			const key = `${who}/${view}`;
+			if (!baked.has(key)) baked.set(key, options.bake(this._spec ?? who, view));
+			const frames$1 = baked.get(key);
+			if (!frames$1) {
+				this.replaceChildren();
+				return;
+			}
+			const canvas = document.createElement("canvas");
+			canvas.width = frames$1.width;
+			canvas.height = frames$1.height;
+			canvas.style.cssText = style;
+			this.canvas = canvas;
+			this.replaceChildren(canvas);
+			this.player = {
+				el: this,
+				frames: frames$1,
+				start: performance.now(),
+				shown: -1,
+				total: frames$1.delays.reduce((a, b$1) => a + b$1, 0)
+			};
+			this.paint(0);
+			this.player.shown = 0;
+			if (frames$1.frames.length > 1) play(this.player);
+		}
+	}
+	customElements.define(tag, LilGuyElement);
+}
+
+//#endregion
+//#region src/bake.ts
+/**
+* A guy or his card, finished: every frame as a page with WebGL draws it,
+* auras, effects, emotes and his copies' finishes included, ready to save as
+* an image or play anywhere. The lil guys Worker serves these (`/g/`), the
+* `<lil-guy>` element plays them, and the lil guys site shows them, all from
+* this one function, so a guy is the same wherever he turns up.
+*/
+/** A baked guy is his frame with room for a rare aura's rings either side: the same size for every guy. */
+const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
+const GUY_HEIGHT = FRAME_HEIGHT;
+/** Longest a baked frame shows while something shimmers, so a finish moves smoothly. */
+const STEP_MS = 80;
+/** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
+function animateOptions(spec) {
+	const config = {
+		...resolve(spec.seed, spec.parts),
+		...spec.palette !== void 0 ? { palette: spec.palette } : {}
+	};
+	return {
+		parts: spec.parts,
+		palette: spec.palette !== void 0 ? paletteOf(config) : void 0,
+		equip: spec.equip
+	};
+}
+/** The guy as worn, for the finishes: what `animate` dresses him in. */
+function ownedOf$1(spec) {
+	return dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed).owned;
+}
+const rgb = (s) => [
+	parseInt(s.slice(1, 3), 16),
+	parseInt(s.slice(3, 5), 16),
+	parseInt(s.slice(5, 7), 16)
+];
+/** A frame on the padded canvas: the guy's pixels (shone, if given) and the aura cells past his sides. */
+function place(frame, shone) {
+	const out = new Uint8ClampedArray(GUY_WIDTH * GUY_HEIGHT * 4);
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
+		const o = (y * GUY_WIDTH + x + AURA_PAD) * 4;
+		if (shone) {
+			const i = (y * FRAME_WIDTH + x) * 4;
+			if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o);
+			continue;
+		}
+		const c = frame.colors[y][x];
+		if (c) out.set([...rgb(c), 255], o);
+	}
+	for (const [x, y, c] of frame.outside ?? []) out.set([...rgb(c), 255], (y * GUY_WIDTH + x + AURA_PAD) * 4);
+	return out;
+}
+const same = (a, b$1) => a.length === b$1.length && a.every((v, i) => v === b$1[i]);
+/** Consecutive identical frames as one, shown for their time together. */
+function merged(width$1, height, frames$1, delays) {
+	const out = {
+		width: width$1,
+		height,
+		frames: [],
+		delays: []
+	};
+	frames$1.forEach((f, i) => {
+		const last = out.frames.length - 1;
+		if (last >= 0 && same(out.frames[last], f)) out.delays[last] += delays[i];
+		else {
+			out.frames.push(f);
+			out.delays.push(delays[i]);
+		}
+	});
+	return out;
+}
+/**
+* How many times to play a move so his finishes also come round: finishes
+* repeat every LOOP_MS, so the move is played the number of times that gets
+* closest to whole turns of them, and they run that little faster or slower to
+* close exactly. Returns the repeats and the finishes' speed.
+*/
+function shineFit(duration) {
+	let best = {
+		repeats: 1,
+		speed: LOOP_MS / duration
+	};
+	for (let turns = 1; turns <= 3; turns++) {
+		const repeats = Math.max(1, Math.round(turns * LOOP_MS / duration));
+		if (repeats * duration > LOOP_MS * 2) continue;
+		const speed = turns * LOOP_MS / (repeats * duration);
+		if (Math.abs(Math.log(speed)) < Math.abs(Math.log(best.speed))) best = {
+			repeats,
+			speed
+		};
+	}
+	return best;
+}
+/** A guy playing a move, every frame finished. */
+function bakeGuy(spec, move = "idle") {
+	const anim = animate(spec.seed, move, animateOptions(spec));
+	const owned = ownedOf$1(spec);
+	if (!anim.frames.some((f) => shines(f, owned))) return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map((f) => place(f)), anim.frames.map((f) => f.ms));
+	const { repeats, speed } = shineFit(anim.duration);
+	const frames$1 = [], delays = [];
+	let t = 0;
+	for (let r = 0; r < repeats; r++) for (const f of anim.frames) {
+		const steps = Math.max(1, Math.ceil(f.ms / STEP_MS));
+		for (let s = 0; s < steps; s++) {
+			const ms = Math.round(f.ms * (s + 1) / steps) - Math.round(f.ms * s / steps);
+			frames$1.push(place(f, shineFrame(f, owned, t * speed)));
+			delays.push(ms);
+			t += ms;
+		}
+	}
+	return merged(GUY_WIDTH, GUY_HEIGHT, frames$1, delays);
+}
+/** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
+function bakeCard(spec) {
+	const face = cardFace(spec);
+	if (!faceMoves(face)) return {
+		width: FACE_WIDTH,
+		height: FACE_HEIGHT,
+		frames: [cardFaceAt(face, 0)],
+		delays: [LOOP_MS]
+	};
+	const frames$1 = [], delays = [];
+	for (let t = 0; t < LOOP_MS; t += STEP_MS) {
+		frames$1.push(cardFaceAt(face, t));
+		delays.push(STEP_MS);
+	}
+	return merged(FACE_WIDTH, FACE_HEIGHT, frames$1, delays);
+}
+/** The frames side by side in one strip, with how long each shows: a sprite sheet for a game. */
+function sheetOf(f) {
+	const W = f.width * f.frames.length, rgba = new Uint8ClampedArray(W * f.height * 4);
+	f.frames.forEach((px, k) => {
+		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), (y * W + k * f.width) * 4);
+	});
+	return {
+		width: W,
+		height: f.height,
+		rgba,
+		delays: f.delays
+	};
+}
+/** Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), or a sprite strip (`sheet`). */
+async function bakedImage(frames$1, kind, scale$1 = 1) {
+	if (kind === "still") return encodePng(frames$1.frames[0], frames$1.width, frames$1.height, scale$1);
+	if (kind === "sheet") {
+		const s = sheetOf(frames$1);
+		return encodePng(s.rgba, s.width, s.height, scale$1);
+	}
+	return encodeApng(frames$1, scale$1);
+}
+/** A code back into a spec, or null for anything that isn't one. */
+function readGuyCode(code) {
+	if (typeof code !== "string" || code.length > 2e3 || !/^[\w-]+$/.test(code)) return null;
+	try {
+		const bin = atob(code.replace(/-/g, "+").replace(/_/g, "/"));
+		const o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0))));
+		if (!o || typeof o.s !== "string" || !o.s || o.s.length > 200) return null;
+		const spec = { seed: o.s };
+		if (typeof o.p === "string") {
+			const values = o.p.split(".");
+			if (values.length !== PART_KEYS.length) return null;
+			const parts = {};
+			PART_KEYS.forEach((k, i) => {
+				const v = values[i];
+				if (v === "") return;
+				parts[k] = v === "t" ? true : v === "f" ? false : Number(v);
+			});
+			if (Object.values(parts).some((v) => typeof v === "number" && !(Number.isInteger(v) && v >= 0 && v < 1e3))) return null;
+			spec.parts = parts;
+		}
+		if (o.c !== void 0) {
+			if (!Number.isInteger(o.c) || o.c < 0 || o.c > 999) return null;
+			spec.palette = o.c;
+		}
+		if (o.e !== void 0) {
+			if (!Array.isArray(o.e) || o.e.length > 8 || o.e.some((e) => typeof e !== "string" || !decode(e))) return null;
+			spec.equip = o.e;
+		}
+		if (o.g !== void 0) {
+			if (!Number.isInteger(o.g) || o.g < -1 || o.g > 9) return null;
+			spec.grade = o.g;
+		}
+		if (o.t !== void 0) {
+			if (typeof o.t !== "string" || !/^#[0-9a-fA-F]{6}$/.test(o.t)) return null;
+			spec.tint = o.t;
+		}
+		return spec;
+	} catch {
+		return null;
+	}
+}
+/** A card spec as the face builder takes it. */
+function faceSpec(spec) {
+	return {
+		name: spec.seed,
+		parts: spec.parts,
+		palette: spec.palette,
+		copies: (spec.equip ?? []).map(decode).filter((o) => !!o),
+		grade: spec.grade,
+		tint: spec.tint
+	};
+}
+/** Whether a move name is one this library plays. */
+const isMove = (m) => MOVES.includes(m);
+/**
+* A view as the Worker serves it and `<lil-guy>` plays it: a move looping
+* (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`.
+* Null for a view there isn't.
+*/
+function bakeView(spec, view) {
+	if (view === "card" || view === "card-still") {
+		const card = bakeCard(faceSpec(spec));
+		return view === "card" ? card : {
+			...card,
+			frames: card.frames.slice(0, 1),
+			delays: [LOOP_MS]
+		};
+	}
+	if (view === "still") {
+		const g = bakeGuy(spec, "idle");
+		return {
+			...g,
+			frames: g.frames.slice(0, 1),
+			delays: [LOOP_MS]
+		};
+	}
+	return isMove(view) ? bakeGuy(spec, view) : null;
+}
+/** `<lil-guy>` with the library on the page: baked in the page, or from a host if given. */
+function defineLilGuyHere(options = {}) {
+	defineLilGuy({
+		...options,
+		bake: (guy, view) => {
+			const spec = typeof guy === "string" ? readGuyCode(guy) : guy;
+			return spec ? bakeView(spec, view) : null;
+		}
+	});
 }
 
 //#endregion
 exports.ARM_NAMES = ARM_NAMES
+exports.ART_VERSION = ART_VERSION
 exports.AURAS = AURAS
 exports.AURA_ODDS = AURA_ODDS
+exports.BAKED_SIZE = BAKED_SIZE
+exports.CARD_FRAGMENT = CARD_FRAGMENT
 exports.CARD_HEIGHT = CARD_HEIGHT
 exports.CARD_WIDTH = CARD_WIDTH
 exports.DEAL_PREFIX = DEAL_PREFIX
@@ -15274,6 +16289,8 @@ exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
 exports.EFFECTS = EFFECTS
 exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
+exports.FACE_HEIGHT = FACE_HEIGHT
+exports.FACE_WIDTH = FACE_WIDTH
 exports.FINISHES = FINISHES
 exports.FOOT_NAMES = FOOT_NAMES
 exports.FOOT_STYLES = FOOT_STYLES
@@ -15282,18 +16299,24 @@ exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
 exports.FX_IDS = FX_IDS
 exports.GAMES = GAMES
+exports.GLSL_COMMON = GLSL_COMMON
 exports.GOLD_RIM_DAYS = GOLD_RIM_DAYS
 exports.GRADES = GRADES
 exports.GRID_SIZE = GRID_SIZE
+exports.GUY_HEIGHT = GUY_HEIGHT
 exports.GUY_TIERS = GUY_TIERS
+exports.GUY_WIDTH = GUY_WIDTH
 exports.HEADROOM = HEADROOM
+exports.LOOP_MS = LOOP_MS
 exports.LUCKY_ODDS = LUCKY_ODDS
 exports.MAX_PINS = MAX_PINS
 exports.MOVES = MOVES
 exports.ONE_OF_ONE_AURAS = ONE_OF_ONE_AURAS
 exports.PINS = PINS
 exports.RETIRED_EYES = RETIRED_EYES
+exports.SHADER_FINISHES = SHADER_FINISHES
 exports.SHADE_COUNT = SHADE_COUNT
+exports.SHINE_FRAGMENT = SHINE_FRAGMENT
 exports.SMALL_SIZE = SMALL_SIZE
 exports.TAG_MAX = TAG_MAX
 exports.TIER_ICONS = TIER_ICONS
@@ -15304,11 +16327,18 @@ exports.WEAR = WEAR
 exports.accessories = accessories
 exports.allowed = allowed
 exports.animate = animate
+exports.animateOptions = animateOptions
 exports.applyFx = applyFx
 exports.auraById = auraById
 exports.auraCells = auraCells
 exports.auraColor = auraColor
+exports.bakeCard = bakeCard
+exports.bakeGuy = bakeGuy
+exports.bakeView = bakeView
+exports.bakedImage = bakedImage
 exports.bodies = bodies
+exports.cardFace = cardFace
+exports.cardFaceAt = cardFaceAt
 exports.cardFrames = cardFrames
 exports.cardPlayer = cardPlayer
 exports.cardStill = cardStill
@@ -15319,17 +16349,23 @@ exports.collectorNotes = collectorNotes
 exports.compose = compose
 exports.composeBase = composeBase
 exports.copyOneIn = copyOneIn
+exports.createCardShader = createCardShader
 exports.createShine = createShine
 exports.dealOf = dealOf
 exports.decode = decode
 exports.decodeLook = decodeLook
+exports.defineLilGuy = defineLilGuyHere
 exports.drawFrame = drawFrame
 exports.dress = dress
 exports.encode = encode
+exports.encodeApng = encodeApng
 exports.encodeGif = encodeGif
 exports.encodeLook = encodeLook
 exports.encodePng = encodePng
 exports.eyes = eyes
+exports.faceMoves = faceMoves
+exports.faceSpec = faceSpec
+exports.finishColor = finishColor
 exports.floatShare = floatShare
 exports.frameAt = frameAt
 exports.freeItem = freeItem
@@ -15338,6 +16374,7 @@ exports.gameItems = gameItems
 exports.getColor = getColor
 exports.getPalette = getPalette
 exports.gradeOf = gradeOf
+exports.guyCode = guyCode
 exports.guyOneIn = guyOneIn
 exports.guyRank = guyRank
 exports.guyScore = guyScore
@@ -15346,6 +16383,7 @@ exports.hash = hash
 exports.hashNth = hashNth
 exports.heads = heads
 exports.inSeason = inSeason
+exports.isMove = isMove
 exports.itemById = itemById
 exports.itemFrame = itemFrame
 exports.items = items
@@ -15356,12 +16394,14 @@ exports.makeSeed = makeSeed
 exports.mouths = mouths
 exports.nameOf = nameOf
 exports.nebulaPhase = nebulaPhase
+exports.noiseOf = noiseOf
 exports.ownedOf = ownedOf
 exports.paint = paint
 exports.paletteOf = paletteOf
 exports.palettes = palettes
 exports.pickable = pickable
 exports.pinById = pinById
+exports.readGuyCode = readGuyCode
 exports.resolve = resolve
 exports.resolveColor = resolveColor
 exports.roll = roll
@@ -15369,7 +16409,11 @@ exports.rollFx = rollFx
 exports.rollSeason = rollSeason
 exports.setProgress = setProgress
 exports.shadePalette = shadePalette
+exports.sheetOf = sheetOf
 exports.shineData = shineData
+exports.shineFit = shineFit
+exports.shineFrame = shineFrame
+exports.shines = shines
 exports.slotOf = slotOf
 exports.special = special
 exports.starter = starter

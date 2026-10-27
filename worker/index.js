@@ -1,4 +1,5 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
+import { baked } from './baked.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
@@ -12,8 +13,12 @@ const digest = async value => Array.from(new Uint8Array(await crypto.subtle.dige
 const equal = async (a, b) => (await digest(a)) === (await digest(b));
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/g/')) {
+      try { return await baked(request, env, url, ctx, guyOf); }
+      catch { return Response.json({ error: 'Pictures are temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try { return await api(request, env, url); }
     catch { return json({ error: 'Names are temporarily unavailable. Please try again.' }, 503); }

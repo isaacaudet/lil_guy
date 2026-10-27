@@ -54,6 +54,23 @@ To turn it on:
 - Add `https://lilguys.dleclub.com` to the Google OAuth client's Authorized
   JavaScript origins, so the Google button keeps working on the new host.
 
+## Finished guys: `/g/`
+
+The Worker serves baked guys and cards at `/g/<art version>/<guy>/<view>`
+(README, Finished guys anywhere; `worker/baked.js`), and the standalone element
+at `/lil-guy-element.js`. A code's pictures are immutable and kept in
+Cloudflare's cache; `@name` redirects to the current code for a minute at a
+time. A cache miss renders in plain code (a plain guy in a few milliseconds, a
+shimmering card in about 30 to 60): on Workers' free plan, with 10 ms of CPU a
+request, larger renders can fail, so the paid plan is assumed. Renders on a
+miss count against the address, 3,000 a day, in `claim_limits` (with
+`CLAIM_SALT`), so made-up codes can't run up the bill. Before deploying a
+change to the art, bump `ART_VERSION` in `src/guy-code.ts`.
+
+Checks: `bun test` (worker/baked.test.ts serves exactly the library's bytes),
+`bun run verify:shaders` and `node scripts/verify-site.mjs` (both need a
+`bun run showcase` and, for the site check, `bash scripts/build-site.sh`).
+
 ## Name claims
 
 - `POST /api/names/:key`: atomically claims a 2–16 character lowercase

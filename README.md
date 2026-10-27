@@ -257,6 +257,49 @@ and everything (items, copies, share cards, the shader) about 27 KB.
 last frame. The SVG plays whatever the reduced-motion setting is, as the DLE
 Club games do; pass `stillWhenReduced: true` to hold the first frame instead.
 
+## Finished guys anywhere
+
+Every guy can be delivered finished: his move, aura, effects, emotes and his
+copies' finishes all baked into frames, the same pixels everywhere. One
+renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
+server, a page and a game all get the same picture.
+
+```html
+<!-- Any page: the picture from the lil guys Worker, no library on the page (1.7 KB gzipped). -->
+<script src="https://lilguys.dleclub.com/lil-guy-element.js"></script>
+<lil-guy name="mia" size="3"></lil-guy>              <!-- a claimed guy, as he's worn -->
+<lil-guy seed="Sneaky Gumdrop" view="hop"></lil-guy> <!-- any text's guy, hopping -->
+<lil-guy name="mia" view="card" size="4"></lil-guy>  <!-- his card, shimmering -->
+```
+
+Or the addresses themselves, `/g/<art version>/<guy>/<view>`:
+
+| | |
+| --- | --- |
+| `<guy>` | a guy code (`guyCode({ seed, parts, palette, equip })`) or `@name` for a claimed name |
+| `idle.png`, `hop.png`… | the move looping, an animated PNG (plays in a plain `<img>`) |
+| `still.png` | his first frame, for dense lists |
+| `card.png`, `card-still.png` | his card, its shimmer looping |
+| `idle.sheet.png` + `idle.sheet.json` | the frames in a strip and their times, for a game's sprite |
+| `idle@4.png` | any of these scaled up by whole pixels (1 to 16) |
+
+A code's images never change for an art version (`ART_VERSION`), so they are
+cached for good; a redraw bumps the version and every board shows it at once.
+`@name` redirects to his code, so it follows what he wears. Show them at
+whole-number sizes with `image-rendering: pixelated`.
+
+With the library on the page, `LilGuy.defineLilGuy()` makes `<lil-guy>` bake
+in the page instead (set `.spec` or `code`); `defineLilGuy({ host })` uses the
+Worker. The lil guys site bakes in the page, and `scripts/verify-site.mjs`
+checks every card and guy it shows against the Worker's frames.
+
+For a game that draws with WebGL, `SHINE_FRAGMENT`, `CARD_FRAGMENT`,
+`createShine` and `createCardShader` run the same effects on the GPU; every
+movement repeats in `LOOP_MS` and noise is precomputed per pixel, so
+`scripts/verify-shaders.mjs` finds the GPU and the plain code within one step
+of 255 on every pixel. Pointer effects (tilt, a hover light) aren't baked: they
+are the page's, on top.
+
 ## How It Works
 
 1. **Hash** — FNV-1a hash of the input string, with an independent hash for each slot, so adding a part to one slot never reshuffles the others

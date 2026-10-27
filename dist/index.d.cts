@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime1 from "react/jsx-runtime";
+import * as react_jsx_runtime3 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -1375,18 +1375,40 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime3.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
 /**
- * A frame as the shader reads it: its colours, and for each pixel the finish,
- * scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+ * The finishes, moving: a WebGL shader that runs each worn copy's finish on
+ * that copy's own pixels — Sunset's sheen, Tempered's glint, Nebula's drift,
+ * Prism's rainbow, Negative's pulse, Gold's sparkle — while the guy plays a
+ * move. Scuffed pixels shine less, the way they're painted.
+ *
+ * Browsers allow only a handful of WebGL contexts per page, so make one shine
+ * and share it: draw each guy into it in turn and copy the result out with
+ * `drawImage` into that guy's own 2D canvas. Without WebGL `createShine`
+ * returns null; draw the frame's colours as they are.
+ */
+/**
+ * A frame as the shader reads it: its colours; for each pixel the finish,
+ * scuff and print of the copy it belongs to; and each pixel's noise. Three
+ * RGBA byte arrays, 16×20.
  */
 declare function shineData(frame: AnimationFrame, owned?: AvatarConfig['owned']): {
   colors: Uint8Array;
   info: Uint8Array;
+  noise: Uint8Array;
 };
+/** Whether any pixel of the frame belongs to a copy with a finish that shimmers. */
+declare const shines: (frame: AnimationFrame, owned?: AvatarConfig["owned"]) => boolean;
+/**
+ * The shader's picture, in plain code: the frame with each copy's finish
+ * running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
+ */
+declare function shineFrame(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): Uint8ClampedArray;
+/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds. */
+declare const SHINE_FRAGMENT = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 uv;\nuniform sampler2D base, info, noise;\nuniform float time;\n\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;\n  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }\n  else if (finish < 4.5) {\n    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));\n    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);\n    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);\n  }\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;\n  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;\n  return c;\n}\n\nvoid main() {\n  vec2 res = vec2(16.0, 20.0);\n  vec2 cell = floor(uv * res);\n  vec2 at = (cell + 0.5) / res;\n  vec4 b = texture2D(base, at);\n  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }\n  vec3 c = b.rgb;\n  vec4 k = texture2D(info, at);\n  float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;\n  if (k.a > 0.5 && finish >= 0.0) c = finishColor(c, finish, k.g, texture2D(noise, at).r, cell.x + cell.y, cell.y, floor(k.b * 255.0 + 0.5) * 4.0, time, 0.0);\n  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);\n}";
 interface Shine {
   /** The 16×20 canvas the shader draws into; copy it out with drawImage. */
   canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -1624,6 +1646,13 @@ declare function upscale(rgba: Uint8ClampedArray, width: number, height: number,
 declare function encodeGif(input: Frames, scale?: number): Uint8Array;
 /** A PNG of one RGBA frame, scaled up by whole pixels. */
 declare function encodePng(rgba: Uint8ClampedArray, width: number, height: number, scale?: number): Promise<Uint8Array>;
+/**
+ * An animated PNG of the frames, looping for ever. Browsers play it in a plain
+ * `<img>` with no script, keep its transparency whole, and a still viewer
+ * shows its first frame. Scale it up by whole pixels here, or in CSS with
+ * `image-rendering: pixelated`.
+ */
+declare function encodeApng(input: Frames, scale?: number): Promise<Uint8Array>;
 
 //#endregion
 //#region src/card.d.ts
@@ -1693,5 +1722,229 @@ declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
 }, scale?: number): Uint8Array;
 
 //#endregion
-export { ARM_NAMES, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, CARD_HEIGHT, CARD_WIDTH, CardInput, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, Finish, Frames, Fx, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_TIERS, GameId, Grade, GuyRank, HEADROOM, Intensity3D, Item, ItemGame, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADE_COUNT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, applyFx, auraById, auraCells, auraColor, bodies, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createShine, dealOf, decode, decodeLook, drawFrame, dress, encode, encodeGif, encodeLook, encodePng, eyes, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, ownedOf, paint, paletteOf, palettes, pickable, pinById, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, shineData, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/finish-shader.d.ts
+/**
+ * The finishes' shimmer, written twice: as GLSL for a page or a game that has
+ * WebGL, and as plain code that gives the same colours anywhere (a server, a
+ * test, a browser without WebGL). Both read the same inputs: a pixel's colour,
+ * its copy's finish, scuff and print, a fixed noise value for the pixel, and
+ * the time. Two things keep them the same:
+ *
+ * - Nothing random is computed on the GPU. A sine hash comes out differently
+ *   on every graphics card, so each pixel's noise is made here (`noiseOf`) and
+ *   handed to the shader in a texture.
+ * - Every movement repeats in `LOOP_MS`, so a baked loop closes without a jump
+ *   and the GPU never sees a large time.
+ *
+ * `scripts/verify-shaders.mjs` runs the GLSL in a browser and checks it
+ * against the plain code, pixel by pixel.
+ */
+declare const LOOP_MS = 6000;
+/** The finishes in the order the shaders number them. */
+declare const SHADER_FINISHES: readonly ["plain", "sunset", "tempered", "nebula", "prism", "negative", "gold"];
+/** A pixel's noise, 0 to 255: the same for a cell and print everywhere. */
+declare const noiseOf: (x: number, y: number, print: number) => number;
+/** Highest precision the device has: mediump is 16-bit on phones, too coarse for the bands. */
+
+declare const GLSL_COMMON = "\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;\n  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }\n  else if (finish < 4.5) {\n    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));\n    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);\n    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);\n  }\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;\n  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;\n  return c;\n}\n";
+type Vec3 = [number, number, number];
+/** `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES. */
+declare function finishColor(c: Vec3, finish: number, scuff: number, h: number, d: number, row: number, print: number, time: number, scan: number): Vec3;
+
+//#endregion
+//#region src/card-face.d.ts
+/** A colour channel as the GPU stores it. */
+/**
+ * The trading card a guy or an item is shown on: a 26×42 face, its window
+ * tinted by grade, the guy standing in it, grade pips under him. The face
+ * shimmers by grade (a sheen, foil, holo, gold) and each worn copy's pixels by
+ * their finish, all in `LOOP_MS`. Its words (name, print, odds) are the page's
+ * to write over it.
+ *
+ * The face is built once (`cardFace`), then drawn at a time either by the GPU
+ * (`CARD_FRAGMENT`, `createCardShader`) or in plain code (`cardFaceAt`), with
+ * the same result.
+ */
+declare const FACE_WIDTH = 26;
+declare const FACE_HEIGHT = 42;
+interface FaceSpec {
+  /** The guy's seed or name. */
+  name: string;
+  /** Picked parts (a look), as `resolve` takes them. */
+  parts?: Parameters<typeof resolve>[1];
+  /** A palette index, overriding the dealt one. */
+  palette?: number;
+  /** The copies he wears. */
+  copies?: Owned[];
+  /** The grade the card is shown at; by default the best of his copies'. */
+  grade?: number;
+  /** The window's tint when there's no grade. */
+  tint?: string;
+}
+interface CardFace {
+  /** Colours, 26×42 RGBA. */
+  base: Uint8Array;
+  /** Per pixel: what it is (card, window, guy, item), its copy's finish, scuff and print. */
+  kind: Uint8Array;
+  /** Per pixel noise, in the red channel. */
+  noise: Uint8Array;
+  grade: number;
+  negative: boolean;
+  /** Where the face's wide band starts: the last copy's print. */
+  seed: number;
+}
+/** The card's face, ready to draw at any time. */
+declare function cardFace(spec: FaceSpec): CardFace;
+/** Whether a face changes over time at all: a plain card with no finishes is one picture. */
+declare const faceMoves: (f: CardFace) => boolean;
+/** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
+interface Hover {
+  x: number;
+  y: number;
+  strength: number;
+}
+/** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
+declare function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8ClampedArray;
+/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise` from `cardFace`. */
+declare const CARD_FRAGMENT = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 uv;\nuniform sampler2D base, kind, noise;\nuniform float time, hover, grade, neg, seed;\nuniform vec2 light;\n\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;\n  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }\n  else if (finish < 4.5) {\n    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));\n    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);\n    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);\n  }\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;\n  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;\n  return c;\n}\n\nvoid main() {\n  vec2 res = vec2(26.0, 42.0);\n  vec2 cell = floor(uv * res);\n  vec2 at = (cell + 0.5) / res;\n  vec4 b = texture2D(base, at);\n  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }\n  vec3 c = b.rgb;\n  vec4 kd = texture2D(kind, at);\n  float k = floor(kd.r * 4.0 + 0.5);\n  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;\n  float print = floor(kd.a * 255.0 + 0.5) * 4.0;\n  float h = texture2D(noise, at).r;\n  float d = cell.x + cell.y;\n  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 60.0) - 30.0) / 3.0, 0.0, 1.0);\n  if (k > 3.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, d, cell.y, print, time, 1.0);\n  else if (k < 2.5) {\n    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);\n    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;\n    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }\n    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }\n    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }\n  }\n  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;\n  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);\n}";
+interface CardShader {
+  /** The 26×42 canvas the shader draws into; copy it out with drawImage. */
+  canvas: HTMLCanvasElement | OffscreenCanvas;
+  /** Draws a face `ms` into its loop, with a hover light if given. */
+  draw(face: CardFace, ms: number, hover?: Hover): void;
+}
+/** One card shader to share across a page or a game, or null without WebGL. */
+declare function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): CardShader | null;
+
+//#endregion
+//#region src/guy-code.d.ts
+/**
+ * A guy as an address carries him, and the art version every address names.
+ * Kept apart from the renderer so a page that only shows guys from the lil
+ * guys Worker (`<lil-guy>` with a host) can build their addresses without
+ * shipping the library.
+ */
+/**
+ * Bumped whenever the art changes. It is part of every baked image's address,
+ * so a redraw reaches every board at once and an old address keeps its picture.
+ */
+declare const ART_VERSION = 1;
+/** Everything that makes a guy look the way he does. */
+interface GuySpec {
+  /** His seed, or the name or text he is drawn from. */
+  seed: string;
+  /** Parts laid over the dealt ones (a picked look, a founder's guy). */
+  parts?: AnimateOptions['parts'];
+  /** A palette index laid over the dealt one. */
+  palette?: number;
+  /** The copies he wears, as `encode` writes them. */
+  equip?: string[];
+}
+/** What a card shows, as an address carries it. */
+interface CardSpec extends GuySpec {
+  /** The grade the card is shown at; by default the best of his copies'. */
+  grade?: number;
+  /** The window's tint when there's no grade. */
+  tint?: string;
+}
+/** A spec as a short, address-safe code. Anything that draws the same guy gives the same code. */
+declare function guyCode(spec: CardSpec): string;
+/** A baked guy's size, and a card's. */
+declare const BAKED_SIZE: {
+  readonly guy: {
+    readonly width: 22;
+    readonly height: 20;
+  };
+  readonly card: {
+    readonly width: 26;
+    readonly height: 42;
+  };
+};
+/** What a baked picture shows: a move looping, his still, or his card. */
+type View = string;
+
+//#endregion
+//#region src/element.d.ts
+/**
+ * `<lil-guy>`: a guy, finished, in any page.
+ *
+ *   <lil-guy name="mia"></lil-guy>                 a claimed name, as he's worn (needs a host)
+ *   <lil-guy seed="Sneaky Gumdrop"></lil-guy>      a guy drawn from any text
+ *   <lil-guy code="eyJzIjoi…"></lil-guy>           an exact guy (`guyCode`), or set `.spec`
+ *   view="idle"   a move looping (default), or `still`, `card`, `card-still`
+ *   size="4"      screen pixels per art pixel (default 4)
+ *   label="mia"   what a screen reader says; without it he's decorative
+ *
+ * With a host (`defineLilGuy({ host })`) it is an `<img>` of the Worker's
+ * picture: no library on the page, cached for good. Without one it plays the
+ * same frames, baked in the page by the library, which is what the lil guys
+ * site does. Either way the picture is the library's plain-code renderer's,
+ * so it matches the URL pixel for pixel.
+ */
+interface LilGuyOptions {
+  /** Where the lil guys Worker is, e.g. `https://lilguys.dleclub.com`. */
+  host?: string;
+  /** Bakes a view of a spec or a code in the page (the full library passes its own); without it a host is needed. */
+  bake?: (guy: CardSpec | string, view: string) => Frames | null;
+  /** The element's tag, `lil-guy` by default. */
+  tag?: string;
+}
+
+//#endregion
+//#region src/bake.d.ts
+/** Defines `<lil-guy>` (once per tag). */
+/**
+ * A guy or his card, finished: every frame as a page with WebGL draws it,
+ * auras, effects, emotes and his copies' finishes included, ready to save as
+ * an image or play anywhere. The lil guys Worker serves these (`/g/`), the
+ * `<lil-guy>` element plays them, and the lil guys site shows them, all from
+ * this one function, so a guy is the same wherever he turns up.
+ */
+/** A baked guy is his frame with room for a rare aura's rings either side: the same size for every guy. */
+declare const GUY_WIDTH: number;
+declare const GUY_HEIGHT: number;
+/** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
+declare function animateOptions(spec: GuySpec): AnimateOptions;
+/**
+ * How many times to play a move so his finishes also come round: finishes
+ * repeat every LOOP_MS, so the move is played the number of times that gets
+ * closest to whole turns of them, and they run that little faster or slower to
+ * close exactly. Returns the repeats and the finishes' speed.
+ */
+declare function shineFit(duration: number): {
+  repeats: number;
+  speed: number;
+};
+/** A guy playing a move, every frame finished. */
+declare function bakeGuy(spec: GuySpec, move?: Move): Frames;
+/** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
+declare function bakeCard(spec: FaceSpec): Frames;
+/** The frames side by side in one strip, with how long each shows: a sprite sheet for a game. */
+declare function sheetOf(f: Frames): {
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+  delays: number[];
+};
+/** The image a baked guy or card is served as. */
+type BakedKind = 'loop' | 'still' | 'sheet';
+/** Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), or a sprite strip (`sheet`). */
+declare function bakedImage(frames: Frames, kind: BakedKind, scale?: number): Promise<Uint8Array>;
+/** A code back into a spec, or null for anything that isn't one. */
+declare function readGuyCode(code: string): CardSpec | null;
+/** A card spec as the face builder takes it. */
+declare function faceSpec(spec: CardSpec): FaceSpec;
+/** Whether a move name is one this library plays. */
+declare const isMove: (m: string) => m is Move;
+/**
+ * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
+ * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`.
+ * Null for a view there isn't.
+ */
+declare function bakeView(spec: CardSpec, view: string): Frames | null;
+/** `<lil-guy>` with the library on the page: baked in the page, or from a host if given. */
+declare function defineLilGuyHere(options?: Omit<LilGuyOptions, 'bake'>): void;
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BakedKind, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CardFace, CardInput, CardShader, CardSpec, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

@@ -98,7 +98,7 @@
   .faces::-webkit-scrollbar { display: none; }
   .faces a { flex: none; width: 88px; display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 10px; background: var(--panel); box-shadow: var(--lift); text-decoration: none; }
   .faces a:hover { background: var(--panel-2); }
-  .faces canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+  .faces canvas { image-rendering: pixelated; }
   .faces small { max-width: 100%; font-size: 16px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .claim { padding: 20px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
@@ -1208,6 +1208,9 @@
   };
   const lookFor = {};                                  // other people's picked looks, by seed
   const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
+  // A guy as the library bakes him and the Worker serves him: his seed, his look and what he wears.
+  const guySpec = (seed, equip) => { const c = guyConfig(seed); return { seed, parts: partsOf(c), palette: c.palette, equip }; };
+  LG.defineLilGuy();
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   // The card a player keeps: drawn by the library, so the one on the page is the one they save.
   const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, move });
@@ -1580,8 +1583,9 @@
   function showRecent(list) {
     if (!list.length) { $('recent').hidden = true; return; }
     $('recent').hidden = false;
-    $('faces').innerHTML = list.slice(0, 12).map(d => `<a href="#/u/${esc(d.name)}" title="@${esc(d.name)}"><canvas width="16" height="16"></canvas><small>@${esc(d.name)}</small></a>`).join('');
-    $('faces').querySelectorAll('canvas').forEach((c, i) => paintInto(c, list[i].seed, []));
+    // Each one the library's baked guy, the picture the lil guys Worker serves for him (/g/…/idle.png).
+    $('faces').innerHTML = list.slice(0, 12).map(d => `<a href="#/u/${esc(d.name)}" title="@${esc(d.name)}"><lil-guy size="3"></lil-guy><small>@${esc(d.name)}</small></a>`).join('');
+    $('faces').querySelectorAll('lil-guy').forEach((g, i) => { g.spec = guySpec(list[i].seed, []); });
   }
   let watching = false;
   function watchNames() {
@@ -2762,7 +2766,6 @@
    * what changes when the guy puts it on), outlined, on a frame the library's finish shader reads, so the finish
    * moves on the object itself: Gold glints, Nebula drifts, Prism runs a rainbow, scuffed pixels shine less. */
   const SLOT_RANGE = { skin: [20, 30], hat: [30, 40], frame: [40, 50], buddy: [50, 60], aura: [60, 70] };
-  const shiner = LG.createShine ? LG.createShine() : null;
   const shows = new Set();
   function itemAlone(o, seed) {
     const base = guyConfig(seed);
@@ -2812,14 +2815,14 @@
     // A copy's effect moves on the item on its own too.
     const fxOn = !s.anim && s.owned && Object.values(s.owned).some(o => o?.fx);
     const frame = fxOn ? { ...s.frame, colors: LG.applyFx(s.frame.colors, s.frame.slots, LG.FRAME_SLOTS.map(sl => s.owned[sl]), now) } : s.frame;
-    if (s.anim || !shiner) {
+    if (s.anim) {
       const img = s.ctx.createImageData(w, h);
       for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const c = frame.colors[y + yy][x + xx]; if (c) img.data.set([...rgb(c), 255], (yy * w + xx) * 4); }
       s.ctx.putImageData(img, 0, 0); return;
     }
-    if (shiner) { shiner.draw(frame, s.owned, now); s.ctx.drawImage(shiner.canvas, x, y, w, h, 0, 0, w, h); return; }
-    const img = s.ctx.createImageData(w, h);
-    for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const c = s.frame.colors[y + yy][x + xx]; if (c) img.data.set([...rgb(c), 255], (yy * w + xx) * 4); }
+    // The finish moving on the object, by the library's plain-code shine: what a baked picture shows.
+    const shone = LG.shineFrame(frame, s.owned, Math.floor(now / 80) * 80), img = s.ctx.createImageData(w, h);
+    for (let yy = 0; yy < h; yy++) img.data.set(shone.subarray(((y + yy) * LG.FRAME_WIDTH + x) * 4, ((y + yy) * LG.FRAME_WIDTH + x + w) * 4), yy * w * 4);
     s.ctx.putImageData(img, 0, 0);
   }
 
@@ -3449,7 +3452,7 @@
     if (now - lastT < 33) return;
     lastT = now;
     const t = now / 1000;
-    for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); } }
+    for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); }
     // Only what is on screen moves; a still item draws once.
     for (const b of balls) if (!b.canvas.isConnected) balls.delete(b); else if (onScreen(b.canvas)) b.tick(t);
     for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }

@@ -154,16 +154,74 @@ async function zlib(raw: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(out);
 }
 
+const concat = (parts: Uint8Array[]) => {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let at = 0;
+  for (const p of parts) { out.set(p, at); at += p.length; }
+  return out;
+};
+const u32 = (n: number) => new Uint8Array([n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]);
+const u16 = (n: number) => new Uint8Array([(n >>> 8) & 255, n & 255]);
+function chunk(type: string, data: Uint8Array): Uint8Array {
+  const body = concat([new Uint8Array([...type].map(c => c.charCodeAt(0))), data]);
+  return concat([u32(data.length), body, u32(crc32(body))]);
+}
+
+/**
+ * The PNG layout for a set of frames: indexed (a palette and its transparency)
+ * when they use 256 colours or fewer, which pixel art nearly always does and
+ * which packs several times smaller, else full RGBA.
+ */
+function layout(frames: Uint8ClampedArray[]): { indexed: boolean; colours: number[]; rows: (rgba: Uint8ClampedArray, W: number, H: number) => Uint8Array } {
+  const key = (px: Uint8ClampedArray, i: number) => (px[i + 3] < 128 ? -1 : (px[i] << 16) | (px[i + 1] << 8) | px[i + 2]);
+  const index = new Map<number, number>([[-1, 0]]);
+  for (const px of frames) for (let i = 0; i < px.length && index.size <= 256; i += 4) { const k = key(px, i); if (!index.has(k)) index.set(k, index.size); }
+  if (index.size > 256) return { indexed: false, colours: [], rows: (px, W, H) => {
+    const raw = new Uint8Array((W * 4 + 1) * H);
+    for (let y = 0; y < H; y++) raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
+    return raw;
+  } };
+  return { indexed: true, colours: [...index.keys()], rows: (px, W, H) => {
+    const raw = new Uint8Array((W + 1) * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) raw[y * (W + 1) + 1 + x] = index.get(key(px, (y * W + x) * 4))!;
+    return raw;
+  } };
+}
+
+async function png(input: Frames, scale: number, animated: boolean): Promise<Uint8Array> {
+  const W = input.width * scale, H = input.height * scale;
+  const frames = input.frames.map(f => upscale(f, input.width, input.height, scale));
+  const { indexed, colours, rows } = layout(frames);
+  const head = new Uint8Array([...u32(W), ...u32(H), 8, indexed ? 3 : 6, 0, 0, 0]);
+  const parts = [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', head)];
+  if (indexed) {
+    parts.push(chunk('PLTE', new Uint8Array(colours.flatMap(k => (k < 0 ? [0, 0, 0] : [k >> 16, (k >> 8) & 255, k & 255])))));
+    parts.push(chunk('tRNS', new Uint8Array([0])));
+  }
+  let seq = 0;
+  if (animated) parts.push(chunk('acTL', concat([u32(frames.length), u32(0)])));
+  for (let i = 0; i < frames.length; i++) {
+    // Every frame whole, replacing the one before (no disposal, source blend), each shown its own time.
+    if (animated) parts.push(chunk('fcTL', concat([u32(seq++), u32(W), u32(H), u32(0), u32(0), u16(Math.max(1, Math.round(input.delays[i] ?? 100))), u16(1000), new Uint8Array([0, 0])])));
+    const data = await zlib(rows(frames[i], W, H));
+    parts.push(i === 0 ? chunk('IDAT', data) : chunk('fdAT', concat([u32(seq++), data])));
+    if (!animated) break;
+  }
+  parts.push(chunk('IEND', new Uint8Array()));
+  return concat(parts);
+}
+
 /** A PNG of one RGBA frame, scaled up by whole pixels. */
-export async function encodePng(rgba: Uint8ClampedArray, width: number, height: number, scale = 1): Promise<Uint8Array> {
-  const W = width * scale, H = height * scale, px = upscale(rgba, width, height, scale);
-  const raw = new Uint8Array((W * 4 + 1) * H);
-  for (let y = 0; y < H; y++) { raw[y * (W * 4 + 1)] = 0; raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1); }
-  const chunk = (type: string, data: Uint8Array) => {
-    const body = new Uint8Array(4 + data.length); body.set([...type].map(c => c.charCodeAt(0))); body.set(data, 4);
-    const len = data.length, c = crc32(body);
-    return [len >>> 24, (len >>> 16) & 255, (len >>> 8) & 255, len & 255, ...body, c >>> 24, (c >>> 16) & 255, (c >>> 8) & 255, c & 255];
-  };
-  const ihdr = new Uint8Array([W >>> 24, (W >>> 16) & 255, (W >>> 8) & 255, W & 255, H >>> 24, (H >>> 16) & 255, (H >>> 8) & 255, H & 255, 8, 6, 0, 0, 0]);
-  return new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, ...chunk('IHDR', ihdr), ...chunk('IDAT', await zlib(raw)), ...chunk('IEND', new Uint8Array())]);
+export function encodePng(rgba: Uint8ClampedArray, width: number, height: number, scale = 1): Promise<Uint8Array> {
+  return png({ width, height, frames: [rgba], delays: [0] }, scale, false);
+}
+
+/**
+ * An animated PNG of the frames, looping for ever. Browsers play it in a plain
+ * `<img>` with no script, keep its transparency whole, and a still viewer
+ * shows its first frame. Scale it up by whole pixels here, or in CSS with
+ * `image-rendering: pixelated`.
+ */
+export function encodeApng(input: Frames, scale = 1): Promise<Uint8Array> {
+  return png(input, scale, true);
 }

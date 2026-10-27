@@ -1,0 +1,236 @@
+import { compose } from './compose';
+import { clamp, distance, finishColor, fract, mod, GLSL_COMMON, GLSL_PRECISION, hueShift, loopSeconds, mix, noiseOf, SHADER_FINISHES, smoothstep, step, toByte, type Vec3 } from './finish-shader';
+import { dress, withItems } from './items';
+import { encode, GRADES, gradeOf, type Owned } from './owned';
+import { paint } from './paint';
+import { paletteOf } from './palette';
+import { LAYER } from './parts/art';
+import { resolve } from './resolve';
+import type { AvatarConfig } from './types';
+
+/**
+ * The trading card a guy or an item is shown on: a 26×42 face, its window
+ * tinted by grade, the guy standing in it, grade pips under him. The face
+ * shimmers by grade (a sheen, foil, holo, gold) and each worn copy's pixels by
+ * their finish, all in `LOOP_MS`. Its words (name, print, odds) are the page's
+ * to write over it.
+ *
+ * The face is built once (`cardFace`), then drawn at a time either by the GPU
+ * (`CARD_FRAGMENT`, `createCardShader`) or in plain code (`cardFaceAt`), with
+ * the same result.
+ */
+export const FACE_WIDTH = 26;
+export const FACE_HEIGHT = 42;
+
+export interface FaceSpec {
+  /** The guy's seed or name. */
+  name: string;
+  /** Picked parts (a look), as `resolve` takes them. */
+  parts?: Parameters<typeof resolve>[1];
+  /** A palette index, overriding the dealt one. */
+  palette?: number;
+  /** The copies he wears. */
+  copies?: Owned[];
+  /** The grade the card is shown at; by default the best of his copies'. */
+  grade?: number;
+  /** The window's tint when there's no grade. */
+  tint?: string;
+}
+
+export interface CardFace {
+  /** Colours, 26×42 RGBA. */
+  base: Uint8Array;
+  /** Per pixel: what it is (card, window, guy, item), its copy's finish, scuff and print. */
+  kind: Uint8Array;
+  /** Per pixel noise, in the red channel. */
+  noise: Uint8Array;
+  grade: number;
+  negative: boolean;
+  /** Where the face's wide band starts: the last copy's print. */
+  seed: number;
+}
+
+const rgb = (s: string): [number, number, number] => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+const blend = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+const gradeIndex = (o: Owned) => GRADES.findIndex(g => g.id === gradeOf(o).id);
+
+/** The card's face, ready to draw at any time. */
+export function cardFace(spec: FaceSpec): CardFace {
+  const W = FACE_WIDTH, H = FACE_HEIGHT;
+  const copies = spec.copies ?? [];
+  const r = resolve(spec.name, spec.parts);
+  if (spec.palette !== undefined) r.palette = spec.palette;
+  const config: AvatarConfig = dress(r, { equip: copies.map(encode) });
+  const grid = compose(config);
+  const colors = paint(grid, config, withItems(paletteOf(config), config));
+  const owned = config.owned ?? {};
+  const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
+  const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise = new Uint8Array(W * H * 4);
+  const put = (x: number, y: number, c: number[], k: number, fi = -1, sc = 0, pr = 0) => {
+    const i = (y * W + x) * 4, print = Math.floor(pr / 4);
+    base.set([c[0], c[1], c[2], 255], i);
+    kind.set([Math.round(k / 4 * 255), (fi + 1) * 32, Math.round(sc * 255), print], i);
+    noise[i] = noiseOf(x, y, print * 4);
+  };
+  const edge = [34, 38, 58], cream = [242, 236, 221], rim = [207, 199, 180];
+  const gc = g >= 0 ? rgb(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb(spec.tint) : [120, 140, 170];
+  const win = blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+    if (cx + cy < 2) continue;
+    put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
+  }
+  // The title band, in the grade's colour: the name is written over it.
+  // Mythic and Grail names are written in foil, so their band goes dark to show it off.
+  const band = g >= 3 ? [30, 26, 52] : g >= 0 ? blend(gc, [24, 22, 44], 0.3) : [58, 66, 100];
+  const lip = g >= 3 ? gc : blend(band, [255, 255, 255], 0.25);
+  for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) {
+    put(x, y, y === 7 ? (g >= 3 ? gc : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
+  }
+  for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : win, 2);
+  grid.forEach((row, y) => row.forEach((t, x) => {
+    const hex = colors[y][x];
+    if (!hex) return;
+    const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null;
+    const o = slot ? owned[slot] : undefined;
+    const fi = o ? SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]) : -1;
+    put(x + 5, y + 11, rgb(hex), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
+  }));
+  if (g >= 0) for (let p = 0; p < 5; p++) {
+    const x0 = 6 + p * 3;
+    for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim, 1);
+  } else for (let x = 8; x <= 17; x++) put(x, 31, rim, 1);
+  return { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: copies.length ? copies[copies.length - 1].print : 0 };
+}
+
+/** Whether a face changes over time at all: a plain card with no finishes is one picture. */
+export const faceMoves = (f: CardFace) => f.grade >= 0 || f.negative || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+
+/** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
+export interface Hover { x: number; y: number; strength: number }
+
+/** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
+export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8ClampedArray {
+  const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
+  const time = loopSeconds(ms), grade = f.grade;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    if (f.base[i + 3] < 128) continue;
+    let c: Vec3 = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
+    const k = Math.floor(f.kind[i] / 255 * 4 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
+    const scuff = f.kind[i + 2] / 255, print = f.kind[i + 3] * 4, h = f.noise[i] / 255, d = x + y;
+    const wide = 1 - clamp(Math.abs(mod(d - time * 10 + f.seed, 60) - 30) / 3, 0, 1);
+    if (k > 3.5 && finish >= 0) c = finishColor(c, finish, scuff, h, d, y, print, time, 1);
+    else if (k < 2.5) {
+      if (f.negative) c = mix([1 - c[0], 1 - c[1], 1 - c[2]], [0.36, 0.2, 0.62], 0.25);
+      if (grade > 0.5 && grade < 1.5) c = c.map(v => v + wide * 0.08) as Vec3;
+      else if (grade > 1.5 && grade < 2.5) {
+        const s = 0.5 + 0.5 * Math.sin(d * 0.55 - time * Math.PI * 2 / 3);
+        c = mix(c, [c[0] * 0.82 + 0.06, c[1] * 0.94 + 0.06, c[2] * 1.2 + 0.06], 0.45 * s).map(v => v + wide * 0.12) as Vec3;
+      } else if (grade > 2.5 && grade < 3.5) {
+        if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * 0.18);
+        c = c.map(v => v + wide * 0.12) as Vec3;
+      } else if (grade > 3.5) {
+        if (k < 1.5) c = mix(c, [1, 0.82, 0.36], 0.35 + 0.2 * wide);
+        c = mix(c, [1, 0.95, 0.7], step(0.965, fract(h * 13 + time / 3)) * 0.8);
+      }
+    }
+    if (hover && hover.strength > 0) {
+      const at = [(x + 0.5) / W, (y + 0.5) / H];
+      const light = (1 - smoothstep(0, 0.34, distance(at, [hover.x, hover.y]))) * 0.35 * hover.strength;
+      c = c.map(v => v + light) as Vec3;
+    }
+    out.set([toByte(c[0]), toByte(c[1]), toByte(c[2]), 255], i);
+  }
+  return out;
+}
+
+/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise` from `cardFace`. */
+export const CARD_FRAGMENT = `${GLSL_PRECISION}
+varying vec2 uv;
+uniform sampler2D base, kind, noise;
+uniform float time, hover, grade, neg, seed;
+uniform vec2 light;
+${GLSL_COMMON}
+void main() {
+  vec2 res = vec2(${FACE_WIDTH}.0, ${FACE_HEIGHT}.0);
+  vec2 cell = floor(uv * res);
+  vec2 at = (cell + 0.5) / res;
+  vec4 b = texture2D(base, at);
+  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
+  vec3 c = b.rgb;
+  vec4 kd = texture2D(kind, at);
+  float k = floor(kd.r * 4.0 + 0.5);
+  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
+  float print = floor(kd.a * 255.0 + 0.5) * 4.0;
+  float h = texture2D(noise, at).r;
+  float d = cell.x + cell.y;
+  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 60.0) - 30.0) / 3.0, 0.0, 1.0);
+  if (k > 3.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, d, cell.y, print, time, 1.0);
+  else if (k < 2.5) {
+    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
+    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
+    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
+    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
+    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+  }
+  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+
+export interface CardShader {
+  /** The 26×42 canvas the shader draws into; copy it out with drawImage. */
+  canvas: HTMLCanvasElement | OffscreenCanvas;
+  /** Draws a face `ms` into its loop, with a hover light if given. */
+  draw(face: CardFace, ms: number, hover?: Hover): void;
+}
+
+const VERTEX = 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }';
+
+/** One card shader to share across a page or a game, or null without WebGL. */
+export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): CardShader | null {
+  const target = canvas ?? (typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(FACE_WIDTH, FACE_HEIGHT)
+    : typeof document !== 'undefined' ? document.createElement('canvas') : null);
+  if (!target) return null;
+  target.width = FACE_WIDTH; target.height = FACE_HEIGHT;
+  const gl = target.getContext('webgl', { premultipliedAlpha: false, preserveDrawingBuffer: true }) as WebGLRenderingContext | null;
+  if (!gl) return null;
+  const shader = (type: number, source: string) => { const s = gl.createShader(type)!; gl.shaderSource(s, source); gl.compileShader(s); return s; };
+  const program = gl.createProgram()!;
+  gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
+  gl.attachShader(program, shader(gl.FRAGMENT_SHADER, CARD_FRAGMENT));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+  gl.useProgram(program);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const p = gl.getAttribLocation(program, 'p');
+  gl.enableVertexAttribArray(p);
+  gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'grade', 'neg', 'seed', 'light'].map(n => [n, gl.getUniformLocation(program, n)]));
+  gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1); gl.uniform1i(u.noise, 2);
+  gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
+  const textures = [0, 1, 2].map(unit => {
+    const t = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.NEAREST);
+    for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
+    return t;
+  });
+  return {
+    canvas: target,
+    draw(face, ms, hover) {
+      [face.base, face.kind, face.noise].forEach((bytes, unit) => {
+        gl.activeTexture(gl.TEXTURE0 + unit);
+        gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FACE_WIDTH, FACE_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+      });
+      gl.uniform1f(u.time, loopSeconds(ms)); gl.uniform1f(u.grade, face.grade);
+      gl.uniform1f(u.neg, face.negative ? 1 : 0); gl.uniform1f(u.seed, face.seed);
+      gl.uniform1f(u.hover, hover?.strength ?? 0); gl.uniform2f(u.light, hover?.x ?? 0.5, hover?.y ?? 0.3);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    },
+  };
+}
