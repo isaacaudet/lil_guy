@@ -1651,14 +1651,14 @@ const frames: Omit<Item, 'slot'>[] = [
  * colour, so it stays dark whatever finish the buddy has.
  */
 const pet = (name: string, rows: string[]): Stamp => {
-  if (rows.length > 6 || rows.some(r => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6x6`);
+  if (rows.length > 5 || rows.some(r => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
   return stamp(rows);
 };
 
 /**
  * A pet that sits at the guy's feet, bottom right, in front of everything but
  * the face. Each is a bold shape of its own with a lit side, a shaded side and
- * a face, filling as much of its 6x6 as it can, so it reads at a glance on any
+ * a face, filling as much of its 6x5 as it can, so it reads at a glance on any
  * guy and any frame.
  */
 const buddies: Omit<Item, 'slot'>[] = [
@@ -2176,7 +2176,7 @@ export function inSeason(day: string | Date): Item[] {
  */
 const showpieces: Omit<Item, 'slot'>[] = [
   {
-    id: 'amountle.dragon', game: 'amountle', name: 'Dragon', eyes: 8, limb: 2, showpiece: true, signature: 'lava',
+    id: 'amountle.dragon', game: 'amountle', name: 'Dragon', eyes: 8, limb: 2, showpiece: true, signature: 'embers',
     about: 'Guards the jar.',
     colors: ['#3BB273', '#25814F', '#86E3AE', '#FFE29A', '#FFF6DC', '#9B6BE0', '#6A44B0', '#E8C25A', '#FF8A3D'],
     outline: '#123F27',
@@ -2344,7 +2344,7 @@ const showpieces: Omit<Item, 'slot'>[] = [
     ]),
   },
   {
-    id: 'cutsies.ninja', game: 'cutsies', name: 'Ninja', eyes: 9, limb: 4, showpiece: true, signature: 'static',
+    id: 'cutsies.ninja', game: 'cutsies', name: 'Ninja', eyes: 9, limb: 4, showpiece: true, signature: 'pulse',
     about: 'Slices before you see it.',
     colors: ['#FFE0C2', '#1A1B2C', '#4A4E6E', '#2B2D42', '#E5484D', '#A82E33', '#C9D3E0'],
     outline: '#0E0F1A',

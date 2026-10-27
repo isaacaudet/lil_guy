@@ -48,13 +48,11 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game four skins and a showpiece, four or five hats (one free), three frames and three or four buddies', () => {
+  it('gives every game four skins and a showpiece, five hats (one free), three frames and four buddies', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
       const count = (slot: string) => own.filter(i => i.slot === slot && !i.showpiece).length;
-      expect([count('skin'), count('frame')]).toEqual([4, 3]);
-      expect(count('hat')).toBeGreaterThanOrEqual(4); expect(count('hat')).toBeLessThanOrEqual(5);
-      expect(count('buddy')).toBeGreaterThanOrEqual(3); expect(count('buddy')).toBeLessThanOrEqual(4);
+      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([4, 5, 3, 4]);
       expect(own.filter(i => i.showpiece).map(i => i.slot)).toEqual(['skin']);
       // A capsule machine holds everything but the free hat: 12 to 16 items.
       expect(own.filter(i => !i.free).length).toBeGreaterThanOrEqual(12);
@@ -193,10 +191,10 @@ describe('everything worn together', () => {
 describe('buddies', () => {
   const buddies = items.filter(i => i.slot === 'buddy');
 
-  it('fill their corner: at most 6x6, and at least 4 across and 4 tall', () => {
+  it('fill their corner under the face: at most 6 across and 5 tall, and at least 4 of each', () => {
     for (const b of buddies) {
       const art = b.art!;
-      expect(art.length).toBeLessThanOrEqual(6);
+      expect(art.length).toBeLessThanOrEqual(5);
       expect(art.length).toBeGreaterThanOrEqual(4);
       expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(6);
       expect(Math.max(...art.map(r => r.length))).toBeGreaterThanOrEqual(4);

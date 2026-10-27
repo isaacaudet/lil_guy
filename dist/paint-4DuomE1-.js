@@ -4228,7 +4228,6 @@ const onPair = (rows, inset = 0) => {
 		seat(c, right, r.right - inset - width(right) + 1);
 	};
 };
-const L = (n) => LOCAL + n - 1;
 const skins = [
 	{
 		id: "amountle.jar",
@@ -5419,95 +5418,113 @@ const hats = [
 	{
 		id: "amountle.gem",
 		game: "amountle",
-		name: "Gem",
+		name: "Gem band",
 		free: true,
-		colors: ["#E3E7EE", "#9AA3B2"],
+		colors: [
+			"#E3E7EE",
+			"#9AA3B2",
+			"#FFFFFF"
+		],
 		draw: on([
-			"..waaA..",
-			".waaaaA.",
-			"..aaAA..",
-			"121aA121"
-		])
+			"...wwaA...",
+			"..wwaaaA..",
+			".waaaaaaA.",
+			"...aaAA...",
+			"3121aA1212"
+		], 0, 2)
 	},
 	{
 		id: "amountle.crown",
 		game: "amountle",
-		name: "Gem crown",
+		name: "Jewelled crown",
 		colors: [
 			"#FFD25A",
-			"#E0A62E",
+			"#D99A1E",
 			"#3FD1C1",
-			"#A6F4EA"
+			"#A6F4EA",
+			"#E5484D",
+			"#FFF1B0",
+			"#FF9EA1"
 		],
 		draw: on([
-			"1...4...1",
-			"11.141.11",
-			"111111111",
-			"134313431",
-			"222222222"
+			"6....7....6",
+			"1...656...2",
+			"16.61112.12",
+			"64311511432",
+			"22222222222"
 		], 0, 2)
 	},
 	{
 		id: "halfsies.bowl",
 		game: "halfsies",
-		name: "Half pot",
+		name: "Bandana",
 		free: true,
 		colors: [],
 		draw: on([
-			"....AA....",
-			"..xaaaaA..",
-			".xaaaaaaA.",
-			"AAAAAAAAAA"
-		])
+			"...waaaA....",
+			"..waawaaA.aA",
+			".waaaaawaAA.",
+			"waawaaaawaAA"
+		], 0, 2)
 	},
 	{
 		id: "halfsies.scale",
 		game: "halfsies",
-		name: "Scale dish",
+		name: "Hatchling",
 		colors: [
+			"#FFF6E6",
+			"#DCC8A6",
 			"#FFFFFF",
-			"#D9DEE6",
-			"#2B2F38",
-			"#7DF0A0"
+			"#B08A5A",
+			"#FFF1A0",
+			"#FFD23A",
+			"#2A1B10",
+			"#FF8A2B",
+			"#E0A010"
 		],
 		draw: on([
-			"...11...",
-			".211112.",
-			"21111112",
-			"33433433"
-		])
+			"...5669...",
+			"...67698..",
+			"3.319191.2",
+			"3141111412",
+			".21122112."
+		], 0, 2)
 	},
 	{
 		id: "stackdle.cube",
 		game: "stackdle",
-		name: "Little block",
+		name: "Brick cap",
 		free: true,
 		colors: [],
 		draw: on([
-			".xA..xA.",
-			"xaaaaaaA",
-			"aaaaaaaA",
-			"AAAAAAAA"
-		])
+			".wA..wA..wA.",
+			"waaaaaaaaaaA",
+			"aaaaaaaaaaaA",
+			"aaaaaaaaaaAA",
+			"AAAAAAAAAAAA"
+		], 0, 2)
 	},
 	{
 		id: "stackdle.tower",
 		game: "stackdle",
-		name: "Tower",
+		name: "Block tower",
 		colors: [
 			"#FF8FB1",
-			"#E0628A",
+			"#D9557F",
 			"#FFB03B",
-			"#E58A1F",
+			"#D97A12",
 			"#6FA8FF",
-			"#4A84E0"
+			"#3F6FD0",
+			"#FFD6E2",
+			"#FFE0A0",
+			"#C8DEFF"
 		],
 		draw: on([
-			"...112..",
-			"..33334.",
-			"..33334.",
-			".555556.",
-			".555556."
+			"..9556..",
+			"..5556..",
+			"71128334",
+			"11123334",
+			"22224444"
 		], 0, 2)
 	},
 	{
@@ -5517,62 +5534,66 @@ const hats = [
 		free: true,
 		colors: [],
 		draw: on([
-			".xaaaaA.",
-			"xaaaaaaA",
-			"aAaAaAaA"
-		])
+			".x.a.a.a.a.A.",
+			"xaaaaaaaaaaaA",
+			"xaAaAaAaAaAaA",
+			"AAAAAAAAAAAAA"
+		], 0, 2)
 	},
 	{
 		id: "flipsies.landed",
 		game: "flipsies",
 		name: "Landed bottle",
 		colors: [
-			"#C4E8FB",
-			"#93CDEE",
-			"#3E7BE0",
-			"#FFFFFF"
+			"#D6F0FD",
+			"#8CCBEF",
+			"#FFFFFF",
+			"#E5484D",
+			"#4A9BD8",
+			"#1E4FA8",
+			"#B8313A"
 		],
 		draw: on([
-			".333.",
-			".111.",
-			"11112",
-			"44442",
-			"11112"
-		])
+			"....66....",
+			"....36....",
+			"..311112..",
+			"..344447..",
+			"..355552.."
+		], 0, 2)
 	},
 	{
 		id: "puttsies.visor",
 		game: "puttsies",
-		name: "Golf visor",
+		name: "Golf cap",
 		free: true,
 		colors: [],
-		draw: (c) => {
-			const y = Math.min(c.crown + 1, c.floor);
-			capRows(c, y - c.crown + 1, T.ACCENT, T.ACCENT_SHADE);
-			const r = c.rows[y];
-			if (!r) return;
-			for (let x = r.right + 1; x <= Math.min(r.right + 2, 14); x++) c.set(x, y, T.ACCENT_SHADE);
-		}
+		draw: on([
+			"....xaaA.....",
+			"..xaaaaaaA...",
+			".xaaawaaaaA..",
+			"xaaaaaaaaaAAA"
+		], 0, 2)
 	},
 	{
 		id: "puttsies.flag",
 		game: "puttsies",
 		name: "Pin flag",
 		colors: [
-			"#8A8F99",
+			"#E8ECF2",
 			"#E5484D",
-			"#B8313A",
-			"#7ED957",
+			"#A82A33",
+			"#9BE36B",
 			"#4CAF50",
-			"#2E7D32"
+			"#2E7D32",
+			"#1C2A1E",
+			"#FF8A8E"
 		],
 		draw: on([
-			"....1222",
-			"....1223",
-			"....1...",
-			".4441445",
-			"55555556"
-		])
+			"......18882...",
+			"......122223..",
+			"..44441444445.",
+			".4555575555556"
+		], 0, 2)
 	},
 	{
 		id: "weighsies.wedge",
@@ -5582,32 +5603,36 @@ const hats = [
 		colors: [
 			"#FFBE3A",
 			"#D9931F",
-			"#B8761A"
+			"#B8761A",
+			"#FFE08A"
 		],
 		draw: on([
-			"......1.",
-			"....1111",
-			"..113111",
-			"11111131",
-			"22222222"
-		])
+			".........411",
+			"......411111",
+			"...411311131",
+			"411111111112",
+			"222222222222"
+		], 0, 2)
 	},
 	{
 		id: "weighsies.scale",
 		game: "weighsies",
-		name: "Balance",
+		name: "Heavyweight belt",
 		colors: [
-			"#E8B84A",
+			"#F2C230",
 			"#B9852A",
-			"#FFF1B0"
+			"#FFF1B0",
+			"#D8343C",
+			"#8A1F26",
+			"#3FA0FF",
+			"#C8ECFF"
 		],
 		draw: on([
-			"....3....",
-			"311111112",
-			"1...1...1",
-			"322.1.322",
-			"...112..."
-		])
+			"....311112....",
+			"44443176124444",
+			"55553166125555",
+			"....222222...."
+		], 0, 2)
 	},
 	{
 		id: "cutsies.slice",
@@ -5620,32 +5645,36 @@ const hats = [
 			"#C9F08F",
 			"#2A1B10",
 			"#F1F7D4",
-			"#9C6E43"
+			"#B98A5A",
+			"#5FA83A",
+			"#7A5432"
 		],
 		draw: on([
-			".55555.",
-			"5131315",
-			"5324235",
-			"5131315",
-			".55555."
+			"..555577..",
+			".52311317.",
+			"5231441367",
+			".51311367.",
+			"..777777.."
 		])
 	},
 	{
 		id: "cutsies.chef",
 		game: "cutsies",
-		name: "Chef hat",
+		name: "Chef's toque",
 		about: "A chef's tall white toque, for the one who does the cutting in Cutsies.",
 		colors: [
 			"#FFFFFF",
 			"#DCE3EC",
-			"#B9C4D2"
+			"#B9C4D2",
+			"#E5484D",
+			"#A8202F"
 		],
 		draw: on([
-			".11.111.",
-			"11111112",
-			"11111122",
-			".111112.",
-			".333333."
+			".11.11.12.",
+			"1111111122",
+			"1111111223",
+			".12121223.",
+			".44444445."
 		])
 	},
 	{
@@ -5653,29 +5682,36 @@ const hats = [
 		game: "tiltsies",
 		name: "Hamster ears",
 		free: true,
-		colors: ["#EDB57D", "#FFB3A7"],
+		colors: [
+			"#EDB57D",
+			"#FFB3A7",
+			"#FFD8A8",
+			"#C98A45"
+		],
 		draw: onPair([
-			"11.",
-			"121",
-			"111"
+			"33.",
+			"321",
+			"114"
 		], 0)
 	},
 	{
 		id: "tiltsies.buddy",
 		game: "tiltsies",
-		name: "Hamster buddy",
+		name: "Head hamster",
+		about: "A hamster that naps on your head between runs.",
 		colors: [
 			"#EDB57D",
+			"#C98A45",
 			"#FFE7CB",
-			"#2A1B10",
-			"#FF9AA4"
+			"#FF9AA4",
+			"#2A1B10"
 		],
 		draw: on([
-			"1.....1",
-			"1111111",
-			"1311131",
-			"1124211",
-			".22222."
+			".11....12.",
+			".14111142.",
+			"1151111512",
+			"1433443342",
+			"1133333322"
 		])
 	},
 	{
@@ -5684,12 +5720,12 @@ const hats = [
 		name: "Pit cap",
 		free: true,
 		colors: ["#23262D", "#FFFFFF"],
-		draw: (c) => {
-			capRows(c, 2, T.ACCENT, T.ACCENT_SHADE);
-			const r = c.rows[c.crown + 1];
-			for (let x = r.left; x <= r.right; x++) c.set(x, c.crown + 1, (x - r.left) % 2 ? L(1) : L(2));
-			for (let x = r.right + 1; x <= Math.min(r.right + 2, 14); x++) c.set(x, c.crown + 1, T.ACCENT_SHADE);
-		}
+		draw: on([
+			"....xaaA....",
+			"..xaaaaaaA..",
+			"..12121212..",
+			"..aaaaaaaAAA"
+		])
 	},
 	{
 		id: "trackdle.helmet",
@@ -5700,235 +5736,364 @@ const hats = [
 			"#D65A1C",
 			"#FFFFFF",
 			"#1C2733",
-			"#6FA8D8"
+			"#6FA8D8",
+			"#FFB27A"
 		],
 		draw: on([
-			"...11111...",
-			"..1133112..",
-			".111331112.",
-			".111331112.",
-			".111331122.",
-			"44444445554"
-		], 0, 2)
+			"...661111...",
+			".6611331112.",
+			".1111331122.",
+			"444444455544"
+		])
 	},
 	{
 		id: "amountle.cluster",
 		game: "amountle",
-		name: "Big gem",
+		name: "Crystal crest",
 		colors: [
+			"#B98AF5",
+			"#7A4FD0",
+			"#EBDDFF",
 			"#3FD1C1",
 			"#1F9C90",
-			"#A6F4EA",
+			"#C8FFF7",
 			"#FFD25A",
-			"#E0A62E"
+			"#D99A1E",
+			"#FFF1B0"
 		],
 		draw: on([
-			"..33112..",
-			".3311112.",
-			"..11112..",
-			"...112...",
-			"444454444"
+			".....3.....",
+			"..6..31..6.",
+			".645.312.45",
+			"64453112645",
+			"99777777778"
 		], 0, 2)
 	},
 	{
 		id: "halfsies.helmet",
 		game: "halfsies",
-		name: "Pot helmet",
+		name: "Saucepan",
 		colors: [
 			"#E07B4C",
-			"#B85A34",
-			"#F4A77C",
-			"#5E2A1C",
-			"#F6DCBB"
+			"#A9532E",
+			"#FFB088",
+			"#2B2B33",
+			"#4E4E5A"
 		],
-		draw: (c) => {
-			capRows(c, 2, L(1), L(2));
-			const r = c.rows[c.crown + 2];
-			for (let x$1 = r.left - 1; x$1 <= r.right + 1; x$1++) c.set(x$1, c.crown + 2, (x$1 - r.left) % 2 ? L(5) : L(4));
-			const x = Math.floor(c.centre);
-			if (c.crown > 1) {
-				c.set(x - 1, c.crown - 1, L(3));
-				c.set(x, c.crown - 1, L(1));
-			}
-		}
+		draw: on([
+			".3331112....",
+			".3111112....",
+			".3111112....",
+			".3111112....",
+			"333333332554"
+		], 1, 2)
 	},
 	{
 		id: "stackdle.ring",
 		game: "stackdle",
-		name: "Ring",
-		colors: ["#FF8FB1", "#E0628A"],
+		name: "Ring stacker",
+		colors: [
+			"#FF5C6A",
+			"#C22E3E",
+			"#FFB03B",
+			"#D97A12",
+			"#7DD87A",
+			"#3E9A4C",
+			"#5C9BFF",
+			"#2F64C8",
+			"#FFE066"
+		],
 		draw: on([
-			".211112.",
-			"21111112",
-			"22222222"
+			"....99....",
+			"...1112...",
+			"..333334..",
+			".55555556.",
+			"7777777778"
 		])
 	},
 	{
 		id: "flipsies.beret",
 		game: "flipsies",
-		name: "Bullseye beret",
+		name: "Diving helmet",
 		colors: [
-			"#FFFFFF",
-			"#8EC5F0",
-			"#E5484D"
+			"#E8B04A",
+			"#B07A1E",
+			"#FFE08A",
+			"#9FE0FF",
+			"#3E8FD6",
+			"#6B4512"
 		],
 		draw: on([
-			"....3....",
-			"..22222..",
-			".2211122.",
-			"221131122",
-			".2211122."
+			"....3666....",
+			"..33111112..",
+			".3114444112.",
+			"611445544116",
+			"6.62626262.6"
 		], 0, 2)
 	},
 	{
 		id: "puttsies.tam",
 		game: "puttsies",
-		name: "Golf tam",
+		name: "Tartan tam",
 		colors: [
 			"#2E7D4F",
 			"#1F5C38",
 			"#F2C230",
-			"#E5484D"
+			"#E5484D",
+			"#5FB07A",
+			"#FF8A8E",
+			"#B8313A"
 		],
 		draw: on([
-			"...33...",
-			".111111.",
-			"14111141",
-			"22222222"
-		])
+			".....64.....",
+			"...5513552..",
+			".55113111312",
+			"333333333332",
+			".1131113112."
+		], 0, 2)
 	},
 	{
 		id: "weighsies.dumbbell",
 		game: "weighsies",
-		name: "Dumbbell",
+		name: "Barbell",
 		colors: [
-			"#4A4E5E",
-			"#9AA0A8",
-			"#D9DEE6"
+			"#E5484D",
+			"#A82A33",
+			"#FF8A8E",
+			"#E3E7EE",
+			"#8A93A3"
 		],
 		draw: on([
-			"13.....13",
-			"112222211",
-			"11.....11"
-		])
+			"31..........12",
+			"31..........12",
+			"31444444444412",
+			"31555555555512"
+		], 0, 2)
 	},
 	{
 		id: "cutsies.orange",
 		game: "cutsies",
-		name: "Orange half",
+		name: "Orange helmet",
+		about: "Half an orange, scooped out and worn. It still smells great.",
 		colors: [
 			"#FF9F2E",
 			"#E07B14",
 			"#FFD08A",
+			"#5CB85C",
+			"#2E7D3A",
+			"#6A4A1E",
 			"#FFF1D6"
 		],
 		draw: on([
-			"..3111..",
-			".311111.",
-			"31111112",
-			"43434343"
+			"....6445..",
+			"..331115..",
+			".33131112.",
+			"3131111122",
+			"7777777777"
 		])
 	},
 	{
 		id: "tiltsies.seed",
 		game: "tiltsies",
-		name: "Sunflower seed",
-		colors: ["#3A3A42", "#E8E4DA"],
+		name: "Maze miner",
+		about: "A hard hat with a lamp, for finding the way through the maze in the dark.",
+		colors: [
+			"#FFD23A",
+			"#D9A01E",
+			"#FFF1A8",
+			"#8A93A3",
+			"#FFFFFF"
+		],
 		draw: on([
-			"...1...",
-			"..121..",
-			".12121.",
-			"1212121",
-			"1111111"
-		], 0, 2)
+			"...31111...",
+			"..3144412..",
+			".311454122.",
+			".311444122.",
+			"22222222222"
+		])
 	},
 	{
 		id: "trackdle.trophy",
 		game: "trackdle",
 		name: "Trophy",
+		about: "The winner's cup, in a laurel wreath.",
 		colors: [
-			"#E8A81E",
-			"#A8700F",
-			"#FFE9A0"
+			"#FFD25A",
+			"#C8901E",
+			"#FFF1B0",
+			"#5CB85C",
+			"#2E7D3A"
 		],
 		draw: on([
-			"1.313.1",
-			"1111111",
-			".11111.",
-			"..121..",
-			".22222."
+			"4.33111112.5",
+			"43.311112.25",
+			"443.3112.255",
+			".44..32..55.",
+			"..4422222.5."
 		])
 	},
 	{
 		id: "amountle.coin-stack",
 		game: "amountle",
-		name: "Coin stack",
+		name: "Pirate hat",
 		colors: [
+			"#3E3852",
+			"#221E30",
+			"#625A80",
 			"#FFD25A",
-			"#E0A62E",
-			"#FFF1B0",
-			"#B8781A"
+			"#C98A1A",
+			"#FFFFFF"
 		],
 		draw: on([
-			".3311.",
-			".4242.",
-			"33111.",
-			"42424.",
-			".33111",
-			".42424"
-		])
+			"..3111112..",
+			".316666612.",
+			"43162626124",
+			".431666124.",
+			"..4444445.."
+		], 0, 2)
+	},
+	{
+		id: "amountle.gumball-dome",
+		game: "amountle",
+		name: "Gumball dome",
+		colors: [
+			"#E5484D",
+			"#A8283A",
+			"#FF8A8E",
+			"#FFD25A",
+			"#3FD1C1",
+			"#5C9BFF",
+			"#FFFFFF",
+			"#BFE6F5",
+			"#FF6FC8"
+		],
+		draw: on([
+			"...7888...",
+			"..849568..",
+			".86594548.",
+			"3111111112",
+			".21144112."
+		], 0, 2)
 	},
 	{
 		id: "halfsies.sandwich",
 		game: "halfsies",
-		name: "Half sandwich",
+		name: "Melon helmet",
 		colors: [
-			"#F6DCA8",
-			"#D9A866",
-			"#7DD87A",
-			"#E5484D",
-			"#FFE38F",
-			"#B07444"
+			"#4FAE5C",
+			"#2E7D3A",
+			"#9EE08A",
+			"#F0435A",
+			"#FFF4E0",
+			"#2A1B10",
+			"#C22E40"
 		],
 		draw: on([
-			"66......",
-			"6116....",
-			"653316..",
-			"6443516.",
-			"66666666"
+			"..3212121..",
+			".321212122.",
+			"55555555555",
+			"44644464447",
+			"74447444677"
+		], 0, 2)
+	},
+	{
+		id: "halfsies.half-moon",
+		game: "halfsies",
+		name: "Half moon helm",
+		colors: [
+			"#3A4A6B",
+			"#222C44",
+			"#5E7096",
+			"#FFD25A",
+			"#D99A1E",
+			"#FFF1B0",
+			"#E5484D"
+		],
+		draw: on([
+			"6....31....4",
+			"46..3112..45",
+			".4664774445.",
+			"331111111122",
+			"222222222222"
 		], 0, 2)
 	},
 	{
 		id: "stackdle.arch",
 		game: "stackdle",
-		name: "Arch",
+		name: "Castle keep",
 		colors: [
-			"#6FA8FF",
-			"#4A84E0",
-			"#B5D3FF"
+			"#B5BCC8",
+			"#7E8696",
+			"#E3E7EE",
+			"#E5484D",
+			"#B02A35",
+			"#3A3F4A"
 		],
 		draw: on([
-			"3311112",
-			"3111112",
-			"11...12"
-		])
+			"31.31.31.12",
+			"31111411112",
+			"31611511612",
+			"22222422222",
+			"22222222222"
+		], 0, 2)
+	},
+	{
+		id: "stackdle.hardhat",
+		game: "stackdle",
+		name: "Hard hat",
+		colors: [
+			"#FFC93A",
+			"#D9921A",
+			"#FFE9A0",
+			"#4A4E5E",
+			"#FFFFFF"
+		],
+		draw: on([
+			"....3311....",
+			"..33111112..",
+			".3114551112.",
+			".3111111112.",
+			"322222222222"
+		], 0, 2)
 	},
 	{
 		id: "flipsies.cup",
 		game: "flipsies",
-		name: "Flipped cup",
+		name: "Party cup",
 		colors: [
 			"#E5484D",
 			"#B83236",
 			"#FFFFFF",
-			"#FF7A7E"
+			"#FF8A8E",
+			"#FF9A3C",
+			"#DDE3EA"
 		],
 		draw: on([
-			".4112.",
-			".4112.",
-			"411112",
-			"333333"
-		])
+			".....55...",
+			".33333336.",
+			".41111122.",
+			"..411122..",
+			"..411122.."
+		], 0, 2)
+	},
+	{
+		id: "flipsies.fin",
+		game: "flipsies",
+		name: "Shark fin",
+		colors: [
+			"#8FA6BC",
+			"#56708A",
+			"#D4E2EE",
+			"#5CB8F2",
+			"#FFFFFF",
+			"#2F7CC8"
+		],
+		draw: on([
+			".......31.....",
+			"......3112....",
+			"....331112....",
+			"54543111112454"
+		], 0, 2)
 	},
 	{
 		id: "puttsies.argyle",
@@ -5936,88 +6101,207 @@ const hats = [
 		name: "Argyle bucket",
 		colors: [
 			"#F4EDE0",
+			"#C9BFA8",
 			"#3A9466",
-			"#2E7D4F",
-			"#E5484D"
+			"#E5484D",
+			"#2E7D4F"
 		],
 		draw: on([
-			"...1311...",
-			"..141141..",
-			"..311311..",
-			"2222222222"
-		])
+			"...113311...",
+			"..13441431..",
+			"..31331331..",
+			"555555555555"
+		], 0, 2)
+	},
+	{
+		id: "puttsies.crown",
+		game: "puttsies",
+		name: "Hole-in-one crown",
+		colors: [
+			"#FFD25A",
+			"#D99A1E",
+			"#FFF1A8",
+			"#FFFFFF",
+			"#C9CFDA",
+			"#E5484D",
+			"#3FB56A"
+		],
+		draw: on([
+			"3....45....1",
+			"31..4455..12",
+			"311111111112",
+			"317161716172"
+		], 0, 2)
 	},
 	{
 		id: "weighsies.feather",
 		game: "weighsies",
-		name: "Feather",
+		name: "Viking helm",
 		colors: [
-			"#E6DCFF",
-			"#B39EEC",
-			"#7A5FD0",
-			"#4A4E5E"
+			"#F4E6C8",
+			"#C9A878",
+			"#FFFFFF",
+			"#C9CFDA",
+			"#7E879A",
+			"#F2C230",
+			"#B9852A"
 		],
 		draw: on([
-			"......11",
-			".....121",
-			"....121.",
-			"...121..",
-			"44434444"
-		])
+			"3............2",
+			"31...3444...12",
+			".3113444445122",
+			"..6766676667.."
+		], 0, 2)
+	},
+	{
+		id: "weighsies.laurel",
+		game: "weighsies",
+		name: "Gold laurels",
+		colors: [
+			"#F2C230",
+			"#B9852A",
+			"#FFF1B0",
+			"#E5484D"
+		],
+		draw: on([
+			"13.3......3.31",
+			".3131....1312.",
+			"..2131..1312..",
+			"...22144122..."
+		], 0, 2)
 	},
 	{
 		id: "cutsies.banana",
 		game: "cutsies",
-		name: "Banana",
+		name: "Banana split",
+		about: "Three scoops on a split banana, with a cherry on top.",
 		colors: [
 			"#FFE066",
 			"#E0B020",
-			"#FFF4B0",
-			"#6A4A1E"
+			"#FFF4E0",
+			"#E8D2B0",
+			"#8A5A3A",
+			"#5E3A1C",
+			"#FF9EBB",
+			"#E06A90",
+			"#E5384D"
 		],
 		draw: on([
-			"4.......4",
-			"13.....31",
-			".1333331.",
-			"..22222.."
+			".....99.....",
+			".33.5556.77.",
+			"133455566782",
+			"111111111122"
+		])
+	},
+	{
+		id: "cutsies.kabuto",
+		game: "cutsies",
+		name: "Samurai kabuto",
+		about: "A lacquered samurai helmet with golden horns, for the sharpest blade in Cutsies.",
+		colors: [
+			"#D8343F",
+			"#8E1B26",
+			"#FFD25A",
+			"#C8901E",
+			"#2B2F38",
+			"#FF7A80"
+		],
+		draw: on([
+			"3..........4",
+			"33..6111..44",
+			".3361111124.",
+			"..61133112..",
+			".5252525252."
 		])
 	},
 	{
 		id: "tiltsies.wheel",
 		game: "tiltsies",
-		name: "Hamster wheel",
+		name: "Marble crown",
+		about: "A gold crown set with the three rarest marbles in the maze.",
+		colors: [
+			"#FFD25A",
+			"#C8901E",
+			"#FFF1B0",
+			"#5CB8F2",
+			"#2F7CC8",
+			"#FF7AA8",
+			"#C9407A",
+			"#7DD87A",
+			"#3E9A4C"
+		],
+		draw: on([
+			".44..66..88.",
+			".45..67..89.",
+			".31..31..12.",
+			"331111111122",
+			"322222222222"
+		])
+	},
+	{
+		id: "tiltsies.ufo",
+		game: "tiltsies",
+		name: "Hamster UFO",
+		about: "A hamster at the wheel of its own flying saucer.",
 		colors: [
 			"#C9CED8",
 			"#8A93A3",
+			"#F4F7FA",
+			"#BFE8FF",
 			"#EDB57D",
+			"#FFD23A",
+			"#6FA8D8",
 			"#2A1B10"
 		],
 		draw: on([
-			".11111.",
-			"1.2.2.1",
-			"1.343.1",
-			"1.333.1",
-			".11111."
-		], 0, 2)
+			"...445547...",
+			"..44855877..",
+			"331111111122",
+			".2626262622."
+		])
 	},
 	{
 		id: "trackdle.goggles",
 		game: "trackdle",
-		name: "Race goggles",
+		name: "Vintage racer",
+		about: "A leather racing cap with the goggles pushed up, from when cars had no roofs.",
 		colors: [
-			"#2B2F38",
+			"#8A5A2E",
+			"#5E3A1C",
+			"#B98250",
+			"#C9CED8",
 			"#6FA8D8",
 			"#C4E8FB",
-			"#FF7A2F"
+			"#8A93A3"
 		],
-		draw: (c) => {
-			c.paintRow(c.crown, L(4));
-			on([
-				".11.11.",
-				"1321321",
-				".11.11."
-			], 0, 2)(c);
-		}
+		draw: on([
+			"...331111...",
+			"..31111112..",
+			".4657114657.",
+			".4557114557.",
+			"311777777112"
+		], 0, 2)
+	},
+	{
+		id: "trackdle.f1",
+		game: "trackdle",
+		name: "Formula car",
+		about: "A whole race car, parked on top.",
+		colors: [
+			"#E5484D",
+			"#A8202F",
+			"#FF8A8E",
+			"#2B2F38",
+			"#FFFFFF",
+			"#FFD447",
+			"#8A93A3"
+		],
+		draw: on([
+			"222..66.....",
+			".2311551111.",
+			"444111114441",
+			"474.....474."
+		])
 	}
 ];
 const frames = [
@@ -6443,13 +6727,13 @@ const frames = [
 * colour, so it stays dark whatever finish the buddy has.
 */
 const pet = (name, rows) => {
-	if (rows.length > 6 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6x6`);
+	if (rows.length > 5 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6 across and 5 tall`);
 	return stamp(rows);
 };
 /**
 * A pet that sits at the guy's feet, bottom right, in front of everything but
 * the face. Each is a bold shape of its own with a lit side, a shaded side and
-* a face, filling as much of its 6x6 as it can, so it reads at a glance on any
+* a face, filling as much of its 6x5 as it can, so it reads at a glance on any
 * guy and any frame.
 */
 const buddies = [
@@ -6460,33 +6744,36 @@ const buddies = [
 		colors: [
 			"#3FD1C1",
 			"#1F9C90",
-			"#C8FFF7"
+			"#C8FFF7",
+			"#137068",
+			"#FFFFFF"
 		],
 		art: pet("gemling", [
-			".3331.",
-			"311112",
-			"1o11o2",
-			"311112",
-			".1122.",
-			"..22.."
+			"..531.",
+			".33112",
+			".31112",
+			".1o1o2",
+			"..124."
 		])
 	},
 	{
 		id: "halfsies.pea",
 		game: "halfsies",
-		name: "Pea pod",
+		name: "Toaster",
 		colors: [
-			"#7CC45A",
-			"#3E8A2A",
-			"#C6F59A",
-			"#2E6B20"
+			"#C9D1DC",
+			"#7E8898",
+			"#F2F5F9",
+			"#E8B060",
+			"#B07A30",
+			"#2B2F38"
 		],
-		art: pet("pea pod", [
-			"...4.",
-			".334.",
-			"31112",
-			"1o1o2",
-			".122."
+		art: pet("toaster", [
+			".4545.",
+			".33332",
+			"611112",
+			".1o1o2",
+			".62226"
 		])
 	},
 	{
@@ -6496,14 +6783,15 @@ const buddies = [
 		colors: [
 			"#FFB03B",
 			"#D97A12",
-			"#FFE0A0"
+			"#FFE0A0",
+			"#A85A0A"
 		],
 		art: pet("cubelet", [
-			"33332",
-			"31112",
-			"1o1o2",
-			"11112",
-			"22222"
+			"..333.",
+			".33334",
+			".11112",
+			".1o1o2",
+			".22224"
 		])
 	},
 	{
@@ -6513,14 +6801,15 @@ const buddies = [
 		colors: [
 			"#5CB8F2",
 			"#2F7CC8",
-			"#FFFFFF"
+			"#FFFFFF",
+			"#1E5A9E"
 		],
 		art: pet("droplet", [
-			"..1..",
-			".311.",
-			"31112",
-			"1o1o2",
-			".122."
+			"....3.",
+			"...312",
+			"..3112",
+			".3o1o2",
+			".11224"
 		])
 	},
 	{
@@ -6534,11 +6823,11 @@ const buddies = [
 			"#B98232"
 		],
 		art: pet("tee buddy", [
-			".112.",
-			"1o1o2",
-			"11122",
-			".222.",
-			".343."
+			"....1.",
+			"...112",
+			"..1212",
+			".1o1o2",
+			"..334."
 		])
 	},
 	{
@@ -6552,11 +6841,11 @@ const buddies = [
 			"#E3E7EE"
 		],
 		art: pet("mouse", [
-			"33.33",
-			"34143",
-			"1o1o2",
-			".132.",
-			"..2.."
+			"....44",
+			"...434",
+			"..11o1",
+			".11113",
+			"32222."
 		])
 	},
 	{
@@ -6568,14 +6857,15 @@ const buddies = [
 			"#7DD87A",
 			"#3E9A4C",
 			"#E07B4C",
-			"#B05A30"
+			"#B05A30",
+			"#F4A77C"
 		],
 		art: pet("seedling", [
-			"11.11",
-			".121.",
-			"33334",
-			"3o3o4",
-			".444."
+			"...112",
+			".55554",
+			".3o3o4",
+			".33344",
+			"..344."
 		])
 	},
 	{
@@ -6585,15 +6875,15 @@ const buddies = [
 		colors: [
 			"#F2B66D",
 			"#C98A45",
-			"#FFE4C2",
+			"#FFF1DE",
 			"#FF9EBB"
 		],
 		art: pet("hamlet", [
-			"2...2",
-			"11112",
-			"1o1o2",
-			"33433",
-			".333."
+			"..1.2.",
+			".11112",
+			".1o1o2",
+			".43342",
+			".3322."
 		])
 	},
 	{
@@ -6601,53 +6891,77 @@ const buddies = [
 		game: "trackdle",
 		name: "Turbo snail",
 		colors: [
-			"#FF8A3A",
-			"#C85A14",
+			"#E5484D",
+			"#A8202F",
 			"#FFD08A",
 			"#9FD18A",
-			"#5FA04A"
+			"#5FA04A",
+			"#FFFFFF"
 		],
 		art: pet("turbo snail", [
-			".11.o",
-			"13214",
-			"12214",
-			"44444"
+			"..1.o4",
+			"13314.",
+			"162144",
+			".22244",
+			"444455"
 		])
 	},
 	{
 		id: "amountle.jellybean",
 		game: "amountle",
-		name: "Jelly bean",
+		name: "Gummy bear",
 		colors: [
-			"#FF5C8A",
-			"#C93A66",
-			"#FFC2D4"
+			"#FF5C6A",
+			"#B8283A",
+			"#FFB0B6"
 		],
-		art: pet("jelly bean", [
-			".31..",
-			"3111.",
-			"1o1o1",
-			"11112",
-			".222."
+		art: pet("gummy bear", [
+			".3..3.",
+			".31112",
+			"311112",
+			".1o1o2",
+			".13332"
 		])
 	},
 	{
 		id: "amountle.piglet",
 		game: "amountle",
-		name: "Piglet bank",
+		name: "Piggy bank",
 		colors: [
 			"#FFA3C0",
-			"#E5799C",
+			"#D9658C",
 			"#FFD2E0",
-			"#F2C230",
-			"#C8406E"
+			"#FFE066",
+			"#D9A21E",
+			"#B8406E"
 		],
-		art: pet("piglet bank", [
-			"2.4.2",
-			"31112",
-			"1o1o2",
-			"13312",
-			".2.2."
+		art: pet("piggy bank", [
+			".2.45.",
+			".31112",
+			"311112",
+			".1o1o2",
+			".16662"
+		])
+	},
+	{
+		id: "amountle.mimic",
+		game: "amountle",
+		name: "Mimic chest",
+		colors: [
+			"#B86B32",
+			"#6E3A18",
+			"#E59A55",
+			"#FFD25A",
+			"#C98A1A",
+			"#3A1020",
+			"#FFFFFF"
+		],
+		art: pet("mimic chest", [
+			".3112.",
+			".31112",
+			"344542",
+			".1o1o2",
+			".76767"
 		])
 	},
 	{
@@ -6656,51 +6970,76 @@ const buddies = [
 		name: "Sunny egg",
 		colors: [
 			"#FFFFFF",
-			"#D5DBE3",
+			"#C9D1DC",
 			"#FFC93A",
-			"#E59A12"
+			"#E58A12",
+			"#FFF2B8"
 		],
 		art: pet("sunny egg", [
-			".11..",
-			"13331",
-			"1o3o1",
-			"13342",
-			".122."
+			"..111.",
+			".11111",
+			"115331",
+			".3o3o4",
+			".13342"
 		])
 	},
 	{
 		id: "halfsies.berry",
 		game: "halfsies",
-		name: "Berry half",
+		name: "Strawberry",
 		colors: [
 			"#F0435A",
-			"#B82A40",
-			"#FFC2CC",
-			"#5CB85C"
+			"#A82238",
+			"#FF9AAA",
+			"#5CB85C",
+			"#2E7D3A",
+			"#FFE7A0"
 		],
-		art: pet("berry half", [
-			".444.",
-			"13331",
-			"1o3o2",
-			".132.",
-			"..2.."
+		art: pet("strawberry", [
+			".4545.",
+			".31112",
+			"316162",
+			".1o1o2",
+			"..162."
+		])
+	},
+	{
+		id: "halfsies.avo",
+		game: "halfsies",
+		name: "Avo",
+		colors: [
+			"#D8EE8A",
+			"#9CCB4A",
+			"#2E5A1E",
+			"#A0602E",
+			"#6A3A18",
+			"#D99060"
+		],
+		art: pet("avo", [
+			"..233.",
+			".21113",
+			"211113",
+			".2o1o3",
+			".26443"
 		])
 	},
 	{
 		id: "stackdle.pyramid",
 		game: "stackdle",
-		name: "Pyramid",
+		name: "Ziggurat",
 		colors: [
 			"#FF8FB1",
 			"#D9557F",
-			"#FFC9DA"
+			"#FFC9DA",
+			"#FFD25A",
+			"#A83A60"
 		],
-		art: pet("pyramid", [
-			"..3..",
-			".312.",
-			".312.",
-			"3o1o2",
-			"11122"
+		art: pet("ziggurat", [
+			"...4..",
+			"..312.",
+			".33332",
+			".1o1o2",
+			".25552"
 		])
 	},
 	{
@@ -6710,14 +7049,36 @@ const buddies = [
 		colors: [
 			"#5C9BFF",
 			"#2F64C8",
-			"#B5D3FF"
+			"#B5D3FF",
+			"#1E3F8A"
 		],
 		art: pet("brickling", [
-			".3.3.",
-			"33332",
-			"1o1o2",
-			"11112",
-			"22222"
+			".3..3.",
+			".33332",
+			".11112",
+			".1o1o2",
+			".22224"
+		])
+	},
+	{
+		id: "stackdle.wobble",
+		game: "stackdle",
+		name: "Wobble",
+		colors: [
+			"#7DD87A",
+			"#3E9A4C",
+			"#C6F5B0",
+			"#FFD84A",
+			"#D9A21E",
+			"#FF6F91",
+			"#C93A66"
+		],
+		art: pet("wobble", [
+			"..67..",
+			".4445.",
+			"311112",
+			".1o1o2",
+			".2222."
 		])
 	},
 	{
@@ -6727,16 +7088,16 @@ const buddies = [
 		colors: [
 			"#E8A04E",
 			"#9A5A20",
-			"#F8CF8A",
-			"#FFF39A",
-			"#7A3A10"
+			"#FBD79A",
+			"#FFE45C",
+			"#6A300C"
 		],
 		art: pet("short stack", [
-			"..4..",
-			".333.",
-			"1o1o1",
-			"25522",
-			"11111"
+			"....33",
+			"...422",
+			"..3333",
+			".1o1o5",
+			"222252"
 		])
 	},
 	{
@@ -6747,14 +7108,33 @@ const buddies = [
 			"#FFD84A",
 			"#E0A820",
 			"#FFF1A8",
-			"#FF8A2B"
+			"#FF7A1A"
 		],
 		art: pet("rubber duck", [
-			".31..",
-			"1o44.",
-			".11.3",
-			"31112",
-			".222."
+			"....31",
+			"...3o4",
+			"...112",
+			"311112",
+			".22222"
+		])
+	},
+	{
+		id: "flipsies.whale",
+		game: "flipsies",
+		name: "Lil whale",
+		colors: [
+			"#5C8FE0",
+			"#2F5FB0",
+			"#9CC2F5",
+			"#E6F3FF",
+			"#7FD8FF"
+		],
+		art: pet("lil whale", [
+			"...5.5",
+			"....5.",
+			"..3111",
+			"3311o1",
+			".44442"
 		])
 	},
 	{
@@ -6765,15 +7145,16 @@ const buddies = [
 			"#B07A4A",
 			"#7A4E2A",
 			"#F2D4A8",
+			"#7ED957",
 			"#3A9466",
-			"#256B47"
+			"#FFFFFF"
 		],
 		art: pet("gopher", [
-			"2...2",
-			"11112",
-			"1o1o2",
-			"13312",
-			"44445"
+			"....2.",
+			"...311",
+			"..31o3",
+			".41136",
+			"445554"
 		])
 	},
 	{
@@ -6784,14 +7165,32 @@ const buddies = [
 			"#6CC24A",
 			"#3E8E2E",
 			"#C8F59A",
-			"#FFFFFF"
+			"#256B20"
 		],
 		art: pet("hazard frog", [
-			"44.44",
-			"4o1o4",
-			"11112",
-			"13332",
-			".1.2."
+			"...33.",
+			"..1o12",
+			".11144",
+			"322122"
+		])
+	},
+	{
+		id: "puttsies.turtle",
+		game: "puttsies",
+		name: "Golf turtle",
+		colors: [
+			"#FFFFFF",
+			"#C9CFDA",
+			"#8A93A3",
+			"#6CC24A",
+			"#3E8E2E"
+		],
+		art: pet("golf turtle", [
+			"....44",
+			"...4o4",
+			"..1214",
+			".12124",
+			"555555"
 		])
 	},
 	{
@@ -6802,14 +7201,15 @@ const buddies = [
 			"#FFC94A",
 			"#D98F22",
 			"#FFE38F",
-			"#E3A52E"
+			"#E3A52E",
+			"#B8761A"
 		],
 		art: pet("cheddar", [
-			"...3.",
-			"..311",
-			".3141",
-			"1o1o1",
-			"22222"
+			"....31",
+			"...311",
+			"..3141",
+			".3o1o1",
+			"222222"
 		])
 	},
 	{
@@ -6820,14 +7220,34 @@ const buddies = [
 			"#FFE066",
 			"#E8B320",
 			"#FFF6C2",
-			"#FF8A2B"
+			"#FF8A2B",
+			"#C9851A"
 		],
 		art: pet("chick", [
-			"..3..",
-			".311.",
-			"1o4o2",
-			"11112",
-			".4.4."
+			"....3.",
+			"...311",
+			"..31o4",
+			".31112",
+			"..4.4."
+		])
+	},
+	{
+		id: "weighsies.elephant",
+		game: "weighsies",
+		name: "Baby elephant",
+		colors: [
+			"#B9C0CE",
+			"#7E879A",
+			"#E3E7EE",
+			"#FFB3C7",
+			"#5E6677"
+		],
+		art: pet("baby elephant", [
+			"....31",
+			"...4o1",
+			"..3415",
+			".31115",
+			".2.2.5"
 		])
 	},
 	{
@@ -6838,13 +7258,15 @@ const buddies = [
 			"#E5384D",
 			"#A8202F",
 			"#FF9AA4",
-			"#4FAE5C"
+			"#4FAE5C",
+			"#2E7D3A"
 		],
 		art: pet("cherries", [
-			"..44.",
-			".4..4",
-			"31.31",
-			"12.12"
+			"...45.",
+			"..312.",
+			".3o1o2",
+			".11112",
+			"31222."
 		])
 	},
 	{
@@ -6859,11 +7281,32 @@ const buddies = [
 			"#2E7D3A"
 		],
 		art: pet("pineapple", [
-			"4.5.4",
-			".454.",
-			"31212",
-			"1o1o2",
-			".212."
+			"...454",
+			"..3122",
+			".3o2o2",
+			".12122",
+			"..222."
+		])
+	},
+	{
+		id: "cutsies.shadow",
+		game: "cutsies",
+		name: "Lil ninja",
+		about: "A tiny ninja who cuts whatever you leave on the board.",
+		colors: [
+			"#4A5068",
+			"#262A38",
+			"#7A8098",
+			"#FFE4C2",
+			"#E5484D",
+			"#A8202F"
+		],
+		art: pet("lil ninja", [
+			"..3116",
+			".55552",
+			"14o4o2",
+			".11112",
+			".12.12"
 		])
 	},
 	{
@@ -6871,18 +7314,19 @@ const buddies = [
 		game: "tiltsies",
 		name: "Rolly",
 		colors: [
-			"#D8EEF8",
-			"#8EBFD8",
+			"#A8DDF5",
+			"#4F94C4",
 			"#FFFFFF",
 			"#EDB57D",
-			"#CC8E55"
+			"#B97A45",
+			"#FF9EBB"
 		],
 		art: pet("rolly", [
-			".312.",
-			"34452",
-			"1o4o2",
-			"14552",
-			".222."
+			"..3112",
+			".34142",
+			"31o4o2",
+			".14652",
+			"..222."
 		])
 	},
 	{
@@ -6892,15 +7336,37 @@ const buddies = [
 		colors: [
 			"#FFD23A",
 			"#E0A61E",
-			"#D9A066",
-			"#4FAE5C"
+			"#A86A3A",
+			"#4FAE5C",
+			"#FFF1A8",
+			"#6E4220"
 		],
 		art: pet("sunflower", [
-			".1.1.",
-			"13331",
-			"3o3o3",
-			"13331",
-			".242."
+			"..5112",
+			".53332",
+			"13o3o2",
+			".13662",
+			"44122."
+		])
+	},
+	{
+		id: "tiltsies.hedgehog",
+		game: "tiltsies",
+		name: "Rollhog",
+		about: "A hedgehog that curls into a ball and rolls the maze with you.",
+		colors: [
+			"#A8794E",
+			"#5E3A1C",
+			"#D9AE7E",
+			"#FFE4C2",
+			"#2A1B10"
+		],
+		art: pet("rollhog", [
+			"..3131",
+			".31312",
+			"34o4o2",
+			".44542",
+			".4..4."
 		])
 	},
 	{
@@ -6911,14 +7377,15 @@ const buddies = [
 			"#FF7A2F",
 			"#C8501A",
 			"#FFFFFF",
-			"#FFAE73"
+			"#FFAE73",
+			"#2B2F38"
 		],
 		art: pet("conelet", [
-			"..1..",
-			".414.",
-			".333.",
-			"1o1o2",
-			"22222"
+			"...41.",
+			"..3332",
+			".4o1o2",
+			".33332",
+			"555555"
 		])
 	},
 	{
@@ -6927,17 +7394,39 @@ const buddies = [
 		name: "Go-kart",
 		colors: [
 			"#E5484D",
-			"#B02A30",
-			"#FFD447",
+			"#A8202F",
+			"#E8F4FF",
 			"#2B2F38",
-			"#FF8A8E"
+			"#FF8A8E",
+			"#FFD447"
 		],
 		art: pet("go-kart", [
-			"..33.",
-			".1341",
-			"51112",
-			"11222",
-			"44.44"
+			"..5112",
+			".13332",
+			"13o3o2",
+			".61162",
+			"44..44"
+		])
+	},
+	{
+		id: "trackdle.hare",
+		game: "trackdle",
+		name: "Pace hare",
+		about: "The hare the whole field chases, in its racing scarf.",
+		colors: [
+			"#C9A27A",
+			"#8E6A44",
+			"#FFB3C1",
+			"#E5484D",
+			"#A8202F",
+			"#F4E6D2"
+		],
+		art: pet("pace hare", [
+			"...1.2",
+			"..1112",
+			".1o1o2",
+			".66612",
+			".4445."
 		])
 	}
 ];
@@ -7315,7 +7804,7 @@ const showpieces = [
 		eyes: 8,
 		limb: 2,
 		showpiece: true,
-		signature: "lava",
+		signature: "embers",
 		about: "Guards the jar.",
 		colors: [
 			"#3BB273",
@@ -7588,7 +8077,7 @@ const showpieces = [
 		eyes: 9,
 		limb: 4,
 		showpiece: true,
-		signature: "static",
+		signature: "pulse",
 		about: "Slices before you see it.",
 		colors: [
 			"#FFE0C2",
@@ -10497,4 +10986,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-Dw5Xjpuu.js.map
+//# sourceMappingURL=paint-4DuomE1-.js.map
