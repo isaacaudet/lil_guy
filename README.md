@@ -383,6 +383,8 @@ recognisable everywhere.
 
 A **skin** turns the guy into the game's object and keeps its face. Each machine also holds one **showpiece** (`showpiece: true`): a whole new character (a dragon, a robot, a rocket…), coming out at half an ordinary item's weight (`SHOWPIECE_WEIGHT`), every copy moving with its own effect (`signature`), which is neither in its name nor its odds.
 
+A capsule can also unlock a rare **face part** (`rollPart`, one capsule in `PART_ODDS`): one of the parts a picker locks, rarer ones less often. Pass a player's earned parts (`unlocksOf(codes)`) to `pickable`, `allowed`, `decodeLook` and `lookOf` and they can pick it; a guy's rarity stays the deal's.
+
 **Buddies.** Each game has three buddies, tiny pets that sit at the guy's
 feet, bottom right, in front of everything, with their own outline. Equip one
 like any item.

@@ -787,6 +787,14 @@
   .won-on { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--ink-2); }
   .won-on canvas { width: 40px; height: 40px; image-rendering: pixelated; border-radius: 6px; background: var(--well); }
   .rv-sub { font-size: 16px; color: var(--ink-2); margin: 0; }
+  .rv-part { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 12px; text-align: left;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 30%, var(--panel)), var(--panel)); box-shadow: 0 0 0 2px var(--purple), var(--lift); animation: slam .45s cubic-bezier(.2,1.5,.35,1) .2s backwards; }
+  .rv-part.dupe { background: var(--panel); box-shadow: var(--lift); }
+  .rv-part canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+  .rv-part > span { display: grid; gap: 2px; }
+  .rv-part small { font-size: 14px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+  .rv-part b { font-size: 24px; line-height: 1.1; }
+  .rv-part em { font-style: normal; font-size: 16px; color: var(--ink-2); }
   .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
   /* the scroll */
   .reelwrap { width: min(1040px, calc(100vw - 32px)); display: grid; gap: 12px; justify-items: center; }
@@ -1188,7 +1196,7 @@
   <div class="art-col"><div class="look-stage" id="look-stage"></div></div>
   <div>
     <h3 id="look-h">Change your look</h3>
-    <p class="fin">Any common part. The locked ones only come from the deal.</p>
+    <p class="fin">Any common part. Locked ones unlock from capsules. Your rarity stays as dealt.</p>
     <div class="filters" id="look-tabs"></div>
     <div class="opts" id="look-opts"></div>
     <div class="look-actions"><button class="btn" type="button" id="look-save">Save look</button><button class="btn ghost" type="button" id="look-reset">As dealt</button></div>
@@ -1208,6 +1216,7 @@
       <div class="won-info" id="rv-info" hidden></div>
       <p class="rv-name" id="rv-name"></p>
       <p class="rv-sub" id="rv-sub"></p>
+      <div class="rv-part" id="rv-part" hidden></div>
       <div class="rv-actions" id="rv-actions" hidden><button class="btn cream" type="button" id="rv-wear">Wear it</button><button class="btn ghost" type="button" id="rv-keep">Keep</button><button class="btn ghost" type="button" id="rv-again">Another</button></div>
     </div>
   </div>
@@ -1696,14 +1705,18 @@
   const dealt = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette, founder: true } : LG.resolve(seed); };
   // Where a guy stands. The founder was picked by hand, not dealt, so odds don't rank him: he's the one of one.
   const FOUNDER_RANK = { top: 0, tier: 5, name: 'Founder', label: 'One of one' };
-  const guyRank = cfg => cfg.founder ? FOUNDER_RANK : LG.guyRank(cfg);
+  const guyRank = cfg => (cfg.base || cfg).founder ? FOUNDER_RANK : LG.guyRank(cfg.base || cfg);
   const rankLine = r => r.label === r.name ? r.name : `${r.label} · ${r.name}`;
   // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
+  const unlocks = () => LG.unlocksOf(state?.parts || []);
+  // The guy as they look; `.base` is the guy as dealt, which is what rarity is counted on.
   const guyConfig = seed => {
-    const base = dealt(seed);
-    const code = state && seed === state.seed ? state.look : lookFor[seed];
-    const look = code ? LG.decodeLook(code, base) : null;
-    return look ? { ...base, ...look } : base;
+    const base = dealt(seed), mine = state && seed === state.seed;
+    const code = mine ? state.look : lookFor[seed];
+    const look = code ? (mine ? LG.decodeLook(code, base, unlocks()) : LG.decodeLook(code)) : null;
+    const out = { ...base, ...(look || {}) };
+    Object.defineProperty(out, 'base', { value: base });
+    return out;
   };
   const lookFor = {};                                  // other people's picked looks, by seed
   const partsOf = cfg => { const { palette, founder, ...parts } = cfg; return parts; };
@@ -1826,7 +1839,7 @@
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', tickets: s.tickets, free: s.freeDay, checkin: s.checkinDay,
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
-      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), swaps: s.swaps || [] };
+      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), swaps: s.swaps || [], parts: s.parts || [] };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   const wearLive = slot => { if (isLive() && state) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
@@ -2105,13 +2118,13 @@
   const TIERS = [{ name: 'Common', min: 1 / 12, c: '#009dff' }, { name: 'Uncommon', min: 1 / 30, c: '#35b07d' }, { name: 'Rare', min: 1 / 80, c: '#fe5f55' }, { name: 'Legendary', min: 1 / 300, c: '#b26cbb' }, { name: 'Chase', min: 0, c: '#c98a1a' }];
   const tierOf = p => TIERS.find(x => p >= x.min);
   // A guy's rarest traits, rarest first: what to lead with on his card.
-  const rarestOf = (cfg, n = 2, shapes = false) => LG.traitOdds(cfg).filter(t => (t.slot !== 'lucky' || t.name === 'Lucky') && !(shapes && ['colour', 'tone', 'arms', 'feet'].includes(t.slot))).sort((a, b) => a.chance - b.chance).slice(0, n);
+  const rarestOf = (cfg, n = 2, shapes = false) => LG.traitOdds(cfg.base || cfg).filter(t => (t.slot !== 'lucky' || t.name === 'Lucky') && !(shapes && ['colour', 'tone', 'arms', 'feet'].includes(t.slot))).sort((a, b) => a.chance - b.chance).slice(0, n);
   // A card's title names the rarest thing you can see in his drawing, not his colourway.
   const cardTrait = cfg => traitWord(rarestOf(cfg, 1, true)[0]);
   // A guy's card: his tier sets its grade, and it says where he stands ("Epic", "Top 0.3%").
   const TIER_COLORS = LG.GRADES.map(g => g.color);
   const rankText = r => r.label === r.name ? r.name : `${r.name} · ${r.label}`;
-  const guyLabel = (cfg, title, corner = '★') => { const r = guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
+  const guyLabel = (cfg, title, corner = '★') => { const r = guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg.base || cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
   const traitWord = t => t.slot === 'lucky' ? 'Lucky' : t.slot === 'tone' ? cap(t.name) : t.slot === 'arms' ? (t.name === 'none' ? 'No arms' : cap(t.name)) : t.slot === 'feet' ? `${cap(t.name)} feet` : `${cap(t.name)} ${t.slot}`;
   const traitChips = (cfg, n = 2) => `<span class="tchips">${rarestOf(cfg, n).map(t => `<span class="tchip" style="--tier:${traitTier(t).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`).join('')}</span>`;
   // One trait as a Balatro card: its icon and slot, what he got, a paper box saying how rare.
@@ -2171,9 +2184,9 @@
     saveButtons($('guy-saves'), guyCard, state.key, () => $('guy-stage'));
     const rank = guyRank(cfg);
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
-    $('tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, false)).join('');
-    $('score').dataset.n = LG.guyOneIn(cfg);
-    meaning($('guy-meaning'), LG.guyOneIn(cfg)); distChart($('guy-dist'), LG.guyOneIn(cfg));
+    $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
+    $('score').dataset.n = LG.guyOneIn(cfg.base || cfg);
+    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg)); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
     setTotal(scored ? +$('score').dataset.n : 1);
     if (scored) fire(heatOf(+$('score').dataset.n));
   }
@@ -2242,7 +2255,7 @@
     $('look-tabs').innerHTML = LOOK_TABS.map(([k, label]) => `<button type="button" data-t="${k}" aria-pressed="${k === lookTab}">${label}</button>`).join('');
     $('look-stage').innerHTML = LG.toAnimatedSvg(state.seed, 'idle', { size: 240, parts: partsOf(cur), palette: LG.paletteOf(cur) });
     // Every part with its odds: the ones you can pick first, then the rarer ones only the deal gives, locked.
-    const pick = new Set(LG.pickable(base, lookTab)), slot = LOOK_SLOT[lookTab];
+    const earned = new Set(unlocks()[lookTab] || []), pick = new Set(LG.pickable(base, lookTab, unlocks())), slot = LOOK_SLOT[lookTab];
     const chance = i => LG.traitOdds({ ...cur, [lookTab]: i }).find(t => t.slot === slot)?.chance || 0;
     const all = list.map((_, i) => i).filter(i => pick.has(i) || chance(i) > 0).sort((x, y) => (pick.has(y) - pick.has(x)) || (chance(y) - chance(x)));
     // Markings and cheeks a crowded guy has no room for wouldn't change him, so they aren't offered as if they would.
@@ -2250,8 +2263,8 @@
     all.sort((x, y) => room(y) - room(x));
     $('look-opts').innerHTML = all.map(i => {
       const p = chance(i), tier = tierOf(p), open = pick.has(i), fits = room(i);
-      const why = !fits ? ' disabled title="No room for this: the face, topper or accessory takes the space"' : open ? '' : ' disabled title="Only the deal gives this one"';
-      return `<button class="opt${fits ? '' : ' noroom'}" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${why}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${fits ? tier.c : 'var(--ink-3)'}">${!fits ? 'No room' : `${i === base[lookTab] ? 'Dealt · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}`}</span></button>`;
+      const why = !fits ? ' disabled title="No room for this: the face, topper or accessory takes the space"' : open ? '' : ' disabled title="Unlocks from capsules"';
+      return `<button class="opt${fits ? '' : ' noroom'}" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${why}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${fits ? tier.c : 'var(--ink-3)'}">${!fits ? 'No room' : `${i === base[lookTab] ? 'Dealt · ' : earned.has(i) ? 'Earned · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}`}</span></button>`;
     }).join('');
     $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: all[k] }));
   }
@@ -2315,7 +2328,7 @@
     $('me-name').textContent = '@' + state.key;
     $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     hydrate($('me-card'));
-    const n = LG.guyOneIn(guyConfig(state.seed));
+    const n = LG.guyOneIn(dealt(state.seed));
     $('me-odds').textContent = founderOf(state.seed) ? 'Picked by hand for the founder. The one of one.' : guyRank(guyConfig(state.seed)).top > 0.5 ? 'Dealt just for you.' : `Dealt just for you: the ${guyRank(guyConfig(state.seed)).label.toLowerCase()} of every guy dealt.`;
     $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy. See who everyone else got.`;
@@ -2441,7 +2454,8 @@
       try {
         const r = await meApi('open', { game: g, free: how === 'Daily capsule' });
         state.tickets = r.tickets; state.free = r.freeDay; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
-        reveal(LG.decode(r.copy.code), g, r.luck ? `${how} · ${LUCK_WORDS[r.luck]}` : how);
+        if (r.part?.new) state.parts = [...(state.parts || []), r.part.code];
+        reveal(LG.decode(r.copy.code), g, r.luck ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part);
       } catch (e) { toast(e.status === 402 ? 'Not enough tickets. Collect today\'s tickets below.' : e.message); renderAll(); }
       return;
     }
@@ -2453,8 +2467,17 @@
     // The day's free capsule is a souvenir of the day.
     if (how === 'Daily capsule') o = { ...o, souvenir: today };
     if (beginner) how = `${how} · ${LUCK_WORDS.beginner}`;
+    // Now and then a capsule also unlocks a rare face part, as on the server.
+    const drop = LG.rollPart(`${state.seed}:part:${how}:${today}:${state.opened}`);
+    let part = null;
+    if (drop) {
+      const code = LG.partCode(drop), have = LG.pickable(dealt(state.seed), drop.slot, unlocks()).includes(drop.index);
+      if (!have) state.parts = [...(state.parts || []), code];
+      else if (!INFINITE) state.tickets += LG.PART_REFUND;
+      part = { code, new: !have, refund: have && !INFINITE ? LG.PART_REFUND : 0 };
+    }
     state.opened++;
-    reveal(o, g, dev ? 'Dev drop' : how);
+    reveal(o, g, dev ? 'Dev drop' : how, part);
   }
 
   /* ---------------------------------------------- sound: a small synth made on the spot after the first click.
@@ -2908,7 +2931,7 @@
     res.classList.remove('go'); shout.classList.remove('slam', 'big'); shout.textContent = '';
     flip.classList.remove('spin', 'rise');
     front.hidden = true; front.innerHTML = ''; back.hidden = false; $('rv-name').textContent = ''; $('rv-sub').textContent = ''; $('rv-actions').hidden = true;
-    res.classList.toggle('withinfo', !!won); $('rv-info').hidden = true; $('rv-info').innerHTML = '';
+    res.classList.toggle('withinfo', !!won); $('rv-info').hidden = true; $('rv-info').innerHTML = ''; $('rv-part').hidden = true;
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
     if (faceUp) {
@@ -2957,7 +2980,21 @@
     $('rv-actions').hidden = false;
   }
 
-  async function reveal(o, g, how) {
+  /** A face part the capsule unlocked, under the item: your guy wearing it, and where to pick it. */
+  function showPart(part) {
+    const el = $('rv-part'), p = part && LG.readPart(part.code);
+    el.hidden = !p;
+    if (!p) return;
+    const base = guyConfig(state.seed);
+    el.innerHTML = `<canvas width="16" height="16" aria-hidden="true"></canvas><span><small>${part.new ? 'Also unlocked' : 'Also in the capsule'}</small><b>${esc(LG.partName(p))}</b>`
+      + `<em>${part.new ? 'Yours to pick in Change look.' : part.refund ? `Already yours: +${part.refund} tickets.` : 'Already yours.'}</em></span>`
+      + (part.new ? '<button class="btn small" type="button" id="rv-part-try">Try it on</button>' : '');
+    paintCfg(el.querySelector('canvas'), LG.dress({ ...base, [p.slot]: p.index }, { equip: wornCodes() }));
+    el.classList.toggle('dupe', !part.new);
+    if (part.new) SFX.good?.();
+    $('rv-part-try')?.addEventListener('click', () => { lookTab = p.slot; closeReveal(false); $('look-open').click(); draft[p.slot] = p.index; renderLook(); });
+  }
+  async function reveal(o, g, how, part) {
     const code = LG.encode(o);
     state.copies.push(code); state.fresh = [...(state.fresh || []), code];
     if (how === 'Dev drop') state.dev = [...(state.dev || []), code];
@@ -2975,6 +3012,7 @@
       <p class="won-cap"><b>${esc(wonTitle)}</b><span>${sp ? '<span class="bal showp">★ Showpiece</span>' : ''}<span class="bal" style="--b:${grade.color}">${esc(grade.name)}</span><span class="bal" style="--b:#5d6b8a">${esc(wonLook || LG.FINISHES[o.finish].name)}</span>${o.fx ? `<span class="bal poly">${esc(LG.EFFECTS[o.fx].name)}</span>` : ''}</span></p>`,
       sp ? '★ SHOWPIECE ★' : (o.fx ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!'),
       LG.nameOf(o), how, false, !!g, o);
+    showPart(part);
     $('rv-again').hidden = !g;
     $('rv-wear').focus();
   }
@@ -2984,7 +3022,7 @@
     current = null; rush = false;
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet your guy';
-    const n = LG.guyOneIn(guyConfig(state.seed));
+    const n = LG.guyOneIn(dealt(state.seed));
     await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div>`,
       'One of a kind!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`, true);
     $('rv-keep').focus();
@@ -3324,7 +3362,7 @@
    * something a capsule could give them */
   function renderMaybe() {
     // Deal 400 and show the rarest 12, so the chase parts turn up.
-    const guys = Array.from({ length: 400 }, () => { const seed = LG.makeSeed(), cfg = LG.resolve(seed); return { seed, cfg, n: LG.guyOneIn(cfg) }; })
+    const guys = Array.from({ length: 400 }, () => { const seed = LG.makeSeed(), cfg = LG.resolve(seed); return { seed, cfg, n: LG.guyOneIn(cfg.base || cfg) }; })
       .sort((a, b) => b.n - a.n).slice(0, 12)
       .map((g, i) => ({ ...g, copies: i % 3 === 0 ? [LG.roll(g.seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
     $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, guyLabel(g.cfg, cardTrait(g.cfg), ''), true, guyRank(g.cfg).tier))}</div>${traitChips(g.cfg)}</div>`).join('');
@@ -3751,9 +3789,9 @@
       if (isLive()) { out.innerHTML = `<p class="lab-msg">@${esc(key)} isn't claimed yet. <a href="#/" class="odds-more">Claim it</a> and see who you get.</p>`; return; }
       seed = key; // the demo deals a plain name the same guy every time
     }
-    const cfg = guyConfig(seed), n = LG.guyOneIn(cfg), [a, b] = split(n);
+    const cfg = guyConfig(seed), n = LG.guyOneIn(cfg.base || cfg), [a, b] = split(n);
     out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, guyRank(cfg).tier))}</div></div>
-      <div class="scoring"><div class="tiles">${LG.traitOdds(cfg).map(x => traitTile(x, true)).join('')}</div>
+      <div class="scoring"><div class="tiles">${LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('')}</div>
       <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b}</span></div><div class="meaning" id="lab-meaning"></div></div></div>`;
     hydrate(out); meaning($('lab-meaning'), n);
   }
@@ -3776,7 +3814,7 @@
   addEventListener('hashchange', route);
 
   // Where the pages read from: the Worker on the live site; in the demo, your own collection (and names others claimed here).
-  const myGuy = () => { const list = copies().filter(c => !LG.itemById(c.o.item).free).sort((a, b) => LG.copyOneIn(b.o) - LG.copyOneIn(a.o)); const b = list[0]; return { key: state.key, seed: state.seed, look: state.look || '', worn: wornCodes(), oneIn: LG.guyOneIn(guyConfig(state.seed)), best: b ? { code: b.code, grade: gradeIdx(b.o), oneIn: LG.copyOneIn(b.o) } : null }; };
+  const myGuy = () => { const list = copies().filter(c => !LG.itemById(c.o.item).free).sort((a, b) => LG.copyOneIn(b.o) - LG.copyOneIn(a.o)); const b = list[0]; return { key: state.key, seed: state.seed, look: state.look || '', worn: wornCodes(), oneIn: LG.guyOneIn(dealt(state.seed)), best: b ? { code: b.code, grade: gradeIdx(b.o), oneIn: LG.copyOneIn(b.o) } : null }; };
   async function listGuys(sort, q) {
     if (isLive()) {
       // Every claimed guy, a page of 200 at a time.
@@ -3844,9 +3882,9 @@
     const uRank = guyRank(cfg);
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
-    $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
-    meaning($('u-meaning'), LG.guyOneIn(cfg)); distChart($('u-dist'), LG.guyOneIn(cfg));
-    const [a, b] = split(LG.guyOneIn(cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
+    $('u-tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('');
+    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg)); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
+    const [a, b] = split(LG.guyOneIn(cfg.base || cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
     userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
     uCat = '';
     // Sets live here, on the player's own page: on yours with every item, ticked off; on anyone else's, just how far.

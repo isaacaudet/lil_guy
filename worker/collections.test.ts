@@ -7,7 +7,7 @@ import { decode, encode } from '../src/index-headless.ts';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
@@ -310,4 +310,29 @@ test('a player can only have so many offers out', async () => {
   const c = await claim('mia'); await claim('bo');
   for (let i = 0; i < RULES.swaps; i++) expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).status).toBe(201);
   expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).status).toBe(429);
+});
+
+test('capsules now and then unlock a rare face part, which can then be picked; rarity stays the deal’s', async () => {
+  const c = await claim('mia');
+  let part: any = null;
+  for (let i = 0; i < 60 && !part?.new; i++) part = ((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).part;
+  expect(part?.new).toBe(true);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.parts).toContain(part.code);
+  const before = env.db.prepare("SELECT guy_one_in FROM players WHERE key = 'mia'").get().guy_one_in;
+  // The earned part goes into a look; a rare part nobody gave them doesn't.
+  const ok = await call('/me/mia/look', 'POST', { look: '2:' + part.code }, auth(c.owner));
+  expect(ok.status).toBe(200);
+  expect(env.db.prepare("SELECT guy_one_in FROM players WHERE key = 'mia'").get().guy_one_in).toBe(before);
+  const LG = await import('../src/index-headless.ts'), mine = LG.resolve(s.seed).eyes;
+  const other = LG.rareParts('eyes').filter((i: number) => i !== mine).map((i: number) => 'e' + i).find((code: string) => !s.parts.includes(code) && code !== part.code);
+  expect((await call('/me/mia/look', 'POST', { look: '2:' + other }, auth(c.owner))).status).toBe(400);
+});
+
+test('without the parts table (before migration 0007) capsules still open', async () => {
+  env.db.exec('DROP TABLE parts');
+  const c = await claim('mia');
+  for (let i = 0; i < 12; i++) expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.parts).toEqual([]);
 });

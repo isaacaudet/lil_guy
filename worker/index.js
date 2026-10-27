@@ -3,7 +3,7 @@ import { baked } from './baked.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
-  cleanTag, tradeFloat,
+  cleanTag, tradeFloat, rollPart, partCode, unlocksOf, pickable, PART_REFUND,
 } from '../src/index-headless.ts';
 
 const json = (body, status = 200, extra = {}) => Response.json(body, {
@@ -56,7 +56,29 @@ const FOUNDER = {
   aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' },
 };
 const dealt = seed => seed === 'founder:isaac' ? { ...resolve(seed, FOUNDER.parts), palette: FOUNDER.palette } : resolve(seed);
-const guyOf = (seed, look) => { const base = dealt(seed); const picked = look ? decodeLook(look, base) : null; return picked ? { ...base, ...picked } : base; };
+// A stored look was checked against the player's own and earned parts when it was saved, so reading one only checks it draws.
+const guyOf = (seed, look) => { const base = dealt(seed); const picked = look ? decodeLook(look) : null; return picked ? { ...base, ...picked } : base; };
+
+/** The rare parts a player has unlocked, as part codes. Empty until migration 0007 has made the table. */
+async function partsOf(env, key) {
+  try { return (await env.DB.prepare('SELECT code FROM parts WHERE key = ? ORDER BY at').bind(key).all()).results.map(r => r.code); }
+  catch { return []; }
+}
+
+/** Gives a capsule's part: a new one is kept, one already theirs (dealt or earned) pays tickets back. */
+async function grantPart(env, name, drop) {
+  const code = partCode(drop);
+  const have = pickable(dealt(name.seed), drop.slot, unlocksOf(await partsOf(env, name.key))).includes(drop.index);
+  if (have) {
+    // While tickets are endless there's nothing to give back.
+    if (free(name.key)) return { code, new: false, refund: 0 };
+    await env.DB.prepare('UPDATE players SET tickets = tickets + ? WHERE key = ?').bind(PART_REFUND, name.key).run();
+    return { code, new: false, refund: PART_REFUND };
+  }
+  try { await env.DB.prepare('INSERT OR IGNORE INTO parts(key, code, at) VALUES (?, ?, ?)').bind(name.key, code, new Date().toISOString()).run(); }
+  catch { return null; }
+  return { code, new: true };
+}
 const ONE_OF_ONE = 1e18;
 const gradeIndex = o => GRADES.findIndex(g => g.id === gradeOf(o).id);
 const PRIZED = GRADES.findIndex(g => g.id === 'prized');
@@ -123,7 +145,8 @@ async function ensurePlayer(env, name) {
       await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
     }
     // A guy's rarity is recounted when the traits it counts change (tone, arms and feet joined them).
-    const oneIn = guyOneIn(guyOf(name.seed, found.look));
+    // Rarity is the deal's: a picked look, earned parts and all, never changes it.
+    const oneIn = guyOneIn(dealt(name.seed));
     if (Math.abs(oneIn - found.guy_one_in) > oneIn * 1e-9) {
       await env.DB.prepare('UPDATE players SET guy_one_in = ? WHERE key = ?').bind(oneIn, name.key).run();
       return { ...found, guy_one_in: oneIn };
@@ -152,7 +175,7 @@ async function meState(env, name) {
   const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all();
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
+  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
     swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
@@ -185,8 +208,11 @@ async function me(request, env, key, action) {
     await env.DB.prepare('UPDATE players SET dry = CASE WHEN ? THEN 0 ELSE dry + 1 END WHERE key = ?').bind(gradeIndex(o) >= PRIZED ? 1 : 0, key).run();
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
+    // Now and then a capsule also unlocks a rare face part.
+    const drop = rollPart(crypto.randomUUID());
+    const part = drop ? await grantPart(env, name, drop) : null;
     const p = await env.DB.prepare('SELECT tickets, free_day FROM players WHERE key = ?').bind(key).first();
-    return json({ copy: publicCopy(copy), tickets: p.tickets, freeDay: p.free_day, luck }, 201);
+    return json({ copy: publicCopy(copy), part, tickets: p.tickets, freeDay: p.free_day, luck }, 201);
   }
   if (action === 'season') {
     if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
@@ -298,8 +324,8 @@ async function me(request, env, key, action) {
   }
   if (action === 'look') {
     const look = typeof body.look === 'string' ? body.look : '';
-    if (look && !decodeLook(look, dealt(name.seed))) return json({ error: 'That look isn’t yours to pick' }, 400);
-    await env.DB.prepare('UPDATE players SET look = ?, guy_one_in = ? WHERE key = ?').bind(look, guyOneIn(guyOf(name.seed, look)), key).run();
+    if (look && !decodeLook(look, dealt(name.seed), unlocksOf(await partsOf(env, key)))) return json({ error: 'That look isn’t yours to pick' }, 400);
+    await env.DB.prepare('UPDATE players SET look = ?, guy_one_in = ? WHERE key = ?').bind(look, guyOneIn(dealt(name.seed)), key).run();
     return json({ look });
   }
   return json({ error: 'Unknown action' }, 404);
@@ -318,7 +344,7 @@ async function guys(env, url) {
   return json(results.map(r => {
     const mine = owned.filter(c => c.key === r.key);
     const best = mine.filter(c => c.source !== 'starter').sort((a, b) => b.one_in - a.one_in)[0];
-    return { key: r.key, seed: r.seed, at: r.at, look: r.look, oneIn: r.guy_one_in || guyOneIn(guyOf(r.seed, r.look)), worn: mine.filter(c => c.worn).map(c => c.code), best: best ? publicCopy(best) : null };
+    return { key: r.key, seed: r.seed, at: r.at, look: r.look, oneIn: r.guy_one_in || guyOneIn(dealt(r.seed)), worn: mine.filter(c => c.worn).map(c => c.code), best: best ? publicCopy(best) : null };
   }));
 }
 

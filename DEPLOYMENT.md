@@ -12,7 +12,7 @@ https://lilguys.isaac-audet.workers.dev. Only the
 bun install
 bun run showcase
 bash scripts/build-site.sh
-npx wrangler d1 migrations apply lilguys-names --remote
+npx wrangler d1 migrations apply lilguys-names --remote   # through 0007_parts
 npx wrangler deploy
 ```
 
@@ -209,3 +209,16 @@ conflicts, public response privacy, founder reservation and claim throttling.
 Autoreview was attempted once at low effort on the API boundary, but could not
 start because the installed Codex CLI binary is missing. Direct inspection and
 focused tests were used instead.
+
+## Face parts from capsules (migration 0007)
+
+One capsule in four (`PART_ODDS`) also unlocks a rare face part (eyes, mouth,
+cheeks, topper, markings or accessory: the parts the look picker locks), kept in
+`parts` as a code like `e12`. A part the player already has (dealt or earned)
+pays `PART_REFUND` tickets back while tickets are on. `POST /api/me/:key/open`
+returns it as `part: { code, new, refund }`, `GET …/state` lists `parts`, and
+`…/look` accepts earned parts. A guy's rarity (`guy_one_in`) is the deal's: a
+look, earned parts and all, never changes it.
+
+Until 0007 is applied the Worker gives no parts and everything else works, so
+the migration can go before or after the deploy.

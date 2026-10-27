@@ -2044,6 +2044,10 @@ const TIER_ICONS = {
 *
 * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
 * the parts can't silently turn a saved look into someone else.
+*
+* A rare part can also be earned: a capsule sometimes unlocks one (`rollPart`),
+* and then it's the player's to pick (`Unlocks`). Earned parts change how a guy
+* looks, never how rare the guy is: that stays the deal's.
 */
 /** A slot in a look code: its letter, its config key and its weights. */
 const SLOTS = [
@@ -2101,15 +2105,93 @@ function makeSeed() {
 	for (const b$1 of bytes) n = n << 8n | BigInt(b$1);
 	return require_paint.DEAL_PREFIX + n.toString(36).padStart(12, "0").slice(-12);
 }
-/** Which options a player may pick in a slot: every common one, and their own. */
-function pickable(own, slot) {
+/** Which options a player may pick in a slot: every common one, their own, and any they've earned. */
+function pickable(own, slot, unlocks) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
 	const total = weights.reduce((a, b$1) => a + b$1, 0);
-	return weights.map((w, i) => i).filter((i) => (weights[i] / total >= RARE || i === own[slot]) && !(slot === "eyes" && require_paint.RETIRED_EYES.includes(i)));
+	const earned = unlocks?.[slot] ?? [];
+	return weights.map((w, i) => i).filter((i) => (weights[i] / total >= RARE || i === own[slot] || earned.includes(i)) && !(slot === "eyes" && require_paint.RETIRED_EYES.includes(i)));
 }
 /** Whether a look only uses parts this player may pick. */
-function allowed(own, look) {
-	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own, slot).includes(look[slot]));
+function allowed(own, look, unlocks) {
+	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own, slot, unlocks).includes(look[slot]));
+}
+/** The slots a capsule can unlock a part in: the face and what's on it, never the shape or the colour. */
+const PART_SLOTS = [
+	"eyes",
+	"mouth",
+	"cheeks",
+	"hair",
+	"body",
+	"accessory"
+];
+/** One capsule in this many also unlocks a part. */
+const PART_ODDS = 4;
+/** Tickets back for a part the player already has. */
+const PART_REFUND = 60;
+const NAMES = {
+	eyes: require_paint.eyes,
+	mouth: require_paint.mouths,
+	cheeks: require_paint.cheeks,
+	hair: require_paint.hair,
+	body: require_paint.bodies,
+	accessory: require_paint.accessories
+};
+const SLOT_WORD = {
+	eyes: "eyes",
+	mouth: "mouth",
+	cheeks: "cheeks",
+	hair: "topper",
+	body: "markings",
+	accessory: "accessory"
+};
+/** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
+function rareParts(slot) {
+	const weights = SLOTS.find((s) => s[1] === slot)[2];
+	const total = weights.reduce((a, b$1) => a + b$1, 0);
+	return weights.map((_, i) => i).filter((i) => weights[i] > 0 && weights[i] / total < RARE && !(slot === "eyes" && require_paint.RETIRED_EYES.includes(i)));
+}
+/**
+* The part a capsule unlocks, or null (most capsules). Only rare parts, since
+* common ones can already be picked, and the rarer a part is to be dealt the
+* rarer it is to unlock. Like `roll`, the seed must come from the server.
+*/
+function rollPart(seed) {
+	const u = (k) => require_paint.hash(`${seed}|part|${k}`) / 4294967296;
+	if (u("odds") * PART_ODDS >= 1) return null;
+	const slot = PART_SLOTS[Math.floor(u("slot") * PART_SLOTS.length)];
+	const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot);
+	let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
+	const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+	return {
+		slot,
+		index
+	};
+}
+/** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */
+function partName(p) {
+	const n = NAMES[p.slot]?.[p.index]?.name ?? "?", word = SLOT_WORD[p.slot];
+	return `${n[0].toUpperCase()}${n.slice(1)}${/mark$/.test(n) || n.endsWith(word) ? "" : ` ${word}`}`;
+}
+/** A part as a short code, like a look's (`e12`), and back. */
+const partCode = (p) => SLOTS.find((s) => s[1] === p.slot)[0] + p.index;
+function readPart(code) {
+	const slot = SLOTS.find((s) => s[0] === code?.[0]);
+	const index = Number(code?.slice(1));
+	if (!slot || !PART_SLOTS.includes(slot[1]) || !/^\d{1,3}$/.test(code.slice(1)) || !rareParts(slot[1]).includes(index)) return null;
+	return {
+		slot: slot[1],
+		index
+	};
+}
+/** Earned part codes as `Unlocks`. */
+function unlocksOf(codes) {
+	const out = {};
+	for (const c of codes) {
+		const p = readPart(c);
+		if (p) (out[p.slot] ??= []).push(p.index);
+	}
+	return out;
 }
 /** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
 function encodeLook(look) {
@@ -2120,7 +2202,7 @@ function encodeLook(look) {
 * this library can draw: an old seven-number code from before 0.2, a part out
 * of range, or (given the player's own guy) a rare part they didn't roll.
 */
-function decodeLook(code, own) {
+function decodeLook(code, own, unlocks) {
 	if (typeof code !== "string" || !code.startsWith("2:")) return null;
 	const look = {};
 	for (const part of code.slice(2).split(".").filter(Boolean)) {
@@ -2130,13 +2212,13 @@ function decodeLook(code, own) {
 		if (slot[1] === "eyes" && require_paint.RETIRED_EYES.includes(n)) continue;
 		look[slot[1]] = n;
 	}
-	if (own && !allowed(own, look)) return null;
+	if (own && !allowed(own, look, unlocks)) return null;
 	return look;
 }
 /** A player's guy: from their seed, with their picked look laid over it. */
-function lookOf(seed, code = "") {
+function lookOf(seed, code = "", unlocks) {
 	const own = require_paint.resolve(seed);
-	const look = code ? decodeLook(code, own) : null;
+	const look = code ? decodeLook(code, own, unlocks) : null;
 	return look ? {
 		...own,
 		...look
@@ -6884,6 +6966,9 @@ exports.LilGuyAnimated = LilGuyAnimated
 exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.ONE_OF_ONE_AURAS = require_paint.ONE_OF_ONE_AURAS
+exports.PART_ODDS = PART_ODDS
+exports.PART_REFUND = PART_REFUND
+exports.PART_SLOTS = PART_SLOTS
 exports.PINS = require_paint.PINS
 exports.RETIRED_EYES = require_paint.RETIRED_EYES
 exports.SHADER_FINISHES = SHADER_FINISHES
@@ -6975,13 +7060,18 @@ exports.ownedOf = ownedOf
 exports.paint = require_paint.paint
 exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
+exports.partCode = partCode
+exports.partName = partName
 exports.pickable = pickable
 exports.pinById = require_paint.pinById
+exports.rareParts = rareParts
 exports.readGuyCode = readGuyCode
+exports.readPart = readPart
 exports.resolve = require_paint.resolve
 exports.resolveColor = require_paint.resolveColor
 exports.roll = require_paint.roll
 exports.rollFx = require_paint.rollFx
+exports.rollPart = rollPart
 exports.rollSeason = require_paint.rollSeason
 exports.setProgress = setProgress
 exports.shadePalette = require_paint.shadePalette
@@ -7008,6 +7098,7 @@ exports.toSvgString = toSvgString
 exports.tradeFloat = tradeFloat
 exports.tradeGames = tradeGames
 exports.traitOdds = traitOdds
+exports.unlocksOf = unlocksOf
 exports.upscale = upscale
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
