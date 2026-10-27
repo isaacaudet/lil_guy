@@ -397,15 +397,15 @@ recognisable everywhere.
 
 | Game | Skins | Showpiece | Hats (first is free) | Frames | Buddies |
 |---|---|---|---|---|---|
-| Amountle | Jar of gems, Crystal, Gumball machine, Jellybean | Today’s jar | Gem band, Winners crown, Jar lid, Gem pile, Gold coin | Jelly beans, Jar glass, Shelf | Gemling, Gummy bear, Play coin, Candy corn |
-| Halfsies | Avocado half, Lemon half, Burger half, Trophy half | Perfect split | Knife, Gold star, Perfect stamp, Thirds cake, Kebab skewer | Kitchen teal, Half and half, Dashed cut line | Sunny egg, Avo, Mini balance, Cake slice |
-| Stackdle | Wedge, Keystone, Arch, Big L | Sky tower | Little block, Block tower, Balanced diamond, Bolt piece, Cloud ring | Valley sky, Height ruler, Space | Block, Ball, Stairs, Little penguin |
-| Flipsies | Water bottle, Soup can, Rubber duck, Giant die | Moai | Bottle cap, Short stack, Buttered toast, Popcorn bucket, Lampshade | Ring mat, Cork coaster, Book spines | Goldfish, Ketchup, Coffee mug, Toaster |
-| Puttsies | Golf ball, Quilt pillow, Windmill, Eight ball | Toy train | Golf cap, Hole-in-one crown, Magic top hat, Sleeping cat, Snail shell | Patchwork, Picnic check, Dimples | Flag in the cup, Sprinkles donut, Wind-up mouse, Toy blocks |
-| Weighsies | Kettlebell, Gold bar, Basketball, Grand piano | Kitchen scale | Scale pan, Apple, Sumo topknot, Great Pyramid, Eiffel Tower | Lavender, Pennies, Weigh-in blocks | House cat, Lil whale, Baby T. rex, Pigeon |
-| Cutsies | Kiwi, Strawberry, Frosted donut, Salmon nigiri | Giant watermelon | “You” flag, Chef's toque, Toadstool, Cut banana, Cupcake top | Melon seeds, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
-| Tiltsies | Hamster ball, Biscuit, Candy ball, Starry ball | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Custard’s daisy | Course tiles, Cloudy sky, Seed trail | Sunflower seed, Bumper, Spring, Ghost |
-| Trackdle | Traffic cone, Coupe, Surf van, Dune buggy | Formula 07 | Pit cap, Start lights, Rear spoiler, Surfboard, Finish flag | Tarmac, Kerb, Boost pad | Conelet, Tyre stack, Jump ramp, Saguaro |
+| Amountle | Jar of gems, Crystal, Gumball machine, Jellybean | Today’s jar | Gem band, Winners crown, Jar lid, Gumball globe, Wrapped sweet | Jelly beans, Jar glass, Shelf | Gemling, Gummy bear, Lil jar, Candy corn |
+| Halfsies | Avocado half, Peach, Burger half, Trophy half | Banana split | Chef’s hat, Gold star, Split beanie, Thirds cake, Pancake stack | Kitchen teal, Half and half, Dashed cut line | Half-shell chick, Avo, Lil acorn, Cake slice |
+| Stackdle | Wedge, Keystone, Arch, Big L | Astronaut | Little block, Block tower, Battlement, Hard hat, Cloud nine | Valley sky, Height ruler, Space | Cubelet, Wobble, Lil yeti, Lil star |
+| Flipsies | Water bottle, Pencil, Duck onesie, Buttered toast | Moai | Bucket hat, Short stack, Fried egg, Popcorn bucket, Lampshade | Ring mat, Cork coaster, Book spines | Goldfish, Ketchup, Rubber duckling, Toaster |
+| Puttsies | Golf ball, Quilt pillow, Golfer, Eight ball hoodie | Engine driver | Golf cap, Hole-in-one crown, Magic top hat, Sleeping cat, Snail | Patchwork, Picnic check, Dimples | Gopher, Sprinkles, Wind-up mouse, Toy blocks |
+| Weighsies | Kettlebell, Panda onesie, Penguin onesie, Capybara | T. rex onesie | Bear ears, Apple shot, Sumo topknot, Pharaoh, Liberty crown | Lavender, Pennies, Gold bars | House cat, Lil whale, Hamster, Pigeon |
+| Cutsies | Kiwi hoodie, Strawberry hoodie, Donut floatie, Salmon nigiri | Watermelon suit | Chef’s headband, Chef's toque, Toadstool, Banana peel, Cupcake | Melon slice, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
+| Tiltsies | Hamster ball, Biscuit hoodie, Mochi hoodie, Starfall pyjamas | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Daisy crown | Course tiles, Cloudy sky, Seed trail | Pocket hamster, Ladybug, Springy, Ghost |
+| Trackdle | Cone suit, Pit crew, Snow parka, Dune rider | Formula 07 | Pit cap, Cowboy hat, Boost flame, Bobble hat, Chequered bandana | Canyon sunset, Kerb, Boost pad | Conelet, Tyre stack, Lil racer, Saguaro |
 
 Items a machine no longer gives stay in `src/sets/<game>.ts` as `retire`: copies already owned keep drawing, capsules and crafting skip them.
 
