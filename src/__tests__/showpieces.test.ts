@@ -31,10 +31,10 @@ describe('showpieces', () => {
   });
 
   test('their own effect is neither in the name nor the odds', () => {
-    const o = { item: 'trackdle.rocket', finish: 'plain' as const, scuff: 0.2, print: 7, fx: 'embers' as const };
-    expect(nameOf(o)).toBe('Rocket');
+    const o = { item: 'trackdle.formula', finish: 'plain' as const, scuff: 0.2, print: 7, fx: 'embers' as const };
+    expect(nameOf(o)).toBe('Formula 07');
     expect(copyOneIn(o)).toBeCloseTo(copyOneIn({ ...o, fx: undefined }), 6);
-    expect(nameOf({ ...o, fx: 'holo' })).toBe('Holo Rocket');
+    expect(nameOf({ ...o, fx: 'holo' })).toBe('Holo Formula 07');
     expect(copyOneIn({ ...o, fx: 'holo' })).toBeGreaterThan(copyOneIn(o) * 100);
   });
 });
