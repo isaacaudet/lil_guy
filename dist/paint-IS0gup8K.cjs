@@ -1504,7 +1504,7 @@ const AURAS = [
 				Math.round(s.w / 2) - 1
 			];
 			for (let i = 0; i < 3; i++) {
-				const span = i === 2 ? Math.max(3, s.top) : Math.ceil(s.cy) + 1, y = Math.round(span - wrap(Math.floor((t + i * 520 + print * 13) / steps(150, span + 3)), span + 3));
+				const span$1 = i === 2 ? Math.max(3, s.top) : Math.ceil(s.cy) + 1, y = Math.round(span$1 - wrap(Math.floor((t + i * 520 + print * 13) / steps(150, span$1 + 3)), span$1 + 3));
 				const x = lanes[i];
 				out.push([
 					x,
@@ -1680,7 +1680,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
-				const span = Math.ceil(s.cy) + 4, y = Math.round(s.cy - wrap(Math.floor((t + i * 700 + print * 17) / steps(170, span)), span));
+				const span$1 = Math.ceil(s.cy) + 4, y = Math.round(s.cy - wrap(Math.floor((t + i * 700 + print * 17) / steps(170, span$1)), span$1));
 				const x = (i ? s.w - 4 : 0) + Math.floor(t / steps(340, 2) + i) % 2;
 				out.push([
 					x + 1,
@@ -4240,9 +4240,66 @@ const grid16 = (name, rows) => {
 	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
 	return stamp(rows);
 };
+/** How many cells a row spans, first filled to last. */
+const span = (row) => {
+	const xs = row.map((t, i) => t ? i : -1).filter((i) => i >= 0);
+	return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0;
+};
+/**
+* A hat made `d` columns wider (or narrower), the way a cap stretches: the
+* plainest columns, each the same as the one beside it, are repeated or taken
+* out, a side at a time from the middle outwards, so a buckle, a jewel or a
+* crown's points stay as drawn.
+*/
+function elastic(s, d) {
+	let out = s.map((r) => [...r]);
+	for (let k = 0; k < Math.abs(d); k++) {
+		const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
+		const cost = (x) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
+		let best = -1, bestCost = Infinity, bestDist = Infinity;
+		for (let x = 2; x <= w - 3; x++) {
+			if (left ? x > mid : x < mid) continue;
+			const c = cost(x), dist = Math.abs(x - mid);
+			if (c < bestCost || c === bestCost && dist < bestDist) {
+				best = x;
+				bestCost = c;
+				bestDist = dist;
+			}
+		}
+		if (best < 0) break;
+		out = out.map((r) => {
+			const row = [...r];
+			if (d < 0) row.splice(best, 1);
+			else row.splice(best, 0, row[best]);
+			return row;
+		});
+	}
+	return out;
+}
+/**
+* Puts a hat on, fitted to the head the way a cap fits. A hat that rests
+* across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
+* comes down to the forehead line and is stretched to the head's width there,
+* a cell of brim either side, so it sits on a narrow head and a wide one
+* alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+*/
+function wear$1(c, s, dx, sink) {
+	const last = s.length - 1, bottom = span(s[last]);
+	if (bottom < 8) {
+		seat(c, s, c.centred(s) + dx, sink);
+		return;
+	}
+	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
+	const head$1 = r ? r.right - r.left + 1 : 10;
+	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
+	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const y = Math.max(1, c.floor - last);
+	c.draw(fitted, c.centred(fitted) + dx, y);
+	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
+}
 const on = (rows, dx = 0, sink = 1) => {
 	const s = stamp(rows);
-	return (c) => seat(c, s, c.centred(s) + dx, sink);
+	return (c) => wear$1(c, s, dx, sink);
 };
 const onPair = (rows, inset = 0) => {
 	const left = stamp(rows);
@@ -11592,4 +11649,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-mXSy9RxI.cjs.map
+//# sourceMappingURL=paint-IS0gup8K.cjs.map

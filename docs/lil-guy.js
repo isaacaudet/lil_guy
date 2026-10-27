@@ -2400,7 +2400,7 @@ const flower = stamp([
 	".a."
 ]);
 /** Paints a body cell unless the mouth is already there. */
-function wear(c, x, y, token) {
+function wear$1(c, x, y, token) {
 	if (c.get(x, y) === T.MOUTH || c.get(x, y) === T.TONGUE) return;
 	c.set(x, y, token);
 }
@@ -2422,9 +2422,9 @@ const accessories = [
 			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
-			for (let x = r.left; x <= r.right; x++) wear(c, x, y, (x - r.left) % 4 < 2 ? T.ACCENT : T.TRIM);
-			wear(c, r.right - 2, y + 1, T.ACCENT);
-			wear(c, r.right - 2, y + 2, T.ACCENT_SHADE);
+			for (let x = r.left; x <= r.right; x++) wear$1(c, x, y, (x - r.left) % 4 < 2 ? T.ACCENT : T.TRIM);
+			wear$1(c, r.right - 2, y + 1, T.ACCENT);
+			wear$1(c, r.right - 2, y + 2, T.ACCENT_SHADE);
 		}
 	},
 	{
@@ -2434,10 +2434,10 @@ const accessories = [
 			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
-			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear(c, x$1, y, T.ACCENT);
+			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear$1(c, x$1, y, T.ACCENT);
 			const x = Math.floor(c.centre);
-			wear(c, x - 1, y + 1, T.GOLD);
-			wear(c, x, y + 1, T.GOLD_SHADE);
+			wear$1(c, x - 1, y + 1, T.GOLD);
+			wear$1(c, x, y + 1, T.GOLD_SHADE);
 		}
 	},
 	{
@@ -2446,7 +2446,7 @@ const accessories = [
 		draw: (c) => {
 			const x = c.centred(bowtie);
 			bowtie.forEach((row, dy) => row.forEach((token, dx) => {
-				if (token) wear(c, x + dx, c.neck + dy, token);
+				if (token) wear$1(c, x + dx, c.neck + dy, token);
 			}));
 		}
 	},
@@ -2457,11 +2457,11 @@ const accessories = [
 			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
-			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear(c, x$1, y, T.ACCENT);
+			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear$1(c, x$1, y, T.ACCENT);
 			const x = Math.floor(c.centre);
-			for (let dx = -2; dx < 2; dx++) wear(c, x + dx, y + 1, T.ACCENT);
-			wear(c, x - 1, y + 2, T.ACCENT_SHADE);
-			wear(c, x, y + 2, T.ACCENT_SHADE);
+			for (let dx = -2; dx < 2; dx++) wear$1(c, x + dx, y + 1, T.ACCENT);
+			wear$1(c, x - 1, y + 2, T.ACCENT_SHADE);
+			wear$1(c, x, y + 2, T.ACCENT_SHADE);
 		}
 	},
 	{
@@ -2480,7 +2480,7 @@ const accessories = [
 			if (!r) return;
 			heart.forEach((row, dy) => row.forEach((token, dx) => {
 				const x = r.right - 3 + dx, y = c.bottom - 2 + dy;
-				if (token && c.isBody(x, y)) wear(c, x, y, token);
+				if (token && c.isBody(x, y)) wear$1(c, x, y, token);
 			}));
 		}
 	},
@@ -2515,8 +2515,8 @@ const accessories = [
 			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
-			for (let x = r.left + 1; x < r.right; x += 2) wear(c, x, y, T.WHITE);
-			wear(c, Math.floor(c.centre) - 1, y + 1, T.GOLD);
+			for (let x = r.left + 1; x < r.right; x += 2) wear$1(c, x, y, T.WHITE);
+			wear$1(c, Math.floor(c.centre) - 1, y + 1, T.GOLD);
 		}
 	},
 	{
@@ -2524,10 +2524,10 @@ const accessories = [
 		layer: "body",
 		draw: (c) => {
 			const x = Math.floor(c.centre) - 1, y = c.neck;
-			wear(c, x, y, T.ACCENT);
-			wear(c, x + 1, y, T.ACCENT_SHADE);
-			wear(c, x, y + 1, T.GOLD);
-			wear(c, x + 1, y + 1, T.GOLD_SHADE);
+			wear$1(c, x, y, T.ACCENT);
+			wear$1(c, x + 1, y, T.ACCENT_SHADE);
+			wear$1(c, x, y + 1, T.GOLD);
+			wear$1(c, x + 1, y + 1, T.GOLD_SHADE);
 		}
 	},
 	{
@@ -2553,14 +2553,14 @@ const accessories = [
 		layer: "body",
 		draw: (c) => {
 			const x = Math.floor(c.centre) - 1, y = c.neck;
-			wear(c, x, y, T.ACCENT_SHADE);
-			wear(c, x + 1, y, T.ACCENT_SHADE);
+			wear$1(c, x, y, T.ACCENT_SHADE);
+			wear$1(c, x + 1, y, T.ACCENT_SHADE);
 			for (let ty = y + 1; ty < c.bottom; ty++) {
-				wear(c, x, ty, T.ACCENT);
-				wear(c, x + 1, ty, T.ACCENT);
+				wear$1(c, x, ty, T.ACCENT);
+				wear$1(c, x + 1, ty, T.ACCENT);
 			}
-			wear(c, x, c.bottom, T.ACCENT_SHADE);
-			wear(c, x + 1, c.bottom, T.ACCENT_SHADE);
+			wear$1(c, x, c.bottom, T.ACCENT_SHADE);
+			wear$1(c, x + 1, c.bottom, T.ACCENT_SHADE);
 		}
 	},
 	{
@@ -2577,7 +2577,7 @@ const accessories = [
 			];
 			for (let x = r.left; x <= r.right; x++) {
 				const i = x - r.left;
-				wear(c, x, y, i % 2 ? T.LEAF : flowers[i / 2 % 3]);
+				wear$1(c, x, y, i % 2 ? T.LEAF : flowers[i / 2 % 3]);
 			}
 		}
 	},
@@ -2608,7 +2608,7 @@ const accessories = [
 			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
-			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear(c, x$1, y, (x$1 - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);
+			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear$1(c, x$1, y, (x$1 - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);
 			const x = Math.floor(c.centre) - 1;
 			for (const [dx, dy, t] of [
 				[
@@ -2641,7 +2641,7 @@ const accessories = [
 					2,
 					T.GOLD_SHADE
 				]
-			]) if (c.isBody(x + dx, y + dy)) wear(c, x + dx, y + dy, t);
+			]) if (c.isBody(x + dx, y + dy)) wear$1(c, x + dx, y + dy, t);
 		}
 	},
 	{
@@ -3178,7 +3178,7 @@ const AURAS = [
 				Math.round(s.w / 2) - 1
 			];
 			for (let i = 0; i < 3; i++) {
-				const span = i === 2 ? Math.max(3, s.top) : Math.ceil(s.cy) + 1, y = Math.round(span - wrap(Math.floor((t + i * 520 + print * 13) / steps(150, span + 3)), span + 3));
+				const span$1 = i === 2 ? Math.max(3, s.top) : Math.ceil(s.cy) + 1, y = Math.round(span$1 - wrap(Math.floor((t + i * 520 + print * 13) / steps(150, span$1 + 3)), span$1 + 3));
 				const x = lanes[i];
 				out.push([
 					x,
@@ -3354,7 +3354,7 @@ const AURAS = [
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
-				const span = Math.ceil(s.cy) + 4, y = Math.round(s.cy - wrap(Math.floor((t + i * 700 + print * 17) / steps(170, span)), span));
+				const span$1 = Math.ceil(s.cy) + 4, y = Math.round(s.cy - wrap(Math.floor((t + i * 700 + print * 17) / steps(170, span$1)), span$1));
 				const x = (i ? s.w - 4 : 0) + Math.floor(t / steps(340, 2) + i) % 2;
 				out.push([
 					x + 1,
@@ -5910,9 +5910,66 @@ const grid16 = (name, rows) => {
 	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
 	return stamp(rows);
 };
+/** How many cells a row spans, first filled to last. */
+const span = (row) => {
+	const xs = row.map((t, i) => t ? i : -1).filter((i) => i >= 0);
+	return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0;
+};
+/**
+* A hat made `d` columns wider (or narrower), the way a cap stretches: the
+* plainest columns, each the same as the one beside it, are repeated or taken
+* out, a side at a time from the middle outwards, so a buckle, a jewel or a
+* crown's points stay as drawn.
+*/
+function elastic(s, d) {
+	let out = s.map((r) => [...r]);
+	for (let k = 0; k < Math.abs(d); k++) {
+		const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
+		const cost = (x) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
+		let best = -1, bestCost = Infinity, bestDist = Infinity;
+		for (let x = 2; x <= w - 3; x++) {
+			if (left ? x > mid : x < mid) continue;
+			const c = cost(x), dist = Math.abs(x - mid);
+			if (c < bestCost || c === bestCost && dist < bestDist) {
+				best = x;
+				bestCost = c;
+				bestDist = dist;
+			}
+		}
+		if (best < 0) break;
+		out = out.map((r) => {
+			const row = [...r];
+			if (d < 0) row.splice(best, 1);
+			else row.splice(best, 0, row[best]);
+			return row;
+		});
+	}
+	return out;
+}
+/**
+* Puts a hat on, fitted to the head the way a cap fits. A hat that rests
+* across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
+* comes down to the forehead line and is stretched to the head's width there,
+* a cell of brim either side, so it sits on a narrow head and a wide one
+* alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+*/
+function wear(c, s, dx, sink) {
+	const last = s.length - 1, bottom = span(s[last]);
+	if (bottom < 8) {
+		seat(c, s, c.centred(s) + dx, sink);
+		return;
+	}
+	const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
+	const head$1 = r ? r.right - r.left + 1 : 10;
+	const want = Math.max(6, Math.min(GRID_SIZE - 2, head$1 + 2));
+	const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+	const y = Math.max(1, c.floor - last);
+	c.draw(fitted, c.centred(fitted) + dx, y);
+	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
+}
 const on = (rows, dx = 0, sink = 1) => {
 	const s = stamp(rows);
-	return (c) => seat(c, s, c.centred(s) + dx, sink);
+	return (c) => wear(c, s, dx, sink);
 };
 const onPair = (rows, inset$1 = 0) => {
 	const left = stamp(rows);
@@ -11632,8 +11689,8 @@ function animate(input, move, options = {}) {
 	const beats = BEATS[move](canWave);
 	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || options.emote);
 	const loop$1 = options.loop, laps = loop$1 ? loop$1.repeats + 1 : 1;
-	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0), span = loop$1 ? lapMs * loop$1.repeats : 0;
-	const clock = (ms) => loop$1 ? ms * loop$1.turns * LOOP_MS % (LOOP_MS * span) / span : ms;
+	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0), span$1 = loop$1 ? lapMs * loop$1.repeats : 0;
+	const clock = (ms) => loop$1 ? ms * loop$1.turns * LOOP_MS % (LOOP_MS * span$1) / span$1 : ms;
 	const slices = [];
 	let t = 0;
 	for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
@@ -13255,12 +13312,12 @@ const SURFACES = {
 };
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
 function surfaceOf(kind, scuff = 0) {
-	const s = SURFACES[kind], wear$1 = Math.round(Math.min(1, Math.max(0, scuff)) * 10) / 10;
+	const s = SURFACES[kind], wear$2 = Math.round(Math.min(1, Math.max(0, scuff)) * 10) / 10;
 	return {
 		kind,
 		...s,
-		roughness: Math.min(1, +(s.roughness + wear$1 * .55).toFixed(3)),
-		clearcoat: +(s.clearcoat * (1 - wear$1)).toFixed(3)
+		roughness: Math.min(1, +(s.roughness + wear$2 * .55).toFixed(3)),
+		clearcoat: +(s.clearcoat * (1 - wear$2)).toFixed(3)
 	};
 }
 const lum = (hex$3) => {
@@ -13296,7 +13353,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		return l < .22 ? .45 : l > .86 ? .3 : 0;
 	};
 	const front = Array.from({ length: H }, () => new Array(W).fill(-Infinity));
-	const span = Array.from({ length: H }, () => new Array(W).fill(null));
+	const span$1 = Array.from({ length: H }, () => new Array(W).fill(null));
 	let deepest = 0;
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const c = C[y][x], s = S[y][x];
@@ -13306,7 +13363,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		if (s === 4 && !small) t *= .82;
 		if (s === 2 && !small) t += .5;
 		const lift = feature(x, y);
-		span[y][x] = {
+		span$1[y][x] = {
 			z0: -t / 2,
 			z1: t / 2 + lift
 		};
@@ -13316,14 +13373,14 @@ function voxelColumns(frame, owned = {}, options = {}) {
 	let squeeze = 1;
 	if (options.deepest) {
 		let lo = Infinity, hi = -Infinity;
-		for (const row of span) for (const s of row) if (s) {
+		for (const row of span$1) for (const s of row) if (s) {
 			lo = Math.min(lo, s.z0);
 			hi = Math.max(hi, s.z1);
 		}
 		if (hi - lo > options.deepest) squeeze = options.deepest / (hi - lo);
 	}
 	if (squeeze < 1) {
-		for (const row of span) for (const s of row) if (s) {
+		for (const row of span$1) for (const s of row) if (s) {
 			s.z0 *= squeeze;
 			s.z1 *= squeeze;
 		}
@@ -13354,7 +13411,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			});
 			continue;
 		}
-		const { z0, z1 } = span[y][x];
+		const { z0, z1 } = span$1[y][x];
 		let shade = 0;
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (front[y + dy]?.[x + dx] ?? -Infinity) > z1 + .4) shade++;
 		let back = c;
@@ -13792,8 +13849,8 @@ const LUCKY_PRINTS = {
 /** Every note that applies to a copy, most wanted first. */
 function collectorNotes(o) {
 	const notes = [];
-	const [lo, hi] = FINISHES[o.finish].scuffs, span = hi - lo;
-	const share$1 = (a, b$1) => Math.max(1e-9, (Math.min(b$1, hi) - Math.max(a, lo)) / span);
+	const [lo, hi] = FINISHES[o.finish].scuffs, span$1 = hi - lo;
+	const share$1 = (a, b$1) => Math.max(1e-9, (Math.min(b$1, hi) - Math.max(a, lo)) / span$1);
 	if (o.scuff < .001) notes.push({
 		id: "triple-zero",
 		name: "0.000 float",

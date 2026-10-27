@@ -77,9 +77,55 @@ const grid16 = (name: string, rows: string[]): Stamp => {
   return stamp(rows);
 };
 
+/** How many cells a row spans, first filled to last. */
+const span = (row: number[]) => { const xs = row.map((t, i) => (t ? i : -1)).filter(i => i >= 0); return xs.length ? xs[xs.length - 1] - xs[0] + 1 : 0; };
+
+/**
+ * A hat made `d` columns wider (or narrower), the way a cap stretches: the
+ * plainest columns, each the same as the one beside it, are repeated or taken
+ * out, a side at a time from the middle outwards, so a buckle, a jewel or a
+ * crown's points stay as drawn.
+ */
+function elastic(s: Stamp, d: number): Stamp {
+  let out = s.map(r => [...r]);
+  for (let k = 0; k < Math.abs(d); k++) {
+    const w = width(out), mid = (w - 1) / 2, left = k % 2 === 0;
+    const cost = (x: number) => out.reduce((a, r) => a + ((r[x] ?? 0) !== (r[x - 1] ?? 0) ? 1 : 0), 0);
+    let best = -1, bestCost = Infinity, bestDist = Infinity;
+    for (let x = 2; x <= w - 3; x++) {
+      if (left ? x > mid : x < mid) continue;
+      const c = cost(x), dist = Math.abs(x - mid);
+      if (c < bestCost || (c === bestCost && dist < bestDist)) { best = x; bestCost = c; bestDist = dist; }
+    }
+    if (best < 0) break;
+    out = out.map(r => { const row = [...r]; if (d < 0) row.splice(best, 1); else row.splice(best, 0, row[best]); return row; });
+  }
+  return out;
+}
+
+/**
+ * Puts a hat on, fitted to the head the way a cap fits. A hat that rests
+ * across the head (a crown, a cap, a helmet: its bottom row 8 or more across)
+ * comes down to the forehead line and is stretched to the head's width there,
+ * a cell of brim either side, so it sits on a narrow head and a wide one
+ * alike. A small thing that stands on top (a gem, a flag) sits on the crown.
+ */
+function wear(c: Canvas, s: Stamp, dx: number, sink: number): void {
+  const last = s.length - 1, bottom = span(s[last]);
+  if (bottom < 8) { seat(c, s, c.centred(s) + dx, sink); return; }
+  const r = c.rows[c.floor] ?? c.rows[c.crown + 2] ?? c.rows[c.crown];
+  const head = r ? r.right - r.left + 1 : 10;
+  const want = Math.max(6, Math.min(GRID_SIZE - 2, head + 2));
+  const fitted = elastic(s, Math.max(-4, Math.min(4, want - bottom)));
+  const y = Math.max(1, c.floor - last);
+  c.draw(fitted, c.centred(fitted) + dx, y);
+  // The head is inside the hat: a tip or a point that would poke out over the top goes under it.
+  for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
+}
+
 const on = (rows: string[], dx = 0, sink = 1) => {
   const s = stamp(rows);
-  return (c: Canvas) => seat(c, s, c.centred(s) + dx, sink);
+  return (c: Canvas) => wear(c, s, dx, sink);
 };
 
 const onPair = (rows: string[], inset = 0) => {
