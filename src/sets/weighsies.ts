@@ -18,9 +18,9 @@ export const set: MachineSet = {
     // ------------------------------------------------------------ skins
     {
       id: 'weighsies.gold-bar', game: 'weighsies', slot: 'skin', name: 'Panda onesie', eyes: 9, limb: 4,
-      colors: ['#F7F6F2', '#C8CAD2', '#FFFFFF', '#2B2D35', '#4B4F5C', '#FFC4CF', '#F09AAE', '#FFE6EB'],
+      colors: ['#F7F6F2', '#C8CAD2', '#FFFFFF', '#2B2D35', '#4B4F5C'],
       outline: '#1A1B22',
-      // A pink lil guy zipped into a giant panda suit: black ears on the hood, black paws.
+      // The guy zipped into a giant panda suit: black ears on the hood, black paws.
       art: grid16('panda onesie', [
         '................',
         '................',
@@ -28,12 +28,12 @@ export const set: MachineSet = {
         '..444311112444..',
         '..311111111112..',
         '..311111111112..',
-        '..311866666112..',
-        '..318666666612..',
-        '..316666666612..',
-        '..316666666612..',
-        '..316666666712..',
-        '..311777777112..',
+        '..311h#####112..',
+        '..31h#######12..',
+        '..31########12..',
+        '..31########12..',
+        '..31#######s12..',
+        '..311ssssss112..',
         '...4111111114...',
         '....44222244....',
         '................',
@@ -42,10 +42,10 @@ export const set: MachineSet = {
     },
     {
       id: 'weighsies.basketball', game: 'weighsies', slot: 'skin', name: 'Penguin onesie', eyes: 9, limb: 3,
-      colors: ['#F4F6FA', '#C9D0DE', '#2B3040', '#1A1E2A', '#4C556E', '#FF9A2E', '#FFD25A', '#BFE2FF', '#8EC0EE'],
+      colors: ['#F4F6FA', '#C9D0DE', '#2B3040', '#1A1E2A', '#4C556E', '#FF9A2E', '#FFD25A'],
       outline: '#141824',
-      // A sky-blue lil guy in an emperor penguin suit: the hood's own little eyes and beak up top,
-      // the yellow at his cheeks, a white bib.
+      // The guy in an emperor penguin suit: the hood's own little eyes and beak up top, the yellow at
+      // his cheeks, a white bib.
       art: grid16('penguin onesie', [
         '................',
         '................',
@@ -53,12 +53,12 @@ export const set: MachineSet = {
         '....53133134....',
         '...3333663334...',
         '..333333333334..',
-        '..333188888334..',
-        '..331888888834..',
-        '..338888888834..',
-        '..378888888874..',
-        '..378888888974..',
-        '..331999999134..',
+        '..333h#####334..',
+        '..33h#######34..',
+        '..33########34..',
+        '..37########74..',
+        '..37#######s74..',
+        '..331ssssss134..',
         '...3111111124...',
         '....31222214....',
         '................',
@@ -92,24 +92,24 @@ export const set: MachineSet = {
     {
       id: 'weighsies.kitchen-scale', game: 'weighsies', slot: 'skin', name: 'T. rex onesie', eyes: 8, limb: 1, showpiece: true, signature: 'pulse',
       about: 'Seven tonnes of costume.',
-      colors: ['#6CC86A', '#3F9A4E', '#A6E890', '#FFFFFF', '#FFC93A', '#FFC89A', '#2B2F38', '#D7F5C2', '#F0A06E'],
+      colors: ['#6CC86A', '#3F9A4E', '#A6E890', '#FFFFFF', '#FFC93A', '#2B2F38', '#D7F5C2'],
       outline: '#1C3A22',
-      // A peach lil guy in a dinosaur suit: a spike on the hood, its eyes up top, and his face
-      // looking out of its jaws.
+      // The guy in a dinosaur suit: a spike on the hood, its eyes up top, and his face looking out
+      // of its jaws.
       art: grid16('t. rex onesie', [
         '................',
         '.......52.......',
         '....33152112....',
-        '...3471111742...',
+        '...3461111642...',
         '..311111111112..',
         '..341414141412..',
-        '..314666666612..',
-        '..316666666612..',
-        '..316666666612..',
-        '..316666666912..',
-        '..319999999912..',
+        '..31h#######12..',
+        '..31########12..',
+        '..31########12..',
+        '..31#######s12..',
+        '..31ssssssss12..',
         '..314141414142..',
-        '...3888888882...',
+        '...3777777772...',
         '....22222222....',
         '................',
         '................',
