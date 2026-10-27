@@ -1,6 +1,7 @@
 import { animate, AURA_PAD, FRAME_HEIGHT, FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
 import { LOOP_MS } from './finish-shader';
+import { fitLoop } from './loop';
 import { encodeApng, encodePng, type Frames } from './gif';
 import { decode, type Owned } from './owned';
 import { dress } from './items';
@@ -25,7 +26,7 @@ export { ART_VERSION, guyCode, type CardSpec, type GuySpec };
 export const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
 export const GUY_HEIGHT = FRAME_HEIGHT;
 
-/** Longest a baked frame shows while something shimmers, so a finish moves smoothly. */
+/** How long each frame of a card's shimmer shows. */
 const STEP_MS = 80;
 
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
@@ -67,43 +68,24 @@ function merged(width: number, height: number, frames: Uint8ClampedArray[], dela
   return out;
 }
 
-/**
- * How many times to play a move so his finishes also come round: finishes
- * repeat every LOOP_MS, so the move is played the number of times that gets
- * closest to whole turns of them, and they run that little faster or slower to
- * close exactly. Returns the repeats and the finishes' speed.
- */
-export function shineFit(duration: number): { repeats: number; speed: number } {
-  let best = { repeats: 1, speed: LOOP_MS / duration };
-  for (let turns = 1; turns <= 3; turns++) {
-    const repeats = Math.max(1, Math.round(turns * LOOP_MS / duration));
-    if (repeats * duration > LOOP_MS * 2) continue;
-    const speed = turns * LOOP_MS / (repeats * duration);
-    if (Math.abs(Math.log(speed)) < Math.abs(Math.log(best.speed))) best = { repeats, speed };
-  }
-  return best;
-}
+/** How many times to play a move so everything on its own clock comes round with it (./loop's `fitLoop`). */
+export const shineFit = fitLoop;
 
-/** A guy playing a move, every frame finished. */
+/**
+ * A guy playing a move, every frame finished, as a loop that closes perfectly:
+ * a guy with nothing on its own clock is his move; one with an aura, an
+ * effect, sparkles or a shimmering copy plays the move the whole number of
+ * times that fits whole turns of LOOP_MS, everything on its own clock running
+ * through without a jump.
+ */
 export function bakeGuy(spec: GuySpec, move: Move = 'idle'): Frames {
-  const anim = animate(spec.seed, move, animateOptions(spec));
-  const owned = ownedOf(spec);
-  if (!anim.frames.some(f => shines(f, owned))) {
-    return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map(f => place(f)), anim.frames.map(f => f.ms));
-  }
-  const { repeats, speed } = shineFit(anim.duration);
-  const frames: Uint8ClampedArray[] = [], delays: number[] = [];
-  let t = 0;
-  for (let r = 0; r < repeats; r++) for (const f of anim.frames) {
-    const steps = Math.max(1, Math.ceil(f.ms / STEP_MS));
-    for (let s = 0; s < steps; s++) {
-      const ms = Math.round(f.ms * (s + 1) / steps) - Math.round(f.ms * s / steps);
-      frames.push(place(f, shineFrame(f, owned, t * speed)));
-      delays.push(ms);
-      t += ms;
-    }
-  }
-  return merged(GUY_WIDTH, GUY_HEIGHT, frames, delays);
+  const options = animateOptions(spec), owned = ownedOf(spec);
+  const plain = animate(spec.seed, move, options);
+  const shining = plain.frames.some(f => shines(f, owned));
+  if (!plain.timed && !shining) return merged(GUY_WIDTH, GUY_HEIGHT, plain.frames.map(f => place(f)), plain.frames.map(f => f.ms));
+  const { repeats, turns } = shineFit(plain.duration);
+  const anim = animate(spec.seed, move, { ...options, loop: { repeats, turns, fine: shining } });
+  return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map(f => place(f, shining ? shineFrame(f, owned, f.at ?? 0) : undefined)), anim.frames.map(f => f.ms));
 }
 
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */

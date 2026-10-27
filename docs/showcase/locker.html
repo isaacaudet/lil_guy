@@ -1006,7 +1006,7 @@ void main() {
     const equip = ['skin', 'hat', 'frame'].map(s => find(state.worn[s])).filter(Boolean).map(c => LG.encode(c.o));
     const el = $('moves-all');
     el.innerHTML = LG.MOVES.map(mv => `<figure class="mover"><canvas width="16" height="20" data-move="${mv}" aria-hidden="true"></canvas><figcaption>${mv}${NOTE[mv] ? `<small>${NOTE[mv]}</small>` : ''}</figcaption></figure>`).join('');
-    el.querySelectorAll('canvas').forEach(c => addMover(c, LG.animate(state.name, c.dataset.move, moveOpts(state.name, { equip }))));
+    el.querySelectorAll('canvas').forEach(c => addMover(c, LG.animateLoop(state.name, c.dataset.move, moveOpts(state.name, { equip }))));
   }
   function renderGrades() {
     const hat = LG.items.find(i => i.game === 'puttsies' && i.slot === 'hat' && !i.free).id;
@@ -1015,7 +1015,7 @@ void main() {
     el.innerHTML = ladder.map(([f, sc, label], i) => `<figure class="mover"><canvas width="16" height="20" data-i="${i}" aria-hidden="true"></canvas><figcaption>${label}</figcaption></figure>`).join('');
     el.querySelectorAll('canvas').forEach(c => {
       const [f, sc] = ladder[+c.dataset.i];
-      addMover(c, LG.animate(state.name, 'hop', moveOpts(state.name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
+      addMover(c, LG.animateLoop(state.name, 'hop', moveOpts(state.name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
     });
   }
 
@@ -1071,7 +1071,7 @@ void main() {
     el.querySelectorAll('[data-cool]').forEach(b => {
       const g = guys[+b.dataset.cool];
       const opts = { parts: g.parts, palette: LG.paletteOf({ ...g.config, shade: g.config.shade }) };
-      const start = () => { g.mover = addMover(b.querySelector('canvas'), LG.animate('rarest', g.move, opts)); };
+      const start = () => { g.mover = addMover(b.querySelector('canvas'), LG.animateLoop('rarest', g.move, opts)); };
       start();
       b.addEventListener('click', () => {
         g.move = COOL_MOVES[(COOL_MOVES.indexOf(g.move) + 1) % COOL_MOVES.length];
@@ -1597,7 +1597,7 @@ void main() {
     // Emotes over his idle.
     const em = $('x-emotes');
     em.innerHTML = LG.EMOTE_UNLOCKS.map(e => `<figure class="mover"><canvas width="16" height="20" data-emote="${e.id}" aria-hidden="true"></canvas><figcaption>${esc(e.name)}<small>${esc(e.how)}</small></figcaption></figure>`).join('');
-    em.querySelectorAll('canvas').forEach(c => addMover(c, LG.animate(me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
+    em.querySelectorAll('canvas').forEach(c => addMover(c, LG.animateLoop(me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
     // The parts added in 0.5, each on a plain guy.
     const NEW = [['cheeks', LG.cheeks, 8], ['body', LG.bodies, 8], ['accessory', LG.accessories, 8]];
     $('x-parts').innerHTML = NEW.flatMap(([key, list, from]) => list.slice(from).map((part, k) => {

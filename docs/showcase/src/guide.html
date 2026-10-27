@@ -174,7 +174,7 @@
   const moves = ['cheer', 'sad', 'dance', 'sleep', 'wave'];
   const wear = [E({ item: 'trackdle.helmet', finish: 'gold', scuff: 0.01, print: 9 })];
   $('moves').innerHTML = moves.map(m => `<figure><canvas width="16" height="20" style="width:72px;height:90px"></canvas><figcaption><b>${m}</b></figcaption></figure>`).join('');
-  const anims = [...$('moves').querySelectorAll('canvas')].map((c, i) => ({ c, a: LG.animate('mia7', moves[i], { equip: wear }), last: null }));
+  const anims = [...$('moves').querySelectorAll('canvas')].map((c, i) => ({ c, a: LG.animateLoop('mia7', moves[i], { equip: wear }), last: null }));
   const calm = matchMedia('(prefers-reduced-motion: reduce)');
   const t0 = performance.now();
   const loop = now => {

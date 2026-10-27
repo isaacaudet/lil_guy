@@ -1,4 +1,7 @@
 import { hash } from './hash';
+import { LOOP_MS } from './loop';
+
+export { LOOP_MS };
 
 /**
  * The finishes' shimmer, written twice: as GLSL for a page or a game that has
@@ -16,7 +19,6 @@ import { hash } from './hash';
  * `scripts/verify-shaders.mjs` runs the GLSL in a browser and checks it
  * against the plain code, pixel by pixel.
  */
-export const LOOP_MS = 6000;
 
 /** The finishes in the order the shaders number them. */
 export const SHADER_FINISHES = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'] as const;

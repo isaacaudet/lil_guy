@@ -1,3 +1,4 @@
+import { cycle, fit, fitLoop, LOOP_MS, steps, wave, wrap } from './loop';
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
 import { compose, composeBase, faceOf } from './compose';
@@ -48,6 +49,8 @@ export interface AnimationFrame {
   slots: number[][];
   /** How long the frame shows. */
   ms: number;
+  /** Where its own-clock things (auras, effects, finishes) are, in ms. */
+  at?: number;
   /**
    * A rare aura's cells that fall past the frame's sides, as `[x, y, colour]`
    * with x from -AURA_PAD to FRAME_WIDTH + AURA_PAD - 1. Only there when there
@@ -67,6 +70,8 @@ export interface Animation {
   frames: AnimationFrame[];
   /** All the frames' times added up. */
   duration: number;
+  /** Whether anything moves on its own clock (an aura, an effect, sparkles), not just with the move. */
+  timed: boolean;
 }
 
 export interface AnimateOptions extends RenderOptions {
@@ -74,6 +79,17 @@ export interface AnimateOptions extends RenderOptions {
   rarity?: boolean;
   /** An emote to show over the whole move, bobbing beside his head. */
   emote?: Emote;
+  /**
+   * Play the move `repeats` times with everything on its own clock (auras,
+   * effects, sparkles) running through `turns` LOOP_MS in that time, so the
+   * loop closes perfectly (see ./bake's `shineFit`). The clock is worked out
+   * from whole milliseconds into the loop, so every lap reads the same times
+   * to the last bit.
+   * `fine` cuts frames to 80 ms for a finish to move in. A lap is played first
+   * and left out, so what carries from frame to frame (a trail) is already
+   * there at the start.
+   */
+  loop?: { repeats: number; turns: number; fine?: boolean };
 }
 
 /**
@@ -274,11 +290,11 @@ const hue = (h: number, s: number, l: number) => {
 
 /** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
 function luckyShimmer(layer: Layer, t: number, seed: number): void {
-  const at = ((t + seed) % 2200) / 2200 * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
+  const at = cycle(t + seed, 2200) * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
   layer.forEach((row, y) => row.forEach((cell, x) => {
     if (!cell?.body) return;
     const d = Math.abs(x + y * 0.8 - at);
-    if (d < 3) cell.c = mix(cell.c, hue((t / 5 + (x - y) * 22) % 360, 0.95, 0.68), d < 1.2 ? 0.6 : 0.3);
+    if (d < 3) cell.c = mix(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, 0.95, 0.68), d < 1.2 ? 0.6 : 0.3);
   }));
 }
 
@@ -288,15 +304,15 @@ function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
     if (!cell?.eye) return;
     const k = cell.eye;
     if (kind === 'galaxy') {
-      if (k === T.WHITE) cell.c = ((t / 160 + x * 3 + y * 2) % 5) < 1.2 ? '#FFFFFF' : '#CBB8FF';
-      else if (k !== T.EYE) cell.c = hue(255 + 45 * Math.sin(t / 380 + x * 0.9 + y * 0.7), 0.8, 0.55);
+      if (k === T.WHITE) cell.c = wrap(t / steps(160, 5) + x * 3 + y * 2, 5) < 1.2 ? '#FFFFFF' : '#CBB8FF';
+      else if (k !== T.EYE) cell.c = hue(255 + 45 * Math.sin(t / wave(380) + x * 0.9 + y * 0.7), 0.8, 0.55);
     } else if (kind === 'diamond') {
-      const at = ((t + seed) % 1400) / 1400 * 24 - 4, d = Math.abs(x - y * 0.5 - at);
-      if (k !== T.EYE) cell.c = mix(cell.c, '#E6FCFF', 0.25 + 0.2 * Math.sin(t / 250 + x));
+      const at = cycle(t + seed, 1400) * 24 - 4, d = Math.abs(x - y * 0.5 - at);
+      if (k !== T.EYE) cell.c = mix(cell.c, '#E6FCFF', 0.25 + 0.2 * Math.sin(t / wave(250) + x));
       if (d < 1.5) cell.c = mix(cell.c, '#FFFFFF', d < 0.6 ? 0.9 : 0.5);
     } else if (kind === 'dragon') {
-      const flash = ((t + seed) % 2000) < 160;
-      if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? '#FFF6B0' : mix(cell.c, '#FF4A1C', 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(t / 260)));
+      const flash = cycle(t + seed, 2000) * fit(2000) < 160;
+      if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? '#FFF6B0' : mix(cell.c, '#FF4A1C', 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(t / wave(260))));
     }
   }));
 }
@@ -449,14 +465,20 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const seed = hash(input) % 997;
 
   const beats = BEATS[move](canWave);
+  const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || options.emote);
   // With effects on, long beats are cut into slices so the shine can move.
-  const slices: { beat: Beat; ms: number; t: number }[] = [];
+  const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
+  const lapMs = beats.reduce((n, b) => n + b.ms, 0), span = loop ? lapMs * loop.repeats : 0;
+  // Whole milliseconds in, an exact remainder, one division: the same moment in any lap is the same number.
+  const clock = (ms: number) => (loop ? ((ms * loop.turns * LOOP_MS) % (LOOP_MS * span)) / span : ms);
+  const slices: { beat: Beat; ms: number; t: number; lap: number }[] = [];
   let t = 0;
-  for (const beat of beats) {
-    const n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+  for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
+    let n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+    if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
     for (let i = 0; i < n; i++) {
-      const ms = Math.round(beat.ms / n);
-      slices.push({ beat, ms, t });
+      const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
+      slices.push({ beat, ms, t: clock(t), lap });
       t += ms;
     }
   }
@@ -465,7 +487,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const trailFrom = (grade >= 3 && !wornAura ? [mix(gradeColor, '#000000', 0.2), mix(gradeColor, '#000000', 0.55)] : []);
   const behind: Layer[] = [];
 
-  const frames = slices.map(({ beat, ms, t }) => {
+  const all = slices.map(({ beat, ms, t }) => {
     let layer = layerOf(beat.pose);
     if (beat.turn) layer = layer.map(row => [...row].reverse());
     layer = squash(layer, beat.squash ?? 0);
@@ -482,7 +504,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
     if (grade >= 1) {
       // A shine sweeping diagonally across the item, once every 1.6 seconds.
-      const at = ((t + seed) % 1600) / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+      const at = cycle(t + seed, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
       layer.forEach((row, y) => row.forEach((cell, x) => {
         if (!cell?.item) return;
         const d = Math.abs(x + y - at);
@@ -494,7 +516,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     if (lucky) luckyShimmer(layer, t, seed);
     if (liveEye) liveEyes(layer, liveEye, t, seed);
     if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
-      if (((t / 260 + k * 1.3 + seed) % 3) < 1) twinkle(layer, x, y, '#FFFFFF', '#FFD45C');
+      if (wrap(t / steps(260, 3) + k * 1.3 + seed, 3) < 1) twinkle(layer, x, y, '#FFFFFF', '#FFD45C');
     });
 
     const aura = grade >= 2 ? rim(layer) : [];
@@ -502,7 +524,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       const gold = palette.colors[T.GOLD] ?? '#F2C230';
       twinkle(layer, 2, 3, '#FFFFFF', gold);
       twinkle(layer, 13, 2, '#FFFFFF', gold);
-      if (Math.floor(t / 120) % 2) twinkle(layer, 8, 1, '#FFFFFF', gold);
+      if (Math.floor(wrap(t, fit(240)) / (fit(240) / 2)) % 2) twinkle(layer, 8, 1, '#FFFFFF', gold);
     }
     if (beat.drop) {
       let top = -1;
@@ -514,7 +536,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       }
     }
     if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
-    if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t / 400) % 2);
+    if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(wrap(t, fit(800)) / (fit(800) / 2)) % 2);
     const outside: [number, number, string][] = [];
     if (wornAura) {
       // The aura, round him as he stands in this frame, in its finish. A rare
@@ -527,24 +549,38 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       }
     } else if (grade >= 2) {
       // A ring in the grade's colour, breathing in and out.
-      const on = Math.floor((t + seed) / 320) % 2 === 0;
+      const on = Math.floor(wrap(t + seed, fit(640)) / (fit(640) / 2)) % 2 === 0;
       const ring = grade === 4 ? (on ? '#FFE27A' : '#E4AE39') : on ? gradeColor : mix(gradeColor, '#000000', 0.35);
       for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = { c: ring, item: false };
     }
     if (grade >= 3 && !wornAura) {
       const count = grade === 4 ? 4 : 3;
       SPARKLE_SPOTS.slice(0, count + 2).forEach(([x, y], k) => {
-        if (((t / 240 + k * 1.7 + seed) % 4) < 1) twinkle(layer, x, y, '#FFFFFF', grade === 4 ? '#FFE27A' : gradeColor);
+        if (wrap(t / steps(240, 4) + k * 1.7 + seed, 4) < 1) twinkle(layer, x, y, '#FFFFFF', grade === 4 ? '#FFE27A' : gradeColor);
       });
     }
 
     const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
     const slots = layer.map((row, y) => row.map((cell, x) => (cell ? cell.slot ?? 0 : backdrop?.[y][x] ? 3 : 0)));
     const colors = withFx ? applyFx(flat, slots, fxCopies, t) : flat;
-    return outside.length ? { colors, ms, slots, outside } : { colors, ms, slots };
+    return outside.length ? { colors, ms, slots, outside, at: t } : { colors, ms, slots, at: t };
   });
+  // In a loop the warm-up lap is left out.
+  const frames = loop ? all.filter((_, i) => slices[i].lap > 0) : all;
 
-  return { move, width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, duration: t };
+  return { move, width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, duration: frames.reduce((n, f) => n + f.ms, 0), timed };
+}
+
+/**
+ * The move as a loop that closes perfectly: as it is when nothing moves on its
+ * own clock, else played the whole number of times that fits whole turns of
+ * LOOP_MS (`fitLoop`). What to hand `frameAt`, a player or an animated SVG.
+ */
+export function animateLoop(input: string, move: Move, options: AnimateOptions = {}): Animation {
+  const plain = animate(input, move, options);
+  if (!plain.timed) return plain;
+  const { repeats, turns } = fitLoop(plain.duration);
+  return animate(input, move, { ...options, loop: { repeats, turns } });
 }
 
 /** The frame showing `ms` into the animation, looping unless `once`. */
@@ -602,7 +638,7 @@ export interface AnimatedSvgOptions extends AnimateOptions {
  * animation shows them in turn. Works as an <img>, inline, or as a file.
  */
 export function toAnimatedSvg(input: string, move: Move, options: AnimatedSvgOptions = {}): string {
-  const anim = animate(input, move, options);
+  const anim = animateLoop(input, move, options);
   const size = options.size ?? 128;
   const id = `lg${hash(`${input}|${move}|${JSON.stringify({ ...options, size: 0 })}`).toString(36)}`;
   const pct = (ms: number) => +(ms / anim.duration * 100).toFixed(3);

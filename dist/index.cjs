@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-Dp_ZbFbU.cjs');
+const require_paint = require('./paint-CQpqyDAm.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -351,11 +351,11 @@ const hue = (h, s, l) => {
 };
 /** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
 function luckyShimmer(layer, t, seed) {
-	const at = (t + seed) % 2200 / 2200 * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
+	const at = require_paint.cycle(t + seed, 2200) * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		if (!cell?.body) return;
 		const d = Math.abs(x + y * .8 - at);
-		if (d < 3) cell.c = mix$2(cell.c, hue((t / 5 + (x - y) * 22) % 360, .95, .68), d < 1.2 ? .6 : .3);
+		if (d < 3) cell.c = mix$2(cell.c, hue(((t * 360 / require_paint.fit(1800) + (x - y) * 22) % 360 + 360) % 360, .95, .68), d < 1.2 ? .6 : .3);
 	}));
 }
 /** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder. */
@@ -364,15 +364,15 @@ function liveEyes(layer, kind, t, seed) {
 		if (!cell?.eye) return;
 		const k = cell.eye;
 		if (kind === "galaxy") {
-			if (k === require_paint.T.WHITE) cell.c = (t / 160 + x * 3 + y * 2) % 5 < 1.2 ? "#FFFFFF" : "#CBB8FF";
-			else if (k !== require_paint.T.EYE) cell.c = hue(255 + 45 * Math.sin(t / 380 + x * .9 + y * .7), .8, .55);
+			if (k === require_paint.T.WHITE) cell.c = require_paint.wrap(t / require_paint.steps(160, 5) + x * 3 + y * 2, 5) < 1.2 ? "#FFFFFF" : "#CBB8FF";
+			else if (k !== require_paint.T.EYE) cell.c = hue(255 + 45 * Math.sin(t / require_paint.wave(380) + x * .9 + y * .7), .8, .55);
 		} else if (kind === "diamond") {
-			const at = (t + seed) % 1400 / 1400 * 24 - 4, d = Math.abs(x - y * .5 - at);
-			if (k !== require_paint.T.EYE) cell.c = mix$2(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / 250 + x));
+			const at = require_paint.cycle(t + seed, 1400) * 24 - 4, d = Math.abs(x - y * .5 - at);
+			if (k !== require_paint.T.EYE) cell.c = mix$2(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / require_paint.wave(250) + x));
 			if (d < 1.5) cell.c = mix$2(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
 		} else if (kind === "dragon") {
-			const flash = (t + seed) % 2e3 < 160;
-			if (k === require_paint.T.GOLD || k === require_paint.T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / 260)));
+			const flash = require_paint.cycle(t + seed, 2e3) * require_paint.fit(2e3) < 160;
+			if (k === require_paint.T.GOLD || k === require_paint.T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / require_paint.wave(260))));
 		}
 	}));
 }
@@ -644,23 +644,29 @@ function animate(input, move, options = {}) {
 	const gradeColor = grade >= 0 ? require_paint.GRADES[grade].color : "#FFFFFF";
 	const seed = require_paint.hash(input) % 997;
 	const beats = BEATS[move](canWave);
+	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || options.emote);
+	const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
+	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0), span = loop ? lapMs * loop.repeats : 0;
+	const clock = (ms) => loop ? ms * loop.turns * require_paint.LOOP_MS % (require_paint.LOOP_MS * span) / span : ms;
 	const slices = [];
 	let t = 0;
-	for (const beat of beats) {
-		const n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+	for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
+		let n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
 		for (let i = 0; i < n; i++) {
-			const ms = Math.round(beat.ms / n);
+			const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
 			slices.push({
 				beat,
 				ms,
-				t
+				t: clock(t),
+				lap
 			});
 			t += ms;
 		}
 	}
 	const trailFrom = grade >= 3 && !wornAura ? [mix$2(gradeColor, "#000000", .2), mix$2(gradeColor, "#000000", .55)] : [];
 	const behind = [];
-	const frames = slices.map(({ beat, ms, t: t$1 }) => {
+	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row].reverse());
 		layer = squash(layer, beat.squash ?? 0);
@@ -676,7 +682,7 @@ function animate(input, move, options = {}) {
 		behind.unshift(figure$1);
 		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
-			const at = (t$1 + seed) % 1600 / 1600 * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+			const at = require_paint.cycle(t$1 + seed, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
@@ -687,14 +693,14 @@ function animate(input, move, options = {}) {
 		if (lucky) luckyShimmer(layer, t$1, seed);
 		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
 		if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
-			if ((t$1 / 260 + k * 1.3 + seed) % 3 < 1) twinkle(layer, x, y, "#FFFFFF", "#FFD45C");
+			if (require_paint.wrap(t$1 / require_paint.steps(260, 3) + k * 1.3 + seed, 3) < 1) twinkle(layer, x, y, "#FFFFFF", "#FFD45C");
 		});
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
 			const gold = palette$1.colors[require_paint.T.GOLD] ?? "#F2C230";
 			twinkle(layer, 2, 3, "#FFFFFF", gold);
 			twinkle(layer, 13, 2, "#FFFFFF", gold);
-			if (Math.floor(t$1 / 120) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
+			if (Math.floor(require_paint.wrap(t$1, require_paint.fit(240)) / (require_paint.fit(240) / 2)) % 2) twinkle(layer, 8, 1, "#FFFFFF", gold);
 		}
 		if (beat.drop) {
 			let top = -1;
@@ -717,7 +723,7 @@ function animate(input, move, options = {}) {
 			};
 		}
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
-		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(t$1 / 400) % 2);
+		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(require_paint.wrap(t$1, require_paint.fit(800)) / (require_paint.fit(800) / 2)) % 2);
 		const outside = [];
 		if (wornAura) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
@@ -735,7 +741,7 @@ function animate(input, move, options = {}) {
 				};
 			}
 		} else if (grade >= 2) {
-			const on = Math.floor((t$1 + seed) / 320) % 2 === 0;
+			const on = Math.floor(require_paint.wrap(t$1 + seed, require_paint.fit(640)) / (require_paint.fit(640) / 2)) % 2 === 0;
 			const ring = grade === 4 ? on ? "#FFE27A" : "#E4AE39" : on ? gradeColor : mix$2(gradeColor, "#000000", .35);
 			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
 				c: ring,
@@ -745,7 +751,7 @@ function animate(input, move, options = {}) {
 		if (grade >= 3 && !wornAura) {
 			const count$1 = grade === 4 ? 4 : 3;
 			SPARKLE_SPOTS.slice(0, count$1 + 2).forEach(([x, y], k) => {
-				if ((t$1 / 240 + k * 1.7 + seed) % 4 < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
+				if (require_paint.wrap(t$1 / require_paint.steps(240, 4) + k * 1.7 + seed, 4) < 1) twinkle(layer, x, y, "#FFFFFF", grade === 4 ? "#FFE27A" : gradeColor);
 			});
 		}
 		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));
@@ -755,20 +761,41 @@ function animate(input, move, options = {}) {
 			colors,
 			ms,
 			slots,
-			outside
+			outside,
+			at: t$1
 		} : {
 			colors,
 			ms,
-			slots
+			slots,
+			at: t$1
 		};
 	});
+	const frames = loop ? all.filter((_, i) => slices[i].lap > 0) : all;
 	return {
 		move,
 		width: FRAME_WIDTH,
 		height: FRAME_HEIGHT,
 		frames,
-		duration: t
+		duration: frames.reduce((n, f) => n + f.ms, 0),
+		timed
 	};
+}
+/**
+* The move as a loop that closes perfectly: as it is when nothing moves on its
+* own clock, else played the whole number of times that fits whole turns of
+* LOOP_MS (`fitLoop`). What to hand `frameAt`, a player or an animated SVG.
+*/
+function animateLoop(input, move, options = {}) {
+	const plain = animate(input, move, options);
+	if (!plain.timed) return plain;
+	const { repeats, turns } = require_paint.fitLoop(plain.duration);
+	return animate(input, move, {
+		...options,
+		loop: {
+			repeats,
+			turns
+		}
+	});
 }
 /** The frame showing `ms` into the animation, looping unless `once`. */
 function frameAt(animation, ms, once = false) {
@@ -809,7 +836,7 @@ function runs(row) {
 * animation shows them in turn. Works as an <img>, inline, or as a file.
 */
 function toAnimatedSvg(input, move, options = {}) {
-	const anim = animate(input, move, options);
+	const anim = animateLoop(input, move, options);
 	const size = options.size ?? 128;
 	const id = `lg${require_paint.hash(`${input}|${move}|${JSON.stringify({
 		...options,
@@ -2235,7 +2262,6 @@ function LilGuyAnimated({ name, move, size = 64, game, equip, parts, emote: emot
 * `scripts/verify-shaders.mjs` runs the GLSL in a browser and checks it
 * against the plain code, pixel by pixel.
 */
-const LOOP_MS = 6e3;
 /** The finishes in the order the shaders number them. */
 const SHADER_FINISHES = [
 	"plain",
@@ -2320,7 +2346,7 @@ function hsv$1(c) {
 	].map((o) => Math.abs(fract(c[0] + o) * 6 - 3));
 	return p.map((v) => c[2] * (1 + (clamp(v - 1, 0, 1) - 1) * c[1]));
 }
-function hueShift$1(c, a) {
+function hueShift(c, a) {
 	const y = .299 * c[0] + .587 * c[1] + .114 * c[2];
 	const i = .596 * c[0] - .274 * c[1] - .322 * c[2];
 	const q = .211 * c[0] - .523 * c[1] + .312 * c[2];
@@ -2348,7 +2374,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		]), .08), .4 * s * coat), b$1 * .5 * coat);
 	}
 	if (finish < 2.5) return add(c, twinkle$1 * .55 * coat + b$1 * .25 * coat);
-	if (finish < 3.5) return mix$1(hueShift$1(c, (time * TAU / 6 + d * .22) * coat), [
+	if (finish < 3.5) return mix$1(hueShift(c, (time * TAU / 6 + d * .22) * coat), [
 		1,
 		1,
 		1
@@ -2376,7 +2402,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 /** A colour channel as the GPU stores it. */
 const toByte = (v) => Math.round(clamp(v, 0, 1) * 255);
 /** Loop time in seconds: what the shaders are given. */
-const loopSeconds = (ms) => mod(ms, LOOP_MS) / 1e3;
+const loopSeconds = (ms) => mod(ms, require_paint.LOOP_MS) / 1e3;
 
 //#endregion
 //#region src/shine.ts
@@ -5523,98 +5549,29 @@ const hsv = (h, s, v) => {
 		f(1) * 255
 	];
 };
-function hueShift(c, a) {
-	const y = .299 * c[0] + .587 * c[1] + .114 * c[2], i = .596 * c[0] - .274 * c[1] - .322 * c[2], q = .211 * c[0] - .523 * c[1] + .312 * c[2];
-	const h = Math.atan2(q, i) + a, ch = Math.hypot(i, q), I = ch * Math.cos(h), Q = ch * Math.sin(h);
-	return [
-		y + .956 * I + .621 * Q,
-		y - .272 * I - .647 * Q,
-		y - 1.106 * I + 1.703 * Q
-	];
-}
 const hash$1 = (x, y, p) => {
 	const s = Math.sin(x * 127.1 + y * 311.7 + p * .731) * 43758.5453;
 	return s - Math.floor(s);
 };
-const FINISHES$1 = [
-	"plain",
-	"sunset",
-	"tempered",
-	"nebula",
-	"prism",
-	"negative",
-	"gold"
-];
 /**
-* One card pixel of a copy in its finish at time `t` seconds: the same
-* shine the site's shader gives, worked out here so it can be saved.
+* One card pixel of a copy in its finish at time `t` seconds: the finishes'
+* shader (./finish-shader), worked out here so the card can be saved.
 * `gx, gy` is the guy pixel (what twinkles), `cx, cy` the card pixel (what a
 * sweep crosses), so light runs smoothly over a single pixel of a hat.
 */
 function shine(c, o, gx, gy, cx, cy, t) {
-	const f = FINISHES$1.indexOf(o.finish);
+	const f = SHADER_FINISHES.indexOf(o.finish);
 	if (f < 0) return c;
-	const d = (cx + cy) / ZOOM, h = hash$1(gx, gy, o.print);
-	const band$1 = 1 - Math.min(1, Math.max(0, Math.abs(((d - t * 10 + o.print) % 58 + 58) % 58 - 29) - .5));
-	const twinkle$1 = (h * 13 + t * .37) % 1 > .965 ? 1 : 0;
-	const coat = Math.min(1, Math.max(0, 1 - o.scuff * 1.4)) * (h >= o.scuff * .55 ? 1 : 0);
-	const add$1 = (v, k = 1) => [
-		c[0] + v * 255 * k,
-		c[1] + v * 255 * k,
-		c[2] + v * 255 * k
+	const out = finishColor([
+		c[0] / 255,
+		c[1] / 255,
+		c[2] / 255
+	], f, o.scuff, hash$1(gx, gy, o.print), (cx + cy) / ZOOM, gy, o.print, loopSeconds(t * 1e3), 1);
+	return [
+		out[0] * 255,
+		out[1] * 255,
+		out[2] * 255
 	];
-	switch (f) {
-		case 0: return o.scuff <= .07 ? add$1(band$1 * .45) : c;
-		case 1: {
-			const s = .5 + .5 * Math.sin(d * .8 - t * 3 + o.print);
-			const tint = mix(c, [
-				c[0] * .86 + 20,
-				c[1] * .96 + 20,
-				c[2] * 1.18 + 20
-			], .4 * s * coat);
-			return [
-				tint[0] + band$1 * 127 * coat,
-				tint[1] + band$1 * 127 * coat,
-				tint[2] + band$1 * 127 * coat
-			];
-		}
-		case 2: return add$1(twinkle$1 * .55 * coat + band$1 * .25 * coat);
-		case 3: {
-			const s = hueShift(c, (t * .9 + d * .22) * coat);
-			return mix(s, [
-				255,
-				255,
-				255
-			], twinkle$1 * coat);
-		}
-		case 4: {
-			const rain = hsv(((d * .07 - t * .3 + o.print * .013) % 1 + 1) % 1, .65, 1);
-			const m = mix(c, [
-				c[0] * .45 + rain[0] * .75,
-				c[1] * .45 + rain[1] * .75,
-				c[2] * .45 + rain[2] * .75
-			], .6 * coat);
-			const row = (gy + Math.floor(t * 10)) % 3 < .5 ? 1.12 : 1;
-			return [
-				m[0] * row,
-				m[1] * row,
-				m[2] * row
-			];
-		}
-		case 5: {
-			const w = .07 * Math.sin(t * 2 + d * .5) * coat * 255;
-			return [
-				c[0] + .28 * 255 * band$1 * coat + w,
-				c[1] + .12 * 255 * band$1 * coat + w,
-				c[2] + .45 * 255 * band$1 * coat + w
-			];
-		}
-		default: return [
-			c[0] + band$1 * .7 * coat * 255 + twinkle$1 * .6 * coat * 255,
-			c[1] + band$1 * .7 * coat * 255 + twinkle$1 * .54 * coat * 255,
-			c[2] + band$1 * .7 * coat * 255 + twinkle$1 * .3 * coat * 255
-		];
-	}
 }
 const EXTRA = {
 	"·": [5, [
@@ -5789,6 +5746,7 @@ const SIDE = 8, LINE = 13;
 * of, then the night card with stars and a colour-turning edge.
 */
 function drawCard(input, frame, owned, g, t) {
+	const tm = t * 1e3;
 	const s = new Surface();
 	const gc = g >= 0 ? rgb$2(require_paint.GRADES[g].color) : [
 		120,
@@ -5815,19 +5773,19 @@ function drawCard(input, frame, owned, g, t) {
 			20,
 			22,
 			40
-		], hsv(((x + y$1) / 300 + t * .04) % 1, .4, .5), .22);
+		], hsv(require_paint.wrap((x + y$1) / 300 + tm / require_paint.fit(25e3), 1), .4, .5), .22);
 		if (gold) return mix(mix(CREAM, [
 			255,
 			206,
 			110
-		], .42), WHITE, .25 * Math.max(0, Math.sin((x + y$1) * .035 - t * 1.6)) ** 6);
+		], .42), WHITE, .25 * Math.max(0, Math.sin((x + y$1) * .035 - tm / require_paint.wave(625))) ** 6);
 		if (g === 3) {
-			const holo = hsv(((x * .006 + y$1 * .004 - t * .07) % 1 + 1) % 1, .28, 1);
+			const holo = hsv(require_paint.wrap(x * .006 + y$1 * .004 - tm / require_paint.fit(1e3 / .07), 1), .28, 1);
 			return mix(mix(CREAM, holo, .42), WHITE, (x - y$1 + 400) % 5 === 0 ? .1 : 0);
 		}
 		return CREAM;
 	};
-	const sheen = (x, y$1) => Math.max(0, 1 - Math.abs((((x + y$1) * .5 - t * 40) % 170 + 170) % 170 - 85) / 9);
+	const sheen = (x, y$1) => Math.max(0, 1 - Math.abs(require_paint.wrap((x + y$1) * .5 - tm * 170 / require_paint.fit(4250), 170) - 85) / 9);
 	for (let yy = 0; yy < CARD_HEIGHT; yy++) for (let x = 0; x < CARD_WIDTH; x++) {
 		if (!inside(x, yy)) continue;
 		const edge = !inside(x - 3, yy) || !inside(x + 3, yy) || !inside(x, yy - 3) || !inside(x, yy + 3);
@@ -5841,8 +5799,8 @@ function drawCard(input, frame, owned, g, t) {
 			255,
 			236,
 			170
-		], .5 + .5 * Math.sin((x - yy) * .06 + t * 2.4));
-		if (night) border = hsv(((x + yy) / 160 + t * .12) % 1, .55, .98);
+		], .5 + .5 * Math.sin((x - yy) * .06 + tm / require_paint.wave(1e3 / 2.4)));
+		if (night) border = hsv(require_paint.wrap((x + yy) / 160 + tm / require_paint.fit(1e3 / .12), 1), .55, .98);
 		const rim$1 = !inside(x - 1, yy) || !inside(x + 1, yy) || !inside(x, yy - 1) || !inside(x, yy + 1);
 		s.set(x, yy, rim$1 ? mix(border, [
 			10,
@@ -5876,7 +5834,7 @@ function drawCard(input, frame, owned, g, t) {
 			226,
 			238,
 			255
-		], .3 * Math.max(0, Math.sin((x - yy * .6) * .09 - t * 1.3)) ** 3);
+		], .3 * Math.max(0, Math.sin((x - yy * .6) * .09 - tm / require_paint.wave(1e3 / 1.3))) ** 3);
 		const fx = (x - (WIN.left + WIN.right) / 2) / 34, fy = (yy - (WIN.bottom - 9)) / 4;
 		if (!rim$1 && fx * fx + fy * fy < 1) c = mix(c, [
 			0,
@@ -5886,7 +5844,7 @@ function drawCard(input, frame, owned, g, t) {
 		s.set(x, yy, c);
 	}
 	for (const [x, yy, ph] of stars) {
-		const on = Math.sin(t * 2.2 + ph * 20) > .2;
+		const on = Math.sin(tm / require_paint.wave(1e3 / 2.2) + ph * 20) > .2;
 		s.set(x, yy, on ? [
 			255,
 			255,
@@ -5915,7 +5873,7 @@ function drawCard(input, frame, owned, g, t) {
 		}
 	});
 	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - FRAME_WIDTH * ZOOM / 2);
-	const bob = soul ? Math.round(Math.sin(t * 2.6) * 2) : 0;
+	const bob = soul ? Math.round(Math.sin(tm / require_paint.wave(1e3 / 2.6)) * 2) : 0;
 	let oy = WIN.bottom - 5 - (botRow + 1) * ZOOM;
 	if (soul) oy = Math.max(5 - topRow * ZOOM, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - (topRow + botRow + 1) * ZOOM / 2) - 10)) + bob;
 	const clip = (cx, cy) => soul ? inside(cx, cy) && cx > 3 && cx < CARD_WIDTH - 4 && cy > 3 && cy < WIN.bottom : cy > WIN.top && cy < WIN.bottom && cx > WIN.left && cx < WIN.right;
@@ -5960,7 +5918,7 @@ function drawCard(input, frame, owned, g, t) {
 		const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
 		if (clip(cx, cy)) s.set(cx, cy, rgb$2(hex$1));
 	}
-	const glare = t * .45 % 2.2 * 180 - 50;
+	const glare = require_paint.cycle(tm, 2200 / .45) * 2.2 * 180 - 50;
 	for (let yy = WIN.top + 1; yy < WIN.bottom; yy++) for (let x = WIN.left + 1; x < WIN.right; x++) {
 		const d = x + (yy - WIN.top) * .6 - glare;
 		if (d > 0 && d < 12) s.set(x, yy, mix(s.get(x, yy), WHITE, d < 3 ? .18 : .08));
@@ -5987,7 +5945,7 @@ function drawCard(input, frame, owned, g, t) {
 		96,
 		56,
 		0
-	], .5 + .5 * Math.sin(x * .15 - t * 3 + yy * .1)) : night ? hsv(((x * .01 - t * .25) % 1 + 1) % 1, .35, 1) : ink;
+	], .5 + .5 * Math.sin(x * .15 - tm / require_paint.wave(1e3 / 3) + yy * .1)) : night ? hsv(require_paint.wrap(x * .01 - tm / require_paint.fit(4e3), 1), .35, 1) : ink;
 	titles.forEach((l, k) => s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), titleTop + k * LINE - 1, foil, night ? [
 		8,
 		8,
@@ -5995,7 +5953,7 @@ function drawCard(input, frame, owned, g, t) {
 	] : void 0));
 	if (pill) {
 		const w = textWidth(pill) + 14, x0 = Math.floor((CARD_WIDTH - w) / 2);
-		const fill = night ? hsv(t * .12 % 1, .45, .85) : g >= 0 ? gc : [
+		const fill = night ? hsv(require_paint.wrap(tm / require_paint.fit(1e3 / .12), 1), .45, .85) : g >= 0 ? gc : [
 			120,
 			130,
 			150
@@ -6036,36 +5994,49 @@ function cardFrames(input, ms = 80) {
 		width: CARD_WIDTH,
 		height: CARD_HEIGHT,
 		frames,
-		delays: frames.map(() => ms)
+		delays: card.delays
 	};
 }
 /**
 * A card to play on screen: each frame is drawn the first time it is asked
 * for and kept, so a page can show a card at once and spread the work out.
+* It loops perfectly: his move played the whole number of times that fits
+* whole turns of LOOP_MS, with every sheen on the card on the same clock.
 */
 function cardPlayer(input, ms = 80) {
-	const anim = animate(input.seed, input.move ?? "idle", {
+	const options = {
 		parts: input.parts,
 		palette: input.palette,
 		equip: (input.copies ?? []).map(require_paint.encode),
 		rarity: false
+	};
+	const move = input.move ?? "idle", plain = animate(input.seed, move, options);
+	const { repeats, turns } = require_paint.fitLoop(plain.duration);
+	const anim = animate(input.seed, move, {
+		...options,
+		loop: {
+			repeats,
+			turns
+		}
 	});
 	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
-	const count$1 = Math.ceil(Math.max(2e3, Math.min(anim.duration, 4800)) / ms), cache = [];
+	const total = anim.duration, count$1 = Math.max(1, Math.round(total / ms)), cache = [];
+	const delays = Array.from({ length: count$1 }, (_, k) => Math.round((k + 1) * total / count$1) - Math.round(k * total / count$1));
 	return {
 		width: CARD_WIDTH,
 		height: CARD_HEIGHT,
 		count: count$1,
-		delay: ms,
+		delay: total / count$1,
+		delays,
 		frame(i) {
 			const k = (i % count$1 + count$1) % count$1;
-			return cache[k] ??= drawCard(input, frameAt(anim, k * ms), owned, g, k * ms / 1e3);
+			return cache[k] ??= drawCard(input, frameAt(anim, k * total / count$1), owned, g, k * turns * require_paint.LOOP_MS / count$1 % require_paint.LOOP_MS / 1e3);
 		}
 	};
 }
 /** The card standing still, for a picture. */
 function cardStill(input, t = .6) {
-	const anim = animate(input.seed, input.move ?? "idle", {
+	const anim = animateLoop(input.seed, input.move ?? "idle", {
 		parts: input.parts,
 		palette: input.palette,
 		equip: (input.copies ?? []).map(require_paint.encode),
@@ -6095,7 +6066,7 @@ function toCardPng(input, scale$1 = 4) {
 * effects and auras moving, on a transparent background or `background`.
 */
 function toGuyGif(seed, move, options = {}, scale$1 = 12) {
-	const anim = animate(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
+	const anim = animateLoop(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
 	const frames = anim.frames.map((f) => {
 		const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
 		f.colors.forEach((row, y) => row.forEach((c, x) => {
@@ -6269,7 +6240,7 @@ function cardFaceAt(f, ms, hover) {
 					c[2] * 1.2 + .06
 				], .45 * s).map((v) => v + wide * .12);
 			} else if (grade > 2.5 && grade < 3.5) {
-				if (k > 1.5) c = hueShift$1(c, time * Math.PI * 2 / 6 + d * .18);
+				if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * .18);
 				c = c.map((v) => v + wide * .12);
 			} else if (grade > 3.5) {
 				if (k < 1.5) c = mix$1(c, [
@@ -6651,7 +6622,7 @@ function defineLilGuy(options = {}) {
 /** A baked guy is his frame with room for a rare aura's rings either side: the same size for every guy. */
 const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
 const GUY_HEIGHT = FRAME_HEIGHT;
-/** Longest a baked frame shows while something shimmers, so a finish moves smoothly. */
+/** How long each frame of a card's shimmer shows. */
 const STEP_MS = 80;
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
 function animateOptions(spec) {
@@ -6709,46 +6680,30 @@ function merged(width, height, frames, delays) {
 	});
 	return out;
 }
+/** How many times to play a move so everything on its own clock comes round with it (./loop's `fitLoop`). */
+const shineFit = require_paint.fitLoop;
 /**
-* How many times to play a move so his finishes also come round: finishes
-* repeat every LOOP_MS, so the move is played the number of times that gets
-* closest to whole turns of them, and they run that little faster or slower to
-* close exactly. Returns the repeats and the finishes' speed.
+* A guy playing a move, every frame finished, as a loop that closes perfectly:
+* a guy with nothing on its own clock is his move; one with an aura, an
+* effect, sparkles or a shimmering copy plays the move the whole number of
+* times that fits whole turns of LOOP_MS, everything on its own clock running
+* through without a jump.
 */
-function shineFit(duration) {
-	let best = {
-		repeats: 1,
-		speed: LOOP_MS / duration
-	};
-	for (let turns = 1; turns <= 3; turns++) {
-		const repeats = Math.max(1, Math.round(turns * LOOP_MS / duration));
-		if (repeats * duration > LOOP_MS * 2) continue;
-		const speed = turns * LOOP_MS / (repeats * duration);
-		if (Math.abs(Math.log(speed)) < Math.abs(Math.log(best.speed))) best = {
-			repeats,
-			speed
-		};
-	}
-	return best;
-}
-/** A guy playing a move, every frame finished. */
 function bakeGuy(spec, move = "idle") {
-	const anim = animate(spec.seed, move, animateOptions(spec));
-	const owned = ownedOf$1(spec);
-	if (!anim.frames.some((f) => shines(f, owned))) return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map((f) => place(f)), anim.frames.map((f) => f.ms));
-	const { repeats, speed } = shineFit(anim.duration);
-	const frames = [], delays = [];
-	let t = 0;
-	for (let r = 0; r < repeats; r++) for (const f of anim.frames) {
-		const steps = Math.max(1, Math.ceil(f.ms / STEP_MS));
-		for (let s = 0; s < steps; s++) {
-			const ms = Math.round(f.ms * (s + 1) / steps) - Math.round(f.ms * s / steps);
-			frames.push(place(f, shineFrame(f, owned, t * speed)));
-			delays.push(ms);
-			t += ms;
+	const options = animateOptions(spec), owned = ownedOf$1(spec);
+	const plain = animate(spec.seed, move, options);
+	const shining = plain.frames.some((f) => shines(f, owned));
+	if (!plain.timed && !shining) return merged(GUY_WIDTH, GUY_HEIGHT, plain.frames.map((f) => place(f)), plain.frames.map((f) => f.ms));
+	const { repeats, turns } = shineFit(plain.duration);
+	const anim = animate(spec.seed, move, {
+		...options,
+		loop: {
+			repeats,
+			turns,
+			fine: shining
 		}
-	}
-	return merged(GUY_WIDTH, GUY_HEIGHT, frames, delays);
+	});
+	return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map((f) => place(f, shining ? shineFrame(f, owned, f.at ?? 0) : void 0)), anim.frames.map((f) => f.ms));
 }
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
 function bakeCard(spec) {
@@ -6757,10 +6712,10 @@ function bakeCard(spec) {
 		width: FACE_WIDTH,
 		height: FACE_HEIGHT,
 		frames: [cardFaceAt(face, 0)],
-		delays: [LOOP_MS]
+		delays: [require_paint.LOOP_MS]
 	};
 	const frames = [], delays = [];
-	for (let t = 0; t < LOOP_MS; t += STEP_MS) {
+	for (let t = 0; t < require_paint.LOOP_MS; t += STEP_MS) {
 		frames.push(cardFaceAt(face, t));
 		delays.push(STEP_MS);
 	}
@@ -6853,7 +6808,7 @@ function bakeView(spec, view) {
 		return view === "card" ? card : {
 			...card,
 			frames: card.frames.slice(0, 1),
-			delays: [LOOP_MS]
+			delays: [require_paint.LOOP_MS]
 		};
 	}
 	if (view === "still") {
@@ -6861,7 +6816,7 @@ function bakeView(spec, view) {
 		return {
 			...g,
 			frames: g.frames.slice(0, 1),
-			delays: [LOOP_MS]
+			delays: [require_paint.LOOP_MS]
 		};
 	}
 	return isMove(view) ? bakeGuy(spec, view) : null;
@@ -6914,7 +6869,7 @@ exports.GUY_HEIGHT = GUY_HEIGHT
 exports.GUY_TIERS = GUY_TIERS
 exports.GUY_WIDTH = GUY_WIDTH
 exports.HEADROOM = HEADROOM
-exports.LOOP_MS = LOOP_MS
+exports.LOOP_MS = require_paint.LOOP_MS
 exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
 exports.LilGuyAnimated = LilGuyAnimated
@@ -6936,6 +6891,7 @@ exports.WEAR = require_paint.WEAR
 exports.accessories = require_paint.accessories
 exports.allowed = allowed
 exports.animate = animate
+exports.animateLoop = animateLoop
 exports.animateOptions = animateOptions
 exports.applyFx = require_paint.applyFx
 exports.auraById = require_paint.auraById

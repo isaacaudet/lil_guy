@@ -292,7 +292,7 @@
   const lives = [];
   const live = (canvas, { name, parts, palette, equip = [], move = 'idle' }) => {
     const cfg = { ...LG.resolve(name, parts), ...(palette == null ? {} : { palette }) };
-    lives.push({ canvas, anim: LG.animate(name, move, { parts, palette: LG.paletteOf(cfg), equip }) });
+    lives.push({ canvas, anim: LG.animateLoop(name, move, { parts, palette: LG.paletteOf(cfg), equip }) });
   };
   let figs = 0;
   const fig = (spec, cap, sub) => { const id = 'live' + figs++; setTimeout(() => live(document.getElementById(id), spec)); return `<figure><canvas id="${id}" width="16" height="20" aria-hidden="true"></canvas><figcaption><b>${esc(cap)}</b>${esc(sub || '')}</figcaption></figure>`; };

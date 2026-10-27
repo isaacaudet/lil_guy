@@ -136,7 +136,7 @@
 
   // A moving guy: every frame of the move built once, one shown at a time.
   function figure(seed, move, codes) {
-    const anim = LG.animate(seed, move, { equip: codes, rarity: false }), owned = LG.ownedOf(codes);
+    const anim = LG.animateLoop(seed, move, { equip: codes, rarity: false }), owned = LG.ownedOf(codes);
     const root = new THREE.Group(), parts = anim.frames.map(f => { const g = build(LG.voxelColumns(f, owned)); g.visible = false; root.add(g); return g; });
     let shown = -1;
     return {

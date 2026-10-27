@@ -1050,6 +1050,8 @@ interface AnimationFrame {
   slots: number[][];
   /** How long the frame shows. */
   ms: number;
+  /** Where its own-clock things (auras, effects, finishes) are, in ms. */
+  at?: number;
   /**
    * A rare aura's cells that fall past the frame's sides, as `[x, y, colour]`
    * with x from -AURA_PAD to FRAME_WIDTH + AURA_PAD - 1. Only there when there
@@ -1067,12 +1069,29 @@ interface Animation {
   frames: AnimationFrame[];
   /** All the frames' times added up. */
   duration: number;
+  /** Whether anything moves on its own clock (an aura, an effect, sparkles), not just with the move. */
+  timed: boolean;
 }
 interface AnimateOptions extends RenderOptions {
   /** Show the best equipped copy's grade: shine, aura, sparkles and a trail. Default true. */
   rarity?: boolean;
   /** An emote to show over the whole move, bobbing beside his head. */
   emote?: Emote;
+  /**
+   * Play the move `repeats` times with everything on its own clock (auras,
+   * effects, sparkles) running through `turns` LOOP_MS in that time, so the
+   * loop closes perfectly (see ./bake's `shineFit`). The clock is worked out
+   * from whole milliseconds into the loop, so every lap reads the same times
+   * to the last bit.
+   * `fine` cuts frames to 80 ms for a finish to move in. A lap is played first
+   * and left out, so what carries from frame to frame (a trail) is already
+   * there at the start.
+   */
+  loop?: {
+    repeats: number;
+    turns: number;
+    fine?: boolean;
+  };
 }
 /** Little pictures that pop up beside his head. */
 type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire';
@@ -1098,6 +1117,12 @@ declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy", "aura"];
  * same options as `toSvgString` (game, equip, parts, palette).
  */
 declare function animate(input: string, move: Move, options?: AnimateOptions): Animation;
+/**
+ * The move as a loop that closes perfectly: as it is when nothing moves on its
+ * own clock, else played the whole number of times that fits whole turns of
+ * LOOP_MS (`fitLoop`). What to hand `frameAt`, a player or an animated SVG.
+ */
+declare function animateLoop(input: string, move: Move, options?: AnimateOptions): Animation;
 /** The frame showing `ms` into the animation, looping unless `once`. */
 declare function frameAt(animation: Animation, ms: number, once?: boolean): AnimationFrame;
 /** Anything with a 2D canvas's fillStyle and fillRect: a canvas, an OffscreenCanvas, a test double. */
@@ -1698,12 +1723,15 @@ declare function cardFrames(input: CardInput, ms?: number): Frames;
 /**
  * A card to play on screen: each frame is drawn the first time it is asked
  * for and kept, so a page can show a card at once and spread the work out.
+ * It loops perfectly: his move played the whole number of times that fits
+ * whole turns of LOOP_MS, with every sheen on the card on the same clock.
  */
 declare function cardPlayer(input: CardInput, ms?: number): {
   width: number;
   height: number;
   count: number;
   delay: number;
+  delays: number[];
   /** The frame showing at `i` (wraps round). */
   frame(i: number): Uint8ClampedArray;
 };
@@ -1720,6 +1748,30 @@ declare function toCardPng(input: CardInput, scale?: number): Promise<Uint8Array
 declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
   background?: string;
 }, scale?: number): Uint8Array;
+
+//#endregion
+//#region src/loop.d.ts
+/**
+ * Everything that moves on its own clock (auras, effects, finishes, a Lucky
+ * guy's sheen, live eyes, sparkles) repeats in LOOP_MS, so any loop of a whole
+ * number of LOOP_MS closes perfectly: its last frame runs into its first like
+ * any other frame. Each motion keeps its own speed as near as it can, nudged
+ * so a whole number of its cycles fill LOOP_MS, and anything drawn from noise
+ * per step or per generation draws the same noise again each LOOP_MS.
+ */
+declare const LOOP_MS = 6000;
+/** `v` brought into 0 to `n`, negative numbers too. */
+
+/**
+ * How many times to play something `duration` ms long so everything on its own
+ * clock comes round with it: the plays that get closest to whole turns of
+ * LOOP_MS (`turns`), the clock running `speed` times as fast to close exactly.
+ */
+declare function fitLoop(duration: number): {
+  repeats: number;
+  turns: number;
+  speed: number;
+};
 
 //#endregion
 //#region src/finish-shader.d.ts
@@ -1739,7 +1791,6 @@ declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
  * `scripts/verify-shaders.mjs` runs the GLSL in a browser and checks it
  * against the plain code, pixel by pixel.
  */
-declare const LOOP_MS = 6000;
 /** The finishes in the order the shaders number them. */
 declare const SHADER_FINISHES: readonly ["plain", "sunset", "tempered", "nebula", "prism", "negative", "gold"];
 /** A pixel's noise, 0 to 255: the same for a cell and print everywhere. */
@@ -1905,17 +1956,15 @@ declare const GUY_WIDTH: number;
 declare const GUY_HEIGHT: number;
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
 declare function animateOptions(spec: GuySpec): AnimateOptions;
+/** How many times to play a move so everything on its own clock comes round with it (./loop's `fitLoop`). */
+declare const shineFit: typeof fitLoop;
 /**
- * How many times to play a move so his finishes also come round: finishes
- * repeat every LOOP_MS, so the move is played the number of times that gets
- * closest to whole turns of them, and they run that little faster or slower to
- * close exactly. Returns the repeats and the finishes' speed.
+ * A guy playing a move, every frame finished, as a loop that closes perfectly:
+ * a guy with nothing on its own clock is his move; one with an aura, an
+ * effect, sparkles or a shimmering copy plays the move the whole number of
+ * times that fits whole turns of LOOP_MS, everything on its own clock running
+ * through without a jump.
  */
-declare function shineFit(duration: number): {
-  repeats: number;
-  speed: number;
-};
-/** A guy playing a move, every frame finished. */
 declare function bakeGuy(spec: GuySpec, move?: Move): Frames;
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
 declare function bakeCard(spec: FaceSpec): Frames;
@@ -1946,5 +1995,5 @@ declare function bakeView(spec: CardSpec, view: string): Frames | null;
 declare function defineLilGuyHere(options?: Omit<LilGuyOptions, 'bake'>): void;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BakedKind, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CardFace, CardInput, CardShader, CardSpec, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BakedKind, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CardFace, CardInput, CardShader, CardSpec, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

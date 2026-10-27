@@ -2790,7 +2790,7 @@
   function showItem(canvas, o, seed, maxW, maxH) {
     if (LG.slotOf(o) === 'aura') {
       // An aura has nothing to show on its own: it's shown round the guy, moving.
-      const c = guyConfig(seed), anim = LG.animate(seed, 'idle', { parts: partsOf(c), palette: LG.paletteOf(c), equip: [LG.encode(o)], rarity: false });
+      const c = guyConfig(seed), anim = LG.animateLoop(seed, 'idle', { parts: partsOf(c), palette: LG.paletteOf(c), equip: [LG.encode(o)], rarity: false });
       const W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT, k = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
       canvas.width = W; canvas.height = H; canvas.style.width = W * k + 'px'; canvas.style.height = H * k + 'px';
       const s = { canvas, ctx: canvas.getContext('2d'), anim, box: { x: 0, y: 0, w: W, h: H }, moves: true };
