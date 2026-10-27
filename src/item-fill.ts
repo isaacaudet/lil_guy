@@ -86,8 +86,6 @@ export function underFloor(item: Item): string[] {
  * redrawn, and never add one.
  */
 export const UNDERSIZED: readonly string[] = [
-  'flipsies.bottle',
-  'puttsies.ball',
   'cutsies.kiwi',
   'amountle.crystal',
   'trackdle.cone',
@@ -104,15 +102,6 @@ export const UNDERSIZED: readonly string[] = [
   'amountle.candy-corn',
   'stackdle.crescent',
   'stackdle.stairs',
-  'flipsies.goldfish',
-  'flipsies.ketchup',
-  'puttsies.top-hat',
-  'puttsies.cup-flag',
-  'weighsies.gold-bar',
-  'weighsies.eiffel',
-  'weighsies.whale',
-  'weighsies.trex',
-  'weighsies.pigeon',
   'cutsies.cupcake',
   'cutsies.pear',
   'tiltsies.daisy',

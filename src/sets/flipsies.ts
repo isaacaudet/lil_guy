@@ -9,84 +9,81 @@ const perch = (rows: string[], sink = 1) => {
 };
 
 /**
- * Flipsies's machine: the things you flip (a water bottle, a soup can, a
- * rubber duck, a die, the moai) and the kitchen and living room they land in.
+ * Flipsies's machine: the things you flip (a water bottle, a pencil, buttered
+ * toast, a rubber duck, the moai) and the kitchen and living room they land in.
  */
 export const set: MachineSet = {
   add: [
     // ------------------------------------------------------------ skins
     {
-      id: 'flipsies.rubber-duck', game: 'flipsies', slot: 'skin', name: 'Rubber duck', eyes: 9,
-      colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF7A1A', '#C9520C'],
+      id: 'flipsies.rubber-duck', game: 'flipsies', slot: 'skin', name: 'Duck onesie', eyes: 9, limb: 4,
+      colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF8A1A', '#C9520C', '#C8F2DC', '#98DCB8', '#2B2F38'],
       outline: '#7A4A06',
-      // Side on, looking right: a round head on a fat body, the beak out to
-      // one side at the mouth and the tail cocked up behind.
-      art: grid16('rubber duck', [
+      // A mint lil guy in a rubber duck suit: a tuft on the hood, its little eyes and its bill over his face.
+      art: grid16('duck onesie', [
         '................',
-        '................',
-        '................',
-        '......331111....',
-        '.....31111112...',
-        '.....311111112..',
-        '.3..3111111112..',
-        '.33.3111111112..',
-        '.11311111111244.',
-        '.31111111111255.',
-        '.31111111111112.',
-        '.31112222111112.',
-        '..311111111112..',
-        '...2222222222...',
-        '................',
-        '................',
-      ]),
-    },
-    {
-      id: 'flipsies.die', game: 'flipsies', slot: 'skin', name: 'Giant die', eyes: 8,
-      colors: ['#FBFCFE', '#AEB8C8', '#E2E8F1', '#2B2F38', '#FFFFFF'],
-      outline: '#3A4150',
-      // A white die seen a little from above: the top shows one pip, the
-      // front four round the face, the side two.
-      art: grid16('giant die', [
-        '................',
-        '................',
-        '....3333333333..',
-        '...33333433332..',
-        '..333333333322..',
-        '..141111114122..',
-        '..111111111122..',
-        '..111111111242..',
-        '..111111111122..',
-        '..111111111122..',
-        '..111111111122..',
-        '..111111111242..',
-        '..141111114122..',
-        '..11111111112...',
+        '.......31.......',
+        '.....331112.....',
+        '....31111112....',
+        '...3181111812...',
+        '..311144441112..',
+        '..311455554112..',
+        '..316666666612..',
+        '..316666666612..',
+        '..316666666612..',
+        '..316666666712..',
+        '..311777777112..',
+        '...3111111112...',
+        '....22222222....',
         '................',
         '................',
       ]),
     },
     {
-      id: 'flipsies.moai', game: 'flipsies', slot: 'skin', name: 'Moai', eyes: 8, showpiece: true, signature: 'lava',
-      colors: ['#ADA195', '#857A6E', '#CDC3B6', '#5E544B', '#968A7D'],
+      id: 'flipsies.die', game: 'flipsies', slot: 'skin', name: 'Buttered toast', eyes: 9, limb: 4,
+      colors: ['#F6D9A0', '#E3B97A', '#FFF0CC', '#B9732F', '#8E5420', '#D99A4A', '#FFE36A', '#F2C430'],
+      outline: '#5A3210',
+      // A slice of toast costume, crust all round, a pat of butter melting on top. It always lands butter side up.
+      art: grid16('buttered toast', [
+        '................',
+        '....66444444....',
+        '...6433311114...',
+        '..643777111145..',
+        '..641788111145..',
+        '..641111111145..',
+        '..641111111145..',
+        '..641111111145..',
+        '..641111111145..',
+        '..641111111145..',
+        '..641111111145..',
+        '..641111111245..',
+        '..642222222245..',
+        '...5555555555...',
+        '................',
+        '................',
+      ]),
+    },
+    {
+      id: 'flipsies.moai', game: 'flipsies', slot: 'skin', name: 'Moai', eyes: 9, limb: 2, showpiece: true, signature: 'lava',
+      colors: ['#ADA195', '#857A6E', '#CDC3B6', '#5E544B', '#C0503A', '#8E3424', '#E07A5A', '#7FA35A'],
       outline: '#3A322B',
-      // A long stone head: a heavy brow in shadow, a long nose down between
-      // the eyes, a jutting chin.
+      // A round little stone head with long ears and a heavy brow, his red topknot stone on top, moss at his feet.
       art: grid16('moai', [
         '................',
-        '.....311112.....',
-        '....31151112....',
-        '...3111111152...',
-        '...3333333332...',
-        '...2444444442...',
-        '...3113511112...',
-        '...3113511112...',
-        '...3133551112...',
+        '.....775556.....',
+        '.....755556.....',
+        '....31111112....',
+        '...3111111112...',
+        '...3444444442...',
+        '..231111111122..',
+        '..231111111122..',
+        '..231111111122..',
+        '..231111111122..',
         '...3111111112...',
         '...3111111112...',
-        '...3115555112...',
-        '...3111111112...',
-        '...3111111152...',
-        '....22222222....',
+        '...8111111128...',
+        '....88222288....',
+        '................',
         '................',
       ]),
     },
@@ -105,28 +102,25 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'flipsies.toast', game: 'flipsies', slot: 'hat', name: 'Buttered toast',
-      colors: ['#F0CB8C', '#A8642A', '#E3B06A', '#FFEC8A', '#F2C94A'],
-      // A slice standing up on the head: a domed crust, a pat of butter in the middle.
+      id: 'flipsies.toast', game: 'flipsies', slot: 'hat', name: 'Fried egg',
+      colors: ['#FFFFFF', '#E3E3EA', '#FFD23A', '#F2A20E', '#FFF3A0', '#E0B070'],
+      // Flipped over easy and landed on his head: a wobbly white, the yolk up top.
       draw: on([
-        '..22222222..',
-        '.2111111112.',
-        '211114511112',
-        '.2111551112.',
-        '.2222222222.',
-      ]),
+        '.....533.....',
+        '..1115334111.',
+        '1111114441112',
+        '6222222222226',
+      ], 0, 1),
     },
     {
       id: 'flipsies.popcorn', game: 'flipsies', slot: 'hat', name: 'Popcorn bucket',
-      colors: ['#E5484D', '#B83236', '#FFF8EE', '#E3D9C8', '#FFFFFF', '#F3DE96'],
-      // A striped tub, wider at the top, heaped with puffs.
+      colors: ['#E5484D', '#B83236', '#FFF8EE', '#E3D9C8', '#FFFFFF', '#F3DE96', '#EADFC0'],
+      // A striped tub heaped with buttery puffs.
       draw: on([
-        '...5.55.5...',
-        '..5565556...',
-        '.5655565556.',
-        '131313131312',
-        '.1313131312.',
-        '.1313131312.',
+        '...5565565...',
+        '.55655655655.',
+        '3131313131312',
+        '.13131313132.',
       ]),
     },
     {
@@ -170,47 +164,49 @@ export const set: MachineSet = {
     // ------------------------------------------------------------ buddies
     {
       id: 'flipsies.goldfish', game: 'flipsies', slot: 'buddy', name: 'Goldfish',
-      colors: ['#FF8A2B', '#D45F10', '#FFC27A', '#3A1A0A'],
+      colors: ['#FF8A2B', '#D45F10', '#FFC27A', '#FFFFFF'],
+      // Out of the fishbowl for the day: a round orange goldfish, its fan tail flicking.
       art: pet('goldfish', [
-        '...33.',
-        '2.3113',
-        '.21141',
-        '2.1112',
-        '...22.',
+        '.33..3',
+        '3111.3',
+        '1o1123',
+        '311123',
+        '..2...',
       ]),
     },
     {
       id: 'flipsies.ketchup', game: 'flipsies', slot: 'buddy', name: 'Ketchup',
-      colors: ['#E5383D', '#A8202A', '#FF8A8A', '#FFFFFF', '#C9D1DC'],
-      // The red bottle with its white cap.
+      colors: ['#E5383D', '#A8202A', '#FF8A8A', '#FFFFFF', '#C9D1DC', '#FFE36A'],
+      // A plump squeezy ketchup bottle with a white cap, looking up at you.
       art: pet('ketchup', [
         '..45..',
-        '..31..',
         '.3112.',
-        '.3112.',
-        '.3122.',
+        '3o11o2',
+        '315512',
+        '.2222.',
       ]),
     },
     {
-      id: 'flipsies.mug', game: 'flipsies', slot: 'buddy', name: 'Coffee mug',
-      colors: ['#FBF6EC', '#D8CDBB', '#7A4A2A', '#E5484D'],
-      art: pet('coffee mug', [
-        '..1332',
-        '221112',
-        '2.1412',
-        '221112',
-        '..2222',
+      id: 'flipsies.mug', game: 'flipsies', slot: 'buddy', name: 'Rubber duckling',
+      colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF8A1A'],
+      // A little rubber duck: orange beak, its tail up behind.
+      art: pet('rubber duckling', [
+        '.13...',
+        '4o1..1',
+        '.11111',
+        '311112',
+        '.2222.',
       ]),
     },
     {
       id: 'flipsies.toaster', game: 'flipsies', slot: 'buddy', name: 'Toaster',
       colors: ['#D3DAE4', '#8A95A6', '#F4F7FA', '#F5C77E', '#2B2F38', '#C98A40'],
-      // A chrome toaster with a slice of toast popped up and its lever down the side.
+      // A chrome toaster with two slices popping up, pleased with itself.
       art: pet('toaster', [
-        '..66..',
-        '.6446.',
+        '.44.44',
+        '.46.46',
         '311112',
-        '311115',
+        '3o11o2',
         '222222',
       ]),
     },
@@ -224,50 +220,61 @@ export const set: MachineSet = {
   ],
 
   redraw: {
+    'flipsies.cap': {
+      name: 'Bucket hat',
+      // A soft bucket hat in his own colours, its brim turned down.
+      draw: on([
+        '...xaaaaaA...',
+        '..xaaaaaaaA..',
+        '..AAAAAAAAA..',
+        'xaaaaaaaaaaaA',
+      ], 0, 2),
+    },
     'flipsies.bottle': {
-      colors: ['#DDF0FB', '#A9D4EE', '#FFFFFF', '#2F6FD6', '#1D4E9E', '#6CBCEB', '#3E8FD3', '#B5E2F8'],
+      limb: 4,
+      colors: ['#D6EEFB', '#A3D0EC', '#FFFFFF', '#2F6FD6', '#1D4E9E', '#5FB2EA', '#3C8DD0', '#8FD0F5', '#6FA0E8'],
       outline: '#2A5A8C',
-      // A third full: the face sits in the clear plastic above the water line.
+      // A chubby water bottle, his sports cap screwed on top and the water sloshing round his feet.
       art: grid16('water bottle', [
         '................',
-        '.....444445.....',
+        '.......45.......',
+        '.....944445.....',
         '.....454545.....',
-        '......3112......',
-        '......3112......',
-        '....31111112....',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...8888888882...',
-        '...6666666667...',
+        '.....311112.....',
+        '...3311111122...',
+        '..331111111122..',
+        '..311111111112..',
+        '..311111111112..',
+        '..311111111112..',
+        '..311111111112..',
+        '..888888888887..',
+        '...6666666677...',
         '....66666677....',
         '................',
         '................',
       ]),
     },
     'flipsies.can': {
-      name: 'Soup can', eyes: 7,
-      colors: ['#E5484D', '#B83236', '#FF7A7E', '#D7DCE4', '#9AA0A8', '#F6EEDC', '#DCCFB0', '#F2B830'],
-      outline: '#5A1A22',
-      // Tomato soup: grey rims, a red label over a cream one, and the pull ring on its lid.
-      art: grid16('soup can', [
+      name: 'Pencil', eyes: 8, limb: 1,
+      colors: ['#FFD23F', '#E0A620', '#FFEC8A', '#F2C99A', '#C99A66', '#3A3A44', '#E6EAF0', '#B9C2CF', '#FF8FA8'],
+      outline: '#5A3A10',
+      // A pencil costume: sharpened to a point on top, a yellow body, the metal band and pink eraser at his feet.
+      art: grid16('pencil', [
         '................',
-        '......454.......',
-        '...4445.54445...',
-        '...5555555555...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...3111111112...',
-        '...8888888888...',
-        '...6666886667...',
-        '...4444444445...',
-        '....55555555....',
+        '.......66.......',
+        '......4665......',
+        '.....444455.....',
+        '....44444455....',
+        '..314141414112..',
+        '..331111111122..',
+        '..331111111122..',
+        '..331111111122..',
+        '..331111111122..',
+        '..331111111122..',
+        '..787878787878..',
+        '...9999999999...',
+        '....99999999....',
+        '................',
         '................',
       ]),
     },
