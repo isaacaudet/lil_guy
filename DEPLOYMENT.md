@@ -12,7 +12,7 @@ https://lilguys.isaac-audet.workers.dev. Only the
 bun install
 bun run showcase
 bash scripts/build-site.sh
-npx wrangler d1 migrations apply lilguys-names --remote   # through 0007_parts
+npx wrangler d1 migrations apply lilguys-names --remote   # through 0008_craft
 npx wrangler deploy
 ```
 
@@ -222,3 +222,14 @@ look, earned parts and all, never changes it.
 
 Until 0007 is applied the Worker gives no parts and everything else works, so
 the migration can go before or after the deploy.
+
+## Crafting, as in TF2 (migration 0008)
+
+`players.metal` (in scrap) and a `counters` table. `POST /api/me/:key/smelt
+{ ids }` melts spare copies into metal (`smeltValue`: Everyday 1, Special 2,
+Prized 4, Mythic 9; never a starter, showpiece, Grail, aura, worn copy or one in
+an open swap), `…/craft { item }` spends `CRAFT_COST` (a refined) on that item,
+numbered by the `craft` counter, and `…/paint { id, paint }` paints a hat or a
+buddy for `PAINT_COST` (a reclaimed); `paint: null` scrapes it off for free.
+`GET …/state` includes `metal`. Until 0008 is applied these answer 503 and
+nothing else changes.

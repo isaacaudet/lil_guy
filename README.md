@@ -385,6 +385,8 @@ A **skin** turns the guy into the game's object and keeps its face. Each machine
 
 A capsule can also unlock a rare **face part** (`rollPart`, one capsule in `PART_ODDS`): one of the parts a picker locks, rarer ones less often. Pass a player's earned parts (`unlocksOf(codes)`) to `pickable`, `allowed`, `decodeLook` and `lookOf` and they can pick it; a guy's rarity stays the deal's.
 
+**Crafting, as in TF2** (`src/craft.ts`, `src/paints.ts`): a copy smelts into metal (`smeltValue`, in scrap: three scrap a reclaimed, three reclaimed a refined, written `2.44 ref` by `metalText`), a refined crafts the exact item you want (`craftCopy`, Plain, with a craft number), and a reclaimed paints a hat or a buddy (`paint` on the copy, twelve paints from A Lack of Hue to Pink as Heck, keeping the item's light and shade). A copy with a tally is a Strange one.
+
 **Buddies.** Each game has three buddies, tiny pets that sit at the guy's
 feet, bottom right, in front of everything, with their own outline. Equip one
 like any item.

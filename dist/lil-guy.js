@@ -4275,13 +4275,13 @@ function rollFx(u, aura) {
 	}
 	return void 0;
 }
-const rgb$5 = (h) => [
+const rgb$6 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$5 = (a, b$1, t) => [
+const mix$6 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -4313,14 +4313,14 @@ const hue$1 = (h, s = .9, l = .65) => {
 };
 /** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
 function fxColor(color, fx, x, y, t, print = 0) {
-	const c = rgb$5(color), tt = t + print * 37;
+	const c = rgb$6(color), tt = t + print * 37;
 	switch (fx) {
 		case "shimmer": {
 			const at = cycle(tt, 900) * 34 - 8;
 			for (const band$1 of [at, at - 14]) {
 				const d = x + y - band$1;
 				if (d >= 0 && d < 1.5) return "#FFFFFF";
-				if (d >= -1.5 && d < 0) return hex$2(mix$5(c, [
+				if (d >= -1.5 && d < 0) return hex$2(mix$6(c, [
 					150,
 					220,
 					255
@@ -4330,19 +4330,19 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "pulse": {
 			const b$1 = Math.sin(tt / wave(260));
-			return hex$2(mix$5(c, b$1 > 0 ? WHITE$1 : [
+			return hex$2(mix$6(c, b$1 > 0 ? WHITE$1 : [
 				0,
 				0,
 				0
 			], (b$1 > 0 ? .45 : .14) * Math.abs(b$1)));
 		}
-		case "holo": return hex$2(mix$5(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit(1800)) % 360 + 360) % 360), .45));
+		case "holo": return hex$2(mix$6(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit(1800)) % 360 + 360) % 360), .45));
 		case "chroma": {
 			const h = ((tt * 360 / fit(2520) + (x + y) * 14) % 360 + 360) % 360, l = (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
-			return hex$2(mix$5(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
+			return hex$2(mix$6(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
 		}
 		case "starlight": {
-			const night = mix$5(mix$5(c, [
+			const night = mix$6(mix$6(c, [
 				24,
 				18,
 				66
@@ -4351,24 +4351,24 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				70,
 				220
 			], .16 * (1 + Math.sin(tt / wave(700) + x * .5 + y * .3)));
-			return noise(x, y, print) > .93 ? hex$2(mix$5(night, [
+			return noise(x, y, print) > .93 ? hex$2(mix$6(night, [
 				210,
 				200,
 				255
 			], .55)) : hex$2(night);
 		}
-		case "embers": return hex$2(mix$5(c, [
+		case "embers": return hex$2(mix$6(c, [
 			255,
 			120,
 			40
 		], .16 + .14 * Math.max(0, Math.sin(tt / wave(140) + x * 1.3 - y * .8))));
-		case "neon": return hex$2(mix$5(c, hue$1((tt * 360 / fit(5040) % 360 + 360) % 360, 1, .62), .2 + .08 * Math.sin(tt / wave(380))));
-		case "bubbles": return hex$2(mix$5(c, [
+		case "neon": return hex$2(mix$6(c, hue$1((tt * 360 / fit(5040) % 360 + 360) % 360, 1, .62), .2 + .08 * Math.sin(tt / wave(380))));
+		case "bubbles": return hex$2(mix$6(c, [
 			190,
 			235,
 			255
 		], .1 + .08 * Math.sin(tt / wave(300) + y)));
-		case "hearts": return hex$2(mix$5(c, [
+		case "hearts": return hex$2(mix$6(c, [
 			255,
 			140,
 			190
@@ -4377,7 +4377,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const reach = .5 + .5 * Math.sin(tt / wave(900) - y * .35);
 			const n = noise(x, y, tick(tt, 400), print);
 			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
-			return hex$2(mix$5(c, [
+			return hex$2(mix$6(c, [
 				190,
 				228,
 				255
@@ -4387,7 +4387,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const roll$1 = cycle(tt, 70 * 24) * 24 - 4, burst = noise(tick(tt, 90), print, 7) > .62;
 			if (burst) {
 				const r = noise(x, y, tick(tt, 60));
-				return r > .8 ? "#FFFFFF" : hex$2(mix$5(c, r > .45 ? [
+				return r > .8 ? "#FFFFFF" : hex$2(mix$6(c, r > .45 ? [
 					255,
 					60,
 					90
@@ -4397,8 +4397,8 @@ function fxColor(color, fx, x, y, t, print = 0) {
 					255
 				], .55));
 			}
-			if (Math.abs(y - roll$1) < 1) return hex$2(mix$5(c, WHITE$1, .45));
-			return y % 2 ? hex$2(mix$5(c, [
+			if (Math.abs(y - roll$1) < 1) return hex$2(mix$6(c, WHITE$1, .45));
+			return y % 2 ? hex$2(mix$6(c, [
 				0,
 				0,
 				0
@@ -4406,12 +4406,12 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "lava": {
 			const flow = Math.sin(y * 1.1 + tt / wave(220) + Math.sin(x * .9 + tt / wave(700)) * 2);
-			const crust = mix$5(c, [
+			const crust = mix$6(c, [
 				40,
 				18,
 				12
 			], .55);
-			return flow > .55 ? hex$2(mix$5([
+			return flow > .55 ? hex$2(mix$6([
 				255,
 				120,
 				30
@@ -4419,7 +4419,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				255,
 				230,
 				120
-			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$5(crust, [
+			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$6(crust, [
 				220,
 				70,
 				20
@@ -4427,13 +4427,13 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "electric": {
 			const flash = noise(tick(tt, 120), print, 11) > .8;
-			if (flash) return hex$2(mix$5(c, WHITE$1, .7));
+			if (flash) return hex$2(mix$6(c, WHITE$1, .7));
 			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / wave(90))) > .93;
-			return vein ? hex$2(mix$5(c, [
+			return vein ? hex$2(mix$6(c, [
 				200,
 				240,
 				255
-			], .75)) : hex$2(mix$5(c, [
+			], .75)) : hex$2(mix$6(c, [
 				110,
 				180,
 				255
@@ -4782,7 +4782,7 @@ function applyFx(colors, slots, copies, t) {
 		const o = copies[s - 1];
 		if (!s || !o?.fx || !colors[y][x]) return;
 		const fx = fxColor(colors[y][x], o.fx, x, y, t, o.print);
-		const a = rgb$5(colors[y][x]), b$1 = rgb$5(fx);
+		const a = rgb$6(colors[y][x]), b$1 = rgb$6(fx);
 		if (s === AURA_SLOT) {
 			out[y][x] = fx;
 			return;
@@ -4791,7 +4791,7 @@ function applyFx(colors, slots, copies, t) {
 			out[y][x] = fx;
 			return;
 		}
-		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$5(a, b$1, .42) : mix$5(a, b$1, 1.5));
+		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$6(a, b$1, .42) : mix$6(a, b$1, 1.5));
 	}));
 	copies.forEach((o, k) => {
 		if (!o?.fx || !small(k) || OWN_EDGE.includes(o.fx)) return;
@@ -4800,7 +4800,7 @@ function applyFx(colors, slots, copies, t) {
 			if (s || colors[y][x]) return;
 			const from = NEAR2.find(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1);
 			if (!from || noise(x, y, beat, o.print, 17) > .4) return;
-			out[y][x] = hex$2(mix$5(rgb$5(out[y + from[1]][x + from[0]]), WHITE$1, .15));
+			out[y][x] = hex$2(mix$6(rgb$6(out[y + from[1]][x + from[0]]), WHITE$1, .15));
 		}));
 	});
 	const cellsOf = (k) => {
@@ -4810,7 +4810,7 @@ function applyFx(colors, slots, copies, t) {
 		}));
 		return c;
 	};
-	const dark = (c) => !!c && rgb$5(c).reduce((a, v) => a + v, 0) < 240;
+	const dark = (c) => !!c && rgb$6(c).reduce((a, v) => a + v, 0) < 240;
 	const edgeOf = (k) => {
 		const outside = slots.map((row) => row.map(() => false)), queue = [];
 		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x === 0 || y === 0 || x === W - 1 || y === H - 1) && slots[y][x] !== k + 1) {
@@ -4874,7 +4874,7 @@ function applyFx(colors, slots, copies, t) {
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$2(mix$5(rgb$5(colors[y][x]), WHITE$1, .25 + .3 * breath)));
+			]) put(x + dx, y + dy, hex$2(mix$6(rgb$6(colors[y][x]), WHITE$1, .25 + .3 * breath)));
 		}
 		if (o.fx === "neon" && !aura) {
 			const glow = .55 + .1 * Math.sin(tt / wave(380)), rim$2 = edgeOf(k), turn = tt * 360 / fit(3600);
@@ -4892,7 +4892,7 @@ function applyFx(colors, slots, copies, t) {
 				const x = key % W, y = Math.floor(key / W);
 				if (d > reach) continue;
 				const glint = noise(x, y, tick(tt, 300), o.print) > .82;
-				out[y][x] = glint ? "#FFFFFF" : hex$2(mix$5(rgb$5(out[y][x]), [
+				out[y][x] = glint ? "#FFFFFF" : hex$2(mix$6(rgb$6(out[y][x]), [
 					214,
 					240,
 					255
@@ -5273,6 +5273,98 @@ function goldRim(grid, slot) {
 }
 
 //#endregion
+//#region src/paints.ts
+/**
+* Paint, as in TF2: a tin of one colour brushed over a hat or a buddy. It
+* tints every colour of the item to the paint, keeping each one's light and
+* shade, so the drawing reads as before, only in the new colour. Paint never
+* changes a copy's finish, float or rarity, and it scrapes off.
+*/
+const PAINTS = {
+	"lack-of-hue": {
+		name: "A Lack of Hue",
+		hex: "#2D2B36"
+	},
+	"abundance": {
+		name: "An Abundance of White",
+		hex: "#EEEDE6"
+	},
+	"pure-gold": {
+		name: "Pure Gold",
+		hex: "#E7B53B"
+	},
+	"pink-as-heck": {
+		name: "Pink as Heck",
+		hex: "#FF6EB4"
+	},
+	"noble-violet": {
+		name: "Noble Violet",
+		hex: "#7D4FA6"
+	},
+	"zesty-lime": {
+		name: "Zesty Lime",
+		hex: "#8FD43A"
+	},
+	"deep-sea": {
+		name: "Deep Sea Teal",
+		hex: "#2E8C8A"
+	},
+	"club-orange": {
+		name: "Club Orange",
+		hex: "#E8792F"
+	},
+	"team-red": {
+		name: "Team Red",
+		hex: "#C2403F"
+	},
+	"team-blue": {
+		name: "Team Blue",
+		hex: "#4E7FB3"
+	},
+	"mint": {
+		name: "Mint Condition",
+		hex: "#A8DDB5"
+	},
+	"clear-skies": {
+		name: "Clear Skies",
+		hex: "#8CC4F2"
+	}
+};
+const PAINT_IDS = Object.keys(PAINTS);
+/** What can be painted. */
+const PAINTABLE = ["hat", "buddy"];
+const rgb$5 = (hex$3) => [
+	1,
+	3,
+	5
+].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
+const toHex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const light$1 = (c) => (.2126 * c[0] + .7152 * c[1] + .0722 * c[2]) / 255;
+const mix$5 = (a, b$1, t) => a.map((v, i) => v + (b$1[i] - v) * t);
+/**
+* An item's colours under a paint: the first colour (an item's main one)
+* becomes the paint, and every other colour sits as much lighter or darker
+* than the paint as it did than the main one.
+*/
+function painted(colors, paint$1) {
+	const p = paint$1 && PAINTS[paint$1];
+	if (!p || !colors.length) return colors;
+	const base = rgb$5(p.hex), main = light$1(rgb$5(colors[0]));
+	return colors.map((hex$3) => {
+		const d = light$1(rgb$5(hex$3)) - main;
+		return toHex(d >= 0 ? mix$5(base, [
+			255,
+			255,
+			255
+		], Math.min(1, d * 1.5)) : mix$5(base, [
+			0,
+			0,
+			0
+		], Math.min(1, -d * 1.5)));
+	});
+}
+
+//#endregion
 //#region src/owned.ts
 const GRADES = [
 	{
@@ -5525,7 +5617,7 @@ function gradeOf(o) {
 function nameOf(o) {
 	const item = itemById(o.item);
 	const base = (o.date ? `${o.date.slice(0, 4)} ` : "") + (item?.name ?? o.item);
-	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Tallied " : "");
+	const tally = (o.souvenir ? "Souvenir " : "") + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : "") + (o.tally !== void 0 ? "Strange " : "");
 	if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === "classic" ? "" : ` | ${FINISHES[o.finish].name}`}`;
 	if (o.finish === "plain") return tally + base;
 	const look = o.finish === "nebula" ? nebulaPhase(o.print) : o.finish === "tempered" ? special(o) ? "Deep Blue" : `${temperTint(o.print)} Tempered` : FINISHES[o.finish].name;
@@ -5548,6 +5640,8 @@ function encode(o) {
 	if (o.date) parts.push(`d${o.date}`);
 	if (o.souvenir) parts.push(`s${o.souvenir}`);
 	if (o.fx) parts.push(`x${o.fx}`);
+	if (o.craft !== void 0) parts.push(`c${o.craft}`);
+	if (o.paint) parts.push(`k${o.paint}`);
 	return parts.join("~");
 }
 function decode(s) {
@@ -5566,6 +5660,8 @@ function decode(s) {
 		if (part.startsWith("d") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
 		if (part.startsWith("s") && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
 		if (part.startsWith("x") && FX_IDS.includes(part.slice(1))) o.fx = part.slice(1);
+		if (part.startsWith("c") && /^\d{1,9}$/.test(part.slice(1))) o.craft = Number(part.slice(1));
+		if (part.startsWith("k") && PAINT_IDS.includes(part.slice(1))) o.paint = part.slice(1);
 		if (part.startsWith("p")) {
 			const pins = part.slice(1).split("+").filter((id) => pinById(id)).slice(0, MAX_PINS);
 			if (pins.length) o.pins = pins;
@@ -8042,14 +8138,14 @@ const frames = [
 * colour, so it stays dark whatever finish the buddy has.
 */
 const pet = (name, rows) => {
-	if (rows.length > 5 || rows.some((r) => r.length > 5)) throw new Error(`Buddy "${name}" must fit in 5x5`);
+	if (rows.length > 6 || rows.some((r) => r.length > 6)) throw new Error(`Buddy "${name}" must fit in 6x6`);
 	return stamp(rows);
 };
 /**
-* A tiny pet that sits at his feet, bottom right, in front of everything.
-* Each is a bold shape of its own (a gem, a drop, a bean, a cone) with a lit
-* side, a shaded side and a face, filling as much of its 5x5 as it can, so it
-* reads at a glance on any guy and any frame.
+* A pet that sits at the guy's feet, bottom right, in front of everything but
+* the face. Each is a bold shape of its own with a lit side, a shaded side and
+* a face, filling as much of its 6x6 as it can, so it reads at a glance on any
+* guy and any frame.
 */
 const buddies = [
 	{
@@ -8062,11 +8158,12 @@ const buddies = [
 			"#C8FFF7"
 		],
 		art: pet("gemling", [
-			".333.",
-			"31112",
-			"1o1o2",
-			".112.",
-			"..2.."
+			".3331.",
+			"311112",
+			"1o11o2",
+			"311112",
+			".1122.",
+			"..22.."
 		])
 	},
 	{
@@ -9363,13 +9460,14 @@ function withItems(palette$1, config) {
 	]) {
 		const item = itemById(config[slot]);
 		if (!item) continue;
-		item.colors.forEach((hex$3, i) => {
+		const paint$1 = PAINTABLE.includes(slot) ? config.owned?.[slot]?.paint : void 0;
+		painted(item.colors, paint$1).forEach((hex$3, i) => {
 			colors[LAYER[slot] + i] = hex$3;
 		});
 		if (slot === "skin") {
 			if (item.outline) colors[T.OUTLINE] = item.outline;
-			const dark = "#15111C", light$1 = "#FFF1D6";
-			colors[T.EYE] = colors[T.MOUTH] = contrast$1(dark, item.colors[0]) >= contrast$1(light$1, item.colors[0]) ? dark : light$1;
+			const dark = "#15111C", light$2 = "#FFF1D6";
+			colors[T.EYE] = colors[T.MOUTH] = contrast$1(dark, item.colors[0]) >= contrast$1(light$2, item.colors[0]) ? dark : light$2;
 		}
 	}
 	return {
@@ -10260,11 +10358,12 @@ function compose(config) {
 	}
 	const buddy = itemById(config.buddy);
 	if (buddy?.slot === "buddy") {
-		const art = buddy.art, h = art.length, w = art[0].length;
+		const art = buddy.art, h = art.length, w = Math.max(...art.map((r) => r.length));
 		const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
 		const on$1 = (x, y) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
 		for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
 			if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
+			if (touches(face, x, y)) continue;
 			if (on$1(x, y)) {
 				const t = art[y - y0][x - x0];
 				c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
@@ -10311,8 +10410,8 @@ function paint(grid, config, palette$1, small = false, still = true) {
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
-		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
-		return still && copy?.fx ? fxColor(painted$1, copy.fx, x, y, 0, copy.print) : painted$1;
+		const painted$2 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
+		return still && copy?.fx ? fxColor(painted$2, copy.fx, x, y, 0, copy.print) : painted$2;
 	}));
 }
 /**
@@ -10701,7 +10800,7 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette$1, small = false, face = null) {
+function painted$1(grid, config, palette$1, small = false, face = null) {
 	const colors = paint(grid, config, palette$1, small, false);
 	const out = empty();
 	const eyeBox = face && {
@@ -11027,7 +11126,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null));
+		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -12930,7 +13029,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			v[2] / l
 		];
 	};
-	const quad = (a, b$1, c, d, n, rgb$6) => {
+	const quad = (a, b$1, c, d, n, rgb$7) => {
 		const shaded$1 = [
 			a,
 			b$1,
@@ -12953,7 +13052,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
 			nor.push(...shaded$1[i]);
-			col.push(...rgb$6);
+			col.push(...rgb$7);
 		}
 	};
 	const open = (z0, z1, n) => {
@@ -13312,6 +13411,18 @@ function collectorNotes(o) {
 		name: `Tally ${o.tally.toLocaleString("en-US")}`,
 		why: "Counts the days its owner finished their games wearing it. One copy in ten has one.",
 		oneIn: 10
+	});
+	if (o.craft !== void 0) notes.push({
+		id: "craft",
+		name: `Craft #${o.craft.toLocaleString("en-US")}`,
+		why: o.craft <= 100 ? "Crafted from metal, one of the first hundred ever crafted." : "Crafted from metal: the item its maker chose.",
+		oneIn: o.craft <= 100 ? 100 : 1
+	});
+	if (o.paint) notes.push({
+		id: "paint",
+		name: PAINTS[o.paint].name,
+		why: "Painted by its owner. It scrapes off.",
+		oneIn: 1
 	});
 	if (o.pins?.length) notes.push({
 		id: "pins",
@@ -16206,8 +16317,8 @@ function cardFaceAt(f, ms, hover) {
 		}
 		if (hover && hover.strength > 0) {
 			const at = [(x + .5) / W, (y + .5) / H];
-			const light$1 = (1 - smoothstep(0, .34, distance(at, [hover.x, hover.y]))) * .35 * hover.strength;
-			c = c.map((v) => v + light$1);
+			const light$2 = (1 - smoothstep(0, .34, distance(at, [hover.x, hover.y]))) * .35 * hover.strength;
+			c = c.map((v) => v + light$2);
 		}
 		out.set([
 			toByte(c[0]),
@@ -16782,6 +16893,68 @@ function defineLilGuyHere(options = {}) {
 }
 
 //#endregion
+//#region src/craft.ts
+/**
+* Crafting, as in TF2. A copy you don't want smelts into metal, and metal
+* crafts the exact item you want.
+*
+* Metal comes in scrap: three scrap are a reclaimed, three reclaimed a
+* refined. A crafted copy is Plain, with a craft number: the count of every
+* copy ever crafted, so the first ones are worth having for that alone.
+*/
+const SCRAP = 1;
+const RECLAIMED = 3;
+const REFINED = 9;
+/** Metal to craft one item of your choice. */
+const CRAFT_COST = REFINED;
+/** Metal to paint a hat or a buddy. Scraping the paint off is free. */
+const PAINT_COST = RECLAIMED;
+/** Scrap a copy smelts into, by grade: Everyday a scrap, up to a refined for a Mythic. */
+const SMELT = [
+	1,
+	2,
+	4,
+	9
+];
+/**
+* What a copy smelts into, or 0 when it can't be: a starter (it's free), a
+* Grail or an aura (too rare to melt down by accident), or a showpiece.
+*/
+function smeltValue(o) {
+	const it = itemById(o.item);
+	if (!it || it.free || it.showpiece || it.slot === "aura") return 0;
+	const g = GRADES.findIndex((x) => x.id === gradeOf(o).id);
+	return SMELT[g] ?? 0;
+}
+/** Whether an item can be crafted: anything a machine holds but its showpiece and the free hat. */
+const craftable = (it) => !!it && !it.free && !it.showpiece && it.slot !== "aura" && it.game !== "club";
+/** Metal as TF2 writes it: refined with a hundredth per scrap, `2.44 ref`. */
+function metalText(scrap) {
+	const ref = Math.floor(scrap / REFINED), rest = scrap % REFINED;
+	return `${ref}.${String(rest * 11).padStart(2, "0")} ref`;
+}
+/** Metal as coins: `{ refined, reclaimed, scrap }`. */
+function metalCoins(scrap) {
+	return {
+		refined: Math.floor(scrap / REFINED),
+		reclaimed: Math.floor(scrap % REFINED / RECLAIMED),
+		scrap: scrap % RECLAIMED
+	};
+}
+/** A crafted copy: Plain, a float and print from the seed, and its craft number. */
+function craftCopy(itemId, seed, number) {
+	const [lo, hi] = FINISHES.plain.scuffs;
+	const u = hash(`${seed}|craft|float`) / 4294967296;
+	return {
+		item: itemId,
+		finish: "plain",
+		scuff: Math.round((lo + u * (hi - lo)) * 1e7) / 1e7,
+		print: hash(`${seed}|craft|pattern`) % 1e3,
+		craft: number
+	};
+}
+
+//#endregion
 exports.ARM_NAMES = ARM_NAMES
 exports.ART_VERSION = ART_VERSION
 exports.AURAS = AURAS
@@ -16790,6 +16963,7 @@ exports.BAKED_SIZE = BAKED_SIZE
 exports.CARD_FRAGMENT = CARD_FRAGMENT
 exports.CARD_HEIGHT = CARD_HEIGHT
 exports.CARD_WIDTH = CARD_WIDTH
+exports.CRAFT_COST = CRAFT_COST
 exports.DEAL_PREFIX = DEAL_PREFIX
 exports.DEEP_BLUE_PRINTS = DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
@@ -16820,11 +16994,18 @@ exports.LUCKY_ODDS = LUCKY_ODDS
 exports.MAX_PINS = MAX_PINS
 exports.MOVES = MOVES
 exports.ONE_OF_ONE_AURAS = ONE_OF_ONE_AURAS
+exports.PAINTABLE = PAINTABLE
+exports.PAINTS = PAINTS
+exports.PAINT_COST = PAINT_COST
+exports.PAINT_IDS = PAINT_IDS
 exports.PART_ODDS = PART_ODDS
 exports.PART_REFUND = PART_REFUND
 exports.PART_SLOTS = PART_SLOTS
 exports.PINS = PINS
+exports.RECLAIMED = RECLAIMED
+exports.REFINED = REFINED
 exports.RETIRED_EYES = RETIRED_EYES
+exports.SCRAP = SCRAP
 exports.SHADER_FINISHES = SHADER_FINISHES
 exports.SHADE_COUNT = SHADE_COUNT
 exports.SHINE_FRAGMENT = SHINE_FRAGMENT
@@ -16862,6 +17043,8 @@ exports.collectorNotes = collectorNotes
 exports.compose = compose
 exports.composeBase = composeBase
 exports.copyOneIn = copyOneIn
+exports.craftCopy = craftCopy
+exports.craftable = craftable
 exports.createCardShader = createCardShader
 exports.createShine = createShine
 exports.dealOf = dealOf
@@ -16905,12 +17088,15 @@ exports.lookOf = lookOf
 exports.luckyPalette = luckyPalette
 exports.machineSet = machineSet
 exports.makeSeed = makeSeed
+exports.metalCoins = metalCoins
+exports.metalText = metalText
 exports.mouths = mouths
 exports.nameOf = nameOf
 exports.nebulaPhase = nebulaPhase
 exports.noiseOf = noiseOf
 exports.ownedOf = ownedOf
 exports.paint = paint
+exports.painted = painted
 exports.paletteOf = paletteOf
 exports.palettes = palettes
 exports.partCode = partCode
@@ -16935,6 +17121,7 @@ exports.shineFrame = shineFrame
 exports.shines = shines
 exports.shows = shows
 exports.slotOf = slotOf
+exports.smeltValue = smeltValue
 exports.special = special
 exports.starter = starter
 exports.surfaceOf = surfaceOf

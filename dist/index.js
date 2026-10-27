@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-DkKCPovd.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-Dw5Xjpuu.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -307,7 +307,7 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette$1, small = false, face = null) {
+function painted$1(grid, config, palette$1, small = false, face = null) {
 	const colors = paint(grid, config, palette$1, small, false);
 	const out = empty();
 	const eyeBox = face && {
@@ -633,7 +633,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null));
+		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -3457,6 +3457,18 @@ function collectorNotes(o) {
 		name: `Tally ${o.tally.toLocaleString("en-US")}`,
 		why: "Counts the days its owner finished their games wearing it. One copy in ten has one.",
 		oneIn: 10
+	});
+	if (o.craft !== void 0) notes.push({
+		id: "craft",
+		name: `Craft #${o.craft.toLocaleString("en-US")}`,
+		why: o.craft <= 100 ? "Crafted from metal, one of the first hundred ever crafted." : "Crafted from metal: the item its maker chose.",
+		oneIn: o.craft <= 100 ? 100 : 1
+	});
+	if (o.paint) notes.push({
+		id: "paint",
+		name: PAINTS[o.paint].name,
+		why: "Painted by its owner. It scrapes off.",
+		oneIn: 1
 	});
 	if (o.pins?.length) notes.push({
 		id: "pins",
@@ -6927,5 +6939,67 @@ function defineLilGuyHere(options = {}) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, RETIRED_EYES, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, partCode, partName, pickable, pinById, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/craft.ts
+/**
+* Crafting, as in TF2. A copy you don't want smelts into metal, and metal
+* crafts the exact item you want.
+*
+* Metal comes in scrap: three scrap are a reclaimed, three reclaimed a
+* refined. A crafted copy is Plain, with a craft number: the count of every
+* copy ever crafted, so the first ones are worth having for that alone.
+*/
+const SCRAP = 1;
+const RECLAIMED = 3;
+const REFINED = 9;
+/** Metal to craft one item of your choice. */
+const CRAFT_COST = REFINED;
+/** Metal to paint a hat or a buddy. Scraping the paint off is free. */
+const PAINT_COST = RECLAIMED;
+/** Scrap a copy smelts into, by grade: Everyday a scrap, up to a refined for a Mythic. */
+const SMELT = [
+	1,
+	2,
+	4,
+	9
+];
+/**
+* What a copy smelts into, or 0 when it can't be: a starter (it's free), a
+* Grail or an aura (too rare to melt down by accident), or a showpiece.
+*/
+function smeltValue(o) {
+	const it = itemById(o.item);
+	if (!it || it.free || it.showpiece || it.slot === "aura") return 0;
+	const g = GRADES.findIndex((x) => x.id === gradeOf(o).id);
+	return SMELT[g] ?? 0;
+}
+/** Whether an item can be crafted: anything a machine holds but its showpiece and the free hat. */
+const craftable = (it) => !!it && !it.free && !it.showpiece && it.slot !== "aura" && it.game !== "club";
+/** Metal as TF2 writes it: refined with a hundredth per scrap, `2.44 ref`. */
+function metalText(scrap) {
+	const ref = Math.floor(scrap / REFINED), rest = scrap % REFINED;
+	return `${ref}.${String(rest * 11).padStart(2, "0")} ref`;
+}
+/** Metal as coins: `{ refined, reclaimed, scrap }`. */
+function metalCoins(scrap) {
+	return {
+		refined: Math.floor(scrap / REFINED),
+		reclaimed: Math.floor(scrap % REFINED / RECLAIMED),
+		scrap: scrap % RECLAIMED
+	};
+}
+/** A crafted copy: Plain, a float and print from the seed, and its craft number. */
+function craftCopy(itemId, seed, number) {
+	const [lo, hi] = FINISHES.plain.scuffs;
+	const u = hash(`${seed}|craft|float`) / 4294967296;
+	return {
+		item: itemId,
+		finish: "plain",
+		scuff: Math.round((lo + u * (hi - lo)) * 1e7) / 1e7,
+		print: hash(`${seed}|craft|pattern`) % 1e3,
+		craft: number
+	};
+}
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partName, pickable, pinById, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

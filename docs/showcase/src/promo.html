@@ -357,6 +357,27 @@
   .it-more:hover { color: #fff; }
 
   /* trade up */
+  .metal { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+  .metal b { margin-left: 6px; font-size: 24px; }
+  .ingot { display: inline-grid; place-items: center; min-width: 40px; height: 28px; padding: 0 6px; border-radius: 4px; font-size: 16px; color: #1b1626; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25), inset 0 3px 0 rgba(255,255,255,.45); }
+  .ingot.ref { background: #d8dde6; } .ingot.rec { background: #b9a37e; } .ingot.scrap { background: #8a7b6a; color: #fff; }
+  .ws { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .ws > div { padding: 18px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); display: grid; gap: 12px; }
+  .ws h3 { font-size: 28px; margin: 0; }
+  .ws p, .ws small { margin: 0; color: var(--ink-3); font-size: 16px; }
+  .ws-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+  .ws-it { display: grid; gap: 2px; padding: 6px; border-radius: 10px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); text-align: left; }
+  .ws-it .pic { display: grid; place-items: center; height: 64px; border-radius: 8px; background: var(--well); }
+  .ws-it canvas { image-rendering: pixelated; }
+  .ws-it b { font-size: 16px; line-height: 1.2; } .ws-it small { font-size: 14px; }
+  .ws-it[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
+  .ws-go { display: grid; gap: 6px; justify-items: start; }
+  .paints { display: grid; gap: 6px; margin-top: 10px; font-size: 16px; color: var(--ink-2); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .swatches [data-paint] { width: 28px; height: 28px; border-radius: 6px; background: var(--p); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25), 0 2px 0 var(--edge); }
+  .swatches [data-paint][aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 1px; }
+  .swatches .scrape { width: auto; padding: 0 10px; background: var(--panel-2); color: var(--ink-2); font-size: 14px; }
+  .smelt-one { margin-top: 10px; }
   .trades { display: grid; gap: 12px; }
   .tr-btns { display: flex; gap: 8px; align-items: center; }
   .trade .tr-math { grid-column: 1 / -1; }
@@ -924,6 +945,7 @@
     .locker { grid-template-columns: minmax(0, 1fr); }
     .lk-guy { position: static; grid-template-columns: 128px minmax(0, 1fr); align-items: start; }
     .lk-stage { padding: 8px; }
+    .ws { grid-template-columns: minmax(0, 1fr); } .ws-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .lk-eq { gap: 4px; margin-top: -12px; } .eq-op { font-size: 20px; }
     .lk-eq .eq { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 6px; padding: 10px 6px; min-height: 0; align-self: stretch; align-content: start; }
     .lk-eq b { font-size: 18px; } .lk-eq small { font-size: 13px; } .lk-eq canvas { width: 40px; height: 40px; }
@@ -1086,6 +1108,14 @@
   <section id="trade-sec">
     <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade into the machine. Usually one of the next grade comes out; sometimes a dud, now and then two grades up.</p></div></div>
     <div class="trades" id="trades"></div>
+  </section>
+
+  <section id="ws-sec" hidden>
+    <div class="sec-h"><div><h2>Workshop</h2><p>Smelt what you don't want into metal. Craft exactly the item you want, numbered. Paint a hat or a buddy.</p></div><div class="metal" id="metal"></div></div>
+    <div class="ws">
+      <div class="ws-smelt" id="ws-smelt"></div>
+      <div class="ws-craft"><div class="filters" id="ws-games"></div><div class="ws-items" id="ws-items"></div><div class="ws-go" id="ws-go"></div></div>
+    </div>
   </section>
 
   <section id="swap-sec">
@@ -1416,7 +1446,7 @@
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', tickets: s.tickets, free: s.freeDay, checkin: s.checkinDay,
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
-      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), swaps: s.swaps || [], parts: s.parts || [] };
+      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   const wearLive = slot => { if (isLive() && state) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
@@ -2682,7 +2712,7 @@
   function renderColl() {
     const list = sortCopies(copies().map(c => ({ ...c, at: c.i })), lkSort);
     $('lk-sort').innerHTML = sortOptions(lkSort);
-    $('trade-sec').hidden = !state;
+    $('trade-sec').hidden = !state; $('ws-sec').hidden = !state;
     if (!state) {
       $('cats').innerHTML = ''; $('filters').innerHTML = ''; $('lk-slots').innerHTML = ''; $('lk-stage').innerHTML = '';
       $('grid').innerHTML = '<div class="empty" style="grid-column:1/-1">Claim a name and your nine starter hats land here.</div>'; return;
@@ -2727,6 +2757,7 @@
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
     $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
     renderTrades();
+    renderWorkshop();
     renderSwaps();
   }
   $('lk-sort').addEventListener('change', e => { lkSort = e.target.value; renderColl(); });
@@ -2763,6 +2794,95 @@
     state.worn[slot] = state.worn[slot] === c.code ? undefined : c.code;
     SFX.equip(); wearLive(slot); save(); trying = null;
     renderClaim(); renderGuy(); renderColl();
+  });
+
+  /* ---------------------------------------------- the workshop, as in TF2: smelt into metal, craft what you want, paint */
+  let wsGame = null, wsItem = null;
+  const metalOf = () => state?.metal || 0;
+  // A copy whose code changed (painted) keeps its place, its slot, its id and its tag.
+  function replaceCopy(from, to) {
+    state.copies = state.copies.map(c => c === from ? to : c);
+    for (const sl in state.worn) if (state.worn[sl] === from) state.worn[sl] = to;
+    if (state.ids?.[from] !== undefined) { state.ids[to] = state.ids[from]; delete state.ids[from]; }
+    if (state.tags?.[from]) { state.tags[to] = state.tags[from]; delete state.tags[from]; }
+  }
+  function removeCopies(codes) {
+    const gone = new Set(codes);
+    state.copies = state.copies.filter(c => !gone.has(c));
+    state.fresh = (state.fresh || []).filter(c => !gone.has(c));
+  }
+  const smeltable = c => !wornCodes().includes(c.code) && !founderCopy(c.o) && !tagOf(c.code) && LG.smeltValue(c.o) > 0;
+  // The spares: every copy past the best one of each item, Special or below, not worn or tagged.
+  function spares() {
+    const by = new Map();
+    for (const c of copies()) { if (!smeltable(c) || gradeIdx(c.o) > 1) continue; (by.get(c.o.item) || by.set(c.o.item, []).get(c.o.item)).push(c); }
+    const have = new Map(); for (const c of copies()) have.set(c.o.item, (have.get(c.o.item) || 0) + 1);
+    return [...by.values()].flatMap(list => {
+      const keep = (have.get(list[0].o.item) || 0) > list.length ? 0 : 1;
+      return list.sort((a, b) => LG.copyOneIn(b.o) - LG.copyOneIn(a.o)).slice(keep);
+    });
+  }
+  async function smelt(list) {
+    if (!list.length) return;
+    let got = 0;
+    if (isLive()) {
+      try { const r = await meApi('smelt', { ids: list.map(c => state.ids?.[c.code]).filter(x => x != null) }); got = r.smelted; state.metal = r.metal; }
+      catch (e) { toast(e.message); return; }
+    } else { got = list.reduce((a, c) => a + LG.smeltValue(c.o), 0); state.metal = metalOf() + got; }
+    removeCopies(list.map(c => c.code)); save(); SFX.earn?.();
+    toast(`Smelted ${list.length} cop${list.length === 1 ? 'y' : 'ies'}: +${got} scrap. You have ${LG.metalText(metalOf())}.`);
+    renderAll();
+  }
+  async function craft(itemId) {
+    if (metalOf() < LG.CRAFT_COST) { toast(`Crafting takes ${LG.metalText(LG.CRAFT_COST)}. Smelt some spares first.`); return; }
+    let o;
+    if (isLive()) {
+      try { const r = await meApi('craft', { item: itemId }); state.metal = r.metal; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; o = LG.decode(r.copy.code); }
+      catch (e) { toast(e.message); return; }
+    } else {
+      state.metal = metalOf() - LG.CRAFT_COST; state.crafts = (state.crafts || 0) + 1;
+      o = LG.craftCopy(itemId, `${state.seed}:craft:${state.crafts}:${Date.now()}`, state.crafts);
+    }
+    reveal(o, null, `Crafted · #${o.craft}`);
+  }
+  async function paintCopy(code, paint) {
+    const o = LG.decode(code), had = o.paint || null;
+    if (had === paint) return code;
+    if (paint && metalOf() < LG.PAINT_COST) { toast(`Paint takes ${LG.metalText(LG.PAINT_COST)}.`); return code; }
+    let next;
+    if (isLive()) {
+      try { const r = await meApi('paint', { id: state.ids?.[code], paint }); next = r.copy.code; if (r.metal !== undefined) state.metal = r.metal; }
+      catch (e) { toast(e.message); return code; }
+    } else {
+      if (paint) state.metal = metalOf() - LG.PAINT_COST;
+      const n = { ...o }; if (paint) n.paint = paint; else delete n.paint; next = LG.encode(n);
+    }
+    replaceCopy(code, next); save(); SFX.equip(); renderAll();
+    return next;
+  }
+  function renderWorkshop() {
+    if (!state) return;
+    const m = LG.metalCoins(metalOf());
+    $('metal').innerHTML = `<span class="ingot ref" title="Refined">${m.refined}</span><span class="ingot rec" title="Reclaimed">${m.reclaimed}</span><span class="ingot scrap" title="Scrap">${m.scrap}</span><b>${LG.metalText(metalOf())}</b>`;
+    const sp = spares(), worth = sp.reduce((a, c) => a + LG.smeltValue(c.o), 0);
+    $('ws-smelt').innerHTML = `<h3>Smelt</h3><p>Everyday copies give a scrap, Special two, Prized four, Mythic a refined. Starters, showpieces, Grails and auras never melt.</p>`
+      + `<button class="btn" type="button" id="ws-spares"${sp.length ? '' : ' disabled'}>${sp.length ? `Smelt ${sp.length} spare${sp.length === 1 ? '' : 's'} · +${worth} scrap` : 'No spares to smelt'}</button>`
+      + `<small>Spares: every copy past your best of each item, Special or below, not worn or tagged. Any other copy smelts from its details.</small>`;
+    const games = LG.GAMES;
+    wsGame = wsGame || todayGame;
+    $('ws-games').innerHTML = games.map(g => `<button type="button" data-ws-g="${g}" aria-pressed="${g === wsGame}">${cap(g)}</button>`).join('');
+    const its = LG.gameItems(wsGame).filter(LG.craftable);
+    if (!its.some(x => x.id === wsItem)) wsItem = its[0].id;
+    $('ws-items').innerHTML = its.map(x => { const n = copies().filter(c => c.o.item === x.id).length; return `<button type="button" class="ws-it" data-ws-it="${x.id}" aria-pressed="${x.id === wsItem}"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(x.name)}</b><small>${n ? `Have ${n}` : 'Not yet'}</small></button>`; }).join('');
+    $('ws-items').querySelectorAll('[data-ws-it]').forEach(b => showItem(b.querySelector('canvas'), { item: b.dataset.wsIt, finish: 'plain', scuff: 0.02, print: 7 }, state.seed, 72, 56));
+    const can = metalOf() >= LG.CRAFT_COST;
+    $('ws-go').innerHTML = `<button class="btn cream" type="button" id="ws-craft"${can ? '' : ' disabled'}>Craft ${esc(LG.itemById(wsItem).name)} · ${LG.metalText(LG.CRAFT_COST)}</button><small>${can ? 'Comes out Plain, with its craft number: one count for every copy anyone has crafted.' : `You have ${LG.metalText(metalOf())}.`}</small>`;
+  }
+  $('ws-sec').addEventListener('click', e => {
+    const g = e.target.closest('[data-ws-g]'); if (g) { wsGame = g.dataset.wsG; renderWorkshop(); return; }
+    const it = e.target.closest('[data-ws-it]'); if (it) { wsItem = it.dataset.wsIt; renderWorkshop(); return; }
+    if (e.target.closest('#ws-spares')) smelt(spares());
+    if (e.target.closest('#ws-craft')) craft(wsItem);
   });
 
   /* ---------------------------------------------- trade up: five of a grade (the least rare first) for one of the next */
@@ -3119,6 +3239,8 @@
         ${collectorPanel(o, g)}
         ${oddsBox(o, one)}
         ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
+          ${LG.PAINTABLE.includes(slot) ? `<div class="paints"><span>Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${LG.PAINT_IDS.map(p => `<button type="button" data-paint="${p}" style="--p:${LG.PAINTS[p].hex}" title="${esc(LG.PAINTS[p].name)}" aria-pressed="${o.paint === p}" aria-label="${esc(LG.PAINTS[p].name)}"></button>`).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div></div>` : ''}
+          ${!on && !one && !tag && LG.smeltValue(o) ? `<button class="btn ghost small smelt-one" type="button" id="insp-smelt">Smelt · +${LG.smeltValue(o)} scrap</button>` : ''}
           <form class="tagf" id="insp-tagf" autocomplete="off"><label class="field"><span>"</span><input id="insp-tag" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" aria-label="Name tag"></label><button class="btn small" type="submit">${tag ? 'Change tag' : 'Add tag'}</button>${tag ? '<button class="btn ghost small" type="button" id="insp-untag">Take off</button>' : ''}</form>`
           : state && isLive() && ctx.id && ctx.key !== state.key && !item.free && !one ? `<div class="ins-actions"><button class="btn" type="button" id="insp-ask">Offer a swap</button></div>${ownerLine}` : ownerLine}
         <details><summary>Share card</summary>
@@ -3157,6 +3279,15 @@
       $('insp-tagf').addEventListener('submit', e => { e.preventDefault(); setTag($('insp-tag').value); });
       $('insp-untag')?.addEventListener('click', () => setTag(''));
       $('insp-give')?.addEventListener('click', () => { $('insp').close(); swapDialog({ give: { id: state.ids?.[code], code } }); });
+      $('insp-body').querySelectorAll('[data-paint]').forEach(b => b.addEventListener('click', async () => {
+        const next = await paintCopy(code, b.dataset.paint || null);
+        if (next !== code) inspectCopy(LG.decode(next), { ...ctx, code: next });
+      }));
+      $('insp-smelt')?.addEventListener('click', e => {
+        const b = e.currentTarget;
+        if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = `Sure? It's gone for good`; return; }
+        $('insp').close(); smelt([{ code, o }]);
+      });
     }
     $('insp-ask')?.addEventListener('click', () => { $('insp').close(); swapDialog({ to: ctx.key, want: { id: ctx.id, code, tag } }); });
     if (!ctx.mine) $('insp-owner').addEventListener('click', () => $('insp').close());

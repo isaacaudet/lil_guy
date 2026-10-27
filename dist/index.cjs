@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-4kY1ojYb.cjs');
+const require_paint = require('./paint-C-sjcTJK.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -303,7 +303,7 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= require_paint.LAYER.aura ? 5 : t >= require_paint.LAYER.buddy ? 4 : t >= require_paint.LAYER.frame ? 3 : t >= require_paint.LAYER.hat ? 2 : t >= require_paint.LAYER.skin ? 1 : 0;
 const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid, config, palette$1, small = false, face = null) {
+function painted$1(grid, config, palette$1, small = false, face = null) {
 	const colors = require_paint.paint(grid, config, palette$1, small, false);
 	const out = empty();
 	const eyeBox = face && {
@@ -629,7 +629,7 @@ function animate(input, move, options = {}) {
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null));
+		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null));
 		return layers.get(pose);
 	};
 	let backdrop = null;
@@ -3453,6 +3453,18 @@ function collectorNotes(o) {
 		name: `Tally ${o.tally.toLocaleString("en-US")}`,
 		why: "Counts the days its owner finished their games wearing it. One copy in ten has one.",
 		oneIn: 10
+	});
+	if (o.craft !== void 0) notes.push({
+		id: "craft",
+		name: `Craft #${o.craft.toLocaleString("en-US")}`,
+		why: o.craft <= 100 ? "Crafted from metal, one of the first hundred ever crafted." : "Crafted from metal: the item its maker chose.",
+		oneIn: o.craft <= 100 ? 100 : 1
+	});
+	if (o.paint) notes.push({
+		id: "paint",
+		name: require_paint.PAINTS[o.paint].name,
+		why: "Painted by its owner. It scrapes off.",
+		oneIn: 1
 	});
 	if (o.pins?.length) notes.push({
 		id: "pins",
@@ -6923,6 +6935,68 @@ function defineLilGuyHere(options = {}) {
 }
 
 //#endregion
+//#region src/craft.ts
+/**
+* Crafting, as in TF2. A copy you don't want smelts into metal, and metal
+* crafts the exact item you want.
+*
+* Metal comes in scrap: three scrap are a reclaimed, three reclaimed a
+* refined. A crafted copy is Plain, with a craft number: the count of every
+* copy ever crafted, so the first ones are worth having for that alone.
+*/
+const SCRAP = 1;
+const RECLAIMED = 3;
+const REFINED = 9;
+/** Metal to craft one item of your choice. */
+const CRAFT_COST = REFINED;
+/** Metal to paint a hat or a buddy. Scraping the paint off is free. */
+const PAINT_COST = RECLAIMED;
+/** Scrap a copy smelts into, by grade: Everyday a scrap, up to a refined for a Mythic. */
+const SMELT = [
+	1,
+	2,
+	4,
+	9
+];
+/**
+* What a copy smelts into, or 0 when it can't be: a starter (it's free), a
+* Grail or an aura (too rare to melt down by accident), or a showpiece.
+*/
+function smeltValue(o) {
+	const it = require_paint.itemById(o.item);
+	if (!it || it.free || it.showpiece || it.slot === "aura") return 0;
+	const g = require_paint.GRADES.findIndex((x) => x.id === require_paint.gradeOf(o).id);
+	return SMELT[g] ?? 0;
+}
+/** Whether an item can be crafted: anything a machine holds but its showpiece and the free hat. */
+const craftable = (it) => !!it && !it.free && !it.showpiece && it.slot !== "aura" && it.game !== "club";
+/** Metal as TF2 writes it: refined with a hundredth per scrap, `2.44 ref`. */
+function metalText(scrap) {
+	const ref = Math.floor(scrap / REFINED), rest = scrap % REFINED;
+	return `${ref}.${String(rest * 11).padStart(2, "0")} ref`;
+}
+/** Metal as coins: `{ refined, reclaimed, scrap }`. */
+function metalCoins(scrap) {
+	return {
+		refined: Math.floor(scrap / REFINED),
+		reclaimed: Math.floor(scrap % REFINED / RECLAIMED),
+		scrap: scrap % RECLAIMED
+	};
+}
+/** A crafted copy: Plain, a float and print from the seed, and its craft number. */
+function craftCopy(itemId, seed, number) {
+	const [lo, hi] = require_paint.FINISHES.plain.scuffs;
+	const u = require_paint.hash(`${seed}|craft|float`) / 4294967296;
+	return {
+		item: itemId,
+		finish: "plain",
+		scuff: Math.round((lo + u * (hi - lo)) * 1e7) / 1e7,
+		print: require_paint.hash(`${seed}|craft|pattern`) % 1e3,
+		craft: number
+	};
+}
+
+//#endregion
 exports.ARM_NAMES = ARM_NAMES
 exports.ART_VERSION = ART_VERSION
 exports.AURAS = require_paint.AURAS
@@ -6934,6 +7008,7 @@ exports.BAKED_SIZE = BAKED_SIZE
 exports.CARD_FRAGMENT = CARD_FRAGMENT
 exports.CARD_HEIGHT = CARD_HEIGHT
 exports.CARD_WIDTH = CARD_WIDTH
+exports.CRAFT_COST = CRAFT_COST
 exports.DEAL_PREFIX = require_paint.DEAL_PREFIX
 exports.DEEP_BLUE_PRINTS = require_paint.DEEP_BLUE_PRINTS
 exports.DEFAULT_COLORS = DEFAULT_COLORS
@@ -6966,11 +7041,18 @@ exports.LilGuyAnimated = LilGuyAnimated
 exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.ONE_OF_ONE_AURAS = require_paint.ONE_OF_ONE_AURAS
+exports.PAINTABLE = require_paint.PAINTABLE
+exports.PAINTS = require_paint.PAINTS
+exports.PAINT_COST = PAINT_COST
+exports.PAINT_IDS = require_paint.PAINT_IDS
 exports.PART_ODDS = PART_ODDS
 exports.PART_REFUND = PART_REFUND
 exports.PART_SLOTS = PART_SLOTS
 exports.PINS = require_paint.PINS
+exports.RECLAIMED = RECLAIMED
+exports.REFINED = REFINED
 exports.RETIRED_EYES = require_paint.RETIRED_EYES
+exports.SCRAP = SCRAP
 exports.SHADER_FINISHES = SHADER_FINISHES
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
 exports.SHINE_FRAGMENT = SHINE_FRAGMENT
@@ -7008,6 +7090,8 @@ exports.collectorNotes = collectorNotes
 exports.compose = require_paint.compose
 exports.composeBase = require_paint.composeBase
 exports.copyOneIn = copyOneIn
+exports.craftCopy = craftCopy
+exports.craftable = craftable
 exports.createCardShader = createCardShader
 exports.createShine = createShine
 exports.dealOf = require_paint.dealOf
@@ -7052,12 +7136,15 @@ exports.luckyPalette = require_paint.luckyPalette
 exports.machineSet = machineSet
 exports.makeSeed = makeSeed
 exports.mergeRefs = mergeRefs
+exports.metalCoins = metalCoins
+exports.metalText = metalText
 exports.mouths = require_paint.mouths
 exports.nameOf = require_paint.nameOf
 exports.nebulaPhase = require_paint.nebulaPhase
 exports.noiseOf = noiseOf
 exports.ownedOf = ownedOf
 exports.paint = require_paint.paint
+exports.painted = require_paint.painted
 exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
 exports.partCode = partCode
@@ -7082,6 +7169,7 @@ exports.shineFrame = shineFrame
 exports.shines = shines
 exports.shows = require_paint.shows
 exports.slotOf = require_paint.slotOf
+exports.smeltValue = smeltValue
 exports.special = require_paint.special
 exports.starter = require_paint.starter
 exports.surfaceOf = surfaceOf

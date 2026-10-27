@@ -1277,10 +1277,10 @@ void main() {
     if (!c) return;
     const o = c.o, item = LG.itemById(o.item), f = LG.FINISHES[o.finish], g = LG.gradeOf(o), w = LG.wearOf(o.scuff);
     const [left, right] = LG.nameOf(o).split(' | ');
-    const itemWord = left.replace(/^Tallied /, '');
+    const itemWord = left.replace(/^Strange /, '');
     const U = { tally: 'var(--amber)', item: 'var(--ink)', finish: g.color, scuff: '#6ee7b0', print: '#7fb6ff' };
     const seg = (text, key, n) => `<span style="--u:${U[key]}">${esc(text)}<sup>${n}</sup></span>`;
-    const name = [o.tally !== undefined ? seg('Tallied', 'tally', 5) : '', seg(itemWord, 'item', 1), right ? seg(right, 'finish', 2) : ''].join('');
+    const name = [o.tally !== undefined ? seg('Strange', 'tally', 5) : '', seg(itemWord, 'item', 1), right ? seg(right, 'finish', 2) : ''].join('');
     const segs = [['#3fbf7f', 0.07], ['#8fd14f', 0.15], ['#e0c341', 0.38], ['#e8893a', 0.45], ['#d94b4b', 1]];
     let prev = 0;
     const bar = segs.map(([col, max]) => { const wpx = (max - prev) * 100; prev = max; return `<i style="width:${wpx}%;background:${col}"></i>`; }).join('');
@@ -1535,7 +1535,7 @@ void main() {
     if (s) s.juice = performance.now() / 1000;
 
     const grade = LG.gradeOf(o), famous = LG.special(o);
-    shout.textContent = famous ? famous + '!' : g === 0 ? (o.tally !== undefined ? 'Tallied!' : grade.name) : grade.name + '!';
+    shout.textContent = famous ? famous + '!' : g === 0 ? (o.tally !== undefined ? 'Strange!' : grade.name) : grade.name + '!';
     res.classList.add('go');
     fanfare(g);
     if (!hold()) {
