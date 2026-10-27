@@ -7,24 +7,25 @@ import { grid16, on, pet, type MachineSet } from '../item-art';
 export const set: MachineSet = {
   add: [
     {
-      id: 'amountle.bean', game: 'amountle', slot: 'skin', name: 'Jellybean', eyes: 8,
+      id: 'amountle.bean', game: 'amountle', slot: 'skin', name: 'Jellybean', eyes: 8, limb: 2,
+      // One bean out of today's jar, stood up on its end, a shine down its side.
       colors: ['#FF6F9C', '#D9466F', '#FFB3CB', '#FFFFFF', '#B02E55'],
       outline: '#6E1634',
       art: grid16('jellybean', [
         '................',
         '................',
-        '................',
-        '..3344..........',
-        '.334411.........',
-        '.3311111........',
-        '.31111111111....',
-        '.1111111111112..',
-        '.21111111111112.',
-        '.22111111111112.',
-        '..2211111111132.',
-        '....22111111122.',
-        '.......2222222..',
-        '................',
+        '.....3331112....',
+        '....344111112...',
+        '...34411111112..',
+        '...34111111112..',
+        '...31111111112..',
+        '...31111111112..',
+        '...11111111112..',
+        '...11111111112..',
+        '....1111111112..',
+        '....2111111112..',
+        '...22111111152..',
+        '....222222255...',
         '................',
         '................',
       ]),
@@ -65,47 +66,47 @@ export const set: MachineSet = {
       ], 0, 2),
     },
     {
-      id: 'amountle.gem-pile', game: 'amountle', slot: 'hat', name: 'Gem pile',
-      colors: ['#3FD1C1', '#1F9C90', '#A6F4EA', '#FFFFFF', '#DCE2EA', '#FFB3CB', '#FF6F9C', '#A9B3C2', '#C94B76'],
+      id: 'amountle.gem-pile', game: 'amountle', slot: 'hat', name: 'Gumball globe',
+      // The top of a gumball machine, full, with its red cap.
+      colors: ['#E8F7FB', '#B8DCE6', '#FF5C6A', '#FFD447', '#5FB4FF', '#7DD87A', '#FFFFFF', '#E5363D', '#A8202A'],
       draw: on([
-        '....666....',
-        '.45o779o31.',
-        '.58o779o12.',
-        '31o45o31o45',
-        '12o58o12o58',
+        '..7111..',
+        '.735461.',
+        '13645362',
+        '.988889.',
       ], 0, 2),
     },
     {
-      id: 'amountle.coin', game: 'amountle', slot: 'hat', name: 'Gold coin',
-      colors: ['#FFD25A', '#C98A1A', '#FFF1B0', '#7A4A08', '#A86E12'],
+      id: 'amountle.coin', game: 'amountle', slot: 'hat', name: 'Wrapped sweet',
+      // A peppermint from today's jar, still in its twist of cellophane, worn like a bow.
+      colors: ['#FFC2DA', '#F07AA8', '#FFE3EE', '#E5363D', '#FFFFFF', '#B8202A'],
       draw: on([
-        '.3314.',
-        '311125',
-        '311214',
-        '312215',
-        '112224',
-        '.1224.',
-      ], 1, 2),
+        '1..454..1',
+        '12.545.21',
+        '1224542 21'.replace(' ',''),
+        '...646...',
+      ], 0, 2),
     },
     {
-      id: 'amountle.play-coin', game: 'amountle', slot: 'buddy', name: 'Play coin',
-      colors: ['#FFFFFF', '#C9D1DC', '#EEF2F7', '#2F7BF5', '#8A95A8'],
-      art: pet('play coin', [
-        '.3311.',
-        '314112',
-        '314412',
-        '314122',
-        '.1225.',
+      id: 'amountle.play-coin', game: 'amountle', slot: 'buddy', name: 'Lil jar',
+      // A tiny jar of jellybeans that follows you about.
+      colors: ['#DDF2F6', '#A8D8E0', '#FF6F9C', '#FFD25A', '#FFD447', '#3FD1C1', '#8C7CF0', '#C98A1A'],
+      art: pet('lil jar', [
+        '.4448.',
+        '311112',
+        '1o11o2',
+        '357632',
+        '.7536.',
       ]),
     },
     {
       id: 'amountle.candy-corn', game: 'amountle', slot: 'buddy', name: 'Candy corn',
       colors: ['#FFF6E0', '#E6D6B8', '#FF7A2E', '#D9561A', '#FFC23A', '#E09A12'],
       art: pet('candy corn', [
-        '...1..',
-        '..112.',
-        '.3334.',
-        '.55556',
+        '..12..',
+        '.1112.',
+        '3o33o4',
+        '333344',
         '555566',
       ]),
     },
@@ -133,6 +134,37 @@ export const set: MachineSet = {
     'amountle.sparkle', 'amountle.coins', 'amountle.piglet', 'amountle.mimic',
   ],
   redraw: {
+    'amountle.crystal': {
+      eyes: 9, limb: 2,
+      // A cut gem as big as he is, its table and facets catching the light on top.
+      art: grid16('crystal', [
+        '................',
+        '................',
+        '....33333111....',
+        '...3443311112...',
+        '..344333111122..',
+        '.34333331111122.',
+        '.31111111111122.',
+        '.11111111111122.',
+        '.11111111111122.',
+        '.11111111111122.',
+        '.11111111111122.',
+        '.21111111111222.',
+        '..211111111222..',
+        '...2222222222...',
+        '................',
+        '................',
+      ]),
+    },
+    'amountle.gemling': {
+      art: pet('gemling', [
+        '.5311.',
+        '331112',
+        '1o11o2',
+        '.1124.',
+        '..24..',
+      ]),
+    },
     'amountle.gem': {
       draw: on([
         '....wwaA....',
@@ -164,25 +196,24 @@ export const set: MachineSet = {
     },
     'amountle.crown': {
       name: 'Winners crown',
-      colors: ['#FFD25A', '#D99A1E', '#FFF1B0', '#A8700E'],
+      // The winners club's crown: pearls on its points, red velvet inside, a jewel in front.
+      colors: ['#FFD25A', '#D99A1E', '#FFF1B0', '#A8700E', '#E5484D', '#3FD1C1', '#FFFFFF', '#B8203A'],
       draw: on([
-        '3....3....3',
-        '13..313..12',
-        '11131113112',
-        '11111111112',
+        '7....7....7',
+        '18883138812',
+        '13161516132',
         '22222222224',
-      ], 0, 2),
+      ]),
     },
     'amountle.beans': {
-      colors: ['#FFF6E6', '#FF5C8A', '#FFD447', '#3FD1C1', '#8C7CF0', '#C9416A', '#D9A21E', '#1F9C90', '#5E4EC0'],
+      colors: ['#FFF6E6', '#FF5C8A', '#FFD447', '#3FD1C1', '#8C7CF0', '#FF8A3D', '#7DD87A', '#FFFFFF'],
       fill: (x, y) => {
-        // Four beans a tile, each a tilted pair of rows in its own flavour, lit on top.
-        const beans = [[1, 1, 2], [12, 2, 3], [0, 10, 4], [13, 12, 5]];
-        const tx = x % 16, ty = y % 16;
-        for (const [bx, by, c] of beans) {
-          if (ty === by && (tx === bx + 1 || tx === bx + 2)) return c;
-          if (ty === by + 1 && (tx === bx || tx === bx + 1)) return c + 4;
-        }
+        // Fat beans on the jar's cream, staggered like a pile, each a tilted pair of rows with a shine.
+        const row = Math.floor(y / 5), ty = y % 5;
+        const shift = row % 2 ? 4 : 0, col = Math.floor((x + shift) / 8), tx = (x + shift) % 8;
+        const flavour = 2 + ((col * 3 + row * 5) % 6 + 6) % 6;
+        if (ty === 1 && tx >= 2 && tx <= 4) return tx === 2 ? 8 : flavour;
+        if (ty === 2 && tx >= 1 && tx <= 3) return flavour;
         return 1;
       },
     },

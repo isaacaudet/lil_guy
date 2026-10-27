@@ -2030,13 +2030,12 @@ const seasonal: Omit<Item, 'slot'>[] = [
       '11121121',
       '.222222.',
     ], 0, 2) },
-  { id: 'club.snowcap', game: 'club', name: 'Snow cap', season: { from: '12-15', to: '01-06' }, colors: ['#E5484D', '#B83236', '#FFFFFF'], draw: on([
-      '......33',
-      '....112.',
-      '..11112.',
-      '.111112.',
-      '33333333',
-    ], 0, 2) },
+  { id: 'club.snowcap', game: 'club', name: 'Snow cap', season: { from: '12-15', to: '01-06' }, colors: ['#E5484D', '#B83236', '#FFFFFF', '#DCE3EC', '#FF8A8E'], draw: on([
+      '....511122.33',
+      '..51111111234',
+      '.51111111112.',
+      '3433343334333',
+    ]) },
   { id: 'club.sweetheart', game: 'club', name: 'Sweetheart', season: { from: '02-10', to: '02-16' }, colors: ['#FF5C8A', '#D93A6A', '#FFC2D4'], draw: on([
       '.11..11.',
       '13111112',
@@ -2048,11 +2047,10 @@ const seasonal: Omit<Item, 'slot'>[] = [
   // The rest of the year, so every month drops something, and two around the
   // big holidays. A range that runs past New Year wraps (see inSeason).
   { id: 'club.newyear', game: 'club', name: 'New Year top hat', season: { from: '12-29', to: '01-02' }, colors: ['#2B2F38', '#4A4E5E', '#F2C230', '#FF6FA0', '#5FB4FF'], draw: on([
-      '...4.5...',
-      '..11112..',
-      '..11112..',
-      '..33333..',
-      '111111112',
+      '...2111111...',
+      '...2111111...',
+      '...3334333...',
+      '.21111111111.',
     ]) },
   { id: 'club.lantern', game: 'club', name: 'Red lantern', season: { from: '01-20', to: '02-12' }, colors: ['#E5363D', '#B02028', '#FFD447', '#FF8A80'], draw: on([
       '...3...',
@@ -2061,17 +2059,17 @@ const seasonal: Omit<Item, 'slot'>[] = [
       '4111112',
       '.33333.',
     ], 0, 2) },
-  { id: 'club.shamrock', game: 'club', name: 'Shamrock', season: { from: '03-10', to: '03-18' }, colors: ['#4FBF5C', '#2E8E3E', '#F2C230', '#2B2F38', '#A8EBA8', '#B98A1A'], draw: on([
-      '..11112..',
-      '..15112..',
-      '..44344..',
-      '.1111112.',
-      '111111112',
+  { id: 'club.shamrock', game: 'club', name: 'Leprechaun hat', season: { from: '03-10', to: '03-18' }, colors: ['#4FBF5C', '#2E8E3E', '#F2C230', '#2B2F38', '#A8EBA8', '#B98A1A'], draw: on([
+      '...5111112.55',
+      '...5111112.15',
+      '...4436344..2',
+      '.51111111112.',
     ]) },
   { id: 'club.blossom', game: 'club', name: 'Cherry blossom', season: { from: '03-19', to: '04-14' }, colors: ['#FFB3D1', '#F07AA8', '#FFF4A0', '#FFFFFF', '#5FBF6A'], draw: on([
-      '.4..4..4.',
-      '131131131',
-      '525525525',
+      '.1.....1.....',
+      '434.1.434.1..',
+      '.1.434.1.434.',
+      '552515525155.',
     ]) },
   { id: 'club.egg', game: 'club', name: 'Painted egg', season: { from: '03-22', to: '04-25' }, colors: ['#B9A3F0', '#8C7CF0', '#FFE066', '#7FD1AE', '#E6DCFF'], draw: on([
       '..51..',
@@ -2081,15 +2079,16 @@ const seasonal: Omit<Item, 'slot'>[] = [
       '111112',
     ], 0, 2) },
   { id: 'club.daisy', game: 'club', name: 'Daisy chain', season: { from: '05-01', to: '05-31' }, colors: ['#FFFFFF', '#FFD23A', '#4FAE5C', '#DCE3EC'], draw: on([
-      '.1..1..1.',
-      '121121121',
-      '343343343',
+      '.1...1...1..',
+      '121.121.121.',
+      '.1...1...1..',
+      '334333433343',
     ]) },
   { id: 'club.sunhat', game: 'club', name: 'Sun hat', season: { from: '06-14', to: '07-20' }, colors: ['#F2D58A', '#D9B060', '#E5484D', '#FFF1C2'], draw: on([
-      '...4112...',
-      '...1112...',
-      '...3333...',
-      '2111111112',
+      '....414141....',
+      '....333333....',
+      '41111111111111',
+      '22222222222222',
     ]) },
   { id: 'club.sparkler', game: 'club', name: 'Fireworks', season: { from: '07-01', to: '07-07' }, colors: ['#FFE066', '#FF6B78', '#7FB0FF', '#FFFFFF', '#8A93A3'], draw: on([
       '2..1..3',
@@ -2118,13 +2117,12 @@ const seasonal: Omit<Item, 'slot'>[] = [
       '.2133312.',
       '..44544..',
     ]) },
-  { id: 'club.antlers', game: 'club', name: 'Reindeer antlers', season: { from: '12-01', to: '12-24' }, colors: ['#A8743F', '#7A5228', '#E5484D'], draw: onPair([
-      '1.1.',
-      '1.1.',
-      '.11.',
-      '..11',
-      '..2.',
-    ], 0) },
+  { id: 'club.antlers', game: 'club', name: 'Reindeer antlers', season: { from: '12-01', to: '12-24' }, colors: ['#A8743F', '#7A5228', '#E5484D', '#4FAE5C', '#C9935A'], draw: on([
+      '5.5......5.5',
+      '1.1.1..1.1.1',
+      '.112....211.',
+      '..22434422..',
+    ]) },
 ];
 
 /** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
