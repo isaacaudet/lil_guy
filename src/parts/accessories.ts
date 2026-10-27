@@ -88,8 +88,8 @@ export const accessories: Accessory[] = [
   {
     name: 'glasses',
     layer: 'face',
-    // Clear lenses, pale behind the eyes, so the eyes still read through a frame.
-    draw: c => fittedGlasses(c, T.ACCENT_SHADE, T.WHITE, T.WHITE),
+    // Lenses in the skin's own highlight, so the eyes read through a frame on any skin.
+    draw: c => fittedGlasses(c, T.ACCENT_SHADE, T.LIGHT, T.WHITE),
   },
 
   {
@@ -189,9 +189,10 @@ export const accessories: Accessory[] = [
       // away across the forehead to the side of the head.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      // Just the eye's own box, in the outline's near-black: a wider patch in the eye's ink read as a bruise.
-      const e = f.eyes[0];
-      for (let y = f.top; y <= f.line; y++) for (let x = e.left - (e.right === e.left ? 1 : 0); x <= e.right; x++) c.set(x, y, T.OUTLINE);
+      // In his accent with a shine, so it reads as a patch worn over the eye: in near-black it read as a hole.
+      const e = f.eyes[0], left = e.left - (e.right === e.left ? 1 : 0);
+      for (let y = f.top; y <= f.line; y++) for (let x = left; x <= e.right; x++) c.set(x, y, T.ACCENT_SHADE);
+      c.set(left, f.top, T.ACCENT);
       for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
     },
   },

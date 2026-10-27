@@ -26,14 +26,14 @@ exports[`golden art composes the same grid for a fixed set of inputs 1`] = `
 ......oAao......
 .....ooAaoo.....
 ....o#AAaa#o....
-...o#s###hw#o...
+...o#####hw#o...
 ..o#######h##o..
 .o###e####e###o.
 .o###e####e###o.
-.oc#c######c#co.
+.os###########o.
 .os##mwwwwm###o.
 .o###mmmm###so.
-..os##Aa###so..
+..o###Aa###so..
 ...oYyssso...
 ....o##oo##o....
 .....oo..oo....."
@@ -60,16 +60,16 @@ exports[`golden art composes the same grid for a fixed set of inputs 1`] = `
 "....oo....oo....
 ...oaaooooaao...
 ...oaA####Aao...
-...oaayyhwaao...
-....o###yh#o....
+...oaa##hwaao...
+....o####h#o....
 ...oAaaaaaaao...
 ...o########o...
 ..o##y####y##o..
 .os#yyy##yyy##o.
 .os##y####y###o.
 .os###mmmm####o.
-o#s#o#mttm#####o
-o#o###mm####s#o
+o#s###mttm#####o
+o#####mm####s#o
 .oossssssoo.
 ...ooo#oo#ooo...
 ......o..o......"
@@ -80,9 +80,9 @@ o#o###mm####s#o
 ...oo###aaAaao..
 ..o#wh##a###ao..
 .o#AAAA##AAAA#o.
-.oAwwewAAwwewAo.
-.oAweewAAweewAo.
-.oAweewAAweewA#o
+.oAwwehAAwwehAo.
+.oAheehAAheehAo.
+.oAheehAAheehA#o
 .o#AAAmmmmAAA##o
 o#######t####so.
 o##s##s####so.
@@ -103,7 +103,7 @@ o#o#o..oyo.o#o#o
 .o#why####y###o.
 .o#hyyy##yyy##o.
 o####y####y####o
-os####m##m##xxo
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4790,7 +4790,7 @@ o#o#o..oaaoo#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4808,7 +4808,7 @@ o#o#xoxooxox#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4826,7 +4826,7 @@ o#o#o..oggoo#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4844,7 +4844,7 @@ oaoaoaaaaaaoaoAo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4862,7 +4862,7 @@ o#o##o....o##o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4880,7 +4880,7 @@ o#o#ooooAooo#o#o
 oA#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4898,7 +4898,7 @@ oaoaoaaaaaaoaoAo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4916,7 +4916,7 @@ o#o#o..oaoooao#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4934,7 +4934,7 @@ o#o#ao....oa#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4952,7 +4952,7 @@ o#o##co..oc##o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4970,7 +4970,7 @@ oaoaoaaxaaaoaoAo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -4988,7 +4988,7 @@ o#o###o..o###o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5006,7 +5006,7 @@ o#o#wwwwwwwo#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5024,7 +5024,7 @@ o#o#orroorro#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5042,7 +5042,7 @@ o#o#oo#o#o.o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5060,7 +5060,7 @@ o#o#oyoyoyoo#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5078,7 +5078,7 @@ owowowwwwwwowowo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5096,7 +5096,7 @@ o#o#o....oao#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5114,7 +5114,7 @@ o#ogoggggggogo#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5132,7 +5132,7 @@ oxoxoxxyxxxaxoxo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5150,7 +5150,7 @@ oAa##o####o##aAo
 oA#wh#########Ao
 oA#hwe####we##Ao
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5168,7 +5168,7 @@ o#o#xo....ox#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5186,7 +5186,7 @@ o#oyoyo..o.o#o#o
 oy#wh#########yo
 oY#hwe####we##Yo
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5204,7 +5204,7 @@ ogogoggggggogogo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5222,7 +5222,7 @@ o#o#o.oaAo.o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5240,7 +5240,7 @@ orororrrwrrororo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5276,7 +5276,7 @@ o#o#ooyroyoo#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5294,7 +5294,7 @@ o#o#ooaaAo.o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5312,7 +5312,7 @@ oaoaoaaaaaaoaoAo
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5330,7 +5330,7 @@ o#oaao....oaao#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5348,7 +5348,7 @@ o#o#oggoggoo#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5366,7 +5366,7 @@ o#o#yo.....o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5384,7 +5384,7 @@ o#oyyyoyoyyy#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5402,7 +5402,7 @@ o#o#o..o#o.o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5420,7 +5420,7 @@ o#o#o..oyo.o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.
@@ -5438,7 +5438,7 @@ o#o#ooaaAo.o#o#o
 .o#wh#########o.
 .o#hwe####we##o.
 o###ee####ee###o
-oscc##m##m##cco
+os####m##m####o
 .os####mm####o.
 ..os#ssss#o..
 .ososoooooooo.

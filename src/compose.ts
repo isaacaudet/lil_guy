@@ -132,6 +132,48 @@ function startCanvas(config: AvatarConfig): Canvas {
 }
 
 /**
+ * Heads that are their own hairdo: a bat's ears and wings leave a face of a
+ * few rows, and ears or a hat on top of them crowded it out. A hat the player
+ * puts on still goes on.
+ */
+const EARED = new Set(['bat']);
+
+/**
+ * Patterns that scatter pale marks all over: on a skin dark enough for light
+ * ink they crowd round the eyes' whites and the face is lost in them, so a
+ * dark guy goes plain. Single marks, a belly and the chase finishes stay.
+ */
+const SCATTERED = new Set(['tabby', 'spots', 'gleam', 'stripes', 'zigzag', 'polka dots', 'sprinkles']);
+const darkSkin = (config: AvatarConfig) => {
+  const ink = paletteOf(config).colors[T.EYE];
+  return !!ink && contrast(ink, '#000000') > 10;
+};
+
+/** Parts meant to be shown off: they always show. */
+const CHASE = new Set(['kintsugi', 'gold dipped', 'gold leaf', 'jewels', 'rainbow']);
+
+/**
+ * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
+ * marks and a body pattern all at once crowd sixteen pixels, so a guy shows
+ * at most two of them, one on a head with eight rows or fewer (a bat, a crab):
+ * the pattern goes first, then the cheeks. Hair and what he wears always
+ * show, and so does a chase part. On a skin dark enough for light ink, the
+ * scattered patterns go too.
+ */
+function extrasOf(config: AvatarConfig, c: Canvas): { pattern: boolean; cheeks: boolean } {
+  const body = bodies[config.body].name, cheek = cheeks[config.cheeks];
+  let pattern = config.body !== 0 && !(SCATTERED.has(body) && darkSkin(config));
+  let marks = cheek.art.length > 0;
+  const top = itemById(config.hat)?.slot === 'hat' || (config.hair !== 0 && !EARED.has(heads[config.head].name));
+  const worn = config.accessory !== 0;
+  const limit = c.bottom - c.crown + 1 <= 8 ? 1 : 2;
+  const count = () => [top, worn, pattern, marks].filter(Boolean).length;
+  if (count() > limit && pattern && !CHASE.has(body)) pattern = false;
+  if (count() > limit && marks && !CHASE.has(cheek.name)) marks = false;
+  return { pattern, cheeks: marks };
+}
+
+/**
  * The body and its markings, lit, with no face, hat or accessory on it.
  * The blink frame fills vacated eye cells from here.
  */
@@ -139,7 +181,7 @@ export function composeBase(config: AvatarConfig): PixelGrid {
   const c = startCanvas(config);
   if (!skinOf(config)) {
     light(c);
-    bodies[config.body].draw(c);
+    if (extrasOf(config, c).pattern) bodies[config.body].draw(c);
   }
   return c.grid;
 }
@@ -213,23 +255,6 @@ function clearFace(c: Canvas, face: Set<number>, bare: PixelGrid, worn: boolean[
   }
 }
 
-/**
- * Heads that are their own hairdo: a bat's ears and wings leave a face of a
- * few rows, and ears or a hat on top of them crowded it out. A hat the player
- * puts on still goes on.
- */
-const EARED = new Set(['bat']);
-
-/**
- * Patterns that scatter pale marks all over: on a skin dark enough for light
- * ink they crowd round the eyes' whites and the face is lost in them, so a
- * dark guy goes plain. Single marks, a belly and the chase finishes stay.
- */
-const SCATTERED = new Set(['tabby', 'spots', 'gleam', 'stripes', 'zigzag', 'polka dots', 'sprinkles']);
-const darkSkin = (config: AvatarConfig) => {
-  const ink = paletteOf(config).colors[T.EYE];
-  return !!ink && contrast(ink, '#000000') > 10;
-};
 
 /**
  * Composes every part into one 16x16 grid of colour tokens.
@@ -265,7 +290,8 @@ export function compose(config: AvatarConfig): PixelGrid {
   }
   // The skin as it is before any pattern: what the face's surround goes back to.
   const bare = c.grid.map(row => [...row]);
-  if (!skin && !(SCATTERED.has(bodies[config.body].name) && darkSkin(config))) bodies[config.body].draw(c);
+  const extras = extrasOf(config, c);
+  if (!skin && extras.pattern) bodies[config.body].draw(c);
 
 
   // On a skin the player's face is what carries over; their ears, bow tie or
@@ -316,7 +342,7 @@ export function compose(config: AvatarConfig): PixelGrid {
   const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 
   const line = c.eyeLine;
-  const cheek = cheeks[config.cheeks].art;
+  const cheek = skin || extras.cheeks ? cheeks[config.cheeks].art : [];
   const face = faceCells(c, eye, mouth);
   clearFace(c, face, bare, onFace);
   if (cheek.length) placeCheeks(c, cheek, face);

@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime0 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -1375,7 +1375,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts

@@ -72,10 +72,10 @@ export const eyes: Eyes[] = [
     'ew....ew',
     'ee....ee',
   ]),
-  // Joined by a bridge: two lenses angled in on their own read as a scowl.
+  // Two small lenses on a bridge: wide ones angled in read as a scowl, and a full bar as a mask.
   eyes_('shades', [
-    'weeeeeweee',
-    '.ee....ee.',
+    'weeeewee',
+    'eee..eee',
   ]),
   eyes_('star', [
     '.y....y.',

@@ -7921,7 +7921,7 @@ const eyes = [
 		"ew....ew",
 		"ee....ee"
 	]),
-	eyes_("shades", ["weeeeeweee", ".ee....ee."]),
+	eyes_("shades", ["weeeewee", "eee..eee"]),
 	eyes_("star", [
 		".y....y.",
 		"yyy..yyy",
@@ -8452,7 +8452,7 @@ const accessories = [
 	{
 		name: "glasses",
 		layer: "face",
-		draw: (c) => fittedGlasses(c, T.ACCENT_SHADE, T.WHITE, T.WHITE)
+		draw: (c) => fittedGlasses(c, T.ACCENT_SHADE, T.LIGHT, T.WHITE)
 	},
 	{
 		name: "scarf",
@@ -8541,8 +8541,9 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const e = f.eyes[0];
-			for (let y = f.top; y <= f.line; y++) for (let x = e.left - (e.right === e.left ? 1 : 0); x <= e.right; x++) c.set(x, y, T.OUTLINE);
+			const e = f.eyes[0], left = e.left - (e.right === e.left ? 1 : 0);
+			for (let y = f.top; y <= f.line; y++) for (let x = left; x <= e.right; x++) c.set(x, y, T.ACCENT_SHADE);
+			c.set(left, f.top, T.ACCENT);
 			for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
 		}
 	},
@@ -9573,6 +9574,66 @@ function startCanvas(config) {
 	return new Canvas(head$1.art.map((row) => [...row]), head$1.eyes);
 }
 /**
+* Heads that are their own hairdo: a bat's ears and wings leave a face of a
+* few rows, and ears or a hat on top of them crowded it out. A hat the player
+* puts on still goes on.
+*/
+const EARED = new Set(["bat"]);
+/**
+* Patterns that scatter pale marks all over: on a skin dark enough for light
+* ink they crowd round the eyes' whites and the face is lost in them, so a
+* dark guy goes plain. Single marks, a belly and the chase finishes stay.
+*/
+const SCATTERED = new Set([
+	"tabby",
+	"spots",
+	"gleam",
+	"stripes",
+	"zigzag",
+	"polka dots",
+	"sprinkles"
+]);
+const darkSkin = (config) => {
+	const ink = paletteOf(config).colors[T.EYE];
+	return !!ink && contrast(ink, "#000000") > 10;
+};
+/** Parts meant to be shown off: they always show. */
+const CHASE = new Set([
+	"kintsugi",
+	"gold dipped",
+	"gold leaf",
+	"jewels",
+	"rainbow"
+]);
+/**
+* What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
+* marks and a body pattern all at once crowd sixteen pixels, so a guy shows
+* at most two of them, one on a head with eight rows or fewer (a bat, a crab):
+* the pattern goes first, then the cheeks. Hair and what he wears always
+* show, and so does a chase part. On a skin dark enough for light ink, the
+* scattered patterns go too.
+*/
+function extrasOf(config, c) {
+	const body = bodies[config.body].name, cheek = cheeks[config.cheeks];
+	let pattern = config.body !== 0 && !(SCATTERED.has(body) && darkSkin(config));
+	let marks = cheek.art.length > 0;
+	const top = itemById(config.hat)?.slot === "hat" || config.hair !== 0 && !EARED.has(heads[config.head].name);
+	const worn = config.accessory !== 0;
+	const limit = c.bottom - c.crown + 1 <= 8 ? 1 : 2;
+	const count = () => [
+		top,
+		worn,
+		pattern,
+		marks
+	].filter(Boolean).length;
+	if (count() > limit && pattern && !CHASE.has(body)) pattern = false;
+	if (count() > limit && marks && !CHASE.has(cheek.name)) marks = false;
+	return {
+		pattern,
+		cheeks: marks
+	};
+}
+/**
 * The body and its markings, lit, with no face, hat or accessory on it.
 * The blink frame fills vacated eye cells from here.
 */
@@ -9580,7 +9641,7 @@ function composeBase(config) {
 	const c = startCanvas(config);
 	if (!skinOf(config)) {
 		light(c);
-		bodies[config.body].draw(c);
+		if (extrasOf(config, c).pattern) bodies[config.body].draw(c);
 	}
 	return c.grid;
 }
@@ -9672,30 +9733,6 @@ function clearFace(c, face, bare, worn) {
 	}
 }
 /**
-* Heads that are their own hairdo: a bat's ears and wings leave a face of a
-* few rows, and ears or a hat on top of them crowded it out. A hat the player
-* puts on still goes on.
-*/
-const EARED = new Set(["bat"]);
-/**
-* Patterns that scatter pale marks all over: on a skin dark enough for light
-* ink they crowd round the eyes' whites and the face is lost in them, so a
-* dark guy goes plain. Single marks, a belly and the chase finishes stay.
-*/
-const SCATTERED = new Set([
-	"tabby",
-	"spots",
-	"gleam",
-	"stripes",
-	"zigzag",
-	"polka dots",
-	"sprinkles"
-]);
-const darkSkin = (config) => {
-	const ink = paletteOf(config).colors[T.EYE];
-	return !!ink && contrast(ink, "#000000") > 10;
-};
-/**
 * Composes every part into one 16x16 grid of colour tokens.
 *
 * The order matters and is the same for every guy: the lit body and its
@@ -9723,7 +9760,8 @@ function compose(config) {
 		arms(c, config.arms, T.BODY);
 	}
 	const bare = c.grid.map((row) => [...row]);
-	if (!skin && !(SCATTERED.has(bodies[config.body].name) && darkSkin(config))) bodies[config.body].draw(c);
+	const extras$1 = extrasOf(config, c);
+	if (!skin && extras$1.pattern) bodies[config.body].draw(c);
 	const before = c.grid.map((row) => [...row]);
 	const onTop = (draw) => {
 		const tryOn = (domed) => {
@@ -9767,7 +9805,7 @@ function compose(config) {
 	if (accessory.layer === "face") accessory.draw(c);
 	const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 	const line = c.eyeLine;
-	const cheek = cheeks[config.cheeks].art;
+	const cheek = skin || extras$1.cheeks ? cheeks[config.cheeks].art : [];
 	const face = faceCells(c, eye, mouth$1);
 	clearFace(c, face, bare, onFace);
 	if (cheek.length) placeCheeks(c, cheek, face);
@@ -10418,4 +10456,4 @@ Object.defineProperty(exports, 'withoutRetired', {
     return withoutRetired;
   }
 });
-//# sourceMappingURL=paint-Bauwqge2.cjs.map
+//# sourceMappingURL=paint-AIl1gSbl.cjs.map
