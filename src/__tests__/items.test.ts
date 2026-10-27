@@ -1,6 +1,7 @@
 import { RETIRED_EYES } from '../parts/weights';
 import { describe, expect, it } from 'bun:test';
-import { compose, ARM_STYLES, FOOT_STYLES } from '../compose';
+import { compose, buddyOf, buddySpot, roomFor, ARM_STYLES, FOOT_STYLES } from '../compose';
+import { BUDDY_BOX } from '../item-art';
 import { heads, eyes, mouths, hair, accessories } from '../parts';
 import { T } from '../parts/art';
 import { items, itemById, gameItems, freeItem, dress, withItems, GAMES } from '../items';
@@ -191,16 +192,52 @@ describe('everything worn together', () => {
 describe('buddies', () => {
   const buddies = items.filter(i => i.slot === 'buddy');
 
-  it('fill their corner under the face: at most 6 across and 5 tall, and at least 4 of each', () => {
+  it('fit their box: at most BUDDY_BOX, 6 across and 5 tall, and at least 4 of each', () => {
     for (const b of buddies) {
       const art = b.art!;
-      expect(art.length).toBeLessThanOrEqual(5);
+      expect(art.length).toBeLessThanOrEqual(BUDDY_BOX.height);
       expect(art.length).toBeGreaterThanOrEqual(4);
-      expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(6);
+      expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(BUDDY_BOX.width);
       expect(Math.max(...art.map(r => r.length))).toBeGreaterThanOrEqual(4);
       // Solid enough to read as a shape, not a scatter of pixels.
       expect(art.flat().filter(Boolean).length).toBeGreaterThanOrEqual(12);
     }
+  });
+
+  // The rule: a buddy stands apart, a clear pixel (diagonals too) between its
+  // outline and the guy in every frame of every move. Sixteen columns leave no
+  // head or skin room for that, so on his own picture it stands in front of
+  // him in the bottom-right corner, never touching his eyes or mouth. On a
+  // picture eleven columns wider every head and skin has the room.
+  const BOX = Array.from({ length: BUDDY_BOX.height }, () => new Array<number>(BUDDY_BOX.width).fill(1));
+  const all = [...heads.map((_, head) => ({ head })), ...skins.map(s => ({ skin: s.id }))];
+  const near = (a: Set<number>, x: number, y: number) => [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => a.has((y + dy) * GRID_SIZE + x + dx)));
+
+  it('stand in front of him on his own sixteen columns, never by his eyes or mouth, flipped or not', () => {
+    const wrong: string[] = [];
+    for (const body of all) for (const flip of [false, true]) for (const b of buddies) {
+      const spot = buddyOf({ ...BASE, ...body, flip, buddy: b.id })!;
+      const label = `${b.id} on ${JSON.stringify(body)}${flip ? ' flipped' : ''}`;
+      if (spot.apart) wrong.push(`${label} found room: use it, and update this test`);
+      if (spot.cells.some(([x, y]) => near(spot.face, x, y))) wrong.push(`${label} touches the face`);
+      const g = guy({ ...body, flip, buddy: b.id }), bare = guy({ ...body, flip });
+      for (const k of spot.face) if (g[Math.floor(k / GRID_SIZE)][k % GRID_SIZE] !== bare[Math.floor(k / GRID_SIZE)][k % GRID_SIZE]) { wrong.push(`${label} covers the face`); break; }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  it('stand apart from him, a clear pixel between, where the picture has the room', () => {
+    const EXTRA = 11, wrong: string[] = [];
+    for (const body of all) for (let feet = 0; feet < FOOT_STYLES.length; feet++) {
+      const still = guy({ ...body, feet }).map(row => [...row.map(Boolean), ...new Array<boolean>(EXTRA).fill(false)]);
+      const room = roomFor(still), spot = buddySpot(BOX, room);
+      if (!spot.apart) { wrong.push(`${JSON.stringify(body)} feet ${feet}`); continue; }
+      // Checked again here, not by buddySpot's own rule: nothing he covers within a pixel of it.
+      for (const [x, y] of spot.cells) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (room[y + dy]?.[x + dx]) wrong.push(`${JSON.stringify(body)} touches at ${x},${y}`);
+      }
+    }
+    expect(wrong).toEqual([]);
   });
 
   it('use a light, a mid and a dark tone of their own, so they read on light and dark guys alike', () => {

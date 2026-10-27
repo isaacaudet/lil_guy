@@ -257,6 +257,70 @@ function clearFace(c: Canvas, face: Set<number>, bare: PixelGrid, worn: boolean[
   }
 }
 
+/** Where a buddy stands, as `buddySpot` works it out. */
+export interface BuddySpot {
+  /** `[x, y, token]`: the art in its own `1`–`9` colours, and its outline (`T.OUTLINE`). */
+  cells: [number, number, number][];
+  /** Whether it stands apart, a clear pixel between its outline and everything of him. */
+  apart: boolean;
+}
+
+/**
+ * Where a buddy stands, on a picture whose cells `taken` marks as his (in any
+ * frame of any move: `roomFor` grows the still to cover them). It stands on
+ * the floor, right then left, as close to its corner as it can while a clear
+ * pixel, diagonals included, runs between its outline and him.
+ *
+ * Where there is no such spot, it stands in front of him in the bottom-right
+ * corner, as it always has, with its own outline, leaving out any pixel that
+ * would touch his eyes or mouth (`face`). That is every head and skin there is
+ * today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
+ * needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
+ * only comes true on a picture wider than his own.
+ */
+export function buddySpot(art: Stamp, taken: boolean[][], face: (x: number, y: number) => boolean = () => false): BuddySpot {
+  const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
+  const at = (x0: number, y0: number) => {
+    const cells: [number, number, number][] = [];
+    const on = (x: number, y: number) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
+    for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
+      if (on(x, y)) cells.push([x, y, art[y - y0][x - x0]]);
+      else if (on(x + 1, y) || on(x - 1, y) || on(x, y + 1) || on(x, y - 1)) cells.push([x, y, T.OUTLINE]);
+    }
+    return cells;
+  };
+  const clear = (cells: [number, number, number][]) => cells.every(([x, y]) => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (taken[y + dy]?.[x + dx]) return false;
+    return true;
+  });
+  const y0 = H - 1 - h;
+  for (let k = 0; k + w + 2 <= W; k++) for (const x0 of [W - 1 - w - k, 1 + k]) {
+    const cells = at(x0, y0);
+    if (clear(cells)) return { cells, apart: true };
+  }
+  const corner = at(W - 1 - w, y0).filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && !face(x, y));
+  return { cells: corner, apart: false };
+}
+
+/**
+ * The cells a guy may cover in any frame of any move, from his still: an arm
+ * out at either side and a step sideways (two columns), down two rows where a
+ * squash lowers him, and turned round in his sixteen columns. A buddy stays
+ * on the floor (./animate), so this is all it has to keep clear of.
+ */
+export function roomFor(still: boolean[][]): boolean[][] {
+  const H = still.length, W = still[0].length;
+  const out = still.map(row => row.map(() => false));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!still[y][x] && !(x < GRID_SIZE && still[y][GRID_SIZE - 1 - x])) continue;
+    for (let dy = 0; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const yy = y + dy, xx = x + dx;
+      if (yy < H && xx >= 0 && xx < W) out[yy][xx] = true;
+    }
+  }
+  return out;
+}
 
 /**
  * Composes every part into one 16x16 grid of colour tokens.
@@ -268,6 +332,39 @@ function clearFace(c: Canvas, face: Set<number>, bare: PixelGrid, worn: boolean[
  * drawn around the finished shape so hats, ears and arms all get one too.
  */
 export function compose(config: AvatarConfig): PixelGrid {
+  return build(config);
+}
+
+/** What composing a guy found out on the way, for the checks and for ./animate. */
+interface Report {
+  hatCut: number;
+  buddy?: BuddySpot & { face: Set<number> };
+}
+
+/**
+ * How many of a hat's pixels the guy it is on cuts off: painted where the
+ * face's room begins (and taken back), or off the grid's edge. Zero for every
+ * hat on every head and skin: a hat too tall or wide for the room is fitted
+ * to it (`fitRoom` in ./item-art), never chopped.
+ */
+export function hatCut(config: AvatarConfig): number {
+  const report: Report = { hatCut: 0 };
+  build(config, report);
+  return report.hatCut;
+}
+
+/**
+ * The buddy a guy wears, where it stands in his still (`cells`, art in its
+ * own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
+ * ./animate can stand it on the floor while he moves.
+ */
+export function buddyOf(config: AvatarConfig): (BuddySpot & { face: Set<number> }) | undefined {
+  const report: Report = { hatCut: 0 };
+  build(config, report);
+  return report.buddy;
+}
+
+function build(config: AvatarConfig, report?: Report): PixelGrid {
   const skin = skinOf(config);
   const hat = itemById(config.hat);
   const frame = itemById(config.frame);
@@ -310,23 +407,28 @@ export function compose(config: AvatarConfig): PixelGrid {
     // gem or a flag stays on the real head.
     const tryOn = (domed: boolean) => {
       const { canvas, dome } = domed ? c.domed(3 - (c.floor - c.tip + 1)) : { canvas: c.clone(), dome: [] as [number, number][] };
-      draw(canvas.forHats());
+      const view = canvas.forHats();
+      view.refused = 0;
+      draw(view);
+      let cut = view.refused;
       const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
       for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
       for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
-        if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
+        if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) { canvas.grid[y][x] = before[y][x]; cut++; }
       }
       let shown = 0;
       canvas.grid.forEach((row, y) => row.forEach((v, x) => { if (v !== before[y][x]) shown++; }));
       // A cap is one that covers most of the dome; anything else would float where the dome was.
-      return { grid: canvas.grid, shown, cap: dome.length > 0 && wrapped * 2 >= dome.length };
+      return { grid: canvas.grid, shown, cut, cap: dome.length > 0 && wrapped * 2 >= dome.length };
     };
     let best = tryOn(false);
     if (c.floor - c.tip + 1 < 3) { const d = tryOn(true); if (d.cap && d.shown > best.shown) best = d; }
     best.grid.forEach((row, y) => row.forEach((v, x) => { c.grid[y][x] = v; }));
+    return best.cut;
   };
   if (hat?.slot === 'hat') {
-    onTop(cv => hat.draw!(cv));
+    const cut = onTop(cv => hat.draw!(cv));
+    if (report) report.hatCut = cut;
     claim(c.grid, LAYER.hat);
     // The hat casts a shadow on the head just under it, so it stands off a
     // body of the same colour (a gold trophy on a yellow guy).
@@ -365,6 +467,13 @@ export function compose(config: AvatarConfig): PixelGrid {
   // authored. The sparkle and the frame go on after, so they never flip.
   if (config.flip) for (const row of c.grid) row.reverse();
 
+  // Where his buddy stands is worked out on him alone, before anything goes round him.
+  const buddy = itemById(config.buddy);
+  const shown = new Set([...face].map(k => (config.flip ? k - (k % GRID_SIZE) + GRID_SIZE - 1 - (k % GRID_SIZE) : k)));
+  const spot = buddy?.slot === 'buddy'
+    ? buddySpot(buddy.art!, roomFor(c.grid.map(row => row.map(Boolean))), (x, y) => touches(shown, x, y))
+    : undefined;
+
   if (Object.values(config.owned ?? {}).some(o => o?.finish === 'gold')) sparkle(c.grid);
 
   // An aura goes round the finished guy, in front of any frame, as it stands
@@ -388,18 +497,10 @@ export function compose(config: AvatarConfig): PixelGrid {
     }
   }
 
-  // The buddy sits at the guy's feet, bottom right, in front of everything but the face, with its own outline.
-  const buddy = itemById(config.buddy);
-  if (buddy?.slot === 'buddy') {
-    const art = buddy.art!, h = art.length, w = Math.max(...art.map(r => r.length));
-    const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
-    const on = (x: number, y: number) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
-    for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
-      if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
-      if (touches(face, x, y)) continue;
-      if (on(x, y)) { const t = art[y - y0][x - x0]; c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t; }
-      else if (on(x + 1, y) || on(x - 1, y) || on(x, y + 1) || on(x, y - 1)) c.grid[y][x] = T.OUTLINE;
-    }
+  // The buddy stands on the floor (`buddySpot`), in front of everything, with its own outline.
+  if (spot) {
+    for (const [x, y, t] of spot.cells) c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+    if (report) report.buddy = { ...spot, face: shown };
   }
   return c.grid;
 }

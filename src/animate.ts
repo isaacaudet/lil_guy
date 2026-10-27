@@ -1,13 +1,13 @@
 import { cycle, fit, fitLoop, LOOP_MS, steps, wave, wrap } from './loop';
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
-import { compose, composeBase, faceOf } from './compose';
+import { buddyOf, compose, composeBase, faceOf } from './compose';
 import { heads, mouths, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
 import { paint } from './paint';
 import { paletteOf } from './palette';
 import { GRADES, gradeOf } from './owned';
-import { LAYER, T } from './parts/art';
+import { LAYER, LOCAL, T } from './parts/art';
 import { hash } from './hash';
 import { auraById, auraCells, auraColor } from './auras';
 import { applyFx } from './effects';
@@ -253,7 +253,7 @@ const mix = (a: string, b: string, t: number) => {
 // ---------------------------------------------------------------- frames
 
 /** `body`: the guy's own skin, which a Lucky shimmer crosses. `eye`: the token of an eye pixel, for eyes that move. */
-interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number }
+interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; face?: boolean }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
@@ -263,7 +263,7 @@ const slotIndex = (t: number) => (t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t
 const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
 
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, face: Face | null = null): Layer {
+function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, face: Face | null = null, mouth?: Set<number>): Layer {
   const colors = paint(grid, config, palette, small, false);
   const out = empty();
   const eyeBox = face && { top: face.top - 1, bottom: face.line, left: face.eyes[0].left - 1, right: face.eyes[face.eyes.length - 1].right + 1 };
@@ -272,6 +272,7 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small 
     if (!c) return;
     const cell: Cell = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy, slot: slotIndex(t) };
     if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
+    if (mouth?.has(y * GRID_SIZE + x)) cell.face = true;
     if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
     out[y + HEADROOM][x] = cell;
   }));
@@ -331,6 +332,20 @@ function squash(layer: Layer, n: number): Layer {
   }
   const k = -n;
   return [...rows.slice(k, r + 1), ...Array.from({ length: k }, () => [...rows[r]]), ...rows.slice(r + 1)];
+}
+
+/**
+ * His buddy, standing where it stands in the still: on the floor, whatever
+ * he does. In front of him (no room beside him; see `buddySpot`), it leaves
+ * out any pixel next to his eyes or mouth in this frame.
+ */
+function standBuddy(layer: Layer, buddy: [number, number, Cell][], apart: boolean): void {
+  const nearFace = (x: number, y: number) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.face) return true;
+    return false;
+  };
+  const keep = buddy.filter(([x, y]) => apart || !nearFace(x, y));
+  for (const [x, y, cell] of keep) layer[y][x] = { ...cell };
 }
 
 function shift(layer: Layer, dx: number, dy: number): Layer {
@@ -411,8 +426,10 @@ const SPARKLE_SPOTS: [number, number][] = [[2, 6], [13, 8], [1, 13], [14, 15], [
 export function animate(input: string, move: Move, options: AnimateOptions = {}): Animation {
   const config = dress(resolve(input, options.parts), options, input);
   const palette = withItems(options.palette ?? paletteOf(config), config);
-  // The frame and any aura are drawn per frame round him, not into his poses.
-  const figure: AvatarConfig = { ...config, frame: undefined, aura: undefined };
+  // The frame and any aura are drawn per frame round him, not into his poses,
+  // and so is his buddy, which stays on the floor while he moves.
+  const figure: AvatarConfig = { ...config, frame: undefined, aura: undefined, buddy: undefined };
+  const spot = itemById(config.buddy)?.slot === 'buddy' ? buddyOf({ ...config, frame: undefined, aura: undefined }) : undefined;
   const wornAura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
   // Effects move, so a guy wearing one gets short frames like an aura's.
   const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
@@ -441,11 +458,26 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // Some shapes and skins have nowhere to put an arm.
   const canWave = JSON.stringify(grid('wave')) !== JSON.stringify(grid('sides'));
 
+  // His eyes and mouth in each pose, which the buddy in front of him keeps off:
+  // the still's, and whatever a laugh or a glance moves onto new pixels.
+  const FACE_TOKENS = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
+  const faceIn = (pose: Pose) => {
+    if (!spot) return undefined;
+    const out = new Set(spot.face), g = grid(pose), base = grid('base');
+    g.forEach((row, y) => row.forEach((t, x) => { if (FACE_TOKENS.has(t) && t !== base[y][x]) out.add(y * GRID_SIZE + x); }));
+    return out;
+  };
   const layers = new Map<Pose, Layer>();
   const layerOf = (pose: Pose) => {
-    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null));
+    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null, faceIn(pose)));
     return layers.get(pose)!;
   };
+  const buddyCells: [number, number, Cell][] = [];
+  if (spot) {
+    const only = Array.from({ length: GRID_SIZE }, () => new Array<number>(GRID_SIZE).fill(0));
+    for (const [x, y, t] of spot.cells) only[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+    painted(only, config, palette, !!options.small).forEach((row, y) => row.forEach((cell, x) => { if (cell) buddyCells.push([x, y, cell]); }));
+  }
 
   // The frame behind him, painted where it sits in the still so it looks the same.
   let backdrop: (string | null)[][] | null = null;
@@ -492,6 +524,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     if (beat.turn) layer = layer.map(row => [...row].reverse());
     layer = squash(layer, beat.squash ?? 0);
     layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+    if (buddyCells.length) { layer = layer.map(row => [...row]); standBuddy(layer, buddyCells, spot!.apart); }
     const figure = layer;
     layer = layer.map(row => row.map(cell => (cell ? { ...cell } : null)));
     if (trailFrom.length && (beat.dy ?? 0) < 0) {
