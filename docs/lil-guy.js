@@ -28,8 +28,8 @@ function hashNth(input, index) {
 //#endregion
 //#region src/parts/weights.ts
 /**
-* How often each part turns up, for guys dealt from deal 3 on (seeds made by
-* `makeSeed`). Older guys read the frozen `DEAL_2` tables at the end.
+* How often each part turns up, for guys dealt from deal 4 on (seeds made by
+* `makeSeed`). Older guys read the frozen `DEAL_3` and `DEAL_2` tables at the end.
 *
 * Weighted by how good a part looks, not to make everything equally likely:
 *
@@ -84,23 +84,23 @@ const headWeights = [
 ];
 const eyeWeights = [
 	120,
-	150,
+	175,
 	110,
-	120,
+	145,
 	40,
-	60,
+	75,
 	40,
 	20,
 	30,
-	50,
+	25,
 	30,
 	15,
 	15,
-	20,
+	8,
 	12,
 	6,
 	8,
-	45,
+	15,
 	12,
 	35,
 	1,
@@ -307,10 +307,250 @@ const paletteWeights = [
 	2
 ];
 /**
-* The deal before 3 (seeds without the `3-` prefix, and plain names). Frozen:
+* Deal 3 (seeds starting `3-`), as it stood when deal 4 began: frozen like
+* `DEAL_2`, so a guy dealt from it keeps his parts. Deal 4 dealt fewer shut
+* and half-shut eyes.
+*/
+const DEAL_3 = {
+	head: [
+		150,
+		130,
+		50,
+		120,
+		100,
+		90,
+		80,
+		25,
+		30,
+		30,
+		35,
+		20,
+		40,
+		30,
+		15,
+		20,
+		20,
+		15,
+		10,
+		15,
+		10,
+		20,
+		10,
+		8,
+		20,
+		30,
+		20,
+		20,
+		15,
+		2,
+		3,
+		3
+	],
+	eyes: [
+		120,
+		150,
+		110,
+		120,
+		40,
+		60,
+		40,
+		20,
+		30,
+		50,
+		30,
+		15,
+		15,
+		20,
+		12,
+		6,
+		8,
+		45,
+		12,
+		35,
+		1,
+		2,
+		2
+	],
+	mouth: [
+		150,
+		130,
+		90,
+		50,
+		40,
+		50,
+		40,
+		20,
+		25,
+		70,
+		15,
+		30,
+		30,
+		15,
+		8,
+		15,
+		35,
+		20,
+		60,
+		2,
+		1,
+		2
+	],
+	cheeks: [
+		300,
+		150,
+		15,
+		60,
+		40,
+		10,
+		10,
+		12,
+		8,
+		25,
+		20,
+		15,
+		10,
+		6,
+		50,
+		40,
+		15,
+		1,
+		1
+	],
+	hair: [
+		250,
+		80,
+		70,
+		50,
+		25,
+		15,
+		30,
+		70,
+		30,
+		30,
+		45,
+		12,
+		15,
+		25,
+		10,
+		25,
+		40,
+		10,
+		40,
+		30,
+		25,
+		25,
+		0,
+		15,
+		10,
+		15,
+		20,
+		20,
+		15,
+		20,
+		30,
+		25,
+		15,
+		20,
+		2,
+		2,
+		2
+	],
+	body: [
+		500,
+		60,
+		50,
+		30,
+		40,
+		25,
+		30,
+		15,
+		20,
+		12,
+		35,
+		15,
+		15,
+		15,
+		35,
+		30,
+		30,
+		1,
+		2
+	],
+	accessory: [
+		450,
+		50,
+		50,
+		40,
+		30,
+		40,
+		15,
+		15,
+		12,
+		10,
+		35,
+		30,
+		30,
+		20,
+		35,
+		25,
+		20,
+		2,
+		2,
+		1
+	],
+	palette: [
+		36,
+		36,
+		36,
+		36,
+		36,
+		36,
+		24,
+		24,
+		36,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		24,
+		36,
+		24,
+		24,
+		8,
+		10,
+		10,
+		6,
+		6,
+		8,
+		26,
+		26,
+		26,
+		26,
+		2,
+		2,
+		2
+	]
+};
+/**
+* The deal before 3 (seeds without the `3-` or `4-` prefix, and plain names). Frozen:
 * every guy already dealt from one of these keeps his parts, so these lists
 * never change, not even to add a part. New parts and new weights go in the
-* tables above, which only seeds made by `makeSeed` from deal 3 on read.
+* tables above, which only seeds made by `makeSeed` from deal 4 on read.
 */
 const DEAL_2 = {
 	head: [
@@ -494,14 +734,15 @@ function weightedPick(weights, hashValue) {
 /** One name in this many gets the Lucky colour variant. */
 const LUCKY_ODDS = 400;
 /**
-* Seeds made from deal 3 on start with this. They draw from today's parts and
-* weights; anything else (an older seed, a plain name) draws from the frozen
-* deal 2 tables, so a guy already dealt never changes when parts are added.
+* Seeds made now start with this. They draw from today's parts and weights;
+* an older seed draws from its own deal's frozen tables (`3-` from deal 3,
+* anything else, plain names included, from deal 2), so a guy already dealt
+* never changes when parts are added or weights move.
 */
-const DEAL_PREFIX = "3-";
+const DEAL_PREFIX = "4-";
 /** Which deal an input draws from. */
-const dealOf = (input) => input.startsWith(DEAL_PREFIX) ? 3 : 2;
-const DEAL_3 = {
+const dealOf = (input) => input.startsWith(DEAL_PREFIX) ? 4 : input.startsWith("3-") ? 3 : 2;
+const DEAL_4 = {
 	head: headWeights,
 	eyes: eyeWeights,
 	mouth: mouthWeights,
@@ -513,7 +754,8 @@ const DEAL_3 = {
 };
 function resolve(input, overrides) {
 	const pick = (slot, weights) => weightedPick(weights, hashNth(input, slot));
-	const w = dealOf(input) === 3 ? DEAL_3 : DEAL_2;
+	const deal = dealOf(input);
+	const w = deal === 4 ? DEAL_4 : deal === 3 ? DEAL_3 : DEAL_2;
 	let eyes$1 = overrides?.eyes ?? pick(1, w.eyes);
 	if (RETIRED_EYES.includes(eyes$1)) eyes$1 = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
 	return {
@@ -1225,7 +1467,7 @@ const eyes_ = (name, rows) => ({
 const eyes = [
 	eyes_("beans", ["e....e", "e....e"]),
 	eyes_("shiny", ["we....we", "ee....ee"]),
-	eyes_("happy", [".e....e.", "e.e..e.e"]),
+	eyes_("happy", ["eee..eee", "e.e..e.e"]),
 	eyes_("sparkle", [
 		"we....we",
 		"ee....ee",
@@ -1244,7 +1486,7 @@ const eyes = [
 	]),
 	eyes_("hearts", [
 		"r.r..r.r",
-		"rrr..rrr",
+		"wrr..wrr",
 		".r....r."
 	]),
 	eyes_("lashes", [
@@ -1252,19 +1494,23 @@ const eyes = [
 		".e....e.",
 		".e....e."
 	]),
-	eyes_("chill", ["ss....ss", "we....we"]),
+	eyes_("chill", [
+		"ss....ss",
+		"we....ew",
+		"ee....ee"
+	]),
 	eyes_("side-eye", [
 		"ss....ss",
 		"ew....ew",
 		"ee....ee"
 	]),
-	eyes_("shades", ["weee..weee", ".ee....ee."]),
+	eyes_("shades", ["weeeeeweee", ".ee....ee."]),
 	eyes_("star", [
 		".y....y.",
 		"yyy..yyy",
 		".y....y."
 	]),
-	eyes_("squint", ["ee....ee"]),
+	eyes_("squint", ["ee....ee", "ee....ee"]),
 	eyes_("fired up", [
 		"o......o",
 		".o....o.",
@@ -1280,7 +1526,7 @@ const eyes = [
 		"weee",
 		"eeee"
 	]),
-	eyes_("sleepy", ["e.e....e.e", ".e......e."]),
+	eyes_("sleepy", ["e.e....e.e", "eee....eee"]),
 	eyes_("dizzy", [
 		".ee....ee.",
 		"e.e....e.e",
@@ -1344,8 +1590,12 @@ const mouths = [
 	]),
 	mouth("toothy", ["mwwwwm", ".mmmm."]),
 	mouth("tongue out", ["mmmm", "..t."]),
-	mouth("flat", ["mmmm"]),
-	mouth("gritted", ["mmmmmm", "mwmwmm"]),
+	mouth("flat", ["m...m", ".mmm."]),
+	mouth("gritted", [
+		"m....m",
+		"mwwwwm",
+		".mmmm."
+	]),
 	mouth("bubblegum", [
 		"...cc.",
 		"mm.cwc",
@@ -1386,7 +1636,7 @@ const cheeks = [
 	cheeks_("blush", ["cc......cc"]),
 	cheeks_("dot", ["c........c"]),
 	cheeks_("rosy", ["cc......cc", ".c......c."]),
-	cheeks_("freckles", ["s.s....s.s"]),
+	cheeks_("freckles", ["c.c....c.c"]),
 	cheeks_("scar", [".......o..", "........o."]),
 	cheeks_("band-aid", [".......xx."]),
 	cheeks_("war paint", ["rr......rr"]),
@@ -2143,13 +2393,13 @@ const accessories = [
 	{
 		name: "glasses",
 		layer: "face",
-		draw: (c) => fittedGlasses(c, T.ACCENT_SHADE, void 0, T.WHITE)
+		draw: (c) => fittedGlasses(c, T.ACCENT_SHADE, T.WHITE, T.WHITE)
 	},
 	{
 		name: "scarf",
 		layer: "body",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
 			for (let x = r.left; x <= r.right; x++) wear(c, x, y, (x - r.left) % 4 < 2 ? T.ACCENT : T.TRIM);
@@ -2161,7 +2411,7 @@ const accessories = [
 		name: "bell collar",
 		layer: "body",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
 			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear(c, x$1, y, T.ACCENT);
@@ -2176,7 +2426,7 @@ const accessories = [
 		draw: (c) => {
 			const x = c.centred(bowtie);
 			bowtie.forEach((row, dy) => row.forEach((token, dx) => {
-				if (token) wear(c, x + dx, c.eyeLine + 3 + dy, token);
+				if (token) wear(c, x + dx, c.neck + dy, token);
 			}));
 		}
 	},
@@ -2184,7 +2434,7 @@ const accessories = [
 		name: "bandana",
 		layer: "body",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
 			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear(c, x$1, y, T.ACCENT);
@@ -2233,19 +2483,15 @@ const accessories = [
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
 			const e = f.eyes[0];
-			for (let y = f.top - 1; y <= f.line; y++) for (let x = e.left - 1; x <= e.right + 1; x++) {
-				const corner = (x === e.left - 1 || x === e.right + 1) && (y === f.top - 1 || y === f.line);
-				if (!corner) c.set(x, y, T.EYE);
-			}
-			c.set(e.left, f.top, T.DEEP);
-			for (let i = 1, x = e.right + 1, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.EYE);
+			for (let y = f.top; y <= f.line; y++) for (let x = e.left - (e.right === e.left ? 1 : 0); x <= e.right; x++) c.set(x, y, T.OUTLINE);
+			for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
 		}
 	},
 	{
 		name: "necklace",
 		layer: "body",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
 			for (let x = r.left + 1; x < r.right; x += 2) wear(c, x, y, T.WHITE);
@@ -2256,7 +2502,7 @@ const accessories = [
 		name: "medal",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+			const x = Math.floor(c.centre) - 1, y = c.neck;
 			wear(c, x, y, T.ACCENT);
 			wear(c, x + 1, y, T.ACCENT_SHADE);
 			wear(c, x, y + 1, T.GOLD);
@@ -2285,7 +2531,7 @@ const accessories = [
 		name: "necktie",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+			const x = Math.floor(c.centre) - 1, y = c.neck;
 			wear(c, x, y, T.ACCENT_SHADE);
 			wear(c, x + 1, y, T.ACCENT_SHADE);
 			for (let ty = y + 1; ty < c.bottom; ty++) {
@@ -2300,7 +2546,7 @@ const accessories = [
 		name: "lei",
 		layer: "body",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
 			const flowers = [
@@ -2338,7 +2584,7 @@ const accessories = [
 		name: "gold chain",
 		layer: "body",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const y = c.neck;
 			const r = c.rows[y];
 			if (!r) return;
 			for (let x$1 = r.left; x$1 <= r.right; x$1++) wear(c, x$1, y, (x$1 - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);
@@ -2492,13 +2738,51 @@ var Canvas = class Canvas {
 			});
 		}
 		const firstRow = eye.findIndex((row) => row.some(Boolean));
+		const m = this.placeMouth(eye, mouth$1);
 		this.face = {
 			top: top + Math.max(0, firstRow),
 			line: this.eyeLine,
 			eyes: eyes$1,
-			mouthTop: this.eyeLine + 1,
-			mouthBottom: this.eyeLine + mouth$1.length
+			mouthTop: m.top,
+			mouthBottom: m.top + m.art.length - 1,
+			mouth: m.art
 		};
+	}
+	/**
+	* The mouth's top row goes just under the eyes, unless a pixel of it would
+	* sit right under an eye: eyes that run into a mouth turn a face into one
+	* shape (an H, a box), and it stops reading as eyes and a mouth. Then the
+	* mouth drops a row where the head has room for it, with a column of face
+	* either side. Where it hasn't (a heart's point, a bat), it stays put:
+	* taking the corners off a smile left a frown.
+	*/
+	placeMouth(eye, mouth$1) {
+		const ex = this.centred(eye), mx = this.centred(mouth$1), w = width(mouth$1);
+		const under = new Set();
+		eye[eye.length - 1].forEach((t, dx) => {
+			if (t) under.add(ex + dx);
+		});
+		const top = this.eyeLine + 1;
+		if (!mouth$1[0].some((t, dx) => t && under.has(mx + dx))) return {
+			top,
+			art: mouth$1
+		};
+		const fits = mouth$1.every((row, dy) => {
+			const y = top + 1 + dy;
+			return this.isBody(mx - 1, y) && this.isBody(mx + w, y) && row.every((t, dx) => !t || this.isBody(mx + dx, y));
+		});
+		return {
+			top: fits ? top + 1 : top,
+			art: mouth$1
+		};
+	}
+	/**
+	* The row a collar, scarf or necklace goes on: three under the eye line, or
+	* the first row under a mouth that reaches lower, where the body still has one.
+	*/
+	get neck() {
+		const low = (this.face?.mouthBottom ?? 0) + 1;
+		return low > this.eyeLine + 3 && low <= this.bottom ? low : this.eyeLine + 3;
 	}
 	/**
 	* The lowest row a hat or topper may paint on the head: it stops at least one
@@ -8651,338 +8935,6 @@ function withItems(palette$1, config) {
 }
 
 //#endregion
-//#region src/compose.ts
-/**
-* Feet, as columns either side of the centre seam. `null` tucks them away.
-*/
-const FOOT_STYLES = [
-	{
-		offsets: [2, 3],
-		token: T.BODY
-	},
-	{
-		offsets: [2],
-		token: T.BODY
-	},
-	{
-		offsets: [3, 4],
-		token: T.BODY
-	},
-	{
-		offsets: [2, 3],
-		token: T.TRIM
-	},
-	null
-];
-/** Arm poses. */
-const ARM_STYLES = [
-	"none",
-	"sides",
-	"wave"
-];
-/**
-* Light from the upper left, as on a glossy vinyl toy: a white specular point
-* and a gleam near the top-left of the head, a shade along the bottom and the
-* lower right, and a deeper shade where those meet. Applied the same way to
-* every shape, which is a lot of what makes the set look like one hand drew it.
-*/
-function light(c) {
-	const middle = (c.crown + c.bottom) / 2;
-	for (let y$1 = c.crown; y$1 <= c.bottom; y$1++) for (let x = 0; x < GRID_SIZE; x++) {
-		if (!c.isBody(x, y$1)) continue;
-		const below = !c.isBody(x, y$1 + 1);
-		const right = y$1 > middle && !c.isBody(x + 1, y$1);
-		if (below || right) c.set(x, y$1, below && x >= c.centre + 1 ? T.DEEP : T.SHADE);
-	}
-	const y = c.crown + 1;
-	const r = c.rows[y];
-	if (r && r.right - r.left >= 5) {
-		c.set(r.left + 1, y, T.WHITE);
-		c.set(r.left + 2, y, T.LIGHT);
-		if (c.isBody(r.left + 1, y + 1)) c.set(r.left + 1, y + 1, T.LIGHT);
-	}
-}
-function feet(c, style, limb) {
-	const spec = FOOT_STYLES[style];
-	if (!spec) return;
-	const base = c.rows[c.bottom];
-	if (!base) return;
-	const y = c.bottom + 1;
-	const mid = Math.floor(c.centre);
-	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base.left && x <= base.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
-}
-function arms(c, style, limb) {
-	const pose = ARM_STYLES[style];
-	if (pose === "none") return;
-	const y = c.eyeLine + 2;
-	const r = c.rows[y];
-	if (!r || r.left < 2 || r.right > GRID_SIZE - 3) return;
-	const nub = (x, top) => {
-		c.set(x, top, limb);
-		c.set(x, top + 1, limb);
-	};
-	nub(r.left - 1, y);
-	if (pose === "sides") nub(r.right + 1, y);
-	if (pose === "wave") {
-		const raised = c.rows[y - 2];
-		if (raised) nub(raised.right + 1, y - 2);
-	}
-}
-/**
-* Every empty cell touching something gets the outline colour. Diagonals are
-* left open, which rounds the corners off instead of boxing them in. Lines
-* already drawn in the outline colour — an antenna stalk, a glasses frame —
-* don't get outlined themselves, or they'd come out three pixels thick.
-*/
-function outline(grid) {
-	const filled = grid.map((row) => row.map((v) => v !== 0 && v !== T.OUTLINE));
-	for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
-		if (grid[y][x] !== 0) continue;
-		if (y > 0 && filled[y - 1][x] || y < GRID_SIZE - 1 && filled[y + 1][x] || x > 0 && filled[y][x - 1] || x < GRID_SIZE - 1 && filled[y][x + 1]) grid[y][x] = T.OUTLINE;
-	}
-}
-/** Moves an item's `1`–`9` colours into its layer's range. */
-function claim(grid, layer) {
-	for (const row of grid) for (let x = 0; x < GRID_SIZE; x++) if (row[x] >= LOCAL) row[x] = row[x] - LOCAL + layer;
-}
-function skinOf(config) {
-	const item = itemById(config.skin);
-	return item?.slot === "skin" ? item : void 0;
-}
-/** Where a guy's eyes and mouth sit, for anything that moves them afterwards (animate). */
-function faceOf(config) {
-	const c = startCanvas(config);
-	c.setFace(eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouths[config.mouth].art);
-	return c.face;
-}
-function startCanvas(config) {
-	const skin = skinOf(config);
-	if (skin) {
-		const grid = skin.art.map((row) => [...row]);
-		claim(grid, LAYER.skin);
-		return new Canvas(grid, skin.eyes);
-	}
-	const head$1 = heads[config.head];
-	return new Canvas(head$1.art.map((row) => [...row]), head$1.eyes);
-}
-/**
-* The body and its markings, lit, with no face, hat or accessory on it.
-* The blink frame fills vacated eye cells from here.
-*/
-function composeBase(config) {
-	const c = startCanvas(config);
-	if (!skinOf(config)) {
-		light(c);
-		bodies[config.body].draw(c);
-	}
-	return c.grid;
-}
-/**
-* A four-point twinkle in a corner the guy leaves empty: the mark of a Gold
-* finish. Top right first, then top left.
-*/
-function sparkle(grid) {
-	for (const [x, y] of [[13, 2], [2, 2]]) {
-		const cells = [
-			[x, y],
-			[x - 1, y],
-			[x + 1, y],
-			[x, y - 1],
-			[x, y + 1]
-		];
-		if (cells.every(([cx, cy]) => grid[cy][cx] === 0)) {
-			for (const [cx, cy] of cells) grid[cy][cx] = cx === x && cy === y ? T.WHITE : T.GOLD;
-			return;
-		}
-	}
-}
-/** The cells the eyes and mouth cover, as `y * GRID_SIZE + x`. */
-function faceCells(c, eye, mouth$1) {
-	const face = new Set();
-	const mark$1 = (s, x0, y0) => s.forEach((row, dy) => row.forEach((t, dx) => {
-		if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx);
-	}));
-	mark$1(eye, c.centred(eye), c.eyeLine - eye.length + 1);
-	mark$1(mouth$1, c.centred(mouth$1), c.eyeLine + 1);
-	return face;
-}
-const touches = (face, x, y) => {
-	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * GRID_SIZE + x + dx)) return true;
-	return false;
-};
-/**
-* Cheeks, kept off the face: each side slides out (up to three columns, or
-* a row lower) to where the most of it shows without touching an eye or the mouth. Patterns
-* (whiskers, stars, a scar) keep clear of the face diagonally too and off the
-* body's edge, where a dark one would read as the outline; a plain blush may
-* sit diagonally by an eye, as a blush does.
-*/
-function placeCheeks(c, cheek, face) {
-	const w = width(cheek), x0 = c.centred(cheek), y0 = c.eyeLine + 1, half = Math.floor(w / 2);
-	const side = (x, y) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
-	const inner = (x, y) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
-	const ok = (x, y, t) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x) && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
-	for (const [from, to, dir] of [[
-		0,
-		half,
-		-1
-	], [
-		w - half,
-		w,
-		1
-	]]) {
-		let best = [];
-		for (const down of [0, 1]) for (let shift$1 = 0; shift$1 <= 3; shift$1++) {
-			const cells = [];
-			cheek.forEach((row, dy) => {
-				for (let dx = from; dx < to; dx++) {
-					const x = x0 + dx + dir * shift$1, y = y0 + dy + down;
-					if (row[dx] && ok(x, y, row[dx])) cells.push([
-						x,
-						y,
-						row[dx]
-					]);
-				}
-			});
-			if (cells.length > best.length) best = cells;
-		}
-		for (const [x, y, t] of best) c.set(x, y, t);
-	}
-}
-/**
-* The face is a few pixels; a marking that runs into them turns it into a
-* smudge. So any patterned skin pixel touching the eyes or mouth (diagonals
-* too) goes back to plain skin. Things worn on the face stay.
-*/
-function clearFace(c, face, bare, worn) {
-	for (const k of face) {
-		const fx = k % GRID_SIZE, fy = Math.floor(k / GRID_SIZE);
-		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-			const x = fx + dx, y = fy + dy;
-			if (!c.isBody(x, y) || face.has(y * GRID_SIZE + x) || worn[y][x]) continue;
-			if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== bare[y][x]) c.grid[y][x] = bare[y][x];
-		}
-	}
-}
-/**
-* Composes every part into one 16x16 grid of colour tokens.
-*
-* The order matters and is the same for every guy: the lit body and its
-* markings, then whatever sits on top of the head, then anything worn over
-* the eyes, then the face itself (cheeks, eyes, mouth), then whatever is worn
-* on the body. Feet and arms are added before the outline, and the outline is
-* drawn around the finished shape so hats, ears and arms all get one too.
-*/
-function compose(config) {
-	const skin = skinOf(config);
-	const hat = itemById(config.hat);
-	const frame = itemById(config.frame);
-	const c = startCanvas(config);
-	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
-	c.setFace(eye, mouth$1);
-	if (skin) {
-		if (skin.limb) {
-			const limb = LAYER.skin + skin.limb - 1;
-			feet(c, config.feet, limb);
-			arms(c, config.arms, limb);
-		}
-	} else {
-		light(c);
-		if (heads[config.head].feet) feet(c, config.feet, T.BODY);
-		arms(c, config.arms, T.BODY);
-	}
-	const bare = c.grid.map((row) => [...row]);
-	if (!skin) bodies[config.body].draw(c);
-	const before = c.grid.map((row) => [...row]);
-	const onTop = (draw) => {
-		const tryOn = (domed) => {
-			const { canvas, dome } = domed ? c.domed(3 - (c.floor - c.tip + 1)) : {
-				canvas: c.clone(),
-				dome: []
-			};
-			draw(canvas.forHats());
-			const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
-			for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
-			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
-			let shown = 0;
-			canvas.grid.forEach((row, y) => row.forEach((v, x) => {
-				if (v !== before[y][x]) shown++;
-			}));
-			return {
-				grid: canvas.grid,
-				shown,
-				cap: dome.length > 0 && wrapped * 2 >= dome.length
-			};
-		};
-		let best = tryOn(false);
-		if (c.floor - c.tip + 1 < 3) {
-			const d = tryOn(true);
-			if (d.cap && d.shown > best.shown) best = d;
-		}
-		best.grid.forEach((row, y) => row.forEach((v, x) => {
-			c.grid[y][x] = v;
-		}));
-	};
-	if (hat?.slot === "hat") {
-		onTop((cv) => hat.draw(cv));
-		claim(c.grid, LAYER.hat);
-		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
-			const t = c.grid[y][x], below = c.grid[y + 1][x];
-			if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
-		}
-	} else if (!skin) onTop((cv) => hair[config.hair].draw(cv));
-	const accessory = accessories[config.accessory];
-	const preFace = c.grid.map((row) => [...row]);
-	if (accessory.layer === "face") accessory.draw(c);
-	const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
-	const line = c.eyeLine;
-	const cheek = cheeks[config.cheeks].art;
-	const face = faceCells(c, eye, mouth$1);
-	clearFace(c, face, bare, onFace);
-	if (cheek.length) placeCheeks(c, cheek, face);
-	c.draw(eye, c.centred(eye), line - eye.length + 1, true);
-	c.draw(mouth$1, c.centred(mouth$1), line + 1, true);
-	if (accessory.layer === "over") accessory.draw(c);
-	if (accessory.layer === "body" && !skin) accessory.draw(c);
-	const worn = (slot) => itemById(config[slot])?.slot === slot ? config.owned?.[slot] : void 0;
-	for (const slot of ["skin", "hat"]) {
-		const o = worn(slot);
-		if (o) markItem(c.grid, slot, o);
-	}
-	outline(c.grid);
-	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
-	if (config.flip) for (const row of c.grid) row.reverse();
-	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
-	const aura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
-	if (aura) {
-		const mask = c.grid.map((row) => row.map(Boolean));
-		for (const [x, y, k] of auraCells(aura.id, mask, aura.still, config.owned?.aura)) c.grid[y][x] = LAYER.aura + k;
-	}
-	if (frame?.slot === "frame") {
-		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill(x, y) - 1;
-		const o = worn("frame");
-		if (o) {
-			markItem(c.grid, "frame", o);
-			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
-		}
-	}
-	const buddy = itemById(config.buddy);
-	if (buddy?.slot === "buddy") {
-		const art = buddy.art, h = art.length, w = art[0].length;
-		const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
-		const on$1 = (x, y) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
-		for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
-			if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
-			if (on$1(x, y)) {
-				const t = art[y - y0][x - x0];
-				c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
-			} else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) c.grid[y][x] = T.OUTLINE;
-		}
-	}
-	return c.grid;
-}
-
-//#endregion
 //#region src/palette.ts
 const COLOURWAYS = [
 	{
@@ -9485,6 +9437,362 @@ function paletteOf(config) {
 }
 
 //#endregion
+//#region src/compose.ts
+/**
+* Feet, as columns either side of the centre seam. `null` tucks them away.
+*/
+const FOOT_STYLES = [
+	{
+		offsets: [2, 3],
+		token: T.BODY
+	},
+	{
+		offsets: [2],
+		token: T.BODY
+	},
+	{
+		offsets: [3, 4],
+		token: T.BODY
+	},
+	{
+		offsets: [2, 3],
+		token: T.TRIM
+	},
+	null
+];
+/** Arm poses. */
+const ARM_STYLES = [
+	"none",
+	"sides",
+	"wave"
+];
+/**
+* Light from the upper left, as on a glossy vinyl toy: a white specular point
+* and a gleam near the top-left of the head, a shade along the bottom and the
+* lower right, and a deeper shade where those meet. Applied the same way to
+* every shape, which is a lot of what makes the set look like one hand drew it.
+*/
+function light(c) {
+	const middle = (c.crown + c.bottom) / 2;
+	for (let y$1 = c.crown; y$1 <= c.bottom; y$1++) for (let x = 0; x < GRID_SIZE; x++) {
+		if (!c.isBody(x, y$1)) continue;
+		const below = !c.isBody(x, y$1 + 1);
+		const right = y$1 > middle && !c.isBody(x + 1, y$1);
+		if (below || right) c.set(x, y$1, below && x >= c.centre + 1 ? T.DEEP : T.SHADE);
+	}
+	const y = c.crown + 1;
+	const r = c.rows[y];
+	if (r && r.right - r.left >= 5) {
+		c.set(r.left + 1, y, T.WHITE);
+		c.set(r.left + 2, y, T.LIGHT);
+		if (c.isBody(r.left + 1, y + 1)) c.set(r.left + 1, y + 1, T.LIGHT);
+	}
+}
+function feet(c, style, limb) {
+	const spec = FOOT_STYLES[style];
+	if (!spec) return;
+	const base = c.rows[c.bottom];
+	if (!base) return;
+	const y = c.bottom + 1;
+	const mid = Math.floor(c.centre);
+	for (const off of spec.offsets) for (const x of [mid - off, mid + off - 1]) if (x >= base.left && x <= base.right) c.set(x, y, spec.token === T.BODY ? limb : spec.token);
+}
+function arms(c, style, limb) {
+	const pose = ARM_STYLES[style];
+	if (pose === "none") return;
+	const y = c.eyeLine + 2;
+	const r = c.rows[y];
+	if (!r || r.left < 2 || r.right > GRID_SIZE - 3) return;
+	const nub = (x, top) => {
+		c.set(x, top, limb);
+		c.set(x, top + 1, limb);
+	};
+	nub(r.left - 1, y);
+	if (pose === "sides") nub(r.right + 1, y);
+	if (pose === "wave") {
+		const raised = c.rows[y - 2];
+		if (raised) nub(raised.right + 1, y - 2);
+	}
+}
+/**
+* Every empty cell touching something gets the outline colour. Diagonals are
+* left open, which rounds the corners off instead of boxing them in. Lines
+* already drawn in the outline colour — an antenna stalk, a glasses frame —
+* don't get outlined themselves, or they'd come out three pixels thick.
+*/
+function outline(grid) {
+	const filled = grid.map((row) => row.map((v) => v !== 0 && v !== T.OUTLINE));
+	for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+		if (grid[y][x] !== 0) continue;
+		if (y > 0 && filled[y - 1][x] || y < GRID_SIZE - 1 && filled[y + 1][x] || x > 0 && filled[y][x - 1] || x < GRID_SIZE - 1 && filled[y][x + 1]) grid[y][x] = T.OUTLINE;
+	}
+}
+/** Moves an item's `1`–`9` colours into its layer's range. */
+function claim(grid, layer) {
+	for (const row of grid) for (let x = 0; x < GRID_SIZE; x++) if (row[x] >= LOCAL) row[x] = row[x] - LOCAL + layer;
+}
+function skinOf(config) {
+	const item = itemById(config.skin);
+	return item?.slot === "skin" ? item : void 0;
+}
+/** Where a guy's eyes and mouth sit, for anything that moves them afterwards (animate). */
+function faceOf(config) {
+	const c = startCanvas(config);
+	c.setFace(eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouths[config.mouth].art);
+	return c.face;
+}
+function startCanvas(config) {
+	const skin = skinOf(config);
+	if (skin) {
+		const grid = skin.art.map((row) => [...row]);
+		claim(grid, LAYER.skin);
+		return new Canvas(grid, skin.eyes);
+	}
+	const head$1 = heads[config.head];
+	return new Canvas(head$1.art.map((row) => [...row]), head$1.eyes);
+}
+/**
+* The body and its markings, lit, with no face, hat or accessory on it.
+* The blink frame fills vacated eye cells from here.
+*/
+function composeBase(config) {
+	const c = startCanvas(config);
+	if (!skinOf(config)) {
+		light(c);
+		bodies[config.body].draw(c);
+	}
+	return c.grid;
+}
+/**
+* A four-point twinkle in a corner the guy leaves empty: the mark of a Gold
+* finish. Top right first, then top left.
+*/
+function sparkle(grid) {
+	for (const [x, y] of [[13, 2], [2, 2]]) {
+		const cells = [
+			[x, y],
+			[x - 1, y],
+			[x + 1, y],
+			[x, y - 1],
+			[x, y + 1]
+		];
+		if (cells.every(([cx, cy]) => grid[cy][cx] === 0)) {
+			for (const [cx, cy] of cells) grid[cy][cx] = cx === x && cy === y ? T.WHITE : T.GOLD;
+			return;
+		}
+	}
+}
+/** The cells the eyes and mouth cover, as `y * GRID_SIZE + x`. */
+function faceCells(c, eye, mouth$1) {
+	const face = new Set();
+	const mark$1 = (s, x0, y0) => s.forEach((row, dy) => row.forEach((t, dx) => {
+		if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx);
+	}));
+	mark$1(eye, c.centred(eye), c.eyeLine - eye.length + 1);
+	mark$1(c.face.mouth, c.centred(mouth$1), c.face.mouthTop);
+	return face;
+}
+const touches = (face, x, y) => {
+	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * GRID_SIZE + x + dx)) return true;
+	return false;
+};
+/**
+* Cheeks, kept off the face: each side slides out (up to three columns, or
+* a row lower) to where the most of it shows without touching an eye or the mouth. Patterns
+* (whiskers, stars, a scar) keep clear of the face diagonally too and off the
+* body's edge, where a dark one would read as the outline; a plain blush may
+* sit diagonally by an eye, as a blush does.
+*/
+function placeCheeks(c, cheek, face) {
+	const w = width(cheek), x0 = c.centred(cheek), y0 = c.eyeLine + 1, half = Math.floor(w / 2);
+	const side = (x, y) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
+	const inner = (x, y) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
+	const ok = (x, y, t) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x) && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
+	for (const [from, to, dir] of [[
+		0,
+		half,
+		-1
+	], [
+		w - half,
+		w,
+		1
+	]]) {
+		let best = [];
+		for (const down of [0, 1]) for (let shift$1 = 0; shift$1 <= 3; shift$1++) {
+			const cells = [];
+			cheek.forEach((row, dy) => {
+				for (let dx = from; dx < to; dx++) {
+					const x = x0 + dx + dir * shift$1, y = y0 + dy + down;
+					if (row[dx] && ok(x, y, row[dx])) cells.push([
+						x,
+						y,
+						row[dx]
+					]);
+				}
+			});
+			if (cells.length > best.length) best = cells;
+		}
+		for (const [x, y, t] of best) c.set(x, y, t);
+	}
+}
+/**
+* The face is a few pixels; a marking that runs into them turns it into a
+* smudge. So any patterned skin pixel touching the eyes or mouth (diagonals
+* too) goes back to plain skin. Things worn on the face stay.
+*/
+function clearFace(c, face, bare, worn) {
+	for (const k of face) {
+		const fx = k % GRID_SIZE, fy = Math.floor(k / GRID_SIZE);
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+			const x = fx + dx, y = fy + dy;
+			if (!c.isBody(x, y) || face.has(y * GRID_SIZE + x) || worn[y][x]) continue;
+			if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== bare[y][x]) c.grid[y][x] = bare[y][x];
+		}
+	}
+}
+/**
+* Heads that are their own hairdo: a bat's ears and wings leave a face of a
+* few rows, and ears or a hat on top of them crowded it out. A hat the player
+* puts on still goes on.
+*/
+const EARED = new Set(["bat"]);
+/**
+* Patterns that scatter pale marks all over: on a skin dark enough for light
+* ink they crowd round the eyes' whites and the face is lost in them, so a
+* dark guy goes plain. Single marks, a belly and the chase finishes stay.
+*/
+const SCATTERED = new Set([
+	"tabby",
+	"spots",
+	"gleam",
+	"stripes",
+	"zigzag",
+	"polka dots",
+	"sprinkles"
+]);
+const darkSkin = (config) => {
+	const ink = paletteOf(config).colors[T.EYE];
+	return !!ink && contrast(ink, "#000000") > 10;
+};
+/**
+* Composes every part into one 16x16 grid of colour tokens.
+*
+* The order matters and is the same for every guy: the lit body and its
+* markings, then whatever sits on top of the head, then anything worn over
+* the eyes, then the face itself (cheeks, eyes, mouth), then whatever is worn
+* on the body. Feet and arms are added before the outline, and the outline is
+* drawn around the finished shape so hats, ears and arms all get one too.
+*/
+function compose(config) {
+	const skin = skinOf(config);
+	const hat = itemById(config.hat);
+	const frame = itemById(config.frame);
+	const c = startCanvas(config);
+	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
+	c.setFace(eye, mouth$1);
+	if (skin) {
+		if (skin.limb) {
+			const limb = LAYER.skin + skin.limb - 1;
+			feet(c, config.feet, limb);
+			arms(c, config.arms, limb);
+		}
+	} else {
+		light(c);
+		if (heads[config.head].feet) feet(c, config.feet, T.BODY);
+		arms(c, config.arms, T.BODY);
+	}
+	const bare = c.grid.map((row) => [...row]);
+	if (!skin && !(SCATTERED.has(bodies[config.body].name) && darkSkin(config))) bodies[config.body].draw(c);
+	const before = c.grid.map((row) => [...row]);
+	const onTop = (draw) => {
+		const tryOn = (domed) => {
+			const { canvas, dome } = domed ? c.domed(3 - (c.floor - c.tip + 1)) : {
+				canvas: c.clone(),
+				dome: []
+			};
+			draw(canvas.forHats());
+			const wrapped = dome.filter(([x, y]) => canvas.grid[y][x] !== 1).length;
+			for (const [x, y] of dome) if (canvas.grid[y][x] === 1) canvas.grid[y][x] = 0;
+			for (let y = c.floor + 1; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (canvas.grid[y][x] !== before[y][x] && c.isBody(x, y)) canvas.grid[y][x] = before[y][x];
+			let shown = 0;
+			canvas.grid.forEach((row, y) => row.forEach((v, x) => {
+				if (v !== before[y][x]) shown++;
+			}));
+			return {
+				grid: canvas.grid,
+				shown,
+				cap: dome.length > 0 && wrapped * 2 >= dome.length
+			};
+		};
+		let best = tryOn(false);
+		if (c.floor - c.tip + 1 < 3) {
+			const d = tryOn(true);
+			if (d.cap && d.shown > best.shown) best = d;
+		}
+		best.grid.forEach((row, y) => row.forEach((v, x) => {
+			c.grid[y][x] = v;
+		}));
+	};
+	if (hat?.slot === "hat") {
+		onTop((cv) => hat.draw(cv));
+		claim(c.grid, LAYER.hat);
+		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
+			const t = c.grid[y][x], below = c.grid[y + 1][x];
+			if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
+		}
+	} else if (!skin && !EARED.has(heads[config.head].name)) onTop((cv) => hair[config.hair].draw(cv));
+	const accessory = accessories[config.accessory];
+	const preFace = c.grid.map((row) => [...row]);
+	if (accessory.layer === "face") accessory.draw(c);
+	const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
+	const line = c.eyeLine;
+	const cheek = cheeks[config.cheeks].art;
+	const face = faceCells(c, eye, mouth$1);
+	clearFace(c, face, bare, onFace);
+	if (cheek.length) placeCheeks(c, cheek, face);
+	c.draw(eye, c.centred(eye), line - eye.length + 1, true);
+	c.draw(c.face.mouth, c.centred(mouth$1), c.face.mouthTop, true);
+	if (accessory.layer === "over") accessory.draw(c);
+	if (accessory.layer === "body" && !skin) accessory.draw(c);
+	const worn = (slot) => itemById(config[slot])?.slot === slot ? config.owned?.[slot] : void 0;
+	for (const slot of ["skin", "hat"]) {
+		const o = worn(slot);
+		if (o) markItem(c.grid, slot, o);
+	}
+	outline(c.grid);
+	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
+	if (config.flip) for (const row of c.grid) row.reverse();
+	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
+	const aura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
+	if (aura) {
+		const mask = c.grid.map((row) => row.map(Boolean));
+		for (const [x, y, k] of auraCells(aura.id, mask, aura.still, config.owned?.aura)) c.grid[y][x] = LAYER.aura + k;
+	}
+	if (frame?.slot === "frame") {
+		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) if (!c.grid[y][x]) c.grid[y][x] = LAYER.frame + frame.fill(x, y) - 1;
+		const o = worn("frame");
+		if (o) {
+			markItem(c.grid, "frame", o);
+			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
+		}
+	}
+	const buddy = itemById(config.buddy);
+	if (buddy?.slot === "buddy") {
+		const art = buddy.art, h = art.length, w = art[0].length;
+		const x0 = GRID_SIZE - 1 - w, y0 = GRID_SIZE - 1 - h;
+		const on$1 = (x, y) => (art[y - y0]?.[x - x0] ?? 0) !== 0;
+		for (let y = y0 - 1; y <= y0 + h; y++) for (let x = x0 - 1; x <= x0 + w; x++) {
+			if (y < 0 || x < 0 || y >= GRID_SIZE || x >= GRID_SIZE) continue;
+			if (on$1(x, y)) {
+				const t = art[y - y0][x - x0];
+				c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+			} else if (on$1(x + 1, y) || on$1(x - 1, y) || on$1(x, y + 1) || on$1(x, y - 1)) c.grid[y][x] = T.OUTLINE;
+		}
+	}
+	return c.grid;
+}
+
+//#endregion
 //#region src/paint.ts
 /**
 * Turns a composed grid into colours. Most cells take their token's palette
@@ -9496,55 +9804,15 @@ function paint(grid, config, palette$1, small = false, still = true) {
 	const slotOf$1 = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	const aura = auraById(config.aura);
 	if (small) ({grid, palette: palette$1} = forSmall(grid, palette$1));
-	const fp = facePlate(grid, palette$1);
-	if (fp) palette$1 = fp.palette;
 	const chase = chaseEyes(grid, config);
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = chase?.[y][x] ?? (fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token));
+		const color = chase?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token));
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
 		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color : copy ? paintCell(color, x, y, copy, state) : color;
 		return still && copy?.fx ? fxColor(painted$1, copy.fx, x, y, 0, copy.print) : painted$1;
 	}));
-}
-/**
-* On a body too dark for dark eyes, the face gets a lighter patch round the
-* eyes and mouth (as a penguin or a panda has) and the eyes stay dark on it:
-* cream eyes straight on a dark skin smudged into it at any size.
-*/
-function facePlate(grid, palette$1) {
-	const ink = resolveColor(palette$1, T.EYE), body = resolveColor(palette$1, T.BODY);
-	if (!ink || !body || contrast(ink, "#000000") <= 10) return null;
-	let top = 99, bottom = -1, left = 99, right = -1;
-	grid.forEach((row, y) => row.forEach((t, x) => {
-		if (t === T.EYE || t === T.MOUTH) {
-			top = Math.min(top, y);
-			bottom = Math.max(bottom, y);
-			left = Math.min(left, x);
-			right = Math.max(right, x);
-		}
-	}));
-	if (bottom < 0) return null;
-	top -= 1;
-	bottom += 1;
-	left -= 1;
-	right += 1;
-	const skin = (t) => t === T.BODY || t === T.SHADE || t === T.LIGHT;
-	const plate = grid.map((row, y) => row.map((t, x) => skin(t) && y >= top && y <= bottom && x >= left && x <= right && !((y === top || y === bottom) && (x <= left + 1 || x >= right - 1))));
-	const dark = mix$2(resolveColor(palette$1, T.OUTLINE) ?? "#000000", "#000000", .3);
-	return {
-		plate,
-		pale: mix$2(body, "#FFF1D6", .62),
-		palette: {
-			...palette$1,
-			colors: {
-				...palette$1.colors,
-				[T.EYE]: dark,
-				[T.MOUTH]: dark
-			}
-		}
-	};
 }
 /**
 * Chase eyes keep their own colours on every guy, so galaxy eyes are always a
@@ -10627,33 +10895,33 @@ function getColor(colors, index) {
 //#region src/guy-rank.ts
 /** [a guy's `guyScore`, the share of guys scoring at least that], commonest first. */
 const GUY_RANK = [
-	[8.0421, 1],
-	[10.7729, .9],
-	[11.5867, .75],
-	[12.1793, .6],
-	[12.544, .5],
-	[12.9172, .4],
-	[13.3205, .3],
-	[13.547, .25],
-	[13.7991, .2],
-	[14.0979, .15],
-	[14.479, .1],
-	[14.7309, .075],
-	[15.062, .05],
-	[15.4589, .03],
-	[15.7604, .02],
-	[16.2643, .01],
-	[16.465, .0075],
-	[16.7411, .005],
-	[17.0756, .003],
-	[17.3223, .002],
-	[17.7234, .001],
-	[18.1205, 5e-4],
-	[18.6163, 2e-4],
-	[18.9523, 1e-4],
-	[19.3143, 5e-5],
-	[19.7576, 2e-5],
-	[20.4402, 1e-5]
+	[7.9742, 1],
+	[10.7157, .9],
+	[11.536, .75],
+	[12.132, .6],
+	[12.5008, .5],
+	[12.8736, .4],
+	[13.2841, .3],
+	[13.5104, .25],
+	[13.7682, .2],
+	[14.0716, .15],
+	[14.4599, .1],
+	[14.7138, .075],
+	[15.0481, .05],
+	[15.4488, .03],
+	[15.7515, .02],
+	[16.2471, .01],
+	[16.4422, .0075],
+	[16.7127, .005],
+	[17.0553, .003],
+	[17.3217, .002],
+	[17.7295, .001],
+	[18.077, 5e-4],
+	[18.5644, 2e-4],
+	[18.9175, 1e-4],
+	[19.2804, 5e-5],
+	[19.7742, 2e-5],
+	[20.1775, 1e-5]
 ];
 
 //#endregion

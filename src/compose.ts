@@ -5,6 +5,7 @@ import { Canvas, type Face } from './parts/canvas';
 import { itemById, type Item } from './items';
 import { auraById, auraCells } from './auras';
 import { goldRim, GOLD_RIM_DAYS, markItem } from './pins';
+import { contrast, paletteOf } from './palette';
 import type { AvatarConfig, PixelGrid } from './types';
 import { GRID_SIZE } from './types';
 
@@ -162,7 +163,7 @@ function faceCells(c: Canvas, eye: Stamp, mouth: Stamp): Set<number> {
   const face = new Set<number>();
   const mark = (s: Stamp, x0: number, y0: number) => s.forEach((row, dy) => row.forEach((t, dx) => { if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx); }));
   mark(eye, c.centred(eye), c.eyeLine - eye.length + 1);
-  mark(mouth, c.centred(mouth), c.eyeLine + 1);
+  mark(c.face!.mouth, c.centred(mouth), c.face!.mouthTop);
   return face;
 }
 
@@ -213,6 +214,24 @@ function clearFace(c: Canvas, face: Set<number>, bare: PixelGrid, worn: boolean[
 }
 
 /**
+ * Heads that are their own hairdo: a bat's ears and wings leave a face of a
+ * few rows, and ears or a hat on top of them crowded it out. A hat the player
+ * puts on still goes on.
+ */
+const EARED = new Set(['bat']);
+
+/**
+ * Patterns that scatter pale marks all over: on a skin dark enough for light
+ * ink they crowd round the eyes' whites and the face is lost in them, so a
+ * dark guy goes plain. Single marks, a belly and the chase finishes stay.
+ */
+const SCATTERED = new Set(['tabby', 'spots', 'gleam', 'stripes', 'zigzag', 'polka dots', 'sprinkles']);
+const darkSkin = (config: AvatarConfig) => {
+  const ink = paletteOf(config).colors[T.EYE];
+  return !!ink && contrast(ink, '#000000') > 10;
+};
+
+/**
  * Composes every part into one 16x16 grid of colour tokens.
  *
  * The order matters and is the same for every guy: the lit body and its
@@ -246,7 +265,7 @@ export function compose(config: AvatarConfig): PixelGrid {
   }
   // The skin as it is before any pattern: what the face's surround goes back to.
   const bare = c.grid.map(row => [...row]);
-  if (!skin) bodies[config.body].draw(c);
+  if (!skin && !(SCATTERED.has(bodies[config.body].name) && darkSkin(config))) bodies[config.body].draw(c);
 
 
   // On a skin the player's face is what carries over; their ears, bow tie or
@@ -287,7 +306,7 @@ export function compose(config: AvatarConfig): PixelGrid {
       const t = c.grid[y][x], below = c.grid[y + 1][x];
       if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
     }
-  } else if (!skin) {
+  } else if (!skin && !EARED.has(heads[config.head].name)) {
     onTop(cv => hair[config.hair].draw(cv));
   }
 
@@ -302,7 +321,7 @@ export function compose(config: AvatarConfig): PixelGrid {
   clearFace(c, face, bare, onFace);
   if (cheek.length) placeCheeks(c, cheek, face);
   c.draw(eye, c.centred(eye), line - eye.length + 1, true);
-  c.draw(mouth, c.centred(mouth), line + 1, true);
+  c.draw(c.face!.mouth, c.centred(mouth), c.face!.mouthTop, true);
 
   if (accessory.layer === 'over') accessory.draw(c);
   if (accessory.layer === 'body' && !skin) accessory.draw(c);

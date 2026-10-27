@@ -26,8 +26,9 @@ export const eyes: Eyes[] = [
     'we....we',
     'ee....ee',
   ]),
+  // Shut and smiling, drawn two pixels thick so they read as happy, not as a line.
   eyes_('happy', [
-    '.e....e.',
+    'eee..eee',
     'e.e..e.e',
   ]),
   eyes_('sparkle', [
@@ -49,9 +50,10 @@ export const eyes: Eyes[] = [
     '.e....e.',
     'e......e',
   ]),
+  // Each with a glint, so they read as eyes and not as red spots on the skin.
   eyes_('hearts', [
     'r.r..r.r',
-    'rrr..rrr',
+    'wrr..wrr',
     '.r....r.',
   ]),
   eyes_('lashes', [
@@ -62,15 +64,17 @@ export const eyes: Eyes[] = [
   // A little attitude, so not every guy is pure sugar.
   eyes_('chill', [
     'ss....ss',
-    'we....we',
+    'we....ew',
+    'ee....ee',
   ]),
   eyes_('side-eye', [
     'ss....ss',
     'ew....ew',
     'ee....ee',
   ]),
+  // Joined by a bridge: two lenses angled in on their own read as a scowl.
   eyes_('shades', [
-    'weee..weee',
+    'weeeeeweee',
     '.ee....ee.',
   ]),
   eyes_('star', [
@@ -79,7 +83,9 @@ export const eyes: Eyes[] = [
     '.y....y.',
   ]),
   // Edgier, and rarer still.
+  // Two solid squares: a single row of ink read as asleep.
   eyes_('squint', [
+    'ee....ee',
     'ee....ee',
   ]),
   eyes_('fired up', [
@@ -99,10 +105,10 @@ export const eyes: Eyes[] = [
     'weee',
     'eeee',
   ]),
-  // Contented, eyes shut the other way up from happy.
+  // Contented, eyes shut the other way up from happy, two pixels thick.
   eyes_('sleepy', [
     'e.e....e.e',
-    '.e......e.',
+    'eee....eee',
   ]),
   // Spirals, each turning the other way.
   eyes_('dizzy', [

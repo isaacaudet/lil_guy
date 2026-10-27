@@ -23,8 +23,9 @@ export const cheeks: Cheeks[] = [
     'cc......cc',
     '.c......c.',
   ]),
+  // In blush: dark dots read as spots.
   cheeks_('freckles', [
-    's.s....s.s',
+    'c.c....c.c',
   ]),
   cheeks_('scar', [
     '.......o..',

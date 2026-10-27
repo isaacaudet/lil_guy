@@ -17,11 +17,9 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
   const slotOf = (t: number) => (t >= LAYER.aura ? 'aura' : t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null);
   const aura = auraById(config.aura);
   if (small) ({ grid, palette } = forSmall(grid, palette));
-  const fp = facePlate(grid, palette);
-  if (fp) palette = fp.palette;
   const chase = chaseEyes(grid, config);
   return grid.map((row, y) => row.map((token, x) => {
-    const color = chase?.[y][x] ?? (fp?.plate[y][x] ? fp.pale : token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
+    const color = chase?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
     if (!color) return null;
     const slot = slotOf(token);
     const copy = slot ? config.owned?.[slot] : undefined;
@@ -30,28 +28,6 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
     // An effect, as it stands at the start; animate moves it instead.
     return still && copy?.fx ? fxColor(painted, copy.fx, x, y, 0, copy.print) : painted;
   }));
-}
-
-/**
- * On a body too dark for dark eyes, the face gets a lighter patch round the
- * eyes and mouth (as a penguin or a panda has) and the eyes stay dark on it:
- * cream eyes straight on a dark skin smudged into it at any size.
- */
-function facePlate(grid: PixelGrid, palette: Palette): { plate: boolean[][]; palette: Palette; pale: string } | null {
-  const ink = resolveColor(palette, T.EYE), body = resolveColor(palette, T.BODY);
-  if (!ink || !body || contrast(ink, '#000000') <= 10) return null;
-  let top = 99, bottom = -1, left = 99, right = -1;
-  grid.forEach((row, y) => row.forEach((t, x) => {
-    if (t === T.EYE || t === T.MOUTH) { top = Math.min(top, y); bottom = Math.max(bottom, y); left = Math.min(left, x); right = Math.max(right, x); }
-  }));
-  if (bottom < 0) return null;
-  top -= 1; bottom += 1; left -= 1; right += 1;
-  const skin = (t: number) => t === T.BODY || t === T.SHADE || t === T.LIGHT;
-  // A rounded patch: the top and bottom rows pull in at the sides.
-  const plate = grid.map((row, y) => row.map((t, x) => skin(t) && y >= top && y <= bottom && x >= left && x <= right
-    && !((y === top || y === bottom) && (x <= left + 1 || x >= right - 1))));
-  const dark = mix(resolveColor(palette, T.OUTLINE) ?? '#000000', '#000000', 0.3);
-  return { plate, pale: mix(body, '#FFF1D6', 0.62), palette: { ...palette, colors: { ...palette.colors, [T.EYE]: dark, [T.MOUTH]: dark } } };
 }
 
 /**

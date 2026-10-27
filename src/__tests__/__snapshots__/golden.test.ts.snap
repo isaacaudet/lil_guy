@@ -10,11 +10,11 @@ exports[`golden art composes the same grid for a fixed set of inputs 1`] = `
 ..oggggggggggo..
 .o#########hw#o.
 .o##r#r##r#rh#o.
-.o##rrr##rrr##o.
+.o##rrw##rrw##o.
 .o###r####r###o.
+.os###########o.
 .os##mmmmmm###o.
-.os###mttm####o.
-.osr#r########o.
+.osr#rmttm####o.
 .orrr#######so.
 ..orsssssso..
 ...oooooooooo...
@@ -30,11 +30,11 @@ exports[`golden art composes the same grid for a fixed set of inputs 1`] = `
 ..o#######h##o..
 .o###e####e###o.
 .o###e####e###o.
-.oss#mwwwwm#s#o.
-.os###mmmm####o.
-.o####Aa####so.
-..oss#Yy###so..
-...ossssso...
+.oc#c######c#co.
+.os##mwwwwm###o.
+.o###mmmm###so.
+..os##Aa###so..
+...oYyssso...
 ....o##oo##o....
 .....oo..oo....."
 ,
@@ -48,11 +48,11 @@ exports[`golden art composes the same grid for a fixed set of inputs 1`] = `
 .o##ss####ssw#o.
 .o#we####wehso.
 .o##ee####ee#o..
-.o###mwwwwm##o..
+.o###########o..
+..os#mwwwwm###o.
 ..os##mmmm####o.
-..os#w#w#w#w##o.
-..os####y####o..
-..osssssso..
+..os#w#w#w#w#o..
+..osysssso..
 ...oo##oo##oo...
 .....oo..oo....."
 ,
@@ -80,9 +80,9 @@ o#o###mm####s#o
 ...oo###aaAaao..
 ..o#wh##a###ao..
 .o#AAAA##AAAA#o.
-.oAwwe#AAwwe#Ao.
-.oA#ee#AA#ee#Ao.
-.oA#ee#AA#ee#A#o
+.oAwwewAAwwewAo.
+.oAweewAAweewAo.
+.oAweewAAweewA#o
 .o#AAAmmmmAAA##o
 o#######t####so.
 o##s##s####so.
@@ -113,7 +113,7 @@ os####m##m##xxo
 }
 `;
 
-exports[`golden art emits the same SVG for a fixed input 1`] = `"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" role="presentation" aria-hidden="true"><g><rect x="4" y="2" width="7" height="1" fill="#332C6D"/><rect x="3" y="3" width="1" height="1" fill="#332C6D"/><rect x="4" y="3" width="1" height="1" fill="#F2C230"/><rect x="5" y="3" width="3" height="1" fill="#FFFFFF"/><rect x="8" y="3" width="1" height="1" fill="#FFD45C"/><rect x="9" y="3" width="2" height="1" fill="#FFFFFF"/><rect x="11" y="3" width="1" height="1" fill="#332C6D"/><rect x="3" y="4" width="1" height="1" fill="#332C6D"/><rect x="4" y="4" width="2" height="1" fill="#FFFFFF"/><rect x="6" y="4" width="1" height="1" fill="#7DD87A"/><rect x="7" y="4" width="3" height="1" fill="#FFFFFF"/><rect x="10" y="4" width="1" height="1" fill="#F2C230"/><rect x="11" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="4" width="1" height="1" fill="#332C6D"/><rect x="2" y="5" width="1" height="1" fill="#332C6D"/><rect x="3" y="5" width="5" height="1" fill="#3D6FE0"/><rect x="8" y="5" width="1" height="1" fill="#FFFFFF"/><rect x="9" y="5" width="4" height="1" fill="#3D6FE0"/><rect x="13" y="5" width="1" height="1" fill="#332C6D"/><rect x="1" y="6" width="1" height="1" fill="#332C6D"/><rect x="2" y="6" width="2" height="1" fill="#3D6FE0"/><rect x="4" y="6" width="2" height="1" fill="#2B3AB5"/><rect x="6" y="6" width="4" height="1" fill="#3D6FE0"/><rect x="10" y="6" width="2" height="1" fill="#2B3AB5"/><rect x="12" y="6" width="1" height="1" fill="#FFFFFF"/><rect x="13" y="6" width="1" height="1" fill="#3D6FE0"/><rect x="14" y="6" width="1" height="1" fill="#332C6D"/><rect x="1" y="7" width="1" height="1" fill="#332C6D"/><rect x="2" y="7" width="1" height="1" fill="#1F2A83"/><rect x="3" y="7" width="1" height="1" fill="#3D6FE0"/><rect x="4" y="7" width="1" height="1" fill="#FFFFFF"/><rect x="5" y="7" width="1" height="1" fill="#0B0915"/><rect x="6" y="7" width="4" height="1" fill="#3D6FE0"/><rect x="10" y="7" width="1" height="1" fill="#FFFFFF"/><rect x="11" y="7" width="1" height="1" fill="#0B0915"/><rect x="12" y="7" width="1" height="1" fill="#A8BEF1"/><rect x="13" y="7" width="1" height="1" fill="#2B3AB5"/><rect x="14" y="7" width="1" height="1" fill="#332C6D"/><rect x="1" y="8" width="1" height="1" fill="#332C6D"/><rect x="2" y="8" width="2" height="1" fill="#3D6FE0"/><rect x="4" y="8" width="2" height="1" fill="#0B0915"/><rect x="6" y="8" width="4" height="1" fill="#3D6FE0"/><rect x="10" y="8" width="2" height="1" fill="#0B0915"/><rect x="12" y="8" width="1" height="1" fill="#3D6FE0"/><rect x="13" y="8" width="1" height="1" fill="#332C6D"/><rect x="1" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="9" width="3" height="1" fill="#3D6FE0"/><rect x="5" y="9" width="1" height="1" fill="#0B0915"/><rect x="6" y="9" width="4" height="1" fill="#FFFFFF"/><rect x="10" y="9" width="1" height="1" fill="#0B0915"/><rect x="11" y="9" width="2" height="1" fill="#3D6FE0"/><rect x="13" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="10" width="1" height="1" fill="#332C6D"/><rect x="3" y="10" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="10" width="2" height="1" fill="#3D6FE0"/><rect x="6" y="10" width="4" height="1" fill="#0B0915"/><rect x="10" y="10" width="4" height="1" fill="#3D6FE0"/><rect x="14" y="10" width="1" height="1" fill="#332C6D"/><rect x="2" y="11" width="1" height="1" fill="#332C6D"/><rect x="3" y="11" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="5" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="7" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="8" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="9" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="10" y="11" width="1" height="1" fill="#3D6FE0"/><rect x="11" y="11" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="11" width="2" height="1" fill="#3D6FE0"/><rect x="14" y="11" width="1" height="1" fill="#332C6D"/><rect x="2" y="12" width="1" height="1" fill="#332C6D"/><rect x="3" y="12" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="12" width="4" height="1" fill="#3D6FE0"/><rect x="8" y="12" width="1" height="1" fill="#FFD45C"/><rect x="9" y="12" width="4" height="1" fill="#3D6FE0"/><rect x="13" y="12" width="1" height="1" fill="#332C6D"/><rect x="2" y="13" width="1" height="1" fill="#332C6D"/><rect x="3" y="13" width="4" height="1" fill="#1F2A83"/><rect x="7" y="13" width="6" height="1" fill="#2B3AB5"/><rect x="13" y="13" width="1" height="1" fill="#332C6D"/><rect x="3" y="14" width="2" height="1" fill="#332C6D"/><rect x="5" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="7" y="14" width="2" height="1" fill="#332C6D"/><rect x="9" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="11" y="14" width="2" height="1" fill="#332C6D"/><rect x="5" y="15" width="2" height="1" fill="#332C6D"/><rect x="9" y="15" width="2" height="1" fill="#332C6D"/></g></svg>"`;
+exports[`golden art emits the same SVG for a fixed input 1`] = `"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" role="presentation" aria-hidden="true"><g><rect x="4" y="2" width="7" height="1" fill="#332C6D"/><rect x="3" y="3" width="1" height="1" fill="#332C6D"/><rect x="4" y="3" width="1" height="1" fill="#F2C230"/><rect x="5" y="3" width="3" height="1" fill="#FFFFFF"/><rect x="8" y="3" width="1" height="1" fill="#FFD45C"/><rect x="9" y="3" width="2" height="1" fill="#FFFFFF"/><rect x="11" y="3" width="1" height="1" fill="#332C6D"/><rect x="3" y="4" width="1" height="1" fill="#332C6D"/><rect x="4" y="4" width="2" height="1" fill="#FFFFFF"/><rect x="6" y="4" width="1" height="1" fill="#7DD87A"/><rect x="7" y="4" width="3" height="1" fill="#FFFFFF"/><rect x="10" y="4" width="1" height="1" fill="#F2C230"/><rect x="11" y="4" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="4" width="1" height="1" fill="#332C6D"/><rect x="2" y="5" width="1" height="1" fill="#332C6D"/><rect x="3" y="5" width="5" height="1" fill="#3D6FE0"/><rect x="8" y="5" width="1" height="1" fill="#FFFFFF"/><rect x="9" y="5" width="4" height="1" fill="#3D6FE0"/><rect x="13" y="5" width="1" height="1" fill="#332C6D"/><rect x="1" y="6" width="1" height="1" fill="#332C6D"/><rect x="2" y="6" width="2" height="1" fill="#3D6FE0"/><rect x="4" y="6" width="2" height="1" fill="#2B3AB5"/><rect x="6" y="6" width="4" height="1" fill="#3D6FE0"/><rect x="10" y="6" width="2" height="1" fill="#2B3AB5"/><rect x="12" y="6" width="1" height="1" fill="#FFFFFF"/><rect x="13" y="6" width="1" height="1" fill="#3D6FE0"/><rect x="14" y="6" width="1" height="1" fill="#332C6D"/><rect x="1" y="7" width="1" height="1" fill="#332C6D"/><rect x="2" y="7" width="1" height="1" fill="#1F2A83"/><rect x="3" y="7" width="1" height="1" fill="#3D6FE0"/><rect x="4" y="7" width="1" height="1" fill="#FFFFFF"/><rect x="5" y="7" width="1" height="1" fill="#0B0915"/><rect x="6" y="7" width="4" height="1" fill="#3D6FE0"/><rect x="10" y="7" width="1" height="1" fill="#FFFFFF"/><rect x="11" y="7" width="1" height="1" fill="#0B0915"/><rect x="12" y="7" width="1" height="1" fill="#A8BEF1"/><rect x="13" y="7" width="1" height="1" fill="#2B3AB5"/><rect x="14" y="7" width="1" height="1" fill="#332C6D"/><rect x="1" y="8" width="1" height="1" fill="#332C6D"/><rect x="2" y="8" width="2" height="1" fill="#3D6FE0"/><rect x="4" y="8" width="2" height="1" fill="#0B0915"/><rect x="6" y="8" width="4" height="1" fill="#3D6FE0"/><rect x="10" y="8" width="2" height="1" fill="#0B0915"/><rect x="12" y="8" width="1" height="1" fill="#3D6FE0"/><rect x="13" y="8" width="1" height="1" fill="#332C6D"/><rect x="1" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="9" width="11" height="1" fill="#3D6FE0"/><rect x="13" y="9" width="1" height="1" fill="#332C6D"/><rect x="2" y="10" width="1" height="1" fill="#332C6D"/><rect x="3" y="10" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="10" width="1" height="1" fill="#3D6FE0"/><rect x="5" y="10" width="1" height="1" fill="#0B0915"/><rect x="6" y="10" width="4" height="1" fill="#FFFFFF"/><rect x="10" y="10" width="1" height="1" fill="#0B0915"/><rect x="11" y="10" width="3" height="1" fill="#3D6FE0"/><rect x="14" y="10" width="1" height="1" fill="#332C6D"/><rect x="2" y="11" width="1" height="1" fill="#332C6D"/><rect x="3" y="11" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="11" width="2" height="1" fill="#3D6FE0"/><rect x="6" y="11" width="4" height="1" fill="#0B0915"/><rect x="10" y="11" width="4" height="1" fill="#3D6FE0"/><rect x="14" y="11" width="1" height="1" fill="#332C6D"/><rect x="2" y="12" width="1" height="1" fill="#332C6D"/><rect x="3" y="12" width="1" height="1" fill="#2B3AB5"/><rect x="4" y="12" width="1" height="1" fill="#3D6FE0"/><rect x="5" y="12" width="1" height="1" fill="#FFFFFF"/><rect x="6" y="12" width="1" height="1" fill="#3D6FE0"/><rect x="7" y="12" width="1" height="1" fill="#FFFFFF"/><rect x="8" y="12" width="1" height="1" fill="#3D6FE0"/><rect x="9" y="12" width="1" height="1" fill="#FFFFFF"/><rect x="10" y="12" width="1" height="1" fill="#3D6FE0"/><rect x="11" y="12" width="1" height="1" fill="#FFFFFF"/><rect x="12" y="12" width="1" height="1" fill="#3D6FE0"/><rect x="13" y="12" width="1" height="1" fill="#332C6D"/><rect x="2" y="13" width="1" height="1" fill="#332C6D"/><rect x="3" y="13" width="4" height="1" fill="#1F2A83"/><rect x="7" y="13" width="1" height="1" fill="#2B3AB5"/><rect x="8" y="13" width="1" height="1" fill="#FFD45C"/><rect x="9" y="13" width="4" height="1" fill="#2B3AB5"/><rect x="13" y="13" width="1" height="1" fill="#332C6D"/><rect x="3" y="14" width="2" height="1" fill="#332C6D"/><rect x="5" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="7" y="14" width="2" height="1" fill="#332C6D"/><rect x="9" y="14" width="2" height="1" fill="#3D6FE0"/><rect x="11" y="14" width="2" height="1" fill="#332C6D"/><rect x="5" y="15" width="2" height="1" fill="#332C6D"/><rect x="9" y="15" width="2" height="1" fill="#332C6D"/></g></svg>"`;
 
 exports[`golden art covers every head wearing every topper 1`] = `
 {
@@ -787,10 +787,10 @@ oss##########o
 "................
 .o............o.
 o#o..........o#o
-o##o.o..ooo.o##o
-o###o#ooaa#o###o
-o###o##oaA#o###o
-o##o####o###o##o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -803,10 +803,10 @@ ososo##mm#sooo
 ,
   "bat + antlers": 
 "................
-.oo.o......o.oo.
-o#xoxo....oxox#o
-o#xxoo....ooxx#o
-o##xo#o..o#ox##o
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -823,10 +823,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##o.o..ooo.o##o
-o###o#oogg#o###o
-o###o##oG##o###o
-o##o###o####o##o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -840,11 +840,11 @@ ososo##mm#sooo
   "bat + beanie": 
 "................
 .o............o.
-o#o....oo....o#o
-o##ooooxxoooo##o
-oaaaaaaaaaaaaaAo
-oaaaaaaaaaaaaaAo
-oxxo###xx###oxxo
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -856,9 +856,9 @@ ososo##mm#sooo
 ................"
 ,
   "bat + bear ears": 
-".oo..........oo.
-o##o........o##o
-o#co........oc#o
+"................
+.o............o.
+o#o..........o#o
 o##o.o....o.o##o
 o###o#o..o#o###o
 o###o##oo##o###o
@@ -877,10 +877,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##o.o..o.o.o##o
-o###o#ooAo#o###o
-oaaaaaaaaaaaaaao
-oaao###aa###oaao
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -895,10 +895,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##oooooooooo##o
-oaaaaaaaaaaaaaAo
-oaaaaaaaaaaaaaAo
-oa#a###a####aa#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -911,10 +911,10 @@ ososo##mm#sooo
 ,
   "bat + bow": 
 "................
-.o......oo.oo.o.
-o#o....oaaoaao#o
-o##o.o.oaaAaa##o
-o###o#ooao#oa##o
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -932,8 +932,8 @@ ososo##mm#sooo
 .o............o.
 o#o..........o#o
 o##o.o....o.o##o
-o#a#o#o..o#o#a#o
-o##oo##oo##oo##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -946,10 +946,10 @@ ososo##mm#sooo
 ................"
 ,
   "bat + bunny ears": 
-"..oo........oo..
-.o##o......o##o.
-o##co......oc##o
-o##coo....ooc##o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
 o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
@@ -967,9 +967,9 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##oooooooooo##o
-oaaaaaaxaaaaaaAo
-oaaaaaaaaaaaaaAo
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -982,10 +982,10 @@ ososo##mm#sooo
 ................"
 ,
   "bat + cat ears": 
-".o............o.
+"................
+.o............o.
 o#o..........o#o
-o#co........oc#o
-o###oo....oo###o
+o##o.o....o.o##o
 o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
@@ -1000,11 +1000,11 @@ ososo##mm#sooo
 ................"
 ,
   "bat + chef hat": 
-".....oo.oo......
-.o..owwowwo...o.
-o#oowwwwwwwo.o#o
-o##owwwwwwwoo##o
-o###oxxxxx#o###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1018,11 +1018,11 @@ ososo##mm#sooo
 ................"
 ,
   "bat + cherries": 
-".......oo.......
-.o....ogGo....o.
-o#o..ogoogo..o#o
-o##oorroorroo##o
-o###orroorro###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1039,9 +1039,9 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##o.oo.o.o.o##o
-o###o##o#o#o###o
-o###o###o##o###o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -1055,10 +1055,10 @@ ososo##mm#sooo
 ,
   "bat + crown": 
 "................
-.o...o.o.o....o.
-o#o.oyoyoyo..o#o
-o##ooyyyyyo.o##o
-o###oYYrYY#o###o
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1075,10 +1075,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##oooooooooo##o
-owwwwwwwwwwwwwwo
-owwwwwwwwwwwwwwo
-ow#w###w####ow#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1091,10 +1091,10 @@ ososo##mm#sooo
 ,
   "bat + flower": 
 "................
-.o........o...o.
-o#o......oao.o#o
-o##o.o..oayao##o
-o###o#o..oao###o
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1108,13 +1108,13 @@ ososo##mm#sooo
 ................"
 ,
   "bat + flower crown": 
-"..............o.
-.oo..........oyo
-ogao.o.......ogo
-o#gooyo...o.og#o
-o##gogo.oogog##o
-o###o#gocg#a###o
-o##o###gg###o##o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1129,10 +1129,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##oooooooooo##o
-oxxxxxxyxxxaxxxo
-oxxxxaxxxgxxxxxo
-o#xo########x##o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1148,9 +1148,9 @@ ososo##mm#sooo
 .o............o.
 o#o..........o#o
 o##o.o....o.o##o
-o###o#oooo#o###o
-oAAAAAAAAAAAAAAo
-oa#o########o#ao
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1162,10 +1162,10 @@ ososo##mm#sooo
 ................"
 ,
   "bat + horns": 
-"..o..........o..
-.oxo........oxo.
-o#xxo......oxx#o
-o#xxoo....ooxx#o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
 o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
@@ -1180,12 +1180,12 @@ ososo##mm#sooo
 ................"
 ,
   "bat + laurel": 
-".o............o.
-oYo.o........oYo
-o#yoyo....o.oY#o
-o##YoYo..oYoY##o
-o###o#YooY#oy##o
-o###Y##oo##Y###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -1199,11 +1199,11 @@ ososo##mm#sooo
 ,
   "bat + leafy top": 
 "................
-.o.....o......o.
-o#o...ogo....o#o
-o##ooooogoooo##o
-oggggggggggggggo
-oGoGoGoGoGoGoG#o
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -1217,11 +1217,11 @@ ososo##mm#sooo
 ,
   "bat + mohawk": 
 "................
-.o.....oo.....o.
-o#o...oaao...o#o
-o##o.ooaAoo.o##o
-o###o#oaAo#o###o
-o###o#aaAA#o###o
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -1237,10 +1237,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##oooooooooo##o
-orrrrrrrwrrrrrro
-orrrrwrrrrrrrrro
-orro###rr###orro
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1270,11 +1270,11 @@ ososo##mm#sooo
 ................"
 ,
   "bat + on fire": 
-".......o........
-.o....oyoo....o.
-o#o..oyroyo..o#o
-o##ooyrryoo.o##o
-o###yrryrryo###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1288,11 +1288,11 @@ ososo##mm#sooo
 ................"
 ,
   "bat + party hat": 
-".......o........
-.o....oxo.....o.
-o#o..oaaAo...o#o
-o##o.oxxxoo.o##o
-o###oaaaAa#o###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1307,11 +1307,11 @@ ososo##mm#sooo
 ,
   "bat + propeller": 
 "................
-.o...oo.oo....o.
-o#o.oxxoaao..o#o
-o##oooooooooo##o
-oaaaaaaaaaaaaaAo
-oxxxxxxxxxxxxxxo
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -1324,10 +1324,10 @@ ososo##mm#sooo
 ................"
 ,
   "bat + space buns": 
-".oo..........oo.
-oaao........oaao
-oaAo........oAao
-oaao.o....o.oaao
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
 o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
@@ -1345,10 +1345,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##o.oo.ooo.o##o
-o###oggogg#o###o
-o###o#GgG##o###o
-o##o###g####o##o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1363,9 +1363,9 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##ooo....o.o##o
-o###y#o..o#o###o
-o##yyy#oo##o###o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
@@ -1378,11 +1378,11 @@ ososo##mm#sooo
 ................"
 ,
   "bat + star crown": 
-".......o........
-.o..o.oyo.o...o.
-o#ooyoyyyoyo.o#o
-o##yyyoyoyyyo##o
-o###y#oo.oyo###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1398,9 +1398,9 @@ ososo##mm#sooo
   "bat + tuft": 
 "................
 .o............o.
-o#o.....o....o#o
-o##o.o.o#oo.o##o
-o###o#o.o##o###o
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
 o##o########o##o
 o#whwe####we###o
@@ -1417,10 +1417,10 @@ ososo##mm#sooo
 "................
 .o............o.
 o#o..........o#o
-o##o.o..o.o.o##o
-o###o#ooyo#o###o
-o###o##yY##o###o
-o##o###yY###o##o
+o##o.o....o.o##o
+o###o#o..o#o###o
+o###o##oo##o###o
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso
@@ -1432,13 +1432,13 @@ ososo##mm#sooo
 ................"
 ,
   "bat + witch hat": 
-".......oo.......
-.o....oaao....o.
-o#o..oaaAo...o#o
-o##o.oxxxoo.o##o
-o###oaaaaA#o###o
+"................
+.o............o.
+o#o..........o#o
+o##o.o....o.o##o
+o###o#o..o#o###o
 o###o##oo##o###o
-oaaa###aa###aaao
+o##o########o##o
 o#whwe####we###o
 o#h#ee####ee###o
 o#ccs#m##m#ccso

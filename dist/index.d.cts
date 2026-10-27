@@ -82,6 +82,8 @@ interface Face {
   /** First and last row of the mouth. */
   mouthTop: number;
   mouthBottom: number;
+  /** The mouth's art. */
+  mouth: Stamp;
 }
 /**
  * The grid a guy is being drawn on, plus the measurements every part needs to
@@ -118,6 +120,20 @@ declare class Canvas {
    * top row just under it, both centred. Everything worn is fitted to this.
    */
   setFace(eye: Stamp, mouth: Stamp): void;
+  /**
+   * The mouth's top row goes just under the eyes, unless a pixel of it would
+   * sit right under an eye: eyes that run into a mouth turn a face into one
+   * shape (an H, a box), and it stops reading as eyes and a mouth. Then the
+   * mouth drops a row where the head has room for it, with a column of face
+   * either side. Where it hasn't (a heart's point, a bat), it stays put:
+   * taking the corners off a smile left a frown.
+   */
+  private placeMouth;
+  /**
+   * The row a collar, scarf or necklace goes on: three under the eye line, or
+   * the first row under a mouth that reaches lower, where the body still has one.
+   */
+  get neck(): number;
   /**
    * The lowest row a hat or topper may paint on the head: it stops at least one
    * row above the eyes (two where the head has the room), so nothing worn on
@@ -794,13 +810,14 @@ declare function hashNth(input: string, index: number): number;
 /** One name in this many gets the Lucky colour variant. */
 declare const LUCKY_ODDS = 400;
 /**
- * Seeds made from deal 3 on start with this. They draw from today's parts and
- * weights; anything else (an older seed, a plain name) draws from the frozen
- * deal 2 tables, so a guy already dealt never changes when parts are added.
+ * Seeds made now start with this. They draw from today's parts and weights;
+ * an older seed draws from its own deal's frozen tables (`3-` from deal 3,
+ * anything else, plain names included, from deal 2), so a guy already dealt
+ * never changes when parts are added or weights move.
  */
-declare const DEAL_PREFIX = "3-";
+declare const DEAL_PREFIX = "4-";
 /** Which deal an input draws from. */
-declare const dealOf: (input: string) => 2 | 3;
+declare const dealOf: (input: string) => 2 | 3 | 4;
 declare function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig;
 
 //#endregion

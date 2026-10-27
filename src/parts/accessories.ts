@@ -88,14 +88,15 @@ export const accessories: Accessory[] = [
   {
     name: 'glasses',
     layer: 'face',
-    draw: c => fittedGlasses(c, T.ACCENT_SHADE, undefined, T.WHITE),
+    // Clear lenses, pale behind the eyes, so the eyes still read through a frame.
+    draw: c => fittedGlasses(c, T.ACCENT_SHADE, T.WHITE, T.WHITE),
   },
 
   {
     name: 'scarf',
     layer: 'body',
     draw: c => {
-      const y = c.eyeLine + 3;
+      const y = c.neck;
       const r = c.rows[y];
       if (!r) return;
       for (let x = r.left; x <= r.right; x++) wear(c, x, y, (x - r.left) % 4 < 2 ? T.ACCENT : T.TRIM);
@@ -108,7 +109,7 @@ export const accessories: Accessory[] = [
     name: 'bell collar',
     layer: 'body',
     draw: c => {
-      const y = c.eyeLine + 3;
+      const y = c.neck;
       const r = c.rows[y];
       if (!r) return;
       for (let x = r.left; x <= r.right; x++) wear(c, x, y, T.ACCENT);
@@ -124,7 +125,7 @@ export const accessories: Accessory[] = [
     draw: c => {
       const x = c.centred(bowtie);
       bowtie.forEach((row, dy) => row.forEach((token, dx) => {
-        if (token) wear(c, x + dx, c.eyeLine + 3 + dy, token);
+        if (token) wear(c, x + dx, c.neck + dy, token);
       }));
     },
   },
@@ -133,7 +134,7 @@ export const accessories: Accessory[] = [
     name: 'bandana',
     layer: 'body',
     draw: c => {
-      const y = c.eyeLine + 3;
+      const y = c.neck;
       const r = c.rows[y];
       if (!r) return;
       for (let x = r.left; x <= r.right; x++) wear(c, x, y, T.ACCENT);
@@ -188,13 +189,10 @@ export const accessories: Accessory[] = [
       // away across the forehead to the side of the head.
       const f = c.face;
       if (!f || !f.eyes.length) return;
+      // Just the eye's own box, in the outline's near-black: a wider patch in the eye's ink read as a bruise.
       const e = f.eyes[0];
-      for (let y = f.top - 1; y <= f.line; y++) for (let x = e.left - 1; x <= e.right + 1; x++) {
-        const corner = (x === e.left - 1 || x === e.right + 1) && (y === f.top - 1 || y === f.line);
-        if (!corner) c.set(x, y, T.EYE);
-      }
-      c.set(e.left, f.top, T.DEEP);
-      for (let i = 1, x = e.right + 1, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.EYE);
+      for (let y = f.top; y <= f.line; y++) for (let x = e.left - (e.right === e.left ? 1 : 0); x <= e.right; x++) c.set(x, y, T.OUTLINE);
+      for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
     },
   },
 
@@ -202,7 +200,7 @@ export const accessories: Accessory[] = [
     name: 'necklace',
     layer: 'body',
     draw: c => {
-      const y = c.eyeLine + 3;
+      const y = c.neck;
       const r = c.rows[y];
       if (!r) return;
       for (let x = r.left + 1; x < r.right; x += 2) wear(c, x, y, T.WHITE);
@@ -214,7 +212,7 @@ export const accessories: Accessory[] = [
     name: 'medal',
     layer: 'body',
     draw: c => {
-      const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+      const x = Math.floor(c.centre) - 1, y = c.neck;
       wear(c, x, y, T.ACCENT);
       wear(c, x + 1, y, T.ACCENT_SHADE);
       wear(c, x, y + 1, T.GOLD);
@@ -246,7 +244,7 @@ export const accessories: Accessory[] = [
     name: 'necktie',
     layer: 'body',
     draw: c => {
-      const x = Math.floor(c.centre) - 1, y = c.eyeLine + 3;
+      const x = Math.floor(c.centre) - 1, y = c.neck;
       wear(c, x, y, T.ACCENT_SHADE);
       wear(c, x + 1, y, T.ACCENT_SHADE);
       for (let ty = y + 1; ty < c.bottom; ty++) { wear(c, x, ty, T.ACCENT); wear(c, x + 1, ty, T.ACCENT); }
@@ -260,7 +258,7 @@ export const accessories: Accessory[] = [
     layer: 'body',
     draw: c => {
       // A garland of flowers in turn the accent, blush and gold, on leaves.
-      const y = c.eyeLine + 3;
+      const y = c.neck;
       const r = c.rows[y];
       if (!r) return;
       const flowers = [T.ACCENT, T.BLUSH, T.GOLD];
@@ -296,7 +294,7 @@ export const accessories: Accessory[] = [
     layer: 'body',
     draw: c => {
       // A heavy gold chain and a big medallion with a glint.
-      const y = c.eyeLine + 3;
+      const y = c.neck;
       const r = c.rows[y];
       if (!r) return;
       for (let x = r.left; x <= r.right; x++) wear(c, x, y, (x - r.left) % 2 ? T.GOLD_SHADE : T.GOLD);

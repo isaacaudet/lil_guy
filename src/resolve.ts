@@ -2,7 +2,7 @@ import { hashNth } from './hash';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
   bodyWeights, accessoryWeights, armWeights, footWeights, shadeWeights,
-  paletteWeights, weightedPick, DEAL_2, RETIRED_EYES, withoutRetired,
+  paletteWeights, weightedPick, DEAL_2, DEAL_3, RETIRED_EYES, withoutRetired,
 } from './parts/weights';
 import type { AvatarConfig, RenderOptions } from './types';
 
@@ -17,23 +17,25 @@ import type { AvatarConfig, RenderOptions } from './types';
 export const LUCKY_ODDS = 400;
 
 /**
- * Seeds made from deal 3 on start with this. They draw from today's parts and
- * weights; anything else (an older seed, a plain name) draws from the frozen
- * deal 2 tables, so a guy already dealt never changes when parts are added.
+ * Seeds made now start with this. They draw from today's parts and weights;
+ * an older seed draws from its own deal's frozen tables (`3-` from deal 3,
+ * anything else, plain names included, from deal 2), so a guy already dealt
+ * never changes when parts are added or weights move.
  */
-export const DEAL_PREFIX = '3-';
+export const DEAL_PREFIX = '4-';
 
 /** Which deal an input draws from. */
-export const dealOf = (input: string): 2 | 3 => (input.startsWith(DEAL_PREFIX) ? 3 : 2);
+export const dealOf = (input: string): 2 | 3 | 4 => (input.startsWith(DEAL_PREFIX) ? 4 : input.startsWith('3-') ? 3 : 2);
 
-const DEAL_3 = {
+const DEAL_4 = {
   head: headWeights, eyes: eyeWeights, mouth: mouthWeights, cheeks: cheekWeights, hair: hairWeights,
   body: bodyWeights, accessory: accessoryWeights, palette: paletteWeights,
 };
 
 export function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig {
   const pick = (slot: number, weights: number[]): number => weightedPick(weights, hashNth(input, slot));
-  const w = dealOf(input) === 3 ? DEAL_3 : DEAL_2;
+  const deal = dealOf(input);
+  const w = deal === 4 ? DEAL_4 : deal === 3 ? DEAL_3 : DEAL_2;
   // A guy whose eyes were retired draws again from the rest, so only he changes.
   let eyes = overrides?.eyes ?? pick(1, w.eyes);
   if (RETIRED_EYES.includes(eyes)) eyes = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));

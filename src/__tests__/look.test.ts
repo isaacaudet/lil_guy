@@ -11,7 +11,7 @@ const crab = heads.findIndex(h => h.name === 'crab');
 describe('seeds', () => {
   test('are random, the deal prefix and 12 characters, and draw a guy like any name', () => {
     const a = makeSeed(), b = makeSeed();
-    expect(a).toMatch(/^3-[0-9a-z]{12}$/);
+    expect(a).toMatch(/^4-[0-9a-z]{12}$/);
     expect(a).not.toBe(b);
     expect(lookOf(a)).toEqual(resolve(a));
   });
@@ -26,13 +26,18 @@ describe('the deal', () => {
       ['okapi', [2, 7, 9, 12, 0, 2, 0, 1]],
       ['ud33mycomvkl', [14, 9, 4, 2, 8, 0, 5, 32]],
       ['founder:isaac', [15, 3, 4, 2, 29, 4, 7, 18]],
+      // Deal 3, frozen when deal 4 dealt fewer shut eyes.
+      ['3-0a1b2c3d4e5f', [24, 10, 1, 4, 6, 0, 15, 23]],
+      ['3-zzzzzzzzzzzz', [3, 7, 13, 0, 2, 0, 14, 36]],
+      ['3-k2m9q0w8e7r6', [12, 5, 1, 14, 15, 0, 11, 1]],
     ];
     for (const [name, parts] of was) {
       const c = resolve(name);
       expect([c.head, c.eyes, c.mouth, c.cheeks, c.hair, c.body, c.accessory, c.palette]).toEqual(parts);
     }
     expect(dealOf('alice')).toBe(2);
-    expect(dealOf(makeSeed())).toBe(3);
+    expect(dealOf('3-0a1b2c3d4e5f')).toBe(3);
+    expect(dealOf(makeSeed())).toBe(4);
   });
 });
 

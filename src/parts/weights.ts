@@ -1,6 +1,6 @@
 /**
- * How often each part turns up, for guys dealt from deal 3 on (seeds made by
- * `makeSeed`). Older guys read the frozen `DEAL_2` tables at the end.
+ * How often each part turns up, for guys dealt from deal 4 on (seeds made by
+ * `makeSeed`). Older guys read the frozen `DEAL_3` and `DEAL_2` tables at the end.
  *
  * Weighted by how good a part looks, not to make everything equally likely:
  *
@@ -57,23 +57,23 @@ export const headWeights = [
 
 export const eyeWeights = [
   120, // beans
-  150, // shiny
+  175, // shiny
   110, // happy
-  120, // sparkle
+  145, // sparkle
   40, // wink
-  60, // glossy
+  75, // glossy
   40, // excited
   20, // hearts
   30, // lashes
-  50, // chill
+  25, // chill: half-shut, so fewer of them (deal 4)
   30, // side-eye
   15, // shades
   15, // star
-  20, // squint
+  8, // squint
   12, // fired up
   6, // laser
   8, // cyclops
-  45, // sleepy
+  15, // sleepy: eyes shut, so fewer of them (deal 4)
   12, // dizzy
   35, // anime
   1, // galaxy: chase
@@ -276,10 +276,26 @@ export const paletteWeights = [
 ];
 
 /**
- * The deal before 3 (seeds without the `3-` prefix, and plain names). Frozen:
+ * Deal 3 (seeds starting `3-`), as it stood when deal 4 began: frozen like
+ * `DEAL_2`, so a guy dealt from it keeps his parts. Deal 4 dealt fewer shut
+ * and half-shut eyes.
+ */
+export const DEAL_3 = {
+  head: [150, 130, 50, 120, 100, 90, 80, 25, 30, 30, 35, 20, 40, 30, 15, 20, 20, 15, 10, 15, 10, 20, 10, 8, 20, 30, 20, 20, 15, 2, 3, 3],
+  eyes: [120, 150, 110, 120, 40, 60, 40, 20, 30, 50, 30, 15, 15, 20, 12, 6, 8, 45, 12, 35, 1, 2, 2],
+  mouth: [150, 130, 90, 50, 40, 50, 40, 20, 25, 70, 15, 30, 30, 15, 8, 15, 35, 20, 60, 2, 1, 2],
+  cheeks: [300, 150, 15, 60, 40, 10, 10, 12, 8, 25, 20, 15, 10, 6, 50, 40, 15, 1, 1],
+  hair: [250, 80, 70, 50, 25, 15, 30, 70, 30, 30, 45, 12, 15, 25, 10, 25, 40, 10, 40, 30, 25, 25, 0, 15, 10, 15, 20, 20, 15, 20, 30, 25, 15, 20, 2, 2, 2],
+  body: [500, 60, 50, 30, 40, 25, 30, 15, 20, 12, 35, 15, 15, 15, 35, 30, 30, 1, 2],
+  accessory: [450, 50, 50, 40, 30, 40, 15, 15, 12, 10, 35, 30, 30, 20, 35, 25, 20, 2, 2, 1],
+  palette: [36, 36, 36, 36, 36, 36, 24, 24, 36, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 36, 24, 24, 8, 10, 10, 6, 6, 8, 26, 26, 26, 26, 2, 2, 2],
+};
+
+/**
+ * The deal before 3 (seeds without the `3-` or `4-` prefix, and plain names). Frozen:
  * every guy already dealt from one of these keeps his parts, so these lists
  * never change, not even to add a part. New parts and new weights go in the
- * tables above, which only seeds made by `makeSeed` from deal 3 on read.
+ * tables above, which only seeds made by `makeSeed` from deal 4 on read.
  */
 export const DEAL_2 = {
   head: [3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 2, 2, 4, 3, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1],

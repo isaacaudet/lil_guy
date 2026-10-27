@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems, withoutRetired } from "./paint-Cmn1yI6h.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, tallyMarks, temperTint, wearOf, withItems, withoutRetired } from "./paint-CzXJ89eo.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -1494,33 +1494,33 @@ function getColor(colors, index) {
 //#region src/guy-rank.ts
 /** [a guy's `guyScore`, the share of guys scoring at least that], commonest first. */
 const GUY_RANK = [
-	[8.0421, 1],
-	[10.7729, .9],
-	[11.5867, .75],
-	[12.1793, .6],
-	[12.544, .5],
-	[12.9172, .4],
-	[13.3205, .3],
-	[13.547, .25],
-	[13.7991, .2],
-	[14.0979, .15],
-	[14.479, .1],
-	[14.7309, .075],
-	[15.062, .05],
-	[15.4589, .03],
-	[15.7604, .02],
-	[16.2643, .01],
-	[16.465, .0075],
-	[16.7411, .005],
-	[17.0756, .003],
-	[17.3223, .002],
-	[17.7234, .001],
-	[18.1205, 5e-4],
-	[18.6163, 2e-4],
-	[18.9523, 1e-4],
-	[19.3143, 5e-5],
-	[19.7576, 2e-5],
-	[20.4402, 1e-5]
+	[7.9742, 1],
+	[10.7157, .9],
+	[11.536, .75],
+	[12.132, .6],
+	[12.5008, .5],
+	[12.8736, .4],
+	[13.2841, .3],
+	[13.5104, .25],
+	[13.7682, .2],
+	[14.0716, .15],
+	[14.4599, .1],
+	[14.7138, .075],
+	[15.0481, .05],
+	[15.4488, .03],
+	[15.7515, .02],
+	[16.2471, .01],
+	[16.4422, .0075],
+	[16.7127, .005],
+	[17.0553, .003],
+	[17.3217, .002],
+	[17.7295, .001],
+	[18.077, 5e-4],
+	[18.5644, 2e-4],
+	[18.9175, 1e-4],
+	[19.2804, 5e-5],
+	[19.7742, 2e-5],
+	[20.1775, 1e-5]
 ];
 
 //#endregion

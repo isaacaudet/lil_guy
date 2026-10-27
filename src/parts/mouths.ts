@@ -68,12 +68,16 @@ export const mouths: Mouth[] = [
     'mmmm',
     '..t.',
   ]),
+  // A small, closed smile: a plain line read as bored.
   mouth('flat', [
-    'mmmm',
+    'm...m',
+    '.mmm.',
   ]),
+  // A big cheesy grin, all teeth. (Two solid rows of ink read as a block.)
   mouth('gritted', [
-    'mmmmmm',
-    'mwmwmm',
+    'm....m',
+    'mwwwwm',
+    '.mmmm.',
   ]),
   // A round pink bubble with a shine, beside a small mouth.
   mouth('bubblegum', [

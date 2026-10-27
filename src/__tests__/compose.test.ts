@@ -12,6 +12,7 @@ const BASE: AvatarConfig = {
 };
 
 const guy = (parts: Partial<AvatarConfig>) => compose({ ...BASE, ...parts });
+const ROOMY = ['round', 'mochi', 'egg', 'gumdrop', 'onigiri', 'ghost', 'slime', 'loaf', 'cloud', 'pill', 'chonk', 'block', 'tower'];
 
 /** Number of 4-connected pieces the drawing falls into. */
 function pieces(grid: PixelGrid): number {
@@ -113,6 +114,21 @@ describe('compose', () => {
           if (drawn < art) wrong.push(`${heads[head].name} + ${hair[h].name} clips ${mouths[m].name}`);
         }
       }
+    }
+    expect(wrong).toEqual([]);
+  }, 60_000);
+
+  it('keeps the mouth off the eyes wherever the head has room', () => {
+    // A mouth pixel right under an eye pixel joins them into one shape (an H, a box).
+    const wrong: string[] = [];
+    for (let head = 0; head < heads.length; head++) for (let e = 0; e < eyes.length; e++) for (let m = 0; m < mouths.length; m++) {
+      if (RETIRED_EYES.includes(e)) continue;
+      const g = guy({ head, eyes: e, mouth: m });
+      // Eye pixels are the ink and shine on or above the eye line (a mouth's teeth are white too).
+      const eye = (t: number, y: number) => (t === T.EYE || t === T.WHITE) && y <= heads[head].eyes;
+      const touching = g.some((row, y) => row.some((t, x) => eye(t, y) && g[y + 1]?.[x] === T.MOUTH));
+      // The everyday heads all have the room; a heart's point or a bat's wings may not.
+      if (touching && ROOMY.includes(heads[head].name)) wrong.push(`${heads[head].name}: ${eyes[e].name} + ${mouths[m].name}`);
     }
     expect(wrong).toEqual([]);
   }, 60_000);

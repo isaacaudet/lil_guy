@@ -17,6 +17,8 @@ export interface Face {
   /** First and last row of the mouth. */
   mouthTop: number;
   mouthBottom: number;
+  /** The mouth's art. */
+  mouth: Stamp;
 }
 
 /**
@@ -84,7 +86,39 @@ export class Canvas {
       if (last && x === last.right + 1) last.right = x; else eyes.push({ left: x, right: x });
     }
     const firstRow = eye.findIndex(row => row.some(Boolean));
-    this.face = { top: top + Math.max(0, firstRow), line: this.eyeLine, eyes, mouthTop: this.eyeLine + 1, mouthBottom: this.eyeLine + mouth.length };
+    const m = this.placeMouth(eye, mouth);
+    this.face = { top: top + Math.max(0, firstRow), line: this.eyeLine, eyes, mouthTop: m.top, mouthBottom: m.top + m.art.length - 1, mouth: m.art };
+  }
+
+  /**
+   * The mouth's top row goes just under the eyes, unless a pixel of it would
+   * sit right under an eye: eyes that run into a mouth turn a face into one
+   * shape (an H, a box), and it stops reading as eyes and a mouth. Then the
+   * mouth drops a row where the head has room for it, with a column of face
+   * either side. Where it hasn't (a heart's point, a bat), it stays put:
+   * taking the corners off a smile left a frown.
+   */
+  private placeMouth(eye: Stamp, mouth: Stamp): { top: number; art: Stamp } {
+    const ex = this.centred(eye), mx = this.centred(mouth), w = width(mouth);
+    const under = new Set<number>();
+    eye[eye.length - 1].forEach((t, dx) => { if (t) under.add(ex + dx); });
+    const top = this.eyeLine + 1;
+    if (!mouth[0].some((t, dx) => t && under.has(mx + dx))) return { top, art: mouth };
+    // Every pixel of it on the face, with a column of face beyond each end (a tooth's roots split low down).
+    const fits = mouth.every((row, dy) => {
+      const y = top + 1 + dy;
+      return this.isBody(mx - 1, y) && this.isBody(mx + w, y) && row.every((t, dx) => !t || this.isBody(mx + dx, y));
+    });
+    return { top: fits ? top + 1 : top, art: mouth };
+  }
+
+  /**
+   * The row a collar, scarf or necklace goes on: three under the eye line, or
+   * the first row under a mouth that reaches lower, where the body still has one.
+   */
+  get neck(): number {
+    const low = (this.face?.mouthBottom ?? 0) + 1;
+    return low > this.eyeLine + 3 && low <= this.bottom ? low : this.eyeLine + 3;
   }
 
   /**
