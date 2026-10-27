@@ -11,6 +11,7 @@ import { AURAS, AURA_ODDS } from './auras';
 import { EFFECTS } from './effects';
 import { DEEP_BLUE_PRINTS, FINISHES, special, type Owned } from './owned';
 import { LUCKY_ODDS } from './resolve';
+import { shows } from './compose';
 import type { AvatarConfig } from './types';
 
 /**
@@ -46,13 +47,15 @@ const share = (weights: number[], i: number) => weights[i] / weights.reduce((a, 
 
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 export function traitOdds(config: AvatarConfig): TraitOdds[] {
+  // What he shows: a marking or cheeks a crowded guy has no room for count as none.
+  const body = shows(config, 'body') ? config.body : 0, cheek = shows(config, 'cheeks') ? config.cheeks : 0;
   return [
     { slot: 'shape', name: heads[config.head].name, chance: share(headWeights, config.head) },
     { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes) },
     { slot: 'mouth', name: mouths[config.mouth].name, chance: share(mouthWeights, config.mouth) },
-    { slot: 'cheeks', name: cheeks[config.cheeks].name, chance: share(cheekWeights, config.cheeks) },
+    { slot: 'cheeks', name: cheeks[cheek].name, chance: share(cheekWeights, cheek) },
     { slot: 'topper', name: hair[config.hair].name, chance: share(hairWeights, config.hair) },
-    { slot: 'markings', name: bodies[config.body].name, chance: share(bodyWeights, config.body) },
+    { slot: 'markings', name: bodies[body].name, chance: share(bodyWeights, body) },
     { slot: 'accessory', name: accessories[config.accessory].name, chance: share(accessoryWeights, config.accessory) },
     { slot: 'colour', name: palettes[config.palette].name, chance: share(paletteWeights, config.palette) },
     { slot: 'tone', name: TONE_NAMES[config.shade], chance: share(shadeWeights, config.shade) },

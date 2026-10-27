@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-CafElv9c.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADE_COUNT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-D9fE5DYw.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -1522,32 +1522,32 @@ function getColor(colors, index) {
 /** [a guy's `guyScore`, the share of guys scoring at least that], commonest first. */
 const GUY_RANK = [
 	[7.9742, 1],
-	[10.7157, .9],
-	[11.536, .75],
-	[12.132, .6],
-	[12.5008, .5],
-	[12.8736, .4],
-	[13.2841, .3],
-	[13.5104, .25],
-	[13.7682, .2],
-	[14.0716, .15],
-	[14.4599, .1],
-	[14.7138, .075],
-	[15.0481, .05],
-	[15.4488, .03],
-	[15.7515, .02],
-	[16.2471, .01],
-	[16.4422, .0075],
-	[16.7127, .005],
-	[17.0553, .003],
-	[17.3217, .002],
-	[17.7295, .001],
-	[18.077, 5e-4],
-	[18.5644, 2e-4],
-	[18.9175, 1e-4],
-	[19.2804, 5e-5],
-	[19.7742, 2e-5],
-	[20.1775, 1e-5]
+	[10.5628, .9],
+	[11.235, .75],
+	[11.7071, .6],
+	[11.996, .5],
+	[12.291, .4],
+	[12.6129, .3],
+	[12.7975, .25],
+	[13.0081, .2],
+	[13.2647, .15],
+	[13.6031, .1],
+	[13.8347, .075],
+	[14.1544, .05],
+	[14.5476, .03],
+	[14.851, .02],
+	[15.345, .01],
+	[15.5431, .0075],
+	[15.8206, .005],
+	[16.1397, .003],
+	[16.3825, .002],
+	[16.7359, .001],
+	[17.1098, 5e-4],
+	[17.5923, 2e-4],
+	[17.9111, 1e-4],
+	[18.162, 5e-5],
+	[18.6492, 2e-5],
+	[19.0382, 1e-5]
 ];
 
 //#endregion
@@ -1598,6 +1598,7 @@ const FOOT_NAMES = [
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
+	const body = shows(config, "body") ? config.body : 0, cheek = shows(config, "cheeks") ? config.cheeks : 0;
 	return [
 		{
 			slot: "shape",
@@ -1616,8 +1617,8 @@ function traitOdds(config) {
 		},
 		{
 			slot: "cheeks",
-			name: cheeks[config.cheeks].name,
-			chance: share(cheekWeights, config.cheeks)
+			name: cheeks[cheek].name,
+			chance: share(cheekWeights, cheek)
 		},
 		{
 			slot: "topper",
@@ -1626,8 +1627,8 @@ function traitOdds(config) {
 		},
 		{
 			slot: "markings",
-			name: bodies[config.body].name,
-			chance: share(bodyWeights, config.body)
+			name: bodies[body].name,
+			chance: share(bodyWeights, body)
 		},
 		{
 			slot: "accessory",
@@ -6837,5 +6838,5 @@ function defineLilGuyHere(options = {}) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PINS, RETIRED_EYES, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

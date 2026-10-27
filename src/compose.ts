@@ -166,8 +166,10 @@ function extrasOf(config: AvatarConfig, c: Canvas): { pattern: boolean; cheeks: 
   let marks = cheek.art.length > 0;
   const top = itemById(config.hat)?.slot === 'hat' || (config.hair !== 0 && !EARED.has(heads[config.head].name));
   const worn = config.accessory !== 0;
-  const limit = c.bottom - c.crown + 1 <= 8 ? 1 : 2;
-  const count = () => [top, worn, pattern, marks].filter(Boolean).length;
+  const small = c.bottom - c.crown + 1 <= 8, limit = small ? 1 : 2;
+  // One quiet mark (a belly, a star, a split) doesn't crowd a full-size head: it only counts on a small one.
+  const quiet = pattern && !SCATTERED.has(body) && body !== 'starry' && !small;
+  const count = () => [top, worn, pattern && !quiet, marks].filter(Boolean).length;
   if (count() > limit && pattern && !CHASE.has(body)) pattern = false;
   if (count() > limit && marks && !CHASE.has(cheek.name)) marks = false;
   return { pattern, cheeks: marks };
@@ -401,3 +403,20 @@ export function compose(config: AvatarConfig): PixelGrid {
   return c.grid;
 }
 
+
+const showsCache = new Map<string, boolean>();
+/**
+ * Whether a guy's markings (`body`) or cheeks are drawn at all: on a crowded or
+ * small guy one may give way, and then it is the same guy as without it.
+ */
+export function shows(config: AvatarConfig, slot: 'body' | 'cheeks'): boolean {
+  if (!config[slot]) return true;
+  const key = slot + JSON.stringify(config);
+  let v = showsCache.get(key);
+  if (v === undefined) {
+    v = JSON.stringify(compose(config)) !== JSON.stringify(compose({ ...config, [slot]: 0 }));
+    if (showsCache.size > 5000) showsCache.clear();
+    showsCache.set(key, v);
+  }
+  return v;
+}

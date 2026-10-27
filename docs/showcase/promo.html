@@ -158,6 +158,9 @@
   @keyframes foil { to { background-position: 300% 0; } }
   .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
   .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: min(6.6cqw, calc(84cqw / (var(--n, 1) * .46))); line-height: 1.25; color: #3a3352; white-space: nowrap; overflow: hidden; }
+  .ov .t.on-light:not(.foil):not(.gold) { color: #2a2340; text-shadow: 0 .6cqw 0 rgba(255, 255, 255, .45); }
+  .ov .t.on-light.foil, .ov .t.on-light.gold { filter: drop-shadow(.4cqw 0 0 #1a1530) drop-shadow(-.4cqw 0 0 #1a1530) drop-shadow(0 .4cqw 0 #1a1530) drop-shadow(0 -.4cqw 0 #1a1530); }
+  .ov .b.on-dark { color: #f4efff; text-shadow: 0 .5cqw 0 rgba(10, 8, 24, .6); }
 
   /* ------------------------------------------------------------ sections */
   main { display: grid; gap: 80px; padding-top: 24px; padding-bottom: 96px; }
@@ -279,9 +282,8 @@
      them every copy. A row or a tab narrows the copies to that slot. */
   .locker { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 24px; align-items: start; }
   .lk-guy { position: sticky; top: 16px; display: grid; gap: 14px; padding: 14px; border-radius: 14px; background: var(--panel); box-shadow: 0 6px 0 var(--edge); }
-  .lk-stage { position: relative; display: grid; place-items: center; aspect-ratio: 5 / 4; border-radius: 10px; background: var(--well); overflow: hidden; }
-  .lk-stage::before { content: ""; position: absolute; left: 18%; right: 18%; bottom: 9%; height: 9%; border-radius: 50%; background: rgba(0,0,0,.55); }
-  .lk-stage svg { position: relative; height: 92%; width: auto; image-rendering: pixelated; }
+  .lk-stage { position: relative; display: grid; place-items: center; padding: 16px 24px 20px; border-radius: 10px; background: var(--well); }
+  .lk-stage .card { width: min(100%, 240px); }
   .lk-slots { display: grid; gap: 8px; }
   .lk-slot { display: grid; grid-template-columns: 44px minmax(0, 1fr) 56px; align-items: center; gap: 10px; padding: 6px 6px 6px 8px; border-radius: 10px; text-align: left; background: var(--panel-2); box-shadow: 0 4px 0 var(--edge); transition: transform .1s; }
   .lk-slot:hover { transform: translateY(-1px); }
@@ -589,11 +591,22 @@
   .rz-x p { font-size: 16px; color: var(--ink-2); line-height: 1.35; }
 
   /* pulls: every copy anyone has opened */
-  .mstats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-  .mstat { display: grid; gap: 2px; padding: 12px 16px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); min-width: 128px; position: relative; overflow: hidden; }
-  .mstat b { font-size: 32px; line-height: 1; text-shadow: var(--ts); }
-  .mstat span { font-size: 16px; color: var(--ink-3); }
-  .mstat i { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--g); }
+  .mstats { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: center; margin-bottom: 24px; padding: 20px 24px; border-radius: 16px; background: var(--panel); box-shadow: var(--lift); }
+  .mhead { display: flex; gap: 32px; }
+  .mhead div { display: grid; gap: 4px; }
+  .mhead b { font-size: 40px; line-height: 1; text-shadow: var(--ts); }
+  .mhead span { font-size: 16px; color: var(--ink-3); }
+  .mgrades { display: grid; gap: 12px; min-width: 0; }
+  .mbar { display: flex; gap: 2px; height: 20px; border-radius: 6px; overflow: hidden; background: var(--panel-2); }
+  .mbar i { display: block; min-width: 8px; flex-basis: 0; background: var(--g); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .25); }
+  .mbar i.none { flex-grow: 1; background: transparent; box-shadow: none; }
+  .mkey { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px 16px; }
+  .mkey div { display: grid; grid-template-columns: 12px minmax(0, 1fr); align-items: center; gap: 2px 8px; }
+  .mkey i { width: 12px; height: 12px; border-radius: 3px; background: var(--g); grid-row: span 2; align-self: start; margin-top: 4px; }
+  .mkey span { font-size: 16px; color: var(--ink-2); white-space: nowrap; }
+  .mkey b { font-size: 20px; line-height: 1; grid-column: 2; }
+  .mkey small { font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+  .mkey .zero { opacity: .45; }
   .mfilters { display: grid; gap: 10px; margin-bottom: 24px; }
   .selects { display: flex; gap: 8px; flex-wrap: wrap; }
   .selects select { height: 40px; padding: 0 10px; border-radius: 8px; border: 0; background: var(--panel); color: var(--ink); font-size: 16px; }
@@ -653,14 +666,28 @@
     background: radial-gradient(closest-side, #fff 0%, color-mix(in srgb, var(--grade) 80%, #fff) 18%, color-mix(in srgb, var(--grade) 45%, transparent) 48%, transparent 100%); mix-blend-mode: screen; }
   .result { position: relative; display: grid; justify-items: center; gap: 12px; text-align: center; width: min(440px, 100%); }
   /* behind the win: a grid of square pixels in the grade's colour, a ring of light pulsing out through it */
-  @property --ring { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
-  .rays { position: absolute; left: 50%; top: 46%; width: 900px; height: 900px; translate: -50% -50%; z-index: -1; opacity: 0; pointer-events: none;
+  @property --ring { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+  .rays { position: absolute; left: var(--rx, 50%); top: var(--ry, 46%); width: 900px; height: 900px; translate: -50% -50%; z-index: -1; opacity: 0; pointer-events: none;
+    animation: ring 1.6s steps(16) infinite; transition: opacity .5s steps(5); }
+  .rays i { position: absolute; inset: 0;
     background: conic-gradient(from 270deg at 12px 12px, var(--grade) 90deg, transparent 0) 0 0 / 16px 16px;
     -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,.35) 0 8%, transparent 46%), radial-gradient(circle, transparent calc(var(--ring) - 9%), #000 var(--ring), transparent calc(var(--ring) + 2%));
     mask-image: radial-gradient(circle, rgba(0,0,0,.35) 0 8%, transparent 46%), radial-gradient(circle, transparent calc(var(--ring) - 9%), #000 var(--ring), transparent calc(var(--ring) + 2%));
-    animation: ring 1.6s steps(16) infinite; transition: opacity .5s steps(5); }
+    filter: drop-shadow(2px 0 0 rgba(255, 64, 140, .45)) drop-shadow(-2px 0 0 rgba(64, 224, 255, .4)); }
+  /* now and then the signal slips: the grid jolts a pixel, a band of it tears sideways */
+  .rays i:first-child { animation: jolt 3.3s steps(1) infinite; }
+  .rays i.tear { animation: tear 2.7s steps(1) infinite; clip-path: inset(100% 0 0 0); opacity: .9; }
   .result.go .rays { opacity: var(--rays, 0); }
   @keyframes ring { from { --ring: 4%; } to { --ring: 52%; } }
+  @keyframes jolt { 0% { translate: 0 0; } 61% { translate: 4px 0; } 63% { translate: -2px 0; } 65%, 100% { translate: 0 0; } }
+  @keyframes tear {
+    0% { clip-path: inset(100% 0 0 0); translate: 0 0; }
+    70% { clip-path: inset(40% 0 53% 0); translate: 16px 0; }
+    73% { clip-path: inset(57% 0 36% 0); translate: -12px 0; }
+    76% { clip-path: inset(100% 0 0 0); translate: 0 0; }
+    90% { clip-path: inset(46% 0 50% 0); translate: 8px 0; }
+    92%, 100% { clip-path: inset(100% 0 0 0); translate: 0 0; }
+  }
   .flip { position: relative; width: 230px; transition: transform .17s cubic-bezier(.55,0,.8,.2); }
   .flip.rise { animation: rise .5s cubic-bezier(.2,.9,.25,1.15) backwards; }
   @keyframes rise { 0% { transform: translateY(120px) scale(.35); opacity: 0; filter: brightness(2.2); } 100% { transform: none; opacity: 1; filter: none; } }
@@ -857,7 +884,7 @@
     .mbc .tchip { white-space: normal; height: auto; padding: 2px 6px; justify-content: center; text-align: center; }
     .locker { grid-template-columns: minmax(0, 1fr); }
     .lk-guy { position: static; grid-template-columns: 128px minmax(0, 1fr); align-items: start; }
-    .lk-stage { aspect-ratio: 1; }
+    .lk-stage { padding: 8px; }
     .lk-slot { grid-template-columns: 34px minmax(0, 1fr) 44px; gap: 8px; padding: 4px 4px 4px 6px; }
     .lk-slot .ico .ci { width: 30px; height: 24px; }
     .lk-slot .txt b { font-size: 16px; }
@@ -875,7 +902,7 @@
     .reveal { overflow-x: hidden; overflow-y: auto; place-items: start center; padding-top: 60px; }
     .rz-float { grid-template-columns: 1fr; } .rz-pic { width: min(220px, 70%); justify-self: center; }
     .rz-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .mstats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .mstat { min-width: 0; }
+    .mstats { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 16px; } .mkey { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .mcopy .pic { height: 128px; }
     .guys { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
   }
@@ -1025,7 +1052,7 @@
 
  <div class="view" id="v-guys" hidden>
   <section>
-    <div class="sec-h"><div><h2>Everyone's guys</h2><p id="guys-sub">Rarest first. Tap one to see their collection.</p></div><div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
+    <div class="sec-h"><div><h2>Everyone's guys</h2></div><div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
     <label class="search"><span>@</span><input id="guys-q" placeholder="find a name" maxlength="16" spellcheck="false" aria-label="Find a name"></label>
     <div class="guys" id="guys-grid"></div>
   </section>
@@ -1131,7 +1158,7 @@
     <div class="gacha" id="gacha" hidden aria-hidden="true"><span class="spot"></span><span class="floor" id="g-floor"></span><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><canvas class="coin" id="coin" width="12" height="12" hidden></canvas><div class="cap2" id="cap2" hidden><span class="leak" id="leak"></span><canvas id="cap-bot" width="64" height="64"></canvas><canvas id="cap-top" width="64" height="64"></canvas></div></div>
     <div class="reelwrap" id="reelwrap" hidden><div class="reel" id="reel"><div class="track" id="track"></div></div></div>
     <div class="result" id="result" hidden>
-      <span class="rays"></span>
+      <span class="rays" id="rays"><i></i><i class="tear"></i></span>
       <p class="shout" id="shout"></p>
       <div class="flip" id="flip"><canvas class="back" id="back" width="26" height="42" aria-hidden="true"></canvas><div id="front" hidden></div></div>
       <div class="won-info" id="rv-info" hidden></div>
@@ -1242,6 +1269,16 @@
     s.card.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
     live.add(s); byCanvas.set(canvas, s); io.observe(canvas);
     draw(s, performance.now() / 1000);
+    // The bottom words sit on the card's own face: light on a dark face (a Negative copy), dark on cream.
+    // The title likewise: dark words on a pale band (a Negative copy's), white on a coloured one.
+    const face = LG.cardFaceAt(f, 0);
+    const light = (a, z) => {
+      let sum = 0, n = 0;
+      for (let y = Math.round(H * a); y < Math.round(H * z); y++) for (let x = 3; x < W - 3; x++) { const i = (y * W + x) * 4; if (face[i + 3] > 200) { sum += 0.2126 * face[i] + 0.7152 * face[i + 1] + 0.0722 * face[i + 2]; n++; } }
+      return n ? sum / n : 128;
+    };
+    s.art?.querySelector('.ov .b')?.classList.toggle('on-dark', light(0.8, 0.9) < 120);
+    s.art?.querySelector('.ov .t')?.classList.toggle('on-light', light(0.07, 0.17) > 170);
     return s;
   }
   function hydrate(root) {
@@ -1611,7 +1648,11 @@
     else founderKey = sessionStorage.getItem('lil-guys-founder');
   } catch (e) {}
   const founderOf = seed => seed === 'founder:isaac' ? FOUNDER : null;
-  const dealt = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette } : LG.resolve(seed); };
+  const dealt = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette, founder: true } : LG.resolve(seed); };
+  // Where a guy stands. The founder was picked by hand, not dealt, so odds don't rank him: he's the one of one.
+  const FOUNDER_RANK = { top: 0, tier: 5, name: 'Founder', label: 'One of one' };
+  const guyRank = cfg => cfg.founder ? FOUNDER_RANK : LG.guyRank(cfg);
+  const rankLine = r => r.label === r.name ? r.name : `${r.label} · ${r.name}`;
   // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
   const guyConfig = seed => {
     const base = dealt(seed);
@@ -1620,7 +1661,7 @@
     return look ? { ...base, ...look } : base;
   };
   const lookFor = {};                                  // other people's picked looks, by seed
-  const partsOf = cfg => { const { palette, ...parts } = cfg; return parts; };
+  const partsOf = cfg => { const { palette, founder, ...parts } = cfg; return parts; };
   // A guy as the library bakes him and the Worker serves him: his seed, his look and what he wears.
   const guySpec = (seed, equip) => { const c = guyConfig(seed); return { seed, parts: partsOf(c), palette: c.palette, equip }; };
   LG.defineLilGuy();
@@ -2025,7 +2066,7 @@
   // A guy's card: his tier sets its grade, and it says where he stands ("Epic", "Top 0.3%").
   const TIER_COLORS = LG.GRADES.map(g => g.color);
   const rankText = r => r.label === r.name ? r.name : `${r.name} · ${r.label}`;
-  const guyLabel = (cfg, title, corner = '★') => { const r = LG.guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
+  const guyLabel = (cfg, title, corner = '★') => { const r = guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
   const traitWord = t => t.slot === 'lucky' ? 'Lucky' : t.slot === 'tone' ? cap(t.name) : t.slot === 'arms' ? (t.name === 'none' ? 'No arms' : cap(t.name)) : t.slot === 'feet' ? `${cap(t.name)} feet` : `${cap(t.name)} ${t.slot}`;
   const traitChips = (cfg, n = 2) => `<span class="tchips">${rarestOf(cfg, n).map(t => `<span class="tchip" style="--tier:${traitTier(t).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`).join('')}</span>`;
   // One trait as a Balatro card: its icon and slot, what he got, a paper box saying how rare.
@@ -2080,11 +2121,11 @@
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
-    const guySpec = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, LG.guyRank(cfg).tier), guyCard = cardInput(guySpec);
+    const guySpec = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, guyRank(cfg).tier), guyCard = cardInput(guySpec);
     guyStage('guy-stage', state.seed, wornCodes(), guySpec);
     saveButtons($('guy-saves'), guyCard, state.key, () => $('guy-stage'));
-    const rank = LG.guyRank(cfg);
-    $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    const rank = guyRank(cfg);
+    $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg);
     meaning($('guy-meaning'), LG.guyOneIn(cfg)); distChart($('guy-dist'), LG.guyOneIn(cfg));
@@ -2159,9 +2200,13 @@
     const pick = new Set(LG.pickable(base, lookTab)), slot = LOOK_SLOT[lookTab];
     const chance = i => LG.traitOdds({ ...cur, [lookTab]: i }).find(t => t.slot === slot)?.chance || 0;
     const all = list.map((_, i) => i).filter(i => pick.has(i) || chance(i) > 0).sort((x, y) => (pick.has(y) - pick.has(x)) || (chance(y) - chance(x)));
+    // Markings and cheeks a crowded guy has no room for wouldn't change him, so they aren't offered as if they would.
+    const room = i => !(lookTab === 'body' || lookTab === 'cheeks') || LG.shows({ ...cur, [lookTab]: i }, lookTab);
+    all.sort((x, y) => room(y) - room(x));
     $('look-opts').innerHTML = all.map(i => {
-      const p = chance(i), tier = tierOf(p), open = pick.has(i);
-      return `<button class="opt" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${open ? '' : ' disabled title="Only the deal gives this one"'}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${tier.c}">${i === base[lookTab] ? 'Dealt · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}</span></button>`;
+      const p = chance(i), tier = tierOf(p), open = pick.has(i), fits = room(i);
+      const why = !fits ? ' disabled title="No room on him for this: his face, topper or accessory takes the space"' : open ? '' : ' disabled title="Only the deal gives this one"';
+      return `<button class="opt${fits ? '' : ' noroom'}" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${why}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${fits ? tier.c : 'var(--ink-3)'}">${!fits ? 'No room' : `${i === base[lookTab] ? 'Dealt · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}`}</span></button>`;
     }).join('');
     $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: all[k] }));
   }
@@ -2223,10 +2268,10 @@
     if (!state) { paintInto($('mark-guy'), 'lilguys', []); setFavicon(); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
     paintInto($('mark-guy'), state.seed, wornCodes()); setFavicon();
     $('me-name').textContent = '@' + state.key;
-    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, LG.guyRank(guyConfig(state.seed)).tier));
+    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     hydrate($('me-card'));
     const n = LG.guyOneIn(guyConfig(state.seed));
-    $('me-odds').textContent = `Dealt just for you. A guy like him turns up 1 in ${words(n)}.`;
+    $('me-odds').textContent = founderOf(state.seed) ? 'Picked by hand for the founder. The one of one.' : guyRank(guyConfig(state.seed)).top > 0.5 ? 'Dealt just for you.' : `Dealt just for you: the ${guyRank(guyConfig(state.seed)).label.toLowerCase()} of every guy dealt.`;
     $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy. See who everyone else got.`;
     $('go-free').textContent = state.free === today ? 'Open a capsule' : "Open today's free capsule";
@@ -2780,6 +2825,15 @@
 
   // After the scroll the card comes up face up with its tier's entrance. A claimed name still comes face
   // down, trembles, flips and pays off.
+  // The grid's centre on the card or the item, wherever the layout put it.
+  function placeRays() {
+    const res = $('result'), on = $('flip');
+    if (res.hidden) return;
+    const r = res.getBoundingClientRect(), f = on.getBoundingClientRect();
+    res.style.setProperty('--rx', (f.left + f.width / 2 - r.left) + 'px');
+    res.style.setProperty('--ry', (f.top + f.height / 2 - r.top) + 'px');
+  }
+  addEventListener('resize', placeRays);
   async function unveil(gr, cardHtml, shoutText, name, sub, claimDrop, faceUp, won) {
     const res = $('result'), flip = $('flip'), front = $('front'), back = $('back'), shout = $('shout');
     res.style.setProperty('--grade', GRADE[gr]);
@@ -2824,7 +2878,7 @@
     const alone = front.querySelector('canvas.alone'); if (alone && won) { const fit = alone.closest('.won-art')?.clientWidth || 260; showItem(alone, won, state.seed, fit, fit); spinItem(alone.parentElement, won); }
     if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
     else shout.textContent = shoutText;
-    res.classList.add('go');
+    res.classList.add('go'); placeRays(); setTimeout(placeRays, 560);
     dropColour(GRADE[gr], 0.64, 500); if (dropPaint) dropPaint.kick(0.5 + gr * 0.25);
     if (claimDrop) SFX.claim(); else { SFX.stinger(Math.min(4, gr)); if (gr === 5) setTimeout(() => SFX.claim(), 700); }
     if (gr < 3) shout.classList.add('slam');
@@ -2863,7 +2917,7 @@
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet him';
     const n = LG.guyOneIn(guyConfig(state.seed));
-    await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, LG.guyRank(guyConfig(state.seed)).tier))}</div>`,
+    await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div>`,
       'One of a kind!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`, true);
     $('rv-keep').focus();
     await new Promise(r => { closeHook = r; });
@@ -2952,7 +3006,9 @@
     }
     const worn = wornCodes(), fresh = state.fresh || [], devs = state.dev || [];
     // Your guy as he stands, and what's in each slot.
-    $('lk-stage').innerHTML = animated(state.seed, 'dance', worn, 260);
+    // His card as it stands, so what you put on shows where it counts.
+    $('lk-stage').innerHTML = `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div>`;
+    hydrate($('lk-stage'));
     $('lk-slots').innerHTML = ['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => {
       const k = catOf(sl), code = state.worn[sl], o = code && LG.decode(code), name = o ? LG.nameOf(o).split(' | ')[0] : '';
       const have = list.filter(c => LG.slotOf(c.o) === sl).length;
@@ -3170,7 +3226,7 @@
     const guys = Array.from({ length: 400 }, () => { const seed = LG.makeSeed(), cfg = LG.resolve(seed); return { seed, cfg, n: LG.guyOneIn(cfg) }; })
       .sort((a, b) => b.n - a.n).slice(0, 12)
       .map((g, i) => ({ ...g, copies: i % 3 === 0 ? [LG.roll(g.seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
-    $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, guyLabel(g.cfg, cardTrait(g.cfg), ''), true, LG.guyRank(g.cfg).tier))}</div>${traitChips(g.cfg)}</div>`).join('');
+    $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, guyLabel(g.cfg, cardTrait(g.cfg), ''), true, guyRank(g.cfg).tier))}</div>${traitChips(g.cfg)}</div>`).join('');
     hydrate($('maybe'));
   }
   $('maybe-more').addEventListener('click', renderMaybe);
@@ -3595,7 +3651,7 @@
       seed = key; // the demo deals a plain name the same guy every time
     }
     const cfg = guyConfig(seed), n = LG.guyOneIn(cfg), [a, b] = split(n);
-    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier))}</div></div>
+    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, guyRank(cfg).tier))}</div></div>
       <div class="scoring"><div class="tiles">${LG.traitOdds(cfg).map(x => traitTile(x, true)).join('')}</div>
       <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b}</span></div><div class="meaning" id="lab-meaning"></div></div></div>`;
     hydrate(out); meaning($('lab-meaning'), n);
@@ -3655,14 +3711,14 @@
     $('guys-sort').querySelectorAll('[data-s]').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === guysSort));
     let list = [];
     try { list = await listGuys(guysSort, guysQ); } catch (e) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${esc(e.message)}</div>`; return; }
-    $('guys-sub').textContent = list.length ? `${list.length.toLocaleString('en-US')} ${guysQ ? 'found' : `guy${list.length === 1 ? '' : 's'} claimed`}. ${guysSort === 'rarest' ? 'Rarest first' : 'Newest first'}. Tap one to see their collection.` : '';
     if (!list.length) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${guysQ ? 'No one by that name yet.' : 'No one has claimed a guy yet. Be the first.'}</div>`; return; }
     for (const g of list) lookFor[g.seed] = g.look || '';
+    if (guysSort === 'rarest') list.sort((a, b) => guyRank(guyConfig(a.seed)).top - guyRank(guyConfig(b.seed)).top);
     $('guys-grid').innerHTML = list.map((g, i) => {
       const worn = (g.worn || []).map(LG.decode).filter(Boolean), best = g.best, bg = best ? LG.GRADES[best.grade] : null;
       return `<a class="gcard card" href="#/u/${esc(g.key)}">${guysSort === 'rarest' && !guysQ && i < 3 ? `<span class="rank">#${i + 1}</span>` : ''}
-        ${px(cardSpec(g.seed, worn, { title: '@' + g.key, g: best ? best.grade : 0, corner: '', bottom: LG.guyRank(guyConfig(g.seed)).label }, list.length > 30, best ? best.grade : undefined))}
-        <span><b>@${esc(g.key)}</b><small>A guy like him: 1 in ${words(g.oneIn)}</small></span>${traitChips(guyConfig(g.seed))}
+        ${px(cardSpec(g.seed, worn, guyLabel(guyConfig(g.seed), '@' + g.key, ''), list.length > 30, guyRank(guyConfig(g.seed)).tier))}
+        <span><b>@${esc(g.key)}</b><small>${esc(rankLine(guyRank(guyConfig(g.seed))))}</small></span>${traitChips(guyConfig(g.seed))}
         ${bg ? `<span class="bal" style="--b:${bg.color}">Best: ${esc(LG.nameOf(LG.decode(best.code)).split(' | ')[1] || bg.name)}</span>` : ''}</a>`;
     }).join('');
     hydrate($('guys-grid'));
@@ -3681,11 +3737,11 @@
     $('page-kicker').textContent = mine ? 'You' : 'Player';
     $('page-title').textContent = '@' + key;
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees him.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
-    const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, LG.guyRank(cfg).tier), uCard = cardInput(uSpec);
+    const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, guyRank(cfg).tier), uCard = cardInput(uSpec);
     guyStage('u-stage', u.seed, worn, uSpec);
     saveButtons($('u-saves'), uCard, key, () => $('u-stage'));
-    const uRank = LG.guyRank(cfg);
-    $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    const uRank = guyRank(cfg);
+    $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg).map(x => traitTile(x, true)).join('');
     meaning($('u-meaning'), LG.guyOneIn(cfg)); distChart($('u-dist'), LG.guyOneIn(cfg));
@@ -3751,8 +3807,11 @@
       s = { players: state ? 1 : 0, copies: n.reduce((a, b) => a + b, 0), grades: n, counts: [...by].map(([k, v]) => [...k.split('|'), v]) };
     }
     setCounts(s.counts || []);
-    $('m-stats').innerHTML = `<div class="mstat" style="--g:#5d6b8a"><b>${s.players.toLocaleString('en-US')}</b><span>guys claimed</span><i></i></div><div class="mstat" style="--g:#5d6b8a"><b>${s.copies.toLocaleString('en-US')}</b><span>copies opened</span><i></i></div>`
-      + LG.GRADES.map((g, k) => `<div class="mstat" style="--g:${g.color}"><b>${(s.grades[k] || 0).toLocaleString('en-US')}</b><span>${esc(g.name)}${k ? '' : ' copies'}</span><i></i></div>`).join('');
+    // The totals, then every copy ever opened as one bar split by grade: how rare the top end really is.
+    const total = s.copies || 0, pct = v => !v ? '0%' : v / total < 0.01 ? '<1%' : Math.round(v / total * 100) + '%';
+    $('m-stats').innerHTML = `<div class="mhead"><div><b>${s.players.toLocaleString('en-US')}</b><span>guys claimed</span></div><div><b>${total.toLocaleString('en-US')}</b><span>copies opened</span></div></div>`
+      + `<div class="mgrades"><div class="mbar" role="img" aria-label="${esc(LG.GRADES.map((g, k) => `${g.name} ${s.grades[k] || 0}`).join(', '))}">${LG.GRADES.map((g, k) => s.grades[k] ? `<i style="--g:${g.color};flex-grow:${s.grades[k]}" title="${esc(g.name)}: ${s.grades[k]} (${pct(s.grades[k])})"></i>` : '').join('') || '<i class="none"></i>'}</div>`
+      + `<div class="mkey">${LG.GRADES.map((g, k) => `<div class="${s.grades[k] ? '' : 'zero'}" style="--g:${g.color}"><i></i><span>${esc(g.name)}</span><b>${(s.grades[k] || 0).toLocaleString('en-US')}<small>${pct(s.grades[k])}</small></b></div>`).join('')}</div></div>`;
   }
   // "12 pulled · 3 in Gold": how many of this item anyone has ever pulled, and how many in this finish.
   const pulledLine = o => {

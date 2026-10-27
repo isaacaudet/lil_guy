@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-CQpqyDAm.cjs');
+const require_paint = require('./paint-DjM9TtWP.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -1518,32 +1518,32 @@ function getColor(colors, index) {
 /** [a guy's `guyScore`, the share of guys scoring at least that], commonest first. */
 const GUY_RANK = [
 	[7.9742, 1],
-	[10.7157, .9],
-	[11.536, .75],
-	[12.132, .6],
-	[12.5008, .5],
-	[12.8736, .4],
-	[13.2841, .3],
-	[13.5104, .25],
-	[13.7682, .2],
-	[14.0716, .15],
-	[14.4599, .1],
-	[14.7138, .075],
-	[15.0481, .05],
-	[15.4488, .03],
-	[15.7515, .02],
-	[16.2471, .01],
-	[16.4422, .0075],
-	[16.7127, .005],
-	[17.0553, .003],
-	[17.3217, .002],
-	[17.7295, .001],
-	[18.077, 5e-4],
-	[18.5644, 2e-4],
-	[18.9175, 1e-4],
-	[19.2804, 5e-5],
-	[19.7742, 2e-5],
-	[20.1775, 1e-5]
+	[10.5628, .9],
+	[11.235, .75],
+	[11.7071, .6],
+	[11.996, .5],
+	[12.291, .4],
+	[12.6129, .3],
+	[12.7975, .25],
+	[13.0081, .2],
+	[13.2647, .15],
+	[13.6031, .1],
+	[13.8347, .075],
+	[14.1544, .05],
+	[14.5476, .03],
+	[14.851, .02],
+	[15.345, .01],
+	[15.5431, .0075],
+	[15.8206, .005],
+	[16.1397, .003],
+	[16.3825, .002],
+	[16.7359, .001],
+	[17.1098, 5e-4],
+	[17.5923, 2e-4],
+	[17.9111, 1e-4],
+	[18.162, 5e-5],
+	[18.6492, 2e-5],
+	[19.0382, 1e-5]
 ];
 
 //#endregion
@@ -1594,6 +1594,7 @@ const FOOT_NAMES = [
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
+	const body = require_paint.shows(config, "body") ? config.body : 0, cheek = require_paint.shows(config, "cheeks") ? config.cheeks : 0;
 	return [
 		{
 			slot: "shape",
@@ -1612,8 +1613,8 @@ function traitOdds(config) {
 		},
 		{
 			slot: "cheeks",
-			name: require_paint.cheeks[config.cheeks].name,
-			chance: share(require_paint.cheekWeights, config.cheeks)
+			name: require_paint.cheeks[cheek].name,
+			chance: share(require_paint.cheekWeights, cheek)
 		},
 		{
 			slot: "topper",
@@ -1622,8 +1623,8 @@ function traitOdds(config) {
 		},
 		{
 			slot: "markings",
-			name: require_paint.bodies[config.body].name,
-			chance: share(require_paint.bodyWeights, config.body)
+			name: require_paint.bodies[body].name,
+			chance: share(require_paint.bodyWeights, body)
 		},
 		{
 			slot: "accessory",
@@ -6980,6 +6981,7 @@ exports.shineData = shineData
 exports.shineFit = shineFit
 exports.shineFrame = shineFrame
 exports.shines = shines
+exports.shows = require_paint.shows
 exports.slotOf = require_paint.slotOf
 exports.special = require_paint.special
 exports.starter = require_paint.starter

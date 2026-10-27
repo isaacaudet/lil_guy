@@ -2045,22 +2045,42 @@ const bolt = stamp([
 	"yyy",
 	"y.."
 ]);
+/** The cells the eyes and mouth take, as `y * 64 + x`. */
+const faceOf$1 = (c) => {
+	const f = c.face, out = new Set();
+	if (!f) return out;
+	for (let y = f.top; y <= f.line; y++) for (const e of f.eyes) for (let x = e.left; x <= e.right; x++) out.add(y * 64 + x);
+	const mx = c.centred(f.mouth);
+	f.mouth.forEach((row, dy) => row.forEach((t, dx) => {
+		if (t) out.add((f.mouthTop + dy) * 64 + mx + dx);
+	}));
+	return out;
+};
 /**
-* The top row of a 3-row mark: a row under the crown, where the head is wide
-* enough to hold it, as long as it stays a clear row above the eyes. On a head
-* with no forehead to spare it goes on the belly under the mouth instead; on
-* one with neither, it isn't drawn (a mark between the eyes reads as a face).
+* Where a 3x3 mark goes: every pixel on the body with body either side, and a
+* clear pixel from the eyes and mouth, so it never reads as part of the face.
+* Under the mouth first, then low on either side, then the forehead (where
+* hair or a hat would most often cover it). On a head with room for none it
+* isn't drawn.
 */
-const forehead = (c) => {
-	const f = c.face;
-	if (!f) return c.crown + 1;
-	if (c.crown + 1 + 2 <= f.top - 2) return c.crown + 1;
-	const belly = f.mouthBottom + 2;
-	return belly + 2 <= c.bottom - 1 ? belly : null;
+const spotFor = (c, s) => {
+	const face = faceOf$1(c);
+	const inside$1 = (x, y) => c.isBody(x, y) && c.isBody(x - 1, y) && c.isBody(x + 1, y);
+	const nearFace = (x, y) => {
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * 64 + x + dx)) return true;
+		return false;
+	};
+	const fits = (x0, y0) => s.every((row, dy) => row.every((t, dx) => !t || inside$1(x0 + dx, y0 + dy) && !nearFace(x0 + dx, y0 + dy)));
+	const mid = Math.floor(c.centre) - 1, f = c.face;
+	const tries = [];
+	if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - 3; y++) tries.push([mid, y]);
+	if (f) for (let y = c.bottom - 3; y >= f.top; y--) for (let off = 3; off <= 6; off++) tries.push([mid + off, y], [mid - off, y]);
+	for (let y = c.crown; y <= (f ? f.top - 3 : c.crown + 1); y++) tries.push([mid, y]);
+	return tries.find(([x, y]) => fits(x, y)) ?? null;
 };
 const mark = (c, s) => {
-	const y = forehead(c);
-	if (y !== null) c.draw(s, Math.floor(c.centre) - 1, y, true);
+	const at = spotFor(c, s);
+	if (at) c.draw(s, at[0], at[1], true);
 };
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c, x, y, token) {
@@ -9654,11 +9674,12 @@ function extrasOf(config, c) {
 	let marks = cheek.art.length > 0;
 	const top = itemById(config.hat)?.slot === "hat" || config.hair !== 0 && !EARED.has(heads[config.head].name);
 	const worn = config.accessory !== 0;
-	const limit = c.bottom - c.crown + 1 <= 8 ? 1 : 2;
+	const small = c.bottom - c.crown + 1 <= 8, limit = small ? 1 : 2;
+	const quiet = pattern && !SCATTERED.has(body) && body !== "starry" && !small;
 	const count$1 = () => [
 		top,
 		worn,
-		pattern,
+		pattern && !quiet,
 		marks
 	].filter(Boolean).length;
 	if (count$1() > limit && pattern && !CHASE.has(body)) pattern = false;
@@ -9884,6 +9905,25 @@ function compose(config) {
 		}
 	}
 	return c.grid;
+}
+const showsCache = new Map();
+/**
+* Whether a guy's markings (`body`) or cheeks are drawn at all: on a crowded or
+* small guy one may give way, and then it is the same guy as without it.
+*/
+function shows(config, slot) {
+	if (!config[slot]) return true;
+	const key = slot + JSON.stringify(config);
+	let v = showsCache.get(key);
+	if (v === void 0) {
+		v = JSON.stringify(compose(config)) !== JSON.stringify(compose({
+			...config,
+			[slot]: 0
+		}));
+		if (showsCache.size > 5e3) showsCache.clear();
+		showsCache.set(key, v);
+	}
+	return v;
 }
 
 //#endregion
@@ -11018,32 +11058,32 @@ function getColor(colors, index) {
 /** [a guy's `guyScore`, the share of guys scoring at least that], commonest first. */
 const GUY_RANK = [
 	[7.9742, 1],
-	[10.7157, .9],
-	[11.536, .75],
-	[12.132, .6],
-	[12.5008, .5],
-	[12.8736, .4],
-	[13.2841, .3],
-	[13.5104, .25],
-	[13.7682, .2],
-	[14.0716, .15],
-	[14.4599, .1],
-	[14.7138, .075],
-	[15.0481, .05],
-	[15.4488, .03],
-	[15.7515, .02],
-	[16.2471, .01],
-	[16.4422, .0075],
-	[16.7127, .005],
-	[17.0553, .003],
-	[17.3217, .002],
-	[17.7295, .001],
-	[18.077, 5e-4],
-	[18.5644, 2e-4],
-	[18.9175, 1e-4],
-	[19.2804, 5e-5],
-	[19.7742, 2e-5],
-	[20.1775, 1e-5]
+	[10.5628, .9],
+	[11.235, .75],
+	[11.7071, .6],
+	[11.996, .5],
+	[12.291, .4],
+	[12.6129, .3],
+	[12.7975, .25],
+	[13.0081, .2],
+	[13.2647, .15],
+	[13.6031, .1],
+	[13.8347, .075],
+	[14.1544, .05],
+	[14.5476, .03],
+	[14.851, .02],
+	[15.345, .01],
+	[15.5431, .0075],
+	[15.8206, .005],
+	[16.1397, .003],
+	[16.3825, .002],
+	[16.7359, .001],
+	[17.1098, 5e-4],
+	[17.5923, 2e-4],
+	[17.9111, 1e-4],
+	[18.162, 5e-5],
+	[18.6492, 2e-5],
+	[19.0382, 1e-5]
 ];
 
 //#endregion
@@ -11094,6 +11134,7 @@ const FOOT_NAMES = [
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
+	const body = shows(config, "body") ? config.body : 0, cheek = shows(config, "cheeks") ? config.cheeks : 0;
 	return [
 		{
 			slot: "shape",
@@ -11112,8 +11153,8 @@ function traitOdds(config) {
 		},
 		{
 			slot: "cheeks",
-			name: cheeks[config.cheeks].name,
-			chance: share(cheekWeights, config.cheeks)
+			name: cheeks[cheek].name,
+			chance: share(cheekWeights, cheek)
 		},
 		{
 			slot: "topper",
@@ -11122,8 +11163,8 @@ function traitOdds(config) {
 		},
 		{
 			slot: "markings",
-			name: bodies[config.body].name,
-			chance: share(bodyWeights, config.body)
+			name: bodies[body].name,
+			chance: share(bodyWeights, body)
 		},
 		{
 			slot: "accessory",
@@ -16426,6 +16467,7 @@ exports.shineData = shineData
 exports.shineFit = shineFit
 exports.shineFrame = shineFrame
 exports.shines = shines
+exports.shows = shows
 exports.slotOf = slotOf
 exports.special = special
 exports.starter = starter

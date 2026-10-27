@@ -36,20 +36,36 @@ const bolt = stamp([
   'y..',
 ]);
 
-/**
- * The top row of a 3-row mark: a row under the crown, where the head is wide
- * enough to hold it, as long as it stays a clear row above the eyes. On a head
- * with no forehead to spare it goes on the belly under the mouth instead; on
- * one with neither, it isn't drawn (a mark between the eyes reads as a face).
- */
-const forehead = (c: Canvas): number | null => {
-  const f = c.face;
-  if (!f) return c.crown + 1;
-  if (c.crown + 1 + 2 <= f.top - 2) return c.crown + 1;
-  const belly = f.mouthBottom + 2;
-  return belly + 2 <= c.bottom - 1 ? belly : null;
+/** The cells the eyes and mouth take, as `y * 64 + x`. */
+const faceOf = (c: Canvas): Set<number> => {
+  const f = c.face, out = new Set<number>();
+  if (!f) return out;
+  for (let y = f.top; y <= f.line; y++) for (const e of f.eyes) for (let x = e.left; x <= e.right; x++) out.add(y * 64 + x);
+  const mx = c.centred(f.mouth);
+  f.mouth.forEach((row, dy) => row.forEach((t, dx) => { if (t) out.add((f.mouthTop + dy) * 64 + mx + dx); }));
+  return out;
 };
-const mark = (c: Canvas, s: Stamp) => { const y = forehead(c); if (y !== null) c.draw(s, Math.floor(c.centre) - 1, y, true); };
+
+/**
+ * Where a 3x3 mark goes: every pixel on the body with body either side, and a
+ * clear pixel from the eyes and mouth, so it never reads as part of the face.
+ * Under the mouth first, then low on either side, then the forehead (where
+ * hair or a hat would most often cover it). On a head with room for none it
+ * isn't drawn.
+ */
+const spotFor = (c: Canvas, s: Stamp): [number, number] | null => {
+  const face = faceOf(c);
+  const inside = (x: number, y: number) => c.isBody(x, y) && c.isBody(x - 1, y) && c.isBody(x + 1, y);
+  const nearFace = (x: number, y: number) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (face.has((y + dy) * 64 + x + dx)) return true; return false; };
+  const fits = (x0: number, y0: number) => s.every((row, dy) => row.every((t, dx) => !t || (inside(x0 + dx, y0 + dy) && !nearFace(x0 + dx, y0 + dy))));
+  const mid = Math.floor(c.centre) - 1, f = c.face;
+  const tries: [number, number][] = [];
+  if (f) for (let y = f.mouthBottom + 2; y <= c.bottom - 3; y++) tries.push([mid, y]);
+  if (f) for (let y = c.bottom - 3; y >= f.top; y--) for (let off = 3; off <= 6; off++) tries.push([mid + off, y], [mid - off, y]);
+  for (let y = c.crown; y <= (f ? f.top - 3 : c.crown + 1); y++) tries.push([mid, y]);
+  return tries.find(([x, y]) => fits(x, y)) ?? null;
+};
+const mark = (c: Canvas, s: Stamp) => { const at = spotFor(c, s); if (at) c.draw(s, at[0], at[1], true); };
 
 /** Paints only where the bare body is — markings never leave the silhouette. */
 function onBody(c: Canvas, x: number, y: number, token: number): void {

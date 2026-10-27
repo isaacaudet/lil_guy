@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime1 from "react/jsx-runtime";
+import * as react_jsx_runtime3 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -860,6 +860,11 @@ declare function composeBase(config: AvatarConfig): PixelGrid;
  * drawn around the finished shape so hats, ears and arms all get one too.
  */
 declare function compose(config: AvatarConfig): PixelGrid;
+/**
+ * Whether a guy's markings (`body`) or cheeks are drawn at all: on a crowded or
+ * small guy one may give way, and then it is the same guy as without it.
+ */
+declare function shows(config: AvatarConfig, slot: 'body' | 'cheeks'): boolean;
 
 //#endregion
 //#region src/palette.d.ts
@@ -1400,7 +1405,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime3.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -1995,5 +2000,5 @@ declare function bakeView(spec: CardSpec, view: string): Frames | null;
 declare function defineLilGuyHere(options?: Omit<LilGuyOptions, 'bake'>): void;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BakedKind, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CardFace, CardInput, CardShader, CardSpec, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BakedKind, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CardFace, CardInput, CardShader, CardSpec, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map
