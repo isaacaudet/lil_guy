@@ -88,9 +88,11 @@ export function cardFace(spec: FaceSpec): CardFace {
     kind.set([Math.round(k / 4 * 255), (fi + 1) * 32, Math.round(sc * 255), print], i);
     noise[i] = noiseOf(x, y, print * 4);
   };
-  const edge = [34, 38, 58], cream = [242, 236, 221], rim = [207, 199, 180];
   const gc = g >= 0 ? rgb(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb(spec.tint) : [120, 140, 170];
-  const win = blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
+  // An aura card is midnight with an edge in the grade's teal and a dark window his aura glows in.
+  const aura = g >= 5, night = [17, 21, 27];
+  const edge = aura ? blend(gc, night, 0.35) : [34, 38, 58], cream = aura ? night : [242, 236, 221], rim = aura ? blend(gc, night, 0.6) : [207, 199, 180];
+  const win = aura ? [12, 15, 22] : blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
     if (cx + cy < 2) continue;
@@ -150,10 +152,10 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
       } else if (grade > 2.5 && grade < 3.5) {
         if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * 0.18);
         c = c.map(v => v + wide * 0.12) as Vec3;
-      } else if (grade > 3.5) {
+      } else if (grade > 3.5 && grade < 4.5) {
         if (k < 1.5) c = mix(c, [1, 0.82, 0.36], 0.35 + 0.2 * wide);
         c = mix(c, [1, 0.95, 0.7], step(0.965, fract(h * 13 + time / 3)) * 0.8);
-      }
+      } else if (grade > 4.5 && k < 1.5) c = mix(c, [0.62, 0.96, 0.92], wide * 0.45);
     }
     if (hover && hover.strength > 0) {
       const at = [(x + 0.5) / W, (y + 0.5) / H];
@@ -193,7 +195,8 @@ void main() {
     if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
     else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
     else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
-    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+    else if (grade > 3.5 && grade < 4.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
+    else if (grade > 4.5 && k < 1.5) c = mix(c, vec3(0.62, 0.96, 0.92), wide * 0.45);
   }
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);

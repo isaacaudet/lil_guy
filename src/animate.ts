@@ -1,4 +1,4 @@
-import { cycle, fit, fitLoop, LOOP_MS, steps, wave, wrap } from './loop';
+import { cycle, fit, fitLoop, LOOP_MS, steps, tick, wave, wrap } from './loop';
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
 import { compose, composeBase, faceOf } from './compose';
@@ -6,11 +6,12 @@ import { heads, mouths, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
 import { paint } from './paint';
 import { paletteOf } from './palette';
-import { GRADES, gradeOf } from './owned';
+import { GRADES, gradeOf, type Owned } from './owned';
 import { LAYER, T } from './parts/art';
 import { hash } from './hash';
 import { auraById, auraCells, auraColor } from './auras';
 import { applyFx } from './effects';
+import { sparkleAt, SPARKLE_REACH } from './sparkle';
 import type { AvatarConfig, Palette, PixelGrid, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -28,6 +29,13 @@ import { GRID_SIZE } from './types';
  * from Special up a shine sweeps across the item, from Prized up a ring in the
  * grade's colour pulses around the guy, and Mythic and Grail copies throw off
  * sparkles.
+ *
+ * Each guy keeps his own time. His idle is dealt from his name like his parts
+ * are: how many breaths he takes in a loop, where in it he starts, and his
+ * habits (a blink or a double blink, a glance, a smile, an "ooh", a little
+ * hop). The same guy always moves the same way, and two guys side by side are
+ * never in step. A squash never cuts his face: rows are only lost or repeated
+ * below his mouth or above his eyes, and a guy with no room there bobs instead.
  */
 
 export const MOVES = ['idle', 'blink', 'hop', 'wave', 'look', 'cheer', 'sad', 'dance', 'squish', 'sleep'] as const;
@@ -97,7 +105,7 @@ export interface AnimateOptions extends RenderOptions {
  * down, and with a few expressions — a laugh for a win, a wobble for a loss,
  * an "ooh" when squished. His own eyes stay: they are who he is.
  */
-type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh';
+type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep';
 
 /** Little pictures that pop up beside his head. */
 export type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire';
@@ -150,17 +158,97 @@ const HOP: Beat[] = [
   b('base', 80, { squash: 1 }),
 ];
 
-const BEATS: Record<Move, (canWave: boolean) => Beat[]> = {
-  idle: () => [
-    b('base', 700), b('base', 500, { squash: 1 }), b('base', 700), b('shut', 120), b('base', 480), b('base', 500, { squash: 1 }),
-  ],
-  blink: () => [b('base', 2400), b('shut', 140)],
+/** What a guy's moves are dealt from: his own rolls, and what his face and arms can do. */
+interface Guy {
+  /** A number in [0, 1) for each `k`, the same for him every time. */
+  roll: (k: number) => number;
+  canWave: boolean;
+  /** Whether his mouth may change for a moment (a smile, an "ooh"); a signature mouth stays. */
+  mouthy: boolean;
+}
+
+/** A well-mixed number in [0, 1) from integers. */
+function noise(...n: number[]): number {
+  let h = 0x9e3779b9;
+  for (const v of n) {
+    h = Math.imul(h ^ v, 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    h ^= h >>> 16;
+  }
+  return (h >>> 0) / 4294967296;
+}
+
+const rollsOf = (input: string) => { const h = hash(`${input}|rhythm`); return (k: number) => noise(h, k); };
+
+/** Little things a guy does between breaths. Each guy has a few of them as his habits. */
+const ACTS = {
+  blink: [b('shut', 130)],
+  double: [b('shut', 100), b('base', 110), b('shut', 110)],
+  glanceLeft: [b('left', 520)],
+  glanceRight: [b('right', 520)],
+  around: [b('left', 320), b('base', 90), b('right', 320)],
+  smile: [b('smile', 580)],
+  content: [b('content', 640)],
+  ooh: [b('ooh', 380)],
+  blep: [b('blep', 460)],
+  hop: [b('base', 80, { squash: 1 }), b('base', 90, { dy: -1 }), b('base', 130, { dy: -2 }), b('base', 90, { dy: -1 }), b('base', 80, { squash: 1 })],
+} satisfies Record<string, Beat[]>;
+type Act = keyof typeof ACTS;
+
+const pick = <T,>(r: number, list: readonly T[]) => list[Math.min(list.length - 1, Math.floor(r * list.length))];
+const actMs = (act: Act) => ACTS[act].reduce((n, x) => n + x.ms, 0);
+
+/**
+ * His idle, one LOOP_MS long, dealt from his name: three to five breaths (his
+ * tempo), each a rest and a dip or, for a floater, a lift; his habits in some
+ * of the rests; and the loop turned to start partway through a rest, so guys
+ * dealt the same tempo still breathe at different moments. It always starts
+ * on his still pose.
+ */
+function idleBeats(g: Guy): Beat[] {
+  const r = g.roll;
+  const breaths = pick(r(1), [3, 4, 4, 5]), floater = r(2) < 0.3;
+  const habits: Act[] = [r(3) < 0.35 ? 'double' : 'blink'];
+  if (r(4) < 0.7) habits.push(pick(r(5), ['glanceLeft', 'glanceRight', 'around'] as const));
+  if (g.mouthy && r(6) < 0.75) habits.push(pick(r(7), ['smile', 'smile', 'content', 'content', 'ooh', 'blep'] as const));
+  if (r(8) < 0.25) habits.push('hop');
+  // Two or three of them a loop, the eyes always, each on a breath of its own.
+  const count = Math.min(breaths, habits.length, 2 + (r(9) < 0.45 ? 1 : 0));
+  const salt = Math.floor(r(10) * 1e9);
+  const order = Array.from({ length: breaths }, (_, i) => i).sort((a, c) => noise(a, salt) - noise(c, salt));
+  const doing = new Map<number, Act>(habits.slice(0, count).map((act, i) => [order[i], act]));
+  const lap: Beat[] = [];
+  for (let i = 0; i < breaths; i++) {
+    const ms = Math.round((i + 1) * LOOP_MS / breaths) - Math.round(i * LOOP_MS / breaths);
+    const dip = Math.round(ms * (0.3 + 0.1 * r(11 + i))), rest = ms - dip, act = doing.get(i);
+    if (act && actMs(act) + 160 <= rest) {
+      const lead = Math.round((rest - actMs(act)) * (0.3 + 0.4 * r(20 + i)));
+      lap.push(b('base', lead), ...ACTS[act], b('base', rest - lead - actMs(act)));
+    } else lap.push(b('base', rest));
+    lap.push(b('base', dip, floater ? { dy: -1 } : { squash: 1 }));
+  }
+  // Start partway through one of his rests.
+  const rests = lap.map((x, i) => [x, i] as const).filter(([x]) => x.pose === 'base' && !x.squash && !x.dy && x.ms >= 200);
+  const [rest, at] = pick(r(30), rests);
+  const cut = Math.round(rest.ms * (0.2 + 0.6 * r(31)));
+  return [b('base', rest.ms - cut), ...lap.slice(at + 1), ...lap.slice(0, at), b('base', cut)];
+}
+
+const BEATS: Record<Move, (g: Guy) => Beat[]> = {
+  idle: idleBeats,
+  blink: ({ roll }) => {
+    const wait = 1800 + Math.round(roll(40) * 1600);
+    return roll(41) < 0.3 ? [b('base', wait), b('shut', 100), b('base', 110), b('shut', 120)] : [b('base', wait), b('shut', 140)];
+  },
   hop: () => [...HOP, b('base', 700)],
-  wave: canWave => canWave
+  wave: ({ canWave }) => canWave
     ? [b('wave', 220), b('sides', 200), b('wave', 220), b('sides', 200), b('wave', 220, { emote: 'heart' }), b('base', 700, { emote: 'heart' })]
     : [b('base', 200, { dx: -1 }), b('base', 200), b('base', 200, { dx: 1 }), b('base', 200), b('base', 700)],
-  look: () => [b('base', 500), b('left', 700, { emote: 'question', left: true }), b('base', 250), b('right', 700, { emote: 'question' }), b('base', 250), b('shut', 120), b('base', 400)],
-  cheer: canWave => {
+  look: ({ roll }) => {
+    const [first, second]: Pose[] = roll(42) < 0.5 ? ['left', 'right'] : ['right', 'left'];
+    return [b('base', 500), b(first, 700, { emote: 'question', left: first === 'left' }), b('base', 250), b(second, 700, { emote: 'question', left: second === 'left' }), b('base', 250), b('shut', 120), b('base', 400)];
+  },
+  cheer: ({ canWave }) => {
     const arm: Pose = canWave ? 'laughWave' : 'laugh';
     const up: Beat[] = [
       b('laugh', 80, { squash: 1 }),
@@ -174,16 +262,22 @@ const BEATS: Record<Move, (canWave: boolean) => Beat[]> = {
   sad: () => [
     b('frown', 900, { squash: 1, drop: true }), b('frown', 700, { squash: 2, drop: true }), b('frown', 900, { squash: 1, drop: true }), b('base', 500, { squash: 1 }),
   ],
-  dance: () => [
-    b('laugh', 180, { dx: -1, squash: 1, emote: 'note', left: true }), b('base', 180, { emote: 'note', left: true }),
-    b('laugh', 180, { dx: 1, squash: 1, turn: true, emote: 'note' }), b('base', 180, { turn: true, emote: 'note' }),
-  ],
+  dance: ({ roll }) => {
+    // His own tempo: a step of 150 to 210 ms.
+    const ms = 150 + 10 * Math.floor(roll(43) * 7);
+    return [
+      b('laugh', ms, { dx: -1, squash: 1, emote: 'note', left: true }), b('base', ms, { emote: 'note', left: true }),
+      b('laugh', ms, { dx: 1, squash: 1, turn: true, emote: 'note' }), b('base', ms, { turn: true, emote: 'note' }),
+    ];
+  },
   squish: () => [
     b('ooh', 90, { squash: 2, emote: 'bang' }), b('ooh', 80, { squash: -2, emote: 'bang' }), b('ooh', 80, { squash: 1, emote: 'bang' }), b('base', 70, { squash: -1 }), b('base', 700),
   ],
-  sleep: () => [
-    b('shut', 1100, { squash: 1, emote: 'zzz' }), b('shut', 1100, { emote: 'zzz', rise: true }), b('shut', 1100, { squash: 1, emote: 'zzz' }), b('shut', 1100, { emote: 'zzz', rise: true }),
-  ],
+  sleep: ({ roll }) => {
+    // Slow breaths, slower for some.
+    const ms = 1000 + 50 * Math.floor(roll(44) * 6);
+    return [b('shut', ms, { squash: 1, emote: 'zzz' }), b('shut', ms, { emote: 'zzz', rise: true }), b('shut', ms, { squash: 1, emote: 'zzz' }), b('shut', ms, { emote: 'zzz', rise: true })];
+  },
 };
 
 // ---------------------------------------------------------------- the face
@@ -317,14 +411,14 @@ function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
   }));
 }
 
-/** Loses rows from (or repeats a row of) the body just above the feet; everything above follows. */
-function squash(layer: Layer, n: number): Layer {
-  if (!n) return layer;
-  let last = -1, first = -1;
-  layer.forEach((row, y) => { if (row.some(Boolean)) { if (first < 0) first = y; last = y; } });
-  if (last < 0) return layer;
-  const r = Math.max(first + 2, last - 3);
-  const rows = layer.map(row => [...row]);
+/**
+ * Loses `n` rows ending at row `r` (or, for a negative `n`, repeats row `r`);
+ * everything above follows. `r` comes from `squashPlan`, so it is never a row
+ * of his face.
+ */
+function squash(layer: Layer, s: Squash | null): Layer {
+  if (!s) return layer;
+  const { n, row: r } = s, rows = layer.map(row => [...row]);
   if (n > 0) {
     const blank = Array.from({ length: n }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
     return [...blank, ...rows.slice(0, r - n + 1), ...rows.slice(r + 1)];
@@ -354,12 +448,56 @@ function rim(layer: Layer): [number, number][] {
   return out;
 }
 
-/** A four-point twinkle, only where there is nothing. */
-function twinkle(layer: Layer, x: number, y: number, centre: string, arms: string): void {
-  const cells: [number, number, string][] = [[x, y, centre], [x - 1, y, arms], [x + 1, y, arms], [x, y - 1, arms], [x, y + 1, arms]];
-  if (!cells.every(([cx, cy]) => cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx])) return;
-  for (const [cx, cy, c] of cells) layer[cy][cx] = { c, item: false };
+/** A sparkle's three colours: its white heart, its bright arms, its deep edges. */
+type Sparkle = [string, string, string];
+
+/** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
+function sparkle(layer: Layer, x: number, y: number, f: number, colors: Sparkle): void {
+  for (const [dx, dy, k] of sparkleAt(f)) {
+    const cx = x + dx, cy = y + dy;
+    if (cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = { c: colors[k], item: false };
+  }
 }
+
+/**
+ * Where sparkles may open: empty cells near the guy, with room all round for
+ * the sparkle at its biggest, two or three cells off him and no lower than his
+ * middle (`above` rows from his top at most, when given). None in the frame's
+ * edge cells, so nothing sits stuck in a corner.
+ */
+function sparkleSpots(layer: Layer, above = Infinity): [number, number][] {
+  let top = FRAME_HEIGHT, bottom = -1;
+  layer.forEach((row, y) => { if (row.some(Boolean)) { top = Math.min(top, y); bottom = y; } });
+  const out: [number, number][] = [];
+  const near = (x: number, y: number, d: number) => {
+    for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) if (layer[y + dy]?.[x + dx]) return true;
+    return false;
+  };
+  for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < FRAME_WIDTH - 1; x++) {
+    if (y > Math.min((top + bottom) / 2, top + above)) continue;
+    if (SPARKLE_REACH.some(([dx, dy]) => layer[y + dy][x + dx])) continue;
+    if (!near(x, y, 1) && near(x, y, 3)) out.push([x, y]);
+  }
+  return out;
+}
+
+/**
+ * One sparkle at a time from a run of them: every `period` ms (fitted to
+ * LOOP_MS) one opens at a spot dealt from `salt`, lives `life` of the period
+ * and is gone for the rest. `at` is the clock with this run's own phase.
+ */
+function sparkleRun(layer: Layer, spots: [number, number][], at: number, period: number, life: number, salt: number, colors: Sparkle): void {
+  if (!spots.length) return;
+  const f = cycle(at, period) / life;
+  if (f >= 1) return;
+  const [x, y] = spots[Math.floor(noise(tick(at, period), salt) * spots.length)];
+  sparkle(layer, x, y, f, colors);
+}
+
+/** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
+const sparkleIn = (color: string): Sparkle => ['#FFFFFF', mix(color, '#FFFFFF', 0.45), color];
+/** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
+const GOLD_SPARKLE: Sparkle = ['#FFFFFF', '#FFF0B8', '#F5C342'];
 
 const mouthIndex = (name: string) => Math.max(0, mouths.findIndex(m => m.name === name));
 
@@ -398,21 +536,114 @@ function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
   for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = { c, item: false };
 }
 
-/** Where a Lucky guy's gold twinkles go. */
-const LUCKY_SPOTS: [number, number][] = [[2, 5], [13, 4], [14, 14], [1, 15]];
+// ---------------------------------------------------------------- poses and squashes
 
-/** Where sparkles may go: around the guy, clear of him. */
-const SPARKLE_SPOTS: [number, number][] = [[2, 6], [13, 8], [1, 13], [14, 15], [7, 1], [2, 18], [13, 2], [12, 18]];
+/** Mouths a guy keeps whatever he is doing, because they are who he is. */
+const SIGNATURE_MOUTHS = new Set(['beak', 'fang', 'gritted', 'bubblegum', 'vampire', 'gold tooth', 'grillz', 'mustache']);
+
+/** The mouth a pose wears, when it isn't his own. */
+function poseMouth(pose: Pose, own: number): number | undefined {
+  if (pose === 'laugh' || pose === 'laughWave') return mouthIndex('laugh');
+  if (pose === 'frown') return mouthIndex('wobble');
+  if (pose === 'ooh') return mouthIndex('ooh');
+  if (pose === 'blep') return mouthIndex('blep');
+  if (pose === 'smile' || pose === 'content') return own === mouthIndex('smile') ? mouthIndex('grin') : mouthIndex('smile');
+  return undefined;
+}
+
+const POSES: Pose[] = ['base', 'shut', 'left', 'right', 'wave', 'sides', 'laugh', 'laughWave', 'frown', 'ooh', 'smile', 'content', 'blep'];
+
+/**
+ * The guy as he is drawn into his poses: dressed, without the frame and aura
+ * (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
+ * frame too). `grid` builds each pose once.
+ */
+function poser(input: string, options: AnimateOptions) {
+  const config = dress(resolve(input, options.parts), options, input);
+  const owned = config.owned && Object.fromEntries(Object.entries(config.owned).map(([slot, o]) => [slot, o?.finish === 'gold' ? { ...o, finish: 'plain' as const } : o]));
+  const figure: AvatarConfig = { ...config, frame: undefined, aura: undefined, owned };
+  const grids = new Map<Pose, PixelGrid>();
+  const grid = (pose: Pose): PixelGrid => {
+    if (!grids.has(pose)) {
+      const base = compose(figure), mouth = poseMouth(pose, config.mouth);
+      const worn = mouth === undefined ? base : compose({ ...figure, mouth, arms: pose === 'laughWave' ? 2 : figure.arms });
+      grids.set(pose,
+        pose === 'shut' ? closeEyes(base, config)
+        : pose === 'left' ? glance(base, config, -1)
+        : pose === 'right' ? glance(base, config, 1)
+        : pose === 'frown' || pose === 'content' ? closeEyes(worn, config)
+        : pose === 'wave' || pose === 'sides' ? compose({ ...figure, arms: pose === 'wave' ? 2 : 1 })
+        : worn);
+    }
+    return grids.get(pose)!;
+  };
+  return { config, figure, grid };
+}
+
+/** Tokens that make a face: eye ink and shine, the mouth and its tongue. */
+const FACE_TOKENS = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
+
+/**
+ * Where a guy squashes: for `n` rows lost (or, negative, repeated), the frame
+ * row the squash ends on, or null when he has no room for it. His face (from
+ * the top of his eyes to the foot of any mouth he pulls, and any row with eye
+ * or mouth pixels) is never touched. Rows go from his body between the mouth
+ * and the feet, nearest four rows up from his foot; failing that from his head
+ * above the eyes; failing that one row fewer, or none.
+ */
+function squashPlan(config: AvatarConfig, figure: AvatarConfig, grid: (pose: Pose) => PixelGrid) {
+  const base = grid('base');
+  let first = -1, last = -1;
+  base.forEach((row, y) => { if (row.some(Boolean)) { if (first < 0) first = y; last = y; } });
+  const face = new Set<number>();
+  let top = GRID_SIZE, bottom = -1;
+  for (const pose of POSES) {
+    const f = faceOf({ ...figure, mouth: poseMouth(pose, config.mouth) ?? figure.mouth });
+    top = Math.min(top, f.top); bottom = Math.max(bottom, f.line, f.mouthBottom);
+    for (const [y, row] of grid(pose).entries()) if (row.some(t => FACE_TOKENS.has(t))) face.add(y);
+  }
+  for (let y = top; y <= bottom; y++) face.add(y);
+  const free = (y: number) => y > first && y < last && !face.has(y);
+  const plans = new Map<number, Squash | null>();
+  const at = (n: number): Squash | null => {
+    if (!n) return null;
+    if (plans.has(n)) return plans.get(n)!;
+    const k = Math.abs(n), fits = (r: number) => (n > 0 ? Array.from({ length: k }, (_, i) => r - i) : [r]).every(free);
+    const below = Array.from({ length: Math.max(0, last - bottom) }, (_, i) => bottom + 1 + i).filter(fits).sort((p, q) => Math.abs(p - (last - 3)) - Math.abs(q - (last - 3)));
+    const above = Array.from({ length: Math.max(0, top - first) }, (_, i) => top - 1 - i).filter(fits);
+    const r = below[0] ?? above[0];
+    const plan = r !== undefined ? { n, row: r + HEADROOM } : at(n - Math.sign(n));
+    plans.set(n, plan);
+    return plan;
+  };
+  return { at, face: [...face].sort((p, q) => p - q).map(y => y + HEADROOM) };
+}
+
+/** A squash as it is done: `n` rows lost (negative: repeated) ending on frame row `row`. */
+interface Squash { n: number; row: number }
+
+/**
+ * What each squash in his moves does to the guy `input` would render as: the
+ * frame rows it takes out (or, for a negative one, repeats), or null where he
+ * has no room and bobs instead; and the rows of his face, which it never touches.
+ */
+export function squashRows(input: string, options: AnimateOptions = {}): { face: number[]; rows: Record<number, number[] | null> } {
+  const { config, figure, grid } = poser(input, options);
+  const plan = squashPlan(config, figure, grid), rows: Record<number, number[] | null> = {};
+  for (const n of [-2, -1, 1, 2]) {
+    const s = plan.at(n);
+    rows[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
+  }
+  return { face: plan.face, rows };
+}
 
 /**
  * Builds the frames of a move for the guy `input` would render as. Takes the
  * same options as `toSvgString` (game, equip, parts, palette).
  */
 export function animate(input: string, move: Move, options: AnimateOptions = {}): Animation {
-  const config = dress(resolve(input, options.parts), options, input);
+  const { config, figure, grid } = poser(input, options);
   const palette = withItems(options.palette ?? paletteOf(config), config);
-  // The frame and any aura are drawn per frame round him, not into his poses.
-  const figure: AvatarConfig = { ...config, frame: undefined, aura: undefined };
   const wornAura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
   // Effects move, so a guy wearing one gets short frames like an aura's.
   const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
@@ -420,26 +651,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // Lucky guys and chase eyes move too, unless a still is asked for.
   const lucky = !!config.lucky && options.rarity !== false && !options.small;
   const liveEye = options.small ? undefined : LIVE_EYES.get(config.eyes);
-
-  const grids = new Map<Pose, PixelGrid>();
-  const grid = (pose: Pose): PixelGrid => {
-    if (!grids.has(pose)) {
-      const base = compose(figure);
-      grids.set(pose,
-        pose === 'base' ? base
-        : pose === 'shut' ? closeEyes(base, config)
-        : pose === 'left' ? glance(base, config, -1)
-        : pose === 'right' ? glance(base, config, 1)
-        : pose === 'laugh' ? compose({ ...figure, mouth: mouthIndex('laugh') })
-        : pose === 'laughWave' ? compose({ ...figure, mouth: mouthIndex('laugh'), arms: 2 })
-        : pose === 'frown' ? closeEyes(compose({ ...figure, mouth: mouthIndex('wobble') }), config)
-        : pose === 'ooh' ? compose({ ...figure, mouth: mouthIndex('ooh') })
-        : compose({ ...figure, arms: pose === 'wave' ? 2 : 1 }));
-    }
-    return grids.get(pose)!;
-  };
   // Some shapes and skins have nowhere to put an arm.
   const canWave = JSON.stringify(grid('wave')) !== JSON.stringify(grid('sides'));
+  const plan = squashPlan(config, figure, grid);
 
   const layers = new Map<Pose, Layer>();
   const layerOf = (pose: Pose) => {
@@ -463,9 +677,18 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map(o => GRADES.findIndex(g => g.id === gradeOf(o!).id)));
   const gradeColor = grade >= 0 ? GRADES[grade].color : '#FFFFFF';
   const seed = hash(input) % 997;
+  // A copy's own number sets its timing: the best copy's print phases its shine and sparkles.
+  const best = copies.reduce<Owned | undefined>((a, o) => (!a || GRADES.findIndex(g => g.id === gradeOf(o!).id) > GRADES.findIndex(g => g.id === gradeOf(a).id) ? o : a), undefined);
+  const phase = best ? best.print * 37 : seed;
+  // A Gold finish's mark: one gold sparkle opening near him now and then, on its copy's own time.
+  const goldCopy = options.small ? undefined : Object.values(config.owned ?? {}).find(o => o?.finish === 'gold');
+  const goldMark = !!goldCopy && !wornAura && grade < 3;
 
-  const beats = BEATS[move](canWave);
-  const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || options.emote);
+  const roll = rollsOf(input);
+  const mouthy = !SIGNATURE_MOUTHS.has(mouths[config.mouth]?.name ?? '') && JSON.stringify(grid('smile')) !== JSON.stringify(grid('base'));
+  const beats = BEATS[move]({ roll, canWave, mouthy });
+  const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote);
+  const spots = sparkleSpots(layerOf('base')), headSpots = sparkleSpots(layerOf('base'), 3);
   // With effects on, long beats are cut into slices so the shine can move.
   const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
   const lapMs = beats.reduce((n, b) => n + b.ms, 0), span = loop ? lapMs * loop.repeats : 0;
@@ -474,7 +697,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const slices: { beat: Beat; ms: number; t: number; lap: number }[] = [];
   let t = 0;
   for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
-    let n = wornAura || withFx || lucky || liveEye ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+    let n = wornAura || withFx || lucky || liveEye || goldMark ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
     if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
     for (let i = 0; i < n; i++) {
       const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
@@ -490,8 +713,11 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const all = slices.map(({ beat, ms, t }) => {
     let layer = layerOf(beat.pose);
     if (beat.turn) layer = layer.map(row => [...row].reverse());
-    layer = squash(layer, beat.squash ?? 0);
-    layer = shift(layer, beat.dx ?? 0, beat.dy ?? 0);
+    const squashed = plan.at(beat.squash ?? 0);
+    layer = squash(layer, squashed);
+    // A guy with no room to squash bobs up a row instead.
+    const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
+    layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
     const figure = layer;
     layer = layer.map(row => row.map(cell => (cell ? { ...cell } : null)));
     if (trailFrom.length && (beat.dy ?? 0) < 0) {
@@ -504,7 +730,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
     if (grade >= 1) {
       // A shine sweeping diagonally across the item, once every 1.6 seconds.
-      const at = cycle(t + seed, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+      const at = cycle(t + phase, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
       layer.forEach((row, y) => row.forEach((cell, x) => {
         if (!cell?.item) return;
         const d = Math.abs(x + y - at);
@@ -515,16 +741,15 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
     if (lucky) luckyShimmer(layer, t, seed);
     if (liveEye) liveEyes(layer, liveEye, t, seed);
-    if (lucky && !wornAura && grade < 3) LUCKY_SPOTS.forEach(([x, y], k) => {
-      if (wrap(t / steps(260, 3) + k * 1.3 + seed, 3) < 1) twinkle(layer, x, y, '#FFFFFF', '#FFD45C');
-    });
+    // Sparkles, sparingly: a Lucky guy's one gold glint, a Gold finish's mark.
+    if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, spots, t + seed * 7, 2300, 0.4, seed, GOLD_SPARKLE);
+    if (goldMark) sparkleRun(layer, spots, t + goldCopy!.print * 37, 2600, 0.4, goldCopy!.print, GOLD_SPARKLE);
 
     const aura = grade >= 2 ? rim(layer) : [];
     if (beat.stars) {
-      const gold = palette.colors[T.GOLD] ?? '#F2C230';
-      twinkle(layer, 2, 3, '#FFFFFF', gold);
-      twinkle(layer, 13, 2, '#FFFFFF', gold);
-      if (Math.floor(wrap(t, fit(240)) / (fit(240) / 2)) % 2) twinkle(layer, 8, 1, '#FFFFFF', gold);
+      // A cheer's stars: two glints over his head, opening by turns.
+      const gold = sparkleIn(palette.colors[T.GOLD] ?? '#F2C230');
+      for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t + i * fit(360) / 2 + seed, 360, 1, seed + i, gold);
     }
     if (beat.drop) {
       let top = -1;
@@ -539,11 +764,12 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(wrap(t, fit(800)) / (fit(800) / 2)) % 2);
     const outside: [number, number, string][] = [];
     if (wornAura) {
-      // The aura, round him as he stands in this frame, in its finish. A rare
-      // one's rings run past the frame's sides; those cells ride along in `outside`.
+      // The aura, round him as he stands in this frame, in its finish, which
+      // shimmers on its print's own time as an effect does. A rare one's rings
+      // run past the frame's sides; those cells ride along in `outside`.
       const copy = config.owned?.aura, mask = layer.map(row => row.map(Boolean));
       for (const [x, y, k] of auraCells(wornAura.id, mask, t, copy, AURA_PAD)) {
-        const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t) : wornAura.colors[k];
+        const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t + copy.print * 37, copy.print) : wornAura.colors[k];
         if (x < 0 || x >= FRAME_WIDTH) outside.push([x, y, c]);
         else layer[y][x] = { c, item: false, slot: 5 };
       }
@@ -554,10 +780,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = { c: ring, item: false };
     }
     if (grade >= 3 && !wornAura) {
-      const count = grade === 4 ? 4 : 3;
-      SPARKLE_SPOTS.slice(0, count + 2).forEach(([x, y], k) => {
-        if (wrap(t / steps(240, 4) + k * 1.7 + seed, 4) < 1) twinkle(layer, x, y, '#FFFFFF', grade === 4 ? '#FFE27A' : gradeColor);
-      });
+      // Mythic copies throw off a sparkle at a time in their colour, Grails two, staggered.
+      const colors = grade === 4 ? GOLD_SPARKLE : sparkleIn(gradeColor), count = grade === 4 ? 2 : 1;
+      for (let i = 0; i < count; i++) sparkleRun(layer, spots, t + phase + i * fit(1700) / count, 1700, 0.5, phase + i, colors);
     }
 
     const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop?.[y][x] ?? null));

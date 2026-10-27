@@ -23,7 +23,7 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
     if (!color) return null;
     const slot = slotOf(token);
     const copy = slot ? config.owned?.[slot] : undefined;
-    const painted = slot === 'aura' ? (aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still) : color)
+    const painted = slot === 'aura' ? (aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color)
       : copy ? paintCell(color, x, y, copy, state) : color;
     // An effect, as it stands at the start; animate moves it instead.
     return still && copy?.fx ? fxColor(painted, copy.fx, x, y, 0, copy.print) : painted;

@@ -41,7 +41,7 @@ const result = await page.evaluate(() => {
       const frame = anim.frames[0];
       shine.draw(frame, owned, ms);
       compare(read(shine.canvas, LG.FRAME_WIDTH, LG.FRAME_HEIGHT), LG.shineFrame(frame, owned, ms));
-      for (const grade of [-1, 0, 1, 2, 3, 4]) {
+      for (const grade of [-1, 0, 1, 2, 3, 4, 5]) {
         const face = LG.cardFace({ name: seed, copies: equip.map(LG.decode), grade });
         card.draw(face, ms);
         compare(read(card.canvas, LG.FACE_WIDTH, LG.FACE_HEIGHT), LG.cardFaceAt(face, ms));

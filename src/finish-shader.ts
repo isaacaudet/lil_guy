@@ -47,13 +47,13 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);
   else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }
   else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;
-  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
+  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22 + fract(print * 0.618) * TAU) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
   else if (finish < 4.5) {
     vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));
     c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);
     c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);
   }
-  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;
+  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;
   else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
   return c;
 }
@@ -112,13 +112,13 @@ export function finishColor(c: Vec3, finish: number, scuff: number, h: number, d
     return add(mix(c, add(scale(c, [0.86, 0.96, 1.18]), 0.08), 0.4 * s * coat), b * 0.5 * coat);
   }
   if (finish < 2.5) return add(c, twinkle * 0.55 * coat + b * 0.25 * coat);
-  if (finish < 3.5) return mix(hueShift(c, (time * TAU / 6 + d * 0.22) * coat), [1, 1, 1], twinkle * coat);
+  if (finish < 3.5) return mix(hueShift(c, (time * TAU / 6 + d * 0.22 + fract(print * 0.618) * TAU) * coat), [1, 1, 1], twinkle * coat);
   if (finish < 4.5) {
     const rain = hsv([fract(d * 0.07 - time / 3 + print * 0.013), 0.65, 1]);
     const out = mix(c, add(scale(c, 0.45), scale(rain, 0.75)), 0.6 * coat);
     return scale(out, 1 + 0.12 * scan * step(mod(row + Math.floor(time * 10), 3), 0.5));
   }
-  if (finish < 5.5) return add(add(c, scale([0.28, 0.12, 0.45], b * coat)), 0.07 * Math.sin(time * TAU / 3 + d * 0.5) * coat);
+  if (finish < 5.5) return add(add(c, scale([0.28, 0.12, 0.45], b * coat)), 0.07 * Math.sin(time * TAU / 3 + d * 0.5 + fract(print * 0.618) * TAU) * coat);
   return add(add(c, b * 0.7 * coat), scale([1, 0.9, 0.5], twinkle * 0.6 * coat));
 }
 
