@@ -212,6 +212,12 @@ async function me(request, env, key, action) {
   await ensurePlayer(env, name);
   const day = today();
 
+  // How he felt about the new guy that replaced his old club one, his last answer kept.
+  if (action === 'feel') {
+    if (body.feel !== 'happy' && body.feel !== 'sad') return json({ error: 'Happy or sad' }, 400);
+    await env.DB.prepare('INSERT INTO retire_feels (key, feel, at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET feel = excluded.feel, at = excluded.at').bind(key, body.feel, new Date().toISOString()).run();
+    return json({ feel: body.feel });
+  }
   if (action === 'open') {
     const game = body.game;
     if (!GAMES.includes(game)) return json({ error: 'Unknown machine' }, 400);
@@ -488,7 +494,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all()).results, today());
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint|feel)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);
