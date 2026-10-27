@@ -55,37 +55,41 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'halfsies.perfect-split', game: 'halfsies', slot: 'skin', name: 'Perfect split', eyes: 8,
+      id: 'halfsies.perfect-split', game: 'halfsies', slot: 'skin', name: 'Banana split', eyes: 9, limb: 6,
       showpiece: true, signature: 'shimmer',
-      about: 'Fifty-fifty, to the gram.',
-      colors: ['#FFC93A', '#D9901A', '#FFF1B0', '#FFFFFF'],
-      art: grid16('perfect split', [
+      about: 'A banana cut in half, to the gram.',
+      // scoop, scoop shade, scoop light, chocolate, cherry, banana, banana shade, dish, dish shade
+      colors: ['#FFA3C0', '#E07098', '#FFD2E0', '#6A321A', '#E5363D', '#FFE066', '#E0B030', '#DDEBF5', '#9FB6CC'],
+      outline: '#5A2030',
+      art: grid16('banana split', [
         '................',
-        '.....h1.........',
-        '...hh#1.........',
-        '..h###1..3h.....',
-        '.h####1..1hh#...',
-        '.#####1..1####..',
-        '.#####1441####s.',
-        '.#####1441####s.',
-        '.#####1441####s.',
-        '.s####1441####s.',
-        '..s###1441####s.',
-        '...ss#1441####s.',
-        '.....s2..1###s..',
-        '.........2sss...',
-        '.........2s.....',
+        '........4.......',
+        '.......55.......',
+        '.....445544.....',
+        '....44444444....',
+        '...4444444444...',
+        '..344134411442..',
+        '..341111111112..',
+        '..311111111112..',
+        '..311111111112..',
+        '.66311111111266.',
+        '.67631111112676.',
+        '..7768888886677.',
+        '...8888888889...',
+        '....99999999....',
         '................',
       ]),
     },
     {
-      id: 'halfsies.knife', game: 'halfsies', slot: 'hat', name: 'Knife', free: true,
-      colors: ['#DDE3EA', '#9AA3B2', '#FFFFFF', '#3A2A22', '#C9CFDA', '#5A4436'],
+      id: 'halfsies.knife', game: 'halfsies', slot: 'hat', name: 'Chef’s hat', free: true,
+      // The kitchen's own hat, puffed up, over a pleated band.
+      colors: ['#FFFFFF', '#D6DDE8', '#F4F7FB', '#E9EEF5', '#B9C3D3'],
       draw: on([
-        '.....33333333.',
-        '65656211111111',
-        '44444222222...',
-      ], 0, 2),
+        '.112.1112.12',
+        '111111111112',
+        '.1111111112.',
+        '.4545454545.',
+      ]),
     },
     {
       id: 'halfsies.star', game: 'halfsies', slot: 'hat', name: 'Gold star',
@@ -100,56 +104,60 @@ export const set: MachineSet = {
       ], 0, 2),
     },
     {
-      id: 'halfsies.stamp', game: 'halfsies', slot: 'hat', name: 'Perfect stamp',
-      colors: ['#E5484D', '#A82238', '#FF8A8E', '#C98A50', '#E8B47A', '#8A5A2A'],
+      id: 'halfsies.stamp', game: 'halfsies', slot: 'hat', name: 'Split beanie',
+      // Knitted in two halves that weigh the same: tomato on one side, mint on the other.
+      colors: ['#F0574E', '#B83232', '#FF8E80', '#3FBFAE', '#22867A', '#8EE6DA', '#FFFFFF', '#D6DDE8'],
       draw: on([
-        '..554..',
-        '...46..',
-        '5444446',
-        '3111112',
-        '1222222',
-      ], 0, 2),
+        '.....78.....',
+        '...331445...',
+        '.3311144445.',
+        '121212454545',
+      ]),
     },
     {
       id: 'halfsies.thirds', game: 'halfsies', slot: 'hat', name: 'Thirds cake',
-      colors: ['#F2B95A', '#C98A34', '#FFF4DC', '#F0DDB8', '#E5484D'],
+      // The weekend's thirds round as a cake: three candles, one for each piece.
+      colors: ['#F2B95A', '#C98A34', '#FFF4DC', '#F0DDB8', '#E5484D', '#5FB4FF', '#FFD447', '#FF8A3D', '#FF8FB1'],
       draw: on([
-        '...3o55o3...',
-        '.3333oo3334.',
-        '33533o333534',
-        '11111o111112',
-        '22222o222222',
-      ], 0, 2),
+        '..7...7...7..',
+        '..6...9...6..',
+        '.33533353335.',
+        '.11411141114.',
+      ]),
     },
     {
-      id: 'halfsies.kebab', game: 'halfsies', slot: 'hat', name: 'Kebab skewer',
-      colors: ['#B0643A', '#7A3E1E', '#D88A5A', '#5CB85C', '#2E7D3A', '#F0433A', '#A82020', '#FF9A8A', '#C9CFDA'],
+      id: 'halfsies.kebab', game: 'halfsies', slot: 'hat', name: 'Pancake stack',
+      // Sunday's short stack, a pat of butter melting into the syrup.
+      colors: ['#E8A04E', '#B87028', '#FBD08A', '#FFF1A0', '#F2D25A', '#8A3E10', '#C8702A'],
       draw: on([
-        '..3111.45.866..',
-        '993111945966699',
-        '..1222.55.677..',
-      ], 0, 2),
+        '....4455....',
+        '.3667666763.',
+        '.2262222622.',
+        '.1111111111.',
+      ]),
     },
     {
-      id: 'halfsies.balance', game: 'halfsies', slot: 'buddy', name: 'Mini balance',
-      colors: ['#F7F4EE', '#CFC6B6', '#FFFFFF', '#A9B3C2', '#6A7385', '#E8392B', '#FDFCF8', '#2B2B30'],
-      art: pet('mini balance', [
-        '144144',
-        '.8..8.',
-        '117712',
-        '116712',
-        '.8888.',
+      id: 'halfsies.balance', game: 'halfsies', slot: 'buddy', name: 'Lil acorn',
+      // An acorn in its little cap, one of the things Halfsies cuts.
+      colors: ['#E0A060', '#A86A30', '#F4C890', '#7A4A26', '#9A6A3A', '#5A3418'],
+      art: pet('lil acorn', [
+        '...4..',
+        '.5555.',
+        '555556',
+        '3o11o2',
+        '.1122.',
       ]),
     },
     {
       id: 'halfsies.cake', game: 'halfsies', slot: 'buddy', name: 'Cake slice',
-      colors: ['#F5C86A', '#C9953A', '#FFFFFF', '#E8D6C4', '#E5484D', '#D9283A'],
+      // A slice of strawberry cake, jam through the middle.
+      colors: ['#F5C86A', '#C9953A', '#FFFFFF', '#E8D6C4', '#E5484D', '#D9283A', '#5CB85C'],
       art: pet('cake slice', [
-        '....36',
+        '....76',
         '..3334',
-        '.11112',
-        '555555',
-        '111112',
+        '.1o1o2',
+        '555556',
+        '111122',
       ]),
     },
     {
@@ -163,5 +171,52 @@ export const set: MachineSet = {
     'halfsies.bowl', 'halfsies.scale', 'halfsies.helmet', 'halfsies.sandwich', 'halfsies.half-moon',
     'halfsies.gingham', 'halfsies.pea', 'halfsies.berry',
   ],
-  redraw: {},
+  redraw: {
+    'halfsies.split': {
+      // Cut straight down the middle: polka dots on one side, stripes on the other, the knife's line between.
+      colors: ['#FFC9B0', '#A9E3DC', '#FFFFFF', '#FFE2D4', '#C9F0EB'],
+      fill: (x, y) => {
+        const tx = x % 16, ty = y % 16;
+        if (tx === 8) return ty % 4 < 2 ? 3 : 2;
+        if (tx < 8) return (tx % 4 === 1 && ty % 4 === 1) || (tx % 4 === 3 && ty % 4 === 3) ? 4 : 1;
+        return ty % 4 === 0 ? 5 : 2;
+      },
+    },
+    'halfsies.lemon': {
+      name: 'Peach', eyes: 9, limb: 2,
+      // A whole peach: the crease down its front, a leaf on its stalk.
+      colors: ['#FFB07A', '#F07A5A', '#FFD6B0', '#FF8A8A', '#6CC24A', '#3E8E2E', '#7A4A26', '#E8906A'],
+      outline: '#7A2E1C',
+      art: grid16('peach', [
+        '................',
+        '........755.....',
+        '.......75566....',
+        '...3331.11112...',
+        '..3333381111112.',
+        '.33333811111112.',
+        '.33331111111112.',
+        '.31111111111112.',
+        '.11111111111112.',
+        '.11111111111122.',
+        '.11111111111122.',
+        '..111111111122..',
+        '..211111111222..',
+        '...2211111222...',
+        '.....222222.....',
+        '................',
+      ]),
+    },
+    'halfsies.yolk': {
+      name: 'Half-shell chick',
+      // Just hatched, still sitting in the bottom half of its shell.
+      colors: ['#FFD84A', '#E0A820', '#FFF0A0', '#FF8A2E', '#FFFFFF', '#C9D1DC'],
+      art: pet('half-shell chick', [
+        '.3311.',
+        '1o4o12',
+        '565656',
+        '555556',
+        '.5566.',
+      ]),
+    },
+  },
 };

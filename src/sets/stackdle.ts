@@ -100,95 +100,98 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'stackdle.sky-tower', game: 'stackdle', slot: 'skin', name: 'Sky tower', eyes: 8,
+      id: 'stackdle.sky-tower', game: 'stackdle', slot: 'skin', name: 'Astronaut', eyes: 7, limb: 1,
       showpiece: true, signature: 'starlight',
       about: 'Stacked past the clouds.',
-      colors: ['#FBD123', '#D9A80E', '#FFE98A', '#FA7158', '#C94E3A', '#1B2A5E', '#FFF6C8', '#2F7BFF', '#5EE4AC'],
-      outline: '#0E1636',
-      art: grid16('sky tower', [
+      // suit, suit shade, suit light, collar, patch, button, button, glass glint, gold
+      colors: ['#F4F6FA', '#B9C3D6', '#FFFFFF', '#7E8AA3', '#FF8A3D', '#2F7BFF', '#E5484D', '#DDF2FF', '#F5C33B'],
+      outline: '#27304A',
+      art: grid16('astronaut', [
         '................',
-        '......67........',
-        '.....6666.......',
-        '....667666.9....',
-        '...766666.999...',
-        '..33333333333...',
-        '..11111111112...',
-        '..11111111112...',
-        '..11111111112...',
-        '..22222222222...',
-        '.888444444445...',
-        '.888555555555...',
-        '.88888888888888.',
-        '.88888888888888.',
-        '................',
+        '....33111122....',
+        '...318#####12...',
+        '..318#######12..',
+        '.318#########12.',
+        '.31###########2.',
+        '.31###########2.',
+        '.31###########2.',
+        '.31s#########s2.',
+        '..31ss#####ss2..',
+        '..444444444444..',
+        '..315116711122..',
+        '..311111111122..',
+        '..311111111122..',
+        '...2222..2222...',
         '................',
       ]),
     },
     {
       id: 'stackdle.little-block', game: 'stackdle', slot: 'hat', name: 'Little block', free: true,
-      colors: ['#8ED68A', '#5A9E5E', '#C4EDBF'],
+      // A toy block, lit on top, with a star on its face.
+      colors: ['#5E83EF', '#3F5FC0', '#9DB6FF', '#FFD447', '#D9A21E', '#2E4796'],
       draw: on([
-        '333332',
-        '111112',
-        '111112',
-        '111112',
-        '222222',
+        '.333332',
+        '1114126',
+        '1444526',
+        '1154126',
+        '2222226',
       ], 0, 2),
     },
     {
-      id: 'stackdle.crescent', game: 'stackdle', slot: 'hat', name: 'Balanced diamond',
-      colors: ['#668ACB', '#45649E', '#A9C2EE'],
-      // The diamond piece stood on its point on the head, the way it has to be balanced in a tower.
+      id: 'stackdle.crescent', game: 'stackdle', slot: 'hat', name: 'Battlement',
+      // The battlement piece worn as a castle crown, in its own gold.
+      colors: ['#E8B448', '#B07A1E', '#FFDB8A', '#7A5212'],
       draw: on([
-        '..331..',
-        '.33112.',
-        '3311122',
-        '..312..',
-        '...2...',
-      ], 0, 1),
-    },
-    {
-      id: 'stackdle.bolt', game: 'stackdle', slot: 'hat', name: 'Bolt piece',
-      colors: ['#B890F8', '#7453B2', '#DCC6FF'],
-      // Laid flat across the head: a foot down at one end, a step up at the other.
-      draw: on([
-        '.......331',
-        '.......112',
-        '3333333112',
-        '1111111222',
-        '122.......',
-      ], 0, 1),
-    },
-    {
-      id: 'stackdle.clouds', game: 'stackdle', slot: 'hat', name: 'Cloud ring',
-      colors: ['#F4F8FD', '#BFD3EC', '#FFFFFF'],
-      draw: on([
-        '..33....33..',
-        '.3113..3113.',
-        '311113311112',
-        '.2222222222.',
-      ], 0, 2),
-    },
-    {
-      id: 'stackdle.stairs', game: 'stackdle', slot: 'buddy', name: 'Stairs',
-      colors: ['#F6C768', '#9E7E2D', '#FFE3A0'],
-      art: pet('stairs', [
-        '33....',
-        '12....',
-        '1233..',
-        '1112..',
-        '111133',
+        '33.33.33.33',
+        '13.13.13.12',
+        '11311111312',
+        '22222222222',
       ]),
     },
     {
-      id: 'stackdle.penguin', game: 'stackdle', slot: 'buddy', name: 'Little penguin',
-      colors: ['#2B2F3A', '#15181F', '#FFFFFF', '#D6DCE6', '#FF9A2E', '#D9701A'],
-      art: pet('little penguin', [
-        '.1111.',
-        '13o3o1',
-        '133531',
-        '133341',
-        '55..55',
+      id: 'stackdle.bolt', game: 'stackdle', slot: 'hat', name: 'Hard hat',
+      // A builder's helmet, for a tower going up.
+      colors: ['#FFC93A', '#D9961A', '#FFE58A', '#E8AE20', '#A86A0A'],
+      draw: on([
+        '....3443....',
+        '..33114111..',
+        '.3111141111.',
+        '222222222222',
+      ]),
+    },
+    {
+      id: 'stackdle.clouds', game: 'stackdle', slot: 'hat', name: 'Cloud nine',
+      // One fat cloud from the top of the climb, the sun coming up behind it.
+      colors: ['#FFFFFF', '#C9DAF0', '#F2F7FD', '#FFD447', '#FFB03B', '#9DB6DA'],
+      draw: on([
+        '..33..454.',
+        '.311331454',
+        '3111111112',
+        '..622226..',
+      ]),
+    },
+    {
+      id: 'stackdle.stairs', game: 'stackdle', slot: 'buddy', name: 'Lil yeti',
+      // From the snowy top of the climb: white fur, a blue face, two little horns.
+      colors: ['#F4F8FD', '#B9C9DE', '#FFFFFF', '#8EC5F0', '#5C93C8', '#F2D9A8'],
+      art: pet('lil yeti', [
+        '6.33.6',
+        '311112',
+        '1o44o2',
+        '144552',
+        '.1..2.',
+      ]),
+    },
+    {
+      id: 'stackdle.penguin', game: 'stackdle', slot: 'buddy', name: 'Lil star',
+      // A star from past the clouds, come down to walk with you.
+      colors: ['#FFD447', '#D9A21E', '#FFF1A8', '#FF9AAA', '#B07A10'],
+      art: pet('lil star', [
+        '..31..',
+        '331112',
+        '.o11o.',
+        '.1112.',
+        '12..12',
       ]),
     },
     {
@@ -203,12 +206,16 @@ export const set: MachineSet = {
     },
     {
       id: 'stackdle.ruler', game: 'stackdle', slot: 'frame', name: 'Height ruler',
-      colors: ['#F3EFE6', '#DCD3C2'],
+      // A yellow tape measure up the side of the wall, a long tick every metre.
+      colors: ['#EEF3FA', '#FFD447', '#E0A81E', '#2B2F3A', '#DDE6F2'],
       fill: (x, y) => {
         const tx = x % 16, ty = y % 16;
-        if (ty === 0 && tx <= 3) return 2;
-        if (ty % 4 === 0 && tx <= 1) return 2;
-        return 1;
+        if (tx <= 2) {
+          if (ty % 8 === 0 && tx <= 2) return 4;
+          if (ty % 2 === 0 && tx === 0) return 4;
+          return tx === 2 ? 3 : 2;
+        }
+        return ty % 8 === 0 ? 5 : 1;
       },
     },
     {
@@ -237,16 +244,28 @@ export const set: MachineSet = {
         '122344',
       ], 0, 2),
     },
-    'stackdle.cubelet': { name: 'Block' },
+    'stackdle.cubelet': {
+      name: 'Cubelet',
+      colors: ['#FFB03B', '#D97A12', '#FFE0A0', '#A85A0A', '#FFF4D6'],
+      // A little cube on its toes: lit top, shaded side.
+      art: pet('cubelet', [
+        '.33334',
+        '311124',
+        '1o1o24',
+        '111124',
+        '.4..4.',
+      ]),
+    },
     'stackdle.wobble': {
-      name: 'Ball',
-      colors: ['#F49AB4', '#C9607E', '#FFD6E2', '#FFF6E6', '#E8D3B4', '#9E3F5C'],
-      art: pet('ball', [
-        '..331.',
-        '633112',
-        '.44445',
-        '61o1o2',
-        '..122.',
+      name: 'Wobble',
+      // A pudding that wobbles like a tall tower, caramel running down.
+      colors: ['#FFE7A8', '#E8C070', '#FFF6D6', '#B8652A', '#E8954A', '#E6ECF2', '#B8C2CE'],
+      art: pet('wobble', [
+        '.5445.',
+        '354442',
+        '1o11o2',
+        '311112',
+        '676676',
       ]),
     },
   },
