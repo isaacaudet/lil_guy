@@ -2244,30 +2244,35 @@ const AURAS = [
 		id: "aura.aurora",
 		name: "Aurora",
 		colors: [
-			"#E6FFF4",
-			"#3DF2B0",
-			"#9C7BFF"
+			"#F2FFF8",
+			"#46F0B4",
+			"#2BB59A",
+			"#8A6BFF"
 		],
 		still: 700,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], fold = wrap((t + print * 60) / steps(140, s.w + 8), s.w + 8) - 4;
+			const s = shape(mask), out = [], d = print % 2 ? 1 : -1;
+			const fold = wrap((t + print * 90) / steps(90, s.w + 10), s.w + 10) - 5;
 			for (let x = 0; x < s.w; x++) {
-				const y = 2 + Math.round(Math.sin(x * .55 + t / wave(420) + print) * 1.4);
-				const drape = 1 + Math.round((Math.sin(x * .9 - t / wave(300) + print * 2) + 1) * 1.2);
-				const bright = Math.abs(x - fold) < 1.2;
-				out.push([
+				const hem = Math.round(3.4 + Math.sin(x * .42 + d * t / wave(520) + print) * 1.3 + Math.sin(x * 1.1 - t / wave(330)) * .6);
+				const ray = Math.sin(x * 1.25 + d * t / wave(260) + print * .7);
+				for (let y = 0; y <= hem; y++) {
+					const up = hem - y;
+					if (ray < -.2 && up > 1) continue;
+					const k = up === 0 ? Math.abs(x - fold) < 1.5 ? 0 : 1 : up === 1 ? ray > .5 ? 1 : 2 : up === 2 ? 2 : 3;
+					out.push([
+						x,
+						y,
+						k
+					]);
+				}
+			}
+			for (let i = 0; i < 2; i++) {
+				const x = Math.floor(noise$1(i, print, 41) * s.w);
+				if (Math.sin(t / wave(240) + i * 2.1) > .3) out.push([
 					x,
-					y - 1,
-					bright ? 0 : 1
-				], [
-					x,
-					y,
-					bright ? 0 : 1
-				]);
-				for (let j = 1; j <= drape; j++) out.push([
-					x,
-					y + j,
-					2
+					0,
+					0
 				]);
 			}
 			return out;
@@ -2387,22 +2392,31 @@ const AURAS = [
 		name: "Ripple",
 		colors: [
 			"#FFFFFF",
-			"#7FE3FF",
-			"#2F7FD6"
+			"#A6EEFF",
+			"#4FB8F2",
+			"#2F6FC8"
 		],
 		still: 250,
 		cells: (mask, t, print) => {
-			const out = [], p = cycle(t + print * 23, 1100), d = 1 + Math.floor(p * 3);
-			for (const [x, y, dd] of ring(mask, 3)) if (dd === d) out.push([
-				x,
-				y,
-				d - 1
-			]);
-			else if (dd === d - 1 && (x + y) % 2) out.push([
-				x,
-				y,
-				2
-			]);
+			const out = [], reach = 6;
+			const h = mask.length, w = mask[0].length;
+			const p = cycle(t + print * 23, 1600), rings = [p, wrap(p + .5, 1)].map((q) => .8 + q * reach);
+			for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+				if (mask[y][x]) continue;
+				let d = Infinity;
+				for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (mask[y + dy]?.[x + dx]) d = Math.min(d, Math.hypot(dx, dy));
+				for (const r of rings) {
+					if (Math.abs(d - r) > .5) continue;
+					const k = r < 2.2 ? 1 : r < 3.8 ? 2 : 3;
+					if (k === 3 && (x + y) % 2) continue;
+					if (r < 1.6 && (x + y + tick(t, 200)) % 2) continue;
+					out.push([
+						x,
+						y,
+						k === 1 && noise$1(x, y, tick(t, 400)) > .86 ? 0 : k
+					]);
+				}
+			}
 			return out;
 		}
 	}
@@ -11210,4 +11224,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-ChXJnKR6.js.map
+//# sourceMappingURL=paint-ixwzZPkT.js.map

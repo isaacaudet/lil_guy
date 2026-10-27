@@ -705,6 +705,10 @@
   .opt-odds { text-transform: none; font-size: 16px; filter: brightness(1.25); white-space: nowrap; }
   .opt span:not(.opt-odds) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .look-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  /* A locked part tried on: what it costs to craft, right under the parts. */
+  .look-craft { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--well); }
+  .look-craft b { font-family: var(--pixel); font-size: 18px; }
+  .look-craft small { color: var(--muted, #b9b2d6); }
 
   /* ------------------------------------------------------------ the drop */
   /* Scrolls when the win is taller than the screen (a phone, a short laptop): the content starts at the top
@@ -1232,9 +1236,10 @@
   <div class="art-col"><div class="look-stage" id="look-stage"></div></div>
   <div>
     <h3 id="look-h">Change your look</h3>
-    <p class="fin">Any common part. Locked ones unlock from capsules. Your rarity stays as dealt.</p>
+    <p class="fin">Locked parts come from capsules, or craft one with metal. Your rarity stays as dealt.</p>
     <div class="filters" id="look-tabs"></div>
     <div class="opts" id="look-opts"></div>
+    <div class="look-craft" id="look-craft" hidden></div>
     <div class="look-actions"><button class="btn" type="button" id="look-save">Save look</button><button class="btn ghost" type="button" id="look-reset">As dealt</button></div>
   </div>
 </div></dialog>
@@ -2315,11 +2320,39 @@
     all.sort((x, y) => room(y) - room(x));
     $('look-opts').innerHTML = all.map(i => {
       const p = chance(i), tier = tierOf(p), open = pick.has(i), fits = room(i);
-      const why = !fits ? ' disabled title="No room for this: the face, topper or accessory takes the space"' : open ? '' : ' disabled title="Unlocks from capsules"';
+      const why = !fits ? ' disabled title="No room for this: the face, topper or accessory takes the space"' : open ? '' : ' title="Locked: try it on, then craft it or win it from a capsule"';
       return `<button class="opt${fits ? '' : ' noroom'}" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${why}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${fits ? tier.c : 'var(--ink-3)'}">${!fits ? 'No room' : `${i === base[lookTab] ? 'Dealt · ' : earned.has(i) ? 'Earned · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}`}</span></button>`;
     }).join('');
     $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: all[k] }));
+    // A locked part tried on can be crafted right here.
+    const lock = lockedInDraft()[0];
+    $('look-craft').hidden = !lock;
+    if (lock) {
+      const cost = LG.partCost(lock), have = metalOf(), can = have >= cost;
+      $('look-craft').innerHTML = `<span><b>${esc(LG.partName(lock))}</b><br><small>Locked. Comes from capsules${can ? '' : `, or craft it with ${LG.metalText(cost)} (you have ${LG.metalText(have)})`}.</small></span>${can ? `<button class="btn small" type="button" id="look-craft-go">Craft · ${LG.metalText(cost)}</button>` : ''}`;
+    }
+    $('look-save').disabled = !!lock;
   }
+  /** The parts in the look being tried on that this player hasn't got. */
+  function lockedInDraft() {
+    const base = dealt(state.seed), mine = unlocks();
+    return Object.entries(draft).filter(([slot, i]) => !LG.pickable(base, slot, mine).includes(i)).map(([slot, index]) => ({ slot, index }));
+  }
+  /** Crafts a locked part from metal, then it's theirs to pick. */
+  async function craftPart(p) {
+    const code = LG.partCode(p), cost = LG.partCost(p);
+    if (isLive()) {
+      try { const r = await meApi('craft-part', { part: code }); state.metal = r.metal; }
+      catch (e) { toast(e.status === 402 ? 'Not enough metal. Smelt spares in the Workshop.' : e.message); return; }
+    } else {
+      if (metalOf() < cost) { toast('Not enough metal. Smelt spares in the Workshop.'); return; }
+      state.metal = metalOf() - cost;
+    }
+    state.parts = [...new Set([...(state.parts || []), code])];
+    save(); SFX.equip(); toast(`${LG.partName(p)} crafted`);
+    renderLook();
+  }
+  $('look-craft').addEventListener('click', e => { if (e.target.closest('#look-craft-go')) { const lock = lockedInDraft()[0]; if (lock) craftPart(lock); } });
   $('look-open').addEventListener('click', () => {
     const base = dealt(state.seed);
     draft = { ...((state.look && LG.decodeLook(state.look, base)) || {}) };
@@ -2519,8 +2552,9 @@
     // The day's free capsule is a souvenir of the day.
     if (how === 'Daily capsule') o = { ...o, souvenir: today };
     if (beginner) how = `${how} · ${LUCK_WORDS.beginner}`;
-    // Now and then a capsule also unlocks a rare face part, as on the server.
-    const drop = LG.rollPart(`${state.seed}:part:${how}:${today}:${state.opened}`);
+    // Every capsule also unlocks a part the player hasn't got, as on the server.
+    const own = dealt(state.seed), mine = unlocks();
+    const drop = LG.rollPart(`${state.seed}:part:${how}:${today}:${state.opened}`, p => LG.pickable(own, p.slot, mine).includes(p.index));
     let part = null;
     if (drop) {
       const code = LG.partCode(drop), have = LG.pickable(dealt(state.seed), drop.slot, unlocks()).includes(drop.index);

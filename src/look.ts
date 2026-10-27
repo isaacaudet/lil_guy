@@ -1,6 +1,7 @@
 import { resolve, DEAL_PREFIX } from './resolve';
 import { hash } from './hash';
-import { eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
+import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
+import { palettes } from './palette';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights, bodyWeights, accessoryWeights, paletteWeights,
   RETIRED_EYES,
@@ -25,9 +26,11 @@ import type { AvatarConfig } from './types';
  * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
  * the parts can't silently turn a saved look into someone else.
  *
- * A rare part can also be earned: a capsule sometimes unlocks one (`rollPart`),
- * and then it's the player's to pick (`Unlocks`). Earned parts change how a guy
- * looks, never how rare the guy is: that stays the deal's.
+ * A rare part can also be earned: every capsule unlocks one the player hasn't
+ * got (`rollPart`), and metal crafts the exact one they want (`partCost`).
+ * Then it's theirs to pick (`Unlocks`). Capsules are how a player builds the
+ * guy they want; earned parts change how a guy looks, never how rare the guy
+ * is: that stays the deal's.
  */
 
 /** A slot in a look code: its letter, its config key and its weights. */
@@ -77,18 +80,18 @@ export function allowed(own: AvatarConfig, look: Look, unlocks?: Unlocks): boole
 
 // ---------------------------------------------------------------- parts from capsules
 
-/** The slots a capsule can unlock a part in: the face and what's on it, never the shape or the colour. */
-export const PART_SLOTS: LookSlot[] = ['eyes', 'mouth', 'cheeks', 'hair', 'body', 'accessory'];
-/** One capsule in this many also unlocks a part. */
-export const PART_ODDS = 4;
+/** The slots a capsule can unlock a part in: every one, the shape and the colour too. */
+export const PART_SLOTS: LookSlot[] = ['head', 'eyes', 'mouth', 'cheeks', 'hair', 'body', 'accessory', 'palette'];
+/** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
+export const PART_ODDS = 1;
 /** Tickets back for a part the player already has. */
 export const PART_REFUND = 60;
 
 /** A part a capsule unlocked. */
 export interface PartDrop { slot: LookSlot; index: number }
 
-const NAMES: Record<string, { name: string }[]> = { eyes, mouth: mouths, cheeks, hair, body: bodies, accessory: accessories };
-const SLOT_WORD: Record<string, string> = { eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', hair: 'topper', body: 'markings', accessory: 'accessory' };
+const NAMES: Record<string, { name: string }[]> = { head: heads, eyes, mouth: mouths, cheeks, hair, body: bodies, accessory: accessories, palette: palettes };
+const SLOT_WORD: Record<string, string> = { head: 'shape', eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', hair: 'topper', body: 'markings', accessory: 'accessory', palette: 'colours' };
 
 /** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
 export function rareParts(slot: LookSlot): number[] {
@@ -98,18 +101,35 @@ export function rareParts(slot: LookSlot): number[] {
 }
 
 /**
- * The part a capsule unlocks, or null (most capsules). Only rare parts, since
- * common ones can already be picked, and the rarer a part is to be dealt the
- * rarer it is to unlock. Like `roll`, the seed must come from the server.
+ * The part a capsule unlocks. Only rare parts, since common ones can already
+ * be picked, and the rarer a part is to be dealt the rarer it is to unlock.
+ * Given what the player `has`, it's one they don't have, from a slot that
+ * still has some, so a capsule never wastes its part; null once there's none
+ * left. Like `roll`, the seed must come from the server.
  */
-export function rollPart(seed: string): PartDrop | null {
+export function rollPart(seed: string, has?: (p: PartDrop) => boolean): PartDrop | null {
   const u = (k: string) => hash(`${seed}|part|${k}`) / 4294967296;
   if (u('odds') * PART_ODDS >= 1) return null;
-  const slot = PART_SLOTS[Math.floor(u('slot') * PART_SLOTS.length)];
-  const weights = SLOTS.find(s => s[1] === slot)![2], pool = rareParts(slot);
-  let r = u('which') * pool.reduce((a, i) => a + weights[i], 0);
-  const index = pool.find(i => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
-  return { slot, index };
+  const start = Math.floor(u('slot') * PART_SLOTS.length);
+  for (let k = 0; k < PART_SLOTS.length; k++) {
+    const slot = PART_SLOTS[(start + k) % PART_SLOTS.length];
+    const weights = SLOTS.find(s => s[1] === slot)![2], pool = rareParts(slot).filter(index => !has?.({ slot, index }));
+    if (!pool.length) continue;
+    let r = u('which') * pool.reduce((a, i) => a + weights[i], 0);
+    const index = pool.find(i => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+    return { slot, index };
+  }
+  return null;
+}
+
+/**
+ * Scrap to craft a part (./craft's metal): a reclaimed for one dealt about
+ * one guy in 200 or more, a refined for rarer, two for the rarest (rarer than
+ * one in 2,000).
+ */
+export function partCost(p: PartDrop): number {
+  const weights = SLOTS.find(s => s[1] === p.slot)![2], total = weights.reduce((a, b) => a + b, 0), share = weights[p.index] / total;
+  return share >= 1 / 200 ? 3 : share >= 1 / 2000 ? 9 : 18;
 }
 
 /** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */

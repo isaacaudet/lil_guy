@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-C76O_DiI.cjs');
+const require_paint = require('./paint-DDqzpIzK.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -2045,9 +2045,11 @@ const TIER_ICONS = {
 * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
 * the parts can't silently turn a saved look into someone else.
 *
-* A rare part can also be earned: a capsule sometimes unlocks one (`rollPart`),
-* and then it's the player's to pick (`Unlocks`). Earned parts change how a guy
-* looks, never how rare the guy is: that stays the deal's.
+* A rare part can also be earned: every capsule unlocks one the player hasn't
+* got (`rollPart`), and metal crafts the exact one they want (`partCost`).
+* Then it's theirs to pick (`Unlocks`). Capsules are how a player builds the
+* guy they want; earned parts change how a guy looks, never how rare the guy
+* is: that stays the deal's.
 */
 /** A slot in a look code: its letter, its config key and its weights. */
 const SLOTS = [
@@ -2116,34 +2118,40 @@ function pickable(own, slot, unlocks) {
 function allowed(own, look, unlocks) {
 	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own, slot, unlocks).includes(look[slot]));
 }
-/** The slots a capsule can unlock a part in: the face and what's on it, never the shape or the colour. */
+/** The slots a capsule can unlock a part in: every one, the shape and the colour too. */
 const PART_SLOTS = [
+	"head",
 	"eyes",
 	"mouth",
 	"cheeks",
 	"hair",
 	"body",
-	"accessory"
+	"accessory",
+	"palette"
 ];
-/** One capsule in this many also unlocks a part. */
-const PART_ODDS = 4;
+/** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
+const PART_ODDS = 1;
 /** Tickets back for a part the player already has. */
 const PART_REFUND = 60;
 const NAMES = {
+	head: require_paint.heads,
 	eyes: require_paint.eyes,
 	mouth: require_paint.mouths,
 	cheeks: require_paint.cheeks,
 	hair: require_paint.hair,
 	body: require_paint.bodies,
-	accessory: require_paint.accessories
+	accessory: require_paint.accessories,
+	palette: require_paint.palettes
 };
 const SLOT_WORD = {
+	head: "shape",
 	eyes: "eyes",
 	mouth: "mouth",
 	cheeks: "cheeks",
 	hair: "topper",
 	body: "markings",
-	accessory: "accessory"
+	accessory: "accessory",
+	palette: "colours"
 };
 /** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
 function rareParts(slot) {
@@ -2152,21 +2160,40 @@ function rareParts(slot) {
 	return weights.map((_, i) => i).filter((i) => weights[i] > 0 && weights[i] / total < RARE && !(slot === "eyes" && require_paint.RETIRED_EYES.includes(i)));
 }
 /**
-* The part a capsule unlocks, or null (most capsules). Only rare parts, since
-* common ones can already be picked, and the rarer a part is to be dealt the
-* rarer it is to unlock. Like `roll`, the seed must come from the server.
+* The part a capsule unlocks. Only rare parts, since common ones can already
+* be picked, and the rarer a part is to be dealt the rarer it is to unlock.
+* Given what the player `has`, it's one they don't have, from a slot that
+* still has some, so a capsule never wastes its part; null once there's none
+* left. Like `roll`, the seed must come from the server.
 */
-function rollPart(seed) {
+function rollPart(seed, has) {
 	const u = (k) => require_paint.hash(`${seed}|part|${k}`) / 4294967296;
 	if (u("odds") * PART_ODDS >= 1) return null;
-	const slot = PART_SLOTS[Math.floor(u("slot") * PART_SLOTS.length)];
-	const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot);
-	let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
-	const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
-	return {
-		slot,
-		index
-	};
+	const start = Math.floor(u("slot") * PART_SLOTS.length);
+	for (let k = 0; k < PART_SLOTS.length; k++) {
+		const slot = PART_SLOTS[(start + k) % PART_SLOTS.length];
+		const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot).filter((index$1) => !has?.({
+			slot,
+			index: index$1
+		}));
+		if (!pool.length) continue;
+		let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
+		const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+		return {
+			slot,
+			index
+		};
+	}
+	return null;
+}
+/**
+* Scrap to craft a part (./craft's metal): a reclaimed for one dealt about
+* one guy in 200 or more, a refined for rarer, two for the rarest (rarer than
+* one in 2,000).
+*/
+function partCost(p) {
+	const weights = SLOTS.find((s) => s[1] === p.slot)[2], total = weights.reduce((a, b$1) => a + b$1, 0), share$1 = weights[p.index] / total;
+	return share$1 >= 1 / 200 ? 3 : share$1 >= 1 / 2e3 ? 9 : 18;
 }
 /** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */
 function partName(p) {
@@ -7271,6 +7298,7 @@ exports.painted = require_paint.painted
 exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
 exports.partCode = partCode
+exports.partCost = partCost
 exports.partName = partName
 exports.pickable = pickable
 exports.pinById = require_paint.pinById

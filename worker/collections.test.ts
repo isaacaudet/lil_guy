@@ -329,6 +329,29 @@ test('capsules now and then unlock a rare face part, which can then be picked; r
   expect((await call('/me/mia/look', 'POST', { look: '2:' + other }, auth(c.owner))).status).toBe(400);
 });
 
+test('every capsule unlocks a part the player hasn’t got, and metal crafts the one they want', async () => {
+  const c = await claim('mia');
+  const got: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const part = ((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).part;
+    expect(part?.new).toBe(true);
+    got.push(part.code);
+  }
+  expect(new Set(got).size).toBe(10);
+  const LG = await import('../src/index-headless.ts');
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  const own = LG.resolve(s.seed);
+  const want = LG.rareParts('mouth').map((i: number) => 'm' + i).find((code: string) => !s.parts.includes(code) && LG.readPart(code)!.index !== own.mouth)!;
+  const cost = LG.partCost(LG.readPart(want)!);
+  expect((await call('/me/mia/craft-part', 'POST', { part: want }, auth(c.owner))).status).toBe(402);
+  env.db.exec(`UPDATE players SET metal = ${cost} WHERE key = 'mia'`);
+  const made: any = await (await call('/me/mia/craft-part', 'POST', { part: want }, auth(c.owner))).json();
+  expect(made.part.new).toBe(true);
+  expect(made.metal).toBe(0);
+  expect((await call('/me/mia/craft-part', 'POST', { part: want }, auth(c.owner))).status).toBe(409);
+  expect((await call('/me/mia/look', 'POST', { look: '2:' + want }, auth(c.owner))).status).toBe(200);
+});
+
 test('without the parts table (before migration 0007) capsules still open', async () => {
   env.db.exec('DROP TABLE parts');
   const c = await claim('mia');

@@ -3979,30 +3979,35 @@ const AURAS = [
 		id: "aura.aurora",
 		name: "Aurora",
 		colors: [
-			"#E6FFF4",
-			"#3DF2B0",
-			"#9C7BFF"
+			"#F2FFF8",
+			"#46F0B4",
+			"#2BB59A",
+			"#8A6BFF"
 		],
 		still: 700,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], fold = wrap((t + print * 60) / steps(140, s.w + 8), s.w + 8) - 4;
+			const s = shape(mask), out = [], d = print % 2 ? 1 : -1;
+			const fold = wrap((t + print * 90) / steps(90, s.w + 10), s.w + 10) - 5;
 			for (let x = 0; x < s.w; x++) {
-				const y = 2 + Math.round(Math.sin(x * .55 + t / wave(420) + print) * 1.4);
-				const drape = 1 + Math.round((Math.sin(x * .9 - t / wave(300) + print * 2) + 1) * 1.2);
-				const bright = Math.abs(x - fold) < 1.2;
-				out.push([
+				const hem = Math.round(3.4 + Math.sin(x * .42 + d * t / wave(520) + print) * 1.3 + Math.sin(x * 1.1 - t / wave(330)) * .6);
+				const ray = Math.sin(x * 1.25 + d * t / wave(260) + print * .7);
+				for (let y = 0; y <= hem; y++) {
+					const up = hem - y;
+					if (ray < -.2 && up > 1) continue;
+					const k = up === 0 ? Math.abs(x - fold) < 1.5 ? 0 : 1 : up === 1 ? ray > .5 ? 1 : 2 : up === 2 ? 2 : 3;
+					out.push([
+						x,
+						y,
+						k
+					]);
+				}
+			}
+			for (let i = 0; i < 2; i++) {
+				const x = Math.floor(noise$1(i, print, 41) * s.w);
+				if (Math.sin(t / wave(240) + i * 2.1) > .3) out.push([
 					x,
-					y - 1,
-					bright ? 0 : 1
-				], [
-					x,
-					y,
-					bright ? 0 : 1
-				]);
-				for (let j = 1; j <= drape; j++) out.push([
-					x,
-					y + j,
-					2
+					0,
+					0
 				]);
 			}
 			return out;
@@ -4122,22 +4127,31 @@ const AURAS = [
 		name: "Ripple",
 		colors: [
 			"#FFFFFF",
-			"#7FE3FF",
-			"#2F7FD6"
+			"#A6EEFF",
+			"#4FB8F2",
+			"#2F6FC8"
 		],
 		still: 250,
 		cells: (mask, t, print) => {
-			const out = [], p = cycle(t + print * 23, 1100), d = 1 + Math.floor(p * 3);
-			for (const [x, y, dd] of ring(mask, 3)) if (dd === d) out.push([
-				x,
-				y,
-				d - 1
-			]);
-			else if (dd === d - 1 && (x + y) % 2) out.push([
-				x,
-				y,
-				2
-			]);
+			const out = [], reach = 6;
+			const h = mask.length, w = mask[0].length;
+			const p = cycle(t + print * 23, 1600), rings = [p, wrap(p + .5, 1)].map((q) => .8 + q * reach);
+			for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+				if (mask[y][x]) continue;
+				let d = Infinity;
+				for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (mask[y + dy]?.[x + dx]) d = Math.min(d, Math.hypot(dx, dy));
+				for (const r of rings) {
+					if (Math.abs(d - r) > .5) continue;
+					const k = r < 2.2 ? 1 : r < 3.8 ? 2 : 3;
+					if (k === 3 && (x + y) % 2) continue;
+					if (r < 1.6 && (x + y + tick(t, 200)) % 2) continue;
+					out.push([
+						x,
+						y,
+						k === 1 && noise$1(x, y, tick(t, 400)) > .86 ? 0 : k
+					]);
+				}
+			}
 			return out;
 		}
 	}
@@ -12764,9 +12778,11 @@ const TIER_ICONS = {
 * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
 * the parts can't silently turn a saved look into someone else.
 *
-* A rare part can also be earned: a capsule sometimes unlocks one (`rollPart`),
-* and then it's the player's to pick (`Unlocks`). Earned parts change how a guy
-* looks, never how rare the guy is: that stays the deal's.
+* A rare part can also be earned: every capsule unlocks one the player hasn't
+* got (`rollPart`), and metal crafts the exact one they want (`partCost`).
+* Then it's theirs to pick (`Unlocks`). Capsules are how a player builds the
+* guy they want; earned parts change how a guy looks, never how rare the guy
+* is: that stays the deal's.
 */
 /** A slot in a look code: its letter, its config key and its weights. */
 const SLOTS = [
@@ -12835,34 +12851,40 @@ function pickable(own$1, slot, unlocks) {
 function allowed(own$1, look, unlocks) {
 	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own$1, slot, unlocks).includes(look[slot]));
 }
-/** The slots a capsule can unlock a part in: the face and what's on it, never the shape or the colour. */
+/** The slots a capsule can unlock a part in: every one, the shape and the colour too. */
 const PART_SLOTS = [
+	"head",
 	"eyes",
 	"mouth",
 	"cheeks",
 	"hair",
 	"body",
-	"accessory"
+	"accessory",
+	"palette"
 ];
-/** One capsule in this many also unlocks a part. */
-const PART_ODDS = 4;
+/** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
+const PART_ODDS = 1;
 /** Tickets back for a part the player already has. */
 const PART_REFUND = 60;
 const NAMES = {
+	head: heads,
 	eyes,
 	mouth: mouths,
 	cheeks,
 	hair,
 	body: bodies,
-	accessory: accessories
+	accessory: accessories,
+	palette: palettes
 };
 const SLOT_WORD = {
+	head: "shape",
 	eyes: "eyes",
 	mouth: "mouth",
 	cheeks: "cheeks",
 	hair: "topper",
 	body: "markings",
-	accessory: "accessory"
+	accessory: "accessory",
+	palette: "colours"
 };
 /** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
 function rareParts(slot) {
@@ -12871,21 +12893,40 @@ function rareParts(slot) {
 	return weights.map((_, i) => i).filter((i) => weights[i] > 0 && weights[i] / total < RARE && !(slot === "eyes" && RETIRED_EYES.includes(i)));
 }
 /**
-* The part a capsule unlocks, or null (most capsules). Only rare parts, since
-* common ones can already be picked, and the rarer a part is to be dealt the
-* rarer it is to unlock. Like `roll`, the seed must come from the server.
+* The part a capsule unlocks. Only rare parts, since common ones can already
+* be picked, and the rarer a part is to be dealt the rarer it is to unlock.
+* Given what the player `has`, it's one they don't have, from a slot that
+* still has some, so a capsule never wastes its part; null once there's none
+* left. Like `roll`, the seed must come from the server.
 */
-function rollPart(seed) {
+function rollPart(seed, has) {
 	const u = (k) => hash(`${seed}|part|${k}`) / 4294967296;
 	if (u("odds") * PART_ODDS >= 1) return null;
-	const slot = PART_SLOTS[Math.floor(u("slot") * PART_SLOTS.length)];
-	const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot);
-	let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
-	const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
-	return {
-		slot,
-		index
-	};
+	const start = Math.floor(u("slot") * PART_SLOTS.length);
+	for (let k = 0; k < PART_SLOTS.length; k++) {
+		const slot = PART_SLOTS[(start + k) % PART_SLOTS.length];
+		const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot).filter((index$1) => !has?.({
+			slot,
+			index: index$1
+		}));
+		if (!pool.length) continue;
+		let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
+		const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+		return {
+			slot,
+			index
+		};
+	}
+	return null;
+}
+/**
+* Scrap to craft a part (./craft's metal): a reclaimed for one dealt about
+* one guy in 200 or more, a refined for rarer, two for the rarest (rarer than
+* one in 2,000).
+*/
+function partCost(p) {
+	const weights = SLOTS.find((s) => s[1] === p.slot)[2], total = weights.reduce((a, b$1) => a + b$1, 0), share$1 = weights[p.index] / total;
+	return share$1 >= 1 / 200 ? 3 : share$1 >= 1 / 2e3 ? 9 : 18;
 }
 /** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */
 function partName(p) {
@@ -17936,6 +17977,7 @@ exports.painted = painted
 exports.paletteOf = paletteOf
 exports.palettes = palettes
 exports.partCode = partCode
+exports.partCost = partCost
 exports.partName = partName
 exports.pickable = pickable
 exports.pinById = pinById

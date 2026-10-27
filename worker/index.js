@@ -4,7 +4,7 @@ import { putOn, readClub, takeOff, withStats } from './card-stats.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
-  cleanTag, tradeFloat, rollPart, partCode, unlocksOf, pickable, PART_REFUND,
+  cleanTag, tradeFloat, rollPart, partCode, readPart, partCost, unlocksOf, pickable, PART_REFUND,
   smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE,
 } from '../src/index-headless.ts';
 
@@ -229,7 +229,9 @@ async function me(request, env, key, action) {
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
     // Now and then a capsule also unlocks a rare face part.
-    const drop = rollPart(crypto.randomUUID());
+    // Every capsule unlocks a part the player hasn't got yet, until there are none left.
+    const mine = unlocksOf(await partsOf(env, key)), own = dealt(name.seed);
+    const drop = rollPart(crypto.randomUUID(), p => pickable(own, p.slot, mine).includes(p.index));
     const part = drop ? await grantPart(env, name, drop) : null;
     const p = await env.DB.prepare('SELECT tickets, free_day FROM players WHERE key = ?').bind(key).first();
     return json({ copy: publicCopy(copy), part, tickets: p.tickets, freeDay: p.free_day, luck }, 201);
@@ -347,7 +349,7 @@ async function me(request, env, key, action) {
     return json({ ok: true });
   }
   // Crafting, as in TF2: smelt copies into metal, craft the item you want, paint a hat or a buddy.
-  if (action === 'smelt' || action === 'craft' || action === 'paint') {
+  if (action === 'smelt' || action === 'craft' || action === 'paint' || action === 'craft-part') {
     try { await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first(); }
     catch { return json({ error: 'Crafting isn’t open yet' }, 503); }
   }
@@ -378,6 +380,18 @@ async function me(request, env, key, action) {
     const copy = await insertCopy(env, copyRow(craftCopy(item.id, crypto.randomUUID(), count.n), key, 'craft'));
     const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
     return json({ copy: publicCopy(copy), metal: p.metal }, 201);
+  }
+  // A part crafted from metal: the exact eyes, mouth, shape or colour a player wants.
+  if (action === 'craft-part') {
+    const drop = readPart(String(body.part || ''));
+    if (!drop) return json({ error: 'That isn’t a part you can craft' }, 400);
+    if (pickable(dealt(name.seed), drop.slot, unlocksOf(await partsOf(env, key))).includes(drop.index)) return json({ error: 'You already have that one' }, 409);
+    const cost = partCost(drop);
+    const r = await env.DB.prepare('UPDATE players SET metal = metal - ? WHERE key = ? AND metal >= ?').bind(cost, key, cost).run();
+    if (!r.meta.changes) return json({ error: 'Not enough metal' }, 402);
+    const part = await grantPart(env, name, drop);
+    const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
+    return json({ part, metal: p.metal }, 201);
   }
   if (action === 'paint') {
     const paint = body.paint == null ? null : String(body.paint);
@@ -471,7 +485,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all()).results, today());
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|paint)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);

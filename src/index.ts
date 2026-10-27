@@ -62,7 +62,7 @@ export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, type GuyRank, copyOn
 export type { TraitOdds, TraitSlot } from "./rarity";
 export { TRAIT_ICONS, TIER_ICONS } from "./icons";
 export type { Tier } from "./icons";
-export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf, rollPart, rareParts, partName, partCode, readPart, unlocksOf, PART_SLOTS, PART_ODDS, PART_REFUND } from "./look";
+export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf, rollPart, rareParts, partName, partCode, readPart, unlocksOf, partCost, PART_SLOTS, PART_ODDS, PART_REFUND } from "./look";
 export type { Look, LookSlot, Unlocks, PartDrop } from "./look";
 export { toShareSvg } from "./share";
 export type { ShareOptions } from "./share";

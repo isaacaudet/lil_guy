@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-ChXJnKR6.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-ixwzZPkT.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -2049,9 +2049,11 @@ const TIER_ICONS = {
 * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
 * the parts can't silently turn a saved look into someone else.
 *
-* A rare part can also be earned: a capsule sometimes unlocks one (`rollPart`),
-* and then it's the player's to pick (`Unlocks`). Earned parts change how a guy
-* looks, never how rare the guy is: that stays the deal's.
+* A rare part can also be earned: every capsule unlocks one the player hasn't
+* got (`rollPart`), and metal crafts the exact one they want (`partCost`).
+* Then it's theirs to pick (`Unlocks`). Capsules are how a player builds the
+* guy they want; earned parts change how a guy looks, never how rare the guy
+* is: that stays the deal's.
 */
 /** A slot in a look code: its letter, its config key and its weights. */
 const SLOTS = [
@@ -2120,34 +2122,40 @@ function pickable(own, slot, unlocks) {
 function allowed(own, look, unlocks) {
 	return SLOTS.every(([, slot]) => look[slot] === void 0 || pickable(own, slot, unlocks).includes(look[slot]));
 }
-/** The slots a capsule can unlock a part in: the face and what's on it, never the shape or the colour. */
+/** The slots a capsule can unlock a part in: every one, the shape and the colour too. */
 const PART_SLOTS = [
+	"head",
 	"eyes",
 	"mouth",
 	"cheeks",
 	"hair",
 	"body",
-	"accessory"
+	"accessory",
+	"palette"
 ];
-/** One capsule in this many also unlocks a part. */
-const PART_ODDS = 4;
+/** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
+const PART_ODDS = 1;
 /** Tickets back for a part the player already has. */
 const PART_REFUND = 60;
 const NAMES = {
+	head: heads,
 	eyes,
 	mouth: mouths,
 	cheeks,
 	hair,
 	body: bodies,
-	accessory: accessories
+	accessory: accessories,
+	palette: palettes
 };
 const SLOT_WORD = {
+	head: "shape",
 	eyes: "eyes",
 	mouth: "mouth",
 	cheeks: "cheeks",
 	hair: "topper",
 	body: "markings",
-	accessory: "accessory"
+	accessory: "accessory",
+	palette: "colours"
 };
 /** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
 function rareParts(slot) {
@@ -2156,21 +2164,40 @@ function rareParts(slot) {
 	return weights.map((_, i) => i).filter((i) => weights[i] > 0 && weights[i] / total < RARE && !(slot === "eyes" && RETIRED_EYES.includes(i)));
 }
 /**
-* The part a capsule unlocks, or null (most capsules). Only rare parts, since
-* common ones can already be picked, and the rarer a part is to be dealt the
-* rarer it is to unlock. Like `roll`, the seed must come from the server.
+* The part a capsule unlocks. Only rare parts, since common ones can already
+* be picked, and the rarer a part is to be dealt the rarer it is to unlock.
+* Given what the player `has`, it's one they don't have, from a slot that
+* still has some, so a capsule never wastes its part; null once there's none
+* left. Like `roll`, the seed must come from the server.
 */
-function rollPart(seed) {
+function rollPart(seed, has) {
 	const u = (k) => hash(`${seed}|part|${k}`) / 4294967296;
 	if (u("odds") * PART_ODDS >= 1) return null;
-	const slot = PART_SLOTS[Math.floor(u("slot") * PART_SLOTS.length)];
-	const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot);
-	let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
-	const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
-	return {
-		slot,
-		index
-	};
+	const start = Math.floor(u("slot") * PART_SLOTS.length);
+	for (let k = 0; k < PART_SLOTS.length; k++) {
+		const slot = PART_SLOTS[(start + k) % PART_SLOTS.length];
+		const weights = SLOTS.find((s) => s[1] === slot)[2], pool = rareParts(slot).filter((index$1) => !has?.({
+			slot,
+			index: index$1
+		}));
+		if (!pool.length) continue;
+		let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
+		const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+		return {
+			slot,
+			index
+		};
+	}
+	return null;
+}
+/**
+* Scrap to craft a part (./craft's metal): a reclaimed for one dealt about
+* one guy in 200 or more, a refined for rarer, two for the rarest (rarer than
+* one in 2,000).
+*/
+function partCost(p) {
+	const weights = SLOTS.find((s) => s[1] === p.slot)[2], total = weights.reduce((a, b$1) => a + b$1, 0), share$1 = weights[p.index] / total;
+	return share$1 >= 1 / 200 ? 3 : share$1 >= 1 / 2e3 ? 9 : 18;
 }
 /** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */
 function partName(p) {
@@ -7124,5 +7151,5 @@ function craftCopy(itemId, seed, number) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partName, pickable, pinById, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map
