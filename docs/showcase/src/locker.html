@@ -86,6 +86,8 @@
   .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center;
   .ov .t.on-light:not(.foil):not(.gold) { color: #2a2340; text-shadow: 0 .6cqw 0 rgba(255, 255, 255, .45); }
   .ov .t.on-light.foil, .ov .t.on-light.gold { filter: drop-shadow(.4cqw 0 0 #1a1530) drop-shadow(-.4cqw 0 0 #1a1530) drop-shadow(0 .4cqw 0 #1a1530) drop-shadow(0 -.4cqw 0 #1a1530); }
+  .ov .n { position: absolute; left: 9%; right: 22%; top: 88.3%; height: 6.6%; display: flex; align-items: center; font-size: 4.2cqw; line-height: 1; color: #6a6284; white-space: nowrap; overflow: hidden; }
+  .ov .n.on-dark { color: #d9d2f0; text-shadow: 0 .4cqw 0 rgba(10, 8, 24, .6); }
   .ov .b.on-dark { color: #f4efff; text-shadow: 0 .5cqw 0 rgba(10, 8, 24, .6); }
     font-size: 6.6cqw; font-weight: 600; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
   .no-gl .ov { display: none; }
@@ -538,13 +540,22 @@ void main() {
     const l = spec.label;
     // --n is how many letters a line has, so a long one shrinks to fit the card instead of being cut off.
     const len = h => String(h ?? '').replace(/<[^>]*>/g, '').length;
-    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span></span>` : '';
+    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
     return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
+  };
+  /**
+   * Where an item sits in its machine's set ("07/16"), as a card's set number does, then its craft number and a
+   * Strange copy's tally of days finished: the small line by the set's symbol.
+   */
+  const setLine = o => {
+    const it = LG.itemById(o.item), set = it && it.game !== 'club' ? LG.gameItems(it.game) : null;
+    const pad = n => String(n).padStart(2, '0');
+    return [set ? `${pad(set.indexOf(it) + 1)}/${pad(set.length)}` : '', o.craft !== undefined ? `Craft #${o.craft}` : '', o.tally !== undefined ? `${o.tally} day${o.tally === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
   };
   /** The words on an item's card: its name, its print, its grade and how rare it is. */
   const itemLabel = (o, starter, one) => {
     const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), set: setLine(o), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
   function mount(canvas, spec) {
@@ -571,6 +582,7 @@ void main() {
       return n ? sum / n : 128;
     };
     s.art?.querySelector('.ov .b')?.classList.toggle('on-dark', light(0.8, 0.9) < 120);
+    s.art?.querySelector('.ov .n')?.classList.toggle('on-dark', light(0.88, 0.95) < 120);
     s.art?.querySelector('.ov .t')?.classList.toggle('on-light', light(0.07, 0.17) > 170);
     return s;
   }

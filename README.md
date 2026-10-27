@@ -264,6 +264,12 @@ copies' finishes all baked into frames, the same pixels everywhere. One
 renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
 server, a page and a game all get the same picture.
 
+A card is a trading card. Its window shimmers in its copy's finish's own foil
+(Sunset stripes, a Tempered oil slick, a Nebula cosmos, Prism cracked ice, a Gold
+sunburst), with the print picking one of four variants. Mythic and up, and
+every showpiece, are full-art: the machine's scene fills the card and the guy
+stands free of a window. An item's card carries its machine's set symbol.
+
 ```html
 <!-- Any page: the picture from the lil guys Worker, no library on the page (1.7 KB gzipped). -->
 <script src="https://lilguys.dleclub.com/lil-guy-element.js"></script>

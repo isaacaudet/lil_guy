@@ -12897,6 +12897,18 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
   return c;
 }
+// A card's foil, as on a trading card: each finish has its own pattern, and a copy's print picks its variant (\`v\`, 0 to 3).
+vec3 holoColor(vec3 c, float holo, float v, vec2 p, vec2 o, float h, float time) {
+  if (holo < 0.5) return c;
+  if (holo < 1.5) { float s = fract((p.x - p.y * 0.5) / (4.0 + v) - time / 3.0); return mix(c, c * vec3(1.05, 0.85, 0.95) + vec3(0.18, 0.08, 0.12), 0.6 * (1.0 - smoothstep(0.3, 0.4, s))); }
+  if (holo < 2.5) { float a = sin(p.x * 0.45 + v) + cos(p.y * 0.35 - v) + time * TAU / 6.0; return mix(c, hueShift(c * 0.9 + vec3(0.1, 0.12, 0.2), a), 0.55); }
+  if (holo < 3.5) { vec3 sky = mix(c, vec3(0.16, 0.12, 0.34), 0.55); return mix(sky, vec3(1.0, 0.95, 1.0), step(0.94 - v * 0.015, h) * step(0.4, fract(h * 17.0 + time / 2.0))); }
+  if (holo < 4.5) { float id = floor((p.x + p.y * 2.0) / (4.0 + v)) + floor((p.x - p.y * 2.0 + 90.0) / (4.0 + v)) * 7.0; vec3 ice = hsv(vec3(fract(id * 0.618 + time / 6.0), 0.45, 1.0)); return mix(c, c * 0.55 + ice * 0.5, 0.55); }
+  if (holo < 5.5) return c;
+  vec2 q = p - o;
+  float r = fract(atan(q.y, q.x) * (5.0 + v) / TAU + time / 6.0);
+  return mix(c, vec3(1.0, 0.86, 0.45), smoothstep(0.42, 0.58, r) * (1.0 - smoothstep(0.92, 1.0, r)) * 0.4);
+}
 `;
 const TAU = Math.PI * 2;
 const fract = (x) => x - Math.floor(x);
@@ -12991,6 +13003,58 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.9,
 		.5
 	], twinkle$2 * .6 * coat));
+}
+/** `holoColor` from GLSL_COMMON: a card's foil pattern for a finish (an index in SHADER_FINISHES), its variant `v` 0–3, at cell `p` round `o`. */
+function holoColor(c, holo, v, p, o, h, time) {
+	if (holo < .5) return c;
+	if (holo < 1.5) {
+		const s = fract((p[0] - p[1] * .5) / (4 + v) - time / 3);
+		return mix$1(c, add(scale(c, [
+			1.05,
+			.85,
+			.95
+		]), [
+			.18,
+			.08,
+			.12
+		]), .6 * (1 - smoothstep(.3, .4, s)));
+	}
+	if (holo < 2.5) {
+		const a = Math.sin(p[0] * .45 + v) + Math.cos(p[1] * .35 - v) + time * TAU / 6;
+		return mix$1(c, hueShift(add(scale(c, .9), [
+			.1,
+			.12,
+			.2
+		]), a), .55);
+	}
+	if (holo < 3.5) {
+		const sky = mix$1(c, [
+			.16,
+			.12,
+			.34
+		], .55);
+		return mix$1(sky, [
+			1,
+			.95,
+			1
+		], step(.94 - v * .015, h) * step(.4, fract(h * 17 + time / 2)));
+	}
+	if (holo < 4.5) {
+		const id = Math.floor((p[0] + p[1] * 2) / (4 + v)) + Math.floor((p[0] - p[1] * 2 + 90) / (4 + v)) * 7;
+		const ice = hsv$1([
+			fract(id * .618 + time / 6),
+			.45,
+			1
+		]);
+		return mix$1(c, add(scale(c, .55), scale(ice, .5)), .55);
+	}
+	if (holo < 5.5) return c;
+	const r = fract(Math.atan2(p[1] - o[1], p[0] - o[0]) * (5 + v) / TAU + time / 6);
+	return mix$1(c, [
+		1,
+		.86,
+		.45
+	], smoothstep(.42, .58, r) * (1 - smoothstep(.92, 1, r)) * .4);
 }
 /** A colour channel as the GPU stores it. */
 const toByte = (v) => Math.round(clamp(v, 0, 1) * 255);
@@ -16704,12 +16768,47 @@ function toGuyGif(seed, move, options = {}, scale$1 = 12) {
 * their finish, all in `LOOP_MS`. Its words (name, print, odds) are the page's
 * to write over it.
 *
+* Like a trading card: the window shimmers in its copy's finish's own foil
+* (stripes, an oil slick, a cosmos, cracked ice, a sunburst), the print picking
+* the variant, so two copies shimmer differently; Mythic and up and showpieces
+* are full-art, their machine's scene filling the card and the guy standing
+* free of any window; and an item's card carries its set's symbol.
+*
 * The face is built once (`cardFace`), then drawn at a time either by the GPU
 * (`CARD_FRAGMENT`, `createCardShader`) or in plain code (`cardFaceAt`), with
 * the same result.
 */
 const FACE_WIDTH = 26;
 const FACE_HEIGHT = 42;
+/** Where a gold card's sunburst turns round: the window's middle, or the card's for full-art. */
+const origin = (full) => full ? [12.5, 16.5] : [12.5, 18.5];
+/** A machine's scene for a full-art card: its first frame's pattern, a little darker at the top and bottom. */
+function scene(game, x, y, n) {
+	const frame = game ? gameItems(game).find((i) => i.slot === "frame") : void 0;
+	const fade = 1 - Math.abs(y - 18) / 30;
+	if (!frame?.fill) {
+		const sky = blend([
+			28,
+			22,
+			64
+		], [
+			92,
+			48,
+			120
+		], y / 42);
+		return n > 246 ? [
+			235,
+			228,
+			255
+		] : sky.map((v) => Math.round(v * (.85 + .15 * fade)));
+	}
+	const hex$3 = frame.colors[frame.fill(x % 16, y % 16) - 1] ?? frame.colors[0];
+	return blend(rgb$1(hex$3), [
+		18,
+		16,
+		36
+	], .5 + .25 * (1 - fade));
+}
 const rgb$1 = (s) => [
 	parseInt(s.slice(1, 3), 16),
 	parseInt(s.slice(3, 5), 16),
@@ -16728,6 +16827,10 @@ function cardFace(spec) {
 	const colors = paint(grid, config, withItems(paletteOf(config), config));
 	const owned = config.owned ?? {};
 	const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
+	const last = copies[copies.length - 1], lastItem = last ? itemById(last.item) : void 0;
+	const full = spec.full ?? (g >= 3 || copies.some((o) => itemById(o.item)?.showpiece));
+	const set = spec.set ?? (lastItem && lastItem.game !== "club" ? lastItem.game : void 0);
+	const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish)) : 0;
 	const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$2 = new Uint8Array(W * H * 4);
 	const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
 		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
@@ -16767,7 +16870,9 @@ function cardFace(spec) {
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
 		if (cx + cy < 2) continue;
-		put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
+		const rim$3 = cx === 0 || cy === 0 || cx + cy === 2;
+		if (full && !rim$3) put(x, y, scene(set, x, y, noiseOf(x, y, 7)), 2);
+		else put(x, y, rim$3 ? edge : cream, 1);
 	}
 	const band$1 = g >= 3 ? [
 		30,
@@ -16792,15 +16897,26 @@ function cardFace(spec) {
 		0,
 		0
 	], .35) : y === 2 ? lip : band$1, 1);
-	for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, x === 3 || y === 9 || x === 22 || y === 28 ? rim$2 : win, 2);
+	if (!full) for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, x === 3 || y === 9 || x === 22 || y === 28 ? rim$2 : win, 2);
+	const gy = full ? 7 : 11;
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		const hex$3 = colors[y][x];
 		if (!hex$3) return;
 		const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 		const o = slot ? owned[slot] : void 0;
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
-		put(x + 5, y + 11, rgb$1(hex$3), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
+		put(x + 5, y + gy, rgb$1(hex$3), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
+	const mark$1 = set ? gameItems(set).find((i) => i.slot === "skin")?.colors[0] : void 0;
+	if (mark$1) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb$1(mark$1), [
+		255,
+		255,
+		255
+	], .5) : x === 22 || y === 39 ? blend(rgb$1(mark$1), [
+		0,
+		0,
+		0
+	], .35) : rgb$1(mark$1), 1);
 	if (g >= 0) for (let p = 0; p < 5; p++) {
 		const x0 = 6 + p * 3;
 		for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim$2, 1);
@@ -16812,11 +16928,14 @@ function cardFace(spec) {
 		noise: noise$2,
 		grade: g,
 		negative: copies.some((o) => o.finish === "negative"),
-		seed: copies.length ? copies[copies.length - 1].print : 0
+		seed: last ? last.print : 0,
+		holo,
+		variant: last ? last.print % 4 : 0,
+		full
 	};
 }
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
-const faceMoves = (f) => f.grade >= 0 || f.negative || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+const faceMoves = (f) => f.grade >= 0 || f.negative || f.holo > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 function cardFaceAt(f, ms, hover) {
 	const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
@@ -16834,6 +16953,7 @@ function cardFaceAt(f, ms, hover) {
 		const wide = 1 - clamp(Math.abs(mod(d - time * 10 + f.seed, 60) - 30) / 3, 0, 1);
 		if (k > 3.5 && finish >= 0) c = finishColor(c, finish, scuff, h, d, y, print, time, 1);
 		else if (k < 2.5) {
+			if (k > 1.5) c = holoColor(c, f.holo, f.variant, [x, y], origin(f.full), h, time);
 			if (f.negative) c = mix$1([
 				1 - c[0],
 				1 - c[1],
@@ -16885,7 +17005,7 @@ function cardFaceAt(f, ms, hover) {
 const CARD_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
 uniform sampler2D base, kind, noise;
-uniform float time, hover, grade, neg, seed;
+uniform float time, hover, grade, neg, seed, holo, variant, full;
 uniform vec2 light;
 ${GLSL_COMMON}
 void main() {
@@ -16904,6 +17024,7 @@ void main() {
   float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 60.0) - 30.0) / 3.0, 0.0, 1.0);
   if (k > 3.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, d, cell.y, print, time, 1.0);
   else if (k < 2.5) {
+    if (k > 1.5) c = holoColor(c, holo, variant, cell, full > 0.5 ? vec2(12.5, 16.5) : vec2(12.5, 18.5), h, time);
     if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
     if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
     else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
@@ -16960,7 +17081,10 @@ function createCardShader(canvas) {
 		"grade",
 		"neg",
 		"seed",
-		"light"
+		"light",
+		"holo",
+		"variant",
+		"full"
 	].map((n) => [n, gl.getUniformLocation(program, n)]));
 	gl.uniform1i(u.base, 0);
 	gl.uniform1i(u.kind, 1);
@@ -16994,6 +17118,9 @@ function createCardShader(canvas) {
 			gl.uniform1f(u.grade, face.grade);
 			gl.uniform1f(u.neg, face.negative ? 1 : 0);
 			gl.uniform1f(u.seed, face.seed);
+			gl.uniform1f(u.holo, face.holo);
+			gl.uniform1f(u.variant, face.variant);
+			gl.uniform1f(u.full, face.full ? 1 : 0);
 			gl.uniform1f(u.hover, hover?.strength ?? 0);
 			gl.uniform2f(u.light, hover?.x ?? .5, hover?.y ?? .3);
 			gl.clearColor(0, 0, 0, 0);

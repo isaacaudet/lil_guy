@@ -57,6 +57,18 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
   return c;
 }
+// A card's foil, as on a trading card: each finish has its own pattern, and a copy's print picks its variant (\`v\`, 0 to 3).
+vec3 holoColor(vec3 c, float holo, float v, vec2 p, vec2 o, float h, float time) {
+  if (holo < 0.5) return c;
+  if (holo < 1.5) { float s = fract((p.x - p.y * 0.5) / (4.0 + v) - time / 3.0); return mix(c, c * vec3(1.05, 0.85, 0.95) + vec3(0.18, 0.08, 0.12), 0.6 * (1.0 - smoothstep(0.3, 0.4, s))); }
+  if (holo < 2.5) { float a = sin(p.x * 0.45 + v) + cos(p.y * 0.35 - v) + time * TAU / 6.0; return mix(c, hueShift(c * 0.9 + vec3(0.1, 0.12, 0.2), a), 0.55); }
+  if (holo < 3.5) { vec3 sky = mix(c, vec3(0.16, 0.12, 0.34), 0.55); return mix(sky, vec3(1.0, 0.95, 1.0), step(0.94 - v * 0.015, h) * step(0.4, fract(h * 17.0 + time / 2.0))); }
+  if (holo < 4.5) { float id = floor((p.x + p.y * 2.0) / (4.0 + v)) + floor((p.x - p.y * 2.0 + 90.0) / (4.0 + v)) * 7.0; vec3 ice = hsv(vec3(fract(id * 0.618 + time / 6.0), 0.45, 1.0)); return mix(c, c * 0.55 + ice * 0.5, 0.55); }
+  if (holo < 5.5) return c;
+  vec2 q = p - o;
+  float r = fract(atan(q.y, q.x) * (5.0 + v) / TAU + time / 6.0);
+  return mix(c, vec3(1.0, 0.86, 0.45), smoothstep(0.42, 0.58, r) * (1.0 - smoothstep(0.92, 1.0, r)) * 0.4);
+}
 `;
 
 // ------------------------------------------------ the same, as plain code (GLSL's own definitions)
@@ -108,6 +120,23 @@ export function finishColor(c: Vec3, finish: number, scuff: number, h: number, d
   }
   if (finish < 5.5) return add(add(c, scale([0.28, 0.12, 0.45], b * coat)), 0.07 * Math.sin(time * TAU / 3 + d * 0.5) * coat);
   return add(add(c, b * 0.7 * coat), scale([1, 0.9, 0.5], twinkle * 0.6 * coat));
+}
+
+
+/** `holoColor` from GLSL_COMMON: a card's foil pattern for a finish (an index in SHADER_FINISHES), its variant `v` 0–3, at cell `p` round `o`. */
+export function holoColor(c: Vec3, holo: number, v: number, p: [number, number], o: [number, number], h: number, time: number): Vec3 {
+  if (holo < 0.5) return c;
+  if (holo < 1.5) { const s = fract((p[0] - p[1] * 0.5) / (4 + v) - time / 3); return mix(c, add(scale(c, [1.05, 0.85, 0.95]), [0.18, 0.08, 0.12]), 0.6 * (1 - smoothstep(0.3, 0.4, s))); }
+  if (holo < 2.5) { const a = Math.sin(p[0] * 0.45 + v) + Math.cos(p[1] * 0.35 - v) + time * TAU / 6; return mix(c, hueShift(add(scale(c, 0.9), [0.1, 0.12, 0.2]), a), 0.55); }
+  if (holo < 3.5) { const sky = mix(c, [0.16, 0.12, 0.34], 0.55); return mix(sky, [1, 0.95, 1], step(0.94 - v * 0.015, h) * step(0.4, fract(h * 17 + time / 2))); }
+  if (holo < 4.5) {
+    const id = Math.floor((p[0] + p[1] * 2) / (4 + v)) + Math.floor((p[0] - p[1] * 2 + 90) / (4 + v)) * 7;
+    const ice = hsv([fract(id * 0.618 + time / 6), 0.45, 1]);
+    return mix(c, add(scale(c, 0.55), scale(ice, 0.5)), 0.55);
+  }
+  if (holo < 5.5) return c;
+  const r = fract(Math.atan2(p[1] - o[1], p[0] - o[0]) * (5 + v) / TAU + time / 6);
+  return mix(c, [1, 0.86, 0.45], smoothstep(0.42, 0.58, r) * (1 - smoothstep(0.92, 1, r)) * 0.4);
 }
 
 /** A colour channel as the GPU stores it. */
