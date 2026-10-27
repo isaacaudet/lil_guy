@@ -251,7 +251,25 @@
   .mcard h3 { font-size: 24px; }
   .mcard p { margin: 2px 0 0; font-size: 16px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
   .mcard[aria-disabled="true"] { opacity: .5; }
-  .mcard.today { grid-column: span 2; grid-row: span 2; }
+  .mwrap { position: relative; display: grid; }
+  .mwrap.today { grid-column: span 2; grid-row: span 2; }
+  .m-inside { position: absolute; top: 10px; right: 10px; z-index: 2; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 16px; color: var(--ink); background: rgba(12, 10, 28, .62); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .m-inside:hover { background: rgba(12, 10, 28, .85); color: #fff; }
+  .insp.machp { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .mach-head p { margin: 6px 0 0; font-size: 16px; color: var(--ink-2); }
+  .mach-fins { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; border-radius: 10px; background: var(--well); }
+  .mach-fins span { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; color: var(--ink-2); }
+  .mach-fins i { width: 10px; height: 10px; border-radius: 3px; background: var(--g); }
+  .mach-fins b { color: var(--ink); }
+  .mach-sl { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; font-size: 24px; }
+  .mach-sl .ci { width: 28px; height: 22px; }
+  .mach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+  .mach-it { display: grid; gap: 2px; padding: 8px; border-radius: 10px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); }
+  .mach-it .pic { display: grid; place-items: center; height: 80px; border-radius: 8px; background: var(--well); margin-bottom: 4px; }
+  .mach-it canvas { image-rendering: pixelated; }
+  .mach-it b { font-size: 18px; line-height: 1.2; }
+  .mach-it small { font-size: 14px; color: var(--ink-3); }
+  .mach-it.have small { color: var(--green, #5fd38d); }
   .mcard.today .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
   .mcard.today h3 { font-size: 32px; }
   .mcard .flag { position: absolute; left: 12px; top: 12px; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-d); text-shadow: var(--ts); }
@@ -935,7 +953,7 @@
     .hand > .slot:nth-child(n+6) { display: none; }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .score b { font-size: 48px; }
-    .mcard.today { grid-column: span 2; grid-row: auto; }
+    .mcard.today, .mwrap.today { grid-column: span 2; grid-row: auto; }
     .mcard.today .pic { min-height: 220px; }
     .mine { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; }
     .mine .who h3 { font-size: 24px; }
@@ -1188,6 +1206,7 @@
     </div>
   </div>
 </div>
+<dialog id="machd" aria-labelledby="mach-h"><div class="insp machp" id="mach-body"></div></dialog>
 <dialog id="swapd" aria-labelledby="swap-h"><div class="insp swapp" id="swap-body"></div></dialog>
 <div class="tu" id="tu" hidden role="dialog" aria-modal="true" aria-label="Trade up">
   <p class="tu-cap" id="tu-cap"></p>
@@ -2300,6 +2319,25 @@
   /* ---------------------------------------------- machines */
   const todayGame = LG.GAMES[Math.floor(Date.now() / 864e5) % LG.GAMES.length];
   const tint = g => CANDY[g];
+  /** What a machine holds: every item with what you have of it, and the odds of each finish on any one of them. */
+  function showInside(g) {
+    const its = LG.gameItems(g).filter(x => !x.free), owned = state ? copies() : [];
+    const each = (1 - LG.AURA_ODDS) / its.length;
+    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+    const set = state ? LG.setProgress(g, owned.map(c => c.o)) : null;
+    const slots = ['skin', 'hat', 'frame', 'buddy'].filter(sl => its.some(x => x.slot === sl));
+    $('mach-body').innerHTML = `<button class="close" type="button" aria-label="Close">×</button>
+      <div class="mach-head"><h3 id="mach-h">${cap(g)} machine</h3>
+        <p>${its.length} items, each 1 in ${Math.round(1 / each)} capsules. ${set ? `You have ${set.got} of ${set.total}${set.complete ? ': set complete' : ''}.` : ''}</p></div>
+      <div class="mach-fins">${order.map(f => { const fin = LG.FINISHES[f], gr = LG.GRADES[fin.grade]; return `<span style="--g:${gr.color}"><i></i>${fin.name}<b>${fin.odds >= 1 ? Math.round(fin.odds) : +fin.odds.toPrecision(2)}%</b></span>`; }).join('')}<span style="--g:${LG.GRADES[5].color}"><i></i>★ Any aura<b>${+(LG.AURA_ODDS * 100).toFixed(2)}%</b></span></div>
+      ${slots.map(sl => `<h4 class="mach-sl" style="--cat:${catOf(sl).c}">${icon(sl)}${catOf(sl).name}</h4><div class="mach-grid">${its.filter(x => x.slot === sl).map(x => {
+        const n = owned.filter(c => c.o.item === x.id).length;
+        return `<div class="mach-it${n ? ' have' : ''}" data-it="${x.id}"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(x.name)}</b><small>${n ? `You have ${n}` : 'Not yet'}</small></div>`;
+      }).join('')}</div>`).join('')}`;
+    $('mach-body').querySelectorAll('.mach-it').forEach(el => showItem(el.querySelector('canvas'), { item: el.dataset.it, finish: 'plain', scuff: 0.2, print: 7 }, state ? state.seed : 'machine', 88, 72));
+    $('machd').showModal();
+  }
+  $('machd').addEventListener('click', e => { if (e.target === $('machd') || e.target.closest('.close')) $('machd').close(); });
   function renderMachines() {
     // Each grade's share of capsules; an aura takes one capsule in a thousand off the top of the others.
     const odds = LG.GRADES.map((g, k) => k === 5 ? LG.AURA_ODDS * 100 : Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0) * (1 - LG.AURA_ODDS));
@@ -2308,14 +2346,15 @@
     $('machines').innerHTML = order.map((g, i) => {
       const n = LG.gameItems(g).filter(it => !it.free).length;
       const first = i === 0, free = first && state && state.free !== today;
-      return `<button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
+      return `<div class="mwrap${first ? ' today' : ''}"><button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button>`;
+        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
   }
   $('machines').addEventListener('click', e => {
+    const inside = e.target.closest('[data-inside]'); if (inside) return showInside(inside.dataset.inside);
     const b = e.target.closest('[data-g]'); if (!b) return;
     if (!state) { $('name').focus(); toast('Claim a name first: your starters come with it.'); return; }
     const g = b.dataset.g;
@@ -3032,7 +3071,7 @@
     // What the locker is for: the guy is dealt from the name and stays; the items are what changes, and the two together are what everyone sees.
     const nWorn = worn.length;
     $('lk-eq').hidden = false;
-    $('lk-eq').innerHTML = `<div class="eq"><canvas id="eq-guy" width="16" height="16" aria-hidden="true"></canvas><span><b>Your guy</b><small>Dealt once from @${esc(state.key)}. Never changes, and nobody else has one.</small></span></div>`
+    $('lk-eq').innerHTML = `<div class="eq"><canvas id="eq-guy" width="16" height="16" aria-hidden="true"></canvas><span><b>Your guy</b><small>Dealt once from @${esc(state.key)}. Nobody else has one.</small></span></div>`
       + '<i class="eq-op" aria-hidden="true">+</i>'
       + `<div class="eq"><span class="eq-slots">${['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => `<span class="${state.worn[sl] ? 'on' : ''}" style="--cat:${catOf(sl).c}" title="${catOf(sl).one}">${icon(sl)}</span>`).join('')}</span><span><b>Your items</b><small>From capsules. One per slot, ${nWorn} on now. Swap any time.</small></span></div>`
       + '<i class="eq-op" aria-hidden="true">=</i>'
