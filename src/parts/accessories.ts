@@ -185,15 +185,14 @@ export const accessories: Accessory[] = [
     name: 'eye patch',
     layer: 'over',
     draw: c => {
-      // A rounded patch over the left eye, and a strap from it running up and
-      // away across the forehead to the side of the head.
+      // A pirate's patch: a dark pad over the left eye, a cell bigger than it all round on the outside
+      // with a glint so it reads as worn, not as a hole, and a strap running up across the forehead.
       const f = c.face;
       if (!f || !f.eyes.length) return;
-      // In his accent with a shine, so it reads as a patch worn over the eye: in near-black it read as a hole.
-      const e = f.eyes[0], left = e.left - (e.right === e.left ? 1 : 0);
-      for (let y = f.top; y <= f.line; y++) for (let x = left; x <= e.right; x++) c.set(x, y, T.ACCENT_SHADE);
-      c.set(left, f.top, T.ACCENT);
-      for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
+      const e = f.eyes[0], left = e.left - 1, top = f.top - 1;
+      for (let y = top; y <= f.line; y++) for (let x = left; x <= e.right; x++) if (c.isBody(x, y)) c.set(x, y, T.EYE);
+      if (c.isBody(left, top)) c.set(left, top, T.WHITE);
+      for (let i = 1, x = e.right, y = top; c.isBody(x + i, y - i + 1) && y - i + 1 > c.tip; i++) c.set(x + i, y - i + 1, T.EYE);
     },
   },
 
@@ -213,11 +212,15 @@ export const accessories: Accessory[] = [
     name: 'medal',
     layer: 'body',
     draw: c => {
-      const x = Math.floor(c.centre) - 1, y = c.neck;
-      wear(c, x, y, T.ACCENT);
-      wear(c, x + 1, y, T.ACCENT_SHADE);
-      wear(c, x, y + 1, T.GOLD);
-      wear(c, x + 1, y + 1, T.GOLD_SHADE);
+      // A gold disc on a ribbon, a row clear of the mouth so it never reads as a tongue.
+      const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
+      const disc = Math.min(y + 1, c.bottom - 1);
+      // The ribbon splays out to either side above it, a V, not a strip under the mouth.
+      if (disc > y) { wear(c, x - 1, y, T.ACCENT); wear(c, x + 2, y, T.ACCENT_SHADE); }
+      wear(c, x, disc, T.GOLD);
+      wear(c, x + 1, disc, T.GOLD_SHADE);
+      wear(c, x, disc + 1, T.GOLD_SHADE);
+      wear(c, x + 1, disc + 1, T.GOLD_SHADE);
     },
   },
 
@@ -245,12 +248,14 @@ export const accessories: Accessory[] = [
     name: 'necktie',
     layer: 'body',
     draw: c => {
-      const x = Math.floor(c.centre) - 1, y = c.neck;
+      // A knot a row clear of the mouth, then the tie down to the bottom, a little wider at its tip.
+      const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
+      if (y > c.bottom - 1) return;
       wear(c, x, y, T.ACCENT_SHADE);
       wear(c, x + 1, y, T.ACCENT_SHADE);
-      for (let ty = y + 1; ty < c.bottom; ty++) { wear(c, x, ty, T.ACCENT); wear(c, x + 1, ty, T.ACCENT); }
-      wear(c, x, c.bottom, T.ACCENT_SHADE);
-      wear(c, x + 1, c.bottom, T.ACCENT_SHADE);
+      for (let ty = y + 1; ty < c.bottom; ty++) { wear(c, x, ty, T.ACCENT); wear(c, x + 1, ty, T.ACCENT_SHADE); }
+      wear(c, x, c.bottom, T.ACCENT);
+      wear(c, x + 1, c.bottom, T.ACCENT);
     },
   },
 

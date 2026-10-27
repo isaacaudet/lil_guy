@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -9603,10 +9628,10 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const e = f.eyes[0], left = e.left - (e.right === e.left ? 1 : 0);
-			for (let y = f.top; y <= f.line; y++) for (let x = left; x <= e.right; x++) c.set(x, y, T.ACCENT_SHADE);
-			c.set(left, f.top, T.ACCENT);
-			for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
+			const e = f.eyes[0], left = e.left - 1, top = f.top - 1;
+			for (let y = top; y <= f.line; y++) for (let x = left; x <= e.right; x++) if (c.isBody(x, y)) c.set(x, y, T.EYE);
+			if (c.isBody(left, top)) c.set(left, top, T.WHITE);
+			for (let i = 1, x = e.right, y = top; c.isBody(x + i, y - i + 1) && y - i + 1 > c.tip; i++) c.set(x + i, y - i + 1, T.EYE);
 		}
 	},
 	{
@@ -9624,11 +9649,16 @@ const accessories = [
 		name: "medal",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = c.neck;
-			wear(c, x, y, T.ACCENT);
-			wear(c, x + 1, y, T.ACCENT_SHADE);
-			wear(c, x, y + 1, T.GOLD);
-			wear(c, x + 1, y + 1, T.GOLD_SHADE);
+			const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
+			const disc = Math.min(y + 1, c.bottom - 1);
+			if (disc > y) {
+				wear(c, x - 1, y, T.ACCENT);
+				wear(c, x + 2, y, T.ACCENT_SHADE);
+			}
+			wear(c, x, disc, T.GOLD);
+			wear(c, x + 1, disc, T.GOLD_SHADE);
+			wear(c, x, disc + 1, T.GOLD_SHADE);
+			wear(c, x + 1, disc + 1, T.GOLD_SHADE);
 		}
 	},
 	{
@@ -9653,15 +9683,16 @@ const accessories = [
 		name: "necktie",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = c.neck;
+			const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
+			if (y > c.bottom - 1) return;
 			wear(c, x, y, T.ACCENT_SHADE);
 			wear(c, x + 1, y, T.ACCENT_SHADE);
 			for (let ty = y + 1; ty < c.bottom; ty++) {
 				wear(c, x, ty, T.ACCENT);
-				wear(c, x + 1, ty, T.ACCENT);
+				wear(c, x + 1, ty, T.ACCENT_SHADE);
 			}
-			wear(c, x, c.bottom, T.ACCENT_SHADE);
-			wear(c, x + 1, c.bottom, T.ACCENT_SHADE);
+			wear(c, x, c.bottom, T.ACCENT);
+			wear(c, x + 1, c.bottom, T.ACCENT);
 		}
 	},
 	{
@@ -11042,5 +11073,586 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, special, starter, steps, tallyMarks, temperTint, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-CK6Znxhl.js.map
+Object.defineProperty(exports, 'AURAS', {
+  enumerable: true,
+  get: function () {
+    return AURAS;
+  }
+});
+Object.defineProperty(exports, 'AURA_ODDS', {
+  enumerable: true,
+  get: function () {
+    return AURA_ODDS;
+  }
+});
+Object.defineProperty(exports, 'DEAL_PREFIX', {
+  enumerable: true,
+  get: function () {
+    return DEAL_PREFIX;
+  }
+});
+Object.defineProperty(exports, 'DEEP_BLUE_PRINTS', {
+  enumerable: true,
+  get: function () {
+    return DEEP_BLUE_PRINTS;
+  }
+});
+Object.defineProperty(exports, 'EFFECTS', {
+  enumerable: true,
+  get: function () {
+    return EFFECTS;
+  }
+});
+Object.defineProperty(exports, 'FINISHES', {
+  enumerable: true,
+  get: function () {
+    return FINISHES;
+  }
+});
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'FX_IDS', {
+  enumerable: true,
+  get: function () {
+    return FX_IDS;
+  }
+});
+Object.defineProperty(exports, 'GAMES', {
+  enumerable: true,
+  get: function () {
+    return GAMES;
+  }
+});
+Object.defineProperty(exports, 'GOLD_RIM_DAYS', {
+  enumerable: true,
+  get: function () {
+    return GOLD_RIM_DAYS;
+  }
+});
+Object.defineProperty(exports, 'GRADES', {
+  enumerable: true,
+  get: function () {
+    return GRADES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'LAYER', {
+  enumerable: true,
+  get: function () {
+    return LAYER;
+  }
+});
+Object.defineProperty(exports, 'LOOP_MS', {
+  enumerable: true,
+  get: function () {
+    return LOOP_MS;
+  }
+});
+Object.defineProperty(exports, 'LUCKY_ODDS', {
+  enumerable: true,
+  get: function () {
+    return LUCKY_ODDS;
+  }
+});
+Object.defineProperty(exports, 'MAX_PINS', {
+  enumerable: true,
+  get: function () {
+    return MAX_PINS;
+  }
+});
+Object.defineProperty(exports, 'ONE_OF_ONE_AURAS', {
+  enumerable: true,
+  get: function () {
+    return ONE_OF_ONE_AURAS;
+  }
+});
+Object.defineProperty(exports, 'PAINTABLE', {
+  enumerable: true,
+  get: function () {
+    return PAINTABLE;
+  }
+});
+Object.defineProperty(exports, 'PAINTS', {
+  enumerable: true,
+  get: function () {
+    return PAINTS;
+  }
+});
+Object.defineProperty(exports, 'PAINT_IDS', {
+  enumerable: true,
+  get: function () {
+    return PAINT_IDS;
+  }
+});
+Object.defineProperty(exports, 'PINS', {
+  enumerable: true,
+  get: function () {
+    return PINS;
+  }
+});
+Object.defineProperty(exports, 'RETIRED_EYES', {
+  enumerable: true,
+  get: function () {
+    return RETIRED_EYES;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, 'SHOWPIECE_WEIGHT', {
+  enumerable: true,
+  get: function () {
+    return SHOWPIECE_WEIGHT;
+  }
+});
+Object.defineProperty(exports, 'SMALL_SIZE', {
+  enumerable: true,
+  get: function () {
+    return SMALL_SIZE;
+  }
+});
+Object.defineProperty(exports, 'T', {
+  enumerable: true,
+  get: function () {
+    return T;
+  }
+});
+Object.defineProperty(exports, 'WEAR', {
+  enumerable: true,
+  get: function () {
+    return WEAR;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'accessoryWeights', {
+  enumerable: true,
+  get: function () {
+    return accessoryWeights;
+  }
+});
+Object.defineProperty(exports, 'applyFx', {
+  enumerable: true,
+  get: function () {
+    return applyFx;
+  }
+});
+Object.defineProperty(exports, 'armWeights', {
+  enumerable: true,
+  get: function () {
+    return armWeights;
+  }
+});
+Object.defineProperty(exports, 'auraById', {
+  enumerable: true,
+  get: function () {
+    return auraById;
+  }
+});
+Object.defineProperty(exports, 'auraCells', {
+  enumerable: true,
+  get: function () {
+    return auraCells;
+  }
+});
+Object.defineProperty(exports, 'auraColor', {
+  enumerable: true,
+  get: function () {
+    return auraColor;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'bodyWeights', {
+  enumerable: true,
+  get: function () {
+    return bodyWeights;
+  }
+});
+Object.defineProperty(exports, 'cheekWeights', {
+  enumerable: true,
+  get: function () {
+    return cheekWeights;
+  }
+});
+Object.defineProperty(exports, 'cheeks', {
+  enumerable: true,
+  get: function () {
+    return cheeks;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'cycle', {
+  enumerable: true,
+  get: function () {
+    return cycle;
+  }
+});
+Object.defineProperty(exports, 'dealOf', {
+  enumerable: true,
+  get: function () {
+    return dealOf;
+  }
+});
+Object.defineProperty(exports, 'decode', {
+  enumerable: true,
+  get: function () {
+    return decode;
+  }
+});
+Object.defineProperty(exports, 'dress', {
+  enumerable: true,
+  get: function () {
+    return dress;
+  }
+});
+Object.defineProperty(exports, 'encode', {
+  enumerable: true,
+  get: function () {
+    return encode;
+  }
+});
+Object.defineProperty(exports, 'eyeWeights', {
+  enumerable: true,
+  get: function () {
+    return eyeWeights;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'faceOf', {
+  enumerable: true,
+  get: function () {
+    return faceOf;
+  }
+});
+Object.defineProperty(exports, 'fit', {
+  enumerable: true,
+  get: function () {
+    return fit;
+  }
+});
+Object.defineProperty(exports, 'fitLoop', {
+  enumerable: true,
+  get: function () {
+    return fitLoop;
+  }
+});
+Object.defineProperty(exports, 'footWeights', {
+  enumerable: true,
+  get: function () {
+    return footWeights;
+  }
+});
+Object.defineProperty(exports, 'freeItem', {
+  enumerable: true,
+  get: function () {
+    return freeItem;
+  }
+});
+Object.defineProperty(exports, 'fxColor', {
+  enumerable: true,
+  get: function () {
+    return fxColor;
+  }
+});
+Object.defineProperty(exports, 'gameItems', {
+  enumerable: true,
+  get: function () {
+    return gameItems;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'gradeOf', {
+  enumerable: true,
+  get: function () {
+    return gradeOf;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hairWeights', {
+  enumerable: true,
+  get: function () {
+    return hairWeights;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'headWeights', {
+  enumerable: true,
+  get: function () {
+    return headWeights;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'inSeason', {
+  enumerable: true,
+  get: function () {
+    return inSeason;
+  }
+});
+Object.defineProperty(exports, 'itemById', {
+  enumerable: true,
+  get: function () {
+    return itemById;
+  }
+});
+Object.defineProperty(exports, 'itemWeight', {
+  enumerable: true,
+  get: function () {
+    return itemWeight;
+  }
+});
+Object.defineProperty(exports, 'items', {
+  enumerable: true,
+  get: function () {
+    return items;
+  }
+});
+Object.defineProperty(exports, 'luckyPalette', {
+  enumerable: true,
+  get: function () {
+    return luckyPalette;
+  }
+});
+Object.defineProperty(exports, 'mouthWeights', {
+  enumerable: true,
+  get: function () {
+    return mouthWeights;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'nameOf', {
+  enumerable: true,
+  get: function () {
+    return nameOf;
+  }
+});
+Object.defineProperty(exports, 'nebulaPhase', {
+  enumerable: true,
+  get: function () {
+    return nebulaPhase;
+  }
+});
+Object.defineProperty(exports, 'paint', {
+  enumerable: true,
+  get: function () {
+    return paint;
+  }
+});
+Object.defineProperty(exports, 'painted', {
+  enumerable: true,
+  get: function () {
+    return painted;
+  }
+});
+Object.defineProperty(exports, 'paletteOf', {
+  enumerable: true,
+  get: function () {
+    return paletteOf;
+  }
+});
+Object.defineProperty(exports, 'paletteWeights', {
+  enumerable: true,
+  get: function () {
+    return paletteWeights;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'pinById', {
+  enumerable: true,
+  get: function () {
+    return pinById;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'roll', {
+  enumerable: true,
+  get: function () {
+    return roll;
+  }
+});
+Object.defineProperty(exports, 'rollFx', {
+  enumerable: true,
+  get: function () {
+    return rollFx;
+  }
+});
+Object.defineProperty(exports, 'rollSeason', {
+  enumerable: true,
+  get: function () {
+    return rollSeason;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+Object.defineProperty(exports, 'shadeWeights', {
+  enumerable: true,
+  get: function () {
+    return shadeWeights;
+  }
+});
+Object.defineProperty(exports, 'shows', {
+  enumerable: true,
+  get: function () {
+    return shows;
+  }
+});
+Object.defineProperty(exports, 'slotOf', {
+  enumerable: true,
+  get: function () {
+    return slotOf;
+  }
+});
+Object.defineProperty(exports, 'special', {
+  enumerable: true,
+  get: function () {
+    return special;
+  }
+});
+Object.defineProperty(exports, 'starter', {
+  enumerable: true,
+  get: function () {
+    return starter;
+  }
+});
+Object.defineProperty(exports, 'steps', {
+  enumerable: true,
+  get: function () {
+    return steps;
+  }
+});
+Object.defineProperty(exports, 'tallyMarks', {
+  enumerable: true,
+  get: function () {
+    return tallyMarks;
+  }
+});
+Object.defineProperty(exports, 'temperTint', {
+  enumerable: true,
+  get: function () {
+    return temperTint;
+  }
+});
+Object.defineProperty(exports, 'wave', {
+  enumerable: true,
+  get: function () {
+    return wave;
+  }
+});
+Object.defineProperty(exports, 'wearOf', {
+  enumerable: true,
+  get: function () {
+    return wearOf;
+  }
+});
+Object.defineProperty(exports, 'withItems', {
+  enumerable: true,
+  get: function () {
+    return withItems;
+  }
+});
+Object.defineProperty(exports, 'withoutRetired', {
+  enumerable: true,
+  get: function () {
+    return withoutRetired;
+  }
+});
+Object.defineProperty(exports, 'wrap', {
+  enumerable: true,
+  get: function () {
+    return wrap$1;
+  }
+});
+//# sourceMappingURL=paint-BoPLa4Z0.cjs.map

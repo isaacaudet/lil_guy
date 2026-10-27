@@ -2502,10 +2502,10 @@ const accessories = [
 		draw: (c) => {
 			const f = c.face;
 			if (!f || !f.eyes.length) return;
-			const e = f.eyes[0], left = e.left - (e.right === e.left ? 1 : 0);
-			for (let y = f.top; y <= f.line; y++) for (let x = left; x <= e.right; x++) c.set(x, y, T.ACCENT_SHADE);
-			c.set(left, f.top, T.ACCENT);
-			for (let i = 1, x = e.right, y = f.top - 1; c.isBody(x + i, y - i) && y - i > c.tip; i++) c.set(x + i, y - i, T.OUTLINE);
+			const e = f.eyes[0], left = e.left - 1, top = f.top - 1;
+			for (let y = top; y <= f.line; y++) for (let x = left; x <= e.right; x++) if (c.isBody(x, y)) c.set(x, y, T.EYE);
+			if (c.isBody(left, top)) c.set(left, top, T.WHITE);
+			for (let i = 1, x = e.right, y = top; c.isBody(x + i, y - i + 1) && y - i + 1 > c.tip; i++) c.set(x + i, y - i + 1, T.EYE);
 		}
 	},
 	{
@@ -2523,11 +2523,16 @@ const accessories = [
 		name: "medal",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = c.neck;
-			wear$1(c, x, y, T.ACCENT);
-			wear$1(c, x + 1, y, T.ACCENT_SHADE);
-			wear$1(c, x, y + 1, T.GOLD);
-			wear$1(c, x + 1, y + 1, T.GOLD_SHADE);
+			const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
+			const disc = Math.min(y + 1, c.bottom - 1);
+			if (disc > y) {
+				wear$1(c, x - 1, y, T.ACCENT);
+				wear$1(c, x + 2, y, T.ACCENT_SHADE);
+			}
+			wear$1(c, x, disc, T.GOLD);
+			wear$1(c, x + 1, disc, T.GOLD_SHADE);
+			wear$1(c, x, disc + 1, T.GOLD_SHADE);
+			wear$1(c, x + 1, disc + 1, T.GOLD_SHADE);
 		}
 	},
 	{
@@ -2552,15 +2557,16 @@ const accessories = [
 		name: "necktie",
 		layer: "body",
 		draw: (c) => {
-			const x = Math.floor(c.centre) - 1, y = c.neck;
+			const x = Math.floor(c.centre) - 1, y = Math.max(c.neck, (c.face?.mouthBottom ?? 0) + 2);
+			if (y > c.bottom - 1) return;
 			wear$1(c, x, y, T.ACCENT_SHADE);
 			wear$1(c, x + 1, y, T.ACCENT_SHADE);
 			for (let ty = y + 1; ty < c.bottom; ty++) {
 				wear$1(c, x, ty, T.ACCENT);
-				wear$1(c, x + 1, ty, T.ACCENT);
+				wear$1(c, x + 1, ty, T.ACCENT_SHADE);
 			}
-			wear$1(c, x, c.bottom, T.ACCENT_SHADE);
-			wear$1(c, x + 1, c.bottom, T.ACCENT_SHADE);
+			wear$1(c, x, c.bottom, T.ACCENT);
+			wear$1(c, x + 1, c.bottom, T.ACCENT);
 		}
 	},
 	{
