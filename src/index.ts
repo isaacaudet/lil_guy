@@ -84,3 +84,7 @@ export { ART_VERSION, GUY_WIDTH, GUY_HEIGHT, bakeGuy, bakeCard, bakeView, bakedI
 export { defineLilGuyHere as defineLilGuy } from "./bake";
 export { BAKED_SIZE, type View } from "./guy-code";
 export type { LilGuyOptions } from "./element";
+
+export { PAINTS, PAINT_IDS, PAINTABLE, painted } from "./paints";
+export type { PaintId } from "./paints";
+export { smeltValue, craftable, craftCopy, metalText, metalCoins, CRAFT_COST, PAINT_COST, SCRAP, RECLAIMED, REFINED } from "./craft";

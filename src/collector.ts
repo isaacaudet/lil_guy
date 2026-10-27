@@ -1,6 +1,7 @@
 import { FINISHES, WEAR, special, type Owned } from './owned';
 import { EFFECTS } from './effects';
 import { itemById } from './items';
+import { PAINTS } from './paints';
 
 /**
  * What a collector looks for in a copy beyond its grade: the small facts that
@@ -56,6 +57,8 @@ export function collectorNotes(o: Owned): Note[] {
   // What happened to it.
   if (o.souvenir) notes.push({ id: 'souvenir', name: 'Souvenir', why: `From the free capsule for finishing every game on ${o.souvenir}. It can never be opened again.`, oneIn: 1 });
   if (o.tally !== undefined) notes.push({ id: 'tally', name: `Tally ${o.tally.toLocaleString('en-US')}`, why: 'Counts the days its owner finished their games wearing it. One copy in ten has one.', oneIn: 10 });
+  if (o.craft !== undefined) notes.push({ id: 'craft', name: `Craft #${o.craft.toLocaleString('en-US')}`, why: o.craft <= 100 ? 'Crafted from metal, one of the first hundred ever crafted.' : 'Crafted from metal: the item its maker chose.', oneIn: o.craft <= 100 ? 100 : 1 });
+  if (o.paint) notes.push({ id: 'paint', name: PAINTS[o.paint].name, why: 'Painted by its owner. It scrapes off.', oneIn: 1 });
   if (o.pins?.length) notes.push({ id: 'pins', name: `${o.pins.length} pin${o.pins.length === 1 ? '' : 's'}`, why: 'Earned in the games and stuck on for good.', oneIn: 1 });
 
   return notes.sort((a, b) => b.oneIn - a.oneIn);

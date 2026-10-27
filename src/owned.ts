@@ -3,6 +3,7 @@ import { AURAS, AURA_ODDS } from './auras';
 import { EFFECTS, FX_IDS, rollFx, type Fx } from './effects';
 import { gameItems, freeItem, inSeason, itemById, itemWeight, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
+import { PAINT_IDS, type PaintId } from './paints';
 import type { GameId } from './types';
 
 /**
@@ -19,7 +20,9 @@ import type { GameId } from './types';
  *   are ordinary; a few are famous (a Deep Blue Tempered, a Red Giant or
  *   Black Hole Nebula)
  * - sometimes a **tally**: a counter of the days its owner finished the game
- *   while wearing it
+ *   while wearing it (a Strange copy, as TF2 calls it)
+ * - a **craft number** if it was crafted from metal (see ./craft), and a
+ *   **paint** if someone painted it (see ./paints)
  *
  * Two copies of the same item are almost never the same: the scuff alone has
  * millions of values. Everything is deterministic from the stored numbers, so
@@ -46,6 +49,10 @@ export interface Owned {
   souvenir?: string;
   /** A rare effect on top of the finish (see ./effects). */
   fx?: Fx;
+  /** Crafted from metal: which craft it was, counting every copy ever crafted. */
+  craft?: number;
+  /** A hat or a buddy's paint (see ./paints). */
+  paint?: PaintId;
 }
 
 export const GRADES = [
@@ -142,7 +149,7 @@ export function gradeOf(o: Owned): Grade {
 export function nameOf(o: Owned): string {
   const item = itemById(o.item);
   const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
-  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : '') + (o.tally !== undefined ? 'Tallied ' : '');
+  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : '') + (o.tally !== undefined ? 'Strange ' : '');
   if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === 'classic' ? '' : ` | ${FINISHES[o.finish].name}`}`;
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
@@ -164,6 +171,8 @@ export function encode(o: Owned): string {
   if (o.date) parts.push(`d${o.date}`);
   if (o.souvenir) parts.push(`s${o.souvenir}`);
   if (o.fx) parts.push(`x${o.fx}`);
+  if (o.craft !== undefined) parts.push(`c${o.craft}`);
+  if (o.paint) parts.push(`k${o.paint}`);
   return parts.join('~');
 }
 
@@ -178,6 +187,8 @@ export function decode(s: string): Owned | null {
     if (part.startsWith('d') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
     if (part.startsWith('s') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
     if (part.startsWith('x') && (FX_IDS as string[]).includes(part.slice(1))) o.fx = part.slice(1) as Fx;
+    if (part.startsWith('c') && /^\d{1,9}$/.test(part.slice(1))) o.craft = Number(part.slice(1));
+    if (part.startsWith('k') && (PAINT_IDS as string[]).includes(part.slice(1))) o.paint = part.slice(1) as PaintId;
     if (part.startsWith('p')) {
       const pins = part.slice(1).split('+').filter(id => pinById(id)).slice(0, MAX_PINS);
       if (pins.length) o.pins = pins;

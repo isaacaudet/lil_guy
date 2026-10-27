@@ -164,7 +164,7 @@ describe('seasonal items', () => {
     expect(o.item).toBe('club.pumpkin');
     expect(o.date).toBe('2026-10-31');
     expect(decode(encode(o))).toEqual(o);
-    expect(nameCopy(o).startsWith('2026 Pumpkin') || nameCopy(o).startsWith('Tallied 2026 Pumpkin')).toBe(true);
+    expect(nameCopy(o).startsWith('2026 Pumpkin') || nameCopy(o).startsWith('Strange 2026 Pumpkin')).toBe(true);
     expect(rollSeason('s1', '2026-02-20')).toBeNull();
   });
 });

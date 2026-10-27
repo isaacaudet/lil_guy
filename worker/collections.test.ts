@@ -7,7 +7,7 @@ import { decode, encode } from '../src/index-headless.ts';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
@@ -335,4 +335,43 @@ test('without the parts table (before migration 0007) capsules still open', asyn
   for (let i = 0; i < 12; i++) expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.parts).toEqual([]);
+});
+
+test('TF2 crafting: smelt spare copies into metal, craft the item you want with its number, paint it', async () => {
+  const c = await claim('mia');
+  const ids: number[] = [];
+  for (let i = 0; i < 12; i++) ids.push(((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).copy.id);
+  const s0: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s0.metal).toBe(0);
+  // Starters never smelt; capsule copies do, by grade.
+  const starter = s0.copies.find((x: any) => x.source === 'starter').id;
+  const sm: any = await (await call('/me/mia/smelt', 'POST', { ids: [...ids, starter] }, auth(c.owner))).json();
+  expect(sm.metal).toBeGreaterThanOrEqual(9);
+  const s1: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s1.copies.some((x: any) => x.id === starter)).toBe(true);
+  // Craft exactly what you want; each crafted copy is numbered.
+  const cr = await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner));
+  expect(cr.status).toBe(201);
+  const made: any = await cr.json();
+  expect(decode(made.copy.code)!.item).toBe('puttsies.flag');
+  expect(decode(made.copy.code)!.craft).toBe(1);
+  expect((await call('/me/mia/craft', 'POST', { item: 'trackdle.rocket' }, auth(c.owner))).status).toBe(400);
+  // Paint it, then scrape it off for free.
+  env.db.exec("UPDATE players SET metal = 5 WHERE key = 'mia'");
+  const p: any = await (await call('/me/mia/paint', 'POST', { id: made.copy.id, paint: 'pink-as-heck' }, auth(c.owner))).json();
+  expect(decode(p.copy.code)!.paint).toBe('pink-as-heck');
+  expect(p.metal).toBe(2);
+  const off: any = await (await call('/me/mia/paint', 'POST', { id: made.copy.id, paint: null }, auth(c.owner))).json();
+  expect(decode(off.copy.code)!.paint).toBeUndefined();
+  expect(off.metal).toBe(2);
+  expect((await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).status).toBe(402);
+});
+
+test('before migration 0008, crafting says it isn’t open and nothing else changes', async () => {
+  env.db.exec('ALTER TABLE players DROP COLUMN metal');
+  const c = await claim('mia');
+  expect((await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).status).toBe(503);
+  expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.metal).toBe(0);
 });

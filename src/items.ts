@@ -4,6 +4,7 @@ import { capRows, mirror, seat } from './parts/hair';
 import { decode, starter } from './owned';
 import { AURAS, ONE_OF_ONE_AURAS } from './auras';
 import type { Fx } from './effects';
+import { painted, PAINTABLE } from './paints';
 import type { AvatarConfig, GameId, Palette, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -2264,7 +2265,9 @@ export function withItems(palette: Palette, config: AvatarConfig): Palette {
   for (const slot of ['skin', 'hat', 'frame', 'buddy', 'aura'] as const) {
     const item = itemById(config[slot]);
     if (!item) continue;
-    item.colors.forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });
+    // A painted hat or buddy wears its paint (./paints).
+    const paint = (PAINTABLE as readonly string[]).includes(slot) ? config.owned?.[slot as 'hat' | 'buddy']?.paint : undefined;
+    painted(item.colors, paint).forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });
     if (slot === 'skin') {
       if (item.outline) colors[T.OUTLINE] = item.outline;
       // The face is drawn on the skin now, so its ink follows the skin.

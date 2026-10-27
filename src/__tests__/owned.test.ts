@@ -32,7 +32,7 @@ describe('owned copies', () => {
     expect(gradeOf(t(661)).name).toBe('Mythic');
     expect(gradeOf(t(117)).name).toBe('Prized');
     expect(nameOf({ item: 'puttsies.ball', finish: 'nebula', scuff: 0.01, print: 20, tally: 0 }))
-      .toBe('Tallied Golf ball | Red Giant');
+      .toBe('Strange Golf ball | Red Giant');
     expect(nameOf({ item: 'stackdle.block', finish: 'tempered', scuff: 0.1, print: 661 })).toBe('Toy block | Deep Blue');
   });
 

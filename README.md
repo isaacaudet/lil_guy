@@ -479,7 +479,7 @@ a famous print if it has one, a scuff at least that low, and a tally.
 | Gold, Box Fresh | ~1,500 |
 | Nebula Red Giant / Blue Moon / Black Hole | ~12,500–25,000 |
 | Tempered Deep Blue | ~1 million |
-| Tallied Deep Blue at 0.002 | ~300 million |
+| Strange Deep Blue at 0.002 | ~300 million |
 
 `equip` takes item ids or encoded copies. This library only draws them and
 rolls them; who owns which, and what it costs, belongs to the game or the club.

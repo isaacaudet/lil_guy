@@ -4,6 +4,7 @@ import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
   cleanTag, tradeFloat, rollPart, partCode, unlocksOf, pickable, PART_REFUND,
+  smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE,
 } from '../src/index-headless.ts';
 
 const json = (body, status = 200, extra = {}) => Response.json(body, {
@@ -175,7 +176,7 @@ async function meState(env, name) {
   const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all();
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
+  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
     swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
@@ -322,6 +323,56 @@ async function me(request, env, key, action) {
     if (body.id != null) await env.DB.prepare('UPDATE copies SET worn = 1 WHERE id = ? AND key = ?').bind(Number(body.id), key).run();
     return json({ ok: true });
   }
+  // Crafting, as in TF2: smelt copies into metal, craft the item you want, paint a hat or a buddy.
+  if (action === 'smelt' || action === 'craft' || action === 'paint') {
+    try { await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first(); }
+    catch { return json({ error: 'Crafting isn’t open yet' }, 503); }
+  }
+  if (action === 'smelt') {
+    const ids = Array.isArray(body.ids) ? [...new Set(body.ids.map(Number).filter(Number.isInteger))].slice(0, 50) : [];
+    if (!ids.length) return json({ error: 'Pick copies to smelt' }, 400);
+    let metal = 0;
+    for (const id of ids) {
+      const c = await env.DB.prepare(`SELECT * FROM copies WHERE id = ? AND key = ? AND worn = 0 AND ${MOVABLE}`).bind(id, key).first();
+      if (!c) continue;
+      if (await env.DB.prepare("SELECT 1 FROM swaps WHERE state = 'open' AND (give = ? OR want = ?)").bind(id, id).first()) continue;
+      const value = smeltValue(decode(c.code));
+      if (!value) continue;
+      const r = await env.DB.prepare('DELETE FROM copies WHERE id = ? AND key = ? AND worn = 0').bind(id, key).run();
+      if (r.meta.changes) metal += value;
+    }
+    if (!metal) return json({ error: 'None of those can be smelted' }, 409);
+    await env.DB.prepare('UPDATE players SET metal = metal + ? WHERE key = ?').bind(metal, key).run();
+    const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
+    return json({ smelted: metal, metal: p.metal });
+  }
+  if (action === 'craft') {
+    const item = itemById(body.item);
+    if (!craftable(item)) return json({ error: 'That can’t be crafted' }, 400);
+    const r = await env.DB.prepare('UPDATE players SET metal = metal - ? WHERE key = ? AND metal >= ?').bind(CRAFT_COST, key, CRAFT_COST).run();
+    if (!r.meta.changes) return json({ error: 'Not enough metal' }, 402);
+    const count = await env.DB.prepare("INSERT INTO counters(name, n) VALUES ('craft', 1) ON CONFLICT(name) DO UPDATE SET n = n + 1 RETURNING n").first();
+    const copy = await insertCopy(env, copyRow(craftCopy(item.id, crypto.randomUUID(), count.n), key, 'craft'));
+    const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
+    return json({ copy: publicCopy(copy), metal: p.metal }, 201);
+  }
+  if (action === 'paint') {
+    const paint = body.paint == null ? null : String(body.paint);
+    if (paint && !PAINT_IDS.includes(paint)) return json({ error: 'Unknown paint' }, 400);
+    const c = await env.DB.prepare('SELECT * FROM copies WHERE id = ? AND key = ?').bind(Number(body.id), key).first();
+    if (!c || !PAINTABLE.includes(c.slot)) return json({ error: 'Only your hats and buddies take paint' }, 404);
+    const o = decode(c.code);
+    if ((o.paint ?? null) === paint) return json({ copy: publicCopy(c) });
+    // Painting costs metal; scraping it off is free.
+    if (paint) {
+      const r = await env.DB.prepare('UPDATE players SET metal = metal - ? WHERE key = ? AND metal >= ?').bind(PAINT_COST, key, PAINT_COST).run();
+      if (!r.meta.changes) return json({ error: 'Not enough metal' }, 402);
+      o.paint = paint;
+    } else delete o.paint;
+    await env.DB.prepare('UPDATE copies SET code = ? WHERE id = ? AND key = ?').bind(encode(o), c.id, key).run();
+    const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
+    return json({ copy: publicCopy({ ...c, code: encode(o) }), metal: p.metal });
+  }
   if (action === 'look') {
     const look = typeof body.look === 'string' ? body.look : '';
     if (look && !decodeLook(look, dealt(name.seed), unlocksOf(await partsOf(env, key)))) return json({ error: 'That look isn’t yours to pick' }, 400);
@@ -397,7 +448,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const { results } = await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all();
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|paint)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);
