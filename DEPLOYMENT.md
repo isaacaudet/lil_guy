@@ -103,7 +103,7 @@ above apply every pending migration) before deploying a Worker that reads it.
   - `POST /api/me/:key/wear {slot, id|null}`: only your own copy, for its own slot.
   - `POST /api/me/:key/look {look}`: only parts `decodeLook` allows for your dealt guy.
 - Public, never with owner tokens:
-  - `GET /api/guys?sort=rarest|recent&q=`: every guy with what he wears and his best copy.
+  - `GET /api/guys?sort=rarest|recent&q=`: every guy with what it wears and its best copy.
   - `GET /api/guys/:key`: one player's guy and collection.
   - `GET /api/market?grade=&game=&slot=&finish=&key=&sort=rarest|float|newest`: every
     copy from a capsule (starters aside).

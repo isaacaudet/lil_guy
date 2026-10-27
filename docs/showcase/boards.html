@@ -110,7 +110,7 @@
 
   <section id="board">
     <h2>On a leaderboard</h2>
-    <p class="lede">Every row shows the guy in what he wears, as a still. Only the top three and your own row move; any row moves while you point at it. Before the library has even loaded, each face square already shows its best copy's grade as a coloured bar, from one number in the row.</p>
+    <p class="lede">Every row shows the guy in what it wears, as a still. Only the top three and your own row move; any row moves while you point at it. Before the library has even loaded, each face square already shows its best copy's grade as a coloured bar, from one number in the row.</p>
     <div class="split">
       <div class="panel"><ol class="board" id="board-list"></ol></div>
       <div style="display:grid;gap:14px">
@@ -132,7 +132,7 @@
 
   <section id="game">
     <h2>In a game</h2>
-    <p class="lede">The results screen gets the same guy in the same items. He cheers on a good day and sulks on a bad one; the game asks club.js for a move and gets frames back.</p>
+    <p class="lede">The results screen gets the same guy in the same items. It cheers on a good day and sulks on a bad one; the game asks club.js for a move and gets frames back.</p>
     <div class="game">
       <canvas class="px" id="game-guy" width="16" height="20" style="width:128px;height:160px;background:transparent"></canvas>
       <div style="display:grid;gap:8px">
@@ -251,15 +251,15 @@
     const steps = [
       { title: 'A name', text: 'A player arrives with a club id. The board shows their nickname, or a generated name until they pick one.',
         figs: `<span class="chip" style="font-size:18px">${esc(name)}</span>` },
-      { title: 'The guy', text: `The name picks every part: shape, eyes, mouth, cheeks, topper, markings, accessory and colour, plus a 1 in ${LG.LUCKY_ODDS} chance of Lucky. Same name, same guy, everywhere. A picked look can pin him.`,
+      { title: 'The guy', text: `The name picks every part: shape, eyes, mouth, cheeks, topper, markings, accessory and colour, plus a 1 in ${LG.LUCKY_ODDS} chance of Lucky. Same name, same guy, everywhere. A picked look can pin it.`,
         figs: `<figure class="fig">${px(16, 20, 'width:96px;height:120px')}<figcaption><b>${esc(name)}</b>1 in ${Math.round(LG.guyOneIn(c)).toLocaleString('en-US')}</figcaption></figure><div class="chips" style="max-width:420px">${traits.map(t => `<span class="chip">${esc(t.name)}</span>`).join('')}</div>`, draw: [[name, []]] },
       { title: 'Starter copies', text: 'Every player owns each game\'s free hat from the start: Plain, with its own scuff and print, so no two are quite the same. These should be made once on the server and stored, so a rename never changes them.',
         figs: starters.map(o => `<figure class="fig">${px(16, 20, 'width:56px;height:70px')}<figcaption><b>${esc(LG.itemById(o.item).name)}</b>${LG.wearOf(o.scuff).short} · #${o.print}</figcaption></figure>`).join(''), draw: starters.map(o => [name, [LG.encode(o)]]) },
-      { title: 'What he wears', text: 'In a game he wears that game\'s free hat until he picks something else; on the club\'s boards he wears his chosen loadout, and nothing until he chooses one.',
-        figs: `<figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>In Puttsies</b>his golf visor</figcaption></figure><figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>On the club</b>no loadout yet</figcaption></figure>`, draw: [[name, [LG.encode(puttsies)]], [name, []]] },
+      { title: 'What it wears', text: 'In a game it wears that game\'s free hat until the player picks something else; on the club\'s boards it wears the chosen loadout, and nothing until one is chosen.',
+        figs: `<figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>In Puttsies</b>a golf visor</figcaption></figure><figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>On the club</b>no loadout yet</figcaption></figure>`, draw: [[name, [LG.encode(puttsies)]], [name, []]] },
       { title: 'Earning more', text: 'Finishing the day\'s gauntlet drops a copy, rolled from a seed the server makes. A tallied copy counts the days it\'s worn; pins come from things done in the games. All of it is stored on the server.',
         figs: `<figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>Today's drop</b>${esc(LG.nameOf(drop))}</figcaption></figure><figure class="fig">${px(16, 20, 'width:72px;height:90px')}<figcaption><b>Weeks later</b>42-day tally, a gold star pin</figcaption></figure>`, draw: [[name, [LG.encode(drop)]], [name, [LG.encode(later)]]] },
-      { title: 'Shown everywhere', text: 'Boards, cards and games all draw the same three strings (name, look, wear) with the same library, so he looks the same in each.',
+      { title: 'Shown everywhere', text: 'Boards, cards and games all draw the same three strings (name, look, wear) with the same library, so it looks the same in each.',
         figs: `<a href="#board" class="chip">See the board below</a><a href="#game" class="chip">and a game</a>` },
     ];
     $('steps').innerHTML = steps.map(s => `<div class="step"><span class="num" aria-hidden="true"></span><div class="body"><h3>${s.title}</h3><p>${s.text}</p><div class="strip">${s.figs}</div></div></div>`).join('');

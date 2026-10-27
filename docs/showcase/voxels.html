@@ -217,7 +217,7 @@
       floorAt(scene, -fig.H / 2, 0, accent);
       $('wearing').innerHTML = guy.equip.map(c => { const o = LG.decode(c), g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
         return `<div class="worn" style="--g:${g.color}"><b>${title}</b><span>${look || 'Plain'}</span><small>${g.name} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</small></div>`; }).join('') ||
-        '<div class="worn" style="--g:#9aa6c8"><b>Just him</b><span>No items</span></div>';
+        '<div class="worn" style="--g:#9aa6c8"><b>Just the guy</b><span>No items</span></div>';
       chips();
     }
     function chips() {

@@ -37,7 +37,7 @@ Pass any string — an email, username, wallet address — and get back a cute, 
 
 Works everywhere: React component with 3D hover + blink animation, headless SVG/PNG generation, Next.js image API route, or plain `<script>` tag.
 
-**[Make yours →](https://isaacaudet.github.io/lil_guy/)** — type anything, get your guy, save him as a PNG with or without his name, and claim him to your wall: the word stays in your browser and is never shown, only the character it makes. Tap one drifting past, or any one you find out in the gallery, and you can take that one instead. Behind it is the gallery: an endless plane where each cell's coordinates *are* the seed, so there is no list and no edge. Order it by colour to walk the spectrum, or leave it scattered. The lattice is a spring mesh, so it stretches behind your hand and rings down when you let go.
+**[Make yours →](https://isaacaudet.github.io/lil_guy/)** — type anything, get your guy, save it as a PNG with or without its name, and claim it to your wall: the word stays in your browser and is never shown, only the character it makes. Tap one drifting past, or any one you find out in the gallery, and you can take that one instead. Behind it is the gallery: an endless plane where each cell's coordinates *are* the seed, so there is no list and no edge. Order it by colour to walk the spectrum, or leave it scattered. The lattice is a spring mesh, so it stretches behind your hand and rings down when you let go.
 
 ## Install
 
@@ -186,7 +186,7 @@ decorative (`aria-hidden`), which is what you want beside a visible username.
 
 At 36px and under it draws for a small size (`small`): each eye solid, dark ink
 darker, the soft highlight back to the body colour, and a square avatar cropped
-to the guy so he fills it. Pass `small: false` to keep the full drawing.
+to the guy so it fills it. Pass `small: false` to keep the full drawing.
 
 ### `toPng(input, options?)`
 
@@ -200,7 +200,7 @@ Creates a Next.js route handler. Returns `{ GET }`.
 
 Ten moves for games: `idle`, `blink`, `hop`, `wave`, `look`, `cheer`, `sad`,
 `dance`, `squish` and `sleep`. They take the same options as `toSvgString`, so a guy
-hops in the hat he is wearing.
+hops in the hat it is wearing.
 
 ```ts
 import { toAnimatedSvg, animate, frameAt, drawFrame } from "lil_guy";
@@ -213,10 +213,10 @@ const hop = animate("alice", "hop", { equip: [savedCopy] });
 drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);
 ```
 
-He changes his face for some of them: a laugh to cheer and dance, a wobbly
-mouth when sad, an "ooh" when squished. His own eyes always stay. Little
-emotes pop up beside him (music notes, a question mark, a heart, a "!"), and
-dust puffs out when he lands.
+A guy changes face for some of them: a laugh to cheer and dance, a wobbly
+mouth when sad, an "ooh" when squished. Its own eyes always stay. Little
+emotes pop up beside it (music notes, a question mark, a heart, a "!"), and
+dust puffs out when it lands.
 
 Players can show an emote over any move with `emote`. `EMOTE_UNLOCKS` lists
 them and how each is earned: a heart, music, a snooze, "huh?" and "whoa!"
@@ -224,18 +224,18 @@ for everyone, a flame for a 7-day streak and a crown for a perfect day.
 
 Frames are 16 wide and 20 tall: the guy stands in the bottom 16 rows exactly
 as in the still, and the top 4 are room to jump into. Every frame is made from
-his own pixels. A squash loses a row from the middle of the body and a stretch
+the guy's own pixels. A squash loses a row from the middle of the body and a stretch
 repeats one; a blink or a glance moves the eye pixels. Nothing is scaled.
 
-Rarity shows in the frames, so it reads without a shader. The best copy he is
+Rarity shows in the frames, so it reads without a shader. The best copy it is
 wearing sets how much:
 
 | Grade | In the frames |
 |---|---|
 | Everyday | nothing extra |
 | Special | a shine sweeps across the item |
-| Prized | and a ring in the grade's colour pulses round him |
-| Mythic | and sparkles, and a trail when he jumps |
+| Prized | and a ring in the grade's colour pulses round the guy |
+| Mythic | and sparkles, and a trail when it jumps |
 | ★ Grail | a gold ring, more sparkles and a gold trail |
 | ★ Aura | the aura itself, moving, in place of the ring |
 
@@ -246,7 +246,7 @@ move with the same SVG, so no timer runs in React.
 each pixel belongs to (`frame.slots`), so a shader can run each copy's finish
 on its own pixels. `createShine()` is that shader: one WebGL context to share
 across a page or a game. Draw a guy's frame into it, then copy the 16×20
-result into his canvas with `drawImage`. It returns null without WebGL; draw
+result into its canvas with `drawImage`. It returns null without WebGL; draw
 the frame's colours as they are.
 
 **Size.** The package is free of side effects, so a bundler keeps only what's
@@ -259,7 +259,7 @@ Club games do; pass `stillWhenReduced: true` to hold the first frame instead.
 
 ## Finished guys anywhere
 
-Every guy can be delivered finished: his move, aura, effects, emotes and his
+Every guy can be delivered finished: its move, aura, effects, emotes and its
 copies' finishes all baked into frames, the same pixels everywhere. One
 renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
 server, a page and a game all get the same picture.
@@ -267,9 +267,9 @@ server, a page and a game all get the same picture.
 ```html
 <!-- Any page: the picture from the lil guys Worker, no library on the page (1.7 KB gzipped). -->
 <script src="https://lilguys.dleclub.com/lil-guy-element.js"></script>
-<lil-guy name="mia" size="3"></lil-guy>              <!-- a claimed guy, as he's worn -->
+<lil-guy name="mia" size="3"></lil-guy>              <!-- a claimed guy, as it's worn -->
 <lil-guy seed="Sneaky Gumdrop" view="hop"></lil-guy> <!-- any text's guy, hopping -->
-<lil-guy name="mia" view="card" size="4"></lil-guy>  <!-- his card, shimmering -->
+<lil-guy name="mia" view="card" size="4"></lil-guy>  <!-- its card, shimmering -->
 ```
 
 Or the addresses themselves, `/g/<art version>/<guy>/<view>`:
@@ -278,14 +278,14 @@ Or the addresses themselves, `/g/<art version>/<guy>/<view>`:
 | --- | --- |
 | `<guy>` | a guy code (`guyCode({ seed, parts, palette, equip })`) or `@name` for a claimed name |
 | `idle.png`, `hop.png`… | the move looping, an animated PNG (plays in a plain `<img>`) |
-| `still.png` | his first frame, for dense lists |
-| `card.png`, `card-still.png` | his card, its shimmer looping |
+| `still.png` | its first frame, for dense lists |
+| `card.png`, `card-still.png` | its card, its shimmer looping |
 | `idle.sheet.png` + `idle.sheet.json` | the frames in a strip and their times, for a game's sprite |
 | `idle@4.png` | any of these scaled up by whole pixels (1 to 16) |
 
 A code's images never change for an art version (`ART_VERSION`), so they are
 cached for good; a redraw bumps the version and every board shows it at once.
-`@name` redirects to his code, so it follows what he wears. Show them at
+`@name` redirects to the guy's code, so it follows what it wears. Show them at
 whole-number sizes with `image-rendering: pixelated`.
 
 With the library on the page, `LilGuy.defineLilGuy()` makes `<lil-guy>` bake
@@ -381,7 +381,7 @@ recognisable everywhere.
 | Tiltsies | Hamster ball, Hamster, Marble, Acorn | Hamster ears, Hamster buddy, Sunflower seed, Hamster wheel | Toy maze, Spiral, Wood shavings | Hamlet, Rolly, Sunflower |
 | Trackdle | Racer, Traffic cone, Stopwatch, Tyre | Pit cap, Race helmet, Trophy, Race goggles | Checkered flag, Tarmac, Kerb | Turbo snail, Conelet, Go-kart |
 
-A **skin** turns the guy into the game's object and keeps his face.
+A **skin** turns the guy into the game's object and keeps its face.
 
 **Buddies.** Each game has three buddies, tiny pets that sit at the guy's
 feet, bottom right, in front of everything, with their own outline. Equip one
@@ -422,7 +422,7 @@ tally and pins, each with about how many copies have it.
 
 One capsule in a thousand (`AURA_ODDS`), from any machine, is an aura instead
 of the machine's item: an effect drawn in the empty pixels round the guy, never
-over him, that moves with him. There are twenty-four (`AURAS`): flames, orbit,
+over it, that moves with it. There are twenty-four (`AURAS`): flames, orbit,
 halo, sparkles, hearts, bubbles, rain cloud, lightning, music, snowfall,
 petals, galaxy, rainbow, glitch, fireflies, neon, echo, comet, butterflies,
 aurora, data rain, vortex, fireworks and ripple, and Origin, the founder's,

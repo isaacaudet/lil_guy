@@ -319,7 +319,7 @@
   </div>
 
   <section class="room" id="cool">
-    <header><h2>Rarest possible</h2><p id="cool-lede">Built from the parts, not found in names: the rarest trait in every slot. Each wears the rarest kind of copy as a frame, since a hat would cover the topper and a skin the shape. He moves on the left; the card shows him in it. Tap him to change his move.</p></header>
+    <header><h2>Rarest possible</h2><p id="cool-lede">Built from the parts, not found in names: the rarest trait in every slot. Each wears the rarest kind of copy as a frame, since a hat would cover the topper and a skin the shape. It moves on the left; the card shows it in that copy. Tap him to change his move.</p></header>
     <div class="cool" id="cool-grid"></div>
   </section>
 
@@ -357,8 +357,8 @@
   </section>
 
   <section class="room" id="moves">
-    <header><h2>Moves</h2><p>The library's animations, for the games. Every frame is drawn from the guy's own pixels, and the best copy he wears shows in them.</p></header>
-    <h3 class="room">In what he's wearing now</h3>
+    <header><h2>Moves</h2><p>The library's animations, for the games. Every frame is drawn from the guy's own pixels, and the best copy it wears shows in them.</p></header>
+    <h3 class="room">In what it's wearing now</h3>
     <div class="moves" id="moves-all"></div>
     <h3 class="room">Same hop, every grade</h3>
     <div class="moves" id="moves-grades"></div>
@@ -1061,7 +1061,7 @@ void main() {
       const gc = LG.gradeOf(g.copy).color;
       return `<figure class="star" style="--grade:${gc}">
         <div class="stage-row">
-          <button class="stage-btn" type="button" data-cool="${n}" aria-label="Change his move"><canvas width="16" height="20" aria-hidden="true"></canvas><span class="move">${g.move}</span></button>
+          <button class="stage-btn" type="button" data-cool="${n}" aria-label="Change its move"><canvas width="16" height="20" aria-hidden="true"></canvas><span class="move">${g.move}</span></button>
           <span class="card mini" style="--grade:${gc}">${px({ name: 'rarest', parts: g.parts, palette: g.palette, copies: [g.copy], label: { title: cap(traits[0].name), bottom: fmt(g.guy), g: 4 } })}</span>
         </div>
         <figcaption>
@@ -1590,7 +1590,7 @@ void main() {
     // Lucky guys from real names, beside how they'd look otherwise.
     const lucky = [];
     for (let i = 0; lucky.length < 5 && i < 20000; i++) { const n = 'luck' + i; if (baseResolve(n).lucky) lucky.push(n); }
-    $('x-lucky-note').textContent = `About one name in ${LG.LUCKY_ODDS}. Same guy, colours turned round the wheel, gold trim. Left: Lucky. Right: how he'd look otherwise.`;
+    $('x-lucky-note').textContent = `About one name in ${LG.LUCKY_ODDS}. Same guy, colours turned round the wheel, gold trim. Left: Lucky. Right: how it would look otherwise.`;
     $('x-lucky').innerHTML = lucky.map(n => {
       const c = baseResolve(n);
       return `<figure class="star" style="--grade:#E4AE39"><div class="stage-row" style="grid-template-columns:1fr 1fr">
