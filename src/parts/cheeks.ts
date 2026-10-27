@@ -31,16 +31,22 @@ export const cheeks: Cheeks[] = [
     '.......o..',
     '........o.',
   ]),
+  // A plaster stuck on at a slant, its pad in the middle.
   cheeks_('band-aid', [
-    '.......xx.',
+    '......xxc.',
+    '.......cxx',
   ]),
+  // Two bold stripes a side.
   cheeks_('war paint', [
     'rr......rr',
+    '..........',
+    'rr......rr',
   ]),
-  // Deep shade rather than outline: an outline-coloured cell at the edge
-  // would cost the body its own outline beside it.
+  // Three a side, fanning out from the cheek, in the face's ink.
   cheeks_('whiskers', [
-    'mm......mm',
+    'm........m',
+    'mmm....mmm',
+    'm........m',
   ]),
   cheeks_('hearts', [
     'r.r....r.r',
@@ -58,9 +64,10 @@ export const cheeks: Cheeks[] = [
     'yyy....yyy',
     '.y......y.',
   ]),
-  // The rarest: cheeks pressed with gold leaf.
+  // The rarest: cheeks pressed with a flake of gold leaf, catching the light.
   cheeks_('gold leaf', [
-    'yY......Yy',
+    '.y......y.',
+    'yYw....wYy',
   ]),
   cheeks_('flushed', [
     'cc......cc',
