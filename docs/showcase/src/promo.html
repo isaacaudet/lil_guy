@@ -153,9 +153,6 @@
   .ov .t.on-light:not(.foil):not(.gold) { color: #2a2340; text-shadow: 0 .6cqw 0 rgba(255, 255, 255, .45); }
   .ov .t.on-light.foil, .ov .t.on-light.gold { filter: drop-shadow(.4cqw 0 0 #1a1530) drop-shadow(-.4cqw 0 0 #1a1530) drop-shadow(0 .4cqw 0 #1a1530) drop-shadow(0 -.4cqw 0 #1a1530); }
   .ov .n { position: absolute; left: 9%; right: 22%; top: 88.3%; height: 6.6%; display: flex; align-items: center; font-size: 4.2cqw; line-height: 1; color: #6a6284; white-space: nowrap; overflow: hidden; }
-  @container (max-width: 170px) { .ov .n .x { display: none; } }
-  /* A full-art card's title sits in the top half of its band: the guy's hat pokes up into the bottom half. */
-  .ov.full .t { top: 4.8%; height: 7.1%; font-size: min(7cqw, calc(70cqw / (var(--n, 1) * .46))); }
   .ov .n.on-dark { color: #d9d2f0; text-shadow: 0 .4cqw 0 rgba(10, 8, 24, .6); }
   .ov .b.on-dark { color: #f4efff; text-shadow: 0 .5cqw 0 rgba(10, 8, 24, .6); }
 
@@ -1341,7 +1338,7 @@
   LG.defineLilGuy();
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   // The card a player keeps: drawn by the library, so the one on the page is the one they save.
-  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set ? setText(spec.label.set) || undefined : undefined, move });
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set || undefined, move });
   const libCards = new Set();
   function libCard(el, input) {
     const canvas = document.createElement('canvas');
@@ -1379,7 +1376,7 @@
     const ctx = out.getContext('2d', { willReadFrequently: true });
     const words = [...art.querySelectorAll('.ov > span')].map(el => {
       const cs = getComputedStyle(el), shadow = (cs.textShadow !== 'none' ? cs.textShadow : cs.filter).match(/(rgba?\([^)]*\))\s*0px\s*([\d.]+)px/);
-      return { el, text: [...el.childNodes].filter(n => n.nodeType === 3 || getComputedStyle(n).display !== 'none').map(n => n.textContent).join(''), x: el.offsetLeft * k, y: el.offsetTop * k, w: el.offsetWidth * k, h: el.offsetHeight * k,
+      return { el, text: el.textContent, x: el.offsetLeft * k, y: el.offsetTop * k, w: el.offsetWidth * k, h: el.offsetHeight * k,
         size: parseFloat(cs.fontSize) * k, font: cs.fontFamily, color: cs.color, bg: cs.backgroundColor, radius: parseFloat(cs.borderTopLeftRadius) * k,
         shadow: shadow ? { c: shadow[1], dy: parseFloat(shadow[2]) * k } : null,
         foil: el.classList.contains('foil') ? ['#ff8fb1', '#ffe27a', '#8fffd2', '#8fb8ff', '#d79bff', '#ff8fb1'] : el.classList.contains('gold') ? ['#b8801c', '#ffe9a8', '#f2c230', '#fffbe6', '#c8901e', '#b8801c'] : null };

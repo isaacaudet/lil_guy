@@ -35,9 +35,8 @@ export interface CardInput {
   /** Up to two lines under the grade pips. */
   lines?: string[];
   /**
-   * The small lines at the foot, beside the set's symbol, as on a sports card: the set number, a 1st
-   * edition, a craft number, stats. Wrapped at its " · " parts, two lines at most (the first beside
-   * the symbol); parts past that are left off.
+   * The small line at the foot, beside the set's symbol: the set number and a 1st edition. Wrapped
+   * at its " · " parts, two lines at most (the first beside the symbol); parts past that are left off.
    */
   footer?: string;
   /** 0 Everyday to 5 Aura; -1 for a plain card. */
