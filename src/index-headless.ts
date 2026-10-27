@@ -14,7 +14,7 @@ export type { Item, Slot, ItemGame } from './items';
 export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
 export type { Owned, Finish, Grade } from './owned';
 export { paint, SMALL_SIZE } from './paint';
-export { animate, animateLoop, frameAt, drawFrame, toAnimatedSvg, closeEyes, MOVES, HEADROOM, FRAME_WIDTH, FRAME_HEIGHT, EMOTE_UNLOCKS } from './animate';
+export { animate, animateLoop, frameAt, drawFrame, toAnimatedSvg, closeEyes, squashRows, MOVES, HEADROOM, FRAME_WIDTH, FRAME_HEIGHT, EMOTE_UNLOCKS } from './animate';
 export { PINS, MAX_PINS, pinById, tallyMarks, GOLD_RIM_DAYS } from './pins';
 export type { Pin } from './pins';
 export type { Emote, Move, Animation, AnimationFrame, AnimateOptions, AnimatedSvgOptions, PixelTarget } from './animate';

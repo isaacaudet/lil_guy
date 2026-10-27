@@ -1,4 +1,5 @@
 import { cycle, fit, LOOP_MS, steps, tick, wave } from './loop';
+import { sparkleAt } from './sparkle';
 import type { Item } from './items';
 import type { Owned } from './owned';
 
@@ -115,7 +116,7 @@ export const AURAS: Aura[] = [
       for (let i = 0; i < 5; i++) {
         const at = t + i * 173 + print * 11, life = tick(at, 520), phase = cycle(at, 520);
         const [x, y] = near[Math.floor(noise(i, life, print) * near.length)] ?? [0, 0];
-        out.push(...(phase < 0.35 || phase > 0.85 ? [[x, y, 0] as AuraCell] : plus(x, y, phase < 0.6 ? 1 : 2)));
+        out.push(...glint(x, y, phase));
       }
       return out;
     },
@@ -231,7 +232,7 @@ export const AURAS: Aura[] = [
       for (let i = 0; i < 4; i++) {
         const life = fit(900), at = t + i * (life / 4) + print * 31, gen = tick(at, 900), f = cycle(at, 900);
         const [x, y] = far[Math.floor(noise(i, gen, print, 23) * far.length)] ?? [0, 0];
-        if (f < 0.75) out.push(...(f > 0.2 && f < 0.55 ? plus(x, y, 1) : [[x, y, 0] as AuraCell]));
+        if (f < 0.75) out.push(...glint(x, y, f / 0.75));
       }
       return out;
     },
@@ -287,16 +288,22 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.neon', name: 'Neon', colors: ['#FFFFFF', '#FF4FD8', '#B23CE0'], still: 300,
+    id: 'aura.neon', name: 'Neon', colors: ['#FFE3F4', '#FF3FA4', '#8A1F62'], still: 300,
     cells: (mask, t, print) => {
-      // A neon tube a pixel off his outline, always lit: it breathes between
-      // pink and violet, and a white-hot run of light travels round it.
-      const s = shape(mask);
-      const tube = ring(mask, 1).map(([x, y]) => [x, y, Math.atan2(y - s.cy, x - s.cx)] as const).sort((a, b) => a[2] - b[2]);
-      const n = tube.length, hot = wrap(Math.floor((t + print * 17) / steps(60, n)), n), breath = Math.sin((t + print * 11) / wave(420)) > 0;
-      return tube.map(([x, y], i): AuraCell => {
-        const d = Math.min(wrap(i - hot, n), wrap(hot - i, n));
-        return [x, y, d <= 1 ? 0 : breath ? 1 : 2];
+      // A neon tube bent round him a pixel off his outline, in one colour: a
+      // white-hot core (0) hugging him, its colour glowing round it (1). It
+      // hums steady, and twice a loop, at moments its print deals, it
+      // flickers as a real sign does: a stretch of tube dims, the whole tube
+      // stutters off to bare glass (2) and back.
+      const s = shape(mask), beat = tick(t + print * 53, 90), n = Math.round(LOOP_MS / fit(90));
+      const since = Math.min(...[1, 2].map(k => wrap(beat - Math.floor(noise(print, k) * n), n)));
+      const off = since === 2 || since === 4, dim = since <= 5 && !off;
+      const stretch = Math.floor(noise(print, 3) * 4);
+      return ring(mask, 2).flatMap(([x, y, d]): AuraCell[] => {
+        if (off) return d === 1 ? [[x, y, 2]] : [];
+        const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU + 0.5, 1) * 4);
+        if (dim && quarter === stretch) return d === 1 ? [[x, y, 1]] : [];
+        return [[x, y, d === 1 ? 0 : 1]];
       });
     },
   },
@@ -502,46 +509,32 @@ function loop(s: ReturnType<typeof shape>, gx: number, gy: number): [number, num
 
 /** A 2x2 orb: a bright corner, two mid, one deep. */
 const orb = (x: number, y: number): AuraCell[] => [[x, y, 0], [x + 1, y, 1], [x, y + 1, 1], [x + 1, y + 1, 2]];
-/** A four-point sparkle, two cells each way: a white heart, bright arms, deep tips. */
-const star = (x: number, y: number): AuraCell[] => [...plus(x, y, 1), [x - 2, y, 2], [x + 2, y, 2], [x, y - 2, 2], [x, y + 2, 2]];
-/** A twinkle that opens and closes: a dot, a cross, a sparkle, a cross, a dot. */
-function twinkle(x: number, y: number, f: number, big: boolean): AuraCell[] {
-  if (f < 0.18 || f > 0.82) return [[x, y, 1]];
-  if (big && f > 0.38 && f < 0.62) return star(x, y);
-  return plus(x, y, 1);
-}
+/** A sparkle (./sparkle) as aura cells: its heart, arms and edges are the aura's colours 0, 1 and 2. */
+const glint = (x: number, y: number, f: number): AuraCell[] => sparkleAt(f).map(([dx, dy, k]) => [x + dx, y + dy, k]);
 
 /**
  * What a rarer aura adds round the guy, in chunky pieces at his own pixel
  * size (no thin lines: a one-pixel line reads as drawn, not as pixel art):
- * twinkles that open into crosses (1), two orbs circling him (2), sparkles
- * opening on the other side (3), more of both and bigger (4, and Origin's
- * 5). Pieces may sit past the
- * frame's sides when `mask` is padded, so a card shows them whole.
+ * a sparkle opening now and then a few cells out (1), two orbs circling him
+ * (2), more of both (3, 4, and Origin's 5). Pieces may sit past the frame's
+ * sides when `mask` is padded, so a card shows them whole.
  */
 function extras(mask: Mask, t: number, print: number, level: number): AuraCell[] {
   if (level <= 0) return [];
   const s = shape(mask), out: AuraCell[] = [], phase = noise(print, 3);
-  const gy = Math.min(2, s.top), inner = loop(s, 3, gy), outer = loop(s, 5, gy + 1);
-  // Twinkles a few cells out, each opening and closing in its own time.
-  const twinkles = [0, 2, 2, 3, 4, 4][level], life = fit(1100);
-  for (let i = 0; i < twinkles; i++) {
-    const at = t + (i * life) / twinkles + print * 29, gen = tick(at, 1100), f = cycle(at, 1100);
-    const [x, y] = outer[Math.floor(noise(i, gen, print, 41) * outer.length)];
-    out.push(...twinkle(x, y, f, level >= 3));
+  const gy = Math.min(2, s.top), inner = loop(s, 3, gy), near = loop(s, 4, gy);
+  // Sparkles a few cells out, one at a time per run, each on its own time and gone between.
+  const runs = [0, 1, 1, 2, 2, 3][level], life = fit(1300);
+  for (let i = 0; i < runs; i++) {
+    const at = t + (i * life) / runs + print * 29, gen = tick(at, 1300), f = cycle(at, 1300) / 0.55;
+    const [x, y] = near[Math.floor(noise(i, gen, print, 41) * near.length)];
+    if (f < 1) out.push(...glint(x, y, f));
   }
   // Orbs riding the inner path, evenly spaced, slowly.
   const orbs = [0, 0, 2, 2, 3, 3][level];
   for (let i = 0; i < orbs; i++) {
     const n = inner.length, [x, y] = inner[wrap(Math.floor(t / steps(26, n)) + Math.round((i * n) / orbs + phase * n), n)];
     out.push(...orb(x - 1, y - 1));
-  }
-  // From level 3, sparkles riding the outer path the other way, opening as they go.
-  const sparks = [0, 0, 0, 2, 3, 3][level];
-  for (let i = 0; i < sparks; i++) {
-    const n = outer.length, [x, y] = outer[wrap(-Math.floor(t / steps(34, n)) + Math.round((i * n) / sparks + phase * n * 2), n)];
-    const open = wrap(t / fit(600) + i * 0.37, 1) < 0.5;
-    out.push(...(open ? star(x, y) : plus(x, y, 1)));
   }
   return out;
 }
@@ -580,6 +573,26 @@ const RAMPS: Record<string, string[]> = {
 };
 const FADE = ['#FFE07A', '#FF6FB5', '#7C5CFF'];
 
+/**
+ * Neon is one colour a copy: the finish's own (Frost ice blue, Toxic acid
+ * green and so on), or for Classic, Fade and Black pearl one the print deals
+ * from a sign maker's tubes. Its core, its colour, and the bare glass when it
+ * flickers off.
+ */
+const NEON_TUBES: Record<string, string[]> = {
+  classic: ['#FF3FA4', '#2FD9FF', '#FF5A3C', '#B45CFF', '#3DFF8F', '#FFC23A'],
+  fade: ['#FF6A4D', '#FF4F9A', '#FFB23A'],
+  frost: ['#7FD8FF'], toxic: ['#9DFF3A'], shadow: ['#9A6BFF'], sapphire: ['#3D7BFF'], ruby: ['#FF2D55'],
+  pearl: ['#C9A2FF', '#FF9EC9', '#7FF5D2'],
+};
+function neonRamp(finish: string, print: number): [string, string, string] {
+  const tubes = NEON_TUBES[finish] ?? NEON_TUBES.classic, c = tubes[print % tubes.length];
+  const rgb = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+  const to = (target: number, a: number) => '#' + rgb.map(v => Math.round(v + (target - v) * a).toString(16).padStart(2, '0')).join('').toUpperCase();
+  // The lit tube runs a little toward white, its glow is the colour falling off, bare glass is the colour gone dark.
+  return [to(255, 0.35), to(15, 0.38), to(25, 0.72)];
+}
+
 const hsl = (h: number, s: number, l: number) => {
   const f = (n: number) => {
     const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -592,9 +605,10 @@ const hsl = (h: number, s: number, l: number) => {
  * The colour of one aura cell in a finish. Fade runs its sunset down the aura
  * and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
  */
-export function auraColor(id: string, k: number, finish: string, x: number, y: number, t: number): string {
+export function auraColor(id: string, k: number, finish: string, x: number, y: number, t: number, print = 0): string {
   const aura = auraById(id);
   if (!aura) return '#FFFFFF';
+  if (id === 'aura.neon') return neonRamp(finish, print)[Math.min(2, k)];
   // A one of one keeps its own colours in any finish, glinting in every colour.
   // Light runs across in one smooth band rather than random glints, as a
   // Balatro foil does: rare looks rich, never noisy.
@@ -609,8 +623,9 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
   }
   const ramp = RAMPS[finish];
   if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-  // Black pearl is nacre: a soft rainbow drifting along the aura, brighter where the light runs.
-  if (finish === 'pearl') return hsl(wrap((x + y) * 14 + t * 360 / fit(3240), 360), 0.62, sweep ? 0.92 : [0.86, 0.76, 0.68][Math.min(2, k % 3)]);
+  // Black pearl is nacre: pale lilac leaning to rose and to sea-green along the
+  // aura and back, slowly, brighter where the light runs. Never the whole rainbow.
+  if (finish === 'pearl') return hsl(wrap(275 + 55 * Math.sin((x + y) * 0.35 + t / wave(520)), 360), 0.5, sweep ? 0.93 : [0.86, 0.76, 0.66][Math.min(2, k % 3)]);
   if (sweep && (finish === 'sapphire' || finish === 'ruby')) return ramp[0];
   return ramp[Math.min(2, k % 3)];
 }

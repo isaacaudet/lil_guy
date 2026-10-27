@@ -222,10 +222,25 @@ Players can show an emote over any move with `emote`. `EMOTE_UNLOCKS` lists
 them and how each is earned: a heart, music, a snooze, "huh?" and "whoa!"
 for everyone, a flame for a 7-day streak and a crown for a perfect day.
 
+Each guy keeps his own time. His `idle` is dealt from his name like his parts:
+three to five breaths a loop (or a little lift, for a floater), where in the
+loop he starts, and a few habits between breaths (a blink or a double blink, a
+glance, a smile, a content shut-eyed smile, an "ooh", a blep, a hop). The same
+guy always idles the same way, and two guys side by side are never in step.
+His blink, dance and sleep keep tempos of their own too.
+
 Frames are 16 wide and 20 tall: the guy stands in the bottom 16 rows exactly
 as in the still, and the top 4 are room to jump into. Every frame is made from
-the guy's own pixels. A squash loses a row from the middle of the body and a stretch
-repeats one; a blink or a glance moves the eye pixels. Nothing is scaled.
+the guy's own pixels. A squash loses a row of the body between his mouth and
+his feet and a stretch repeats one, never a row of his eyes or mouth; with no
+room there it takes one above his eyes, and with none at all he bobs instead
+(`squashRows` says what it does for a guy). A blink or a glance moves the eye
+pixels. Nothing is scaled.
+
+Sparkles (a rare copy's, a Gold finish's mark, a Lucky guy's, a cheer's
+stars, a rare aura's) are all one glint: a dot that brightens, opens into a
+small cross, turns to a diagonal glint and goes out, near the guy, one at a
+time, on its copy's own clock.
 
 Rarity shows in the frames, so it reads without a shader. The best copy it is
 wearing sets how much:
@@ -447,7 +462,9 @@ which no capsule gives (`ONE_OF_ONE_AURAS`). The list is append only: copies
 store an aura by id. An aura copy has its own finish: Classic (50%),
 Fade (22%), Frost (12%), Toxic (8%), Shadow (5%) and Deep sea Sapphire (1.5%),
 Ruby (1.2%) and Black pearl (0.3%). Its float shows (a battered aura flickers
-with gaps) and its print sets its timing. Wear one like any item
+with gaps) and its print sets its timing. Neon is one tube in one colour a
+copy (its finish's, or one its print deals for Classic, Fade and Black pearl)
+that hums and now and then flickers. Wear one like any item
 (`equip: ['aura.flames~ruby~0.0123~7']`); still pictures draw it at a still
 moment, `animate` moves it.
 
