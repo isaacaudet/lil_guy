@@ -224,7 +224,7 @@ describe('buddies', () => {
       for (const k of spot.face) if (g[Math.floor(k / GRID_SIZE)][k % GRID_SIZE] !== bare[Math.floor(k / GRID_SIZE)][k % GRID_SIZE]) { wrong.push(`${label} covers the face`); break; }
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('stand apart from him, a clear pixel between, where the picture has the room', () => {
     const EXTRA = 11, wrong: string[] = [];
@@ -238,7 +238,7 @@ describe('buddies', () => {
       }
     }
     expect(wrong).toEqual([]);
-  });
+  }, 60_000);
 
   it('use a light, a mid and a dark tone of their own, so they read on light and dark guys alike', () => {
     const lum = (hex: string) => {

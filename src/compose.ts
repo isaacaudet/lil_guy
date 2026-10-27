@@ -422,7 +422,10 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
       return { grid: canvas.grid, shown, cut, cap: dome.length > 0 && wrapped * 2 >= dome.length };
     };
     let best = tryOn(false);
-    if (c.floor - c.tip + 1 < 3) { const d = tryOn(true); if (d.cap && d.shown > best.shown) best = d; }
+    // Only a short forehead gets one: where the top of the head's middle is
+    // under the floor, there is a gap there (a Perfect split), not a forehead,
+    // and a dome built up from it would climb through the face.
+    if (c.tip <= c.floor && c.floor - c.tip + 1 < 3) { const d = tryOn(true); if (d.cap && d.shown > best.shown) best = d; }
     best.grid.forEach((row, y) => row.forEach((v, x) => { c.grid[y][x] = v; }));
     return best.cut;
   };
