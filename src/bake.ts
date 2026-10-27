@@ -2,7 +2,7 @@ import { animate, AURA_PAD, FRAME_HEIGHT, FRAME_WIDTH, type AnimateOptions, type
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
-import { encodeApng, encodePng, type Frames } from './gif';
+import { encodeApng, encodeGif, encodePng, type Frames } from './gif';
 import { decode, type Owned } from './owned';
 import { dress } from './items';
 import { paletteOf } from './palette';
@@ -88,6 +88,70 @@ export function bakeGuy(spec: GuySpec, move: Move = 'idle'): Frames {
   return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map(f => place(f, shining ? shineFrame(f, owned, f.at ?? 0) : undefined)), anim.frames.map(f => f.ms));
 }
 
+/** The size Discord shows a profile picture at, and asks for at least 128 of. */
+export const PROFILE_SIZE = 512;
+
+/**
+ * A guy as a profile picture (Discord and the like): square, with room all round so the round crop
+ * never cuts him or his aura, on a solid ground in a light tint of his own colour, or the colour of
+ * the backdrop he wears. Every frame of the move.
+ */
+export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
+  const g = bakeGuy(spec, move), W = g.width, H = g.height;
+  const lit = (px: Uint8ClampedArray, x: number, y: number) => px[(y * W + x) * 4 + 3] >= 128;
+  let left = W, right = -1, top = H, bottom = -1;
+  for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!lit(px, x, y)) continue;
+    left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+  }
+  // The circle a crop leaves: centred on the lit pixels, out to the far corner of the farthest one.
+  const cx = (left + right + 1) / 2, cy = (top + bottom + 1) / 2;
+  let reach = 0;
+  for (const px of g.frames) for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) {
+    if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
+  }
+  const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
+  const ground = groundOf(g.frames[0], W, H, !!ownedOf(spec)?.frame);
+  const frames = g.frames.map(px => {
+    const out = new Uint8ClampedArray(side * side * 4);
+    for (let i = 0; i < side * side; i++) out.set(ground, i * 4);
+    for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) {
+      if (lit(px, x, y)) out.set(px.subarray((y * W + x) * 4, (y * W + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
+    }
+    return out;
+  });
+  return { width: side, height: side, frames, delays: g.delays };
+}
+
+/** His commonest colour that isn't an outline: as it is for a backdrop, else most of the way to white. */
+function groundOf(px: Uint8ClampedArray, W: number, H: number, backdrop: boolean): number[] {
+  const counts = new Map<number, number>();
+  for (let i = 0; i < W * H; i++) {
+    const [r, g, b, a] = px.subarray(i * 4, i * 4 + 4);
+    if (a < 128 || 0.2126 * r + 0.7152 * g + 0.0722 * b < 60) continue;
+    const key = (r << 16) | (g << 8) | b;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const top = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0xdddddd;
+  const c = [top >> 16, (top >> 8) & 255, top & 255];
+  return [...(backdrop ? c : c.map(v => Math.round(v + (255 - v) * 0.72))), 255];
+}
+
+/** The scale that brings a profile picture nearest `size` without going over. */
+const profileScale = (f: Frames, size: number) => Math.max(1, Math.floor(size / f.width));
+
+/** A still profile picture as a PNG, about `size` across. */
+export function toProfilePng(spec: GuySpec, size = PROFILE_SIZE): Promise<Uint8Array> {
+  const f = profileFrames(spec);
+  return encodePng(f.frames[0], f.width, f.height, profileScale(f, size));
+}
+
+/** A moving profile picture as a GIF, about `size` across: Discord takes animated pictures only as GIFs. */
+export function toProfileGif(spec: GuySpec, size = PROFILE_SIZE, move: Move = 'idle'): Uint8Array {
+  const f = profileFrames(spec, move);
+  return encodeGif(f, profileScale(f, size));
+}
+
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
 export function bakeCard(spec: FaceSpec): Frames {
   const face = cardFace(spec);
@@ -159,7 +223,8 @@ export const isMove = (m: string): m is Move => (MOVES as readonly string[]).inc
 
 /**
  * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
- * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`.
+ * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
+ * (a profile picture, `profileFrames`).
  * Null for a view there isn't.
  */
 export function bakeView(spec: CardSpec, view: string): Frames | null {
@@ -167,6 +232,7 @@ export function bakeView(spec: CardSpec, view: string): Frames | null {
     const card = bakeCard(faceSpec(spec));
     return view === 'card' ? card : { ...card, frames: card.frames.slice(0, 1), delays: [LOOP_MS] };
   }
+  if (view === 'pfp' || view === 'pfp-still') { const p = profileFrames(spec); return view === 'pfp' ? p : { ...p, frames: p.frames.slice(0, 1), delays: [LOOP_MS] }; }
   if (view === 'still') { const g = bakeGuy(spec, 'idle'); return { ...g, frames: g.frames.slice(0, 1), delays: [LOOP_MS] }; }
   return isMove(view) ? bakeGuy(spec, view) : null;
 }

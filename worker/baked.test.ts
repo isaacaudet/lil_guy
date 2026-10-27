@@ -2,7 +2,7 @@ import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { readFileSync } from 'node:fs';
 import worker, { api } from './index.js';
-import { ART_VERSION, bakeCard, bakeGuy, bakedImage, faceSpec, guyCode, readGuyCode, AURAS } from '../src/index-headless.ts';
+import { ART_VERSION, bakeCard, bakeGuy, bakedImage, bakeView, faceSpec, guyCode, readGuyCode, AURAS } from '../src/index-headless.ts';
 
 let env: any;
 beforeEach(() => {
@@ -31,6 +31,7 @@ test('a code serves exactly the picture the library bakes, cached for good', asy
   expect(await bytes(await get(`/g/${ART_VERSION}/${code}/hop@4.png`))).toEqual(await bakedImage(bakeGuy(spec, 'hop'), 'loop', 4));
   expect(await bytes(await get(`/g/${ART_VERSION}/${code}/still.png`))).toEqual(await bakedImage(bakeGuy(spec, 'idle'), 'still'));
   expect(await bytes(await get(`/g/${ART_VERSION}/${code}/card.png`))).toEqual(await bakedImage(bakeCard(faceSpec(spec)), 'loop'));
+  expect(await bytes(await get(`/g/${ART_VERSION}/${code}/pfp-still@16.png`))).toEqual(await bakedImage(bakeView(spec, 'pfp-still')!, 'still', 16));
   const sheet = await (await get(`/g/${ART_VERSION}/${code}/idle.sheet.json`)).json();
   expect(sheet.frames).toBe(bakeGuy(spec, 'idle').frames.length);
   expect(sheet.delays.reduce((a: number, b: number) => a + b, 0)).toBe(6000);

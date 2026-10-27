@@ -290,6 +290,7 @@ Or the addresses themselves, `/g/<art version>/<guy>/<view>`:
 | `idle.png`, `hop.png`… | the move looping, an animated PNG (plays in a plain `<img>`) |
 | `still.png` | its first frame, for dense lists |
 | `card.png`, `card-still.png` | its card, its shimmer looping |
+| `pfp.png`, `pfp-still.png` | a profile picture: square, on a ground of its own colour, with room so a round crop never cuts it (`pfp-still@16.png` is about Discord's 512 px) |
 | `idle.sheet.png` + `idle.sheet.json` | the frames in a strip and their times, for a game's sprite |
 | `idle@4.png` | any of these scaled up by whole pixels (1 to 16) |
 

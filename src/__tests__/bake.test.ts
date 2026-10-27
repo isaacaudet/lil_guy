@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { animate, AURAS, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng } from '../index-headless';
+import { animate, AURAS, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode } from '../index-headless';
 
 const aura = `${AURAS[0].id}~gold~0.0123456~20`;
 const hat = `${items.find(i => i.slot === 'hat' && !i.free)!.id}~nebula~0.0500000~7`;
@@ -46,5 +46,35 @@ describe('baked guys', () => {
     const view = new DataView(png.buffer, png.byteOffset + at + 4, 8);
     expect([view.getUint32(0), view.getUint32(4)]).toEqual([frames.frames.length, 0]);
     expect((await encodeApng(frames, 2)).length).toBeGreaterThan(png.length);
+  });
+});
+
+describe('profile pictures', () => {
+  const specs = [
+    { seed: 'mia' },
+    { seed: 'zed', equip: [encode({ item: 'aura.aurora', finish: 'classic', scuff: 0.1, print: 9 })] },
+    { seed: 'founder:isaac', equip: [encode({ item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1 }), encode({ item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' })] },
+  ];
+
+  test('are square and solid, with every pixel of the guy inside the round crop', () => {
+    for (const spec of specs) {
+      const p = profileFrames(spec), r = p.width / 2, ground = [...p.frames[0].subarray(0, 4)];
+      expect(p.width).toBe(p.height);
+      for (const px of p.frames) for (let y = 0; y < p.height; y++) for (let x = 0; x < p.width; x++) {
+        const i = (y * p.width + x) * 4;
+        expect(px[i + 3]).toBe(255);
+        const isGround = [0, 1, 2].every(k => px[i + k] === ground[k]);
+        if (!isGround) expect(Math.hypot(Math.max(Math.abs(x - r), Math.abs(x + 1 - r)), Math.max(Math.abs(y - r), Math.abs(y + 1 - r)))).toBeLessThanOrEqual(r);
+      }
+    }
+  });
+
+  test('come out near 512 px, still as a PNG and moving as a GIF', async () => {
+    const png = await toProfilePng(specs[1]), gif = toProfileGif(specs[1]);
+    const side = (b: Uint8Array, at: number, le = false) => le ? b[at] | (b[at + 1] << 8) : (b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3];
+    expect(side(png, 16)).toBeGreaterThan(400); expect(side(png, 16)).toBeLessThanOrEqual(512);
+    expect(side(gif, 6, true)).toBeGreaterThan(400); expect(side(gif, 6, true)).toBeLessThanOrEqual(512);
+    expect(gif.length).toBeLessThan(10 * 1024 * 1024);
+    expect(bakeView(specs[1], 'pfp-still')!.frames.length).toBe(1);
   });
 });

@@ -44,7 +44,7 @@ export { encodeGif, encodePng, encodeApng, upscale, type Frames } from './gif';
 export { LOOP_MS, SHADER_FINISHES, noiseOf, finishColor, GLSL_COMMON } from './finish-shader';
 export { shineFrame, shines, SHINE_FRAGMENT } from './shine';
 export { cardFace, cardFaceAt, faceMoves, createCardShader, CARD_FRAGMENT, FACE_WIDTH, FACE_HEIGHT, type CardFace, type FaceSpec, type CardShader, type Hover } from './card-face';
-export { ART_VERSION, GUY_WIDTH, GUY_HEIGHT, bakeGuy, bakeCard, bakeView, bakedImage, sheetOf, shineFit, guyCode, readGuyCode, faceSpec, animateOptions, isMove, type GuySpec, type CardSpec, type BakedKind } from './bake';
+export { ART_VERSION, GUY_WIDTH, GUY_HEIGHT, bakeGuy, bakeCard, bakeView, profileFrames, toProfilePng, toProfileGif, PROFILE_SIZE, bakedImage, sheetOf, shineFit, guyCode, readGuyCode, faceSpec, animateOptions, isMove, type GuySpec, type CardSpec, type BakedKind } from './bake';
 export { defineLilGuyHere as defineLilGuy } from './bake';
 export { BAKED_SIZE, type View } from './guy-code';
 export type { LilGuyOptions } from './element';

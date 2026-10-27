@@ -6,6 +6,7 @@ import { ART_VERSION, bakeGuy, bakedImage, bakeView, guyCode, isMove, readGuyCod
  *   <guy>   a guy code (`guyCode`: seed, parts, palette, worn copies), or `@name` for a claimed name
  *   <view>  `idle.png` (or any move): the move looping, as an animated PNG
  *           `still.png`: his first frame          `card.png` / `card-still.png`: his card
+ *           `pfp.png` / `pfp-still.png`: a profile picture, framed for a round crop (`pfp-still@16.png` for Discord)
  *           `idle.sheet.png` + `idle.sheet.json`: the frames in a strip and their times, for a game
  *           `@4` before the extension scales every pixel up (1 to 16): `idle@4.png`
  *
@@ -16,7 +17,7 @@ import { ART_VERSION, bakeGuy, bakedImage, bakeView, guyCode, isMove, readGuyCod
  */
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
-const VIEW = /^(still|card|card-still|[a-z]+(?:\.sheet)?)(?:@(\d{1,2}))?\.(png|json)$/;
+const VIEW = /^(still|card|card-still|pfp-still|[a-z]+(?:\.sheet)?)(?:@(\d{1,2}))?\.(png|json)$/;
 const head = (type, cache) => ({ 'Content-Type': type, 'Cache-Control': cache, 'Access-Control-Allow-Origin': '*', 'X-Content-Type-Options': 'nosniff' });
 const fail = (status, error) => Response.json({ error }, { status, headers: head('application/json', 'no-store') });
 

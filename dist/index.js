@@ -6961,6 +6961,71 @@ function bakeGuy(spec, move = "idle") {
 	});
 	return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map((f) => place(f, shining ? shineFrame(f, owned, f.at ?? 0) : void 0)), anim.frames.map((f) => f.ms));
 }
+/** The size Discord shows a profile picture at, and asks for at least 128 of. */
+const PROFILE_SIZE = 512;
+/**
+* A guy as a profile picture (Discord and the like): square, with room all round so the round crop
+* never cuts him or his aura, on a solid ground in a light tint of his own colour, or the colour of
+* the backdrop he wears. Every frame of the move.
+*/
+function profileFrames(spec, move = "idle") {
+	const g = bakeGuy(spec, move), W = g.width, H = g.height;
+	const lit = (px, x, y) => px[(y * W + x) * 4 + 3] >= 128;
+	let left = W, right = -1, top = H, bottom = -1;
+	for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		if (!lit(px, x, y)) continue;
+		left = Math.min(left, x);
+		right = Math.max(right, x);
+		top = Math.min(top, y);
+		bottom = Math.max(bottom, y);
+	}
+	const cx = (left + right + 1) / 2, cy = (top + bottom + 1) / 2;
+	let reach = 0;
+	for (const px of g.frames) for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
+	const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
+	const ground = groundOf(g.frames[0], W, H, !!ownedOf$1(spec)?.frame);
+	const frames = g.frames.map((px) => {
+		const out = new Uint8ClampedArray(side * side * 4);
+		for (let i = 0; i < side * side; i++) out.set(ground, i * 4);
+		for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit(px, x, y)) out.set(px.subarray((y * W + x) * 4, (y * W + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
+		return out;
+	});
+	return {
+		width: side,
+		height: side,
+		frames,
+		delays: g.delays
+	};
+}
+/** His commonest colour that isn't an outline: as it is for a backdrop, else most of the way to white. */
+function groundOf(px, W, H, backdrop) {
+	const counts = new Map();
+	for (let i = 0; i < W * H; i++) {
+		const [r, g, b$1, a] = px.subarray(i * 4, i * 4 + 4);
+		if (a < 128 || .2126 * r + .7152 * g + .0722 * b$1 < 60) continue;
+		const key = r << 16 | g << 8 | b$1;
+		counts.set(key, (counts.get(key) ?? 0) + 1);
+	}
+	const top = [...counts].sort((a, b$1) => b$1[1] - a[1])[0]?.[0] ?? 14540253;
+	const c = [
+		top >> 16,
+		top >> 8 & 255,
+		top & 255
+	];
+	return [...backdrop ? c : c.map((v) => Math.round(v + (255 - v) * .72)), 255];
+}
+/** The scale that brings a profile picture nearest `size` without going over. */
+const profileScale = (f, size) => Math.max(1, Math.floor(size / f.width));
+/** A still profile picture as a PNG, about `size` across. */
+function toProfilePng(spec, size = PROFILE_SIZE) {
+	const f = profileFrames(spec);
+	return encodePng(f.frames[0], f.width, f.height, profileScale(f, size));
+}
+/** A moving profile picture as a GIF, about `size` across: Discord takes animated pictures only as GIFs. */
+function toProfileGif(spec, size = PROFILE_SIZE, move = "idle") {
+	const f = profileFrames(spec, move);
+	return encodeGif(f, profileScale(f, size));
+}
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
 function bakeCard(spec) {
 	const face = cardFace(spec);
@@ -7055,7 +7120,8 @@ function faceSpec(spec) {
 const isMove = (m) => MOVES.includes(m);
 /**
 * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
-* (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`.
+* (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
+* (a profile picture, `profileFrames`).
 * Null for a view there isn't.
 */
 function bakeView(spec, view) {
@@ -7064,6 +7130,14 @@ function bakeView(spec, view) {
 		return view === "card" ? card : {
 			...card,
 			frames: card.frames.slice(0, 1),
+			delays: [LOOP_MS]
+		};
+	}
+	if (view === "pfp" || view === "pfp-still") {
+		const p = profileFrames(spec);
+		return view === "pfp" ? p : {
+			...p,
+			frames: p.frames.slice(0, 1),
 			delays: [LOOP_MS]
 		};
 	}
@@ -7151,5 +7225,5 @@ function craftCopy(itemId, seed, number) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

@@ -1847,9 +1847,11 @@
     return { width: W, height: H, frames, delays: frames.map(() => ms) };
   }
 
-  function saveButtons(el, input, name, host) {
+  // `pfp`: the guy as he's drawn here, for a Discord profile picture (a still PNG, or a GIF for Nitro).
+  function saveButtons(el, input, name, host, pfp) {
     const base = fileName(name);
-    el.innerHTML = '<span class="saves-h">Save</span><button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>';
+    el.innerHTML = '<span class="saves-h">Save</span><button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
+      + (pfp ? '<button class="btn small ghost" type="button" data-save="pfp" title="512 px, framed for Discord\'s round crop">Discord PNG</button><button class="btn small ghost" type="button" data-save="pfp-gif" title="Moving, for Nitro">Discord GIF</button>' : '');
     el.onclick = e => {
       const b = e.target.closest('[data-save]');
       if (!b || b.disabled) return;
@@ -1857,9 +1859,11 @@
       setTimeout(async () => {
         try {
           // The card as the page shows it; the library's card only where the page has none.
-          const page = b.dataset.save === 'guy' ? null : pageCardFrames(host?.());
+          const page = ['guy', 'pfp', 'pfp-gif'].includes(b.dataset.save) ? null : pageCardFrames(host?.());
           if (b.dataset.save === 'gif') await saveFile(page ? LG.encodeGif(page, 1) : LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
           else if (b.dataset.save === 'png') await saveFile(page ? await LG.encodePng(page.frames[0], page.width, page.height, 1) : await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
+          else if (b.dataset.save === 'pfp') await saveFile(await LG.toProfilePng(pfp), base + '-discord.png', 'image/png');
+          else if (b.dataset.save === 'pfp-gif') await saveFile(LG.toProfileGif(pfp), base + '-discord.gif', 'image/gif');
           else await saveFile(LG.toGuyGif(input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16), base + '.gif', 'image/gif');
         } catch (err) { toast('Couldn\'t make that file: ' + err.message); }
         b.disabled = false; b.textContent = was;
@@ -2236,9 +2240,9 @@
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
-    const guySpec = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, guyRank(cfg).tier), guyCard = cardInput(guySpec);
-    guyStage('guy-stage', state.seed, wornCodes(), guySpec);
-    saveButtons($('guy-saves'), guyCard, state.key, () => $('guy-stage'));
+    const meCard = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, guyRank(cfg).tier), guyCard = cardInput(meCard);
+    guyStage('guy-stage', state.seed, wornCodes(), meCard);
+    saveButtons($('guy-saves'), guyCard, state.key, () => $('guy-stage'), guySpec(state.seed, wornCodes()));
     const rank = guyRank(cfg);
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
@@ -4076,7 +4080,7 @@
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees it.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
     const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, guyRank(cfg).tier), uCard = cardInput(uSpec);
     guyStage('u-stage', u.seed, worn, uSpec);
-    saveButtons($('u-saves'), uCard, key, () => $('u-stage'));
+    saveButtons($('u-saves'), uCard, key, () => $('u-stage'), guySpec(u.seed, worn));
     const uRank = guyRank(cfg);
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
