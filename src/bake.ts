@@ -1,10 +1,12 @@
-import { animate, AURA_PAD, FRAME_HEIGHT, FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
+import { animate, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
 import { encodeApng, encodeGif, encodePng, type Frames } from './gif';
 import { decode, type Owned } from './owned';
-import { dress } from './items';
+import { dress, itemById, withItems } from './items';
+import { LAYER } from './parts/art';
+import { paint } from './paint';
 import { paletteOf } from './palette';
 import { resolve } from './resolve';
 import { shineFrame, shines } from './shine';
@@ -93,11 +95,13 @@ export const PROFILE_SIZE = 512;
 
 /**
  * A guy as a profile picture (Discord and the like): square, with room all round so the round crop
- * never cuts him or his aura, on a solid ground in a light tint of his own colour, or the colour of
- * the backdrop he wears. Every frame of the move.
+ * never cuts him or his aura, on a solid ground in a light tint of his own colour, or on the
+ * backdrop he wears, run out to every edge. Every frame of the move.
  */
 export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
-  const g = bakeGuy(spec, move), W = g.width, H = g.height;
+  // A backdrop is the picture's ground, not a square behind him: he is framed without it.
+  const backdrop = spec.equip?.find(code => itemById(decode(code)?.item)?.slot === 'frame');
+  const g = bakeGuy(backdrop ? { ...spec, equip: spec.equip!.filter(code => code !== backdrop) } : spec, move), W = g.width, H = g.height;
   const lit = (px: Uint8ClampedArray, x: number, y: number) => px[(y * W + x) * 4 + 3] >= 128;
   let left = W, right = -1, top = H, bottom = -1;
   for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -111,10 +115,10 @@ export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
     if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
   }
   const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-  const ground = groundOf(g.frames[0], W, H, !!ownedOf(spec)?.frame);
+  const ground = backdrop ? backdropGround(spec, side, ox, oy) : null, solid = groundOf(g.frames[0], W, H);
   const frames = g.frames.map(px => {
-    const out = new Uint8ClampedArray(side * side * 4);
-    for (let i = 0; i < side * side; i++) out.set(ground, i * 4);
+    const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
+    if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
     for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) {
       if (lit(px, x, y)) out.set(px.subarray((y * W + x) * 4, (y * W + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
     }
@@ -123,8 +127,21 @@ export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
   return { width: side, height: side, frames, delays: g.delays };
 }
 
-/** His commonest colour that isn't an outline: as it is for a backdrop, else most of the way to white. */
-function groundOf(px: Uint8ClampedArray, W: number, H: number, backdrop: boolean): number[] {
+/** The backdrop he wears, in its finish, over the whole picture and lined up with where it sits behind him. */
+function backdropGround(spec: GuySpec, side: number, ox: number, oy: number): Uint8ClampedArray {
+  const config = dress({ ...resolve(spec.seed, spec.parts), ...(spec.palette !== undefined ? { palette: spec.palette } : {}) }, { equip: spec.equip }, spec.seed);
+  const frame = itemById(config.frame)!;
+  const grid = Array.from({ length: side }, (_, y) => Array.from({ length: side }, (_, x) =>
+    LAYER.frame + frame.fill!(x - ox - AURA_PAD + 48, y - oy - HEADROOM + 48) - 1));
+  const colors = paint(grid, config, withItems(paletteOf(config), config), false, false);
+  const out = new Uint8ClampedArray(side * side * 4);
+  // Knocked back toward night, so he and his aura stand out from a busy pattern.
+  colors.forEach((row, y) => row.forEach((c, x) => { if (c) out.set([...rgb(c).map((v, k) => Math.round(v * 0.55 + [20, 24, 36][k] * 0.45)), 255], (y * side + x) * 4); }));
+  return out;
+}
+
+/** His commonest colour that isn't an outline, most of the way to white. */
+function groundOf(px: Uint8ClampedArray, W: number, H: number): number[] {
   const counts = new Map<number, number>();
   for (let i = 0; i < W * H; i++) {
     const [r, g, b, a] = px.subarray(i * 4, i * 4 + 4);
@@ -134,7 +151,7 @@ function groundOf(px: Uint8ClampedArray, W: number, H: number, backdrop: boolean
   }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0xdddddd;
   const c = [top >> 16, (top >> 8) & 255, top & 255];
-  return [...(backdrop ? c : c.map(v => Math.round(v + (255 - v) * 0.72))), 255];
+  return [...c.map(v => Math.round(v + (255 - v) * 0.72)), 255];
 }
 
 /** The scale that brings a profile picture nearest `size` without going over. */

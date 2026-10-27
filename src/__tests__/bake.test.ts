@@ -57,7 +57,7 @@ describe('profile pictures', () => {
   ];
 
   test('are square and solid, with every pixel of the guy inside the round crop', () => {
-    for (const spec of specs) {
+    for (const spec of specs.slice(0, 2)) {
       const p = profileFrames(spec), r = p.width / 2, ground = [...p.frames[0].subarray(0, 4)];
       expect(p.width).toBe(p.height);
       for (const px of p.frames) for (let y = 0; y < p.height; y++) for (let x = 0; x < p.width; x++) {
@@ -67,6 +67,13 @@ describe('profile pictures', () => {
         if (!isGround) expect(Math.hypot(Math.max(Math.abs(x - r), Math.abs(x + 1 - r)), Math.max(Math.abs(y - r), Math.abs(y + 1 - r)))).toBeLessThanOrEqual(r);
       }
     }
+  });
+
+  test('run a worn backdrop out to every edge', () => {
+    const p = profileFrames(specs[2]), px = p.frames[0], at = (x: number, y: number) => [...px.subarray((y * p.width + x) * 4, (y * p.width + x) * 4 + 3)].join();
+    // A checkered flag: neighbouring cells differ along the top edge, not one flat colour.
+    expect(new Set(Array.from({ length: p.width }, (_, x) => at(x, 0))).size).toBeGreaterThan(1);
+    expect(px.every((v, i) => i % 4 !== 3 || v === 255)).toBe(true);
   });
 
   test('come out near 512 px, still as a PNG and moving as a GIF', async () => {
