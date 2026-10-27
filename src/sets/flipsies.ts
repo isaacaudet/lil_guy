@@ -1,4 +1,13 @@
 import { grid16, on, pet, type MachineSet } from '../item-art';
+import { stamp } from '../parts/art';
+import type { Canvas } from '../parts/canvas';
+import { seat } from '../parts/hair';
+
+/** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
+const perch = (rows: string[], sink = 1) => {
+  const s = stamp(rows);
+  return (c: Canvas) => seat(c, s, c.centred(s), sink);
+};
 
 /**
  * Flipsies's machine: the things you flip (a water bottle, a soup can, a
@@ -86,14 +95,14 @@ export const set: MachineSet = {
     // ------------------------------------------------------------ hats
     {
       id: 'flipsies.pancake-hat', game: 'flipsies', slot: 'hat', name: 'Short stack',
-      colors: ['#F7C873', '#D9933F', '#FDE3A7', '#7A3410', '#FFF27A'],
+      colors: ['#F7C873', '#C98236', '#FDE3A7', '#9A4416', '#FFF27A'],
       // A stack of pancakes on the head, a pat of butter on top and syrup running over the edge.
-      draw: on([
-        '...55..',
-        '.34443.',
-        '2111114',
-        '3333334',
-        '2111112',
+      draw: perch([
+        '...5555...',
+        '.33444333.',
+        '1114111412',
+        '.22242222.',
+        '1111111112',
       ]),
     },
     {
@@ -123,15 +132,15 @@ export const set: MachineSet = {
     },
     {
       id: 'flipsies.lampshade', game: 'flipsies', slot: 'hat', name: 'Lampshade',
-      colors: ['#F2703F', '#C24E26', '#FFA27A', '#34343C', '#FFE9A8'],
+      colors: ['#F2703F', '#C24E26', '#FFA27A', '#6E6E78', '#FFF3B0'],
       // The lamp that hangs in the way of a throw: an orange dome on its cord, its bulb lit under it.
       draw: on([
-        '...4...',
-        '...4...',
-        '.33112.',
-        '3111112',
-        '.55555.',
-      ]),
+        '....4....',
+        '..33112..',
+        '.3311112.',
+        '311111122',
+        '...555...',
+      ], 0, 1),
     },
 
     // ------------------------------------------------------------ frames

@@ -136,25 +136,28 @@ export const set: MachineSet = {
       ], 0, 2),
     },
     {
-      id: 'stackdle.crescent', game: 'stackdle', slot: 'hat', name: 'Balanced crescent',
-      colors: ['#7FC5F5', '#4F8BB5', '#BDE3FB'],
+      id: 'stackdle.crescent', game: 'stackdle', slot: 'hat', name: 'Balanced diamond',
+      colors: ['#668ACB', '#45649E', '#A9C2EE'],
+      // The diamond piece stood on its point on the head, the way it has to be balanced in a tower.
       draw: on([
-        '.33331',
-        '311...',
-        '112...',
-        '.12222',
+        '..331..',
+        '.33112.',
+        '3311122',
+        '..312..',
+        '...2...',
       ], 0, 1),
     },
     {
       id: 'stackdle.bolt', game: 'stackdle', slot: 'hat', name: 'Bolt piece',
       colors: ['#B890F8', '#7453B2', '#DCC6FF'],
+      // Laid flat across the head: a foot down at one end, a step up at the other.
       draw: on([
-        '3331..',
-        '1112..',
-        '..12..',
-        '..1331',
-        '..1122',
-      ], 0, 2),
+        '.......331',
+        '.......112',
+        '3333333112',
+        '1111111222',
+        '122.......',
+      ], 0, 1),
     },
     {
       id: 'stackdle.clouds', game: 'stackdle', slot: 'hat', name: 'Cloud ring',

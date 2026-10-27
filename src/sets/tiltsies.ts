@@ -145,8 +145,15 @@ export const set: MachineSet = {
     // ---------------------------------------------------------------- frames
     {
       id: 'tiltsies.tiles', game: 'tiltsies', slot: 'frame', name: 'Course tiles',
-      colors: ['#F4EBD6', '#DDEBCB'],
-      fill: (x, y) => ((Math.floor(x / 4) + Math.floor(y / 4)) % 2 ? 2 : 1),
+      // cream tile, green tile, the gap between them, a tile's lit corner
+      colors: ['#F4EBD6', '#C6E0AE', '#9DB487', '#FFFBF0'],
+      // A course's floor: square tiles in a checker, a gap round each, lit at the top left.
+      fill: (x, y) => {
+        const tx = x % 4, ty = y % 4;
+        if (tx === 3 || ty === 3) return 3;
+        if (tx === 0 && ty === 0) return 4;
+        return (Math.floor(x / 4) + Math.floor(y / 4)) % 2 ? 2 : 1;
+      },
     },
     {
       id: 'tiltsies.sky', game: 'tiltsies', slot: 'frame', name: 'Cloudy sky',

@@ -124,13 +124,14 @@ export const set: MachineSet = {
     {
       id: 'trackdle.spoiler', game: 'trackdle', slot: 'hat', name: 'Rear spoiler',
       colors: ['#ED6137', '#B8441F', '#F7905F', '#2B2F38', '#FFF4DC'],
+      // Seen from behind the car: the wing between two tall endplates, up on its pylon.
       draw: on([
-        '4..........4',
-        '433333333334',
-        '422222222224',
-        '4..4....4..4',
-        '...4....4...',
-      ]),
+        '44........44',
+        '445555555544',
+        '441111111144',
+        '.....44.....',
+        '.....44.....',
+      ], 0, 1),
     },
     {
       id: 'trackdle.surfboard', game: 'trackdle', slot: 'hat', name: 'Surfboard',

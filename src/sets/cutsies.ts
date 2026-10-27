@@ -107,16 +107,16 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'cutsies.peel', game: 'cutsies', slot: 'hat', name: 'Banana peel',
-      // peel, peel shade, inside, tip
-      colors: ['#FFD84A', '#E0A920', '#FFF3C4', '#7A5230'],
+      id: 'cutsies.peel', game: 'cutsies', slot: 'hat', name: 'Cut banana',
+      // peel, peel shade, cut face, stalk tip, stalk, peel light
+      colors: ['#FFE04A', '#D9A11E', '#FFF6D2', '#5C3A1E', '#9A8A3A', '#FFF19A'],
+      // Lying on the head, one end cut clean off, the stalk up at the other.
       draw: on([
-        '.....44.....',
-        '....1122....',
-        '..11333222..',
-        '.113.33.322.',
-        '14...33...42',
-      ]),
+        '.........54',
+        '......6612.',
+        '..3666112..',
+        '.3311122...',
+      ], 0, 1),
     },
     {
       id: 'cutsies.cupcake', game: 'cutsies', slot: 'hat', name: 'Cupcake top',
@@ -224,3 +224,4 @@ export const set: MachineSet = {
     },
   },
 };
+
