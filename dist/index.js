@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-Dw4sjmOc.js";
+import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-BSJf_26Y.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -356,22 +356,27 @@ const BEATS = {
 	}
 };
 const EYE_TOKENS = new Set([T.EYE, T.WHITE]);
-/** The row the bottom of the eyes sits on, for this guy's shape or skin. */
-function eyeLineOf(config) {
-	const skin = itemById(config.skin);
-	return skin?.slot === "skin" ? skin.eyes : heads[config.head].eyes;
-}
 /** The bare body, mirrored the same way as the finished guy. */
 function bareOf(config) {
 	const bare = composeBase(config);
 	if (config.flip) for (const row of bare) row.reverse();
 	return bare;
 }
-/** Eye pixels: eye ink and eye shine in the rows the eyes are drawn on. */
+/** The colour low in an eye (shiny, sparkle, beans): part of the eye, so it shuts with it. */
+const IRIS_TOKENS = new Set([T.ACCENT, T.ACCENT_SHADE]);
+/**
+* Eye pixels: eye ink and eye shine in the rows the eyes are drawn on, and
+* the colour in them within the eyes' own columns (a frame round them stays).
+*/
 function eyeCells(grid, config) {
-	const line = eyeLineOf(config);
+	const face = faceOf(config);
+	const cols = new Set();
+	for (const e of face.eyes) for (let x = e.left; x <= e.right; x++) cols.add(config.flip ? GRID_SIZE - 1 - x : x);
 	const out = [];
-	for (let y = Math.max(0, line - 3); y <= line; y++) for (let x = 0; x < GRID_SIZE; x++) if (EYE_TOKENS.has(grid[y][x])) out.push([x, y]);
+	for (let y = Math.max(0, face.line - 3); y <= face.line; y++) for (let x = 0; x < GRID_SIZE; x++) {
+		const t = grid[y][x];
+		if (EYE_TOKENS.has(t) || y >= face.top && cols.has(x) && IRIS_TOKENS.has(t)) out.push([x, y]);
+	}
 	return out;
 }
 /**

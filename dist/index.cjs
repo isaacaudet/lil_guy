@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-Sab-qQE_.cjs');
+const require_paint = require('./paint-n5r_Y7wL.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -352,22 +352,27 @@ const BEATS = {
 	}
 };
 const EYE_TOKENS = new Set([require_paint.T.EYE, require_paint.T.WHITE]);
-/** The row the bottom of the eyes sits on, for this guy's shape or skin. */
-function eyeLineOf(config) {
-	const skin = require_paint.itemById(config.skin);
-	return skin?.slot === "skin" ? skin.eyes : require_paint.heads[config.head].eyes;
-}
 /** The bare body, mirrored the same way as the finished guy. */
 function bareOf(config) {
 	const bare = require_paint.composeBase(config);
 	if (config.flip) for (const row of bare) row.reverse();
 	return bare;
 }
-/** Eye pixels: eye ink and eye shine in the rows the eyes are drawn on. */
+/** The colour low in an eye (shiny, sparkle, beans): part of the eye, so it shuts with it. */
+const IRIS_TOKENS = new Set([require_paint.T.ACCENT, require_paint.T.ACCENT_SHADE]);
+/**
+* Eye pixels: eye ink and eye shine in the rows the eyes are drawn on, and
+* the colour in them within the eyes' own columns (a frame round them stays).
+*/
 function eyeCells(grid, config) {
-	const line = eyeLineOf(config);
+	const face = require_paint.faceOf(config);
+	const cols = new Set();
+	for (const e of face.eyes) for (let x = e.left; x <= e.right; x++) cols.add(config.flip ? require_paint.GRID_SIZE - 1 - x : x);
 	const out = [];
-	for (let y = Math.max(0, line - 3); y <= line; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) if (EYE_TOKENS.has(grid[y][x])) out.push([x, y]);
+	for (let y = Math.max(0, face.line - 3); y <= face.line; y++) for (let x = 0; x < require_paint.GRID_SIZE; x++) {
+		const t = grid[y][x];
+		if (EYE_TOKENS.has(t) || y >= face.top && cols.has(x) && IRIS_TOKENS.has(t)) out.push([x, y]);
+	}
 	return out;
 }
 /**

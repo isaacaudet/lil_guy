@@ -1150,25 +1150,26 @@ const heads = [
 		".....hhhhhh.....",
 		"................"
 	]),
-	head("jellyfish", 7, false, [
+	head("jellyfish", 8, false, [
 		"................",
 		"................",
-		".....######.....",
+		"......####......",
+		"....########....",
 		"...##########...",
 		"..############..",
 		"..############..",
 		"..############..",
 		"..############..",
 		"..############..",
-		"..############..",
 		".##############.",
-		".#.##s####s##.#.",
-		"..#....##....#..",
-		"...#...##...#...",
-		"..#....##....#..",
+		".#s##s####s##s#.",
+		"..##...##...##..",
+		"...##..##..##...",
+		"..##...##...##..",
 		"................"
 	]),
 	head("octopus", 8, false, [
+		"................",
 		"................",
 		"................",
 		".....######.....",
@@ -1180,31 +1181,30 @@ const heads = [
 		"..############..",
 		"..############..",
 		"..############..",
-		".##############.",
-		".#.##.####.##.#.",
-		".#..#.#..#.#..#.",
-		".....#....#.....",
+		".###.##..##.###.",
+		".#..##.##.##..#.",
+		".##..#....#..##.",
 		"................"
 	]),
 	head("robot", 8, true, [
 		"................",
-		".......hh.......",
+		".......rr.......",
 		".......ss.......",
 		"..############..",
-		"..############..",
+		"..#s########s#..",
 		"..#hhhhhhhhhh#..",
 		".s#hhhhhhhhhh#s.",
-		".s#hhhhhhhhhh#s.",
+		".d#hhhhhhhhhh#d.",
 		".s#hhhhhhhhhh#s.",
 		"..#hhhhhhhhhh#..",
 		"..#hhhhhhhhhh#..",
 		"..############..",
-		"..############..",
+		"..#s########s#..",
 		"................",
 		"................",
 		"................"
 	]),
-	head("cactus", 10, true, [
+	head("cactus", 9, true, [
 		"................",
 		"......####......",
 		".....#s##s#.....",
@@ -1222,10 +1222,10 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("saucer", 7, false, [
+	head("saucer", 8, false, [
 		"................",
 		"................",
-		".....######.....",
+		"......####......",
 		"....########....",
 		"...##########...",
 		"...##########...",
@@ -1234,9 +1234,9 @@ const heads = [
 		"..############..",
 		"..############..",
 		".##############.",
-		".#h##h####h##h#.",
-		"..ssssssssssss..",
-		"....s......s....",
+		".#y##y####y##y#.",
+		".ssssssssssssss.",
+		"...dd......dd...",
 		"................",
 		"................"
 	]),
@@ -1294,16 +1294,16 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("crab", 9, false, [
+	head("crab", 8, false, [
 		"................",
-		"................",
-		".#.#........#.#.",
-		".###........###.",
-		"..#..........#..",
+		".dd.d......d.dd.",
+		".dd.d......d.dd.",
+		".dddd......dddd.",
+		"..##........##..",
 		"..##.######.##..",
-		"...##########...",
 		"..############..",
-		"..############..",
+		".##############.",
+		".##############.",
 		".##############.",
 		".##############.",
 		"..############..",
@@ -1312,15 +1312,15 @@ const heads = [
 		"................",
 		"................"
 	]),
-	head("heart", 8, true, [
+	head("heart", 7, true, [
 		"................",
-		"................",
-		"................",
-		"...###....###...",
-		"..#####..#####..",
+		"..####....####..",
+		".######..######.",
 		".##############.",
 		".##############.",
 		".##############.",
+		".##############.",
+		"..############..",
 		"..############..",
 		"...##########...",
 		"....########....",
@@ -1467,21 +1467,21 @@ const eyes_ = (name, rows) => ({
 const eyes = [
 	eyes_("beans", [
 		"e....e",
-		"e....e",
+		"A....A",
 		"......"
 	]),
-	eyes_("shiny", ["we....we", "ee....ee"]),
+	eyes_("shiny", ["we....we", "eA....Ae"]),
 	eyes_("happy", [".ee....ee.", "e..e..e..e"]),
 	eyes_("sparkle", [
 		"we....we",
 		"ee....ee",
-		"ee....ee"
+		"eA....Ae"
 	]),
-	eyes_("wink", ["we....e.", "ee...e.e"]),
+	eyes_("wink", ["we....e.", "eA...e.e"]),
 	eyes_("glossy", [
 		"we....we",
 		"ee....ee",
-		"ew....ew"
+		"Aw....Aw"
 	]),
 	eyes_("excited", [
 		"e......e",
@@ -1501,33 +1501,37 @@ const eyes = [
 	eyes_("chill", [
 		"ss....ss",
 		"we....ew",
-		"ee....ee"
+		"eA....Ae"
 	]),
 	eyes_("side-eye", [
 		"ss....ss",
 		"ew....ew",
-		"ee....ee"
+		"Ae....Ae"
 	]),
-	eyes_("shades", ["weeeewee", "eee..eee"]),
+	eyes_("shades", [
+		".eeeeeeee.",
+		"eAAe..eAAe",
+		".ee....ee."
+	]),
 	eyes_("star", [
 		".y....y.",
 		"yyy..yyy",
 		".y....y."
 	]),
-	eyes_("squint", ["eee..eee", "wee..eew"]),
+	eyes_("squint", ["eee..eee", "eA....Ae"]),
 	eyes_("fired up", [
-		".y....y.",
-		"yry..yry",
-		"ere..ere"
+		".r......r.",
+		"rre....err",
+		".ey....ye."
 	]),
 	eyes_("laser", [
-		"..r....r..",
-		"rrw....wrr",
-		"..r....r.."
+		".ee....ee.",
+		"rey....yer",
+		".ee....ee."
 	]),
 	eyes_("cyclops", [
 		".ww.",
-		"weee",
+		"weAe",
 		"eeee"
 	]),
 	eyes_("sleepy", ["e.e....e.e", "eee....eee"]),
@@ -1537,9 +1541,9 @@ const eyes = [
 		"e.e..e.e"
 	]),
 	eyes_("anime", [
-		".eee..eee.",
-		"eewe..ewee",
-		".eae..eae."
+		".ee....ee.",
+		"eew....wee",
+		".aA....Aa."
 	]),
 	eyes_("galaxy", [
 		".ew....we.",
@@ -1579,7 +1583,11 @@ const mouths = [
 		"..t."
 	]),
 	mouth("grin", ["mmmmmm", ".mttm."]),
-	mouth("fang", ["m..m", ".mw."]),
+	mouth("fang", [
+		"mmmm",
+		"mwtm",
+		".mm."
+	]),
 	mouth("smirk", [
 		"....",
 		"...m",
@@ -1594,11 +1602,11 @@ const mouths = [
 	mouth("wobble", ["m.m.m.", ".m.m.m"]),
 	mouth("toothy", ["mwwwwm", ".mmmm."]),
 	mouth("tongue out", ["mmmm", "..t."]),
-	mouth("flat", ["m...m", ".mmm."]),
+	mouth("flat", ["mmmm", ".tt."]),
 	mouth("gritted", [
-		"mmmmmm",
-		"mwmwmw",
-		"mmmmmm"
+		".mmmm.",
+		"mwwwwm",
+		".mmmm."
 	]),
 	mouth("bubblegum", [
 		".cccc.",
@@ -1649,9 +1657,9 @@ const cheeks = [
 		"rr......rr"
 	]),
 	cheeks_("whiskers", [
-		"m........m",
-		"mmm....mmm",
-		"m........m"
+		"oo......oo",
+		"..........",
+		"oo......oo"
 	]),
 	cheeks_("hearts", ["r.r....r.r", ".r......r."]),
 	cheeks_("shine", ["ww......ww"]),
@@ -1798,7 +1806,7 @@ const hair = [
 		"..o.."
 	]),
 	pair("horns", [
-		"r..",
+		"w..",
 		"r..",
 		"rr.",
 		".rr"
@@ -1930,14 +1938,18 @@ const hair = [
 		"rrrrrwwr",
 		"rrrrrrrr"
 	]], 2),
-	{
-		name: "eggshell",
-		draw: (c) => {
-			capRows(c, 2, T.WHITE, T.WHITE);
-			const r = c.rows[c.crown + 2];
-			if (r) for (let x = r.left; x <= r.right; x += 2) c.set(x, c.crown + 2, T.WHITE);
-		}
-	},
+	hat("eggshell", [[
+		"....ww....",
+		"..wwwwww..",
+		".wwwwwwwh.",
+		"wwwwwwwwhh",
+		"w.ww.ww.wh"
+	], [
+		"...ww...",
+		".wwwwww.",
+		"wwwwwwhh",
+		"w.ww.w.h"
+	]], 2),
 	hat("frosting", [[
 		".....r...",
 		"....r....",
@@ -1963,31 +1975,41 @@ const hair = [
 		"...gG..."
 	]], 1),
 	hat("beret", [[
-		"......A...",
-		"...aaaaaa.",
-		".aaaaaaaaA",
-		"AaaaaaaaA."
+		"....A.....",
+		"..aaaaaa..",
+		".aaaaaaaaa",
+		"aAAAAAAAaa",
+		"........aA"
 	], [
-		".....A..",
-		"..aaaaa.",
-		"aaaaaaaA",
-		"AaaaaaA."
-	]], 1),
-	hat("witch hat", [[
-		"......aA..",
-		".....aaA..",
-		"....aaaA..",
-		"....aaaA..",
-		"...xxyxx..",
-		"aaaaaaaaaA"
-	], [
-		".....aA.",
-		"....aaA.",
-		"...aaaA.",
-		"...aaaA.",
-		"..xxyxx.",
-		"aaaaaaaA"
-	]], 1),
+		"...A....",
+		".aaaaaa.",
+		"aaaaaaaa",
+		"AAAAAAaa",
+		"......aA"
+	]], 2),
+	hat("witch hat", [
+		[
+			"........AA..",
+			"......aAA...",
+			".....aAAA...",
+			"....xxyxx...",
+			"aAAAAAAAAAAA"
+		],
+		[
+			".......AA.",
+			".....aAA..",
+			"....aAAA..",
+			"...xxyxx..",
+			"aAAAAAAAAA"
+		],
+		[
+			"......A.",
+			"....aAA.",
+			"...aAA..",
+			"..xxyxx.",
+			"aAAAAAAA"
+		]
+	], 1),
 	{
 		name: "propeller",
 		draw: (c) => {
@@ -2677,9 +2699,16 @@ const accessories = [
 				top: f.top - 1,
 				bottom: f.line + 1
 			};
-			rim$1(c, b$1, T.GOLD, T.LIGHT);
+			for (let y = b$1.top; y <= b$1.bottom; y++) for (let x = b$1.left; x <= b$1.right; x++) {
+				const edgeX = x === b$1.left || x === b$1.right, edgeY = y === b$1.top || y === b$1.bottom;
+				if (edgeX && edgeY) continue;
+				if (edgeX || edgeY) c.set(x, y, y === b$1.bottom || x === b$1.right ? T.GOLD_SHADE : T.GOLD);
+			}
 			c.set(b$1.left + 1, b$1.top, T.WHITE);
-			for (let y = b$1.top + 2, x = b$1.right + 1; y <= Math.min(b$1.bottom + 2, c.bottom); y++, x += y % 2) c.set(x, y, y % 2 ? T.GOLD_SHADE : T.GOLD);
+			for (let i = 0, x = b$1.right + 1, y = b$1.bottom; y <= c.bottom && c.isBody(x, y); i++, y++) {
+				c.set(x, y, i % 2 ? T.GOLD : T.GOLD_SHADE);
+				if (i === 1 && c.isBody(x + 1, y + 1)) x++;
+			}
 		}
 	},
 	{
@@ -2699,15 +2728,8 @@ const accessories = [
 				if (!corner && c.isBody(x, y)) c.set(x, y, T.OUTLINE);
 			}
 			c.set(b$1.left + 1, b$1.top + 1, T.DEEP);
-			const strap = (x0, y0, dx) => {
-				for (let i = 0;; i++) {
-					const x = x0 + dx * i, y = y0 - (i >> 1);
-					if (!c.isBody(x, y) || y <= c.tip) return;
-					c.set(x, y, T.OUTLINE);
-				}
-			};
-			strap(b$1.left - 1, b$1.top, -1);
-			strap(b$1.right + 1, b$1.top - 1, 1);
+			for (let x = b$1.right, y = b$1.top - 1; y >= b$1.top - 3 && c.isBody(x, y); x++, y--) c.set(x, y, T.OUTLINE);
+			for (let x = b$1.left - 1, y = b$1.top + 1; c.isBody(x, y); x--) c.set(x, y, T.OUTLINE);
 		}
 	},
 	{
@@ -2725,24 +2747,33 @@ const accessories = [
 		name: "medal",
 		layer: "body",
 		draw: (c) => {
-			const tall = [
-				[T.ACCENT, T.ACCENT_SHADE],
-				[T.ACCENT, T.ACCENT_SHADE],
-				[T.WHITE, T.GOLD],
-				[T.GOLD_SHADE, T.GOLD_SHADE]
+			const sizes = [
+				stamp([
+					"aAa",
+					".y.",
+					"ywY",
+					".Y."
+				]),
+				stamp([
+					".A.",
+					"ywY",
+					".Y."
+				]),
+				stamp([
+					"aA",
+					"wy",
+					"yY"
+				])
 			];
-			const short = [
-				tall[0],
-				tall[2],
-				tall[3]
-			];
-			let art = tall, at = clearSpot(c, 2, 4, 1, c.eyeLine + 1);
-			if (!at) {
-				art = short;
-				at = clearSpot(c, 2, 3) ?? clearSpot(c, 2, 3, 0);
+			for (const art of sizes) {
+				const at$1 = clearSpot(c, art[0].length, art.length, 1, c.eyeLine + 1) ?? clearSpot(c, art[0].length, art.length);
+				if (at$1) {
+					c.draw(art, at$1[0], at$1[1]);
+					return;
+				}
 			}
-			if (!at) return;
-			art.forEach((row, dy) => row.forEach((t, dx) => c.set(at[0] + dx, at[1] + dy, t)));
+			const at = clearSpot(c, 2, 3, 0);
+			if (at) c.draw(sizes[2], at[0], at[1]);
 		}
 	},
 	{
@@ -2976,7 +3007,7 @@ var Canvas = class Canvas {
 	* top row just under it, both centred. Everything worn is fitted to this.
 	*/
 	setFace(eye, mouth$1) {
-		const x0 = this.centred(eye), top = this.eyeLine - eye.length + 1;
+		const x0 = this.centred(eye);
 		const cols = [];
 		for (let dx = 0; dx < width(eye); dx++) if (eye.some((row) => row[dx])) cols.push(x0 + dx);
 		const eyes$1 = [];
@@ -2990,9 +3021,10 @@ var Canvas = class Canvas {
 		}
 		const firstRow = eye.findIndex((row) => row.some(Boolean));
 		const m = this.placeMouth(eye, mouth$1);
+		const top = m.line - eye.length + 1;
 		this.face = {
 			top: top + Math.max(0, firstRow),
-			line: this.eyeLine,
+			line: m.line,
 			eyes: eyes$1,
 			mouthTop: m.top,
 			mouthBottom: m.top + m.art.length - 1,
@@ -3001,30 +3033,70 @@ var Canvas = class Canvas {
 	}
 	/**
 	* The mouth's top row goes just under the eyes, unless a pixel of it would
-	* sit right under an eye: eyes that run into a mouth turn a face into one
-	* shape (an H, a box), and it stops reading as eyes and a mouth. Then the
-	* mouth drops a row where the head has room for it, with a column of face
-	* either side. Where it hasn't (a heart's point, a bat), it stays put:
-	* taking the corners off a smile left a frown.
+	* sit beside or under an eye pixel: eyes that run into a mouth turn a face
+	* into one shape (an H, a box), and it stops reading as eyes and a mouth. A
+	* corner touch is fine. Then the mouth drops a row or two where the head has
+	* room for it, with a column of face either side if it can. Where it hasn't
+	* (a heart's point, a car's bumper), the eyes go up a row instead.
 	*/
 	placeMouth(eye, mouth$1) {
 		const ex = this.centred(eye), mx = this.centred(mouth$1), w = width(mouth$1);
-		const under = new Set();
-		eye[eye.length - 1].forEach((t, dx) => {
-			if (t) under.add(ex + dx);
+		const eyeAt = (line$1) => {
+			const at = new Set(), ey = line$1 - eye.length + 1;
+			eye.forEach((row, dy) => row.forEach((t, dx) => {
+				if (t && this.isBody(ex + dx, ey + dy)) at.add((ey + dy) * 64 + ex + dx);
+			}));
+			return at;
+		};
+		const clear = (at, top$1) => mouth$1.every((row, dy) => row.every((t, dx) => {
+			const x = mx + dx, y = top$1 + dy;
+			return !t || !this.isBody(x, y) || ![
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			].some(([ox, oy]) => at.has((y + oy) * 64 + x + ox));
+		}));
+		const fits = (top$1, margin) => mouth$1.every((row, dy) => {
+			const y = top$1 + dy;
+			if (!row.some(Boolean)) return true;
+			return (!margin || this.isBody(mx - 1, y) && this.isBody(mx + w, y)) && row.every((t, dx) => !t || this.isBody(mx + dx, y));
 		});
-		const top = this.eyeLine + 1;
-		if (!mouth$1[0].some((t, dx) => t && under.has(mx + dx))) return {
+		const eyesFit = (line$1) => {
+			const ey = line$1 - eye.length + 1;
+			return eye.every((row, dy) => row.every((t, dx) => !t || this.isBody(ex + dx, ey + dy) && this.isBody(ex + dx, ey + dy - 1)));
+		};
+		const line = this.eyeLine, top = line + 1, here = eyeAt(line);
+		if (clear(here, top)) return {
 			top,
+			line,
 			art: mouth$1
 		};
-		const fits = mouth$1.every((row, dy) => {
-			const y = top + 1 + dy;
-			return this.isBody(mx - 1, y) && this.isBody(mx + w, y) && row.every((t, dx) => !t || this.isBody(mx + dx, y));
-		});
-		return {
-			top: fits ? top + 1 : top,
+		for (const margin of [true, false]) for (const drop of [1, 2]) if (clear(here, top + drop) && fits(top + drop, margin)) return {
+			top: top + drop,
+			line,
 			art: mouth$1
+		};
+		if (eyesFit(line - 1)) {
+			const up = eyeAt(line - 1);
+			for (const drop of [0, 1]) if (clear(up, top + drop) && fits(top + drop, false)) return {
+				top: top + drop,
+				line: line - 1,
+				art: mouth$1
+			};
+		}
+		const art = mouth$1.map((row, dy) => row.map((t, dx) => {
+			const x = mx + dx, y = top + dy;
+			return [
+				[1, 0],
+				[-1, 0],
+				[0, -1]
+			].some(([ox, oy]) => here.has((y + oy) * 64 + x + ox)) ? 0 : t;
+		}));
+		return {
+			top,
+			line,
+			art
 		};
 	}
 	/**
@@ -14469,7 +14541,7 @@ function faceCells(c, eye, mouth$1) {
 	const mark$1 = (s, x0, y0) => s.forEach((row, dy) => row.forEach((t, dx) => {
 		if (t && c.isBody(x0 + dx, y0 + dy)) face.add((y0 + dy) * GRID_SIZE + x0 + dx);
 	}));
-	mark$1(eye, c.centred(eye), c.eyeLine - eye.length + 1);
+	mark$1(eye, c.centred(eye), c.face.line - eye.length + 1);
 	mark$1(c.face.mouth, c.centred(mouth$1), c.face.mouthTop);
 	return face;
 }
@@ -14485,7 +14557,7 @@ const touches = (face, x, y) => {
 * sit diagonally by an eye, as a blush does.
 */
 function placeCheeks(c, cheek, face) {
-	const w = width(cheek), x0 = c.centred(cheek), y0 = c.eyeLine + 1, half = Math.floor(w / 2);
+	const w = width(cheek), x0 = c.centred(cheek), y0 = c.face.line + 1, half = Math.floor(w / 2);
 	const side = (x, y) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
 	const inner = (x, y) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
 	const ok = (x, y, t) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x) && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
@@ -14670,7 +14742,7 @@ function build(config, report) {
 			};
 		};
 		let best = tryOn(false);
-		if (c.floor - c.tip + 1 < 3) {
+		if (c.tip <= c.floor && c.floor - c.tip + 1 < 3) {
 			const d = tryOn(true);
 			if (d.cap && d.shown > best.shown) best = d;
 		}
@@ -14692,7 +14764,7 @@ function build(config, report) {
 	const preFace = c.grid.map((row) => [...row]);
 	if (accessory.layer === "face") accessory.draw(c);
 	const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
-	const line = c.eyeLine;
+	const line = c.face.line;
 	const cheek = skin || extras$1.cheeks ? cheeks[config.cheeks].art : [];
 	const face = faceCells(c, eye, mouth$1);
 	clearFace(c, face, bare, onFace);
@@ -15212,22 +15284,27 @@ const BEATS = {
 	}
 };
 const EYE_TOKENS = new Set([T.EYE, T.WHITE]);
-/** The row the bottom of the eyes sits on, for this guy's shape or skin. */
-function eyeLineOf(config) {
-	const skin = itemById(config.skin);
-	return skin?.slot === "skin" ? skin.eyes : heads[config.head].eyes;
-}
 /** The bare body, mirrored the same way as the finished guy. */
 function bareOf(config) {
 	const bare = composeBase(config);
 	if (config.flip) for (const row of bare) row.reverse();
 	return bare;
 }
-/** Eye pixels: eye ink and eye shine in the rows the eyes are drawn on. */
+/** The colour low in an eye (shiny, sparkle, beans): part of the eye, so it shuts with it. */
+const IRIS_TOKENS = new Set([T.ACCENT, T.ACCENT_SHADE]);
+/**
+* Eye pixels: eye ink and eye shine in the rows the eyes are drawn on, and
+* the colour in them within the eyes' own columns (a frame round them stays).
+*/
 function eyeCells(grid, config) {
-	const line = eyeLineOf(config);
+	const face = faceOf(config);
+	const cols = new Set();
+	for (const e of face.eyes) for (let x = e.left; x <= e.right; x++) cols.add(config.flip ? GRID_SIZE - 1 - x : x);
 	const out = [];
-	for (let y = Math.max(0, line - 3); y <= line; y++) for (let x = 0; x < GRID_SIZE; x++) if (EYE_TOKENS.has(grid[y][x])) out.push([x, y]);
+	for (let y = Math.max(0, face.line - 3); y <= face.line; y++) for (let x = 0; x < GRID_SIZE; x++) {
+		const t = grid[y][x];
+		if (EYE_TOKENS.has(t) || y >= face.top && cols.has(x) && IRIS_TOKENS.has(t)) out.push([x, y]);
+	}
 	return out;
 }
 /**
