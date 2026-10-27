@@ -8,31 +8,31 @@ export const set: MachineSet = {
   add: [
     // ---------------------------------------------------------------- skins
     {
-      id: 'cutsies.donut', game: 'cutsies', slot: 'skin', name: 'Frosted donut', eyes: 9,
-      // icing, icing shade, icing light, dough, dough shade, dough light, hole, sprinkles
+      id: 'cutsies.donut', game: 'cutsies', slot: 'skin', name: 'Donut floatie', eyes: 8,
+      // icing, icing shade, icing light, dough, dough shade, dough light, -, blue sprinkle, yellow sprinkle
       colors: ['#FF8FB8', '#E0679A', '#FFC2DA', '#E3A866', '#B97A3E', '#F2C98E', '#8A5428', '#5CC8F0', '#FFE066'],
       outline: '#7A3A2A',
-      art: grid16('donut', [
+      art: grid16('donut floatie', [
         '................',
         '................',
-        '................',
-        '....33333333....',
-        '..339177771182..',
-        '.31111166111112.',
-        '.31111111111112.',
-        '.39111111111182.',
-        '.31111111111112.',
-        '.31811111111912.',
-        '.21111111111112.',
-        '.54411441441145.',
-        '..555455545555..',
-        '...5555555555...',
+        '.....hh###......',
+        '....h######s....',
+        '...h########s...',
+        '..h##########s..',
+        '..h##########s..',
+        '..############..',
+        '..###########s..',
+        '..###########s..',
+        '.###########sss.',
+        '.31181191181192.',
+        '.21141144141142.',
+        '..554555545554..',
         '................',
         '................',
       ]),
     },
     {
-      id: 'cutsies.nigiri', game: 'cutsies', slot: 'skin', name: 'Salmon nigiri', eyes: 10,
+      id: 'cutsies.nigiri', game: 'cutsies', slot: 'skin', name: 'Salmon nigiri', eyes: 10, limb: 1,
       // rice, rice shade, rice light, salmon, salmon shade, fat stripe, salmon light
       colors: ['#FFFDF6', '#E6E0D2', '#F7F3EA', '#FF8A5B', '#E0663A', '#FFD6BF', '#FFAB82'],
       outline: '#7A3A24',
@@ -56,26 +56,25 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'cutsies.watermelon', game: 'cutsies', slot: 'skin', name: 'Giant watermelon', eyes: 8, showpiece: true, signature: 'pulse',
-      about: 'A whole watermelon, with the one cut that counts.',
-      // rind, stripe, rind light, rind shade, -, flesh
-      colors: ['#A8DB7A', '#4E9E3A', '#D2F0A8', '#2F6E2E', '#2F6E2E', '#F2454E'],
+      id: 'cutsies.watermelon', game: 'cutsies', slot: 'skin', name: 'Watermelon suit', eyes: 9, limb: 5, showpiece: true, signature: 'pulse',
+      // rind, rind stripe, rind light, white rind, flesh, flesh shade, seed, flesh light
+      colors: ['#8ED45C', '#2F6E2E', '#C9F08F', '#F4FBE8', '#F2454E', '#C42A36', '#2A1B10', '#FF7A80'],
       outline: '#1F4A22',
-      art: grid16('melon', [
+      art: grid16('watermelon suit', [
         '................',
         '................',
-        '................',
-        '....12211221....',
-        '..666666666666..',
-        '.32112211221124.',
-        '.32112211221124.',
-        '.32112211221124.',
-        '.32112211221124.',
-        '.32112211221124.',
-        '.32112211221124.',
-        '.32112211221124.',
-        '..442211221144..',
-        '....44444444....',
+        '.....312211.....',
+        '...3211221122...',
+        '..322112211221..',
+        '..322112211221..',
+        '..444444444444..',
+        '..58h######s65..',
+        '..5##########5..',
+        '..5##########6..',
+        '..5#########s6..',
+        '..65s######s56..',
+        '...6758575856...',
+        '....66555566....',
         '................',
         '................',
       ]),
@@ -83,51 +82,49 @@ export const set: MachineSet = {
 
     // ---------------------------------------------------------------- hats
     {
-      id: 'cutsies.flag', game: 'cutsies', slot: 'hat', name: '“You” flag', free: true,
-      about: 'The cocktail stick flag that marks your slice on the board.',
-      // stick, paper, paper shade
-      colors: ['#E8D2A8', '#FFFFFF', '#DDE3EA'],
+      id: 'cutsies.flag', game: 'cutsies', slot: 'hat', name: 'Chef’s headband', free: true,
+      about: 'Tied on before the first cut.',
+      // band, band shade
+      colors: ['#FFFFFF', '#D5DCE6'],
       draw: on([
-        '122222',
-        '12aa23',
-        '133333',
-        '1.....',
-        '1.....',
-      ], 2),
+        '..........1.1',
+        '..........11.',
+        '11111aa11111.',
+        '22222AA22222.',
+      ]),
     },
     {
       id: 'cutsies.toadstool', game: 'cutsies', slot: 'hat', name: 'Toadstool',
+      // cap, cap shade, spot, underside, cap light
       colors: ['#E8483B', '#B8302A', '#FFFFFF', '#FFF1DC', '#FF7A6E'],
       draw: on([
-        '....5111....',
-        '..51133112..',
-        '.5111111332.',
-        '533111111122',
+        '...511331...',
+        '.5133111112.',
+        '511111133112',
         '444444444444',
       ]),
     },
     {
-      id: 'cutsies.peel', game: 'cutsies', slot: 'hat', name: 'Cut banana',
-      // peel, peel shade, cut face, stalk tip, stalk, peel light
-      colors: ['#FFE04A', '#D9A11E', '#FFF6D2', '#5C3A1E', '#9A8A3A', '#FFF19A'],
-      // Lying on the head, one end cut clean off, the stalk up at the other.
+      id: 'cutsies.peel', game: 'cutsies', slot: 'hat', name: 'Banana peel',
+      about: 'What’s left once the banana’s been cut.',
+      // peel, peel shade, inside, stalk, peel light
+      colors: ['#FFE04A', '#D9A11E', '#FFF6D2', '#5C3A1E', '#FFF19A'],
       draw: on([
-        '.........54',
-        '......6612.',
-        '..3666112..',
-        '.3311122...',
-      ], 0, 1),
+        '.....44.....',
+        '....5112....',
+        '.5513333122.',
+        '51..1332..12',
+      ]),
     },
     {
-      id: 'cutsies.cupcake', game: 'cutsies', slot: 'hat', name: 'Cupcake top',
-      // frosting, frosting shade, frosting light, cherry, cherry light, stem
-      colors: ['#FF9EC4', '#E0679A', '#FFD0E2', '#E5243B', '#FF8A96', '#5C8A2E'],
+      id: 'cutsies.cupcake', game: 'cutsies', slot: 'hat', name: 'Cupcake',
+      // frosting, frosting shade, frosting light, cherry, cherry light, wrapper, wrapper shade
+      colors: ['#FF9EC4', '#E0679A', '#FFD0E2', '#E5243B', '#FF8A96', '#7AC8F0', '#4A9ACC'],
       draw: on([
-        '.....45.....',
-        '....3442....',
+        '.....54.....',
         '...311112...',
-        '..32222222..',
-        '.3111111112.',
+        '.3112211222.',
+        '..67676767..',
       ]),
     },
 
@@ -150,13 +147,14 @@ export const set: MachineSet = {
     // ---------------------------------------------------------------- buddies
     {
       id: 'cutsies.pear', game: 'cutsies', slot: 'buddy', name: 'Pear',
+      // pear, shade, light, stem, leaf
       colors: ['#C6E05A', '#93B33A', '#E8F59A', '#7A5230', '#5CA83A'],
       art: pet('pear', [
-        '...45.',
-        '..31..',
+        '..45..',
         '.3112.',
         '311112',
-        '.3122.',
+        '3o11o2',
+        '.1122.',
       ]),
     },
     {
@@ -165,31 +163,33 @@ export const set: MachineSet = {
       art: pet('tomato', [
         '..44..',
         '.34441',
-        '311112',
+        '3o11o2',
         '311112',
         '.1122.',
       ]),
     },
     {
       id: 'cutsies.corn', game: 'cutsies', slot: 'buddy', name: 'Corn cob',
+      // kernel, kernel shade, kernel light, husk, husk shade
       colors: ['#FFD23F', '#E0A620', '#FFEC99', '#7CC24A', '#4E8A2E'],
       art: pet('corn cob', [
-        '..3131',
-        '.41212',
-        '443131',
-        '.51212',
-        '..5...',
+        '..32..',
+        '.3132.',
+        '4o11o5',
+        '441255',
+        '.4455.',
       ]),
     },
     {
       id: 'cutsies.eggplant', game: 'cutsies', slot: 'buddy', name: 'Eggplant',
+      // purple, shade, light, cap, cap shade
       colors: ['#8A55C8', '#5A2E8C', '#C49BEF', '#5CA83A', '#3E7A26'],
       art: pet('eggplant', [
-        '5.....',
-        '44331.',
-        '443111',
-        '.31111',
-        '..1122',
+        '..44..',
+        '.4554.',
+        '.3112.',
+        '3o11o2',
+        '.1122.',
       ]),
     },
   ],
@@ -200,6 +200,73 @@ export const set: MachineSet = {
     'cutsies.seedling', 'cutsies.cherries', 'cutsies.pineapple', 'cutsies.shadow',
   ],
   redraw: {
+    'cutsies.kiwi': {
+      name: 'Kiwi hoodie', eyes: 9, limb: 1,
+      about: 'Fuzzy outside, cut open round the face.',
+      // fuzz, fuzz shade, fuzz light, flesh, flesh light, seed
+      colors: ['#B88A5A', '#8E6438', '#D9AE7E', '#86CF55', '#C9F08F', '#2A1B10'],
+      outline: '#4E3420',
+      art: grid16('kiwi hoodie', [
+        '................',
+        '................',
+        '................',
+        '....33111112....',
+        '...3311111112...',
+        '..314464646412..',
+        '..14h######s41..',
+        '..14h######s41..',
+        '..14########41..',
+        '..14########41..',
+        '..14#######s41..',
+        '..214s####s412..',
+        '...2144444412...',
+        '....22111122....',
+        '................',
+        '................',
+      ]),
+    },
+    'cutsies.strawberry': {
+      name: 'Strawberry hoodie', eyes: 9, limb: 1,
+      // red, red shade, red light, seed, leaf, leaf shade, leaf light
+      colors: ['#E8343F', '#B01E2A', '#FF6E78', '#FFE07A', '#5CB83A', '#3E8A26', '#9AE070'],
+      outline: '#5A0E16',
+      art: grid16('strawberry hoodie', [
+        '................',
+        '.......56.......',
+        '...57.7557.75...',
+        '..556555555655..',
+        '..314111411412..',
+        '..311141111112..',
+        '..31h######s12..',
+        '..4h########s2..',
+        '..1##########2..',
+        '..1##########4..',
+        '..2#########s2..',
+        '..21s######s12..',
+        '...2141141412...',
+        '.....222222.....',
+        '................',
+        '................',
+      ]),
+    },
+    'cutsies.seeds': {
+      name: 'Melon slice',
+      // flesh, seed, white rind, rind, rind shade, flesh light
+      colors: ['#FF8FA3', '#3A1E1A', '#FFF4E0', '#A8DB7A', '#4E9E3A', '#FFB3C0'],
+      fill: (x, y) => {
+        const X = ((x % 16) + 16) % 16, Y = ((y % 16) + 16) % 16;
+        // The guy stands on the slice: white, then the green rind, along the foot.
+        if (Y === 13) return 3;
+        if (Y === 14) return 4;
+        if (Y === 15) return 5;
+        // A few seeds down each side, clear of the guy: a dark drop with a glint of flesh above it.
+        for (const [sx, sy] of [[1, 2], [13, 1], [2, 7], [14, 5], [1, 11], [13, 10]]) {
+          if (X === sx && (Y === sy || Y === sy + 1)) return 2;
+          if (X === sx && Y === sy - 1) return 6;
+        }
+        return 1;
+      },
+    },
     'cutsies.chef': {
       // Tall and pleated, the puff wider than the band.
       draw: on([
@@ -212,16 +279,6 @@ export const set: MachineSet = {
       colors: ['#F7F9FC', '#D5DCE6', '#FFFFFF', '#B9C4D2'],
     },
     'cutsies.board': { name: 'Chopping board' },
-    'cutsies.seeds': {
-      // An even grid of seeds, each row set half a step along from the last.
-      colors: ['#FF9DAF', '#3A1E1A', '#FFC2CC'],
-      fill: (x, y) => {
-        const row = Math.floor(y / 4), sx = (x + (row % 2) * 2) % 4;
-        if (sx === 1 && y % 4 === 1) return 2;
-        if (sx === 1 && y % 4 === 2) return 3;
-        return 1;
-      },
-    },
   },
 };
 

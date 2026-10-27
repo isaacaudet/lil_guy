@@ -1,4 +1,4 @@
-import { grid16, on, pet, type MachineSet } from '../item-art';
+import { grid16, on, onPair, pet, type MachineSet } from '../item-art';
 
 /**
  * Tiltsies' machine: its own hamsters (Biscuit, Mochi, Pebble, Custard) and
@@ -8,101 +8,104 @@ import { grid16, on, pet, type MachineSet } from '../item-art';
 export const set: MachineSet = {
   add: [
     // ---------------------------------------------------------------- skins
+    // Every skin is a guy in costume: his own face (and colour) looks out of
+    // the suit, and his arms and feet come out of its sleeves.
     {
-      id: 'tiltsies.biscuit', game: 'tiltsies', slot: 'skin', name: 'Biscuit', eyes: 8, limb: 2,
-      about: 'The golden classic, the hamster everyone starts with.',
+      id: 'tiltsies.biscuit', game: 'tiltsies', slot: 'skin', name: 'Biscuit hoodie', eyes: 9, limb: 1,
+      about: 'The golden classic.',
       // coat, coat shade, coat light, inner ear, cream, cream shade
       colors: ['#E9B88A', '#C98A55', '#F6D2AE', '#FF9AA4', '#FFF1DE', '#EBD3B4'],
       outline: '#5A3418',
-      art: grid16('biscuit', [
+      art: grid16('biscuit hoodie', [
         '................',
         '................',
-        '...22......22...',
-        '..2442....2442..',
-        '..243111111342..',
+        '...33......32...',
+        '..3443....3442..',
+        '..344311113442..',
         '..311111111112..',
-        '.31111111111112.',
-        '.31111111111112.',
-        '.31111111111112.',
-        '.31115555551112.',
-        '.31155555555112.',
-        '.21155555555112.',
-        '..215555555512..',
-        '...2266666622...',
+        '..31h######s12..',
+        '..1h########s2..',
+        '..1##########2..',
+        '..1##########2..',
+        '..2#########s2..',
+        '..25s######s52..',
+        '...2555555552...',
+        '....22666622....',
         '................',
         '................',
       ]),
     },
     {
-      id: 'tiltsies.candy', game: 'tiltsies', slot: 'skin', name: 'Candy ball', eyes: 8,
-      // stripe, white, glint, rim shade
-      colors: ['#FF9FB0', '#FFF1F3', '#FFFFFF', '#E06F86'],
-      outline: '#9A3048',
-      art: grid16('candy ball', [
+      id: 'tiltsies.candy', game: 'tiltsies', slot: 'skin', name: 'Mochi hoodie', eyes: 9, limb: 1,
+      about: 'Snow white, with a bow.',
+      // fur, fur shade, white, inner ear, bow, bow knot, bow light
+      colors: ['#FBF6EF', '#E3D6C6', '#FFFFFF', '#F1C9C9', '#E8483B', '#B8302A', '#FF8A80'],
+      outline: '#7A5A48',
+      art: grid16('mochi hoodie', [
         '................',
         '................',
-        '.....312221.....',
-        '....33222111....',
-        '...3332211122...',
-        '..333221112221..',
-        '..122211122214..',
-        '..222111222114..',
-        '..221112221114..',
-        '..211122211124..',
-        '..111222111224..',
-        '...1222111224...',
-        '....22111224....',
-        '.....144444.....',
-        '................',
-        '................',
-      ]),
-    },
-    {
-      id: 'tiltsies.starry', game: 'tiltsies', slot: 'skin', name: 'Starry ball', eyes: 8,
-      // glass, glass shade, glint, -, seam, star
-      colors: ['#BFE2FF', '#8CC7F5', '#F4FAFF', '#D4ECFF', '#2A5B86', '#FFC93A'],
-      outline: '#2A5B86',
-      art: grid16('starry ball', [
-        '................',
-        '................',
-        '.....611111.....',
-        '....66611116....',
-        '...3361111666...',
-        '..333111111611..',
-        '..111111111112..',
-        '..111111111112..',
-        '..511111111112..',
-        '..111111111162..',
-        '..161111111666..',
-        '...6611111116...',
-        '....11111112....',
-        '.....122222.....',
+        '...33.....55.55.',
+        '..3443....57675.',
+        '..3443111155155.',
+        '..311111111112..',
+        '..31h######s12..',
+        '..1h########s2..',
+        '..1##########2..',
+        '..1##########2..',
+        '..2#########s2..',
+        '..23s######s32..',
+        '...2333333332...',
+        '....22222222....',
         '................',
         '................',
       ]),
     },
     {
-      id: 'tiltsies.golden', game: 'tiltsies', slot: 'skin', name: 'Golden seed', eyes: 10, showpiece: true, signature: 'shimmer',
-      about: 'The rare seed on a course, in gold.',
+      id: 'tiltsies.starry', game: 'tiltsies', slot: 'skin', name: 'Starfall pyjamas', eyes: 9, limb: 1,
+      // navy, navy shade, navy light, star, pompom, cuff
+      colors: ['#3A4A8C', '#2A3466', '#5A6CB8', '#FFC93A', '#FFF4D6', '#DDE6FF'],
+      outline: '#161C3A',
+      art: grid16('starfall pyjamas', [
+        '................',
+        '......331112....',
+        '.....3111112255.',
+        '....31111111255.',
+        '...3114111142...',
+        '..311111111412..',
+        '..31h######s12..',
+        '..1h########s2..',
+        '..1##########2..',
+        '..1##########2..',
+        '..2#########s2..',
+        '..26s######s62..',
+        '..216666666612..',
+        '...2242224222...',
+        '................',
+        '................',
+      ]),
+    },
+    {
+      id: 'tiltsies.golden', game: 'tiltsies', slot: 'skin', name: 'Golden seed', eyes: 9, limb: 1, showpiece: true, signature: 'shimmer',
+      about: 'The rare seed on a course, worn.',
       // gold, gold shade, gold light, pale stripe
       colors: ['#F2B530', '#C98A12', '#FFE07A', '#FFF3C0'],
       outline: '#6A4508',
       art: grid16('golden seed', [
         '................',
-        '.......34.......',
-        '......3114......',
-        '......3114......',
-        '.....314114.....',
-        '.....314114.....',
-        '....31141142....',
-        '....31141142....',
-        '...3111111112...',
-        '..311111111112..',
-        '..311111111112..',
-        '..311111111112..',
-        '..311111111112..',
-        '...2111111112...',
-        '....22222222....',
+        '.......32.......',
+        '......3312......',
+        '.....313112.....',
+        '....34131142....',
+        '...3141311412...',
+        '...3141111412...',
+        '..311h#####112..',
+        '..31h#######12..',
+        '..31#######s12..',
+        '..21#######s12..',
+        '..211#####s112..',
+        '..211411114112..',
+        '...2222222222...',
+        '................',
         '................',
       ]),
     },
@@ -121,25 +124,26 @@ export const set: MachineSet = {
     },
     {
       id: 'tiltsies.sprout', game: 'tiltsies', slot: 'hat', name: 'Pebble’s sprout',
+      // leaf, leaf shade, leaf light, stem
       colors: ['#6CC24A', '#3E8A2E', '#B4EA8A', '#5A9A3A'],
       draw: on([
-        '33...12',
-        '3314122',
-        '.11412.',
-        '...4...',
-        '...4...',
+        '.33...11.',
+        '3333.1112',
+        '.3334112.',
+        '....4....',
+        '....4....',
       ]),
     },
     {
-      id: 'tiltsies.daisy', game: 'tiltsies', slot: 'hat', name: 'Custard’s daisy',
-      colors: ['#FFFFFF', '#DCE3EA', '#FFC93A', '#E0A010'],
+      id: 'tiltsies.daisy', game: 'tiltsies', slot: 'hat', name: 'Daisy crown',
+      // petal, petal shade, centre, centre shade, leaf, leaf shade
+      colors: ['#FFFFFF', '#DCE3EA', '#FFC93A', '#E0A010', '#6CC24A', '#3E8A2E'],
       draw: on([
-        '.1.1.',
-        '11311',
-        '.343.',
-        '11411',
-        '.2.2.',
-      ], 3),
+        '.1....1....1.',
+        '131..131..131',
+        '.1.55.1.55.1.',
+        '6555555555556',
+      ]),
     },
 
     // ---------------------------------------------------------------- frames
@@ -178,37 +182,40 @@ export const set: MachineSet = {
 
     // ---------------------------------------------------------------- buddies
     {
-      id: 'tiltsies.sunseed', game: 'tiltsies', slot: 'buddy', name: 'Sunflower seed',
-      colors: ['#3A3530', '#6B635A', '#E8DCC0'],
-      art: pet('sunflower seed', [
-        '.111..',
-        '13331.',
-        '111111',
-        '13331.',
-        '.111..',
+      id: 'tiltsies.sunseed', game: 'tiltsies', slot: 'buddy', name: 'Pocket hamster',
+      // coat, shade, light, pink, cream
+      colors: ['#E9B88A', '#C98A55', '#F6D2AE', '#FF9AA4', '#FFF1DE'],
+      art: pet('pocket hamster', [
+        '.4..4.',
+        '311112',
+        '3o11o2',
+        '154452',
+        '.5555.',
       ]),
     },
     {
-      id: 'tiltsies.bumper', game: 'tiltsies', slot: 'buddy', name: 'Bumper',
-      colors: ['#E8392B', '#A8231A', '#FF7A6E', '#FFFFFF', '#DDE3EA'],
-      art: pet('bumper', [
-        '.3311.',
-        '311112',
-        '444445',
-        '311112',
-        '.2222.',
+      id: 'tiltsies.bumper', game: 'tiltsies', slot: 'buddy', name: 'Ladybug',
+      // red, red shade, red light, black, white
+      colors: ['#E8392B', '#A8231A', '#FF7A6E', '#2B2F38', '#FFFFFF'],
+      art: pet('ladybug', [
+        '.5445.',
+        '311412',
+        '141412',
+        '311142',
+        '.1122.',
       ]),
     },
     {
-      id: 'tiltsies.spring', game: 'tiltsies', slot: 'buddy', name: 'Spring',
-      // coil, coil shade, plate, plate shade
-      colors: ['#FF8A3D', '#B85A1C', '#F4EBD6', '#C9BC9C'],
-      art: pet('spring', [
-        '333333',
-        '.4444.',
-        '..11..',
-        '.1..1.',
-        '..11..',
+      id: 'tiltsies.spring', game: 'tiltsies', slot: 'buddy', name: 'Springy',
+      about: 'Every trampoline’s best friend.',
+      // green, shade, light, belly, cheek
+      colors: ['#7CCB5A', '#4E9A3A', '#B4EA8A', '#E8F5C8', '#FF9AA4'],
+      art: pet('springy', [
+        '3o..o3',
+        '311112',
+        '511115',
+        '144441',
+        '22..22',
       ]),
     },
     {
@@ -232,6 +239,38 @@ export const set: MachineSet = {
     'tiltsies.hamlet', 'tiltsies.rolly', 'tiltsies.sunflower', 'tiltsies.hedgehog',
   ],
   redraw: {
+    'tiltsies.ball': {
+      eyes: 9,
+      // rim, glass, glint, rim shade
+      colors: ['#BFE2F2', '#EAF6FD', '#FFFFFF', '#8CC7E5'],
+      outline: '#4E7A92',
+      art: grid16('hamster ball', [
+        '................',
+        '......1111......',
+        '....11332211....',
+        '...1322222221...',
+        '..132222222224..',
+        '..122hh####224..',
+        '.122h#######224.',
+        '.12h#########24.',
+        '.12##########24.',
+        '.12##########24.',
+        '..1#########s4..',
+        '..1########ss4..',
+        '...1s######s4...',
+        '....44ssss44....',
+        '......4444......',
+        '................',
+      ]),
+    },
+    'tiltsies.ears': {
+      draw: onPair([
+        '33.',
+        '321',
+        '321',
+        '114',
+      ], 0),
+    },
     'tiltsies.buddy': {
       colors: ['#E9B88A', '#C98A55', '#FFF1DE', '#FF9AA4', '#2A1B10'],
       draw: on([
