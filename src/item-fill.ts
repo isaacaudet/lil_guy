@@ -85,16 +85,4 @@ export function underFloor(item: Item): string[] {
  * and fails on anything else under its floor; take an id out as its item is
  * redrawn, and never add one.
  */
-export const UNDERSIZED: readonly string[] = [
-  'flipsies.bottle',
-  'puttsies.ball',
-  'flipsies.goldfish',
-  'flipsies.ketchup',
-  'puttsies.top-hat',
-  'puttsies.cup-flag',
-  'weighsies.gold-bar',
-  'weighsies.eiffel',
-  'weighsies.whale',
-  'weighsies.trex',
-  'weighsies.pigeon',
-];
+export const UNDERSIZED: readonly string[] = [];

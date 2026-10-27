@@ -1,107 +1,116 @@
-import { grid16, on, pet, type MachineSet } from '../item-art';
+import { grid16, on, pet, sit, type MachineSet } from '../item-art';
+import { stamp } from '../parts/art';
+import type { Canvas } from '../parts/canvas';
+
+/** A hat stood on the crown as drawn, rather than pulled down round the head like a cap. */
+const perch = (rows: string[], sink = 1) => {
+  const s = stamp(rows);
+  return (c: Canvas) => sit(c, s, 0, sink);
+};
 
 /**
- * Weighsies's machine: the scale itself, and the things it weighs (a gold
- * bar, a basketball, a kettlebell, a grand piano, an apple, the Great
- * Pyramid, the Eiffel Tower, a cat, a whale, a T. rex, a pigeon).
+ * Weighsies's machine: the animals and the heavy things the scale weighs (a
+ * panda, a penguin, a capybara, a T. rex, the pharaohs' pyramid, the Statue of
+ * Liberty), and a kettlebell.
  */
 export const set: MachineSet = {
   add: [
     // ------------------------------------------------------------ skins
     {
-      id: 'weighsies.gold-bar', game: 'weighsies', slot: 'skin', name: 'Gold bar', eyes: 9,
-      colors: ['#F2C230', '#C8901E', '#FFE07A', '#FFFFFF', '#E0A92A', '#FFD54A'],
-      outline: '#7A5212',
-      // An ingot from the front and a little above: its light top face, the
-      // front widening down to the bench.
-      art: grid16('gold bar', [
+      id: 'weighsies.gold-bar', game: 'weighsies', slot: 'skin', name: 'Panda onesie', eyes: 9, limb: 4,
+      colors: ['#F7F6F2', '#C8CAD2', '#FFFFFF', '#2B2D35', '#4B4F5C', '#FFC4CF', '#F09AAE', '#FFE6EB'],
+      outline: '#1A1B22',
+      // A pink lil guy zipped into a giant panda suit: black ears on the hood, black paws.
+      art: grid16('panda onesie', [
         '................',
         '................',
-        '................',
-        '................',
-        '....33333333....',
-        '...3333433333...',
-        '...6666666666...',
+        '..545......545..',
+        '..444311112444..',
         '..311111111112..',
         '..311111111112..',
-        '..311111111112..',
-        '.31111111111112.',
-        '.31111111111112.',
-        '.22222222222222.',
-        '................',
+        '..311866666112..',
+        '..318666666612..',
+        '..316666666612..',
+        '..316666666612..',
+        '..316666666712..',
+        '..311777777112..',
+        '...4111111114...',
+        '....44222244....',
         '................',
         '................',
       ]),
     },
     {
-      id: 'weighsies.basketball', game: 'weighsies', slot: 'skin', name: 'Basketball', eyes: 9,
-      colors: ['#F07A2E', '#C85A1A', '#FFA466', '#2B2420'],
-      outline: '#5A2A10',
-      // The seams curve down either side and run top and bottom, clear of the face.
-      art: grid16('basketball', [
+      id: 'weighsies.basketball', game: 'weighsies', slot: 'skin', name: 'Penguin onesie', eyes: 9, limb: 3,
+      colors: ['#F4F6FA', '#C9D0DE', '#2B3040', '#1A1E2A', '#4C556E', '#FF9A2E', '#FFD25A', '#BFE2FF', '#8EC0EE'],
+      outline: '#141824',
+      // A sky-blue lil guy in an emperor penguin suit: the hood's own little eyes and beak up top,
+      // the yellow at his cheeks, a white bib.
+      art: grid16('penguin onesie', [
         '................',
-        '.....114111.....',
-        '...1141411411...',
-        '..114114111411..',
-        '..141134111141..',
-        '.11413141111422.',
-        '.14111111111142.',
-        '.14111111111142.',
-        '.14111111111142.',
-        '.14111111111142.',
-        '.14111111111142.',
-        '..141111111142..',
-        '..142111111242..',
-        '...2422412242...',
-        '.....224222.....',
         '................',
-      ]),
-    },
-    {
-      id: 'weighsies.piano', game: 'weighsies', slot: 'skin', name: 'Grand piano', eyes: 7,
-      colors: ['#23252C', '#121318', '#5A6070', '#F7F5EE', '#C9C5BA', '#D9A63A'],
-      outline: '#08090C',
-      // Its lid propped open behind, the gold inside showing, the keys along the front, three legs.
-      art: grid16('grand piano', [
-        '................',
-        '............11..',
-        '........11133...',
-        '....11113333....',
-        '.66666666666662.',
-        '.11111111111112.',
-        '.11111111111112.',
-        '.11111111111112.',
-        '.11111111111112.',
-        '.11111111111112.',
-        '.44244244244245.',
-        '.44444444444445.',
-        '..2.....2....2..',
-        '..2.....2....2..',
+        '.....553333.....',
+        '....53133134....',
+        '...3333663334...',
+        '..333333333334..',
+        '..333188888334..',
+        '..331888888834..',
+        '..338888888834..',
+        '..378888888874..',
+        '..378888888974..',
+        '..331999999134..',
+        '...3111111124...',
+        '....31222214....',
         '................',
         '................',
       ]),
     },
     {
-      id: 'weighsies.kitchen-scale', game: 'weighsies', slot: 'skin', name: 'Kitchen scale', eyes: 8, showpiece: true, signature: 'pulse',
-      about: 'Weighs everything.',
-      colors: ['#FFF8E8', '#E8DCC0', '#2F4FA8', '#C9D6F5', '#E5484D', '#F6EBD2', '#D8C8A6', '#1F3478'],
-      outline: '#16224A',
-      // The dial is the face, its red needle up top; the pan on top; a blue body on two feet.
-      art: grid16('kitchen scale', [
+      id: 'weighsies.piano', game: 'weighsies', slot: 'skin', name: 'Capybara', eyes: 9, limb: 2,
+      colors: ['#C48A57', '#94603A', '#DDAA78', '#6E4426', '#FFA62E', '#E07A12', '#5BAE4A', '#FFD08A'],
+      outline: '#4A2C16',
+      // A round capybara, an orange balanced on his head the way they wear them in the hot springs.
+      art: grid16('capybara', [
+        '................',
+        '......85577.....',
+        '.....855556.....',
+        '...44.5566.44...',
+        '...3311111112...',
+        '..331111111112..',
+        '..311111111112..',
+        '..311111111122..',
+        '..311111111112..',
+        '..311111111112..',
+        '..211111111122..',
+        '..311111111122..',
+        '...2111111122...',
+        '....22222222....',
         '................',
         '................',
-        '.66666666666666.',
-        '...7777777777...',
-        '...3344444433...',
-        '..334815518433..',
-        '..341111111143..',
-        '..341111111143..',
-        '..341111111143..',
-        '..341111111143..',
-        '..334111111433..',
-        '..333444444333..',
-        '...8888888888...',
-        '..66........66..',
+      ]),
+    },
+    {
+      id: 'weighsies.kitchen-scale', game: 'weighsies', slot: 'skin', name: 'T. rex onesie', eyes: 8, limb: 1, showpiece: true, signature: 'pulse',
+      about: 'Seven tonnes of costume.',
+      colors: ['#6CC86A', '#3F9A4E', '#A6E890', '#FFFFFF', '#FFC93A', '#FFC89A', '#2B2F38', '#D7F5C2', '#F0A06E'],
+      outline: '#1C3A22',
+      // A peach lil guy in a dinosaur suit: a spike on the hood, its eyes up top, and his face
+      // looking out of its jaws.
+      art: grid16('t. rex onesie', [
+        '................',
+        '.......52.......',
+        '....33152112....',
+        '...3471111742...',
+        '..311111111112..',
+        '..341414141412..',
+        '..314666666612..',
+        '..316666666612..',
+        '..316666666612..',
+        '..316666666912..',
+        '..319999999912..',
+        '..314141414142..',
+        '...3888888882...',
+        '....22222222....',
         '................',
         '................',
       ]),
@@ -109,28 +118,26 @@ export const set: MachineSet = {
 
     // ------------------------------------------------------------ hats
     {
-      id: 'weighsies.scale-pan', game: 'weighsies', slot: 'hat', name: 'Scale pan', free: true,
-      colors: ['#F6EBD2', '#D8C8A6', '#FFFFFF', '#E5484D', '#B83236', '#FF8A8A'],
-      // The cream pan off the scale, a little red weight sat in it.
+      id: 'weighsies.scale-pan', game: 'weighsies', slot: 'hat', name: 'Bear ears', free: true,
+      colors: ['#9A6440', '#6E4426', '#C48A5E', '#F2A6B4'],
+      // A headband with round brown bear ears, for a day out at the zoo.
       draw: on([
-        '....664....',
-        '....445....',
-        '....445....',
-        '.311111112.',
-        '..2222222..',
-      ]),
+        '.31......31.',
+        '3412....3412',
+        '1122....1122',
+        '222222222222',
+      ], 0, 1),
     },
     {
-      id: 'weighsies.apple', game: 'weighsies', slot: 'hat', name: 'Apple',
-      colors: ['#E5383D', '#A8202A', '#FF8A8A', '#4FAE5C', '#2E7D3A', '#6A3A18'],
-      // A red apple balanced on the head, its stalk and a leaf.
-      draw: on([
-        '...645',
-        '.3161.',
-        '311112',
-        '311112',
-        '.1122.',
-      ], 0, 2),
+      id: 'weighsies.apple', game: 'weighsies', slot: 'hat', name: 'Apple shot',
+      colors: ['#E5383D', '#A8202A', '#FF8A8A', '#4FAE5C', '#C89A5E', '#6A3A18', '#B9C2CF', '#FFFFFF', '#E5484D'],
+      // William Tell's apple on his head, the arrow clean through it.
+      draw: perch([
+        '......64.....',
+        '.....3112..7.',
+        '8955531125577',
+        '98...1122..7.',
+      ], 1),
     },
     {
       id: 'weighsies.topknot', game: 'weighsies', slot: 'hat', name: 'Sumo topknot',
@@ -145,27 +152,26 @@ export const set: MachineSet = {
       ], 0, 2),
     },
     {
-      id: 'weighsies.pyramid', game: 'weighsies', slot: 'hat', name: 'Great Pyramid',
-      colors: ['#F2D08A', '#B98A48', '#FFE6B0', '#D9B26E', '#96692E'],
-      // Stood on the head, seen from a corner: a sunlit face and a shaded one, courses of stone across both.
+      id: 'weighsies.pyramid', game: 'weighsies', slot: 'hat', name: 'Pharaoh',
+      colors: ['#2F5FD0', '#1E3E96', '#5C8BF0', '#F2C230', '#C8901E', '#FFE07A', '#E5484D'],
+      // The striped headcloth from the pyramids, a gold cobra rearing at the front.
       draw: on([
-        '...3...',
-        '..312..',
-        '.44352.',
-        '3113225',
-      ], 0, 2),
+        '......6......',
+        '..141454141..',
+        '.41414641414.',
+        '4444447444444',
+      ], 0, 1),
     },
     {
-      id: 'weighsies.eiffel', game: 'weighsies', slot: 'hat', name: 'Eiffel Tower',
-      colors: ['#A8683A', '#6E4020', '#D99A5E'],
-      // The tower stood on the head: its spire, two decks, the arch between its legs.
+      id: 'weighsies.eiffel', game: 'weighsies', slot: 'hat', name: 'Liberty crown',
+      colors: ['#7FCDB4', '#4E9C86', '#B8F0DC', '#2F6E5E'],
+      // The Statue of Liberty's crown in her green copper: its rays and the band of windows.
       draw: on([
-        '..3..',
-        '.313.',
-        '.1.2.',
-        '.333.',
-        '31.12',
-      ]),
+        '3..3..3..3..3',
+        '.1.1..1..1.1.',
+        '..311111112..',
+        '.31414141412.',
+      ], 0, 1),
     },
 
     // ------------------------------------------------------------ frames
@@ -184,63 +190,63 @@ export const set: MachineSet = {
       },
     },
     {
-      id: 'weighsies.blocks', game: 'weighsies', slot: 'frame', name: 'Weigh-in blocks',
-      colors: ['#F3F0E8', '#F2A19B', '#DB7C76', '#A8DBA2', '#7FC078'],
-      // The red and green weights off the scale, spaced out on cream.
+      id: 'weighsies.blocks', game: 'weighsies', slot: 'frame', name: 'Gold bars',
+      colors: ['#FBF5E4', '#F6DD94', '#FCEFC2', '#E9C76B'],
+      // A wall of gold bars stacked like bricks, each lit along its top.
       fill: (x, y) => {
-        for (const [bx, by, red] of [[1, 1, 1], [12, 0, 0], [14, 5, 1], [0, 8, 0], [13, 11, 0], [2, 13, 1], [7, 14, 0]] as const) {
-          if (x >= bx && x <= bx + 1 && y >= by && y <= by + 1) return red ? (y === by ? 2 : 3) : (y === by ? 4 : 5);
-        }
-        return 1;
+        const band = Math.floor(y / 3), col = (x + (band % 2) * 3) % 6, ry = y % 3;
+        if (col === 5) return 1;
+        return ry === 0 ? 3 : ry === 1 ? 2 : 4;
       },
     },
 
     // ------------------------------------------------------------ buddies
     {
       id: 'weighsies.cat', game: 'weighsies', slot: 'buddy', name: 'House cat',
-      colors: ['#F29A4A', '#C46A24', '#FFE0B8', '#FFC98A'],
-      // Sat side on, looking right: ears up, a cream chest and paws, the tail curled round its feet.
+      colors: ['#F29A4A', '#C46A24', '#FFE0B8', '#FFC98A', '#E9838A'],
+      // A ginger tabby's face, ears up, a pink nose.
       art: pet('house cat', [
-        '...1.1',
-        '...1o1',
-        '..1113',
-        '.12113',
-        '222233',
+        '1...1.',
+        '11211.',
+        '1o1o1.',
+        '13531.',
+        '22222.',
       ]),
     },
     {
       id: 'weighsies.whale', game: 'weighsies', slot: 'buddy', name: 'Lil whale',
       colors: ['#5DBEFC', '#2F8FD0', '#A8DEFF', '#E6F6FF', '#BFEAFF'],
+      // Blowing a spout, its tail flicked up behind.
       art: pet('lil whale', [
-        '...5.5',
-        '....5.',
-        '..3311',
-        '3311o1',
-        '.44442',
+        '.5.5..',
+        '..5..1',
+        '.31112',
+        '31o112',
+        '444422',
       ]),
     },
     {
-      id: 'weighsies.trex', game: 'weighsies', slot: 'buddy', name: 'Baby T. rex',
-      colors: ['#5CC46A', '#2F8A44', '#B5F0A8'],
-      // A big head on a small body, two tiny arms, the tail out behind.
-      art: pet('baby t. rex', [
-        '...111',
-        '...1o1',
-        '..1113',
-        '21111.',
-        '2.2.2.',
+      id: 'weighsies.trex', game: 'weighsies', slot: 'buddy', name: 'Hamster',
+      colors: ['#F2B06A', '#C9813E', '#FFF1DC', '#F59AB0', '#FFFFFF'],
+      // A golden hamster: pink ears, a cream face and a pink nose.
+      art: pet('hamster', [
+        '.4..4.',
+        '.1111.',
+        '1o11o1',
+        '334433',
+        '.3333.',
       ]),
     },
     {
       id: 'weighsies.pigeon', game: 'weighsies', slot: 'buddy', name: 'Pigeon',
-      colors: ['#A9B0BC', '#7A8292', '#D0D5DD', '#7A6EA8', '#3A3A40', '#E86A6A'],
-      // Grey, its neck shot with purple, pink feet.
+      colors: ['#A9B0BC', '#7A8292', '#D0D5DD', '#7A6EA8', '#4FB59A', '#E86A6A', '#FF9A3A', '#2F3440', '#E8D8C8'],
+      // Plump and grey, its neck shot with purple and green, pink feet.
       art: pet('pigeon', [
-        '...31.',
-        '...1o5',
-        '..4413',
-        '211221',
-        '..6.6.',
+        '..33..',
+        '.9o11.',
+        '.34512',
+        '311122',
+        '..6.62',
       ]),
     },
   ],
