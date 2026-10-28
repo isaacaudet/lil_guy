@@ -250,7 +250,7 @@
   .mcard p { margin: 2px 0 0; font-size: 16px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
   .mcard[aria-disabled="true"] { opacity: .5; }
   .mwrap { position: relative; display: grid; }
-  .mwrap.today { grid-column: span 2; grid-row: span 2; }
+  .mwrap.today, .mwrap.big { grid-column: span 2; grid-row: span 2; }
   .m-inside { position: absolute; top: 10px; right: 10px; z-index: 2; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 16px; color: var(--ink); background: rgba(12, 10, 28, .62); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .m-inside:hover { background: rgba(12, 10, 28, .85); color: #fff; }
   .insp.machp { grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -274,8 +274,8 @@
   .showp-h { color: var(--gold); }
   .bal.showp { --b: var(--gold); color: #2a1c00; text-shadow: none; }
   .m-star { color: var(--gold); }
-  .mcard.today .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
-  .mcard.today h3 { font-size: 32px; }
+  .mcard.today .pic, .mcard.big .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
+  .mcard.today h3, .mcard.big h3 { font-size: 32px; }
   .mcard .flag { position: absolute; left: 12px; top: 12px; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-d); text-shadow: var(--ts); }
   .season { margin-top: 16px; display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
   .season .pic { width: 64px; height: 64px; border-radius: 10px; background: var(--well); display: grid; place-items: center; flex: none; }
@@ -991,8 +991,8 @@
     .hand > .slot:nth-child(n+6) { display: none; }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .score b { font-size: 48px; }
-    .mcard.today, .mwrap.today { grid-column: span 2; grid-row: auto; }
-    .mcard.today .pic { min-height: 220px; }
+    .mcard.today, .mwrap.today, .mcard.big, .mwrap.big { grid-column: span 2; grid-row: auto; }
+    .mcard.today .pic, .mcard.big .pic { min-height: 220px; }
     .mine { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; }
     .mine .who h3 { font-size: 24px; }
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1287,7 +1287,7 @@
   const split = n => { for (const [v, w] of UNITS) if (n >= v) return [(n / v).toFixed(n / v >= 100 ? 0 : 1), w]; return [Math.round(n).toLocaleString('en-US'), '']; };
   const words = n => split(n).join(' ').trim();
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const cap = s => (LG.GAMES.includes(s) ? LG.machineName(s) : s[0].toUpperCase() + s.slice(1));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   // Tickets are endless for now (the owner), here and on the live site: nothing ever costs any.
   // Everyone opens for free for now; the server says who does (the founder always).
@@ -2024,12 +2024,15 @@
     // Each grade's share of capsules; an aura takes one capsule in a thousand off the top of the others.
     const odds = LG.GRADES.map((g, k) => k === 5 ? LG.AURA_ODDS * 100 : Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0) * (1 - LG.AURA_ODDS));
     $('odds').innerHTML = LG.GRADES.map((g, k) => `<span style="--g:${g.color}"><i></i>${g.name} <b>${odds[k] >= 1 ? odds[k].toFixed(0) : +odds[k].toFixed(2)}%</b></span>`).join('') + '<a class="odds-more" href="#/rarity">How rarity works →</a>';
-    const order = [todayGame, ...LG.GAMES.filter(g => g !== todayGame)];
+    // Today's machine and the newest one are the two big cards (on the newest's own day, the next machine),
+    // which also keeps the grid full: two big cards and eight small ones.
+    const newest = LG.GAMES[LG.GAMES.length - 1], second = newest !== todayGame ? newest : LG.GAMES.find(g => g !== todayGame);
+    const order = [todayGame, second, ...LG.GAMES.filter(g => g !== todayGame && g !== second)];
     $('machines').innerHTML = order.map((g, i) => {
       const n = LG.gameItems(g).filter(it => !it.free).length, star = LG.gameItems(g).find(it => it.showpiece);
-      const first = i === 0, free = first && state && state.free !== today;
-      return `<div class="mwrap${first ? ' today' : ''}"><button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
-        <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
+      const first = i === 0, free = first && state && state.free !== today, big = i === 1 ? ' big' : '';
+      return `<div class="mwrap${first ? ' today' : big}"><button class="mcard${first ? ' today' : big}" type="button" data-g="${g}">
+        <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : g === newest ? '<span class="pill flag">New</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
         <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
@@ -3767,7 +3770,7 @@
   /* ---------------------------------------------- the club's paint: the swirl from dle-club's twitch/backdrop.js,
    * drawn at half size so its pixels are big. Under the band in today's machine colour, deepened toward the
    * navy so the type stays readable; under the drop in the game's colour, flooding to the grade's on the flip. */
-  const TABLES = { amountle: '#4f7193', halfsies: '#8a5a6c', stackdle: '#5a6593', puttsies: '#50846e', weighsies: '#8c6a4f', flipsies: '#4f7f86', cutsies: '#86605a', tiltsies: '#5f6a8c', trackdle: '#66708a' };
+  const TABLES = { amountle: '#4f7193', halfsies: '#8a5a6c', stackdle: '#5a6593', puttsies: '#50846e', weighsies: '#8c6a4f', flipsies: '#4f7f86', cutsies: '#86605a', tiltsies: '#5f6a8c', trackdle: '#66708a', pets: '#7f5f86' };
   const PAINT_FS = 'precision mediump float;uniform vec2 R;uniform float t;uniform vec3 c1;uniform vec3 c2;uniform vec3 c3;' +
     'void main(){vec2 sc=vec2(gl_FragCoord.x,R.y-gl_FragCoord.y);float px=max(2.,length(R)/500.);' +
     'vec2 uv=(floor(sc/px)*px-.5*R)/length(R)-vec2(.12,0.);float l=length(uv);' +

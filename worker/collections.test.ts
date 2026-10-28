@@ -1,6 +1,7 @@
 import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { api, RULES, todayGame, tradeGrade } from './index.js';
+import { GAMES } from '../src/index-headless.ts';
 import { readFileSync } from 'node:fs';
 import { decode, encode } from '../src/index-headless.ts';
 
@@ -22,14 +23,24 @@ const call = (path: string, method = 'GET', body?: any, headers: any = {}) => ap
 const claim = async (key: string) => (await (await call('/names/' + key, 'POST')).json()) as any;
 const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
 
-test('a claim makes a player with tickets and nine starters, one worn', async () => {
+test('a claim makes a player with tickets and a starter from every machine, one worn', async () => {
   const c = await claim('mia');
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.tickets).toBe(RULES.start);
-  expect(s.copies).toHaveLength(9);
+  expect(s.copies).toHaveLength(GAMES.length);
+  expect(new Set(s.copies.map((x: any) => decode(x.code)!.item.split('.')[0]))).toEqual(new Set(GAMES));
   expect(s.copies.filter((x: any) => x.worn)).toHaveLength(1);
   expect(s.copies.every((x: any) => x.source === 'starter')).toBe(true);
   expect((await call('/me/mia/state')).status).toBe(401);
+});
+
+test('a player made before a machine joined gets its starter once', async () => {
+  const c = await claim('mia');
+  await call('/me/mia/state', 'GET', undefined, auth(c.owner));
+  env.db.exec("DELETE FROM copies WHERE key = 'mia' AND game = 'pets'");
+  const games = async () => ((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).copies.map((x: any) => decode(x.code)!.item.split('.')[0]);
+  expect((await games()).filter((g: string) => g === 'pets')).toHaveLength(1);
+  expect(await games()).toHaveLength(GAMES.length);
 });
 
 test('capsules are rolled and stored on the server, paid in tickets, and the free one is today’s machine once', async () => {
@@ -125,7 +136,7 @@ test('everyone is public: guys, profiles, the market and stats, without owner to
   expect(list.map((g: any) => g.key).sort()).toEqual(['bo', 'mia']);
   expect(JSON.stringify(list)).not.toContain(a.owner);
   const prof: any = await (await call('/guys/mia')).json();
-  expect(prof.copies).toHaveLength(10);
+  expect(prof.copies).toHaveLength(GAMES.length + 1);
   const market: any = await (await call('/market?sort=rarest')).json();
   expect(market).toHaveLength(1);
   expect(market[0].key).toBe('mia');

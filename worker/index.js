@@ -154,10 +154,23 @@ const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, gra
 // Copies that can change hands: not a starter, not the founder's.
 const MOVABLE = "source NOT IN ('starter', 'founder')";
 
-/** A claimed name's player record, made on first use: its tickets and its nine starters (the founder's flag too). */
+/** A claimed name's player record, made on first use: its tickets and a starter from every machine (the founder's flag too). */
 async function ensurePlayer(env, name) {
   const found = await env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
   if (found) {
+    // A machine added since the player was made (the Pet shop) gives them its starter once.
+    const { results: had } = await env.DB.prepare("SELECT DISTINCT game FROM copies WHERE key = ? AND source = 'starter'").bind(name.key).all();
+    if (had.length < GAMES.length) {
+      const has = new Set(had.map(r => r.game));
+      for (const g of GAMES) {
+        if (has.has(g)) continue;
+        // Guarded, so two requests at once never give it twice.
+        const row = copyRow(starter(name.seed, g), name.key, 'starter');
+        await env.DB.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at)
+          SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'starter', 0, ? WHERE NOT EXISTS (SELECT 1 FROM copies WHERE key = ? AND game = ? AND source = 'starter')`)
+          .bind(row.key, row.code, row.item, row.game, row.slot, row.finish, row.grade, row.one_in, row.scuff, new Date().toISOString(), row.key, row.game).run();
+      }
+    }
     // A founder made before Origin existed is given it once.
     if (name.seed === 'founder:isaac' && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
       await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);

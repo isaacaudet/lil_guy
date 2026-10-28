@@ -262,7 +262,7 @@
   const gold = per('gold');
   $('games').innerHTML = [...LG.GAMES.map(g => {
     const list = machine(g), free = LG.freeItem(g);
-    return `<div class="game"><h3>${g[0].toUpperCase() + g.slice(1)}<small>${list.length} items · each 1 in ${list.length} capsules · in Gold 1 in ${fmt(list.length / gold)}</small></h3>
+    return `<div class="game"><h3>${LG.machineName(g)}<small>${list.length} items · each 1 in ${list.length} capsules · in Gold 1 in ${fmt(list.length / gold)}</small></h3>
       <div class="grid">${[free, ...list].map(it => `<div class="t">${cv({ equip: [it.id] })}<span class="n">${esc(it.name)}</span><span class="o">${it.free ? 'free for all' : oneIn(1 / list.length)}<span class="chip" style="--k:${{ skin: '#2f9b6e', hat: '#d9702a', frame: '#7a52d6', buddy: '#cf4578' }[it.slot]}">${it.slot}</span></span></div>`).join('')}</div></div>`;
   }), `<div class="game"><h3>Seasonal<small>the seasonal machine, only on these days</small></h3><div class="grid">${LG.items.filter(i => i.season).map(it => `<div class="t">${cv({ equip: [it.id] })}<span class="n">${esc(it.name)}</span><span class="o">${it.season.from} to ${it.season.to}<span class="chip" style="--k:#d9702a">hat</span></span></div>`).join('')}</div></div>`].join('');
 

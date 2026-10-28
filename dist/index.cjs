@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-DS1YUnz-.cjs');
+const require_paint = require('./paint-WBfjn8_t.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -7684,6 +7684,7 @@ exports.itemWeight = require_paint.itemWeight
 exports.items = require_paint.items
 exports.lookOf = lookOf
 exports.luckyPalette = require_paint.luckyPalette
+exports.machineName = require_paint.machineName
 exports.machineSet = machineSet
 exports.makeSeed = makeSeed
 exports.mergeRefs = mergeRefs

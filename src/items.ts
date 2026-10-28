@@ -2388,12 +2388,16 @@ export function itemById(id: string | undefined): Item | undefined {
 }
 
 /** Each machine's own colour: its set symbol on a card, as the site's machines are painted. */
-export const SET_COLORS: Record<GameId, string> = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+export const SET_COLORS: Record<GameId, string> = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d', pets: '#e48cf2' };
 
+/** Every machine, in the order they joined: a new one goes on the end, so nothing else moves. */
 export const GAMES: GameId[] = [
   'amountle', 'halfsies', 'stackdle', 'flipsies', 'puttsies',
-  'weighsies', 'cutsies', 'tiltsies', 'trackdle',
+  'weighsies', 'cutsies', 'tiltsies', 'trackdle', 'pets',
 ];
+
+/** What a machine is called: its game's name, or the Pet shop. */
+export const machineName = (game: GameId): string => (game === 'pets' ? 'Pet shop' : game[0].toUpperCase() + game.slice(1));
 
 /** How often a showpiece comes out of its machine, against 1 for every other item. */
 export const SHOWPIECE_WEIGHT = 0.5;

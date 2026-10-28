@@ -391,8 +391,9 @@ weights before deal 3, so adding parts never redraws a guy already dealt.
 
 ## Game items
 
-Every DLE Club game has things a player can wear, here and in every other game.
-The guy underneath — face, shape, colours — never changes, so a player is
+Every DLE Club game has things a player can wear, here and in every other game,
+and so does the club's own Pet shop (cats, dogs, foxes and bunnies). The guy
+underneath — face, shape, colours — never changes, so a player is
 recognisable everywhere.
 
 | Game | Skins | Showpiece | Hats (first is free) | Frames | Buddies |
@@ -406,6 +407,7 @@ recognisable everywhere.
 | Cutsies | Kiwi hoodie, Strawberry hoodie, Donut floatie, Salmon nigiri | Watermelon suit | Chef’s headband, Chef's toque, Toadstool, Banana peel, Cupcake | Melon slice, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
 | Tiltsies | Hamster ball, Biscuit hoodie, Mochi hoodie, Starfall pyjamas | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Daisy crown | Course tiles, Cloudy sky, Seed trail | Pocket hamster, Ladybug, Springy, Ghost |
 | Trackdle | Cone suit, Pit crew, Snow parka, Dune rider | Formula 07 | Pit cap, Cowboy hat, Boost flame, Bobble hat, Chequered bandana | Canyon sunset, Kerb, Boost pad | Conelet, Tyre stack, Lil racer, Saguaro |
+| Pet shop | Cat onesie, Shiba onesie, Bunny hoodie, Frog hoodie | Kitsune | Cat ears, Head puppy, Fox ears, Bunny ears, Cat-ear headphones | Paw prints, Cozy cushion, Sakura | Kitten, Puppy, Axolotl, Bunny |
 
 Items a machine no longer gives stay in `src/sets/<game>.ts` as `retire`: copies already owned keep drawing, capsules and crafting skip them.
 

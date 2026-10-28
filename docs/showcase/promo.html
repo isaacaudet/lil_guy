@@ -258,7 +258,7 @@
   .mcard p { margin: 2px 0 0; font-size: 16px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
   .mcard[aria-disabled="true"] { opacity: .5; }
   .mwrap { position: relative; display: grid; }
-  .mwrap.today { grid-column: span 2; grid-row: span 2; }
+  .mwrap.today, .mwrap.big { grid-column: span 2; grid-row: span 2; }
   .m-inside { position: absolute; top: 10px; right: 10px; z-index: 2; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 16px; color: var(--ink); background: rgba(12, 10, 28, .62); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .m-inside:hover { background: rgba(12, 10, 28, .85); color: #fff; }
   .insp.machp { grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -282,8 +282,8 @@
   .showp-h { color: var(--gold); }
   .bal.showp { --b: var(--gold); color: #2a1c00; text-shadow: none; }
   .m-star { color: var(--gold); }
-  .mcard.today .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
-  .mcard.today h3 { font-size: 32px; }
+  .mcard.today .pic, .mcard.big .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
+  .mcard.today h3, .mcard.big h3 { font-size: 32px; }
   .mcard .flag { position: absolute; left: 12px; top: 12px; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-d); text-shadow: var(--ts); }
   .season { margin-top: 16px; display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
   .season .pic { width: 64px; height: 64px; border-radius: 10px; background: var(--well); display: grid; place-items: center; flex: none; }
@@ -999,8 +999,8 @@
     .hand > .slot:nth-child(n+6) { display: none; }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .score b { font-size: 48px; }
-    .mcard.today, .mwrap.today { grid-column: span 2; grid-row: auto; }
-    .mcard.today .pic { min-height: 220px; }
+    .mcard.today, .mwrap.today, .mcard.big, .mwrap.big { grid-column: span 2; grid-row: auto; }
+    .mcard.today .pic, .mcard.big .pic { min-height: 220px; }
     .mine { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; }
     .mine .who h3 { font-size: 24px; }
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1296,7 +1296,7 @@
   const split = n => { for (const [v, w] of UNITS) if (n >= v) return [(n / v).toFixed(n / v >= 100 ? 0 : 1), w]; return [Math.round(n).toLocaleString('en-US'), '']; };
   const words = n => split(n).join(' ').trim();
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const cap = s => (LG.GAMES.includes(s) ? LG.machineName(s) : s[0].toUpperCase() + s.slice(1));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   // Tickets are endless for now (the owner), here and on the live site: nothing ever costs any.
   // Everyone opens for free for now; the server says who does (the founder always).
@@ -1407,7 +1407,7 @@
    * toy inside (the game's own object) shows through the top, with the little
    * folded paper insert behind it. Each game has its machine: a glass dome of
    * capsules on a body in its colour, a crank, a coin slot and a chute. */
-  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d', pets: '#e48cf2' };
   const gameColor = g => CANDY[g];
   const balls = new Set();
   const WHITE = [255, 255, 255], INK = [22, 18, 34];
@@ -1582,6 +1582,29 @@
       body: (x, y, c) => (x >= 37 && x <= 42 ? (((x >> 1) + (y >> 1)) % 2 ? MPAL.k : WHITE) : y === 66 || y === 67 ? WHITE : c),
       sign(hi) { plate(hi, MPAL.w); for (let y = 56; y <= 67; y++) for (let x = 20; x <= 35; x++) hi.set(x, y, ((x >> 2) + (y >> 2)) % 2 ? MPAL.k : MPAL.w); digits(hi, '01', 41, 57, MPAL.r, 2); },
       topFn(hi, t) { for (let y = 0; y < 11; y++) hi.set(31, y, MPAL.N), hi.set(32, y, MPAL.n); for (let x = 0; x < 15; x++) { const w = Math.round(Math.sin(t * 6 - x * 0.7) * 1.2); for (let y = 0; y < 6; y++) hi.set(33 + x, y + 1 + w, ((x >> 1) + (y >> 1)) % 2 ? MPAL.k : MPAL.w); } } },
+    pets: { pile: ['#e48cf2', '#ffc2d8', '#f6a04d', '#ffffff'],
+      // Paw prints walking up the body.
+      body: (x, y, c) => { const px = (x - 16 + (Math.floor((y - 64) / 7) % 2) * 6) % 12, py = (y - 64) % 7, PAW = ['.x.x.', 'x...x', '.xxx.', '.xxx.']; return PAW[py]?.[px] === 'x' ? blend(c, WHITE, 0.32) : c; },
+      // A cat's face that blinks now and then, between two paws.
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        const blink = (t % 3.2) < 0.18;
+        sprite(hi, ['o.......o', 'oo.....oo', 'ooooooooo', blink ? 'ooooooooo' : 'ookoookoo', 'oooopoooo', 'oookokooo', '.ooooooo.', '..ooooo..'], 40, 58);
+        for (const cx of [27, 53]) sprite(hi, ['p.p.p', '.ppp.', '.ppp.'], cx, 61);
+      },
+      // Cat ears on the dome, the left one twitching.
+      topFn(hi, t) {
+        const fur = rgb(CANDY.pets), inner = [255, 176, 214], twitch = (t % 4) < 0.25 ? 1 : 0;
+        const inside = (px, py, a, b, c) => { const d = (p, q, r) => (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1]); const s1 = d([px, py], a, b), s2 = d([px, py], b, c), s3 = d([px, py], c, a); return !((s1 < 0 || s2 < 0 || s3 < 0) && (s1 > 0 || s2 > 0 || s3 > 0)); };
+        for (const side of [-1, 1]) {
+          const tip = [40 + side * (17 + (side < 0 ? twitch : 0)), 3 + (side < 0 ? twitch : 0)], a = [40 + side * 21, 18], b = [40 + side * 8, 12];
+          const ia = [40 + side * 18.5, 15.5], ib = [40 + side * 11, 12.5], it = [40 + side * 16.8, 7 + (side < 0 ? twitch : 0)];
+          for (let y = 0; y < 20; y++) for (let x = 10; x < 70; x++) {
+            if (Math.hypot(x + 0.5 - M.DX, y + 0.5 - M.DY) <= M.DR - 1) continue;
+            if (inside(x + 0.5, y + 0.5, tip, a, b)) hi.set(x, y, inside(x + 0.5, y + 0.5, it, ia, ib) ? inner : x < 40 ? blend(fur, WHITE, 0.2) : fur);
+          }
+        }
+      } },
   };
 
   /* One capsule in the dome, flat like a sticker: a pale clear top, a candy bottom, a white seam, a dark
@@ -2461,12 +2484,15 @@
     // Each grade's share of capsules; an aura takes one capsule in a thousand off the top of the others.
     const odds = LG.GRADES.map((g, k) => k === 5 ? LG.AURA_ODDS * 100 : Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0) * (1 - LG.AURA_ODDS));
     $('odds').innerHTML = LG.GRADES.map((g, k) => `<span style="--g:${g.color}"><i></i>${g.name} <b>${odds[k] >= 1 ? odds[k].toFixed(0) : +odds[k].toFixed(2)}%</b></span>`).join('') + '<a class="odds-more" href="#/rarity">How rarity works →</a>';
-    const order = [todayGame, ...LG.GAMES.filter(g => g !== todayGame)];
+    // Today's machine and the newest one are the two big cards (on the newest's own day, the next machine),
+    // which also keeps the grid full: two big cards and eight small ones.
+    const newest = LG.GAMES[LG.GAMES.length - 1], second = newest !== todayGame ? newest : LG.GAMES.find(g => g !== todayGame);
+    const order = [todayGame, second, ...LG.GAMES.filter(g => g !== todayGame && g !== second)];
     $('machines').innerHTML = order.map((g, i) => {
       const n = LG.gameItems(g).filter(it => !it.free).length, star = LG.gameItems(g).find(it => it.showpiece);
-      const first = i === 0, free = first && state && state.free !== today;
-      return `<div class="mwrap${first ? ' today' : ''}"><button class="mcard${first ? ' today' : ''}" type="button" data-g="${g}">
-        <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
+      const first = i === 0, free = first && state && state.free !== today, big = i === 1 ? ' big' : '';
+      return `<div class="mwrap${first ? ' today' : big}"><button class="mcard${first ? ' today' : big}" type="button" data-g="${g}">
+        <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : g === newest ? '<span class="pill flag">New</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
         <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : INFINITE ? `${n} items` : `${tk} 120 · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
@@ -4204,7 +4230,7 @@
   /* ---------------------------------------------- the club's paint: the swirl from dle-club's twitch/backdrop.js,
    * drawn at half size so its pixels are big. Under the band in today's machine colour, deepened toward the
    * navy so the type stays readable; under the drop in the game's colour, flooding to the grade's on the flip. */
-  const TABLES = { amountle: '#4f7193', halfsies: '#8a5a6c', stackdle: '#5a6593', puttsies: '#50846e', weighsies: '#8c6a4f', flipsies: '#4f7f86', cutsies: '#86605a', tiltsies: '#5f6a8c', trackdle: '#66708a' };
+  const TABLES = { amountle: '#4f7193', halfsies: '#8a5a6c', stackdle: '#5a6593', puttsies: '#50846e', weighsies: '#8c6a4f', flipsies: '#4f7f86', cutsies: '#86605a', tiltsies: '#5f6a8c', trackdle: '#66708a', pets: '#7f5f86' };
   const PAINT_FS = 'precision mediump float;uniform vec2 R;uniform float t;uniform vec3 c1;uniform vec3 c2;uniform vec3 c3;' +
     'void main(){vec2 sc=vec2(gl_FragCoord.x,R.y-gl_FragCoord.y);float px=max(2.,length(R)/500.);' +
     'vec2 uv=(floor(sc/px)*px-.5*R)/length(R)-vec2(.12,0.);float l=length(uv);' +

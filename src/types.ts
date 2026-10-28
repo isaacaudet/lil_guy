@@ -22,10 +22,10 @@ export interface Palette {
   colors: Record<number, string>; // token → hex colour; 0 is transparent
 }
 
-/** The DLE Club games that have items. */
+/** The capsule machines: the DLE Club games that have items, and the Pet shop. */
 export type GameId =
   | 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies'
-  | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle';
+  | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle' | 'pets';
 
 export type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 

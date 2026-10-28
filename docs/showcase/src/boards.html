@@ -171,7 +171,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const cap = s => (LG.GAMES.includes(s) ? LG.machineName(s) : s[0].toUpperCase() + s.slice(1));
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };

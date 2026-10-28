@@ -460,7 +460,7 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const cap = s => (LG.GAMES.includes(s) ? LG.machineName(s) : s[0].toUpperCase() + s.slice(1));
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const $ = id => document.getElementById(id);
   const ticket = '<svg width="16" height="10" aria-hidden="true"><use href="#ticket"/></svg>';
@@ -635,7 +635,7 @@ void main() {
    * toy inside (the game's own object) shows through the top, with the little
    * folded paper insert behind it. Each game has its machine: a glass dome of
    * capsules on a body in its colour, a crank, a coin slot and a chute. */
-  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d', pets: '#e48cf2' };
   const gameColor = g => CANDY[g];
   const balls = new Set();
   const WHITE = [255, 255, 255], INK = [22, 18, 34];
@@ -810,6 +810,29 @@ void main() {
       body: (x, y, c) => (x >= 37 && x <= 42 ? (((x >> 1) + (y >> 1)) % 2 ? MPAL.k : WHITE) : y === 66 || y === 67 ? WHITE : c),
       sign(hi) { plate(hi, MPAL.w); for (let y = 56; y <= 67; y++) for (let x = 20; x <= 35; x++) hi.set(x, y, ((x >> 2) + (y >> 2)) % 2 ? MPAL.k : MPAL.w); digits(hi, '01', 41, 57, MPAL.r, 2); },
       topFn(hi, t) { for (let y = 0; y < 11; y++) hi.set(31, y, MPAL.N), hi.set(32, y, MPAL.n); for (let x = 0; x < 15; x++) { const w = Math.round(Math.sin(t * 6 - x * 0.7) * 1.2); for (let y = 0; y < 6; y++) hi.set(33 + x, y + 1 + w, ((x >> 1) + (y >> 1)) % 2 ? MPAL.k : MPAL.w); } } },
+    pets: { pile: ['#e48cf2', '#ffc2d8', '#f6a04d', '#ffffff'],
+      // Paw prints walking up the body.
+      body: (x, y, c) => { const px = (x - 16 + (Math.floor((y - 64) / 7) % 2) * 6) % 12, py = (y - 64) % 7, PAW = ['.x.x.', 'x...x', '.xxx.', '.xxx.']; return PAW[py]?.[px] === 'x' ? blend(c, WHITE, 0.32) : c; },
+      // A cat's face that blinks now and then, between two paws.
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        const blink = (t % 3.2) < 0.18;
+        sprite(hi, ['o.......o', 'oo.....oo', 'ooooooooo', blink ? 'ooooooooo' : 'ookoookoo', 'oooopoooo', 'oookokooo', '.ooooooo.', '..ooooo..'], 40, 58);
+        for (const cx of [27, 53]) sprite(hi, ['p.p.p', '.ppp.', '.ppp.'], cx, 61);
+      },
+      // Cat ears on the dome, the left one twitching.
+      topFn(hi, t) {
+        const fur = rgb(CANDY.pets), inner = [255, 176, 214], twitch = (t % 4) < 0.25 ? 1 : 0;
+        const inside = (px, py, a, b, c) => { const d = (p, q, r) => (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1]); const s1 = d([px, py], a, b), s2 = d([px, py], b, c), s3 = d([px, py], c, a); return !((s1 < 0 || s2 < 0 || s3 < 0) && (s1 > 0 || s2 > 0 || s3 > 0)); };
+        for (const side of [-1, 1]) {
+          const tip = [40 + side * (17 + (side < 0 ? twitch : 0)), 3 + (side < 0 ? twitch : 0)], a = [40 + side * 21, 18], b = [40 + side * 8, 12];
+          const ia = [40 + side * 18.5, 15.5], ib = [40 + side * 11, 12.5], it = [40 + side * 16.8, 7 + (side < 0 ? twitch : 0)];
+          for (let y = 0; y < 20; y++) for (let x = 10; x < 70; x++) {
+            if (Math.hypot(x + 0.5 - M.DX, y + 0.5 - M.DY) <= M.DR - 1) continue;
+            if (inside(x + 0.5, y + 0.5, tip, a, b)) hi.set(x, y, inside(x + 0.5, y + 0.5, it, ia, ib) ? inner : x < 40 ? blend(fur, WHITE, 0.2) : fur);
+          }
+        }
+      } },
   };
 
   /* One capsule in the dome, flat like a sticker: a pale clear top, a candy bottom, a white seam, a dark
@@ -1135,7 +1158,7 @@ void main() {
     state.name = name;
     state.locker = LG.GAMES.map(g => copyOf(LG.starter(name, g), 'Starter', `starter("${name}", "${g}")`));
     for (let i = 0; i < 26; i++) {
-      const game = LG.GAMES[(i * 4) % 9], seed = `${name}:drop:${i}`;
+      const game = LG.GAMES[(i * 3) % LG.GAMES.length], seed = `${name}:drop:${i}`;
       const o = LG.roll(seed, game);
       if (o.tally !== undefined) o.tally = 3 + strHash(`${name}:${i}:days`) % 60;
       if (o.tally !== undefined && o.tally >= 20) o.pins = LG.PINS.filter((_, k) => (strHash(`${name}:${i}:pin`) >> k) & 1).slice(0, 1 + (o.tally >= 50)).map(pn => pn.id);

@@ -1489,7 +1489,7 @@ const pet = (name, rows) => {
 * Amountle's machine: the jars, the jellybeans in today's jar and the
 * winners club's crown. Every item is something in the game.
 */
-const set$8 = {
+const set$9 = {
 	add: [
 		{
 			id: "amountle.bean",
@@ -1819,7 +1819,7 @@ const set$8 = {
 * Halfsies's machine: the knife, things cut down the middle, the stamp a
 * perfect cut gets, the weekend's thirds and the Sunday kebab.
 */
-const set$7 = {
+const set$8 = {
 	add: [
 		{
 			id: "halfsies.burger",
@@ -2183,7 +2183,7 @@ const set$7 = {
 * Stackdle's machine: its real pieces in their own colours, and the climb
 * from the valley up past the clouds into space.
 */
-const set$6 = {
+const set$7 = {
 	add: [
 		{
 			id: "stackdle.wedge",
@@ -2599,7 +2599,7 @@ const set$6 = {
 //#endregion
 //#region src/sets/flipsies.ts
 /** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
-const perch$2 = (rows, sink = 1) => {
+const perch$3 = (rows, sink = 1) => {
 	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
@@ -2607,7 +2607,7 @@ const perch$2 = (rows, sink = 1) => {
 * Flipsies's machine: the things you flip (a water bottle, a pencil, buttered
 * toast, a rubber duck, the moai) and the kitchen and living room they land in.
 */
-const set$5 = {
+const set$6 = {
 	add: [
 		{
 			id: "flipsies.rubber-duck",
@@ -2732,7 +2732,7 @@ const set$5 = {
 				"#9A4416",
 				"#FFF27A"
 			],
-			draw: perch$2([
+			draw: perch$3([
 				"...5555...",
 				".33444333.",
 				"1114111412",
@@ -3032,7 +3032,7 @@ const set$5 = {
 //#endregion
 //#region src/sets/puttsies.ts
 /** A hat that lies on top of the head as drawn, rather than pulled down round it like a cap. */
-const perch$1 = (rows, sink = 1) => {
+const perch$2 = (rows, sink = 1) => {
 	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
@@ -3041,7 +3041,7 @@ const perch$1 = (rows, sink = 1) => {
 * eight ball), and the household holes you putt through (the quilt, the toy
 * train, the magic trick, the sleeping cat, the snail shell, the sprinkles).
 */
-const set$4 = {
+const set$5 = {
 	add: [
 		{
 			id: "puttsies.eight-ball",
@@ -3128,7 +3128,7 @@ const set$4 = {
 				"#FFFFFF",
 				"#FFB3C7"
 			],
-			draw: perch$1([
+			draw: perch$2([
 				"..56..56..",
 				"..311112..",
 				"..311112..",
@@ -3150,7 +3150,7 @@ const set$4 = {
 				"#3A2A22",
 				"#E9838A"
 			],
-			draw: perch$1([
+			draw: perch$2([
 				".1..1..3331.",
 				"11111.314412",
 				"161611331412",
@@ -3171,7 +3171,7 @@ const set$4 = {
 				"#C2A882",
 				"#2B2F38"
 			],
-			draw: perch$1([
+			draw: perch$2([
 				"..3311...7.7",
 				".314412..5.5",
 				".143142.555.",
@@ -3428,7 +3428,7 @@ const set$4 = {
 //#endregion
 //#region src/sets/weighsies.ts
 /** A hat stood on the crown as drawn, rather than pulled down round the head like a cap. */
-const perch = (rows, sink = 1) => {
+const perch$1 = (rows, sink = 1) => {
 	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
@@ -3437,7 +3437,7 @@ const perch = (rows, sink = 1) => {
 * panda, a penguin, a capybara, a T. rex, the pharaohs' pyramid, the Statue of
 * Liberty), and a kettlebell.
 */
-const set$3 = {
+const set$4 = {
 	add: [
 		{
 			id: "weighsies.gold-bar",
@@ -3620,7 +3620,7 @@ const set$3 = {
 				"#FFFFFF",
 				"#E5484D"
 			],
-			draw: perch([
+			draw: perch$1([
 				"......64.....",
 				".....3112..7.",
 				"8955531125577",
@@ -3864,7 +3864,7 @@ const set$3 = {
 * Cutsies' machine: the food it slices, the chef's knife hand and the
 * chopping board. Colours follow the game's own objects (public/objects).
 */
-const set$2 = {
+const set$3 = {
 	add: [
 		{
 			id: "cutsies.donut",
@@ -4320,7 +4320,7 @@ const set$2 = {
 * the balls they roll in, the pieces on the course and the seeds on it.
 * Colours follow the game's hamster.ts and its course.
 */
-const set$1 = {
+const set$2 = {
 	add: [
 		{
 			id: "tiltsies.biscuit",
@@ -4750,7 +4750,7 @@ const set$1 = {
 * The livery is the game's own: Tangerine #ED6137 with cream #FFF4DC stripes,
 * toy-black tyres, orange ramps with a cream chevron, a cream band on a cone.
 */
-const set = {
+const set$1 = {
 	add: [
 		{
 			id: "trackdle.coupe",
@@ -5173,21 +5173,509 @@ const set = {
 };
 
 //#endregion
+//#region src/sets/pets.ts
+/** A hat stood on the crown as drawn, rather than pulled down round the head like a cap. */
+const perch = (rows, sink = 1) => {
+	const s = stamp(rows);
+	return (c) => sit(c, s, 0, sink);
+};
+/**
+* A pair of ears set `out` columns past the sides of the head, where there is
+* room, so they stand at its corners the way a cat's or a fox's do, rather
+* than meeting in the middle on a narrow head.
+*/
+const earsOut = (rows, out) => {
+	const left = stamp(rows), right = mirror(left);
+	return (c) => {
+		const r = c.rows[c.shoulder()], l = fitRoom(c, left), rr = fitRoom(c, right);
+		seat(c, l, Math.max(1, r.left - out));
+		seat(c, rr, Math.min(GRID_SIZE - 1 - width(rr), r.right + out - width(rr) + 1));
+	};
+};
+/**
+* The Pet shop: no game's machine, the club's own. Cats, dogs, foxes and
+* bunnies: animal onesies with the guy's own face looking out, animal ears to
+* wear, a pet bed and cherry blossom to sit in, and a little pet at his feet.
+*/
+const set = {
+	add: [
+		{
+			id: "pets.cat",
+			game: "pets",
+			slot: "skin",
+			name: "Cat onesie",
+			eyes: 9,
+			limb: 1,
+			colors: [
+				"#F7F4FF",
+				"#3B3652",
+				"#26223A",
+				"#5E5880",
+				"#FF9CC0",
+				"#E8394F",
+				"#FFD04A",
+				"#C98A12"
+			],
+			outline: "#15121F",
+			art: grid16("cat onesie", [
+				"................",
+				"...4........3...",
+				"..452......253..",
+				"..455222222553..",
+				"..422222222223..",
+				"..422221122223..",
+				"..42h######s23..",
+				"..2h########s3..",
+				"..2##########3..",
+				"..2##########31.",
+				"..3#########s33.",
+				"..33s######s333.",
+				"..3666677666633.",
+				"...3111881113...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "pets.shiba",
+			game: "pets",
+			slot: "skin",
+			name: "Shiba onesie",
+			eyes: 9,
+			limb: 1,
+			colors: [
+				"#FFF3DF",
+				"#E99447",
+				"#C2692A",
+				"#F7B877",
+				"#FFD9C2",
+				"#E5484D",
+				"#B22F3A"
+			],
+			outline: "#5A2E10",
+			art: grid16("shiba onesie", [
+				"................",
+				"...4........3...",
+				"..421......123..",
+				"..411222222113..",
+				"..422222222223..",
+				"..422122221223..",
+				"..41h######s13..",
+				"..1h########s1..",
+				"..1##########1..",
+				"..1##########1..",
+				"..1#########s1..",
+				"..21s######s12..",
+				"..366666666663..",
+				"...3116776113...",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "pets.bunny",
+			game: "pets",
+			slot: "skin",
+			name: "Bunny hoodie",
+			eyes: 10,
+			limb: 1,
+			colors: [
+				"#FFC2D8",
+				"#E893B4",
+				"#FFE3EE",
+				"#FF7FAE",
+				"#FFFFFF"
+			],
+			outline: "#7A2E4E",
+			art: grid16("bunny hoodie", [
+				"................",
+				"....3......2....",
+				"...341....142...",
+				"...341....142...",
+				"...341....142...",
+				"..314111111412..",
+				"..311111111112..",
+				"..31h######s12..",
+				"..1h########s2..",
+				"..1##########2..",
+				"..1##########2..",
+				"..2#########s2..",
+				"..21s######s12..",
+				"...2151111512...",
+				"....22522522....",
+				"................"
+			])
+		},
+		{
+			id: "pets.frog",
+			game: "pets",
+			slot: "skin",
+			name: "Frog hoodie",
+			eyes: 9,
+			limb: 1,
+			colors: [
+				"#86D45E",
+				"#4F9E3A",
+				"#BDEB91",
+				"#FFFFFF",
+				"#1F2A1A",
+				"#FF9AAE",
+				"#EAF7C8"
+			],
+			outline: "#24451A",
+			art: grid16("frog hoodie", [
+				"................",
+				"...3332..3332...",
+				"..34442..34442..",
+				"..345521134552..",
+				"..311111111112..",
+				"..311111111112..",
+				"..31h######s12..",
+				"..1h########s2..",
+				"..1##########2..",
+				"..6##########6..",
+				"..2#########s2..",
+				"..21s######s12..",
+				"...2177777712...",
+				"....22222222....",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "pets.kitsune",
+			game: "pets",
+			slot: "skin",
+			name: "Kitsune",
+			eyes: 9,
+			limb: 1,
+			showpiece: true,
+			signature: "neon",
+			about: "A fox spirit, a tail for every hundred years.",
+			colors: [
+				"#FFFDF7",
+				"#DCD3E8",
+				"#FFFFFF",
+				"#E5383B",
+				"#FFB347",
+				"#DD7F1C",
+				"#FFF0C8"
+			],
+			outline: "#4A2232",
+			art: grid16("kitsune", [
+				"................",
+				"...3........2...",
+				"...34......42...",
+				"..3441....1442..",
+				"..341111111142..",
+				"..311114411112..",
+				"..31h######s12..",
+				".71h########s27.",
+				".74##########47.",
+				".54##########45.",
+				".52#########s25.",
+				".5521s####s1255.",
+				".56544455444565.",
+				"..662111111266..",
+				"................",
+				"................"
+			])
+		},
+		{
+			id: "pets.ears",
+			game: "pets",
+			slot: "hat",
+			name: "Cat ears",
+			free: true,
+			colors: [],
+			draw: earsOut([
+				"h....",
+				"#h...",
+				"#ch..",
+				"#cc#s"
+			], 2)
+		},
+		{
+			id: "pets.puppy-ears",
+			game: "pets",
+			slot: "hat",
+			name: "Head puppy",
+			colors: [
+				"#FFF8EE",
+				"#E2D2BC",
+				"#FFFFFF",
+				"#9A6034",
+				"#2B1D18"
+			],
+			draw: perch([
+				".433111124.",
+				"443o111o244",
+				"44311511244",
+				"..3111112.."
+			])
+		},
+		{
+			id: "pets.fox-ears",
+			game: "pets",
+			slot: "hat",
+			name: "Fox ears",
+			colors: [
+				"#F28A2E",
+				"#C2601A",
+				"#FFB066",
+				"#FFF1DC",
+				"#3A2418"
+			],
+			draw: earsOut([
+				"5....",
+				"35...",
+				"3141.",
+				"31442"
+			], 1)
+		},
+		{
+			id: "pets.bunny-ears",
+			game: "pets",
+			slot: "hat",
+			name: "Bunny ears",
+			colors: [
+				"#FFFFFF",
+				"#FFA8C8",
+				"#E2D8EC"
+			],
+			draw: perch([
+				"13......31",
+				"123....321",
+				".123..321.",
+				"..13..31.."
+			])
+		},
+		{
+			id: "pets.headphones",
+			game: "pets",
+			slot: "hat",
+			name: "Cat-ear headphones",
+			colors: [
+				"#FF9EC8",
+				"#E06A9E",
+				"#7FF0FF",
+				"#E8FFFF"
+			],
+			draw: on([
+				".3.......3.",
+				".43.....34.",
+				"13311111331",
+				"22.......22"
+			])
+		},
+		{
+			id: "pets.paws",
+			game: "pets",
+			slot: "frame",
+			name: "Paw prints",
+			colors: [
+				"#FFE6DA",
+				"#E58A74",
+				"#F0A994"
+			],
+			fill: (x, y) => {
+				const X = (x % 16 + 16) % 16, Y = (y % 16 + 16) % 16;
+				const PAW = [
+					".x.x.",
+					"x...x",
+					".xxx.",
+					".xxx."
+				];
+				for (const [px, py] of [
+					[0, 0],
+					[11, 1],
+					[0, 11],
+					[11, 12]
+				]) {
+					const r = PAW[Y - py], ch = r?.[X - px];
+					if (ch === "x") return (px + py) % 2 ? 3 : 2;
+				}
+				return 1;
+			}
+		},
+		{
+			id: "pets.cushion",
+			game: "pets",
+			slot: "frame",
+			name: "Cozy cushion",
+			colors: [
+				"#FFF3E4",
+				"#FFE3CC",
+				"#B98AE0",
+				"#8A5CB8",
+				"#DDC2F5",
+				"#FFD6E6"
+			],
+			fill: (x, y) => {
+				const X = (x % 16 + 16) % 16, Y = (y % 16 + 16) % 16;
+				const d = ((X - 7.5) / 9.2) ** 2 + ((Y - 17) / 9) ** 2;
+				const inner = ((X - 7.5) / 5.6) ** 2 + ((Y - 17) / 5.4) ** 2;
+				if (inner <= 1) return 6;
+				if (d <= 1) {
+					const dIn = ((X - 7.5) / 8.4) ** 2 + ((Y - 17) / 8) ** 2;
+					return dIn > 1 ? 5 : Y >= 14 || X <= 1 || X >= 14 ? 4 : 3;
+				}
+				return X % 4 < 2 ? 1 : 2;
+			}
+		},
+		{
+			id: "pets.sakura",
+			game: "pets",
+			slot: "frame",
+			name: "Sakura",
+			colors: [
+				"#E3F1FF",
+				"#FF8FB8",
+				"#FFD0E1",
+				"#6E4636",
+				"#FFE36E",
+				"#FFB3CF"
+			],
+			fill: (x, y) => {
+				const X = (x % 16 + 16) % 16, Y = (y % 16 + 16) % 16;
+				for (const [bx, by] of [
+					[1, 1],
+					[7, 1],
+					[12, 0],
+					[14, 3]
+				]) {
+					if (X === bx && Y === by) return 5;
+					const d = Math.abs(X - bx) + Math.abs(Y - by);
+					if (d === 1) return Y < by || X < bx ? 3 : 2;
+				}
+				if ([
+					[0, 3],
+					[1, 3],
+					[2, 2],
+					[3, 2],
+					[4, 1],
+					[5, 1],
+					[6, 0],
+					[8, 0],
+					[9, 0],
+					[10, 1],
+					[11, 1]
+				].some(([bx, by]) => X === bx && Y === by)) return 4;
+				for (const [px, py] of [
+					[1, 7],
+					[14, 7],
+					[0, 11],
+					[15, 12],
+					[3, 15],
+					[12, 15]
+				]) {
+					if (X === px && Y === py) return 6;
+					if (X === px + 1 && Y === py + 1) return 3;
+				}
+				return 1;
+			}
+		},
+		{
+			id: "pets.kitten",
+			game: "pets",
+			slot: "buddy",
+			name: "Kitten",
+			colors: [
+				"#F6A04D",
+				"#D07228",
+				"#FFC98A",
+				"#FF9AAE",
+				"#FFF4E6"
+			],
+			art: pet("kitten", [
+				"3....2",
+				"31..12",
+				"1o22o2",
+				"154452",
+				".1552."
+			])
+		},
+		{
+			id: "pets.puppy",
+			game: "pets",
+			slot: "buddy",
+			name: "Puppy",
+			colors: [
+				"#F2C27A",
+				"#D29A50",
+				"#FFE2B0",
+				"#8A5530",
+				"#2B1D18",
+				"#FF8A9E"
+			],
+			art: pet("puppy", [
+				"431124",
+				"4o11o4",
+				"413514",
+				".1662.",
+				".1..2."
+			])
+		},
+		{
+			id: "pets.axolotl",
+			game: "pets",
+			slot: "buddy",
+			name: "Axolotl",
+			colors: [
+				"#FFB3CF",
+				"#E77FA8",
+				"#FFE0EC",
+				"#FF6F9F",
+				"#D9417A"
+			],
+			art: pet("axolotl", [
+				"4.33.4",
+				"531125",
+				"4o11o4",
+				".1221.",
+				".1..1."
+			])
+		},
+		{
+			id: "pets.bunny-buddy",
+			game: "pets",
+			slot: "buddy",
+			name: "Bunny",
+			colors: [
+				"#FFFFFF",
+				"#DCD0E8",
+				"#FFA8C8"
+			],
+			art: pet("bunny", [
+				".1..1.",
+				".3..3.",
+				"111112",
+				"1o11o2",
+				".1332."
+			])
+		}
+	],
+	retire: [],
+	redraw: {}
+};
+
+//#endregion
 //#region src/sets/index.ts
 /**
 * Each machine's set, one file a machine, so every game's things are drawn
 * from what is really in that game and kept in one place.
 */
 const SETS = {
-	amountle: set$8,
-	halfsies: set$7,
-	stackdle: set$6,
-	flipsies: set$5,
-	puttsies: set$4,
-	weighsies: set$3,
-	cutsies: set$2,
-	tiltsies: set$1,
-	trackdle: set
+	amountle: set$9,
+	halfsies: set$8,
+	stackdle: set$7,
+	flipsies: set$6,
+	puttsies: set$5,
+	weighsies: set$4,
+	cutsies: set$3,
+	tiltsies: set$2,
+	trackdle: set$1,
+	pets: set
 };
 
 //#endregion
@@ -7631,10 +8119,10 @@ function markItem(grid, slot, copy) {
 */
 function goldRim(grid, slot) {
 	const edge = (x, y) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
-	const set$9 = [];
+	const set$10 = [];
 	grid.forEach((row, y) => row.forEach((t, x) => {
 		if (slot === "frame") {
-			if (own("frame", t) && edge(x, y)) set$9.push([x, y]);
+			if (own("frame", t) && edge(x, y)) set$10.push([x, y]);
 			return;
 		}
 		if (t !== T.OUTLINE) return;
@@ -7644,9 +8132,9 @@ function goldRim(grid, slot) {
 			[-1, 0],
 			[0, 1],
 			[0, -1]
-		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set$9.push([x, y]);
+		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set$10.push([x, y]);
 	}));
-	for (const [x, y] of set$9) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+	for (const [x, y] of set$10) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
 }
 
 //#endregion
@@ -12232,11 +12720,11 @@ const base = [
 const items = (() => {
 	const sets = Object.values(SETS);
 	const out = base.map((i) => {
-		const set$9 = sets.find((st) => st.redraw[i.id] || st.retire.includes(i.id));
-		return set$9 ? {
+		const set$10 = sets.find((st) => st.redraw[i.id] || st.retire.includes(i.id));
+		return set$10 ? {
 			...i,
-			...set$9.redraw[i.id],
-			...set$9.retire.includes(i.id) ? { retired: true } : {}
+			...set$10.redraw[i.id],
+			...set$10.retire.includes(i.id) ? { retired: true } : {}
 		} : i;
 	});
 	return [...out, ...sets.flatMap((st) => st.add)];
@@ -12255,8 +12743,10 @@ const SET_COLORS = {
 	weighsies: "#a98bff",
 	cutsies: "#ff6b6b",
 	tiltsies: "#4fd6c4",
-	trackdle: "#ff8a3d"
+	trackdle: "#ff8a3d",
+	pets: "#e48cf2"
 };
+/** Every machine, in the order they joined: a new one goes on the end, so nothing else moves. */
 const GAMES = [
 	"amountle",
 	"halfsies",
@@ -12266,8 +12756,11 @@ const GAMES = [
 	"weighsies",
 	"cutsies",
 	"tiltsies",
-	"trackdle"
+	"trackdle",
+	"pets"
 ];
+/** What a machine is called: its game's name, or the Pet shop. */
+const machineName = (game) => game === "pets" ? "Pet shop" : game[0].toUpperCase() + game.slice(1);
 /** How often a showpiece comes out of its machine, against 1 for every other item. */
 const SHOWPIECE_WEIGHT = .5;
 /** An item's weight in its machine's draw: none once it's retired. */
@@ -15787,6 +16280,12 @@ Object.defineProperty(exports, 'luckyPalette', {
     return luckyPalette;
   }
 });
+Object.defineProperty(exports, 'machineName', {
+  enumerable: true,
+  get: function () {
+    return machineName;
+  }
+});
 Object.defineProperty(exports, 'mouthWeights', {
   enumerable: true,
   get: function () {
@@ -15973,4 +16472,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-DS1YUnz-.cjs.map
+//# sourceMappingURL=paint-WBfjn8_t.cjs.map
