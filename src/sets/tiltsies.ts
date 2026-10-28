@@ -85,26 +85,27 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'tiltsies.golden', game: 'tiltsies', slot: 'skin', name: 'Golden seed', eyes: 9, limb: 1, showpiece: true, signature: 'shimmer',
+      id: 'tiltsies.golden', game: 'tiltsies', slot: 'skin', name: 'Golden seed', eyes: 10, limb: 'own', showpiece: true, signature: 'shimmer',
       about: 'The rare seed on a course, worn.',
+      // The rare seed worn as a hood, its pale stripes running up to the point, the guy's own body under it.
       // gold, gold shade, gold light, pale stripe
       colors: ['#F2B530', '#C98A12', '#FFE07A', '#FFF3C0'],
       outline: '#6A4508',
       art: grid16('golden seed', [
         '................',
         '.......32.......',
-        '......3312......',
-        '.....313112.....',
-        '....34131142....',
-        '...3141311412...',
-        '...3141111412...',
-        '..311h#####112..',
-        '..31h#######12..',
-        '..31#######s12..',
-        '..21#######s12..',
-        '..211#####s112..',
-        '..211411114112..',
-        '...2222222222...',
+        '......3412......',
+        '.....341142.....',
+        '....34114142....',
+        '...3411141412...',
+        '..314h####s412..',
+        '.314h######s412.',
+        '.31h########s12.',
+        '.31##########12.',
+        '.22##########22.',
+        '..###########s..',
+        '...#########s...',
+        '....ssssssss....',
         '................',
         '................',
       ]),
@@ -182,16 +183,16 @@ export const set: MachineSet = {
 
     // ---------------------------------------------------------------- buddies
     {
-      id: 'tiltsies.sunseed', game: 'tiltsies', slot: 'buddy', name: 'Pocket hamster',
-      // coat, shade, light, cheek, cream, seed, seed stripe
-      colors: ['#E9B88A', '#B97C48', '#F6D2AE', '#FF9AA4', '#FFF1DE', '#3A3530', '#A8A096'],
-      // Round ears, rosy cheeks and a sunflower seed held up in both paws.
-      art: pet('pocket hamster', [
-        '.22.22',
-        '.21112',
-        '.1o1o1',
-        '.45754',
-        '..565.',
+      id: 'tiltsies.sunseed', game: 'tiltsies', slot: 'buddy', name: 'Ball hamster',
+      // glass, glass shade, shine, coat, coat shade, cream, cheek
+      colors: ['#A9DDF2', '#6FB2D6', '#FFFFFF', '#E9B88A', '#B97C48', '#FFF1DE', '#FF9AA4'],
+      // Rolling about in its own clear ball, the way Tiltsies' hamster does: round ears, rosy cheeks.
+      art: pet('ball hamster', [
+        '.3112.',
+        '354452',
+        '1o44o2',
+        '176672',
+        '.1222.',
       ]),
     },
     {

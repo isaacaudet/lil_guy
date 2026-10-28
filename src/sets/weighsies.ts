@@ -236,16 +236,16 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'weighsies.trex', game: 'weighsies', slot: 'buddy', name: 'Hamster',
-      // coat, shade, cream, pink
-      colors: ['#F0A24E', '#C2742C', '#FFF1DC', '#FF8FA8'],
-      // A golden hamster: round pink ears, a cream muzzle and a pink nose.
-      art: pet('hamster', [
-        '.44.44',
-        '.11111',
-        '.1o1o1',
-        '.33433',
-        '.23332',
+      id: 'weighsies.trex', game: 'weighsies', slot: 'buddy', name: 'Baby walrus',
+      // hide, shade, light, tusk, whisker pad, nose
+      colors: ['#B98A6A', '#8A5E44', '#D9AE8E', '#FFF8EC', '#EBCBAA', '#5A3A2A'],
+      // A little heavyweight: whisker pads, a dark nose and two tusks hanging down.
+      art: pet('baby walrus', [
+        '.3112.',
+        '1o11o2',
+        '156652',
+        '.4554.',
+        '.4..4.',
       ]),
     },
     {
