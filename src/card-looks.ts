@@ -11,16 +11,20 @@ import { editionField, fract, type EditionPixels, type Vec3 } from './finish-sha
  * - `polychrome`: a Polychrome card, and every Prism copy on it, turned
  *   through the spectrum by a slow field of a few drifting rings, its colours
  *   lifted.
- * - `foil`: a Foil card's face, and a Grail's gold, run with interference
- *   bands that catch a cool highlight where they cross.
+ * - `foil`: a Foil card's face run with interference bands that catch a
+ *   cool highlight where they cross.
  * - `holo`: a Holographic card tinted by the same drifting field, with a fine
  *   diagonal grid lighting up where it runs bright.
+ * - `sheen`: a Grail's brushed gold as it is, and once a loop a band of
+ *   light crossing it corner to corner, as light catches a metal card:
+ *   brighter on what stands proud (the bevel, the words, the rim), a glint
+ *   on the bevel as it passes, and still the rest of the time.
  *
  * Each is written twice, as GLSL (`GLSL_LOOKS`) and as plain code
  * (`lookField`, `polyColor`), with the same result, and every motion comes
  * round in LOOP_MS: time enters only as whole turns of the loop's angle.
  */
-export const CARD_LOOKS = ['none', 'paint', 'polychrome', 'foil', 'holo'] as const;
+export const CARD_LOOKS = ['none', 'paint', 'polychrome', 'foil', 'holo', 'sheen'] as const;
 export type CardLook = Exclude<(typeof CARD_LOOKS)[number], 'none'>;
 
 /** A look and what it is drawn with. */
@@ -37,8 +41,9 @@ export const lookIndex = (look?: CardLook) => (look ? CARD_LOOKS.indexOf(look) :
 export function lookApplies(look: number, ed: number): boolean {
   if (look === 1) return ed === 6;
   if (look === 2) return ed === 3;
-  if (look === 3) return ed === 1 || ed === 5;
+  if (look === 3) return ed === 1;
   if (look === 4) return ed === 2;
+  if (look === 5) return ed === 5;
   return false;
 }
 
@@ -131,13 +136,9 @@ float foilWave(vec2 p, vec2 o, float th) {
   vec2 b = p - o - vec2(10.0 - 6.0 * sin(th), 16.0 + 5.0 * cos(th));
   return sin((length(a) - length(b)) * 0.6 + (p.x * 0.3 + p.y * 0.5) - th);
 }
-vec3 foilColor(vec3 c, vec2 p, vec2 o, float region, float th, float gold) {
+vec3 foilColor(vec3 c, vec2 p, vec2 o, float region, float th) {
   float w = foilWave(p, o, th);
   float lift = clamp((w - 0.35) / 0.45, 0.0, 1.0), peak = clamp((w - 0.86) / 0.14, 0.0, 1.0), dip = clamp((-w - 0.5) / 0.5, 0.0, 1.0);
-  if (gold > 0.5) {
-    float k = region > 1.5 ? 0.35 : 1.0;
-    return c * (1.0 - 0.14 * dip * k) + vec3(0.2, 0.16, 0.05) * lift * k + vec3(0.5, 0.66, 0.92) * peak * 0.6 * k;
-  }
   float k = region > 1.5 ? 0.6 : 1.0, l = dot(c, vec3(0.299, 0.587, 0.114));
   vec3 base = mix(c, l * vec3(0.8, 0.9, 1.06) + vec3(0.07, 0.09, 0.15), 0.6 * k);
   return base * (1.0 - 0.16 * dip * k) + vec3(0.42, 0.6, 0.95) * lift * 0.45 * k + vec3(0.7, 0.8, 0.95) * peak * 0.45 * k;
@@ -150,12 +151,30 @@ vec3 holoColor(vec3 c, vec2 p, vec2 o, float region, float th) {
   float k = region > 1.5 ? 0.6 : 1.0;
   return mix(c, c * 0.5 + tint * 0.55, 0.5 * k) + vec3(0.65, 0.78, 1.0) * grid * 0.4 * k;
 }
-vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
+float sheenPos(float time) { return -6.0 + 84.0 * clamp(time / 1.4, 0.0, 1.0); }
+float glint(vec2 p, vec2 g, float pos) {
+  vec2 q = abs(p - g) * 5.0;
+  float a = min(q.x, q.y), b = max(q.x, q.y);
+  float star = b < 0.5 ? 1.0 : (a < 0.5 && b < 3.5 ? 0.8 - 0.2 * b : 0.0);
+  return star * clamp(1.0 - abs(g.x + g.y - pos) / 1.2, 0.0, 1.0);
+}
+vec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time) {
+  float pos = sheenPos(time), d = abs(p.x + p.y - pos);
+  float halo = clamp(1.0 - d / 4.5, 0.0, 1.0), glow = clamp(1.0 - d / 2.2, 0.0, 1.0), core = clamp(1.0 - d / 0.7, 0.0, 1.0);
+  float k = (0.65 + 0.35 * raised) * (region > 1.5 ? 0.6 : 1.0);
+  c = mix(c, vec3(1.0, 0.88, 0.52), halo * halo * 0.35 * k);
+  c = mix(c, vec3(1.0, 0.93, 0.7), glow * 0.55 * k);
+  c = mix(c, vec3(1.0, 0.99, 0.93), core * 0.85 * k);
+  if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));
+  return c;
+}
+vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
   float th = time * TAU / 6.0;
   if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast) : c;
   if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
-  if (look > 2.5 && look < 3.5 && ((ed > 0.5 && ed < 1.5) || (ed > 4.5 && ed < 5.5))) return foilColor(c, p, o, region, th, step(4.5, ed));
-  if (look > 3.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
+  if (look > 2.5 && look < 3.5 && ed > 0.5 && ed < 1.5) return foilColor(c, p, o, region, th);
+  if (look > 3.5 && look < 4.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
+  if (look > 4.5 && ed > 4.5 && ed < 5.5) return sheenColor(c, p, region, raised, px, time);
   return editionColor(c, ed, v, p, o, region, h, px, time);
 }
 `;
@@ -204,9 +223,10 @@ export interface PaintSpec { colors: [Vec3, Vec3, Vec3]; contrast: number }
  * working-out of the field, so a frame costs a field a block and a few
  * multiplies a pixel; nothing is allocated per frame.
  */
-export function lookField(look: number, ed: number, v: number, o: [number, number], pixels: EditionPixels, paint?: PaintSpec): ((time: number, out: Float32Array) => void) | null {
+export function lookField(look: number, ed: number, v: number, o: [number, number], px: number, pixels: LookPixels, paint?: PaintSpec): ((time: number, out: Float32Array) => void) | null {
   if (!lookApplies(look, ed)) return null;
   const { x, y, region, rgb } = pixels, n = region.length;
+  if (look === 5) return sheenField(px, pixels);
   // The blocks: one per distinct cell, and each pixel's block.
   const blockOf = new Int32Array(n), keys = new Map<number, number>(), bx: number[] = [], by: number[] = [];
   for (let k = 0; k < n; k++) {
@@ -281,8 +301,8 @@ export function lookField(look: number, ed: number, v: number, o: [number, numbe
     };
   }
 
-  // Foil, and a Grail's gold foil.
-  const gold = ed === 5, lum = new Float32Array(n);
+  // Foil.
+  const lum = new Float32Array(n);
   for (let k = 0; k < n; k++) lum[k] = 0.299 * rgb[k * 3] + 0.587 * rgb[k * 3 + 1] + 0.114 * rgb[k * 3 + 2];
   const lift = new Float32Array(nb), peak = new Float32Array(nb), dip = new Float32Array(nb);
   const diag = Float32Array.from(bx, (dx, b) => (dx + o[0]) * 0.3 + (by[b] + o[1]) * 0.5);
@@ -296,11 +316,6 @@ export function lookField(look: number, ed: number, v: number, o: [number, numbe
     }
     for (let k = 0; k < n; k++) {
       const j = k * 3, b = blockOf[k], win = region[k] > 1.5;
-      if (gold) {
-        const kk = win ? 0.35 : 1, d = 1 - 0.14 * dip[b] * kk, l = lift[b] * kk, p = peak[b] * 0.6 * kk;
-        out[j] = rgb[j] * d + 0.2 * l + 0.5 * p; out[j + 1] = rgb[j + 1] * d + 0.16 * l + 0.66 * p; out[j + 2] = rgb[j + 2] * d + 0.05 * l + 0.92 * p;
-        continue;
-      }
       const kk = win ? 0.6 : 1, mm = 0.6 * kk, d = 1 - 0.16 * dip[b] * kk, l = lift[b] * 0.45 * kk, p = peak[b] * 0.45 * kk, L = lum[k];
       out[j] = (rgb[j] + (L * 0.8 + 0.07 - rgb[j]) * mm) * d + 0.42 * l + 0.7 * p;
       out[j + 1] = (rgb[j + 1] + (L * 0.9 + 0.09 - rgb[j + 1]) * mm) * d + 0.6 * l + 0.8 * p;
@@ -309,7 +324,47 @@ export function lookField(look: number, ed: number, v: number, o: [number, numbe
   };
 }
 
+/** Where the sheen stands across the card at `time`: the sum of a cell's two coordinates under its middle. */
+const sheenPos = (time: number) => -6 + 84 * clamp01(time / 1.4);
+/** Where the big card's two glints open, on its bevel, in face cells. */
+const GLINTS: [number, number][] = [[4.8, 0.8], [23, 38.8]];
+
+/**
+ * `sheenColor` over a fixed set of pixels: each pixel's place along the
+ * diagonal and its glint are worked out once, and a pixel the band is
+ * nowhere near is copied as it is.
+ */
+function sheenField(px: number, { x, y, region, rgb, raised }: LookPixels) {
+  const n = region.length, s = new Float32Array(n), k = new Float32Array(n), star = new Float32Array(px < 0.5 ? n * 2 : 0);
+  for (let i = 0; i < n; i++) {
+    s[i] = x[i] + y[i];
+    k[i] = (0.65 + 0.35 * (raised?.[i] ?? 0)) * (region[i] > 1.5 ? 0.6 : 1);
+    if (px < 0.5) GLINTS.forEach(([gx, gy], g) => {
+      const qx = Math.abs(x[i] - gx) * 5, qy = Math.abs(y[i] - gy) * 5, a = Math.min(qx, qy), b = Math.max(qx, qy);
+      star[i * 2 + g] = b < 0.5 ? 1 : a < 0.5 && b < 3.5 ? 0.8 - 0.2 * b : 0;
+    });
+  }
+  return (time: number, out: Float32Array) => {
+    const pos = sheenPos(time), lit = GLINTS.map(([gx, gy]) => clamp01(1 - Math.abs(gx + gy - pos) / 1.2));
+    for (let i = 0; i < n; i++) {
+      const j = i * 3, d = Math.abs(s[i] - pos), g = star.length ? star[i * 2] * lit[0] + star[i * 2 + 1] * lit[1] : 0;
+      if (d >= 4.5 && !g) { out[j] = rgb[j]; out[j + 1] = rgb[j + 1]; out[j + 2] = rgb[j + 2]; continue; }
+      const halo = clamp01(1 - d / 4.5), glow = clamp01(1 - d / 2.2), core = clamp01(1 - d / 0.7), kk = k[i];
+      const a = halo * halo * 0.35 * kk, b = glow * 0.55 * kk, c = core * 0.85 * kk;
+      for (let ch = 0; ch < 3; ch++) {
+        let v = rgb[j + ch];
+        v += (SHEEN_HALO[ch] - v) * a; v += (SHEEN_GLOW[ch] - v) * b; v += (SHEEN_CORE[ch] - v) * c;
+        out[j + ch] = v + SHEEN_GLINT[ch] * g;
+      }
+    }
+  };
+}
+const SHEEN_HALO = [1, 0.88, 0.52], SHEEN_GLOW = [1, 0.93, 0.7], SHEEN_CORE = [1, 0.99, 0.93], SHEEN_GLINT = [1, 0.97, 0.88];
+
+/** What a look plays over: the edition's pixels, and for the sheen how proud each one stands, 0 or 1. */
+export type LookPixels = EditionPixels & { raised?: Float32Array };
+
 /** `lookColor`'s choice over a set of pixels: the look's field where it applies, else the edition's own. */
-export function cardField(look: number, ed: number, v: number, o: [number, number], px: number, pixels: EditionPixels, paint?: PaintSpec) {
-  return lookField(look, ed, v, o, pixels, paint) ?? editionField(ed, v, o, px, pixels);
+export function cardField(look: number, ed: number, v: number, o: [number, number], px: number, pixels: LookPixels, paint?: PaintSpec) {
+  return lookField(look, ed, v, o, px, pixels, paint) ?? editionField(ed, v, o, px, pixels);
 }

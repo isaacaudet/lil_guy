@@ -22473,10 +22473,14 @@ function encodeApng(input, scale$1 = 1) {
 * - `polychrome`: a Polychrome card, and every Prism copy on it, turned
 *   through the spectrum by a slow field of a few drifting rings, its colours
 *   lifted.
-* - `foil`: a Foil card's face, and a Grail's gold, run with interference
-*   bands that catch a cool highlight where they cross.
+* - `foil`: a Foil card's face run with interference bands that catch a
+*   cool highlight where they cross.
 * - `holo`: a Holographic card tinted by the same drifting field, with a fine
 *   diagonal grid lighting up where it runs bright.
+* - `sheen`: a Grail's brushed gold as it is, and once a loop a band of
+*   light crossing it corner to corner, as light catches a metal card:
+*   brighter on what stands proud (the bevel, the words, the rim), a glint
+*   on the bevel as it passes, and still the rest of the time.
 *
 * Each is written twice, as GLSL (`GLSL_LOOKS`) and as plain code
 * (`lookField`, `polyColor`), with the same result, and every motion comes
@@ -22487,7 +22491,8 @@ const CARD_LOOKS = [
 	"paint",
 	"polychrome",
 	"foil",
-	"holo"
+	"holo",
+	"sheen"
 ];
 /** The look as the shaders number it, 0 for none. */
 const lookIndex = (look) => look ? CARD_LOOKS.indexOf(look) : 0;
@@ -22495,8 +22500,9 @@ const lookIndex = (look) => look ? CARD_LOOKS.indexOf(look) : 0;
 function lookApplies(look, ed) {
 	if (look === 1) return ed === 6;
 	if (look === 2) return ed === 3;
-	if (look === 3) return ed === 1 || ed === 5;
+	if (look === 3) return ed === 1;
 	if (look === 4) return ed === 2;
+	if (look === 5) return ed === 5;
 	return false;
 }
 /** The default hardness of `paint`'s bands. */
@@ -22610,13 +22616,9 @@ float foilWave(vec2 p, vec2 o, float th) {
   vec2 b = p - o - vec2(10.0 - 6.0 * sin(th), 16.0 + 5.0 * cos(th));
   return sin((length(a) - length(b)) * 0.6 + (p.x * 0.3 + p.y * 0.5) - th);
 }
-vec3 foilColor(vec3 c, vec2 p, vec2 o, float region, float th, float gold) {
+vec3 foilColor(vec3 c, vec2 p, vec2 o, float region, float th) {
   float w = foilWave(p, o, th);
   float lift = clamp((w - 0.35) / 0.45, 0.0, 1.0), peak = clamp((w - 0.86) / 0.14, 0.0, 1.0), dip = clamp((-w - 0.5) / 0.5, 0.0, 1.0);
-  if (gold > 0.5) {
-    float k = region > 1.5 ? 0.35 : 1.0;
-    return c * (1.0 - 0.14 * dip * k) + vec3(0.2, 0.16, 0.05) * lift * k + vec3(0.5, 0.66, 0.92) * peak * 0.6 * k;
-  }
   float k = region > 1.5 ? 0.6 : 1.0, l = dot(c, vec3(0.299, 0.587, 0.114));
   vec3 base = mix(c, l * vec3(0.8, 0.9, 1.06) + vec3(0.07, 0.09, 0.15), 0.6 * k);
   return base * (1.0 - 0.16 * dip * k) + vec3(0.42, 0.6, 0.95) * lift * 0.45 * k + vec3(0.7, 0.8, 0.95) * peak * 0.45 * k;
@@ -22629,12 +22631,30 @@ vec3 holoColor(vec3 c, vec2 p, vec2 o, float region, float th) {
   float k = region > 1.5 ? 0.6 : 1.0;
   return mix(c, c * 0.5 + tint * 0.55, 0.5 * k) + vec3(0.65, 0.78, 1.0) * grid * 0.4 * k;
 }
-vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
+float sheenPos(float time) { return -6.0 + 84.0 * clamp(time / 1.4, 0.0, 1.0); }
+float glint(vec2 p, vec2 g, float pos) {
+  vec2 q = abs(p - g) * 5.0;
+  float a = min(q.x, q.y), b = max(q.x, q.y);
+  float star = b < 0.5 ? 1.0 : (a < 0.5 && b < 3.5 ? 0.8 - 0.2 * b : 0.0);
+  return star * clamp(1.0 - abs(g.x + g.y - pos) / 1.2, 0.0, 1.0);
+}
+vec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time) {
+  float pos = sheenPos(time), d = abs(p.x + p.y - pos);
+  float halo = clamp(1.0 - d / 4.5, 0.0, 1.0), glow = clamp(1.0 - d / 2.2, 0.0, 1.0), core = clamp(1.0 - d / 0.7, 0.0, 1.0);
+  float k = (0.65 + 0.35 * raised) * (region > 1.5 ? 0.6 : 1.0);
+  c = mix(c, vec3(1.0, 0.88, 0.52), halo * halo * 0.35 * k);
+  c = mix(c, vec3(1.0, 0.93, 0.7), glow * 0.55 * k);
+  c = mix(c, vec3(1.0, 0.99, 0.93), core * 0.85 * k);
+  if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));
+  return c;
+}
+vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
   float th = time * TAU / 6.0;
   if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast) : c;
   if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
-  if (look > 2.5 && look < 3.5 && ((ed > 0.5 && ed < 1.5) || (ed > 4.5 && ed < 5.5))) return foilColor(c, p, o, region, th, step(4.5, ed));
-  if (look > 3.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
+  if (look > 2.5 && look < 3.5 && ed > 0.5 && ed < 1.5) return foilColor(c, p, o, region, th);
+  if (look > 3.5 && look < 4.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
+  if (look > 4.5 && ed > 4.5 && ed < 5.5) return sheenColor(c, p, region, raised, px, time);
   return editionColor(c, ed, v, p, o, region, h, px, time);
 }
 `;
@@ -22687,9 +22707,10 @@ function polyColor(c, p, o, time, k) {
 * working-out of the field, so a frame costs a field a block and a few
 * multiplies a pixel; nothing is allocated per frame.
 */
-function lookField(look, ed, v, o, pixels, paint$1) {
+function lookField(look, ed, v, o, px, pixels, paint$1) {
 	if (!lookApplies(look, ed)) return null;
 	const { x, y, region, rgb: rgb$7 } = pixels, n = region.length;
+	if (look === 5) return sheenField(px, pixels);
 	const blockOf = new Int32Array(n), keys = new Map(), bx = [], by = [];
 	for (let k = 0; k < n; k++) {
 		const key = Math.round(x[k] * 10) * 100003 + Math.round(y[k] * 10);
@@ -22725,9 +22746,9 @@ function lookField(look, ed, v, o, pixels, paint$1) {
 		};
 		const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), shade = new Float32Array(nb);
 		for (let b$1 = 0; b$1 < nb; b$1++) {
-			const px = bx[b$1] / 9, py = by[b$1] / 9, r = Math.sqrt(px * px + py * py), a = 1.5 * r;
-			qx[b$1] = px * Math.cos(a) - py * Math.sin(a);
-			qy[b$1] = px * Math.sin(a) + py * Math.cos(a);
+			const px$1 = bx[b$1] / 9, py = by[b$1] / 9, r = Math.sqrt(px$1 * px$1 + py * py), a = 1.5 * r;
+			qx[b$1] = px$1 * Math.cos(a) - py * Math.sin(a);
+			qy[b$1] = px$1 * Math.sin(a) + py * Math.cos(a);
 			rr[b$1] = r;
 			shade[b$1] = 1 - .22 * clamp01(r * .5 - .35);
 		}
@@ -22779,8 +22800,8 @@ function lookField(look, ed, v, o, pixels, paint$1) {
 		}
 		const grid = new Float32Array(look === 4 ? nb : 0);
 		for (let b$1 = 0; b$1 < grid.length; b$1++) {
-			const px = bx[b$1] + o[0], py = by[b$1] + o[1];
-			grid[b$1] = Math.max(0, 10 * Math.abs(Math.cos((px + py) * 1.1)) - 9, 10 * Math.abs(Math.cos((px - py) * 1.1)) - 9);
+			const px$1 = bx[b$1] + o[0], py = by[b$1] + o[1];
+			grid[b$1] = Math.max(0, 10 * Math.abs(Math.cos((px$1 + py) * 1.1)) - 9, 10 * Math.abs(Math.cos((px$1 - py) * 1.1)) - 9);
 		}
 		/** `fromHsl`, written into `out` at `j`. */
 		const put = (out, j, h, s, l) => {
@@ -22815,7 +22836,7 @@ function lookField(look, ed, v, o, pixels, paint$1) {
 			}
 		};
 	}
-	const gold = ed === 5, lum$2 = new Float32Array(n);
+	const lum$2 = new Float32Array(n);
 	for (let k = 0; k < n; k++) lum$2[k] = .299 * rgb$7[k * 3] + .587 * rgb$7[k * 3 + 1] + .114 * rgb$7[k * 3 + 2];
 	const lift = new Float32Array(nb), peak = new Float32Array(nb), dip = new Float32Array(nb);
 	const diag = Float32Array.from(bx, (dx, b$1) => (dx + o[0]) * .3 + (by[b$1] + o[1]) * .5);
@@ -22831,13 +22852,6 @@ function lookField(look, ed, v, o, pixels, paint$1) {
 		}
 		for (let k = 0; k < n; k++) {
 			const j = k * 3, b$1 = blockOf[k], win = region[k] > 1.5;
-			if (gold) {
-				const kk$1 = win ? .35 : 1, d$1 = 1 - .14 * dip[b$1] * kk$1, l$1 = lift[b$1] * kk$1, p$1 = peak[b$1] * .6 * kk$1;
-				out[j] = rgb$7[j] * d$1 + .2 * l$1 + .5 * p$1;
-				out[j + 1] = rgb$7[j + 1] * d$1 + .16 * l$1 + .66 * p$1;
-				out[j + 2] = rgb$7[j + 2] * d$1 + .05 * l$1 + .92 * p$1;
-				continue;
-			}
 			const kk = win ? .6 : 1, mm = .6 * kk, d = 1 - .16 * dip[b$1] * kk, l = lift[b$1] * .45 * kk, p = peak[b$1] * .45 * kk, L = lum$2[k];
 			out[j] = (rgb$7[j] + (L * .8 + .07 - rgb$7[j]) * mm) * d + .42 * l + .7 * p;
 			out[j + 1] = (rgb$7[j + 1] + (L * .9 + .09 - rgb$7[j + 1]) * mm) * d + .6 * l + .8 * p;
@@ -22845,9 +22859,67 @@ function lookField(look, ed, v, o, pixels, paint$1) {
 		}
 	};
 }
+/** Where the sheen stands across the card at `time`: the sum of a cell's two coordinates under its middle. */
+const sheenPos = (time) => -6 + 84 * clamp01(time / 1.4);
+/** Where the big card's two glints open, on its bevel, in face cells. */
+const GLINTS = [[4.8, .8], [23, 38.8]];
+/**
+* `sheenColor` over a fixed set of pixels: each pixel's place along the
+* diagonal and its glint are worked out once, and a pixel the band is
+* nowhere near is copied as it is.
+*/
+function sheenField(px, { x, y, region, rgb: rgb$7, raised }) {
+	const n = region.length, s = new Float32Array(n), k = new Float32Array(n), star$2 = new Float32Array(px < .5 ? n * 2 : 0);
+	for (let i = 0; i < n; i++) {
+		s[i] = x[i] + y[i];
+		k[i] = (.65 + .35 * (raised?.[i] ?? 0)) * (region[i] > 1.5 ? .6 : 1);
+		if (px < .5) GLINTS.forEach(([gx, gy], g) => {
+			const qx = Math.abs(x[i] - gx) * 5, qy = Math.abs(y[i] - gy) * 5, a = Math.min(qx, qy), b$1 = Math.max(qx, qy);
+			star$2[i * 2 + g] = b$1 < .5 ? 1 : a < .5 && b$1 < 3.5 ? .8 - .2 * b$1 : 0;
+		});
+	}
+	return (time, out) => {
+		const pos = sheenPos(time), lit$1 = GLINTS.map(([gx, gy]) => clamp01(1 - Math.abs(gx + gy - pos) / 1.2));
+		for (let i = 0; i < n; i++) {
+			const j = i * 3, d = Math.abs(s[i] - pos), g = star$2.length ? star$2[i * 2] * lit$1[0] + star$2[i * 2 + 1] * lit$1[1] : 0;
+			if (d >= 4.5 && !g) {
+				out[j] = rgb$7[j];
+				out[j + 1] = rgb$7[j + 1];
+				out[j + 2] = rgb$7[j + 2];
+				continue;
+			}
+			const halo = clamp01(1 - d / 4.5), glow = clamp01(1 - d / 2.2), core = clamp01(1 - d / .7), kk = k[i];
+			const a = halo * halo * .35 * kk, b$1 = glow * .55 * kk, c = core * .85 * kk;
+			for (let ch = 0; ch < 3; ch++) {
+				let v = rgb$7[j + ch];
+				v += (SHEEN_HALO[ch] - v) * a;
+				v += (SHEEN_GLOW[ch] - v) * b$1;
+				v += (SHEEN_CORE[ch] - v) * c;
+				out[j + ch] = v + SHEEN_GLINT[ch] * g;
+			}
+		}
+	};
+}
+const SHEEN_HALO = [
+	1,
+	.88,
+	.52
+], SHEEN_GLOW = [
+	1,
+	.93,
+	.7
+], SHEEN_CORE = [
+	1,
+	.99,
+	.93
+], SHEEN_GLINT = [
+	1,
+	.97,
+	.88
+];
 /** `lookColor`'s choice over a set of pixels: the look's field where it applies, else the edition's own. */
 function cardField(look, ed, v, o, px, pixels, paint$1) {
-	return lookField(look, ed, v, o, pixels, paint$1) ?? editionField(ed, v, o, px, pixels);
+	return lookField(look, ed, v, o, px, pixels, paint$1) ?? editionField(ed, v, o, px, pixels);
 }
 
 //#endregion
@@ -23439,24 +23511,33 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			count: gw * gh
 		};
 	})() : null;
+	const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = looked && look === 5;
 	const edIdx = [];
-	for (let i = 0; i < W * H; i++) if (s.region[i]) edIdx.push(i);
+	for (let i = 0; i < W * H; i++) if (sheen ? shape$1.depth[i] > 2 : s.region[i]) edIdx.push(i);
 	const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
+	const raised = new Float32Array(sheen ? n : 0);
 	edIdx.forEach((i, k) => {
 		const x = i % W, yy = (i - x) / W;
 		ex[k] = x / 5;
 		ey[k] = yy / 5;
-		er[k] = s.region[i];
+		er[k] = s.region[i] || 1;
 		eh[k] = shape$1.glint[(yy >> 1) * W + (x >> 1)];
+		if (sheen) raised[k] = !s.region[i] || shape$1.bevel[i] ? 1 : 0;
 		for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
 	});
-	const look = lookIndex(looks.look), looked = lookApplies(look, ed);
 	const paint$1 = look === 1 ? {
 		colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color),
 		contrast: looks.contrast ?? PAINT_CONTRAST
 	} : void 0;
 	const block = (k) => Math.floor(k * 2.5) * 2 / 5;
-	const field = looked ? lookField(look, ed, v, [wcx / 5, wcy / 5], {
+	const field = looked ? lookField(look, ed, v, [wcx / 5, wcy / 5], .2, sheen ? {
+		x: ex,
+		y: ey,
+		region: er,
+		h: eh,
+		rgb: ergb,
+		raised
+	} : {
 		x: ex.map(block),
 		y: ey.map(block),
 		region: er,
@@ -24013,6 +24094,11 @@ function cardFace(spec) {
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
 const faceMoves = (f) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
 const PRISM = SHADER_FINISHES.indexOf("prism");
+/** Whether a face cell is on the card's bevel (`raised` in CARD_FRAGMENT). */
+function faceRaised(x, y) {
+	const ex = Math.min(x, FACE_WIDTH - 1 - x), ey = Math.min(y, FACE_HEIGHT - 1 - y);
+	return ex === 1 || ey === 1 || ex + ey === 3 ? 1 : 0;
+}
 /** A face's edition worked out per pixel once (`editionField`), kept with the face. */
 const fields = new WeakMap();
 function faceField(f) {
@@ -24032,12 +24118,14 @@ function faceField(f) {
 		h[k] = f.noise[i * 4] / 255;
 		for (let j = 0; j < 3; j++) rgb$7[k * 3 + j] = f.base[i * 4 + j] / 255;
 	});
+	const raised = Float32Array.from(x, (cx, k) => faceRaised(cx, y[k]));
 	const pixels = {
 		x,
 		y,
 		region,
 		h,
-		rgb: rgb$7
+		rgb: rgb$7,
+		raised
 	};
 	got = {
 		at,
@@ -24111,7 +24199,11 @@ void main() {
   float h = texture2D(noise, at).r;
   if (k > 3.5 && k < 4.5 && finish > 3.5 && finish < 4.5 && look > 1.5 && look < 2.5) c = polyColor(c, cell, origin, time * TAU / 6.0, clamp(1.0 - kd.b * 1.4, 0.0, 1.0));
   else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
-  else if (k < 2.5 && look > 0.5) c = lookColor(c, look, edition, variant, cell, origin, k, h, 1.0, time, paint1, paint2, paint3, contrast);
+  else if (k < 2.5 && look > 0.5) {
+    vec2 e = min(cell, res - 1.0 - cell);
+    float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
+    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast);
+  }
   else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);

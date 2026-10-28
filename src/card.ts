@@ -437,21 +437,24 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   })() : null;
 
   // ---------------------------------------------------------------- the edition's field
-  // Pixels the edition plays over: the card's face and its window.
+  // Pixels the edition plays over: the card's face and its window. The prototype sheen (./card-looks)
+  // crosses everything inside the card's outline, its words, rim and studs counted as raised.
+  const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = looked && look === 5;
   const edIdx: number[] = [];
-  for (let i = 0; i < W * H; i++) if (s.region[i]) edIdx.push(i);
+  for (let i = 0; i < W * H; i++) if (sheen ? shape.depth[i] > 2 : s.region[i]) edIdx.push(i);
   const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
+  const raised = new Float32Array(sheen ? n : 0);
   edIdx.forEach((i, k) => {
     const x = i % W, yy = (i - x) / W;
-    ex[k] = x / 5; ey[k] = yy / 5; er[k] = s.region[i]; eh[k] = shape.glint[(yy >> 1) * W + (x >> 1)];
+    ex[k] = x / 5; ey[k] = yy / 5; er[k] = s.region[i] || 1; eh[k] = shape.glint[(yy >> 1) * W + (x >> 1)];
+    if (sheen) raised[k] = !s.region[i] || shape.bevel[i] ? 1 : 0;
     for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
   });
-  // A prototype look (./card-looks) works its field out on blocks of two card pixels: crisp, and a quarter of the work.
-  const look = lookIndex(looks.look), looked = lookApplies(look, ed);
+  // Other prototype looks work their field out on blocks of two card pixels: crisp, and a quarter of the work.
   const paint = look === 1 ? { colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color), contrast: looks.contrast ?? PAINT_CONTRAST } : undefined;
   const block = (k: number) => (Math.floor(k * 2.5) * 2) / 5;
   const field = looked
-    ? lookField(look, ed, v, [wcx / 5, wcy / 5], { x: ex.map(block), y: ey.map(block), region: er, h: eh, rgb: ergb }, paint)!
+    ? lookField(look, ed, v, [wcx / 5, wcy / 5], 0.2, sheen ? { x: ex, y: ey, region: er, h: eh, rgb: ergb, raised } : { x: ex.map(block), y: ey.map(block), region: er, h: eh, rgb: ergb }, paint)!
     : editionField(ed, v, [wcx / 5, wcy / 5], 0.2, { x: ex, y: ey, region: er, h: eh, rgb: ergb });
   const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
 

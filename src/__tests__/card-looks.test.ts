@@ -8,16 +8,19 @@ import type { Owned } from '../owned';
 const aura: Owned = { item: 'aura.flames', finish: 'classic', scuff: 0.1, print: 41 };
 const prism: Owned = { item: 'amountle.crown', finish: 'prism', scuff: 0.02, print: 88 };
 const gold: Owned = { item: 'flipsies.cap', finish: 'gold', scuff: 0.01, print: 5 };
+const sunset: Owned = { item: 'puttsies.visor', finish: 'sunset', scuff: 0.03, print: 150 };
 const nebula: Owned = { item: 'cutsies.chef', finish: 'nebula', scuff: 0.04, print: 72 };
 const negative: Owned = { item: 'stackdle.tower', finish: 'negative', scuff: 0.02, print: 19 };
-const forLook = { paint: aura, polychrome: prism, foil: gold, holo: nebula } as const;
+const forLook = { paint: aura, polychrome: prism, foil: sunset, holo: nebula, sheen: gold } as const;
 const differs = (a: ArrayLike<number>, b: ArrayLike<number>) => { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; };
 
 describe('prototype card looks', () => {
   test('each look changes the card it is for, and leaves the rest as they are', () => {
     for (const look of CARD_LOOKS.slice(1) as (keyof typeof forLook)[]) {
       const input = { seed: 'looks', title: 'A', copies: [forLook[look]] };
-      expect(differs(cardStill(input), cardStill(input, 0.6, { look }))).toBeGreaterThan(500);
+      // The sheen is still most of the loop: look at it mid-sweep.
+      const t = look === 'sheen' ? 0.5 : 0.6;
+      expect(differs(cardStill(input, t), cardStill(input, t, { look }))).toBeGreaterThan(500);
       const other = { seed: 'looks', title: 'A', copies: [negative] };
       expect(differs(cardStill(other), cardStill(other, 0.6, { look }))).toBe(0);
     }
@@ -33,7 +36,7 @@ describe('prototype card looks', () => {
       let worst = 0;
       for (let i = 0; i < a.length; i++) worst = Math.max(worst, Math.abs(a[i] - b[i]));
       expect(worst).toBeLessThan(look === 'paint' ? 140 : 60);
-      expect(differs(cardFaceAt(face, 1500), b)).toBeGreaterThan(0);
+      expect(differs(cardFaceAt(face, 700), b)).toBeGreaterThan(0);
     }
   });
 });

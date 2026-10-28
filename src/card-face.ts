@@ -184,6 +184,11 @@ export function cardFace(spec: FaceSpec): CardFace {
 export const faceMoves = (f: CardFace) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
 
 const PRISM = SHADER_FINISHES.indexOf('prism');
+/** Whether a face cell is on the card's bevel (`raised` in CARD_FRAGMENT). */
+function faceRaised(x: number, y: number) {
+  const ex = Math.min(x, FACE_WIDTH - 1 - x), ey = Math.min(y, FACE_HEIGHT - 1 - y);
+  return ex === 1 || ey === 1 || ex + ey === 3 ? 1 : 0;
+}
 
 /** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
 export interface Hover { x: number; y: number; strength: number }
@@ -203,7 +208,9 @@ function faceField(f: CardFace) {
     x[k] = i % W; y[k] = Math.floor(i / W); region[k] = Math.floor(f.kind[i * 4] / 32 + 0.5); h[k] = f.noise[i * 4] / 255;
     for (let j = 0; j < 3; j++) rgb[k * 3 + j] = f.base[i * 4 + j] / 255;
   });
-  const pixels = { x, y, region, h, rgb };
+  // The bevel stands proud, for the sheen: the ring one cell inside the outline.
+  const raised = Float32Array.from(x, (cx, k) => faceRaised(cx, y[k]));
+  const pixels = { x, y, region, h, rgb, raised };
   got = { at, field: f.look ? cardField(f.look, f.edition, f.variant, f.origin, 1, pixels, f.paint) : editionField(f.edition, f.variant, f.origin, 1, pixels), out: new Float32Array(n * 3) };
   fields.set(f, got);
   return got;
@@ -259,7 +266,11 @@ void main() {
   float h = texture2D(noise, at).r;
   if (k > 3.5 && k < 4.5 && finish > 3.5 && finish < 4.5 && look > 1.5 && look < 2.5) c = polyColor(c, cell, origin, time * TAU / 6.0, clamp(1.0 - kd.b * 1.4, 0.0, 1.0));
   else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
-  else if (k < 2.5 && look > 0.5) c = lookColor(c, look, edition, variant, cell, origin, k, h, 1.0, time, paint1, paint2, paint3, contrast);
+  else if (k < 2.5 && look > 0.5) {
+    vec2 e = min(cell, res - 1.0 - cell);
+    float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
+    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast);
+  }
   else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
