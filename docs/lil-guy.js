@@ -2394,7 +2394,8 @@ const bodies = [
 	{
 		name: "zigzag",
 		draw: (c) => {
-			const y = c.eyeLine + 3;
+			const low = (c.face?.mouthBottom ?? 0) + 2;
+			const y = low > c.eyeLine + 3 && low < c.bottom ? low : c.eyeLine + 3;
 			const r = c.rows[y];
 			if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + x % 2, T.ACCENT);
 		}
@@ -15981,21 +15982,42 @@ const CHASE = new Set([
 	"jewels",
 	"rainbow"
 ]);
+/** Reds and golds, which make an eye loud (hearts, stars, fired up, a laser). */
+const LOUD_EYE = new Set([
+	T.RED,
+	T.GOLD,
+	T.GOLD_SHADE
+]);
+const loudEyes = (config) => eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art.some((row) => row.some((t) => LOUD_EYE.has(t)));
+/** Cheek marks in colours of their own (hearts, stars, war paint, a plaster), not a blush or a fine line. */
+const LOUD_CHEEK = new Set([
+	T.RED,
+	T.GOLD,
+	T.GOLD_SHADE,
+	T.ACCENT,
+	T.ACCENT_SHADE,
+	T.TRIM
+]);
+const loudCheeks = (config) => cheeks[config.cheeks].art.some((row) => row.some((t) => LOUD_CHEEK.has(t)));
 /**
 * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
 * marks and a body pattern all at once crowd sixteen pixels, so a guy shows
 * at most two of them, one on a head with eight rows or fewer (a bat, a crab):
 * the pattern goes first, then the cheeks. Hair and what he wears always
 * show, and so does a chase part. On a skin dark enough for light ink, the
-* scattered patterns go too.
+* scattered patterns go too. A face boxed in, with hair or a hat down to
+* the eyes and something worn on them or just under the mouth, has room for
+* one fewer. And a face carries one loud thing: cheek marks that are more
+* than a blush give way to eyes in their own colours.
 */
-function extrasOf(config, c) {
+function extrasOf(config, c, face) {
 	const body = bodies[config.body].name, cheek = cheeks[config.cheeks];
 	let pattern = config.body !== 0 && !(SCATTERED.has(body) && darkSkin(config));
 	let marks = cheek.art.length > 0;
 	const top = itemById(config.hat)?.slot === "hat" || config.hair !== 0 && !EARED.has(heads[config.head].name);
 	const worn = config.accessory !== 0;
-	const small = c.bottom - c.crown + 1 <= 8, limit = small ? 2 : 3;
+	const small = c.bottom - c.crown + 1 <= 8;
+	const limit = (small ? 2 : 3) - (top && worn && boxedIn(config, c, face) ? 1 : 0);
 	const quiet = pattern && !SCATTERED.has(body) && body !== "starry" && !small;
 	const count$1 = () => [
 		top,
@@ -16003,12 +16025,32 @@ function extrasOf(config, c) {
 		pattern && !quiet,
 		marks
 	].filter(Boolean).length;
-	if (count$1() > limit && pattern && !CHASE.has(body)) pattern = false;
+	if (count$1() > limit && pattern && !quiet && !CHASE.has(body)) pattern = false;
 	if (count$1() > limit && marks && !CHASE.has(cheek.name)) marks = false;
+	if (marks && !CHASE.has(cheek.name) && loudCheeks(config) && loudEyes(config)) marks = false;
 	return {
 		pattern,
 		cheeks: marks
 	};
+}
+/** Whether any cell `draw` paints on a copy of the canvas, among those `keep` allows, comes within `reach` of `cells`. */
+function paintsNear(c, draw, cells, reach, keep = () => true) {
+	const view = c.clone();
+	draw(view);
+	return view.grid.some((row, y) => row.some((v, x) => v !== c.grid[y][x] && keep(x, y) && cells.some((k) => Math.abs(k % GRID_SIZE - x) <= reach && Math.abs(Math.floor(k / GRID_SIZE) - y) <= reach)));
+}
+/**
+* A face boxed in: what's on top comes down to the eyes (hair or a hat in the
+* row over them), and what he wears is on the eyes or sits a row under the mouth.
+*/
+function boxedIn(config, c, face) {
+	const eyeAt = [...face].filter((k) => Math.floor(k / GRID_SIZE) <= c.face.line);
+	const mouthAt = [...face].filter((k) => Math.floor(k / GRID_SIZE) >= c.face.mouthTop);
+	const hat$1 = itemById(config.hat);
+	const top = (v) => hat$1?.slot === "hat" ? hat$1.draw(v.forHats()) : hair[config.hair].draw(v.forHats());
+	if (!paintsNear(c, top, eyeAt, 1, (_, y) => y <= c.floor)) return false;
+	const accessory = accessories[config.accessory];
+	return accessory.layer !== "body" || paintsNear(c, (v) => accessory.draw(v), mouthAt, 2);
 }
 /**
 * The body and its markings, lit, with no face, hat or accessory on it.
@@ -16017,10 +16059,42 @@ function extrasOf(config, c) {
 function composeBase(config) {
 	const c = startCanvas(config);
 	if (!skinOf(config)) {
+		const { face, extras: extras$1, worn, cheekAt } = faceAndCheeks(c, config, false);
 		light(c);
-		if (extrasOf(config, c).pattern) bodies[config.body].draw(c);
+		if (extras$1.pattern) markings(c, config, face, worn, cheekAt);
 	}
 	return c.grid;
+}
+/**
+* Sets the face on a canvas, and works out where the eyes and mouth go, which
+* extras show (a skin always shows its cheeks) and where the cheek marks go.
+*/
+function faceAndCheeks(c, config, skin) {
+	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
+	c.setFace(eye, mouth$1);
+	const face = faceCells(c, eye, mouth$1);
+	const extras$1 = extrasOf(config, c, face);
+	const cheek = skin || extras$1.cheeks ? cheeks[config.cheeks].art : [];
+	const loud = new Set(), ex = c.centred(eye), ey = c.face.line - eye.length + 1;
+	eye.forEach((row, dy) => row.forEach((t, dx) => {
+		if (LOUD_EYE.has(t)) loud.add((ey + dy) * GRID_SIZE + ex + dx);
+	}));
+	const worn = new Set(), accessory = accessories[config.accessory];
+	if (accessory.layer !== "body") {
+		const view = c.clone();
+		accessory.draw(view);
+		view.grid.forEach((row, y) => row.forEach((v, x) => {
+			if (v !== c.grid[y][x]) worn.add(y * GRID_SIZE + x);
+		}));
+	}
+	return {
+		eye,
+		mouth: mouth$1,
+		face,
+		extras: extras$1,
+		worn,
+		cheekAt: cheek.length ? cheekCells(c, cheek, face, loud) : []
+	};
 }
 /**
 * A four-point twinkle in a corner the guy leaves empty: the mark of a Gold
@@ -16060,13 +16134,16 @@ const touches = (face, x, y) => {
 * a row lower) to where the most of it shows without touching an eye or the mouth. Patterns
 * (whiskers, stars, a scar) keep clear of the face diagonally too and off the
 * body's edge, where a dark one would read as the outline; a plain blush may
-* sit diagonally by an eye, as a blush does.
+* sit diagonally by an eye, as a blush does, but not by an eye's own reds and
+* golds (`loud`), where pink on red is one smudge. Where they go, as
+* `[x, y, token]`: worked out before the marking, so it can keep clear of them.
 */
-function placeCheeks(c, cheek, face) {
+function cheekCells(c, cheek, face, loud) {
+	const out = [];
 	const w = width(cheek), x0 = c.centred(cheek), y0 = c.face.line + 1, half = Math.floor(w / 2);
 	const side = (x, y) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
 	const inner = (x, y) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
-	const ok = (x, y, t) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x) && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
+	const ok = (x, y, t) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x) && (t === T.BLUSH ? !side(x, y) && !touches(loud, x, y) : !touches(face, x, y) && inner(x, y));
 	for (const [from, to, dir] of [[
 		0,
 		half,
@@ -16091,21 +16168,72 @@ function placeCheeks(c, cheek, face) {
 			});
 			if (cells.length > best.length) best = cells;
 		}
-		for (const [x, y, t] of best) c.set(x, y, t);
+		out.push(...best);
 	}
+	return out;
 }
 /**
-* The face is a few pixels; a marking that runs into them turns it into a
-* smudge. So any patterned skin pixel touching the eyes or mouth (diagonals
-* too) goes back to plain skin. Things worn on the face stay.
+* Markings that run across the body in rows (a belly, stripes): one that
+* comes near the face gives way there a whole row at a time, so it never
+* wraps round the mouth with a notch.
 */
-function clearFace(c, face, bare, worn) {
+const BANDS = new Set([
+	"belly",
+	"two tone",
+	"stripes"
+]);
+/** A split tints half the body flat, face and all, rather than ringing the face with a halo of the other half. */
+const FILLS = new Set(["split"]);
+/** Markings that scatter specks of colour: they keep a wider berth, and stay off the cheek marks too. */
+const SPECKS = new Set([
+	"polka dots",
+	"sprinkles",
+	"starry"
+]);
+/**
+* Paints a guy's marking, keeping a quiet zone round his face: the face is a
+* few pixels, and a marking that runs into them turns it into noise. Nothing
+* of a marking stays touching the eyes or mouth (diagonals too), or what he
+* wears on his face; specks of colour (dots, sprinkles, stars) keep two pixels
+* off the eyes and mouth, and off the cheek marks, which they would run into.
+* The body colour shows there instead. Where that would leave none of the
+* marking (a belly on a head with no room under the mouth), it only keeps off
+* the eyes and mouth themselves, as it always has: the zone cleans a marking
+* up, it never takes one away.
+*/
+function markings(c, config, face, worn, cheekAt) {
+	const name = bodies[config.body].name;
+	const before = c.grid.map((row) => [...row]);
+	bodies[config.body].draw(c);
+	if (FILLS.has(name) && !darkSkin(config)) return;
+	const painted$2 = [];
+	c.grid.forEach((row, y) => row.forEach((v, x) => {
+		if (v !== before[y][x]) painted$2.push([x, y]);
+	}));
+	const near = (x, y, reach, marks$1) => {
+		for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (face.has((y + dy) * GRID_SIZE + x + dx)) return true;
+		return touches(marks$1, x, y);
+	};
+	const specks = SPECKS.has(name);
+	const marks = new Set([...worn, ...specks ? cheekAt.map(([x, y]) => y * GRID_SIZE + x) : []]);
+	const crowded = painted$2.filter(([x, y]) => near(x, y, specks ? 2 : 1, marks));
+	const rows = new Set(crowded.map(([, y]) => y));
+	let clear = BANDS.has(name) ? painted$2.filter(([, y]) => rows.has(y)) : crowded;
+	if (clear.length === painted$2.length) clear = painted$2.filter(([x, y]) => near(x, y, 1, new Set()));
+	for (const [x, y] of clear) c.grid[y][x] = before[y][x];
+}
+/**
+* Anything painted in his own colours since the marking (hair reaching down)
+* that touches the eyes or mouth, diagonals too, goes back to the skin and
+* its marking (`marked`), so nothing runs into the face. Things worn on the face stay.
+*/
+function clearFace(c, face, marked, worn) {
 	for (const k of face) {
 		const fx = k % GRID_SIZE, fy = Math.floor(k / GRID_SIZE);
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
 			const x = fx + dx, y = fy + dy;
 			if (!c.isBody(x, y) || face.has(y * GRID_SIZE + x) || worn[y][x]) continue;
-			if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== bare[y][x]) c.grid[y][x] = bare[y][x];
+			if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== marked[y][x]) c.grid[y][x] = marked[y][x];
 		}
 	}
 }
@@ -16237,8 +16365,7 @@ function build(config, report) {
 	const hat$1 = itemById(config.hat);
 	const frame = itemById(config.frame);
 	const c = startCanvas(config);
-	const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth$1 = mouths[config.mouth].art;
-	c.setFace(eye, mouth$1);
+	const { eye, mouth: mouth$1, face, extras: extras$1, worn: wornOnFace, cheekAt } = faceAndCheeks(c, config, !!skin);
 	if (skin) {
 		if (skin.limb) {
 			const limb = skin.limb === "own" ? T.BODY : LAYER.skin + skin.limb - 1;
@@ -16250,9 +16377,8 @@ function build(config, report) {
 		if (heads[config.head].feet) feet(c, config.feet, T.BODY);
 		arms(c, config.arms, T.BODY);
 	}
-	const bare = c.grid.map((row) => [...row]);
-	const extras$1 = extrasOf(config, c);
-	if (!skin && extras$1.pattern) bodies[config.body].draw(c);
+	if (!skin && extras$1.pattern) markings(c, config, face, wornOnFace, cheekAt);
+	const marked = c.grid.map((row) => [...row]);
 	const before = c.grid.map((row) => [...row]);
 	const onTop = (draw) => {
 		const tryOn = (domed) => {
@@ -16313,10 +16439,8 @@ function build(config, report) {
 	if (accessory.layer === "face") accessory.draw(c);
 	const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 	const line = c.face.line;
-	const cheek = skin || extras$1.cheeks ? cheeks[config.cheeks].art : [];
-	const face = faceCells(c, eye, mouth$1);
-	clearFace(c, face, bare, onFace);
-	if (cheek.length) placeCheeks(c, cheek, face);
+	clearFace(c, face, marked, onFace);
+	for (const [x, y, t] of cheekAt) c.set(x, y, t);
 	c.draw(eye, c.centred(eye), line - eye.length + 1, true);
 	c.draw(c.face.mouth, c.centred(mouth$1), c.face.mouthTop, true);
 	if (accessory.layer === "over") accessory.draw(c);
@@ -23265,7 +23389,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 6;
+const ART_VERSION = 7;
 const PART_KEYS = [
 	"head",
 	"eyes",

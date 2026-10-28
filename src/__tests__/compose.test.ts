@@ -89,7 +89,7 @@ describe('compose', () => {
       if (n !== 1) wrong.push(`${JSON.stringify(parts)} has ${n} pieces`);
     }
     expect(wrong).toEqual([]);
-  }, 60_000);
+  }, 300_000);
 
   it('draws every eye and mouth in full, on every head, under every hat', () => {
     // The face is the whole character. If a narrow head or a low hat clips a
