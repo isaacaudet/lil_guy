@@ -99,17 +99,21 @@ export class Canvas {
    * room for it, with a column of face either side if it can. Where it hasn't
    * (a heart's point, a car's bumper), the eyes go up a row instead.
    */
-  private placeMouth(eye: Stamp, mouth: Stamp): { top: number; line: number; art: Stamp } {
+  private placeMouth(eye: Stamp, mouth: Stamp, corners?: boolean): { top: number; line: number; art: Stamp } {
     const ex = this.centred(eye), mx = this.centred(mouth), w = width(mouth);
     const eyeAt = (line: number) => {
       const at = new Set<number>(), ey = line - eye.length + 1;
       eye.forEach((row, dy) => row.forEach((t, dx) => { if (t && this.isBody(ex + dx, ey + dy)) at.add((ey + dy) * 64 + ex + dx); }));
       return at;
     };
-    // No mouth pixel beside or under an eye pixel.
+    // No mouth pixel beside or under an eye pixel. Eyes drawn as a single
+    // stroke (^ ^, a shut line) can't touch it at a corner either: the stroke
+    // runs on into the mouth and the face reads as one zigzag.
+    const thin = corners ?? eye.every((row, dy) => dy === 0 || row.every((t, dx) => !t || !eye[dy - 1][dx]));
+    const near = thin ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
     const clear = (at: Set<number>, top: number) => mouth.every((row, dy) => row.every((t, dx) => {
       const x = mx + dx, y = top + dy;
-      return !t || !this.isBody(x, y) || ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ox, oy]) => at.has((y + oy) * 64 + x + ox));
+      return !t || !this.isBody(x, y) || !near.some(([ox, oy]) => at.has((y + oy) * 64 + x + ox));
     }));
     // Every pixel of it on the face, and with `margin` a column of face beyond each end (a tooth's roots split low down).
     const fits = (top: number, margin: boolean) => mouth.every((row, dy) => {
@@ -131,6 +135,8 @@ export class Canvas {
       const up = eyeAt(line - 1);
       for (const drop of [0, 1]) if (clear(up, top + drop) && fits(top + drop, false)) return { top: top + drop, line: line - 1, art: mouth };
     }
+    // Stroke eyes with no room to keep off the corners: as any other eyes.
+    if (thin) return this.placeMouth(eye, mouth, false);
     // A head with no room either way (a jellybean, a car): the corners of the
     // mouth's top row that would touch an eye are left off.
     const art = mouth.map((row, dy) => row.map((t, dx) => {

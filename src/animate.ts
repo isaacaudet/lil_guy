@@ -2,7 +2,7 @@ import { cycle, fit, fitLoop, LOOP_MS, steps, tick, wave, wrap } from './loop';
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
 import { buddyOf, compose, composeBase, faceOf } from './compose';
-import { mouths, eyes as EYES } from './parts';
+import { mouths, cheeks, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -38,7 +38,7 @@ import { GRID_SIZE } from './types';
  * below his mouth or above his eyes, and a guy with no room there bobs instead.
  */
 
-export const MOVES = ['idle', 'blink', 'hop', 'wave', 'look', 'cheer', 'sad', 'dance', 'squish', 'sleep'] as const;
+export const MOVES = ['idle', 'blink', 'hop', 'wave', 'look', 'cheer', 'sad', 'dance', 'squish', 'sleep', 'shy', 'huff', 'oops'] as const;
 export type Move = (typeof MOVES)[number];
 
 /** Rows of room above the guy for jumps. */
@@ -105,10 +105,14 @@ export interface AnimateOptions extends RenderOptions {
  * down, and with a few expressions — a laugh for a win, a wobble for a loss,
  * an "ooh" when squished. His own eyes stay: they are who he is.
  */
-type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep';
+type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep'
+  | 'blush' | 'blushLeft' | 'blushRight' | 'huff' | 'oops';
 
-/** Little pictures that pop up beside his head. */
-export type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire';
+/**
+ * Little pictures that pop up beside his head. The last three are manga's
+ * own: a sweat drop, the cross-shaped anger vein and a little floating heart.
+ */
+export type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire' | 'sweat' | 'anger' | 'hearts';
 
 /**
  * Emotes a player can show after a game, and how each is unlocked. The
@@ -122,6 +126,9 @@ export const EMOTE_UNLOCKS: { id: Emote; name: string; how: string }[] = [
   { id: 'bang', name: 'Whoa!', how: 'Everyone has it' },
   { id: 'fire', name: 'On fire', how: 'A 7-day streak' },
   { id: 'crown', name: 'Crown', how: 'A perfect day' },
+  { id: 'hearts', name: 'Smitten', how: 'Everyone has it' },
+  { id: 'sweat', name: 'Sweat drop', how: 'Everyone has it' },
+  { id: 'anger', name: 'Hmph', how: 'Everyone has it' },
 ];
 
 /** One beat of a move: a pose, held for `ms`, moved and squashed. */
@@ -137,8 +144,9 @@ interface Beat {
   turn?: boolean;
   /** Little stars in the air. */
   stars?: boolean;
-  /** A bead of sweat. */
+  /** A manga sweat drop on his temple; `slide` rows further down it has run. */
   drop?: boolean;
+  slide?: number;
   emote?: Emote;
   /** Which side the emote prefers. */
   left?: boolean;
@@ -260,7 +268,7 @@ const BEATS: Record<Move, (g: Guy) => Beat[]> = {
     return [...up, ...up, b(arm, 220, { stars: true }), b('laugh', 220), b('base', 400)];
   },
   sad: () => [
-    b('frown', 900, { squash: 1, drop: true }), b('frown', 700, { squash: 2, drop: true }), b('frown', 900, { squash: 1, drop: true }), b('base', 500, { squash: 1 }),
+    b('frown', 900, { squash: 1, drop: true }), b('frown', 700, { squash: 2, drop: true, slide: 1 }), b('frown', 900, { squash: 1, drop: true, slide: 2 }), b('base', 500, { squash: 1 }),
   ],
   dance: ({ roll }) => {
     // His own tempo: a step of 150 to 210 ms.
@@ -271,13 +279,36 @@ const BEATS: Record<Move, (g: Guy) => Beat[]> = {
     ];
   },
   squish: () => [
-    b('ooh', 90, { squash: 2, emote: 'bang' }), b('ooh', 80, { squash: -2, emote: 'bang' }), b('ooh', 80, { squash: 1, emote: 'bang' }), b('base', 70, { squash: -1 }), b('base', 700),
+    b('ooh', 90, { squash: 2, emote: 'bang' }), b('ooh', 80, { squash: -2, emote: 'bang' }), b('ooh', 80, { squash: 1, emote: 'bang' }), b('base', 70, { squash: -1 }), b('base', 350, { drop: true }), b('base', 350, { drop: true, slide: 1 }),
   ],
   sleep: ({ roll }) => {
     // Slow breaths, slower for some.
     const ms = 1000 + 50 * Math.floor(roll(44) * 6);
     return [b('shut', ms, { squash: 1, emote: 'zzz' }), b('shut', ms, { emote: 'zzz', rise: true }), b('shut', ms, { squash: 1, emote: 'zzz' }), b('shut', ms, { emote: 'zzz', rise: true })];
   },
+  // The anime reactions. Shy: a manga blush comes up, he looks away to one side
+  // and back, and two little hearts float up beside him. For a compliment, a gift, a friend.
+  shy: ({ roll }) => {
+    const away: Pose = roll(45) < 0.5 ? 'blushLeft' : 'blushRight', left = away === 'blushLeft';
+    return [
+      b('blush', 300), b(away, 600, { emote: 'hearts', left }), b(away, 600, { emote: 'hearts', left, rise: true }),
+      b('blush', 120, { squash: 1, emote: 'hearts', left }), b('blush', 500, { emote: 'hearts', left, rise: true }),
+      b(away, 600, { emote: 'hearts', left }), b(away, 600, { emote: 'hearts', left, rise: true }), b('base', 500),
+    ];
+  },
+  // Huff: hmph. He shuts his eyes, pouts, turns his back on you with an anger
+  // vein throbbing over his head and stamps once. For a loss he won't admit.
+  huff: () => [
+    b('base', 300), b('huff', 110, { squash: 1, emote: 'anger' }), b('huff', 450, { turn: true, emote: 'anger' }), b('huff', 450, { turn: true, emote: 'anger', rise: true }),
+    b('huff', 90, { turn: true, dy: -1, emote: 'anger' }), b('huff', 110, { turn: true, squash: 1, emote: 'anger', rise: true }), b('huff', 450, { turn: true, emote: 'anger' }),
+    b('huff', 450, { turn: true, emote: 'anger', rise: true }), b('base', 500),
+  ],
+  // Oops: tehe. Eyes shut, the tip of his tongue out and a sweat drop running
+  // down his temple, after a near miss.
+  oops: () => [
+    b('base', 300), b('oops', 110, { squash: 1, drop: true }), b('oops', 600, { drop: true }), b('oops', 600, { drop: true, slide: 1 }),
+    b('oops', 600, { drop: true, slide: 2, dx: 1 }), b('oops', 400, { drop: true, slide: 2 }), b('base', 500),
+  ],
 };
 
 // ---------------------------------------------------------------- the face
@@ -352,7 +383,7 @@ const mix = (a: string, b: string, t: number) => {
 // ---------------------------------------------------------------- frames
 
 /** `body`: the guy's own skin, which a Lucky shimmer crosses. `eye`: the token of an eye pixel, for eyes that move. */
-interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; face?: boolean }
+interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; face?: boolean; feature?: boolean }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
@@ -372,15 +403,18 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small 
     const cell: Cell = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy, slot: slotIndex(t) };
     if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
     if (mouth?.has(y * GRID_SIZE + x)) cell.face = true;
+    if (FEATURE_TOKENS.has(t)) cell.feature = true;
     if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
     out[y + HEADROOM][x] = cell;
   }));
   return out;
 }
 
+/** An eye, its shine, the mouth or the tongue: what a sweat drop keeps off. */
+const FEATURE_TOKENS = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
 const LIVE_EYE_TOKENS: number[] = [T.EYE, T.WHITE, T.ACCENT, T.ACCENT_SHADE, T.GOLD, T.GOLD_SHADE];
-/** Chase eyes that move: one guy in hundreds has them, so they should look it. */
-const LIVE_EYES = new Map(['galaxy', 'diamond', 'dragon'].map(n => [EYES.findIndex(e => e.name === n), n]));
+/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and shoujo eyes, which glisten. */
+const LIVE_EYES = new Map(['galaxy', 'diamond', 'dragon', 'shoujo'].map(n => [EYES.findIndex(e => e.name === n), n]));
 
 const hue = (h: number, s: number, l: number) => {
   const k = (n: number) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -398,7 +432,7 @@ function luckyShimmer(layer: Layer, t: number, seed: number): void {
   }));
 }
 
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder. */
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, shoujo eyes glisten. */
 function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
   layer.forEach((row, y) => row.forEach((cell, x) => {
     if (!cell?.eye) return;
@@ -413,6 +447,10 @@ function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
     } else if (kind === 'dragon') {
       const flash = cycle(t + seed, 2000) * fit(2000) < 160;
       if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? '#FFF6B0' : mix(cell.c, '#FF4A1C', 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(t / wave(260))));
+    } else if (kind === 'shoujo') {
+      // Every couple of seconds a soft gleam wells up through the iris and fades.
+      const ms = cycle(t + seed, 2400) * fit(2400);
+      if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix(cell.c, '#FFFFFF', 0.55 * Math.sin(Math.PI * ms / 360));
     }
   }));
 }
@@ -521,8 +559,8 @@ const GOLD_SPARKLE: Sparkle = ['#FFFFFF', '#FFF0B8', '#F5C342'];
 
 const mouthIndex = (name: string) => Math.max(0, mouths.findIndex(m => m.name === name));
 
-/** `#` is the emote's colour, `+` its second colour. */
-const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string }> = {
+/** `#` is the emote's colour, `+` its second colour. `open`: outlined round its outside only, its gaps left clear. */
+const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string; open?: boolean }> = {
   note: { rows: ['.##', '.#.', '##.', '##.'], color: '#FFE27A' },
   question: { rows: ['###', '..#', '.#.', '...', '.#.'], color: '#FFFFFF' },
   bang: { rows: ['#', '#', '#', '.', '#'], color: '#FF6B6B' },
@@ -530,12 +568,44 @@ const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string }> 
   zzz: { rows: ['###', '..#', '.#.', '###'], color: '#BFD8FF' },
   crown: { rows: ['#.#.#', '#####', '#+#+#'], color: '#FFD447', accent: '#FF6B6B' },
   fire: { rows: ['.#.', '##.', '#+#', '#++', '.#.'], color: '#FF7A3D', accent: '#FFE27A' },
+  sweat: { rows: ['.#.', '.#.', '#+#', '###', '.#.'], color: '#9ED9FF', accent: '#FFFFFF' },
+  // Four ticks round a gap: the cross-shaped vein that throbs on an angry forehead.
+  anger: { rows: ['.#.#.', '##.##', '.....', '##.##', '.#.#.'], color: '#FF4D5E', open: true },
+  // A little heart that floats up as a beat lifts it.
+  hearts: { rows: ['#.#', '###', '.#.'], color: '#FF7AAE' },
 };
+
+/**
+ * A manga sweat drop on his temple, `slide` rows down from the top of his
+ * head: on the right of his head, over its edge where there is no room
+ * beside it, as manga draws one. It never covers his eyes or mouth.
+ */
+function sweatDrop(layer: Layer, slide: number): void {
+  const { rows, color, accent } = EMOTES.sweat, ink = '#2B6CA8';
+  let top = -1;
+  layer.forEach((row, y) => { if (top < 0 && row.some(Boolean)) top = y; });
+  if (top < 0) return;
+  const edge = (layer[top + 2] ?? []).reduce((r, cell, x) => (cell ? x : r), -1);
+  const w = rows[0].length + 2, h = rows.length + 2;
+  const x0 = Math.min(edge, FRAME_WIDTH - w), y0 = Math.max(0, top - 1 + slide);
+  const nearFace = (x: number, y: number) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.feature) return true;
+    return false;
+  };
+  const ink_ = (ch: string | undefined) => ch === '#' || ch === '+';
+  const cells: [number, number, string][] = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = rows[y - 1]?.[x - 1], on = ink_(ch);
+    if (on || NEIGHBOURS.some(([dx, dy]) => ink_(rows[y - 1 + dy]?.[x - 1 + dx]))) cells.push([x0 + x, y0 + y, on ? (ch === '+' ? accent! : color) : ink]);
+  }
+  for (const [x, y, c] of cells) if (x >= 0 && y < FRAME_HEIGHT && !nearFace(x, y)) layer[y][x] = { c, item: false };
+}
 
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
-  const { rows, color, accent } = EMOTES[kind];
+  const { rows, color, accent, open } = EMOTES[kind];
   const w = rows[0].length + 2, h = rows.length + 2;
+  const inside = (x: number, y: number) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
   const spots: [number, number][] = [[FRAME_WIDTH - w, 0], [0, 0], [FRAME_WIDTH - w, 1], [0, 1], [FRAME_WIDTH - w, 2], [0, 2]]
     .map(([x, y]) => [x, Math.max(0, y + 1 - lift)] as [number, number]);
   if (left) spots.sort((a, b) => a[0] - b[0]);
@@ -545,7 +615,7 @@ function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const ch = rows[y - 1]?.[x - 1];
       const on = ink(ch);
-      const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+      const near = !on && !(open && inside(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
       if (on || near) cells.push([x0 + x, y0 + y, on ? (ch === '+' ? accent ?? color : color) : '#1B1428']);
     }
     return cells;
@@ -568,10 +638,13 @@ function poseMouth(pose: Pose, own: number): number | undefined {
   if (pose === 'ooh') return mouthIndex('ooh');
   if (pose === 'blep') return mouthIndex('blep');
   if (pose === 'smile' || pose === 'content') return own === mouthIndex('smile') ? mouthIndex('grin') : mouthIndex('smile');
+  if (pose === 'huff') return mouthIndex('kissy');
+  if (pose === 'oops') return mouthIndex('tehe');
   return undefined;
 }
 
-const POSES: Pose[] = ['base', 'shut', 'left', 'right', 'wave', 'sides', 'laugh', 'laughWave', 'frown', 'ooh', 'smile', 'content', 'blep'];
+const POSES: Pose[] = ['base', 'shut', 'left', 'right', 'wave', 'sides', 'laugh', 'laughWave', 'frown', 'ooh', 'smile', 'content', 'blep', 'blush', 'blushLeft', 'blushRight', 'huff', 'oops'];
+const MANGA_BLUSH = cheeks.findIndex(c => c.name === 'manga blush');
 
 /**
  * The guy as he is drawn into his poses: dressed, without the frame and aura
@@ -592,7 +665,9 @@ function poser(input: string, options: AnimateOptions) {
         pose === 'shut' ? closeEyes(base, config)
         : pose === 'left' ? glance(base, config, -1)
         : pose === 'right' ? glance(base, config, 1)
-        : pose === 'frown' || pose === 'content' ? closeEyes(worn, config)
+        : pose === 'frown' || pose === 'content' || pose === 'huff' || pose === 'oops' ? closeEyes(worn, config)
+        : pose === 'blush' ? compose({ ...figure, cheeks: MANGA_BLUSH })
+        : pose === 'blushLeft' || pose === 'blushRight' ? glance(grid('blush'), config, pose === 'blushLeft' ? -1 : 1)
         : pose === 'wave' || pose === 'sides' ? compose({ ...figure, arms: pose === 'wave' ? 2 : 1 })
         : worn);
     }
@@ -790,15 +865,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       const gold = sparkleIn(palette.colors[T.GOLD] ?? '#F2C230');
       for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t + i * fit(360) / 2 + seed, 360, 1, seed + i, gold);
     }
-    if (beat.drop) {
-      let top = -1;
-      layer.forEach((row, y) => { if (top < 0 && row.some(Boolean)) top = y; });
-      const row = layer[top + 2];
-      const right = row ? row.reduce((r, cell, x) => (cell ? x : r), -1) : -1;
-      for (const [x, y, c] of [[right + 1, top + 1, '#CFEFFF'], [right + 1, top + 2, '#7CC4F2']] as [number, number, string][]) {
-        if (right >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = { c, item: false };
-      }
-    }
+    if (beat.drop) sweatDrop(layer, beat.slide ?? 0);
     if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
     if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(wrap(t, fit(800)) / (fit(800) / 2)) % 2);
     const outside: [number, number, string][] = [];

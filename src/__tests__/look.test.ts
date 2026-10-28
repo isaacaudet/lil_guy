@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { allowed, decodeLook, encodeLook, lookOf, makeSeed, pickable } from '../look';
+import { allowed, decodeLook, encodeLook, lookOf, makeSeed, pickable, rareParts, readPart, partCode, rollPart, type LookSlot } from '../look';
 import { resolve, dealOf } from '../resolve';
 import { eyes, heads } from '../parts';
 import { palettes } from '../palette';
-import { eyeWeights, headWeights } from '../parts/weights';
+import { eyeWeights, headWeights, mouthWeights, cheekWeights, CAPSULE_ONLY } from '../parts/weights';
 
 const laser = eyes.findIndex(e => e.name === 'laser');
 const crab = heads.findIndex(h => h.name === 'crab');
@@ -87,5 +87,31 @@ describe('look codes', () => {
     expect(g.mouth).toBe(0);
     expect(g.head).toBe(resolve(seed).head);
     expect(lookOf(seed, '3.5.0.12.4.0.17')).toEqual(resolve(seed));
+  });
+});
+
+describe('the anime set, from capsules only', () => {
+  const anime = Object.entries(CAPSULE_ONLY).flatMap(([slot, w]) => Object.keys(w!).map(i => ({ slot: slot as LookSlot, index: Number(i) })));
+
+  test('is never dealt: every deal draws exactly as it did', () => {
+    expect(anime.length).toBe(8);
+    for (const { slot, index } of anime) expect(({ eyes: eyeWeights, mouth: mouthWeights, cheeks: cheekWeights } as Record<string, number[]>)[slot][index]).toBe(0);
+    for (let n = 0; n < 3000; n++) {
+      const g = resolve(`4-anime${n}`);
+      expect(anime.some(({ slot, index }) => g[slot] === index)).toBe(false);
+    }
+  });
+
+  test('a capsule can unlock each one, and then it can be picked', () => {
+    const own = resolve('anime-owner');
+    for (const p of anime) {
+      expect(rareParts(p.slot)).toContain(p.index);
+      expect(pickable(own, p.slot)).not.toContain(p.index);
+      expect(pickable(own, p.slot, { [p.slot]: [p.index] })).toContain(p.index);
+      expect(readPart(partCode(p))).toEqual(p);
+    }
+    const got = new Set<string>();
+    for (let n = 0; n < 4000; n++) { const d = rollPart(`anime${n}`); if (d) got.add(partCode(d)); }
+    for (const p of anime) expect(got.has(partCode(p))).toBe(true);
   });
 });

@@ -1044,7 +1044,7 @@ void main() {
     }));
     m.ctx.putImageData(img, 0, 0);
   }
-  const NOTE = { idle: 'breathing, blinks', blink: '', hop: 'squash and stretch', wave: 'arm up and down', look: 'glances', cheer: 'for a win', sad: 'for a loss', dance: 'turns side to side', squish: 'when tapped' };
+  const NOTE = { idle: 'breathing, blinks', blink: '', hop: 'squash and stretch', wave: 'arm up and down', look: 'glances', cheer: 'for a win', sad: 'for a loss', dance: 'turns side to side', squish: 'when tapped', shy: 'blushes, a heart', huff: 'hmph, an anger vein', oops: 'tehe, a sweat drop' };
   function renderMoves() {
     const equip = ['skin', 'hat', 'frame'].map(s => find(state.worn[s])).filter(Boolean).map(c => LG.encode(c.o));
     const el = $('moves-all');
@@ -1641,13 +1641,15 @@ void main() {
     const em = $('x-emotes');
     em.innerHTML = LG.EMOTE_UNLOCKS.map(e => `<figure class="mover"><canvas width="16" height="20" data-emote="${e.id}" aria-hidden="true"></canvas><figcaption>${esc(e.name)}<small>${esc(e.how)}</small></figcaption></figure>`).join('');
     em.querySelectorAll('canvas').forEach(c => addMover(c, LG.animateLoop(me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
-    // The parts added in 0.5, each on a plain guy.
-    const NEW = [['cheeks', LG.cheeks, 8], ['body', LG.bodies, 8], ['accessory', LG.accessories, 8]];
-    $('x-parts').innerHTML = NEW.flatMap(([key, list, from]) => list.slice(from).map((part, k) => {
-      const i = from + k, spec = { name: 'demo', parts: { ...DEMO, [key]: i } };
-      const slot = { cheeks: 'cheeks', body: 'markings', accessory: 'accessory' }[key];
-      const ch = chanceOf(slot, key, i);
-      return `<figure class="card tile" tabindex="0">${px({ ...spec, label: { title: part.name, bottom: `1 in ${fmt(1 / ch)}` } })}<figcaption><small>${slot}</small>${esc(part.name)}<b>1 in ${fmt(1 / ch)}</b></figcaption></figure>`;
+    // The anime set (capsules only), then the parts added in 0.5, each on a plain guy.
+    const anime = key => Object.keys(LG.CAPSULE_ONLY[key] ?? {}).map(Number);
+    const NEW = [['eyes', LG.eyes, anime('eyes')], ['mouth', LG.mouths, anime('mouth')], ['cheeks', LG.cheeks, anime('cheeks')],
+      ...[['cheeks', LG.cheeks], ['body', LG.bodies], ['accessory', LG.accessories]].map(([key, list]) => [key, list, list.map((_, i) => i).filter(i => i >= 8 && !anime(key).includes(i))])];
+    $('x-parts').innerHTML = NEW.flatMap(([key, list, which]) => which.map(i => {
+      const part = list[i], spec = { name: 'demo', parts: { ...DEMO, [key]: i } };
+      const slot = { eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', body: 'markings', accessory: 'accessory' }[key];
+      const odds = anime(key).includes(i) ? 'capsules only' : `1 in ${fmt(1 / chanceOf(slot, key, i))}`;
+      return `<figure class="card tile" tabindex="0">${px({ ...spec, label: { title: part.name, bottom: odds } })}<figcaption><small>${slot}</small>${esc(part.name)}<b>${odds}</b></figcaption></figure>`;
     })).join('');
     $('x-frames').innerHTML = LG.GAMES.map(g => LG.gameItems(g).filter(it => it.slot === 'frame')[1]).map(it => {
       const o = { item: it.id, finish: 'plain', scuff: 0.03, print: 7 };

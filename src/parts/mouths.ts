@@ -123,4 +123,23 @@ export const mouths: Mouth[] = [
     'mmmmmm',
     '..mm..',
   ]),
+  // The anime set: never dealt, only unlocked from a capsule (CAPSULE_ONLY in ./weights).
+  // Puckered up for a kiss, a little 3.
+  mouth('kissy', [
+    'mm',
+    '.m',
+    'mm',
+  ]),
+  // Wide open and shouting for joy, a triangle with a tongue in it.
+  mouth('yay', [
+    'mmmmm',
+    '.mtm.',
+    '..m..',
+  ]),
+  // Tehe: a smile with the tip of the tongue poking out of one corner.
+  mouth('tehe', [
+    'm....m',
+    '.mmmm.',
+    '...tt.',
+  ]),
 ];

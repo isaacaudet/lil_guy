@@ -149,8 +149,8 @@ const darkSkin = (config: AvatarConfig) => {
   return !!ink && contrast(ink, '#000000') > 10;
 };
 
-/** Parts meant to be shown off: they always show. */
-const CHASE = new Set(['kintsugi', 'gold dipped', 'gold leaf', 'jewels', 'rainbow']);
+/** Parts meant to be shown off: they always show. So does a manga blush, which a player earns from a capsule and a shy guy wears (./animate). */
+const CHASE = new Set(['kintsugi', 'gold dipped', 'gold leaf', 'jewels', 'rainbow', 'manga blush']);
 
 /**
  * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek

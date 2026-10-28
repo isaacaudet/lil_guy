@@ -3,7 +3,7 @@ import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts'
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
   bodyWeights, accessoryWeights, paletteWeights, armWeights, footWeights, shadeWeights,
-  RETIRED_EYES, withoutRetired, DEAL_2, DEAL_3,
+  RETIRED_EYES, withoutRetired, unlockWeight, DEAL_2, DEAL_3,
 } from './parts/weights';
 import { palettes } from './palette';
 import { gameItems, itemById, itemWeight } from './items';
@@ -43,13 +43,18 @@ export interface TraitOdds {
   chance: number;
 }
 
-const share = (weights: number[], i: number) => weights[i] / weights.reduce((a, b) => a + b, 0);
+/**
+ * A part's chance. A part no deal gives (the capsule-only anime set) counts
+ * as if it were dealt at its capsule weight, so a look wearing one stays a
+ * number; every dealt part's chance is as it was.
+ */
+const share = (weights: number[], i: number, slot = '') => (weights[i] || unlockWeight(slot, weights, i)) / weights.reduce((a, b) => a + b, 0);
 // A part today's deal no longer gives (eggshell) is still worn by guys an older
 // deal gave it to: rate it by the newest deal that did, never as impossible.
-const dealt = (key: keyof typeof DEAL_3, weights: number[], i: number) => {
+const dealt = (key: keyof typeof DEAL_3, weights: number[], i: number, slot = '') => {
   if (weights[i] > 0) return share(weights, i);
   for (const deal of [DEAL_3, DEAL_2]) if (deal[key][i] > 0) return share(deal[key], i);
-  return share(weights, i);
+  return share(weights, i, slot);
 };
 
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
@@ -58,9 +63,9 @@ export function traitOdds(config: AvatarConfig): TraitOdds[] {
   const body = shows(config, 'body') ? config.body : 0, cheek = shows(config, 'cheeks') ? config.cheeks : 0;
   return [
     { slot: 'shape', name: heads[config.head].name, chance: dealt('head', headWeights, config.head) },
-    { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes) },
-    { slot: 'mouth', name: mouths[config.mouth].name, chance: dealt('mouth', mouthWeights, config.mouth) },
-    { slot: 'cheeks', name: cheeks[cheek].name, chance: dealt('cheeks', cheekWeights, cheek) },
+    { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes, 'eyes') },
+    { slot: 'mouth', name: mouths[config.mouth].name, chance: dealt('mouth', mouthWeights, config.mouth, 'mouth') },
+    { slot: 'cheeks', name: cheeks[cheek].name, chance: dealt('cheeks', cheekWeights, cheek, 'cheeks') },
     { slot: 'topper', name: hair[config.hair].name, chance: dealt('hair', hairWeights, config.hair) },
     { slot: 'markings', name: bodies[body].name, chance: dealt('body', bodyWeights, body) },
     { slot: 'accessory', name: accessories[config.accessory].name, chance: dealt('accessory', accessoryWeights, config.accessory) },

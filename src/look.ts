@@ -4,7 +4,7 @@ import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts'
 import { palettes } from './palette';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights, bodyWeights, accessoryWeights, paletteWeights,
-  RETIRED_EYES,
+  RETIRED_EYES, unlockWeight,
 } from './parts/weights';
 import type { AvatarConfig } from './types';
 
@@ -93,11 +93,14 @@ export interface PartDrop { slot: LookSlot; index: number }
 const NAMES: Record<string, { name: string }[]> = { head: heads, eyes, mouth: mouths, cheeks, hair, body: bodies, accessory: accessories, palette: palettes };
 const SLOT_WORD: Record<string, string> = { head: 'shape', eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', hair: 'topper', body: 'markings', accessory: 'accessory', palette: 'colours' };
 
-/** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
+/**
+ * The rare parts in a slot, the ones a picker locks: what a capsule can
+ * unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+ */
 export function rareParts(slot: LookSlot): number[] {
   const weights = SLOTS.find(s => s[1] === slot)![2];
   const total = weights.reduce((a, b) => a + b, 0);
-  return weights.map((_, i) => i).filter(i => weights[i] > 0 && weights[i] / total < RARE && !(slot === 'eyes' && RETIRED_EYES.includes(i)));
+  return weights.map((_, i) => i).filter(i => (weights[i] > 0 ? weights[i] / total < RARE : unlockWeight(slot, weights, i) > 0) && !(slot === 'eyes' && RETIRED_EYES.includes(i)));
 }
 
 /**
@@ -115,8 +118,9 @@ export function rollPart(seed: string, has?: (p: PartDrop) => boolean): PartDrop
     const slot = PART_SLOTS[(start + k) % PART_SLOTS.length];
     const weights = SLOTS.find(s => s[1] === slot)![2], pool = rareParts(slot).filter(index => !has?.({ slot, index }));
     if (!pool.length) continue;
-    let r = u('which') * pool.reduce((a, i) => a + weights[i], 0);
-    const index = pool.find(i => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+    const w = (i: number) => unlockWeight(slot, weights, i);
+    let r = u('which') * pool.reduce((a, i) => a + w(i), 0);
+    const index = pool.find(i => (r -= w(i)) < 0) ?? pool[pool.length - 1];
     return { slot, index };
   }
   return null;
@@ -128,7 +132,7 @@ export function rollPart(seed: string, has?: (p: PartDrop) => boolean): PartDrop
  * one in 2,000).
  */
 export function partCost(p: PartDrop): number {
-  const weights = SLOTS.find(s => s[1] === p.slot)![2], total = weights.reduce((a, b) => a + b, 0), share = weights[p.index] / total;
+  const weights = SLOTS.find(s => s[1] === p.slot)![2], total = weights.reduce((a, b) => a + b, 0), share = unlockWeight(p.slot, weights, p.index) / total;
   return share >= 1 / 200 ? 3 : share >= 1 / 2000 ? 9 : 18;
 }
 

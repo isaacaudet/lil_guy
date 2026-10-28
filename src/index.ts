@@ -38,7 +38,7 @@ export { toPng } from "./export-png";
 
 export { hash, hashNth } from "./hash";
 export { resolve, LUCKY_ODDS, DEAL_PREFIX, dealOf } from "./resolve";
-export { RETIRED_EYES } from "./parts/weights";
+export { RETIRED_EYES, CAPSULE_ONLY } from "./parts/weights";
 export { compose, composeBase, FOOT_STYLES, shows } from "./compose";
 export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPalette, paletteOf } from "./palette";
 export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from "./parts";

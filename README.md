@@ -198,8 +198,8 @@ Creates a Next.js route handler. Returns `{ GET }`.
 
 ## Animations
 
-Ten moves for games: `idle`, `blink`, `hop`, `wave`, `look`, `cheer`, `sad`,
-`dance`, `squish` and `sleep`. They take the same options as `toSvgString`, so a guy
+Thirteen moves for games: `idle`, `blink`, `hop`, `wave`, `look`, `cheer`, `sad`,
+`dance`, `squish`, `sleep`, and three anime reactions, `shy`, `huff` and `oops`. They take the same options as `toSvgString`, so a guy
 hops in the hat it is wearing.
 
 ```ts
@@ -218,9 +218,18 @@ mouth when sad, an "ooh" when squished. Its own eyes always stay. Little
 emotes pop up beside it (music notes, a question mark, a heart, a "!"), and
 dust puffs out when it lands.
 
+The anime reactions are manga's own symbols on the guy's own face. `shy`: a
+manga blush (pink hatched with red, ////) comes up, he looks away and a little
+heart floats up beside him. `huff`: hmph, eyes shut, a pout, his back turned,
+the cross-shaped anger vein throbbing over his head and one stamp. `oops`:
+tehe, eyes shut, the tip of his tongue out and a sweat drop running down his
+temple. `sad` runs the same sweat drop down his temple, and `squish` ends
+with one, phew.
+
 Players can show an emote over any move with `emote`. `EMOTE_UNLOCKS` lists
-them and how each is earned: a heart, music, a snooze, "huh?" and "whoa!"
-for everyone, a flame for a 7-day streak and a crown for a perfect day.
+them and how each is earned: a heart, music, a snooze, "huh?", "whoa!", a
+little floating heart, a sweat drop and an anger vein for everyone, a flame
+for a 7-day streak and a crown for a perfect day.
 
 Each guy keeps his own time. His `idle` is dealt from his name like his parts:
 three to five breaths a loop (or a little lift, for a floater), where in the
@@ -364,9 +373,9 @@ Every slot can be pinned through `parts`, and the rest stays deterministic:
 | Slot | Values |
 |---|---|
 | `head` | `0-31` body shape: round, mochi, egg, gumdrop, onigiri, ghost, slime, loaf, cloud, pill, chonk, block, tower, gourd, flame, jellyfish, octopus, robot, cactus, saucer, shard, toadstool, bat, crab, heart, dumpling, tooth, star, acorn, gem, clover, disco; chase: gem, clover, disco |
-| `eyes` | `0-22` beans, shiny, happy, sparkle, wink, glossy, excited, hearts, lashes, chill, side-eye, shades, star, squint, fired up, laser, cyclops, sleepy, dizzy, anime, galaxy, diamond, dragon; chase: galaxy, diamond, dragon |
-| `mouth` | `0-21` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum, bunny, vampire, wide, gold tooth, grillz, mustache; chase: gold tooth, grillz, mustache |
-| `cheeks` | `0-18` bare, blush, dot, rosy, freckles, scar, band-aid, war paint, whiskers, hearts, shine, stripes, stars, gold leaf, flushed, shy, mole, jewels, rainbow; chase: jewels, rainbow |
+| `eyes` | `0-26` beans, shiny, happy, sparkle, wink, glossy, excited, hearts, lashes, chill, side-eye, shades, star, squint, fired up, laser, cyclops, sleepy, dizzy, anime, galaxy, diamond, dragon, shoujo, kitty, joy, puppy; chase: galaxy, diamond, dragon; capsules only: shoujo, kitty, joy, puppy |
+| `mouth` | `0-24` smile, cat, laugh, beak, blep, grin, fang, smirk, ooh, tiny, wobble, toothy, tongue out, flat, gritted, bubblegum, bunny, vampire, wide, gold tooth, grillz, mustache, kissy, yay, tehe; chase: gold tooth, grillz, mustache; capsules only: kissy, yay, tehe |
+| `cheeks` | `0-19` bare, blush, dot, rosy, freckles, scar, band-aid, war paint, whiskers, hearts, shine, stripes, stars, gold leaf, flushed, shy, mole, jewels, rainbow, manga blush; chase: jewels, rainbow; capsules only: manga blush |
 | `hair` | `0-36` toppers: none, cat ears, bear ears, bunny ears, bug antennae, horns, space buns, sprout, apple stem, flower, bow, crown, party hat, antenna, unicorn horn, star clip, tuft, chick tuft, beanie, cap, bob, mushroom, eggshell, frosting, leafy top, beret, witch hat, propeller, mohawk, headphones, cherries, flower crown, antlers, chef hat, laurel, star crown, on fire; chase: laurel, star crown, on fire |
 | `body` | `0-18` markings: plain, belly, two tone, tabby, spots, star mark, heart mark, gleam, stripes, zigzag, split, moon mark, bolt mark, starry, polka dots, blaze, sprinkles, kintsugi, gold dipped; chase: kintsugi, gold dipped |
 | `accessory` | `0-19` none, glasses, scarf, bell collar, bowtie, bandana, star sticker, heart badge, monocle, eye patch, necklace, medal, flower pin, headband, necktie, lei, goggles, gold chain, heart shades, masquerade; chase: gold chain, heart shades, masquerade |
@@ -388,6 +397,13 @@ uncommon, and the chase parts above turn up one guy in 300 to 1,000. Anything
 else (an older seed, a plain name) is dealt from `DEAL_2`, a frozen copy of the
 weights before deal 3, so adding parts never redraws a guy already dealt.
 `traitOdds(config)` gives each part's odds.
+
+**The anime set** is never dealt: shoujo eyes (big and glossy, two catchlights,
+the iris glistening as he moves), kitty eyes (gold, a slit pupil), joy eyes
+(^ ^), puppy eyes, a kissy 3, a yay ▽, a tehe tongue and the manga blush. Each
+weighs 0 in every deal, so no guy already dealt changes, and is listed in
+`CAPSULE_ONLY` with its weight for capsules: a capsule unlocks one like any
+rare part, and metal crafts it.
 
 ## Game items
 
