@@ -288,13 +288,15 @@ copies' finishes all baked into frames, the same pixels everywhere. One
 renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
 server, a page and a game all get the same picture.
 
-A card is a trading card. Its window shimmers in its copy's finish's own foil
-(Sunset stripes, a Tempered oil slick, a Nebula cosmos, Prism cracked ice, a Gold
-sunburst), with the print picking one of four variants. An item's card carries
-its machine's set symbol. A Grail card is brushed gold foil with a glint
-sweeping it, a bevelled edge and gold studs round a deep amber window; an aura
-card is pale silk in the aura's own colour with a double foil edge, its deep
-window glowing in that colour behind the guy.
+A card is a trading card, after Balatro's: printed in its grade's colour with a
+dark outline and a chunky bevel, the guy in a window, his name big on a dark
+plate with the grade's badge, and a hard shadow it lifts off now and then. Its
+edition comes from the finish that sets its grade: Sunset is Foil (blue-silver
+bands), Tempered and Nebula Holographic (a red and blue sheen), Prism
+Polychrome (a slow rainbow across the whole card), Negative an inverted, dark
+card. A Grail card is gold with a sunburst in its window and glints across it.
+An aura card is Spectral and full-art: the aura's own colour swirls edge to edge
+behind the guy. An item's card carries its machine's set symbol.
 
 A finish repaints a copy's own colours through the finish's ramp by tone, so
 every part keeps its shading and stays apart from the next: Prism a smooth

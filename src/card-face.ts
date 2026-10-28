@@ -1,5 +1,6 @@
+import { FRAME_WIDTH } from './animate';
 import { compose } from './compose';
-import { clamp, distance, finishColor, holoColor, mod, GLSL_COMMON, GLSL_PRECISION, hueShift, loopSeconds, mix, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
+import { distance, editionColor, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, SET_COLORS, withItems } from './items';
 import { auraHue } from './auras';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
@@ -10,16 +11,16 @@ import { resolve } from './resolve';
 import type { AvatarConfig } from './types';
 
 /**
- * The trading card a guy or an item is shown on: a 26×42 face, its window
- * tinted by grade, the guy standing in it, grade pips under him. The face
- * shimmers by grade (a sheen, foil, holo, gold) and each worn copy's pixels by
- * their finish, all in `LOOP_MS`. Its words (name, print, odds) are the page's
- * to write over it.
+ * The trading card a guy or an item is shown on: a 26×42 face printed in its
+ * grade's colour, a dark plate across the top for the name, the guy standing
+ * in a window, and a dark plate at the foot with the grade pips and the set's
+ * symbol. Its words (name, print, odds) are the page's to write over it.
  *
- * Like a trading card: the window shimmers in its copy's finish's own foil
- * (stripes, an oil slick, a cosmos, cracked ice, a sunburst), the print picking
- * the variant, so two copies shimmer differently; and an item's card carries
- * its set's symbol.
+ * Like Balatro's cards, each has an edition, from the finish that sets its
+ * grade: Foil (Sunset), Holographic (Tempered, Nebula), Polychrome (Prism),
+ * Negative, Gold for a Grail, and Spectral for an aura card, which is
+ * full-art: its aura's own colours swirl edge to edge. Each worn copy's pixels
+ * shine in their own finish, and everything comes round in `LOOP_MS`.
  *
  * The face is built once (`cardFace`), then drawn at a time either by the GPU
  * (`CARD_FRAGMENT`, `createCardShader`) or in plain code (`cardFaceAt`), with
@@ -48,7 +49,7 @@ export interface FaceSpec {
 export interface CardFace {
   /** Colours, 26×42 RGBA. */
   base: Uint8Array;
-  /** Per pixel: what it is (card, window, guy, item), its copy's finish, scuff and print. */
+  /** Per pixel: what it is (card, window, guy, item, plate), its copy's finish, scuff and print. */
   kind: Uint8Array;
   /** Per pixel noise, in the red channel. */
   noise: Uint8Array;
@@ -56,17 +57,22 @@ export interface CardFace {
   negative: boolean;
   /** Where the face's wide band starts: the last copy's print. */
   seed: number;
-  /** The window's foil: its copy's finish, an index in SHADER_FINISHES (0 for none), and the print's variant 0–3. */
+  /** The last copy's finish, an index in SHADER_FINISHES (0 for none), and its print's variant 0–3. */
   holo: number;
   variant: number;
+  /** The card's edition, an index in EDITIONS. */
+  edition: number;
+  /** The window's middle, in face cells: where a Gold sunburst and a Spectral swirl turn round. */
+  origin: [number, number];
 }
-
-/** Where a gold card's sunburst turns round: the window's middle. */
-const ORIGIN: [number, number] = [12.5, 18.5];
 
 const rgb = (s: string): [number, number, number] => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
 const blend = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
 const gradeIndex = (o: Owned) => GRADES.findIndex(g => g.id === gradeOf(o).id);
+
+const INK = [24, 20, 31], WHITE = [255, 255, 255], IVORY = [246, 240, 227], PLATE = [38, 34, 52];
+/** Kinds of pixel, as the shader reads them. */
+const CARD = 1, WINDOW = 2, GUY = 3, ITEM = 4, FIXED = 5;
 
 /** The card's face, ready to draw at any time. */
 export function cardFace(spec: FaceSpec): CardFace {
@@ -82,43 +88,53 @@ export function cardFace(spec: FaceSpec): CardFace {
   const last = copies[copies.length - 1], lastItem = last ? itemById(last.item) : undefined;
   const set = spec.set ?? (lastItem && lastItem.game !== 'club' ? lastItem.game : undefined);
   const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish as (typeof SHADER_FINISHES)[number])) : 0;
+  // The edition: the finish of the copy that sets the grade, or the grade's own for a card given one.
+  const top = copies.filter(o => gradeIndex(o) === g).pop();
+  const edition = top ? editionOf(top.finish) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][Math.min(g, 5)];
   const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise = new Uint8Array(W * H * 4);
   const put = (x: number, y: number, c: number[], k: number, fi = -1, sc = 0, pr = 0) => {
     const i = (y * W + x) * 4, print = Math.floor(pr / 4);
     base.set([c[0], c[1], c[2], 255], i);
-    kind.set([Math.round(k / 4 * 255), (fi + 1) * 32, Math.round(sc * 255), print], i);
+    kind.set([k * 32, (fi + 1) * 32, Math.round(sc * 255), print], i);
     noise[i] = noiseOf(x, y, print * 4);
   };
-  const gc = g >= 0 ? rgb(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb(spec.tint) : [120, 140, 170];
-  // An aura card is pale silk in the aura's own colour with a foil edge of it, its deep window
-  // glowing in that colour; a Grail is gold foil with a bevelled edge and a deep amber window.
-  const aura = g >= 5, gold = g === 4, night = [17, 21, 27];
+  const gc = g >= 0 ? rgb(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb(spec.tint) : [104, 118, 146];
+  const aura = edition === 6, gold = edition === 5, neg = edition === 4;
   const auraCopy = copies.find(o => itemById(o.item)?.slot === 'aura');
-  const ah = aura && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
-  const edge = aura ? blend(ah, night, 0.25) : gold ? [150, 92, 18] : [34, 38, 58];
-  const cream = aura ? blend([242, 236, 221], blend(ah, [255, 255, 255], 0.62), 0.55) : gold ? [240, 194, 92] : [242, 236, 221];
-  const rim = aura ? blend(ah, night, 0.35) : gold ? [255, 226, 140] : [207, 199, 180];
-  const win = aura ? blend(ah, night, 0.88) : gold ? [92, 54, 12] : blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
-  const glow = aura ? blend(ah, night, 0.4) : gold ? [214, 150, 44] : win;
-  // An aura card's lip and pips are in its aura's colour too.
-  const accent = aura ? ah : gc;
+  const tone = aura && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
+  // The window sits round the picture, however wide the picture is.
+  const gx0 = Math.floor((W - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
+  const origin: [number, number] = [(left + right) / 2, (wTop + wBottom) / 2];
+  // The stock the card is printed on, before its edition: the grade's colour (an aura's own on an
+  // aura card), gold for a Grail, pale for a Negative card so its edition turns it dark.
+  const stock = (x: number, y: number) => gold ? blend([255, 222, 110], [204, 124, 22], y / H * 0.85)
+    : neg ? blend(blend(IVORY, tone, 0.35), blend(IVORY, tone, 0.6), y / H)
+      : blend(blend(tone, WHITE, 0.08), blend(tone, INK, 0.25), y / H);
+  const plate = gold ? [92, 52, 8] : aura ? blend(blend(tone, INK, 0.6), INK, 0.45) : PLATE;
+  const light = gold ? [112, 62, 10] : blend(IVORY, gc, g >= 0 ? 0.22 : spec.tint ? 0.3 : 0.12);
+  const glow = gold ? [232, 160, 48] : blend(light, gc, 0.2);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
     if (cx + cy < 2) continue;
-    const outer = cx === 0 || cy === 0 || cx + cy === 2;
-    // A Grail's edge is lit along the top and left; its gold runs deeper towards the foot.
-    put(x, y, outer ? (gold ? blend([255, 238, 168], edge, (x + y * 1.4) / (W + H * 1.4)) : edge) : gold ? blend(cream, [196, 130, 30], y / H) : cream, 1);
+    // A dark outline, then a bevel: lit along the top and left, deep along the bottom and right.
+    if (cx === 0 || cy === 0 || cx + cy === 2) { put(x, y, INK, FIXED); continue; }
+    const bevel = cx === 1 || cy === 1 || cx + cy === 3;
+    let c = stock(x, y);
+    if (bevel) c = (x > W / 2 && cx === 1) || (y > H / 2 && cy === 1) ? blend(c, INK, 0.3) : blend(c, WHITE, 0.35);
+    // An aura card is full-art: its aura's colours fill the face, the swirl playing over them.
+    if (aura && !bevel) { const d = Math.hypot((x - origin[0]) / 15, (y - origin[1]) / 19); put(x, y, blend(blend(tone, INK, 0.62), blend(tone, INK, 0.3), Math.max(0, 1 - d) ** 1.2), WINDOW); continue; }
+    put(x, y, c, CARD);
   }
-  // The title band, in the grade's colour: the name is written over it.
-  // Mythic and Grail names are written in foil, so their band goes dark to show it off.
-  const band = g >= 3 ? [30, 26, 52] : g >= 0 ? blend(gc, [24, 22, 44], 0.3) : [58, 66, 100];
-  const lip = g >= 3 ? accent : blend(band, [255, 255, 255], 0.25);
-  for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) {
-    put(x, y, y === 7 ? (g >= 3 ? accent : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
+  // The name's plate across the top, in the grade's colour along its lip.
+  for (let y = 2; y <= 7; y++) for (let x = 2; x <= W - 3; x++) {
+    if ((x === 2 || x === W - 3) && (y === 2 || y === 7)) continue;
+    put(x, y, y === 2 ? blend(plate, WHITE, 0.16) : y === 7 ? INK : plate, FIXED);
   }
-  for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) {
-    const r = Math.hypot((x - 12.5) / 10, (y - 18) / 11);
-    put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : blend(win, glow, Math.max(0, 1 - r) ** 1.4), 2);
+  // The window, set in with a dark rim: light by grade, deep amber on a Grail; none on an aura card.
+  if (!aura) for (let y = wTop; y <= wBottom; y++) for (let x = left; x <= right; x++) {
+    const d = Math.hypot((x - origin[0]) / 10, (y - origin[1]) / 11);
+    if (x === left || y === wTop || x === right || y === wBottom) put(x, y, INK, FIXED);
+    else put(x, y, blend(light, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
   }
   grid.forEach((row, y) => row.forEach((t, x) => {
     const hex = colors[y][x];
@@ -126,20 +142,26 @@ export function cardFace(spec: FaceSpec): CardFace {
     const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null;
     const o = slot ? owned[slot] : undefined;
     const fi = o ? SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]) : -1;
-    put(x + 5, y + 11, rgb(hex), o ? 4 : 3, fi, o ? o.scuff : 0, o ? o.print : 0);
+    if (x + gx0 > 1 && x + gx0 < W - 2) put(x + gx0, y + 11, rgb(hex), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
   }));
-  // The set's symbol, bottom right: a small badge in the machine's colour.
-  const mark = set ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
-  if (mark) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb(mark), [255, 255, 255], 0.5) : x === 22 || y === 39 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), 1);
+  // The foot's plate: the grade's pips, and under them room for the page's words and the set's symbol.
+  for (let y = 30; y <= H - 3; y++) for (let x = 2; x <= W - 3; x++) {
+    if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
+    put(x, y, y === 30 ? INK : plate, FIXED);
+  }
+  const empty = blend(plate, WHITE, 0.22);
   if (g >= 0) for (let p = 0; p < 5; p++) {
     const x0 = 6 + p * 3;
-    for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? accent : rim, 1);
-  } else for (let x = 8; x <= 17; x++) put(x, 31, rim, 1);
-  return { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0 };
+    for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? (y === 31 ? blend(tone, WHITE, 0.3) : tone) : empty, FIXED);
+  } else for (let x = 8; x <= 17; x++) put(x, 31, empty, FIXED);
+  // The set's symbol, bottom right: a small badge in the machine's colour.
+  const mark = set ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
+  if (mark) for (let y = 36; y <= 38; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 36 ? blend(rgb(mark), WHITE, 0.5) : x === 22 || y === 38 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), FIXED);
+  return { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin };
 }
 
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
-export const faceMoves = (f: CardFace) => f.grade >= 0 || f.negative || f.holo > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+export const faceMoves = (f: CardFace) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
 
 /** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
 export interface Hover { x: number; y: number; strength: number }
@@ -147,29 +169,15 @@ export interface Hover { x: number; y: number; strength: number }
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8ClampedArray {
   const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
-  const time = loopSeconds(ms), grade = f.grade;
+  const time = loopSeconds(ms);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4;
     if (f.base[i + 3] < 128) continue;
     let c: Vec3 = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
-    const k = Math.floor(f.kind[i] / 255 * 4 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
-    const scuff = f.kind[i + 2] / 255, print = f.kind[i + 3] * 4, h = f.noise[i] / 255, d = x + y;
-    const wide = 1 - clamp(Math.abs(mod(d - time * 10 + f.seed, 60) - 30) / 3, 0, 1);
-    if (k > 3.5 && finish >= 0) c = finishColor(c, finish, scuff, h, d, y, print, time, 1);
-    else if (k < 2.5) {
-      if (k > 1.5) c = holoColor(c, f.holo, f.variant, [x, y], ORIGIN, h, time);
-      if (f.negative) c = mix([1 - c[0], 1 - c[1], 1 - c[2]], [0.36, 0.2, 0.62], 0.25);
-      if (grade > 0.5 && grade < 1.5) c = c.map(v => v + wide * 0.08) as Vec3;
-      else if (grade > 1.5 && grade < 2.5) {
-        const s = 0.5 + 0.5 * Math.sin(d * 0.55 - time * Math.PI * 2 / 3);
-        c = mix(c, [c[0] * 0.82 + 0.06, c[1] * 0.94 + 0.06, c[2] * 1.2 + 0.06], 0.45 * s).map(v => v + wide * 0.12) as Vec3;
-      } else if (grade > 2.5 && grade < 3.5) {
-        if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * 0.18);
-        c = c.map(v => v + wide * 0.12) as Vec3;
-      } else if (grade > 3.5 && grade < 4.5) {
-        c = mix(c, [1, 0.97, 0.84], wide * (k < 1.5 ? 0.6 : 0.25));
-      } else if (grade > 4.5 && k < 1.5) c = mix(c, [1, 1, 1], wide * 0.4);
-    }
+    const k = Math.floor(f.kind[i] / 32 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
+    const scuff = f.kind[i + 2] / 255, print = f.kind[i + 3] * 4, h = f.noise[i] / 255;
+    if (k === ITEM && finish >= 0) c = finishColor(c, finish, scuff, h, x + y, y, print, time, 1);
+    else if (k <= WINDOW) c = editionColor(c, f.edition, f.variant, [x, y], f.origin, k, h, 1, time);
     if (hover && hover.strength > 0) {
       const at = [(x + 0.5) / W, (y + 0.5) / H];
       const light = (1 - smoothstep(0, 0.34, distance(at, [hover.x, hover.y]))) * 0.35 * hover.strength;
@@ -184,9 +192,10 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
 export const CARD_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
 uniform sampler2D base, kind, noise;
-uniform float time, hover, grade, neg, seed, holo, variant;
-uniform vec2 light;
+uniform float time, hover, edition, variant;
+uniform vec2 light, origin;
 ${GLSL_COMMON}
+${GLSL_EDITIONS}
 void main() {
   vec2 res = vec2(${FACE_WIDTH}.0, ${FACE_HEIGHT}.0);
   vec2 cell = floor(uv * res);
@@ -195,22 +204,12 @@ void main() {
   if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
   vec3 c = b.rgb;
   vec4 kd = texture2D(kind, at);
-  float k = floor(kd.r * 4.0 + 0.5);
+  float k = floor(kd.r * 255.0 / 32.0 + 0.5);
   float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
   float print = floor(kd.a * 255.0 + 0.5) * 4.0;
   float h = texture2D(noise, at).r;
-  float d = cell.x + cell.y;
-  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 60.0) - 30.0) / 3.0, 0.0, 1.0);
-  if (k > 3.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, d, cell.y, print, time, 1.0);
-  else if (k < 2.5) {
-    if (k > 1.5) c = holoColor(c, holo, variant, cell, vec2(12.5, 18.5), h, time);
-    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
-    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
-    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
-    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
-    else if (grade > 3.5 && grade < 4.5) c = mix(c, vec3(1.0, 0.97, 0.84), wide * (k < 1.5 ? 0.6 : 0.25));
-    else if (grade > 4.5 && k < 1.5) c = mix(c, vec3(1.0), wide * 0.4);
-  }
+  if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
@@ -244,7 +243,7 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
   const p = gl.getAttribLocation(program, 'p');
   gl.enableVertexAttribArray(p);
   gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
-  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'grade', 'neg', 'seed', 'light', 'holo', 'variant'].map(n => [n, gl.getUniformLocation(program, n)]));
+  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin'].map(n => [n, gl.getUniformLocation(program, n)]));
   gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1); gl.uniform1i(u.noise, 2);
   gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
   const textures = [0, 1, 2].map(unit => {
@@ -263,9 +262,8 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
         gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FACE_WIDTH, FACE_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
       });
-      gl.uniform1f(u.time, loopSeconds(ms)); gl.uniform1f(u.grade, face.grade);
-      gl.uniform1f(u.neg, face.negative ? 1 : 0); gl.uniform1f(u.seed, face.seed);
-      gl.uniform1f(u.holo, face.holo); gl.uniform1f(u.variant, face.variant);
+      gl.uniform1f(u.time, loopSeconds(ms)); gl.uniform1f(u.edition, face.edition);
+      gl.uniform1f(u.variant, face.variant); gl.uniform2f(u.origin, face.origin[0], face.origin[1]);
       gl.uniform1f(u.hover, hover?.strength ?? 0); gl.uniform2f(u.light, hover?.x ?? 0.5, hover?.y ?? 0.3);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

@@ -221,7 +221,7 @@
   .gview { display: grid; gap: 10px; justify-items: center; width: 100%; }
   .gview > div:last-child { width: 100%; }
   /* The 3D guy takes the card's shape, so switching never moves the page. */
-  canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); transition: transform .12s ease-out; }
+  canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; transition: transform .12s ease-out; }
   .saves { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 280px; }
   .saves-h { grid-column: 1 / -1; font-size: 16px; color: var(--ink-3); text-align: center; }
   .saves .btn { height: 36px; font-size: 16px; padding: 0 6px; border-radius: 8px; white-space: nowrap; }
@@ -1349,7 +1349,7 @@
     const l = spec.label;
     // --n is how many letters a line has, so a long one shrinks to fit the card instead of being cut off.
     const len = h => String(h ?? '').replace(/<[^>]*>/g, '').length;
-    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
+    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g === 4 ? ' gold' : l.g === 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
     return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
   };
   /**
