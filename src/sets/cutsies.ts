@@ -105,15 +105,16 @@ export const set: MachineSet = {
       ]),
     },
     {
-      id: 'cutsies.peel', game: 'cutsies', slot: 'hat', name: 'Banana peel',
-      about: 'What’s left once the banana’s been cut.',
-      // peel, peel shade, inside, stalk, peel light
-      colors: ['#FFE04A', '#D9A11E', '#FFF6D2', '#5C3A1E', '#FFF19A'],
+      id: 'cutsies.peel', game: 'cutsies', slot: 'hat', name: 'Peeled banana',
+      // peel, peel shade, banana, stalk, peel light, banana shade
+      colors: ['#FFE04A', '#D9A11E', '#FFF6D2', '#5C3A1E', '#FFF19A', '#F0DCA0'],
+      // A banana lying across his head, tipped up at its stalk, its other end peeled.
       draw: on([
-        '.....44.....',
-        '....5112....',
-        '.5513333122.',
-        '51..1332..12',
+        '.4..........',
+        '441.........',
+        '.2115......3',
+        '..2211555136',
+        '....2222222.',
       ]),
     },
     {
