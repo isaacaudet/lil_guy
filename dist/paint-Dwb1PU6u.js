@@ -1753,31 +1753,24 @@ const set$9 = {
 			])
 		},
 		"amountle.crystal": {
-			eyes: 8,
-			colors: [
-				"#8CEBDF",
-				"#3FBFB0",
-				"#D2FFF8",
-				"#FFFFFF",
-				"#23897D"
-			],
-			outline: "#14524C",
+			eyes: 9,
+			limb: 2,
 			art: grid16("crystal", [
 				"................",
-				"......4331......",
-				".....433112.....",
-				"....43331112....",
-				"...433oooo112...",
-				"..43ohh####o12..",
-				".43oh#######o12.",
-				".31o########o12.",
-				".31o########o22.",
-				".11o#######so22.",
-				"..11os####so22..",
-				"...511oooo225...",
-				"....51112225....",
-				".....521225.....",
-				"......5522......",
+				"................",
+				"....33333111....",
+				"...3443311112...",
+				"..344333111122..",
+				".34333331111122.",
+				".31111111111122.",
+				".11111111111122.",
+				".11111111111122.",
+				".11111111111122.",
+				".11111111111122.",
+				".21111111111222.",
+				"..211111111222..",
+				"...2222222222...",
+				"................",
 				"................"
 			])
 		},
@@ -2237,7 +2230,7 @@ const set$8 = {
 			])
 		},
 		"halfsies.avocado": {
-			eyes: 9,
+			eyes: 8,
 			colors: [
 				"#E2EE9A",
 				"#A9CF5C",
@@ -2251,17 +2244,17 @@ const set$8 = {
 				"......4333......",
 				".....421123.....",
 				"....42155123....",
-				"...4215555123...",
-				"...421oooo123...",
-				"..42oh####so23..",
-				".42oh#######o23.",
-				".42o########o23.",
-				".42o########o23.",
-				".42o#######so23.",
-				".425os####so523.",
-				"..4255oooo5523..",
+				"...415oooo513...",
+				"..41ohhh###o13..",
+				".1oh#########o1.",
+				".1o##########o1.",
+				".1o##########o1.",
+				".1o##########o1.",
+				".1o#########so1.",
+				".41os######so13.",
+				".421os####so123.",
+				"..4211oooo1123..",
 				"...4222222223...",
-				"....33333333....",
 				"................"
 			])
 		},
@@ -3155,7 +3148,7 @@ const set$6 = {
 			], 0, 2)
 		},
 		"flipsies.bottle": {
-			eyes: 10,
+			eyes: 9,
 			limb: 4,
 			colors: [
 				"#D6EEFB",
@@ -3171,20 +3164,20 @@ const set$6 = {
 			outline: "#2A5A8C",
 			art: grid16("water bottle", [
 				"................",
-				"......4445......",
+				".......45.......",
 				".....444445.....",
 				".....555555.....",
-				"...3111111112...",
-				"..311oooooo112..",
-				".311ohh####o112.",
-				".31oh#######o12.",
-				".3oh#########o2.",
-				".3o##########o2.",
-				".1o##########o2.",
-				".1o#########so2.",
-				".86os######so68.",
-				".76666666666667.",
-				"..777777777777..",
+				"....31111112....",
+				"..331111111122..",
+				"..31h######s12..",
+				"..31########12..",
+				"..31########12..",
+				"..31########12..",
+				"..31s######s12..",
+				"..388s####s882..",
+				"..863666666667..",
+				"...6666666677...",
+				"....77777777....",
 				"................"
 			])
 		},
@@ -3520,32 +3513,31 @@ const set$5 = {
 	redraw: {
 		"puttsies.ball": {
 			eyes: 9,
+			limb: 2,
 			colors: [
 				"#FAFAF6",
 				"#D3D6DE",
 				"#FFFFFF",
-				"#C9CED9",
-				"#B8BDC9",
-				"#E5484D",
-				"#B83236"
+				"#D6DAE2",
+				"#B8BDC9"
 			],
 			outline: "#4A4E5A",
 			art: grid16("golf ball", [
 				"................",
 				"................",
 				".....331112.....",
-				"....33141142....",
-				"...3141114112...",
-				"..314oooooo412..",
-				".314ohhh###o412.",
-				".31oh#######o12.",
-				".3oh#########o2.",
-				".1o##########o2.",
-				".4o#########so4.",
-				".14os######so42.",
-				"..14os####so42..",
-				"...24oooooo42...",
-				"......6667......",
+				"....33141412....",
+				"...3314114142...",
+				"..314141414142..",
+				"..341111111142..",
+				"..311111111112..",
+				"..341111111142..",
+				"..311111111112..",
+				"..341111111142..",
+				"..314111111422..",
+				"...2414141422...",
+				"....22222222....",
+				"................",
 				"................"
 			])
 		},
@@ -3604,9 +3596,6 @@ const set$5 = {
 			], 0, 2)
 		},
 		"puttsies.pillow": {
-			name: "Patchwork quilt",
-			eyes: 9,
-			limb: 3,
 			colors: [
 				"#F7B7B0",
 				"#B9E3A8",
@@ -3615,26 +3604,25 @@ const set$5 = {
 				"#E59A92",
 				"#94C985",
 				"#8DB8E6",
-				"#E9C979",
-				"#FFF6E6"
+				"#E9C979"
 			],
 			outline: "#6E3E3A",
-			art: grid16("patchwork quilt", [
+			art: grid16("quilt pillow", [
 				"................",
-				".....111222.....",
-				"....11112222....",
-				"...1111122222...",
-				"..111111222222..",
-				"..519999999962..",
-				"..519hh####962..",
-				".519h######s926.",
-				".59h########s96.",
-				".79##########98.",
-				".79#########s98.",
-				".739s######s948.",
-				"..739ssssss948..",
-				"..733333444448..",
-				"...7777788888...",
+				"................",
+				"..5.11112222.6..",
+				"...1111122226...",
+				"..111111222226..",
+				"..111111222226..",
+				"..111111222226..",
+				"..111111222226..",
+				"..333333444448..",
+				"..333333444448..",
+				"..333333444448..",
+				"..333333444448..",
+				"...7333344448...",
+				"..7.77778888.8..",
+				"................",
 				"................"
 			])
 		}
@@ -5405,9 +5393,7 @@ const set$1 = {
 			])
 		},
 		"trackdle.cone": {
-			name: "Cone suit",
-			eyes: 9,
-			limb: 1,
+			eyes: 10,
 			colors: [
 				"#FF8A3D",
 				"#D9621E",
@@ -5416,22 +5402,22 @@ const set$1 = {
 				"#2B2F38",
 				"#E6D5B3"
 			],
-			art: grid16("cone suit", [
+			art: grid16("traffic cone", [
 				"................",
 				".......41.......",
 				"......4112......",
-				"......3336......",
+				"......4112......",
+				".....333336.....",
 				".....411112.....",
-				".....411112.....",
+				"....41111112....",
+				"....41111112....",
 				"....33333336....",
-				"...41######12...",
-				"..41h#######12..",
-				"..41########12..",
-				"..41########12..",
-				"..41s######s12..",
-				"..333333333336..",
+				"...3333333336...",
+				"...3333333336...",
+				"..411111111112..",
+				"..411111111112..",
+				".41111111111112.",
 				".55555555555555.",
-				"................",
 				"................"
 			])
 		},
@@ -16600,4 +16586,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-Bo1iX3DF.js.map
+//# sourceMappingURL=paint-Dwb1PU6u.js.map

@@ -1,4 +1,4 @@
-import { GRID_SIZE, compose, dress, paint, paletteOf, resolve, withItems } from "../paint-Bo1iX3DF.js";
+import { GRID_SIZE, compose, dress, paint, paletteOf, resolve, withItems } from "../paint-Dwb1PU6u.js";
 import { jsx } from "react/jsx-runtime";
 import { ImageResponse } from "next/og";
 
