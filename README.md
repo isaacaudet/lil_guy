@@ -289,12 +289,13 @@ renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
 server, a page and a game all get the same picture.
 
 A card is a trading card, after Balatro's: printed in its grade's colour with a
-dark outline and a chunky bevel, the guy in a window, his name big on a dark
-plate with the grade's badge, and a hard shadow it lifts off now and then. Its
+dark outline and a chunky bevel, the guy in a window (at the same size on every
+card, buddy or not), his name on a dark plate with the grade's badge, and a hard
+shadow it lifts off now and then. Its
 edition comes from the finish that sets its grade: Sunset is Foil (blue-silver
 bands), Tempered and Nebula Holographic (a red and blue sheen), Prism
 Polychrome (a slow rainbow across the whole card), Negative an inverted, dark
-card. A Grail card is gold with a sunburst in its window and glints across it.
+card. A Grail card is gold, its window a still, warm amber with a slow, soft glint.
 An aura card is Spectral and full-art: the aura's own colour swirls edge to edge
 behind the guy. An item's card carries its machine's set symbol.
 
@@ -310,6 +311,8 @@ days worn and, while worn, DLE Club games finished and the best club day.
 Each copy also has its place in its item's run: the first 100 are 1st editions.
 `CardInput.footer` puts the set number and 1st edition, and the machine's set symbol, at a card's
 foot; the stats show in the site's inspect view, not on the card.
+A page showing many cards plays each with `cardPlayer(input, 80, { keep: false })`, which redraws
+one picture (about a millisecond a frame) instead of keeping every frame, and only those on screen.
 
 ```html
 <!-- Any page: the picture from the lil guys Worker, no library on the page (1.7 KB gzipped). -->

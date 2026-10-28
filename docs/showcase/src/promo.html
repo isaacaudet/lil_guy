@@ -1486,7 +1486,8 @@
     canvas.width = LG.CARD_WIDTH; canvas.height = LG.CARD_HEIGHT; canvas.className = 'libcard';
     canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `${input.title} card`);
     el.replaceChildren(canvas);
-    libCards.add({ canvas, ctx: canvas.getContext('2d'), p: LG.cardPlayer(input), start: performance.now(), last: -1 });
+    // Built when first on screen, then drawn into one picture each frame (a frame is about a millisecond).
+    libCards.add({ canvas, ctx: canvas.getContext('2d'), input, p: null, img: null, start: performance.now(), last: -1 });
     canvas.addEventListener('pointermove', e => { const r = canvas.getBoundingClientRect(); canvas.style.transform = `perspective(700px) rotateY(${((e.clientX - r.left) / r.width - 0.5) * 18}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 14}deg)`; });
     canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
   }
@@ -1525,7 +1526,7 @@
     const frames = [];
     for (let i = 0; i < n; i++) {
       const t = 0.6 + i * ms / 1000;
-      draw(s, t);
+      draw(s, t, true);
       ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = false; ctx.drawImage(canvas, 0, 0, W, H);
       for (const w of words) {
         if (w.bg && w.bg !== 'rgba(0, 0, 0, 0)') { ctx.fillStyle = w.bg; ctx.beginPath(); ctx.roundRect(w.x, w.y, w.w, w.h, w.radius); ctx.fill(); }
@@ -1542,7 +1543,7 @@
       }
       frames.push(new Uint8ClampedArray(ctx.getImageData(0, 0, W, H).data));
     }
-    draw(s, performance.now() / 1000);
+    draw(s, performance.now() / 1000, true);
     return { width: W, height: H, frames, delays: frames.map(() => ms) };
   }
 
@@ -3645,8 +3646,12 @@
   }
   function drawShow(s, now) {
     const { x, y, w, h } = s.box;
+    // Only a new frame of his move, or a new step of the finish, is drawn.
+    const at = s.anim ? LG.frameAt(s.anim, now) : Math.floor(now / 80);
+    if (s.drawn && at === s.at) return;
+    s.at = at;
     s.ctx.clearRect(0, 0, w, h);
-    if (s.anim) s.frame = LG.frameAt(s.anim, now);
+    if (s.anim) s.frame = at;
     // A copy's effect moves on the item on its own too.
     const fxOn = !s.anim && s.owned && Object.values(s.owned).some(o => o?.fx);
     const frame = fxOn ? { ...s.frame, colors: LG.applyFx(s.frame.colors, s.frame.slots, LG.FRAME_SLOTS.map(sl => s.owned[sl]), now) } : s.frame;
@@ -4299,11 +4304,13 @@
   const seen = new WeakMap();
   const watch = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: '80px' });
   const onScreen = c => { if (!seen.has(c)) { seen.set(c, false); watch.observe(c); } return seen.get(c); };
+  // Cards move at about 15 frames a second, and only those on screen.
   let lastT = 0;
   const frame = now => {
     requestAnimationFrame(frame);
-    if (now - lastT < 33) return;
+    if (now - lastT < 66) return;
     lastT = now;
+    cardsTick();
     const t = now / 1000;
     for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); }
     // Only what is on screen moves; a still item draws once.
@@ -4317,8 +4324,9 @@
     for (const s of libCards) {
       if (!s.canvas.isConnected) { libCards.delete(s); continue; }
       if (!onScreen(s.canvas)) continue;
+      if (!s.p) { s.p = LG.cardPlayer(s.input, 80, { keep: false }); s.start = now; }
       const i = Math.floor((now - s.start) / s.p.delay);
-      if (i !== s.last) { s.ctx.putImageData(new ImageData(s.p.frame(i), LG.CARD_WIDTH, LG.CARD_HEIGHT), 0, 0); s.last = i; }
+      if (i !== s.last) { const px = s.p.frame(i); if (s.img?.data !== px) s.img = new ImageData(px, LG.CARD_WIDTH, LG.CARD_HEIGHT); s.ctx.putImageData(s.img, 0, 0); s.last = i; }
     }
     fireTick();
     if (bandPaint) bandPaint.draw(now);

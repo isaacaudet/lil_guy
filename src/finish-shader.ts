@@ -171,12 +171,8 @@ vec3 editionColor(vec3 c, float ed, float v, vec2 p, vec2 o, float region, float
     return mix(n, n * vec3(0.75, 0.68, 1.1) + vec3(0.02, 0.0, 0.06), 0.55) + vec3(0.3, 0.16, 0.5) * wide * 0.6;
   }
   if (ed < 5.5) {
-    if (region > 1.5) {
-      vec2 q = p - o;
-      float r = fract(atan(q.y, q.x) * (6.0 + v) / TAU + time / 6.0);
-      c = mix(c, vec3(1.0, 0.82, 0.38), smoothstep(0.35, 0.5, r) * (1.0 - smoothstep(0.85, 1.0, r)) * 0.5 * clamp(1.0 - length(q) / 22.0, 0.0, 1.0));
-    }
-    return mix(c, vec3(1.0, 0.97, 0.84), wide * 0.6) + glint * 0.7;
+    if (region > 1.5) return mix(c, vec3(1.0, 0.94, 0.78), sweep(p.x + p.y * 0.6 + v * 13.0, time, 9.0) * 0.16);
+    return mix(c, vec3(1.0, 0.97, 0.84), wide * 0.6);
   }
   vec2 q = (p - o) / (region > 1.5 ? 7.0 : 12.0);
   float r = length(q), a = atan(q.y, q.x) + r * 1.8 - time * TAU / 6.0;
@@ -214,12 +210,8 @@ export function editionColor(c: Vec3, ed: number, v: number, p: [number, number]
     return add(mix(n, add(scale(n, [0.75, 0.68, 1.1]), [0.02, 0, 0.06]), 0.55), scale([0.3, 0.16, 0.5], wide * 0.6));
   }
   if (ed < 5.5) {
-    if (region > 1.5) {
-      const q = [p[0] - o[0], p[1] - o[1]];
-      const r = fract(Math.atan2(q[1], q[0]) * (6 + v) / TAU + time / 6);
-      c = mix(c, [1, 0.82, 0.38], smoothstep(0.35, 0.5, r) * (1 - smoothstep(0.85, 1, r)) * 0.5 * clamp(1 - Math.hypot(q[0], q[1]) / 22, 0, 1));
-    }
-    return add(mix(c, [1, 0.97, 0.84], wide * 0.6), glint * 0.7);
+    if (region > 1.5) return mix(c, [1, 0.94, 0.78], sweep(p[0] + p[1] * 0.6 + v * 13, time, 9) * 0.16);
+    return mix(c, [1, 0.97, 0.84], wide * 0.6);
   }
   const z = region > 1.5 ? 7 : 12, qx = (p[0] - o[0]) / z, qy = (p[1] - o[1]) / z;
   const r = Math.hypot(qx, qy), a = Math.atan2(qy, qx) + r * 1.8 - time * TAU / 6;
@@ -227,4 +219,140 @@ export function editionColor(c: Vec3, ed: number, v: number, p: [number, number]
   const f = Math.floor((0.5 + 0.5 * Math.sin(wx * 3.2 + Math.sin(wy * 2.6 + time * TAU / 3) * 1.5)) * 3.99);
   if (region > 1.5) return add(scale(c, 0.7 + 0.25 * f), wide * 0.12 + glint * 0.6);
   return add(hueShift(scale(c, 0.86 + 0.1 * f), 0.4 * Math.sin((p[0] - p[1]) * 0.16 + time * TAU / 6 + v)), wide * 0.35 + glint * 0.6);
+}
+
+/** A sine from a table, to a few millionths: the spectral swirl takes two a pixel every frame. */
+const SINES = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU));
+const sine = (x: number) => { const u = x * (4096 / TAU), i = Math.floor(u), j = i & 4095; return SINES[j] + (SINES[j + 1] - SINES[j]) * (u - i); };
+
+/** Pixels an edition plays over: each one's cell (`x`, `y`, in face cells), its region and noise, and its colour, 0 to 1, three a pixel. */
+export interface EditionPixels { x: Float32Array; y: Float32Array; region: Uint8Array; h: Float32Array; rgb: Float32Array }
+
+/**
+ * `editionColor` over a fixed set of pixels, for drawing the same card again
+ * and again: what doesn't move is worked out once, so each moment costs a few
+ * multiplies a pixel. The returned function writes each pixel's colour at
+ * `time` into `out` (0 to 1, unclamped, three a pixel), as `editionColor` gives it.
+ */
+export function editionField(ed: number, v: number, o: [number, number], px: number, pixels: EditionPixels): (time: number, out: Float32Array) => void {
+  const { x, y, region, h, rgb } = pixels, n = region.length;
+  if (ed < 0.5) return (_, out) => out.set(rgb);
+  // Where each pixel sits along the sweep, brought into 0 to 60 once.
+  const at = new Float32Array(n);
+  for (let k = 0; k < n; k++) at[k] = mod(x[k] + y[k] * 0.6 + v * 13, 60);
+  /** `sweep(at, time, width)`, with T = time * 10 brought into 0 to 60. */
+  const band = (k: number, T: number, width: number) => { let u = at[k] - T; if (u < 0) u += 60; const d = Math.abs(u - 30) / width; return d > 1 ? 0 : 1 - d; };
+  const a = new Float32Array(n * 3), s = new Float32Array(n), c2 = new Float32Array(n);
+
+  if (ed < 1.5) {
+    for (let k = 0; k < n; k++) {
+      const r = rgb[k * 3], g = rgb[k * 3 + 1], b = rgb[k * 3 + 2], l = 0.299 * r + 0.587 * g + 0.114 * b;
+      a[k * 3] = r + (l * 0.8 + 0.05 - r) * 0.6; a[k * 3 + 1] = g + (l * 0.92 + 0.08 - g) * 0.6; a[k * 3 + 2] = b + (l * 1.1 + 0.16 - b) * 0.6;
+      const phase = (x[k] * 0.7 + y[k] * 0.45 + v * 3) * 1.3;
+      s[k] = Math.sin(phase); c2[k] = Math.cos(phase);
+    }
+    return (time, out) => {
+      const T = mod(time * 10, 60), ca = Math.cos(time * TAU / 2), sa = Math.sin(time * TAU / 2);
+      for (let k = 0; k < n; k++) {
+        const w = 0.5 + 0.5 * (s[k] * ca - c2[k] * sa), w2 = w * w, m = w2 * w2 * w2 * 0.22 + band(k, T, 5) * 0.4;
+        out[k * 3] = a[k * 3] + 0.6 * m; out[k * 3 + 1] = a[k * 3 + 1] + 0.75 * m; out[k * 3 + 2] = a[k * 3 + 2] + m;
+      }
+    };
+  }
+  if (ed < 2.5) {
+    const lift = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const phase = x[k] * 0.35 - y[k] * 0.55 + v * 2;
+      s[k] = Math.sin(phase); c2[k] = Math.cos(phase);
+      lift[k] = step(0.5, fract(y[k] / (px * 2))) * 0.05 * (2 - region[k]);
+    }
+    return (time, out) => {
+      const T = mod(time * 10, 60), ca = Math.cos(time * TAU / 3), sa = Math.sin(time * TAU / 3);
+      for (let k = 0; k < n; k++) {
+        const t = 0.5 + 0.5 * (s[k] * ca - c2[k] * sa), m = 0.55 * (region[k] > 1.5 ? 0.6 : 1), add = lift[k] + band(k, T, 5) * 0.25;
+        const tr = 1 + (0.28 - 1) * t, tg = 0.3 + (0.62 - 0.3) * t, tb = 0.42 + (1 - 0.42) * t;
+        const r = rgb[k * 3], g = rgb[k * 3 + 1], b = rgb[k * 3 + 2];
+        out[k * 3] = r + (r * 0.5 + tr * 0.55 - r) * m + add;
+        out[k * 3 + 1] = g + (g * 0.5 + tg * 0.55 - g) * m + add;
+        out[k * 3 + 2] = b + (b * 0.5 + tb * 0.55 - b) * m + add;
+      }
+    };
+  }
+  if (ed < 3.5) {
+    // The hue turns by the same angle everywhere at once, so each pixel's turned colour is a fixed one rotated.
+    const lum = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const r = rgb[k * 3], g = rgb[k * 3 + 1], b = rgb[k * 3 + 2];
+      const i = 0.596 * r - 0.274 * g - 0.322 * b, q = 0.211 * r - 0.523 * g + 0.312 * b;
+      const hue = Math.atan2(q, i) + (x[k] - y[k]) * 0.05, ch = Math.hypot(i, q);
+      lum[k] = 0.299 * r + 0.587 * g + 0.114 * b; s[k] = ch * Math.cos(hue); c2[k] = ch * Math.sin(hue);
+      a[k] = (x[k] + y[k]) * 0.03 + v * 0.25;
+    }
+    const hsv1 = (hh: number, o: number) => { const p = Math.abs(fract(hh + o) * 6 - 3) - 1; return 1 + ((p < 0 ? 0 : p > 1 ? 1 : p) - 1) * 0.6; };
+    return (time, out) => {
+      const T = mod(time * 10, 60), ct = Math.cos(time * TAU / 6), st = Math.sin(time * TAU / 6);
+      for (let k = 0; k < n; k++) {
+        const I = s[k] * ct + c2[k] * st, Q = c2[k] * ct - s[k] * st, Y = lum[k];
+        const hh = fract(a[k] - time / 6), add = band(k, T, 5) * 0.18;
+        const hr = Y + 0.956 * I + 0.621 * Q, hg = Y - 0.272 * I - 0.647 * Q, hb = Y - 1.106 * I + 1.703 * Q;
+        out[k * 3] = hr + (rgb[k * 3] * 0.45 + hsv1(hh, 1) * 0.6 - hr) * 0.5 + add;
+        out[k * 3 + 1] = hg + (rgb[k * 3 + 1] * 0.45 + hsv1(hh, 2 / 3) * 0.6 - hg) * 0.5 + add;
+        out[k * 3 + 2] = hb + (rgb[k * 3 + 2] * 0.45 + hsv1(hh, 1 / 3) * 0.6 - hb) * 0.5 + add;
+      }
+    };
+  }
+  if (ed < 4.5) {
+    for (let k = 0; k < n; k++) for (let j = 0; j < 3; j++) {
+      const m = 1 - rgb[k * 3 + j];
+      a[k * 3 + j] = m + (m * [0.75, 0.68, 1.1][j] + [0.02, 0, 0.06][j] - m) * 0.55;
+    }
+    return (time, out) => {
+      const T = mod(time * 10, 60);
+      for (let k = 0; k < n; k++) {
+        const w = band(k, T, 5) * 0.6;
+        out[k * 3] = a[k * 3] + 0.3 * w; out[k * 3 + 1] = a[k * 3 + 1] + 0.16 * w; out[k * 3 + 2] = a[k * 3 + 2] + 0.5 * w;
+      }
+    };
+  }
+  if (ed < 5.5) {
+    return (time, out) => {
+      const T = mod(time * 10, 60);
+      for (let k = 0; k < n; k++) {
+        const win = region[k] > 1.5, m = win ? band(k, T, 9) * 0.16 : band(k, T, 5) * 0.6;
+        const lr = 1, lg = win ? 0.94 : 0.97, lb = win ? 0.78 : 0.84;
+        out[k * 3] = rgb[k * 3] + (lr - rgb[k * 3]) * m;
+        out[k * 3 + 1] = rgb[k * 3 + 1] + (lg - rgb[k * 3 + 1]) * m;
+        out[k * 3 + 2] = rgb[k * 3 + 2] + (lb - rgb[k * 3 + 2]) * m;
+      }
+    };
+  }
+  // Spectral: the swirl turns as a whole, so each pixel's place in it is a fixed point rotated.
+  const lum = new Float32Array(n), hue = new Float32Array(n), chroma = new Float32Array(n);
+  for (let k = 0; k < n; k++) {
+    const z = region[k] > 1.5 ? 7 : 12, qx = (x[k] - o[0]) / z, qy = (y[k] - o[1]) / z;
+    const r = Math.hypot(qx, qy), turn = Math.atan2(qy, qx) + r * 1.8;
+    s[k] = Math.cos(turn) * r; c2[k] = Math.sin(turn) * r;
+    const cr = rgb[k * 3], cg = rgb[k * 3 + 1], cb = rgb[k * 3 + 2];
+    const i = 0.596 * cr - 0.274 * cg - 0.322 * cb, q = 0.211 * cr - 0.523 * cg + 0.312 * cb;
+    lum[k] = 0.299 * cr + 0.587 * cg + 0.114 * cb; hue[k] = Math.atan2(q, i); chroma[k] = Math.hypot(i, q);
+    a[k] = (x[k] - y[k]) * 0.16;
+  }
+  /** A glint opening on a pixel whose noise is high enough. */
+  const glint = (k: number, time: number) => { if (h[k] < 0.965) return 0; const g = Math.max(0, Math.sin(time * TAU / 2 + h[k] * 91)), g2 = g * g; return g2 * g2 * g2 * 0.6; };
+  return (time, out) => {
+    const T = mod(time * 10, 60), th = time * TAU / 6, ct = Math.cos(th), st = Math.sin(th), B = time * TAU / 3;
+    for (let k = 0; k < n; k++) {
+      const wx = s[k] * ct + c2[k] * st, wy = c2[k] * ct - s[k] * st;
+      const f = Math.floor((0.5 + 0.5 * sine(wx * 3.2 + sine(wy * 2.6 + B) * 1.5)) * 3.99);
+      const r = rgb[k * 3], g = rgb[k * 3 + 1], b = rgb[k * 3 + 2], gl = glint(k, time);
+      if (region[k] > 1.5) {
+        const m = 0.7 + 0.25 * f, add = band(k, T, 5) * 0.12 + gl;
+        out[k * 3] = r * m + add; out[k * 3 + 1] = g * m + add; out[k * 3 + 2] = b * m + add;
+        continue;
+      }
+      const m = 0.86 + 0.1 * f, turn = hue[k] + 0.4 * Math.sin(a[k] + th + v), ch = chroma[k] * m, Y = lum[k] * m;
+      const I = ch * Math.cos(turn), Q = ch * Math.sin(turn), add = band(k, T, 5) * 0.35 + gl;
+      out[k * 3] = Y + 0.956 * I + 0.621 * Q + add; out[k * 3 + 1] = Y - 0.272 * I - 0.647 * Q + add; out[k * 3 + 2] = Y - 1.106 * I + 1.703 * Q + add;
+    }
+  };
 }

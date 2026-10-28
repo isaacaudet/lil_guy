@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { cardFrames, cardStill, toCardGif, toCardPng, toGuyGif, CARD_WIDTH, CARD_HEIGHT, textWidth } from '../card';
 import { encodeGif, encodePng } from '../gif';
 import { roll } from '../owned';
+import { editionColor, editionField } from '../finish-shader';
 
 const copy = roll('card-test', 'puttsies');
 
@@ -28,6 +29,27 @@ describe('cards', () => {
     const c = cardStill({ seed: 'maya', title: long, lines: ['Mythic', 'prism · electric · 1 in 83.3K'] });
     expect(a).not.toEqual(b);
     expect(a).not.toEqual(c);
+  });
+});
+
+describe('editions', () => {
+  test('worked out ahead, every edition gives the colours editionColor does', () => {
+    const n = 400, x = new Float32Array(n), y = new Float32Array(n), region = new Uint8Array(n), h = new Float32Array(n), rgb = new Float32Array(n * 3);
+    for (let k = 0; k < n; k++) {
+      x[k] = (k * 7.3) % 28; y[k] = (k * 3.1) % 40; region[k] = 1 + (k % 2); h[k] = ((k * 0.6180339) % 1);
+      for (let j = 0; j < 3; j++) rgb[k * 3 + j] = ((k * (j + 3) * 0.137) % 1);
+    }
+    const out = new Float32Array(n * 3);
+    for (let ed = 0; ed <= 6; ed++) for (const v of [0, 3]) {
+      const field = editionField(ed, v, [13, 19], 0.2, { x, y, region, h, rgb });
+      for (const time of [0, 0.7, 2.333, 5.95]) {
+        field(time, out);
+        for (let k = 0; k < n; k++) {
+          const want = editionColor([rgb[k * 3], rgb[k * 3 + 1], rgb[k * 3 + 2]], ed, v, [x[k], y[k]], [13, 19], region[k], h[k], 0.2, time);
+          for (let j = 0; j < 3; j++) expect(Math.abs(out[k * 3 + j] - want[j])).toBeLessThan(1e-4);
+        }
+      }
+    }
   });
 });
 

@@ -1,6 +1,6 @@
 import { FRAME_WIDTH } from './animate';
 import { compose } from './compose';
-import { distance, editionColor, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
+import { distance, editionField, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, SET_COLORS, withItems } from './items';
 import { auraHue } from './auras';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
@@ -62,7 +62,7 @@ export interface CardFace {
   variant: number;
   /** The card's edition, an index in EDITIONS. */
   edition: number;
-  /** The window's middle, in face cells: where a Gold sunburst and a Spectral swirl turn round. */
+  /** The window's middle, in face cells: where a Spectral swirl turns round. */
   origin: [number, number];
 }
 
@@ -166,24 +166,47 @@ export const faceMoves = (f: CardFace) => f.edition > 0 || f.kind.some((v, i) =>
 /** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
 export interface Hover { x: number; y: number; strength: number }
 
+/** A face's edition worked out per pixel once (`editionField`), kept with the face. */
+const fields = new WeakMap<CardFace, { at: Int32Array; field: (time: number, out: Float32Array) => void; out: Float32Array }>();
+function faceField(f: CardFace) {
+  let got = fields.get(f);
+  if (got) return got;
+  const W = FACE_WIDTH, H = FACE_HEIGHT, at = new Int32Array(W * H).fill(-1), cells: number[] = [];
+  for (let i = 0; i < W * H; i++) {
+    if (f.base[i * 4 + 3] < 128 || Math.floor(f.kind[i * 4] / 32 + 0.5) > WINDOW) continue;
+    at[i] = cells.length; cells.push(i);
+  }
+  const n = cells.length, x = new Float32Array(n), y = new Float32Array(n), region = new Uint8Array(n), h = new Float32Array(n), rgb = new Float32Array(n * 3);
+  cells.forEach((i, k) => {
+    x[k] = i % W; y[k] = Math.floor(i / W); region[k] = Math.floor(f.kind[i * 4] / 32 + 0.5); h[k] = f.noise[i * 4] / 255;
+    for (let j = 0; j < 3; j++) rgb[k * 3 + j] = f.base[i * 4 + j] / 255;
+  });
+  got = { at, field: editionField(f.edition, f.variant, f.origin, 1, { x, y, region, h, rgb }), out: new Float32Array(n * 3) };
+  fields.set(f, got);
+  return got;
+}
+
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8ClampedArray {
   const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
-  const time = loopSeconds(ms);
+  const time = loopSeconds(ms), { at, field, out: ed } = faceField(f);
+  field(time, ed);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4;
     if (f.base[i + 3] < 128) continue;
-    let c: Vec3 = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
-    const k = Math.floor(f.kind[i] / 32 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
-    const scuff = f.kind[i + 2] / 255, print = f.kind[i + 3] * 4, h = f.noise[i] / 255;
-    if (k === ITEM && finish >= 0) c = finishColor(c, finish, scuff, h, x + y, y, print, time, 1);
-    else if (k <= WINDOW) c = editionColor(c, f.edition, f.variant, [x, y], f.origin, k, h, 1, time);
-    if (hover && hover.strength > 0) {
-      const at = [(x + 0.5) / W, (y + 0.5) / H];
-      const light = (1 - smoothstep(0, 0.34, distance(at, [hover.x, hover.y]))) * 0.35 * hover.strength;
-      c = c.map(v => v + light) as Vec3;
+    let c: Vec3;
+    const e = at[i >> 2];
+    if (e >= 0) c = [ed[e * 3], ed[e * 3 + 1], ed[e * 3 + 2]];
+    else {
+      c = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
+      const k = Math.floor(f.kind[i] / 32 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
+      if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
     }
-    out.set([toByte(c[0]), toByte(c[1]), toByte(c[2]), 255], i);
+    if (hover && hover.strength > 0) {
+      const light = (1 - smoothstep(0, 0.34, distance([(x + 0.5) / W, (y + 0.5) / H], [hover.x, hover.y]))) * 0.35 * hover.strength;
+      c = [c[0] + light, c[1] + light, c[2] + light];
+    }
+    out[i] = toByte(c[0]); out[i + 1] = toByte(c[1]); out[i + 2] = toByte(c[2]); out[i + 3] = 255;
   }
   return out;
 }

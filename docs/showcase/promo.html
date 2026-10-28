@@ -1498,11 +1498,16 @@
     return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
+  // A face is built the first time it is drawn, and the loop builds at most this many a frame, so a long
+  // grid fills in over a few frames instead of holding the page. Each step of its shimmer is kept once drawn.
+  const BUILDS_PER_FRAME = 3;
+  let builds = 0;
+  /** The next frame of the loop: a fresh allowance of builds. */
+  const cardsTick = () => { builds = 0; };
   function mount(canvas, spec) {
-    const f = build(canvas.dataset.code || codeOf(spec));
-    const s = { canvas, ctx: canvas.getContext('2d'), f, art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: true, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
+    const s = { canvas, ctx: canvas.getContext('2d'), code: canvas.dataset.code || codeOf(spec), f: null, steps: new Map(), art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: false, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
     s.still = !!spec.still;
-    s.moves = LG.faceMoves(f); s.shown = -1;
+    s.shown = -1;
     s.card.addEventListener('pointerenter', () => { s.juice = performance.now() / 1000; });
     s.card.addEventListener('focus', () => { s.juice = performance.now() / 1000; });
     s.card.addEventListener('pointermove', e => {
@@ -1512,7 +1517,13 @@
     });
     s.card.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
     live.add(s); byCanvas.set(canvas, s); io.observe(canvas);
-    draw(s, performance.now() / 1000);
+    return s;
+  }
+  /** Builds a card's face the first time it is needed. */
+  function ready(s) {
+    if (s.f) return;
+    const f = s.f = build(s.code);
+    s.moves = LG.faceMoves(f);
     // The bottom words sit on the card's own face: light on a dark face (a Negative copy), dark on cream.
     // The title likewise: dark words on a pale band (a Negative copy's), white on a coloured one.
     const face = LG.cardFaceAt(f, 0);
@@ -1524,17 +1535,25 @@
     s.art?.querySelector('.ov .b')?.classList.toggle('on-dark', light(0.8, 0.9) < 120);
     s.art?.querySelector('.ov .n')?.classList.toggle('on-dark', light(0.88, 0.95) < 120);
     s.art?.querySelector('.ov .t')?.classList.toggle('on-light', light(0.07, 0.17) > 170);
-    return s;
   }
   function hydrate(root) {
-    root.querySelectorAll('canvas[data-p]').forEach(c => { const i = +c.dataset.p; c.removeAttribute('data-p'); mount(c, pending[i]); pending[i] = null; });
+    const mounted = [];
+    root.querySelectorAll('canvas[data-p]').forEach(c => { const i = +c.dataset.p; c.removeAttribute('data-p'); mounted.push(mount(c, pending[i])); pending[i] = null; });
+    // The first few show at once (a reveal, a single card); the rest as they come on screen.
+    const t = performance.now() / 1000;
+    mounted.slice(0, BUILDS_PER_FRAME).forEach(s => draw(s, t, true));
   }
-  function draw(s, t) {
+  /** The card at `t` seconds; one not built yet waits for the loop's allowance unless `now`. */
+  function draw(s, t, now = false) {
+    if (!s.f) { if (!now && builds >= BUILDS_PER_FRAME) return; builds++; ready(s); }
     // Each step of the loop, as baked; under the pointer, its light on top.
     const ms = Math.floor(t * 1000 / STEP) * STEP, at = s.hover ? -1 : s.moves ? ms % LG.LOOP_MS : 0;
     if (at >= 0 && at === s.shown) return;
     s.shown = at;
-    s.ctx.putImageData(new ImageData(LG.cardFaceAt(s.f, ms, s.hover ? { x: s.light[0], y: s.light[1], strength: s.hover } : undefined), W, H), 0, 0);
+    if (at < 0) { s.ctx.putImageData(new ImageData(LG.cardFaceAt(s.f, ms, { x: s.light[0], y: s.light[1], strength: s.hover }), W, H), 0, 0); return; }
+    let img = s.steps.get(at);
+    if (!img) s.steps.set(at, img = new ImageData(LG.cardFaceAt(s.f, at), W, H));
+    s.ctx.putImageData(img, 0, 0);
   }
 
 
@@ -1946,7 +1965,8 @@
     canvas.width = LG.CARD_WIDTH; canvas.height = LG.CARD_HEIGHT; canvas.className = 'libcard';
     canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `${input.title} card`);
     el.replaceChildren(canvas);
-    libCards.add({ canvas, ctx: canvas.getContext('2d'), p: LG.cardPlayer(input), start: performance.now(), last: -1 });
+    // Built when first on screen, then drawn into one picture each frame (a frame is about a millisecond).
+    libCards.add({ canvas, ctx: canvas.getContext('2d'), input, p: null, img: null, start: performance.now(), last: -1 });
     canvas.addEventListener('pointermove', e => { const r = canvas.getBoundingClientRect(); canvas.style.transform = `perspective(700px) rotateY(${((e.clientX - r.left) / r.width - 0.5) * 18}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 14}deg)`; });
     canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
   }
@@ -1985,7 +2005,7 @@
     const frames = [];
     for (let i = 0; i < n; i++) {
       const t = 0.6 + i * ms / 1000;
-      draw(s, t);
+      draw(s, t, true);
       ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = false; ctx.drawImage(canvas, 0, 0, W, H);
       for (const w of words) {
         if (w.bg && w.bg !== 'rgba(0, 0, 0, 0)') { ctx.fillStyle = w.bg; ctx.beginPath(); ctx.roundRect(w.x, w.y, w.w, w.h, w.radius); ctx.fill(); }
@@ -2002,7 +2022,7 @@
       }
       frames.push(new Uint8ClampedArray(ctx.getImageData(0, 0, W, H).data));
     }
-    draw(s, performance.now() / 1000);
+    draw(s, performance.now() / 1000, true);
     return { width: W, height: H, frames, delays: frames.map(() => ms) };
   }
 
@@ -4105,8 +4125,12 @@
   }
   function drawShow(s, now) {
     const { x, y, w, h } = s.box;
+    // Only a new frame of his move, or a new step of the finish, is drawn.
+    const at = s.anim ? LG.frameAt(s.anim, now) : Math.floor(now / 80);
+    if (s.drawn && at === s.at) return;
+    s.at = at;
     s.ctx.clearRect(0, 0, w, h);
-    if (s.anim) s.frame = LG.frameAt(s.anim, now);
+    if (s.anim) s.frame = at;
     // A copy's effect moves on the item on its own too.
     const fxOn = !s.anim && s.owned && Object.values(s.owned).some(o => o?.fx);
     const frame = fxOn ? { ...s.frame, colors: LG.applyFx(s.frame.colors, s.frame.slots, LG.FRAME_SLOTS.map(sl => s.owned[sl]), now) } : s.frame;
@@ -4759,11 +4783,13 @@
   const seen = new WeakMap();
   const watch = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: '80px' });
   const onScreen = c => { if (!seen.has(c)) { seen.set(c, false); watch.observe(c); } return seen.get(c); };
+  // Cards move at about 15 frames a second, and only those on screen.
   let lastT = 0;
   const frame = now => {
     requestAnimationFrame(frame);
-    if (now - lastT < 33) return;
+    if (now - lastT < 66) return;
     lastT = now;
+    cardsTick();
     const t = now / 1000;
     for (const s of live) if (!s.canvas.isConnected) { live.delete(s); io.unobserve(s.canvas); }
     // Only what is on screen moves; a still item draws once.
@@ -4777,8 +4803,9 @@
     for (const s of libCards) {
       if (!s.canvas.isConnected) { libCards.delete(s); continue; }
       if (!onScreen(s.canvas)) continue;
+      if (!s.p) { s.p = LG.cardPlayer(s.input, 80, { keep: false }); s.start = now; }
       const i = Math.floor((now - s.start) / s.p.delay);
-      if (i !== s.last) { s.ctx.putImageData(new ImageData(s.p.frame(i), LG.CARD_WIDTH, LG.CARD_HEIGHT), 0, 0); s.last = i; }
+      if (i !== s.last) { const px = s.p.frame(i); if (s.img?.data !== px) s.img = new ImageData(px, LG.CARD_WIDTH, LG.CARD_HEIGHT); s.ctx.putImageData(s.img, 0, 0); s.last = i; }
     }
     fireTick();
     if (bandPaint) bandPaint.draw(now);

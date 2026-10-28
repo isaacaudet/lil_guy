@@ -302,9 +302,12 @@
 
   // ---------------------------------------------------------------- auras and the founder, moving
   const lives = [];
+  // Each figure's move is built when it first comes on screen, a couple a frame.
   const live = (canvas, { name, parts, palette, equip = [], move = 'idle' }) => {
-    const cfg = { ...LG.resolve(name, parts), ...(palette == null ? {} : { palette }) };
-    lives.push({ canvas, anim: LG.animateLoop(name, move, { parts, palette: LG.paletteOf(cfg), equip }) });
+    lives.push({ canvas, anim: null, make: () => {
+      const cfg = { ...LG.resolve(name, parts), ...(palette == null ? {} : { palette }) };
+      return LG.animateLoop(name, move, { parts, palette: LG.paletteOf(cfg), equip });
+    } });
   };
   let figs = 0;
   const fig = (spec, cap, sub) => { const id = 'live' + figs++; setTimeout(() => live(document.getElementById(id), spec)); return `<figure><canvas id="${id}" width="16" height="20" aria-hidden="true"></canvas><figcaption><b>${esc(cap)}</b>${esc(sub || '')}</figcaption></figure>`; };
@@ -323,10 +326,23 @@
   $('vs').innerHTML = fig({ name: best, equip: [LG.encode({ item: 'puttsies.tee', finish: 'gold', scuff: 0.001, print: 1 }), LG.encode({ item: 'aura.galaxy', finish: 'pearl', scuff: 0.0004, print: 7 })] }, 'A great roll', 'A 0.001 Gold buddy and a 0.000 Black pearl Galaxy')
     + fig({ name: 'founder:isaac', ...FOUNDER, equip: [LG.encode({ item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' })] }, '@isaac, the founder', 'The Origin aura, one of one');
 
-  // One loop draws every live figure.
+  // One loop draws the live figures on screen, at about 15 frames a second, each only when its frame changes.
+  const seen = new WeakMap();
+  const watch = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: '80px' });
+  let last = 0;
   (function frame(now) {
-    for (const l of lives) if (l.canvas && l.canvas.isConnected) put(l.canvas, LG.frameAt(l.anim, now).colors);
     requestAnimationFrame(frame);
+    if (now - last < 66) return;
+    last = now;
+    let builds = 2;
+    for (const l of lives) {
+      if (!l.canvas || !l.canvas.isConnected) continue;
+      if (!seen.has(l.canvas)) { seen.set(l.canvas, false); watch.observe(l.canvas); }
+      if (!seen.get(l.canvas)) continue;
+      if (!l.anim) { if (builds-- <= 0) continue; l.anim = l.make(); }
+      const f = LG.frameAt(l.anim, now);
+      if (f !== l.shown) { l.shown = f; put(l.canvas, f.colors); }
+    }
   })(performance.now());
 })();
 </script>
