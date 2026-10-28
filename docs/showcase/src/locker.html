@@ -133,15 +133,13 @@
   .loadout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 28px; align-items: start; }
   .dress { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 16px; }
   .dress .card { width: 78%; justify-self: center; }
+  .dress .btn { text-decoration: none; }
   .slots { display: grid; gap: 8px; }
   .slotrow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--felt); border-radius: 6px; }
   .slotrow .k { font: 600 11px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   .slotrow .v { font: 600 13px/1.25 var(--pixel); min-width: 0; }
   .slotrow .v small { display: block; font: 400 12px/1.3 var(--body); color: var(--muted); }
   .slotrow .v.empty { color: var(--muted); }
-  .x { appearance: none; border: 0; background: var(--line); color: var(--ink); font: 700 13px/1 var(--pixel); width: 26px; height: 26px; border-radius: 5px; cursor: pointer; }
-  .x:hover { background: #3a4570; }
-  .x:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
   .bar-tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; justify-content: space-between; }
   .bar-tools .group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .bar-tools .count { font: 600 13px/1 var(--pixel); color: var(--muted); }
@@ -335,7 +333,7 @@
   </section>
 
   <section class="room" id="locker">
-    <header><h2>Locker</h2><p>Every copy this player owns. Tap one to wear it and see what it's made of; tap it again to take it off. One skin, one hat and one frame at a time.</p></header>
+    <header><h2>Locker</h2><p>Every copy this player owns. Tap one to see what it's made of.</p></header>
     <div class="panel" id="inspect"></div>
     <div class="loadout">
       <div class="dress panel" id="dress"></div>
@@ -444,8 +442,7 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
       <h3 id="reveal-name"></h3>
       <p class="chips" id="reveal-chips" style="justify-content:center"></p>
       <div class="actions" id="reveal-actions" hidden>
-        <button class="btn" type="button" id="wear-it">Wear it</button>
-        <button class="btn ghost" type="button" id="keep-it">Keep it</button>
+        <button class="btn" type="button" id="keep-it">Keep it</button>
       </div>
     </div>
   </div>
@@ -1283,22 +1280,25 @@ void main() {
     const copies = worn.map(c => c.o);
     const top = worn.reduce((a, c) => (oneIn(c) > oneIn(a || c) ? c : a || c), null);
     const g = copies.length ? Math.max(...copies.map(gradeIdx)) : -1;
+    // What he wears, to read: changing it is the lil guys site's one editor (promo.html, "Your guy").
     const row = slot => {
       const c = find(state.worn[slot]);
       return `<div class="slotrow"><span class="k">${slot}</span>${c
-        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span><button class="x" type="button" data-off="${slot}" aria-label="Take off ${esc(LG.nameOf(c.o))}">×</button>`
-        : `<span class="v empty">Empty</span><span></span>`}</div>`;
+        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span>`
+        : '<span class="v empty">Empty</span>'}</div>`;
     };
     $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>Only one</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
-      <div class="slots">${row('skin')}${row('hat')}${row('frame')}</div>`;
+      <div class="slots">${row('skin')}${row('hat')}${row('frame')}</div>
+      <a class="btn" href="promo.html#/edit/wear">Dress your own guy</a>`;
     hydrate($('dress'));
     renderMoves();
   }
-  function toggle(c) {
-    state.worn[c.slot] = isWorn(c) ? null : c.uid;
+  /** A copy tapped in the locker: shown in the inspect panel above. */
+  function pick(c) {
     c.fresh = false;
     state.inspect = c.uid;
-    refreshWorn(); renderDress(); renderSwaps(); renderInspect();
+    refreshWorn(); renderInspect();
+    $('inspect').scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth', block: 'nearest' });
   }
 
   /** How a copy's name is put together, and every number behind it. */
@@ -1349,8 +1349,7 @@ void main() {
     try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (err) { done(false); }
   });
 
-  $('grid').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) toggle(find(+b.dataset.uid)); });
-  $('dress').addEventListener('click', e => { const b = e.target.closest('[data-off]'); if (b) { state.worn[b.dataset.off] = null; refreshWorn(); renderDress(); renderSwaps(); } });
+  $('grid').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) pick(find(+b.dataset.uid)); });
   document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => {
     state.filter = b.dataset.filter;
     document.querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', x === b));
@@ -1581,7 +1580,7 @@ void main() {
     $('reveal-name').textContent = LG.nameOf(o);
     $('reveal-chips').innerHTML = chipsFor(o) + `<span class="chip">1 in ${fmt(LG.copyOneIn(o))}</span>`;
     $('reveal-actions').hidden = false;
-    $('wear-it').focus();
+    $('keep-it').focus();
   }
 
   let revealed = null;
@@ -1599,21 +1598,19 @@ void main() {
     if (game && !hold()) { $('skip').hidden = false; if (source === 'Capsule') await gacha(game); await spin(o, game, g); }
     await unveil(o, g);
   }
-  function closeReveal(wear) {
+  function closeReveal() {
     if (!revealed || $('reveal-actions').hidden) return;
-    if (wear) { state.worn[revealed.slot] = revealed.uid; revealed.fresh = false; }
     state.inspect = revealed.uid;
     $('reveal').hidden = true;
     revealed = null;
     renderLocker(); renderDress(); renderSwaps(); renderInspect();
   }
-  $('wear-it').addEventListener('click', () => closeReveal(true));
-  $('keep-it').addEventListener('click', () => closeReveal(false));
+  $('keep-it').addEventListener('click', () => closeReveal());
   $('skip').addEventListener('click', () => { rush = true; if (skipSpin) skipSpin(); });
   addEventListener('keydown', e => {
     if ($('reveal').hidden) return;
     if (!$('skip').hidden && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); rush = true; if (skipSpin) skipSpin(); }
-    else if (e.key === 'Escape') closeReveal(false);
+    else if (e.key === 'Escape') closeReveal();
   });
 
   /* ------------------------------------------------ name */

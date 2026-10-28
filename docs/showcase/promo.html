@@ -312,7 +312,7 @@
      them every copy. A row or a tab narrows the copies to that slot. */
   .locker { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 24px; align-items: start; }
   .lk-guy { position: sticky; top: 16px; display: grid; gap: 14px; padding: 14px; border-radius: 14px; background: var(--panel); box-shadow: 0 6px 0 var(--edge); }
-  .lk-stage { position: relative; display: grid; place-items: center; padding: 16px 24px 20px; border-radius: 10px; background: var(--well); }
+  .lk-stage { position: relative; display: grid; place-items: center; padding: 16px 24px 20px; border-radius: 10px; background: var(--well); cursor: pointer; }
   .lk-stage .card { width: min(100%, 240px); }
   .lk-slots { display: grid; gap: 8px; }
   .lk-slot { display: grid; grid-template-columns: 44px minmax(0, 1fr) 56px; align-items: center; gap: 10px; padding: 6px 6px 6px 8px; border-radius: 10px; text-align: left; background: var(--panel-2); box-shadow: 0 4px 0 var(--edge); transition: transform .1s; }
@@ -326,7 +326,6 @@
   .lk-slot.vacant .pic { background: transparent; box-shadow: inset 0 0 0 2px var(--panel); }
   .lk-slot.vacant .ico { opacity: .7; }
   .lk-slot canvas { image-rendering: pixelated; max-width: 46px; max-height: 42px; }
-  .lk-slot[aria-pressed="true"] { background: color-mix(in srgb, var(--cat) 32%, var(--panel-2)); box-shadow: 0 0 0 3px var(--cat), 0 4px 0 var(--edge); }
   .cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .cats button { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 8px; border-radius: 8px; font-size: 24px; color: var(--ink-3); background: var(--panel); }
   .cats button .num { font-size: 16px; color: var(--ink-3); }
@@ -357,7 +356,6 @@
   .eq-slots span { display: grid; place-items: center; width: 24px; height: 22px; border-radius: 5px; background: var(--well); opacity: .45; }
   .eq-slots span.on { opacity: 1; background: color-mix(in srgb, var(--cat) 45%, var(--well)); }
   .eq-slots .ci { width: 18px; height: 14px; }
-  .lk-stage[data-try]::after { content: attr(data-try); position: absolute; top: 8px; left: 50%; translate: -50% 0; padding: 2px 10px; border-radius: 6px; font-size: 16px; background: var(--panel-2); color: var(--ink); box-shadow: 0 3px 0 var(--edge); }
   .it-pic { position: relative; display: grid; place-items: center; height: 112px; border-radius: 8px; margin-bottom: 4px; overflow: hidden; background: var(--well); }
   .it-pic::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--g); }
   .it-pic canvas { image-rendering: pixelated; max-width: 92%; max-height: 92%; filter: drop-shadow(0 4px 0 rgba(0,0,0,.4)); }
@@ -429,7 +427,7 @@
   dialog { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(920px, calc(100vw - 32px)); max-width: none; }
   dialog::backdrop { background: rgba(5,6,12,.78); }
   .insp { background: var(--panel); border-radius: 16px; box-shadow: var(--lift); padding: 24px; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
-  .insp .close { position: absolute; z-index: 2; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 8px; background: var(--red); box-shadow: 0 3px 0 var(--red-d); color: #fff; display: grid; place-items: center; font-size: 32px; line-height: 1; text-shadow: var(--ts); }
+  .insp .close, .ed .close { position: absolute; z-index: 2; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 8px; background: var(--red); box-shadow: 0 3px 0 var(--red-d); color: #fff; display: grid; place-items: center; font-size: 32px; line-height: 1; text-shadow: var(--ts); }
   .insp h3 { font-size: 32px; padding-right: 52px; }
   .insp .fin { margin: 6px 0 0; font-size: 24px; color: var(--ink-2); }
   .insp .grade { margin-top: 12px; background: var(--g); color: #fff; }
@@ -696,23 +694,98 @@
   .mcopy .own { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; font-size: 16px; }
   .mcopy .own em { font-style: normal; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* the look picker */
-  .lookp .look-stage { background: var(--well); border-radius: 12px; display: grid; place-items: center; aspect-ratio: 1; }
-  .lookp .look-stage svg { width: 80%; height: auto; display: block; }
-  .lookp .filters { margin: 16px 0 12px; }
-  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 360px; overflow: auto; padding: 4px 4px 8px; }
-  .opt { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 10px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); font-size: 16px; text-align: center; text-transform: capitalize; }
-  .opt canvas { width: 48px; height: 48px; image-rendering: pixelated; }
-  .opt[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
-  .opt[disabled] { opacity: .45; cursor: not-allowed; }
-  .opt-odds .lock { width: 9px; height: 10px; shape-rendering: crispEdges; vertical-align: -1px; }
-  .opt-odds { text-transform: none; font-size: 16px; filter: brightness(1.25); white-space: nowrap; }
-  .opt span:not(.opt-odds) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .look-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-  /* A locked part tried on: what it costs to craft, right under the parts. */
-  .look-craft { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--well); }
-  .look-craft b { font-family: var(--pixel); font-size: 18px; }
-  .look-craft small { color: var(--muted, #b9b2d6); }
+
+  /* ------------------------------------------------------------ your guy: one sheet for his look, what he wears and his card.
+     His card on the left, always what he'll be once saved; the tabs and their options on the right. A phone stacks them:
+     tabs, the card beside what changed, the options scrolling under it, Save at the foot. */
+  #edd { width: min(1120px, calc(100vw - 32px)); max-height: none; }
+  .ed { position: relative; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "prev head" "prev tabs" "prev sub" "prev panel" "prev foot"; column-gap: 24px;
+    height: min(820px, calc(100dvh - 40px)); padding: 20px; border-radius: 16px; background: var(--panel); box-shadow: var(--lift); }
+  .ed-head { grid-area: head; display: flex; align-items: center; min-height: 44px; padding-right: 52px; }
+  .ed-head h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ed-tabs { grid-area: tabs; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0 16px; }
+  .ed-tabs button { height: 48px; border-radius: 10px; font-size: 24px; color: var(--ink-3); background: var(--panel-2); box-shadow: 0 4px 0 var(--edge); }
+  .ed-tabs button:hover { color: var(--ink); }
+  .ed-tabs button[aria-selected="true"] { color: #fff; background: var(--red); box-shadow: 0 4px 0 var(--red-d); text-shadow: var(--ts); }
+  .ed .dot { display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 2px; background: var(--gold); box-shadow: 0 2px 0 var(--gold-d); }
+  .ed-sub button[disabled] { opacity: .4; cursor: not-allowed; }
+  .ed-sub .ed-reset { margin-left: 10px; box-shadow: inset 2px 0 0 var(--panel-2); border-radius: 0 8px 8px 0; padding-left: 16px; }
+  .ed-prev { grid-area: prev; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 28px 18px 18px; border-radius: 12px; background: var(--well); overflow: auto; }
+  .ed-card { width: min(100%, 272px); }
+  .ed-now { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 6px; min-height: 24px; }
+  .ed-now .bal { --b: var(--panel-2); color: var(--ink); }
+  .ed-now .bal i { font-style: normal; color: var(--ink-3); margin-right: 6px; }
+  .ed-now .bal.locked { --b: var(--red-d); }
+  .ed-now .bal.locked .lock { margin-right: 6px; }
+  .ed-now .bal.locked i { color: rgba(255,255,255,.7); }
+  .ed-sub { grid-area: sub; overflow-x: auto; scrollbar-width: none; margin-bottom: 14px; padding: 0 4px 6px; }
+  .ed-sub::-webkit-scrollbar { display: none; }
+  .ed-sub .filters, .ed-sub .cats { flex-wrap: nowrap; margin: 0; width: max-content; }
+  .ed-sub .cats button { font-size: 16px; }
+  .ed-panel { grid-area: panel; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 8px 6px 16px; }
+  .ed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 16px 10px; }
+  .ed-h { grid-column: 1 / -1; margin: 12px 0 -4px; font-size: 16px; color: var(--ink-3); text-transform: uppercase; }
+  .ed-note { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 8px 8px 12px; border-radius: 10px; background: var(--paper); color: var(--paper-ink); font-size: 16px; }
+  .ed-tile { position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; min-width: 0; padding: 8px 6px 10px; border-radius: 10px; text-align: center;
+    background: var(--panel-2); box-shadow: 0 4px 0 var(--edge); transition: transform .1s; }
+  .ed-tile:hover { transform: translateY(-2px); }
+  .ed-tile[aria-pressed="true"] { transform: translateY(-2px); box-shadow: 0 0 0 3px var(--gold), 0 6px 0 var(--edge); }
+  .ed-tile[aria-pressed="true"] .ed-pic { background: color-mix(in srgb, var(--gold) 14%, var(--well)); }
+  .ed-tile[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+  .ed-pic { position: relative; display: grid; place-items: center; width: 100%; height: 92px; margin-bottom: 4px; border-radius: 8px; background: var(--well); overflow: hidden; }
+  .ed-pic::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--g, transparent); }
+  .ed-pic canvas { image-rendering: pixelated; }
+  .ed-tile[data-locked] lil-guy { opacity: .55; }
+  .ed-tile b { max-width: 100%; font-size: 16px; line-height: 1.25; color: #fff; text-shadow: var(--ts); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ed-tile b.part { text-transform: capitalize; }
+  .ed-tile b.tagged, .ed-tagc b.tagged { color: var(--gold); }
+  .ed-tile small { max-width: 100%; font-size: 16px; line-height: 1.2; color: var(--ink-3); }
+  .ed-how span { white-space: nowrap; }
+  .ed-how .lock { margin-right: 5px; vertical-align: -1px; }
+  .lock { width: 9px; height: 10px; shape-rendering: crispEdges; flex: none; }
+  .ed-tile .tag.earned { background: var(--purple); color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+  /* The card's tab: each thing he wears with its name tag and what it counts, then his card to download. */
+  .ed-panel > .kicker { margin: 0 0 10px; }
+  .ed-tags { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px 12px; }
+  .ed-tagc { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; min-width: 0; padding: 10px; border-radius: 12px; background: var(--panel-2); box-shadow: 0 4px 0 var(--edge); }
+  .ed-tagc .ed-pic { height: 84px; margin: 0; }
+  .ed-tagc .field input { width: 100%; }
+  .ed-tagc .who { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 16px; color: var(--ink-3); }
+  .ed-tagc .who .ci { width: 20px; height: 16px; }
+  .ed-tagc b { font-size: 24px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ed-tagc .field { height: 44px; padding-left: 12px; }
+  .ed-tagc .field span, .ed-tagc .field input { font-size: 24px; }
+  .ed-tagc .field[data-bad] { box-shadow: 0 0 0 3px var(--red); }
+  .ed-tagc .ins-stats { margin: 0; }
+  .ed-tagc .lcd { padding: 4px 10px; } .ed-tagc .lcd b { font-size: 24px; }
+  .ed-dl { display: grid; gap: 8px; margin-top: 24px; }
+  .ed-dl .saves { justify-self: start; max-width: 440px; }
+  .ed-dl .saves-h { margin-bottom: 4px; text-align: left; text-transform: uppercase; }
+  .ed-foot { grid-area: foot; display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 2px solid var(--line); }
+  .ed-msg { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 16px; line-height: 1.3; color: var(--ink-2); }
+  .ed-msg.bad { color: #ff9b8a; }
+  .ed-foot > .btn { flex: none; }
+  @media (max-width: 760px) {
+    #edd { width: 100vw; height: 100dvh; margin: 0; }
+    .ed { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; grid-template-areas: "head" "tabs" "prev" "sub" "panel" "foot";
+      height: 100dvh; border-radius: 0; padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px)); }
+    .ed .close { top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; }
+    .ed-head h3 { font-size: 24px; }
+    .ed-tabs { margin: 8px 0 10px; gap: 6px; }
+    .ed-tabs button { height: 40px; }
+    .ed-prev { grid-template-columns: 104px minmax(0, 1fr); justify-items: start; align-items: center; gap: 12px; padding: 10px 12px 14px; margin-bottom: 10px; overflow: visible; }
+    .ed-card { width: 104px; }
+    .ed-now { justify-content: start; }
+    .ed-sub { margin: 0 -12px 6px; padding: 0 12px 6px; }
+    .ed-panel { margin: 0 -6px; }
+    .ed-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px; }
+    .ed-pic { height: 64px; }
+    .ed-tags { grid-template-columns: minmax(0, 1fr); }
+    .ed-foot { padding-top: 10px; }
+    .ed-foot > .btn { padding: 0 14px; }
+  }
 
   /* ------------------------------------------------------------ the drop */
   /* Scrolls when the win is taller than the screen (a phone, a short laptop): the content starts at the top
@@ -950,7 +1023,6 @@
     .ins-stage { position: static; }
     .ins-view { height: 280px; }
     .fins { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .insp > .art-col { width: 200px; justify-self: center; }
     .rz-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 760px) {
@@ -1081,7 +1153,7 @@
 <main class="wrap">
  <div class="view" id="v-home">
   <section id="guy-sec" hidden>
-    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="look-open">Change look</button></div>
+    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="guy-edit">Customise</button></div>
     <div class="odds-panel">
       <div class="stage guy-card"><div class="gview"><div id="guy-stage"></div></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
       <div class="scoring">
@@ -1123,7 +1195,7 @@
   </section>
 
   <section id="coll">
-    <div class="sec-h"><div><h2>Your locker</h2></div></div>
+    <div class="sec-h"><div><h2>Your locker</h2></div><button class="btn" type="button" id="lk-edit">Customise</button></div>
     <div class="lk-eq" id="lk-eq" hidden></div>
     <div class="locker">
       <div class="lk-guy"><div class="lk-stage" id="lk-stage"></div><div class="lk-slots" id="lk-slots"></div></div>
@@ -1170,7 +1242,7 @@
     </div>
   </section>
   <section>
-    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-look" hidden>Change look</button><a class="btn ghost" id="u-dress" href="#/" hidden>Dress your guy</a><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a></div></div>
+    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Customise</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a></div></div>
     <div class="u-sets" id="u-sets-wrap"><p class="u-sets-h" id="u-sets-h"></p><div class="sets small" id="u-sets"></div><details class="u-sets-more" id="u-sets-more"><summary>Every item in every set</summary><div class="sets" id="u-sets-full"></div></details></div>
     <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
@@ -1240,17 +1312,16 @@
 </main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
-<dialog id="lookd" aria-labelledby="look-h"><div class="insp lookp">
-  <button class="close" type="button" id="look-close" aria-label="Close">×</button>
-  <div class="art-col"><div class="look-stage" id="look-stage"></div></div>
-  <div>
-    <h3 id="look-h">Change your look</h3>
-    <p class="fin">Locked parts come from capsules, or craft one with metal. Your rarity stays as dealt.</p>
-    <div class="filters" id="look-tabs"></div>
-    <div class="opts" id="look-opts"></div>
-    <div class="look-craft" id="look-craft" hidden></div>
-    <div class="look-actions"><button class="btn" type="button" id="look-save">Save look</button><button class="btn ghost" type="button" id="look-reset">As dealt</button></div>
+<dialog id="edd" aria-labelledby="ed-h"><div class="ed">
+  <div class="ed-head"><h3 id="ed-h">Your guy</h3></div>
+  <button class="close" type="button" id="ed-x" aria-label="Cancel">×</button>
+  <div class="ed-tabs" id="ed-tabs" role="tablist" aria-label="Change">
+    <button type="button" role="tab" id="ed-t-look" data-tab="look" aria-controls="ed-panel">Look</button><button type="button" role="tab" id="ed-t-wear" data-tab="wear" aria-controls="ed-panel">Wear</button><button type="button" role="tab" id="ed-t-card" data-tab="card" aria-controls="ed-panel">Card</button>
   </div>
+  <div class="ed-prev"><div class="ed-card" id="ed-card"></div><div class="ed-now" id="ed-now" aria-live="polite"></div></div>
+  <div class="ed-sub" id="ed-sub"></div>
+  <div class="ed-panel" id="ed-panel" role="tabpanel"></div>
+  <div class="ed-foot"><p class="ed-msg" id="ed-msg" aria-live="polite"></p><button class="btn ghost" type="button" id="ed-cancel">Cancel</button><button class="btn green" type="button" id="ed-save">Save</button></div>
 </div></dialog>
 
 <div class="reveal" id="reveal" hidden role="dialog" aria-modal="true" aria-label="Drop">
@@ -1267,7 +1338,7 @@
       <p class="rv-name" id="rv-name"></p>
       <p class="rv-sub" id="rv-sub"></p>
       <div class="rv-part" id="rv-part" hidden></div>
-      <div class="rv-actions" id="rv-actions" hidden><button class="btn cream" type="button" id="rv-wear">Wear it</button><button class="btn ghost" type="button" id="rv-keep">Keep</button><button class="btn ghost" type="button" id="rv-again">Another</button></div>
+      <div class="rv-actions" id="rv-actions" hidden><button class="btn cream" type="button" id="rv-wear">Try it on</button><button class="btn ghost" type="button" id="rv-keep">Keep</button><button class="btn ghost" type="button" id="rv-again">Another</button></div>
     </div>
   </div>
 </div>
@@ -1880,9 +1951,9 @@
   }
 
   // `pfp`: the guy as he's drawn here, for a Discord profile picture (a still PNG, or a GIF for Nitro).
-  function saveButtons(el, input, name, host, pfp) {
+  function saveButtons(el, input, name, host, pfp, heading = 'Save') {
     const base = fileName(name);
-    el.innerHTML = '<span class="saves-h">Save</span><button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
+    el.innerHTML = `<span class="saves-h">${heading}</span>` + '<button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
       + (pfp ? '<button class="btn small ghost" type="button" data-save="pfp" title="512 px, framed for Discord\'s round crop">Discord PNG</button><button class="btn small ghost" type="button" data-save="pfp-gif" title="Moving, for Nitro">Discord GIF</button>' : '');
     el.onclick = e => {
       const b = e.target.closest('[data-save]');
@@ -1912,7 +1983,8 @@
   // Cards show a copy's stats and place in its run where the server sent them (locker.html, setLine).
   window.cardAbout = o => { const code = LG.encode(o); return { stats: state?.stats?.[code], pull: state?.pulls?.[code] }; };
   // Outside claude.ai (the Cloudflare deploy) names live behind the Worker's /api/names instead (DEPLOYMENT.md).
-  let backendReady = false, signedIn = false, accountKey = null;
+  // `restored`: the account (or this browser's claim) has been read, so a link into your guy's editor can open it.
+  let backendReady = false, signedIn = false, accountKey = null, restored = false;
   // The live site: no artifact database, but the Worker's API. It rolls every capsule and keeps every collection.
   // Only when the Worker answers: a page with neither a database nor the API (a signed-out claude.ai view,
   // a saved copy) is the demo, and keeps the collection in this browser.
@@ -1935,7 +2007,6 @@
       tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), pulls: Object.fromEntries(s.copies.filter(c => c.pull).map(c => [c.code, c.pull])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
-  const wearLive = slot => { if (isLive() && state) meApi('wear', { slot, id: state.worn[slot] ? state.ids?.[state.worn[slot]] ?? null : null }).catch(e => toast(e.message)); };
   async function namesApi(path, options) {
     const response = await fetch(`/api/names${path}`, options);
     const data = await response.json();
@@ -2077,7 +2148,8 @@
     ctx.putImageData(img, 0, 0);
   }
   let toastT;
-  const toast = msg => { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); };
+  // Over an open dialog the toast goes inside it, since a modal dialog sits above everything else on the page.
+  const toast = msg => { const t = $('toast'), host = document.querySelector('dialog[open]') || document.body; if (t.parentNode !== host) host.append(t); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); };
   $('today').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   /* ---------------------------------------------- the hand: the rarest copies a sample of 12,000 capsules turned up */
@@ -2338,42 +2410,316 @@
     fctx.putImageData(fimg, 0, 0);
   }
 
-  /* ---------------------------------------------- changing your look: any common part, plus the ones you were dealt */
-  const LOOK_TABS = [['head', 'Shape', 'heads'], ['eyes', 'Eyes', 'eyes'], ['mouth', 'Mouth', 'mouths'], ['cheeks', 'Cheeks', 'cheeks'], ['hair', 'Topper', 'hair'], ['body', 'Markings', 'bodies'], ['accessory', 'Accessory', 'accessories'], ['palette', 'Colour', 'palettes']];
-  const LOCK = '<svg class="lock" viewBox="0 0 7 8" aria-hidden="true"><path fill="currentColor" d="M2 0h3v1h1v2h1v5H0V3h1V1h1zM2 1v2h3V1z"/></svg> ';
+  /* ---------------------------------------------- your guy: one editor for his look, what he wears and his card.
+   * Everything is tried on live on his card, and one Save keeps it all: the look, each slot that changed, each tag.
+   * Look offers every common part, the ones he was dealt and any earned; the rare ones say how to get them.
+   * Wear offers every copy in his locker, then what he hasn't got yet. Card names what he wears. */
+  const LOOK_TABS = [['head', 'Shape', 'heads'], ['eyes', 'Eyes', 'eyes'], ['mouth', 'Mouth', 'mouths'], ['cheeks', 'Cheeks', 'cheeks'], ['hair', 'Topper', 'hair'], ['body', 'Markings', 'bodies'], ['accessory', 'Accessory', 'accessories'], ['palette', 'Colours', 'palettes']];
+  const LOCK = '<svg class="lock" viewBox="0 0 7 8" aria-hidden="true"><path fill="currentColor" d="M2 0h3v1h1v2h1v5H0V3h1V1h1zM2 1v2h3V1z"/></svg>';
   const LOOK_SLOT = { head: 'shape', eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', hair: 'topper', body: 'markings', accessory: 'accessory', palette: 'colour' };
-  let draft = {}, lookTab = 'head';
-  function renderLook() {
-    const base = dealt(state.seed), cur = { ...base, ...draft }, list = LG[LOOK_TABS.find(x => x[0] === lookTab)[2]];
-    $('look-tabs').innerHTML = LOOK_TABS.map(([k, label]) => `<button type="button" data-t="${k}" aria-pressed="${k === lookTab}">${label}</button>`).join('');
-    $('look-stage').innerHTML = LG.toAnimatedSvg(state.seed, 'idle', { size: 240, parts: partsOf(cur), palette: LG.paletteOf(cur) });
-    // Every part with its odds: the ones you can pick first, then the rarer ones only the deal gives, locked.
-    const earned = new Set(unlocks()[lookTab] || []), pick = new Set(LG.pickable(base, lookTab, unlocks())), slot = LOOK_SLOT[lookTab];
-    const chance = i => LG.traitOdds({ ...cur, [lookTab]: i }).find(t => t.slot === slot)?.chance || 0;
-    const all = list.map((_, i) => i).filter(i => pick.has(i) || chance(i) > 0).sort((x, y) => (pick.has(y) - pick.has(x)) || (chance(y) - chance(x)));
-    // Markings and cheeks a crowded guy has no room for wouldn't change him, so they aren't offered as if they would.
-    const room = i => !(lookTab === 'body' || lookTab === 'cheeks') || LG.shows({ ...cur, [lookTab]: i }, lookTab);
-    all.sort((x, y) => room(y) - room(x));
-    $('look-opts').innerHTML = all.map(i => {
-      const p = chance(i), tier = tierOf(p), open = pick.has(i), fits = room(i);
-      const why = !fits ? ' disabled title="No room for this: the face, topper or accessory takes the space"' : open ? '' : ' title="Locked: try it on, then craft it or win it from a capsule"';
-      return `<button class="opt${fits ? '' : ' noroom'}" type="button" data-i="${i}" aria-pressed="${cur[lookTab] === i}"${why}><canvas width="16" height="16" aria-hidden="true"></canvas><span>${esc(list[i].name)}</span><span class="opt-odds" style="color:${fits ? tier.c : 'var(--ink-3)'}">${!fits ? 'No room' : `${i === base[lookTab] ? 'Dealt · ' : earned.has(i) ? 'Earned · ' : open ? '' : LOCK}1 in ${fmt(1 / p)}`}</span></button>`;
-    }).join('');
-    $('look-opts').querySelectorAll('canvas').forEach((c, k) => paintCfg(c, { ...cur, [lookTab]: all[k] }));
-    // A locked part tried on can be crafted right here.
-    const lock = lockedInDraft()[0];
-    $('look-craft').hidden = !lock;
-    if (lock) {
-      const cost = LG.partCost(lock), have = metalOf(), can = have >= cost;
-      $('look-craft').innerHTML = `<span><b>${esc(LG.partName(lock))}</b><br><small>Locked. Comes from capsules${can ? '' : `, or craft it with ${LG.metalText(cost)} (you have ${LG.metalText(have)})`}.</small></span>${can ? `<button class="btn small" type="button" id="look-craft-go">Craft · ${LG.metalText(cost)}</button>` : ''}`;
+  const WEAR_SLOTS = ['hat', 'skin', 'frame', 'buddy', 'aura'];
+  const ed = { tab: 'look', part: 'head', slot: 'hat', look: {}, worn: {}, tags: {}, saving: false, shown: null, feed: 0 };
+  const partList = slot => LG[LOOK_TABS.find(t => t[0] === slot)[2]];
+  const edBase = () => dealt(state.seed);
+  const savedLook = () => (state.look && LG.decodeLook(state.look, edBase(), unlocks())) || {};
+  /** The guy being tried on: as dealt with the draft look over him. `.base` stays the deal, which his rank counts. */
+  const edCfg = (over = {}) => { const base = edBase(), cfg = { ...base, ...ed.look, ...over }; Object.defineProperty(cfg, 'base', { value: base }); return cfg; };
+  const edCodes = (over = {}) => WEAR_SLOTS.map(sl => (sl in over ? over[sl] : ed.worn[sl])).filter(Boolean);
+  const edGuy = (cfg, codes) => ({ seed: state.seed, parts: partsOf(cfg), palette: cfg.palette, equip: codes });
+  const owns = code => state.copies.includes(code);
+  const edTag = code => (code in ed.tags ? ed.tags[code] : tagOf(code));
+  /** How to get an item nobody has given you: a short line for its tile, a sentence once it's tried on. */
+  function howTo(it) {
+    if (it.slot === 'aura') return ['Any capsule', `${it.name}: from any capsule, about one in ${Math.round(1 / LG.AURA_ODDS).toLocaleString('en-US')}.`];
+    if (it.season) return ['Seasonal', `${it.name}: from the seasonal capsule while it’s in season.`];
+    const m = LG.machineName(it.game);
+    if (!LG.craftable(it)) return ['Capsule', `${it.name}: from ${m} capsules.`];
+    return ['Capsule or craft', `${it.name}: from ${m} capsules, or craft it for ${LG.metalText(LG.CRAFT_COST)}.`];
+  }
+  /** Every item a slot can hold that capsules still give, by machine: the ones a player hasn't got are shown locked. */
+  const slotItems = slot => slot === 'aura' ? [['Any capsule', LG.AURAS.map(a => LG.itemById(a.id)).filter(Boolean)]]
+    : [...LG.GAMES.map(g => [`${LG.machineName(g)} machine`, LG.gameItems(g).filter(it => it.slot === slot && !it.free)]),
+      ['Seasonal', LG.gameItems('club').filter(it => it.slot === slot && it.season)]].filter(([, list]) => list.length);
+  const tryCode = it => LG.encode({ item: it.id, finish: it.slot === 'aura' ? 'classic' : 'plain', scuff: 0.05, print: 1 });
+
+  /** What the draft changes from what's saved; a locked part or an item he hasn't got can be tried on, not saved. */
+  function edChanges() {
+    const base = edBase(), was = savedLook(), mine = unlocks(), out = [];
+    for (const [slot, label] of LOOK_TABS) {
+      const now = ed.look[slot] ?? base[slot];
+      if (now !== (was[slot] ?? base[slot])) out.push({ tab: 'look', key: slot, label, value: cap(partList(slot)[now]?.name ?? '?'), locked: !LG.pickable(base, slot, mine).includes(now) });
     }
-    $('look-save').disabled = !!lock;
+    for (const slot of WEAR_SLOTS) {
+      const now = ed.worn[slot] || '';
+      if (now === (state.worn[slot] || '')) continue;
+      const o = now && LG.decode(now);
+      out.push({ tab: 'wear', key: slot, label: catOf(slot).one, value: o ? named(LG.itemById(o.item).name, owns(now) ? tagOf(now) : '') : 'Nothing', locked: !!now && !owns(now) });
+    }
+    for (const code of Object.keys(ed.tags)) {
+      const t = ed.tags[code].replace(/\s+/g, ' ').trim();
+      if (t !== tagOf(code)) out.push({ tab: 'card', key: code, label: 'Tag', value: t ? `"${t}"` : 'None', bad: LG.cleanTag(t) === null });
+    }
+    return out;
   }
-  /** The parts in the look being tried on that this player hasn't got. */
-  function lockedInDraft() {
-    const base = dealt(state.seed), mine = unlocks();
-    return Object.entries(draft).filter(([slot, i]) => !LG.pickable(base, slot, mine).includes(i)).map(([slot, index]) => ({ slot, index }));
+
+  /* The card: rebuilt only when what it shows changes, so it keeps moving while tags are typed. */
+  function edPreview(changes) {
+    const cfg = edCfg(), codes = edCodes(), key = JSON.stringify([partsOf(cfg), cfg.palette, codes]);
+    if (ed.shown !== key) {
+      ed.shown = key;
+      const spec = { name: state.seed, parts: partsOf(cfg), palette: cfg.palette, copies: codes.map(LG.decode).filter(Boolean), label: guyLabel(cfg, '@' + state.key), still: false, grade: guyRank(cfg).tier };
+      ed.spec = spec;
+      $('ed-card').innerHTML = `<div class="card">${px(spec)}</div>`;
+      hydrate($('ed-card'));
+    }
+    $('ed-now').innerHTML = changes.length
+      ? changes.map(c => `<span class="bal${c.locked || c.bad ? ' locked' : ''}">${c.locked ? LOCK : ''}<i>${esc(c.label)}</i>${esc(c.value)}</span>`).join('')
+      : '<span class="bal"><i>Tap anything to try it on</i></span>';
   }
+
+  /** The foot: what's changed, or why it can't be saved yet and how to fix that. */
+  function edFoot(changes) {
+    const lock = changes.find(c => c.locked), bad = changes.find(c => c.bad), msg = $('ed-msg');
+    msg.className = 'ed-msg' + (lock || bad ? ' bad' : '');
+    if (lock && lock.tab === 'look') {
+      const p = { slot: lock.key, index: ed.look[lock.key] }, cost = LG.partCost(p), can = metalOf() >= cost;
+      msg.innerHTML = `<span>${esc(LG.partName(p))}: from a capsule, or craft it for ${LG.metalText(cost)}${can ? '' : ` (you have ${LG.metalText(metalOf())})`}.</span>${can ? `<button class="btn small" type="button" data-craft-part="${LG.partCode(p)}">Craft · ${LG.metalText(cost)}</button>` : ''}`;
+    } else if (lock) {
+      const it = LG.itemById(LG.decode(ed.worn[lock.key]).item), can = LG.craftable(it) && metalOf() >= LG.CRAFT_COST;
+      msg.innerHTML = `<span>${esc(howTo(it)[1])}</span>${can ? `<button class="btn small" type="button" data-craft-item="${lock.key}">Craft · ${LG.metalText(LG.CRAFT_COST)}</button>` : ''}`;
+    } else if (bad) msg.textContent = 'That tag can’t be used. Letters, numbers and simple punctuation, up to 20.';
+    else msg.textContent = changes.length ? `${changes.length} change${changes.length === 1 ? '' : 's'}` : '';
+    $('ed-save').disabled = ed.saving || !changes.length || !!lock || !!bad;
+    $('ed-save').textContent = ed.saving ? 'Saving…' : 'Save';
+    $('ed-tabs').querySelectorAll('[data-tab]').forEach(b => {
+      b.setAttribute('aria-selected', b.dataset.tab === ed.tab);
+      b.innerHTML = cap(b.dataset.tab) + (changes.some(c => c.tab === b.dataset.tab) ? '<span class="dot" aria-label="changed"></span>' : '');
+    });
+  }
+
+  /** After a pick: the tiles' marks, the card and the foot. The tiles themselves stay, so nothing is baked again. */
+  function edRefresh() {
+    const changes = edChanges(), on = edPicked();
+    $('ed-panel').querySelectorAll('.ed-tile[data-v]').forEach(t => t.setAttribute('aria-pressed', t.dataset.v === on));
+    edSub(changes); edPreview(changes); edFoot(changes);
+  }
+  /** The tab's slots along the top, a dot on each one changed. */
+  function edSub(changes) {
+    const dot = key => changes.some(c => c.key === key) ? '<span class="dot" aria-label="changed"></span>' : '';
+    $('ed-sub').hidden = ed.tab === 'card';
+    if (ed.tab === 'look') {
+      $('ed-sub').innerHTML = `<div class="filters">${LOOK_TABS.map(([k, label]) => `<button type="button" data-part="${k}" aria-pressed="${k === ed.part}">${label}${dot(k)}</button>`).join('')}`
+        + `<button type="button" class="ed-reset" data-reset${Object.keys(ed.look).length ? '' : ' disabled'}>As dealt</button></div>`;
+    } else if (ed.tab === 'wear') {
+      const n = sl => copies().filter(c => LG.slotOf(c.o) === sl).length;
+      $('ed-sub').innerHTML = `<div class="cats" role="group" aria-label="Slots">${WEAR_SLOTS.map(sl => { const k = catOf(sl); return `<button type="button" data-slot="${sl}" style="--cat:${k.c}" aria-selected="${sl === ed.slot}">${icon(sl)}${k.name} <span class="num">${n(sl)}</span>${dot(sl)}</button>`; }).join('')}</div>`;
+    } else $('ed-sub').innerHTML = '';
+  }
+  const edPicked = () => ed.tab === 'look' ? String(ed.look[ed.part] ?? edBase()[ed.part]) : ed.tab === 'wear' ? (ed.worn[ed.slot] || '') : null;
+
+  /** Puts each tile's guy on a few at a time, so a tab of fifty opens at once and fills in as it's baked. */
+  function edFeed(specs) {
+    const token = ++ed.feed, els = [...$('ed-panel').querySelectorAll('lil-guy[data-s]')];
+    let k = 0;
+    const step = () => {
+      if (token !== ed.feed) return;
+      for (const end = k + 6; k < end && k < els.length; k++) els[k].spec = specs[+els[k].dataset.s];
+      if (k < els.length) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  // A locked tile's way to get it, breaking before "or" when it has to.
+  const howLine = text => `<small class="ed-how">${text.split(' or ').map((w, k) => `<span>${k ? 'or ' : LOCK}${esc(w)}</span>`).join(' ')}</small>`;
+  const guyPic = (specs, spec) => { specs.push(spec); return `<lil-guy size="${matchMedia('(max-width: 760px)').matches ? 3 : 4}" data-s="${specs.length - 1}"></lil-guy>`; };
+
+  /** Which worn item hides a look part, so the tab can say so instead of looking broken: none when the part shows. */
+  function coveredBy(slot) {
+    const pixels = (cfg, codes) => { const d = LG.dress(cfg, { equip: codes }); return JSON.stringify(LG.paint(LG.compose(d), d, LG.withItems(LG.paletteOf(d), d))); };
+    const options = LG.pickable(edBase(), slot, unlocks()), now = ed.look[slot] ?? edBase()[slot], other = options.find(i => i !== now);
+    if (other === undefined || !edCodes().length) return null;
+    const a = edCfg({ [slot]: now }), b = edCfg({ [slot]: other });
+    if (pixels(a, edCodes()) !== pixels(b, edCodes())) return null;
+    return WEAR_SLOTS.find(sl => ed.worn[sl] && pixels(a, edCodes({ [sl]: '' })) !== pixels(b, edCodes({ [sl]: '' }))) || null;
+  }
+
+  function edLookPanel(specs) {
+    const slot = ed.part, base = edBase(), cur = edCfg(), list = partList(slot), mine = unlocks(), word = LOOK_SLOT[slot];
+    const pick = new Set(LG.pickable(base, slot, mine)), earned = new Set(mine[slot] || []);
+    const ids = [...new Set([...pick, ...LG.rareParts(slot)])];
+    const chance = new Map(ids.map(i => [i, LG.traitOdds({ ...cur, [slot]: i }).find(t => t.slot === word)?.chance || 0]));
+    // Markings and cheeks a crowded face has no room for wouldn't change him, so they aren't offered as if they would.
+    const room = new Map(ids.map(i => [i, !(slot === 'body' || slot === 'cheeks') || LG.shows({ ...cur, [slot]: i }, slot)]));
+    const all = ids.sort((x, y) => (room.get(y) - room.get(x)) || (pick.has(y) - pick.has(x)) || (chance.get(y) - chance.get(x)));
+    const hid = coveredBy(slot);
+    const note = hid ? `<div class="ed-note"><span>Your ${esc(catOf(hid).one.toLowerCase())} covers his ${esc(word)}.</span><button class="btn small ghost" type="button" data-off="${hid}">Take it off</button></div>` : '';
+    return `<div class="ed-grid">${note}${all.map(i => {
+      const open = pick.has(i), fits = room.get(i), p = chance.get(i), name = list[i].name;
+      const odds = !fits ? 'No room' : p ? `1 in ${fmt(1 / p)}` : 'Capsule only';
+      const mark = i === base[slot] ? '<span class="tag on">Dealt</span>' : earned.has(i) ? '<span class="tag earned">Earned</span>' : '';
+      // Each one on him, bare, so the part itself shows.
+      return `<button class="ed-tile" type="button" data-v="${i}" aria-pressed="false"${open ? '' : ' data-locked'}${fits ? '' : ' disabled'} aria-label="${esc(cap(name))}${open ? '' : ', locked'}">${mark}`
+        + `<span class="ed-pic">${guyPic(specs, edGuy(edCfg({ [slot]: i }), []))}</span><b class="part">${esc(name)}</b>`
+        + `<small style="color:${fits && p ? tierOf(p).c : 'var(--ink-3)'}">${odds}</small>${open ? '' : howLine('Capsule or craft')}</button>`;
+    }).join('')}</div>`;
+  }
+
+  function edWearPanel(specs) {
+    const slot = ed.slot, cur = edCfg(), others = edCodes({ [slot]: '' }), k = catOf(slot);
+    const mine = copies().filter(c => LG.slotOf(c.o) === slot).sort(rarer), have = new Set(mine.map(c => c.o.item));
+    const tile = (v, spec, body, extra = '') => `<button class="ed-tile" type="button" data-v="${esc(v)}" aria-pressed="false"${extra}>${body[0]}<span class="ed-pic">${guyPic(specs, spec)}</span>${body[1]}</button>`;
+    const none = tile('', edGuy(cur, others), ['', `<b>Nothing</b><small>No ${esc(k.one.toLowerCase())}</small>`], ` aria-label="No ${esc(k.one.toLowerCase())}"`);
+    const owned = mine.map(c => {
+      const it = LG.itemById(c.o.item), g = LG.gradeOf(c.o), [title, look] = LG.nameOf(c.o).split(' | '), tag = tagOf(c.code), one = founderCopy(c.o);
+      const fin = one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o));
+      return tile(c.code, edGuy(cur, [...others, c.code]), [state.worn[slot] === c.code ? '<span class="tag on">On</span>' : '',
+        `<b class="${tag ? 'tagged' : ''}">${esc(named(title, tag))}</b><small style="color:color-mix(in srgb, ${g.color} 65%, #fff)">${esc(fin)}</small>${it.free || one ? '' : `<small>${esc(g.name)}</small>`}`],
+        ` style="--g:${g.color}" aria-label="${esc(LG.nameOf(c.o).replace(' | ', ', '))}"`);
+    });
+    const locked = slotItems(slot).map(([head, list]) => {
+      const want = list.filter(it => !have.has(it.id));
+      if (!want.length) return '';
+      return `<p class="ed-h">${esc(head)}</p>` + want.map(it => tile(tryCode(it), edGuy(cur, [...others, tryCode(it)]),
+        [it.showpiece ? '<span class="tag new">★</span>' : '', `<b>${esc(it.name)}</b>${howLine(howTo(it)[0])}`],
+        ` data-locked aria-label="${esc(it.name)}, locked"`)).join('');
+    }).join('');
+    return `<div class="ed-grid">${none}${owned.join('')}${locked ? `<p class="ed-h" style="color:var(--ink);margin-top:24px">Not yours yet</p>${locked}` : ''}</div>`;
+  }
+
+  function edCardPanel() {
+    const worn = edCodes().filter(owns);
+    const cards = worn.map(code => {
+      const o = LG.decode(code), it = LG.itemById(o.item), g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | '), sl = LG.slotOf(o);
+      const tag = edTag(code), st = state.stats?.[code], one = founderCopy(o);
+      return `<div class="ed-tagc" style="--g:${g.color}"><span class="ed-pic"><canvas data-code="${esc(code)}" aria-hidden="true"></canvas></span>
+        <span class="who">${icon(sl)}${esc(catOf(sl).one)} · ${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(o)))}</span>
+        <b class="${tag ? 'tagged' : ''}" data-name="${esc(code)}">${esc(named(title, tag))}</b>
+        <label class="field"><span aria-hidden="true">"</span><input data-tag="${esc(code)}" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" spellcheck="false" autocomplete="off" aria-label="Name tag for ${esc(title)}"></label>
+        ${o.tally !== undefined ? `<span class="lcd"><small>TALLY</small><b>${String(o.tally).padStart(6, '0')}</b></span>` : ''}
+        ${st ? `<div class="ins-stats"><span><b>${st.worn}</b>day${st.worn === 1 ? '' : 's'} worn</span><span><b>${st.games}</b>club game${st.games === 1 ? '' : 's'}</span><span><b>${st.best || '—'}</b>best club day</span></div>` : ''}
+      </div>`;
+    });
+    return `<p class="kicker">Name tags</p>${cards.length ? `<div class="ed-tags">${cards.join('')}</div>` : '<p class="empty">Wear something from your locker to give it a name tag.</p>'}
+      <div class="ed-dl"><div class="saves" id="ed-saves"></div></div>`;
+  }
+
+  /** Draws the open tab from scratch: its slots along the top, its tiles, then the card and the foot. */
+  function edRender() {
+    const specs = [];
+    if (ed.tab === 'look') $('ed-panel').innerHTML = edLookPanel(specs);
+    else if (ed.tab === 'wear') $('ed-panel').innerHTML = edWearPanel(specs);
+    else {
+      $('ed-panel').innerHTML = edCardPanel();
+      $('ed-panel').querySelectorAll('canvas[data-code]').forEach(c => showItem(c, LG.decode(c.dataset.code), state.seed, 120, 72));
+    }
+    $('ed-panel').scrollTop = 0;
+    edFeed(specs);
+    edRefresh();
+    if (ed.tab === 'card') {
+      const cfg = edCfg(), codes = edCodes();
+      saveButtons($('ed-saves'), cardInput(ed.spec), state.key, () => $('ed-card'), edGuy(cfg, codes), 'Download');
+    }
+    $('ed-sub').querySelector('[aria-pressed="true"], [aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    $('ed-panel').querySelector('.ed-tile[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * Opens the editor on a tab, from what's saved. `part` and `index` try a face part on; `slot` and `code` an item
+   * (an empty code takes the slot's item off).
+   */
+  function openEditor(tab = 'look', o = {}) {
+    if (!state) return;
+    ed.look = { ...savedLook() };
+    ed.worn = Object.fromEntries(WEAR_SLOTS.filter(sl => state.worn[sl]).map(sl => [sl, state.worn[sl]]));
+    ed.tags = {}; ed.saving = false; ed.shown = null; ed.tab = tab;
+    if (o.part) {
+      ed.part = o.part;
+      if (o.index !== undefined) { if (o.index === edBase()[o.part]) delete ed.look[o.part]; else ed.look[o.part] = o.index; }
+    }
+    if (o.slot) {
+      ed.slot = o.slot;
+      if ('code' in o) { if (o.code) ed.worn[o.slot] = o.code; else delete ed.worn[o.slot]; }
+    }
+    if (!$('edd').open) { SFX.whoosh(0.22, 400, 2400, 0.06); $('edd').showModal(); }
+    edRender();
+  }
+  const closeEditor = () => { if ($('edd').open) $('edd').close(); };
+  // Closing for any reason throws the draft away and lets the tiles go.
+  $('edd').addEventListener('close', () => { ed.feed++; ed.shown = null; $('ed-panel').innerHTML = ''; $('ed-card').innerHTML = ''; $('ed-sub').innerHTML = ''; });
+  $('edd').addEventListener('click', e => { if (e.target === $('edd') && !edChanges().length) closeEditor(); });
+  $('ed-x').addEventListener('click', closeEditor);
+  $('ed-cancel').addEventListener('click', closeEditor);
+  $('ed-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && b.dataset.tab !== ed.tab) { ed.tab = b.dataset.tab; edRender(); } });
+  $('ed-sub').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.part) ed.part = b.dataset.part;
+    else if (b.dataset.slot) ed.slot = b.dataset.slot;
+    else if (b.hasAttribute('data-reset')) ed.look = {};
+    else return;
+    edRender();
+  });
+  $('ed-panel').addEventListener('click', e => {
+    const off = e.target.closest('[data-off]');
+    if (off) { delete ed.worn[off.dataset.off]; edRender(); return; }
+    const t = e.target.closest('.ed-tile[data-v]'); if (!t || t.disabled) return;
+    const v = t.dataset.v;
+    if (ed.tab === 'look') { const i = +v; if (i === edBase()[ed.part]) delete ed.look[ed.part]; else ed.look[ed.part] = i; }
+    else if (v) ed.worn[ed.slot] = v; else delete ed.worn[ed.slot];
+    SFX.equip();
+    edRefresh();
+  });
+  $('ed-panel').addEventListener('input', e => {
+    const f = e.target.closest('[data-tag]'); if (!f) return;
+    const code = f.dataset.tag, t = f.value.replace(/\s+/g, ' ').trim();
+    ed.tags[code] = f.value;
+    f.closest('.field').toggleAttribute('data-bad', LG.cleanTag(t) === null);
+    const name = $('ed-panel').querySelector(`[data-name="${CSS.escape(code)}"]`);
+    if (name) { name.textContent = named(LG.nameOf(LG.decode(code)).split(' | ')[0], t); name.classList.toggle('tagged', !!t); }
+    edRefresh();
+  });
+  $('ed-msg').addEventListener('click', async e => {
+    const part = e.target.closest('[data-craft-part]'), item = e.target.closest('[data-craft-item]');
+    if (part) { await craftPart(LG.readPart(part.dataset.craftPart)); edRender(); }
+    if (item) {
+      const slot = item.dataset.craftItem, made = await crafted(LG.decode(ed.worn[slot]).item);
+      if (!made) return;
+      state.copies.push(made.code); state.fresh = [...(state.fresh || []), made.code]; save();
+      ed.worn[slot] = made.code;
+      SFX.equip(); toast(`${LG.itemById(made.o.item).name} crafted · #${made.o.craft}`);
+      edRender(); renderColl();
+    }
+  });
+  $('ed-save').addEventListener('click', async () => {
+    const changes = edChanges();
+    if (ed.saving || !changes.length || changes.some(c => c.locked || c.bad)) return;
+    const look = Object.keys(ed.look).length ? LG.encodeLook(ed.look) : '', lookChanged = changes.some(c => c.tab === 'look');
+    ed.saving = true; edFoot(changes);
+    // The live site's API keeps the look, each slot and each tag apart, so a change to all three is several calls.
+    if (isLive()) {
+      try {
+        if (lookChanged) await meApi('look', { look });
+        for (const c of changes.filter(c => c.tab === 'wear')) await meApi('wear', { slot: c.key, id: ed.worn[c.key] ? state.ids?.[ed.worn[c.key]] ?? null : null });
+        for (const c of changes.filter(c => c.tab === 'card')) await meApi('tag', { id: state.ids?.[c.key], tag: LG.cleanTag(ed.tags[c.key]) });
+      } catch (err) {
+        // Part of it may have saved: show what the server has, and keep the draft so Save can be tried again.
+        ed.saving = false;
+        toast(err.message);
+        try { fromServer(await meApi('state')); } catch (e2) {}
+        renderAll(); edRefresh();
+        return;
+      }
+    }
+    state.look = look;
+    state.worn = Object.fromEntries(WEAR_SLOTS.filter(sl => ed.worn[sl]).map(sl => [sl, ed.worn[sl]]));
+    state.tags = { ...(state.tags || {}) };
+    for (const c of changes.filter(c => c.tab === 'card')) { const t = LG.cleanTag(ed.tags[c.key]); if (t) state.tags[c.key] = t; else delete state.tags[c.key]; }
+    lookFor[state.seed] = state.look;
+    ed.saving = false;
+    save(); SFX.equip(); closeEditor(); toast('Saved');
+    if (lookChanged) scored = false;
+    renderAll();
+    if (lookChanged) score();
+    if (document.body.dataset.route === 'u') route();
+  });
   /** Crafts a locked part from metal, then it's theirs to pick. */
   async function craftPart(p) {
     const code = LG.partCode(p), cost = LG.partCost(p);
@@ -2386,32 +2732,10 @@
     }
     state.parts = [...new Set([...(state.parts || []), code])];
     save(); SFX.equip(); toast(`${LG.partName(p)} crafted`);
-    renderLook();
+    renderWorkshop();
   }
-  $('look-craft').addEventListener('click', e => { if (e.target.closest('#look-craft-go')) { const lock = lockedInDraft()[0]; if (lock) craftPart(lock); } });
-  $('look-open').addEventListener('click', () => {
-    const base = dealt(state.seed);
-    draft = { ...((state.look && LG.decodeLook(state.look, base)) || {}) };
-    renderLook(); SFX.whoosh(0.22, 400, 2400, 0.06); $('lookd').showModal();
-  });
-  $('look-tabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { lookTab = b.dataset.t; renderLook(); } });
-  $('look-opts').addEventListener('click', e => {
-    const b = e.target.closest('[data-i]'); if (!b) return;
-    const i = +b.dataset.i;
-    if (i === dealt(state.seed)[lookTab]) delete draft[lookTab]; else draft[lookTab] = i;
-    renderLook();
-  });
-  $('look-reset').addEventListener('click', () => { draft = {}; renderLook(); });
-  $('look-close').addEventListener('click', () => $('lookd').close());
-  $('lookd').addEventListener('click', e => { if (e.target === $('lookd')) $('lookd').close(); });
-  $('look-save').addEventListener('click', () => {
-    state.look = Object.keys(draft).length ? LG.encodeLook(draft) : '';
-    if (isLive()) meApi('look', { look: state.look }).catch(e => toast(e.message));
-    save(); SFX.equip(); $('lookd').close();
-    if (typeof lookFor !== 'undefined') lookFor[state.seed] = state.look;
-    scored = false; renderAll(); score();
-    if (document.body.dataset.route === 'u') route();
-  });
+  $('guy-edit').addEventListener('click', () => openEditor('look'));
+  $('lk-edit').addEventListener('click', () => openEditor('wear'));
 
   /* ---------------------------------------------- the claim card */
   // The tab's icon is the guy in the corner, in whole pixels.
@@ -3121,12 +3445,12 @@
     if (!p) return;
     const base = guyConfig(state.seed);
     el.innerHTML = `<canvas width="16" height="16" aria-hidden="true"></canvas><span><small>${part.new ? 'Also unlocked' : 'Also in the capsule'}</small><b>${esc(LG.partName(p))}</b>`
-      + `<em>${part.new ? 'Yours to pick in Change look.' : part.refund ? `Already yours: +${part.refund} tickets.` : 'Already yours.'}</em></span>`
+      + `<em>${part.new ? 'Yours to pick in Customise.' : part.refund ? `Already yours: +${part.refund} tickets.` : 'Already yours.'}</em></span>`
       + (part.new ? '<button class="btn small" type="button" id="rv-part-try">Try it on</button>' : '');
     paintCfg(el.querySelector('canvas'), LG.dress({ ...base, [p.slot]: p.index }, { equip: wornCodes() }));
     el.classList.toggle('dupe', !part.new);
     if (part.new) SFX.good?.();
-    $('rv-part-try')?.addEventListener('click', () => { lookTab = p.slot; closeReveal(false); $('look-open').click(); draft[p.slot] = p.index; renderLook(); });
+    $('rv-part-try')?.addEventListener('click', () => { closeReveal(); openEditor('look', { part: p.slot, index: p.index }); });
   }
   async function reveal(o, g, how, part) {
     const code = LG.encode(o);
@@ -3163,21 +3487,21 @@
     await new Promise(r => { closeHook = r; });
   }
   let closeHook = null;
-  function closeReveal(wear) {
+  function closeReveal() {
     if ($('rv-actions').hidden) return;
     $('reveal').hidden = true;
     if (closeHook) { const h = closeHook; closeHook = null; h(); setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120); return; }
     if (!current) return;
-    if (wear) { state.worn[LG.slotOf(current.o)] = current.code; SFX.equip(); wearLive(LG.slotOf(current.o)); }
     save();
     const c = current; current = null;
     renderAll();
     return c;
   }
-  $('rv-wear').addEventListener('click', () => closeReveal(true));
-  $('rv-keep').addEventListener('click', () => closeReveal(false));
+  // Trying it on opens your guy's editor with it on, to keep with Save.
+  $('rv-wear').addEventListener('click', () => { const c = closeReveal(); if (c) openEditor('wear', { slot: LG.slotOf(c.o), code: c.code }); });
+  $('rv-keep').addEventListener('click', () => closeReveal());
   $('rv-again').addEventListener('click', () => {
-    const c = closeReveal(false);
+    const c = closeReveal();
     if (!c || !c.g) return;
     pay(120);
     open(c.g, 'Capsule');
@@ -3186,7 +3510,7 @@
   addEventListener('keydown', e => {
     if ($('reveal').hidden) return;
     if (!$('skip').hidden && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); rush = true; }
-    else if (e.key === 'Escape') closeReveal(false);
+    else if (e.key === 'Escape') closeReveal();
   });
 
   /* ---------------------------------------------- the locker: your guy and his four slots, and every copy sorted
@@ -3261,7 +3585,7 @@
     $('lk-slots').innerHTML = ['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => {
       const k = catOf(sl), code = state.worn[sl], o = code && LG.decode(code), name = o ? LG.nameOf(o).split(' | ')[0] : '';
       const have = list.filter(c => LG.slotOf(c.o) === sl).length;
-      return `<button type="button" class="lk-slot${o ? '' : ' vacant'}" data-cat="${sl}" style="--cat:${k.c}" aria-pressed="${cat === sl}" aria-label="${k.one}: ${esc(name || 'empty')}"><span class="ico">${icon(sl)}</span>`
+      return `<button type="button" class="lk-slot${o ? '' : ' vacant'}" data-cat="${sl}" style="--cat:${k.c}" aria-label="${k.one}: ${esc(name || 'empty')}. Change it"><span class="ico">${icon(sl)}</span>`
         + `<span class="txt"><b>${k.one}</b><small>${o ? esc(name) : have ? `${have} to try` : 'Empty'}</small></span><span class="pic">${o ? '<canvas aria-hidden="true"></canvas>' : ''}</span></button>`;
     }).join('');
     $('lk-slots').querySelectorAll('[data-cat]').forEach(b => { const code = state.worn[b.dataset.cat], cv = b.querySelector('canvas'); if (code && cv) showItem(cv, LG.decode(code), state.seed, 46, 42); });
@@ -3273,13 +3597,12 @@
     $('grid').innerHTML = shown.length ? shown.map(c => {
       const it = LG.itemById(c.o.item), [title, look] = LG.nameOf(c.o).split(' | '), k = catOf(it.slot), g = LG.gradeOf(c.o), on = worn.includes(c.code);
       const one = founderCopy(c.o);
-      const swap = !on && state.worn[it.slot];
-      return `<div class="itw"><button class="it" type="button" data-i="${c.i}" style="--cat:${k.c};--g:${g.color}" aria-pressed="${on}" aria-label="${on ? 'Take off' : swap ? 'Swap in' : 'Wear'} ${esc(LG.nameOf(c.o))}">
+      return `<div class="itw"><button class="it" type="button" data-i="${c.i}" style="--cat:${k.c};--g:${g.color}" aria-pressed="${on}" aria-label="${on ? 'Wearing' : 'Try on'} ${esc(LG.nameOf(c.o))}">
         ${!on && fresh.includes(c.code) ? '<span class="pill tag new">NEW</span>' : ''}${devs.includes(c.code) ? '<span class="pill tag dev">DEV</span>' : ''}
         <span class="it-pic"><canvas aria-hidden="true"></canvas></span>
         <span class="it-cat">${icon(it.slot)}${k.one}</span>${it.showpiece ? '<span class="bal showp">★ Showpiece</span>' : ''}<b class="${tagOf(c.code) ? 'tagged' : ''}">${esc(named(title, tagOf(c.code)))}</b><span class="it-fin">${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o)))}</span>
         <span class="it-wear">${esc(it.free ? 'Starter' : g.name)} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span>
-        <span class="it-act">${on ? '✓ Wearing' : swap ? 'Swap in' : 'Wear'}</span></button>
+        <span class="it-act">${on ? '✓ Wearing' : 'Try on'}</span></button>
         <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button></div>`;
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
     $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
@@ -3288,39 +3611,16 @@
     renderSwaps();
   }
   $('lk-sort').addEventListener('change', e => { lkSort = e.target.value; renderColl(); });
-  // Pointing at a copy tries it on: the card on the left shows your guy in it until the pointer leaves.
-  let tryT = 0, trying = null;
-  const lockerCard = codes => {
-    $('lk-stage').innerHTML = `<div class="card">${px(cardSpec(state.seed, codes.map(LG.decode).filter(Boolean), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div>`;
-    hydrate($('lk-stage'));
-  };
-  const tryOn = code => {
-    if (code === trying) return;
-    trying = code;
-    clearTimeout(tryT);
-    tryT = setTimeout(() => {
-      const c = code && copies().find(x => x.code === code);
-      if (!c) { lockerCard(wornCodes()); $('lk-stage').removeAttribute('data-try'); return; }
-      const slot = LG.slotOf(c.o);
-      lockerCard(['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => sl === slot ? code : state.worn[sl]).filter(Boolean));
-      $('lk-stage').dataset.try = wornCodes().includes(code) ? 'Wearing' : 'Trying on';
-    }, 70);
-  };
-  if (matchMedia('(hover: hover)').matches) {
-    $('grid').addEventListener('pointerover', e => { const b = e.target.closest('[data-i]'); const c = b && copies().find(x => x.i === +b.dataset.i); tryOn(c ? c.code : null); });
-    $('grid').addEventListener('pointerleave', () => tryOn(null));
-  }
   $('cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = b.dataset.cat; filter = -1; renderColl(); } });
-  $('lk-slots').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = cat === b.dataset.cat ? '' : b.dataset.cat; filter = -1; renderColl(); } });
+  // What he wears is changed in his editor: a slot opens it there, a copy opens it with that copy on.
+  $('lk-slots').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) openEditor('wear', { slot: b.dataset.cat }); });
+  $('lk-stage').addEventListener('click', () => openEditor('wear'));
   $('filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = +b.dataset.f; renderColl(); } });
   $('grid').addEventListener('click', e => {
     const more = e.target.closest('[data-more]'); if (more) return inspect(+more.dataset.more);
     const b = e.target.closest('[data-i]'); if (!b) return;
     const c = copies().find(x => x.i === +b.dataset.i); if (!c) return;
-    const slot = LG.slotOf(c.o);
-    state.worn[slot] = state.worn[slot] === c.code ? undefined : c.code;
-    SFX.equip(); wearLive(slot); save(); trying = null;
-    renderClaim(); renderGuy(); renderColl();
+    openEditor('wear', { slot: LG.slotOf(c.o), code: c.code });
   });
 
   /* ---------------------------------------------- the workshop, as in TF2: smelt into metal, craft what you want, paint */
@@ -3360,17 +3660,20 @@
     toast(`Smelted ${list.length} cop${list.length === 1 ? 'y' : 'ies'}: +${got} scrap. You have ${LG.metalText(metalOf())}.`);
     renderAll();
   }
-  async function craft(itemId) {
-    if (metalOf() < LG.CRAFT_COST) { toast(`Crafting takes ${LG.metalText(LG.CRAFT_COST)}. Smelt some spares first.`); return; }
-    let o;
+  /** Crafts a copy of an item from metal: the copy and its code, not yet in the locker, or null when it couldn't be. */
+  async function crafted(itemId) {
+    if (metalOf() < LG.CRAFT_COST) { toast(`Crafting takes ${LG.metalText(LG.CRAFT_COST)}. Smelt some spares first.`); return null; }
     if (isLive()) {
-      try { const r = await meApi('craft', { item: itemId }); state.metal = r.metal; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; o = LG.decode(r.copy.code); }
-      catch (e) { toast(e.message); return; }
-    } else {
-      state.metal = metalOf() - LG.CRAFT_COST; state.crafts = (state.crafts || 0) + 1;
-      o = LG.craftCopy(itemId, `${state.seed}:craft:${state.crafts}:${Date.now()}`, state.crafts);
+      try { const r = await meApi('craft', { item: itemId }); state.metal = r.metal; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; return { o: LG.decode(r.copy.code), code: r.copy.code }; }
+      catch (e) { toast(e.message); return null; }
     }
-    reveal(o, null, `Crafted · #${o.craft}`);
+    state.metal = metalOf() - LG.CRAFT_COST; state.crafts = (state.crafts || 0) + 1;
+    const o = LG.craftCopy(itemId, `${state.seed}:craft:${state.crafts}:${Date.now()}`, state.crafts);
+    return { o, code: LG.encode(o) };
+  }
+  async function craft(itemId) {
+    const made = await crafted(itemId);
+    if (made) reveal(made.o, null, `Crafted · #${made.o.craft}`);
   }
   async function paintCopy(code, paint) {
     const o = LG.decode(code), had = o.paint || null;
@@ -3790,7 +4093,7 @@
         ${floatPanel(o)}
         ${collectorPanel(o, g)}
         ${oddsBox(o, one)}
-        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Wear it'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
+        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Try it on'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
           ${LG.PAINTABLE.includes(slot) ? `<div class="paints"><span>Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${LG.PAINT_IDS.map(p => `<button type="button" data-paint="${p}" style="--p:${LG.PAINTS[p].hex}" title="${esc(LG.PAINTS[p].name)}" aria-pressed="${o.paint === p}" aria-label="${esc(LG.PAINTS[p].name)}"></button>`).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div></div>` : ''}
           ${!on && !one && !tag && LG.smeltValue(o) ? `<button class="btn ghost small smelt-one" type="button" id="insp-smelt">Smelt · +${LG.smeltValue(o)} scrap</button>` : ''}
           <form class="tagf" id="insp-tagf" autocomplete="off"><label class="field"><span>"</span><input id="insp-tag" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" aria-label="Name tag"></label><button class="btn small" type="submit">${tag ? 'Change tag' : 'Add tag'}</button>${tag ? '<button class="btn ghost small" type="button" id="insp-untag">Take off</button>' : ''}</form>`
@@ -3819,7 +4122,7 @@
     view.addEventListener('pointermove', e => { const r = view.getBoundingClientRect(), tl = view.querySelector('.tilt'); if (tl) tl.style.transform = `rotateY(${((e.clientX - r.left) / r.width - 0.5) * 26}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 22}deg)`; });
     view.addEventListener('pointerleave', () => { const tl = view.querySelector('.tilt'); if (tl) tl.style.transform = ''; });
     $('insp-close').addEventListener('click', () => $('insp').close());
-    if (ctx.mine) $('insp-wear').addEventListener('click', () => { if (on) delete state.worn[slot]; else { state.worn[slot] = code; SFX.equip(); } wearLive(slot); save(); $('insp').close(); renderAll(); });
+    if (ctx.mine) $('insp-wear').addEventListener('click', () => { $('insp').close(); openEditor('wear', { slot, code: on ? '' : code }); });
     if (ctx.mine) {
       const setTag = async raw => {
         const t = LG.cleanTag(raw);
@@ -4059,6 +4362,8 @@
   function route() {
     let [r, arg] = location.hash.replace(/^#\/?/, '').split('/');
     if (r === 'market') r = 'pulls'; // old links
+    // #/edit/wear opens your guy's editor on that tab, once the page knows who you are.
+    if (r === 'edit' && restored) { history.replaceState(null, '', location.pathname + location.search + '#/'); if (state) setTimeout(() => openEditor(['look', 'wear', 'card'].includes(arg) ? arg : 'look'), 0); }
     const view = PAGES[r] ? r : 'home';
     document.body.dataset.route = view;
     for (const v of ['home', 'guys', 'u', 'pulls', 'rarity']) $('v-' + v).hidden = v !== view;
@@ -4154,7 +4459,7 @@
     // The full item grid only on your own page, drawn when opened.
     more.hidden = !mine; more.open = false; $('u-sets-full').innerHTML = '';
     more.ontoggle = () => { if (more.open && !$('u-sets-full').childElementCount) renderSets($('u-sets-full'), setOwned, true); };
-    $('u-look').hidden = !mine; $('u-dress').hidden = !mine;
+    $('u-edit').hidden = !mine;
     $('u-coll-h').textContent = mine ? 'Your collection' : 'Collection';
     $('u-coll-sub').textContent = `${userCopies.length} copies, ${userCopies.filter(c => !LG.itemById(c.o.item).free).length} from capsules.`;
     $('u-market').href = '#/pulls';
@@ -4175,7 +4480,7 @@
     paint();
     $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
     $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
-    $('u-look').onclick = () => $('look-open').click();
+    $('u-edit').onclick = () => openEditor('look');
     $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); };
   }
 
@@ -4396,6 +4701,7 @@
         if (!signedIn && account.club && clubHost()) clubSignIn();
       } catch (e) { toast('Could not restore your account. Reload to try again.'); }
       }
+      restored = true;
       renderAll(); route();
       return;
     }
@@ -4412,6 +4718,8 @@
         else if (state) save();
       } catch (e) {}
     }
+    restored = true;
+    if (location.hash.startsWith('#/edit')) route();
     if ($('name').value) check();
   })();
 })();
