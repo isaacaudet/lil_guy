@@ -183,14 +183,15 @@ export const set: MachineSet = {
     // ---------------------------------------------------------------- buddies
     {
       id: 'tiltsies.sunseed', game: 'tiltsies', slot: 'buddy', name: 'Pocket hamster',
-      // coat, shade, light, pink, cream
-      colors: ['#E9B88A', '#C98A55', '#F6D2AE', '#FF9AA4', '#FFF1DE'],
+      // coat, shade, light, cheek, cream, seed, seed stripe
+      colors: ['#E9B88A', '#B97C48', '#F6D2AE', '#FF9AA4', '#FFF1DE', '#3A3530', '#A8A096'],
+      // Round ears, rosy cheeks and a sunflower seed held up in both paws.
       art: pet('pocket hamster', [
-        '.4..4.',
-        '311112',
-        '3o11o2',
-        '154452',
-        '.5555.',
+        '.22.22',
+        '.21112',
+        '.1o1o1',
+        '.45754',
+        '..565.',
       ]),
     },
     {

@@ -172,14 +172,14 @@ export const set: MachineSet = {
     },
     {
       id: 'stackdle.stairs', game: 'stackdle', slot: 'buddy', name: 'Lil yeti',
-      // From the snowy top of the climb: white fur, a blue face, two little horns.
-      colors: ['#F4F8FD', '#B9C9DE', '#FFFFFF', '#8EC5F0', '#5C93C8', '#F2D9A8'],
+      // From the snowy top of the climb: white fur, a blue face, two horns and a tuft between them.
+      colors: ['#E4EDF9', '#93A9CB', '#FFFFFF', '#7FB8EE', '#3F74B0', '#E8B86A'],
       art: pet('lil yeti', [
-        '6.33.6',
-        '311112',
-        '1o44o2',
-        '144552',
-        '.1..2.',
+        '.6.3.6',
+        '.13331',
+        '.1o4o1',
+        '314441',
+        '.21.12',
       ]),
     },
     {

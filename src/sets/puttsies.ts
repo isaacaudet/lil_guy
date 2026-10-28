@@ -147,13 +147,13 @@ export const set: MachineSet = {
     {
       id: 'puttsies.windup', game: 'puttsies', slot: 'buddy', name: 'Wind-up mouse',
       colors: ['#B9C0CE', '#7E879A', '#E3E7EE', '#FF9EBB', '#E0B040', '#9A7420'],
-      // Facing left: a big round ear, a pink nose and the brass key in its back.
+      // Facing away from him: a pink ear and nose, its tail out behind, the brass key standing up out of its back.
       art: pet('wind-up mouse', [
-        '.33.55',
-        '3443.6',
-        '41o116',
-        '.11112',
-        '2.2..2',
+        '..5.5.',
+        '...643',
+        '.11113',
+        '2111o4',
+        '.22.22',
       ]),
     },
     {

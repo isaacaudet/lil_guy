@@ -1,4 +1,4 @@
-import { fitRoom, grid16, on, pet, sit, type MachineSet } from '../item-art';
+import { backdrop, fitRoom, grid16, on, pet, sit, type MachineSet } from '../item-art';
 import { stamp, width } from '../parts/art';
 import type { Canvas } from '../parts/canvas';
 import { mirror, seat } from '../parts/hair';
@@ -66,23 +66,25 @@ export const set: MachineSet = {
     {
       id: 'pets.shiba', game: 'pets', slot: 'skin', name: 'Shiba onesie', eyes: 9, limb: 1,
       // orange, orange shade, orange light, cream, cream shade, bandana, bandana shade
-      colors: ['#E99447', '#C2692A', '#F7B877', '#FFF3DF', '#EBD3B4', '#E5484D', '#B22F3A'],
+      colors: ['#E9944A', '#C2692A', '#F7B877', '#FFF3DF', '#EBD3B4', '#E5484D', '#B22F3A'],
       outline: '#5A2E10',
+      // A shiba hood: pointed ears with cream insides, the two cream "maro" brows, cream cheek
+      // fur round his face, and a red bandana.
       art: grid16('shiba onesie', [
         '................',
-        '..31........12..',
-        '..341......142..',
-        '..344111111442..',
-        '..311411114112..',
+        '...1........1...',
+        '..141......141..',
+        '..1441....1441..',
         '..311111111112..',
-        '..34h######s42..',
-        '..4h########s4..',
+        '..314411114412..',
+        '..311######112..',
+        '..31########12..',
+        '..1##########2..',
         '..4##########4..',
-        '..4##########43.',
-        '..4#########s44.',
-        '..44s######s442.',
-        '..2667666676622.',
-        '...2117667112...',
+        '..4##########4..',
+        '..44########44..',
+        '...44######44...',
+        '...2666776662...',
         '................',
         '................',
       ]),
@@ -175,13 +177,14 @@ export const set: MachineSet = {
     },
     {
       id: 'pets.puppy-ears', game: 'pets', slot: 'hat', name: 'Head puppy',
-      // white, white shade, white light, ear, ear shade, nose, tongue
-      colors: ['#FFF8EE', '#E2D2BC', '#FFFFFF', '#B07040', '#7E4A26', '#2B1D18', '#FF8A9E'],
+      // tan, tan shade, white, ear, ear shade, eye, nose
+      colors: ['#E3A05A', '#B9773A', '#FFFFFF', '#8A5028', '#5E3418', '#2B1D18', '#3A2A26'],
+      // A beagle puppy's head on his own: floppy brown ears down either side, a white blaze and muzzle.
       draw: perch([
-        '.543111245.',
-        '.441o1o144.',
-        '.451161154.',
-        '.5.32723.5.',
+        '..41133114..',
+        '.5411331145.',
+        '.5416336145.',
+        '.5433773345.',
       ]),
     },
     {
@@ -208,18 +211,18 @@ export const set: MachineSet = {
     },
     {
       id: 'pets.headphones', game: 'pets', slot: 'hat', name: 'Cat-ear headphones',
-      // band, band shade, band light, glow, glow light, ear cup
-      colors: ['#FF9EC8', '#E06A9E', '#FFD0E4', '#7FF0FF', '#E8FFFF', '#B8457A'],
-      // The ears stand at the head's corners like Cat ears; the band and its cups go on over them like a cap.
+      // band, band shade, band light, glow, glow light, ear cup, cup shade
+      colors: ['#FF6FAE', '#D23A7E', '#FFC2DD', '#5FEFFF', '#E8FFFF', '#7A2858', '#4E1638'],
+      // Hot pink with glowing cat ears, the band over his head and a plum cup at each side.
       draw: headset([
-        '..21111112..',
-        '66........66',
-        '64........46',
+        '..31111112..',
+        '.61......16.',
+        '6556....6556',
       ], [
-        '1....',
-        '13o..',
-        '154o.',
-        '1145o',
+        '1...',
+        '12..',
+        '142.',
+        '1442',
       ], 1),
     },
 
@@ -256,35 +259,41 @@ export const set: MachineSet = {
     {
       id: 'pets.sakura', game: 'pets', slot: 'frame', name: 'Sakura',
       // sky, blossom, blossom light, branch, blossom heart, petal
-      colors: ['#E3F1FF', '#FF8FB8', '#FFD0E1', '#6E4636', '#FFE36E', '#FFB3CF'],
-      fill: (x, y) => {
-        const X = ((x % 16) + 16) % 16, Y = ((y % 16) + 16) % 16;
-        // A branch sloping in over the top left, blossoms along it, petals falling down the sides.
-        for (const [bx, by] of [[1, 1], [7, 1], [12, 0], [14, 3]]) {
-          if (X === bx && Y === by) return 5;
-          const d = Math.abs(X - bx) + Math.abs(Y - by);
-          if (d === 1) return Y < by || X < bx ? 3 : 2;
-        }
-        if ([[0, 3], [1, 3], [2, 2], [3, 2], [4, 1], [5, 1], [6, 0], [8, 0], [9, 0], [10, 1], [11, 1]].some(([bx, by]) => X === bx && Y === by)) return 4;
-        for (const [px, py] of [[1, 7], [14, 7], [0, 11], [15, 12], [3, 15], [12, 15]]) {
-          if (X === px && Y === py) return 6;
-          if (X === px + 1 && Y === py + 1) return 3;
-        }
-        return 1;
-      },
+      colors: ['#E6F2FF', '#FF8FB8', '#FFD0E1', '#7A4E3A', '#FFE36E', '#FFB3CF'],
+      // A branch in over the top corners, five-petalled blossoms on it, and a few petals falling
+      // down the sides, the guy's own corner left clear for a buddy.
+      fill: backdrop('sakura', [
+        '.3....4.3.......',
+        '352.44.352.....4',
+        '.2.43...2.....34',
+        '.44352.......352',
+        '4...2.........2.',
+        '................',
+        '................',
+        '................',
+        '..............6.',
+        '................',
+        '.6..............',
+        '................',
+        '................',
+        '6...............',
+        '................',
+        '................',
+      ]),
     },
 
     // ---------------------------------------------------------------- buddies
     {
       id: 'pets.kitten', game: 'pets', slot: 'buddy', name: 'Kitten',
-      // orange, shade, light, pink, white
-      colors: ['#F6A04D', '#D07228', '#FFC98A', '#FF9AAE', '#FFF4E6'],
+      // coat, shade, light, pink, white
+      colors: ['#FFA95C', '#E07A34', '#FFD3A1', '#FF7F9E', '#FFFFFF'],
+      // An apricot kitten sat up: a big head, a white muzzle and pink nose, white socks, its tail up.
       art: pet('kitten', [
-        '1...1.',
-        '14.41.',
-        '11111.',
-        '1o1o13',
-        '154512',
+        '.1...1',
+        '.11111',
+        '.1o1o1',
+        '3.5452',
+        '.11515',
       ]),
     },
     {
