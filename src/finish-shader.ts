@@ -58,18 +58,6 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   else c = mix(c, vec3(1.0, 0.97, 0.84), w * 0.5 * coat) + b * 0.35 * coat;
   return c;
 }
-// A card's foil, as on a trading card: each finish has its own pattern, and a copy's print picks its variant (\`v\`, 0 to 3).
-vec3 holoColor(vec3 c, float holo, float v, vec2 p, vec2 o, float h, float time) {
-  if (holo < 0.5) return c;
-  if (holo < 1.5) { float s = fract((p.x - p.y * 0.5) / (4.0 + v) - time / 3.0); return mix(c, c * vec3(1.05, 0.85, 0.95) + vec3(0.18, 0.08, 0.12), 0.6 * (1.0 - smoothstep(0.3, 0.4, s))); }
-  if (holo < 2.5) { float a = sin(p.x * 0.45 + v) + cos(p.y * 0.35 - v) + time * TAU / 6.0; return mix(c, hueShift(c * 0.9 + vec3(0.1, 0.12, 0.2), a), 0.55); }
-  if (holo < 3.5) { vec3 sky = mix(c, vec3(0.16, 0.12, 0.34), 0.55); return mix(sky, vec3(1.0, 0.95, 1.0), step(0.94 - v * 0.015, h) * step(0.4, fract(h * 17.0 + time / 2.0))); }
-  if (holo < 4.5) { float id = floor((p.x + p.y * 2.0) / (4.0 + v)) + floor((p.x - p.y * 2.0 + 90.0) / (4.0 + v)) * 7.0; vec3 ice = hsv(vec3(fract(id * 0.618 + time / 6.0), 0.45, 1.0)); return mix(c, c * 0.55 + ice * 0.5, 0.55); }
-  if (holo < 5.5) return c;
-  vec2 q = p - o;
-  float r = fract(atan(q.y, q.x) * (5.0 + v) / TAU + time / 6.0);
-  return mix(c, vec3(1.0, 0.86, 0.45), smoothstep(0.42, 0.58, r) * (1.0 - smoothstep(0.92, 1.0, r)) * 0.4);
-}
 `;
 
 // ------------------------------------------------ the same, as plain code (GLSL's own definitions)
@@ -132,24 +120,111 @@ export function finishColor(c: Vec3, finish: number, scuff: number, h: number, d
 }
 
 
-/** `holoColor` from GLSL_COMMON: a card's foil pattern for a finish (an index in SHADER_FINISHES), its variant `v` 0–3, at cell `p` round `o`. */
-export function holoColor(c: Vec3, holo: number, v: number, p: [number, number], o: [number, number], h: number, time: number): Vec3 {
-  if (holo < 0.5) return c;
-  if (holo < 1.5) { const s = fract((p[0] - p[1] * 0.5) / (4 + v) - time / 3); return mix(c, add(scale(c, [1.05, 0.85, 0.95]), [0.18, 0.08, 0.12]), 0.6 * (1 - smoothstep(0.3, 0.4, s))); }
-  if (holo < 2.5) { const a = Math.sin(p[0] * 0.45 + v) + Math.cos(p[1] * 0.35 - v) + time * TAU / 6; return mix(c, hueShift(add(scale(c, 0.9), [0.1, 0.12, 0.2]), a), 0.55); }
-  if (holo < 3.5) { const sky = mix(c, [0.16, 0.12, 0.34], 0.55); return mix(sky, [1, 0.95, 1], step(0.94 - v * 0.015, h) * step(0.4, fract(h * 17 + time / 2))); }
-  if (holo < 4.5) {
-    const id = Math.floor((p[0] + p[1] * 2) / (4 + v)) + Math.floor((p[0] - p[1] * 2 + 90) / (4 + v)) * 7;
-    const ice = hsv([fract(id * 0.618 + time / 6), 0.45, 1]);
-    return mix(c, add(scale(c, 0.55), scale(ice, 0.5)), 0.55);
-  }
-  if (holo < 5.5) return c;
-  const r = fract(Math.atan2(p[1] - o[1], p[0] - o[0]) * (5 + v) / TAU + time / 6);
-  return mix(c, [1, 0.86, 0.45], smoothstep(0.42, 0.58, r) * (1 - smoothstep(0.92, 1, r)) * 0.4);
-}
-
 /** A colour channel as the GPU stores it. */
 export const toByte = (v: number) => Math.round(clamp(v, 0, 1) * 255);
 
 /** Loop time in seconds: what the shaders are given. */
 export const loopSeconds = (ms: number) => mod(ms, LOOP_MS) / 1000;
+
+// ------------------------------------------------ card editions
+
+/**
+ * A card's edition, after Balatro's: the treatment its face gets for the
+ * finish that sets its grade. Numbered as the shaders read them.
+ */
+export const EDITIONS = ['base', 'foil', 'holographic', 'polychrome', 'negative', 'gold', 'spectral'] as const;
+
+/** The edition a finish puts on its card: Sunset is foil, Tempered and Nebula holographic, an aura's finishes spectral. */
+export function editionOf(finish: string | undefined): number {
+  const i = SHADER_FINISHES.indexOf(finish as (typeof SHADER_FINISHES)[number]);
+  return i < 0 ? (finish ? 6 : 0) : [0, 1, 2, 2, 3, 4, 5][i];
+}
+
+/**
+ * `editionColor` in GLSL: `p` is the cell in face cells, `px` one drawn pixel
+ * in face cells (1 on the face, a fifth on the big card), `o` the window's
+ * middle, `region` 1 for the card's face and 2 for its window, `h` the cell's
+ * noise. Every motion comes round in LOOP_MS.
+ */
+export const GLSL_EDITIONS = `
+float sweep(float s, float time, float width) { return 1.0 - clamp(abs(mod(s - time * 10.0, 60.0) - 30.0) / width, 0.0, 1.0); }
+vec3 editionColor(vec3 c, float ed, float v, vec2 p, vec2 o, float region, float h, float px, float time) {
+  if (ed < 0.5) return c;
+  float wide = sweep(p.x + p.y * 0.6 + v * 13.0, time, 5.0);
+  float glint = step(0.965, h) * pow(max(0.0, sin(time * TAU / 2.0 + h * 91.0)), 6.0);
+  if (ed < 1.5) {
+    float l = dot(c, vec3(0.299, 0.587, 0.114));
+    float fine = pow(0.5 + 0.5 * sin((p.x * 0.7 + p.y * 0.45 + v * 3.0) * 1.3 - time * TAU / 2.0), 6.0);
+    return mix(c, l * vec3(0.8, 0.92, 1.1) + vec3(0.05, 0.08, 0.16), 0.6) + vec3(0.6, 0.75, 1.0) * (fine * 0.22 + wide * 0.4);
+  }
+  if (ed < 2.5) {
+    vec3 tint = mix(vec3(1.0, 0.3, 0.42), vec3(0.28, 0.62, 1.0), 0.5 + 0.5 * sin(p.x * 0.35 - p.y * 0.55 + v * 2.0 - time * TAU / 3.0));
+    float k = region > 1.5 ? 0.6 : 1.0;
+    return mix(c, c * 0.5 + tint * 0.55, 0.55 * k) + step(0.5, fract(p.y / (px * 2.0))) * 0.05 * (2.0 - region) + wide * 0.25;
+  }
+  if (ed < 3.5) {
+    vec3 rb = hsv(vec3(fract((p.x + p.y) * 0.03 + v * 0.25 - time / 6.0), 0.6, 1.0));
+    return mix(hueShift(c, (p.x - p.y) * 0.05 - time * TAU / 6.0), c * 0.45 + rb * 0.6, 0.5) + wide * 0.18;
+  }
+  if (ed < 4.5) {
+    vec3 n = vec3(1.0) - c;
+    return mix(n, n * vec3(0.75, 0.68, 1.1) + vec3(0.02, 0.0, 0.06), 0.55) + vec3(0.3, 0.16, 0.5) * wide * 0.6;
+  }
+  if (ed < 5.5) {
+    if (region > 1.5) {
+      vec2 q = p - o;
+      float r = fract(atan(q.y, q.x) * (6.0 + v) / TAU + time / 6.0);
+      c = mix(c, vec3(1.0, 0.82, 0.38), smoothstep(0.35, 0.5, r) * (1.0 - smoothstep(0.85, 1.0, r)) * 0.5 * clamp(1.0 - length(q) / 22.0, 0.0, 1.0));
+    }
+    return mix(c, vec3(1.0, 0.97, 0.84), wide * 0.6) + glint * 0.7;
+  }
+  vec2 q = (p - o) / (region > 1.5 ? 7.0 : 12.0);
+  float r = length(q), a = atan(q.y, q.x) + r * 1.8 - time * TAU / 6.0;
+  vec2 w = vec2(cos(a), sin(a)) * r;
+  float f = floor((0.5 + 0.5 * sin(w.x * 3.2 + sin(w.y * 2.6 + time * TAU / 3.0) * 1.5)) * 3.99);
+  if (region > 1.5) return c * (0.7 + 0.25 * f) + wide * 0.12 + glint * 0.6;
+  return hueShift(c * (0.86 + 0.1 * f), 0.4 * sin((p.x - p.y) * 0.16 + time * TAU / 6.0 + v)) + wide * 0.35 + glint * 0.6;
+}
+`;
+
+/** `sweep` from GLSL_EDITIONS: a soft band of light `width` either side of its middle, crossing every 6 s. */
+export const sweep = (s: number, time: number, width: number) => 1 - clamp(Math.abs(mod(s - time * 10, 60) - 30) / width, 0, 1);
+
+/** `editionColor` from GLSL_EDITIONS. */
+export function editionColor(c: Vec3, ed: number, v: number, p: [number, number], o: [number, number], region: number, h: number, px: number, time: number): Vec3 {
+  if (ed < 0.5) return c;
+  const wide = sweep(p[0] + p[1] * 0.6 + v * 13, time, 5);
+  const glint = step(0.965, h) * Math.max(0, Math.sin(time * TAU / 2 + h * 91)) ** 6;
+  if (ed < 1.5) {
+    const l = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+    const fine = (0.5 + 0.5 * Math.sin((p[0] * 0.7 + p[1] * 0.45 + v * 3) * 1.3 - time * TAU / 2)) ** 6;
+    return add(mix(c, add(scale([l, l, l], [0.8, 0.92, 1.1]), [0.05, 0.08, 0.16]), 0.6), scale([0.6, 0.75, 1], fine * 0.22 + wide * 0.4));
+  }
+  if (ed < 2.5) {
+    const tint = mix([1, 0.3, 0.42], [0.28, 0.62, 1], 0.5 + 0.5 * Math.sin(p[0] * 0.35 - p[1] * 0.55 + v * 2 - time * TAU / 3));
+    const k = region > 1.5 ? 0.6 : 1;
+    return add(mix(c, add(scale(c, 0.5), scale(tint, 0.55)), 0.55 * k), step(0.5, fract(p[1] / (px * 2))) * 0.05 * (2 - region) + wide * 0.25);
+  }
+  if (ed < 3.5) {
+    const rb = hsv([fract((p[0] + p[1]) * 0.03 + v * 0.25 - time / 6), 0.6, 1]);
+    return add(mix(hueShift(c, (p[0] - p[1]) * 0.05 - time * TAU / 6), add(scale(c, 0.45), scale(rb, 0.6)), 0.5), wide * 0.18);
+  }
+  if (ed < 4.5) {
+    const n: Vec3 = [1 - c[0], 1 - c[1], 1 - c[2]];
+    return add(mix(n, add(scale(n, [0.75, 0.68, 1.1]), [0.02, 0, 0.06]), 0.55), scale([0.3, 0.16, 0.5], wide * 0.6));
+  }
+  if (ed < 5.5) {
+    if (region > 1.5) {
+      const q = [p[0] - o[0], p[1] - o[1]];
+      const r = fract(Math.atan2(q[1], q[0]) * (6 + v) / TAU + time / 6);
+      c = mix(c, [1, 0.82, 0.38], smoothstep(0.35, 0.5, r) * (1 - smoothstep(0.85, 1, r)) * 0.5 * clamp(1 - Math.hypot(q[0], q[1]) / 22, 0, 1));
+    }
+    return add(mix(c, [1, 0.97, 0.84], wide * 0.6), glint * 0.7);
+  }
+  const z = region > 1.5 ? 7 : 12, qx = (p[0] - o[0]) / z, qy = (p[1] - o[1]) / z;
+  const r = Math.hypot(qx, qy), a = Math.atan2(qy, qx) + r * 1.8 - time * TAU / 6;
+  const wx = Math.cos(a) * r, wy = Math.sin(a) * r;
+  const f = Math.floor((0.5 + 0.5 * Math.sin(wx * 3.2 + Math.sin(wy * 2.6 + time * TAU / 3) * 1.5)) * 3.99);
+  if (region > 1.5) return add(scale(c, 0.7 + 0.25 * f), wide * 0.12 + glint * 0.6);
+  return add(hueShift(scale(c, 0.86 + 0.1 * f), 0.4 * Math.sin((p[0] - p[1]) * 0.16 + time * TAU / 6 + v)), wide * 0.35 + glint * 0.6);
+}

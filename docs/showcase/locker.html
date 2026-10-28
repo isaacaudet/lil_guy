@@ -549,7 +549,7 @@ void main() {
     const l = spec.label;
     // --n is how many letters a line has, so a long one shrinks to fit the card instead of being cut off.
     const len = h => String(h ?? '').replace(/<[^>]*>/g, '').length;
-    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
+    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g === 4 ? ' gold' : l.g === 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
     return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
   };
   /**

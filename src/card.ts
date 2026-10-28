@@ -1,8 +1,8 @@
 import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type AnimateOptions, type Move } from './animate';
-import { finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
-import { cycle, fit, fitLoop, LOOP_MS, wave, wrap } from './loop';
+import { editionColor, editionOf, finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
+import { cycle, fitLoop, LOOP_MS, wave } from './loop';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
-import { GLYPHS, FONT_BASELINE, FONT_HEIGHT } from './font';
+import { GLYPHS } from './font';
 import { encodeGif, encodePng, type Frames } from './gif';
 import { itemById, SET_COLORS } from './items';
 import { auraHue } from './auras';
@@ -19,7 +19,8 @@ import { auraHue } from './auras';
  */
 export const CARD_WIDTH = 140;
 export const CARD_HEIGHT = 204;
-const ZOOM = 6;
+/** Card pixels to each of the guy's: six, or fewer if a wider picture would not fit the window. */
+const ZOOM = Math.min(6, Math.floor((CARD_WIDTH - 18) / FRAME_WIDTH));
 
 export interface CardInput {
   /** The guy: a name or a seed, as for `animate`. */
@@ -49,15 +50,6 @@ export interface CardInput {
 type RGB = [number, number, number];
 const rgb = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-const hsv = (h: number, s: number, v: number): RGB => {
-  const f = (n: number) => { const k = (n + h * 6) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
-  return [f(5) * 255, f(3) * 255, f(1) * 255];
-};
-function hueShift(c: RGB, a: number): RGB {
-  const y = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2], i = 0.596 * c[0] - 0.274 * c[1] - 0.322 * c[2], q = 0.211 * c[0] - 0.523 * c[1] + 0.312 * c[2];
-  const h = Math.atan2(q, i) + a, ch = Math.hypot(i, q), I = ch * Math.cos(h), Q = ch * Math.sin(h);
-  return [y + 0.956 * I + 0.621 * Q, y - 0.272 * I - 0.647 * Q, y - 1.106 * I + 1.703 * Q];
-}
 const hash = (x: number, y: number, p: number) => { const s = Math.sin(x * 127.1 + y * 311.7 + p * 0.731) * 43758.5453; return s - Math.floor(s); };
 
 
@@ -119,72 +111,81 @@ function wrapText(text: string, width: number): string[] {
 
 /** A drawing surface of RGBA card pixels. */
 class Surface {
-  readonly px = new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
+  readonly px: Uint8ClampedArray;
+  constructor(readonly w = CARD_WIDTH, readonly h = CARD_HEIGHT) { this.px = new Uint8ClampedArray(w * h * 4); }
   set(x: number, y: number, c: RGB, a = 255): void {
-    if (x < 0 || y < 0 || x >= CARD_WIDTH || y >= CARD_HEIGHT) return;
-    const i = (y * CARD_WIDTH + x) * 4;
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    const i = (y * this.w + x) * 4;
     this.px[i] = c[0]; this.px[i + 1] = c[1]; this.px[i + 2] = c[2]; this.px[i + 3] = a;
   }
-  get(x: number, y: number): RGB { const i = (y * CARD_WIDTH + x) * 4; return [this.px[i], this.px[i + 1], this.px[i + 2]]; }
-  opaque(x: number, y: number): boolean { return this.px[(y * CARD_WIDTH + x) * 4 + 3] > 0; }
-  /** Text with a hard drop shadow, its colour picked per pixel so foil can run along it. */
-  text(s: string, x: number, top: number, colour: (x: number, y: number) => RGB, shadow?: RGB): void {
+  get(x: number, y: number): RGB { const i = (y * this.w + x) * 4; return [this.px[i], this.px[i + 1], this.px[i + 2]]; }
+  /** Text `z` times its size with a hard drop shadow, its colour picked per pixel so foil can run along it. */
+  text(s: string, x: number, top: number, colour: (x: number, y: number) => RGB, shadow?: RGB, z = 1): void {
     const draw = (ox: number, oy: number, col: (x: number, y: number) => RGB) => {
       let cx = ox;
       for (const ch of s) {
         const [adv, rows] = glyph(ch);
-        rows.forEach((bits, dy) => { for (let dx = 0; bits >> dx; dx++) if (bits & (1 << dx)) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy)); });
-        cx += adv;
+        rows.forEach((bits, dy) => {
+          for (let dx = 0; bits >> dx; dx++) if (bits & (1 << dx)) for (let a = 0; a < z; a++) for (let b = 0; b < z; b++) this.set(cx + dx * z + b, oy + dy * z + a, col(cx + dx * z + b, oy + dy * z + a));
+        });
+        cx += adv * z;
       }
     };
-    if (shadow) draw(x, top + 1, () => shadow);
+    if (shadow) draw(x, top + z, () => shadow);
     draw(x, top, colour);
   }
 }
 
-const EDGE: RGB = [30, 34, 56], CREAM: RGB = [242, 236, 221], RIM: RGB = [207, 199, 180], INK: RGB = [58, 51, 82], WHITE: RGB = [255, 255, 255];
-/** The club's midnight navy, what the aura card's colour is deepened with. */
-const NIGHT: RGB = [17, 21, 27];
-/** A Grail's gold foil, its light and its deep. */
-const GOLD_HI: RGB = [255, 226, 128], GOLD_LO: RGB = [196, 130, 30];
+const INK: RGB = [24, 20, 31], IVORY: RGB = [246, 240, 227], WHITE: RGB = [255, 255, 255], PLATE: RGB = [38, 34, 52];
+/** A Grail's gold, its light and its deep. */
+const GOLD_HI: RGB = [255, 222, 110], GOLD_LO: RGB = [204, 124, 22];
+const clamp8 = (c: number[]): RGB => [Math.min(255, Math.max(0, c[0])), Math.min(255, Math.max(0, c[1])), Math.min(255, Math.max(0, c[2]))];
 
-/** Whether a card pixel is inside the rounded card. */
-function inside(x: number, y: number, r = 7): boolean {
-  const cx = x < r ? r - x : x > CARD_WIDTH - 1 - r ? x - (CARD_WIDTH - 1 - r) : 0;
-  const cy = y < r ? r - y : y > CARD_HEIGHT - 1 - r ? y - (CARD_HEIGHT - 1 - r) : 0;
+/** How tall the card itself is: the rows under it hold its shadow. */
+const BODY_HEIGHT = CARD_HEIGHT - 5;
+/** Whether a pixel is inside a rounded box. */
+function inBox(x: number, y: number, w: number, h: number, r: number): boolean {
+  if (x < 0 || y < 0 || x >= w || y >= h) return false;
+  const cx = x < r ? r - x : x > w - 1 - r ? x - (w - 1 - r) : 0;
+  const cy = y < r ? r - y : y > h - 1 - r ? y - (h - 1 - r) : 0;
   return cx * cx + cy * cy <= r * r;
 }
+const inside = (x: number, y: number) => inBox(x, y, CARD_WIDTH, BODY_HEIGHT, 8);
 
-const SIDE = 8, LINE = 13;
+const M = 7;
 
 /**
  * The card at `t` seconds, with the guy's frame `frame` in its window.
  *
- * Laid out from the foot up so the words always fit: the second line (wrapped
- * as long as it needs), a pill naming the grade, the title (wrapped), and the
- * window takes the rest, so the card is mostly him. The rarer the card, the
- * more it does, one smooth effect at a time, as Balatro's editions do: a sheen
- * on the border, foil bands, a holographic face, then the Grail: brushed gold
- * foil with a glint sweeping it, a bevelled gold edge, studs at the window's
- * corners and a deep amber window he rises out of; then the aura card, pale
- * silk in his aura's own colour with a double foil edge, its deep window
- * glowing in that colour where he stands.
+ * Laid out from the foot up so the words always fit, and the window takes the
+ * rest, so the card is mostly him. The card stands on its own hard shadow and
+ * lifts off it now and then. Its edition, after Balatro's, comes from the
+ * finish that sets its grade: Foil, Holographic, Polychrome, Negative, Gold,
+ * and the aura card's Spectral.
  */
-function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, t: number): Uint8ClampedArray {
+function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, ed: number, t: number): Uint8ClampedArray {
   // The card's own clock, in ms, on the loop every other moving thing keeps
   // (./loop), set by its last copy's print (or its guy's name), so cards side
   // by side catch the light at their own moments.
   const lastCopy = input.copies?.[input.copies.length - 1];
-  const tm = t * 1000 + (lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6000, 0));
-  const s = new Surface();
-  const gc: RGB = g >= 0 ? rgb(GRADES[g].color) : [120, 140, 170];
-  const textW = CARD_WIDTH - SIDE * 2 - 6;
+  const shift = lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6000, 0);
+  const tm = t * 1000 + shift, time = loopSeconds(tm), v = lastCopy ? lastCopy.print % 4 : 0;
+  const s = new Surface(CARD_WIDTH, BODY_HEIGHT);
+  const W = CARD_WIDTH, H = BODY_HEIGHT;
+  const gold = ed === 5, aura = ed === 6, neg = ed === 4;
+  const gc: RGB = g >= 0 ? rgb(GRADES[g].color) : [104, 118, 146];
+  const auraCopy = owned.aura;
+  const ah: RGB = aura && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
+  const tone: RGB = aura ? ah : gc;
+
+  // ---------------------------------------------------------------- words
+  const textW = W - M * 2 - 10;
   const pill = input.lines?.[0], subs = (input.lines ?? []).slice(1).flatMap(l => wrapText(l, textW));
-  const titles = wrapText(input.title, textW);
-  // The set's symbol: the machine of the last copy worn, as the page's card face shows it.
+  const big = textWidth(input.title) * 2 <= textW;
+  const titles = big ? [input.title] : wrapText(input.title, textW);
+  const titleH = big ? 23 : titles.length * 12;
   const lastItem = input.copies?.length ? itemById(input.copies[input.copies.length - 1].item) : undefined;
   const markHex = lastItem ? SET_COLORS[lastItem.game as keyof typeof SET_COLORS] : undefined;
-  // Two lines at most, its parts kept whole, beside the symbol.
   const foots: string[] = [];
   for (const part of (input.footer ?? '').split(' · ').filter(Boolean)) {
     const k = foots.length - 1, w = k <= 0 ? textW - 14 : textW;
@@ -192,117 +193,104 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     else if (foots.length < 2 && textWidth(part) <= textW) foots.push(part);
     else break;
   }
-  const footH = foots.length ? foots.length * LINE : markHex ? LINE : 0;
-  // From the foot up.
-  let y = CARD_HEIGHT - SIDE - 2 - footH - subs.length * LINE;
+  const footH = foots.length ? foots.length * 11 : markHex ? 11 : 0;
+  // The grade's badge shares its row with a short line, as "Everyday  @mochi".
+  const pillW = pill ? textWidth(pill) + 14 : 0;
+  const paired = !!pill && subs.length === 1 && pillW + 6 + textWidth(subs[0]) <= W - M * 2 - 6;
+  const rest = paired ? [] : subs;
+  // From the foot up: the plate holds the title, the badge and the lines, and the set line.
+  const plateBottom = H - 1 - 6;
+  let y = plateBottom - 3 - footH;
+  const footTop = y;
+  if (footH) y -= 2;
+  const pillTop = pill ? (y -= 15) : y;
+  if (pill) y -= 3;
+  y -= rest.length * 11;
   const subTop = y;
-  const pillTop = pill ? (y -= 17) : y;
-  y -= 4 + titles.length * LINE;
+  y -= titleH;
   const titleTop = y;
-  const WIN = { left: SIDE, right: CARD_WIDTH - 1 - SIDE, top: SIDE, bottom: y - 4 };
-  const night = g === 5, gold = g === 4, soul = g >= 4;
-  // The aura card is dressed in the aura's own colour (its most vivid, in its
-  // finish): a deep ground of it, a pale light of it, and the colour itself.
-  const auraCopy = owned.aura;
-  const ah: RGB = night && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
-  const aMid = mix(ah, NIGHT, 0.45), aLight = mix(ah, WHITE, 0.62);
-  // A wide, soft band of light that crosses the card now and then.
-  const sweep = (x: number, y: number, width: number) => Math.max(0, 1 - Math.abs(wrap((x + y) * 0.5 - tm * 170 / fit(4250), 170) - 85) / width);
-
-  // The face and border.
-  const face = (x: number, y: number): RGB => {
-    // The aura card: the club's midnight, a touch lighter at the top, still.
-    if (night) {
-      // Pale silk in the aura's own colour, finely pinstriped, a soft light crossing it now and then.
-      const base = mix(mix(CREAM, aLight, 0.55), WHITE, 0.15 * (1 - y / CARD_HEIGHT));
-      return mix((x + y) % 5 === 0 ? mix(base, ah, 0.12) : base, WHITE, 0.35 * sweep(x, y, 14));
-    }
-    if (gold) {
-      // Gold foil: bright at the top, deep at the foot, finely brushed, and a
-      // strong glint (a wide warm band round a white core) sweeping across it.
-      const base = mix(GOLD_HI, GOLD_LO, y / CARD_HEIGHT * 0.9 + 0.08 * Math.sin(x * 0.05 + y * 0.02));
-      const brushed = y % 3 === 0 ? mix(base, GOLD_LO, 0.12) : base;
-      const glint = sweep(x, y, 12), core = sweep(x, y, 2.2);
-      return mix(mix(brushed, [255, 246, 200], glint * 0.55), WHITE, core * 0.6);
-    }
-    if (g === 3) {
-      // Holographic: a soft rainbow drifting across the face, with a faint diagonal grain.
-      const holo = hsv(wrap(x * 0.006 + y * 0.004 - tm / fit(1000 / 0.07), 1), 0.28, 1);
-      return mix(mix(CREAM, holo, 0.42), WHITE, (x - y + 400) % 5 === 0 ? 0.1 : 0);
-    }
-    return CREAM;
-  };
-  const sheen = (x: number, y: number) => Math.max(0, 1 - Math.abs(wrap((x + y) * 0.5 - tm * 170 / fit(4250), 170) - 85) / 9);
-  for (let yy = 0; yy < CARD_HEIGHT; yy++) for (let x = 0; x < CARD_WIDTH; x++) {
-    if (!inside(x, yy)) continue;
-    const edge = !inside(x - 3, yy) || !inside(x + 3, yy) || !inside(x, yy - 3) || !inside(x, yy + 3);
-    let border: RGB = g >= 0 ? mix(gc, EDGE, 0.3) : EDGE;
-    if (g >= 1 && g <= 3) border = mix(border, WHITE, sheen(x, yy) * 0.6);
-    // A Grail's edge is a raised bevel of gold: lit along the top and left, deep along the bottom and right.
-    if (gold) border = mix(mix([255, 238, 168], [150, 92, 18], (x + yy * 1.4) / (CARD_WIDTH + CARD_HEIGHT * 1.4)), WHITE, sweep(x, yy, 3) * 0.8);
-    // The aura card's edge is foil in its colour: deep to pale across it, one slow glint.
-    if (night) border = mix(mix(mix(ah, NIGHT, 0.25), aLight, 0.5 + 0.5 * Math.sin((x - yy) * 0.045)), WHITE, sheen(x, yy) * 0.75);
-    // The edge's own outline, so it reads on any page.
-    const rim = !inside(x - 1, yy) || !inside(x + 1, yy) || !inside(x, yy - 1) || !inside(x, yy + 1);
-    // The aura card has a second, fine line of its foil just inside the edge.
-    const inset = night && !edge && (!inside(x - 5, yy) || !inside(x + 5, yy) || !inside(x, yy - 5) || !inside(x, yy + 5)) && (inside(x - 4, yy) && inside(x + 4, yy) && inside(x, yy - 4) && inside(x, yy + 4));
-    s.set(x, yy, rim ? mix(border, [10, 10, 20], 0.55) : edge ? border : inset ? mix(border, ah, 0.35) : face(x, yy));
-  }
-
-  // The window: tinted by grade, foil bands on a Prized card, a pool of light on the aura card.
-  const tint = night ? mix(ah, NIGHT, 0.88) : gold ? [92, 54, 12] as RGB : mix(CREAM, gc, g >= 0 ? 0.28 : 0.14);
+  const plateTop = y - 3;
+  const WIN = { left: M, right: W - 1 - M, top: 6, bottom: plateTop - 4 };
   const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * 0.45;
-  for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
-    const rim = x === WIN.left || x === WIN.right || yy === WIN.top || yy === WIN.bottom;
-    const depth = (yy - WIN.top) / (WIN.bottom - WIN.top);
-    let c = rim ? (night ? mix(ah, NIGHT, 0.35) : mix(RIM, gc, 0.25)) : mix(tint, mix(tint, [20, 24, 40], 0.5), depth * 0.3);
-    // A deep window in his aura's colour with a soft glow of it where he stands, so his aura shines.
-    if (!rim && night) { const r = Math.hypot((x - wcx) / 62, (yy - wcy) / 70); c = mix(tint, mix(ah, NIGHT, 0.4), Math.max(0, 1 - r) ** 1.4); }
-    // A Grail's window is deep amber with a warm glow behind him and a slow sunburst turning in it.
-    if (!rim && gold) {
-      const r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72), a = Math.atan2(yy - wcy, x - wcx);
-      const ray = 0.5 + 0.5 * Math.cos(a * 12 + tm / wave(1000 / 0.35));
-      c = mix(mix(tint, [214, 150, 44], Math.max(0, 1 - r) ** 1.3), [255, 214, 120], ray * 0.15 * Math.max(0, 1 - r * 0.8));
+
+  // ---------------------------------------------------------------- the card's stock
+  // The colour the card is printed on, before its edition.
+  const stock = (x: number, yy: number): RGB => {
+    if (gold) {
+      const base = mix(GOLD_HI, GOLD_LO, yy / H * 0.85 + 0.1 * Math.sin(x * 0.05 + yy * 0.02));
+      return yy % 3 === 0 ? mix(base, GOLD_LO, 0.12) : base;
     }
-    if (rim && gold) c = [255, 226, 140];
-    if (!rim && g === 2) c = mix(c, [226, 238, 255], 0.3 * Math.max(0, Math.sin((x - yy * 0.6) * 0.09 - tm / wave(1000 / 1.3))) ** 3);
-    const fx = (x - (WIN.left + WIN.right) / 2) / 34, fy = (yy - (WIN.bottom - 9)) / 4;
-    if (!rim && fx * fx + fy * fy < 1) c = mix(c, [0, 0, 0], (soul ? 0.12 : 0.18) * (1 - fx * fx - fy * fy));
-    s.set(x, yy, c);
-  }
-  // A Grail's window is held by four raised gold studs at its corners.
-  if (gold) for (const [sx, sy] of [[WIN.left, WIN.top], [WIN.right, WIN.top], [WIN.left, WIN.bottom], [WIN.right, WIN.bottom]]) {
-    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-      const d = dx * dx + dy * dy;
-      if (d > 10) continue;
-      s.set(sx + dx, sy + dy, d > 6 ? [110, 66, 10] : mix([255, 244, 196], [196, 128, 26], (dx + dy + 4) / 8));
+    // A Negative card is printed pale so its edition turns it dark.
+    if (neg) return mix(mix(IVORY, tone, 0.35), mix(IVORY, tone, 0.6), yy / H);
+    return mix(mix(tone, WHITE, 0.08), mix(tone, INK, 0.25), yy / H);
+  };
+  // Pixels the edition plays over, keyed by region: 1 the card's face, 2 the window.
+  const glintAt = (x: number, yy: number) => hash(x >> 1, yy >> 1, 11);
+  const edition = (c: RGB, x: number, yy: number, region: number): RGB => {
+    const out = editionColor([c[0] / 255, c[1] / 255, c[2] / 255], ed, v, [x / 5, yy / 5], [wcx / 5, wcy / 5], region, glintAt(x, yy), 0.2, time);
+    return clamp8([out[0] * 255, out[1] * 255, out[2] * 255]);
+  };
+
+  for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
+    if (!inside(x, yy)) continue;
+    const ring = (d: number) => !inside(x - d, yy) || !inside(x + d, yy) || !inside(x, yy - d) || !inside(x, yy + d);
+    if (ring(2)) { s.set(x, yy, INK); continue; }
+    let c = stock(x, yy);
+    // A chunky bevel: lit along the top and left, deep along the bottom and right.
+    const lit = !inside(x - 3, yy) || !inside(x, yy - 3), deep = !inside(x + 3, yy) || !inside(x, yy + 3);
+    if (lit && !deep) c = mix(c, WHITE, 0.35);
+    else if (deep) c = mix(c, INK, 0.3);
+    // The top grades have a fine inlaid line inside the bevel: pale foil on an aura card, an engraved line on gold.
+    else if ((aura || gold) && ring(5)) c = aura ? mix(ah, WHITE, 0.7) : mix(GOLD_LO, INK, 0.25);
+    // The aura card is full-art: inside its bevel the aura's own colours swirl, edge to edge.
+    if (aura && !ring(6)) {
+      const r = Math.hypot((x - wcx) / 80, (yy - wcy) / 100);
+      s.set(x, yy, edition(mix(mix(ah, INK, 0.62), mix(ah, INK, 0.3), Math.max(0, 1 - r) ** 1.2), x, yy, 2));
+      continue;
     }
+    s.set(x, yy, edition(c, x, yy, 1));
   }
 
+  // ---------------------------------------------------------------- the window
+  const light: RGB = g >= 0 ? mix(IVORY, gc, 0.22) : mix(IVORY, gc, 0.12);
+  if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
+    const rim = x - WIN.left < 2 || WIN.right - x < 2 || yy - WIN.top < 2 || WIN.bottom - yy < 2;
+    if (rim) { s.set(x, yy, INK); continue; }
+    const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 62, (yy - wcy) / 70);
+    let c: RGB;
+    if (gold) c = mix([112, 62, 10], [232, 160, 48], Math.max(0, 1 - r) ** 1.3);
+    else c = mix(light, mix(light, gc, 0.35), depth * 0.6);
+    // His floor: a soft shadow where he stands.
+    const fx = (x - wcx) / 34, fy = (yy - (WIN.bottom - 9)) / 4;
+    if (fx * fx + fy * fy < 1) c = mix(c, [0, 0, 0], 0.16 * (1 - fx * fx - fy * fy));
+    // A shaded lip under the rim, so the window reads as set into the card.
+    if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK, 0.35);
+    s.set(x, yy, edition(c, x, yy, 2));
+  }
+
+  // ---------------------------------------------------------------- him
   // Where he stands: feet near the floor; on the top grades he rises out of
   // the window and floats, bobbing (Balatro's soul layer).
+  const soul = gold || aura;
   let topRow = FRAME_HEIGHT, botRow = 0;
   frame.colors.forEach((row, gy) => { if (row.some(Boolean)) { topRow = Math.min(topRow, gy); botRow = gy; } });
   const ox = Math.round((WIN.left + WIN.right + 1) / 2 - (FRAME_WIDTH * ZOOM) / 2);
   const bob = soul ? Math.round(Math.sin(tm / wave(1000 / 2.6)) * 2) : 0;
   let oy = WIN.bottom - 5 - (botRow + 1) * ZOOM;
-  // Floating: centred in the window and lifted till his top just clears its
-  // edge, never off the card (an aura's rings above him count as him).
   if (soul) oy = Math.max(5 - topRow * ZOOM, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - ((topRow + botRow + 1) * ZOOM) / 2) - 10)) + bob;
-  // The space he may draw in: the window, or above it too when he floats.
-  const clip = (cx: number, cy: number) => soul ? inside(cx, cy) && cx > 3 && cx < CARD_WIDTH - 4 && cy > 3 && cy < WIN.bottom
-    : cy > WIN.top && cy < WIN.bottom && cx > WIN.left && cx < WIN.right;
-
-  // A sticker's edge round him, so his dark outline never sinks into the
-  // window. Aura cells get none: an outline round every spark tangles them.
+  // A tall hat pokes out over the window's top rather than being cut off.
+  const pop = soul || oy + topRow * ZOOM < WIN.top + 3;
+  const clip = (cx: number, cy: number) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1
+    : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left + 1 && cx < WIN.right - 1;
+  // A sticker's edge round him, so his dark outline never sinks into the window.
   const solid = (gx: number, gy: number) => !!frame.colors[gy]?.[gx] && frame.slots[gy]?.[gx] !== 5;
-  const edgeC = night ? mix(aMid, WHITE, 0.45) : mix(tint, WHITE, 0.55);
-  for (let yy = 0; yy < CARD_HEIGHT; yy++) for (let x = 0; x < CARD_WIDTH; x++) {
+  const edgeC: RGB = aura ? mix(ah, WHITE, 0.55) : gold ? [255, 236, 170] : WHITE;
+  for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
     if (!clip(x, yy)) continue;
     const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((yy - oy) / ZOOM);
     if (x - ox >= 0 && yy - oy >= 0 && solid(gx, gy)) continue;
     const near = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / ZOOM), Math.floor((yy + dy - oy) / ZOOM)));
-    if (near) s.set(x, yy, soul && (yy <= WIN.top || x <= WIN.left || x >= WIN.right) ? [255, 250, 235] : edgeC);
+    if (near) s.set(x, yy, pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? WHITE : edgeC);
   }
   frame.colors.forEach((row, gy) => row.forEach((hex, gx) => {
     if (!hex) return;
@@ -312,7 +300,7 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
       if (!clip(cx, cy)) continue;
       let c = rgb(hex);
       if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
-      s.set(cx, cy, [Math.min(255, Math.max(0, c[0])), Math.min(255, Math.max(0, c[1])), Math.min(255, Math.max(0, c[2]))]);
+      s.set(cx, cy, clamp8(c));
     }
   }));
   // A rare aura's rings run past the frame's sides into the window's margins.
@@ -320,52 +308,79 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
     if (clip(cx, cy)) s.set(cx, cy, rgb(hex));
   }
-  // Glass over the window: a soft glare that slides across now and then.
-  const glare = cycle(tm, 2200 / 0.45) * 2.2 * 180 - 50;
-  for (let yy = WIN.top + 1; yy < WIN.bottom; yy++) for (let x = WIN.left + 1; x < WIN.right; x++) {
-    const d = x + (yy - WIN.top) * 0.6 - glare;
-    if (d > 0 && d < 12) s.set(x, yy, mix(s.get(x, yy), WHITE, d < 3 ? 0.18 : 0.08));
-  }
   // The corner tag in the window.
   if (input.corner) {
-    const w = textWidth(input.corner) + 5, x0 = WIN.right - 3 - w, y0 = WIN.top + 3;
-    for (let yy = y0; yy < y0 + 13; yy++) for (let x = x0; x < x0 + w; x++) if (!((x === x0 || x === x0 + w - 1) && (yy === y0 || yy === y0 + 12))) s.set(x, yy, [20, 18, 38]);
+    const w = textWidth(input.corner) + 6, x0 = WIN.right - 4 - w, y0 = WIN.top + 4;
+    for (let yy = y0; yy < y0 + 14; yy++) for (let x = x0; x < x0 + w; x++) if (!((x === x0 || x === x0 + w - 1) && (yy === y0 || yy === y0 + 13))) s.set(x, yy, yy >= y0 + 12 ? [0, 0, 0] : INK);
     s.text(input.corner, x0 + 3, y0 - 2, () => WHITE);
   }
 
-  // The title: foil on Mythic and up, gold on a Grail.
-  const ink: RGB = night ? mix(ah, NIGHT, 0.7) : INK;
-  const foil = (x: number, yy: number): RGB => gold ? mix([104, 60, 6], [70, 38, 0], 0.5 + 0.5 * Math.sin(x * 0.15 - tm / wave(1000 / 3) + yy * 0.1))
-    : ink;
-  // A Grail's title is struck into the gold: dark, with the light catching the cut's lower edge.
-  titles.forEach((l, k) => s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), titleTop + k * LINE - 1, foil, gold ? [255, 240, 186] : undefined));
-  // The grade's pill.
-  if (pill) {
-    const w = textWidth(pill) + 14, x0 = Math.floor((CARD_WIDTH - w) / 2);
-    const fill: RGB = night ? mix(ah, NIGHT, 0.3) : gold ? [96, 56, 10] : g >= 0 ? gc : [120, 130, 150];
-    for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
-      const r = (x < x0 + 3 ? x0 + 3 - x : x > x0 + w - 4 ? x - (x0 + w - 4) : 0), ry = yy < pillTop + 3 ? pillTop + 3 - yy : yy > pillTop + 11 ? yy - (pillTop + 11) : 0;
-      if (r * r + ry * ry > 10) continue;
-      s.set(x, yy, yy === pillTop + 14 ? mix(fill, [0, 0, 0], 0.35) : yy <= pillTop + 1 ? mix(fill, WHITE, 0.3) : fill);
-    }
-    s.text(pill, x0 + 7, pillTop - 1, () => (gold ? [255, 222, 130] : WHITE), mix(fill, [0, 0, 0], 0.5));
+  // ---------------------------------------------------------------- the plate and its words
+  for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = M; x <= W - 1 - M; x++) {
+    if (!inBox(x - M, yy - plateTop, W - M * 2, plateBottom - plateTop + 1, 4)) continue;
+    const edge = !inBox(x - M - 1, yy - plateTop, W - M * 2, plateBottom - plateTop + 1, 4) || !inBox(x - M + 1, yy - plateTop, W - M * 2, plateBottom - plateTop + 1, 4) || yy === plateTop || yy === plateBottom;
+    const base: RGB = gold ? [92, 52, 8] : aura ? mix(mix(ah, INK, 0.6), INK, 0.45) : PLATE;
+    s.set(x, yy, edge ? INK : yy === plateTop + 1 ? mix(base, WHITE, 0.16) : yy >= plateBottom - 2 ? mix(base, INK, 0.45) : base);
   }
-  subs.forEach((l, k) => s.text(l, Math.floor((CARD_WIDTH - textWidth(l)) / 2), subTop + k * LINE - 2, () => (night ? mix(ah, NIGHT, 0.6) : gold ? [104, 62, 8] as RGB : mix(INK, CREAM, 0.25))));
-  // The foot: the set line on the left, the set's symbol on the right.
-  const footTop = CARD_HEIGHT - SIDE - 2 - footH;
-  foots.forEach((l, k) => s.text(l, SIDE + 3, footTop + k * LINE - 1, () => (night ? mix(ah, NIGHT, 0.5) : gold ? [124, 76, 14] as RGB : mix(INK, CREAM, 0.4))));
+  // The words sit on the dark plate: white, a Grail's title in gold and an aura card's in its colour.
+  const quiet: RGB = gold ? [236, 196, 120] : aura ? mix(ah, WHITE, 0.6) : [184, 176, 206];
+  const titleInk = (x: number, yy: number): RGB => gold ? mix([255, 210, 90], [255, 248, 214], 0.5 + 0.5 * Math.sin(x * 0.15 - tm / wave(1000 / 3) + yy * 0.1))
+    : aura ? mix(mix(ah, WHITE, 0.5), WHITE, 0.5 + 0.5 * Math.sin(x * 0.12 - tm / wave(1000 / 2) + yy * 0.1)) : WHITE;
+  if (big) s.text(input.title, Math.floor((W - textWidth(input.title) * 2) / 2), titleTop - 4, titleInk, INK, 2);
+  else titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, titleInk, INK));
+  rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
+  // The grade's badge: a chunky pill in its colour with a deep lip, as Balatro's rarity badges.
+  if (pill) {
+    const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
+    const fill: RGB = gold ? [236, 164, 32] : tone;
+    for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
+      if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
+      const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
+      s.set(x, yy, edge ? INK : yy >= pillTop + 12 ? mix(fill, INK, 0.45) : yy === pillTop + 1 ? mix(fill, WHITE, 0.4) : fill);
+    }
+    s.text(pill, x0 + 7, pillTop - 1, () => WHITE, mix(fill, INK, 0.6));
+    if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
+  }
+  foots.forEach((l, k) => s.text(l, M + 5, footTop + k * 11 - 2, () => quiet));
   if (markHex) {
-    const m = rgb(markHex), x0 = CARD_WIDTH - SIDE - 12, y0 = footTop + 1;
+    const m = rgb(markHex), x0 = W - M - 14, y0 = footTop;
     for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
       const rim = x === 0 || yy === 0 || x === 8 || yy === 8;
-      s.set(x0 + x, y0 + yy, rim ? mix(m, [10, 10, 20], 0.55) : x === 1 || yy === 1 ? mix(m, WHITE, 0.45) : x === 7 || yy === 7 ? mix(m, [0, 0, 0], 0.3) : m);
+      s.set(x0 + x, y0 + yy, rim ? INK : x === 1 || yy === 1 ? mix(m, WHITE, 0.45) : x === 7 || yy === 7 ? mix(m, [0, 0, 0], 0.3) : m);
     }
   }
-  return s.px;
+
+  // ---------------------------------------------------------------- on its shadow
+  // It stands on a hard shadow and lifts off it now and then, the shadow staying on the table.
+  const lift = Math.round(1 + Math.sin(TAU_MS(tm, 3000)));
+  const out = new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
+  for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
+    if (!inside(x, yy)) continue;
+    const o = ((yy + 5) * CARD_WIDTH + x) * 4;
+    out[o] = 20; out[o + 1] = 16; out[o + 2] = 28; out[o + 3] = 150;
+  }
+  for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
+    const i = (yy * W + x) * 4;
+    if (!s.px[i + 3]) continue;
+    out.set(s.px.subarray(i, i + 4), ((yy + 2 - lift) * CARD_WIDTH + x) * 4);
+  }
+  return out;
 }
+
+/** The angle of a wave about `period` ms long at `tm`, coming round in LOOP_MS. */
+const TAU_MS = (tm: number, period: number) => cycle(tm, period) * Math.PI * 2;
 
 /** The grade a card shows: the one given, or the rarest copy's. */
 const cardGrade = (input: CardInput) => input.grade ?? (input.copies?.length ? Math.max(...input.copies.map(o => GRADES.findIndex(x => x.id === gradeOf(o).id))) : -1);
+
+/**
+ * The card's edition: its rarest copy's finish's (the last such copy's), or,
+ * for a card given a grade with nothing that sets it, the grade's own.
+ */
+function cardEdition(input: CardInput, g: number): number {
+  const top = (input.copies ?? []).filter(o => GRADES.findIndex(x => x.id === gradeOf(o).id) === g).pop();
+  return top ? editionOf(top.finish) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][g];
+}
 
 /**
  * The card as frames, `ms` apart, covering one loop of his move (at least two
@@ -389,7 +404,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
   const move = input.move ?? 'idle', plain = animate(input.seed, move, options);
   const { repeats, turns } = fitLoop(plain.duration);
   const anim = animate(input.seed, move, { ...options, loop: { repeats, turns } });
-  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), ed = cardEdition(input, g);
   const total = anim.duration, count = Math.max(1, Math.round(total / ms)), cache: Uint8ClampedArray[] = [];
   const delays = Array.from({ length: count }, (_, k) => Math.round((k + 1) * total / count) - Math.round(k * total / count));
   return {
@@ -397,7 +412,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
     /** The frame showing at `i` (wraps round). */
     frame(i: number): Uint8ClampedArray {
       const k = ((i % count) + count) % count;
-      return cache[k] ??= drawCard(input, frameAt(anim, k * total / count), owned, g, ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000);
+      return cache[k] ??= drawCard(input, frameAt(anim, k * total / count), owned, g, ed, ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000);
     },
   };
 }
@@ -405,7 +420,8 @@ export function cardPlayer(input: CardInput, ms = 80) {
 /** The card standing still, for a picture. */
 export function cardStill(input: CardInput, t = 0.6): Uint8ClampedArray {
   const anim = animateLoop(input.seed, input.move ?? 'idle', { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false });
-  return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t);
+  const g = cardGrade(input);
+  return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), g, cardEdition(input, g), t);
 }
 
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */
