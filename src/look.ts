@@ -84,8 +84,6 @@ export function allowed(own: AvatarConfig, look: Look, unlocks?: Unlocks): boole
 export const PART_SLOTS: LookSlot[] = ['head', 'eyes', 'mouth', 'cheeks', 'hair', 'body', 'accessory', 'palette'];
 /** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
 export const PART_ODDS = 1;
-/** Tickets back for a part the player already has. */
-export const PART_REFUND = 60;
 
 /** A part a capsule unlocked. */
 export interface PartDrop { slot: LookSlot; index: number }

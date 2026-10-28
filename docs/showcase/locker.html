@@ -65,7 +65,7 @@
   .chipbtn[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); }
   nav.rooms a:focus-visible, .chipbtn:focus-visible, .btn:focus-visible, select:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
   .wallet { font: 700 18px/1 var(--pixel); display: inline-flex; gap: 8px; align-items: center; background: var(--panel); padding: 9px 12px; border-radius: 6px; box-shadow: 0 3px 0 var(--panel-edge); }
-  .wallet svg { width: 22px; height: 14px; image-rendering: pixelated; }
+  .wallet svg { width: 20px; height: 20px; image-rendering: pixelated; }
 
   section.room { display: grid; gap: 22px; scroll-margin-top: 20px; }
   section.room > header h2 { font-size: 34px; line-height: 1; font-weight: 700; }
@@ -313,7 +313,7 @@
 
 <canvas id="swirl" aria-hidden="true"></canvas>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol>
+  <symbol id="stamp" viewBox="0 0 11 11" shape-rendering="crispEdges"><path fill="#f3ead6" d="M0 0h1v1H0zM2 0h1v1H2zM4 0h1v1H4zM6 0h1v1H6zM8 0h1v1H8zM10 0h1v1h-1zM0 10h1v1H0zM2 10h1v1H2zM4 10h1v1H4zM6 10h1v1H6zM8 10h1v1H8zM10 10h1v1h-1zM0 2h1v1H0zM0 4h1v1H0zM0 6h1v1H0zM0 8h1v1H0zM10 2h1v1h-1zM10 4h1v1h-1zM10 6h1v1h-1zM10 8h1v1h-1zM1 1h9v9H1z"/><path fill="#fe5f55" d="M2 2h7v7H2z"/><path fill="#a8352e" d="M2 8h7v1H2zM8 2h1v6H8z"/><path fill="#f3ead6" d="M4 4h1v1H4zM6 4h1v1H6zM4 6h3v1H4z"/></symbol>
 </svg>
 
 <div class="wrap">
@@ -398,10 +398,10 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
   </section>
 
   <section class="room" id="shop">
-    <header><h2>Shop</h2><p>A mock-up. Tickets are pretend here; in the club the server would roll every capsule and keep the copy.</p></header>
+    <header><h2>Shop</h2><p>A mock-up. Stamps are pretend here; in the club the server would roll every capsule and keep the copy.</p></header>
     <div class="shop-top">
       <div class="panel">
-        <h3>Capsules · 100 <svg class="tk" width="16" height="10" aria-label="tickets"><use href="#ticket"/></svg></h3>
+        <h3>Capsules · 8 <svg class="tk" width="16" height="16" aria-label="stamps"><use href="#stamp"/></svg></h3>
         <div class="capsules" id="capsules"></div>
       </div>
       <div style="display:grid;gap:16px;align-content:start">
@@ -411,12 +411,11 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
           <p class="fine">Then a scuff, a print from 0 to 999, and one in ten keeps a tally.</p>
         </div>
         <div class="panel">
-          <h3>Earn tickets</h3>
+          <h3>Earn stamps</h3>
           <ul class="earn">
-            <li><span>Finish a game in today's gauntlet</span><b>+20</b></li>
-            <li><span>Finish all five</span><b>+60</b></li>
-            <li><span>Each day of your streak, up to 10</span><b>+5</b></li>
-            <li><span>Your first day in a new game</span><b>+100</b></li>
+            <li><span>Finish a DLE Club game</span><b>+1</b></li>
+            <li><span>Clear all five of the gauntlet</span><b>+2 gold</b></li>
+            <li><span>Claim a name</span><b>+10</b></li>
           </ul>
         </div>
       </div>
@@ -472,7 +471,7 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
   const cap = s => (LG.GAMES.includes(s) ? LG.machineName(s) : s[0].toUpperCase() + s.slice(1));
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const $ = id => document.getElementById(id);
-  const ticket = '<svg width="16" height="10" aria-hidden="true"><use href="#ticket"/></svg>';
+  const stamp = '<svg width="16" height="16" aria-hidden="true"><use href="#stamp"/></svg>';
 
   const compile = (gl, vs, fs) => {
     const sh = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); return x; };
@@ -1138,7 +1137,7 @@ void main() {
   }
 
   /* ------------------------------------------------ the player */
-  const state = { name: 'luna', tickets: 640, locker: [], worn: { skin: null, hat: null, frame: null }, filter: 'all', sort: 'rare', bought: new Set(), opened: 0 };
+  const state = { name: 'luna', stamps: 42, locker: [], worn: { skin: null, hat: null, frame: null }, filter: 'all', sort: 'rare', bought: new Set(), opened: 0 };
   let uid = 0;
   const copyOf = (o, source, from) => ({ uid: ++uid, o, source, from, game: LG.itemById(o.item).game, slot: LG.slotOf(o), fresh: false });
   const find = id => state.locker.find(c => c.uid === id);
@@ -1368,21 +1367,21 @@ void main() {
   $('sort').addEventListener('change', e => { state.sort = e.target.value; renderLocker(); });
 
   /* ------------------------------------------------ shop */
-  const PRICE = { capsule: 100, skin: 450, hat: 300, frame: 350 };
-  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.tickets.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); renderSwaps(); }
+  const PRICE = { capsule: 8, skin: 30, hat: 20, frame: 24 };
+  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.stamps.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); renderSwaps(); }
 
   function renderCapsules() {
     const el = $('capsules');
     if (!el.children.length) {
-      el.innerHTML = LG.GAMES.map(g => `<div class="capsule"><canvas width="40" height="56" data-cap="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-open="${g}">${ticket} Turn</button></div>`).join('');
+      el.innerHTML = LG.GAMES.map(g => `<div class="capsule"><canvas width="40" height="56" data-cap="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-open="${g}">${stamp} Turn</button></div>`).join('');
       el.querySelectorAll('canvas[data-cap]').forEach(c => addMachine(c, c.dataset.cap, c.closest('.capsule')));
     }
-    el.querySelectorAll('[data-open]').forEach(b => { b.disabled = state.tickets < PRICE.capsule; });
+    el.querySelectorAll('[data-open]').forEach(b => { b.disabled = state.stamps < PRICE.capsule; });
   }
   $('capsules').addEventListener('click', e => {
     const b = e.target.closest('[data-open]');
-    if (!b || state.tickets < PRICE.capsule) return;
-    state.tickets -= PRICE.capsule;
+    if (!b || state.stamps < PRICE.capsule) return;
+    state.stamps -= PRICE.capsule;
     const game = b.dataset.open;
     const seed = `${state.name}:capsule:${++state.opened}`;
     const o = LG.roll(seed, game);
@@ -1409,7 +1408,7 @@ void main() {
     el.innerHTML = shelfToday().map(o => {
       const slot = LG.slotOf(o), price = PRICE[slot], key = LG.encode(o), owned = state.bought.has(key);
       return `<figure class="card" style="--grade:${LG.gradeOf(o).color}">${px({ name: state.name, copies: [o], label: itemLabel(o) })}<figcaption class="meta"><span class="h">${esc(LG.nameOf(o))}</span><span class="chips">${chipsFor(o)}</span>
-        <span class="buyrow"><span class="sub">${cap(LG.itemById(o.item).game)} · ${slot}</span><button class="btn" type="button" data-buy="${esc(key)}"${owned || state.tickets < price ? ' disabled' : ''}>${owned ? 'Owned' : `${ticket} ${price}`}</button></span></figcaption></figure>`;
+        <span class="buyrow"><span class="sub">${cap(LG.itemById(o.item).game)} · ${slot}</span><button class="btn" type="button" data-buy="${esc(key)}"${owned || state.stamps < price ? ' disabled' : ''}>${owned ? 'Owned' : `${stamp} ${price}`}</button></span></figcaption></figure>`;
     }).join('');
     hydrate(el);
   }
@@ -1417,8 +1416,8 @@ void main() {
     const b = e.target.closest('[data-buy]');
     if (!b) return;
     const o = LG.decode(b.dataset.buy), price = PRICE[LG.slotOf(o)];
-    if (state.tickets < price || state.bought.has(b.dataset.buy)) return;
-    state.tickets -= price; state.bought.add(b.dataset.buy);
+    if (state.stamps < price || state.bought.has(b.dataset.buy)) return;
+    state.stamps -= price; state.bought.add(b.dataset.buy);
     reveal(o, 'Shop', null, "Today's shelf: always Plain, scuff and print set by the date");
   });
 
@@ -1682,7 +1681,7 @@ void main() {
   });
 
   // The wallet sits in the shop heading and the top bar.
-  document.querySelector('.rooms').insertAdjacentHTML('beforeend', `<span class="wallet"><svg aria-hidden="true"><use href="#ticket"/></svg><span data-wallet></span></span>`);
+  document.querySelector('.rooms').insertAdjacentHTML('beforeend', `<span class="wallet"><svg aria-hidden="true"><use href="#stamp"/></svg><span data-wallet></span></span>`);
 
   newPlayer('isaac');
   renderRarest(); renderOdds(); renderAll();

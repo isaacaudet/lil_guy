@@ -544,6 +544,33 @@ a famous print if it has one, a scuff at least that low, and a tally.
 
 `equip` takes item ids or encoded copies. This library only draws them and
 rolls them; who owns which, and what it costs, belongs to the game or the club.
+`mysteryMachine(seed)` draws a machine for a capsule from any of them, each as
+likely as its share of every capsule pool; `roll(seed, game)` then opens it.
+
+### Stamps
+
+On the club's site, lilguys.dleclub.com, capsules cost **stamps**, its only
+currency. They come from playing DLE Club, like stamps in a passport, and are
+typed by game, but any will pay for anything.
+
+| | Stamps |
+|---|---|
+| Each DLE Club game finished in a day (the gauntlet's five and three extras) | 1 each, up to 8 |
+| Clearing the five-game gauntlet | 2 gold |
+| Every player, once (those from before stamps too: their tickets are gone, everything else they own stays) | 10 to start |
+
+| Capsule | Cost | Gives |
+|---|---|---|
+| Mystery capsule | 5 | an item from any machine at random (`mysteryMachine`), normal odds |
+| Pick-a-machine capsule | 8 | an item from the machine you choose |
+| Seasonal capsule, while one is on | 8 | the seasonal hat |
+
+Clearing the gauntlet gives 7: a mystery capsule a day and 2 towards the next.
+Games played before stamps began (`STAMPS_FROM`, 29 October 2026) give none.
+Today's machine still gives one free capsule a day. Beginner's luck (the first
+three capsules), pity (Prized or better after 30 dry), trade-ups, smelting,
+crafting and swaps work as before. The Worker reads stamps from the club with
+the card stats (`worker/stamps.js`, DEPLOYMENT.md, Stamps).
 
 ### Keeping rarity real
 

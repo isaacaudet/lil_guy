@@ -12,7 +12,7 @@ https://lilguys.isaac-audet.workers.dev. Only the
 bun install
 bun run showcase
 bash scripts/build-site.sh
-npx wrangler d1 migrations apply lilguys-names --remote   # through 0009_card_stats
+npx wrangler d1 migrations apply lilguys-names --remote   # through 0010_stamps
 npx wrangler deploy
 ```
 
@@ -91,15 +91,15 @@ Every copy is rolled and stored by the Worker, so what the Pulls page shows is w
 capsules really gave. Apply `migrations/0002_collections.sql` (the deploy commands
 above apply every pending migration) before deploying a Worker that reads it.
 
-- A claim creates the player record: 1,200 tickets and the nine starter copies
-  (the founder also gets the one-of-one Gold flag). Names claimed before 0002 get
-  theirs on first use.
+- A claim creates the player record and a starter from every machine (the founder
+  also gets the one-of-one Gold flag). Names claimed before 0002 get theirs on first
+  use. Capsules are paid in stamps (migration 0010, below).
 - Owner-only (`Authorization: Bearer <owner token>`, same-origin writes):
-  - `GET /api/me/:key/state`: tickets, today's free and ticket days, the look and every copy.
-  - `POST /api/me/:key/open {game, free}`: one capsule, rolled on the server from a random
-    seed. Today's machine is free once a UTC day; otherwise 120 tickets. 402 when short.
-  - `POST /api/me/:key/season`: the seasonal hat, 150 tickets, only while one is in season.
-  - `POST /api/me/:key/checkin`: 360 tickets, once a UTC day.
+  - `GET /api/me/:key/state`: stamps, today's free day, the look and every copy.
+  - `POST /api/me/:key/open {game, free}` or `{mystery: true}`: one capsule, rolled on the
+    server from a random seed. Today's machine is free once a UTC day; otherwise 8 stamps for
+    a picked machine, or 5 for a mystery capsule from a machine the server draws. 402 when short.
+  - `POST /api/me/:key/season`: the seasonal hat, 8 stamps, only while one is in season.
   - `POST /api/me/:key/wear {slot, id|null}`: only your own copy, for its own slot.
   - `POST /api/me/:key/look {look}`: only parts `decodeLook` allows for your dealt guy.
 - Public, never with owner tokens:
@@ -114,7 +114,7 @@ above apply every pending migration) before deploying a Worker that reads it.
 - Nothing is bought or sold. Dev drops (the `rarest` easter egg) only work in the demo.
 
 Validated locally with `wrangler dev --local` and both migrations applied:
-- two players claimed, opened free and paid capsules, and collected tickets;
+- two players claimed and opened free and paid capsules;
 - the Guys, profile and Pulls pages listed both, and a reload restored state from D1;
 - `bun test`: 142 pass, including the Worker's ten API tests.
 
@@ -154,7 +154,7 @@ For local Google acceptance, authorize the exact localhost origin too.
 
 Apply `0003_google_accounts.sql` before deploying this Worker. It adds a nullable,
 unique account hash to existing names and creates session and sign-in nonce tables.
-Existing claims, seeds, tickets, copies and looks are preserved.
+Existing claims, seeds, copies and looks are preserved.
 
 - Existing owners: use the browser that holds the claim token, then choose **Continue
   with Google**. The server verifies both Google and the existing claim token before
@@ -216,9 +216,8 @@ focused tests were used instead.
 
 One capsule in four (`PART_ODDS`) also unlocks a rare face part (eyes, mouth,
 cheeks, topper, markings or accessory: the parts the look picker locks), kept in
-`parts` as a code like `e12`. A part the player already has (dealt or earned)
-pays `PART_REFUND` tickets back while tickets are on. `POST /api/me/:key/open`
-returns it as `part: { code, new, refund }`, `GET …/state` lists `parts`, and
+`parts` as a code like `e12`. A capsule only unlocks parts the player hasn't got.
+`POST /api/me/:key/open` returns it as `part: { code, new }`, `GET …/state` lists `parts`, and
 `…/look` accepts earned parts. A guy's rarity (`guy_one_in`) is the deal's: a
 look, earned parts and all, never changes it.
 
@@ -253,3 +252,40 @@ finished club games in it. Names without a Google sign-in count days worn only.
 they were made): the first 100 of an item are its 1st edition, and copies carry
 `pull` in the same reads. Starters and the founder's copies have none.
 Before 0009 is applied, there are no stats and nothing else changes.
+
+## Stamps (migration 0010)
+
+Stamps are the only currency; tickets are gone (the old `players.tickets` and
+`checkin_day` columns stay but are no longer read). A player gets a stamp for each DLE Club game
+they finish in a day (the gauntlet's five and its extras, eight at most), two gold
+stamps on a day all five are finished, and ten to start (`STARTER_STAMPS` in
+`worker/stamps.js`). Days count from `STAMPS_FROM` (2026-10-29). A mystery capsule
+costs 5 and comes from a machine drawn by `mysteryMachine` (each as likely as its
+share of every capsule pool), then rolls as that machine's capsule, luck and pity
+included; a picked machine costs 8, a seasonal 8. The founder's stamps never run out.
+
+The card stats' read of `lilguys-stats` (above) keeps each day in `club_days`
+(`played`, `n`, `cleared`), from `STAMPS_FROM` and then two days back from the last
+answered read (`players.stamps_read`). A day only ever gains stamps. The ten to start
+(`+10`, `starter`) and every spend (negative) are rows in `stamp_ledger`; a spend is one
+guarded insert that only goes in while the balance covers it, so two at once never take
+the same stamps. Releasing a name deletes both tables' rows.
+`GET …/state` carries `stamps: { ready, balance, unlimited, linked, carried, games,
+gold, other, earned, spent, starter, from, cost }`: `games` counts each game's stamps
+(the club's `slicies` is Cutsies), `other` those from a club that only sent a count.
+
+The club adds `played` and `cleared` to each day in dle-club's
+`claude/lilguys-card-stats` branch. Until that ships, each day gives a stamp for
+each game counted (`games`, eight at most) and no gold. A name without a Google
+sign-in only has its ten; the page says to sign in to DLE Club and play.
+
+Players who claimed before stamps (`carried`) keep every copy, part, bit of metal and
+luck counter; their tickets are gone and they get the same ten as a new player, once,
+on their first load after 0010 (`giveStarter`, guarded in the insert and by the unique
+index `stamp_ledger_starter`). Club games before `STAMPS_FROM` are not backdated. The
+page tells them once: “Tickets are now stamps. Play DLE Club games to earn more.”
+(dismissed in `localStorage` as `lil-guys-stamps-note`).
+
+Before 0010 is applied: `stamps.ready` is false, the page shows no balance, paid
+and mystery capsules answer 503 (`Stamps aren’t open yet`), and the free capsule,
+trades, crafting, swaps and card stats carry on.

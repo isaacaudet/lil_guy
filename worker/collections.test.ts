@@ -8,7 +8,7 @@ import { decode, encode } from '../src/index-headless.ts';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
@@ -22,11 +22,15 @@ const call = (path: string, method = 'GET', body?: any, headers: any = {}) => ap
 }), env);
 const claim = async (key: string) => (await (await call('/names/' + key, 'POST')).json()) as any;
 const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
+// Stamps for a test that opens many capsules: a club day well after stamps began, as if read from the club.
+const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, ?, 0) ON CONFLICT(key, day) DO UPDATE SET n = n + excluded.n").run(key, n);
 
-test('a claim makes a player with tickets and a starter from every machine, one worn', async () => {
+test('a claim makes a player with ten stamps and a starter from every machine, one worn', async () => {
   const c = await claim('mia');
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-  expect(s.tickets).toBe(RULES.start);
+  expect(s.stamps).toMatchObject({ ready: true, balance: RULES.stamps, unlimited: false, linked: false, gold: 0 });
+  expect(RULES.stamps).toBe(10);
+  expect(s.tickets).toBeUndefined();
   expect(s.copies).toHaveLength(GAMES.length);
   expect(new Set(s.copies.map((x: any) => decode(x.code)!.item.split('.')[0]))).toEqual(new Set(GAMES));
   expect(s.copies.filter((x: any) => x.worn)).toHaveLength(1);
@@ -43,7 +47,7 @@ test('a player made before a machine joined gets its starter once', async () => 
   expect(await games()).toHaveLength(GAMES.length);
 });
 
-test('capsules are rolled and stored on the server, paid in tickets, and the free one is today’s machine once', async () => {
+test('capsules are rolled and stored on the server, paid in stamps, and the free one is today’s machine once', async () => {
   const c = await claim('mia');
   const free = await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, auth(c.owner));
   expect(free.status).toBe(201);
@@ -51,25 +55,39 @@ test('capsules are rolled and stored on the server, paid in tickets, and the fre
   expect(body.copy.code).toContain('~');
   // The free one is a souvenir of today; no other capsule is.
   expect(body.copy.code).toMatch(/~s\d{4}-\d{2}-\d{2}/);
-  expect(body.tickets).toBe(RULES.start);
+  // The free one costs nothing.
+  expect(body.stamps.balance).toBe(RULES.stamps);
   expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, auth(c.owner))).status).toBe(409);
-  // Tickets are endless for now: a paid capsule leaves them where they were, even at none.
+  // A picked machine costs eight stamps; the copy comes from it.
   const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json();
-  expect(paid.tickets).toBe(RULES.start);
-  env.db.exec("UPDATE players SET tickets = 0 WHERE key = 'mia'");
-  expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
+  expect(paid.game).toBe('puttsies');
+  expect(paid.stamps.balance).toBe(RULES.stamps - RULES.capsule);
+  // Short: nothing is taken, and the answer says how many more and where they come from.
+  const short = await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner));
+  expect(short.status).toBe(402);
+  expect(((await short.json()) as any)).toMatchObject({ error: '6 more stamps. Sign in to DLE Club and play to earn stamps.', need: 6, stamps: { balance: 2 } });
   expect((await call('/me/mia/open', 'POST', { game: 'nope' }, auth(c.owner))).status).toBe(400);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'mia' AND source <> 'starter'").get().n).toBe(2);
 });
 
-test('with tickets switched back on, a capsule costs them and runs out', async () => {
-  RULES.infinite = false;
-  try {
-    const c = await claim('mia');
-    const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json();
-    expect(paid.tickets).toBe(RULES.start - RULES.capsule);
-    env.db.exec("UPDATE players SET tickets = 10 WHERE key = 'mia'");
-    expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(402);
-  } finally { RULES.infinite = true; }
+test('a mystery capsule costs five stamps and comes from any machine, rolled as that machine’s', async () => {
+  const c = await claim('mia');
+  const seen = new Set<string>();
+  give('mia', 5 * 40 - RULES.stamps);
+  for (let i = 0; i < 40; i++) {
+    const r = await call('/me/mia/open', 'POST', { mystery: true, game: 'puttsies' }, auth(c.owner));
+    expect(r.status).toBe(201);
+    const body: any = await r.json();
+    expect(GAMES).toContain(body.game);
+    expect(body.copy.code.startsWith(body.game + '.') || body.copy.code.startsWith('aura.')).toBe(true);
+    seen.add(body.game);
+  }
+  // Not the machine asked for: the server draws it.
+  expect(seen.size).toBeGreaterThan(3);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.stamps).toMatchObject({ balance: 0, spent: 200 });
+  const short: any = await (await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner))).json();
+  expect(short.error).toBe('5 more stamps. Sign in to DLE Club and play to earn stamps.');
 });
 
 test('trade up: five unworn copies of one grade for one of the next, each copy traded once', async () => {
@@ -108,11 +126,12 @@ test('a trade up is usually the next grade, sometimes a dud, now and then two up
   expect(at(0.5, 3)).toEqual({ grade: 4, outcome: 'up' });
 });
 
-test('the day’s tickets are collected once', async () => {
+test('there are no tickets to collect: stamps only come from playing', async () => {
   const c = await claim('mia');
-  const r: any = await (await call('/me/mia/checkin', 'POST', {}, auth(c.owner))).json();
-  expect(r.tickets).toBe(RULES.start + RULES.daily);
-  expect((await call('/me/mia/checkin', 'POST', {}, auth(c.owner))).status).toBe(409);
+  expect((await call('/me/mia/checkin', 'POST', {}, auth(c.owner))).status).toBe(404);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.checkinDay).toBeUndefined();
+  expect(s.infinite).toBeUndefined();
 });
 
 test('wearing takes only your own copy for its slot; looks only take parts you may pick', async () => {
@@ -165,6 +184,7 @@ test('letting a name go takes its collection with it; the founder holds the one 
 test('a float rank counts copies of the same item and finish, cleaner first, and names no one', async () => {
   const c = await claim('flo');
   const codes: string[] = [];
+  give('flo', 48);
   for (let i = 0; i < 6; i++) codes.push(((await (await call('/me/flo/open', 'POST', { game: 'stackdle' }, auth(c.owner))).json()) as any).copy.code);
   const o = decode(codes[0])!;
   const r: any = await (await call('/rank?code=' + encodeURIComponent(codes[0]))).json();
@@ -179,25 +199,20 @@ test('a float rank counts copies of the same item and finish, cleaner first, and
   expect((await call('/rank?code=nope')).status).toBe(400);
 });
 
-test('the founder never pays, even with tickets switched back on, and his state says so', async () => {
-  RULES.infinite = false;
-  try {
-    const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
-    env.db.exec("UPDATE players SET tickets = 0 WHERE key = 'isaac'");
-    const r = await call('/me/isaac/open', 'POST', { game: 'puttsies' }, auth(f.owner));
-    expect(r.status).toBe(201);
-    expect(((await r.json()) as any).tickets).toBe(0);
-    const s: any = await (await call('/me/isaac/state', 'GET', undefined, auth(f.owner))).json();
-    expect(s.infinite).toBe(true);
-    // Anyone else pays, and their state says so.
-    const c = await claim('mia');
-    const m: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-    expect(m.infinite).toBe(false);
-    env.db.exec("UPDATE players SET tickets = 0 WHERE key = 'mia'");
-    expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(402);
-  } finally { RULES.infinite = true; }
-  const c = await claim('bo');
-  expect(((await (await call('/me/bo/state', 'GET', undefined, auth(c.owner))).json()) as any).infinite).toBe(true);
+test('the founder has unlimited stamps, and his state says so', async () => {
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  for (let i = 0; i < 4; i++) {
+    expect((await call('/me/isaac/open', 'POST', { game: 'puttsies' }, auth(f.owner))).status).toBe(201);
+    expect((await call('/me/isaac/open', 'POST', { mystery: true }, auth(f.owner))).status).toBe(201);
+  }
+  const s: any = await (await call('/me/isaac/state', 'GET', undefined, auth(f.owner))).json();
+  expect(s.stamps).toMatchObject({ unlimited: true, spent: 0 });
+  // Anyone else pays, and their state says so.
+  const c = await claim('mia');
+  const m: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(m.stamps.unlimited).toBe(false);
+  await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner));
+  expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(402);
 });
 
 test('beginner’s luck: a player’s first three capsules are the best of three, the fourth a plain roll', async () => {
@@ -207,13 +222,14 @@ test('beginner’s luck: a player’s first three capsules are the best of three
     // A fresh address for each, past the daily claim limit.
     const c: any = await (await call('/names/' + key, 'POST', undefined, { 'CF-Connecting-IP': `198.51.100.${i}` })).json();
     for (let k = 0; k < 3; k++) {
-      // The first is the day's free one, the rest paid: both count.
-      const body: any = await (await call(`/me/${key}/open`, 'POST', k ? { game: 'puttsies' } : { game: todayGame(), free: true }, auth(c.owner))).json();
+      // The first is the day's free one, then the two mystery capsules a claim's ten stamps pay for: both count.
+      const body: any = await (await call(`/me/${key}/open`, 'POST', k ? { mystery: true } : { game: todayGame(), free: true }, auth(c.owner))).json();
       expect(body.luck).toBe('beginner');
       n++;
       if (body.copy.grade >= 1) good++;
     }
     if (i === 0) {
+      give(key, 8);
       const fourth: any = await (await call(`/me/${key}/open`, 'POST', { game: 'puttsies' }, auth(c.owner))).json();
       expect(fourth.luck).toBeNull();
     }
@@ -226,6 +242,7 @@ test('beginner’s luck: a player’s first three capsules are the best of three
 test('pity: after thirty capsules in a row below Prized the next is Prized or better, and the counters persist', async () => {
   const c = await claim('mia');
   const row = () => env.db.query("SELECT opened, dry FROM players WHERE key = 'mia'").get();
+  give('mia', 8 * 25);
   let run = 0;
   for (let k = 0; k < 4; k++) {
     const body: any = await (await call('/me/mia/open', 'POST', { game: 'stackdle' }, auth(c.owner))).json();
@@ -325,6 +342,7 @@ test('a player can only have so many offers out', async () => {
 
 test('capsules now and then unlock a rare face part, which can then be picked; rarity stays the deal’s', async () => {
   const c = await claim('mia');
+  give('mia', 8 * 60);
   let part: any = null;
   for (let i = 0; i < 60 && !part?.new; i++) part = ((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).part;
   expect(part?.new).toBe(true);
@@ -342,6 +360,7 @@ test('capsules now and then unlock a rare face part, which can then be picked; r
 
 test('every capsule unlocks a part the player hasn’t got, and metal crafts the one they want', async () => {
   const c = await claim('mia');
+  give('mia', 8 * 10);
   const got: string[] = [];
   for (let i = 0; i < 10; i++) {
     const part = ((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).part;
@@ -366,6 +385,7 @@ test('every capsule unlocks a part the player hasn’t got, and metal crafts the
 test('without the parts table (before migration 0007) capsules still open', async () => {
   env.db.exec('DROP TABLE parts');
   const c = await claim('mia');
+  give('mia', 8 * 12);
   for (let i = 0; i < 12; i++) expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.parts).toEqual([]);
@@ -373,6 +393,7 @@ test('without the parts table (before migration 0007) capsules still open', asyn
 
 test('TF2 crafting: smelt spare copies into metal, craft the item you want with its number, paint it', async () => {
   const c = await claim('mia');
+  give('mia', 8 * 12);
   const ids: number[] = [];
   for (let i = 0; i < 12; i++) ids.push(((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).copy.id);
   const s0: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();

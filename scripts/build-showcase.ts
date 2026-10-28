@@ -18,7 +18,7 @@ const PAGES: Record<string, string> = {
   locker: 'A player\'s guy, locker, moves, extras and the gacha shop, all working.',
   shop: 'A rotating shop: the daily shelf, a weekly spotlight, capsules and bundles.',
   boards: 'From a name to a dressed guy, and how boards and games would show it.',
-  economy: 'Tickets, prices and drop odds simulated over 90 days of play, with targets.',
+  economy: 'Stamps, capsule prices and drop odds simulated over 90 days of play, with targets.',
   review: 'Every part and item on four test guys, with what to keep, cut and add.',
   catalog: 'Everything a guy can be dealt or pull, with its odds, what is thin, and a tier above Grail.',
   voxels: 'A prototype: the same pixels as 3D figures, each finish a real material.',
@@ -71,7 +71,7 @@ await Bun.write(new URL('index.html', OUT), `<!doctype html>
 </head>
 <body>
 <h1>lil_guy showcase</h1>
-<p>Working mock-ups drawn by the library itself. Tickets, drops and the shop are pretend: nothing here talks to a server.</p>
+<p>Working mock-ups drawn by the library itself. Stamps, drops and the shop are pretend: nothing here talks to a server.</p>
 <ul>
 ${links}
 </ul>

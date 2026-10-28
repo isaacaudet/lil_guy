@@ -9,7 +9,7 @@ const pair = await generateKeyPair('RS256');
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const file of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql']) db.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
+  for (const file of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql']) db.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-salt', FOUNDER_SECRET: 'founder-test', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const stmt = { bind(...v: any[]) { args = v; return stmt; },
@@ -40,7 +40,7 @@ async function login(sub = 'account-a', guest = {}, oldCookie = '') {
 }
 const claim = async (key = 'mia', cookie = '') => (await (await call('/names/' + key, 'POST', undefined, cookie)).json()) as any;
 
-test('links an existing name without changing its guy, tickets, copies or worn look; restores on another device', async () => {
+test('links an existing name without changing its guy, stamps, copies or worn look; restores on another device', async () => {
   const guest = await claim();
   await call('/me/mia/open', 'POST', { game: 'puttsies' }, '', { Authorization: 'Bearer ' + guest.owner });
   const before = await (await call('/me/mia/state', 'GET', undefined, '', { Authorization: 'Bearer ' + guest.owner })).json();
@@ -49,7 +49,8 @@ test('links an existing name without changing its guy, tickets, copies or worn l
   expect(linked.headers.getSetCookie().every(c => c.includes('Secure; HttpOnly; SameSite=Lax'))).toBe(true);
   const again = await login();
   const restored = await (await call('/me/mia/state', 'GET', undefined, sessionCookie(again))).json();
-  expect(restored).toEqual(before);
+  // Everything is as it was, and now the club can be read for its stamps.
+  expect(restored).toEqual({ ...before, stamps: { ...before.stamps, linked: true } });
   expect((await call('/me/mia/state', 'GET', undefined, '', { Authorization: 'Bearer ' + guest.owner })).status).toBe(401);
   const raw = env.db.query('SELECT account FROM names').get();
   expect(raw.account).toBe(await digest('google:account-a'));

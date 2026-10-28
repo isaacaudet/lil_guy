@@ -6,8 +6,10 @@
 // Days worn are counted from when a copy goes on (`worn_since`) to when it comes off, so a day counts
 // whether or not anyone looked. Club days come from dleclub.com (its docs/accounts.md, Lil guys): the
 // Worker asks for the owner's Google sign-in's days, signed with CLUB_SSO_SECRET, at most every ten
-// minutes, and gives each day to the copies worn then. Before 0009 is applied, none of it runs.
+// minutes, and gives each day to the copies worn then. Before 0009 is applied, none of it runs. The same
+// read keeps the days as stamps (stamps.js), from 0010 on.
 import { decode, encode } from '../src/index-headless.ts';
+import { keepDays, stampsReady, STAMPS_FROM } from './stamps.js';
 
 export const CLUB_STATS = 'https://dleclub.com/api/club/lilguys-stats';
 export const READ_EVERY = 10 * 60 * 1000;
@@ -44,8 +46,9 @@ export async function statsSignature(secret, a, since, t) {
 }
 
 /**
- * Reads the owner's club days and gives each to the copies worn that day. Quiet on any failure: the club
- * being down, sign-in off, a name with no Google sign-in or no 0009 all leave the stats as they were.
+ * Reads the owner's club days, gives each to the copies worn then and keeps it as stamps. Quiet on any
+ * failure: the club being down, sign-in off, a name with no Google sign-in, no 0009 (nothing is read) or
+ * no 0010 (no stamps are kept) all leave things as they were.
  */
 export async function readClub(env, key, now = Date.now(), fetcher = fetch) {
   const secret = env.CLUB_SSO_SECRET;
@@ -56,24 +59,32 @@ export async function readClub(env, key, now = Date.now(), fetcher = fetch) {
     const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
     if (!name?.account) return;
     const { results: worn } = await env.DB.prepare("SELECT id, code, worn_since FROM copies WHERE key = ? AND worn = 1 AND worn_since <> ''").bind(key).all();
+    const stamps = await stampsReady(env);
+    const read = stamps ? (await env.DB.prepare('SELECT stamps_read FROM players WHERE key = ?').bind(key).first()).stamps_read : 0;
     await env.DB.prepare('UPDATE players SET club_read = ? WHERE key = ?').bind(now, key).run();
-    if (!worn.length) return;
-    // From the earliest copy on, but days read before (two back, for late scores) are settled.
-    let since = worn.map(c => c.worn_since).sort()[0];
-    if (p.club_read) since = [since, dayOf(p.club_read - 2 * DAY)].sort().pop();
+    // Each from where it last stopped, two days back for late scores: the copies from the earliest one
+    // on, stamps from their first day. One read covers both, from whichever starts first.
+    const settled = at => dayOf(at - 2 * DAY);
+    const froms = [];
+    if (worn.length) froms.push([worn.map(c => c.worn_since).sort()[0], p.club_read ? settled(p.club_read) : ''].sort().pop());
+    if (stamps) froms.push([STAMPS_FROM, read ? settled(read) : ''].sort().pop());
+    if (!froms.length) return;
+    const since = froms.sort()[0];
     const t = Math.floor(now / 1000);
     const url = `${env.CLUB_STATS || CLUB_STATS}?a=${name.account}&since=${since}&t=${t}&sig=${await statsSignature(secret, name.account, since, t)}`;
     const r = await fetcher(url, { signal: AbortSignal.timeout(3000) });
     if (!r.ok) return;
     const { days } = await r.json();
     if (!Array.isArray(days)) return;
-    const put = [];
+    const put = stamps ? keepDays(env, key, days) : [];
     for (const d of days) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d?.day) || !Number.isInteger(d.games) || !Number.isInteger(d.score)) continue;
       for (const c of worn) if (c.worn_since <= d.day) put.push(env.DB.prepare(`INSERT INTO copy_days(copy_id, day, games, score) VALUES (?, ?, ?, ?)
         ON CONFLICT(copy_id, day) DO UPDATE SET games = MAX(games, excluded.games), score = MAX(score, excluded.score)`).bind(c.id, d.day, d.games, d.score));
     }
     if (put.length) await env.DB.batch(put);
+    // Stamps only move on once the club has answered, so a day it was down for is read again.
+    if (stamps) await env.DB.prepare('UPDATE players SET stamps_read = ? WHERE key = ?').bind(now, key).run();
     // A Strange copy's tally: the days its owner finished club games wearing it.
     for (const c of worn) {
       const o = decode(c.code);

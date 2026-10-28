@@ -10,7 +10,7 @@ import { decode, encode } from '../src/index-headless.ts';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
@@ -24,6 +24,8 @@ const call = (path: string, method = 'GET', body?: any, headers: any = {}) => ap
 }), env);
 const claim = async (key: string) => (await (await call('/names/' + key, 'POST')).json()) as any;
 const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
+// Stamps for a test that opens many capsules: a club day well after stamps began, as if read from the club.
+const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, ?, 0) ON CONFLICT(key, day) DO UPDATE SET n = n + excluded.n").run(key, n);
 
 
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
@@ -106,6 +108,7 @@ test('signatures match the club’s', async () => {
 
 test('every copy pulled is numbered in its item’s run; starters aren’t, and the numbers never repeat', async () => {
   const c = await claim('mia');
+  give('mia', 8 * 12);
   const s = await state(c);
   expect(s.copies.every((x: any) => x.pull === undefined)).toBe(true);
   const got: any[] = [];

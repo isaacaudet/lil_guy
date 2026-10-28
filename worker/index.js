@@ -2,10 +2,11 @@ import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked } from './baked.js';
 import { clubGuys, namedGuys } from './club-guys.js';
 import { putOn, readClub, takeOff, withStats } from './card-stats.js';
+import { giveStarter, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
 import {
-  roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
+  roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
-  cleanTag, tradeFloat, rollPart, partCode, readPart, partCost, unlocksOf, pickable, PART_REFUND,
+  cleanTag, tradeFloat, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
   smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE,
 } from '../src/index-headless.ts';
 
@@ -29,12 +30,12 @@ export default {
 };
 
 // ------------------------------------------------------------ the guys and their copies
-// The rules the page plays by, kept here so the server decides them: what a capsule costs, what a claim
-// starts with, what collecting the day's tickets gives, and which machine is free today. Tickets are
-// endless for now (the owner): capsules and seasonals cost nothing until there is something to earn them with.
-export const RULES = { start: 1200, capsule: 120, seasonal: 150, daily: 360, infinite: true, trade: 5, swaps: 10 };
-// The founder never pays, whatever the rules say.
-const free = key => RULES.infinite || key === 'isaac';
+// The rules the page plays by, kept here so the server decides them: the stamps a player starts with, what
+// each capsule costs in stamps (stamps.js), how many copies a trade up takes and how many swap offers can be
+// out, and which machine's capsule is free today.
+export const RULES = { stamps: STARTER_STAMPS, mystery: STAMP_COST.mystery, capsule: STAMP_COST.machine, seasonal: STAMP_COST.seasonal, trade: 5, swaps: 10 };
+// The founder never pays.
+const free = key => key === 'isaac';
 // Capsule luck: a player's first few capsules are each the best of a few rolls (weighted toward good, never
 // promised), and after a long dry run below Prized the next capsule is Prized or better.
 export const LUCK = { beginner: 3, rolls: 3, pity: 30, tries: 5000 };
@@ -68,16 +69,11 @@ async function partsOf(env, key) {
   catch { return []; }
 }
 
-/** Gives a capsule's part: a new one is kept, one already theirs (dealt or earned) pays tickets back. */
+/** Gives a capsule's part: a new one is kept; one already theirs (dealt or earned) gives nothing more. */
 async function grantPart(env, name, drop) {
   const code = partCode(drop);
   const have = pickable(dealt(name.seed), drop.slot, unlocksOf(await partsOf(env, name.key))).includes(drop.index);
-  if (have) {
-    // While tickets are endless there's nothing to give back.
-    if (free(name.key)) return { code, new: false, refund: 0 };
-    await env.DB.prepare('UPDATE players SET tickets = tickets + ? WHERE key = ?').bind(PART_REFUND, name.key).run();
-    return { code, new: false, refund: PART_REFUND };
-  }
+  if (have) return { code, new: false };
   try { await env.DB.prepare('INSERT OR IGNORE INTO parts(key, code, at) VALUES (?, ?, ?)').bind(name.key, code, new Date().toISOString()).run(); }
   catch { return null; }
   return { code, new: true };
@@ -154,7 +150,7 @@ const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, gra
 // Copies that can change hands: not a starter, not the founder's.
 const MOVABLE = "source NOT IN ('starter', 'founder')";
 
-/** A claimed name's player record, made on first use: its tickets and a starter from every machine (the founder's flag too). */
+/** A claimed name's player record, made on first use: a starter from every machine (the founder's flag too). */
 async function ensurePlayer(env, name) {
   const found = await env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
   if (found) {
@@ -171,6 +167,8 @@ async function ensurePlayer(env, name) {
           .bind(row.key, row.code, row.item, row.game, row.slot, row.finish, row.grade, row.one_in, row.scuff, new Date().toISOString(), row.key, row.game).run();
       }
     }
+    // A player from before stamps is given the ten to start once, as a new one is (their tickets are gone).
+    await giveStarter(env, name.key);
     // A founder made before Origin existed is given it once.
     if (name.seed === 'founder:isaac' && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
       await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
@@ -185,8 +183,8 @@ async function ensurePlayer(env, name) {
     return found;
   }
   const at = new Date().toISOString();
-  const made = await env.DB.prepare('INSERT INTO players(key, tickets, guy_one_in, at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING')
-    .bind(name.key, RULES.start, guyOneIn(dealt(name.seed)), at).run();
+  const made = await env.DB.prepare('INSERT INTO players(key, guy_one_in, at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING')
+    .bind(name.key, guyOneIn(dealt(name.seed)), at).run();
   if (made.meta.changes) {
     const founder = name.seed === 'founder:isaac';
     for (const [i, g] of GAMES.entries()) await insertCopy(env, copyRow(starter(name.seed, g), name.key, 'starter'), !founder && i === 0 ? 1 : 0);
@@ -196,10 +194,32 @@ async function ensurePlayer(env, name) {
       await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
     }
   }
+  await giveStarter(env, name.key);
   return env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
 }
 
 const owner = ownedName;
+
+/**
+ * Takes a capsule's stamps, or answers why not: none to take before 0010, or how many more the player
+ * needs and where they come from. The club is read first, so a game just finished counts. Null once paid.
+ */
+async function pay(env, key, cost, what) {
+  if (free(key)) return null;
+  await readClub(env, key);
+  const paid = await spendStamps(env, key, cost, what);
+  if (paid === null) return json({ error: 'Stamps aren’t open yet' }, 503);
+  if (paid) return null;
+  const s = await stampsOf(env, key);
+  const need = Math.max(1, cost - s.balance);
+  return json({ error: shortOf(need, s.linked), need, stamps: s }, 402);
+}
+
+/** A player's stamps, with whether their name has a Google sign-in for the club to read and when it was claimed. */
+async function stampsOf(env, key) {
+  const name = await env.DB.prepare('SELECT account, at FROM names WHERE key = ?').bind(key).first();
+  return stampState(env, key, { founder: free(key), linked: !!name?.account, claimed: name?.at || '' });
+}
 
 async function meState(env, name) {
   const p = await ensurePlayer(env, name);
@@ -209,11 +229,11 @@ async function meState(env, name) {
   const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all()).results, today());
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, tickets: p.tickets, infinite: free(name.key), freeDay: p.free_day, checkinDay: p.checkin_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
+  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, stamps: await stampsOf(env, name.key), freeDay: p.free_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
     swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
-/** Everything a signed-in owner does: read their state, open a capsule, collect the day's tickets, wear, change their look. */
+/** Everything a signed-in owner does: read their state, open a capsule, wear, change their look, trade, craft and swap. */
 async function me(request, env, key, action) {
   const name = await owner(request, env, key);
   if (!name) return json({ error: 'Owner token required' }, 401);
@@ -226,15 +246,18 @@ async function me(request, env, key, action) {
   const day = today();
 
   if (action === 'open') {
-    const game = body.game;
+    // A mystery capsule (5 stamps) comes from any machine at random, drawn here; a picked machine costs 8.
+    // Today's machine is also free once a day.
+    const mystery = !!body.mystery && !body.free;
+    const game = mystery ? mysteryMachine(crypto.randomUUID()) : body.game;
     if (!GAMES.includes(game)) return json({ error: 'Unknown machine' }, 400);
     if (body.free) {
       if (game !== todayGame()) return json({ error: 'Only today’s machine is free' }, 409);
       const r = await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day <> ?').bind(day, key, day).run();
       if (!r.meta.changes) return json({ error: 'Today’s free capsule is already open' }, 409);
-    } else if (!free(key)) {
-      const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.capsule, key, RULES.capsule).run();
-      if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
+    } else {
+      const short = await pay(env, key, mystery ? RULES.mystery : RULES.capsule, mystery ? 'mystery' : `machine:${game}`);
+      if (short) return short;
     }
     // Count the capsule before rolling it, so two opened at once never share a beginner's roll.
     const count = await env.DB.prepare('UPDATE players SET opened = opened + 1 WHERE key = ? RETURNING opened, dry').bind(key).first();
@@ -247,24 +270,15 @@ async function me(request, env, key, action) {
     const mine = unlocksOf(await partsOf(env, key)), own = dealt(name.seed);
     const drop = rollPart(crypto.randomUUID(), p => pickable(own, p.slot, mine).includes(p.index));
     const part = drop ? await grantPart(env, name, drop) : null;
-    const p = await env.DB.prepare('SELECT tickets, free_day FROM players WHERE key = ?').bind(key).first();
-    return json({ copy: publicCopy(copy), part, tickets: p.tickets, freeDay: p.free_day, luck }, 201);
+    const p = await env.DB.prepare('SELECT free_day FROM players WHERE key = ?').bind(key).first();
+    return json({ copy: publicCopy(copy), game, part, stamps: await stampsOf(env, key), freeDay: p.free_day, luck }, 201);
   }
   if (action === 'season') {
     if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
-    if (!free(key)) {
-      const r = await env.DB.prepare('UPDATE players SET tickets = tickets - ? WHERE key = ? AND tickets >= ?').bind(RULES.seasonal, key, RULES.seasonal).run();
-      if (!r.meta.changes) return json({ error: 'Not enough tickets' }, 402);
-    }
+    const short = await pay(env, key, RULES.seasonal, 'seasonal');
+    if (short) return short;
     const copy = await insertCopy(env, copyRow(rollSeason(crypto.randomUUID(), day), key, 'seasonal'));
-    const p = await env.DB.prepare('SELECT tickets FROM players WHERE key = ?').bind(key).first();
-    return json({ copy: publicCopy(copy), tickets: p.tickets }, 201);
-  }
-  if (action === 'checkin') {
-    const r = await env.DB.prepare('UPDATE players SET tickets = tickets + ?, checkin_day = ? WHERE key = ? AND checkin_day <> ?').bind(RULES.daily, day, key, day).run();
-    if (!r.meta.changes) return json({ error: 'Today’s tickets are already collected' }, 409);
-    const p = await env.DB.prepare('SELECT tickets, checkin_day FROM players WHERE key = ?').bind(key).first();
-    return json({ tickets: p.tickets, checkinDay: p.checkin_day });
+    return json({ copy: publicCopy(copy), stamps: await stampsOf(env, key) }, 201);
   }
   if (action === 'trade') {
     // Trade up: five copies of one grade, none worn, starters and the founder's aside, for one copy of the next
@@ -501,7 +515,7 @@ export async function api(request, env, url = new URL(request.url)) {
     const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all()).results, today());
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);
@@ -525,12 +539,15 @@ export async function api(request, env, url = new URL(request.url)) {
       : { clause: 'owner = ? AND account IS NULL', value: token ? await digest(token) : '' };
     // Delete the collection and name in one transaction, guarded by the same current owner.
     const guard = `EXISTS (SELECT 1 FROM names WHERE key = ? AND ${proof.clause})`;
+    // Its stamps go too (from 0010), so whoever claims the name next starts fresh.
+    const stamps = await stampsReady(env) ? ['club_days', 'stamp_ledger'].map(t => env.DB.prepare(`DELETE FROM ${t} WHERE key = ? AND ${guard}`).bind(key, key, proof.value)) : [];
     const results = await env.DB.batch([
       env.DB.prepare(`DELETE FROM copies WHERE key = ? AND ${guard}`).bind(key, key, proof.value),
       env.DB.prepare(`DELETE FROM players WHERE key = ? AND ${guard}`).bind(key, key, proof.value),
+      ...stamps,
       env.DB.prepare(`DELETE FROM names WHERE key = ? AND ${proof.clause}`).bind(key, proof.value),
     ]);
-    if (!results[2].meta.changes) return json({ error: 'Owner authentication changed. Reload and try again.' }, 403);
+    if (!results.at(-1).meta.changes) return json({ error: 'Owner authentication changed. Reload and try again.' }, 403);
     return json({ deleted: true });
   }
   if (!env.CLAIM_SALT) return json({ error: 'Name claims are not configured' }, 503);
