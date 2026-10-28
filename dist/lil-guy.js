@@ -7962,13 +7962,13 @@ const SETS = {
 * per step or per generation draws the same noise again each LOOP_MS.
 */
 const LOOP_MS = 6e3;
-const TAU$2 = Math.PI * 2;
+const TAU$3 = Math.PI * 2;
 /** `v` brought into 0 to `n`, negative numbers too. */
 const wrap$1 = (v, n) => (v % n + n) % n;
 /** `period` ms, nudged so a whole number of them fill LOOP_MS. */
 const fit = (period) => LOOP_MS / Math.max(1, Math.round(LOOP_MS / Math.abs(period)));
 /** The `d` in `sin(t / d)`, nudged so the wave (2πd ms) comes round in LOOP_MS. */
-const wave = (d) => fit(TAU$2 * d) / TAU$2;
+const wave = (d) => fit(TAU$3 * d) / TAU$3;
 /** A step's length in a pattern `n` steps long, nudged so the pattern comes round in LOOP_MS. */
 const steps = (step$1, n) => fit(step$1 * Math.max(1, n)) / Math.max(1, n);
 /** A count of `step` ms that starts again every LOOP_MS: for noise drawn fresh each step or generation. */
@@ -8733,7 +8733,7 @@ const AURAS = [
 					y,
 					2
 				]] : [];
-				const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU$1 + .5, 1) * 4);
+				const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU$2 + .5, 1) * 4);
 				if (dim && quarter === stretch) return d === 1 ? [[
 					x,
 					y,
@@ -9087,7 +9087,7 @@ function auraIntensity(id, finish) {
 	if (ONE_OF_ONE_AURAS.some((a) => a.id === id)) return 5;
 	return INTENSITY[finish ?? "classic"] ?? 0;
 }
-const TAU$1 = Math.PI * 2;
+const TAU$2 = Math.PI * 2;
 /**
 * Points round the guy on a squarish ellipse, `gx` cells clear of his sides
 * and `gy` of his top and foot, in order: where a rarer aura's pieces ride.
@@ -9096,7 +9096,7 @@ function loop(s, gx, gy) {
 	const rx = (s.right - s.left) / 2 + gx, ry = (s.bottom - s.top) / 2 + gy, steps$1 = 720;
 	const pts = [];
 	for (let i = 0; i < steps$1; i++) {
-		const a = i / steps$1 * TAU$1, c = Math.cos(a), sn = Math.sin(a);
+		const a = i / steps$1 * TAU$2, c = Math.cos(a), sn = Math.sin(a);
 		const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** .6), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** .6);
 		const last = pts[pts.length - 1];
 		if (!last || last[0] !== x || last[1] !== y) pts.push([x, y]);
@@ -9326,8 +9326,7 @@ function auraColor(id, k, finish, x, y, t, print = 0) {
 * dressed in it.
 */
 function auraHue(id, finish, print = 0) {
-	const aura = auraById(id);
-	const colors = id === "aura.neon" ? [neonRamp(finish, print)[0], NEON_TUBES$1[finish]?.[print % NEON_TUBES$1[finish].length] ?? "#FF3FA4"] : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors : finish === "fade" ? FADE : finish === "pearl" ? ["#B9A2FF"] : RAMPS[finish] ?? aura?.colors ?? ["#19D3C5"];
+	const colors = auraColors(id, finish, print);
 	const vivid = (hex$3) => {
 		const [r, g, b$1] = [
 			1,
@@ -9337,6 +9336,11 @@ function auraHue(id, finish, print = 0) {
 		return (max - min) * (1 - Math.abs(max + min - 1) * .3);
 	};
 	return colors.reduce((a, c) => vivid(c) > vivid(a) ? c : a, colors[0]);
+}
+/** The colours an aura copy's card is dressed from, in its finish: the list `auraHue` picks the most vivid of. */
+function auraColors(id, finish, print = 0) {
+	const aura = auraById(id);
+	return id === "aura.neon" ? [neonRamp(finish, print)[0], NEON_TUBES$1[finish]?.[print % NEON_TUBES$1[finish].length] ?? "#FF3FA4"] : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors : finish === "fade" ? FADE : finish === "pearl" ? ["#B9A2FF"] : RAMPS[finish] ?? aura?.colors ?? ["#19D3C5"];
 }
 
 //#endregion
@@ -11035,7 +11039,7 @@ const hsl = (h, s, l) => {
 		4
 	].map((n) => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
 };
-const hueOf = (c) => {
+const hueOf$1 = (c) => {
 	const [r, g, b$1] = c.map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), d = max - min;
 	if (d < 1e-6) return {
 		h: 0,
@@ -11155,7 +11159,7 @@ const PAINT = {
 		], .14);
 	},
 	"negative": (_x, _y, tone, _p, original) => {
-		const { h, s } = hueOf([
+		const { h, s } = hueOf$1([
 			255 - original[0],
 			255 - original[1],
 			255 - original[2]
@@ -15628,7 +15632,7 @@ function rgbToHex(r, g, b$1) {
 		b$1
 	].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
 }
-function toHsl(hex$3) {
+function toHsl$1(hex$3) {
 	const [r, g, b$1] = hexToRgb(hex$3).map((v) => v / 255);
 	const max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
 	const l = (max + min) / 2;
@@ -15646,7 +15650,7 @@ function toHsl(hex$3) {
 		l
 	];
 }
-function fromHsl([h, s, l]) {
+function fromHsl$1([h, s, l]) {
 	h = (h % 360 + 360) % 360;
 	s = Math.min(1, Math.max(0, s));
 	l = Math.min(1, Math.max(0, l));
@@ -15707,8 +15711,8 @@ function contrast(a, b$1) {
 * Adding saturation in the shadow is what turned a green body's shade neon.
 */
 function shadeOf(hex$3, depth = .12) {
-	const [h, s, l] = toHsl(hex$3);
-	return fromHsl([
+	const [h, s, l] = toHsl$1(hex$3);
+	return fromHsl$1([
 		towards(h, 265, 12),
 		s * .85,
 		l - depth
@@ -15716,18 +15720,18 @@ function shadeOf(hex$3, depth = .12) {
 }
 /** Builds the full set of token colours from a body, an accent and a trim. */
 function derive(name, body, accent, trim) {
-	const [h] = toHsl(body);
+	const [h] = toHsl$1(body);
 	const outlineHue = towards(h, 285, 25);
-	const outline$1 = fromHsl([
+	const outline$1 = fromHsl$1([
 		outlineHue,
 		.42,
-		toHsl(body)[2] >= .5 ? .3 : toHsl(body)[2] * .25
+		toHsl$1(body)[2] >= .5 ? .3 : toHsl$1(body)[2] * .25
 	]);
-	const dark = fromHsl([
+	const dark = fromHsl$1([
 		outlineHue,
 		.38,
 		.14
-	]), deeper = fromHsl([
+	]), deeper = fromHsl$1([
 		outlineHue,
 		.4,
 		.06
@@ -15787,8 +15791,8 @@ function shadePalette(palette$1, shade) {
 	if (shade === 1) return palette$1;
 	const tone = (hex$3) => {
 		if (shade === 0) return mix$3(hex$3, "#FFFFFF", .3);
-		const [h, s, l] = toHsl(hex$3);
-		return fromHsl([
+		const [h, s, l] = toHsl$1(hex$3);
+		return fromHsl$1([
 			h,
 			Math.min(.8, s + .04),
 			l > .4 ? l - .08 : l
@@ -15803,11 +15807,11 @@ function shadePalette(palette$1, shade) {
 */
 function luckyPalette(palette$1) {
 	const turn = (hex$3) => {
-		const [h, s, l] = toHsl(hex$3);
+		const [h, s, l] = toHsl$1(hex$3);
 		let hue$2 = (h + 150) % 360;
 		const dark = l < .45;
 		if (dark && hue$2 >= 10 && hue$2 <= 110) hue$2 += 130;
-		return fromHsl([
+		return fromHsl$1([
 			hue$2,
 			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.max(.7, Math.min(.92, s + .25)),
 			dark ? Math.min(Math.max(l, .22), .28) : Math.min(Math.max(l, .6), .68)
@@ -18999,7 +19003,7 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   return c;
 }
 `;
-const TAU = Math.PI * 2;
+const TAU$1 = Math.PI * 2;
 const fract = (x) => x - Math.floor(x);
 const mod = (x, y) => x - y * Math.floor(x / y);
 const clamp = (x, a, b$1) => Math.min(Math.max(x, a), b$1);
@@ -19059,7 +19063,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	const coat = clamp(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
 	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
 	if (finish < 1.5) {
-		const s = .5 + .5 * Math.sin(d * .8 - time * TAU / 2 + print);
+		const s = .5 + .5 * Math.sin(d * .8 - time * TAU$1 / 2 + print);
 		return add(mix$1(c, add(scale(c, [
 			.86,
 			.96,
@@ -19076,20 +19080,20 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.16
 	]), w * .5 * coat), b$1 * .2 * coat);
 	if (finish < 3.5) {
-		const shifted = hueShift(c, .32 * Math.sin(time * TAU / 6 + d * .12 + fract(print * .618) * TAU) * coat);
-		const s = Math.max(0, Math.sin(time * TAU / 3 + h * 97));
+		const shifted = hueShift(c, .32 * Math.sin(time * TAU$1 / 6 + d * .12 + fract(print * .618) * TAU$1) * coat);
+		const s = Math.max(0, Math.sin(time * TAU$1 / 3 + h * 97));
 		return mix$1(shifted, [
 			1,
 			.94,
 			1
 		], step(.972, h) * s * s * s * coat);
 	}
-	if (finish < 4.5) return add(hueShift(c, time * TAU / 6 * coat), w * .14 * coat);
+	if (finish < 4.5) return add(hueShift(c, time * TAU$1 / 6 * coat), w * .14 * coat);
 	if (finish < 5.5) return add(add(c, scale([
 		.28,
 		.12,
 		.45
-	], b$1 * coat)), .07 * Math.sin(time * TAU / 3 + d * .5 + fract(print * .618) * TAU) * coat);
+	], b$1 * coat)), .07 * Math.sin(time * TAU$1 / 3 + d * .5 + fract(print * .618) * TAU$1) * coat);
 	return add(mix$1(c, [
 		1,
 		.94,
@@ -19160,10 +19164,10 @@ vec3 editionColor(vec3 c, float ed, float v, vec2 p, vec2 o, float region, float
 }
 `;
 /** A sine from a table, to a few millionths: the spectral swirl takes two a pixel every frame. */
-const SINES = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU));
+const SINES$1 = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU$1));
 const sine = (x) => {
-	const u = x * (4096 / TAU), i = Math.floor(u), j = i & 4095;
-	return SINES[j] + (SINES[j + 1] - SINES[j]) * (u - i);
+	const u = x * (4096 / TAU$1), i = Math.floor(u), j = i & 4095;
+	return SINES$1[j] + (SINES$1[j + 1] - SINES$1[j]) * (u - i);
 };
 /**
 * `editionColor` over a fixed set of pixels, for drawing the same card again
@@ -19195,7 +19199,7 @@ function editionField(ed, v, o, px, pixels) {
 			c2[k] = Math.cos(phase);
 		}
 		return (time, out) => {
-			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU / 2), sa = Math.sin(time * TAU / 2);
+			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$1 / 2), sa = Math.sin(time * TAU$1 / 2);
 			for (let k = 0; k < n; k++) {
 				const w = .5 + .5 * (s[k] * ca - c2[k] * sa), w2 = w * w, m = w2 * w2 * w2 * .22 + band$1(k, T$1, 5) * .4;
 				out[k * 3] = a[k * 3] + .6 * m;
@@ -19213,7 +19217,7 @@ function editionField(ed, v, o, px, pixels) {
 			lift[k] = step(.5, fract(y[k] / (px * 2))) * .05 * (2 - region[k]);
 		}
 		return (time, out) => {
-			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU / 3), sa = Math.sin(time * TAU / 3);
+			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$1 / 3), sa = Math.sin(time * TAU$1 / 3);
 			for (let k = 0; k < n; k++) {
 				const t = .5 + .5 * (s[k] * ca - c2[k] * sa), m = .55 * (region[k] > 1.5 ? .6 : 1), add$1 = lift[k] + band$1(k, T$1, 5) * .25;
 				const tr = 1 + -.72 * t, tg = .3 + .32 * t, tb = .42 + .5800000000000001 * t;
@@ -19240,7 +19244,7 @@ function editionField(ed, v, o, px, pixels) {
 			return 1 + ((p < 0 ? 0 : p > 1 ? 1 : p) - 1) * .6;
 		};
 		return (time, out) => {
-			const T$1 = mod(time * 10, 60), ct = Math.cos(time * TAU / 6), st = Math.sin(time * TAU / 6);
+			const T$1 = mod(time * 10, 60), ct = Math.cos(time * TAU$1 / 6), st = Math.sin(time * TAU$1 / 6);
 			for (let k = 0; k < n; k++) {
 				const I = s[k] * ct + c2[k] * st, Q = c2[k] * ct - s[k] * st, Y = lum$3[k];
 				const hh = fract(a[k] - time / 6), add$1 = band$1(k, T$1, 5) * .18;
@@ -19300,11 +19304,11 @@ function editionField(ed, v, o, px, pixels) {
 	/** A glint opening on a pixel whose noise is high enough. */
 	const glint$1 = (k, time) => {
 		if (h[k] < .965) return 0;
-		const g = Math.max(0, Math.sin(time * TAU / 2 + h[k] * 91)), g2 = g * g;
+		const g = Math.max(0, Math.sin(time * TAU$1 / 2 + h[k] * 91)), g2 = g * g;
 		return g2 * g2 * g2 * .6;
 	};
 	return (time, out) => {
-		const T$1 = mod(time * 10, 60), th = time * TAU / 6, ct = Math.cos(th), st = Math.sin(th), B = time * TAU / 3;
+		const T$1 = mod(time * 10, 60), th = time * TAU$1 / 6, ct = Math.cos(th), st = Math.sin(th), B = time * TAU$1 / 3;
 		for (let k = 0; k < n; k++) {
 			const wx = s[k] * ct + c2[k] * st, wy = c2[k] * ct - s[k] * st;
 			const f = Math.floor((.5 + .5 * sine(wx * 3.2 + sine(wy * 2.6 + B) * 1.5)) * 3.99);
@@ -22457,6 +22461,396 @@ function encodeApng(input, scale$1 = 1) {
 }
 
 //#endregion
+//#region src/card-looks.ts
+/**
+* Prototype looks for a card's edition, after the way Balatro paints its
+* cards, to set beside today's. Nothing draws them unless asked
+* (`cardPlayer(input, ms, { look })`, `cardFace({ ..., look })`), so every
+* card, finish and saved guy keeps the picture it has.
+*
+* - `paint`: an aura card's ground as banded paint, a twisted swirl warped a
+*   few times over and cut into the aura's own colours in hard bands.
+* - `polychrome`: a Polychrome card, and every Prism copy on it, turned
+*   through the spectrum by a slow field of a few drifting rings, its colours
+*   lifted.
+* - `foil`: a Foil card's face, and a Grail's gold, run with interference
+*   bands that catch a cool highlight where they cross.
+* - `holo`: a Holographic card tinted by the same drifting field, with a fine
+*   diagonal grid lighting up where it runs bright.
+*
+* Each is written twice, as GLSL (`GLSL_LOOKS`) and as plain code
+* (`lookField`, `polyColor`), with the same result, and every motion comes
+* round in LOOP_MS: time enters only as whole turns of the loop's angle.
+*/
+const CARD_LOOKS = [
+	"none",
+	"paint",
+	"polychrome",
+	"foil",
+	"holo"
+];
+/** The look as the shaders number it, 0 for none. */
+const lookIndex = (look) => look ? CARD_LOOKS.indexOf(look) : 0;
+/** Whether a look changes a card of edition `ed` (an index in EDITIONS). */
+function lookApplies(look, ed) {
+	if (look === 1) return ed === 6;
+	if (look === 2) return ed === 3;
+	if (look === 3) return ed === 1 || ed === 5;
+	if (look === 4) return ed === 2;
+	return false;
+}
+/** The default hardness of `paint`'s bands. */
+const PAINT_CONTRAST = 5;
+const INK$2 = [
+	24 / 255,
+	20 / 255,
+	31 / 255
+];
+const lerp = (a, b$1, t) => [
+	a[0] + (b$1[0] - a[0]) * t,
+	a[1] + (b$1[1] - a[1]) * t,
+	a[2] + (b$1[2] - a[2]) * t
+];
+const unhex = (h) => [
+	parseInt(h.slice(1, 3), 16) / 255,
+	parseInt(h.slice(3, 5), 16) / 255,
+	parseInt(h.slice(5, 7), 16) / 255
+];
+const hueOf = (c) => toHsl(c)[0];
+/**
+* The three paints an aura card is banded in, from its aura's colours and the
+* one it's known by (`auraHue`): a deep ground most of the card, a middle
+* band, and a narrow top band in a second colour of the aura where it has one.
+* All kept dark enough that the guy's own aura still reads over them.
+*/
+function paintColors(colors, hue$2) {
+	const main = unhex(hue$2), h = hueOf(main);
+	const other = colors.map(unhex).filter((c) => {
+		const s = toHsl(c);
+		const d = Math.abs(s[0] - h);
+		return s[1] > .3 && Math.min(d, 1 - d) > .08;
+	})[0];
+	return [
+		lerp(main, INK$2, .7),
+		lerp(main, INK$2, .42),
+		other ? lerp(other, INK$2, .3) : lerp(main, INK$2, .12)
+	];
+}
+/** A colour as hue, saturation and lightness, each 0 to 1 (`toHsl` in GLSL). */
+function toHsl(c) {
+	const hi = Math.max(c[0], c[1], c[2]), lo = Math.min(c[0], c[1], c[2]), d = hi - lo, l = (hi + lo) * .5;
+	if (d < 1e-5) return [
+		0,
+		0,
+		l
+	];
+	const s = d / (1 - Math.abs(2 * l - 1));
+	const h = hi === c[0] ? (c[1] - c[2]) / d : hi === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4;
+	return [
+		fract(h / 6),
+		s,
+		l
+	];
+}
+/** Back from hue, saturation and lightness (`fromHsl` in GLSL). */
+function fromHsl(h, s, l) {
+	const chroma = s * (1 - Math.abs(2 * l - 1));
+	const ramp$1 = (o) => {
+		const k = Math.abs(fract(h + o) * 6 - 3) - 1;
+		return l + chroma * ((k < 0 ? 0 : k > 1 ? 1 : k) - .5);
+	};
+	return [
+		ramp$1(0),
+		ramp$1(2 / 3),
+		ramp$1(1 / 3)
+	];
+}
+/**
+* `lookColor` falls back to `editionColor` (GLSL_EDITIONS) where the look
+* doesn't apply, so it goes after it. `p` is the cell in face cells, `o` the
+* window's middle, `region` 1 face and 2 window, `th` the loop's angle.
+*/
+const GLSL_LOOKS = `
+vec3 toHsl(vec3 c) {
+  float hi = max(c.r, max(c.g, c.b)), lo = min(c.r, min(c.g, c.b)), d = hi - lo, l = (hi + lo) * 0.5;
+  if (d < 1e-5) return vec3(0.0, 0.0, l);
+  float s = d / (1.0 - abs(2.0 * l - 1.0));
+  float h = hi == c.r ? (c.g - c.b) / d : hi == c.g ? (c.b - c.r) / d + 2.0 : (c.r - c.g) / d + 4.0;
+  return vec3(fract(h / 6.0), s, l);
+}
+vec3 fromHsl(vec3 c) {
+  vec3 k = clamp(abs(fract(c.x + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+  return c.z + c.y * (1.0 - abs(2.0 * c.z - 1.0)) * (k - 0.5);
+}
+float polyField(vec2 p, vec2 o, float th) {
+  vec2 a = p - o - vec2(7.0 * cos(th), 9.0 * sin(th));
+  vec2 b = p - o - vec2(-8.0 * sin(th), 6.0 * cos(2.0 * th));
+  vec2 e = p - o - vec2(6.0 * cos(2.0 * th + 1.3), -7.0 * sin(th + 0.4));
+  return cos(length(a) * 0.38) + sin(length(b) * 0.27 + th) * cos(b.y * 0.21) + cos(length(e) * 0.33 - th) * sin(e.x * 0.19);
+}
+vec3 polyColor(vec3 c, vec2 p, vec2 o, float th, float k) {
+  vec3 s = toHsl(c);
+  float f = polyField(p, o, th);
+  return mix(c, fromHsl(vec3(fract(s.x + 0.22 * f + 0.1), min(0.78, s.y + 0.45), s.z * 0.84 + 0.08)), k);
+}
+vec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast) {
+  vec2 q = (p - o) / 9.0;
+  float r = length(q), tw = 1.5 * r + 0.35 * sin(th);
+  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 2.6;
+  float ct = 0.8 * cos(th), st = 0.8 * sin(th);
+  u += 0.8 * vec2(sin(1.3 * u.y + ct), sin(1.1 * u.x + st));
+  u += 0.8 * vec2(sin(1.7 * u.y - st + 0.9), sin(1.5 * u.x + ct - 0.7));
+  u += 0.8 * vec2(sin(2.1 * u.y + ct + 1.8), sin(1.9 * u.x - st + 2.6));
+  float t = 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5), w = 0.5 / contrast;
+  float k1 = clamp((t - 0.38) / w + 0.5, 0.0, 1.0), k2 = clamp((t - 0.74) / w + 0.5, 0.0, 1.0);
+  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(r * 0.5 - 0.35, 0.0, 1.0));
+}
+float foilWave(vec2 p, vec2 o, float th) {
+  vec2 a = p - o - vec2(5.0 * cos(th) - 9.0, 6.0 * sin(th) - 14.0);
+  vec2 b = p - o - vec2(10.0 - 6.0 * sin(th), 16.0 + 5.0 * cos(th));
+  return sin((length(a) - length(b)) * 0.6 + (p.x * 0.3 + p.y * 0.5) - th);
+}
+vec3 foilColor(vec3 c, vec2 p, vec2 o, float region, float th, float gold) {
+  float w = foilWave(p, o, th);
+  float lift = clamp((w - 0.35) / 0.45, 0.0, 1.0), peak = clamp((w - 0.86) / 0.14, 0.0, 1.0), dip = clamp((-w - 0.5) / 0.5, 0.0, 1.0);
+  if (gold > 0.5) {
+    float k = region > 1.5 ? 0.35 : 1.0;
+    return c * (1.0 - 0.14 * dip * k) + vec3(0.2, 0.16, 0.05) * lift * k + vec3(0.5, 0.66, 0.92) * peak * 0.6 * k;
+  }
+  float k = region > 1.5 ? 0.6 : 1.0, l = dot(c, vec3(0.299, 0.587, 0.114));
+  vec3 base = mix(c, l * vec3(0.8, 0.9, 1.06) + vec3(0.07, 0.09, 0.15), 0.6 * k);
+  return base * (1.0 - 0.16 * dip * k) + vec3(0.42, 0.6, 0.95) * lift * 0.45 * k + vec3(0.7, 0.8, 0.95) * peak * 0.45 * k;
+}
+vec3 holoColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float f = polyField(p, o, th);
+  vec3 tint = fromHsl(vec3(fract(0.58 + 0.12 * f), 0.75, 0.66));
+  float ga = abs(cos((p.x + p.y) * 1.1)), gb = abs(cos((p.x - p.y) * 1.1));
+  float grid = max(max(0.0, 10.0 * ga - 9.0), max(0.0, 10.0 * gb - 9.0)) * clamp(f * 0.6, 0.0, 1.0);
+  float k = region > 1.5 ? 0.6 : 1.0;
+  return mix(c, c * 0.5 + tint * 0.55, 0.5 * k) + vec3(0.65, 0.78, 1.0) * grid * 0.4 * k;
+}
+vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
+  float th = time * TAU / 6.0;
+  if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast) : c;
+  if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
+  if (look > 2.5 && look < 3.5 && ((ed > 0.5 && ed < 1.5) || (ed > 4.5 && ed < 5.5))) return foilColor(c, p, o, region, th, step(4.5, ed));
+  if (look > 3.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
+  return editionColor(c, ed, v, p, o, region, h, px, time);
+}
+`;
+const TAU = Math.PI * 2;
+/** A sine from a table, to well under a millionth of a colour step: the looks take several a block every frame. */
+const SINES = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU));
+const sin = (x) => {
+	const u = x * (4096 / TAU), i = Math.floor(u), j = i & 4095;
+	return SINES[j] + (SINES[j + 1] - SINES[j]) * (u - i);
+};
+const cos = (x) => sin(x + Math.PI / 2);
+/** The holo grid's cool light. */
+const HOLO_LIT = [
+	.65,
+	.78,
+	1
+];
+const clamp01 = (x) => x < 0 ? 0 : x > 1 ? 1 : x;
+/** The rings' middles at angle `th`, relative to the window's middle: three pairs. */
+function polyCentres(th, into) {
+	into[0] = 7 * Math.cos(th);
+	into[1] = 9 * Math.sin(th);
+	into[2] = -8 * Math.sin(th);
+	into[3] = 6 * Math.cos(2 * th);
+	into[4] = 6 * Math.cos(2 * th + 1.3);
+	into[5] = -7 * Math.sin(th + .4);
+}
+/** `polyField` from GLSL_LOOKS, at `dx`, `dy` from the window's middle, with the middles from `polyCentres`. */
+function polyAt(dx, dy, m, th) {
+	const ax = dx - m[0], ay = dy - m[1], bx = dx - m[2], by = dy - m[3], ex = dx - m[4], ey = dy - m[5];
+	return cos(Math.sqrt(ax * ax + ay * ay) * .38) + sin(Math.sqrt(bx * bx + by * by) * .27 + th) * cos(by * .21) + cos(Math.sqrt(ex * ex + ey * ey) * .33 - th) * sin(ex * .19);
+}
+const scratch = new Float64Array(6);
+/** `polyColor` from GLSL_LOOKS: a Prism copy's pixel, or any pixel, turned by the field at `p`. */
+function polyColor(c, p, o, time, k) {
+	const th = time * TAU / 6, s = toHsl(c);
+	polyCentres(th, scratch);
+	const f = polyAt(p[0] - o[0], p[1] - o[1], scratch, th);
+	const t = fromHsl(fract(s[0] + .22 * f + .1), Math.min(.78, s[1] + .45), s[2] * .84 + .08);
+	return [
+		c[0] + (t[0] - c[0]) * k,
+		c[1] + (t[1] - c[1]) * k,
+		c[2] + (t[2] - c[2]) * k
+	];
+}
+/**
+* `lookColor` over a fixed set of pixels, as `editionField` is for the
+* editions, or null where the look doesn't change this edition. Pixels on
+* the same cell (the big card quantizes its cells to blocks) share one
+* working-out of the field, so a frame costs a field a block and a few
+* multiplies a pixel; nothing is allocated per frame.
+*/
+function lookField(look, ed, v, o, pixels, paint$1) {
+	if (!lookApplies(look, ed)) return null;
+	const { x, y, region, rgb: rgb$7 } = pixels, n = region.length;
+	const blockOf = new Int32Array(n), keys = new Map(), bx = [], by = [];
+	for (let k = 0; k < n; k++) {
+		const key = Math.round(x[k] * 10) * 100003 + Math.round(y[k] * 10);
+		let b$1 = keys.get(key);
+		if (b$1 === void 0) {
+			keys.set(key, b$1 = bx.length);
+			bx.push(x[k] - o[0]);
+			by.push(y[k] - o[1]);
+		}
+		blockOf[k] = b$1;
+	}
+	const nb = bx.length, val = new Float32Array(nb), m = new Float64Array(6);
+	if (look === 1) {
+		const { colors: [c1, c2, c3], contrast: contrast$2 } = paint$1 ?? {
+			colors: [
+				[
+					0,
+					0,
+					0
+				],
+				[
+					.5,
+					.5,
+					.5
+				],
+				[
+					1,
+					1,
+					1
+				]
+			],
+			contrast: PAINT_CONTRAST
+		};
+		const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), shade = new Float32Array(nb);
+		for (let b$1 = 0; b$1 < nb; b$1++) {
+			const px = bx[b$1] / 9, py = by[b$1] / 9, r = Math.sqrt(px * px + py * py), a = 1.5 * r;
+			qx[b$1] = px * Math.cos(a) - py * Math.sin(a);
+			qy[b$1] = px * Math.sin(a) + py * Math.cos(a);
+			rr[b$1] = r;
+			shade[b$1] = 1 - .22 * clamp01(r * .5 - .35);
+		}
+		const w = .5 / contrast$2, k1v = new Float32Array(nb), k2v = new Float32Array(nb);
+		return (time, out) => {
+			const th = time * TAU / 6, tw = .35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = .8 * Math.cos(th), st = .8 * Math.sin(th);
+			for (let b$1 = 0; b$1 < nb; b$1++) {
+				let ux = (qx[b$1] * ca - qy[b$1] * sa) * 2.6, uy = (qx[b$1] * sa + qy[b$1] * ca) * 2.6, dx;
+				dx = .8 * sin(1.3 * uy + ct);
+				uy += .8 * sin(1.1 * ux + st);
+				ux += dx;
+				dx = .8 * sin(1.7 * uy - st + .9);
+				uy += .8 * sin(1.5 * ux + ct - .7);
+				ux += dx;
+				dx = .8 * sin(2.1 * uy + ct + 1.8);
+				uy += .8 * sin(1.9 * ux - st + 2.6);
+				ux += dx;
+				const t = .5 + .5 * sin(ux * .9 + uy * 1.2 + rr[b$1] * 1.5);
+				k1v[b$1] = clamp01((t - .38) / w + .5);
+				k2v[b$1] = clamp01((t - .74) / w + .5);
+			}
+			for (let k = 0; k < n; k++) {
+				const j = k * 3;
+				if (region[k] < 1.5) {
+					out[j] = rgb$7[j];
+					out[j + 1] = rgb$7[j + 1];
+					out[j + 2] = rgb$7[j + 2];
+					continue;
+				}
+				const b$1 = blockOf[k], k1 = k1v[b$1], k2 = k2v[b$1], s = shade[b$1];
+				for (let i = 0; i < 3; i++) {
+					const lo = c1[i] + (c2[i] - c1[i]) * k1;
+					out[j + i] = (lo + (c3[i] - lo) * k2) * s;
+				}
+			}
+		};
+	}
+	if (look === 2 || look === 4) {
+		const hsl$2 = new Float32Array(n * 3);
+		for (let k = 0; k < n; k++) {
+			const s = toHsl([
+				rgb$7[k * 3],
+				rgb$7[k * 3 + 1],
+				rgb$7[k * 3 + 2]
+			]);
+			hsl$2[k * 3] = s[0];
+			hsl$2[k * 3 + 1] = s[1];
+			hsl$2[k * 3 + 2] = s[2];
+		}
+		const grid = new Float32Array(look === 4 ? nb : 0);
+		for (let b$1 = 0; b$1 < grid.length; b$1++) {
+			const px = bx[b$1] + o[0], py = by[b$1] + o[1];
+			grid[b$1] = Math.max(0, 10 * Math.abs(Math.cos((px + py) * 1.1)) - 9, 10 * Math.abs(Math.cos((px - py) * 1.1)) - 9);
+		}
+		/** `fromHsl`, written into `out` at `j`. */
+		const put = (out, j, h, s, l) => {
+			const ch = s * (1 - Math.abs(2 * l - 1));
+			for (let i = 0; i < 3; i++) {
+				const q = Math.abs(fract(h + (i === 0 ? 0 : i === 1 ? 2 / 3 : 1 / 3)) * 6 - 3) - 1;
+				out[j + i] = l + ch * ((q < 0 ? 0 : q > 1 ? 1 : q) - .5);
+			}
+		};
+		const tint = new Float32Array(look === 4 ? nb * 3 : 0), glow = new Float32Array(look === 4 ? nb : 0);
+		return (time, out) => {
+			const th = time * TAU / 6;
+			polyCentres(th, m);
+			for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = polyAt(bx[b$1], by[b$1], m, th);
+			if (look === 4) for (let b$1 = 0; b$1 < nb; b$1++) {
+				put(tint, b$1 * 3, fract(.58 + .12 * val[b$1]), .75, .66);
+				glow[b$1] = grid[b$1] * clamp01(val[b$1] * .6) * .4;
+			}
+			for (let k = 0; k < n; k++) {
+				const j = k * 3, f = val[blockOf[k]], win = region[k] > 1.5;
+				if (look === 2) {
+					put(out, j, fract(hsl$2[j] + .22 * f + .1), Math.min(.78, hsl$2[j + 1] + .45), hsl$2[j + 2] * .84 + .08);
+					const kk$1 = win ? .85 : 1;
+					for (let i = 0; i < 3; i++) out[j + i] = rgb$7[j + i] + (out[j + i] - rgb$7[j + i]) * kk$1;
+					continue;
+				}
+				const b$1 = blockOf[k], kk = win ? .6 : 1, g = glow[b$1] * kk;
+				for (let i = 0; i < 3; i++) {
+					const c = rgb$7[j + i];
+					out[j + i] = c + (c * .5 + tint[b$1 * 3 + i] * .55 - c) * .5 * kk + HOLO_LIT[i] * g;
+				}
+			}
+		};
+	}
+	const gold = ed === 5, lum$2 = new Float32Array(n);
+	for (let k = 0; k < n; k++) lum$2[k] = .299 * rgb$7[k * 3] + .587 * rgb$7[k * 3 + 1] + .114 * rgb$7[k * 3 + 2];
+	const lift = new Float32Array(nb), peak = new Float32Array(nb), dip = new Float32Array(nb);
+	const diag = Float32Array.from(bx, (dx, b$1) => (dx + o[0]) * .3 + (by[b$1] + o[1]) * .5);
+	return (time, out) => {
+		const th = time * TAU / 6;
+		const ax = 5 * Math.cos(th) - 9, ay = 6 * Math.sin(th) - 14, cx = 10 - 6 * Math.sin(th), cy = 16 + 5 * Math.cos(th);
+		for (let b$1 = 0; b$1 < nb; b$1++) {
+			const a1 = bx[b$1] - ax, a2 = by[b$1] - ay, b1 = bx[b$1] - cx, b2 = by[b$1] - cy;
+			const w = sin((Math.sqrt(a1 * a1 + a2 * a2) - Math.sqrt(b1 * b1 + b2 * b2)) * .6 + diag[b$1] - th);
+			lift[b$1] = clamp01((w - .35) / .45);
+			peak[b$1] = clamp01((w - .86) / .14);
+			dip[b$1] = clamp01((-w - .5) / .5);
+		}
+		for (let k = 0; k < n; k++) {
+			const j = k * 3, b$1 = blockOf[k], win = region[k] > 1.5;
+			if (gold) {
+				const kk$1 = win ? .35 : 1, d$1 = 1 - .14 * dip[b$1] * kk$1, l$1 = lift[b$1] * kk$1, p$1 = peak[b$1] * .6 * kk$1;
+				out[j] = rgb$7[j] * d$1 + .2 * l$1 + .5 * p$1;
+				out[j + 1] = rgb$7[j + 1] * d$1 + .16 * l$1 + .66 * p$1;
+				out[j + 2] = rgb$7[j + 2] * d$1 + .05 * l$1 + .92 * p$1;
+				continue;
+			}
+			const kk = win ? .6 : 1, mm = .6 * kk, d = 1 - .16 * dip[b$1] * kk, l = lift[b$1] * .45 * kk, p = peak[b$1] * .45 * kk, L = lum$2[k];
+			out[j] = (rgb$7[j] + (L * .8 + .07 - rgb$7[j]) * mm) * d + .42 * l + .7 * p;
+			out[j + 1] = (rgb$7[j + 1] + (L * .9 + .09 - rgb$7[j + 1]) * mm) * d + .6 * l + .8 * p;
+			out[j + 2] = (rgb$7[j + 2] + (L * 1.06 + .15 - rgb$7[j + 2]) * mm) * d + .95 * l + .95 * p;
+		}
+	};
+}
+/** `lookColor`'s choice over a set of pixels: the look's field where it applies, else the edition's own. */
+function cardField(look, ed, v, o, px, pixels, paint$1) {
+	return lookField(look, ed, v, o, pixels, paint$1) ?? editionField(ed, v, o, px, pixels);
+}
+
+//#endregion
 //#region src/card.ts
 /**
 * Trading cards, drawn by the library so every game, the site and an export
@@ -22731,6 +23125,7 @@ const M = 4;
 * pixel under its rim at their widest reach.
 */
 const ZOOM = 5;
+const PRISM$1 = SHADER_FINISHES.indexOf("prism");
 /** Whether a copy's finish moves on the card (a heavily scuffed plain copy's sweep is worn away). */
 const shines$1 = (o) => {
 	const f = SHADER_FINISHES.indexOf(o.finish);
@@ -22793,7 +23188,7 @@ function buddyNudge(anim) {
 * finish that sets its grade: Foil, Holographic, Polychrome, Negative, Gold,
 * and the aura card's Spectral.
 */
-function cardArt(input, anim, owned, g, ed) {
+function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const zoom = ZOOM, nudge = buddyNudge(anim);
 	const cellX = (gx, slot) => gx * zoom - (gx >= FRAME_WIDTH && slot !== 5 ? nudge : 0);
 	const fit$1 = cardFit(anim.frames, anim.width, cellX), shape$1 = cardShape();
@@ -23055,7 +23450,19 @@ function cardArt(input, anim, owned, g, ed) {
 		eh[k] = shape$1.glint[(yy >> 1) * W + (x >> 1)];
 		for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
 	});
-	const field = editionField(ed, v, [wcx / 5, wcy / 5], .2, {
+	const look = lookIndex(looks.look), looked = lookApplies(look, ed);
+	const paint$1 = look === 1 ? {
+		colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color),
+		contrast: looks.contrast ?? PAINT_CONTRAST
+	} : void 0;
+	const block = (k) => Math.floor(k * 2.5) * 2 / 5;
+	const field = looked ? lookField(look, ed, v, [wcx / 5, wcy / 5], {
+		x: ex.map(block),
+		y: ey.map(block),
+		region: er,
+		h: eh,
+		rgb: ergb
+	}, paint$1) : editionField(ed, v, [wcx / 5, wcy / 5], .2, {
 		x: ex,
 		y: ey,
 		region: er,
@@ -23194,6 +23601,21 @@ function cardArt(input, anim, owned, g, ed) {
 					put(cy * W + cx, c[0], c[1], c[2]);
 					continue;
 				}
+				if (look === 2 && f === PRISM$1) {
+					if (!litDone[0]) {
+						litDone.fill(1);
+						const out = polyColor([
+							c[0] / 255,
+							c[1] / 255,
+							c[2] / 255
+						], [x0 / 5, (oy + gy * zoom) / 5], [wcx / 5, wcy / 5], shineTime, Math.min(1, Math.max(0, 1 - copy.scuff * 1.4)));
+						lit$1[0] = out[0] * 255;
+						lit$1[1] = out[1] * 255;
+						lit$1[2] = out[2] * 255;
+					}
+					put(cy * W + cx, lit$1[0], lit$1[1], lit$1[2]);
+					continue;
+				}
 				const k = dx + dy;
 				if (!litDone[k]) {
 					litDone[k] = 1;
@@ -23292,7 +23714,7 @@ function cardFrames(input, ms = 80) {
 * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
 * card with nothing shining draws each pose of his once and shows it again.
 */
-function cardPlayer(input, ms = 80, { keep = true } = {}) {
+function cardPlayer(input, ms = 80, { keep = true, look, contrast: contrast$2 } = {}) {
 	const options = {
 		parts: input.parts,
 		palette: input.palette,
@@ -23303,7 +23725,10 @@ function cardPlayer(input, ms = 80, { keep = true } = {}) {
 		...options,
 		loop: { fit: true }
 	}), turns = anim.turns ?? 1;
-	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g));
+	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), {
+		look,
+		contrast: contrast$2
+	});
 	const total = anim.duration, count$1 = Math.max(1, Math.round(total / ms)), cache = [];
 	const delays = Array.from({ length: count$1 }, (_, k) => Math.round((k + 1) * total / count$1) - Math.round(k * total / count$1));
 	const frameOf = new Map(anim.frames.map((f, k) => [f, k]));
@@ -23336,7 +23761,7 @@ function cardPlayer(input, ms = 80, { keep = true } = {}) {
 	};
 }
 /** The card standing still, for a picture. */
-function cardStill(input, t = .6) {
+function cardStill(input, t = .6, looks = {}) {
 	const anim = animateLoop(input.seed, input.move ?? "idle", {
 		parts: input.parts,
 		palette: input.palette,
@@ -23344,7 +23769,7 @@ function cardStill(input, t = .6) {
 		rarity: false
 	});
 	const g = cardGrade(input);
-	return cardArt(input, anim, ownedBySlot(input.copies ?? []), g, cardEdition(input, g)).draw(frameAt(anim, 0), t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+	return cardArt(input, anim, ownedBySlot(input.copies ?? []), g, cardEdition(input, g), looks).draw(frameAt(anim, 0), t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
 }
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */
 function ownedBySlot(copies) {
@@ -23563,7 +23988,7 @@ function cardFace(spec) {
 		0,
 		0
 	], .35) : rgb$1(mark$1), FIXED);
-	return {
+	const face = {
 		base: base$1,
 		kind,
 		noise: noise$3,
@@ -23575,9 +24000,19 @@ function cardFace(spec) {
 		edition,
 		origin
 	};
+	if (spec.look) {
+		face.look = lookIndex(spec.look);
+		const hues = auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, Math.min(g, GRADES.length - 1))].color];
+		face.paint = {
+			colors: paintColors(hues, auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]),
+			contrast: spec.contrast ?? PAINT_CONTRAST
+		};
+	}
+	return face;
 }
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
 const faceMoves = (f) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+const PRISM = SHADER_FINISHES.indexOf("prism");
 /** A face's edition worked out per pixel once (`editionField`), kept with the face. */
 const fields = new WeakMap();
 function faceField(f) {
@@ -23597,15 +24032,16 @@ function faceField(f) {
 		h[k] = f.noise[i * 4] / 255;
 		for (let j = 0; j < 3; j++) rgb$7[k * 3 + j] = f.base[i * 4 + j] / 255;
 	});
+	const pixels = {
+		x,
+		y,
+		region,
+		h,
+		rgb: rgb$7
+	};
 	got = {
 		at,
-		field: editionField(f.edition, f.variant, f.origin, 1, {
-			x,
-			y,
-			region,
-			h,
-			rgb: rgb$7
-		}),
+		field: f.look ? cardField(f.look, f.edition, f.variant, f.origin, 1, pixels, f.paint) : editionField(f.edition, f.variant, f.origin, 1, pixels),
 		out: new Float32Array(n * 3)
 	};
 	fields.set(f, got);
@@ -23633,7 +24069,8 @@ function cardFaceAt(f, ms, hover) {
 				f.base[i + 2] / 255
 			];
 			const k = Math.floor(f.kind[i] / 32 + .5), finish = Math.floor(f.kind[i + 1] / 32 + .5) - 1;
-			if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
+			if (k === ITEM && finish === PRISM && f.look === 2) c = polyColor(c, [x, y], f.origin, time, Math.min(1, Math.max(0, 1 - f.kind[i + 2] / 255 * 1.4)));
+			else if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
 		}
 		if (hover && hover.strength > 0) {
 			const light$2 = (1 - smoothstep(0, .34, distance([(x + .5) / W, (y + .5) / H], [hover.x, hover.y]))) * .35 * hover.strength;
@@ -23654,10 +24091,12 @@ function cardFaceAt(f, ms, hover) {
 const CARD_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
 uniform sampler2D base, kind, noise;
-uniform float time, hover, edition, variant;
+uniform float time, hover, edition, variant, look, contrast;
 uniform vec2 light, origin;
+uniform vec3 paint1, paint2, paint3;
 ${GLSL_COMMON}
 ${GLSL_EDITIONS}
+${GLSL_LOOKS}
 void main() {
   vec2 res = vec2(${FACE_WIDTH}.0, ${FACE_HEIGHT}.0);
   vec2 cell = floor(uv * res);
@@ -23670,7 +24109,9 @@ void main() {
   float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
   float print = floor(kd.a * 255.0 + 0.5) * 4.0;
   float h = texture2D(noise, at).r;
-  if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  if (k > 3.5 && k < 4.5 && finish > 3.5 && finish < 4.5 && look > 1.5 && look < 2.5) c = polyColor(c, cell, origin, time * TAU / 6.0, clamp(1.0 - kd.b * 1.4, 0.0, 1.0));
+  else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  else if (k < 2.5 && look > 0.5) c = lookColor(c, look, edition, variant, cell, origin, k, h, 1.0, time, paint1, paint2, paint3, contrast);
   else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
@@ -23722,7 +24163,12 @@ function createCardShader(canvas) {
 		"edition",
 		"variant",
 		"light",
-		"origin"
+		"origin",
+		"look",
+		"contrast",
+		"paint1",
+		"paint2",
+		"paint3"
 	].map((n) => [n, gl.getUniformLocation(program, n)]));
 	gl.uniform1i(u.base, 0);
 	gl.uniform1i(u.kind, 1);
@@ -23758,6 +24204,14 @@ function createCardShader(canvas) {
 			gl.uniform2f(u.origin, face.origin[0], face.origin[1]);
 			gl.uniform1f(u.hover, hover?.strength ?? 0);
 			gl.uniform2f(u.light, hover?.x ?? .5, hover?.y ?? .3);
+			gl.uniform1f(u.look, face.look ?? 0);
+			gl.uniform1f(u.contrast, face.paint?.contrast ?? PAINT_CONTRAST);
+			const paint$1 = face.paint?.colors;
+			[
+				u.paint1,
+				u.paint2,
+				u.paint3
+			].forEach((at, k) => gl.uniform3f(at, paint$1?.[k][0] ?? 0, paint$1?.[k][1] ?? 0, paint$1?.[k][2] ?? 0));
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -24483,6 +24937,7 @@ exports.BUDDY_GUY_WIDTH = BUDDY_GUY_WIDTH
 exports.CAPSULE_ONLY = CAPSULE_ONLY
 exports.CARD_FRAGMENT = CARD_FRAGMENT
 exports.CARD_HEIGHT = CARD_HEIGHT
+exports.CARD_LOOKS = CARD_LOOKS
 exports.CARD_WIDTH = CARD_WIDTH
 exports.CRAFT_COST = CRAFT_COST
 exports.DEAL_PREFIX = DEAL_PREFIX
@@ -24503,6 +24958,7 @@ exports.FRAME_WIDTH = FRAME_WIDTH
 exports.FX_IDS = FX_IDS
 exports.GAMES = GAMES
 exports.GLSL_COMMON = GLSL_COMMON
+exports.GLSL_LOOKS = GLSL_LOOKS
 exports.GOLD_RIM_DAYS = GOLD_RIM_DAYS
 exports.GRADES = GRADES
 exports.GRID_SIZE = GRID_SIZE
@@ -24549,6 +25005,7 @@ exports.applyFx = applyFx
 exports.auraById = auraById
 exports.auraCells = auraCells
 exports.auraColor = auraColor
+exports.auraColors = auraColors
 exports.bakeCard = bakeCard
 exports.bakeGuy = bakeGuy
 exports.bakeView = bakeView
@@ -24608,6 +25065,7 @@ exports.itemById = itemById
 exports.itemFrame = itemFrame
 exports.itemWeight = itemWeight
 exports.items = items
+exports.lookApplies = lookApplies
 exports.lookOf = lookOf
 exports.luckyPalette = luckyPalette
 exports.machineName = machineName

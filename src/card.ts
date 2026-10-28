@@ -5,7 +5,8 @@ import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { GLYPHS } from './font';
 import { encodeGif, encodePng, type Frames } from './gif';
 import { itemById, SET_COLORS } from './items';
-import { auraHue } from './auras';
+import { auraColors, auraHue } from './auras';
+import { lookApplies, lookField, lookIndex, paintColors, PAINT_CONTRAST, polyColor, type LookOptions } from './card-looks';
 
 /**
  * Trading cards, drawn by the library so every game, the site and an export
@@ -186,6 +187,7 @@ const ZOOM = 5;
 type CardFrame = AnimationFrame & { outside?: [number, number, string][] };
 type OwnedBySlot = Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>;
 
+const PRISM = SHADER_FINISHES.indexOf('prism');
 /** Whether a copy's finish moves on the card (a heavily scuffed plain copy's sweep is worn away). */
 const shines = (o: Owned) => { const f = SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]); return f > 0 || (f === 0 && o.scuff <= 0.07); };
 
@@ -240,7 +242,7 @@ function buddyNudge(anim: Animation): number {
  * finish that sets its grade: Foil, Holographic, Polychrome, Negative, Gold,
  * and the aura card's Spectral.
  */
-function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: number, ed: number) {
+function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: number, ed: number, looks: LookOptions = {}) {
   // Where a cell of his frame starts across, in card pixels: his buddy's room (an aura's cells aside) nudged in.
   const zoom = ZOOM, nudge = buddyNudge(anim);
   const cellX = (gx: number, slot: number) => gx * zoom - (gx >= FRAME_WIDTH && slot !== 5 ? nudge : 0);
@@ -444,7 +446,13 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     ex[k] = x / 5; ey[k] = yy / 5; er[k] = s.region[i]; eh[k] = shape.glint[(yy >> 1) * W + (x >> 1)];
     for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
   });
-  const field = editionField(ed, v, [wcx / 5, wcy / 5], 0.2, { x: ex, y: ey, region: er, h: eh, rgb: ergb });
+  // A prototype look (./card-looks) works its field out on blocks of two card pixels: crisp, and a quarter of the work.
+  const look = lookIndex(looks.look), looked = lookApplies(look, ed);
+  const paint = look === 1 ? { colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color), contrast: looks.contrast ?? PAINT_CONTRAST } : undefined;
+  const block = (k: number) => (Math.floor(k * 2.5) * 2) / 5;
+  const field = looked
+    ? lookField(look, ed, v, [wcx / 5, wcy / 5], { x: ex.map(block), y: ey.map(block), region: er, h: eh, rgb: ergb }, paint)!
+    : editionField(ed, v, [wcx / 5, wcy / 5], 0.2, { x: ex, y: ey, region: er, h: eh, rgb: ergb });
   const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
 
   // A tall hat pokes out over the window's top rather than being cut off.
@@ -561,6 +569,16 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
         const cx = x0 + dx, cy = oy + gy * zoom + dy;
         if (cx < 0 || cy < 0 || cx >= W || cy >= H || !room[cy * W + cx]) continue;
         if (!copy || f < 0) { put(cy * W + cx, c[0], c[1], c[2]); continue; }
+        // Under the polychrome look a Prism copy turns with the card's field, a whole cell at a time.
+        if (look === 2 && f === PRISM) {
+          if (!litDone[0]) {
+            litDone.fill(1);
+            const out = polyColor([c[0] / 255, c[1] / 255, c[2] / 255], [x0 / 5, (oy + gy * zoom) / 5], [wcx / 5, wcy / 5], shineTime, Math.min(1, Math.max(0, 1 - copy.scuff * 1.4)));
+            lit[0] = out[0] * 255; lit[1] = out[1] * 255; lit[2] = out[2] * 255;
+          }
+          put(cy * W + cx, lit[0], lit[1], lit[2]);
+          continue;
+        }
         const k = dx + dy;
         if (!litDone[k]) {
           litDone[k] = 1;
@@ -646,6 +664,10 @@ export interface CardPlayerOptions {
    * a page showing many cards: a frame costs about a millisecond.
    */
   keep?: boolean;
+  /** A prototype look for the card's edition (./card-looks): nothing uses one yet. */
+  look?: LookOptions['look'];
+  /** How hard the `paint` look's bands are. */
+  contrast?: number;
 }
 
 /**
@@ -655,10 +677,10 @@ export interface CardPlayerOptions {
  * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
  * card with nothing shining draws each pose of his once and shows it again.
  */
-export function cardPlayer(input: CardInput, ms = 80, { keep = true }: CardPlayerOptions = {}) {
+export function cardPlayer(input: CardInput, ms = 80, { keep = true, look, contrast }: CardPlayerOptions = {}) {
   const options = { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false };
   const anim = animate(input.seed, input.move ?? 'idle', { ...options, loop: { fit: true } }), turns = anim.turns ?? 1;
-  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g));
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), { look, contrast });
   const total = anim.duration, count = Math.max(1, Math.round(total / ms)), cache: Uint8ClampedArray[] = [];
   const delays = Array.from({ length: count }, (_, k) => Math.round((k + 1) * total / count) - Math.round(k * total / count));
   const frameOf = new Map(anim.frames.map((f, k) => [f, k]));
@@ -687,10 +709,10 @@ export function cardPlayer(input: CardInput, ms = 80, { keep = true }: CardPlaye
 }
 
 /** The card standing still, for a picture. */
-export function cardStill(input: CardInput, t = 0.6): Uint8ClampedArray {
+export function cardStill(input: CardInput, t = 0.6, looks: LookOptions = {}): Uint8ClampedArray {
   const anim = animateLoop(input.seed, input.move ?? 'idle', { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false });
   const g = cardGrade(input);
-  return cardArt(input, anim, ownedBySlot(input.copies ?? []), g, cardEdition(input, g)).draw(frameAt(anim, 0), t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+  return cardArt(input, anim, ownedBySlot(input.copies ?? []), g, cardEdition(input, g), looks).draw(frameAt(anim, 0), t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
 }
 
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */

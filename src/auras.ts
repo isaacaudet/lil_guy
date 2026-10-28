@@ -636,14 +636,19 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
  * dressed in it.
  */
 export function auraHue(id: string, finish: string, print = 0): string {
-  const aura = auraById(id);
-  const colors = id === 'aura.neon' ? [neonRamp(finish, print)[0], NEON_TUBES[finish]?.[print % NEON_TUBES[finish].length] ?? '#FF3FA4']
-    : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors
-      : finish === 'fade' ? FADE : finish === 'pearl' ? ['#B9A2FF'] : RAMPS[finish] ?? aura?.colors ?? ['#19D3C5'];
+  const colors = auraColors(id, finish, print);
   const vivid = (hex: string) => {
     const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b), min = Math.min(r, g, b);
     // Chroma, a little in favour of the middle of the range: a near-white or near-black step never wins.
     return (max - min) * (1 - Math.abs(max + min - 1) * 0.3);
   };
   return colors.reduce((a, c) => (vivid(c) > vivid(a) ? c : a), colors[0]);
+}
+
+/** The colours an aura copy's card is dressed from, in its finish: the list `auraHue` picks the most vivid of. */
+export function auraColors(id: string, finish: string, print = 0): string[] {
+  const aura = auraById(id);
+  return id === 'aura.neon' ? [neonRamp(finish, print)[0], NEON_TUBES[finish]?.[print % NEON_TUBES[finish].length] ?? '#FF3FA4']
+    : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors
+      : finish === 'fade' ? FADE : finish === 'pearl' ? ['#B9A2FF'] : RAMPS[finish] ?? aura?.colors ?? ['#19D3C5'];
 }

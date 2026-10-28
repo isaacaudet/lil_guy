@@ -2,7 +2,8 @@ import { backdropColors, FRAME_WIDTH, HEADROOM } from './animate';
 import { compose } from './compose';
 import { distance, editionField, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, SET_COLORS, withItems } from './items';
-import { auraHue } from './auras';
+import { auraColors, auraHue } from './auras';
+import { cardField, GLSL_LOOKS, lookIndex, paintColors, PAINT_CONTRAST, polyColor, type LookOptions, type PaintSpec } from './card-looks';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -44,6 +45,9 @@ export interface FaceSpec {
   tint?: string;
   /** The machine whose set symbol it carries; by default its last copy's. */
   set?: string;
+  /** A prototype look for its edition (./card-looks), and its paint's contrast. None by default. */
+  look?: LookOptions['look'];
+  contrast?: number;
 }
 
 export interface CardFace {
@@ -64,6 +68,9 @@ export interface CardFace {
   edition: number;
   /** The window's middle, in face cells: where a Spectral swirl turns round. */
   origin: [number, number];
+  /** A prototype look (an index in CARD_LOOKS) and what its paint is drawn in; only on a face given one. */
+  look?: number;
+  paint?: PaintSpec;
 }
 
 const rgb = (s: string): [number, number, number] => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
@@ -164,11 +171,19 @@ export function cardFace(spec: FaceSpec): CardFace {
   // The set's symbol, bottom right: a small badge in the machine's colour.
   const mark = set ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
   if (mark) for (let y = 36; y <= 38; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 36 ? blend(rgb(mark), WHITE, 0.5) : x === 22 || y === 38 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), FIXED);
-  return { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin };
+  const face: CardFace = { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin };
+  if (spec.look) {
+    face.look = lookIndex(spec.look);
+    const hues = auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, Math.min(g, GRADES.length - 1))].color];
+    face.paint = { colors: paintColors(hues, auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]), contrast: spec.contrast ?? PAINT_CONTRAST };
+  }
+  return face;
 }
 
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
 export const faceMoves = (f: CardFace) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+
+const PRISM = SHADER_FINISHES.indexOf('prism');
 
 /** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
 export interface Hover { x: number; y: number; strength: number }
@@ -188,7 +203,8 @@ function faceField(f: CardFace) {
     x[k] = i % W; y[k] = Math.floor(i / W); region[k] = Math.floor(f.kind[i * 4] / 32 + 0.5); h[k] = f.noise[i * 4] / 255;
     for (let j = 0; j < 3; j++) rgb[k * 3 + j] = f.base[i * 4 + j] / 255;
   });
-  got = { at, field: editionField(f.edition, f.variant, f.origin, 1, { x, y, region, h, rgb }), out: new Float32Array(n * 3) };
+  const pixels = { x, y, region, h, rgb };
+  got = { at, field: f.look ? cardField(f.look, f.edition, f.variant, f.origin, 1, pixels, f.paint) : editionField(f.edition, f.variant, f.origin, 1, pixels), out: new Float32Array(n * 3) };
   fields.set(f, got);
   return got;
 }
@@ -207,7 +223,8 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
     else {
       c = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
       const k = Math.floor(f.kind[i] / 32 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
-      if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
+      if (k === ITEM && finish === PRISM && f.look === 2) c = polyColor(c, [x, y], f.origin, time, Math.min(1, Math.max(0, 1 - f.kind[i + 2] / 255 * 1.4)));
+      else if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
     }
     if (hover && hover.strength > 0) {
       const light = (1 - smoothstep(0, 0.34, distance([(x + 0.5) / W, (y + 0.5) / H], [hover.x, hover.y]))) * 0.35 * hover.strength;
@@ -222,10 +239,12 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
 export const CARD_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
 uniform sampler2D base, kind, noise;
-uniform float time, hover, edition, variant;
+uniform float time, hover, edition, variant, look, contrast;
 uniform vec2 light, origin;
+uniform vec3 paint1, paint2, paint3;
 ${GLSL_COMMON}
 ${GLSL_EDITIONS}
+${GLSL_LOOKS}
 void main() {
   vec2 res = vec2(${FACE_WIDTH}.0, ${FACE_HEIGHT}.0);
   vec2 cell = floor(uv * res);
@@ -238,7 +257,9 @@ void main() {
   float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
   float print = floor(kd.a * 255.0 + 0.5) * 4.0;
   float h = texture2D(noise, at).r;
-  if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  if (k > 3.5 && k < 4.5 && finish > 3.5 && finish < 4.5 && look > 1.5 && look < 2.5) c = polyColor(c, cell, origin, time * TAU / 6.0, clamp(1.0 - kd.b * 1.4, 0.0, 1.0));
+  else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  else if (k < 2.5 && look > 0.5) c = lookColor(c, look, edition, variant, cell, origin, k, h, 1.0, time, paint1, paint2, paint3, contrast);
   else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
@@ -273,7 +294,7 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
   const p = gl.getAttribLocation(program, 'p');
   gl.enableVertexAttribArray(p);
   gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
-  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin'].map(n => [n, gl.getUniformLocation(program, n)]));
+  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin', 'look', 'contrast', 'paint1', 'paint2', 'paint3'].map(n => [n, gl.getUniformLocation(program, n)]));
   gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1); gl.uniform1i(u.noise, 2);
   gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
   const textures = [0, 1, 2].map(unit => {
@@ -295,6 +316,9 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
       gl.uniform1f(u.time, loopSeconds(ms)); gl.uniform1f(u.edition, face.edition);
       gl.uniform1f(u.variant, face.variant); gl.uniform2f(u.origin, face.origin[0], face.origin[1]);
       gl.uniform1f(u.hover, hover?.strength ?? 0); gl.uniform2f(u.light, hover?.x ?? 0.5, hover?.y ?? 0.3);
+      gl.uniform1f(u.look, face.look ?? 0); gl.uniform1f(u.contrast, face.paint?.contrast ?? PAINT_CONTRAST);
+      const paint = face.paint?.colors;
+      [u.paint1, u.paint2, u.paint3].forEach((at, k) => gl.uniform3f(at, paint?.[k][0] ?? 0, paint?.[k][1] ?? 0, paint?.[k][2] ?? 0));
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
