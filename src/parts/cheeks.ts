@@ -94,9 +94,9 @@ export const cheeks: Cheeks[] = [
     'yy......yy',
     'gg......gg',
   ]),
-  // The anime set, from capsules only: a manga blush, pink hatched with red lines (////).
+  // The anime set, from capsules only: a manga blush, a pink cheek with one red stroke (/) through it.
   cheeks_('manga blush', [
-    'crcr....crcr',
-    'rcrc....rcrc',
+    '.rc.....rc',
+    'rc.....rc.',
   ]),
 ];

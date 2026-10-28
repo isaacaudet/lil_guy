@@ -1745,7 +1745,7 @@ const cheeks = [
 		"yy......yy",
 		"gg......gg"
 	]),
-	cheeks_("manga blush", ["crcr....crcr", "rcrc....rcrc"])
+	cheeks_("manga blush", [".rc.....rc", "rc.....rc."])
 ];
 
 //#endregion
@@ -15311,8 +15311,22 @@ function luckyPalette(palette$1) {
 	return derive(`${palette$1.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
 }
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+const POINTED = [
+	3,
+	4,
+	6,
+	13,
+	14,
+	20
+];
+const NOT_BROWN = {
+	13: 0,
+	14: 20
+};
+/** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
+const shownPalette = (config) => POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
 function paletteOf(config) {
-	const toned = shadePalette(getPalette(config.palette), config.shade);
+	const toned = shadePalette(getPalette(shownPalette(config)), config.shade);
 	return config.lucky ? luckyPalette(toned) : toned;
 }
 
@@ -15455,14 +15469,13 @@ const darkSkin = (config) => {
 	const ink = paletteOf(config).colors[T.EYE];
 	return !!ink && contrast(ink, "#000000") > 10;
 };
-/** Parts meant to be shown off: they always show. So does a manga blush, which a player earns from a capsule and a shy guy wears (./animate). */
+/** Parts meant to be shown off: they always show. */
 const CHASE = new Set([
 	"kintsugi",
 	"gold dipped",
 	"gold leaf",
 	"jewels",
-	"rainbow",
-	"manga blush"
+	"rainbow"
 ]);
 /**
 * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
@@ -17567,7 +17580,7 @@ function traitOdds(config) {
 		},
 		{
 			slot: "colour",
-			name: palettes[config.palette].name,
+			name: palettes[shownPalette(config)].name,
 			chance: dealt("palette", paletteWeights, config.palette)
 		},
 		{

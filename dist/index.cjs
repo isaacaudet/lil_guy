@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-CdA16umU.cjs');
+const require_paint = require('./paint-CrGdjXhO.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -2137,7 +2137,7 @@ function traitOdds(config) {
 		},
 		{
 			slot: "colour",
-			name: require_paint.palettes[config.palette].name,
+			name: require_paint.palettes[require_paint.shownPalette(config)].name,
 			chance: dealt("palette", require_paint.paletteWeights, config.palette)
 		},
 		{

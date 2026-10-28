@@ -5,7 +5,7 @@ import {
   bodyWeights, accessoryWeights, paletteWeights, armWeights, footWeights, shadeWeights,
   RETIRED_EYES, withoutRetired, unlockWeight, DEAL_2, DEAL_3,
 } from './parts/weights';
-import { palettes } from './palette';
+import { palettes, shownPalette } from './palette';
 import { gameItems, itemById, itemWeight } from './items';
 import { AURAS, AURA_ODDS } from './auras';
 import { EFFECTS } from './effects';
@@ -69,7 +69,7 @@ export function traitOdds(config: AvatarConfig): TraitOdds[] {
     { slot: 'topper', name: hair[config.hair].name, chance: dealt('hair', hairWeights, config.hair) },
     { slot: 'markings', name: bodies[body].name, chance: dealt('body', bodyWeights, body) },
     { slot: 'accessory', name: accessories[config.accessory].name, chance: dealt('accessory', accessoryWeights, config.accessory) },
-    { slot: 'colour', name: palettes[config.palette].name, chance: dealt('palette', paletteWeights, config.palette) },
+    { slot: 'colour', name: palettes[shownPalette(config)].name, chance: dealt('palette', paletteWeights, config.palette) },
     { slot: 'tone', name: TONE_NAMES[config.shade], chance: share(shadeWeights, config.shade) },
     { slot: 'arms', name: ARM_NAMES[config.arms], chance: share(armWeights, config.arms) },
     { slot: 'feet', name: FOOT_NAMES[config.feet], chance: share(footWeights, config.feet) },

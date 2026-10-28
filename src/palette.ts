@@ -270,7 +270,16 @@ export function luckyPalette(palette: Palette): Palette {
 }
 
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+// Gumdrop, onigiri, slime, gourd, flame and shard: heads that come to a point.
+const POINTED = [3, 4, 6, 13, 14, 20];
+// A pointed head in a brown reads as a poo emoji, so Cocoa and Caramel wear Peach and Honey there.
+const NOT_BROWN: Record<number, number> = { 13: 0, 14: 20 };
+
+/** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
+export const shownPalette = (config: Pick<AvatarConfig, 'head' | 'palette'>): number =>
+  POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
+
 export function paletteOf(config: AvatarConfig): Palette {
-  const toned = shadePalette(getPalette(config.palette), config.shade);
+  const toned = shadePalette(getPalette(shownPalette(config)), config.shade);
   return config.lucky ? luckyPalette(toned) : toned;
 }
