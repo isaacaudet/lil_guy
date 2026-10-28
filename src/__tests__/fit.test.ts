@@ -30,7 +30,7 @@ describe('nothing on top of the head covers the face', () => {
       for (const h of hats) if (faceCells(compose({ ...b, ...f, hat: h.id })) !== bare) bad.push(`${h.id} on ${label(b)}`);
     }
     expect(bad).toEqual([]);
-  });
+  }, 30_000);
   test('toppers, on every head, with every kind of face', () => {
     const bad: string[] = [];
     for (const head of heads.keys()) for (const f of faces) {

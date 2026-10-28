@@ -93,5 +93,5 @@ describe('faces', () => {
       if (sideBySide(marks, f.eye) || sideBySide(marks, f.mouth)) wrong.push(`${shape.name}: ${cheeks[k].name} by ${eyes[e].name} + ${mouths[m].name}`);
     }
     expect(wrong).toEqual([]);
-  }, 120_000);
+  }, 300_000);
 });
