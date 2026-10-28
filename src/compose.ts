@@ -152,27 +152,62 @@ const darkSkin = (config: AvatarConfig) => {
 /** Parts meant to be shown off: they always show. */
 const CHASE = new Set(['kintsugi', 'gold dipped', 'gold leaf', 'jewels', 'rainbow']);
 
+/** Reds and golds, which make an eye loud (hearts, stars, fired up, a laser). */
+const LOUD_EYE = new Set<number>([T.RED, T.GOLD, T.GOLD_SHADE]);
+const loudEyes = (config: AvatarConfig) => eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art.some(row => row.some(t => LOUD_EYE.has(t)));
+/** Cheek marks in colours of their own (hearts, stars, war paint, a plaster), not a blush or a fine line. */
+const LOUD_CHEEK = new Set<number>([T.RED, T.GOLD, T.GOLD_SHADE, T.ACCENT, T.ACCENT_SHADE, T.TRIM]);
+const loudCheeks = (config: AvatarConfig) => cheeks[config.cheeks].art.some(row => row.some(t => LOUD_CHEEK.has(t)));
+
 /**
  * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
  * marks and a body pattern all at once crowd sixteen pixels, so a guy shows
  * at most two of them, one on a head with eight rows or fewer (a bat, a crab):
  * the pattern goes first, then the cheeks. Hair and what he wears always
  * show, and so does a chase part. On a skin dark enough for light ink, the
- * scattered patterns go too.
+ * scattered patterns go too. A face boxed in, with hair or a hat down to
+ * the eyes and something worn on them or just under the mouth, has room for
+ * one fewer. And a face carries one loud thing: cheek marks that are more
+ * than a blush give way to eyes in their own colours.
  */
-function extrasOf(config: AvatarConfig, c: Canvas): { pattern: boolean; cheeks: boolean } {
+function extrasOf(config: AvatarConfig, c: Canvas, face: Set<number>): { pattern: boolean; cheeks: boolean } {
   const body = bodies[config.body].name, cheek = cheeks[config.cheeks];
   let pattern = config.body !== 0 && !(SCATTERED.has(body) && darkSkin(config));
   let marks = cheek.art.length > 0;
   const top = itemById(config.hat)?.slot === 'hat' || (config.hair !== 0 && !EARED.has(heads[config.head].name));
   const worn = config.accessory !== 0;
-  const small = c.bottom - c.crown + 1 <= 8, limit = small ? 2 : 3;
+  const small = c.bottom - c.crown + 1 <= 8;
+  const limit = (small ? 2 : 3) - (top && worn && boxedIn(config, c, face) ? 1 : 0);
   // One quiet mark (a belly, a star, a split) doesn't crowd a full-size head: it only counts on a small one.
   const quiet = pattern && !SCATTERED.has(body) && body !== 'starry' && !small;
   const count = () => [top, worn, pattern && !quiet, marks].filter(Boolean).length;
-  if (count() > limit && pattern && !CHASE.has(body)) pattern = false;
+  if (count() > limit && pattern && !quiet && !CHASE.has(body)) pattern = false;
   if (count() > limit && marks && !CHASE.has(cheek.name)) marks = false;
+  if (marks && !CHASE.has(cheek.name) && loudCheeks(config) && loudEyes(config)) marks = false;
   return { pattern, cheeks: marks };
+}
+
+/** Whether any cell `draw` paints on a copy of the canvas, among those `keep` allows, comes within `reach` of `cells`. */
+function paintsNear(c: Canvas, draw: (c: Canvas) => void, cells: number[], reach: number, keep: (x: number, y: number) => boolean = () => true): boolean {
+  const view = c.clone();
+  draw(view);
+  return view.grid.some((row, y) => row.some((v, x) => v !== c.grid[y][x] && keep(x, y)
+    && cells.some(k => Math.abs((k % GRID_SIZE) - x) <= reach && Math.abs(Math.floor(k / GRID_SIZE) - y) <= reach)));
+}
+
+/**
+ * A face boxed in: what's on top comes down to the eyes (hair or a hat in the
+ * row over them), and what he wears is on the eyes or sits a row under the mouth.
+ */
+function boxedIn(config: AvatarConfig, c: Canvas, face: Set<number>): boolean {
+  const eyeAt = [...face].filter(k => Math.floor(k / GRID_SIZE) <= c.face!.line);
+  const mouthAt = [...face].filter(k => Math.floor(k / GRID_SIZE) >= c.face!.mouthTop);
+  const hat = itemById(config.hat);
+  const top = (v: Canvas) => (hat?.slot === 'hat' ? hat.draw!(v.forHats()) : hair[config.hair].draw(v.forHats()));
+  // Only what stays: anything on top is taken back under the floor.
+  if (!paintsNear(c, top, eyeAt, 1, (_, y) => y <= c.floor)) return false;
+  const accessory = accessories[config.accessory];
+  return accessory.layer !== 'body' || paintsNear(c, v => accessory.draw(v), mouthAt, 2);
 }
 
 /**
@@ -182,10 +217,35 @@ function extrasOf(config: AvatarConfig, c: Canvas): { pattern: boolean; cheeks: 
 export function composeBase(config: AvatarConfig): PixelGrid {
   const c = startCanvas(config);
   if (!skinOf(config)) {
+    // Worked out on the bare head, as `build` does, so the marking lands where it does on him.
+    const { face, extras, worn, cheekAt } = faceAndCheeks(c, config, false);
     light(c);
-    if (extrasOf(config, c).pattern) bodies[config.body].draw(c);
+    if (extras.pattern) markings(c, config, face, worn, cheekAt);
   }
   return c.grid;
+}
+
+/**
+ * Sets the face on a canvas, and works out where the eyes and mouth go, which
+ * extras show (a skin always shows its cheeks) and where the cheek marks go.
+ */
+function faceAndCheeks(c: Canvas, config: AvatarConfig, skin: boolean) {
+  // A config made without resolve can still name retired eyes; they draw as beans.
+  const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth = mouths[config.mouth].art;
+  c.setFace(eye, mouth);
+  const face = faceCells(c, eye, mouth);
+  const extras = extrasOf(config, c, face);
+  const cheek = skin || extras.cheeks ? cheeks[config.cheeks].art : [];
+  const loud = new Set<number>(), ex = c.centred(eye), ey = c.face!.line - eye.length + 1;
+  eye.forEach((row, dy) => row.forEach((t, dx) => { if (LOUD_EYE.has(t)) loud.add((ey + dy) * GRID_SIZE + ex + dx); }));
+  // What he wears on his face (glasses, a patch) is part of it, for the marking to keep clear of.
+  const worn = new Set<number>(), accessory = accessories[config.accessory];
+  if (accessory.layer !== 'body') {
+    const view = c.clone();
+    accessory.draw(view);
+    view.grid.forEach((row, y) => row.forEach((v, x) => { if (v !== c.grid[y][x]) worn.add(y * GRID_SIZE + x); }));
+  }
+  return { eye, mouth, face, extras, worn, cheekAt: cheek.length ? cheekCells(c, cheek, face, loud) : [] };
 }
 
 /**
@@ -221,14 +281,17 @@ const touches = (face: Set<number>, x: number, y: number) => {
  * a row lower) to where the most of it shows without touching an eye or the mouth. Patterns
  * (whiskers, stars, a scar) keep clear of the face diagonally too and off the
  * body's edge, where a dark one would read as the outline; a plain blush may
- * sit diagonally by an eye, as a blush does.
+ * sit diagonally by an eye, as a blush does, but not by an eye's own reds and
+ * golds (`loud`), where pink on red is one smudge. Where they go, as
+ * `[x, y, token]`: worked out before the marking, so it can keep clear of them.
  */
-function placeCheeks(c: Canvas, cheek: Stamp, face: Set<number>): void {
+function cheekCells(c: Canvas, cheek: Stamp, face: Set<number>, loud: Set<number>): [number, number, number][] {
+  const out: [number, number, number][] = [];
   const w = width(cheek), x0 = c.centred(cheek), y0 = c.face!.line + 1, half = Math.floor(w / 2);
   const side = (x: number, y: number) => face.has(y * GRID_SIZE + x - 1) || face.has(y * GRID_SIZE + x + 1) || face.has((y - 1) * GRID_SIZE + x) || face.has((y + 1) * GRID_SIZE + x);
   const inner = (x: number, y: number) => c.isBody(x - 1, y) && c.isBody(x + 1, y) && c.isBody(x, y - 1) && c.isBody(x, y + 1);
   const ok = (x: number, y: number, t: number) => c.isBody(x, y) && !face.has(y * GRID_SIZE + x)
-    && (t === T.BLUSH ? !side(x, y) : !touches(face, x, y) && inner(x, y));
+    && (t === T.BLUSH ? !side(x, y) && !touches(loud, x, y) : !touches(face, x, y) && inner(x, y));
   for (const [from, to, dir] of [[0, half, -1], [w - half, w, 1]] as const) {
     let best: [number, number, number][] = [];
     // Out first, then a row lower where a wide mouth leaves no room beside it.
@@ -237,22 +300,66 @@ function placeCheeks(c: Canvas, cheek: Stamp, face: Set<number>): void {
       cheek.forEach((row, dy) => { for (let dx = from; dx < to; dx++) { const x = x0 + dx + dir * shift, y = y0 + dy + down; if (row[dx] && ok(x, y, row[dx])) cells.push([x, y, row[dx]]); } });
       if (cells.length > best.length) best = cells;
     }
-    for (const [x, y, t] of best) c.set(x, y, t);
+    out.push(...best);
   }
+  return out;
 }
 
 /**
- * The face is a few pixels; a marking that runs into them turns it into a
- * smudge. So any patterned skin pixel touching the eyes or mouth (diagonals
- * too) goes back to plain skin. Things worn on the face stay.
+ * Markings that run across the body in rows (a belly, stripes): one that
+ * comes near the face gives way there a whole row at a time, so it never
+ * wraps round the mouth with a notch.
  */
-function clearFace(c: Canvas, face: Set<number>, bare: PixelGrid, worn: boolean[][]): void {
+const BANDS = new Set(['belly', 'two tone', 'stripes']);
+/** A split tints half the body flat, face and all, rather than ringing the face with a halo of the other half. */
+const FILLS = new Set(['split']);
+/** Markings that scatter specks of colour: they keep a wider berth, and stay off the cheek marks too. */
+const SPECKS = new Set(['polka dots', 'sprinkles', 'starry']);
+
+/**
+ * Paints a guy's marking, keeping a quiet zone round his face: the face is a
+ * few pixels, and a marking that runs into them turns it into noise. Nothing
+ * of a marking stays touching the eyes or mouth (diagonals too), or what he
+ * wears on his face; specks of colour (dots, sprinkles, stars) keep two pixels
+ * off the eyes and mouth, and off the cheek marks, which they would run into.
+ * The body colour shows there instead. Where that would leave none of the
+ * marking (a belly on a head with no room under the mouth), it only keeps off
+ * the eyes and mouth themselves, as it always has: the zone cleans a marking
+ * up, it never takes one away.
+ */
+function markings(c: Canvas, config: AvatarConfig, face: Set<number>, worn: Set<number>, cheekAt: [number, number, number][]): void {
+  const name = bodies[config.body].name;
+  const before = c.grid.map(row => [...row]);
+  bodies[config.body].draw(c);
+  // Light ink on a dark skin is lost on the pale half, so there the half keeps off the face.
+  if (FILLS.has(name) && !darkSkin(config)) return;
+  const painted: [number, number][] = [];
+  c.grid.forEach((row, y) => row.forEach((v, x) => { if (v !== before[y][x]) painted.push([x, y]); }));
+  const near = (x: number, y: number, reach: number, marks: Set<number>) => {
+    for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) if (face.has((y + dy) * GRID_SIZE + x + dx)) return true;
+    return touches(marks, x, y);
+  };
+  const specks = SPECKS.has(name);
+  const marks = new Set([...worn, ...(specks ? cheekAt.map(([x, y]) => y * GRID_SIZE + x) : [])]);
+  const crowded = painted.filter(([x, y]) => near(x, y, specks ? 2 : 1, marks));
+  const rows = new Set(crowded.map(([, y]) => y));
+  let clear = BANDS.has(name) ? painted.filter(([, y]) => rows.has(y)) : crowded;
+  if (clear.length === painted.length) clear = painted.filter(([x, y]) => near(x, y, 1, new Set()));
+  for (const [x, y] of clear) c.grid[y][x] = before[y][x];
+}
+
+/**
+ * Anything painted in his own colours since the marking (hair reaching down)
+ * that touches the eyes or mouth, diagonals too, goes back to the skin and
+ * its marking (`marked`), so nothing runs into the face. Things worn on the face stay.
+ */
+function clearFace(c: Canvas, face: Set<number>, marked: PixelGrid, worn: boolean[][]): void {
   for (const k of face) {
     const fx = k % GRID_SIZE, fy = Math.floor(k / GRID_SIZE);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const x = fx + dx, y = fy + dy;
       if (!c.isBody(x, y) || face.has(y * GRID_SIZE + x) || worn[y][x]) continue;
-      if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== bare[y][x]) c.grid[y][x] = bare[y][x];
+      if (c.grid[y][x] < LAYER.skin && c.grid[y][x] !== marked[y][x]) c.grid[y][x] = marked[y][x];
     }
   }
 }
@@ -370,9 +477,7 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
   const frame = itemById(config.frame);
   const c = startCanvas(config);
   // The face goes where it always does; everything else, markings included, is fitted around it.
-  // A config made without resolve can still name retired eyes; they draw as beans.
-  const eye = eyes[RETIRED_EYES.includes(config.eyes) ? 0 : config.eyes].art, mouth = mouths[config.mouth].art;
-  c.setFace(eye, mouth);
+  const { eye, mouth, face, extras, worn: wornOnFace, cheekAt } = faceAndCheeks(c, config, !!skin);
 
   // A skin is drawn already shaded, in its own material, and carries no
   // markings. Its arms and feet, if it has any, take one of its colours, or
@@ -388,11 +493,9 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
     if (heads[config.head].feet) feet(c, config.feet, T.BODY);
     arms(c, config.arms, T.BODY);
   }
-  // The skin as it is before any pattern: what the face's surround goes back to.
-  const bare = c.grid.map(row => [...row]);
-  const extras = extrasOf(config, c);
-  if (!skin && extras.pattern) bodies[config.body].draw(c);
-
+  if (!skin && extras.pattern) markings(c, config, face, wornOnFace, cheekAt);
+  // The skin and its marking: what the face's surround goes back to.
+  const marked = c.grid.map(row => [...row]);
 
   // On a skin the player's face is what carries over; their ears, bow tie or
   // scarf would only clutter the object. Glasses stay — they are part of a face.
@@ -457,10 +560,8 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
   const onFace = c.grid.map((row, y) => row.map((v, x) => v !== preFace[y][x]));
 
   const line = c.face!.line;
-  const cheek = skin || extras.cheeks ? cheeks[config.cheeks].art : [];
-  const face = faceCells(c, eye, mouth);
-  clearFace(c, face, bare, onFace);
-  if (cheek.length) placeCheeks(c, cheek, face);
+  clearFace(c, face, marked, onFace);
+  for (const [x, y, t] of cheekAt) c.set(x, y, t);
   c.draw(eye, c.centred(eye), line - eye.length + 1, true);
   c.draw(c.face!.mouth, c.centred(mouth), c.face!.mouthTop, true);
 

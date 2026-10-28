@@ -175,7 +175,9 @@ export const bodies: Marking[] = [
   {
     name: 'zigzag',
     draw: c => {
-      const y = c.eyeLine + 3;
+      // Under the mouth, with a row of skin between, where a big mouth reaches low and the body has room.
+      const low = (c.face?.mouthBottom ?? 0) + 2;
+      const y = low > c.eyeLine + 3 && low < c.bottom ? low : c.eyeLine + 3;
       const r = c.rows[y];
       if (r) for (let x = r.left; x <= r.right; x++) onBody(c, x, y + (x % 2), T.ACCENT);
     },
