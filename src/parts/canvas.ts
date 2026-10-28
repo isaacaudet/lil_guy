@@ -93,11 +93,12 @@ export class Canvas {
 
   /**
    * The mouth's top row goes just under the eyes, unless a pixel of it would
-   * sit beside or under an eye pixel: eyes that run into a mouth turn a face
-   * into one shape (an H, a box), and it stops reading as eyes and a mouth. A
-   * corner touch is fine. Then the mouth drops a row or two where the head has
+   * sit beside, under or at a corner of an eye pixel: eyes that run into a mouth
+   * turn a face into one shape (an H, a box, a zigzag), and it stops reading as
+   * eyes and a mouth. Then the mouth drops a row or two where the head has
    * room for it, with a column of face either side if it can. Where it hasn't
-   * (a heart's point, a car's bumper), the eyes go up a row instead.
+   * (a heart's point, a car's bumper), the eyes go up a row instead, and only
+   * if neither works is a corner touch allowed.
    */
   private placeMouth(eye: Stamp, mouth: Stamp, corners?: boolean): { top: number; line: number; art: Stamp } {
     const ex = this.centred(eye), mx = this.centred(mouth), w = width(mouth);
@@ -106,10 +107,10 @@ export class Canvas {
       eye.forEach((row, dy) => row.forEach((t, dx) => { if (t && this.isBody(ex + dx, ey + dy)) at.add((ey + dy) * 64 + ex + dx); }));
       return at;
     };
-    // No mouth pixel beside or under an eye pixel. Eyes drawn as a single
-    // stroke (^ ^, a shut line) can't touch it at a corner either: the stroke
-    // runs on into the mouth and the face reads as one zigzag.
-    const thin = corners ?? eye.every((row, dy) => dy === 0 || row.every((t, dx) => !t || !eye[dy - 1][dx]));
+    // No mouth pixel beside, under or at a corner of an eye pixel: an eye that
+    // runs into the mouth, even corner to corner, reads as one shape. Where a
+    // head has no room for that, a corner touch is allowed (`corners` false).
+    const thin = corners ?? true;
     const near = thin ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
     const clear = (at: Set<number>, top: number) => mouth.every((row, dy) => row.every((t, dx) => {
       const x = mx + dx, y = top + dy;
