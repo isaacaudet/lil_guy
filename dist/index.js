@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-BQm8URTi.js";
+import { AURAS, AURA_ODDS, CAPSULE_ONLY, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-CXKCE0rV.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -40,7 +40,10 @@ const MOVES = [
 	"sad",
 	"dance",
 	"squish",
-	"sleep"
+	"sleep",
+	"shy",
+	"huff",
+	"oops"
 ];
 /** Rows of room above the guy for jumps. */
 const HEADROOM = 4;
@@ -87,6 +90,21 @@ const EMOTE_UNLOCKS = [
 		id: "crown",
 		name: "Crown",
 		how: "A perfect day"
+	},
+	{
+		id: "hearts",
+		name: "Smitten",
+		how: "Everyone has it"
+	},
+	{
+		id: "sweat",
+		name: "Sweat drop",
+		how: "Everyone has it"
+	},
+	{
+		id: "anger",
+		name: "Hmph",
+		how: "Everyone has it"
 	}
 ];
 const b = (pose, ms, more = {}) => ({
@@ -284,11 +302,13 @@ const BEATS = {
 		}),
 		b("frown", 700, {
 			squash: 2,
-			drop: true
+			drop: true,
+			slide: 1
 		}),
 		b("frown", 900, {
 			squash: 1,
-			drop: true
+			drop: true,
+			slide: 2
 		}),
 		b("base", 500, { squash: 1 })
 	],
@@ -331,7 +351,11 @@ const BEATS = {
 			emote: "bang"
 		}),
 		b("base", 70, { squash: -1 }),
-		b("base", 700)
+		b("base", 350, { drop: true }),
+		b("base", 350, {
+			drop: true,
+			slide: 1
+		})
 	],
 	sleep: ({ roll: roll$1 }) => {
 		const ms = 1e3 + 50 * Math.floor(roll$1(44) * 6);
@@ -353,7 +377,101 @@ const BEATS = {
 				rise: true
 			})
 		];
-	}
+	},
+	shy: ({ roll: roll$1 }) => {
+		const away = roll$1(45) < .5 ? "blushLeft" : "blushRight", left = away === "blushLeft";
+		return [
+			b("blush", 300),
+			b(away, 600, {
+				emote: "hearts",
+				left
+			}),
+			b(away, 600, {
+				emote: "hearts",
+				left,
+				rise: true
+			}),
+			b("blush", 120, {
+				squash: 1,
+				emote: "hearts",
+				left
+			}),
+			b("blush", 500, {
+				emote: "hearts",
+				left,
+				rise: true
+			}),
+			b(away, 600, {
+				emote: "hearts",
+				left
+			}),
+			b(away, 600, {
+				emote: "hearts",
+				left,
+				rise: true
+			}),
+			b("base", 500)
+		];
+	},
+	huff: () => [
+		b("base", 300),
+		b("huff", 110, {
+			squash: 1,
+			emote: "anger"
+		}),
+		b("huff", 450, {
+			turn: true,
+			emote: "anger"
+		}),
+		b("huff", 450, {
+			turn: true,
+			emote: "anger",
+			rise: true
+		}),
+		b("huff", 90, {
+			turn: true,
+			dy: -1,
+			emote: "anger"
+		}),
+		b("huff", 110, {
+			turn: true,
+			squash: 1,
+			emote: "anger",
+			rise: true
+		}),
+		b("huff", 450, {
+			turn: true,
+			emote: "anger"
+		}),
+		b("huff", 450, {
+			turn: true,
+			emote: "anger",
+			rise: true
+		}),
+		b("base", 500)
+	],
+	oops: () => [
+		b("base", 300),
+		b("oops", 110, {
+			squash: 1,
+			drop: true
+		}),
+		b("oops", 600, { drop: true }),
+		b("oops", 600, {
+			drop: true,
+			slide: 1
+		}),
+		b("oops", 600, {
+			drop: true,
+			slide: 2,
+			dx: 1
+		}),
+		b("oops", 400, {
+			drop: true,
+			slide: 2
+		}),
+		b("base", 500)
+	]
 };
 const EYE_TOKENS = new Set([T.EYE, T.WHITE]);
 /** The bare body, mirrored the same way as the finished guy. */
@@ -448,11 +566,19 @@ function painted$1(grid, config, palette$1, small = false, face = null, mouth) {
 		};
 		if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
 		if (mouth?.has(y * GRID_SIZE + x)) cell.face = true;
+		if (FEATURE_TOKENS.has(t)) cell.feature = true;
 		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
 		out[y + HEADROOM][x] = cell;
 	}));
 	return out;
 }
+/** An eye, its shine, the mouth or the tongue: what a sweat drop keeps off. */
+const FEATURE_TOKENS = new Set([
+	T.EYE,
+	T.WHITE,
+	T.MOUTH,
+	T.TONGUE
+]);
 const LIVE_EYE_TOKENS = [
 	T.EYE,
 	T.WHITE,
@@ -461,11 +587,12 @@ const LIVE_EYE_TOKENS = [
 	T.GOLD,
 	T.GOLD_SHADE
 ];
-/** Chase eyes that move: one guy in hundreds has them, so they should look it. */
+/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and shoujo eyes, which glisten. */
 const LIVE_EYES = new Map([
 	"galaxy",
 	"diamond",
-	"dragon"
+	"dragon",
+	"shoujo"
 ].map((n) => [eyes.findIndex((e) => e.name === n), n]));
 const hue = (h, s, l) => {
 	const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -485,7 +612,7 @@ function luckyShimmer(layer, t, seed) {
 		if (d < 3) cell.c = mix$2(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, .95, .68), d < 1.2 ? .6 : .3);
 	}));
 }
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder. */
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, shoujo eyes glisten. */
 function liveEyes(layer, kind, t, seed) {
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		if (!cell?.eye) return;
@@ -500,6 +627,9 @@ function liveEyes(layer, kind, t, seed) {
 		} else if (kind === "dragon") {
 			const flash = cycle(t + seed, 2e3) * fit(2e3) < 160;
 			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
+		} else if (kind === "shoujo") {
+			const ms = cycle(t + seed, 2400) * fit(2400);
+			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$2(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
 		}
 	}));
 }
@@ -623,7 +753,7 @@ const GOLD_SPARKLE = [
 	"#F5C342"
 ];
 const mouthIndex = (name) => Math.max(0, mouths.findIndex((m) => m.name === name));
-/** `#` is the emote's colour, `+` its second colour. */
+/** `#` is the emote's colour, `+` its second colour. `open`: outlined round its outside only, its gaps left clear. */
 const EMOTES = {
 	note: {
 		rows: [
@@ -691,12 +821,77 @@ const EMOTES = {
 		],
 		color: "#FF7A3D",
 		accent: "#FFE27A"
+	},
+	sweat: {
+		rows: [
+			".#.",
+			".#.",
+			"#+#",
+			"###",
+			".#."
+		],
+		color: "#9ED9FF",
+		accent: "#FFFFFF"
+	},
+	anger: {
+		rows: [
+			".#.#.",
+			"##.##",
+			".....",
+			"##.##",
+			".#.#."
+		],
+		color: "#FF4D5E",
+		open: true
+	},
+	hearts: {
+		rows: [
+			"#.#",
+			"###",
+			".#."
+		],
+		color: "#FF7AAE"
 	}
 };
+/**
+* A manga sweat drop on his temple, `slide` rows down from the top of his
+* head: on the right of his head, over its edge where there is no room
+* beside it, as manga draws one. It never covers his eyes or mouth.
+*/
+function sweatDrop(layer, slide) {
+	const { rows, color, accent } = EMOTES.sweat, ink = "#2B6CA8";
+	let top = -1;
+	layer.forEach((row, y) => {
+		if (top < 0 && row.some(Boolean)) top = y;
+	});
+	if (top < 0) return;
+	const edge = (layer[top + 2] ?? []).reduce((r, cell, x) => cell ? x : r, -1);
+	const w = rows[0].length + 2, h = rows.length + 2;
+	const x0 = Math.min(edge, FRAME_WIDTH - w), y0 = Math.max(0, top - 1 + slide);
+	const nearFace = (x, y) => {
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.feature) return true;
+		return false;
+	};
+	const ink_ = (ch) => ch === "#" || ch === "+";
+	const cells = [];
+	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+		const ch = rows[y - 1]?.[x - 1], on = ink_(ch);
+		if (on || NEIGHBOURS.some(([dx, dy]) => ink_(rows[y - 1 + dy]?.[x - 1 + dx]))) cells.push([
+			x0 + x,
+			y0 + y,
+			on ? ch === "+" ? accent : color : ink
+		]);
+	}
+	for (const [x, y, c] of cells) if (x >= 0 && y < FRAME_HEIGHT && !nearFace(x, y)) layer[y][x] = {
+		c,
+		item: false
+	};
+}
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer, kind, left, lift = 0) {
-	const { rows, color, accent } = EMOTES[kind];
+	const { rows, color, accent, open } = EMOTES[kind];
 	const w = rows[0].length + 2, h = rows.length + 2;
+	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
 		[0, 0],
@@ -712,7 +907,7 @@ function emote(layer, kind, left, lift = 0) {
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
 			const ch = rows[y - 1]?.[x - 1];
 			const on = ink(ch);
-			const near = !on && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+			const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 			if (on || near) cells.push([
 				x0 + x,
 				y0 + y,
@@ -745,6 +940,8 @@ function poseMouth(pose, own) {
 	if (pose === "ooh") return mouthIndex("ooh");
 	if (pose === "blep") return mouthIndex("blep");
 	if (pose === "smile" || pose === "content") return own === mouthIndex("smile") ? mouthIndex("grin") : mouthIndex("smile");
+	if (pose === "huff") return mouthIndex("kissy");
+	if (pose === "oops") return mouthIndex("tehe");
 	return void 0;
 }
 const POSES = [
@@ -760,8 +957,14 @@ const POSES = [
 	"ooh",
 	"smile",
 	"content",
-	"blep"
+	"blep",
+	"blush",
+	"blushLeft",
+	"blushRight",
+	"huff",
+	"oops"
 ];
+const MANGA_BLUSH = cheeks.findIndex((c) => c.name === "manga blush");
 /**
 * The guy as he is drawn into his poses: dressed, without the frame and aura
 * (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
@@ -789,7 +992,10 @@ function poser(input, options) {
 				mouth,
 				arms: pose === "laughWave" ? 2 : figure.arms
 			});
-			grids.set(pose, pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "frown" || pose === "content" ? closeEyes(worn, config) : pose === "wave" || pose === "sides" ? compose({
+			grids.set(pose, pose === "shut" ? closeEyes(base, config) : pose === "left" ? glance(base, config, -1) : pose === "right" ? glance(base, config, 1) : pose === "frown" || pose === "content" || pose === "huff" || pose === "oops" ? closeEyes(worn, config) : pose === "blush" ? compose({
+				...figure,
+				cheeks: MANGA_BLUSH
+			}) : pose === "blushLeft" || pose === "blushRight" ? glance(grid("blush"), config, pose === "blushLeft" ? -1 : 1) : pose === "wave" || pose === "sides" ? compose({
 				...figure,
 				arms: pose === "wave" ? 2 : 1
 			}) : worn);
@@ -1015,26 +1221,7 @@ function animate(input, move, options = {}) {
 			const gold = sparkleIn(palette$1.colors[T.GOLD] ?? "#F2C230");
 			for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t$1 + i * fit(360) / 2 + seed, 360, 1, seed + i, gold);
 		}
-		if (beat.drop) {
-			let top = -1;
-			layer.forEach((row$1, y) => {
-				if (top < 0 && row$1.some(Boolean)) top = y;
-			});
-			const row = layer[top + 2];
-			const right = row ? row.reduce((r, cell, x) => cell ? x : r, -1) : -1;
-			for (const [x, y, c] of [[
-				right + 1,
-				top + 1,
-				"#CFEFFF"
-			], [
-				right + 1,
-				top + 2,
-				"#7CC4F2"
-			]]) if (right >= 0 && x < FRAME_WIDTH && y >= 0 && !layer[y][x]) layer[y][x] = {
-				c,
-				item: false
-			};
-		}
+		if (beat.drop) sweatDrop(layer, beat.slide ?? 0);
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
 		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(wrap(t$1, fit(800)) / (fit(800) / 2)) % 2);
 		const outside = [];
@@ -1902,7 +2089,12 @@ const FOOT_NAMES = [
 	"socks",
 	"tucked"
 ];
-const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
+/**
+* A part's chance. A part no deal gives (the capsule-only anime set) counts
+* as if it were dealt at its capsule weight, so a look wearing one stays a
+* number; every dealt part's chance is as it was.
+*/
+const share = (weights, i, slot = "") => (weights[i] || unlockWeight(slot, weights, i)) / weights.reduce((a, b$1) => a + b$1, 0);
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
 	const body = shows(config, "body") ? config.body : 0, cheek = shows(config, "cheeks") ? config.cheeks : 0;
@@ -1915,17 +2107,17 @@ function traitOdds(config) {
 		{
 			slot: "eyes",
 			name: eyes[config.eyes].name,
-			chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes)
+			chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes, "eyes")
 		},
 		{
 			slot: "mouth",
 			name: mouths[config.mouth].name,
-			chance: share(mouthWeights, config.mouth)
+			chance: share(mouthWeights, config.mouth, "mouth")
 		},
 		{
 			slot: "cheeks",
 			name: cheeks[cheek].name,
-			chance: share(cheekWeights, cheek)
+			chance: share(cheekWeights, cheek, "cheeks")
 		},
 		{
 			slot: "topper",
@@ -2464,11 +2656,14 @@ const SLOT_WORD = {
 	accessory: "accessory",
 	palette: "colours"
 };
-/** The rare parts in a slot, the ones a picker locks: what a capsule can unlock. */
+/**
+* The rare parts in a slot, the ones a picker locks: what a capsule can
+* unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+*/
 function rareParts(slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
 	const total = weights.reduce((a, b$1) => a + b$1, 0);
-	return weights.map((_, i) => i).filter((i) => weights[i] > 0 && weights[i] / total < RARE && !(slot === "eyes" && RETIRED_EYES.includes(i)));
+	return weights.map((_, i) => i).filter((i) => (weights[i] > 0 ? weights[i] / total < RARE : unlockWeight(slot, weights, i) > 0) && !(slot === "eyes" && RETIRED_EYES.includes(i)));
 }
 /**
 * The part a capsule unlocks. Only rare parts, since common ones can already
@@ -2488,8 +2683,9 @@ function rollPart(seed, has) {
 			index: index$1
 		}));
 		if (!pool.length) continue;
-		let r = u("which") * pool.reduce((a, i) => a + weights[i], 0);
-		const index = pool.find((i) => (r -= weights[i]) < 0) ?? pool[pool.length - 1];
+		const w = (i) => unlockWeight(slot, weights, i);
+		let r = u("which") * pool.reduce((a, i) => a + w(i), 0);
+		const index = pool.find((i) => (r -= w(i)) < 0) ?? pool[pool.length - 1];
 		return {
 			slot,
 			index
@@ -2503,7 +2699,7 @@ function rollPart(seed, has) {
 * one in 2,000).
 */
 function partCost(p) {
-	const weights = SLOTS.find((s) => s[1] === p.slot)[2], total = weights.reduce((a, b$1) => a + b$1, 0), share$1 = weights[p.index] / total;
+	const weights = SLOTS.find((s) => s[1] === p.slot)[2], total = weights.reduce((a, b$1) => a + b$1, 0), share$1 = unlockWeight(p.slot, weights, p.index) / total;
 	return share$1 >= 1 / 200 ? 3 : share$1 >= 1 / 2e3 ? 9 : 18;
 }
 /** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */
@@ -7551,5 +7747,5 @@ function craftCopy(itemId, seed, number) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CAPSULE_ONLY, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

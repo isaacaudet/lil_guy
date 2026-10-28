@@ -79,6 +79,10 @@ export const eyeWeights = [
   1, // galaxy: chase
   2, // diamond: chase
   2, // dragon: chase
+  0, // shoujo: capsules only
+  0, // kitty: capsules only
+  0, // joy: capsules only
+  0, // puppy: capsules only
 ];
 
 export const mouthWeights = [
@@ -104,6 +108,9 @@ export const mouthWeights = [
   2, // gold tooth: chase
   1, // grillz: chase
   2, // mustache: chase
+  0, // kissy: capsules only
+  0, // yay: capsules only
+  0, // tehe: capsules only
 ];
 
 export const cheekWeights = [
@@ -126,6 +133,7 @@ export const cheekWeights = [
   15, // mole
   1, // jewels: chase
   1, // rainbow: chase
+  0, // manga blush: capsules only
 ];
 
 export const hairWeights = [
@@ -274,6 +282,23 @@ export const paletteWeights = [
   2, // Obsidian: chase
   2, // Aurora: chase
 ];
+
+/**
+ * Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
+ * and metal crafts them. Each weighs 0 in its table above, so every guy dealt
+ * from any deal stays exactly as he was, and the weight here is its share
+ * among a slot's rare parts when a capsule picks one, as a dealt part's
+ * weight is. The anime set, October 2026.
+ */
+export const CAPSULE_ONLY: Partial<Record<'eyes' | 'mouth' | 'cheeks', Record<number, number>>> = {
+  eyes: { 23: 6, 24: 6, 25: 8, 26: 8 },     // shoujo, kitty, joy, puppy
+  mouth: { 22: 8, 23: 8, 24: 6 },           // kissy, yay, tehe
+  cheeks: { 19: 8 },                        // manga blush
+};
+
+/** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */
+export const unlockWeight = (slot: string, weights: readonly number[], i: number): number =>
+  weights[i] || (CAPSULE_ONLY as Record<string, Record<number, number> | undefined>)[slot]?.[i] || 0;
 
 /**
  * Deal 3 (seeds starting `3-`), as it stood when deal 4 began: frozen like

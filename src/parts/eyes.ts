@@ -152,4 +152,28 @@ export const eyes: Eyes[] = [
     'yey....yey',
     'YeY....YeY',
   ]),
+  // The anime set: never dealt, only unlocked from a capsule (CAPSULE_ONLY in ./weights).
+  // Shoujo: big glossy eyes under a dark lid, a catchlight high and another low, the iris in his accent.
+  eyes_('shoujo', [
+    '.ee....ee.',
+    'ewA....Awe',
+    'eAw....wAe',
+  ]),
+  // Kitty: gold cat's eyes, a slit pupil through each.
+  eyes_('kitty', [
+    '.ee....ee.',
+    'yey....yey',
+    'Yey....yeY',
+  ]),
+  // Joy: shut tight in two little carets, ^ ^.
+  eyes_('joy', [
+    '.e......e.',
+    'e.e....e.e',
+  ]),
+  // Puppy: big round dark eyes, a shine high on one side and a glint low on the other.
+  eyes_('puppy', [
+    '.ee....ee.',
+    'wee....wee',
+    'eew....eew',
+  ]),
 ];

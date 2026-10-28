@@ -196,7 +196,8 @@
   const specs = [];
   const cv = spec => { specs.push(spec); return `<canvas width="16" height="16" data-s="${specs.length - 1}" aria-hidden="true"></canvas>`; };
   const paintAll = () => document.querySelectorAll('canvas[data-s]').forEach(c => { put(c, colorsOf(specs[+c.dataset.s])); c.removeAttribute('data-s'); });
-  const tile = (name, p, canvas, extra = '') => { const t = tierOf(p); return `<div class="t${extra}">${canvas}<span class="n">${esc(name)}</span><span class="o">${p ? oneIn(p) : 'retired'}<span class="chip" style="--k:${t.c}">${t.name}</span></span></div>`; };
+  const ANIME = { name: 'Anime', c: '#e2558f' };
+  const tile = (name, p, canvas, extra = '', capsule = false) => { const t = capsule ? ANIME : tierOf(p); return `<div class="t${extra}">${canvas}<span class="n">${esc(name)}</span><span class="o">${capsule ? 'capsules only' : p ? oneIn(p) : 'retired'}<span class="chip" style="--k:${t.c}">${t.name}</span></span></div>`; };
 
   // Each option's chance, from the library's own weights.
   const SLOTS = [
@@ -211,7 +212,9 @@
   const chanceOf = (slot, i) => LG.traitOdds({ ...LG.resolve('x'), [slot.key]: i }).find(t => t.slot === slot.odds).chance;
   // Rarest first; a part no longer dealt goes last.
   const order = (a, b) => (a.p || 1) - (b.p || 1);
-  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: chanceOf(s, i) })).filter(o => !(s.key === 'eyes' && LG.RETIRED_EYES.includes(o.i))).sort(order);
+  // The anime set is never dealt, only unlocked from capsules: shown last, as capsules only.
+  const capsuleOnly = (s, i) => !!LG.CAPSULE_ONLY[s.key]?.[i];
+  for (const s of SLOTS) s.options = s.list.map((p, i) => ({ i, name: p.name, p: capsuleOnly(s, i) ? 0 : chanceOf(s, i), capsule: capsuleOnly(s, i) })).filter(o => !(s.key === 'eyes' && LG.RETIRED_EYES.includes(o.i))).sort(order);
   const palOdds = LG.palettes.map((p, i) => ({ i, name: p.name, p: LG.traitOdds({ ...LG.resolve('x'), palette: i }).find(t => t.slot === 'colour').chance })).sort(order);
   // Traits the seed rolls that aren't in the odds list (weights from parts/weights.ts).
   const share = w => w.map(x => x / w.reduce((a, b) => a + b, 0));
@@ -262,7 +265,7 @@
 
   // ---------------------------------------------------------------- slots
   let html = '';
-  for (const s of SLOTS) html += `<section id="${s.id}"><div class="sh"><h2>${s.title}</h2><p>${s.options.length} options, rarest first.</p></div><div class="grid">${s.options.map(o => tile(o.name, o.p, cv({ parts: { [s.key]: o.i, ...(s.key === 'head' ? { hair: 0 } : {}) } }))).join('')}</div></section>`;
+  for (const s of SLOTS) html += `<section id="${s.id}"><div class="sh"><h2>${s.title}</h2><p>${s.options.length} options, rarest first.</p></div><div class="grid">${s.options.map(o => tile(o.name, o.p, cv({ parts: { [s.key]: o.i, ...(s.key === 'head' ? { hair: 0 } : {}) } }), '', o.capsule)).join('')}</div></section>`;
   html += `<section id="colours"><div class="sh"><h2>Colourways</h2><p>${LG.palettes.length} options, rarest first. The chase colourways (Opal, Obsidian, Aurora) are the rarest, then the night colours.</p></div><div class="grid">${palOdds.map(o => tile(o.name, o.p, cv({ palette: o.i }))).join('')}</div></section>`;
   html += `<section id="extras"><div class="sh"><h2>Body, tone and Lucky</h2><p>Rolled from the seed too. Lucky turns the colourway round the wheel.</p></div><div class="grid">${EXTRA.map(o => tile(o.name, o.p, cv({ parts: o.parts }))).join('')}</div></section>`;
   $('slots').innerHTML = html;

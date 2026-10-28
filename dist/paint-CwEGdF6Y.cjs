@@ -122,7 +122,11 @@ const eyeWeights = [
 	35,
 	1,
 	2,
-	2
+	2,
+	0,
+	0,
+	0,
+	0
 ];
 const mouthWeights = [
 	150,
@@ -146,7 +150,10 @@ const mouthWeights = [
 	60,
 	2,
 	1,
-	2
+	2,
+	0,
+	0,
+	0
 ];
 const cheekWeights = [
 	300,
@@ -167,7 +174,8 @@ const cheekWeights = [
 	40,
 	15,
 	1,
-	1
+	1,
+	0
 ];
 const hairWeights = [
 	250,
@@ -323,6 +331,29 @@ const paletteWeights = [
 	2,
 	2
 ];
+/**
+* Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
+* and metal crafts them. Each weighs 0 in its table above, so every guy dealt
+* from any deal stays exactly as he was, and the weight here is its share
+* among a slot's rare parts when a capsule picks one, as a dealt part's
+* weight is. The anime set, October 2026.
+*/
+const CAPSULE_ONLY = {
+	eyes: {
+		23: 6,
+		24: 6,
+		25: 8,
+		26: 8
+	},
+	mouth: {
+		22: 8,
+		23: 8,
+		24: 6
+	},
+	cheeks: { 19: 8 }
+};
+/** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */
+const unlockWeight = (slot, weights, i) => weights[i] || CAPSULE_ONLY[slot]?.[i] || 0;
 /**
 * Deal 3 (seeds starting `3-`), as it stood when deal 4 began: frozen like
 * `DEAL_2`, so a guy dealt from it keeps his parts. Deal 4 dealt fewer shut
@@ -13527,6 +13558,22 @@ const eyes = [
 		".y......y.",
 		"yey....yey",
 		"YeY....YeY"
+	]),
+	eyes_("shoujo", [
+		".ee....ee.",
+		"ewA....Awe",
+		"eAw....wAe"
+	]),
+	eyes_("kitty", [
+		".ee....ee.",
+		"yey....yey",
+		"Yey....yeY"
+	]),
+	eyes_("joy", [".e......e.", "e.e....e.e"]),
+	eyes_("puppy", [
+		".ee....ee.",
+		"wee....wee",
+		"eew....eew"
 	])
 ];
 
@@ -13602,6 +13649,21 @@ const mouths = [
 		"mm..mm",
 		"mmmmmm",
 		"..mm.."
+	]),
+	mouth("kissy", [
+		"mm",
+		".m",
+		"mm"
+	]),
+	mouth("yay", [
+		"mmmmm",
+		".mtm.",
+		"..m.."
+	]),
+	mouth("tehe", [
+		"m....m",
+		".mmmm.",
+		"...tt."
 	])
 ];
 
@@ -13650,7 +13712,8 @@ const cheeks = [
 		"rr......rr",
 		"yy......yy",
 		"gg......gg"
-	])
+	]),
+	cheeks_("manga blush", ["crcr....crcr", "rcrc....rcrc"])
 ];
 
 //#endregion
@@ -15380,13 +15443,14 @@ const darkSkin = (config) => {
 	const ink = paletteOf(config).colors[T.EYE];
 	return !!ink && contrast(ink, "#000000") > 10;
 };
-/** Parts meant to be shown off: they always show. */
+/** Parts meant to be shown off: they always show. So does a manga blush, which a player earns from a capsule and a shy guy wears (./animate). */
 const CHASE = new Set([
 	"kintsugi",
 	"gold dipped",
 	"gold leaf",
 	"jewels",
-	"rainbow"
+	"rainbow",
+	"manga blush"
 ]);
 /**
 * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
@@ -15858,6 +15922,12 @@ Object.defineProperty(exports, 'AURA_ODDS', {
   enumerable: true,
   get: function () {
     return AURA_ODDS;
+  }
+});
+Object.defineProperty(exports, 'CAPSULE_ONLY', {
+  enumerable: true,
+  get: function () {
+    return CAPSULE_ONLY;
   }
 });
 Object.defineProperty(exports, 'DEAL_PREFIX', {
@@ -16442,6 +16512,12 @@ Object.defineProperty(exports, 'tick', {
     return tick;
   }
 });
+Object.defineProperty(exports, 'unlockWeight', {
+  enumerable: true,
+  get: function () {
+    return unlockWeight;
+  }
+});
 Object.defineProperty(exports, 'wave', {
   enumerable: true,
   get: function () {
@@ -16472,4 +16548,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-WBfjn8_t.cjs.map
+//# sourceMappingURL=paint-CwEGdF6Y.cjs.map

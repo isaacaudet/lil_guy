@@ -97,7 +97,11 @@ const eyeWeights = [
 	35,
 	1,
 	2,
-	2
+	2,
+	0,
+	0,
+	0,
+	0
 ];
 const mouthWeights = [
 	150,
@@ -121,7 +125,10 @@ const mouthWeights = [
 	60,
 	2,
 	1,
-	2
+	2,
+	0,
+	0,
+	0
 ];
 const cheekWeights = [
 	300,
@@ -142,7 +149,8 @@ const cheekWeights = [
 	40,
 	15,
 	1,
-	1
+	1,
+	0
 ];
 const hairWeights = [
 	250,
@@ -298,6 +306,29 @@ const paletteWeights = [
 	2,
 	2
 ];
+/**
+* Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
+* and metal crafts them. Each weighs 0 in its table above, so every guy dealt
+* from any deal stays exactly as he was, and the weight here is its share
+* among a slot's rare parts when a capsule picks one, as a dealt part's
+* weight is. The anime set, October 2026.
+*/
+const CAPSULE_ONLY = {
+	eyes: {
+		23: 6,
+		24: 6,
+		25: 8,
+		26: 8
+	},
+	mouth: {
+		22: 8,
+		23: 8,
+		24: 6
+	},
+	cheeks: { 19: 8 }
+};
+/** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */
+const unlockWeight = (slot, weights, i) => weights[i] || CAPSULE_ONLY[slot]?.[i] || 0;
 /**
 * Deal 3 (seeds starting `3-`), as it stood when deal 4 began: frozen like
 * `DEAL_2`, so a guy dealt from it keeps his parts. Deal 4 dealt fewer shut
@@ -13502,6 +13533,22 @@ const eyes = [
 		".y......y.",
 		"yey....yey",
 		"YeY....YeY"
+	]),
+	eyes_("shoujo", [
+		".ee....ee.",
+		"ewA....Awe",
+		"eAw....wAe"
+	]),
+	eyes_("kitty", [
+		".ee....ee.",
+		"yey....yey",
+		"Yey....yeY"
+	]),
+	eyes_("joy", [".e......e.", "e.e....e.e"]),
+	eyes_("puppy", [
+		".ee....ee.",
+		"wee....wee",
+		"eew....eew"
 	])
 ];
 
@@ -13577,6 +13624,21 @@ const mouths = [
 		"mm..mm",
 		"mmmmmm",
 		"..mm.."
+	]),
+	mouth("kissy", [
+		"mm",
+		".m",
+		"mm"
+	]),
+	mouth("yay", [
+		"mmmmm",
+		".mtm.",
+		"..m.."
+	]),
+	mouth("tehe", [
+		"m....m",
+		".mmmm.",
+		"...tt."
 	])
 ];
 
@@ -13625,7 +13687,8 @@ const cheeks = [
 		"rr......rr",
 		"yy......yy",
 		"gg......gg"
-	])
+	]),
+	cheeks_("manga blush", ["crcr....crcr", "rcrc....rcrc"])
 ];
 
 //#endregion
@@ -15355,13 +15418,14 @@ const darkSkin = (config) => {
 	const ink = paletteOf(config).colors[T.EYE];
 	return !!ink && contrast(ink, "#000000") > 10;
 };
-/** Parts meant to be shown off: they always show. */
+/** Parts meant to be shown off: they always show. So does a manga blush, which a player earns from a capsule and a shy guy wears (./animate). */
 const CHASE = new Set([
 	"kintsugi",
 	"gold dipped",
 	"gold leaf",
 	"jewels",
-	"rainbow"
+	"rainbow",
+	"manga blush"
 ]);
 /**
 * What of a guy's extras is drawn. Hair (or a hat), something worn, cheek
@@ -15823,5 +15887,5 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-BQm8URTi.js.map
+export { AURAS, AURA_ODDS, CAPSULE_ONLY, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
+//# sourceMappingURL=paint-CXKCE0rV.js.map

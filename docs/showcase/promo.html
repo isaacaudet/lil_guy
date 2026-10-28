@@ -405,6 +405,10 @@
   .tr-get small { font-size: 16px; color: var(--ink-3); }
   .trade.going .tr-c:not(.gap) { transform: translateX(var(--fly)) scale(.3); opacity: 0; }
 
+  /* anime */
+  .anime { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 14px; }
+  .anime .mb canvas { width: 80px; height: 100px; animation: none; }
+
   /* who you could get */
   .maybe { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 18px 14px; }
   .mbc { display: grid; gap: 8px; align-content: start; min-width: 0; }
@@ -1092,6 +1096,11 @@
   <section id="maybe-sec">
     <div class="sec-h"><div><h2>Who you could get</h2><p id="maybe-sub">Every name is dealt its own guy. The rarest 12 of 400 dealt just now.</p></div><button class="btn ghost" type="button" id="maybe-more">Deal more</button></div>
     <div class="maybe" id="maybe"></div>
+  </section>
+
+  <section id="anime-sec">
+    <div class="sec-h"><div><h2>Anime</h2><p>Shoujo, kitty, joy and puppy eyes, a kissy, a yay, a tehe and a manga blush, from capsules only. Three new moves: shy, huff and oops.</p></div></div>
+    <div class="anime" id="anime"></div>
   </section>
 
   <section id="roll">
@@ -3585,6 +3594,29 @@
   }
   $('maybe-more').addEventListener('click', renderMaybe);
 
+  /* ---------------------------------------------- the anime set: its face parts on a few guys, and its three moves */
+  function renderAnime() {
+    const at = (list, n) => list.findIndex(p => p.name === n);
+    const E = n => at(LG.eyes, n), M = n => at(LG.mouths, n), C = n => at(LG.cheeks, n);
+    const guys = [
+      ['sakura', { head: 0, eyes: E('shoujo'), mouth: M('yay') }, 'idle', 'Shoujo eyes'],
+      ['neko', { head: 1, eyes: E('kitty'), mouth: M('cat'), hair: 1 }, 'idle', 'Kitty eyes'],
+      ['hana', { head: 3, eyes: E('joy') }, 'shy', 'shy'],
+      ['taro', { head: 4, eyes: E('puppy') }, 'huff', 'huff'],
+      ['yuki', { head: 2, eyes: E('wink') }, 'oops', 'oops'],
+      ['momo', { head: 6, eyes: E('shoujo'), cheeks: C('manga blush'), mouth: M('kissy') }, 'idle', 'Manga blush'],
+      ['pochi', { head: 0, eyes: E('puppy'), mouth: M('tehe'), hair: 2 }, 'idle', 'Puppy eyes'],
+      ['riku', { head: 10, eyes: E('joy'), mouth: M('yay') }, 'cheer', 'Joy eyes'],
+    ];
+    $('anime').innerHTML = guys.map(g => `<div class="mb"><canvas aria-hidden="true"></canvas><small>${esc(g[3])}</small></div>`).join('');
+    $('anime').querySelectorAll('canvas').forEach((canvas, k) => {
+      const [seed, parts, move] = guys[k], W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT;
+      canvas.width = W; canvas.height = H;
+      const s = { canvas, ctx: canvas.getContext('2d'), anim: LG.animateLoop(seed, move, { parts: { body: 0, accessory: 0, hair: 0, cheeks: 0, ...parts }, rarity: false }), box: { x: 0, y: 0, w: W, h: H }, moves: true };
+      shows.add(s); drawShow(s, performance.now());
+    });
+  }
+
   /* ---------------------------------------------- an item on its own: the pixels that are the item (by layer, or by
    * what changes when the guy puts it on), outlined, on a frame the library's finish shader reads, so the finish
    * moves on the object itself: Gold glints, Nebula drifts, Prism runs a rainbow, scuffed pixels shine less. */
@@ -4328,6 +4360,7 @@
 
   renderHand();
   renderMaybe();
+  renderAnime();
   // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
   // fills the box, and once it is theirs a button takes them back to the game.
   try {

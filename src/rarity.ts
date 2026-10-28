@@ -3,7 +3,7 @@ import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts'
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights,
   bodyWeights, accessoryWeights, paletteWeights, armWeights, footWeights, shadeWeights,
-  RETIRED_EYES, withoutRetired,
+  RETIRED_EYES, withoutRetired, unlockWeight,
 } from './parts/weights';
 import { palettes } from './palette';
 import { gameItems, itemById, itemWeight } from './items';
@@ -43,7 +43,12 @@ export interface TraitOdds {
   chance: number;
 }
 
-const share = (weights: number[], i: number) => weights[i] / weights.reduce((a, b) => a + b, 0);
+/**
+ * A part's chance. A part no deal gives (the capsule-only anime set) counts
+ * as if it were dealt at its capsule weight, so a look wearing one stays a
+ * number; every dealt part's chance is as it was.
+ */
+const share = (weights: number[], i: number, slot = '') => (weights[i] || unlockWeight(slot, weights, i)) / weights.reduce((a, b) => a + b, 0);
 
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 export function traitOdds(config: AvatarConfig): TraitOdds[] {
@@ -51,9 +56,9 @@ export function traitOdds(config: AvatarConfig): TraitOdds[] {
   const body = shows(config, 'body') ? config.body : 0, cheek = shows(config, 'cheeks') ? config.cheeks : 0;
   return [
     { slot: 'shape', name: heads[config.head].name, chance: share(headWeights, config.head) },
-    { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes) },
-    { slot: 'mouth', name: mouths[config.mouth].name, chance: share(mouthWeights, config.mouth) },
-    { slot: 'cheeks', name: cheeks[cheek].name, chance: share(cheekWeights, cheek) },
+    { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes, 'eyes') },
+    { slot: 'mouth', name: mouths[config.mouth].name, chance: share(mouthWeights, config.mouth, 'mouth') },
+    { slot: 'cheeks', name: cheeks[cheek].name, chance: share(cheekWeights, cheek, 'cheeks') },
     { slot: 'topper', name: hair[config.hair].name, chance: share(hairWeights, config.hair) },
     { slot: 'markings', name: bodies[body].name, chance: share(bodyWeights, body) },
     { slot: 'accessory', name: accessories[config.accessory].name, chance: share(accessoryWeights, config.accessory) },
