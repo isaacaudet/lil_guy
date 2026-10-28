@@ -199,9 +199,10 @@ export const set: MachineSet = {
       ]),
     },
     'halfsies.avocado': {
-      eyes: 9,
+      eyes: 8,
       // The guy as the pit: his whole round head sat in the hollow of an avocado half, the pale flesh
-      // ripening to yellow round him, the dark skin all round.
+      // ripening to yellow round him, the dark skin all round. The hollow is ten wide across the eyes
+      // and runs four rows under them, so every pair of eyes and every mouth lands inside it.
       colors: ['#E2EE9A', '#A9CF5C', '#3F6B22', '#6E9A34', '#F7F0A8'],
       outline: '#22380F',
       art: grid16('avocado', [
@@ -209,17 +210,17 @@ export const set: MachineSet = {
         '......4333......',
         '.....421123.....',
         '....42155123....',
-        '...4215555123...',
-        '...421oooo123...',
-        '..42oh####so23..',
-        '.42oh#######o23.',
-        '.42o########o23.',
-        '.42o########o23.',
-        '.42o#######so23.',
-        '.425os####so523.',
-        '..4255oooo5523..',
+        '...415oooo513...',
+        '..41ohhh###o13..',
+        '.1oh#########o1.',
+        '.1o##########o1.',
+        '.1o##########o1.',
+        '.1o##########o1.',
+        '.1o#########so1.',
+        '.41os######so13.',
+        '.421os####so123.',
+        '..4211oooo1123..',
         '...4222222223...',
-        '....33333333....',
         '................',
       ]),
     },

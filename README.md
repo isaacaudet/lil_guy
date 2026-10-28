@@ -440,7 +440,7 @@ recognisable everywhere.
 | Weighsies | Kettlebell, Panda onesie, Penguin onesie, Capybara | T. rex onesie | Bear ears, Apple shot, Sumo topknot, Pharaoh, Liberty crown | Lavender, Pennies, Gold bars | House cat, Lil whale, Hamster, Pigeon |
 | Cutsies | Kiwi hoodie, Strawberry hoodie, Donut floatie, Salmon nigiri | Watermelon suit | Chef’s headband, Chef's toque, Toadstool, Peeled banana, Cupcake | Melon slice, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
 | Tiltsies | Hamster ball, Biscuit hoodie, Mochi hoodie, Starfall pyjamas | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Daisy crown | Course tiles, Cloudy sky, Seed trail | Pocket hamster, Ladybug, Springy, Ghost |
-| Trackdle | Cone suit, Pit crew, Snow parka, Dune rider | Formula 07 | Pit cap, Cowboy hat, Boost flame, Bobble hat, Chequered bandana | Canyon sunset, Kerb, Boost pad | Conelet, Tyre stack, Lil racer, Saguaro |
+| Trackdle | Traffic cone, Pit crew, Snow parka, Dune rider | Formula 07 | Pit cap, Cowboy hat, Boost flame, Bobble hat, Chequered bandana | Canyon sunset, Kerb, Boost pad | Conelet, Tyre stack, Lil racer, Saguaro |
 | Pet shop | Cat onesie, Shiba onesie, Bunny hoodie, Frog hoodie | Kitsune | Cat ears, Head puppy, Fox ears, Bunny ears, Cat-ear headphones | Paw prints, Cozy cushion, Sakura | Kitten, Puppy, Axolotl, Bunny |
 
 Items a machine no longer gives stay in `src/sets/<game>.ts` as `retire`: copies already owned keep drawing, capsules and crafting skip them.
