@@ -189,12 +189,12 @@ export const set: MachineSet = {
     {
       id: 'flipsies.mug', game: 'flipsies', slot: 'buddy', name: 'Rubber duckling',
       colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF8A1A'],
-      // A little rubber duck: orange beak, its tail up behind.
+      // A little rubber duck facing away from him: orange beak, a wing, its tail up behind.
       art: pet('rubber duckling', [
-        '.13...',
-        '4o1..1',
-        '.11111',
-        '311112',
+        '...31.',
+        '..11o4',
+        '1..111',
+        '111321',
         '.2222.',
       ]),
     },

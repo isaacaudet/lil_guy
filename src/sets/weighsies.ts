@@ -1,4 +1,4 @@
-import { grid16, on, pet, sit, type MachineSet } from '../item-art';
+import { backdrop, grid16, on, pet, sit, type MachineSet } from '../item-art';
 import { stamp } from '../parts/art';
 import type { Canvas } from '../parts/canvas';
 
@@ -17,25 +17,25 @@ export const set: MachineSet = {
   add: [
     // ------------------------------------------------------------ skins
     {
-      id: 'weighsies.gold-bar', game: 'weighsies', slot: 'skin', name: 'Panda onesie', eyes: 9, limb: 4,
+      id: 'weighsies.gold-bar', game: 'weighsies', slot: 'skin', name: 'Panda onesie', eyes: 10, limb: 4,
       colors: ['#F7F6F2', '#C8CAD2', '#FFFFFF', '#2B2D35', '#4B4F5C'],
       outline: '#1A1B22',
       // The guy zipped into a giant panda suit: black ears on the hood, black paws.
       art: grid16('panda onesie', [
         '................',
-        '................',
-        '..545......545..',
-        '..444311112444..',
+        '..444......444..',
+        '.45441111114454.',
         '..311111111112..',
-        '..311111111112..',
-        '..311h#####112..',
-        '..31h#######12..',
+        '..311411114112..',
+        '..314411114412..',
+        '..311115511112..',
         '..31########12..',
-        '..31########12..',
-        '..31#######s12..',
-        '..311ssssss112..',
-        '...4111111114...',
-        '....44222244....',
+        '..1##########2..',
+        '..1##########2..',
+        '..1##########2..',
+        '..21########12..',
+        '...21######12...',
+        '...2441111442...',
         '................',
         '................',
       ]),
@@ -177,17 +177,27 @@ export const set: MachineSet = {
     // ------------------------------------------------------------ frames
     {
       id: 'weighsies.pennies', game: 'weighsies', slot: 'frame', name: 'Pennies',
-      colors: ['#FBF3E4', '#D9946A', '#EDB892', '#B87450'],
-      // Copper coins in rows on cream, each lit at its top left.
-      fill: (x, y) => {
-        const row = Math.floor(y / 6), cx = x - (row % 2) * 3, dx = ((cx % 6) + 6) % 6, dy = y % 6;
-        if (dx === 2 && dy === 2) return 3;
-        if ((dx === 2 && dy === 1) || (dx === 1 && dy === 2)) return 3;
-        if ((dx === 3 && dy === 2) || (dx === 2 && dy === 3)) return 2;
-        if (dx === 3 && dy === 3) return 4;
-        if ((dx === 3 && dy === 1) || (dx === 1 && dy === 3)) return 2;
-        return 1;
-      },
+      // ground, copper, rim shade, rim light, emboss, shine
+      colors: ['#D9EEE9', '#D8854A', '#9C5228', '#F7B47E', '#B8693A', '#FFE3C8'],
+      // A scatter of copper pennies on a mint cloth, each lit on its top left with the head in the middle.
+      fill: backdrop('pennies', [
+        '.443...443......',
+        '46223.46223.443.',
+        '42523.4252346223',
+        '32223.3222342523',
+        '.333...333.32223',
+        '............333.',
+        '.443............',
+        '46223........443',
+        '42523.......4622',
+        '32223.......4252',
+        '.333........3222',
+        '.443.........333',
+        '46223.......443.',
+        '42523..443.46223',
+        '32223.4622342523',
+        '.333..4252332223',
+      ]),
     },
     {
       id: 'weighsies.blocks', game: 'weighsies', slot: 'frame', name: 'Gold bars',
@@ -204,13 +214,13 @@ export const set: MachineSet = {
     {
       id: 'weighsies.cat', game: 'weighsies', slot: 'buddy', name: 'House cat',
       colors: ['#F29A4A', '#C46A24', '#FFE0B8', '#FFC98A', '#E9838A'],
-      // A ginger tabby's face, ears up, a pink nose.
+      // A ginger tabby sat up: a striped brow, a pink nose and its tail curled round its paws.
       art: pet('house cat', [
-        '1...1.',
-        '11211.',
-        '1o1o1.',
-        '13531.',
-        '22222.',
+        '.2...2',
+        '.12121',
+        '.1o1o1',
+        '..3531',
+        '422131',
       ]),
     },
     {
@@ -227,26 +237,28 @@ export const set: MachineSet = {
     },
     {
       id: 'weighsies.trex', game: 'weighsies', slot: 'buddy', name: 'Hamster',
-      colors: ['#F2B06A', '#C9813E', '#FFF1DC', '#F59AB0', '#FFFFFF'],
-      // A golden hamster: pink ears, a cream face and a pink nose.
+      // coat, shade, cream, pink
+      colors: ['#F0A24E', '#C2742C', '#FFF1DC', '#FF8FA8'],
+      // A golden hamster: round pink ears, a cream muzzle and a pink nose.
       art: pet('hamster', [
-        '.4..4.',
-        '.1111.',
-        '1o11o1',
-        '334433',
-        '.3333.',
+        '.44.44',
+        '.11111',
+        '.1o1o1',
+        '.33433',
+        '.23332',
       ]),
     },
     {
       id: 'weighsies.pigeon', game: 'weighsies', slot: 'buddy', name: 'Pigeon',
-      colors: ['#A9B0BC', '#7A8292', '#D0D5DD', '#7A6EA8', '#4FB59A', '#E86A6A', '#FF9A3A', '#2F3440', '#E8D8C8'],
-      // Plump and grey, its neck shot with purple and green, pink feet.
+      // grey, shade, light, neck purple, neck green, feet, beak
+      colors: ['#A3ABBA', '#6F7889', '#D3D8E2', '#9A6BD6', '#3FC79A', '#F07070', '#F2C98E'],
+      // Plump and grey, facing away from him: its neck shot with purple and green, a pale beak, pink feet.
       art: pet('pigeon', [
-        '..33..',
-        '.9o11.',
-        '.34512',
-        '311122',
-        '..6.62',
+        '...13.',
+        '..21o7',
+        '.22451',
+        '221113',
+        '2.6.6.',
       ]),
     },
   ],

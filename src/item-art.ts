@@ -154,3 +154,14 @@ export const pet = (name: string, rows: string[]): Stamp => {
   return stamp(rows);
 };
 
+
+/**
+ * A frame drawn as a 16x16 picture: `1`–`9` are its colours and `.` its
+ * ground (colour 1). It repeats past the edges, for the card face's bigger
+ * backdrop.
+ */
+export const backdrop = (name: string, rows: string[]): ((x: number, y: number) => number) => {
+  if (rows.length !== GRID_SIZE || rows.some(r => r.length !== GRID_SIZE || /[^.1-9]/.test(r))) throw new Error(`Frame "${name}" must be drawn on a 16x16 grid in its own colours`);
+  const at = rows.map(r => [...r].map(ch => (ch === '.' ? 1 : +ch)));
+  return (x, y) => at[((y % GRID_SIZE) + GRID_SIZE) % GRID_SIZE][((x % GRID_SIZE) + GRID_SIZE) % GRID_SIZE];
+};

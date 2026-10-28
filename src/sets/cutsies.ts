@@ -1,4 +1,4 @@
-import { grid16, on, pet, type MachineSet } from '../item-art';
+import { backdrop, grid16, on, pet, type MachineSet } from '../item-art';
 
 /**
  * Cutsies' machine: the food it slices, the chef's knife hand and the
@@ -278,7 +278,31 @@ export const set: MachineSet = {
       ]),
       colors: ['#F7F9FC', '#D5DCE6', '#FFFFFF', '#B9C4D2'],
     },
-    'cutsies.board': { name: 'Chopping board' },
+    'cutsies.board': {
+      name: 'Chopping board',
+      // wood, grain, wood light, hole, blade, blade shade, handle, tomato, tomato flesh
+      colors: ['#E6BE86', '#CC9C5E', '#F6DDB2', '#6B4528', '#F2F5F9', '#A7B1BF', '#3E3440', '#E5483D', '#FFB59A'],
+      // The board he's chopping on: its grain, the hole to hang it by, the knife down one side and a
+      // tomato slice in the other corner.
+      fill: backdrop('chopping board', [
+        '................',
+        '.44...........5.',
+        '.44..222222...56',
+        '.33...........56',
+        '.........2222.56',
+        '..............56',
+        '222222........56',
+        '..............66',
+        '..............77',
+        '..............73',
+        '..............77',
+        '................',
+        '.....88.........',
+        '....8998..222222',
+        '.....88.........',
+        '22222...........',
+      ]),
+    },
   },
 };
 
