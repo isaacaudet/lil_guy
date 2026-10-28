@@ -2759,11 +2759,12 @@ const accessories = [
 			for (let y = b$1.top; y <= b$1.bottom; y++) for (let x = b$1.left; x <= b$1.right; x++) {
 				const edgeX = x === b$1.left || x === b$1.right, edgeY = y === b$1.top || y === b$1.bottom;
 				if (edgeX && edgeY) continue;
-				if (edgeX || edgeY) c.set(x, y, y === b$1.bottom || x === b$1.right ? T.GOLD_SHADE : T.GOLD);
+				if (edgeX || edgeY) c.set(x, y, T.GOLD);
+				else if (c.get(x, y) === T.BODY) c.set(x, y, T.LIGHT);
 			}
 			c.set(b$1.left + 1, b$1.top, T.WHITE);
-			for (let i = 0, x = b$1.right + 1, y = b$1.bottom; y <= c.bottom && c.isBody(x, y); i++, y++) {
-				c.set(x, y, i % 2 ? T.GOLD : T.GOLD_SHADE);
+			for (let i = 0, x = b$1.right, y = b$1.bottom + 1; i < 5 && y <= c.bottom && c.isBody(x, y); i++, y++) {
+				if (i % 2 === 0) c.set(x, y, T.GOLD);
 				if (i === 1 && c.isBody(x + 1, y + 1)) x++;
 			}
 		}
@@ -23776,7 +23777,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 10;
+const ART_VERSION = 11;
 const PART_KEYS = [
 	"head",
 	"eyes",

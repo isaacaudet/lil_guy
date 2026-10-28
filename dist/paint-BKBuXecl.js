@@ -14784,11 +14784,12 @@ const accessories = [
 			for (let y = b.top; y <= b.bottom; y++) for (let x = b.left; x <= b.right; x++) {
 				const edgeX = x === b.left || x === b.right, edgeY = y === b.top || y === b.bottom;
 				if (edgeX && edgeY) continue;
-				if (edgeX || edgeY) c.set(x, y, y === b.bottom || x === b.right ? T.GOLD_SHADE : T.GOLD);
+				if (edgeX || edgeY) c.set(x, y, T.GOLD);
+				else if (c.get(x, y) === T.BODY) c.set(x, y, T.LIGHT);
 			}
 			c.set(b.left + 1, b.top, T.WHITE);
-			for (let i = 0, x = b.right + 1, y = b.bottom; y <= c.bottom && c.isBody(x, y); i++, y++) {
-				c.set(x, y, i % 2 ? T.GOLD : T.GOLD_SHADE);
+			for (let i = 0, x = b.right, y = b.bottom + 1; i < 5 && y <= c.bottom && c.isBody(x, y); i++, y++) {
+				if (i % 2 === 0) c.set(x, y, T.GOLD);
 				if (i === 1 && c.isBody(x + 1, y + 1)) x++;
 			}
 		}
@@ -16600,4 +16601,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-uyN5VL_o.js.map
+//# sourceMappingURL=paint-BKBuXecl.js.map

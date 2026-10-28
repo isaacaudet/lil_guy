@@ -212,9 +212,10 @@ export const accessories: Accessory[] = [
     name: 'monocle',
     layer: 'face',
     draw: c => {
-      // A round gold rim close round the right eye, its lower edge in shadow and a
-      // glint on its top, the eye clear through the glass, and a gold chain
-      // swinging down from its outer side in links.
+      // A round gold rim close round the right eye with a glint on its top and
+      // the glass lit pale, the eye clear through it, and a short gold chain
+      // from its outer side in dotted links. One gold all round: on a peach or
+      // tan face the gold's shade is a brown that read as a smudge.
       const f = c.face;
       if (!f || !f.eyes.length) return;
       const e = f.eyes[f.eyes.length - 1];
@@ -222,11 +223,12 @@ export const accessories: Accessory[] = [
       for (let y = b.top; y <= b.bottom; y++) for (let x = b.left; x <= b.right; x++) {
         const edgeX = x === b.left || x === b.right, edgeY = y === b.top || y === b.bottom;
         if (edgeX && edgeY) continue;
-        if (edgeX || edgeY) c.set(x, y, y === b.bottom || x === b.right ? T.GOLD_SHADE : T.GOLD);
+        if (edgeX || edgeY) c.set(x, y, T.GOLD);
+        else if (c.get(x, y) === T.BODY) c.set(x, y, T.LIGHT);
       }
       c.set(b.left + 1, b.top, T.WHITE);
-      for (let i = 0, x = b.right + 1, y = b.bottom; y <= c.bottom && c.isBody(x, y); i++, y++) {
-        c.set(x, y, i % 2 ? T.GOLD : T.GOLD_SHADE);
+      for (let i = 0, x = b.right, y = b.bottom + 1; i < 5 && y <= c.bottom && c.isBody(x, y); i++, y++) {
+        if (i % 2 === 0) c.set(x, y, T.GOLD);
         if (i === 1 && c.isBody(x + 1, y + 1)) x++;
       }
     },

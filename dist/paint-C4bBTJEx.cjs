@@ -14809,11 +14809,12 @@ const accessories = [
 			for (let y = b.top; y <= b.bottom; y++) for (let x = b.left; x <= b.right; x++) {
 				const edgeX = x === b.left || x === b.right, edgeY = y === b.top || y === b.bottom;
 				if (edgeX && edgeY) continue;
-				if (edgeX || edgeY) c.set(x, y, y === b.bottom || x === b.right ? T.GOLD_SHADE : T.GOLD);
+				if (edgeX || edgeY) c.set(x, y, T.GOLD);
+				else if (c.get(x, y) === T.BODY) c.set(x, y, T.LIGHT);
 			}
 			c.set(b.left + 1, b.top, T.WHITE);
-			for (let i = 0, x = b.right + 1, y = b.bottom; y <= c.bottom && c.isBody(x, y); i++, y++) {
-				c.set(x, y, i % 2 ? T.GOLD : T.GOLD_SHADE);
+			for (let i = 0, x = b.right, y = b.bottom + 1; i < 5 && y <= c.bottom && c.isBody(x, y); i++, y++) {
+				if (i % 2 === 0) c.set(x, y, T.GOLD);
 				if (i === 1 && c.isBody(x + 1, y + 1)) x++;
 			}
 		}
@@ -17290,4 +17291,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-Cks6t9BP.cjs.map
+//# sourceMappingURL=paint-C4bBTJEx.cjs.map
