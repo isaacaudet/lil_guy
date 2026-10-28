@@ -1,4 +1,4 @@
-import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type AnimateOptions, type Move } from './animate';
+import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type Animation, type AnimateOptions, type Move } from './animate';
 import { finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
 import { cycle, fit, fitLoop, LOOP_MS, wave, wrap } from './loop';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
@@ -67,10 +67,10 @@ const hash = (x: number, y: number, p: number) => { const s = Math.sin(x * 127.1
  * `gx, gy` is the guy pixel (what twinkles), `cx, cy` the card pixel (what a
  * sweep crosses), so light runs smoothly over a single pixel of a hat.
  */
-function shine(c: RGB, o: Owned, gx: number, gy: number, cx: number, cy: number, t: number): RGB {
+function shine(c: RGB, o: Owned, gx: number, gy: number, cx: number, cy: number, t: number, zoom: number): RGB {
   const f = SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]);
   if (f < 0) return c;
-  const out = finishColor([c[0] / 255, c[1] / 255, c[2] / 255], f, o.scuff, hash(gx, gy, o.print), (cx + cy) / ZOOM, gy, o.print, loopSeconds(t * 1000), 1);
+  const out = finishColor([c[0] / 255, c[1] / 255, c[2] / 255], f, o.scuff, hash(gx, gy, o.print), (cx + cy) / zoom, gy, o.print, loopSeconds(t * 1000), 1);
   return [out[0] * 255, out[1] * 255, out[2] * 255];
 }
 
@@ -157,6 +157,23 @@ function inside(x: number, y: number, r = 7): boolean {
 
 const SIDE = 8, LINE = 13;
 
+/** How he stands on the card: card pixels to each of his (`zoom`), and the columns of his frame centred in the window. */
+interface CardFit { zoom: number; left: number; span: number }
+
+/**
+ * Six card pixels to each of his, centred on his sixteen columns; with a buddy
+ * beside him, as big as the two of them fit the window (`zoom`), centred on
+ * everything either of them covers in any frame of the move.
+ */
+function cardFit(anim: Animation): CardFit {
+  if (anim.width <= FRAME_WIDTH) return { zoom: ZOOM, left: 0, span: FRAME_WIDTH };
+  let left = anim.width, right = -1;
+  for (const f of anim.frames) f.colors.forEach((row, y) => row.forEach((c, x) => { if (c && f.slots[y][x] !== 5) { left = Math.min(left, x); right = Math.max(right, x); } }));
+  const span = right - left + 1;
+  // The window less its rim and the sticker edge round him.
+  return { zoom: Math.min(ZOOM, Math.floor((CARD_WIDTH - SIDE * 2 - 6) / span)), left, span };
+}
+
 /**
  * The card at `t` seconds, with the guy's frame `frame` in its window.
  *
@@ -170,7 +187,7 @@ const SIDE = 8, LINE = 13;
  * silk in his aura's own colour with a double foil edge, its deep window
  * glowing in that colour where he stands.
  */
-function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, t: number): Uint8ClampedArray {
+function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, t: number, { zoom, left, span }: CardFit): Uint8ClampedArray {
   // The card's own clock, in ms, on the loop every other moving thing keeps
   // (./loop), set by its last copy's print (or its guy's name), so cards side
   // by side catch the light at their own moments.
@@ -283,12 +300,12 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   // the window and floats, bobbing (Balatro's soul layer).
   let topRow = FRAME_HEIGHT, botRow = 0;
   frame.colors.forEach((row, gy) => { if (row.some(Boolean)) { topRow = Math.min(topRow, gy); botRow = gy; } });
-  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - (FRAME_WIDTH * ZOOM) / 2);
+  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - ((left + span / 2) * zoom));
   const bob = soul ? Math.round(Math.sin(tm / wave(1000 / 2.6)) * 2) : 0;
-  let oy = WIN.bottom - 5 - (botRow + 1) * ZOOM;
+  let oy = WIN.bottom - 5 - (botRow + 1) * zoom;
   // Floating: centred in the window and lifted till his top just clears its
   // edge, never off the card (an aura's rings above him count as him).
-  if (soul) oy = Math.max(5 - topRow * ZOOM, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - ((topRow + botRow + 1) * ZOOM) / 2) - 10)) + bob;
+  if (soul) oy = Math.max(5 - topRow * zoom, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - ((topRow + botRow + 1) * zoom) / 2) - 10)) + bob;
   // The space he may draw in: the window, or above it too when he floats.
   const clip = (cx: number, cy: number) => soul ? inside(cx, cy) && cx > 3 && cx < CARD_WIDTH - 4 && cy > 3 && cy < WIN.bottom
     : cy > WIN.top && cy < WIN.bottom && cx > WIN.left && cx < WIN.right;
@@ -299,25 +316,25 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   const edgeC = night ? mix(aMid, WHITE, 0.45) : mix(tint, WHITE, 0.55);
   for (let yy = 0; yy < CARD_HEIGHT; yy++) for (let x = 0; x < CARD_WIDTH; x++) {
     if (!clip(x, yy)) continue;
-    const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((yy - oy) / ZOOM);
+    const gx = Math.floor((x - ox) / zoom), gy = Math.floor((yy - oy) / zoom);
     if (x - ox >= 0 && yy - oy >= 0 && solid(gx, gy)) continue;
-    const near = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / ZOOM), Math.floor((yy + dy - oy) / ZOOM)));
+    const near = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / zoom), Math.floor((yy + dy - oy) / zoom)));
     if (near) s.set(x, yy, soul && (yy <= WIN.top || x <= WIN.left || x >= WIN.right) ? [255, 250, 235] : edgeC);
   }
   frame.colors.forEach((row, gy) => row.forEach((hex, gx) => {
     if (!hex) return;
     const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : undefined;
-    for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
-      const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+    for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+      const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
       if (!clip(cx, cy)) continue;
       let c = rgb(hex);
-      if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
+      if (copy) c = shine(c, copy, gx, gy, cx, cy, t, zoom);
       s.set(cx, cy, [Math.min(255, Math.max(0, c[0])), Math.min(255, Math.max(0, c[1])), Math.min(255, Math.max(0, c[2]))]);
     }
   }));
   // A rare aura's rings run past the frame's sides into the window's margins.
-  for (const [gx, gy, hex] of frame.outside ?? []) for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
-    const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+  for (const [gx, gy, hex] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+    const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
     if (clip(cx, cy)) s.set(cx, cy, rgb(hex));
   }
   // Glass over the window: a soft glare that slides across now and then.
@@ -389,7 +406,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
   const move = input.move ?? 'idle', plain = animate(input.seed, move, options);
   const { repeats, turns } = fitLoop(plain.duration);
   const anim = animate(input.seed, move, { ...options, loop: { repeats, turns } });
-  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), fit = cardFit(anim);
   const total = anim.duration, count = Math.max(1, Math.round(total / ms)), cache: Uint8ClampedArray[] = [];
   const delays = Array.from({ length: count }, (_, k) => Math.round((k + 1) * total / count) - Math.round(k * total / count));
   return {
@@ -397,7 +414,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
     /** The frame showing at `i` (wraps round). */
     frame(i: number): Uint8ClampedArray {
       const k = ((i % count) + count) % count;
-      return cache[k] ??= drawCard(input, frameAt(anim, k * total / count), owned, g, ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000);
+      return cache[k] ??= drawCard(input, frameAt(anim, k * total / count), owned, g, ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000, fit);
     },
   };
 }
@@ -405,7 +422,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
 /** The card standing still, for a picture. */
 export function cardStill(input: CardInput, t = 0.6): Uint8ClampedArray {
   const anim = animateLoop(input.seed, input.move ?? 'idle', { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false });
-  return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t);
+  return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t, cardFit(anim));
 }
 
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */
@@ -431,10 +448,10 @@ export function toCardPng(input: CardInput, scale = 4): Promise<Uint8Array> {
  */
 export function toGuyGif(seed: string, move: Move, options: AnimateOptions & { background?: string } = {}, scale = 12): Uint8Array {
   const anim = animateLoop(seed, move, options), bg = options.background ? rgb(options.background) : null;
-  const frames = anim.frames.map(f => {
-    const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
-    f.colors.forEach((row, y) => row.forEach((c, x) => { const v = c ? rgb(c) : bg; if (v) px.set([...v, 255], (y * FRAME_WIDTH + x) * 4); }));
+  const W = anim.width, frames = anim.frames.map(f => {
+    const px = new Uint8ClampedArray(W * FRAME_HEIGHT * 4);
+    f.colors.forEach((row, y) => row.forEach((c, x) => { const v = c ? rgb(c) : bg; if (v) px.set([...v, 255], (y * W + x) * 4); }));
     return px;
   });
-  return encodeGif({ width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, delays: anim.frames.map(f => f.ms) }, scale);
+  return encodeGif({ width: W, height: FRAME_HEIGHT, frames, delays: anim.frames.map(f => f.ms) }, scale);
 }

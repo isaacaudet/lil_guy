@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { animate } from '../animate';
 import { encode, type Owned } from '../owned';
 import { itemFrame, ownedOf, surfaceOf, voxelColumns, voxelItem, voxelMesh } from '../voxel';
+import { items } from '../items';
+import { LOCAL } from '../parts/art';
 
 const crown: Owned = { item: 'amountle.crown', finish: 'gold', scuff: .012, print: 7 };
 const plate: Owned = { item: 'flipsies.target', finish: 'sunset', scuff: .04, print: 18 };
@@ -13,6 +15,14 @@ describe('voxel', () => {
     expect(lit).toBeGreaterThan(6);
     expect(lit).toBeLessThan(16 * 16 / 2);
     f.colors.forEach((row, y) => row.forEach((c, x) => expect(f.slots[y][x]).toBe(c ? 2 : 0)));
+  });
+
+  test('a buddy on its own is its whole art, never a corner his face cut into', () => {
+    for (const b of items.filter(i => i.slot === 'buddy' && !i.retired)) {
+      const f = itemFrame({ item: b.id, finish: 'plain', scuff: 0.1, print: 3 });
+      // Its own colours: its eyes are in his outline's colour, so they are not the item's.
+      expect(f.colors.flat().filter(Boolean).length).toBe(b.art!.flat().filter(t => t >= LOCAL).length);
+    }
   });
 
   test('a guy comes out round: the middle deeper than the edge', () => {

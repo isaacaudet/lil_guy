@@ -1464,9 +1464,11 @@ const onPair = (rows, inset = 0) => {
 };
 /**
 * The biggest a buddy is drawn: its art, inside the outline compose gives it.
-* It stands in front of the guy in his bottom-right corner (no head leaves
-* room beside him; see `buddySpot` in ./compose), and this is as big as it
-* gets there without coming up to his face.
+* The moving and baked pictures give it room beside him (`buddyBeside` in
+* ./compose, `BUDDY_ROOM` columns for this box), but on the 16x16 icon it
+* stands in front of him in his bottom-right corner, and this is as big as it
+* gets there without coming up to his face. A bigger box widens every buddy
+* picture (`BUDDY_ROOM`) and crowds the icon.
 */
 const BUDDY_BOX = {
 	width: 6,
@@ -15886,11 +15888,12 @@ function clearFace(c, face, bare, worn) {
 * pixel, diagonals included, runs between its outline and him.
 *
 * Where there is no such spot, it stands in front of him in the bottom-right
-* corner, as it always has, with its own outline, leaving out any pixel that
-* would touch his eyes or mouth (`face`). That is every head and skin there is
-* today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
-* needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
-* only comes true on a picture wider than his own.
+* corner with its own outline, leaving out any pixel that would touch his eyes
+* or mouth (`face`). That is every head and skin on his own sixteen columns
+* (the 16x16 icon): a guy fills them, and a 6x5 buddy apart from him needs
+* nine to eleven more (`scripts/buddy-room.ts` measures it). The moving and
+* baked pictures give him those columns (`buddyBeside`), so there it always
+* stands apart.
 */
 function buddySpot(art, taken, face = () => false) {
 	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
@@ -15928,6 +15931,74 @@ function buddySpot(art, taken, face = () => false) {
 		apart: false
 	};
 }
+/** The most columns a wide picture adds past his sixteen for a buddy: a full `BUDDY_BOX` one, on the widest head or skin. */
+const BUDDY_ROOM = 10;
+/**
+* Where his buddy stands in the moving and baked pictures: on the floor to his
+* right, past his sixteen columns, as near him as it can be with a clear pixel
+* between them in every frame of every move (`movesRoom`), its whole art
+* drawn. The picture is as wide as that needs, `BUDDY_ROOM` more at most.
+* Undefined when he has no buddy. The 16x16 icon has no room for it and keeps
+* the corner (`compose`).
+*/
+function buddyBeside(config) {
+	const buddy = itemById(config.buddy);
+	if (buddy?.slot !== "buddy") return void 0;
+	const room = movesRoom(config);
+	for (let extra = width(buddy.art) + 2;; extra++) {
+		const spot = buddySpot(buddy.art, room.map((row) => [...row, ...new Array(GRID_SIZE + extra - row.length).fill(false)]));
+		if (spot.apart) return {
+			width: GRID_SIZE + extra,
+			cells: spot.cells
+		};
+	}
+}
+/**
+* His buddy on its own, its whole art (in the buddy's layer) and outline where
+* it stands beside him (`buddyBeside`), on a grid that wide: what a moving
+* picture draws for it, and an item view of a buddy shows.
+*/
+function buddyAlone(config) {
+	const beside = buddyBeside(config);
+	if (!beside) return void 0;
+	const grid = Array.from({ length: GRID_SIZE }, () => new Array(beside.width).fill(0));
+	for (const [x, y, t] of beside.cells) grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+	return grid;
+}
+/**
+* The cells he covers in any frame of any move, on his sixteen columns and the one a step takes him past them, as
+* ./animate moves him: his still with either arm out, turned round, a step to
+* either side (a dance's, an oops), down two rows where a squash lowers him
+* and up one for the hop a buddy takes on its own (it hops higher only while
+* he is off the ground too). Tighter than `roomFor`, which allows two steps.
+*/
+function movesRoom(config) {
+	const plain = {
+		...config,
+		buddy: void 0,
+		frame: void 0,
+		aura: void 0
+	};
+	const out = Array.from({ length: GRID_SIZE }, () => new Array(GRID_SIZE + 1).fill(false));
+	for (const arms$1 of new Set([
+		config.arms,
+		1,
+		2
+	])) {
+		const g = compose({
+			...plain,
+			arms: arms$1
+		});
+		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+			if (!g[y][x] && !g[y][GRID_SIZE - 1 - x]) continue;
+			for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) {
+				const yy = y + dy, xx = x + dx;
+				if (yy >= 0 && yy < GRID_SIZE && xx >= 0) out[yy][xx] = true;
+			}
+		}
+	}
+	return out;
+}
 /**
 * The cells a guy may cover in any frame of any move, from his still: an arm
 * out at either side and a step sideways (two columns), down two rows where a
@@ -15957,16 +16028,6 @@ function roomFor(still) {
 */
 function compose(config) {
 	return build(config);
-}
-/**
-* The buddy a guy wears, where it stands in his still (`cells`, art in its
-* own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
-* ./animate can stand it on the floor while he moves.
-*/
-function buddyOf(config) {
-	const report = { hatCut: 0 };
-	build(config, report);
-	return report.buddy;
 }
 function build(config, report) {
 	const skin = skinOf(config);
@@ -16225,5 +16286,5 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-BvlDdcM_.js.map
+export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
+//# sourceMappingURL=paint-B8QYhPQ7.js.map

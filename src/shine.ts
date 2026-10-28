@@ -18,15 +18,16 @@ import type { AvatarConfig } from './types';
 /**
  * A frame as the shader reads it: its colours; for each pixel the finish,
  * scuff and print of the copy it belongs to; and each pixel's noise. Three
- * RGBA byte arrays, 16×20.
+ * RGBA byte arrays, the frame's size (16×20, wider with a buddy).
  */
 export function shineData(frame: AnimationFrame, owned: AvatarConfig['owned'] = {}): { colors: Uint8Array; info: Uint8Array; noise: Uint8Array } {
-  const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-  const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-  const noise = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+  const W = frame.colors[0].length;
+  const colors = new Uint8Array(W * FRAME_HEIGHT * 4);
+  const info = new Uint8Array(W * FRAME_HEIGHT * 4);
+  const noise = new Uint8Array(W * FRAME_HEIGHT * 4);
   frame.colors.forEach((row, y) => row.forEach((c, x) => {
     if (!c) return;
-    const i = (y * FRAME_WIDTH + x) * 4;
+    const i = (y * W + x) * 4;
     colors.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], i);
     const slot = frame.slots[y][x];
     const copy: Owned | undefined = slot ? owned?.[FRAME_SLOTS[slot - 1]] : undefined;
@@ -51,9 +52,9 @@ export const shines = (frame: AnimationFrame, owned: AvatarConfig['owned'] = {})
 export function shineFrame(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): Uint8ClampedArray {
   const { colors, info, noise } = shineData(frame, owned);
   const out = new Uint8ClampedArray(colors);
-  const time = loopSeconds(ms);
-  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
-    const i = (y * FRAME_WIDTH + x) * 4;
+  const time = loopSeconds(ms), W = frame.colors[0].length;
+  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
     if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
     const finish = Math.floor(info[i] / 32 + 0.5) - 1;
     const c = finishColor([colors[i] / 255, colors[i + 1] / 255, colors[i + 2] / 255], finish, info[i + 1] / 255, noise[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
@@ -64,14 +65,14 @@ export function shineFrame(frame: AnimationFrame, owned: AvatarConfig['owned'], 
 
 const VERTEX = 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }';
 
-/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds. */
+/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds, \`res\` the frame's size. */
 export const SHINE_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
 uniform sampler2D base, info, noise;
 uniform float time;
+uniform vec2 res;
 ${GLSL_COMMON}
 void main() {
-  vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
   vec2 cell = floor(uv * res);
   vec2 at = (cell + 0.5) / res;
   vec4 b = texture2D(base, at);
@@ -84,7 +85,7 @@ void main() {
 }`;
 
 export interface Shine {
-  /** The 16×20 canvas the shader draws into; copy it out with drawImage. */
+  /** The canvas the shader draws into, the size of the last frame drawn (16×20, wider with a buddy); copy it out with drawImage. */
   canvas: HTMLCanvasElement | OffscreenCanvas;
   /** Draws a frame with its copies' finishes `ms` into the shimmer. */
   draw(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): void;
@@ -115,8 +116,7 @@ export function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine
   gl.uniform1i(gl.getUniformLocation(program, 'base'), 0);
   gl.uniform1i(gl.getUniformLocation(program, 'info'), 1);
   gl.uniform1i(gl.getUniformLocation(program, 'noise'), 2);
-  const time = gl.getUniformLocation(program, 'time');
-  gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+  const time = gl.getUniformLocation(program, 'time'), res = gl.getUniformLocation(program, 'res');
 
   const texture = (unit: number) => {
     const t = gl.createTexture();
@@ -131,13 +131,16 @@ export function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine
   return {
     canvas: target,
     draw(frame, owned, ms) {
-      const { colors, info, noise } = shineData(frame, owned);
+      const { colors, info, noise } = shineData(frame, owned), W = frame.colors[0].length;
+      if (target.width !== W) target.width = W;
+      gl.viewport(0, 0, W, FRAME_HEIGHT);
       [colors, info, noise].forEach((bytes, unit) => {
         gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
       });
       gl.uniform1f(time, loopSeconds(ms));
+      gl.uniform2f(res, W, FRAME_HEIGHT);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

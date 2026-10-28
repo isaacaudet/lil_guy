@@ -1,4 +1,4 @@
-import { animate, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
+import { animate, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, WIDE_FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
@@ -24,9 +24,18 @@ export { ART_VERSION, guyCode, type CardSpec, type GuySpec };
  * this one function, so a guy is the same wherever he turns up.
  */
 
-/** A baked guy is his frame with room for a rare aura's rings either side: the same size for every guy. */
+/**
+ * A baked guy is his frame with room for a rare aura's rings either side: the
+ * same size for every guy without a buddy. A guy with a buddy is
+ * `BUDDY_GUY_WIDTH` across, the buddy on the floor beside him and the two of
+ * them centred, so every buddy picture is one size too.
+ */
 export const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
+export const BUDDY_GUY_WIDTH = WIDE_FRAME_WIDTH + AURA_PAD * 2;
 export const GUY_HEIGHT = FRAME_HEIGHT;
+
+/** Where a frame `width` wide starts on a baked picture `W` wide: centred, room for an aura's rings either side. */
+const leftOf = (width: number, W: number) => AURA_PAD + Math.floor((W - AURA_PAD * 2 - width) / 2);
 
 /** How long each frame of a card's shimmer shows. */
 const STEP_MS = 80;
@@ -44,16 +53,16 @@ function ownedOf(spec: GuySpec): AvatarConfig['owned'] {
 
 const rgb = (s: string) => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
 
-/** A frame on the padded canvas: the guy's pixels (shone, if given) and the aura cells past his sides. */
-function place(frame: AnimationFrame, shone?: Uint8ClampedArray): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(GUY_WIDTH * GUY_HEIGHT * 4);
-  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
-    const o = (y * GUY_WIDTH + x + AURA_PAD) * 4;
-    if (shone) { const i = (y * FRAME_WIDTH + x) * 4; if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o); continue; }
+/** A frame on the padded canvas `W` wide, from column `left`: the guy's pixels (shone, if given) and the aura cells past his sides. */
+function place(frame: AnimationFrame, W: number, left: number, shone?: Uint8ClampedArray): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(W * GUY_HEIGHT * 4), fw = frame.colors[0].length;
+  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
+    const o = (y * W + x + left) * 4;
+    if (shone) { const i = (y * fw + x) * 4; if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o); continue; }
     const c = frame.colors[y][x];
     if (c) out.set([...rgb(c), 255], o);
   }
-  for (const [x, y, c] of frame.outside ?? []) out.set([...rgb(c), 255], (y * GUY_WIDTH + x + AURA_PAD) * 4);
+  for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) out.set([...rgb(c), 255], (y * W + x + left) * 4);
   return out;
 }
 
@@ -81,13 +90,19 @@ export const shineFit = fitLoop;
  * through without a jump.
  */
 export function bakeGuy(spec: GuySpec, move: Move = 'idle'): Frames {
+  return bakeAt(spec, move).frames;
+}
+
+/** `bakeGuy`, and the column his frame starts at on the picture. */
+function bakeAt(spec: GuySpec, move: Move): { frames: Frames; left: number } {
   const options = animateOptions(spec), owned = ownedOf(spec);
   const plain = animate(spec.seed, move, options);
+  const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
   const shining = plain.frames.some(f => shines(f, owned));
-  if (!plain.timed && !shining) return merged(GUY_WIDTH, GUY_HEIGHT, plain.frames.map(f => place(f)), plain.frames.map(f => f.ms));
+  if (!plain.timed && !shining) return { frames: merged(W, GUY_HEIGHT, plain.frames.map(f => place(f, W, left)), plain.frames.map(f => f.ms)), left };
   const { repeats, turns } = shineFit(plain.duration);
   const anim = animate(spec.seed, move, { ...options, loop: { repeats, turns, fine: shining } });
-  return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map(f => place(f, shining ? shineFrame(f, owned, f.at ?? 0) : undefined)), anim.frames.map(f => f.ms));
+  return { frames: merged(W, GUY_HEIGHT, anim.frames.map(f => place(f, W, left, shining ? shineFrame(f, owned, f.at ?? 0) : undefined)), anim.frames.map(f => f.ms)), left };
 }
 
 /** The size Discord shows a profile picture at, and asks for at least 128 of. */
@@ -95,13 +110,13 @@ export const PROFILE_SIZE = 512;
 
 /**
  * A guy as a profile picture (Discord and the like): square, with room all round so the round crop
- * never cuts him or his aura, on a solid ground in a light tint of his own colour, or on the
- * backdrop he wears, run out to every edge. Every frame of the move.
+ * never cuts him, his buddy or his aura, centred on all of them, on a solid ground in a light tint
+ * of his own colour, or on the backdrop he wears, run out to every edge. Every frame of the move.
  */
 export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
   // A backdrop is the picture's ground, not a square behind him: he is framed without it.
   const backdrop = spec.equip?.find(code => itemById(decode(code)?.item)?.slot === 'frame');
-  const g = bakeGuy(backdrop ? { ...spec, equip: spec.equip!.filter(code => code !== backdrop) } : spec, move), W = g.width, H = g.height;
+  const baked = bakeAt(backdrop ? { ...spec, equip: spec.equip!.filter(code => code !== backdrop) } : spec, move), g = baked.frames, W = g.width, H = g.height;
   const lit = (px: Uint8ClampedArray, x: number, y: number) => px[(y * W + x) * 4 + 3] >= 128;
   let left = W, right = -1, top = H, bottom = -1;
   for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -115,7 +130,7 @@ export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
     if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
   }
   const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-  const ground = backdrop ? backdropGround(spec, side, ox, oy) : null, solid = groundOf(g.frames[0], W, H);
+  const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H);
   const frames = g.frames.map(px => {
     const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
     if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
@@ -132,7 +147,7 @@ function backdropGround(spec: GuySpec, side: number, ox: number, oy: number): Ui
   const config = dress({ ...resolve(spec.seed, spec.parts), ...(spec.palette !== undefined ? { palette: spec.palette } : {}) }, { equip: spec.equip }, spec.seed);
   const frame = itemById(config.frame)!;
   const grid = Array.from({ length: side }, (_, y) => Array.from({ length: side }, (_, x) =>
-    LAYER.frame + frame.fill!(x - ox - AURA_PAD + 48, y - oy - HEADROOM + 48) - 1));
+    LAYER.frame + frame.fill!(x - ox + 48, y - oy - HEADROOM + 48) - 1));
   const colors = paint(grid, config, withItems(paletteOf(config), config), false, false);
   const out = new Uint8ClampedArray(side * side * 4);
   // Knocked back toward night, so he and his aura stand out from a busy pattern.

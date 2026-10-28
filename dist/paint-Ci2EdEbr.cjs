@@ -1489,9 +1489,11 @@ const onPair = (rows, inset = 0) => {
 };
 /**
 * The biggest a buddy is drawn: its art, inside the outline compose gives it.
-* It stands in front of the guy in his bottom-right corner (no head leaves
-* room beside him; see `buddySpot` in ./compose), and this is as big as it
-* gets there without coming up to his face.
+* The moving and baked pictures give it room beside him (`buddyBeside` in
+* ./compose, `BUDDY_ROOM` columns for this box), but on the 16x16 icon it
+* stands in front of him in his bottom-right corner, and this is as big as it
+* gets there without coming up to his face. A bigger box widens every buddy
+* picture (`BUDDY_ROOM`) and crowds the icon.
 */
 const BUDDY_BOX = {
 	width: 6,
@@ -15911,11 +15913,12 @@ function clearFace(c, face, bare, worn) {
 * pixel, diagonals included, runs between its outline and him.
 *
 * Where there is no such spot, it stands in front of him in the bottom-right
-* corner, as it always has, with its own outline, leaving out any pixel that
-* would touch his eyes or mouth (`face`). That is every head and skin there is
-* today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
-* needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
-* only comes true on a picture wider than his own.
+* corner with its own outline, leaving out any pixel that would touch his eyes
+* or mouth (`face`). That is every head and skin on his own sixteen columns
+* (the 16x16 icon): a guy fills them, and a 6x5 buddy apart from him needs
+* nine to eleven more (`scripts/buddy-room.ts` measures it). The moving and
+* baked pictures give him those columns (`buddyBeside`), so there it always
+* stands apart.
 */
 function buddySpot(art, taken, face = () => false) {
 	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
@@ -15953,6 +15956,74 @@ function buddySpot(art, taken, face = () => false) {
 		apart: false
 	};
 }
+/** The most columns a wide picture adds past his sixteen for a buddy: a full `BUDDY_BOX` one, on the widest head or skin. */
+const BUDDY_ROOM = 10;
+/**
+* Where his buddy stands in the moving and baked pictures: on the floor to his
+* right, past his sixteen columns, as near him as it can be with a clear pixel
+* between them in every frame of every move (`movesRoom`), its whole art
+* drawn. The picture is as wide as that needs, `BUDDY_ROOM` more at most.
+* Undefined when he has no buddy. The 16x16 icon has no room for it and keeps
+* the corner (`compose`).
+*/
+function buddyBeside(config) {
+	const buddy = itemById(config.buddy);
+	if (buddy?.slot !== "buddy") return void 0;
+	const room = movesRoom(config);
+	for (let extra = width(buddy.art) + 2;; extra++) {
+		const spot = buddySpot(buddy.art, room.map((row) => [...row, ...new Array(GRID_SIZE + extra - row.length).fill(false)]));
+		if (spot.apart) return {
+			width: GRID_SIZE + extra,
+			cells: spot.cells
+		};
+	}
+}
+/**
+* His buddy on its own, its whole art (in the buddy's layer) and outline where
+* it stands beside him (`buddyBeside`), on a grid that wide: what a moving
+* picture draws for it, and an item view of a buddy shows.
+*/
+function buddyAlone(config) {
+	const beside = buddyBeside(config);
+	if (!beside) return void 0;
+	const grid = Array.from({ length: GRID_SIZE }, () => new Array(beside.width).fill(0));
+	for (const [x, y, t] of beside.cells) grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+	return grid;
+}
+/**
+* The cells he covers in any frame of any move, on his sixteen columns and the one a step takes him past them, as
+* ./animate moves him: his still with either arm out, turned round, a step to
+* either side (a dance's, an oops), down two rows where a squash lowers him
+* and up one for the hop a buddy takes on its own (it hops higher only while
+* he is off the ground too). Tighter than `roomFor`, which allows two steps.
+*/
+function movesRoom(config) {
+	const plain = {
+		...config,
+		buddy: void 0,
+		frame: void 0,
+		aura: void 0
+	};
+	const out = Array.from({ length: GRID_SIZE }, () => new Array(GRID_SIZE + 1).fill(false));
+	for (const arms$1 of new Set([
+		config.arms,
+		1,
+		2
+	])) {
+		const g = compose({
+			...plain,
+			arms: arms$1
+		});
+		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+			if (!g[y][x] && !g[y][GRID_SIZE - 1 - x]) continue;
+			for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) {
+				const yy = y + dy, xx = x + dx;
+				if (yy >= 0 && yy < GRID_SIZE && xx >= 0) out[yy][xx] = true;
+			}
+		}
+	}
+	return out;
+}
 /**
 * The cells a guy may cover in any frame of any move, from his still: an arm
 * out at either side and a step sideways (two columns), down two rows where a
@@ -15982,16 +16053,6 @@ function roomFor(still) {
 */
 function compose(config) {
 	return build(config);
-}
-/**
-* The buddy a guy wears, where it stands in his still (`cells`, art in its
-* own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
-* ./animate can stand it on the floor while he moves.
-*/
-function buddyOf(config) {
-	const report = { hatCut: 0 };
-	build(config, report);
-	return report.buddy;
 }
 function build(config, report) {
 	const skin = skinOf(config);
@@ -16262,6 +16323,12 @@ Object.defineProperty(exports, 'AURA_ODDS', {
     return AURA_ODDS;
   }
 });
+Object.defineProperty(exports, 'BUDDY_ROOM', {
+  enumerable: true,
+  get: function () {
+    return BUDDY_ROOM;
+  }
+});
 Object.defineProperty(exports, 'CAPSULE_ONLY', {
   enumerable: true,
   get: function () {
@@ -16344,12 +16411,6 @@ Object.defineProperty(exports, 'LAYER', {
   enumerable: true,
   get: function () {
     return LAYER;
-  }
-});
-Object.defineProperty(exports, 'LOCAL', {
-  enumerable: true,
-  get: function () {
-    return LOCAL;
   }
 });
 Object.defineProperty(exports, 'LOOP_MS', {
@@ -16514,10 +16575,10 @@ Object.defineProperty(exports, 'bodyWeights', {
     return bodyWeights;
   }
 });
-Object.defineProperty(exports, 'buddyOf', {
+Object.defineProperty(exports, 'buddyAlone', {
   enumerable: true,
   get: function () {
-    return buddyOf;
+    return buddyAlone;
   }
 });
 Object.defineProperty(exports, 'cheekWeights', {
@@ -16910,4 +16971,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-CAsBemLy.cjs.map
+//# sourceMappingURL=paint-Ci2EdEbr.cjs.map
