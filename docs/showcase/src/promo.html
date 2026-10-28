@@ -3950,13 +3950,15 @@
     if (!r || !state) return;
     try { sessionStorage.removeItem(RETIRE); } catch (e) {}
     const name = r.name || state.key, svg = await oldGuy(r.was || name, r.look, 160);
+    // a guest's new guy lives only in this browser, so the way on is keeping him on a Google account
+    const ask = isLive() && !signedIn;
     $('ret-body').innerHTML = `<button class="close" type="button" aria-label="Close">×</button>
       <h3 id="ret-h">Meet your new lil guy</h3>
       <div class="ret-pair">${svg ? `<figure><span class="ret-old">${svg}</span><figcaption>Retired</figcaption></figure><span class="ret-arrow" aria-hidden="true">→</span>` : ''}
         <figure class="ret-now"><div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div><figcaption>Yours now</figcaption></figure></div>
       <p class="ret-q">How do you feel about him?</p>
       <div class="ret-feel"><button class="btn ghost small" type="button" data-feel="happy" aria-pressed="false">${feelIcon('happy')}Happy</button><button class="btn ghost small sad" type="button" data-feel="sad" aria-pressed="false">${feelIcon('sad')}Sad</button></div>
-      <div class="ret-go">${svg ? '<button class="btn ghost" type="button" id="ret-save">Save old one</button>' : ''}<button class="btn cream" type="button" id="ret-done">Get new one</button></div>`;
+      <div class="ret-go">${svg ? '<button class="btn ghost" type="button" id="ret-save">Save old one</button>' : ''}<button class="btn cream" type="button" id="ret-done">${ask ? 'Keep him with Google' : 'Get new one'}</button></div>`;
     hydrate($('ret-body'));
     $('ret-body').querySelectorAll('[data-feel]').forEach(b => b.addEventListener('click', () => {
       $('ret-body').querySelectorAll('[data-feel]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
@@ -3964,7 +3966,7 @@
       if (isLive()) meApi('feel', { feel: b.dataset.feel }).catch(() => {});
     }));
     $('ret-save')?.addEventListener('click', e => saveOld(svg, name, e.currentTarget));
-    const done = () => { $('retd').close(); SFX.equip(); };
+    const done = e => { e.stopPropagation(); $('retd').close(); SFX.equip(); if (ask) { acctOpen(true); $('acct').scrollIntoView({ block: 'nearest' }); restoreSaved = false; startGoogle(); } };
     $('ret-done').addEventListener('click', done);
     $('ret-body').querySelector('.close').addEventListener('click', () => $('retd').close());
     $('retd').showModal();
