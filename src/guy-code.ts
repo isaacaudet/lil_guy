@@ -11,7 +11,7 @@ import type { AnimateOptions } from './animate';
  * Bumped whenever the art changes. It is part of every baked image's address,
  * so a redraw reaches every board at once and an old address keeps its picture.
  */
-export const ART_VERSION = 1;
+export const ART_VERSION = 2;
 
 /** Everything that makes a guy look the way he does. */
 export interface GuySpec {

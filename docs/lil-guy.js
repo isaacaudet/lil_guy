@@ -3102,7 +3102,7 @@ var Canvas = class Canvas {
 	* room for it, with a column of face either side if it can. Where it hasn't
 	* (a heart's point, a car's bumper), the eyes go up a row instead.
 	*/
-	placeMouth(eye, mouth$1) {
+	placeMouth(eye, mouth$1, corners) {
 		const ex = this.centred(eye), mx = this.centred(mouth$1), w = width(mouth$1);
 		const eyeAt = (line$1) => {
 			const at = new Set(), ey = line$1 - eye.length + 1;
@@ -3111,14 +3111,23 @@ var Canvas = class Canvas {
 			}));
 			return at;
 		};
+		const thin = corners ?? eye.every((row, dy) => dy === 0 || row.every((t, dx) => !t || !eye[dy - 1][dx]));
+		const near = thin ? [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1],
+			[1, -1],
+			[-1, -1]
+		] : [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		];
 		const clear = (at, top$1) => mouth$1.every((row, dy) => row.every((t, dx) => {
 			const x = mx + dx, y = top$1 + dy;
-			return !t || !this.isBody(x, y) || ![
-				[1, 0],
-				[-1, 0],
-				[0, 1],
-				[0, -1]
-			].some(([ox, oy]) => at.has((y + oy) * 64 + x + ox));
+			return !t || !this.isBody(x, y) || !near.some(([ox, oy]) => at.has((y + oy) * 64 + x + ox));
 		}));
 		const fits = (top$1, margin) => mouth$1.every((row, dy) => {
 			const y = top$1 + dy;
@@ -3148,6 +3157,7 @@ var Canvas = class Canvas {
 				art: mouth$1
 			};
 		}
+		if (thin) return this.placeMouth(eye, mouth$1, false);
 		const art = mouth$1.map((row, dy) => row.map((t, dx) => {
 			const x = mx + dx, y = top + dy;
 			return [
@@ -7127,7 +7137,8 @@ const perch = (rows, sink = 1) => {
 /**
 * A pair of ears set `out` columns past the sides of the head, where there is
 * room, so they stand at its corners the way a cat's or a fox's do, rather
-* than meeting in the middle on a narrow head.
+* than meeting in the middle on a narrow head. Drawn for the left side; the
+* right is its mirror.
 */
 const earsOut = (rows, out) => {
 	const left = stamp(rows), right = mirror(left);
@@ -7135,6 +7146,14 @@ const earsOut = (rows, out) => {
 		const r = c.rows[c.shoulder()], l = fitRoom(c, left), rr = fitRoom(c, right);
 		seat(c, l, Math.max(1, r.left - out));
 		seat(c, rr, Math.min(GRID_SIZE - 1 - width(rr), r.right + out - width(rr) + 1));
+	};
+};
+/** Headphones: a pair of ears at the head's corners (`earsOut`), and a band and its cups over them, worn like a cap. */
+const headset = (band$1, ear, out) => {
+	const wearBand = on(band$1), wearEars = earsOut(ear, out);
+	return (c) => {
+		wearEars(c);
+		wearBand(c);
 	};
 };
 /**
@@ -7150,33 +7169,34 @@ const set = {
 			slot: "skin",
 			name: "Cat onesie",
 			eyes: 9,
-			limb: 1,
+			limb: 4,
 			colors: [
+				"#5D5880",
+				"#45405F",
+				"#7F79A8",
 				"#F7F4FF",
-				"#3B3652",
-				"#26223A",
-				"#5E5880",
 				"#FF9CC0",
 				"#E8394F",
 				"#FFD04A",
-				"#C98A12"
+				"#C98A12",
+				"#D6D0EA"
 			],
-			outline: "#15121F",
+			outline: "#1F1B2E",
 			art: grid16("cat onesie", [
 				"................",
-				"...4........3...",
-				"..452......253..",
-				"..455222222553..",
-				"..422222222223..",
-				"..422221122223..",
-				"..42h######s23..",
-				"..2h########s3..",
-				"..2##########3..",
-				"..2##########31.",
-				"..3#########s33.",
-				"..33s######s333.",
-				"..3666677666633.",
-				"...3111881113...",
+				"..31........12..",
+				"..351......152..",
+				"..355111111552..",
+				"..311114411112..",
+				"..311144441112..",
+				"..31h######s12..",
+				".41h########s24.",
+				"..1##########2..",
+				".41##########24.",
+				"..1#########s2..",
+				"..21s######s124.",
+				"..2666677666621.",
+				"...2454884542...",
 				"................",
 				"................"
 			])
@@ -7189,30 +7209,30 @@ const set = {
 			eyes: 9,
 			limb: 1,
 			colors: [
-				"#FFF3DF",
 				"#E99447",
 				"#C2692A",
 				"#F7B877",
-				"#FFD9C2",
+				"#FFF3DF",
+				"#EBD3B4",
 				"#E5484D",
 				"#B22F3A"
 			],
 			outline: "#5A2E10",
 			art: grid16("shiba onesie", [
 				"................",
-				"...4........3...",
-				"..421......123..",
-				"..411222222113..",
-				"..422222222223..",
-				"..422122221223..",
-				"..41h######s13..",
-				"..1h########s1..",
-				"..1##########1..",
-				"..1##########1..",
-				"..1#########s1..",
-				"..21s######s12..",
-				"..366666666663..",
-				"...3116776113...",
+				"..31........12..",
+				"..341......142..",
+				"..344111111442..",
+				"..311411114112..",
+				"..311111111112..",
+				"..34h######s42..",
+				"..4h########s4..",
+				"..4##########4..",
+				"..4##########43.",
+				"..4#########s44.",
+				"..44s######s442.",
+				"..2667666676622.",
+				"...2117667112...",
 				"................",
 				"................"
 			])
@@ -7229,25 +7249,26 @@ const set = {
 				"#E893B4",
 				"#FFE3EE",
 				"#FF7FAE",
-				"#FFFFFF"
+				"#FFFFFF",
+				"#EADFF0"
 			],
 			outline: "#7A2E4E",
 			art: grid16("bunny hoodie", [
 				"................",
-				"....3......2....",
-				"...341....142...",
-				"...341....142...",
-				"...341....142...",
-				"..314111111412..",
+				"...33......3311.",
+				"..3143....3141..",
+				"..3143....3142..",
+				"..3143....3142..",
+				"..311111111112..",
 				"..311111111112..",
 				"..31h######s12..",
 				"..1h########s2..",
 				"..1##########2..",
-				"..1##########2..",
-				"..2#########s2..",
+				"..1##########25.",
+				"..2#########s26.",
 				"..21s######s12..",
-				"...2151111512...",
-				"....22522522....",
+				"...2554224552...",
+				"................",
 				"................"
 			])
 		},
@@ -7270,9 +7291,9 @@ const set = {
 			outline: "#24451A",
 			art: grid16("frog hoodie", [
 				"................",
-				"...3332..3332...",
 				"..34442..34442..",
-				"..345521134552..",
+				".345542..345542.",
+				".31444111144412.",
 				"..311111111112..",
 				"..311111111112..",
 				"..31h######s12..",
@@ -7302,27 +7323,29 @@ const set = {
 				"#DCD3E8",
 				"#FFFFFF",
 				"#E5383B",
-				"#FFB347",
-				"#DD7F1C",
-				"#FFF0C8"
+				"#F28A2E",
+				"#C2601A",
+				"#FFF0C8",
+				"#FFB066",
+				"#FFD04A"
 			],
 			outline: "#4A2232",
 			art: grid16("kitsune", [
 				"................",
-				"...3........2...",
-				"...34......42...",
-				"..3441....1442..",
-				"..341111111142..",
-				"..311114411112..",
+				"..77.3....2.77..",
+				".777.34..42.777.",
+				".85563411426558.",
+				".85631144112658.",
+				"..631111111126..",
 				"..31h######s12..",
-				".71h########s27.",
-				".74##########47.",
-				".54##########45.",
-				".52#########s25.",
-				".5521s####s1255.",
-				".56544455444565.",
-				"..662111111266..",
-				"................",
+				".74h########s47.",
+				".81##########18.",
+				"..1##########2..",
+				"..1#########s2..",
+				".721s######s127.",
+				".85244499444258.",
+				".65521111112556.",
+				"..66........66..",
 				"................"
 			])
 		},
@@ -7334,10 +7357,10 @@ const set = {
 			free: true,
 			colors: [],
 			draw: earsOut([
-				"h....",
-				"#h...",
-				"#ch..",
-				"#cc#s"
+				"h.....",
+				"#ho...",
+				"#cwo..",
+				"s#cw#o"
 			], 2)
 		},
 		{
@@ -7349,14 +7372,16 @@ const set = {
 				"#FFF8EE",
 				"#E2D2BC",
 				"#FFFFFF",
-				"#9A6034",
-				"#2B1D18"
+				"#B07040",
+				"#7E4A26",
+				"#2B1D18",
+				"#FF8A9E"
 			],
 			draw: perch([
-				".433111124.",
-				"443o111o244",
-				"44311511244",
-				"..3111112.."
+				".543111245.",
+				".441o1o144.",
+				".451161154.",
+				".5.32723.5."
 			])
 		},
 		{
@@ -7372,11 +7397,11 @@ const set = {
 				"#3A2418"
 			],
 			draw: earsOut([
-				"5....",
-				"35...",
-				"3141.",
-				"31442"
-			], 1)
+				"5o...",
+				"55o..",
+				"343o.",
+				"1442o"
+			], 2)
 		},
 		{
 			id: "pets.bunny-ears",
@@ -7389,10 +7414,10 @@ const set = {
 				"#E2D8EC"
 			],
 			draw: perch([
-				"13......31",
-				"123....321",
-				".123..321.",
-				"..13..31.."
+				".13.....1111",
+				".123...1223.",
+				".123...123..",
+				".123...123.."
 			])
 		},
 		{
@@ -7403,15 +7428,21 @@ const set = {
 			colors: [
 				"#FF9EC8",
 				"#E06A9E",
+				"#FFD0E4",
 				"#7FF0FF",
-				"#E8FFFF"
+				"#E8FFFF",
+				"#B8457A"
 			],
-			draw: on([
-				".3.......3.",
-				".43.....34.",
-				"13311111331",
-				"22.......22"
-			])
+			draw: headset([
+				"..21111112..",
+				"66........66",
+				"64........46"
+			], [
+				"1....",
+				"13o..",
+				"154o.",
+				"1145o"
+			], 1)
 		},
 		{
 			id: "pets.paws",
@@ -7533,11 +7564,11 @@ const set = {
 				"#FFF4E6"
 			],
 			art: pet("kitten", [
-				"3....2",
-				"31..12",
-				"1o22o2",
-				"154452",
-				".1552."
+				"1...1.",
+				"14.41.",
+				"11111.",
+				"1o1o13",
+				"154512"
 			])
 		},
 		{
@@ -7551,14 +7582,15 @@ const set = {
 				"#FFE2B0",
 				"#8A5530",
 				"#2B1D18",
-				"#FF8A9E"
+				"#FF8A9E",
+				"#FFF6E8"
 			],
 			art: pet("puppy", [
-				"431124",
-				"4o11o4",
-				"413514",
-				".1662.",
-				".1..2."
+				"41314",
+				"4o1o4",
+				"47574",
+				".767.",
+				".2.2."
 			])
 		},
 		{
@@ -7571,14 +7603,15 @@ const set = {
 				"#E77FA8",
 				"#FFE0EC",
 				"#FF6F9F",
-				"#D9417A"
+				"#D9417A",
+				"#8A2E52"
 			],
 			art: pet("axolotl", [
-				"4.33.4",
-				"531125",
-				"4o11o4",
-				".1221.",
-				".1..1."
+				"5.33.5",
+				"451154",
+				"1o11o1",
+				"116611",
+				".2..2."
 			])
 		},
 		{
@@ -7594,9 +7627,9 @@ const set = {
 			art: pet("bunny", [
 				".1..1.",
 				".3..3.",
-				"111112",
-				"1o11o2",
-				".1332."
+				".1111.",
+				"1o11o1",
+				"213312"
 			])
 		}
 	],
@@ -22508,7 +22541,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 1;
+const ART_VERSION = 2;
 const PART_KEYS = [
 	"head",
 	"eyes",
