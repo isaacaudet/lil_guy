@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-BvlDdcM_.js";
+import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-B8QYhPQ7.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -16,7 +16,9 @@ import { jsx, jsxs } from "react/jsx-runtime";
 * eyes close and glance by moving their own pixels — so nothing is ever
 * resampled or blurred. Frames are 16 wide and 20 tall: the guy stands in the
 * bottom 16 rows exactly as he does in the still, and the 4 rows above are
-* room to jump into.
+* room to jump into. A guy with a buddy gets wider frames: his sixteen
+* columns, then the buddy's own room to his right (`buddyBeside`), where it
+* stands on the floor with a little life of its own, never on him.
 *
 * Rarity shows in the frames too, so it reads in any game without a shader:
 * from Special up a shine sweeps across the item, from Prized up a ring in the
@@ -47,7 +49,10 @@ const MOVES = [
 ];
 /** Rows of room above the guy for jumps. */
 const HEADROOM = 4;
+/** A frame's width: his own sixteen columns. A guy with a buddy is wider (`Animation.width`, at most `WIDE_FRAME_WIDTH`). */
 const FRAME_WIDTH = GRID_SIZE;
+/** The widest a frame is: his sixteen columns and a buddy's room beside him. */
+const WIDE_FRAME_WIDTH = GRID_SIZE + BUDDY_ROOM;
 const FRAME_HEIGHT = GRID_SIZE + HEADROOM;
 /** How many columns past each side of the frame a rare aura may reach (`outside`). */
 const AURA_PAD = 3;
@@ -545,11 +550,11 @@ const FRAME_SLOTS = [
 	"aura"
 ];
 const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
-const empty = () => Array.from({ length: FRAME_HEIGHT }, () => new Array(FRAME_WIDTH).fill(null));
+const empty = (width = FRAME_WIDTH) => Array.from({ length: FRAME_HEIGHT }, () => new Array(width).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted$1(grid, config, palette$1, small = false, face = null, mouth) {
+function painted$1(grid, config, palette$1, small = false, face = null, width = FRAME_WIDTH) {
 	const colors = paint(grid, config, palette$1, small, false);
-	const out = empty();
+	const out = empty(width);
 	const eyeBox = face && {
 		top: face.top - 1,
 		bottom: face.line,
@@ -565,7 +570,6 @@ function painted$1(grid, config, palette$1, small = false, face = null, mouth) {
 			slot: slotIndex(t)
 		};
 		if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
-		if (mouth?.has(y * GRID_SIZE + x)) cell.face = true;
 		if (FEATURE_TOKENS.has(t)) cell.feature = true;
 		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
 		out[y + HEADROOM][x] = cell;
@@ -642,7 +646,7 @@ function squash(layer, s) {
 	if (!s) return layer;
 	const { n, row: r } = s, rows = layer.map((row) => [...row]);
 	if (n > 0) {
-		const blank = Array.from({ length: n }, () => new Array(FRAME_WIDTH).fill(null));
+		const blank = Array.from({ length: n }, () => new Array(rows[0].length).fill(null));
 		return [
 			...blank,
 			...rows.slice(0, r - n + 1),
@@ -657,23 +661,38 @@ function squash(layer, s) {
 	];
 }
 /**
-* His buddy, standing where it stands in the still: on the floor, whatever
-* he does. In front of him (no room beside him; see `buddySpot`), it leaves
-* out any pixel next to his eyes or mouth in this frame.
+* His buddy, beside him on the floor (`buddyBeside`), `lift` rows up: its whole
+* art and outline, in front of anything else there.
 */
-function standBuddy(layer, buddy, apart) {
-	const nearFace = (x, y) => {
-		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.face) return true;
-		return false;
-	};
-	const keep = buddy.filter(([x, y]) => apart || !nearFace(x, y));
-	for (const [x, y, cell] of keep) layer[y][x] = { ...cell };
+function standBuddy(layer, buddy, lift) {
+	for (const [x, y, cell] of buddy) if (y - lift >= 0) layer[y - lift][x] = { ...cell };
+}
+/** The moves a buddy hops through on its own: all but the calm ones. */
+const BUDDY_HOPS = (move) => move !== "sleep" && move !== "sad";
+/**
+* How many rows his buddy is up off the floor at a moment of a move: when he
+* jumps it hops too, about half as high (a floater's breath, a row, it sits
+* out); otherwise, now and then,
+* a little hop of its own (a double hop for some), dealt from his name and on
+* its own clock, so it comes round in LOOP_MS, never while he squashes. It
+* stays put through the calm moves (sleep, sad), and keeps time with his steps
+* in a dance.
+*/
+function buddyLift(move, beat, t, roll$1) {
+	const up = -(beat.dy ?? 0);
+	if (up >= 2) return Math.min(2, Math.ceil(up / 2));
+	if (!BUDDY_HOPS(move)) return 0;
+	if (move === "dance") return beat.squash ? 1 : 0;
+	if ((beat.squash ?? 0) > 0) return 0;
+	const period = 2e3 + 1e3 * roll$1(61), f = cycle(t + roll$1(60) * LOOP_MS, period) * fit(period);
+	const double = roll$1(62) < .4;
+	return f < 160 || double && f >= 260 && f < 400 ? 1 : 0;
 }
 function shift(layer, dx, dy) {
-	const out = empty();
+	const W = layer[0].length, out = empty(W);
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		const nx = x + dx, ny = y + dy;
-		if (cell && nx >= 0 && ny >= 0 && nx < FRAME_WIDTH && ny < FRAME_HEIGHT) out[ny][nx] = cell;
+		if (cell && nx >= 0 && ny >= 0 && nx < W && ny < FRAME_HEIGHT) out[ny][nx] = cell;
 	}));
 	return out;
 }
@@ -686,7 +705,7 @@ const NEIGHBOURS = [
 /** Empty cells touching the guy. */
 function rim(layer) {
 	const out = [];
-	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < layer[0].length; x++) {
 		if (layer[y][x]) continue;
 		if (NEIGHBOURS.some(([dx, dy]) => layer[y + dy]?.[x + dx])) out.push([x, y]);
 	}
@@ -696,7 +715,7 @@ function rim(layer) {
 function sparkle(layer, x, y, f, colors) {
 	for (const [dx, dy, k] of sparkleAt(f)) {
 		const cx = x + dx, cy = y + dy;
-		if (cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = {
+		if (cx >= 0 && cy >= 0 && cx < layer[0].length && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = {
 			c: colors[k],
 			item: false
 		};
@@ -705,8 +724,8 @@ function sparkle(layer, x, y, f, colors) {
 /**
 * Where sparkles may open: empty cells near the guy, with room all round for
 * the sparkle at its biggest, two or three cells off him and no lower than his
-* middle (`above` rows from his top at most, when given). None in the frame's
-* edge cells, so nothing sits stuck in a corner.
+* middle (`above` rows from his top at most, when given). None in the edge
+* cells of his sixteen columns, so nothing sits stuck in a corner.
 */
 function sparkleSpots(layer, above = Infinity) {
 	let top = FRAME_HEIGHT, bottom = -1;
@@ -721,7 +740,7 @@ function sparkleSpots(layer, above = Infinity) {
 		for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) if (layer[y + dy]?.[x + dx]) return true;
 		return false;
 	};
-	for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < FRAME_WIDTH - 1; x++) {
+	for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < GRID_SIZE - 1; x++) {
 		if (y > Math.min((top + bottom) / 2, top + above)) continue;
 		if (SPARKLE_REACH.some(([dx, dy]) => layer[y + dy][x + dx])) continue;
 		if (!near(x, y, 1) && near(x, y, 3)) out.push([x, y]);
@@ -1094,11 +1113,7 @@ function squashRows(input, options = {}) {
 function animate(input, move, options = {}) {
 	const { config, figure, grid } = poser(input, options);
 	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
-	const spot = itemById(config.buddy)?.slot === "buddy" ? buddyOf({
-		...config,
-		frame: void 0,
-		aura: void 0
-	}) : void 0;
+	const alone = buddyAlone(config), W = alone?.[0].length ?? FRAME_WIDTH;
 	const wornAura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
@@ -1106,41 +1121,23 @@ function animate(input, move, options = {}) {
 	const liveEye = options.small ? void 0 : LIVE_EYES.get(config.eyes);
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const plan = squashPlan(config, figure, grid);
-	const FACE_TOKENS$1 = new Set([
-		T.EYE,
-		T.WHITE,
-		T.MOUTH,
-		T.TONGUE
-	]);
-	const faceIn = (pose) => {
-		if (!spot) return void 0;
-		const out = new Set(spot.face), g = grid(pose), base = grid("base");
-		g.forEach((row, y) => row.forEach((t$1, x) => {
-			if (FACE_TOKENS$1.has(t$1) && t$1 !== base[y][x]) out.add(y * GRID_SIZE + x);
-		}));
-		return out;
-	};
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, faceIn(pose)));
+		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, W));
 		return layers.get(pose);
 	};
 	const buddyCells = [];
-	if (spot) {
-		const only = Array.from({ length: GRID_SIZE }, () => new Array(GRID_SIZE).fill(0));
-		for (const [x, y, t$1] of spot.cells) only[y][x] = t$1 >= LOCAL ? t$1 - LOCAL + LAYER.buddy : t$1;
-		painted$1(only, config, palette$1, !!options.small).forEach((row, y) => row.forEach((cell, x) => {
-			if (cell) buddyCells.push([
-				x,
-				y,
-				cell
-			]);
-		}));
-	}
+	if (alone) painted$1(alone, config, palette$1, !!options.small, null, W).forEach((row, y) => row.forEach((cell, x) => {
+		if (cell) buddyCells.push([
+			x,
+			y,
+			cell
+		]);
+	}));
 	let backdrop = null;
 	const frameItem = itemById(config.frame);
 	if (frameItem?.slot === "frame") {
-		const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: GRID_SIZE }, (_$1, x) => LAYER.frame + frameItem.fill(x, y + 48) - 1));
+		const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) => Array.from({ length: W }, (_$1, x) => LAYER.frame + frameItem.fill(x, y + 48) - 1));
 		const colors = paint(tall, config, palette$1, false, false);
 		backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
 	}
@@ -1159,7 +1156,8 @@ function animate(input, move, options = {}) {
 		canWave,
 		mouthy
 	});
-	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote);
+	const buddyLife = !!alone && BUDDY_HOPS(move) && move !== "dance";
+	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
 	const spots = sparkleSpots(layerOf("base")), headSpots = sparkleSpots(layerOf("base"), 3);
 	const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
 	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0), span = loop ? lapMs * loop.repeats : 0;
@@ -1167,7 +1165,7 @@ function animate(input, move, options = {}) {
 	const slices = [];
 	let t = 0;
 	for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
-		let n = wornAura || withFx || lucky || liveEye || goldMark ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+		let n = wornAura || withFx || lucky || liveEye || goldMark || buddyLife ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
@@ -1184,14 +1182,14 @@ function animate(input, move, options = {}) {
 	const behind = [];
 	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
-		if (beat.turn) layer = layer.map((row) => [...row].reverse());
+		if (beat.turn) layer = layer.map((row) => [...row.slice(0, GRID_SIZE).reverse(), ...row.slice(GRID_SIZE)]);
 		const squashed = plan.at(beat.squash ?? 0);
 		layer = squash(layer, squashed);
 		const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
 		layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
 		if (buddyCells.length) {
 			layer = layer.map((row) => [...row]);
-			standBuddy(layer, buddyCells, spot.apart);
+			standBuddy(layer, buddyCells, buddyLift(move, beat, t$1, roll$1));
 		}
 		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
@@ -1204,7 +1202,7 @@ function animate(input, move, options = {}) {
 		behind.unshift(figure$1);
 		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
-			const at = cycle(t$1 + phase, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+			const at = cycle(t$1 + phase, 1600) * (W + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
@@ -1229,7 +1227,7 @@ function animate(input, move, options = {}) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
 			for (const [x, y, k] of auraCells(wornAura.id, mask, t$1, copy, AURA_PAD)) {
 				const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t$1 + copy.print * 37, copy.print) : wornAura.colors[k];
-				if (x < 0 || x >= FRAME_WIDTH) outside.push([
+				if (x < 0 || x >= W) outside.push([
 					x,
 					y,
 					c
@@ -1271,7 +1269,7 @@ function animate(input, move, options = {}) {
 	const frames = loop ? all.filter((_, i) => slices[i].lap > 0) : all;
 	return {
 		move,
-		width: FRAME_WIDTH,
+		width: W,
 		height: FRAME_HEIGHT,
 		frames,
 		duration: frames.reduce((n, f) => n + f.ms, 0),
@@ -1355,7 +1353,7 @@ function toAnimatedSvg(input, move, options = {}) {
 	if (options.stillWhenReduced) css.push(`@media (prefers-reduced-motion: reduce){.${id} g{animation:none}.${id} .f0{visibility:visible}}`);
 	const labelled = typeof options.title === "string" && options.title.length > 0;
 	return [
-		`<svg xmlns="http://www.w3.org/2000/svg" class="${id}" width="${size}" height="${size * FRAME_HEIGHT / FRAME_WIDTH}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
+		`<svg xmlns="http://www.w3.org/2000/svg" class="${id}" width="${size * anim.width / FRAME_WIDTH}" height="${size * FRAME_HEIGHT / FRAME_WIDTH}" viewBox="0 0 ${anim.width} ${FRAME_HEIGHT}" shape-rendering="crispEdges"${labelled ? " role=\"img\"" : " role=\"presentation\" aria-hidden=\"true\""}>`,
 		labelled ? `<title>${options.title.replace(/[&<>]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;")}</title>` : "",
 		`<style>${css.join("")}</style>`,
 		...groups,
@@ -3118,15 +3116,16 @@ const loopSeconds = (ms) => mod(ms, LOOP_MS) / 1e3;
 /**
 * A frame as the shader reads it: its colours; for each pixel the finish,
 * scuff and print of the copy it belongs to; and each pixel's noise. Three
-* RGBA byte arrays, 16×20.
+* RGBA byte arrays, the frame's size (16×20, wider with a buddy).
 */
 function shineData(frame, owned = {}) {
-	const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-	const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-	const noise$1 = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const W = frame.colors[0].length;
+	const colors = new Uint8Array(W * FRAME_HEIGHT * 4);
+	const info = new Uint8Array(W * FRAME_HEIGHT * 4);
+	const noise$1 = new Uint8Array(W * FRAME_HEIGHT * 4);
 	frame.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
-		const i = (y * FRAME_WIDTH + x) * 4;
+		const i = (y * W + x) * 4;
 		colors.set([
 			parseInt(c.slice(1, 3), 16),
 			parseInt(c.slice(3, 5), 16),
@@ -3162,9 +3161,9 @@ const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) 
 function shineFrame(frame, owned, ms) {
 	const { colors, info, noise: noise$1 } = shineData(frame, owned);
 	const out = new Uint8ClampedArray(colors);
-	const time = loopSeconds(ms);
-	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
-		const i = (y * FRAME_WIDTH + x) * 4;
+	const time = loopSeconds(ms), W = frame.colors[0].length;
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W; x++) {
+		const i = (y * W + x) * 4;
 		if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
 		const finish = Math.floor(info[i] / 32 + .5) - 1;
 		const c = finishColor([
@@ -3179,14 +3178,14 @@ function shineFrame(frame, owned, ms) {
 	return out;
 }
 const VERTEX$1 = "attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }";
-/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds. */
+/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds, \`res\` the frame's size. */
 const SHINE_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
 uniform sampler2D base, info, noise;
 uniform float time;
+uniform vec2 res;
 ${GLSL_COMMON}
 void main() {
-  vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
   vec2 cell = floor(uv * res);
   vec2 at = (cell + 0.5) / res;
   vec4 b = texture2D(base, at);
@@ -3237,8 +3236,7 @@ function createShine(canvas) {
 	gl.uniform1i(gl.getUniformLocation(program, "base"), 0);
 	gl.uniform1i(gl.getUniformLocation(program, "info"), 1);
 	gl.uniform1i(gl.getUniformLocation(program, "noise"), 2);
-	const time = gl.getUniformLocation(program, "time");
-	gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+	const time = gl.getUniformLocation(program, "time"), res = gl.getUniformLocation(program, "res");
 	const texture = (unit) => {
 		const t = gl.createTexture();
 		gl.activeTexture(gl.TEXTURE0 + unit);
@@ -3255,7 +3253,9 @@ function createShine(canvas) {
 	return {
 		canvas: target,
 		draw(frame, owned, ms) {
-			const { colors, info, noise: noise$1 } = shineData(frame, owned);
+			const { colors, info, noise: noise$1 } = shineData(frame, owned), W = frame.colors[0].length;
+			if (target.width !== W) target.width = W;
+			gl.viewport(0, 0, W, FRAME_HEIGHT);
 			[
 				colors,
 				info,
@@ -3263,9 +3263,10 @@ function createShine(canvas) {
 			].forEach((bytes, unit) => {
 				gl.activeTexture(gl.TEXTURE0 + unit);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 			});
 			gl.uniform1f(time, loopSeconds(ms));
+			gl.uniform2f(res, W, FRAME_HEIGHT);
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -3584,7 +3585,7 @@ function itemFrame(o, seed = "display stand") {
 	const base = resolve(seed);
 	const draw = (equip) => {
 		const cfg = dress(base, { equip });
-		const grid = compose(cfg);
+		const grid = slot === "buddy" && buddyAlone(cfg) || compose(cfg);
 		return {
 			grid,
 			colors: paint(grid, cfg, withItems(paletteOf(cfg), cfg))
@@ -6276,14 +6277,14 @@ const hash$1 = (x, y, p) => {
 * `gx, gy` is the guy pixel (what twinkles), `cx, cy` the card pixel (what a
 * sweep crosses), so light runs smoothly over a single pixel of a hat.
 */
-function shine(c, o, gx, gy, cx, cy, t) {
+function shine(c, o, gx, gy, cx, cy, t, zoom) {
 	const f = SHADER_FINISHES.indexOf(o.finish);
 	if (f < 0) return c;
 	const out = finishColor([
 		c[0] / 255,
 		c[1] / 255,
 		c[2] / 255
-	], f, o.scuff, hash$1(gx, gy, o.print), (cx + cy) / ZOOM, gy, o.print, loopSeconds(t * 1e3), 1);
+	], f, o.scuff, hash$1(gx, gy, o.print), (cx + cy) / zoom, gy, o.print, loopSeconds(t * 1e3), 1);
 	return [
 		out[0] * 255,
 		out[1] * 255,
@@ -6469,6 +6470,31 @@ function inside(x, y, r = 7) {
 }
 const SIDE = 8, LINE = 13;
 /**
+* Six card pixels to each of his, centred on his sixteen columns; with a buddy
+* beside him, as big as the two of them fit the window (`zoom`), centred on
+* everything either of them covers in any frame of the move.
+*/
+function cardFit(anim) {
+	if (anim.width <= FRAME_WIDTH) return {
+		zoom: ZOOM,
+		left: 0,
+		span: FRAME_WIDTH
+	};
+	let left = anim.width, right = -1;
+	for (const f of anim.frames) f.colors.forEach((row, y) => row.forEach((c, x) => {
+		if (c && f.slots[y][x] !== 5) {
+			left = Math.min(left, x);
+			right = Math.max(right, x);
+		}
+	}));
+	const span = right - left + 1;
+	return {
+		zoom: Math.min(ZOOM, Math.floor((CARD_WIDTH - SIDE * 2 - 6) / span)),
+		left,
+		span
+	};
+}
+/**
 * The card at `t` seconds, with the guy's frame `frame` in its window.
 *
 * Laid out from the foot up so the words always fit: the second line (wrapped
@@ -6481,7 +6507,7 @@ const SIDE = 8, LINE = 13;
 * silk in his aura's own colour with a double foil edge, its deep window
 * glowing in that colour where he stands.
 */
-function drawCard(input, frame, owned, g, t) {
+function drawCard(input, frame, owned, g, t, { zoom, left, span }) {
 	const lastCopy = input.copies?.[input.copies.length - 1];
 	const tm = t * 1e3 + (lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6e3, 0));
 	const s = new Surface();
@@ -6642,16 +6668,16 @@ function drawCard(input, frame, owned, g, t) {
 			botRow = gy;
 		}
 	});
-	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - FRAME_WIDTH * ZOOM / 2);
+	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - (left + span / 2) * zoom);
 	const bob = soul ? Math.round(Math.sin(tm / wave(1e3 / 2.6)) * 2) : 0;
-	let oy = WIN.bottom - 5 - (botRow + 1) * ZOOM;
-	if (soul) oy = Math.max(5 - topRow * ZOOM, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - (topRow + botRow + 1) * ZOOM / 2) - 10)) + bob;
+	let oy = WIN.bottom - 5 - (botRow + 1) * zoom;
+	if (soul) oy = Math.max(5 - topRow * zoom, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - (topRow + botRow + 1) * zoom / 2) - 10)) + bob;
 	const clip = (cx, cy) => soul ? inside(cx, cy) && cx > 3 && cx < CARD_WIDTH - 4 && cy > 3 && cy < WIN.bottom : cy > WIN.top && cy < WIN.bottom && cx > WIN.left && cx < WIN.right;
 	const solid = (gx, gy) => !!frame.colors[gy]?.[gx] && frame.slots[gy]?.[gx] !== 5;
 	const edgeC = night ? mix(aMid, WHITE, .45) : mix(tint, WHITE, .55);
 	for (let yy = 0; yy < CARD_HEIGHT; yy++) for (let x = 0; x < CARD_WIDTH; x++) {
 		if (!clip(x, yy)) continue;
-		const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((yy - oy) / ZOOM);
+		const gx = Math.floor((x - ox) / zoom), gy = Math.floor((yy - oy) / zoom);
 		if (x - ox >= 0 && yy - oy >= 0 && solid(gx, gy)) continue;
 		const near = [
 			[2, 0],
@@ -6662,7 +6688,7 @@ function drawCard(input, frame, owned, g, t) {
 			[1, -1],
 			[-1, 1],
 			[-1, -1]
-		].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / ZOOM), Math.floor((yy + dy - oy) / ZOOM)));
+		].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / zoom), Math.floor((yy + dy - oy) / zoom)));
 		if (near) s.set(x, yy, soul && (yy <= WIN.top || x <= WIN.left || x >= WIN.right) ? [
 			255,
 			250,
@@ -6672,11 +6698,11 @@ function drawCard(input, frame, owned, g, t) {
 	frame.colors.forEach((row, gy) => row.forEach((hex$1, gx) => {
 		if (!hex$1) return;
 		const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0;
-		for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
-			const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+		for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
 			if (!clip(cx, cy)) continue;
 			let c = rgb$2(hex$1);
-			if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
+			if (copy) c = shine(c, copy, gx, gy, cx, cy, t, zoom);
 			s.set(cx, cy, [
 				Math.min(255, Math.max(0, c[0])),
 				Math.min(255, Math.max(0, c[1])),
@@ -6684,8 +6710,8 @@ function drawCard(input, frame, owned, g, t) {
 			]);
 		}
 	}));
-	for (const [gx, gy, hex$1] of frame.outside ?? []) for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
-		const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+	for (const [gx, gy, hex$1] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+		const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
 		if (clip(cx, cy)) s.set(cx, cy, rgb$2(hex$1));
 	}
 	const glare = cycle(tm, 2200 / .45) * 2.2 * 180 - 50;
@@ -6814,7 +6840,7 @@ function cardPlayer(input, ms = 80) {
 			turns
 		}
 	});
-	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input);
+	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), fit$1 = cardFit(anim);
 	const total = anim.duration, count$1 = Math.max(1, Math.round(total / ms)), cache = [];
 	const delays = Array.from({ length: count$1 }, (_, k) => Math.round((k + 1) * total / count$1) - Math.round(k * total / count$1));
 	return {
@@ -6825,7 +6851,7 @@ function cardPlayer(input, ms = 80) {
 		delays,
 		frame(i) {
 			const k = (i % count$1 + count$1) % count$1;
-			return cache[k] ??= drawCard(input, frameAt(anim, k * total / count$1), owned, g, k * turns * LOOP_MS / count$1 % LOOP_MS / 1e3);
+			return cache[k] ??= drawCard(input, frameAt(anim, k * total / count$1), owned, g, k * turns * LOOP_MS / count$1 % LOOP_MS / 1e3, fit$1);
 		}
 	};
 }
@@ -6837,7 +6863,7 @@ function cardStill(input, t = .6) {
 		equip: (input.copies ?? []).map(encode),
 		rarity: false
 	});
-	return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t);
+	return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), cardGrade(input), t, cardFit(anim));
 }
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */
 function ownedBySlot(copies) {
@@ -6862,16 +6888,16 @@ function toCardPng(input, scale$1 = 4) {
 */
 function toGuyGif(seed, move, options = {}, scale$1 = 12) {
 	const anim = animateLoop(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
-	const frames = anim.frames.map((f) => {
-		const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
+	const W = anim.width, frames = anim.frames.map((f) => {
+		const px = new Uint8ClampedArray(W * FRAME_HEIGHT * 4);
 		f.colors.forEach((row, y) => row.forEach((c, x) => {
 			const v = c ? rgb$2(c) : bg;
-			if (v) px.set([...v, 255], (y * FRAME_WIDTH + x) * 4);
+			if (v) px.set([...v, 255], (y * W + x) * 4);
 		}));
 		return px;
 	});
 	return encodeGif({
-		width: FRAME_WIDTH,
+		width: W,
 		height: FRAME_HEIGHT,
 		frames,
 		delays: anim.frames.map((f) => f.ms)
@@ -7276,7 +7302,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 3;
+const ART_VERSION = 4;
 const PART_KEYS = [
 	"head",
 	"eyes",
@@ -7312,10 +7338,19 @@ function guyCode(spec) {
 	for (const b$1 of bytes) bin += String.fromCharCode(b$1);
 	return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-/** A baked guy's size, and a card's. */
+/**
+* A baked guy's size (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a guy with a
+* buddy beside him (`BUDDY_GUY_WIDTH`), and a card's. Nothing tells a page
+* from an address alone which of the first two a guy is, so size a box by its
+* height and let the picture set its width.
+*/
 const BAKED_SIZE = {
 	guy: {
 		width: 22,
+		height: 20
+	},
+	buddy: {
+		width: 32,
 		height: 20
 	},
 	card: {
@@ -7435,14 +7470,15 @@ function defineLilGuy(options = {}) {
 				this.replaceChildren();
 				return;
 			}
-			const style = `width:${box.width * size}px;height:${box.height * size}px;image-rendering:pixelated;image-rendering:crisp-edges`;
+			const pixels = "image-rendering:pixelated;image-rendering:crisp-edges";
+			const style = (width, height) => `width:${width * size}px;height:${height * size}px;${pixels}`;
 			if (host) {
 				const img = document.createElement("img");
 				img.src = `${host}/g/${ART_VERSION}/${who}/${view}.png`;
 				img.alt = "";
 				img.decoding = "async";
 				img.loading = "lazy";
-				img.style.cssText = style;
+				img.style.cssText = box === BAKED_SIZE.card ? style(box.width, box.height) : `width:auto;min-width:${box.width * size}px;height:${box.height * size}px;${pixels}`;
 				this.replaceChildren(img);
 				return;
 			}
@@ -7465,7 +7501,7 @@ function defineLilGuy(options = {}) {
 			const canvas = document.createElement("canvas");
 			canvas.width = frames.width;
 			canvas.height = frames.height;
-			canvas.style.cssText = style;
+			canvas.style.cssText = style(frames.width, frames.height);
 			this.canvas = canvas;
 			this.replaceChildren(canvas);
 			this.player = {
@@ -7492,9 +7528,17 @@ function defineLilGuy(options = {}) {
 * `<lil-guy>` element plays them, and the lil guys site shows them, all from
 * this one function, so a guy is the same wherever he turns up.
 */
-/** A baked guy is his frame with room for a rare aura's rings either side: the same size for every guy. */
+/**
+* A baked guy is his frame with room for a rare aura's rings either side: the
+* same size for every guy without a buddy. A guy with a buddy is
+* `BUDDY_GUY_WIDTH` across, the buddy on the floor beside him and the two of
+* them centred, so every buddy picture is one size too.
+*/
 const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
+const BUDDY_GUY_WIDTH = WIDE_FRAME_WIDTH + AURA_PAD * 2;
 const GUY_HEIGHT = FRAME_HEIGHT;
+/** Where a frame `width` wide starts on a baked picture `W` wide: centred, room for an aura's rings either side. */
+const leftOf = (width, W) => AURA_PAD + Math.floor((W - AURA_PAD * 2 - width) / 2);
 /** How long each frame of a card's shimmer shows. */
 const STEP_MS = 80;
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
@@ -7518,20 +7562,20 @@ const rgb = (s) => [
 	parseInt(s.slice(3, 5), 16),
 	parseInt(s.slice(5, 7), 16)
 ];
-/** A frame on the padded canvas: the guy's pixels (shone, if given) and the aura cells past his sides. */
-function place(frame, shone) {
-	const out = new Uint8ClampedArray(GUY_WIDTH * GUY_HEIGHT * 4);
-	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
-		const o = (y * GUY_WIDTH + x + AURA_PAD) * 4;
+/** A frame on the padded canvas `W` wide, from column `left`: the guy's pixels (shone, if given) and the aura cells past his sides. */
+function place(frame, W, left, shone) {
+	const out = new Uint8ClampedArray(W * GUY_HEIGHT * 4), fw = frame.colors[0].length;
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
+		const o = (y * W + x + left) * 4;
 		if (shone) {
-			const i = (y * FRAME_WIDTH + x) * 4;
+			const i = (y * fw + x) * 4;
 			if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o);
 			continue;
 		}
 		const c = frame.colors[y][x];
 		if (c) out.set([...rgb(c), 255], o);
 	}
-	for (const [x, y, c] of frame.outside ?? []) out.set([...rgb(c), 255], (y * GUY_WIDTH + x + AURA_PAD) * 4);
+	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) out.set([...rgb(c), 255], (y * W + x + left) * 4);
 	return out;
 }
 const same = (a, b$1) => a.length === b$1.length && a.every((v, i) => v === b$1[i]);
@@ -7563,10 +7607,18 @@ const shineFit = fitLoop;
 * through without a jump.
 */
 function bakeGuy(spec, move = "idle") {
+	return bakeAt(spec, move).frames;
+}
+/** `bakeGuy`, and the column his frame starts at on the picture. */
+function bakeAt(spec, move) {
 	const options = animateOptions(spec), owned = ownedOf$1(spec);
 	const plain = animate(spec.seed, move, options);
+	const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
 	const shining = plain.frames.some((f) => shines(f, owned));
-	if (!plain.timed && !shining) return merged(GUY_WIDTH, GUY_HEIGHT, plain.frames.map((f) => place(f)), plain.frames.map((f) => f.ms));
+	if (!plain.timed && !shining) return {
+		frames: merged(W, GUY_HEIGHT, plain.frames.map((f) => place(f, W, left)), plain.frames.map((f) => f.ms)),
+		left
+	};
 	const { repeats, turns } = shineFit(plain.duration);
 	const anim = animate(spec.seed, move, {
 		...options,
@@ -7576,21 +7628,24 @@ function bakeGuy(spec, move = "idle") {
 			fine: shining
 		}
 	});
-	return merged(GUY_WIDTH, GUY_HEIGHT, anim.frames.map((f) => place(f, shining ? shineFrame(f, owned, f.at ?? 0) : void 0)), anim.frames.map((f) => f.ms));
+	return {
+		frames: merged(W, GUY_HEIGHT, anim.frames.map((f) => place(f, W, left, shining ? shineFrame(f, owned, f.at ?? 0) : void 0)), anim.frames.map((f) => f.ms)),
+		left
+	};
 }
 /** The size Discord shows a profile picture at, and asks for at least 128 of. */
 const PROFILE_SIZE = 512;
 /**
 * A guy as a profile picture (Discord and the like): square, with room all round so the round crop
-* never cuts him or his aura, on a solid ground in a light tint of his own colour, or on the
-* backdrop he wears, run out to every edge. Every frame of the move.
+* never cuts him, his buddy or his aura, centred on all of them, on a solid ground in a light tint
+* of his own colour, or on the backdrop he wears, run out to every edge. Every frame of the move.
 */
 function profileFrames(spec, move = "idle") {
 	const backdrop = spec.equip?.find((code) => itemById(decode(code)?.item)?.slot === "frame");
-	const g = bakeGuy(backdrop ? {
+	const baked = bakeAt(backdrop ? {
 		...spec,
 		equip: spec.equip.filter((code) => code !== backdrop)
-	} : spec, move), W = g.width, H = g.height;
+	} : spec, move), g = baked.frames, W = g.width, H = g.height;
 	const lit = (px, x, y) => px[(y * W + x) * 4 + 3] >= 128;
 	let left = W, right = -1, top = H, bottom = -1;
 	for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -7604,7 +7659,7 @@ function profileFrames(spec, move = "idle") {
 	let reach = 0;
 	for (const px of g.frames) for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
 	const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-	const ground = backdrop ? backdropGround(spec, side, ox, oy) : null, solid = groundOf(g.frames[0], W, H);
+	const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H);
 	const frames = g.frames.map((px) => {
 		const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
 		if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
@@ -7625,7 +7680,7 @@ function backdropGround(spec, side, ox, oy) {
 		...spec.palette !== void 0 ? { palette: spec.palette } : {}
 	}, { equip: spec.equip }, spec.seed);
 	const frame = itemById(config.frame);
-	const grid = Array.from({ length: side }, (_, y) => Array.from({ length: side }, (_$1, x) => LAYER.frame + frame.fill(x - ox - AURA_PAD + 48, y - oy - HEADROOM + 48) - 1));
+	const grid = Array.from({ length: side }, (_, y) => Array.from({ length: side }, (_$1, x) => LAYER.frame + frame.fill(x - ox + 48, y - oy - HEADROOM + 48) - 1));
 	const colors = paint(grid, config, withItems(paletteOf(config), config), false, false);
 	const out = new Uint8ClampedArray(side * side * 4);
 	colors.forEach((row, y) => row.forEach((c, x) => {
@@ -7865,5 +7920,5 @@ function craftCopy(itemId, seed, number) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, CAPSULE_ONLY, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_REFUND, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, buddyAlone, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, itemWeight, items, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

@@ -16,7 +16,8 @@ await page.addScriptTag({ content: lib });
 const result = await page.evaluate(() => {
   const LG = window.LilGuy;
   const finishes = LG.SHADER_FINISHES;
-  const hats = LG.items.filter(i => i.slot === 'hat' && !i.free).slice(0, 4);
+  // Hats on his sixteen columns, and a buddy, whose frames are wider.
+  const hats = [...LG.items.filter(i => i.slot === 'hat' && !i.free).slice(0, 3), LG.items.find(i => i.slot === 'buddy' && !i.retired)];
   const times = [0, 137, 1000, 2333, 4111, 5950];
   const read = (canvas, w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(canvas, 0, 0); return x.getImageData(0, 0, w, h).data; };
   const stats = { pixels: 0, off: 0, worst: 0, cases: 0 };
@@ -40,7 +41,7 @@ const result = await page.evaluate(() => {
     for (const ms of times) {
       const frame = anim.frames[0];
       shine.draw(frame, owned, ms);
-      compare(read(shine.canvas, LG.FRAME_WIDTH, LG.FRAME_HEIGHT), LG.shineFrame(frame, owned, ms));
+      compare(read(shine.canvas, frame.colors[0].length, LG.FRAME_HEIGHT), LG.shineFrame(frame, owned, ms));
       for (const grade of [-1, 0, 1, 2, 3, 4, 5]) {
         const face = LG.cardFace({ name: seed, copies: equip.map(LG.decode), grade });
         card.draw(face, ms);

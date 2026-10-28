@@ -1,4 +1,4 @@
-import { compose } from './compose';
+import { buddyAlone, compose } from './compose';
 import { dress, withItems, type Slot } from './items';
 import { decode, encode, slotOf, type Finish, type Owned } from './owned';
 import { paint } from './paint';
@@ -193,7 +193,8 @@ export function itemFrame(o: Owned, seed = 'display stand'): VoxelSource {
   if (!slot) throw new Error(`Unknown item "${o.item}"`);
   const [lo, hi] = SLOT_TOKENS[slot], want = ['skin', 'hat', 'frame', 'buddy'].indexOf(slot) + 1;
   const base = resolve(seed);
-  const draw = (equip: string[]) => { const cfg = dress(base, { equip }); const grid = compose(cfg); return { grid, colors: paint(grid, cfg, withItems(paletteOf(cfg), cfg)) }; };
+  // A buddy is taken from where it stands beside him, whole: on his own sixteen columns it gives way to his face.
+  const draw = (equip: string[]) => { const cfg = dress(base, { equip }); const grid = (slot === 'buddy' && buddyAlone(cfg)) || compose(cfg); return { grid, colors: paint(grid, cfg, withItems(paletteOf(cfg), cfg)) }; };
   const worn = draw([encode(o)]);
   let mask = worn.grid.map(row => row.map(t => t >= lo && t < hi));
   if (!mask.some(r => r.some(Boolean))) {

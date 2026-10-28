@@ -2,7 +2,7 @@ import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { readFileSync } from 'node:fs';
 import worker, { api } from './index.js';
-import { ART_VERSION, bakeCard, bakeGuy, bakedImage, bakeView, faceSpec, guyCode, readGuyCode, AURAS } from '../src/index-headless.ts';
+import { ART_VERSION, BAKED_SIZE, bakeCard, bakeGuy, bakedImage, bakeView, faceSpec, guyCode, readGuyCode, AURAS } from '../src/index-headless.ts';
 
 let env: any;
 beforeEach(() => {
@@ -35,6 +35,19 @@ test('a code serves exactly the picture the library bakes, cached for good', asy
   const sheet = await (await get(`/g/${ART_VERSION}/${code}/idle.sheet.json`)).json();
   expect(sheet.frames).toBe(bakeGuy(spec, 'idle').frames.length);
   expect(sheet.delays.reduce((a: number, b: number) => a + b, 0)).toBe(6000);
+});
+
+test('a guy with a buddy is served wider, the buddy beside him, and his sheet says so', async () => {
+  const spec = { seed: 'Maya0', equip: ['pets.kitten~plain~0.3000000~900'] }, code = guyCode(spec);
+  const png = await bytes(await get(`/g/${ART_VERSION}/${code}/still.png`));
+  expect(png).toEqual(await bakedImage(bakeGuy(spec, 'idle'), 'still'));
+  // The PNG's own header: width then height.
+  const view = new DataView(png.buffer, png.byteOffset);
+  expect([view.getUint32(16), view.getUint32(20)]).toEqual([BAKED_SIZE.buddy.width, BAKED_SIZE.buddy.height]);
+  const sheet = await (await get(`/g/${ART_VERSION}/${code}/hop.sheet@2.json`)).json();
+  expect([sheet.frameWidth, sheet.frameHeight]).toEqual([BAKED_SIZE.buddy.width * 2, BAKED_SIZE.buddy.height * 2]);
+  const plain = await (await get(`/g/${ART_VERSION}/${guyCode({ seed: 'Maya0' })}/hop.sheet.json`)).json();
+  expect([plain.frameWidth, plain.frameHeight]).toEqual([BAKED_SIZE.guy.width, BAKED_SIZE.guy.height]);
 });
 
 test('a claimed name sends you to the code of the guy as he is worn', async () => {

@@ -1,13 +1,13 @@
 import { cycle, fit, fitLoop, LOOP_MS, steps, tick, wave, wrap } from './loop';
 import { resolve } from './resolve';
 import { dress, itemById, withItems } from './items';
-import { buddyOf, compose, composeBase, faceOf } from './compose';
+import { BUDDY_ROOM, buddyAlone, compose, composeBase, faceOf } from './compose';
 import { mouths, cheeks, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
 import { paint } from './paint';
 import { paletteOf } from './palette';
 import { GRADES, gradeOf, type Owned } from './owned';
-import { LAYER, LOCAL, T } from './parts/art';
+import { LAYER, T } from './parts/art';
 import { hash } from './hash';
 import { auraById, auraCells, auraColor } from './auras';
 import { applyFx } from './effects';
@@ -23,7 +23,9 @@ import { GRID_SIZE } from './types';
  * eyes close and glance by moving their own pixels — so nothing is ever
  * resampled or blurred. Frames are 16 wide and 20 tall: the guy stands in the
  * bottom 16 rows exactly as he does in the still, and the 4 rows above are
- * room to jump into.
+ * room to jump into. A guy with a buddy gets wider frames: his sixteen
+ * columns, then the buddy's own room to his right (`buddyBeside`), where it
+ * stands on the floor with a little life of its own, never on him.
  *
  * Rarity shows in the frames too, so it reads in any game without a shader:
  * from Special up a shine sweeps across the item, from Prized up a ring in the
@@ -43,11 +45,14 @@ export type Move = (typeof MOVES)[number];
 
 /** Rows of room above the guy for jumps. */
 export const HEADROOM = 4;
+/** A frame's width: his own sixteen columns. A guy with a buddy is wider (`Animation.width`, at most `WIDE_FRAME_WIDTH`). */
 export const FRAME_WIDTH = GRID_SIZE;
+/** The widest a frame is: his sixteen columns and a buddy's room beside him. */
+export const WIDE_FRAME_WIDTH = GRID_SIZE + BUDDY_ROOM;
 export const FRAME_HEIGHT = GRID_SIZE + HEADROOM;
 
 export interface AnimationFrame {
-  /** FRAME_HEIGHT rows of FRAME_WIDTH colours; null is transparent. */
+  /** FRAME_HEIGHT rows of `Animation.width` colours (FRAME_WIDTH, or more with a buddy); null is transparent. */
   colors: (string | null)[][];
   /**
    * Which worn item each pixel belongs to: 0 none, 1 skin, 2 hat, 3 frame,
@@ -61,7 +66,7 @@ export interface AnimationFrame {
   at?: number;
   /**
    * A rare aura's cells that fall past the frame's sides, as `[x, y, colour]`
-   * with x from -AURA_PAD to FRAME_WIDTH + AURA_PAD - 1. Only there when there
+   * with x from -AURA_PAD to width + AURA_PAD - 1. Only there when there
    * are some; a picture with room round the guy (a card) draws them, anything
    * else can leave them out.
    */
@@ -383,26 +388,25 @@ const mix = (a: string, b: string, t: number) => {
 // ---------------------------------------------------------------- frames
 
 /** `body`: the guy's own skin, which a Lucky shimmer crosses. `eye`: the token of an eye pixel, for eyes that move. */
-interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; face?: boolean; feature?: boolean }
+interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; feature?: boolean }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
 export const FRAME_SLOTS = ['skin', 'hat', 'frame', 'buddy', 'aura'] as const;
 const slotIndex = (t: number) => (t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0);
 
-const empty = (): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
+const empty = (width = FRAME_WIDTH): Layer => Array.from({ length: FRAME_HEIGHT }, () => new Array<Cell | null>(width).fill(null));
 
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, face: Face | null = null, mouth?: Set<number>): Layer {
+function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, face: Face | null = null, width = FRAME_WIDTH): Layer {
   const colors = paint(grid, config, palette, small, false);
-  const out = empty();
+  const out = empty(width);
   const eyeBox = face && { top: face.top - 1, bottom: face.line, left: face.eyes[0].left - 1, right: face.eyes[face.eyes.length - 1].right + 1 };
   grid.forEach((row, y) => row.forEach((t, x) => {
     const c = colors[y][x];
     if (!c) return;
     const cell: Cell = { c, item: (t >= LAYER.skin && t < LAYER.frame) || t >= LAYER.buddy, slot: slotIndex(t) };
     if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
-    if (mouth?.has(y * GRID_SIZE + x)) cell.face = true;
     if (FEATURE_TOKENS.has(t)) cell.feature = true;
     if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
     out[y + HEADROOM][x] = cell;
@@ -464,7 +468,7 @@ function squash(layer: Layer, s: Squash | null): Layer {
   if (!s) return layer;
   const { n, row: r } = s, rows = layer.map(row => [...row]);
   if (n > 0) {
-    const blank = Array.from({ length: n }, () => new Array<Cell | null>(FRAME_WIDTH).fill(null));
+    const blank = Array.from({ length: n }, () => new Array<Cell | null>(rows[0].length).fill(null));
     return [...blank, ...rows.slice(0, r - n + 1), ...rows.slice(r + 1)];
   }
   const k = -n;
@@ -472,24 +476,42 @@ function squash(layer: Layer, s: Squash | null): Layer {
 }
 
 /**
- * His buddy, standing where it stands in the still: on the floor, whatever
- * he does. In front of him (no room beside him; see `buddySpot`), it leaves
- * out any pixel next to his eyes or mouth in this frame.
+ * His buddy, beside him on the floor (`buddyBeside`), `lift` rows up: its whole
+ * art and outline, in front of anything else there.
  */
-function standBuddy(layer: Layer, buddy: [number, number, Cell][], apart: boolean): void {
-  const nearFace = (x: number, y: number) => {
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.face) return true;
-    return false;
-  };
-  const keep = buddy.filter(([x, y]) => apart || !nearFace(x, y));
-  for (const [x, y, cell] of keep) layer[y][x] = { ...cell };
+function standBuddy(layer: Layer, buddy: [number, number, Cell][], lift: number): void {
+  for (const [x, y, cell] of buddy) if (y - lift >= 0) layer[y - lift][x] = { ...cell };
+}
+
+/** The moves a buddy hops through on its own: all but the calm ones. */
+const BUDDY_HOPS = (move: Move) => move !== 'sleep' && move !== 'sad';
+
+/**
+ * How many rows his buddy is up off the floor at a moment of a move: when he
+ * jumps it hops too, about half as high (a floater's breath, a row, it sits
+ * out); otherwise, now and then,
+ * a little hop of its own (a double hop for some), dealt from his name and on
+ * its own clock, so it comes round in LOOP_MS, never while he squashes. It
+ * stays put through the calm moves (sleep, sad), and keeps time with his steps
+ * in a dance.
+ */
+function buddyLift(move: Move, beat: Beat, t: number, roll: (k: number) => number): number {
+  const up = -(beat.dy ?? 0);
+  if (up >= 2) return Math.min(2, Math.ceil(up / 2));
+  if (!BUDDY_HOPS(move)) return 0;
+  if (move === 'dance') return beat.squash ? 1 : 0;
+  // Not while he squashes down beside it: that would bring them closer than `movesRoom` allows.
+  if ((beat.squash ?? 0) > 0) return 0;
+  const period = 2000 + 1000 * roll(61), f = cycle(t + roll(60) * LOOP_MS, period) * fit(period);
+  const double = roll(62) < 0.4;
+  return f < 160 || (double && f >= 260 && f < 400) ? 1 : 0;
 }
 
 function shift(layer: Layer, dx: number, dy: number): Layer {
-  const out = empty();
+  const W = layer[0].length, out = empty(W);
   layer.forEach((row, y) => row.forEach((cell, x) => {
     const nx = x + dx, ny = y + dy;
-    if (cell && nx >= 0 && ny >= 0 && nx < FRAME_WIDTH && ny < FRAME_HEIGHT) out[ny][nx] = cell;
+    if (cell && nx >= 0 && ny >= 0 && nx < W && ny < FRAME_HEIGHT) out[ny][nx] = cell;
   }));
   return out;
 }
@@ -499,7 +521,7 @@ const NEIGHBOURS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 /** Empty cells touching the guy. */
 function rim(layer: Layer): [number, number][] {
   const out: [number, number][] = [];
-  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < FRAME_WIDTH; x++) {
+  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < layer[0].length; x++) {
     if (layer[y][x]) continue;
     if (NEIGHBOURS.some(([dx, dy]) => layer[y + dy]?.[x + dx])) out.push([x, y]);
   }
@@ -513,15 +535,15 @@ type Sparkle = [string, string, string];
 function sparkle(layer: Layer, x: number, y: number, f: number, colors: Sparkle): void {
   for (const [dx, dy, k] of sparkleAt(f)) {
     const cx = x + dx, cy = y + dy;
-    if (cx >= 0 && cy >= 0 && cx < FRAME_WIDTH && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = { c: colors[k], item: false };
+    if (cx >= 0 && cy >= 0 && cx < layer[0].length && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = { c: colors[k], item: false };
   }
 }
 
 /**
  * Where sparkles may open: empty cells near the guy, with room all round for
  * the sparkle at its biggest, two or three cells off him and no lower than his
- * middle (`above` rows from his top at most, when given). None in the frame's
- * edge cells, so nothing sits stuck in a corner.
+ * middle (`above` rows from his top at most, when given). None in the edge
+ * cells of his sixteen columns, so nothing sits stuck in a corner.
  */
 function sparkleSpots(layer: Layer, above = Infinity): [number, number][] {
   let top = FRAME_HEIGHT, bottom = -1;
@@ -531,7 +553,8 @@ function sparkleSpots(layer: Layer, above = Infinity): [number, number][] {
     for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) if (layer[y + dy]?.[x + dx]) return true;
     return false;
   };
-  for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < FRAME_WIDTH - 1; x++) {
+  // On his own sixteen columns: a buddy's room beside him is its own.
+  for (let y = 1; y < FRAME_HEIGHT - 1; y++) for (let x = 1; x < GRID_SIZE - 1; x++) {
     if (y > Math.min((top + bottom) / 2, top + above)) continue;
     if (SPARKLE_REACH.some(([dx, dy]) => layer[y + dy][x + dx])) continue;
     if (!near(x, y, 1) && near(x, y, 3)) out.push([x, y]);
@@ -741,7 +764,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const { config, figure, grid } = poser(input, options);
   const palette = withItems(options.palette ?? paletteOf(config), config);
   // His buddy is drawn per frame beside him, not into his poses: it stays on the floor while he moves.
-  const spot = itemById(config.buddy)?.slot === 'buddy' ? buddyOf({ ...config, frame: undefined, aura: undefined }) : undefined;
+  const alone = buddyAlone(config), W = alone?.[0].length ?? FRAME_WIDTH;
   const wornAura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
   // Effects move, so a guy wearing one gets short frames like an aura's.
   const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
@@ -753,33 +776,20 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const canWave = JSON.stringify(grid('wave')) !== JSON.stringify(grid('sides'));
   const plan = squashPlan(config, figure, grid);
 
-  // His eyes and mouth in each pose, which the buddy in front of him keeps off:
-  // the still's, and whatever a laugh or a glance moves onto new pixels.
-  const FACE_TOKENS = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
-  const faceIn = (pose: Pose) => {
-    if (!spot) return undefined;
-    const out = new Set(spot.face), g = grid(pose), base = grid('base');
-    g.forEach((row, y) => row.forEach((t, x) => { if (FACE_TOKENS.has(t) && t !== base[y][x]) out.add(y * GRID_SIZE + x); }));
-    return out;
-  };
   const layers = new Map<Pose, Layer>();
   const layerOf = (pose: Pose) => {
-    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null, faceIn(pose)));
+    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null, W));
     return layers.get(pose)!;
   };
   const buddyCells: [number, number, Cell][] = [];
-  if (spot) {
-    const only = Array.from({ length: GRID_SIZE }, () => new Array<number>(GRID_SIZE).fill(0));
-    for (const [x, y, t] of spot.cells) only[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
-    painted(only, config, palette, !!options.small).forEach((row, y) => row.forEach((cell, x) => { if (cell) buddyCells.push([x, y, cell]); }));
-  }
+  if (alone) painted(alone, config, palette, !!options.small, null, W).forEach((row, y) => row.forEach((cell, x) => { if (cell) buddyCells.push([x, y, cell]); }));
 
   // The frame behind him, painted where it sits in the still so it looks the same.
   let backdrop: (string | null)[][] | null = null;
   const frameItem = itemById(config.frame);
   if (frameItem?.slot === 'frame') {
     const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) =>
-      Array.from({ length: GRID_SIZE }, (_, x) => LAYER.frame + frameItem.fill!(x, y + 48) - 1));
+      Array.from({ length: W }, (_, x) => LAYER.frame + frameItem.fill!(x, y + 48) - 1));
     const colors = paint(tall, config, palette, false, false);
     backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
   }
@@ -800,7 +810,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const roll = rollsOf(input);
   const mouthy = !SIGNATURE_MOUTHS.has(mouths[config.mouth]?.name ?? '') && JSON.stringify(grid('smile')) !== JSON.stringify(grid('base'));
   const beats = BEATS[move]({ roll, canWave, mouthy });
-  const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote);
+  // A buddy's own little hops are on its own clock, like an effect.
+  const buddyLife = !!alone && BUDDY_HOPS(move) && move !== 'dance';
+  const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
   const spots = sparkleSpots(layerOf('base')), headSpots = sparkleSpots(layerOf('base'), 3);
   // With effects on, long beats are cut into slices so the shine can move.
   const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
@@ -810,7 +822,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const slices: { beat: Beat; ms: number; t: number; lap: number }[] = [];
   let t = 0;
   for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
-    let n = wornAura || withFx || lucky || liveEye || goldMark ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
+    let n = wornAura || withFx || lucky || liveEye || goldMark || buddyLife ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
     if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
     for (let i = 0; i < n; i++) {
       const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
@@ -825,13 +837,14 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
   const all = slices.map(({ beat, ms, t }) => {
     let layer = layerOf(beat.pose);
-    if (beat.turn) layer = layer.map(row => [...row].reverse());
+    // Turning round is within his own sixteen columns; a buddy's room stays where it is.
+    if (beat.turn) layer = layer.map(row => [...row.slice(0, GRID_SIZE).reverse(), ...row.slice(GRID_SIZE)]);
     const squashed = plan.at(beat.squash ?? 0);
     layer = squash(layer, squashed);
     // A guy with no room to squash bobs up a row instead.
     const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
     layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
-    if (buddyCells.length) { layer = layer.map(row => [...row]); standBuddy(layer, buddyCells, spot!.apart); }
+    if (buddyCells.length) { layer = layer.map(row => [...row]); standBuddy(layer, buddyCells, buddyLift(move, beat, t, roll)); }
     const figure = layer;
     layer = layer.map(row => row.map(cell => (cell ? { ...cell } : null)));
     if (trailFrom.length && (beat.dy ?? 0) < 0) {
@@ -844,7 +857,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
     if (grade >= 1) {
       // A shine sweeping diagonally across the item, once every 1.6 seconds.
-      const at = cycle(t + phase, 1600) * (FRAME_WIDTH + FRAME_HEIGHT + 8) - 4;
+      const at = cycle(t + phase, 1600) * (W + FRAME_HEIGHT + 8) - 4;
       layer.forEach((row, y) => row.forEach((cell, x) => {
         if (!cell?.item) return;
         const d = Math.abs(x + y - at);
@@ -876,7 +889,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       const copy = config.owned?.aura, mask = layer.map(row => row.map(Boolean));
       for (const [x, y, k] of auraCells(wornAura.id, mask, t, copy, AURA_PAD)) {
         const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t + copy.print * 37, copy.print) : wornAura.colors[k];
-        if (x < 0 || x >= FRAME_WIDTH) outside.push([x, y, c]);
+        if (x < 0 || x >= W) outside.push([x, y, c]);
         else layer[y][x] = { c, item: false, slot: 5 };
       }
     } else if (grade >= 2) {
@@ -899,7 +912,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // In a loop the warm-up lap is left out.
   const frames = loop ? all.filter((_, i) => slices[i].lap > 0) : all;
 
-  return { move, width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, duration: frames.reduce((n, f) => n + f.ms, 0), timed };
+  return { move, width: W, height: FRAME_HEIGHT, frames, duration: frames.reduce((n, f) => n + f.ms, 0), timed };
 }
 
 /**
@@ -953,7 +966,7 @@ function runs(row: (string | null)[]): { x: number; width: number; color: string
 }
 
 export interface AnimatedSvgOptions extends AnimateOptions {
-  /** Width in pixels; the height is a quarter more. Default 128. */
+  /** His width in pixels (his own sixteen columns); the height is a quarter more, and a buddy beside him adds its room. Default 128. */
   size?: number;
   /** Play once and hold the last frame. Default false: loop. */
   once?: boolean;
@@ -991,7 +1004,7 @@ export function toAnimatedSvg(input: string, move: Move, options: AnimatedSvgOpt
 
   const labelled = typeof options.title === 'string' && options.title.length > 0;
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" class="${id}" width="${size}" height="${size * FRAME_HEIGHT / FRAME_WIDTH}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}" shape-rendering="crispEdges"${labelled ? ' role="img"' : ' role="presentation" aria-hidden="true"'}>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" class="${id}" width="${size * anim.width / FRAME_WIDTH}" height="${size * FRAME_HEIGHT / FRAME_WIDTH}" viewBox="0 0 ${anim.width} ${FRAME_HEIGHT}" shape-rendering="crispEdges"${labelled ? ' role="img"' : ' role="presentation" aria-hidden="true"'}>`,
     labelled ? `<title>${options.title!.replace(/[&<>]/g, c => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'))}</title>` : '',
     `<style>${css.join('')}</style>`,
     ...groups,
