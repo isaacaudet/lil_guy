@@ -1628,10 +1628,10 @@ const frames: Omit<Item, 'slot'>[] = [
 // ---------------------------------------------------------------- buddies
 
 /**
- * A pet that sits at the guy's feet, bottom right, in front of everything but
- * the face. Each is a bold shape of its own with a lit side, a shaded side and
- * a face, filling as much of its 6x5 as it can, so it reads at a glance on any
- * guy and any frame.
+ * A pet that stands on the floor beside the guy (`buddyBeside` in ./compose).
+ * Each is a bold shape of its own with a lit side, a shaded side and a face,
+ * filling as much of its 8x8 (`BUDDY_BOX`) as it can, so it reads at a glance
+ * beside any guy and in any frame. The machines' sets redraw most of these.
  */
 const buddies: Omit<Item, 'slot'>[] = [
   {

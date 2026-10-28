@@ -11,7 +11,7 @@ import type { AnimateOptions } from './animate';
  * Bumped whenever the art changes. It is part of every baked image's address,
  * so a redraw reaches every board at once and an old address keeps its picture.
  */
-export const ART_VERSION = 5;
+export const ART_VERSION = 6;
 
 /** Everything that makes a guy look the way he does. */
 export interface GuySpec {
@@ -53,7 +53,7 @@ export function guyCode(spec: CardSpec): string {
  * from an address alone which of the first two a guy is, so size a box by its
  * height and let the picture set its width.
  */
-export const BAKED_SIZE = { guy: { width: 22, height: 20 }, buddy: { width: 32, height: 20 }, card: { width: 26, height: 42 } } as const;
+export const BAKED_SIZE = { guy: { width: 22, height: 20 }, buddy: { width: 34, height: 20 }, card: { width: 26, height: 42 } } as const;
 
 /** What a baked picture shows: a move looping, his still, or his card. */
 export type View = string;

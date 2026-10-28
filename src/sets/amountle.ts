@@ -93,24 +93,32 @@ export const set: MachineSet = {
     {
       id: 'amountle.play-coin', game: 'amountle', slot: 'buddy', name: 'Lil jar',
       // A tiny jar of jellybeans that follows you about.
-      colors: ['#DDF2F6', '#A8D8E0', '#FF6F9C', '#FFD25A', '#FFD447', '#3FD1C1', '#8C7CF0', '#C98A1A'],
+      // glass, glass shade, pink, lid, lid light, teal, purple, lid shade, white
+      colors: ['#E4F6F9', '#A8D8E0', '#FF6F9C', '#FFC93A', '#FFE89A', '#3FD1C1', '#8C7CF0', '#C98A1A', '#FFFFFF'],
       art: pet('lil jar', [
-        '.4448.',
-        '311112',
-        '1o11o2',
-        '357632',
-        '.7536.',
+        '.554448.',
+        '..8888..',
+        '.911112.',
+        '91o11o12',
+        '91111112',
+        '36743672',
+        '67364732',
+        '.364762.',
       ]),
     },
     {
       id: 'amountle.candy-corn', game: 'amountle', slot: 'buddy', name: 'Candy corn',
-      colors: ['#FFF6E0', '#E6D6B8', '#FF7A2E', '#D9561A', '#FFC23A', '#E09A12'],
+      // white, white shade, orange, orange shade, yellow, yellow shade, blush
+      colors: ['#FFF6E0', '#E6D6B8', '#FF7A2E', '#D9561A', '#FFC23A', '#E09A12', '#FFB0A0'],
       art: pet('candy corn', [
-        '..12..',
-        '.1112.',
-        '3o33o4',
-        '333344',
-        '555566',
+        '...12...',
+        '..1112..',
+        '..3334..',
+        '.3o33o4.',
+        '.373374.',
+        '33333344',
+        '55555566',
+        '.555566.',
       ]),
     },
     {
@@ -137,6 +145,20 @@ export const set: MachineSet = {
     'amountle.sparkle', 'amountle.coins', 'amountle.piglet', 'amountle.mimic',
   ],
   redraw: {
+    'amountle.jellybean': {
+      // red, shade, light, deep
+      colors: ['#FF5C6A', '#C8303F', '#FFB0B6', '#8E1A2C'],
+      art: pet('gummy bear', [
+        '.31..12.',
+        '.311112.',
+        '.1o11o2.',
+        '.113412.',
+        '31133112',
+        '21333122',
+        '.111122.',
+        '.12..12.',
+      ]),
+    },
     'amountle.crystal': {
       eyes: 8,
       // The guy's whole round head inside a cut gem: its table and crown facets catching the light
@@ -163,12 +185,16 @@ export const set: MachineSet = {
       ]),
     },
     'amountle.gemling': {
+      // teal, shade, light, deep, white, blush
+      colors: ['#3FD1C1', '#1F9C90', '#C8FFF7', '#137068', '#FFFFFF', '#FF9CB8'],
       art: pet('gemling', [
-        '.5311.',
-        '331112',
-        '1o11o2',
-        '.1124.',
-        '..24..',
+        '.355112.',
+        '35531122',
+        '31111112',
+        '31o11o12',
+        '.164462.',
+        '..1112..',
+        '...12...',
       ]),
     },
     'amountle.gem': {

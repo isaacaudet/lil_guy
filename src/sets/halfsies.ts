@@ -143,25 +143,33 @@ export const set: MachineSet = {
     {
       id: 'halfsies.balance', game: 'halfsies', slot: 'buddy', name: 'Lil acorn',
       // An acorn in its little cap, one of the things Halfsies cuts.
-      colors: ['#E0A060', '#A86A30', '#F4C890', '#7A4A26', '#9A6A3A', '#5A3418'],
+      // nut, nut shade, nut light, cap, cap light, stem/cap shade
+      colors: ['#E0A060', '#A86A30', '#F4C890', '#8A5A2E', '#B8834E', '#5A3418'],
       art: pet('lil acorn', [
-        '...4..',
-        '.5555.',
-        '555556',
-        '3o11o2',
-        '.1122.',
+        '....6...',
+        '..5546..',
+        '.545446.',
+        '54545446',
+        '.666666.',
+        '.3o11o2.',
+        '.311112.',
+        '..3122..',
       ]),
     },
     {
       id: 'halfsies.cake', game: 'halfsies', slot: 'buddy', name: 'Cake slice',
       // A slice of strawberry cake, jam through the middle.
-      colors: ['#F5C86A', '#C9953A', '#FFFFFF', '#E8D6C4', '#E5484D', '#D9283A', '#5CB85C'],
+      // sponge, sponge shade, frosting, frosting shade, jam, jam shade, leaf, berry light
+      colors: ['#F5C86A', '#C9953A', '#FFFFFF', '#E8D6C4', '#E5484D', '#B8283A', '#5CB85C', '#FF8A8E'],
       art: pet('cake slice', [
-        '....76',
-        '..3334',
-        '.1o1o2',
-        '555556',
-        '111122',
+        '.....78.',
+        '....3854',
+        '..333336',
+        '33333334',
+        '1o11o112',
+        '55555556',
+        '11111112',
+        '22222222',
       ]),
     },
     {
@@ -176,6 +184,20 @@ export const set: MachineSet = {
     'halfsies.gingham', 'halfsies.pea', 'halfsies.berry',
   ],
   redraw: {
+    'halfsies.avo': {
+      // flesh, flesh shade, skin dark, pit, pit shade, pit light, skin, flesh light
+      colors: ['#D8EE8A', '#9CCB4A', '#2E5A1E', '#A0602E', '#6A3A18', '#D99060', '#4E8A2E', '#F0FAC0'],
+      art: pet('avo', [
+        '..7777..',
+        '.788117.',
+        '78o11o13',
+        '78111113',
+        '71164123',
+        '71145123',
+        '.711223.',
+        '..3333..',
+      ]),
+    },
     'halfsies.avocado': {
       eyes: 9,
       // The guy as the pit: his whole round head sat in the hollow of an avocado half, the pale flesh
@@ -239,13 +261,17 @@ export const set: MachineSet = {
     'halfsies.yolk': {
       name: 'Half-shell chick',
       // Just hatched, still sitting in the bottom half of its shell.
-      colors: ['#FFD84A', '#E0A820', '#FFF0A0', '#FF8A2E', '#FFFFFF', '#C9D1DC'],
+      // yellow, shade, light, beak, shell, shell shade, shell deep
+      colors: ['#FFD84A', '#E0A820', '#FFF2A0', '#FF8A2E', '#FFFFFF', '#C9D1DC', '#A8B2C2'],
       art: pet('half-shell chick', [
-        '.3311.',
-        '1o4o12',
-        '565656',
-        '555556',
-        '.5566.',
+        '...3....',
+        '..3311..',
+        '.311112.',
+        '.1o11o2.',
+        '.114412.',
+        '51511516',
+        '55555566',
+        '.555776.',
       ]),
     },
   },

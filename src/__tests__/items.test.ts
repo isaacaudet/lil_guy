@@ -1,6 +1,6 @@
 import { RETIRED_EYES } from '../parts/weights';
 import { describe, expect, it } from 'bun:test';
-import { compose, buddyOf, buddySpot, movesRoom, ARM_STYLES, BUDDY_ROOM, FOOT_STYLES } from '../compose';
+import { compose, buddySpot, movesRoom, ARM_STYLES, BUDDY_ROOM, FOOT_STYLES } from '../compose';
 import { BUDDY_BOX } from '../item-art';
 import { heads, eyes, mouths, hair, accessories } from '../parts';
 import { T } from '../parts/art';
@@ -192,7 +192,7 @@ describe('everything worn together', () => {
 describe('buddies', () => {
   const buddies = items.filter(i => i.slot === 'buddy');
 
-  it('fit their box: at most BUDDY_BOX, 6 across and 5 tall, and at least 4 of each', () => {
+  it('fit their box: at most BUDDY_BOX, 8 across and 8 tall, and at least 4 of each', () => {
     for (const b of buddies) {
       const art = b.art!;
       expect(art.length).toBeLessThanOrEqual(BUDDY_BOX.height);
@@ -205,24 +205,17 @@ describe('buddies', () => {
   });
 
   // The rule: a buddy stands apart, a clear pixel (diagonals too) between its
-  // outline and the guy in every frame of every move. Sixteen columns leave no
-  // head or skin room for that, so on his 16x16 icon it stands in front of
-  // him in the bottom-right corner, never touching his eyes or mouth. The
-  // moving and baked pictures are BUDDY_ROOM columns wider at most, and there
-  // every head and skin has the room (`buddyBeside`).
+  // outline and the guy in every frame of every move. The moving and baked
+  // pictures are BUDDY_ROOM columns wider at most, and there every head and
+  // skin has the room (`buddyBeside`). His 16x16 icon has none, so it leaves
+  // the buddy out.
   const BOX = Array.from({ length: BUDDY_BOX.height }, () => new Array<number>(BUDDY_BOX.width).fill(1));
   const all = [...heads.map((_, head) => ({ head })), ...skins.map(s => ({ skin: s.id }))];
-  const near = (a: Set<number>, x: number, y: number) => [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => a.has((y + dy) * GRID_SIZE + x + dx)));
 
-  it('stand in front of him on his own sixteen columns, never by his eyes or mouth, flipped or not', () => {
+  it('are left off his 16x16 icon, flipped or not', () => {
     const wrong: string[] = [];
     for (const body of all) for (const flip of [false, true]) for (const b of buddies) {
-      const spot = buddyOf({ ...BASE, ...body, flip, buddy: b.id })!;
-      const label = `${b.id} on ${JSON.stringify(body)}${flip ? ' flipped' : ''}`;
-      if (spot.apart) wrong.push(`${label} found room: use it, and update this test`);
-      if (spot.cells.some(([x, y]) => near(spot.face, x, y))) wrong.push(`${label} touches the face`);
-      const g = guy({ ...body, flip, buddy: b.id }), bare = guy({ ...body, flip });
-      for (const k of spot.face) if (g[Math.floor(k / GRID_SIZE)][k % GRID_SIZE] !== bare[Math.floor(k / GRID_SIZE)][k % GRID_SIZE]) { wrong.push(`${label} covers the face`); break; }
+      if (JSON.stringify(guy({ ...body, flip, buddy: b.id })) !== JSON.stringify(guy({ ...body, flip }))) wrong.push(`${b.id} on ${JSON.stringify(body)}`);
     }
     expect(wrong).toEqual([]);
   }, 60_000);

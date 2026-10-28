@@ -13,7 +13,7 @@ import type { AvatarConfig } from './types';
  * | ----- | ------------------------------------------ | ----------------------------------------------------- |
  * | skin  | the 14x14 inside the grid's border         | its art                                               |
  * | hat   | the rows above the face, 14 across         | what it adds to the guy, on the head it shows least on |
- * | buddy | `BUDDY_BOX`, 6 across and 5 tall            | its art                                               |
+ * | buddy | `BUDDY_BOX`, 8 across and 8 tall            | its art                                               |
  *
  * The floors are what the items the owner liked already do (Kettlebell,
  * Salmon nigiri and Big L for skins), and for hats and buddies two thirds of
@@ -35,8 +35,8 @@ export const FILL_FLOORS: Record<FillSlot, { pixels: number; short: number; long
   skin: { pixels: 112, short: 10, long: 12 },
   // Two thirds of a 14x4 band of room; a hat no smaller than a 4x4 thing on the crown.
   hat: { pixels: 18, short: 4, long: 6 },
-  // Two thirds of the 6x5 box, reaching its full height or width.
-  buddy: { pixels: 20, short: BUDDY_BOX.height, long: BUDDY_BOX.width - 1 },
+  // Two thirds of an 8x7 pet, at least 6 by 7 of the 8x8 box.
+  buddy: { pixels: 36, short: BUDDY_BOX.height - 2, long: BUDDY_BOX.width - 1 },
 };
 
 /** The heads a hat is measured on: round, tall, wide, pointed and the ghost, as the item sheet shows them. */

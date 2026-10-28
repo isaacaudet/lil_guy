@@ -1464,15 +1464,13 @@ const onPair = (rows, inset = 0) => {
 };
 /**
 * The biggest a buddy is drawn: its art, inside the outline compose gives it.
-* The moving and baked pictures give it room beside him (`buddyBeside` in
-* ./compose, `BUDDY_ROOM` columns for this box), but on the 16x16 icon it
-* stands in front of him in his bottom-right corner, and this is as big as it
-* gets there without coming up to his face. A bigger box widens every buddy
-* picture (`BUDDY_ROOM`) and crowds the icon.
+* It stands on the floor beside him in the moving and baked pictures
+* (`buddyBeside` in ./compose), which are `BUDDY_ROOM` columns wider for this
+* box; the 16x16 icon has no room for it and leaves it out.
 */
 const BUDDY_BOX = {
-	width: 6,
-	height: 5
+	width: 8,
+	height: 8
 };
 /**
 * A buddy's drawing: at most `BUDDY_BOX`, with a pixel round it for its
@@ -1643,21 +1641,25 @@ const set$9 = {
 			slot: "buddy",
 			name: "Lil jar",
 			colors: [
-				"#DDF2F6",
+				"#E4F6F9",
 				"#A8D8E0",
 				"#FF6F9C",
-				"#FFD25A",
-				"#FFD447",
+				"#FFC93A",
+				"#FFE89A",
 				"#3FD1C1",
 				"#8C7CF0",
-				"#C98A1A"
+				"#C98A1A",
+				"#FFFFFF"
 			],
 			art: pet("lil jar", [
-				".4448.",
-				"311112",
-				"1o11o2",
-				"357632",
-				".7536."
+				".554448.",
+				"..8888..",
+				".911112.",
+				"91o11o12",
+				"91111112",
+				"36743672",
+				"67364732",
+				".364762."
 			])
 		},
 		{
@@ -1671,14 +1673,18 @@ const set$9 = {
 				"#FF7A2E",
 				"#D9561A",
 				"#FFC23A",
-				"#E09A12"
+				"#E09A12",
+				"#FFB0A0"
 			],
 			art: pet("candy corn", [
-				"..12..",
-				".1112.",
-				"3o33o4",
-				"333344",
-				"555566"
+				"...12...",
+				"..1112..",
+				"..3334..",
+				".3o33o4.",
+				".373374.",
+				"33333344",
+				"55555566",
+				".555566."
 			])
 		},
 		{
@@ -1728,6 +1734,24 @@ const set$9 = {
 		"amountle.mimic"
 	],
 	redraw: {
+		"amountle.jellybean": {
+			colors: [
+				"#FF5C6A",
+				"#C8303F",
+				"#FFB0B6",
+				"#8E1A2C"
+			],
+			art: pet("gummy bear", [
+				".31..12.",
+				".311112.",
+				".1o11o2.",
+				".113412.",
+				"31133112",
+				"21333122",
+				".111122.",
+				".12..12."
+			])
+		},
 		"amountle.crystal": {
 			eyes: 8,
 			colors: [
@@ -1757,13 +1781,25 @@ const set$9 = {
 				"................"
 			])
 		},
-		"amountle.gemling": { art: pet("gemling", [
-			".5311.",
-			"331112",
-			"1o11o2",
-			".1124.",
-			"..24.."
-		]) },
+		"amountle.gemling": {
+			colors: [
+				"#3FD1C1",
+				"#1F9C90",
+				"#C8FFF7",
+				"#137068",
+				"#FFFFFF",
+				"#FF9CB8"
+			],
+			art: pet("gemling", [
+				".355112.",
+				"35531122",
+				"31111112",
+				"31o11o12",
+				".164462.",
+				"..1112..",
+				"...12..."
+			])
+		},
 		"amountle.gem": { draw: on([
 			"....wwaA....",
 			"...waaaaA...",
@@ -2114,16 +2150,19 @@ const set$8 = {
 				"#E0A060",
 				"#A86A30",
 				"#F4C890",
-				"#7A4A26",
-				"#9A6A3A",
+				"#8A5A2E",
+				"#B8834E",
 				"#5A3418"
 			],
 			art: pet("lil acorn", [
-				"...4..",
-				".5555.",
-				"555556",
-				"3o11o2",
-				".1122."
+				"....6...",
+				"..5546..",
+				".545446.",
+				"54545446",
+				".666666.",
+				".3o11o2.",
+				".311112.",
+				"..3122.."
 			])
 		},
 		{
@@ -2137,15 +2176,19 @@ const set$8 = {
 				"#FFFFFF",
 				"#E8D6C4",
 				"#E5484D",
-				"#D9283A",
-				"#5CB85C"
+				"#B8283A",
+				"#5CB85C",
+				"#FF8A8E"
 			],
 			art: pet("cake slice", [
-				"....76",
-				"..3334",
-				".1o1o2",
-				"555556",
-				"111122"
+				".....78.",
+				"....3854",
+				"..333336",
+				"33333334",
+				"1o11o112",
+				"55555556",
+				"11111112",
+				"22222222"
 			])
 		},
 		{
@@ -2171,6 +2214,28 @@ const set$8 = {
 		"halfsies.berry"
 	],
 	redraw: {
+		"halfsies.avo": {
+			colors: [
+				"#D8EE8A",
+				"#9CCB4A",
+				"#2E5A1E",
+				"#A0602E",
+				"#6A3A18",
+				"#D99060",
+				"#4E8A2E",
+				"#F0FAC0"
+			],
+			art: pet("avo", [
+				"..7777..",
+				".788117.",
+				"78o11o13",
+				"78111113",
+				"71164123",
+				"71145123",
+				".711223.",
+				"..3333.."
+			])
+		},
 		"halfsies.avocado": {
 			eyes: 9,
 			colors: [
@@ -2254,17 +2319,21 @@ const set$8 = {
 			colors: [
 				"#FFD84A",
 				"#E0A820",
-				"#FFF0A0",
+				"#FFF2A0",
 				"#FF8A2E",
 				"#FFFFFF",
-				"#C9D1DC"
+				"#C9D1DC",
+				"#A8B2C2"
 			],
 			art: pet("half-shell chick", [
-				".3311.",
-				"1o4o12",
-				"565656",
-				"555556",
-				".5566."
+				"...3....",
+				"..3311..",
+				".311112.",
+				".1o11o2.",
+				".114412.",
+				"51511516",
+				"55555566",
+				".555776."
 			])
 		}
 	}
@@ -2549,11 +2618,14 @@ const set$7 = {
 				"#E8B86A"
 			],
 			art: pet("lil yeti", [
-				".6.3.6",
-				".13331",
-				".1o4o1",
-				"314441",
-				".21.12"
+				".6.33.6.",
+				".631136.",
+				"31444412",
+				"34o44o42",
+				"14455412",
+				"31111112",
+				"11111122",
+				".11..12."
 			])
 		},
 		{
@@ -2565,15 +2637,17 @@ const set$7 = {
 				"#FFD447",
 				"#D9A21E",
 				"#FFF1A8",
-				"#FF9AAA",
-				"#B07A10"
+				"#FF9AAA"
 			],
 			art: pet("lil star", [
-				"..31..",
-				"331112",
-				".o11o.",
-				".1112.",
-				"12..12"
+				"...31...",
+				"...31...",
+				"33311112",
+				".3o11o2.",
+				"..4114..",
+				"..1112..",
+				".112112.",
+				".12..12."
 			])
 		},
 		{
@@ -2664,35 +2738,42 @@ const set$7 = {
 			colors: [
 				"#FFB03B",
 				"#D97A12",
-				"#FFE0A0",
+				"#FFD27A",
 				"#A85A0A",
-				"#FFF4D6"
+				"#FFEDB8"
 			],
 			art: pet("cubelet", [
-				".33334",
-				"311124",
-				"1o1o24",
-				"111124",
-				".4..4."
+				"..553333",
+				".5533332",
+				"11111122",
+				"1o11o122",
+				"11441122",
+				"11111122",
+				"1111112.",
+				".4..4..."
 			])
 		},
 		"stackdle.wobble": {
 			name: "Wobble",
 			colors: [
-				"#FFE7A8",
-				"#E8C070",
-				"#FFF6D6",
-				"#B8652A",
-				"#E8954A",
-				"#E6ECF2",
+				"#7DD87A",
+				"#3E9A4C",
+				"#C6F5B0",
+				"#E5384D",
+				"#FF9AA0",
+				"#6A4020",
+				"#F4F7FA",
 				"#B8C2CE"
 			],
 			art: pet("wobble", [
-				".5445.",
-				"354442",
-				"1o11o2",
-				"311112",
-				"676676"
+				"....6...",
+				"...54...",
+				".331112.",
+				".3o11o2.",
+				"31111122",
+				"31111122",
+				"77777788",
+				".888888."
 			])
 		}
 	}
@@ -2962,14 +3043,16 @@ const set$6 = {
 				"#FF8A2B",
 				"#D45F10",
 				"#FFC27A",
-				"#FFFFFF"
+				"#FFFFFF",
+				"#FFB060"
 			],
 			art: pet("goldfish", [
-				".33..3",
-				"3111.3",
-				"1o1123",
-				"311123",
-				"..2..."
+				"..335...",
+				".33115.5",
+				"34o11255",
+				"31111225",
+				".1111255",
+				"..122..5"
 			])
 		},
 		{
@@ -2983,14 +3066,18 @@ const set$6 = {
 				"#FF8A8A",
 				"#FFFFFF",
 				"#C9D1DC",
-				"#FFE36A"
+				"#FFE36A",
+				"#E0B030"
 			],
 			art: pet("ketchup", [
-				"..45..",
-				".3112.",
-				"3o11o2",
-				"315512",
-				".2222."
+				"...45...",
+				"..4445..",
+				".311112.",
+				".3o11o2.",
+				".366672.",
+				".366772.",
+				".311122.",
+				"..1122.."
 			])
 		},
 		{
@@ -3002,14 +3089,18 @@ const set$6 = {
 				"#FFD84A",
 				"#E0A820",
 				"#FFF1A8",
-				"#FF8A1A"
+				"#FF8A1A",
+				"#D9661A"
 			],
 			art: pet("rubber duckling", [
-				"...31.",
-				"..11o4",
-				"1..111",
-				"111321",
-				".2222."
+				"..331...",
+				".33111..",
+				"44o112..",
+				".5111..3",
+				".1111131",
+				"31131112",
+				"11111122",
+				".222222."
 			])
 		},
 		{
@@ -3026,11 +3117,14 @@ const set$6 = {
 				"#C98A40"
 			],
 			art: pet("toaster", [
-				".44.44",
-				".46.46",
-				"311112",
-				"3o11o2",
-				"222222"
+				".46.46..",
+				".46.46..",
+				"33333312",
+				"31o11o12",
+				"31111125",
+				"31111122",
+				"22222222",
+				".5....5."
 			])
 		}
 	],
@@ -3325,11 +3419,14 @@ const set$5 = {
 				"#E9838A"
 			],
 			art: pet("gopher", [
-				".1111.",
-				"1o11o1",
-				"138831",
-				"614416",
-				"755557"
+				".2....2.",
+				".211112.",
+				".1o11o2.",
+				".833382.",
+				".135312.",
+				".134412.",
+				"67666676",
+				".767767."
 			])
 		},
 		{
@@ -3347,11 +3444,13 @@ const set$5 = {
 				"#B87634"
 			],
 			art: pet("sprinkles", [
-				".1341.",
-				"151131",
-				"1o11o2",
-				"666667",
-				".6777."
+				"..5311..",
+				".141135.",
+				"11311412",
+				"11o11o12",
+				"66111166",
+				"66666667",
+				".667777."
 			])
 		},
 		{
@@ -3360,19 +3459,21 @@ const set$5 = {
 			slot: "buddy",
 			name: "Wind-up mouse",
 			colors: [
-				"#B9C0CE",
-				"#7E879A",
-				"#E3E7EE",
-				"#FF9EBB",
+				"#AEB6C6",
+				"#77819A",
+				"#E6EAF1",
+				"#FF8FB0",
 				"#E0B040",
 				"#9A7420"
 			],
 			art: pet("wind-up mouse", [
-				"..5.5.",
-				"...643",
-				".11113",
-				"2111o4",
-				".22.22"
+				"33..33..",
+				"34..43..",
+				"311112..",
+				"1o11o2.5",
+				"11441265",
+				"311122.5",
+				".2..2..."
 			])
 		},
 		{
@@ -3386,14 +3487,20 @@ const set$5 = {
 				"#4C8DF6",
 				"#2F64C8",
 				"#FFD447",
-				"#D9A21E"
+				"#D9A21E",
+				"#FF8A8E",
+				"#8FB8FF",
+				"#FFF0A0"
 			],
 			art: pet("toy blocks", [
-				"..556.",
-				"..556.",
-				"112334",
-				"112334",
-				"222444"
+				"..99955.",
+				"..9o5o6.",
+				"..95556.",
+				"..56666.",
+				"77718883",
+				"71128334",
+				"71128334",
+				"12224444"
 			])
 		}
 	],
@@ -3856,11 +3963,14 @@ const set$4 = {
 				"#E9838A"
 			],
 			art: pet("house cat", [
-				".2...2",
-				".12121",
-				".1o1o1",
-				"..3531",
-				"422131"
+				".2....2.",
+				".42..24.",
+				".121212.",
+				".1o11o1.",
+				".335331.",
+				"..1111.2",
+				"..13312.",
+				"..3..3.."
 			])
 		},
 		{
@@ -3876,11 +3986,14 @@ const set$4 = {
 				"#BFEAFF"
 			],
 			art: pet("lil whale", [
-				".5.5..",
-				"..5..1",
-				".31112",
-				"31o112",
-				"444422"
+				".5.5....",
+				"..5...12",
+				"..3...1.",
+				".33111..",
+				"33o11122",
+				"31111122",
+				"44441122",
+				".44442.."
 			])
 		},
 		{
@@ -3897,11 +4010,14 @@ const set$4 = {
 				"#5A3A2A"
 			],
 			art: pet("baby walrus", [
-				".3112.",
-				"1o11o2",
-				"156652",
-				".4554.",
-				".4..4."
+				"..3112..",
+				".311112.",
+				"31o11o12",
+				"31566512",
+				"11555512",
+				"21411422",
+				".24..42.",
+				".2....2."
 			])
 		},
 		{
@@ -3919,11 +4035,14 @@ const set$4 = {
 				"#F2C98E"
 			],
 			art: pet("pigeon", [
-				"...13.",
-				"..21o7",
-				".22451",
-				"221113",
-				"2.6.6."
+				"..33....",
+				".3o31...",
+				"7311....",
+				".45111..",
+				".541111.",
+				".3112211",
+				"..112222",
+				"..6..6.."
 			])
 		}
 	],
@@ -4234,14 +4353,18 @@ const set$3 = {
 				"#93B33A",
 				"#E8F59A",
 				"#7A5230",
-				"#5CA83A"
+				"#5CA83A",
+				"#FF9C8A"
 			],
 			art: pet("pear", [
-				"..45..",
-				".3112.",
-				"311112",
-				"3o11o2",
-				".1122."
+				"...455..",
+				"...4....",
+				"..3112..",
+				"..3112..",
+				".311112.",
+				"3o1111o2",
+				"16111162",
+				".111122."
 			])
 		},
 		{
@@ -4253,14 +4376,17 @@ const set$3 = {
 				"#EE3B33",
 				"#B8241F",
 				"#FF8A80",
-				"#4FA93A"
+				"#4FA93A",
+				"#2E7A26"
 			],
 			art: pet("tomato", [
-				"..44..",
-				".34441",
-				"3o11o2",
-				"311112",
-				".1122."
+				"...45...",
+				".344451.",
+				"33131412",
+				"31o11o12",
+				"31111112",
+				"11111122",
+				".111122."
 			])
 		},
 		{
@@ -4276,11 +4402,14 @@ const set$3 = {
 				"#4E8A2E"
 			],
 			art: pet("corn cob", [
-				"..32..",
-				".3132.",
-				"4o11o5",
-				"441255",
-				".4455."
+				"..3131..",
+				".313132.",
+				".3o11o2.",
+				".131312.",
+				"41313125",
+				"44131255",
+				".441255.",
+				"..4455.."
 			])
 		},
 		{
@@ -4296,11 +4425,14 @@ const set$3 = {
 				"#3E7A26"
 			],
 			art: pet("eggplant", [
-				"..44..",
-				".4554.",
-				".3112.",
-				"3o11o2",
-				".1122."
+				"...45...",
+				".444455.",
+				"..3112..",
+				".311122.",
+				".3o11o2.",
+				"31111122",
+				"11111122",
+				".111222."
 			])
 		}
 	],
@@ -4756,11 +4888,14 @@ const set$2 = {
 				"#FF9AA4"
 			],
 			art: pet("ball hamster", [
-				".3112.",
-				"354452",
-				"1o44o2",
-				"176672",
-				".1222."
+				"..3112..",
+				".351152.",
+				"31444412",
+				"14o44o42",
+				"17466472",
+				"14566542",
+				".215512.",
+				"..1222.."
 			])
 		},
 		{
@@ -4773,14 +4908,18 @@ const set$2 = {
 				"#A8231A",
 				"#FF7A6E",
 				"#2B2F38",
-				"#FFFFFF"
+				"#FFFFFF",
+				"#4A4F62"
 			],
 			art: pet("ladybug", [
-				".5445.",
-				"311412",
-				"141412",
-				"311142",
-				".1122."
+				".6....6.",
+				"..6666..",
+				".656656.",
+				"33114112",
+				"34111142",
+				"11141122",
+				"14111422",
+				".111122."
 			])
 		},
 		{
@@ -4797,11 +4936,14 @@ const set$2 = {
 				"#FF9AA4"
 			],
 			art: pet("springy", [
-				"3o..o3",
-				"311112",
-				"511115",
-				"144441",
-				"22..22"
+				".33..32.",
+				".3o33o2.",
+				"31111112",
+				"35111152",
+				"11222211",
+				"11444412",
+				".144412.",
+				"12.22.22"
 			])
 		},
 		{
@@ -4811,17 +4953,21 @@ const set$2 = {
 			name: "Ghost",
 			about: "Your best run, rolling along beside you.",
 			colors: [
-				"#9DB8D6",
-				"#EEF5FD",
-				"#D8C0A8",
-				"#FFFFFF"
+				"#F2F6FF",
+				"#C6D3EA",
+				"#FFFFFF",
+				"#FFA8C4",
+				"#FFC9DA"
 			],
 			art: pet("ghost", [
-				".1241.",
-				"132231",
-				"133331",
-				"233332",
-				".1221."
+				".35..52.",
+				".311112.",
+				"31111112",
+				"31o11o12",
+				"14111412",
+				"11111122",
+				"11111122",
+				"1.12.1.2"
 			])
 		}
 	],
@@ -5155,17 +5301,23 @@ const set$1 = {
 			slot: "buddy",
 			name: "Tyre stack",
 			colors: [
-				"#3A3F48",
-				"#5C6370",
-				"#23262D",
-				"#C9CFD8"
+				"#3E4450",
+				"#6A7382",
+				"#1A1D24",
+				"#9AA2AE",
+				"#F2F4F7",
+				"#E5484D",
+				"#A8202F"
 			],
 			art: pet("tyre stack", [
-				".1111.",
-				"134431",
-				"211112",
-				"134431",
-				".1111."
+				".244442.",
+				"24333342",
+				"21444412",
+				"65555556",
+				"65o55o57",
+				"76555677",
+				"21212121",
+				".111111."
 			])
 		},
 		{
@@ -5180,14 +5332,17 @@ const set$1 = {
 				"#F7905F",
 				"#CFE6EE",
 				"#23262D",
-				"#FFE7A0"
+				"#FFE7A0",
+				"#FFFFFF"
 			],
 			art: pet("lil racer", [
-				".3112.",
-				"3o44o2",
-				"611116",
-				"222222",
-				"55..55"
+				"..3311..",
+				".374442.",
+				".4o44o4.",
+				"33111112",
+				"61122116",
+				"11111122",
+				"55....55"
 			])
 		},
 		{
@@ -5203,11 +5358,14 @@ const set$1 = {
 				"#FFE07A"
 			],
 			art: pet("saguaro", [
-				"..45..",
-				"3.31.1",
-				"3o11o2",
-				".3112.",
-				".3112."
+				"...454..",
+				"..33112.",
+				"..3o1o2.",
+				"3.31112.",
+				"33311122",
+				"..311.22",
+				"..31112.",
+				"..31112."
 			])
 		}
 	],
@@ -5232,14 +5390,18 @@ const set$1 = {
 				"#D9621E",
 				"#FFF4DC",
 				"#FFB27A",
-				"#2B2F38"
+				"#3A3F48",
+				"#E6D5B3"
 			],
 			art: pet("conelet", [
-				"..41..",
-				".4112.",
-				"3o33o3",
-				"411112",
-				"555555"
+				"...41...",
+				"..4112..",
+				"..3336..",
+				".4o11o2.",
+				".411112.",
+				".333336.",
+				"41111112",
+				"55555555"
 			])
 		},
 		"trackdle.cone": {
@@ -5741,11 +5903,14 @@ const set = {
 				"#FFFFFF"
 			],
 			art: pet("kitten", [
-				".1...1",
-				".11111",
-				".1o1o1",
-				"3.5452",
-				".11515"
+				".1....1.",
+				".141141.",
+				".311112.",
+				".1o11o2.",
+				".155452.",
+				"..1111.2",
+				"..15512.",
+				"..5..5.."
 			])
 		},
 		{
@@ -5763,11 +5928,14 @@ const set = {
 				"#FFF6E8"
 			],
 			art: pet("puppy", [
-				"41314",
-				"4o1o4",
-				"47574",
-				".767.",
-				".2.2."
+				"..3112..",
+				"43111124",
+				"41o11o14",
+				"41755714",
+				".176671.",
+				"..1111..",
+				".311112.",
+				".22..22."
 			])
 		},
 		{
@@ -5784,11 +5952,13 @@ const set = {
 				"#8A2E52"
 			],
 			art: pet("axolotl", [
-				"5.33.5",
-				"451154",
-				"1o11o1",
-				"116611",
-				".2..2."
+				"4.3113.4",
+				".431134.",
+				"54111145",
+				".1o11o1.",
+				"41166114",
+				".111122.",
+				".12..12."
 			])
 		},
 		{
@@ -5802,11 +5972,14 @@ const set = {
 				"#FFA8C8"
 			],
 			art: pet("bunny", [
-				".1..1.",
-				".3..3.",
-				".1111.",
-				"1o11o1",
-				"213312"
+				".13..13.",
+				".13..13.",
+				".13..12.",
+				".111112.",
+				"1o1111o2",
+				"11133112",
+				".111112.",
+				".12..12."
 			])
 		}
 	],
@@ -11594,10 +11767,10 @@ const frames = [
 	}
 ];
 /**
-* A pet that sits at the guy's feet, bottom right, in front of everything but
-* the face. Each is a bold shape of its own with a lit side, a shaded side and
-* a face, filling as much of its 6x5 as it can, so it reads at a glance on any
-* guy and any frame.
+* A pet that stands on the floor beside the guy (`buddyBeside` in ./compose).
+* Each is a bold shape of its own with a lit side, a shaded side and a face,
+* filling as much of its 8x8 (`BUDDY_BOX`) as it can, so it reads at a glance
+* beside any guy and in any frame. The machines' sets redraw most of these.
 */
 const buddies = [
 	{
@@ -15934,19 +16107,13 @@ function clearFace(c, face, bare, worn) {
 }
 /**
 * Where a buddy stands, on a picture whose cells `taken` marks as his (in any
-* frame of any move: `roomFor` grows the still to cover them). It stands on
-* the floor, right then left, as close to its corner as it can while a clear
-* pixel, diagonals included, runs between its outline and him.
-*
-* Where there is no such spot, it stands in front of him in the bottom-right
-* corner with its own outline, leaving out any pixel that would touch his eyes
-* or mouth (`face`). That is every head and skin on his own sixteen columns
-* (the 16x16 icon): a guy fills them, and a 6x5 buddy apart from him needs
-* nine to eleven more (`scripts/buddy-room.ts` measures it). The moving and
-* baked pictures give him those columns (`buddyBeside`), so there it always
-* stands apart.
+* frame of any move: `movesRoom`). It stands on the floor, right then left, as
+* close to its corner as it can while a clear pixel, diagonals included, runs
+* between its outline and him. `apart` is false, and `cells` empty, where
+* there is no such spot: the picture needs more columns (`buddyBeside` adds
+* them; `scripts/buddy-room.ts` measures how many).
 */
-function buddySpot(art, taken, face = () => false) {
+function buddySpot(art, taken) {
 	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
 	const at = (x0, y0$1) => {
 		const cells = [];
@@ -15976,21 +16143,20 @@ function buddySpot(art, taken, face = () => false) {
 			apart: true
 		};
 	}
-	const corner = at(W - 1 - w, y0).filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && !face(x, y));
 	return {
-		cells: corner,
+		cells: [],
 		apart: false
 	};
 }
 /** The most columns a wide picture adds past his sixteen for a buddy: a full `BUDDY_BOX` one, on the widest head or skin. */
-const BUDDY_ROOM = 10;
+const BUDDY_ROOM = 12;
 /**
 * Where his buddy stands in the moving and baked pictures: on the floor to his
 * right, past his sixteen columns, as near him as it can be with a clear pixel
 * between them in every frame of every move (`movesRoom`), its whole art
 * drawn. The picture is as wide as that needs, `BUDDY_ROOM` more at most.
-* Undefined when he has no buddy. The 16x16 icon has no room for it and keeps
-* the corner (`compose`).
+* Undefined when he has no buddy. The 16x16 icon has no room for it and
+* leaves it out (`compose`).
 */
 function buddyBeside(config) {
 	const buddy = itemById(config.buddy);
@@ -16051,24 +16217,6 @@ function movesRoom(config) {
 	return out;
 }
 /**
-* The cells a guy may cover in any frame of any move, from his still: an arm
-* out at either side and a step sideways (two columns), down two rows where a
-* squash lowers him, and turned round in his sixteen columns. A buddy stays
-* on the floor (./animate), so this is all it has to keep clear of.
-*/
-function roomFor(still) {
-	const H = still.length, W = still[0].length;
-	const out = still.map((row) => row.map(() => false));
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-		if (!still[y][x] && !(x < GRID_SIZE && still[y][GRID_SIZE - 1 - x])) continue;
-		for (let dy = 0; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-			const yy = y + dy, xx = x + dx;
-			if (yy < H && xx >= 0 && xx < W) out[yy][xx] = true;
-		}
-	}
-	return out;
-}
-/**
 * Composes every part into one 16x16 grid of colour tokens.
 *
 * The order matters and is the same for every guy: the lit body and its
@@ -16118,13 +16266,13 @@ function build(config, report) {
 				canvas.grid[y][x] = before[y][x];
 				cut++;
 			}
-			let shown$1 = 0;
+			let shown = 0;
 			canvas.grid.forEach((row, y) => row.forEach((v, x) => {
-				if (v !== before[y][x]) shown$1++;
+				if (v !== before[y][x]) shown++;
 			}));
 			return {
 				grid: canvas.grid,
-				shown: shown$1,
+				shown,
 				cut,
 				cap: dome.length > 0 && wrapped * 2 >= dome.length
 			};
@@ -16177,9 +16325,6 @@ function build(config, report) {
 	outline(c.grid);
 	for (const slot of ["skin", "hat"]) if ((worn(slot)?.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, slot);
 	if (config.flip) for (const row of c.grid) row.reverse();
-	const buddy = itemById(config.buddy);
-	const shown = new Set([...face].map((k) => config.flip ? k - k % GRID_SIZE + GRID_SIZE - 1 - k % GRID_SIZE : k));
-	const spot = buddy?.slot === "buddy" ? buddySpot(buddy.art, roomFor(c.grid.map((row) => row.map(Boolean))), (x, y) => touches(shown, x, y)) : void 0;
 	if (Object.values(config.owned ?? {}).some((o) => o?.finish === "gold")) sparkle(c.grid);
 	const aura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
 	if (aura) {
@@ -16193,13 +16338,6 @@ function build(config, report) {
 			markItem(c.grid, "frame", o);
 			if ((o.tally ?? 0) >= GOLD_RIM_DAYS) goldRim(c.grid, "frame");
 		}
-	}
-	if (spot) {
-		for (const [x, y, t] of spot.cells) c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
-		if (report) report.buddy = {
-			...spot,
-			face: shown
-		};
 	}
 	return c.grid;
 }
@@ -16338,4 +16476,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-DP7clQqx.js.map
+//# sourceMappingURL=paint--nNS04mj.js.map

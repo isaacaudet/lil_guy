@@ -216,11 +216,14 @@ export const set: MachineSet = {
       colors: ['#F29A4A', '#C46A24', '#FFE0B8', '#FFC98A', '#E9838A'],
       // A ginger tabby sat up: a striped brow, a pink nose and its tail curled round its paws.
       art: pet('house cat', [
-        '.2...2',
-        '.12121',
-        '.1o1o1',
-        '..3531',
-        '422131',
+        '.2....2.',
+        '.42..24.',
+        '.121212.',
+        '.1o11o1.',
+        '.335331.',
+        '..1111.2',
+        '..13312.',
+        '..3..3..',
       ]),
     },
     {
@@ -228,11 +231,14 @@ export const set: MachineSet = {
       colors: ['#5DBEFC', '#2F8FD0', '#A8DEFF', '#E6F6FF', '#BFEAFF'],
       // Blowing a spout, its tail flicked up behind.
       art: pet('lil whale', [
-        '.5.5..',
-        '..5..1',
-        '.31112',
-        '31o112',
-        '444422',
+        '.5.5....',
+        '..5...12',
+        '..3...1.',
+        '.33111..',
+        '33o11122',
+        '31111122',
+        '44441122',
+        '.44442..',
       ]),
     },
     {
@@ -241,24 +247,30 @@ export const set: MachineSet = {
       colors: ['#B98A6A', '#8A5E44', '#D9AE8E', '#FFF8EC', '#EBCBAA', '#5A3A2A'],
       // A little heavyweight: whisker pads, a dark nose and two tusks hanging down.
       art: pet('baby walrus', [
-        '.3112.',
-        '1o11o2',
-        '156652',
-        '.4554.',
-        '.4..4.',
+        '..3112..',
+        '.311112.',
+        '31o11o12',
+        '31566512',
+        '11555512',
+        '21411422',
+        '.24..42.',
+        '.2....2.',
       ]),
     },
     {
       id: 'weighsies.pigeon', game: 'weighsies', slot: 'buddy', name: 'Pigeon',
       // grey, shade, light, neck purple, neck green, feet, beak
       colors: ['#A3ABBA', '#6F7889', '#D3D8E2', '#9A6BD6', '#3FC79A', '#F07070', '#F2C98E'],
-      // Plump and grey, facing away from him: its neck shot with purple and green, a pale beak, pink feet.
+      // Plump and grey, turned to him: its neck shot with purple and green, a pale beak, pink feet.
       art: pet('pigeon', [
-        '...13.',
-        '..21o7',
-        '.22451',
-        '221113',
-        '2.6.6.',
+        '..33....',
+        '.3o31...',
+        '7311....',
+        '.45111..',
+        '.541111.',
+        '.3112211',
+        '..112222',
+        '..6..6..',
       ]),
     },
   ],

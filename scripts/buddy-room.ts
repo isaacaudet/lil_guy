@@ -1,7 +1,7 @@
 // How many columns a picture needs past a guy's sixteen for his buddy to stand apart from him (a
 // clear pixel between them in every frame of every move: `movesRoom` and `buddySpot` in
 // src/compose.ts), on every head and skin, with every feet and arms. `BUDDY_ROOM` is the most of
-// these for a `BUDDY_BOX` buddy; the 16x16 icon has none of them, so there it stands in front of him.
+// these for a `BUDDY_BOX` buddy; the 16x16 icon has none of them, so it leaves the buddy out.
 //   bun scripts/buddy-room.ts [width]x[height]
 import { BUDDY_ROOM, buddySpot, FOOT_STYLES, movesRoom } from '../src/compose';
 import { heads } from '../src/parts';

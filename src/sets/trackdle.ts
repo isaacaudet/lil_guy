@@ -180,27 +180,33 @@ export const set: MachineSet = {
     // ---------------------------------------------------------------- buddies
     {
       id: 'trackdle.tyres', game: 'trackdle', slot: 'buddy', name: 'Tyre stack',
-      // rubber, rubber shine, tread, hub
-      colors: ['#3A3F48', '#5C6370', '#23262D', '#C9CFD8'],
+      // Three tyres off the barrier, the middle one painted red and white with a face on it.
+      // rubber, rubber shine, hole, rim, white, red, red shade
+      colors: ['#3E4450', '#6A7382', '#1A1D24', '#9AA2AE', '#F2F4F7', '#E5484D', '#A8202F'],
       art: pet('tyre stack', [
-        '.1111.',
-        '134431',
-        '211112',
-        '134431',
-        '.1111.',
+        '.244442.',
+        '24333342',
+        '21444412',
+        '65555556',
+        '65o55o57',
+        '76555677',
+        '21212121',
+        '.111111.',
       ]),
     },
     {
       id: 'trackdle.ramp', game: 'trackdle', slot: 'buddy', name: 'Lil racer',
       about: 'A pocket-sized No. 07.',
-      // body, shade, light, glass, tyre, headlight
-      colors: ['#ED6137', '#B8441F', '#F7905F', '#CFE6EE', '#23262D', '#FFE7A0'],
+      // body, shade, light, glass, tyre, headlight, glass light
+      colors: ['#ED6137', '#B8441F', '#F7905F', '#CFE6EE', '#23262D', '#FFE7A0', '#FFFFFF'],
       art: pet('lil racer', [
-        '.3112.',
-        '3o44o2',
-        '611116',
-        '222222',
-        '55..55',
+        '..3311..',
+        '.374442.',
+        '.4o44o4.',
+        '33111112',
+        '61122116',
+        '11111122',
+        '55....55',
       ]),
     },
     {
@@ -208,11 +214,14 @@ export const set: MachineSet = {
       // green, shade, light, flower, flower centre
       colors: ['#4F9B62', '#2F6B40', '#8ED07A', '#FF8FB8', '#FFE07A'],
       art: pet('saguaro', [
-        '..45..',
-        '3.31.1',
-        '3o11o2',
-        '.3112.',
-        '.3112.',
+        '...454..',
+        '..33112.',
+        '..3o1o2.',
+        '3.31112.',
+        '33311122',
+        '..311.22',
+        '..31112.',
+        '..31112.',
       ]),
     },
   ],
@@ -224,13 +233,17 @@ export const set: MachineSet = {
   ],
   redraw: {
     'trackdle.conelet': {
-      colors: ['#FF8A3D', '#D9621E', '#FFF4DC', '#FFB27A', '#2B2F38'],
+      // cone, shade, cream band, light, base, cream shade
+      colors: ['#FF8A3D', '#D9621E', '#FFF4DC', '#FFB27A', '#3A3F48', '#E6D5B3'],
       art: pet('conelet', [
-        '..41..',
-        '.4112.',
-        '3o33o3',
-        '411112',
-        '555555',
+        '...41...',
+        '..4112..',
+        '..3336..',
+        '.4o11o2.',
+        '.411112.',
+        '.333336.',
+        '41111112',
+        '55555555',
       ]),
     },
     'trackdle.cone': {

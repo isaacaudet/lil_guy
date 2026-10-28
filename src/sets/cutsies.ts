@@ -148,25 +148,31 @@ export const set: MachineSet = {
     // ---------------------------------------------------------------- buddies
     {
       id: 'cutsies.pear', game: 'cutsies', slot: 'buddy', name: 'Pear',
-      // pear, shade, light, stem, leaf
-      colors: ['#C6E05A', '#93B33A', '#E8F59A', '#7A5230', '#5CA83A'],
+      // pear, shade, light, stem, leaf, blush
+      colors: ['#C6E05A', '#93B33A', '#E8F59A', '#7A5230', '#5CA83A', '#FF9C8A'],
       art: pet('pear', [
-        '..45..',
-        '.3112.',
-        '311112',
-        '3o11o2',
-        '.1122.',
+        '...455..',
+        '...4....',
+        '..3112..',
+        '..3112..',
+        '.311112.',
+        '3o1111o2',
+        '16111162',
+        '.111122.',
       ]),
     },
     {
       id: 'cutsies.tomato', game: 'cutsies', slot: 'buddy', name: 'Tomato',
-      colors: ['#EE3B33', '#B8241F', '#FF8A80', '#4FA93A'],
+      // red, shade, light, leaf, leaf shade
+      colors: ['#EE3B33', '#B8241F', '#FF8A80', '#4FA93A', '#2E7A26'],
       art: pet('tomato', [
-        '..44..',
-        '.34441',
-        '3o11o2',
-        '311112',
-        '.1122.',
+        '...45...',
+        '.344451.',
+        '33131412',
+        '31o11o12',
+        '31111112',
+        '11111122',
+        '.111122.',
       ]),
     },
     {
@@ -174,11 +180,14 @@ export const set: MachineSet = {
       // kernel, kernel shade, kernel light, husk, husk shade
       colors: ['#FFD23F', '#E0A620', '#FFEC99', '#7CC24A', '#4E8A2E'],
       art: pet('corn cob', [
-        '..32..',
-        '.3132.',
-        '4o11o5',
-        '441255',
-        '.4455.',
+        '..3131..',
+        '.313132.',
+        '.3o11o2.',
+        '.131312.',
+        '41313125',
+        '44131255',
+        '.441255.',
+        '..4455..',
       ]),
     },
     {
@@ -186,11 +195,14 @@ export const set: MachineSet = {
       // purple, shade, light, cap, cap shade
       colors: ['#8A55C8', '#5A2E8C', '#C49BEF', '#5CA83A', '#3E7A26'],
       art: pet('eggplant', [
-        '..44..',
-        '.4554.',
-        '.3112.',
-        '3o11o2',
-        '.1122.',
+        '...45...',
+        '.444455.',
+        '..3112..',
+        '.311122.',
+        '.3o11o2.',
+        '31111122',
+        '11111122',
+        '.111222.',
       ]),
     },
   ],

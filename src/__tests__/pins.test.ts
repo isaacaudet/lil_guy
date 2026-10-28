@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { compose } from '../compose';
+import { buddyAlone, compose } from '../compose';
 import { resolve, LUCKY_ODDS } from '../resolve';
 import { dress } from '../items';
 import { decode, encode, type Owned } from '../owned';
@@ -120,17 +120,15 @@ describe('emotes and the trail', () => {
 
 
 describe('buddies', () => {
-  test('four per game, drawn at the guy\'s feet in front, with an outline', () => {
+  test('four per game, each on its own beside him with an outline, never on his 16x16 icon', () => {
     for (const game of GAMES) expect(gameItems(game).filter(i => i.slot === 'buddy').length).toBe(4);
     const bare = compose(dress(resolve('alice'), {}));
-    const withBuddy = compose(dress(resolve('alice'), { equip: ['puttsies.tee'] }));
-    const changed = withBuddy.flat().filter((t, i) => t !== bare.flat()[i]).length;
-    expect(changed).toBeGreaterThan(8);
-    expect(withBuddy.flat().some(t => t >= 50 && t < 60)).toBe(true);
-    // Only the bottom-right corner changes, whichever buddy it is.
     for (const b of items.filter(i => i.slot === 'buddy')) {
-      const g = compose(dress(resolve('alice'), { equip: [b.id] }));
-      g.forEach((row, y) => row.forEach((t, x) => { if (t !== bare[y][x]) expect(x >= 8 && y >= 9).toBe(true); }));
+      const config = dress(resolve('alice'), { equip: [b.id] });
+      expect(compose(config)).toEqual(bare);
+      const alone = buddyAlone(config)!;
+      expect(alone.flat().some(t => t >= 50 && t < 60)).toBe(true);
+      expect(alone.flat().some(t => t === T.OUTLINE)).toBe(true);
     }
   });
 });

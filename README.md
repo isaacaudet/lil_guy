@@ -331,7 +331,7 @@ Or the addresses themselves, `/g/<art version>/<guy>/<view>`:
 | `idle.sheet.png` + `idle.sheet.json` | the frames in a strip and their times, for a game's sprite |
 | `idle@4.png` | any of these scaled up by whole pixels (1 to 16) |
 
-A guy is 22×20 (`BAKED_SIZE.guy`), and 32×20 with a buddy beside him
+A guy is 22×20 (`BAKED_SIZE.guy`), and 34×20 with a buddy beside him
 (`BAKED_SIZE.buddy`), the two of them centred. `<lil-guy>` sizes its box by the
 height and lets the picture set the width; size a box of your own that way, or
 to the wider size.
@@ -455,9 +455,9 @@ Every capsule also unlocks a **part** the player doesn't have yet (`rollPart`, a
 beside the guy, with their own outline. Equip one like any item. The moving
 and baked pictures are wider for it (`buddyBeside`): his sixteen columns, then
 the buddy's room to his right, a clear pixel between them in every frame of
-every move, and the buddy hops a little on its own and when he does. The
-16×16 icon has no room beside him, so there it stands in front of him in the
-bottom-right corner, keeping off his face.
+every move, and the buddy hops a little on its own and when he does. A buddy
+is drawn up to 8×8 (`BUDDY_BOX`). The 16×16 icon has no room beside him, so it
+leaves the buddy out.
 
 **Seasonal hats.** Club birthday (12 October – 16 October), Pumpkin (20 October – 2 November), Snow cap (15 December – 6 January), Sweetheart (10 February – 16 February), New Year top hat (29 December – 2 January), Red lantern (20 January – 12 February), Shamrock (10 March – 18 March), Cherry blossom (19 March – 14 April), Painted egg (22 March – 25 April), Daisy chain (1 May – 31 May), Sun hat (14 June – 20 July), Fireworks (1 July – 7 July), Ice cream (1 August – 25 August), Maple leaf (20 September – 30 November), Turkey feathers (18 November – 30 November), Reindeer antlers (1 December – 24 December)
 only drop in their days: `inSeason(day)` lists what's dropping and

@@ -177,23 +177,30 @@ export const set: MachineSet = {
       // From the snowy top of the climb: white fur, a blue face, two horns and a tuft between them.
       colors: ['#E4EDF9', '#93A9CB', '#FFFFFF', '#7FB8EE', '#3F74B0', '#E8B86A'],
       art: pet('lil yeti', [
-        '.6.3.6',
-        '.13331',
-        '.1o4o1',
-        '314441',
-        '.21.12',
+        '.6.33.6.',
+        '.631136.',
+        '31444412',
+        '34o44o42',
+        '14455412',
+        '31111112',
+        '11111122',
+        '.11..12.',
       ]),
     },
     {
       id: 'stackdle.penguin', game: 'stackdle', slot: 'buddy', name: 'Lil star',
       // A star from past the clouds, come down to walk with you.
-      colors: ['#FFD447', '#D9A21E', '#FFF1A8', '#FF9AAA', '#B07A10'],
+      // yellow, shade, light, blush
+      colors: ['#FFD447', '#D9A21E', '#FFF1A8', '#FF9AAA'],
       art: pet('lil star', [
-        '..31..',
-        '331112',
-        '.o11o.',
-        '.1112.',
-        '12..12',
+        '...31...',
+        '...31...',
+        '33311112',
+        '.3o11o2.',
+        '..4114..',
+        '..1112..',
+        '.112112.',
+        '.12..12.',
       ]),
     },
     {
@@ -248,26 +255,34 @@ export const set: MachineSet = {
     },
     'stackdle.cubelet': {
       name: 'Cubelet',
-      colors: ['#FFB03B', '#D97A12', '#FFE0A0', '#A85A0A', '#FFF4D6'],
+      // front, side, top, deep, top light
+      colors: ['#FFB03B', '#D97A12', '#FFD27A', '#A85A0A', '#FFEDB8'],
       // A little cube on its toes: lit top, shaded side.
       art: pet('cubelet', [
-        '.33334',
-        '311124',
-        '1o1o24',
-        '111124',
-        '.4..4.',
+        '..553333',
+        '.5533332',
+        '11111122',
+        '1o11o122',
+        '11441122',
+        '11111122',
+        '1111112.',
+        '.4..4...',
       ]),
     },
     'stackdle.wobble': {
       name: 'Wobble',
-      // A pudding that wobbles like a tall tower, caramel running down.
-      colors: ['#FFE7A8', '#E8C070', '#FFF6D6', '#B8652A', '#E8954A', '#E6ECF2', '#B8C2CE'],
+      // A lime jelly that wobbles like a tall tower, a cherry on top, on its plate.
+      // jelly, shade, light, cherry, cherry light, stem, plate, plate shade
+      colors: ['#7DD87A', '#3E9A4C', '#C6F5B0', '#E5384D', '#FF9AA0', '#6A4020', '#F4F7FA', '#B8C2CE'],
       art: pet('wobble', [
-        '.5445.',
-        '354442',
-        '1o11o2',
-        '311112',
-        '676676',
+        '....6...',
+        '...54...',
+        '.331112.',
+        '.3o11o2.',
+        '31111122',
+        '31111122',
+        '77777788',
+        '.888888.',
       ]),
     },
   },

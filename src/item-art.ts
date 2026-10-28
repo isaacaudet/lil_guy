@@ -138,13 +138,11 @@ export const L = (n: number) => LOCAL + n - 1;
 
 /**
  * The biggest a buddy is drawn: its art, inside the outline compose gives it.
- * The moving and baked pictures give it room beside him (`buddyBeside` in
- * ./compose, `BUDDY_ROOM` columns for this box), but on the 16x16 icon it
- * stands in front of him in his bottom-right corner, and this is as big as it
- * gets there without coming up to his face. A bigger box widens every buddy
- * picture (`BUDDY_ROOM`) and crowds the icon.
+ * It stands on the floor beside him in the moving and baked pictures
+ * (`buddyBeside` in ./compose), which are `BUDDY_ROOM` columns wider for this
+ * box; the 16x16 icon has no room for it and leaves it out.
  */
-export const BUDDY_BOX = { width: 6, height: 5 } as const;
+export const BUDDY_BOX = { width: 8, height: 8 } as const;
 
 /**
  * A buddy's drawing: at most `BUDDY_BOX`, with a pixel round it for its

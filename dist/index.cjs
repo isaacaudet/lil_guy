@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-UAiO_jxs.cjs');
+const require_paint = require('./paint-ujn3suhS.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -7328,7 +7328,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 5;
+const ART_VERSION = 6;
 const PART_KEYS = [
 	"head",
 	"eyes",
@@ -7376,7 +7376,7 @@ const BAKED_SIZE = {
 		height: 20
 	},
 	buddy: {
-		width: 32,
+		width: 34,
 		height: 20
 	},
 	card: {

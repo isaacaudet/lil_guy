@@ -125,11 +125,14 @@ export const set: MachineSet = {
       colors: ['#B07A4A', '#7A4E2A', '#F2D4A8', '#FFFFFF', '#2A2420', '#7ED957', '#4CAF50', '#E9838A'],
       // The gopher who lives in the cup, popping out of the hole to see who's putting.
       art: pet('gopher', [
-        '.1111.',
-        '1o11o1',
-        '138831',
-        '614416',
-        '755557',
+        '.2....2.',
+        '.211112.',
+        '.1o11o2.',
+        '.833382.',
+        '.135312.',
+        '.134412.',
+        '67666676',
+        '.767767.',
       ]),
     },
     {
@@ -137,35 +140,44 @@ export const set: MachineSet = {
       colors: ['#FF9EC4', '#E06A98', '#FFE066', '#6FC3FF', '#FFFFFF', '#E3A35E', '#B87634'],
       // A pink-iced donut with sprinkles, peeking over its icing.
       art: pet('sprinkles', [
-        '.1341.',
-        '151131',
-        '1o11o2',
-        '666667',
-        '.6777.',
+        '..5311..',
+        '.141135.',
+        '11311412',
+        '11o11o12',
+        '66111166',
+        '66666667',
+        '.667777.',
       ]),
     },
     {
       id: 'puttsies.windup', game: 'puttsies', slot: 'buddy', name: 'Wind-up mouse',
-      colors: ['#B9C0CE', '#7E879A', '#E3E7EE', '#FF9EBB', '#E0B040', '#9A7420'],
-      // Facing away from him: a pink ear and nose, its tail out behind, the brass key standing up out of its back.
+      // grey, shade, light, pink, brass, brass shade
+      colors: ['#AEB6C6', '#77819A', '#E6EAF1', '#FF8FB0', '#E0B040', '#9A7420'],
+      // A grey toy mouse: round pink-lined ears, a pink nose, and the brass key sticking out of its side.
       art: pet('wind-up mouse', [
-        '..5.5.',
-        '...643',
-        '.11113',
-        '2111o4',
-        '.22.22',
+        '33..33..',
+        '34..43..',
+        '311112..',
+        '1o11o2.5',
+        '11441265',
+        '311122.5',
+        '.2..2...',
       ]),
     },
     {
       id: 'puttsies.blocks', game: 'puttsies', slot: 'buddy', name: 'Toy blocks',
-      colors: ['#E5484D', '#B83236', '#4C8DF6', '#2F64C8', '#FFD447', '#D9A21E'],
+      // red, red shade, blue, blue shade, yellow, yellow shade, red light, blue light, yellow light
+      colors: ['#E5484D', '#B83236', '#4C8DF6', '#2F64C8', '#FFD447', '#D9A21E', '#FF8A8E', '#8FB8FF', '#FFF0A0'],
       // Red and blue side by side, yellow on top.
       art: pet('toy blocks', [
-        '..556.',
-        '..556.',
-        '112334',
-        '112334',
-        '222444',
+        '..99955.',
+        '..9o5o6.',
+        '..95556.',
+        '..56666.',
+        '77718883',
+        '71128334',
+        '71128334',
+        '12224444',
       ]),
     },
   ],

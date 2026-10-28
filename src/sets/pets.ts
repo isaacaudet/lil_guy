@@ -290,11 +290,14 @@ export const set: MachineSet = {
       colors: ['#FFA95C', '#E07A34', '#FFD3A1', '#FF7F9E', '#FFFFFF'],
       // An apricot kitten sat up: a big head, a white muzzle and pink nose, white socks, its tail up.
       art: pet('kitten', [
-        '.1...1',
-        '.11111',
-        '.1o1o1',
-        '3.5452',
-        '.11515',
+        '.1....1.',
+        '.141141.',
+        '.311112.',
+        '.1o11o2.',
+        '.155452.',
+        '..1111.2',
+        '..15512.',
+        '..5..5..',
       ]),
     },
     {
@@ -302,11 +305,14 @@ export const set: MachineSet = {
       // golden, shade, light, ear, nose, tongue, muzzle
       colors: ['#F2C27A', '#D29A50', '#FFE2B0', '#8A5530', '#2B1D18', '#FF8A9E', '#FFF6E8'],
       art: pet('puppy', [
-        '41314',
-        '4o1o4',
-        '47574',
-        '.767.',
-        '.2.2.',
+        '..3112..',
+        '43111124',
+        '41o11o14',
+        '41755714',
+        '.176671.',
+        '..1111..',
+        '.311112.',
+        '.22..22.',
       ]),
     },
     {
@@ -314,11 +320,13 @@ export const set: MachineSet = {
       // pink, shade, light, gill, gill dark, smile
       colors: ['#FFB3CF', '#E77FA8', '#FFE0EC', '#FF6F9F', '#D9417A', '#8A2E52'],
       art: pet('axolotl', [
-        '5.33.5',
-        '451154',
-        '1o11o1',
-        '116611',
-        '.2..2.',
+        '4.3113.4',
+        '.431134.',
+        '54111145',
+        '.1o11o1.',
+        '41166114',
+        '.111122.',
+        '.12..12.',
       ]),
     },
     {
@@ -326,11 +334,14 @@ export const set: MachineSet = {
       // white, shade, pink
       colors: ['#FFFFFF', '#DCD0E8', '#FFA8C8'],
       art: pet('bunny', [
-        '.1..1.',
-        '.3..3.',
-        '.1111.',
-        '1o11o1',
-        '213312',
+        '.13..13.',
+        '.13..13.',
+        '.13..12.',
+        '.111112.',
+        '1o1111o2',
+        '11133112',
+        '.111112.',
+        '.12..12.',
       ]),
     },
   ],

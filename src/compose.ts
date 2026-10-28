@@ -267,19 +267,13 @@ export interface BuddySpot {
 
 /**
  * Where a buddy stands, on a picture whose cells `taken` marks as his (in any
- * frame of any move: `roomFor` grows the still to cover them). It stands on
- * the floor, right then left, as close to its corner as it can while a clear
- * pixel, diagonals included, runs between its outline and him.
- *
- * Where there is no such spot, it stands in front of him in the bottom-right
- * corner with its own outline, leaving out any pixel that would touch his eyes
- * or mouth (`face`). That is every head and skin on his own sixteen columns
- * (the 16x16 icon): a guy fills them, and a 6x5 buddy apart from him needs
- * nine to eleven more (`scripts/buddy-room.ts` measures it). The moving and
- * baked pictures give him those columns (`buddyBeside`), so there it always
- * stands apart.
+ * frame of any move: `movesRoom`). It stands on the floor, right then left, as
+ * close to its corner as it can while a clear pixel, diagonals included, runs
+ * between its outline and him. `apart` is false, and `cells` empty, where
+ * there is no such spot: the picture needs more columns (`buddyBeside` adds
+ * them; `scripts/buddy-room.ts` measures how many).
  */
-export function buddySpot(art: Stamp, taken: boolean[][], face: (x: number, y: number) => boolean = () => false): BuddySpot {
+export function buddySpot(art: Stamp, taken: boolean[][]): BuddySpot {
   const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
   const at = (x0: number, y0: number) => {
     const cells: [number, number, number][] = [];
@@ -300,12 +294,11 @@ export function buddySpot(art: Stamp, taken: boolean[][], face: (x: number, y: n
     const cells = at(x0, y0);
     if (clear(cells)) return { cells, apart: true };
   }
-  const corner = at(W - 1 - w, y0).filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && !face(x, y));
-  return { cells: corner, apart: false };
+  return { cells: [], apart: false };
 }
 
 /** The most columns a wide picture adds past his sixteen for a buddy: a full `BUDDY_BOX` one, on the widest head or skin. */
-export const BUDDY_ROOM = 10;
+export const BUDDY_ROOM = 12;
 
 /** A buddy beside him in a wide picture, as `buddyBeside` works it out. */
 export interface BuddyBeside {
@@ -320,8 +313,8 @@ export interface BuddyBeside {
  * right, past his sixteen columns, as near him as it can be with a clear pixel
  * between them in every frame of every move (`movesRoom`), its whole art
  * drawn. The picture is as wide as that needs, `BUDDY_ROOM` more at most.
- * Undefined when he has no buddy. The 16x16 icon has no room for it and keeps
- * the corner (`compose`).
+ * Undefined when he has no buddy. The 16x16 icon has no room for it and
+ * leaves it out (`compose`).
  */
 export function buddyBeside(config: AvatarConfig): BuddyBeside | undefined {
   const buddy = itemById(config.buddy);
@@ -370,25 +363,6 @@ export function movesRoom(config: AvatarConfig): boolean[][] {
 }
 
 /**
- * The cells a guy may cover in any frame of any move, from his still: an arm
- * out at either side and a step sideways (two columns), down two rows where a
- * squash lowers him, and turned round in his sixteen columns. A buddy stays
- * on the floor (./animate), so this is all it has to keep clear of.
- */
-export function roomFor(still: boolean[][]): boolean[][] {
-  const H = still.length, W = still[0].length;
-  const out = still.map(row => row.map(() => false));
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (!still[y][x] && !(x < GRID_SIZE && still[y][GRID_SIZE - 1 - x])) continue;
-    for (let dy = 0; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-      const yy = y + dy, xx = x + dx;
-      if (yy < H && xx >= 0 && xx < W) out[yy][xx] = true;
-    }
-  }
-  return out;
-}
-
-/**
  * Composes every part into one 16x16 grid of colour tokens.
  *
  * The order matters and is the same for every guy: the lit body and its
@@ -404,7 +378,6 @@ export function compose(config: AvatarConfig): PixelGrid {
 /** What composing a guy found out on the way, for the checks and for ./animate. */
 interface Report {
   hatCut: number;
-  buddy?: BuddySpot & { face: Set<number> };
 }
 
 /**
@@ -417,17 +390,6 @@ export function hatCut(config: AvatarConfig): number {
   const report: Report = { hatCut: 0 };
   build(config, report);
   return report.hatCut;
-}
-
-/**
- * The buddy a guy wears, where it stands in his still (`cells`, art in its
- * own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
- * ./animate can stand it on the floor while he moves.
- */
-export function buddyOf(config: AvatarConfig): (BuddySpot & { face: Set<number> }) | undefined {
-  const report: Report = { hatCut: 0 };
-  build(config, report);
-  return report.buddy;
 }
 
 function build(config: AvatarConfig, report?: Report): PixelGrid {
@@ -544,13 +506,6 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
   // authored. The sparkle and the frame go on after, so they never flip.
   if (config.flip) for (const row of c.grid) row.reverse();
 
-  // Where his buddy stands is worked out on him alone, before anything goes round him.
-  const buddy = itemById(config.buddy);
-  const shown = new Set([...face].map(k => (config.flip ? k - (k % GRID_SIZE) + GRID_SIZE - 1 - (k % GRID_SIZE) : k)));
-  const spot = buddy?.slot === 'buddy'
-    ? buddySpot(buddy.art!, roomFor(c.grid.map(row => row.map(Boolean))), (x, y) => touches(shown, x, y))
-    : undefined;
-
   if (Object.values(config.owned ?? {}).some(o => o?.finish === 'gold')) sparkle(c.grid);
 
   // An aura goes round the finished guy, in front of any frame, as it stands
@@ -574,11 +529,8 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
     }
   }
 
-  // The buddy stands on the floor (`buddySpot`), in front of everything, with its own outline.
-  if (spot) {
-    for (const [x, y, t] of spot.cells) c.grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
-    if (report) report.buddy = { ...spot, face: shown };
-  }
+  // A buddy is left off: his sixteen columns have no room beside him for it
+  // (`buddyBeside`), and standing it in front of him would crowd them both.
   return c.grid;
 }
 

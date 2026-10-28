@@ -165,38 +165,48 @@ export const set: MachineSet = {
     // ------------------------------------------------------------ buddies
     {
       id: 'flipsies.goldfish', game: 'flipsies', slot: 'buddy', name: 'Goldfish',
-      colors: ['#FF8A2B', '#D45F10', '#FFC27A', '#FFFFFF'],
+      // orange, shade, light, white, fin
+      colors: ['#FF8A2B', '#D45F10', '#FFC27A', '#FFFFFF', '#FFB060'],
       // Out of the fishbowl for the day: a round orange goldfish, its fan tail flicking.
       art: pet('goldfish', [
-        '.33..3',
-        '3111.3',
-        '1o1123',
-        '311123',
-        '..2...',
+        '..335...',
+        '.33115.5',
+        '34o11255',
+        '31111225',
+        '.1111255',
+        '..122..5',
       ]),
     },
     {
       id: 'flipsies.ketchup', game: 'flipsies', slot: 'buddy', name: 'Ketchup',
-      colors: ['#E5383D', '#A8202A', '#FF8A8A', '#FFFFFF', '#C9D1DC', '#FFE36A'],
+      // red, shade, light, white, white shade, label, label shade
+      colors: ['#E5383D', '#A8202A', '#FF8A8A', '#FFFFFF', '#C9D1DC', '#FFE36A', '#E0B030'],
       // A plump squeezy ketchup bottle with a white cap, looking up at you.
       art: pet('ketchup', [
-        '..45..',
-        '.3112.',
-        '3o11o2',
-        '315512',
-        '.2222.',
+        '...45...',
+        '..4445..',
+        '.311112.',
+        '.3o11o2.',
+        '.366672.',
+        '.366772.',
+        '.311122.',
+        '..1122..',
       ]),
     },
     {
       id: 'flipsies.mug', game: 'flipsies', slot: 'buddy', name: 'Rubber duckling',
-      colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF8A1A'],
-      // A little rubber duck facing away from him: orange beak, a wing, its tail up behind.
+      // yellow, shade, light, beak, beak shade
+      colors: ['#FFD84A', '#E0A820', '#FFF1A8', '#FF8A1A', '#D9661A'],
+      // A little rubber duck looking up at him: orange beak, a wing, its tail up behind.
       art: pet('rubber duckling', [
-        '...31.',
-        '..11o4',
-        '1..111',
-        '111321',
-        '.2222.',
+        '..331...',
+        '.33111..',
+        '44o112..',
+        '.5111..3',
+        '.1111131',
+        '31131112',
+        '11111122',
+        '.222222.',
       ]),
     },
     {
@@ -204,11 +214,14 @@ export const set: MachineSet = {
       colors: ['#D3DAE4', '#8A95A6', '#F4F7FA', '#F5C77E', '#2B2F38', '#C98A40'],
       // A chrome toaster with two slices popping up, pleased with itself.
       art: pet('toaster', [
-        '.44.44',
-        '.46.46',
-        '311112',
-        '3o11o2',
-        '222222',
+        '.46.46..',
+        '.46.46..',
+        '33333312',
+        '31o11o12',
+        '31111125',
+        '31111122',
+        '22222222',
+        '.5....5.',
       ]),
     },
   ],
