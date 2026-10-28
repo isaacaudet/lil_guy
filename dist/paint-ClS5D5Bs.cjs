@@ -1,3 +1,28 @@
+"use strict";
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
 //#region src/hash.ts
 /**
 * FNV-1a hash — returns a positive 32-bit integer.
@@ -957,7 +982,7 @@ function brow(c, min = 6) {
 	return Math.min(c.crown, c.floor);
 }
 /** How wide the head is on a row. */
-const across = (c, y) => {
+const across$1 = (c, y) => {
 	const r = c.rows[y];
 	return r ? r.right - r.left + 1 : 0;
 };
@@ -979,7 +1004,7 @@ const hat = (name, sizes, sink = 1, dx = 0) => {
 		name,
 		draw: (c) => {
 			const y = Math.min(brow(c) + sink - 1, c.floor);
-			wear$2(c, fitted(stamps, across(c, y) + 2), y, dx);
+			wear$2(c, fitted(stamps, across$1(c, y) + 2), y, dx);
 		}
 	};
 };
@@ -7003,7 +7028,7 @@ const FADE = [
 * from a sign maker's tubes. Its core, its colour, and the bare glass when it
 * flickers off.
 */
-const NEON_TUBES = {
+const NEON_TUBES$1 = {
 	classic: [
 		"#FF3FA4",
 		"#2FD9FF",
@@ -7029,7 +7054,7 @@ const NEON_TUBES = {
 	]
 };
 function neonRamp(finish, print) {
-	const tubes = NEON_TUBES[finish] ?? NEON_TUBES.classic, c = tubes[print % tubes.length];
+	const tubes = NEON_TUBES$1[finish] ?? NEON_TUBES$1.classic, c = tubes[print % tubes.length];
 	const rgb$3 = [
 		1,
 		3,
@@ -7042,7 +7067,7 @@ function neonRamp(finish, print) {
 		to(25, .72)
 	];
 }
-const hsl = (h, s, l) => {
+const hsl$1 = (h, s, l) => {
 	const f = (n) => {
 		const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
 		return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0");
@@ -7059,22 +7084,40 @@ function auraColor(id, k, finish, x, y, t, print = 0) {
 	if (id === "aura.neon") return neonRamp(finish, print)[Math.min(2, k)];
 	const sweep = wrap(x + y * .7 - t / steps(55, 26), 26) < 1.6;
 	if (ONE_OF_ONE_AURAS.includes(aura)) {
-		if (sweep) return hsl(wrap((x + y) * 18 + t * 360 / fit(2160), 360), .9, .78);
+		if (sweep) return hsl$1(wrap((x + y) * 18 + t * 360 / fit(2160), 360), .9, .78);
 		return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
 	}
 	if (finish === "fade") {
 		const i = wrap(Math.floor((y + x * .5 + t / steps(140, 6)) / 2), 3);
 		return k === 0 ? "#FFFFFF" : FADE[(i + k) % 3];
 	}
-	const ramp = RAMPS[finish];
-	if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-	if (finish === "pearl") return hsl(wrap(275 + 55 * Math.sin((x + y) * .35 + t / wave(520)), 360), .5, sweep ? .93 : [
+	const ramp$1 = RAMPS[finish];
+	if (!ramp$1) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
+	if (finish === "pearl") return hsl$1(wrap(275 + 55 * Math.sin((x + y) * .35 + t / wave(520)), 360), .5, sweep ? .93 : [
 		.86,
 		.76,
 		.66
 	][Math.min(2, k % 3)]);
-	if (sweep && (finish === "sapphire" || finish === "ruby")) return ramp[0];
-	return ramp[Math.min(2, k % 3)];
+	if (sweep && (finish === "sapphire" || finish === "ruby")) return ramp$1[0];
+	return ramp$1[Math.min(2, k % 3)];
+}
+/**
+* The one colour an aura copy is known by, in its finish: its most vivid
+* colour (Flames' orange, Frost's ice blue, a Neon copy's tube). Its card is
+* dressed in it.
+*/
+function auraHue(id, finish, print = 0) {
+	const aura = auraById(id);
+	const colors = id === "aura.neon" ? [neonRamp(finish, print)[0], NEON_TUBES$1[finish]?.[print % NEON_TUBES$1[finish].length] ?? "#FF3FA4"] : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors : finish === "fade" ? FADE : finish === "pearl" ? ["#B9A2FF"] : RAMPS[finish] ?? aura?.colors ?? ["#19D3C5"];
+	const vivid = (hex$2) => {
+		const [r, g, b] = [
+			1,
+			3,
+			5
+		].map((i) => parseInt(hex$2.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b), min = Math.min(r, g, b);
+		return (max - min) * (1 - Math.abs(max + min - 1) * .3);
+	};
+	return colors.reduce((a, c) => vivid(c) > vivid(a) ? c : a, colors[0]);
 }
 
 //#endregion
@@ -7100,7 +7143,7 @@ const EFFECTS = {
 	},
 	neon: {
 		name: "Neon",
-		what: "A buzzing neon edge runs round it, changing colour.",
+		what: "A buzzing neon edge runs round it.",
 		item: 250,
 		aura: 30
 	},
@@ -7205,6 +7248,40 @@ const hue = (h, s = .9, l = .65) => {
 		f(4)
 	];
 };
+/** A Neon copy's tube: one colour from a sign maker's set, dealt by its print, never the whole wheel. */
+const NEON_TUBES = [
+	[
+		255,
+		63,
+		164
+	],
+	[
+		47,
+		217,
+		255
+	],
+	[
+		255,
+		90,
+		60
+	],
+	[
+		180,
+		92,
+		255
+	],
+	[
+		61,
+		255,
+		143
+	],
+	[
+		255,
+		194,
+		58
+	]
+];
+const neonTube = (print) => NEON_TUBES[print % NEON_TUBES.length];
 /** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
 function fxColor(color, fx, x, y, t, print = 0) {
 	const c = rgb$2(color), tt = t + print * 37;
@@ -7256,7 +7333,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			120,
 			40
 		], .16 + .14 * Math.max(0, Math.sin(tt / wave(140) + x * 1.3 - y * .8))));
-		case "neon": return hex$1(mix$3(c, hue((tt * 360 / fit(5040) % 360 + 360) % 360, 1, .62), .2 + .08 * Math.sin(tt / wave(380))));
+		case "neon": return hex$1(mix$3(c, neonTube(print), .16 + .06 * Math.sin(tt / wave(380))));
 		case "bubbles": return hex$1(mix$3(c, [
 			190,
 			235,
@@ -7771,14 +7848,18 @@ function applyFx(colors, slots, copies, t) {
 			]) put(x + dx, y + dy, hex$1(mix$3(rgb$2(colors[y][x]), WHITE, .25 + .3 * breath)));
 		}
 		if (o.fx === "neon" && !aura) {
-			const glow = .55 + .1 * Math.sin(tt / wave(380)), rim$1 = edgeOf(k), turn = tt * 360 / fit(3600);
-			for (const [x, y] of rim$1) out[y][x] = hex$1(hue(((turn + (x + y) * 10) % 360 + 360) % 360, 1, glow));
+			const tube = neonTube(o.print), glow = .3 + .12 * Math.sin(tt / wave(380)), rim$1 = edgeOf(k);
+			for (const [x, y] of rim$1) out[y][x] = hex$1(mix$3(tube, WHITE, glow));
 			for (const [x, y] of rim$1) for (const [dx, dy] of [
 				[1, 0],
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$1(hue(((turn + (x + y) * 10) % 360 + 360) % 360, .9, .32)));
+			]) put(x + dx, y + dy, hex$1(mix$3(tube, [
+				20,
+				12,
+				36
+			], .5)));
 		}
 		if (o.fx === "rime") {
 			const reach = 1 + 1.6 * (.5 + .5 * Math.sin(tt / wave(900)));
@@ -8701,87 +8782,194 @@ const shaded = (c, l) => {
 		255
 	], .6), (t - .5) * 2);
 };
+/** A colour along a ramp of stops, `t` 0 to 1, blended smoothly between them. */
+const ramp = (stops, t) => {
+	const at = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(at));
+	return mix$1(stops[i], stops[i + 1], at - i);
+};
+/** A colour taken through its tone: `t` 0 its shadow, 0.5 itself, 1 its highlight. */
+const toned = (c, t, deep = [
+	16,
+	12,
+	34
+]) => t < .5 ? mix$1(mix$1(c, deep, .62), c, t * 2) : mix$1(c, mix$1(c, [
+	255,
+	255,
+	255
+], .72), (t - .5) * 2);
+const hsl = (h, s, l) => {
+	const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+	return [
+		0,
+		8,
+		4
+	].map((n) => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+};
+const hueOf = (c) => {
+	const [r, g, b] = c.map((v) => v / 255), max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+	if (d < 1e-6) return {
+		h: 0,
+		s: 0
+	};
+	const l = (max + min) / 2, s = d / (1 - Math.abs(2 * l - 1));
+	const h = max === r ? (g - b) / d % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+	return {
+		h: (h * 60 + 360) % 360,
+		s
+	};
+};
+const GOLD = [
+	"#4A2A06",
+	"#8A5510",
+	"#C48A1C",
+	"#EDB52E",
+	"#FFD95A",
+	"#FFF1B8",
+	"#FFFBEA"
+].map(rgb);
+const WHITE_GOLD = [
+	"#3A3226",
+	"#76695A",
+	"#B3A58E",
+	"#DDD2BC",
+	"#F2EBDC",
+	"#FFFBF2",
+	"#FFFFFF"
+].map(rgb);
+/** How far across the item a cell is, corner to corner, about 0 to 1: what a finish's sweep runs along. */
+const across = (x, y) => (x + y * .8) / 26;
+/**
+* Where each of an item's own colours sits for a finish: its main colour (the
+* first) in the middle, the rest by how much lighter or darker than it they
+* are, and how far their colour is from it. A finish paints by these, so the
+* item's shading and its parts (a hood, its lining, the ears' insides) keep
+* the steps the artist drew between them.
+*/
+function toneOf(colors) {
+	const ls = colors.map((c) => lum(rgb(c))), main = ls[0] ?? .5;
+	const down = .47 / Math.max(.33, main - Math.min(...ls)), up = .47 / Math.max(.33, Math.max(...ls) - main);
+	const chroma = (c) => {
+		const g = (c[0] + c[1] + c[2]) / 3;
+		return c.map((v) => v - g);
+	};
+	const key = colors[0] ? chroma(rgb(colors[0])) : [
+		0,
+		0,
+		0
+	];
+	return new Map(colors.map((c, i) => {
+		const k = chroma(rgb(c));
+		return [c.toUpperCase(), {
+			tone: .5 + (ls[i] - main) * (ls[i] < main ? down : up),
+			part: Math.min(1, Math.hypot(k[0] - key[0], k[1] - key[1], k[2] - key[2]) / 120)
+		}];
+	}));
+}
+/**
+* Each finish as a clean, premium version of the item: its colours mapped
+* through the finish's own ramp by tone, so the item's shading and parts all
+* still read, and any colour shift runs in smooth bands across the whole
+* item, never pixel by pixel. The shaders (./finish-shader) move a sheen over
+* it.
+*/
 const PAINT = {
-	"plain": (_x, _y, _l, _p, original) => original,
-	"sunset": (x, y, l, p) => {
+	"plain": (_x, _y, _t, _p, original) => original,
+	"sunset": (x, y, _t, p, _o, l) => {
 		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
 		const c = t < .5 ? mix$1(rgb("#F5C542"), rgb("#E55AA8"), t * 2) : mix$1(rgb("#E55AA8"), rgb("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
-	"tempered": (x, y, l, p) => {
-		const stops = TINTS[temperTint(p)];
-		const band = Math.floor(((x + y + p % 11) % 12 + 12) % 12 / 3);
-		return shaded(rgb(stops[[
-			0,
-			1,
-			2,
-			1
-		][band]]), l);
+	"tempered": (x, y, tone, p, _o, _l, part) => {
+		const [a, b, c] = TINTS[temperTint(p)].map(rgb);
+		const s = (across(x, y) * 1.5 + p % 11 / 11 + part * .4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
+		const band = s < .5 ? mix$1(a, b, k) : mix$1(c, b, 1 - k);
+		return toned(band, .12 + tone * .8, [
+			10,
+			16,
+			40
+		]);
 	},
-	"nebula": (x, y, l, p) => {
+	"nebula": (x, y, tone, p, _o, _l, part) => {
 		const phase = nebulaPhase(p);
-		const base$1 = phase === "Red Giant" ? rgb("#D0102E") : phase === "Blue Moon" ? rgb("#1E4FE8") : phase === "Black Hole" ? rgb("#2A1E3A") : rgb([
-			"#8A2AB0",
-			"#3A2AB0",
-			"#2A6AB0",
-			"#B02A8A"
-		][p % 4]);
-		const c = cellNoise(p, x, y, 2) < .2 ? mix$1(base$1, rgb("#FFD6F0"), .55) : base$1;
-		return shaded(c, l);
+		const [a, b] = phase === "Red Giant" ? ["#C8102E", "#FF6A3D"] : phase === "Blue Moon" ? ["#1E4FE8", "#58B8FF"] : phase === "Black Hole" ? ["#2A1E3A", "#4A2A6A"] : [
+			["#7A2AB8", "#3A3AD0"],
+			["#3A2AB0", "#8A3AC8"],
+			["#2A5AC0", "#6A2AB0"],
+			["#A82A8A", "#4A2AB8"]
+		][p % 4];
+		const cloud = Math.min(1, (.5 + .5 * Math.sin(x * .5 + p) * Math.cos(y * .42 - p * .7)) * (1 - part) + part * .95);
+		const t = Math.pow(tone, 1.15);
+		return ramp([
+			[
+				8,
+				6,
+				22
+			],
+			mix$1(rgb(a), rgb(b), cloud),
+			mix$1(mix$1(rgb(a), rgb(b), cloud), rgb("#FFC4EC"), .5),
+			rgb("#FFF0FA")
+		], t * .92);
 	},
-	"prism": (x, y, l, p) => {
-		const h = ((x * 23 + y * 17 + p * 7) % 360 + 360) % 360;
-		const k = (n) => {
-			const t = (n + h / 30) % 12;
-			return .5 - .5 * Math.max(-1, Math.min(t - 3, 9 - t, 1));
-		};
-		const c = [
-			k(0) * 255,
-			k(8) * 255,
-			k(4) * 255
-		];
-		return mix$1(shaded(c, l), [
+	"prism": (x, y, tone, p) => {
+		const h = (across(x, y) * 300 + p * 7) % 360;
+		return mix$1(hsl(h, .6, .3 + .58 * tone), [
 			255,
 			255,
 			255
-		], .18);
+		], .14);
 	},
-	"negative": (_x, _y, _l, _p, original) => {
-		const inverted = [
+	"negative": (_x, _y, tone, _p, original) => {
+		const { h, s } = hueOf([
 			255 - original[0],
 			255 - original[1],
 			255 - original[2]
-		];
-		return mix$1(inverted, [
+		]);
+		return mix$1(hsl(h, Math.min(.7, s * .8 + .15), .26 + .6 * (1 - tone)), [
 			92,
 			52,
 			160
-		], .22);
+		], .2);
 	},
-	"classic": (_x, _y, _l, _p, original) => original,
-	"fade": (_x, _y, _l, _p, original) => original,
-	"frost": (_x, _y, _l, _p, original) => original,
-	"toxic": (_x, _y, _l, _p, original) => original,
-	"shadow": (_x, _y, _l, _p, original) => original,
-	"sapphire": (_x, _y, _l, _p, original) => original,
-	"ruby": (_x, _y, _l, _p, original) => original,
-	"pearl": (_x, _y, _l, _p, original) => original,
-	"gold": (x, y, l) => {
-		if ((x + y) % 6 === 0 && l > .5) return rgb("#FFFBE6");
-		return l > .75 ? rgb("#FFF1B0") : l > .5 ? rgb("#F2C230") : l > .3 ? rgb("#C8901E") : rgb("#7A5212");
+	"classic": (_x, _y, _t, _p, original) => original,
+	"fade": (_x, _y, _t, _p, original) => original,
+	"frost": (_x, _y, _t, _p, original) => original,
+	"toxic": (_x, _y, _t, _p, original) => original,
+	"shadow": (_x, _y, _t, _p, original) => original,
+	"sapphire": (_x, _y, _t, _p, original) => original,
+	"ruby": (_x, _y, _t, _p, original) => original,
+	"pearl": (_x, _y, _t, _p, original) => original,
+	"gold": (x, y, tone, _p, _o, _l, part) => {
+		const t = tone * .92 + Math.max(0, 1 - Math.abs(across(x, y) - .42) / .16) * .14;
+		return mix$1(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * .6);
 	}
 };
 const PRIMER = rgb("#8B9097");
 /**
+* A finished skin's outline: the deepest colour of its finish, so a purple
+* Nebula frog isn't ringed in frog green. Negative and Sunset keep the skin's own.
+*/
+function finishOutline(o) {
+	if (o.finish === "gold") return "#3A2206";
+	if (o.finish === "nebula") return "#160C30";
+	if (o.finish === "prism") return "#2C2048";
+	if (o.finish === "tempered") return hex(mix$1(rgb(TINTS[temperTint(o.print)][0]), [
+		8,
+		10,
+		26
+	], .72));
+	return void 0;
+}
+/**
 * Paints one cell of an owned item: its finish, then its wear. Chips land in
 * places fixed by the print, so a copy always wears the same way, and how many
 * show is the scuff. `glint` is set once the first Box Fresh glint has been
-* placed.
+* placed. `tone` is the colour's place among the item's own (`toneOf`); left
+* out, its lightness stands in.
 */
-function paintCell(color, x, y, o, state) {
-	const original = rgb(color);
-	let c = PAINT[o.finish](x, y, lum(original), o.print, original);
-	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$1(PRIMER, c, .25);
+function paintCell(color, x, y, o, state, tone) {
+	const original = rgb(color), l = lum(original);
+	let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - .15) / .75)), o.print, original, l, tone?.part ?? 0);
+	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$1(c, PRIMER, Math.min(.75, .3 + o.scuff * .6));
 	c = mix$1(c, [
 		120,
 		116,
@@ -12838,6 +13026,28 @@ function contrast$1(a, b) {
 	return (hi + .05) / (lo + .05);
 }
 /** Adds the equipped items' own colours to a palette. */
+/**
+* The guy's own colours a hat can be drawn in (cat ears in his fur), in the
+* order a finished copy takes them into the hat's layer after the hat's own
+* colours (`ownFinishTokens`), so its finish reaches them too. Outline and
+* face ink stay his.
+*/
+const OWN_TOKENS = [
+	T.BODY,
+	T.SHADE,
+	T.LIGHT,
+	T.BLUSH,
+	T.WHITE,
+	T.ACCENT,
+	T.ACCENT_SHADE,
+	T.BELLY,
+	T.DEEP
+];
+/** Whether the hat he wears is a copy with a finish, whose pixels in his own colours should take it. */
+function ownFinishTokens(config) {
+	const hat$1 = itemById(config.hat), finish = config.owned?.hat?.finish;
+	return hat$1?.slot === "hat" && !!finish && finish !== "plain";
+}
 function withItems(palette, config) {
 	const colors = { ...palette.colors };
 	for (const slot of [
@@ -12853,8 +13063,13 @@ function withItems(palette, config) {
 		painted(item.colors, paint$1).forEach((hex$2, i) => {
 			colors[LAYER[slot] + i] = hex$2;
 		});
+		if (slot === "hat" && ownFinishTokens(config)) OWN_TOKENS.forEach((t, j) => {
+			const n = item.colors.length + j;
+			if (n <= 9 && palette.colors[t]) colors[LAYER.hat + n] = palette.colors[t];
+		});
 		if (slot === "skin") {
-			if (item.outline) colors[T.OUTLINE] = item.outline;
+			const own$1 = config.owned?.skin;
+			if (item.outline) colors[T.OUTLINE] = (own$1 && finishOutline(own$1)) ?? item.outline;
 			const dark = "#15111C", light$2 = "#FFF1D6";
 			colors[T.EYE] = colors[T.MOUTH] = contrast$1(dark, item.colors[0]) >= contrast$1(light$2, item.colors[0]) ? dark : light$2;
 		}
@@ -15322,8 +15537,8 @@ const NOT_BROWN = {
 /** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
 const shownPalette = (config) => POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
 function paletteOf(config) {
-	const toned = shadePalette(getPalette(shownPalette(config)), config.shade);
-	return config.lucky ? luckyPalette(toned) : toned;
+	const toned$1 = shadePalette(getPalette(shownPalette(config)), config.shade);
+	return config.lucky ? luckyPalette(toned$1) : toned$1;
 }
 
 //#endregion
@@ -15752,10 +15967,18 @@ function build(config, report) {
 	if (hat$1?.slot === "hat") {
 		const cut = onTop((cv) => hat$1.draw(cv));
 		if (report) report.hatCut = cut;
+		const own$1 = [];
+		if (ownFinishTokens(config)) c.grid.forEach((row, y) => row.forEach((v, x) => {
+			if (v !== before[y][x] && OWN_TOKENS.includes(v)) own$1.push([x, y]);
+		}));
 		claim(c.grid, LAYER.hat);
 		for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
 			const t = c.grid[y][x], below = c.grid[y + 1][x];
 			if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
+		}
+		for (const [x, y] of own$1) {
+			const n = hat$1.colors.length + OWN_TOKENS.indexOf(c.grid[y][x]);
+			if (OWN_TOKENS.includes(c.grid[y][x]) && n <= 9) c.grid[y][x] = LAYER.hat + n;
 		}
 	} else if (!skin && !EARED.has(heads[config.head].name)) onTop((cv) => hair[config.hair].draw(cv));
 	const accessory = accessories[config.accessory];
@@ -15838,12 +16061,18 @@ function paint(grid, config, palette, small = false, still = true) {
 	const aura = auraById(config.aura);
 	if (small) ({grid, palette} = forSmall(grid, palette));
 	const chase = chaseEyes(grid, config);
+	const tones = new Map();
+	const tonesOf = (slot) => {
+		let m = tones.get(slot);
+		if (!m) tones.set(slot, m = toneOf(Array.from({ length: 10 }, (_, i) => palette.colors[LAYER[slot] + i]).filter((c) => !!c)));
+		return m;
+	};
 	return grid.map((row, y) => row.map((token, x) => {
 		const color = chase?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
-		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color : copy ? paintCell(color, x, y, copy, state) : color;
+		const painted$1 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color : copy ? paintCell(color, x, y, copy, state, tonesOf(slot).get(color.toUpperCase())) : color;
 		return still && copy?.fx ? fxColor(painted$1, copy.fx, x, y, 0, copy.print) : painted$1;
 	}));
 }
@@ -15933,5 +16162,664 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-xQLqyr1y.js.map
+Object.defineProperty(exports, 'AURAS', {
+  enumerable: true,
+  get: function () {
+    return AURAS;
+  }
+});
+Object.defineProperty(exports, 'AURA_ODDS', {
+  enumerable: true,
+  get: function () {
+    return AURA_ODDS;
+  }
+});
+Object.defineProperty(exports, 'CAPSULE_ONLY', {
+  enumerable: true,
+  get: function () {
+    return CAPSULE_ONLY;
+  }
+});
+Object.defineProperty(exports, 'DEAL_2', {
+  enumerable: true,
+  get: function () {
+    return DEAL_2;
+  }
+});
+Object.defineProperty(exports, 'DEAL_3', {
+  enumerable: true,
+  get: function () {
+    return DEAL_3;
+  }
+});
+Object.defineProperty(exports, 'DEAL_PREFIX', {
+  enumerable: true,
+  get: function () {
+    return DEAL_PREFIX;
+  }
+});
+Object.defineProperty(exports, 'DEEP_BLUE_PRINTS', {
+  enumerable: true,
+  get: function () {
+    return DEEP_BLUE_PRINTS;
+  }
+});
+Object.defineProperty(exports, 'EFFECTS', {
+  enumerable: true,
+  get: function () {
+    return EFFECTS;
+  }
+});
+Object.defineProperty(exports, 'FINISHES', {
+  enumerable: true,
+  get: function () {
+    return FINISHES;
+  }
+});
+Object.defineProperty(exports, 'FOOT_STYLES', {
+  enumerable: true,
+  get: function () {
+    return FOOT_STYLES;
+  }
+});
+Object.defineProperty(exports, 'FX_IDS', {
+  enumerable: true,
+  get: function () {
+    return FX_IDS;
+  }
+});
+Object.defineProperty(exports, 'GAMES', {
+  enumerable: true,
+  get: function () {
+    return GAMES;
+  }
+});
+Object.defineProperty(exports, 'GOLD_RIM_DAYS', {
+  enumerable: true,
+  get: function () {
+    return GOLD_RIM_DAYS;
+  }
+});
+Object.defineProperty(exports, 'GRADES', {
+  enumerable: true,
+  get: function () {
+    return GRADES;
+  }
+});
+Object.defineProperty(exports, 'GRID_SIZE', {
+  enumerable: true,
+  get: function () {
+    return GRID_SIZE;
+  }
+});
+Object.defineProperty(exports, 'LAYER', {
+  enumerable: true,
+  get: function () {
+    return LAYER;
+  }
+});
+Object.defineProperty(exports, 'LOCAL', {
+  enumerable: true,
+  get: function () {
+    return LOCAL;
+  }
+});
+Object.defineProperty(exports, 'LOOP_MS', {
+  enumerable: true,
+  get: function () {
+    return LOOP_MS;
+  }
+});
+Object.defineProperty(exports, 'LUCKY_ODDS', {
+  enumerable: true,
+  get: function () {
+    return LUCKY_ODDS;
+  }
+});
+Object.defineProperty(exports, 'MAX_PINS', {
+  enumerable: true,
+  get: function () {
+    return MAX_PINS;
+  }
+});
+Object.defineProperty(exports, 'ONE_OF_ONE_AURAS', {
+  enumerable: true,
+  get: function () {
+    return ONE_OF_ONE_AURAS;
+  }
+});
+Object.defineProperty(exports, 'PAINTABLE', {
+  enumerable: true,
+  get: function () {
+    return PAINTABLE;
+  }
+});
+Object.defineProperty(exports, 'PAINTS', {
+  enumerable: true,
+  get: function () {
+    return PAINTS;
+  }
+});
+Object.defineProperty(exports, 'PAINT_IDS', {
+  enumerable: true,
+  get: function () {
+    return PAINT_IDS;
+  }
+});
+Object.defineProperty(exports, 'PINS', {
+  enumerable: true,
+  get: function () {
+    return PINS;
+  }
+});
+Object.defineProperty(exports, 'RETIRED_EYES', {
+  enumerable: true,
+  get: function () {
+    return RETIRED_EYES;
+  }
+});
+Object.defineProperty(exports, 'SET_COLORS', {
+  enumerable: true,
+  get: function () {
+    return SET_COLORS;
+  }
+});
+Object.defineProperty(exports, 'SHADE_COUNT', {
+  enumerable: true,
+  get: function () {
+    return SHADE_COUNT;
+  }
+});
+Object.defineProperty(exports, 'SHOWPIECE_WEIGHT', {
+  enumerable: true,
+  get: function () {
+    return SHOWPIECE_WEIGHT;
+  }
+});
+Object.defineProperty(exports, 'SMALL_SIZE', {
+  enumerable: true,
+  get: function () {
+    return SMALL_SIZE;
+  }
+});
+Object.defineProperty(exports, 'SPARKLE_REACH', {
+  enumerable: true,
+  get: function () {
+    return SPARKLE_REACH;
+  }
+});
+Object.defineProperty(exports, 'T', {
+  enumerable: true,
+  get: function () {
+    return T;
+  }
+});
+Object.defineProperty(exports, 'WEAR', {
+  enumerable: true,
+  get: function () {
+    return WEAR;
+  }
+});
+Object.defineProperty(exports, '__toESM', {
+  enumerable: true,
+  get: function () {
+    return __toESM;
+  }
+});
+Object.defineProperty(exports, 'accessories', {
+  enumerable: true,
+  get: function () {
+    return accessories;
+  }
+});
+Object.defineProperty(exports, 'accessoryWeights', {
+  enumerable: true,
+  get: function () {
+    return accessoryWeights;
+  }
+});
+Object.defineProperty(exports, 'applyFx', {
+  enumerable: true,
+  get: function () {
+    return applyFx;
+  }
+});
+Object.defineProperty(exports, 'armWeights', {
+  enumerable: true,
+  get: function () {
+    return armWeights;
+  }
+});
+Object.defineProperty(exports, 'auraById', {
+  enumerable: true,
+  get: function () {
+    return auraById;
+  }
+});
+Object.defineProperty(exports, 'auraCells', {
+  enumerable: true,
+  get: function () {
+    return auraCells;
+  }
+});
+Object.defineProperty(exports, 'auraColor', {
+  enumerable: true,
+  get: function () {
+    return auraColor;
+  }
+});
+Object.defineProperty(exports, 'auraHue', {
+  enumerable: true,
+  get: function () {
+    return auraHue;
+  }
+});
+Object.defineProperty(exports, 'bodies', {
+  enumerable: true,
+  get: function () {
+    return bodies;
+  }
+});
+Object.defineProperty(exports, 'bodyWeights', {
+  enumerable: true,
+  get: function () {
+    return bodyWeights;
+  }
+});
+Object.defineProperty(exports, 'buddyOf', {
+  enumerable: true,
+  get: function () {
+    return buddyOf;
+  }
+});
+Object.defineProperty(exports, 'cheekWeights', {
+  enumerable: true,
+  get: function () {
+    return cheekWeights;
+  }
+});
+Object.defineProperty(exports, 'cheeks', {
+  enumerable: true,
+  get: function () {
+    return cheeks;
+  }
+});
+Object.defineProperty(exports, 'compose', {
+  enumerable: true,
+  get: function () {
+    return compose;
+  }
+});
+Object.defineProperty(exports, 'composeBase', {
+  enumerable: true,
+  get: function () {
+    return composeBase;
+  }
+});
+Object.defineProperty(exports, 'cycle', {
+  enumerable: true,
+  get: function () {
+    return cycle;
+  }
+});
+Object.defineProperty(exports, 'dealOf', {
+  enumerable: true,
+  get: function () {
+    return dealOf;
+  }
+});
+Object.defineProperty(exports, 'decode', {
+  enumerable: true,
+  get: function () {
+    return decode;
+  }
+});
+Object.defineProperty(exports, 'dress', {
+  enumerable: true,
+  get: function () {
+    return dress;
+  }
+});
+Object.defineProperty(exports, 'encode', {
+  enumerable: true,
+  get: function () {
+    return encode;
+  }
+});
+Object.defineProperty(exports, 'eyeWeights', {
+  enumerable: true,
+  get: function () {
+    return eyeWeights;
+  }
+});
+Object.defineProperty(exports, 'eyes', {
+  enumerable: true,
+  get: function () {
+    return eyes;
+  }
+});
+Object.defineProperty(exports, 'faceOf', {
+  enumerable: true,
+  get: function () {
+    return faceOf;
+  }
+});
+Object.defineProperty(exports, 'fit', {
+  enumerable: true,
+  get: function () {
+    return fit;
+  }
+});
+Object.defineProperty(exports, 'fitLoop', {
+  enumerable: true,
+  get: function () {
+    return fitLoop;
+  }
+});
+Object.defineProperty(exports, 'footWeights', {
+  enumerable: true,
+  get: function () {
+    return footWeights;
+  }
+});
+Object.defineProperty(exports, 'freeItem', {
+  enumerable: true,
+  get: function () {
+    return freeItem;
+  }
+});
+Object.defineProperty(exports, 'fxColor', {
+  enumerable: true,
+  get: function () {
+    return fxColor;
+  }
+});
+Object.defineProperty(exports, 'gameItems', {
+  enumerable: true,
+  get: function () {
+    return gameItems;
+  }
+});
+Object.defineProperty(exports, 'getPalette', {
+  enumerable: true,
+  get: function () {
+    return getPalette;
+  }
+});
+Object.defineProperty(exports, 'gradeOf', {
+  enumerable: true,
+  get: function () {
+    return gradeOf;
+  }
+});
+Object.defineProperty(exports, 'hair', {
+  enumerable: true,
+  get: function () {
+    return hair;
+  }
+});
+Object.defineProperty(exports, 'hairWeights', {
+  enumerable: true,
+  get: function () {
+    return hairWeights;
+  }
+});
+Object.defineProperty(exports, 'hash', {
+  enumerable: true,
+  get: function () {
+    return hash;
+  }
+});
+Object.defineProperty(exports, 'hashNth', {
+  enumerable: true,
+  get: function () {
+    return hashNth;
+  }
+});
+Object.defineProperty(exports, 'headWeights', {
+  enumerable: true,
+  get: function () {
+    return headWeights;
+  }
+});
+Object.defineProperty(exports, 'heads', {
+  enumerable: true,
+  get: function () {
+    return heads;
+  }
+});
+Object.defineProperty(exports, 'inSeason', {
+  enumerable: true,
+  get: function () {
+    return inSeason;
+  }
+});
+Object.defineProperty(exports, 'itemById', {
+  enumerable: true,
+  get: function () {
+    return itemById;
+  }
+});
+Object.defineProperty(exports, 'itemWeight', {
+  enumerable: true,
+  get: function () {
+    return itemWeight;
+  }
+});
+Object.defineProperty(exports, 'items', {
+  enumerable: true,
+  get: function () {
+    return items;
+  }
+});
+Object.defineProperty(exports, 'luckyPalette', {
+  enumerable: true,
+  get: function () {
+    return luckyPalette;
+  }
+});
+Object.defineProperty(exports, 'machineName', {
+  enumerable: true,
+  get: function () {
+    return machineName;
+  }
+});
+Object.defineProperty(exports, 'mouthWeights', {
+  enumerable: true,
+  get: function () {
+    return mouthWeights;
+  }
+});
+Object.defineProperty(exports, 'mouths', {
+  enumerable: true,
+  get: function () {
+    return mouths;
+  }
+});
+Object.defineProperty(exports, 'nameOf', {
+  enumerable: true,
+  get: function () {
+    return nameOf;
+  }
+});
+Object.defineProperty(exports, 'nebulaPhase', {
+  enumerable: true,
+  get: function () {
+    return nebulaPhase;
+  }
+});
+Object.defineProperty(exports, 'paint', {
+  enumerable: true,
+  get: function () {
+    return paint;
+  }
+});
+Object.defineProperty(exports, 'painted', {
+  enumerable: true,
+  get: function () {
+    return painted;
+  }
+});
+Object.defineProperty(exports, 'paletteOf', {
+  enumerable: true,
+  get: function () {
+    return paletteOf;
+  }
+});
+Object.defineProperty(exports, 'paletteWeights', {
+  enumerable: true,
+  get: function () {
+    return paletteWeights;
+  }
+});
+Object.defineProperty(exports, 'palettes', {
+  enumerable: true,
+  get: function () {
+    return palettes;
+  }
+});
+Object.defineProperty(exports, 'pinById', {
+  enumerable: true,
+  get: function () {
+    return pinById;
+  }
+});
+Object.defineProperty(exports, 'resolve', {
+  enumerable: true,
+  get: function () {
+    return resolve;
+  }
+});
+Object.defineProperty(exports, 'resolveColor', {
+  enumerable: true,
+  get: function () {
+    return resolveColor;
+  }
+});
+Object.defineProperty(exports, 'roll', {
+  enumerable: true,
+  get: function () {
+    return roll;
+  }
+});
+Object.defineProperty(exports, 'rollFx', {
+  enumerable: true,
+  get: function () {
+    return rollFx;
+  }
+});
+Object.defineProperty(exports, 'rollSeason', {
+  enumerable: true,
+  get: function () {
+    return rollSeason;
+  }
+});
+Object.defineProperty(exports, 'shadePalette', {
+  enumerable: true,
+  get: function () {
+    return shadePalette;
+  }
+});
+Object.defineProperty(exports, 'shadeWeights', {
+  enumerable: true,
+  get: function () {
+    return shadeWeights;
+  }
+});
+Object.defineProperty(exports, 'shownPalette', {
+  enumerable: true,
+  get: function () {
+    return shownPalette;
+  }
+});
+Object.defineProperty(exports, 'shows', {
+  enumerable: true,
+  get: function () {
+    return shows;
+  }
+});
+Object.defineProperty(exports, 'slotOf', {
+  enumerable: true,
+  get: function () {
+    return slotOf;
+  }
+});
+Object.defineProperty(exports, 'sparkleAt', {
+  enumerable: true,
+  get: function () {
+    return sparkleAt;
+  }
+});
+Object.defineProperty(exports, 'special', {
+  enumerable: true,
+  get: function () {
+    return special;
+  }
+});
+Object.defineProperty(exports, 'starter', {
+  enumerable: true,
+  get: function () {
+    return starter;
+  }
+});
+Object.defineProperty(exports, 'steps', {
+  enumerable: true,
+  get: function () {
+    return steps;
+  }
+});
+Object.defineProperty(exports, 'tallyMarks', {
+  enumerable: true,
+  get: function () {
+    return tallyMarks;
+  }
+});
+Object.defineProperty(exports, 'temperTint', {
+  enumerable: true,
+  get: function () {
+    return temperTint;
+  }
+});
+Object.defineProperty(exports, 'tick', {
+  enumerable: true,
+  get: function () {
+    return tick;
+  }
+});
+Object.defineProperty(exports, 'unlockWeight', {
+  enumerable: true,
+  get: function () {
+    return unlockWeight;
+  }
+});
+Object.defineProperty(exports, 'wave', {
+  enumerable: true,
+  get: function () {
+    return wave;
+  }
+});
+Object.defineProperty(exports, 'wearOf', {
+  enumerable: true,
+  get: function () {
+    return wearOf;
+  }
+});
+Object.defineProperty(exports, 'withItems', {
+  enumerable: true,
+  get: function () {
+    return withItems;
+  }
+});
+Object.defineProperty(exports, 'withoutRetired', {
+  enumerable: true,
+  get: function () {
+    return withoutRetired;
+  }
+});
+Object.defineProperty(exports, 'wrap', {
+  enumerable: true,
+  get: function () {
+    return wrap$1;
+  }
+});
+//# sourceMappingURL=paint-ClS5D5Bs.cjs.map

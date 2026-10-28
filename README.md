@@ -291,7 +291,18 @@ server, a page and a game all get the same picture.
 A card is a trading card. Its window shimmers in its copy's finish's own foil
 (Sunset stripes, a Tempered oil slick, a Nebula cosmos, Prism cracked ice, a Gold
 sunburst), with the print picking one of four variants. An item's card carries
-its machine's set symbol.
+its machine's set symbol. A Grail card is brushed gold foil with a glint
+sweeping it, a bevelled edge and gold studs round a deep amber window; an aura
+card is pale silk in the aura's own colour with a double foil edge, its deep
+window glowing in that colour behind the guy.
+
+A finish repaints a copy's own colours through the finish's ramp by tone, so
+every part keeps its shading and stays apart from the next: Prism a smooth
+rainbow sweep, Tempered steel-blue and straw-gold bands, Nebula deep purple
+clouds with a few pulsing stars, Negative the item's opposite colours with
+light and dark swapped, Gold polished gold with a moving glint. A costume's
+face opening keeps the guy's own colours, and a hat drawn partly in them (cat
+ears) takes the finish there too.
 On lilguys.dleclub.com each copy also keeps stats, as a sports card does:
 days worn and, while worn, DLE Club games finished and the best club day.
 Each copy also has its place in its item's run: the first 100 are 1st editions.

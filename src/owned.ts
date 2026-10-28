@@ -318,70 +318,151 @@ const shaded = (c: RGB, l: number) => {
   return t < 0.5 ? mix(mix(c, [0, 0, 0], 0.5), c, t * 2) : mix(c, mix(c, [255, 255, 255], 0.6), (t - 0.5) * 2);
 };
 
-const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, original: RGB) => RGB> = {
-  'plain': (_x, _y, _l, _p, original) => original,
-  'sunset': (x, y, l, p) => {
+/** A colour along a ramp of stops, `t` 0 to 1, blended smoothly between them. */
+const ramp = (stops: RGB[], t: number): RGB => {
+  const at = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(at));
+  return mix(stops[i], stops[i + 1], at - i);
+};
+
+/** A colour taken through its tone: `t` 0 its shadow, 0.5 itself, 1 its highlight. */
+const toned = (c: RGB, t: number, deep: RGB = [16, 12, 34]) =>
+  t < 0.5 ? mix(mix(c, deep, 0.62), c, t * 2) : mix(c, mix(c, [255, 255, 255], 0.72), (t - 0.5) * 2);
+
+const hsl = (h: number, s: number, l: number): RGB => {
+  const k = (n: number) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  return [0, 8, 4].map(n => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))) as RGB;
+};
+const hueOf = (c: RGB): { h: number; s: number } => {
+  const [r, g, b] = c.map(v => v / 255), max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  if (d < 1e-6) return { h: 0, s: 0 };
+  const l = (max + min) / 2, s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: (h * 60 + 360) % 360, s };
+};
+
+const GOLD = ['#4A2A06', '#8A5510', '#C48A1C', '#EDB52E', '#FFD95A', '#FFF1B8', '#FFFBEA'].map(rgb);
+const WHITE_GOLD = ['#3A3226', '#76695A', '#B3A58E', '#DDD2BC', '#F2EBDC', '#FFFBF2', '#FFFFFF'].map(rgb);
+
+/** How far across the item a cell is, corner to corner, about 0 to 1: what a finish's sweep runs along. */
+const across = (x: number, y: number) => (x + y * 0.8) / 26;
+
+/** Where one of an item's own colours sits for a finish (`toneOf`). */
+export interface Tone {
+  /** 0 deep shadow to 1 highlight, its main colour at 0.5. */
+  tone: number;
+  /** 0 the main colour's own hue to 1 a part in another colour altogether (a fox's white chest on its orange). */
+  part: number;
+}
+
+/**
+ * Where each of an item's own colours sits for a finish: its main colour (the
+ * first) in the middle, the rest by how much lighter or darker than it they
+ * are, and how far their colour is from it. A finish paints by these, so the
+ * item's shading and its parts (a hood, its lining, the ears' insides) keep
+ * the steps the artist drew between them.
+ */
+export function toneOf(colors: string[]): Map<string, Tone> {
+  const ls = colors.map(c => lum(rgb(c))), main = ls[0] ?? 0.5;
+  // Subtle shading is opened up a little; an item whose colours run far from its main one is fitted into the range.
+  const down = 0.47 / Math.max(0.33, main - Math.min(...ls)), up = 0.47 / Math.max(0.33, Math.max(...ls) - main);
+  const chroma = (c: RGB) => { const g = (c[0] + c[1] + c[2]) / 3; return c.map(v => v - g); };
+  const key = colors[0] ? chroma(rgb(colors[0])) : [0, 0, 0];
+  return new Map(colors.map((c, i) => {
+    const k = chroma(rgb(c));
+    return [c.toUpperCase(), { tone: 0.5 + (ls[i] - main) * (ls[i] < main ? down : up), part: Math.min(1, Math.hypot(k[0] - key[0], k[1] - key[1], k[2] - key[2]) / 120) }];
+  }));
+}
+
+/**
+ * Each finish as a clean, premium version of the item: its colours mapped
+ * through the finish's own ramp by tone, so the item's shading and parts all
+ * still read, and any colour shift runs in smooth bands across the whole
+ * item, never pixel by pixel. The shaders (./finish-shader) move a sheen over
+ * it.
+ */
+const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, original: RGB, l: number, part: number) => RGB> = {
+  'plain': (_x, _y, _t, _p, original) => original,
+  'sunset': (x, y, _t, p, _o, l) => {
     const t = Math.max(0, Math.min(1, (x + y * 0.5 - 2 + (p % 100) / 12) / 14));
     const c = t < 0.5 ? mix(rgb('#F5C542'), rgb('#E55AA8'), t * 2) : mix(rgb('#E55AA8'), rgb('#7A4BE0'), (t - 0.5) * 2);
     return shaded(c, l);
   },
-  'tempered': (x, y, l, p) => {
-    // Clean diagonal bands of heat tint, in the tint the print picks; the
-    // print also sets where the bands fall.
-    const stops = TINTS[temperTint(p)];
-    const band = Math.floor((((x + y + (p % 11)) % 12) + 12) % 12 / 3);
-    return shaded(rgb(stops[[0, 1, 2, 1][band]]), l);
+  'tempered': (x, y, tone, p, _o, _l, part) => {
+    // Case-hardened steel: soft bands of heat tint running across the item,
+    // through the print's tint (blue, its pale, straw gold, its pale again).
+    const [a, b, c] = TINTS[temperTint(p)].map(rgb);
+    const s = (across(x, y) * 1.5 + (p % 11) / 11 + part * 0.4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
+    const band = s < 0.5 ? mix(a, b, k) : mix(c, b, 1 - k);
+    return toned(band, 0.12 + tone * 0.8, [10, 16, 40]);
   },
-  'nebula': (x, y, l, p) => {
+  'nebula': (x, y, tone, p, _o, _l, part) => {
+    // Deep space: two of the phase's colours drifting into each other in soft
+    // clouds across the item, dark in its shadows and lit pink in its lights.
+    // A part drawn in another colour takes the second one, so it still stands apart.
     const phase = nebulaPhase(p);
-    const base = phase === 'Red Giant' ? rgb('#D0102E') : phase === 'Blue Moon' ? rgb('#1E4FE8')
-      : phase === 'Black Hole' ? rgb('#2A1E3A') : rgb(['#8A2AB0', '#3A2AB0', '#2A6AB0', '#B02A8A'][p % 4]);
-    const c = cellNoise(p, x, y, 2) < 0.2 ? mix(base, rgb('#FFD6F0'), 0.55) : base;
-    return shaded(c, l);
+    const [a, b] = phase === 'Red Giant' ? ['#C8102E', '#FF6A3D'] : phase === 'Blue Moon' ? ['#1E4FE8', '#58B8FF']
+      : phase === 'Black Hole' ? ['#2A1E3A', '#4A2A6A'] : [['#7A2AB8', '#3A3AD0'], ['#3A2AB0', '#8A3AC8'], ['#2A5AC0', '#6A2AB0'], ['#A82A8A', '#4A2AB8']][p % 4];
+    const cloud = Math.min(1, (0.5 + 0.5 * Math.sin(x * 0.5 + p) * Math.cos(y * 0.42 - p * 0.7)) * (1 - part) + part * 0.95);
+    const t = Math.pow(tone, 1.15);
+    return ramp([[8, 6, 22], mix(rgb(a), rgb(b), cloud), mix(mix(rgb(a), rgb(b), cloud), rgb('#FFC4EC'), 0.5), rgb('#FFF0FA')], t * 0.92);
   },
-  'prism': (x, y, l, p) => {
-    // A rainbow running diagonally across the item, like holographic foil;
-    // the print sets where the bands start.
-    const h = ((x * 23 + y * 17 + p * 7) % 360 + 360) % 360;
-    const k = (n: number) => {
-      const t = (n + h / 30) % 12;
-      return 0.5 - 0.5 * Math.max(-1, Math.min(t - 3, 9 - t, 1));
-    };
-    const c: RGB = [k(0) * 255, k(8) * 255, k(4) * 255];
-    return mix(shaded(c, l), [255, 255, 255], 0.18);
+  'prism': (x, y, tone, p) => {
+    // One smooth rainbow sweeping corner to corner, the item's own tones
+    // from its shadows to near white, pearly.
+    const h = (across(x, y) * 300 + p * 7) % 360;
+    return mix(hsl(h, 0.6, 0.3 + 0.58 * tone), [255, 255, 255], 0.14);
   },
-  'negative': (_x, _y, _l, _p, original) => {
-    // The item's own colours turned inside out, pulled towards violet.
-    const inverted: RGB = [255 - original[0], 255 - original[1], 255 - original[2]];
-    return mix(inverted, [92, 52, 160], 0.22);
+  'negative': (_x, _y, tone, _p, original) => {
+    // A photographic negative: light parts go dark and dark go light, each
+    // in its colour's opposite, pulled towards violet. Kept off the extremes,
+    // so the item still stands clear of its own outline.
+    const { h, s } = hueOf([255 - original[0], 255 - original[1], 255 - original[2]]);
+    return mix(hsl(h, Math.min(0.7, s * 0.8 + 0.15), 0.26 + 0.6 * (1 - tone)), [92, 52, 160], 0.2);
   },
   // Auras are coloured by ./auras, not here.
-  'classic': (_x, _y, _l, _p, original) => original,
-  'fade': (_x, _y, _l, _p, original) => original,
-  'frost': (_x, _y, _l, _p, original) => original,
-  'toxic': (_x, _y, _l, _p, original) => original,
-  'shadow': (_x, _y, _l, _p, original) => original,
-  'sapphire': (_x, _y, _l, _p, original) => original,
-  'ruby': (_x, _y, _l, _p, original) => original,
-  'pearl': (_x, _y, _l, _p, original) => original,
-  'gold': (x, y, l) => {
-    if ((x + y) % 6 === 0 && l > 0.5) return rgb('#FFFBE6');
-    return l > 0.75 ? rgb('#FFF1B0') : l > 0.5 ? rgb('#F2C230') : l > 0.3 ? rgb('#C8901E') : rgb('#7A5212');
+  'classic': (_x, _y, _t, _p, original) => original,
+  'fade': (_x, _y, _t, _p, original) => original,
+  'frost': (_x, _y, _t, _p, original) => original,
+  'toxic': (_x, _y, _t, _p, original) => original,
+  'shadow': (_x, _y, _t, _p, original) => original,
+  'sapphire': (_x, _y, _t, _p, original) => original,
+  'ruby': (_x, _y, _t, _p, original) => original,
+  'pearl': (_x, _y, _t, _p, original) => original,
+  'gold': (x, y, tone, _p, _o, _l, part) => {
+    // Polished gold: deep bronze in the shadows to pale gold in the lights,
+    // with one soft gleam lying across it. A part in another colour is white
+    // gold, so it still stands apart.
+    const t = tone * 0.92 + Math.max(0, 1 - Math.abs(across(x, y) - 0.42) / 0.16) * 0.14;
+    return mix(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * 0.6);
   },
 };
 
 const PRIMER = rgb('#8B9097');
 
 /**
+ * A finished skin's outline: the deepest colour of its finish, so a purple
+ * Nebula frog isn't ringed in frog green. Negative and Sunset keep the skin's own.
+ */
+export function finishOutline(o: Owned): string | undefined {
+  if (o.finish === 'gold') return '#3A2206';
+  if (o.finish === 'nebula') return '#160C30';
+  if (o.finish === 'prism') return '#2C2048';
+  if (o.finish === 'tempered') return hex(mix(rgb(TINTS[temperTint(o.print)][0]), [8, 10, 26], 0.72));
+  return undefined;
+}
+
+/**
  * Paints one cell of an owned item: its finish, then its wear. Chips land in
  * places fixed by the print, so a copy always wears the same way, and how many
  * show is the scuff. `glint` is set once the first Box Fresh glint has been
- * placed.
+ * placed. `tone` is the colour's place among the item's own (`toneOf`); left
+ * out, its lightness stands in.
  */
-export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }): string {
-  const original = rgb(color);
-  let c = PAINT[o.finish](x, y, lum(original), o.print, original);
-  if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, 0.9) * 0.45) c = mix(PRIMER, c, 0.25);
+export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }, tone?: Tone): string {
+  const original = rgb(color), l = lum(original);
+  let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - 0.15) / 0.75)), o.print, original, l, tone?.part ?? 0);
+  // A chip shows more of the primer the more worn the copy is, so a nearly new one is barely flecked.
+  if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, 0.9) * 0.45) c = mix(c, PRIMER, Math.min(0.75, 0.3 + o.scuff * 0.6));
   c = mix(c, [120, 116, 112], Math.min(0.25, o.scuff * 0.3));
   if (o.scuff < 0.07 && !state.glint && lum(c) > 0.55) {
     c = [255, 255, 255];

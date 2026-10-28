@@ -26,7 +26,7 @@ export const EFFECTS: Record<Fx, Effect> = {
   shimmer:   { name: 'Shimmer',   what: 'Glints race across it.', item: 25, aura: 5 },
   pulse:     { name: 'Pulse',     what: 'It breathes, brightening and dimming.', item: 60, aura: 10 },
   holo:      { name: 'Holo',      what: 'A rainbow sheen sweeps across it, like foil.', item: 150, aura: 25 },
-  neon:      { name: 'Neon',      what: 'A buzzing neon edge runs round it, changing colour.', item: 250, aura: 30 },
+  neon:      { name: 'Neon',      what: 'A buzzing neon edge runs round it.', item: 250, aura: 30 },
   bubbles:   { name: 'Bubbles',   what: 'Bubbles wobble up off it.', item: 350, aura: 40 },
   hearts:    { name: 'Hearts',    what: 'Little hearts float up off it.', item: 500, aura: 60 },
   chroma:    { name: 'Chroma',    what: 'Its colours cycle round the rainbow.', item: 600, aura: 80 },
@@ -74,6 +74,10 @@ const hue = (h: number, s = 0.9, l = 0.65): RGB => {
   return [f(0), f(8), f(4)];
 };
 
+/** A Neon copy's tube: one colour from a sign maker's set, dealt by its print, never the whole wheel. */
+const NEON_TUBES: RGB[] = [[255, 63, 164], [47, 217, 255], [255, 90, 60], [180, 92, 255], [61, 255, 143], [255, 194, 58]];
+const neonTube = (print: number) => NEON_TUBES[print % NEON_TUBES.length];
+
 /** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
 export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print = 0): string {
   const c = rgb(color), tt = t + print * 37;
@@ -109,7 +113,7 @@ export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, 
       return hex(mix(c, [255, 120, 40], 0.16 + 0.14 * Math.max(0, Math.sin(tt / wave(140) + x * 1.3 - y * 0.8))));
     case 'neon':
       // Lit from within in the tube's colour (see applyFx for the tube itself).
-      return hex(mix(c, hue(((tt * 360 / fit(5040)) % 360 + 360) % 360, 1, 0.62), 0.2 + 0.08 * Math.sin(tt / wave(380))));
+      return hex(mix(c, neonTube(print), 0.16 + 0.06 * Math.sin(tt / wave(380))));
     case 'bubbles':
       return hex(mix(c, [190, 235, 255], 0.1 + 0.08 * Math.sin(tt / wave(300) + y)));
     case 'hearts':
@@ -286,12 +290,12 @@ export function applyFx(colors: (string | null)[][], slots: number[][], copies: 
       if (breath > 0.2) for (const [x, y] of cellsOf(k)) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(x + dx, y + dy, hex(mix(rgb(colors[y][x]!), WHITE, 0.25 + 0.3 * breath)));
     }
     if (o.fx === 'neon' && !aura) {
-      // A tube of light round the outside, always lit: its colour runs round
-      // the wheel and it glows brighter and softer in a slow breath.
-      const glow = 0.55 + 0.1 * Math.sin(tt / wave(380)), rim = edgeOf(k), turn = tt * 360 / fit(3600);
-      for (const [x, y] of rim) out[y][x] = hex(hue(((turn + (x + y) * 10) % 360 + 360) % 360, 1, glow));
+      // A tube of light round the outside in the copy's one colour, always
+      // lit, glowing brighter and softer in a slow breath.
+      const tube = neonTube(o.print), glow = 0.3 + 0.12 * Math.sin(tt / wave(380)), rim = edgeOf(k);
+      for (const [x, y] of rim) out[y][x] = hex(mix(tube, WHITE, glow));
       // A soft glow a cell further out, where there's room.
-      for (const [x, y] of rim) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(x + dx, y + dy, hex(hue(((turn + (x + y) * 10) % 360 + 360) % 360, 0.9, 0.32)));
+      for (const [x, y] of rim) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(x + dx, y + dy, hex(mix(tube, [20, 12, 36], 0.5)));
     }
     if (o.fx === 'rime') {
       // Frost creeps in from the copy's edges and melts back: the edge cells

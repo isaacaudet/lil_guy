@@ -629,3 +629,21 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
   if (sweep && (finish === 'sapphire' || finish === 'ruby')) return ramp[0];
   return ramp[Math.min(2, k % 3)];
 }
+
+/**
+ * The one colour an aura copy is known by, in its finish: its most vivid
+ * colour (Flames' orange, Frost's ice blue, a Neon copy's tube). Its card is
+ * dressed in it.
+ */
+export function auraHue(id: string, finish: string, print = 0): string {
+  const aura = auraById(id);
+  const colors = id === 'aura.neon' ? [neonRamp(finish, print)[0], NEON_TUBES[finish]?.[print % NEON_TUBES[finish].length] ?? '#FF3FA4']
+    : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors
+      : finish === 'fade' ? FADE : finish === 'pearl' ? ['#B9A2FF'] : RAMPS[finish] ?? aura?.colors ?? ['#19D3C5'];
+  const vivid = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b), min = Math.min(r, g, b);
+    // Chroma, a little in favour of the middle of the range: a near-white or near-black step never wins.
+    return (max - min) * (1 - Math.abs(max + min - 1) * 0.3);
+  };
+  return colors.reduce((a, c) => (vivid(c) > vivid(a) ? c : a), colors[0]);
+}

@@ -2,7 +2,7 @@ import { LAYER, T } from './parts/art';
 import { eyes as eyeParts } from './parts';
 import { faceOf } from './compose';
 import { resolveColor, mix, contrast } from './palette';
-import { paintCell } from './owned';
+import { paintCell, toneOf, type Tone } from './owned';
 import { auraById, auraColor } from './auras';
 import { fxColor } from './effects';
 import type { AvatarConfig, Palette, PixelGrid } from './types';
@@ -18,13 +18,20 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
   const aura = auraById(config.aura);
   if (small) ({ grid, palette } = forSmall(grid, palette));
   const chase = chaseEyes(grid, config);
+  // Each worn item's own colours, ranked, so a finish keeps its parts apart (`toneOf`).
+  const tones = new Map<string, Map<string, Tone>>();
+  const tonesOf = (slot: 'skin' | 'hat' | 'frame' | 'buddy') => {
+    let m = tones.get(slot);
+    if (!m) tones.set(slot, m = toneOf(Array.from({ length: 10 }, (_, i) => palette.colors[LAYER[slot] + i]).filter((c): c is string => !!c)));
+    return m;
+  };
   return grid.map((row, y) => row.map((token, x) => {
     const color = chase?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
     if (!color) return null;
     const slot = slotOf(token);
     const copy = slot ? config.owned?.[slot] : undefined;
     const painted = slot === 'aura' ? (aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color)
-      : copy ? paintCell(color, x, y, copy, state) : color;
+      : copy ? paintCell(color, x, y, copy, state, tonesOf(slot as 'skin' | 'hat' | 'frame' | 'buddy').get(color.toUpperCase())) : color;
     // An effect, as it stands at the start; animate moves it instead.
     return still && copy?.fx ? fxColor(painted, copy.fx, x, y, 0, copy.print) : painted;
   }));

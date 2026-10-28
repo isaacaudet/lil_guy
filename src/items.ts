@@ -3,7 +3,7 @@ import type { Canvas } from './parts/canvas';
 import { capRows, mirror, seat } from './parts/hair';
 import { elastic, grid16, L, on, onPair, pet, span, wear } from './item-art';
 import { SETS } from './sets';
-import { decode, starter } from './owned';
+import { decode, finishOutline, starter } from './owned';
 import { AURAS, ONE_OF_ONE_AURAS } from './auras';
 import type { Fx } from './effects';
 import { painted, PAINTABLE } from './paints';
@@ -2450,6 +2450,20 @@ function contrast(a: string, b: string): number {
 }
 
 /** Adds the equipped items' own colours to a palette. */
+/**
+ * The guy's own colours a hat can be drawn in (cat ears in his fur), in the
+ * order a finished copy takes them into the hat's layer after the hat's own
+ * colours (`ownFinishTokens`), so its finish reaches them too. Outline and
+ * face ink stay his.
+ */
+export const OWN_TOKENS: readonly number[] = [T.BODY, T.SHADE, T.LIGHT, T.BLUSH, T.WHITE, T.ACCENT, T.ACCENT_SHADE, T.BELLY, T.DEEP];
+
+/** Whether the hat he wears is a copy with a finish, whose pixels in his own colours should take it. */
+export function ownFinishTokens(config: AvatarConfig): boolean {
+  const hat = itemById(config.hat), finish = config.owned?.hat?.finish;
+  return hat?.slot === 'hat' && !!finish && finish !== 'plain';
+}
+
 export function withItems(palette: Palette, config: AvatarConfig): Palette {
   const colors = { ...palette.colors };
   for (const slot of ['skin', 'hat', 'frame', 'buddy', 'aura'] as const) {
@@ -2458,8 +2472,13 @@ export function withItems(palette: Palette, config: AvatarConfig): Palette {
     // A painted hat or buddy wears its paint (./paints).
     const paint = (PAINTABLE as readonly string[]).includes(slot) ? config.owned?.[slot as 'hat' | 'buddy']?.paint : undefined;
     painted(item.colors, paint).forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });
+    if (slot === 'hat' && ownFinishTokens(config)) OWN_TOKENS.forEach((t, j) => {
+      const n = item.colors.length + j;
+      if (n <= 9 && palette.colors[t]) colors[LAYER.hat + n] = palette.colors[t];
+    });
     if (slot === 'skin') {
-      if (item.outline) colors[T.OUTLINE] = item.outline;
+      const own = config.owned?.skin;
+      if (item.outline) colors[T.OUTLINE] = (own && finishOutline(own)) ?? item.outline;
       // The face is drawn on the skin now, so its ink follows the skin.
       const dark = '#15111C', light = '#FFF1D6';
       colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light, item.colors[0]) ? dark : light;

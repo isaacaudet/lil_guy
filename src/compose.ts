@@ -2,7 +2,7 @@ import { RETIRED_EYES } from './parts/weights';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 import { LAYER, LOCAL, T, width, type Stamp } from './parts/art';
 import { Canvas, type Face } from './parts/canvas';
-import { itemById, type Item } from './items';
+import { itemById, OWN_TOKENS, ownFinishTokens, type Item } from './items';
 import { auraById, auraCells } from './auras';
 import { goldRim, GOLD_RIM_DAYS, markItem } from './pins';
 import { contrast, paletteOf } from './palette';
@@ -432,12 +432,19 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
   if (hat?.slot === 'hat') {
     const cut = onTop(cv => hat.draw!(cv));
     if (report) report.hatCut = cut;
+    // A finished hat drawn partly in his own colours takes those pixels into its layer, so the finish reaches them.
+    const own: [number, number][] = [];
+    if (ownFinishTokens(config)) c.grid.forEach((row, y) => row.forEach((v, x) => { if (v !== before[y][x] && OWN_TOKENS.includes(v)) own.push([x, y]); }));
     claim(c.grid, LAYER.hat);
     // The hat casts a shadow on the head just under it, so it stands off a
     // body of the same colour (a gold trophy on a yellow guy).
     for (let y = GRID_SIZE - 2; y >= 0; y--) for (let x = 0; x < GRID_SIZE; x++) {
       const t = c.grid[y][x], below = c.grid[y + 1][x];
       if (t >= LAYER.hat && t < LAYER.frame && (below === T.BODY || below === T.LIGHT || below === T.BELLY)) c.grid[y + 1][x] = T.SHADE;
+    }
+    for (const [x, y] of own) {
+      const n = hat.colors.length + OWN_TOKENS.indexOf(c.grid[y][x]);
+      if (OWN_TOKENS.includes(c.grid[y][x]) && n <= 9) c.grid[y][x] = LAYER.hat + n;
     }
   } else if (!skin && !EARED.has(heads[config.head].name)) {
     onTop(cv => hair[config.hair].draw(cv));

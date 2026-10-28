@@ -1,6 +1,7 @@
 import { compose } from './compose';
-import { clamp, distance, finishColor, fract, holoColor, mod, GLSL_COMMON, GLSL_PRECISION, hueShift, loopSeconds, mix, noiseOf, SHADER_FINISHES, smoothstep, step, toByte, type Vec3 } from './finish-shader';
+import { clamp, distance, finishColor, holoColor, mod, GLSL_COMMON, GLSL_PRECISION, hueShift, loopSeconds, mix, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, SET_COLORS, withItems } from './items';
+import { auraHue } from './auras';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -89,23 +90,36 @@ export function cardFace(spec: FaceSpec): CardFace {
     noise[i] = noiseOf(x, y, print * 4);
   };
   const gc = g >= 0 ? rgb(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb(spec.tint) : [120, 140, 170];
-  // An aura card is midnight with an edge in the grade's teal and a dark window his aura glows in.
-  const aura = g >= 5, night = [17, 21, 27];
-  const edge = aura ? blend(gc, night, 0.35) : [34, 38, 58], cream = aura ? night : [242, 236, 221], rim = aura ? blend(gc, night, 0.6) : [207, 199, 180];
-  const win = aura ? [12, 15, 22] : blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
+  // An aura card is pale silk in the aura's own colour with a foil edge of it, its deep window
+  // glowing in that colour; a Grail is gold foil with a bevelled edge and a deep amber window.
+  const aura = g >= 5, gold = g === 4, night = [17, 21, 27];
+  const auraCopy = copies.find(o => itemById(o.item)?.slot === 'aura');
+  const ah = aura && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
+  const edge = aura ? blend(ah, night, 0.25) : gold ? [150, 92, 18] : [34, 38, 58];
+  const cream = aura ? blend([242, 236, 221], blend(ah, [255, 255, 255], 0.62), 0.55) : gold ? [240, 194, 92] : [242, 236, 221];
+  const rim = aura ? blend(ah, night, 0.35) : gold ? [255, 226, 140] : [207, 199, 180];
+  const win = aura ? blend(ah, night, 0.88) : gold ? [92, 54, 12] : blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
+  const glow = aura ? blend(ah, night, 0.4) : gold ? [214, 150, 44] : win;
+  // An aura card's lip and pips are in its aura's colour too.
+  const accent = aura ? ah : gc;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
     if (cx + cy < 2) continue;
-    put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
+    const outer = cx === 0 || cy === 0 || cx + cy === 2;
+    // A Grail's edge is lit along the top and left; its gold runs deeper towards the foot.
+    put(x, y, outer ? (gold ? blend([255, 238, 168], edge, (x + y * 1.4) / (W + H * 1.4)) : edge) : gold ? blend(cream, [196, 130, 30], y / H) : cream, 1);
   }
   // The title band, in the grade's colour: the name is written over it.
   // Mythic and Grail names are written in foil, so their band goes dark to show it off.
   const band = g >= 3 ? [30, 26, 52] : g >= 0 ? blend(gc, [24, 22, 44], 0.3) : [58, 66, 100];
-  const lip = g >= 3 ? gc : blend(band, [255, 255, 255], 0.25);
+  const lip = g >= 3 ? accent : blend(band, [255, 255, 255], 0.25);
   for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) {
-    put(x, y, y === 7 ? (g >= 3 ? gc : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
+    put(x, y, y === 7 ? (g >= 3 ? accent : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
   }
-  for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : win, 2);
+  for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) {
+    const r = Math.hypot((x - 12.5) / 10, (y - 18) / 11);
+    put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : blend(win, glow, Math.max(0, 1 - r) ** 1.4), 2);
+  }
   grid.forEach((row, y) => row.forEach((t, x) => {
     const hex = colors[y][x];
     if (!hex) return;
@@ -119,7 +133,7 @@ export function cardFace(spec: FaceSpec): CardFace {
   if (mark) for (let y = 37; y <= 39; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 37 ? blend(rgb(mark), [255, 255, 255], 0.5) : x === 22 || y === 39 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), 1);
   if (g >= 0) for (let p = 0; p < 5; p++) {
     const x0 = 6 + p * 3;
-    for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim, 1);
+    for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? accent : rim, 1);
   } else for (let x = 8; x <= 17; x++) put(x, 31, rim, 1);
   return { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0 };
 }
@@ -153,9 +167,8 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
         if (k > 1.5) c = hueShift(c, time * Math.PI * 2 / 6 + d * 0.18);
         c = c.map(v => v + wide * 0.12) as Vec3;
       } else if (grade > 3.5 && grade < 4.5) {
-        if (k < 1.5) c = mix(c, [1, 0.82, 0.36], 0.35 + 0.2 * wide);
-        c = mix(c, [1, 0.95, 0.7], step(0.965, fract(h * 13 + time / 3)) * 0.8);
-      } else if (grade > 4.5 && k < 1.5) c = mix(c, [0.62, 0.96, 0.92], wide * 0.45);
+        c = mix(c, [1, 0.97, 0.84], wide * (k < 1.5 ? 0.6 : 0.25));
+      } else if (grade > 4.5 && k < 1.5) c = mix(c, [1, 1, 1], wide * 0.4);
     }
     if (hover && hover.strength > 0) {
       const at = [(x + 0.5) / W, (y + 0.5) / H];
@@ -195,8 +208,8 @@ void main() {
     if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
     else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
     else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }
-    else if (grade > 3.5 && grade < 4.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }
-    else if (grade > 4.5 && k < 1.5) c = mix(c, vec3(0.62, 0.96, 0.92), wide * 0.45);
+    else if (grade > 3.5 && grade < 4.5) c = mix(c, vec3(1.0, 0.97, 0.84), wide * (k < 1.5 ? 0.6 : 0.25));
+    else if (grade > 4.5 && k < 1.5) c = mix(c, vec3(1.0), wide * 0.4);
   }
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
