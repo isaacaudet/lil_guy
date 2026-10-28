@@ -62,26 +62,25 @@
 <div class="wrap">
   <header>
     <h1>Lil Guy Economy</h1>
-    <p class="lede">600 simulated players over 90 days, rolling with the library's real drop odds (Gold is 1 in 400), to test prices and ticket earnings before real players do. The daily drop is a free capsule for finishing the day's gauntlet. Move the numbers; everything reruns.</p>
+    <p class="lede">600 simulated players over 90 days, rolling with the library's real drop odds (Gold is 1 in 400), to test stamps and capsule prices before real players do. A stamp for each club game finished, two gold for clearing the gauntlet and ten to start; a mystery capsule is 5, a picked machine 8. The daily drop is a free capsule for finishing the day's gauntlet. Move the numbers; everything reruns.</p>
   </header>
 
   <div class="types">
     <div class="panel"><b>Casual</b>Plays about 2 days a week, 1–3 games a day. Rarely finishes all five.</div>
     <div class="panel"><b>Regular</b>Plays about 5 days a week, usually all five games.</div>
-    <div class="panel"><b>Daily</b>Plays nearly every day, all five, and keeps a streak.</div>
+    <div class="panel"><b>Daily</b>Plays nearly every day, all five and often an extra or three.</div>
   </div>
 
   <div class="layout">
     <div class="panel controls" id="controls">
       <h2>Numbers</h2>
-      <div class="ctl"><label for="perGame">Tickets per game finished <b id="perGame-v"></b></label><input type="range" id="perGame" min="0" max="40" step="5"></div>
-      <div class="ctl"><label for="allFive">Bonus for finishing all five <b id="allFive-v"></b></label><input type="range" id="allFive" min="0" max="120" step="10"></div>
-      <div class="ctl"><label for="streak">Streak bonus per day (up to 10 days) <b id="streak-v"></b></label><input type="range" id="streak" min="0" max="10" step="1"></div>
-      <div class="ctl"><label for="capsule">Capsule price <b id="capsule-v"></b></label><input type="range" id="capsule" min="50" max="250" step="10"></div>
-      <div class="ctl"><label for="spend">Share of tickets spent on capsules <b id="spend-v"></b></label><input type="range" id="spend" min="30" max="100" step="10"><small>The rest is saved for the shop's shelf (Plain items at 300–450).</small></div>
-      <div class="ctl"><label for="recycle">Tickets for recycling an Everyday copy <b id="recycle-v"></b></label><input type="range" id="recycle" min="0" max="40" step="5"></div>
+      <div class="ctl"><label for="perGame">Stamps per game finished <b id="perGame-v"></b></label><input type="range" id="perGame" min="0" max="3" step="1"></div>
+      <div class="ctl"><label for="gold">Gold stamps for clearing the gauntlet <b id="gold-v"></b></label><input type="range" id="gold" min="0" max="6" step="1"></div>
+      <div class="ctl"><label for="mysteryPrice">Mystery capsule price <b id="mysteryPrice-v"></b></label><input type="range" id="mysteryPrice" min="2" max="12" step="1"></div>
+      <div class="ctl"><label for="machinePrice">Pick-a-machine price <b id="machinePrice-v"></b></label><input type="range" id="machinePrice" min="4" max="16" step="1"></div>
+      <div class="ctl"><label for="mystery">Share of capsules opened as mystery <b id="mystery-v"></b></label><input type="range" id="mystery" min="0" max="100" step="10"><small>The rest pick their machine.</small></div>
       <label class="toggle"><input type="checkbox" id="free"> Free daily capsule for finishing the gauntlet</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="suggested">Use my suggested numbers</button><button class="btn" type="button" id="current">Use the first guesses</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="suggested">Use the approved numbers</button></div>
       <p class="note">Swap-ups run when a player has 5 spare Everyday copies, half the time.</p>
     </div>
 
@@ -108,11 +107,12 @@
   const TYPES = [
     { id: 'casual', name: 'Casual', play: 0.3, games: () => (rand() < 0.08 ? 5 : 1 + Math.floor(rand() * 3)), color: 'var(--series-1)' },
     { id: 'regular', name: 'Regular', play: 0.7, games: () => (rand() < 0.75 ? 5 : 3), color: 'var(--series-2)' },
-    { id: 'daily', name: 'Daily', play: 0.95, games: () => 5, color: 'var(--series-3)' },
+    { id: 'daily', name: 'Daily', play: 0.95, games: () => 5 + (rand() < 0.5 ? 1 + Math.floor(rand() * 3) : 0), color: 'var(--series-3)' },
   ];
-  const SUGGESTED = { perGame: 10, allFive: 30, streak: 2, capsule: 120, spend: 70, recycle: 10, free: true };
-  const MOCK = { perGame: 20, allFive: 60, streak: 5, capsule: 100, spend: 80, recycle: 15, free: true };
-  const KEYS = ['perGame', 'allFive', 'streak', 'capsule', 'spend', 'recycle'];
+  // The approved economy: a stamp a game (five core, three extras), two gold for clearing the five, ten to start.
+  const STARTER = 10;
+  const SUGGESTED = { perGame: 1, gold: 2, mysteryPrice: 5, machinePrice: 8, mystery: 70, free: true };
+  const KEYS = ['perGame', 'gold', 'mysteryPrice', 'machinePrice', 'mystery'];
 
   // A seeded generator, so a setting always gives the same result.
   let s = 1;
@@ -123,9 +123,9 @@
     s = 12345;
     return TYPES.map(type => {
       const owned = new Array(DAYS + 1).fill(0);       // players owning Prized+ by each day
-      const tot = { earned: 0, capsules: 0, free: 0, copies: 0, left: 0, firstPrized: [], firstMythic: [], grail: 0, special: 0, swaps: 0, recycled: 0, setDone: 0 };
+      const tot = { earned: 0, capsules: 0, free: 0, copies: 0, left: 0, firstPrized: [], firstMythic: [], grail: 0, special: 0, swaps: 0, setDone: 0 };
       for (let p = 0; p < PER; p++) {
-        let tickets = 0, shelfFund = 0, streak = 0, got = -1, gotM = -1, hasGrail = false, n = 0;
+        let stamps = STARTER, got = -1, gotM = -1, hasGrail = false, n = 0;
         const everyday = [], seen = new Set();
         const take = (o, day) => {
           n++; tot.copies++;
@@ -135,33 +135,34 @@
           if (g >= 2 && got < 0) got = day;
           if (g >= 3 && gotM < 0) gotM = day;
           if (g >= 4) hasGrail = true;
-          if (g === 0) {
-            if (everyday.length >= 4 && rand() < 0.5) { tickets += cfg.recycle; tot.recycled++; }
-            else everyday.push(o);
-          }
+          if (g === 0) everyday.push(o);
         };
         for (let day = 1; day <= DAYS; day++) {
           if (rand() < type.play) {
             const g = type.games();
-            const five = g === 5;
-            streak++;
-            const earn = g * cfg.perGame + (five ? cfg.allFive : 0) + cfg.streak * Math.min(streak, 10);
+            const five = g >= 5;
+            const earn = g * cfg.perGame + (five ? cfg.gold : 0);
             tot.earned += earn;
-            tickets += earn * cfg.spend / 100;
-            shelfFund += earn * (100 - cfg.spend) / 100;
+            stamps += earn;
             const game = LG.GAMES[(p + day) % LG.GAMES.length];
             if (cfg.free && five) { take(LG.roll(`f:${type.id}:${p}:${day}`, game), day); tot.free++; tot.capsules++; }
-            while (tickets >= cfg.capsule) { tickets -= cfg.capsule; tot.capsules++; take(LG.roll(`b:${type.id}:${p}:${day}:${n}`, game), day); }
-            if (shelfFund >= 370 && rand() < 0.3) { shelfFund -= 370; n++; tot.copies++; }
+            // Spend while the next capsule is affordable: a mystery one from any machine, or a picked one.
+            for (;;) {
+              const mystery = rand() * 100 < cfg.mystery, price = mystery ? cfg.mysteryPrice : cfg.machinePrice;
+              if (stamps < price) break;
+              stamps -= price; tot.capsules++;
+              const seed = `b:${type.id}:${p}:${day}:${n}`;
+              take(LG.roll(seed, mystery ? LG.mysteryMachine(seed) : game), day);
+            }
             if (everyday.length >= 5 && rand() < 0.5) {
               everyday.splice(0, 5); tot.swaps++;
               let o; for (let i = 0; i < 4000; i++) { o = LG.roll(`s:${type.id}:${p}:${day}:${i}`, game); if (gradeIdx(o) === 1) break; }
               take(o, day);
             }
-          } else streak = 0;
+          }
           if (got >= 0) owned[day]++;
         }
-        tot.left += tickets + shelfFund;
+        tot.left += stamps;
         if (got >= 0) tot.firstPrized.push(got);
         if (gotM >= 0) tot.firstMythic.push(gotM);
         if (hasGrail) tot.grail++;
@@ -173,7 +174,7 @@
         earnedWeek: tot.earned / PER / (DAYS / 7), capsWeek: tot.capsules / PER / (DAYS / 7), freeWeek: tot.free / PER / (DAYS / 7),
         copies: tot.copies / PER, special: tot.special / PER, prized90: tot.firstPrized.length / PER,
         medianPrized: median(tot.firstPrized), mythic90: tot.firstMythic.length / PER, grail90: tot.grail / PER,
-        left: tot.left / PER, swaps: tot.swaps / PER, recycled: tot.recycled / PER,
+        left: tot.left / PER, swaps: tot.swaps / PER,
       };
     });
   }
@@ -188,11 +189,11 @@
       { ok: regular.medianPrized !== null && regular.medianPrized >= 7 && regular.medianPrized <= 28, big: regular.medianPrized === null ? 'never' : `day ${regular.medianPrized}`, text: 'A regular player\'s first Prized or better. Aim: within 1–4 weeks.' },
       { ok: casual.special >= 1, big: one(casual.special), text: 'Special-or-better copies a casual player has by day 90. Aim: at least one.' },
       { ok: daily.grail90 <= 0.35 && daily.grail90 >= 0.05, big: pct(daily.grail90), text: 'Daily players with a Grail by day 90. Aim: 5–35%, so it stays a story.' },
-      { ok: regular.left <= cfg.capsule * 3, big: Math.round(regular.left).toLocaleString('en-US'), text: `Tickets a regular player is sitting on at day 90. Aim: under 3 capsules' worth (${cfg.capsule * 3}).` },
+      { ok: regular.left <= cfg.machinePrice * 2, big: Math.round(regular.left).toLocaleString('en-US'), text: `Stamps a regular player is sitting on at day 90. Aim: under 2 picked capsules' worth (${cfg.machinePrice * 2}).` },
       { ok: regular.capsWeek >= 3 && regular.capsWeek <= 10, big: one(regular.capsWeek), text: 'Capsules a regular player opens a week. Aim: 3–10, a few a session.' },
     ];
     $('checks').innerHTML = checks.map(c => `<div class="check ${c.ok ? 'ok' : 'no'}"><span class="st">${c.ok ? '✓ On target' : '! Off target'}</span><b>${c.big}</b><span>${c.text}</span></div>`).join('');
-    $('table').innerHTML = `<thead><tr><th>Player</th><th>Tickets / week</th><th>Capsules / week</th><th>of them free</th><th>Copies</th><th>Special+</th><th>Prized+ by day 90</th><th>Mythic+</th><th>Grail</th><th>Tickets left</th></tr></thead><tbody>${res.map(r =>
+    $('table').innerHTML = `<thead><tr><th>Player</th><th>Stamps / week</th><th>Capsules / week</th><th>of them free</th><th>Copies</th><th>Special+</th><th>Prized+ by day 90</th><th>Mythic+</th><th>Grail</th><th>Stamps left</th></tr></thead><tbody>${res.map(r =>
       `<tr><td>${r.type.name}</td><td>${Math.round(r.earnedWeek)}</td><td>${one(r.capsWeek)}</td><td>${one(r.freeWeek)}</td><td>${Math.round(r.copies)}</td><td>${one(r.special)}</td><td>${pct(r.prized90)}</td><td>${pct(r.mythic90)}</td><td>${pct(r.grail90)}</td><td>${Math.round(r.left)}</td></tr>`).join('')}</tbody>`;
     drawChart(res);
   }
@@ -237,7 +238,7 @@
   // Controls
   let cfg = { ...SUGGESTED };
   function sync() {
-    for (const k of KEYS) { $(k).value = cfg[k]; $(k + '-v').textContent = k === 'spend' ? cfg[k] + '%' : cfg[k]; }
+    for (const k of KEYS) { $(k).value = cfg[k]; $(k + '-v').textContent = k === 'mystery' ? cfg[k] + '%' : cfg[k]; }
     $('free').checked = cfg.free;
   }
   let timer;
@@ -245,7 +246,6 @@
   for (const k of KEYS) $(k).addEventListener('input', e => { cfg[k] = +e.target.value; sync(); rerun(); });
   $('free').addEventListener('change', e => { cfg.free = e.target.checked; rerun(); });
   $('suggested').addEventListener('click', () => { cfg = { ...SUGGESTED }; sync(); rerun(); });
-  $('current').addEventListener('click', () => { cfg = { ...MOCK }; sync(); rerun(); });
   sync(); render(cfg);
   window.LGEconomy = { simulate };
 })();

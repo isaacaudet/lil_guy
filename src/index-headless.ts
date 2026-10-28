@@ -11,7 +11,7 @@ export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPal
 export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from './parts';
 export { items, itemById, gameItems, freeItem, dress, withItems, inSeason, GAMES, machineName, SHOWPIECE_WEIGHT, itemWeight } from './items';
 export type { Item, Slot, ItemGame } from './items';
-export { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
+export { encode, decode, starter, roll, mysteryMachine, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from './owned';
 export type { Owned, Finish, Grade } from './owned';
 export { paint, SMALL_SIZE } from './paint';
 export { animate, animateLoop, frameAt, drawFrame, toAnimatedSvg, closeEyes, squashRows, MOVES, HEADROOM, FRAME_WIDTH, WIDE_FRAME_WIDTH, FRAME_HEIGHT, EMOTE_UNLOCKS } from './animate';
@@ -27,7 +27,7 @@ export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, type GuyRank, copyOn
 export type { TraitOdds, TraitSlot } from './rarity';
 export { TRAIT_ICONS, TIER_ICONS } from './icons';
 export type { Tier } from './icons';
-export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf, rollPart, rareParts, partName, partCode, readPart, unlocksOf, partCost, PART_SLOTS, PART_ODDS, PART_REFUND } from './look';
+export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf, rollPart, rareParts, partName, partCode, readPart, unlocksOf, partCost, PART_SLOTS, PART_ODDS } from './look';
 export type { Look, LookSlot, Unlocks, PartDrop } from './look';
 export { toShareSvg } from './share';
 export type { ShareOptions } from './share';

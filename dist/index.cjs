@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-BDud85F6.cjs');
+const require_paint = require('./paint-BlwLAozx.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -2633,8 +2633,6 @@ const PART_SLOTS = [
 ];
 /** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
 const PART_ODDS = 1;
-/** Tickets back for a part the player already has. */
-const PART_REFUND = 60;
 const NAMES = {
 	head: require_paint.heads,
 	eyes: require_paint.eyes,
@@ -8019,7 +8017,6 @@ exports.PAINTS = require_paint.PAINTS
 exports.PAINT_COST = PAINT_COST
 exports.PAINT_IDS = require_paint.PAINT_IDS
 exports.PART_ODDS = PART_ODDS
-exports.PART_REFUND = PART_REFUND
 exports.PART_SLOTS = PART_SLOTS
 exports.PINS = require_paint.PINS
 exports.PROFILE_SIZE = PROFILE_SIZE
@@ -8116,6 +8113,7 @@ exports.mergeRefs = mergeRefs
 exports.metalCoins = metalCoins
 exports.metalText = metalText
 exports.mouths = require_paint.mouths
+exports.mysteryMachine = require_paint.mysteryMachine
 exports.nameKey = nameKey
 exports.nameOf = require_paint.nameOf
 exports.nameSkeleton = nameSkeleton

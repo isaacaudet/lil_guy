@@ -1,7 +1,7 @@
 import { hash } from './hash';
 import { AURAS, AURA_ODDS } from './auras';
 import { EFFECTS, FX_IDS, rollFx, type Fx } from './effects';
-import { gameItems, freeItem, inSeason, itemById, itemWeight, type Item, type Slot } from './items';
+import { GAMES, gameItems, freeItem, inSeason, itemById, itemWeight, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
 import { PAINT_IDS, type PaintId } from './paints';
 import type { GameId } from './types';
@@ -229,6 +229,18 @@ export function starter(name: string, game: GameId): Owned {
 export function roll(seed: string, game: GameId): Owned {
   if (unit(`${seed}|aura`) < AURA_ODDS) return rollAura(seed);
   return rollFrom(gameItems(game).filter(i => !i.free), seed);
+}
+
+/**
+ * The machine a mystery capsule comes from: any of them, each as likely as its
+ * share of every machine's capsule pool (the items a capsule can give, by
+ * weight), so every item across the machines is as likely as it is in its own.
+ * Then `roll(seed, game)` opens it as that machine's capsule.
+ */
+export function mysteryMachine(seed: string): GameId {
+  const pools = GAMES.map(game => gameItems(game).filter(i => !i.free).reduce((a, i) => a + itemWeight(i), 0));
+  let r = unit(`${seed}|machine`) * pools.reduce((a, b) => a + b, 0);
+  return GAMES.find((_, i) => (r -= pools[i]) < 0) ?? GAMES[GAMES.length - 1];
 }
 
 /** An aura, from any machine: which one, its finish by share, any float, a print and maybe a tally. */

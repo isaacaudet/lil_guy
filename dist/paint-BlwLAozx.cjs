@@ -8760,6 +8760,17 @@ function roll(seed, game) {
 	if (unit(`${seed}|aura`) < AURA_ODDS) return rollAura(seed);
 	return rollFrom(gameItems(game).filter((i) => !i.free), seed);
 }
+/**
+* The machine a mystery capsule comes from: any of them, each as likely as its
+* share of every machine's capsule pool (the items a capsule can give, by
+* weight), so every item across the machines is as likely as it is in its own.
+* Then `roll(seed, game)` opens it as that machine's capsule.
+*/
+function mysteryMachine(seed) {
+	const pools = GAMES.map((game) => gameItems(game).filter((i) => !i.free).reduce((a, i) => a + itemWeight(i), 0));
+	let r = unit(`${seed}|machine`) * pools.reduce((a, b) => a + b, 0);
+	return GAMES.find((_, i) => (r -= pools[i]) < 0) ?? GAMES[GAMES.length - 1];
+}
 /** An aura, from any machine: which one, its finish by share, any float, a print and maybe a tally. */
 function rollAura(seed) {
 	const aura = AURAS[hash(`${seed}|which`) % AURAS.length];
@@ -16786,6 +16797,12 @@ Object.defineProperty(exports, 'mouths', {
     return mouths;
   }
 });
+Object.defineProperty(exports, 'mysteryMachine', {
+  enumerable: true,
+  get: function () {
+    return mysteryMachine;
+  }
+});
 Object.defineProperty(exports, 'nameOf', {
   enumerable: true,
   get: function () {
@@ -16972,4 +16989,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-BDud85F6.cjs.map
+//# sourceMappingURL=paint-BlwLAozx.cjs.map

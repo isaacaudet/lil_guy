@@ -8735,6 +8735,17 @@ function roll(seed, game) {
 	if (unit(`${seed}|aura`) < AURA_ODDS) return rollAura(seed);
 	return rollFrom(gameItems(game).filter((i) => !i.free), seed);
 }
+/**
+* The machine a mystery capsule comes from: any of them, each as likely as its
+* share of every machine's capsule pool (the items a capsule can give, by
+* weight), so every item across the machines is as likely as it is in its own.
+* Then `roll(seed, game)` opens it as that machine's capsule.
+*/
+function mysteryMachine(seed) {
+	const pools = GAMES.map((game) => gameItems(game).filter((i) => !i.free).reduce((a, i) => a + itemWeight(i), 0));
+	let r = unit(`${seed}|machine`) * pools.reduce((a, b) => a + b, 0);
+	return GAMES.find((_, i) => (r -= pools[i]) < 0) ?? GAMES[GAMES.length - 1];
+}
 /** An aura, from any machine: which one, its finish by share, any float, a print and maybe a tally. */
 function rollAura(seed) {
 	const aura = AURAS[hash(`${seed}|which`) % AURAS.length];
@@ -16287,5 +16298,5 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-DXlY2inO.js.map
+export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
+//# sourceMappingURL=paint-Dl8YWPvV.js.map
