@@ -1077,7 +1077,7 @@ void main() {
       const min = Math.min(...ch.filter(c => c > 0));
       rarest[sl.key] = ch.map((c, i) => [c, i]).filter(([c]) => c === min).map(([, i]) => i);
     }
-    const frames = LG.items.filter(i => i.slot === 'frame');
+    const frames = LG.items.filter(i => i.slot === 'frame' && !i.retired && !i.free);
     // The rarest kinds of copy there are, at the lowest scuff there is, with a tally.
     const FINEST = [
       ['tempered', p => LG.DEEP_BLUE_PRINTS[p % LG.DEEP_BLUE_PRINTS.length]],

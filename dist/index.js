@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-BQm8URTi.js";
+import { AURAS, AURA_ODDS, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-eVQu75g6.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -1903,6 +1903,11 @@ const FOOT_NAMES = [
 	"tucked"
 ];
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
+const dealt = (key, weights, i) => {
+	if (weights[i] > 0) return share(weights, i);
+	for (const deal of [DEAL_3, DEAL_2]) if (deal[key][i] > 0) return share(deal[key], i);
+	return share(weights, i);
+};
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
 	const body = shows(config, "body") ? config.body : 0, cheek = shows(config, "cheeks") ? config.cheeks : 0;
@@ -1910,7 +1915,7 @@ function traitOdds(config) {
 		{
 			slot: "shape",
 			name: heads[config.head].name,
-			chance: share(headWeights, config.head)
+			chance: dealt("head", headWeights, config.head)
 		},
 		{
 			slot: "eyes",
@@ -1920,32 +1925,32 @@ function traitOdds(config) {
 		{
 			slot: "mouth",
 			name: mouths[config.mouth].name,
-			chance: share(mouthWeights, config.mouth)
+			chance: dealt("mouth", mouthWeights, config.mouth)
 		},
 		{
 			slot: "cheeks",
 			name: cheeks[cheek].name,
-			chance: share(cheekWeights, cheek)
+			chance: dealt("cheeks", cheekWeights, cheek)
 		},
 		{
 			slot: "topper",
 			name: hair[config.hair].name,
-			chance: share(hairWeights, config.hair)
+			chance: dealt("hair", hairWeights, config.hair)
 		},
 		{
 			slot: "markings",
 			name: bodies[body].name,
-			chance: share(bodyWeights, body)
+			chance: dealt("body", bodyWeights, body)
 		},
 		{
 			slot: "accessory",
 			name: accessories[config.accessory].name,
-			chance: share(accessoryWeights, config.accessory)
+			chance: dealt("accessory", accessoryWeights, config.accessory)
 		},
 		{
 			slot: "colour",
 			name: palettes[config.palette].name,
-			chance: share(paletteWeights, config.palette)
+			chance: dealt("palette", paletteWeights, config.palette)
 		},
 		{
 			slot: "tone",

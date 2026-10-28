@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-WBfjn8_t.cjs');
+const require_paint = require('./paint-D2x8NqmW.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -1899,6 +1899,11 @@ const FOOT_NAMES = [
 	"tucked"
 ];
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
+const dealt = (key, weights, i) => {
+	if (weights[i] > 0) return share(weights, i);
+	for (const deal of [require_paint.DEAL_3, require_paint.DEAL_2]) if (deal[key][i] > 0) return share(deal[key], i);
+	return share(weights, i);
+};
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
 	const body = require_paint.shows(config, "body") ? config.body : 0, cheek = require_paint.shows(config, "cheeks") ? config.cheeks : 0;
@@ -1906,7 +1911,7 @@ function traitOdds(config) {
 		{
 			slot: "shape",
 			name: require_paint.heads[config.head].name,
-			chance: share(require_paint.headWeights, config.head)
+			chance: dealt("head", require_paint.headWeights, config.head)
 		},
 		{
 			slot: "eyes",
@@ -1916,32 +1921,32 @@ function traitOdds(config) {
 		{
 			slot: "mouth",
 			name: require_paint.mouths[config.mouth].name,
-			chance: share(require_paint.mouthWeights, config.mouth)
+			chance: dealt("mouth", require_paint.mouthWeights, config.mouth)
 		},
 		{
 			slot: "cheeks",
 			name: require_paint.cheeks[cheek].name,
-			chance: share(require_paint.cheekWeights, cheek)
+			chance: dealt("cheeks", require_paint.cheekWeights, cheek)
 		},
 		{
 			slot: "topper",
 			name: require_paint.hair[config.hair].name,
-			chance: share(require_paint.hairWeights, config.hair)
+			chance: dealt("hair", require_paint.hairWeights, config.hair)
 		},
 		{
 			slot: "markings",
 			name: require_paint.bodies[body].name,
-			chance: share(require_paint.bodyWeights, body)
+			chance: dealt("body", require_paint.bodyWeights, body)
 		},
 		{
 			slot: "accessory",
 			name: require_paint.accessories[config.accessory].name,
-			chance: share(require_paint.accessoryWeights, config.accessory)
+			chance: dealt("accessory", require_paint.accessoryWeights, config.accessory)
 		},
 		{
 			slot: "colour",
 			name: require_paint.palettes[config.palette].name,
-			chance: share(require_paint.paletteWeights, config.palette)
+			chance: dealt("palette", require_paint.paletteWeights, config.palette)
 		},
 		{
 			slot: "tone",

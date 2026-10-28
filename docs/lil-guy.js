@@ -17232,6 +17232,11 @@ const FOOT_NAMES = [
 	"tucked"
 ];
 const share = (weights, i) => weights[i] / weights.reduce((a, b$1) => a + b$1, 0);
+const dealt = (key, weights, i) => {
+	if (weights[i] > 0) return share(weights, i);
+	for (const deal of [DEAL_3, DEAL_2]) if (deal[key][i] > 0) return share(deal[key], i);
+	return share(weights, i);
+};
 /** Each of a guy's twelve traits and how likely it was, always in `TRAIT_SLOTS` order. */
 function traitOdds(config) {
 	const body = shows(config, "body") ? config.body : 0, cheek = shows(config, "cheeks") ? config.cheeks : 0;
@@ -17239,7 +17244,7 @@ function traitOdds(config) {
 		{
 			slot: "shape",
 			name: heads[config.head].name,
-			chance: share(headWeights, config.head)
+			chance: dealt("head", headWeights, config.head)
 		},
 		{
 			slot: "eyes",
@@ -17249,32 +17254,32 @@ function traitOdds(config) {
 		{
 			slot: "mouth",
 			name: mouths[config.mouth].name,
-			chance: share(mouthWeights, config.mouth)
+			chance: dealt("mouth", mouthWeights, config.mouth)
 		},
 		{
 			slot: "cheeks",
 			name: cheeks[cheek].name,
-			chance: share(cheekWeights, cheek)
+			chance: dealt("cheeks", cheekWeights, cheek)
 		},
 		{
 			slot: "topper",
 			name: hair[config.hair].name,
-			chance: share(hairWeights, config.hair)
+			chance: dealt("hair", hairWeights, config.hair)
 		},
 		{
 			slot: "markings",
 			name: bodies[body].name,
-			chance: share(bodyWeights, body)
+			chance: dealt("body", bodyWeights, body)
 		},
 		{
 			slot: "accessory",
 			name: accessories[config.accessory].name,
-			chance: share(accessoryWeights, config.accessory)
+			chance: dealt("accessory", accessoryWeights, config.accessory)
 		},
 		{
 			slot: "colour",
 			name: palettes[config.palette].name,
-			chance: share(paletteWeights, config.palette)
+			chance: dealt("palette", paletteWeights, config.palette)
 		},
 		{
 			slot: "tone",
