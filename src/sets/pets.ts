@@ -13,7 +13,8 @@ const perch = (rows: string[], sink = 1) => {
 /**
  * A pair of ears set `out` columns past the sides of the head, where there is
  * room, so they stand at its corners the way a cat's or a fox's do, rather
- * than meeting in the middle on a narrow head.
+ * than meeting in the middle on a narrow head. Drawn for the left side; the
+ * right is its mirror.
  */
 const earsOut = (rows: string[], out: number) => {
   const left = stamp(rows), right = mirror(left);
@@ -22,6 +23,12 @@ const earsOut = (rows: string[], out: number) => {
     seat(c, l, Math.max(1, r.left - out));
     seat(c, rr, Math.min(GRID_SIZE - 1 - width(rr), r.right + out - width(rr) + 1));
   };
+};
+
+/** Headphones: a pair of ears at the head's corners (`earsOut`), and a band and its cups over them, worn like a cap. */
+const headset = (band: string[], ear: string[], out: number) => {
+  const wearBand = on(band), wearEars = earsOut(ear, out);
+  return (c: Canvas) => { wearEars(c); wearBand(c); };
 };
 
 /**
@@ -33,74 +40,74 @@ export const set: MachineSet = {
   add: [
     // ---------------------------------------------------------------- skins
     {
-      id: 'pets.cat', game: 'pets', slot: 'skin', name: 'Cat onesie', eyes: 9, limb: 1,
-      // white socks, fur, fur shade, fur light, pink, collar, bell, bell shade
-      colors: ['#F7F4FF', '#3B3652', '#26223A', '#5E5880', '#FF9CC0', '#E8394F', '#FFD04A', '#C98A12'],
-      outline: '#15121F',
+      id: 'pets.cat', game: 'pets', slot: 'skin', name: 'Cat onesie', eyes: 9, limb: 4,
+      // suit, suit shade, suit light, white, pink, collar, bell, bell shade, white shade
+      colors: ['#5D5880', '#45405F', '#7F79A8', '#F7F4FF', '#FF9CC0', '#E8394F', '#FFD04A', '#C98A12', '#D6D0EA'],
+      outline: '#1F1B2E',
       art: grid16('cat onesie', [
         '................',
-        '...4........3...',
-        '..452......253..',
-        '..455222222553..',
-        '..422222222223..',
-        '..422221122223..',
-        '..42h######s23..',
-        '..2h########s3..',
-        '..2##########3..',
-        '..2##########31.',
-        '..3#########s33.',
-        '..33s######s333.',
-        '..3666677666633.',
-        '...3111881113...',
+        '..31........12..',
+        '..351......152..',
+        '..355111111552..',
+        '..311114411112..',
+        '..311144441112..',
+        '..31h######s12..',
+        '.41h########s24.',
+        '..1##########2..',
+        '.41##########24.',
+        '..1#########s2..',
+        '..21s######s124.',
+        '..2666677666621.',
+        '...2454884542...',
         '................',
         '................',
       ]),
     },
     {
       id: 'pets.shiba', game: 'pets', slot: 'skin', name: 'Shiba onesie', eyes: 9, limb: 1,
-      // cream, orange, orange shade, orange light, -, bandana, bandana shade
-      colors: ['#FFF3DF', '#E99447', '#C2692A', '#F7B877', '#FFD9C2', '#E5484D', '#B22F3A'],
+      // orange, orange shade, orange light, cream, cream shade, bandana, bandana shade
+      colors: ['#E99447', '#C2692A', '#F7B877', '#FFF3DF', '#EBD3B4', '#E5484D', '#B22F3A'],
       outline: '#5A2E10',
       art: grid16('shiba onesie', [
         '................',
-        '...4........3...',
-        '..421......123..',
-        '..411222222113..',
-        '..422222222223..',
-        '..422122221223..',
-        '..41h######s13..',
-        '..1h########s1..',
-        '..1##########1..',
-        '..1##########1..',
-        '..1#########s1..',
-        '..21s######s12..',
-        '..366666666663..',
-        '...3116776113...',
+        '..31........12..',
+        '..341......142..',
+        '..344111111442..',
+        '..311411114112..',
+        '..311111111112..',
+        '..34h######s42..',
+        '..4h########s4..',
+        '..4##########4..',
+        '..4##########43.',
+        '..4#########s44.',
+        '..44s######s442.',
+        '..2667666676622.',
+        '...2117667112...',
         '................',
         '................',
       ]),
     },
     {
       id: 'pets.bunny', game: 'pets', slot: 'skin', name: 'Bunny hoodie', eyes: 10, limb: 1,
-      // pink, pink shade, pink light, inner ear, white
-      colors: ['#FFC2D8', '#E893B4', '#FFE3EE', '#FF7FAE', '#FFFFFF'],
+      // pink, pink shade, pink light, inner ear, white, white shade
+      colors: ['#FFC2D8', '#E893B4', '#FFE3EE', '#FF7FAE', '#FFFFFF', '#EADFF0'],
       outline: '#7A2E4E',
       art: grid16('bunny hoodie', [
         '................',
-        '....3......2....',
-        '...341....142...',
-        '...341....142...',
-        '...341....142...',
-        '..314111111412..',
+        '...33......3311.',
+        '..3143....3141..',
+        '..3143....3142..',
+        '..3143....3142..',
+        '..311111111112..',
         '..311111111112..',
         '..31h######s12..',
         '..1h########s2..',
         '..1##########2..',
-        '..1##########2..',
-        '..2#########s2..',
+        '..1##########25.',
+        '..2#########s26.',
         '..21s######s12..',
-        '...2151111512...',
-        '....22522522....',
+        '...2554224552...',
+        '................',
         '................',
       ]),
     },
@@ -111,9 +118,9 @@ export const set: MachineSet = {
       outline: '#24451A',
       art: grid16('frog hoodie', [
         '................',
-        '...3332..3332...',
         '..34442..34442..',
-        '..345521134552..',
+        '.345542..345542.',
+        '.31444111144412.',
         '..311111111112..',
         '..311111111112..',
         '..31h######s12..',
@@ -131,25 +138,25 @@ export const set: MachineSet = {
     {
       id: 'pets.kitsune', game: 'pets', slot: 'skin', name: 'Kitsune', eyes: 9, limb: 1, showpiece: true, signature: 'neon',
       about: 'A fox spirit, a tail for every hundred years.',
-      // white, white shade, white light, red, tail gold, tail shade, tail tip
-      colors: ['#FFFDF7', '#DCD3E8', '#FFFFFF', '#E5383B', '#FFB347', '#DD7F1C', '#FFF0C8'],
+      // white, white shade, white light, red, tail, tail shade, tail tip, tail light, gold
+      colors: ['#FFFDF7', '#DCD3E8', '#FFFFFF', '#E5383B', '#F28A2E', '#C2601A', '#FFF0C8', '#FFB066', '#FFD04A'],
       outline: '#4A2232',
       art: grid16('kitsune', [
         '................',
-        '...3........2...',
-        '...34......42...',
-        '..3441....1442..',
-        '..341111111142..',
-        '..311114411112..',
+        '..77.3....2.77..',
+        '.777.34..42.777.',
+        '.85563411426558.',
+        '.85631144112658.',
+        '..631111111126..',
         '..31h######s12..',
-        '.71h########s27.',
-        '.74##########47.',
-        '.54##########45.',
-        '.52#########s25.',
-        '.5521s####s1255.',
-        '.56544455444565.',
-        '..662111111266..',
-        '................',
+        '.74h########s47.',
+        '.81##########18.',
+        '..1##########2..',
+        '..1#########s2..',
+        '.721s######s127.',
+        '.85244499444258.',
+        '.65521111112556.',
+        '..66........66..',
         '................',
       ]),
     },
@@ -157,24 +164,24 @@ export const set: MachineSet = {
     // ---------------------------------------------------------------- hats
     {
       id: 'pets.ears', game: 'pets', slot: 'hat', name: 'Cat ears', free: true,
-      // In the guy's own colour, pink inside his blush: they read as his own ears.
+      // In the guy's own colour, pink inside his blush with a white tuft: they read as his own ears.
       colors: [],
       draw: earsOut([
-        'h....',
-        '#h...',
-        '#ch..',
-        '#cc#s',
+        'h.....',
+        '#ho...',
+        '#cwo..',
+        's#cw#o',
       ], 2),
     },
     {
       id: 'pets.puppy-ears', game: 'pets', slot: 'hat', name: 'Head puppy',
-      // white, white shade, white light, ear, nose
-      colors: ['#FFF8EE', '#E2D2BC', '#FFFFFF', '#9A6034', '#2B1D18'],
+      // white, white shade, white light, ear, ear shade, nose, tongue
+      colors: ['#FFF8EE', '#E2D2BC', '#FFFFFF', '#B07040', '#7E4A26', '#2B1D18', '#FF8A9E'],
       draw: perch([
-        '.433111124.',
-        '443o111o244',
-        '44311511244',
-        '..3111112..',
+        '.543111245.',
+        '.441o1o144.',
+        '.451161154.',
+        '.5.32723.5.',
       ]),
     },
     {
@@ -182,33 +189,38 @@ export const set: MachineSet = {
       // orange, orange shade, orange light, cream, dark tip
       colors: ['#F28A2E', '#C2601A', '#FFB066', '#FFF1DC', '#3A2418'],
       draw: earsOut([
-        '5....',
-        '35...',
-        '3141.',
-        '31442',
-      ], 1),
+        '5o...',
+        '55o..',
+        '343o.',
+        '1442o',
+      ], 2),
     },
     {
       id: 'pets.bunny-ears', game: 'pets', slot: 'hat', name: 'Bunny ears',
       // white, pink, white shade
       colors: ['#FFFFFF', '#FFA8C8', '#E2D8EC'],
       draw: perch([
-        '13......31',
-        '123....321',
-        '.123..321.',
-        '..13..31..',
+        '.13.....1111',
+        '.123...1223.',
+        '.123...123..',
+        '.123...123..',
       ]),
     },
     {
       id: 'pets.headphones', game: 'pets', slot: 'hat', name: 'Cat-ear headphones',
-      // band, band shade, light, light glow
-      colors: ['#FF9EC8', '#E06A9E', '#7FF0FF', '#E8FFFF'],
-      draw: on([
-        '.3.......3.',
-        '.43.....34.',
-        '13311111331',
-        '22.......22',
-      ]),
+      // band, band shade, band light, glow, glow light, ear cup
+      colors: ['#FF9EC8', '#E06A9E', '#FFD0E4', '#7FF0FF', '#E8FFFF', '#B8457A'],
+      // The ears stand at the head's corners like Cat ears; the band and its cups go on over them like a cap.
+      draw: headset([
+        '..21111112..',
+        '66........66',
+        '64........46',
+      ], [
+        '1....',
+        '13o..',
+        '154o.',
+        '1145o',
+      ], 1),
     },
 
     // ---------------------------------------------------------------- frames
@@ -268,35 +280,35 @@ export const set: MachineSet = {
       // orange, shade, light, pink, white
       colors: ['#F6A04D', '#D07228', '#FFC98A', '#FF9AAE', '#FFF4E6'],
       art: pet('kitten', [
-        '3....2',
-        '31..12',
-        '1o22o2',
-        '154452',
-        '.1552.',
+        '1...1.',
+        '14.41.',
+        '11111.',
+        '1o1o13',
+        '154512',
       ]),
     },
     {
       id: 'pets.puppy', game: 'pets', slot: 'buddy', name: 'Puppy',
-      // golden, shade, light, ear, nose, tongue
-      colors: ['#F2C27A', '#D29A50', '#FFE2B0', '#8A5530', '#2B1D18', '#FF8A9E'],
+      // golden, shade, light, ear, nose, tongue, muzzle
+      colors: ['#F2C27A', '#D29A50', '#FFE2B0', '#8A5530', '#2B1D18', '#FF8A9E', '#FFF6E8'],
       art: pet('puppy', [
-        '431124',
-        '4o11o4',
-        '413514',
-        '.1662.',
-        '.1..2.',
+        '41314',
+        '4o1o4',
+        '47574',
+        '.767.',
+        '.2.2.',
       ]),
     },
     {
       id: 'pets.axolotl', game: 'pets', slot: 'buddy', name: 'Axolotl',
-      // pink, shade, light, gill, gill dark
-      colors: ['#FFB3CF', '#E77FA8', '#FFE0EC', '#FF6F9F', '#D9417A'],
+      // pink, shade, light, gill, gill dark, smile
+      colors: ['#FFB3CF', '#E77FA8', '#FFE0EC', '#FF6F9F', '#D9417A', '#8A2E52'],
       art: pet('axolotl', [
-        '4.33.4',
-        '531125',
-        '4o11o4',
-        '.1221.',
-        '.1..1.',
+        '5.33.5',
+        '451154',
+        '1o11o1',
+        '116611',
+        '.2..2.',
       ]),
     },
     {
@@ -306,9 +318,9 @@ export const set: MachineSet = {
       art: pet('bunny', [
         '.1..1.',
         '.3..3.',
-        '111112',
-        '1o11o2',
-        '.1332.',
+        '.1111.',
+        '1o11o1',
+        '213312',
       ]),
     },
   ],
