@@ -1464,9 +1464,11 @@ const onPair = (rows, inset = 0) => {
 };
 /**
 * The biggest a buddy is drawn: its art, inside the outline compose gives it.
-* It stands in front of the guy in his bottom-right corner (no head leaves
-* room beside him; see `buddySpot` in ./compose), and this is as big as it
-* gets there without coming up to his face.
+* The moving and baked pictures give it room beside him (`buddyBeside` in
+* ./compose, `BUDDY_ROOM` columns for this box), but on the 16x16 icon it
+* stands in front of him in his bottom-right corner, and this is as big as it
+* gets there without coming up to his face. A bigger box widens every buddy
+* picture (`BUDDY_ROOM`) and crowds the icon.
 */
 const BUDDY_BOX = {
 	width: 6,
@@ -1780,15 +1782,15 @@ const set$9 = {
 			art: grid16("gumball machine", [
 				"................",
 				".......45.......",
-				".....444445.....",
-				"....36373836....",
-				"...1667788661...",
-				"..37h######s38..",
-				"..77########88..",
-				"..38########36..",
-				"..88########66..",
-				"..36s######s37..",
-				"...6373836377...",
+				".....311112.....",
+				"....6oooooo8....",
+				"...7ohh####o8...",
+				".36oh#######o71.",
+				".1oh#########o2.",
+				".1o##########o2.",
+				".7o#########so8.",
+				".68os######so76.",
+				"..86os####so67..",
 				"..444444444445..",
 				"..449944455445..",
 				"..449944455445..",
@@ -1797,7 +1799,7 @@ const set$9 = {
 			])
 		},
 		"amountle.jar": {
-			eyes: 7,
+			eyes: 8,
 			limb: 5,
 			colors: [
 				"#E3F5F7",
@@ -1813,20 +1815,20 @@ const set$9 = {
 			outline: "#2F6870",
 			art: grid16("jar", [
 				"................",
-				"....45454545....",
-				"....44444444....",
-				"...3111111112...",
-				"..131######112..",
-				"..13########12..",
-				"..13########12..",
-				"..13########12..",
-				"..1#########s2..",
-				"..1##########2..",
-				"..13s######s12..",
-				"..363738393637..",
-				"..667788996677..",
-				"..738393637382..",
-				"...8899667788...",
+				"...4545454545...",
+				"...4444444444...",
+				"..311111111112..",
+				".3111oooooo1112.",
+				".311ohh####o112.",
+				".31oh#######o12.",
+				".3oh#########o2.",
+				".3o##########o2.",
+				".1o##########o2.",
+				".1o#########so2.",
+				".67os######so76.",
+				".89678967896789.",
+				".76897689768976.",
+				"..222222222222..",
 				"................"
 			])
 		},
@@ -1886,7 +1888,7 @@ const set$8 = {
 			slot: "skin",
 			name: "Burger suit",
 			eyes: 9,
-			limb: 2,
+			limb: "own",
 			colors: [
 				"#EFA352",
 				"#C47A30",
@@ -1902,17 +1904,17 @@ const set$8 = {
 				"................",
 				"................",
 				"....33331112....",
-				"..331141114122..",
-				".31411111141112.",
-				".31111411111142.",
-				".5555h####s5555.",
-				".778########877.",
-				".778########877.",
-				".778########877.",
-				".678s######s876.",
-				".6666s####s6666.",
-				".31631111613612.",
-				".21111111111112.",
+				"...3114111412...",
+				"..311141114112..",
+				"..221111111122..",
+				".555h######s555.",
+				".5h##########s5.",
+				".h############s.",
+				".##############.",
+				".#############s.",
+				"..s##########s..",
+				".666ss####ss666.",
+				".31111111111112.",
 				"..222222222222..",
 				"................"
 			])
@@ -2246,8 +2248,8 @@ const set$7 = {
 			game: "stackdle",
 			slot: "skin",
 			name: "Wedge",
-			eyes: 11,
-			limb: 2,
+			eyes: 10,
+			limb: "own",
 			colors: [
 				"#5FE0B4",
 				"#34A985",
@@ -2259,20 +2261,20 @@ const set$7 = {
 			outline: "#17533F",
 			art: grid16("wedge", [
 				"................",
-				"................",
 				".33.............",
 				".3133...........",
 				".315133.........",
 				".356511333......",
 				".31511111133....",
 				".3111111111133..",
-				".311h######s132.",
-				".311########112.",
-				".311########112.",
-				".311########112.",
-				".311s######s112.",
-				".3111s####s1112.",
-				".22222222222224.",
+				".31111111111112.",
+				"..ssssssssssss..",
+				"..h##########s..",
+				"..h##########s..",
+				"..###########s..",
+				"...#########s...",
+				"....ssssssss....",
+				"................",
 				"................"
 			])
 		},
@@ -2281,8 +2283,8 @@ const set$7 = {
 			game: "stackdle",
 			slot: "skin",
 			name: "Keystone",
-			eyes: 9,
-			limb: 2,
+			eyes: 10,
+			limb: "own",
 			colors: [
 				"#F88F7B",
 				"#D9705C",
@@ -2294,19 +2296,19 @@ const set$7 = {
 			outline: "#6E2A1C",
 			art: grid16("keystone", [
 				"................",
-				"................",
 				".33333333333332.",
 				".31111155111112.",
-				".31111566511112.",
-				".31111155111112.",
-				"..31h######s12..",
-				"..31########12..",
-				"..31########12..",
-				"...3########2...",
-				"...3s######s2...",
-				"...31s####s12...",
-				"....31111112....",
-				"....22222224....",
+				"..311156651112..",
+				"..311115511112..",
+				"...3111111112...",
+				"...2222222222...",
+				"...ssssssssss...",
+				"..h##########s..",
+				"..h##########s..",
+				"..###########s..",
+				"..###########s..",
+				"...#########s...",
+				"....ssssssss....",
 				"................",
 				"................"
 			])
@@ -2316,7 +2318,8 @@ const set$7 = {
 			game: "stackdle",
 			slot: "skin",
 			name: "Arch",
-			eyes: 8,
+			eyes: 9,
+			limb: "own",
 			colors: [
 				"#F6C768",
 				"#DBAD4A",
@@ -2328,19 +2331,19 @@ const set$7 = {
 			outline: "#5E4A12",
 			art: grid16("arch", [
 				"................",
-				"................",
 				".....335533.....",
 				"...3311561122...",
 				"..311444444112..",
-				".3114######4112.",
+				".3114hhh###4112.",
 				".314h######s412.",
-				".314########412.",
-				".314########412.",
-				".314########412.",
-				".314########412.",
-				".314########412.",
-				".314s######s412.",
-				".224.ss..ss.422.",
+				".34h########s42.",
+				".34##########42.",
+				".34##########42.",
+				".34##########42.",
+				".22##########22.",
+				"..###########s..",
+				"...#########s...",
+				"....ssssssss....",
 				"................",
 				"................"
 			])
@@ -2713,8 +2716,8 @@ const set$6 = {
 			game: "flipsies",
 			slot: "skin",
 			name: "Buttered toast",
-			eyes: 9,
-			limb: 4,
+			eyes: 10,
+			limb: "own",
 			colors: [
 				"#F6D9A0",
 				"#E3B97A",
@@ -2728,19 +2731,19 @@ const set$6 = {
 			outline: "#5A3210",
 			art: grid16("buttered toast", [
 				"................",
-				"....66444444....",
-				"...6433311114...",
-				"..643777111145..",
-				"..641788111145..",
-				"..641h#####145..",
-				"..64h#######45..",
-				"..64########45..",
-				"..64########45..",
-				"..64########45..",
-				"..64#######s45..",
-				"..641ssssss245..",
-				"..642222222245..",
-				"...5555555555...",
+				"...6644444444...",
+				"..643331111114..",
+				".64377711111145.",
+				".64178811111145.",
+				".64111111111145.",
+				".6411h####s1145.",
+				".641h######s145.",
+				".64h########s45.",
+				".64##########45.",
+				".55##########55.",
+				"..###########s..",
+				"...#########s...",
+				"....ssssssss....",
 				"................",
 				"................"
 			])
@@ -2751,7 +2754,7 @@ const set$6 = {
 			slot: "skin",
 			name: "Moai",
 			eyes: 10,
-			limb: 2,
+			limb: "own",
 			showpiece: true,
 			signature: "lava",
 			colors: [
@@ -2774,12 +2777,12 @@ const set$6 = {
 				"..211111311112..",
 				"..211121121112..",
 				"..214222222412..",
-				"..21h######s12..",
-				"..21########12..",
-				"...1########1...",
-				"...1########1...",
-				"...21s####s12...",
-				"...8122222218...",
+				".21ssssssssss12.",
+				".21h########s12.",
+				".21##########12.",
+				"..###########s..",
+				"...#########s...",
+				"...8ssssssss8...",
 				"................",
 				"................"
 			])
@@ -3023,7 +3026,7 @@ const set$6 = {
 			], 0, 2)
 		},
 		"flipsies.bottle": {
-			eyes: 9,
+			eyes: 10,
 			limb: 4,
 			colors: [
 				"#D6EEFB",
@@ -3039,20 +3042,20 @@ const set$6 = {
 			outline: "#2A5A8C",
 			art: grid16("water bottle", [
 				"................",
-				".......45.......",
+				"......4445......",
 				".....444445.....",
 				".....555555.....",
-				"....31111112....",
-				"..331111111122..",
-				"..31h######s12..",
-				"..31########12..",
-				"..31########12..",
-				"..31########12..",
-				"..31s######s12..",
-				"..388s####s882..",
-				"..863666666667..",
-				"...6666666677...",
-				"....77777777....",
+				"...3111111112...",
+				"..311oooooo112..",
+				".311ohh####o112.",
+				".31oh#######o12.",
+				".3oh#########o2.",
+				".3o##########o2.",
+				".1o##########o2.",
+				".1o#########so2.",
+				".86os######so68.",
+				".76666666666667.",
+				"..777777777777..",
 				"................"
 			])
 		},
@@ -3130,16 +3133,16 @@ const set$5 = {
 				"....53333114....",
 				"...5333314114...",
 				"..533333141234..",
-				"..536666666634..",
-				"..56h######s64..",
-				"..56########64..",
-				"..56########64..",
-				"..56########64..",
-				"..56########64..",
-				"..56s######s64..",
-				"...5666666664...",
-				"....44444444....",
-				"................",
+				"..533666666334..",
+				"..536hh####634..",
+				".536h######s634.",
+				".56h########s64.",
+				".56##########64.",
+				".56#########s64.",
+				".536s######s634.",
+				"..536ssssss634..",
+				"..533666666334..",
+				"...4444444444...",
 				"................"
 			])
 		},
@@ -3374,7 +3377,7 @@ const set$5 = {
 	],
 	redraw: {
 		"puttsies.ball": {
-			eyes: 8,
+			eyes: 9,
 			colors: [
 				"#FAFAF6",
 				"#D3D6DE",
@@ -3391,16 +3394,16 @@ const set$5 = {
 				".....331112.....",
 				"....33141142....",
 				"...3141114112...",
-				"..314h####s412..",
-				"..34########42..",
-				"..31########12..",
-				"..34########42..",
-				"..31########12..",
-				"...14s####s42...",
-				"....24111142....",
-				".....222222.....",
+				"..314oooooo412..",
+				".314ohhh###o412.",
+				".31oh#######o12.",
+				".3oh#########o2.",
+				".1o##########o2.",
+				".4o#########so4.",
+				".14os######so42.",
+				"..14os####so42..",
+				"...24oooooo42...",
 				"......6667......",
-				".......67.......",
 				"................"
 			])
 		},
@@ -3529,13 +3532,13 @@ const set$4 = {
 				"..311411114112..",
 				"..314411114412..",
 				"..311115511112..",
-				"..31########12..",
+				"..311h####s112..",
+				"..31h######s12..",
+				"..1h########s2..",
 				"..1##########2..",
-				"..1##########2..",
-				"..1##########2..",
-				"..21########12..",
-				"...21######12...",
-				"...2441111442...",
+				"..1#########s2..",
+				"..21s######s12..",
+				"...244ssss442...",
 				"................",
 				"................"
 			])
@@ -15886,11 +15889,12 @@ function clearFace(c, face, bare, worn) {
 * pixel, diagonals included, runs between its outline and him.
 *
 * Where there is no such spot, it stands in front of him in the bottom-right
-* corner, as it always has, with its own outline, leaving out any pixel that
-* would touch his eyes or mouth (`face`). That is every head and skin there is
-* today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
-* needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
-* only comes true on a picture wider than his own.
+* corner with its own outline, leaving out any pixel that would touch his eyes
+* or mouth (`face`). That is every head and skin on his own sixteen columns
+* (the 16x16 icon): a guy fills them, and a 6x5 buddy apart from him needs
+* nine to eleven more (`scripts/buddy-room.ts` measures it). The moving and
+* baked pictures give him those columns (`buddyBeside`), so there it always
+* stands apart.
 */
 function buddySpot(art, taken, face = () => false) {
 	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
@@ -15928,6 +15932,74 @@ function buddySpot(art, taken, face = () => false) {
 		apart: false
 	};
 }
+/** The most columns a wide picture adds past his sixteen for a buddy: a full `BUDDY_BOX` one, on the widest head or skin. */
+const BUDDY_ROOM = 10;
+/**
+* Where his buddy stands in the moving and baked pictures: on the floor to his
+* right, past his sixteen columns, as near him as it can be with a clear pixel
+* between them in every frame of every move (`movesRoom`), its whole art
+* drawn. The picture is as wide as that needs, `BUDDY_ROOM` more at most.
+* Undefined when he has no buddy. The 16x16 icon has no room for it and keeps
+* the corner (`compose`).
+*/
+function buddyBeside(config) {
+	const buddy = itemById(config.buddy);
+	if (buddy?.slot !== "buddy") return void 0;
+	const room = movesRoom(config);
+	for (let extra = width(buddy.art) + 2;; extra++) {
+		const spot = buddySpot(buddy.art, room.map((row) => [...row, ...new Array(GRID_SIZE + extra - row.length).fill(false)]));
+		if (spot.apart) return {
+			width: GRID_SIZE + extra,
+			cells: spot.cells
+		};
+	}
+}
+/**
+* His buddy on its own, its whole art (in the buddy's layer) and outline where
+* it stands beside him (`buddyBeside`), on a grid that wide: what a moving
+* picture draws for it, and an item view of a buddy shows.
+*/
+function buddyAlone(config) {
+	const beside = buddyBeside(config);
+	if (!beside) return void 0;
+	const grid = Array.from({ length: GRID_SIZE }, () => new Array(beside.width).fill(0));
+	for (const [x, y, t] of beside.cells) grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+	return grid;
+}
+/**
+* The cells he covers in any frame of any move, on his sixteen columns and the one a step takes him past them, as
+* ./animate moves him: his still with either arm out, turned round, a step to
+* either side (a dance's, an oops), down two rows where a squash lowers him
+* and up one for the hop a buddy takes on its own (it hops higher only while
+* he is off the ground too). Tighter than `roomFor`, which allows two steps.
+*/
+function movesRoom(config) {
+	const plain = {
+		...config,
+		buddy: void 0,
+		frame: void 0,
+		aura: void 0
+	};
+	const out = Array.from({ length: GRID_SIZE }, () => new Array(GRID_SIZE + 1).fill(false));
+	for (const arms$1 of new Set([
+		config.arms,
+		1,
+		2
+	])) {
+		const g = compose({
+			...plain,
+			arms: arms$1
+		});
+		for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+			if (!g[y][x] && !g[y][GRID_SIZE - 1 - x]) continue;
+			for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) {
+				const yy = y + dy, xx = x + dx;
+				if (yy >= 0 && yy < GRID_SIZE && xx >= 0) out[yy][xx] = true;
+			}
+		}
+	}
+	return out;
+}
 /**
 * The cells a guy may cover in any frame of any move, from his still: an arm
 * out at either side and a step sideways (two columns), down two rows where a
@@ -15958,16 +16030,6 @@ function roomFor(still) {
 function compose(config) {
 	return build(config);
 }
-/**
-* The buddy a guy wears, where it stands in his still (`cells`, art in its
-* own `1`–`9` colours), and his eyes and mouth (`face`, as `y * 16 + x`), so
-* ./animate can stand it on the floor while he moves.
-*/
-function buddyOf(config) {
-	const report = { hatCut: 0 };
-	build(config, report);
-	return report.buddy;
-}
 function build(config, report) {
 	const skin = skinOf(config);
 	const hat$1 = itemById(config.hat);
@@ -15977,7 +16039,7 @@ function build(config, report) {
 	c.setFace(eye, mouth$1);
 	if (skin) {
 		if (skin.limb) {
-			const limb = LAYER.skin + skin.limb - 1;
+			const limb = skin.limb === "own" ? T.BODY : LAYER.skin + skin.limb - 1;
 			feet(c, config.feet, limb);
 			arms(c, config.arms, limb);
 		}
@@ -16225,5 +16287,5 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOCAL, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyOf, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-BvlDdcM_.js.map
+export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
+//# sourceMappingURL=paint-DXlY2inO.js.map

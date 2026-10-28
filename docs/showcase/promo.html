@@ -3626,11 +3626,12 @@
     const base = guyConfig(seed);
     const slot = LG.slotOf(o), [lo, hi] = SLOT_RANGE[slot], want = LG.FRAME_SLOTS.indexOf(slot) + 1;
     // Painted without its effect: drawShow moves the effect itself.
-    const draw = cfg => { const grid = LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg), false, false) }; };
+    // A buddy is taken whole from where it stands beside him: on his sixteen columns it gives way to his face.
+    const draw = cfg => { const grid = (slot === 'buddy' && LG.buddyAlone(cfg)) || LG.compose(cfg); return { grid, colors: LG.paint(grid, cfg, LG.withItems(LG.paletteOf(cfg), cfg), false, false) }; };
     const worn = draw(LG.dress(base, { equip: [LG.encode(o)] }));
     let mask = worn.grid.map(row => row.map(tk => tk >= lo && tk < hi));
     if (!mask.some(r => r.some(Boolean))) { const bare = draw(LG.dress(base, { equip: [] })); mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x])); }
-    const W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT, top = H - 16;
+    const W = worn.grid[0].length, H = LG.FRAME_HEIGHT, top = H - 16;
     const colors = Array.from({ length: H }, () => new Array(W).fill(null)), slots = Array.from({ length: H }, () => new Array(W).fill(0));
     worn.colors.forEach((row, y) => row.forEach((c, x) => { if (mask[y][x] && c) { colors[y + top][x] = c; slots[y + top][x] = want; } }));
     const edge = [];
@@ -3646,7 +3647,7 @@
     if (LG.slotOf(o) === 'aura') {
       // An aura has nothing to show on its own: it's shown round the guy, moving.
       const c = guyConfig(seed), anim = LG.animateLoop(seed, 'idle', { parts: partsOf(c), palette: LG.paletteOf(c), equip: [LG.encode(o)], rarity: false });
-      const W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT, k = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
+      const W = anim.width, H = LG.FRAME_HEIGHT, k = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
       canvas.width = W; canvas.height = H; canvas.style.width = W * k + 'px'; canvas.style.height = H * k + 'px';
       const s = { canvas, ctx: canvas.getContext('2d'), anim, box: { x: 0, y: 0, w: W, h: H }, moves: true };
       shows.add(s); drawShow(s, performance.now());
@@ -3676,8 +3677,8 @@
       s.ctx.putImageData(img, 0, 0); return;
     }
     // The finish moving on the object, by the library's plain-code shine: what a baked picture shows.
-    const shone = LG.shineFrame(frame, s.owned, Math.floor(now / 80) * 80), img = s.ctx.createImageData(w, h);
-    for (let yy = 0; yy < h; yy++) img.data.set(shone.subarray(((y + yy) * LG.FRAME_WIDTH + x) * 4, ((y + yy) * LG.FRAME_WIDTH + x + w) * 4), yy * w * 4);
+    const shone = LG.shineFrame(frame, s.owned, Math.floor(now / 80) * 80), img = s.ctx.createImageData(w, h), FW = frame.colors[0].length;
+    for (let yy = 0; yy < h; yy++) img.data.set(shone.subarray(((y + yy) * FW + x) * 4, ((y + yy) * FW + x + w) * 4), yy * w * 4);
     s.ctx.putImageData(img, 0, 0);
   }
 

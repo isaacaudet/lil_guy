@@ -272,11 +272,12 @@ export interface BuddySpot {
  * pixel, diagonals included, runs between its outline and him.
  *
  * Where there is no such spot, it stands in front of him in the bottom-right
- * corner, as it always has, with its own outline, leaving out any pixel that
- * would touch his eyes or mouth (`face`). That is every head and skin there is
- * today: a guy fills his sixteen columns, and a 6x5 buddy apart from him
- * needs nine to eleven more (`scripts/buddy-room.ts` measures it), so `apart`
- * only comes true on a picture wider than his own.
+ * corner with its own outline, leaving out any pixel that would touch his eyes
+ * or mouth (`face`). That is every head and skin on his own sixteen columns
+ * (the 16x16 icon): a guy fills them, and a 6x5 buddy apart from him needs
+ * nine to eleven more (`scripts/buddy-room.ts` measures it). The moving and
+ * baked pictures give him those columns (`buddyBeside`), so there it always
+ * stands apart.
  */
 export function buddySpot(art: Stamp, taken: boolean[][], face: (x: number, y: number) => boolean = () => false): BuddySpot {
   const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
@@ -301,6 +302,71 @@ export function buddySpot(art: Stamp, taken: boolean[][], face: (x: number, y: n
   }
   const corner = at(W - 1 - w, y0).filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && !face(x, y));
   return { cells: corner, apart: false };
+}
+
+/** The most columns a wide picture adds past his sixteen for a buddy: a full `BUDDY_BOX` one, on the widest head or skin. */
+export const BUDDY_ROOM = 10;
+
+/** A buddy beside him in a wide picture, as `buddyBeside` works it out. */
+export interface BuddyBeside {
+  /** How wide the picture is: his sixteen columns and the buddy's room to his right. */
+  width: number;
+  /** `[x, y, token]` on that picture: the art in its own `1`–`9` colours, and its outline. */
+  cells: [number, number, number][];
+}
+
+/**
+ * Where his buddy stands in the moving and baked pictures: on the floor to his
+ * right, past his sixteen columns, as near him as it can be with a clear pixel
+ * between them in every frame of every move (`movesRoom`), its whole art
+ * drawn. The picture is as wide as that needs, `BUDDY_ROOM` more at most.
+ * Undefined when he has no buddy. The 16x16 icon has no room for it and keeps
+ * the corner (`compose`).
+ */
+export function buddyBeside(config: AvatarConfig): BuddyBeside | undefined {
+  const buddy = itemById(config.buddy);
+  if (buddy?.slot !== 'buddy') return undefined;
+  const room = movesRoom(config);
+  for (let extra = width(buddy.art!) + 2; ; extra++) {
+    const spot = buddySpot(buddy.art!, room.map(row => [...row, ...new Array<boolean>(GRID_SIZE + extra - row.length).fill(false)]));
+    if (spot.apart) return { width: GRID_SIZE + extra, cells: spot.cells };
+  }
+}
+
+/**
+ * His buddy on its own, its whole art (in the buddy's layer) and outline where
+ * it stands beside him (`buddyBeside`), on a grid that wide: what a moving
+ * picture draws for it, and an item view of a buddy shows.
+ */
+export function buddyAlone(config: AvatarConfig): PixelGrid | undefined {
+  const beside = buddyBeside(config);
+  if (!beside) return undefined;
+  const grid = Array.from({ length: GRID_SIZE }, () => new Array<number>(beside.width).fill(0));
+  for (const [x, y, t] of beside.cells) grid[y][x] = t >= LOCAL ? t - LOCAL + LAYER.buddy : t;
+  return grid;
+}
+
+/**
+ * The cells he covers in any frame of any move, on his sixteen columns and the one a step takes him past them, as
+ * ./animate moves him: his still with either arm out, turned round, a step to
+ * either side (a dance's, an oops), down two rows where a squash lowers him
+ * and up one for the hop a buddy takes on its own (it hops higher only while
+ * he is off the ground too). Tighter than `roomFor`, which allows two steps.
+ */
+export function movesRoom(config: AvatarConfig): boolean[][] {
+  const plain = { ...config, buddy: undefined, frame: undefined, aura: undefined };
+  const out = Array.from({ length: GRID_SIZE }, () => new Array<boolean>(GRID_SIZE + 1).fill(false));
+  for (const arms of new Set([config.arms, 1, 2])) {
+    const g = compose({ ...plain, arms });
+    for (let y = 0; y < GRID_SIZE; y++) for (let x = 0; x < GRID_SIZE; x++) {
+      if (!g[y][x] && !g[y][GRID_SIZE - 1 - x]) continue;
+      for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const yy = y + dy, xx = x + dx;
+        if (yy >= 0 && yy < GRID_SIZE && xx >= 0) out[yy][xx] = true;
+      }
+    }
+  }
+  return out;
 }
 
 /**
@@ -375,10 +441,11 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
   c.setFace(eye, mouth);
 
   // A skin is drawn already shaded, in its own material, and carries no
-  // markings. Its arms and feet, if it has any, take one of its colours.
+  // markings. Its arms and feet, if it has any, take one of its colours, or
+  // his own where his body shows under the costume.
   if (skin) {
     if (skin.limb) {
-      const limb = LAYER.skin + skin.limb - 1;
+      const limb = skin.limb === 'own' ? T.BODY : LAYER.skin + skin.limb - 1;
       feet(c, config.feet, limb);
       arms(c, config.arms, limb);
     }

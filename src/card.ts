@@ -1,4 +1,4 @@
-import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type AnimateOptions, type Move } from './animate';
+import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type Animation, type AnimateOptions, type Move } from './animate';
 import { editionColor, editionOf, finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
 import { cycle, fitLoop, LOOP_MS, wave } from './loop';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
@@ -59,10 +59,10 @@ const hash = (x: number, y: number, p: number) => { const s = Math.sin(x * 127.1
  * `gx, gy` is the guy pixel (what twinkles), `cx, cy` the card pixel (what a
  * sweep crosses), so light runs smoothly over a single pixel of a hat.
  */
-function shine(c: RGB, o: Owned, gx: number, gy: number, cx: number, cy: number, t: number): RGB {
+function shine(c: RGB, o: Owned, gx: number, gy: number, cx: number, cy: number, t: number, zoom: number): RGB {
   const f = SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]);
   if (f < 0) return c;
-  const out = finishColor([c[0] / 255, c[1] / 255, c[2] / 255], f, o.scuff, hash(gx, gy, o.print), (cx + cy) / ZOOM, gy, o.print, loopSeconds(t * 1000), 1);
+  const out = finishColor([c[0] / 255, c[1] / 255, c[2] / 255], f, o.scuff, hash(gx, gy, o.print), (cx + cy) / zoom, gy, o.print, loopSeconds(t * 1000), 1);
   return [out[0] * 255, out[1] * 255, out[2] * 255];
 }
 
@@ -152,7 +152,29 @@ function inBox(x: number, y: number, w: number, h: number, r: number): boolean {
 }
 const inside = (x: number, y: number) => inBox(x, y, CARD_WIDTH, BODY_HEIGHT, 8);
 
-const M = 7;
+/** The window's and plate's margin at the card's sides, and the narrowest it goes for a guy and his buddy. */
+const M = 7, WIDE = 4;
+
+/** How he stands on the card: card pixels to each of his (`zoom`), and the columns of his frame centred in the window. */
+interface CardFit { zoom: number; left: number; span: number; side: number }
+
+/**
+ * Six card pixels to each of his, centred on his sixteen columns; with a buddy
+ * beside him, as big as the two of them fit the window (`zoom`), centred on
+ * everything either of them covers in any frame of the move. When widening
+ * the window to the card's bevel (`side`) lets the pair stand a size bigger,
+ * it does.
+ */
+function cardFit(anim: Animation): CardFit {
+  if (anim.width <= FRAME_WIDTH) return { zoom: ZOOM, left: 0, span: FRAME_WIDTH, side: M };
+  let left = anim.width, right = -1;
+  for (const f of anim.frames) f.colors.forEach((row, y) => row.forEach((c, x) => { if (c && f.slots[y][x] !== 5) { left = Math.min(left, x); right = Math.max(right, x); } }));
+  const span = right - left + 1;
+  // The window less its rim and the sticker edge round him; or, wide, its rim allowed to
+  // cover a card pixel at either end of the furthest either of them reaches.
+  const narrow = Math.floor((CARD_WIDTH - M * 2 - 6) / span), wide = Math.floor((CARD_WIDTH - WIDE * 2 - 2) / span);
+  return wide > narrow ? { zoom: Math.min(ZOOM, wide), left, span, side: WIDE } : { zoom: Math.min(ZOOM, narrow), left, span, side: M };
+}
 
 /**
  * The card at `t` seconds, with the guy's frame `frame` in its window.
@@ -163,7 +185,7 @@ const M = 7;
  * finish that sets its grade: Foil, Holographic, Polychrome, Negative, Gold,
  * and the aura card's Spectral.
  */
-function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, ed: number, t: number): Uint8ClampedArray {
+function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots: number[][]; outside?: [number, number, string][] }, owned: Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>, g: number, ed: number, t: number, { zoom, left, span, side }: CardFit): Uint8ClampedArray {
   // The card's own clock, in ms, on the loop every other moving thing keeps
   // (./loop), set by its last copy's print (or its guy's name), so cards side
   // by side catch the light at their own moments.
@@ -210,7 +232,7 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   y -= titleH;
   const titleTop = y;
   const plateTop = y - 3;
-  const WIN = { left: M, right: W - 1 - M, top: 6, bottom: plateTop - 4 };
+  const WIN = { left: side, right: W - 1 - side, top: 6, bottom: plateTop - 4 };
   const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * 0.45;
 
   // ---------------------------------------------------------------- the card's stock
@@ -251,6 +273,28 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     s.set(x, yy, edition(c, x, yy, 1));
   }
 
+  // ---------------------------------------------------------------- where he stands
+  // Where he stands: feet near the floor; on the top grades he rises out of
+  // the window and floats, bobbing (Balatro's soul layer).
+  const soul = gold || aura;
+  let topRow = FRAME_HEIGHT, botRow = 0;
+  frame.colors.forEach((row, gy) => { if (row.some(Boolean)) { topRow = Math.min(topRow, gy); botRow = gy; } });
+  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - ((left + span / 2) * zoom));
+  const bob = soul ? Math.round(Math.sin(tm / wave(1000 / 2.6)) * 2) : 0;
+  let oy = WIN.bottom - 5 - (botRow + 1) * zoom;
+  if (soul) oy = Math.max(5 - topRow * zoom, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - ((topRow + botRow + 1) * zoom) / 2) - 10)) + bob;
+  // A soft shadow on the floor under each of them, him and his buddy: under the
+  // cells of his bottom rows, in the window's floor even when he floats.
+  const floors: [number, number, number][] = [];
+  for (const buddy of [false, true]) {
+    let lo = -1, l = Infinity, r = -Infinity;
+    frame.colors.forEach((row, gy) => row.forEach((c, gx) => { if (c && frame.slots[gy][gx] !== 5 && (frame.slots[gy][gx] === 4) === buddy) lo = Math.max(lo, gy); }));
+    if (lo < 0) continue;
+    frame.colors.forEach((row, gy) => { if (gy >= lo - 1) row.forEach((c, gx) => { if (c && frame.slots[gy][gx] !== 5 && (frame.slots[gy][gx] === 4) === buddy) { l = Math.min(l, gx); r = Math.max(r, gx); } }); });
+    const feet = soul ? WIN.bottom - 5 : oy + (lo + 1) * zoom - bob;
+    floors.push([ox + (l + r + 1) / 2 * zoom, Math.min(WIN.bottom - 7, feet - 3), Math.max(6, (r - l + 1) * zoom * 0.38 + 2)]);
+  }
+
   // ---------------------------------------------------------------- the window
   const light: RGB = g >= 0 ? mix(IVORY, gc, 0.22) : mix(IVORY, gc, 0.12);
   if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
@@ -260,26 +304,18 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     let c: RGB;
     if (gold) c = mix([112, 62, 10], [232, 160, 48], Math.max(0, 1 - r) ** 1.3);
     else c = mix(light, mix(light, gc, 0.35), depth * 0.6);
-    // His floor: a soft shadow where he stands.
-    const fx = (x - wcx) / 34, fy = (yy - (WIN.bottom - 9)) / 4;
-    if (fx * fx + fy * fy < 1) c = mix(c, [0, 0, 0], 0.16 * (1 - fx * fx - fy * fy));
+    for (const [sx, sy, rx] of floors) {
+      const fx = (x - sx) / rx, fy = (yy - sy) / 4;
+      if (fx * fx + fy * fy < 1) c = mix(c, [0, 0, 0], 0.16 * (1 - fx * fx - fy * fy));
+    }
     // A shaded lip under the rim, so the window reads as set into the card.
     if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK, 0.35);
     s.set(x, yy, edition(c, x, yy, 2));
   }
 
   // ---------------------------------------------------------------- him
-  // Where he stands: feet near the floor; on the top grades he rises out of
-  // the window and floats, bobbing (Balatro's soul layer).
-  const soul = gold || aura;
-  let topRow = FRAME_HEIGHT, botRow = 0;
-  frame.colors.forEach((row, gy) => { if (row.some(Boolean)) { topRow = Math.min(topRow, gy); botRow = gy; } });
-  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - (FRAME_WIDTH * ZOOM) / 2);
-  const bob = soul ? Math.round(Math.sin(tm / wave(1000 / 2.6)) * 2) : 0;
-  let oy = WIN.bottom - 5 - (botRow + 1) * ZOOM;
-  if (soul) oy = Math.max(5 - topRow * ZOOM, Math.min(oy, Math.round((WIN.top + WIN.bottom) / 2 - ((topRow + botRow + 1) * ZOOM) / 2) - 10)) + bob;
   // A tall hat pokes out over the window's top rather than being cut off.
-  const pop = soul || oy + topRow * ZOOM < WIN.top + 3;
+  const pop = soul || oy + topRow * zoom < WIN.top + 3;
   const clip = (cx: number, cy: number) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1
     : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left + 1 && cx < WIN.right - 1;
   // A sticker's edge round him, so his dark outline never sinks into the window.
@@ -287,25 +323,25 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   const edgeC: RGB = aura ? mix(ah, WHITE, 0.55) : gold ? [255, 236, 170] : WHITE;
   for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
     if (!clip(x, yy)) continue;
-    const gx = Math.floor((x - ox) / ZOOM), gy = Math.floor((yy - oy) / ZOOM);
+    const gx = Math.floor((x - ox) / zoom), gy = Math.floor((yy - oy) / zoom);
     if (x - ox >= 0 && yy - oy >= 0 && solid(gx, gy)) continue;
-    const near = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / ZOOM), Math.floor((yy + dy - oy) / ZOOM)));
+    const near = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]].some(([dx, dy]) => x + dx - ox >= 0 && yy + dy - oy >= 0 && solid(Math.floor((x + dx - ox) / zoom), Math.floor((yy + dy - oy) / zoom)));
     if (near) s.set(x, yy, pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? WHITE : edgeC);
   }
   frame.colors.forEach((row, gy) => row.forEach((hex, gx) => {
     if (!hex) return;
     const slot = frame.slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : undefined;
-    for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
-      const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+    for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+      const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
       if (!clip(cx, cy)) continue;
       let c = rgb(hex);
-      if (copy) c = shine(c, copy, gx, gy, cx, cy, t);
+      if (copy) c = shine(c, copy, gx, gy, cx, cy, t, zoom);
       s.set(cx, cy, clamp8(c));
     }
   }));
   // A rare aura's rings run past the frame's sides into the window's margins.
-  for (const [gx, gy, hex] of frame.outside ?? []) for (let dy = 0; dy < ZOOM; dy++) for (let dx = 0; dx < ZOOM; dx++) {
-    const cx = ox + gx * ZOOM + dx, cy = oy + gy * ZOOM + dy;
+  for (const [gx, gy, hex] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+    const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
     if (clip(cx, cy)) s.set(cx, cy, rgb(hex));
   }
   // The corner tag in the window.
@@ -316,9 +352,10 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
   }
 
   // ---------------------------------------------------------------- the plate and its words
-  for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = M; x <= W - 1 - M; x++) {
-    if (!inBox(x - M, yy - plateTop, W - M * 2, plateBottom - plateTop + 1, 4)) continue;
-    const edge = !inBox(x - M - 1, yy - plateTop, W - M * 2, plateBottom - plateTop + 1, 4) || !inBox(x - M + 1, yy - plateTop, W - M * 2, plateBottom - plateTop + 1, 4) || yy === plateTop || yy === plateBottom;
+  for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
+    const pw = W - side * 2, ph = plateBottom - plateTop + 1;
+    if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
+    const edge = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
     const base: RGB = gold ? [92, 52, 8] : aura ? mix(mix(ah, INK, 0.6), INK, 0.45) : PLATE;
     s.set(x, yy, edge ? INK : yy === plateTop + 1 ? mix(base, WHITE, 0.16) : yy >= plateBottom - 2 ? mix(base, INK, 0.45) : base);
   }
@@ -341,9 +378,9 @@ function drawCard(input: CardInput, frame: { colors: (string | null)[][]; slots:
     s.text(pill, x0 + 7, pillTop - 1, () => WHITE, mix(fill, INK, 0.6));
     if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
   }
-  foots.forEach((l, k) => s.text(l, M + 5, footTop + k * 11 - 2, () => quiet));
+  foots.forEach((l, k) => s.text(l, side + 5, footTop + k * 11 - 2, () => quiet));
   if (markHex) {
-    const m = rgb(markHex), x0 = W - M - 14, y0 = footTop;
+    const m = rgb(markHex), x0 = W - side - 14, y0 = footTop;
     for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
       const rim = x === 0 || yy === 0 || x === 8 || yy === 8;
       s.set(x0 + x, y0 + yy, rim ? INK : x === 1 || yy === 1 ? mix(m, WHITE, 0.45) : x === 7 || yy === 7 ? mix(m, [0, 0, 0], 0.3) : m);
@@ -404,7 +441,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
   const move = input.move ?? 'idle', plain = animate(input.seed, move, options);
   const { repeats, turns } = fitLoop(plain.duration);
   const anim = animate(input.seed, move, { ...options, loop: { repeats, turns } });
-  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), ed = cardEdition(input, g);
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), ed = cardEdition(input, g), fit = cardFit(anim);
   const total = anim.duration, count = Math.max(1, Math.round(total / ms)), cache: Uint8ClampedArray[] = [];
   const delays = Array.from({ length: count }, (_, k) => Math.round((k + 1) * total / count) - Math.round(k * total / count));
   return {
@@ -412,7 +449,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
     /** The frame showing at `i` (wraps round). */
     frame(i: number): Uint8ClampedArray {
       const k = ((i % count) + count) % count;
-      return cache[k] ??= drawCard(input, frameAt(anim, k * total / count), owned, g, ed, ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000);
+      return cache[k] ??= drawCard(input, frameAt(anim, k * total / count), owned, g, ed, ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000, fit);
     },
   };
 }
@@ -421,7 +458,7 @@ export function cardPlayer(input: CardInput, ms = 80) {
 export function cardStill(input: CardInput, t = 0.6): Uint8ClampedArray {
   const anim = animateLoop(input.seed, input.move ?? 'idle', { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false });
   const g = cardGrade(input);
-  return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), g, cardEdition(input, g), t);
+  return drawCard(input, frameAt(anim, 0), ownedBySlot(input.copies ?? []), g, cardEdition(input, g), t, cardFit(anim));
 }
 
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */
@@ -447,10 +484,10 @@ export function toCardPng(input: CardInput, scale = 4): Promise<Uint8Array> {
  */
 export function toGuyGif(seed: string, move: Move, options: AnimateOptions & { background?: string } = {}, scale = 12): Uint8Array {
   const anim = animateLoop(seed, move, options), bg = options.background ? rgb(options.background) : null;
-  const frames = anim.frames.map(f => {
-    const px = new Uint8ClampedArray(FRAME_WIDTH * FRAME_HEIGHT * 4);
-    f.colors.forEach((row, y) => row.forEach((c, x) => { const v = c ? rgb(c) : bg; if (v) px.set([...v, 255], (y * FRAME_WIDTH + x) * 4); }));
+  const W = anim.width, frames = anim.frames.map(f => {
+    const px = new Uint8ClampedArray(W * FRAME_HEIGHT * 4);
+    f.colors.forEach((row, y) => row.forEach((c, x) => { const v = c ? rgb(c) : bg; if (v) px.set([...v, 255], (y * W + x) * 4); }));
     return px;
   });
-  return encodeGif({ width: FRAME_WIDTH, height: FRAME_HEIGHT, frames, delays: anim.frames.map(f => f.ms) }, scale);
+  return encodeGif({ width: W, height: FRAME_HEIGHT, frames, delays: anim.frames.map(f => f.ms) }, scale);
 }

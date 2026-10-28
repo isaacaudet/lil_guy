@@ -8,7 +8,7 @@ import type { Frames } from './gif';
  *   <lil-guy seed="Sneaky Gumdrop"></lil-guy>      a guy drawn from any text
  *   <lil-guy code="eyJzIjoi…"></lil-guy>           an exact guy (`guyCode`), or set `.spec`
  *   view="idle"   a move looping (default), or `still`, `card`, `card-still`
- *   size="4"      screen pixels per art pixel (default 4)
+ *   size="4"      screen pixels per art pixel (default 4); a guy with a buddy is wider (`BAKED_SIZE.buddy`)
  *   label="mia"   what a screen reader says; without it he's decorative
  *
  * With a host (`defineLilGuy({ host })`) it is an `<img>` of the Worker's
@@ -99,11 +99,14 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
       if (label) { this.setAttribute('role', 'img'); this.setAttribute('aria-label', label); } else this.setAttribute('aria-hidden', 'true');
       if (this.player) { playing.delete(this.player); this.player = null; }
       if (!who) { this.replaceChildren(); return; }
-      const style = `width:${box.width * size}px;height:${box.height * size}px;image-rendering:pixelated;image-rendering:crisp-edges`;
+      const pixels = 'image-rendering:pixelated;image-rendering:crisp-edges';
+      const style = (width: number, height: number) => `width:${width * size}px;height:${height * size}px;${pixels}`;
       if (host) {
         const img = document.createElement('img');
         img.src = `${host}/g/${ART_VERSION}/${who}/${view}.png`;
-        img.alt = ''; img.decoding = 'async'; img.loading = 'lazy'; img.style.cssText = style;
+        // A guy with a buddy beside him is wider: the box holds the narrower size until the picture says.
+        img.alt = ''; img.decoding = 'async'; img.loading = 'lazy';
+        img.style.cssText = box === BAKED_SIZE.card ? style(box.width, box.height) : `width:auto;min-width:${box.width * size}px;height:${box.height * size}px;${pixels}`;
         this.replaceChildren(img);
         return;
       }
@@ -115,7 +118,7 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
       const frames = baked.get(key);
       if (!frames) { this.replaceChildren(); return; }
       const canvas = document.createElement('canvas');
-      canvas.width = frames.width; canvas.height = frames.height; canvas.style.cssText = style;
+      canvas.width = frames.width; canvas.height = frames.height; canvas.style.cssText = style(frames.width, frames.height);
       this.canvas = canvas;
       this.replaceChildren(canvas);
       this.player = { el: this, frames, start: performance.now(), shown: -1, total: frames.delays.reduce((a, b) => a + b, 0) };

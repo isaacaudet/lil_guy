@@ -20,7 +20,7 @@ export const set: MachineSet = {
       id: 'weighsies.gold-bar', game: 'weighsies', slot: 'skin', name: 'Panda onesie', eyes: 10, limb: 4,
       colors: ['#F7F6F2', '#C8CAD2', '#FFFFFF', '#2B2D35', '#4B4F5C'],
       outline: '#1A1B22',
-      // The guy zipped into a giant panda suit: black ears on the hood, black paws.
+      // The guy zipped into a giant panda suit: black ears on the hood, his round face out of it, black paws.
       art: grid16('panda onesie', [
         '................',
         '..444......444..',
@@ -29,13 +29,13 @@ export const set: MachineSet = {
         '..311411114112..',
         '..314411114412..',
         '..311115511112..',
-        '..31########12..',
+        '..311h####s112..',
+        '..31h######s12..',
+        '..1h########s2..',
         '..1##########2..',
-        '..1##########2..',
-        '..1##########2..',
-        '..21########12..',
-        '...21######12...',
-        '...2441111442...',
+        '..1#########s2..',
+        '..21s######s12..',
+        '...244ssss442...',
         '................',
         '................',
       ]),

@@ -1,6 +1,6 @@
 import { RETIRED_EYES } from '../parts/weights';
 import { describe, expect, it } from 'bun:test';
-import { compose, buddyOf, buddySpot, roomFor, ARM_STYLES, FOOT_STYLES } from '../compose';
+import { compose, buddyOf, buddySpot, movesRoom, ARM_STYLES, BUDDY_ROOM, FOOT_STYLES } from '../compose';
 import { BUDDY_BOX } from '../item-art';
 import { heads, eyes, mouths, hair, accessories } from '../parts';
 import { T } from '../parts/art';
@@ -206,9 +206,10 @@ describe('buddies', () => {
 
   // The rule: a buddy stands apart, a clear pixel (diagonals too) between its
   // outline and the guy in every frame of every move. Sixteen columns leave no
-  // head or skin room for that, so on his own picture it stands in front of
-  // him in the bottom-right corner, never touching his eyes or mouth. On a
-  // picture eleven columns wider every head and skin has the room.
+  // head or skin room for that, so on his 16x16 icon it stands in front of
+  // him in the bottom-right corner, never touching his eyes or mouth. The
+  // moving and baked pictures are BUDDY_ROOM columns wider at most, and there
+  // every head and skin has the room (`buddyBeside`).
   const BOX = Array.from({ length: BUDDY_BOX.height }, () => new Array<number>(BUDDY_BOX.width).fill(1));
   const all = [...heads.map((_, head) => ({ head })), ...skins.map(s => ({ skin: s.id }))];
   const near = (a: Set<number>, x: number, y: number) => [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => a.has((y + dy) * GRID_SIZE + x + dx)));
@@ -226,11 +227,11 @@ describe('buddies', () => {
     expect(wrong).toEqual([]);
   }, 60_000);
 
-  it('stand apart from him, a clear pixel between, where the picture has the room', () => {
-    const EXTRA = 11, wrong: string[] = [];
-    for (const body of all) for (let feet = 0; feet < FOOT_STYLES.length; feet++) {
-      const still = guy({ ...body, feet }).map(row => [...row.map(Boolean), ...new Array<boolean>(EXTRA).fill(false)]);
-      const room = roomFor(still), spot = buddySpot(BOX, room);
+  it('stand apart from him, a clear pixel between, within BUDDY_ROOM more columns', () => {
+    const wrong: string[] = [];
+    for (const body of all) for (let feet = 0; feet < FOOT_STYLES.length; feet++) for (const arms of [0, 1, 2]) for (const flip of [false, true]) {
+      const room = movesRoom({ ...BASE, ...body, feet, arms, flip }).map(row => [...row, ...new Array<boolean>(GRID_SIZE + BUDDY_ROOM - row.length).fill(false)]);
+      const spot = buddySpot(BOX, room);
       if (!spot.apart) { wrong.push(`${JSON.stringify(body)} feet ${feet}`); continue; }
       // Checked again here, not by buddySpot's own rule: nothing he covers within a pixel of it.
       for (const [x, y] of spot.cells) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {

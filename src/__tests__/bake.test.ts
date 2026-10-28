@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { animate, AURAS, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode } from '../index-headless';
+import { AURA_PAD } from '../animate';
+import { animate, AURAS, BAKED_SIZE, BUDDY_GUY_WIDTH, GUY_HEIGHT, GUY_WIDTH, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode } from '../index-headless';
 
 const aura = `${AURAS[0].id}~gold~0.0123456~20`;
 const hat = `${items.find(i => i.slot === 'hat' && !i.free)!.id}~nebula~0.0500000~7`;
@@ -10,6 +11,24 @@ describe('baked guys', () => {
     const anim = animate('Maya0', 'hop', {}), baked = bakeGuy({ seed: 'Maya0' }, 'hop');
     expect(total(baked.delays)).toBe(anim.duration);
     expect([baked.width, baked.height]).toEqual([22, 20]);
+    expect([GUY_WIDTH, GUY_HEIGHT]).toEqual([BAKED_SIZE.guy.width, BAKED_SIZE.guy.height]);
+  });
+
+  test('a guy with a buddy is one wider size, the two of them centred, nothing cut off', () => {
+    expect([BUDDY_GUY_WIDTH, GUY_HEIGHT]).toEqual([BAKED_SIZE.buddy.width, BAKED_SIZE.buddy.height]);
+    const lit = (px: Uint8ClampedArray) => { let n = 0; for (let i = 3; i < px.length; i += 4) if (px[i]) n++; return n; };
+    for (const [seed, buddy] of [['Maya0', 'pets.kitten'], ['Theo1', 'weighsies.elephant'], ['Lux7', 'trackdle.kart']]) {
+      const equip = [`${buddy}~plain~0.3000000~900`];
+      for (const move of ['idle', 'hop', 'dance'] as const) {
+        const baked = bakeGuy({ seed, equip }, move);
+        expect([baked.width, baked.height]).toEqual([BUDDY_GUY_WIDTH, GUY_HEIGHT]);
+        expect(lit(baked.frames[0])).toBe(animate(seed, move, { equip }).frames[0].colors.flat().filter(Boolean).length);
+        let left = baked.width, right = -1;
+        for (const px of baked.frames) for (let i = 3; i < px.length; i += 4) if (px[i]) { const x = ((i - 3) / 4) % baked.width; left = Math.min(left, x); right = Math.max(right, x); }
+        expect(left).toBeGreaterThanOrEqual(AURA_PAD);
+        expect(Math.abs(left - (baked.width - 1 - right))).toBeLessThanOrEqual(2);
+      }
+    }
   });
 
   test('a shimmering copy plays the move whole times, and its finish comes round with it', () => {
