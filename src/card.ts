@@ -1,4 +1,4 @@
-import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, WIDE_FRAME_WIDTH, type Animation, type AnimationFrame, type AnimateOptions, type Move } from './animate';
+import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type Animation, type AnimationFrame, type AnimateOptions, type Move } from './animate';
 import { editionField, editionOf, finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
 import { cycle, LOOP_MS, wave } from './loop';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
@@ -170,43 +170,60 @@ function cardShape() {
   return theShape = { depth, bevel, glint, runs, shadow };
 }
 
-/** The window's and plate's margin at the card's sides. */
-const M = 7;
+/** The window's and plate's margin at the card's sides: out to the bevel, so a guy and his buddy fit. */
+const M = 4;
 /**
- * Card pixels to each of the guy's, the same on every card: as big as a guy
- * with the widest buddy beside him fits the window, inside its rim and the
- * sticker edge round him. A guy on his own stands at the same size.
+ * Card pixels to each of the guy's, the same on every card, buddy or not. A
+ * guy with his buddy a column closer fills the window, losing at most a card
+ * pixel under its rim at their widest reach.
  */
-const ZOOM = Math.floor((CARD_WIDTH - M * 2 - 6) / WIDE_FRAME_WIDTH);
-
-/** Where he stands on the card: the columns of his frame centred in the window, and the rows he ever reaches. */
-interface CardFit { left: number; span: number; top: number; foot: number; topAll: number; footAll: number; rest: number }
-
-/**
- * Centred on his sixteen columns, or with a buddy beside him on everything
- * either of them covers in any frame of the move; and in the window's height
- * as he stands at rest. His feet stand on the same row in every frame, so a
- * hop leaves the floor.
- */
-function cardFit(anim: Animation): CardFit {
-  let left = anim.width, right = -1, top = FRAME_HEIGHT, foot = 0, topAll = FRAME_HEIGHT, footAll = 0;
-  for (const f of anim.frames) f.colors.forEach((row, y) => row.forEach((c, x) => {
-    if (!c) return;
-    topAll = Math.min(topAll, y); footAll = Math.max(footAll, y);
-    if (f.slots[y][x] === 5) return;
-    left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); foot = Math.max(foot, y);
-  }));
-  if (anim.width <= FRAME_WIDTH || right < 0) { left = 0; right = FRAME_WIDTH - 1; }
-  // His top as he stands at rest, in the move's first frame.
-  const rest = anim.frames[0]?.colors.findIndex((row, y) => row.some((c, x) => c && anim.frames[0].slots[y][x] !== 5)) ?? top;
-  return { left, span: right - left + 1, top, foot, topAll, footAll, rest: rest < 0 ? top : rest };
-}
+const ZOOM = 5;
 
 type CardFrame = AnimationFrame & { outside?: [number, number, string][] };
 type OwnedBySlot = Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>;
 
 /** Whether a copy's finish moves on the card (a heavily scuffed plain copy's sweep is worn away). */
 const shines = (o: Owned) => { const f = SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]); return f > 0 || (f === 0 && o.scuff <= 0.07); };
+
+/** Where he stands on the card: the middle of what he covers across, in card pixels from his frame's left, and the rows he ever reaches. */
+interface CardFit { mid: number; top: number; foot: number; topAll: number; footAll: number; rest: number }
+
+/**
+ * Centred on his sixteen columns, or with a buddy beside him on everything
+ * either of them covers in any frame of the move; and in the window's height
+ * as he stands at rest. His feet stand on the same row in every frame, so a
+ * hop leaves the floor. A frame item's backdrop is a panel behind them and
+ * doesn't count: its edges may go under the window's rim.
+ */
+function cardFit(frames: CardFrame[], width: number, cellX: (gx: number, slot: number) => number): CardFit {
+  let left = Infinity, right = -Infinity, top = FRAME_HEIGHT, foot = 0, topAll = FRAME_HEIGHT, footAll = 0;
+  for (const f of frames) f.colors.forEach((row, y) => row.forEach((c, x) => {
+    const slot = f.slots[y][x];
+    if (!c || slot === 3) return;
+    topAll = Math.min(topAll, y); footAll = Math.max(footAll, y);
+    if (slot === 5) return;
+    left = Math.min(left, cellX(x, slot)); right = Math.max(right, cellX(x, slot) + ZOOM); top = Math.min(top, y); foot = Math.max(foot, y);
+  }));
+  const mid = width <= FRAME_WIDTH || right < left ? FRAME_WIDTH * ZOOM / 2 : (left + right) / 2;
+  // His top as he stands at rest, in the move's first frame.
+  const rest = frames[0]?.colors.findIndex((row, y) => row.some((c, x) => c && frames[0].slots[y][x] !== 5 && frames[0].slots[y][x] !== 3)) ?? top;
+  return { mid, top, foot, topAll, footAll, rest: rest < 0 ? top : rest };
+}
+
+/**
+ * How many card pixels his buddy stands in towards him: all of the empty
+ * columns between them in every frame of the move but two card pixels, room
+ * for a sticker edge between them, so the two stand a size bigger.
+ */
+function buddyNudge(anim: Animation): number {
+  if (anim.width <= FRAME_WIDTH) return 0;
+  let guy = -1, buddy = anim.width;
+  for (const f of anim.frames) f.colors.forEach((row, y) => row.forEach((c, x) => {
+    if (!c || f.slots[y][x] === 3 || f.slots[y][x] === 5) return;
+    if (x < FRAME_WIDTH) guy = Math.max(guy, x); else buddy = Math.min(buddy, x);
+  }));
+  return Math.max(0, (buddy - guy - 1) * ZOOM - 2);
+}
 
 /**
  * Everything about a card that holds still, worked out once: the laid-out
@@ -220,7 +237,10 @@ const shines = (o: Owned) => { const f = SHADER_FINISHES.indexOf(o.finish as (ty
  * and the aura card's Spectral.
  */
 function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: number, ed: number) {
-  const fit = cardFit(anim), zoom = ZOOM, { left, span } = fit, shape = cardShape();
+  // Where a cell of his frame starts across, in card pixels: his buddy's room (an aura's cells aside) nudged in.
+  const zoom = ZOOM, nudge = buddyNudge(anim);
+  const cellX = (gx: number, slot: number) => gx * zoom - (gx >= FRAME_WIDTH && slot !== 5 ? nudge : 0);
+  const fit = cardFit(anim.frames, anim.width, cellX), shape = cardShape();
   // The card's own clock, in ms, on the loop every other moving thing keeps
   // (./loop), set by its last copy's print (or its guy's name), so cards side
   // by side catch the light at their own moments.
@@ -380,14 +400,14 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // ---------------------------------------------------------------- where he stands
   // Standing in the middle of the window, on its floor; on an aura card he rises and floats, bobbing (Balatro's soul layer).
   const soul = aura;
-  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - ((left + span / 2) * zoom));
+  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit.mid);
   const oy0 = soul
     ? Math.max(5 - fit.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - ((fit.topAll + fit.footAll + 1) * zoom) / 2) - 10)
     : Math.round((WIN.top + WIN.bottom + 1) / 2 - ((fit.rest + fit.foot + 1) * zoom) / 2) + 4;
   // A tall hat pokes out over the window's top rather than being cut off.
   const pop = soul || oy0 + fit.top * zoom < WIN.top + 3;
   const clip = (cx: number, cy: number) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1
-    : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left + 1 && cx < WIN.right - 1;
+    : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
   const edgeC: RGB = aura ? mix(ah, WHITE, 0.55) : gold ? [255, 236, 170] : WHITE;
 
   // Where he may draw, and where his sticker edge turns white against the window's rim.
@@ -414,8 +434,8 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
       const own = (gx: number, gy: number) => !!colors[gy][gx] && slots[gy][gx] !== 5 && (slots[gy][gx] === 4) === buddy;
       colors.forEach((row, gy) => row.forEach((_, gx) => { if (own(gx, gy)) lo = gy; }));
       if (lo < 0) continue;
-      for (let gy = Math.max(0, lo - 1); gy <= lo; gy++) colors[gy].forEach((_, gx) => { if (own(gx, gy)) { l = Math.min(l, gx); r = Math.max(r, gx); } });
-      got.push(ox + (l + r + 1) / 2 * zoom, Math.min(WIN.bottom - 7, oy + (lo + 1) * zoom - 3), Math.max(6, (r - l + 1) * zoom * 0.38 + 2));
+      for (let gy = Math.max(0, lo - 1); gy <= lo; gy++) colors[gy].forEach((_, gx) => { if (own(gx, gy)) { l = Math.min(l, cellX(gx, slots[gy][gx])); r = Math.max(r, cellX(gx, slots[gy][gx]) + zoom); } });
+      got.push(ox + (l + r) / 2, Math.min(WIN.bottom - 7, oy + (lo + 1) * zoom - 3), Math.max(6, (r - l) * 0.38 + 2));
     }
     floors.set(frame, got);
     return got;
@@ -439,7 +459,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     for (let gy = 0; gy < fh; gy++) {
       const row = colors[gy], srow = slots[gy];
       for (let gx = 0; gx < fw; gx++) if (row[gx] && srow[gx] !== 5)
-        for (let dy = 0; dy < zoom; dy++) mask.fill(1, (2 + gy * zoom + dy) * bw + 2 + gx * zoom, (2 + gy * zoom + dy) * bw + 2 + gx * zoom + zoom);
+        for (let dy = 0; dy < zoom; dy++) mask.fill(1, (2 + gy * zoom + dy) * bw + 2 + cellX(gx, srow[gx]), (2 + gy * zoom + dy) * bw + 2 + cellX(gx, srow[gx]) + zoom);
     }
     for (let j = 0; j < bh; j++) {
       const yy = by + j;
@@ -470,14 +490,15 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
       }
     }
     for (const e of edgesOf(frame, oy)) { const c = e & 1 ? WHITE : edgeC; put(e >> 1, c[0], c[1], c[2]); }
-    for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
+    // A frame item's backdrop first, so his buddy's room nudged in over it never covers him.
+    for (const behind of [true, false]) for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
       const hex = colors[gy][gx];
-      if (!hex) continue;
-      const slot = slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : undefined;
+      if (!hex || (slots[gy][gx] === 3) !== behind) continue;
+      const slot = slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : undefined, x0 = ox + cellX(gx, slot);
       const f = copy ? SHADER_FINISHES.indexOf(copy.finish as (typeof SHADER_FINISHES)[number]) : -1, c = rgb(hex);
       if (copy && f >= 0) litDone.fill(0);
       for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
-        const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy;
+        const cx = x0 + dx, cy = oy + gy * zoom + dy;
         if (cx < 0 || cy < 0 || cx >= W || cy >= H || !room[cy * W + cx]) continue;
         if (!copy || f < 0) { put(cy * W + cx, c[0], c[1], c[2]); continue; }
         const k = dx + dy;
