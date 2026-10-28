@@ -375,10 +375,11 @@ function build(config: AvatarConfig, report?: Report): PixelGrid {
   c.setFace(eye, mouth);
 
   // A skin is drawn already shaded, in its own material, and carries no
-  // markings. Its arms and feet, if it has any, take one of its colours.
+  // markings. Its arms and feet, if it has any, take one of its colours, or
+  // his own where his body shows under the costume.
   if (skin) {
     if (skin.limb) {
-      const limb = LAYER.skin + skin.limb - 1;
+      const limb = skin.limb === 'own' ? T.BODY : LAYER.skin + skin.limb - 1;
       feet(c, config.feet, limb);
       arms(c, config.arms, limb);
     }

@@ -56,8 +56,12 @@ export interface Item {
   art?: Stamp;
   /** Skins: the row the bottom of the eyes sits on. */
   eyes?: number;
-  /** Skins: which of the item's colours arms and feet are drawn in, or none. */
-  limb?: number;
+  /**
+   * Skins: which of the item's colours arms and feet are drawn in, or none.
+   * `'own'` draws them in the guy's own colour, for a costume worn as a hood
+   * or a hat with his own body showing under it.
+   */
+  limb?: number | 'own';
   /** Hats: draws onto the head. */
   draw?: (c: Canvas) => void;
   /** Frames: which of the item's colours fills a background cell. */
