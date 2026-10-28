@@ -1,4 +1,4 @@
-import { animate, animateLoop, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type Animation, type AnimationFrame, type AnimateOptions, type Move } from './animate';
+import { animate, animateLoop, backdropOf, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type Animation, type AnimationFrame, type AnimateOptions, type Move } from './animate';
 import { editionField, editionOf, finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
 import { cycle, LOOP_MS, wave } from './loop';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
@@ -126,8 +126,12 @@ class Surface {
 }
 
 const INK: RGB = [24, 20, 31], IVORY: RGB = [246, 240, 227], WHITE: RGB = [255, 255, 255], PLATE: RGB = [38, 34, 52];
-/** A Grail's gold, its light and its deep. */
-const GOLD_HI: RGB = [255, 222, 110], GOLD_LO: RGB = [204, 124, 22];
+/** A Grail's gold foil, its light and its deep. */
+const GOLD_HI: RGB = [255, 226, 128], GOLD_LO: RGB = [196, 130, 30];
+/** A Grail's amber window, its deep and the glow behind him. */
+const AMBER: RGB = [92, 54, 12], AMBER_GLOW: RGB = [214, 150, 44];
+/** A Grail's words, struck into the gold: dark brown, the light catching the cut's lower edge. */
+const GOLD_INK: RGB = [96, 54, 6], GOLD_CUT: RGB = [255, 240, 186];
 
 /** How tall the card itself is: the rows under it hold its shadow. */
 const BODY_HEIGHT = CARD_HEIGHT - 5;
@@ -192,8 +196,8 @@ interface CardFit { mid: number; top: number; foot: number; topAll: number; foot
  * Centred on his sixteen columns, or with a buddy beside him on everything
  * either of them covers in any frame of the move; and in the window's height
  * as he stands at rest. His feet stand on the same row in every frame, so a
- * hop leaves the floor. A frame item's backdrop is a panel behind them and
- * doesn't count: its edges may go under the window's rim.
+ * hop leaves the floor. A frame item's backdrop doesn't count: it fills the
+ * whole window behind them.
  */
 function cardFit(frames: CardFrame[], width: number, cellX: (gx: number, slot: number) => number): CardFit {
   let left = Infinity, right = -Infinity, top = FRAME_HEIGHT, foot = 0, topAll = FRAME_HEIGHT, footAll = 0;
@@ -292,8 +296,9 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // ---------------------------------------------------------------- the card's stock
   // The colour the card is printed on, before its edition.
   const stock = (x: number, yy: number): RGB => {
+    // Brushed gold foil: bright at the top, deep at the foot, a fine line every third row.
     if (gold) {
-      const base = mix(GOLD_HI, GOLD_LO, yy / H * 0.85 + 0.1 * Math.sin(x * 0.05 + yy * 0.02));
+      const base = mix(GOLD_HI, GOLD_LO, yy / H * 0.9 + 0.08 * Math.sin(x * 0.05 + yy * 0.02));
       return yy % 3 === 0 ? mix(base, GOLD_LO, 0.12) : base;
     }
     // A Negative card is printed pale so its edition turns it dark.
@@ -301,17 +306,19 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     return mix(mix(tone, WHITE, 0.08), mix(tone, INK, 0.25), yy / H);
   };
   const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
-  const auraDeep = mix(ah, INK, 0.62), auraLight = mix(ah, INK, 0.3), inlay = aura ? mix(ah, WHITE, 0.7) : mix(GOLD_LO, INK, 0.25);
+  const auraDeep = mix(ah, INK, 0.62), auraLight = mix(ah, INK, 0.3), inlay = mix(ah, WHITE, 0.7);
   for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
     const d = shape.depth[yy * W + x], bevel = shape.bevel[yy * W + x];
     if (!d) continue;
     if (d <= 2) { s.set(x, yy, INK); continue; }
     let c = rows[yy] ?? stock(x, yy);
+    // A Grail's bevel is raised gold, lit at the top left and running deeper to the bottom right.
+    if (gold && bevel) c = mix(mix([255, 238, 168], [150, 92, 18], (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE : INK, 0.2);
     // A chunky bevel: lit along the top and left, deep along the bottom and right.
-    if (bevel === 1) c = mix(c, WHITE, 0.35);
+    else if (bevel === 1) c = mix(c, WHITE, 0.35);
     else if (bevel) c = mix(c, INK, 0.3);
-    // The top grades have a fine inlaid line inside the bevel: pale foil on an aura card, an engraved line on gold.
-    else if ((aura || gold) && d <= 5) c = inlay;
+    // An aura card has a fine line of pale foil inside the bevel.
+    else if (aura && d <= 5) c = inlay;
     // The aura card is full-art: inside its bevel the aura's own colours swirl, edge to edge.
     if (aura && d > 6) {
       const r = Math.hypot((x - wcx) / 80, (yy - wcy) / 100);
@@ -322,47 +329,58 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   }
 
   // ---------------------------------------------------------------- the window
-  // Light by grade, deep amber behind a Grail's guy; none on an aura card.
+  // Light by grade, deep amber with a warm glow behind a Grail's guy; none on an aura card.
   const light: RGB = g >= 0 ? mix(IVORY, gc, 0.22) : mix(IVORY, gc, 0.12);
   if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
     const rim = x - WIN.left < 2 || WIN.right - x < 2 || yy - WIN.top < 2 || WIN.bottom - yy < 2;
-    if (rim) { s.set(x, yy, INK); continue; }
-    const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 62, (yy - wcy) / 70);
-    let c: RGB = gold ? mix([108, 60, 10], [242, 174, 62], Math.max(0, 1 - r) ** 1.2) : mix(light, mix(light, gc, 0.35), depth * 0.6);
+    // A Grail's window is set in a dark line with a bright gold rim inside it.
+    if (rim) { s.set(x, yy, gold && (x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1) ? [255, 226, 140] : gold ? [72, 40, 6] : INK); continue; }
+    const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
+    let c: RGB = gold ? mix(mix(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix(AMBER, INK, 0.3), depth * 0.3) : mix(light, mix(light, gc, 0.35), depth * 0.6);
     // A shaded lip under the rim, so the window reads as set into the card.
     if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK, 0.35);
     s.set(x, yy, c, 2);
   }
+  // A Grail's window is held by four raised gold studs at its corners.
+  if (gold) for (const [sx, sy] of [[WIN.left + 1, WIN.top + 1], [WIN.right - 1, WIN.top + 1], [WIN.left + 1, WIN.bottom - 1], [WIN.right - 1, WIN.bottom - 1]]) {
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+      const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
+      if (d > 10 || shape.depth[yy * W + x] <= 2) continue;
+      s.set(x, yy, d > 6 ? [110, 66, 10] : mix([255, 244, 196], [196, 128, 26], (dx + dy + 4) / 8));
+    }
+  }
 
   // ---------------------------------------------------------------- the plate and its words
-  for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
+  // A Grail has no plate: its words are struck into the gold.
+  if (!gold) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
     const pw = W - side * 2, ph = plateBottom - plateTop + 1;
     if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
     const edge = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
-    const base: RGB = gold ? [92, 52, 8] : aura ? mix(mix(ah, INK, 0.6), INK, 0.45) : PLATE;
+    const base: RGB = aura ? mix(mix(ah, INK, 0.6), INK, 0.45) : PLATE;
     s.set(x, yy, edge ? INK : yy === plateTop + 1 ? mix(base, WHITE, 0.16) : yy >= plateBottom - 2 ? mix(base, INK, 0.45) : base);
   }
-  // The words sit on the dark plate: white, a Grail's title in gold and an aura card's in its colour, a light running along it.
-  const quiet: RGB = gold ? [236, 196, 120] : aura ? mix(ah, WHITE, 0.6) : [184, 176, 206];
-  const titleInk = (x: number, yy: number, tm: number): RGB => gold ? mix([255, 210, 90], [255, 248, 214], 0.5 + 0.5 * Math.sin(x * 0.15 - tm / wave(1000 / 3) + yy * 0.1))
-    : mix(mix(ah, WHITE, 0.5), WHITE, 0.5 + 0.5 * Math.sin(x * 0.12 - tm / wave(1000 / 2) + yy * 0.1));
+  // The words sit on the dark plate: white, an aura card's title in its colour with a light running
+  // along it. A Grail's are struck into the gold, dark, the light catching each cut's lower edge.
+  const quiet: RGB = gold ? [110, 66, 10] : aura ? mix(ah, WHITE, 0.6) : [184, 176, 206];
+  const titleInk = (x: number, yy: number, tm: number): RGB => mix(mix(ah, WHITE, 0.5), WHITE, 0.5 + 0.5 * Math.sin(x * 0.12 - tm / wave(1000 / 2) + yy * 0.1));
   const titlePixels: number[] = [];
   titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
-    if (!(gold || aura)) return WHITE;
+    if (gold) return GOLD_INK;
+    if (!aura) return WHITE;
     titlePixels.push(x, yy);
     return titleInk(x, yy, 0);
-  }, INK));
+  }, gold ? GOLD_CUT : INK));
   rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
   // The grade's badge: a chunky pill in its colour with a deep lip, as Balatro's rarity badges.
   if (pill) {
     const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
-    const fill: RGB = gold ? [236, 164, 32] : tone;
+    const fill: RGB = gold ? [96, 56, 10] : tone;
     for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
       if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
       const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
       s.set(x, yy, edge ? INK : yy >= pillTop + 12 ? mix(fill, INK, 0.45) : yy === pillTop + 1 ? mix(fill, WHITE, 0.4) : fill);
     }
-    s.text(pill, x0 + 7, pillTop - 1, () => WHITE, mix(fill, INK, 0.6));
+    s.text(pill, x0 + 7, pillTop - 1, () => (gold ? [255, 222, 130] : WHITE), mix(fill, INK, 0.6));
     if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
   }
   foots.forEach((l, k) => s.text(l, side + 5, footTop + k * 11 - 2, () => quiet));
@@ -384,6 +402,38 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const tagIdx: number[] = [];
   if (input.corner) for (let i = 0; i < W * H; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
 
+  // ---------------------------------------------------------------- where he stands
+  // Standing in the middle of the window, on its floor; on an aura card he rises and floats, bobbing (Balatro's soul layer).
+  const soul = aura;
+  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit.mid);
+  const oy0 = soul
+    ? Math.max(5 - fit.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - ((fit.topAll + fit.footAll + 1) * zoom) / 2) - 10)
+    : Math.round((WIN.top + WIN.bottom + 1) / 2 - ((fit.rest + fit.foot + 1) * zoom) / 2) + 4;
+
+  // ---------------------------------------------------------------- the frame he wears, behind him
+  // A frame item's backdrop fills the whole window (an aura card's art), edge to edge under its rim, so
+  // nothing drawn over it ever sticks out past a smaller box. It is painted once, outside the edition;
+  // a copy whose finish shines is lit again each frame (`drawGuy`).
+  const floor = Uint8Array.from(s.region, r => (r === 2 ? 1 : 0));
+  const ground = input.copies?.some(o => itemById(o.item)?.slot === 'frame') ? (() => {
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let i = 0; i < W * H; i++) if (floor[i]) { const x = i % W, yy = (i - x) / W; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, yy); y1 = Math.max(y1, yy); }
+    if (x1 < 0) return null;
+    const gx0 = Math.floor((x0 - ox) / zoom), gy0 = Math.floor((y0 - oy0) / zoom), gw = Math.floor((x1 - ox) / zoom) - gx0 + 1, gh = Math.floor((y1 - oy0) / zoom) - gy0 + 1;
+    const colors = backdropOf(input.seed, { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode) }, gx0, gy0, gw, gh);
+    if (!colors) return null;
+    // Each window pixel's cell of the backdrop, and the cells' own colours, 0 to 1.
+    const cells = new Float32Array(gw * gh * 3), pix: number[] = [], cellOf: number[] = [], diag: number[] = [];
+    colors.forEach((row, j) => row.forEach((hex, i) => { const c = hex ? rgb(hex) : INK; for (let k = 0; k < 3; k++) cells[(j * gw + i) * 3 + k] = c[k] / 255; }));
+    for (let i = 0; i < W * H; i++) {
+      if (!floor[i]) continue;
+      const x = i % W, yy = (i - x) / W, cx = Math.floor((x - ox) / zoom), cy = Math.floor((yy - oy0) / zoom), cell = (cy - gy0) * gw + cx - gx0;
+      pix.push(i); cellOf.push(cell); diag.push(x - ox - cx * zoom + yy - oy0 - cy * zoom);
+      s.set(x, yy, [cells[cell * 3] * 255, cells[cell * 3 + 1] * 255, cells[cell * 3 + 2] * 255]);
+    }
+    return { pix: Int32Array.from(pix), cell: Int32Array.from(cellOf), diag: Int32Array.from(diag), cells, gx0, gy0, gw, count: gw * gh };
+  })() : null;
+
   // ---------------------------------------------------------------- the edition's field
   // Pixels the edition plays over: the card's face and its window.
   const edIdx: number[] = [];
@@ -397,13 +447,6 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const field = editionField(ed, v, [wcx / 5, wcy / 5], 0.2, { x: ex, y: ey, region: er, h: eh, rgb: ergb });
   const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
 
-  // ---------------------------------------------------------------- where he stands
-  // Standing in the middle of the window, on its floor; on an aura card he rises and floats, bobbing (Balatro's soul layer).
-  const soul = aura;
-  const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit.mid);
-  const oy0 = soul
-    ? Math.max(5 - fit.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - ((fit.topAll + fit.footAll + 1) * zoom) / 2) - 10)
-    : Math.round((WIN.top + WIN.bottom + 1) / 2 - ((fit.rest + fit.foot + 1) * zoom) / 2) + 4;
   // A tall hat pokes out over the window's top rather than being cut off.
   const pop = soul || oy0 + fit.top * zoom < WIN.top + 3;
   const clip = (cx: number, cy: number) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1
@@ -431,7 +474,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     got = [];
     for (const buddy of [false, true]) {
       let lo = -1, l = Infinity, r = -Infinity;
-      const own = (gx: number, gy: number) => !!colors[gy][gx] && slots[gy][gx] !== 5 && (slots[gy][gx] === 4) === buddy;
+      const own = (gx: number, gy: number) => !!colors[gy][gx] && slots[gy][gx] !== 5 && slots[gy][gx] !== 3 && (slots[gy][gx] === 4) === buddy;
       colors.forEach((row, gy) => row.forEach((_, gx) => { if (own(gx, gy)) lo = gy; }));
       if (lo < 0) continue;
       for (let gy = Math.max(0, lo - 1); gy <= lo; gy++) colors[gy].forEach((_, gx) => { if (own(gx, gy)) { l = Math.min(l, cellX(gx, slots[gy][gx])); r = Math.max(r, cellX(gx, slots[gy][gx]) + zoom); } });
@@ -458,7 +501,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     mask.fill(0, 0, bw * bh);
     for (let gy = 0; gy < fh; gy++) {
       const row = colors[gy], srow = slots[gy];
-      for (let gx = 0; gx < fw; gx++) if (row[gx] && srow[gx] !== 5)
+      for (let gx = 0; gx < fw; gx++) if (row[gx] && srow[gx] !== 5 && srow[gx] !== 3)
         for (let dy = 0; dy < zoom; dy++) mask.fill(1, (2 + gy * zoom + dy) * bw + 2 + cellX(gx, srow[gx]), (2 + gy * zoom + dy) * bw + 2 + cellX(gx, srow[gx]) + zoom);
     }
     for (let j = 0; j < bh; j++) {
@@ -474,15 +517,32 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     byY.set(oy, got = Int32Array.from(out));
     return got;
   };
+  const frameCopy = owned.frame, DIAGS = zoom * 2 - 1;
+  const groundShine = ground && frameCopy && shines(frameCopy) ? SHADER_FINISHES.indexOf(frameCopy.finish as (typeof SHADER_FINISHES)[number]) : -1;
+  const groundDone = new Uint8Array(ground && groundShine >= 0 ? ground.count * DIAGS : 0), groundLit = new Float32Array(groundDone.length * 3);
   const drawGuy = (frame: CardFrame, oy: number, body: Uint8ClampedArray, shineTime: number) => {
     const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0;
     const put = (i: number, r: number, g: number, b: number) => { body[i * 4] = r; body[i * 4 + 1] = g; body[i * 4 + 2] = b; };
+    // A frame whose finish shines, lit again: once for each of a cell's diagonals.
+    if (ground && frameCopy && groundShine >= 0) {
+      groundDone.fill(0);
+      for (let k = 0; k < ground.pix.length; k++) {
+        const cell = ground.cell[k], j = cell * DIAGS + ground.diag[k];
+        if (!groundDone[j]) {
+          groundDone[j] = 1;
+          const gx = ground.gx0 + cell % ground.gw, gy = ground.gy0 + Math.floor(cell / ground.gw), c = ground.cells;
+          const out = finishColor([c[cell * 3], c[cell * 3 + 1], c[cell * 3 + 2]], groundShine, frameCopy.scuff, hash(gx, gy, frameCopy.print), gx + gy + ground.diag[k] / zoom, gy, frameCopy.print, shineTime, 1);
+          groundLit[j * 3] = out[0] * 255; groundLit[j * 3 + 1] = out[1] * 255; groundLit[j * 3 + 2] = out[2] * 255;
+        }
+        put(ground.pix[k], groundLit[j * 3], groundLit[j * 3 + 1], groundLit[j * 3 + 2]);
+      }
+    }
     // A soft shadow on the window's floor under each of them, under the cells of their bottom rows.
     const fl = aura ? [] : floorsOf(frame, oy);
     for (let f = 0; f < fl.length; f += 3) {
       const sx = fl[f], sy = fl[f + 1], rx = fl[f + 2];
       for (let yy = Math.ceil(sy - 4); yy <= sy + 4; yy++) for (let x = Math.ceil(sx - rx); x <= sx + rx; x++) {
-        if (x < 0 || yy < 0 || x >= W || yy >= H || s.region[yy * W + x] !== 2) continue;
+        if (x < 0 || yy < 0 || x >= W || yy >= H || !floor[yy * W + x]) continue;
         const fx = (x - sx) / rx, fy = (yy - sy) / 4, d = fx * fx + fy * fy;
         if (d >= 1) continue;
         const i = (yy * W + x) * 4, k = 1 - 0.16 * (1 - d);
@@ -490,10 +550,10 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
       }
     }
     for (const e of edgesOf(frame, oy)) { const c = e & 1 ? WHITE : edgeC; put(e >> 1, c[0], c[1], c[2]); }
-    // A frame item's backdrop first, so his buddy's room nudged in over it never covers him.
-    for (const behind of [true, false]) for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
+    // His pixels and his buddy's; a frame item's backdrop is the window's own ground (`ground`).
+    for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
       const hex = colors[gy][gx];
-      if (!hex || (slots[gy][gx] === 3) !== behind) continue;
+      if (!hex || slots[gy][gx] === 3) continue;
       const slot = slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : undefined, x0 = ox + cellX(gx, slot);
       const f = copy ? SHADER_FINISHES.indexOf(copy.finish as (typeof SHADER_FINISHES)[number]) : -1, c = rgb(hex);
       if (copy && f >= 0) litDone.fill(0);

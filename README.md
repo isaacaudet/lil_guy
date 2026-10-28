@@ -295,15 +295,20 @@ shadow it lifts off now and then. Its
 edition comes from the finish that sets its grade: Sunset is Foil (blue-silver
 bands), Tempered and Nebula Holographic (a red and blue sheen), Prism
 Polychrome (a slow rainbow across the whole card), Negative an inverted, dark
-card. A Grail card is gold, its window a still, warm amber with a slow, soft glint.
-An aura card is Spectral and full-art: the aura's own colour swirls edge to edge
-behind the guy. An item's card carries its machine's set symbol.
+card. A Grail card is brushed gold foil with a raised gold bevel, its name struck
+into the gold, its window a deep, still amber held by four gold studs, a slow
+glint crossing it. An aura card is Spectral and full-art: the aura's own colour
+swirls edge to edge behind the guy. A frame item's backdrop fills the whole
+window (an aura card's art) edge to edge, and a baked guy's whole picture, so
+nothing stands out past it. An item's card carries its machine's set symbol.
 
 A finish repaints a copy's own colours through the finish's ramp by tone, so
 every part keeps its shading and stays apart from the next: Prism a smooth
 rainbow sweep, Tempered steel-blue and straw-gold bands, Nebula deep purple
 clouds with a few pulsing stars, Negative the item's opposite colours with
-light and dark swapped, Gold polished gold with a moving glint. A costume's
+light and dark swapped, Gold rich, bright gold from a deep amber shade to a
+light highlight, with a slow glint. Tempered and Nebula keep some of each
+colour's own lightness, so a big costume never sinks into one dark blob. A costume's
 face opening keeps the guy's own colours, and a hat drawn partly in them (cat
 ears) takes the finish there too.
 On lilguys.dleclub.com each copy also keeps stats, as a sports card does:

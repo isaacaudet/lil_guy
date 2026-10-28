@@ -1,4 +1,4 @@
-import { animate, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, WIDE_FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
+import { animate, backdropOf, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, WIDE_FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
@@ -98,11 +98,26 @@ function bakeAt(spec: GuySpec, move: Move): { frames: Frames; left: number } {
   const options = animateOptions(spec), owned = ownedOf(spec);
   const plain = animate(spec.seed, move, options);
   const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
+  // A backdrop he wears runs out to the picture's every edge, behind an aura's rings too.
+  const ground = backdropOf(spec.seed, options, -left, 0, W, FRAME_HEIGHT);
+  const lay = (f: AnimationFrame) => (ground ? { frame: grounded(f, ground, left), left: 0 } : { frame: f, left });
   const shining = plain.frames.some(f => shines(f, owned));
-  if (!plain.timed && !shining) return { frames: merged(W, GUY_HEIGHT, plain.frames.map(f => place(f, W, left)), plain.frames.map(f => f.ms)), left };
+  if (!plain.timed && !shining) return { frames: merged(W, GUY_HEIGHT, plain.frames.map(f => { const l = lay(f); return place(l.frame, W, l.left); }), plain.frames.map(f => f.ms)), left };
   const { repeats, turns } = shineFit(plain.duration);
   const anim = animate(spec.seed, move, { ...options, loop: { repeats, turns, fine: shining } });
-  return { frames: merged(W, GUY_HEIGHT, anim.frames.map(f => place(f, W, left, shining ? shineFrame(f, owned, f.at ?? 0) : undefined)), anim.frames.map(f => f.ms)), left };
+  return { frames: merged(W, GUY_HEIGHT, anim.frames.map(f => { const l = lay(f); return place(l.frame, W, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : undefined); }), anim.frames.map(f => f.ms)), left };
+}
+
+/** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
+function grounded(frame: AnimationFrame, ground: (string | null)[][], left: number): AnimationFrame {
+  const W = ground[0].length, fw = frame.colors[0].length;
+  const colors = ground.map(row => row.slice()), slots = ground.map(row => row.map(c => (c ? 3 : 0)));
+  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
+    const c = frame.colors[y][x];
+    if (c && frame.slots[y][x] !== 3) { colors[y][x + left] = c; slots[y][x + left] = frame.slots[y][x]; }
+  }
+  for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) { colors[y][x + left] = c; slots[y][x + left] = 0; }
+  return { ...frame, colors, slots, outside: undefined };
 }
 
 /** The size Discord shows a profile picture at, and asks for at least 128 of. */

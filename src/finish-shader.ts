@@ -55,7 +55,7 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   }
   else if (finish < 4.5) c = hueShift(c, time * TAU / 6.0 * coat) + w * 0.14 * coat;
   else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;
-  else c = mix(c, vec3(1.0, 0.97, 0.84), w * 0.5 * coat) + b * 0.35 * coat;
+  else c = mix(c, vec3(1.0, 0.94, 0.66), w * 0.45 * coat) + vec3(0.36, 0.3, 0.16) * b * coat;
   return c;
 }
 `;
@@ -116,7 +116,7 @@ export function finishColor(c: Vec3, finish: number, scuff: number, h: number, d
   }
   if (finish < 4.5) return add(hueShift(c, time * TAU / 6 * coat), w * 0.14 * coat);
   if (finish < 5.5) return add(add(c, scale([0.28, 0.12, 0.45], b * coat)), 0.07 * Math.sin(time * TAU / 3 + d * 0.5 + fract(print * 0.618) * TAU) * coat);
-  return add(mix(c, [1, 0.97, 0.84], w * 0.5 * coat), b * 0.35 * coat);
+  return add(mix(c, [1, 0.94, 0.66], w * 0.45 * coat), scale([0.36, 0.3, 0.16], b * coat));
 }
 
 

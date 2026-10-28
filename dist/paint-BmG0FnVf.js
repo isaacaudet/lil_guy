@@ -9089,14 +9089,15 @@ const hueOf = (c) => {
 		s
 	};
 };
+/** Rich polished gold, from a deep amber shade through saturated warm yellows to a light highlight. */
 const GOLD = [
-	"#4A2A06",
-	"#8A5510",
-	"#C48A1C",
-	"#EDB52E",
-	"#FFD95A",
-	"#FFF1B8",
-	"#FFFBEA"
+	"#7A3E00",
+	"#B06A04",
+	"#E09A12",
+	"#F8C424",
+	"#FFDD4A",
+	"#FFEFA0",
+	"#FFF8D8"
 ].map(rgb);
 const WHITE_GOLD = [
 	"#3A3226",
@@ -9107,6 +9108,11 @@ const WHITE_GOLD = [
 	"#FFFBF2",
 	"#FFFFFF"
 ].map(rgb);
+/**
+* A colour's tone with some of its own lightness kept: a pale item stays pale in a dark finish and a
+* dark part stays darker than it, so a big costume keeps its light and dark instead of one blob.
+*/
+const lit = (tone, l) => tone * .6 + l * .4;
 /** How far across the item a cell is, corner to corner, about 0 to 1: what a finish's sweep runs along. */
 const across = (x, y) => (x + y * .8) / 26;
 /**
@@ -9150,17 +9156,17 @@ const PAINT = {
 		const c = t < .5 ? mix$1(rgb("#F5C542"), rgb("#E55AA8"), t * 2) : mix$1(rgb("#E55AA8"), rgb("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
-	"tempered": (x, y, tone, p, _o, _l, part) => {
+	"tempered": (x, y, tone, p, _o, l, part) => {
 		const [a, b, c] = TINTS[temperTint(p)].map(rgb);
 		const s = (across(x, y) * 1.5 + p % 11 / 11 + part * .4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
 		const band = s < .5 ? mix$1(a, b, k) : mix$1(c, b, 1 - k);
-		return toned(band, .12 + tone * .8, [
+		return toned(band, .28 + lit(tone, l) * .5, [
 			10,
 			16,
 			40
 		]);
 	},
-	"nebula": (x, y, tone, p, _o, _l, part) => {
+	"nebula": (x, y, tone, p, _o, l, part) => {
 		const phase = nebulaPhase(p);
 		const [a, b] = phase === "Red Giant" ? ["#C8102E", "#FF6A3D"] : phase === "Blue Moon" ? ["#1E4FE8", "#58B8FF"] : phase === "Black Hole" ? ["#2A1E3A", "#4A2A6A"] : [
 			["#7A2AB8", "#3A3AD0"],
@@ -9169,17 +9175,17 @@ const PAINT = {
 			["#A82A8A", "#4A2AB8"]
 		][p % 4];
 		const cloud = Math.min(1, (.5 + .5 * Math.sin(x * .5 + p) * Math.cos(y * .42 - p * .7)) * (1 - part) + part * .95);
-		const t = Math.pow(tone, 1.15);
+		const t = .2 + lit(Math.pow(tone, 1.1), l) * .72, sky = mix$1(rgb(a), rgb(b), cloud);
 		return ramp([
-			[
+			mix$1(sky, [
 				8,
 				6,
 				22
-			],
-			mix$1(rgb(a), rgb(b), cloud),
-			mix$1(mix$1(rgb(a), rgb(b), cloud), rgb("#FFC4EC"), .5),
+			], .6),
+			sky,
+			mix$1(sky, rgb("#FFC4EC"), .5),
 			rgb("#FFF0FA")
-		], t * .92);
+		], t);
 	},
 	"prism": (x, y, tone, p) => {
 		const h = (across(x, y) * 300 + p * 7) % 360;
@@ -9210,8 +9216,8 @@ const PAINT = {
 	"ruby": (_x, _y, _t, _p, original) => original,
 	"pearl": (_x, _y, _t, _p, original) => original,
 	"gold": (x, y, tone, _p, _o, _l, part) => {
-		const t = tone * .92 + Math.max(0, 1 - Math.abs(across(x, y) - .42) / .16) * .14;
-		return mix$1(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * .6);
+		const t = .1 + tone * .82 + Math.max(0, 1 - Math.abs(across(x, y) - .42) / .16) * .12;
+		return mix$1(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * .3);
 	}
 };
 const PRIMER = rgb("#8B9097");
@@ -9220,7 +9226,7 @@ const PRIMER = rgb("#8B9097");
 * Nebula frog isn't ringed in frog green. Negative and Sunset keep the skin's own.
 */
 function finishOutline(o) {
-	if (o.finish === "gold") return "#3A2206";
+	if (o.finish === "gold") return "#4A2400";
 	if (o.finish === "nebula") return "#160C30";
 	if (o.finish === "prism") return "#2C2048";
 	if (o.finish === "tempered") return hex(mix$1(rgb(TINTS[temperTint(o.print)][0]), [
@@ -16586,4 +16592,4 @@ function catchlight(grid, x, y, palette) {
 
 //#endregion
 export { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-Dwb1PU6u.js.map
+//# sourceMappingURL=paint-BmG0FnVf.js.map

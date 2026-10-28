@@ -352,8 +352,15 @@ const hueOf = (c: RGB): { h: number; s: number } => {
   return { h: (h * 60 + 360) % 360, s };
 };
 
-const GOLD = ['#4A2A06', '#8A5510', '#C48A1C', '#EDB52E', '#FFD95A', '#FFF1B8', '#FFFBEA'].map(rgb);
+/** Rich polished gold, from a deep amber shade through saturated warm yellows to a light highlight. */
+const GOLD = ['#7A3E00', '#B06A04', '#E09A12', '#F8C424', '#FFDD4A', '#FFEFA0', '#FFF8D8'].map(rgb);
 const WHITE_GOLD = ['#3A3226', '#76695A', '#B3A58E', '#DDD2BC', '#F2EBDC', '#FFFBF2', '#FFFFFF'].map(rgb);
+
+/**
+ * A colour's tone with some of its own lightness kept: a pale item stays pale in a dark finish and a
+ * dark part stays darker than it, so a big costume keeps its light and dark instead of one blob.
+ */
+const lit = (tone: number, l: number) => tone * 0.6 + l * 0.4;
 
 /** How far across the item a cell is, corner to corner, about 0 to 1: what a finish's sweep runs along. */
 const across = (x: number, y: number) => (x + y * 0.8) / 26;
@@ -399,15 +406,16 @@ const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, orig
     const c = t < 0.5 ? mix(rgb('#F5C542'), rgb('#E55AA8'), t * 2) : mix(rgb('#E55AA8'), rgb('#7A4BE0'), (t - 0.5) * 2);
     return shaded(c, l);
   },
-  'tempered': (x, y, tone, p, _o, _l, part) => {
+  'tempered': (x, y, tone, p, _o, l, part) => {
     // Case-hardened steel: soft bands of heat tint running across the item,
     // through the print's tint (blue, its pale, straw gold, its pale again).
     const [a, b, c] = TINTS[temperTint(p)].map(rgb);
+    // Its darkest parts stay well off black, so a big item keeps its light and dark and never sinks into one blob.
     const s = (across(x, y) * 1.5 + (p % 11) / 11 + part * 0.4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
     const band = s < 0.5 ? mix(a, b, k) : mix(c, b, 1 - k);
-    return toned(band, 0.12 + tone * 0.8, [10, 16, 40]);
+    return toned(band, 0.28 + lit(tone, l) * 0.5, [10, 16, 40]);
   },
-  'nebula': (x, y, tone, p, _o, _l, part) => {
+  'nebula': (x, y, tone, p, _o, l, part) => {
     // Deep space: two of the phase's colours drifting into each other in soft
     // clouds across the item, dark in its shadows and lit pink in its lights.
     // A part drawn in another colour takes the second one, so it still stands apart.
@@ -415,8 +423,9 @@ const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, orig
     const [a, b] = phase === 'Red Giant' ? ['#C8102E', '#FF6A3D'] : phase === 'Blue Moon' ? ['#1E4FE8', '#58B8FF']
       : phase === 'Black Hole' ? ['#2A1E3A', '#4A2A6A'] : [['#7A2AB8', '#3A3AD0'], ['#3A2AB0', '#8A3AC8'], ['#2A5AC0', '#6A2AB0'], ['#A82A8A', '#4A2AB8']][p % 4];
     const cloud = Math.min(1, (0.5 + 0.5 * Math.sin(x * 0.5 + p) * Math.cos(y * 0.42 - p * 0.7)) * (1 - part) + part * 0.95);
-    const t = Math.pow(tone, 1.15);
-    return ramp([[8, 6, 22], mix(rgb(a), rgb(b), cloud), mix(mix(rgb(a), rgb(b), cloud), rgb('#FFC4EC'), 0.5), rgb('#FFF0FA')], t * 0.92);
+    // Its darkest parts are the cloud's deep, not black, so a big item keeps its light and dark and never sinks into one blob.
+    const t = 0.2 + lit(Math.pow(tone, 1.1), l) * 0.72, sky = mix(rgb(a), rgb(b), cloud);
+    return ramp([mix(sky, [8, 6, 22], 0.6), sky, mix(sky, rgb('#FFC4EC'), 0.5), rgb('#FFF0FA')], t);
   },
   'prism': (x, y, tone, p) => {
     // One smooth rainbow sweeping corner to corner, the item's own tones
@@ -441,11 +450,11 @@ const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, orig
   'ruby': (_x, _y, _t, _p, original) => original,
   'pearl': (_x, _y, _t, _p, original) => original,
   'gold': (x, y, tone, _p, _o, _l, part) => {
-    // Polished gold: deep bronze in the shadows to pale gold in the lights,
-    // with one soft gleam lying across it. A part in another colour is white
-    // gold, so it still stands apart.
-    const t = tone * 0.92 + Math.max(0, 1 - Math.abs(across(x, y) - 0.42) / 0.16) * 0.14;
-    return mix(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * 0.6);
+    // Polished gold: deep amber in the shadows, bright warm yellow in the middle, a light highlight,
+    // with one soft gleam lying across it. A part in another colour leans to white gold, so it still
+    // stands apart and still reads as gold.
+    const t = 0.1 + tone * 0.82 + Math.max(0, 1 - Math.abs(across(x, y) - 0.42) / 0.16) * 0.12;
+    return mix(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * 0.3);
   },
 };
 
@@ -456,7 +465,7 @@ const PRIMER = rgb('#8B9097');
  * Nebula frog isn't ringed in frog green. Negative and Sunset keep the skin's own.
  */
 export function finishOutline(o: Owned): string | undefined {
-  if (o.finish === 'gold') return '#3A2206';
+  if (o.finish === 'gold') return '#4A2400';
   if (o.finish === 'nebula') return '#160C30';
   if (o.finish === 'prism') return '#2C2048';
   if (o.finish === 'tempered') return hex(mix(rgb(TINTS[temperTint(o.print)][0]), [8, 10, 26], 0.72));

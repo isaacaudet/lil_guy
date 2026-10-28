@@ -1,4 +1,4 @@
-import { FRAME_WIDTH } from './animate';
+import { backdropColors, FRAME_WIDTH, HEADROOM } from './animate';
 import { compose } from './compose';
 import { distance, editionField, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, SET_COLORS, withItems } from './items';
@@ -82,7 +82,7 @@ export function cardFace(spec: FaceSpec): CardFace {
   if (spec.palette !== undefined) r.palette = spec.palette;
   const config: AvatarConfig = dress(r, { equip: copies.map(encode) });
   const grid = compose(config);
-  const colors = paint(grid, config, withItems(paletteOf(config), config));
+  const palette = withItems(paletteOf(config), config), colors = paint(grid, config, palette);
   const owned = config.owned ?? {};
   const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
   const last = copies[copies.length - 1], lastItem = last ? itemById(last.item) : undefined;
@@ -136,9 +136,16 @@ export function cardFace(spec: FaceSpec): CardFace {
     if (x === left || y === wTop || x === right || y === wBottom) put(x, y, INK, FIXED);
     else put(x, y, blend(light, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
   }
+  // A frame he wears fills the window (an aura card's art) edge to edge, never a box smaller than what stands on it.
+  const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
+  const ground = backdropColors(config, palette, fx0 - gx0, fy0 - 11 + HEADROOM, fx1 - fx0 + 1, fy1 - fy0 + 1);
+  if (ground) {
+    const fi = frameCopy ? SHADER_FINISHES.indexOf(frameCopy.finish as (typeof SHADER_FINISHES)[number]) : -1;
+    ground.forEach((row, j) => row.forEach((hex, i) => { if (hex) put(fx0 + i, fy0 + j, rgb(hex), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0); }));
+  }
   grid.forEach((row, y) => row.forEach((t, x) => {
     const hex = colors[y][x];
-    if (!hex) return;
+    if (!hex || (ground && t >= LAYER.frame && t < LAYER.buddy)) return;
     const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null;
     const o = slot ? owned[slot] : undefined;
     const fi = o ? SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]) : -1;

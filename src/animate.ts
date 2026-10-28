@@ -677,6 +677,27 @@ const MANGA_BLUSH = cheeks.findIndex(c => c.name === 'manga blush');
  * (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
  * frame too). `grid` builds each pose once.
  */
+/**
+ * The frame item a guy wears, painted over any stretch of frame cells `w` by `h` from (`x0`, `y0`),
+ * which may run past his frame on every side: the pattern carries on, so a card's window or a
+ * picture with room round him is backdrop edge to edge, never a box smaller than what is drawn
+ * over it. Null when he wears no frame.
+ */
+export function backdropColors(config: AvatarConfig, palette: Palette, x0: number, y0: number, w: number, h: number): (string | null)[][] | null {
+  const item = itemById(config.frame);
+  if (item?.slot !== 'frame' || !item.fill) return null;
+  // Columns left of the frame take the pattern's own columns, so a pattern sixteen across runs on unbroken.
+  const col = (x: number) => (x < 0 ? ((x % GRID_SIZE) + GRID_SIZE) % GRID_SIZE : x);
+  const grid = Array.from({ length: h }, (_, j) => Array.from({ length: w }, (_, i) => LAYER.frame + item.fill!(col(x0 + i), y0 + j - HEADROOM + 48) - 1));
+  return paint(grid, config, palette, false, false);
+}
+
+/** `backdropColors` for a guy as `animate` dresses him from `input` and `options`. */
+export function backdropOf(input: string, options: AnimateOptions, x0: number, y0: number, w: number, h: number): (string | null)[][] | null {
+  const config = dress(resolve(input, options.parts), options, input);
+  return backdropColors(config, withItems(options.palette ?? paletteOf(config), config), x0, y0, w, h);
+}
+
 function poser(input: string, options: AnimateOptions) {
   const config = dress(resolve(input, options.parts), options, input);
   const owned = config.owned && Object.fromEntries(Object.entries(config.owned).map(([slot, o]) => [slot, o?.finish === 'gold' ? { ...o, finish: 'plain' as const } : o]));
@@ -788,14 +809,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   if (alone) painted(alone, config, palette, !!options.small, null, W).forEach((row, y) => row.forEach((cell, x) => { if (cell) buddyCells.push([x, y, cell]); }));
 
   // The frame behind him, painted where it sits in the still so it looks the same.
-  let backdrop: (string | null)[][] | null = null;
-  const frameItem = itemById(config.frame);
-  if (frameItem?.slot === 'frame') {
-    const tall = Array.from({ length: GRID_SIZE + HEADROOM * 2 }, (_, y) =>
-      Array.from({ length: W }, (_, x) => LAYER.frame + frameItem.fill!(x, y + 48) - 1));
-    const colors = paint(tall, config, palette, false, false);
-    backdrop = Array.from({ length: FRAME_HEIGHT }, (_, y) => colors[y < HEADROOM ? GRID_SIZE - HEADROOM + y : y - HEADROOM]);
-  }
+  const backdrop = backdropColors(config, palette, 0, 0, W, FRAME_HEIGHT);
 
   // The best copy he is wearing sets how much shows. An aura is its own show,
   // so it doesn't count here.
