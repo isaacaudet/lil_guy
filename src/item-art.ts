@@ -146,8 +146,11 @@ export const BUDDY_BOX = { width: 8, height: 8 } as const;
 
 /**
  * A buddy's drawing: at most `BUDDY_BOX`, with a pixel round it for its
- * outline. `o` is an eye, in the guy's outline colour, so it stays dark
- * whatever finish the buddy has.
+ * outline. Every face has the same eyes: two cells square, `wo` over `oo`,
+ * the guy's outline ink with a white catchlight, a pixel of the buddy between
+ * each eye and its outline and a gap between the two. Neither colour is the
+ * buddy's own, so no finish repaints them: the eyes stay dark and shining on
+ * Gold, Negative and Nebula alike.
  */
 export const pet = (name: string, rows: string[]): Stamp => {
   if (rows.length > BUDDY_BOX.height || rows.some(r => r.length > BUDDY_BOX.width)) throw new Error(`Buddy "${name}" must fit in ${BUDDY_BOX.width} across and ${BUDDY_BOX.height} tall`);

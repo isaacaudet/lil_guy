@@ -3090,11 +3090,12 @@ var Canvas = class Canvas {
 	}
 	/**
 	* The mouth's top row goes just under the eyes, unless a pixel of it would
-	* sit beside or under an eye pixel: eyes that run into a mouth turn a face
-	* into one shape (an H, a box), and it stops reading as eyes and a mouth. A
-	* corner touch is fine. Then the mouth drops a row or two where the head has
+	* sit beside, under or at a corner of an eye pixel: eyes that run into a mouth
+	* turn a face into one shape (an H, a box, a zigzag), and it stops reading as
+	* eyes and a mouth. Then the mouth drops a row or two where the head has
 	* room for it, with a column of face either side if it can. Where it hasn't
-	* (a heart's point, a car's bumper), the eyes go up a row instead.
+	* (a heart's point, a car's bumper), the eyes go up a row instead, and only
+	* if neither works is a corner touch allowed.
 	*/
 	placeMouth(eye, mouth$1, corners) {
 		const ex = this.centred(eye), mx = this.centred(mouth$1), w = width(mouth$1);
@@ -3105,7 +3106,7 @@ var Canvas = class Canvas {
 			}));
 			return at;
 		};
-		const thin = corners ?? eye.every((row, dy) => dy === 0 || row.every((t, dx) => !t || !eye[dy - 1][dx]));
+		const thin = corners ?? true;
 		const near = thin ? [
 			[1, 0],
 			[-1, 0],
@@ -3424,8 +3425,11 @@ const BUDDY_BOX = {
 };
 /**
 * A buddy's drawing: at most `BUDDY_BOX`, with a pixel round it for its
-* outline. `o` is an eye, in the guy's outline colour, so it stays dark
-* whatever finish the buddy has.
+* outline. Every face has the same eyes: two cells square, `wo` over `oo`,
+* the guy's outline ink with a white catchlight, a pixel of the buddy between
+* each eye and its outline and a gap between the two. Neither colour is the
+* buddy's own, so no finish repaints them: the eyes stay dark and shining on
+* Gold, Negative and Nebula alike.
 */
 const pet = (name, rows) => {
 	if (rows.length > BUDDY_BOX.height || rows.some((r) => r.length > BUDDY_BOX.width)) throw new Error(`Buddy "${name}" must fit in ${BUDDY_BOX.width} across and ${BUDDY_BOX.height} tall`);
@@ -3605,8 +3609,8 @@ const set$9 = {
 				".554448.",
 				"..8888..",
 				".911112.",
-				"91o11o12",
-				"91111112",
+				"9wo11wo2",
+				"9oo11oo2",
 				"36743672",
 				"67364732",
 				".364762."
@@ -3630,10 +3634,10 @@ const set$9 = {
 				"...12...",
 				"..1112..",
 				"..3334..",
-				".3o33o4.",
-				".373374.",
-				"33333344",
-				"55555566",
+				".333334.",
+				"3wo33wo4",
+				"3oo33oo4",
+				"57555576",
 				".555566."
 			])
 		},
@@ -3694,10 +3698,10 @@ const set$9 = {
 			art: pet("gummy bear", [
 				".31..12.",
 				".311112.",
-				".1o11o2.",
-				".113412.",
+				"1wo11wo2",
+				"1oo11oo2",
+				".114412.",
 				"31133112",
-				"21333122",
 				".111122.",
 				".12..12."
 			])
@@ -3736,8 +3740,8 @@ const set$9 = {
 			art: pet("gemling", [
 				".355112.",
 				"35531122",
-				"31111112",
-				"31o11o12",
+				"3wo11wo2",
+				"3oo11oo2",
 				".164462.",
 				"..1112..",
 				"...12..."
@@ -4099,11 +4103,11 @@ const set$8 = {
 			],
 			art: pet("lil acorn", [
 				"....6...",
-				"..5546..",
-				".545446.",
+				".555446.",
 				"54545446",
-				".666666.",
-				".3o11o2.",
+				"66666666",
+				"3wo11wo2",
+				"1oo11oo2",
 				".311112.",
 				"..3122.."
 			])
@@ -4128,10 +4132,10 @@ const set$8 = {
 				"....3854",
 				"..333336",
 				"33333334",
-				"1o11o112",
+				"1wo11wo2",
+				"1oo11oo2",
 				"55555556",
-				"11111112",
-				"22222222"
+				"11111112"
 			])
 		},
 		{
@@ -4171,8 +4175,8 @@ const set$8 = {
 			art: pet("avo", [
 				"..7777..",
 				".788117.",
-				"78o11o13",
-				"78111113",
+				"7wo11wo3",
+				"7oo11oo3",
 				"71164123",
 				"71145123",
 				".711223.",
@@ -4270,9 +4274,9 @@ const set$8 = {
 			],
 			art: pet("half-shell chick", [
 				"...3....",
-				"..3311..",
-				".311112.",
-				".1o11o2.",
+				".331112.",
+				"3wo11wo2",
+				"1oo11oo2",
 				".114412.",
 				"51511516",
 				"55555566",
@@ -4563,10 +4567,10 @@ const set$7 = {
 			art: pet("lil yeti", [
 				".6.33.6.",
 				".631136.",
-				"31444412",
-				"34o44o42",
-				"14455412",
-				"31111112",
+				"34444442",
+				"3wo44wo2",
+				"1oo44oo2",
+				"31455412",
 				"11111122",
 				".11..12."
 			])
@@ -4584,10 +4588,10 @@ const set$7 = {
 			],
 			art: pet("lil star", [
 				"...31...",
-				"...31...",
-				"33311112",
-				".3o11o2.",
-				"..4114..",
+				"..3112..",
+				"3wo11wo2",
+				"3oo11oo2",
+				".341142.",
 				"..1112..",
 				".112112.",
 				".12..12."
@@ -4688,9 +4692,9 @@ const set$7 = {
 			art: pet("cubelet", [
 				"..553333",
 				".5533332",
-				"11111122",
-				"1o11o122",
-				"11441122",
+				"1wo1wo22",
+				"1oo1oo22",
+				"11141122",
 				"11111122",
 				"1111112.",
 				".4..4..."
@@ -4712,8 +4716,8 @@ const set$7 = {
 				"....6...",
 				"...54...",
 				".331112.",
-				".3o11o2.",
-				"31111122",
+				"3wo11wo2",
+				"1oo11oo2",
 				"31111122",
 				"77777788",
 				".888888."
@@ -4992,8 +4996,8 @@ const set$6 = {
 			art: pet("goldfish", [
 				"..335...",
 				".33115.5",
-				"34o11255",
-				"31111225",
+				"3wo11255",
+				"3oo11225",
 				".1111255",
 				"..122..5"
 			])
@@ -5016,9 +5020,9 @@ const set$6 = {
 				"...45...",
 				"..4445..",
 				".311112.",
-				".3o11o2.",
-				".366672.",
-				".366772.",
+				"3wo11wo2",
+				"3oo11oo2",
+				"36666772",
 				".311122.",
 				"..1122.."
 			])
@@ -5037,8 +5041,8 @@ const set$6 = {
 			],
 			art: pet("rubber duckling", [
 				"..331...",
-				".33111..",
-				"44o112..",
+				".3wo11..",
+				"44oo12..",
 				".5111..3",
 				".1111131",
 				"31131112",
@@ -5063,9 +5067,9 @@ const set$6 = {
 				".46.46..",
 				".46.46..",
 				"33333312",
-				"31o11o12",
+				"3wo11wo2",
+				"3oo11oo2",
 				"31111125",
-				"31111122",
 				"22222222",
 				".5....5."
 			])
@@ -5364,9 +5368,9 @@ const set$5 = {
 			art: pet("gopher", [
 				".2....2.",
 				".211112.",
-				".1o11o2.",
-				".833382.",
-				".135312.",
+				"1wo11wo2",
+				"1oo11oo2",
+				".835382.",
 				".134412.",
 				"67666676",
 				".767767."
@@ -5389,8 +5393,9 @@ const set$5 = {
 			art: pet("sprinkles", [
 				"..5311..",
 				".141135.",
-				"11311412",
-				"11o11o12",
+				"13111412",
+				"1wo11wo2",
+				"1oo11oo2",
 				"66111166",
 				"66666667",
 				".667777."
@@ -5412,9 +5417,10 @@ const set$5 = {
 			art: pet("wind-up mouse", [
 				"33..33..",
 				"34..43..",
-				"311112..",
-				"1o11o2.5",
-				"11441265",
+				"3111112.",
+				"1wo1wo2.",
+				"1oo1oo25",
+				"11141265",
 				"311122.5",
 				".2..2..."
 			])
@@ -5436,10 +5442,10 @@ const set$5 = {
 				"#FFF0A0"
 			],
 			art: pet("toy blocks", [
-				"..99955.",
-				"..9o5o6.",
-				"..95556.",
-				"..56666.",
+				".9999956",
+				".5wo5wo6",
+				".5oo5oo6",
+				".5555566",
 				"77718883",
 				"71128334",
 				"71128334",
@@ -5904,10 +5910,10 @@ const set$4 = {
 				".2....2.",
 				".42..24.",
 				".121212.",
-				".1o11o1.",
+				"1wo11wo1",
+				"1oo11oo1",
 				".335331.",
-				"..1111.2",
-				"..13312.",
+				"..1331.2",
 				"..3..3.."
 			])
 		},
@@ -5928,8 +5934,8 @@ const set$4 = {
 				"..5...12",
 				"..3...1.",
 				".33111..",
-				"33o11122",
-				"31111122",
+				"3wo11122",
+				"3oo11122",
 				"44441122",
 				".44442.."
 			])
@@ -5948,9 +5954,9 @@ const set$4 = {
 				"#5A3A2A"
 			],
 			art: pet("baby walrus", [
-				"..3112..",
 				".311112.",
-				"31o11o12",
+				"3wo11wo2",
+				"1oo11oo2",
 				"31566512",
 				"11555512",
 				"21411422",
@@ -5974,8 +5980,8 @@ const set$4 = {
 			],
 			art: pet("pigeon", [
 				"..33....",
-				".3o31...",
-				"7311....",
+				".3wo1...",
+				"73oo1...",
 				".45111..",
 				".541111.",
 				".3112211",
@@ -6300,9 +6306,9 @@ const set$3 = {
 				"..3112..",
 				"..3112..",
 				".311112.",
-				"3o1111o2",
-				"16111162",
-				".111122."
+				"3wo11wo2",
+				"1oo11oo2",
+				".161162."
 			])
 		},
 		{
@@ -6321,8 +6327,8 @@ const set$3 = {
 				"...45...",
 				".344451.",
 				"33131412",
-				"31o11o12",
-				"31111112",
+				"3wo11wo2",
+				"3oo11oo2",
 				"11111122",
 				".111122."
 			])
@@ -6342,9 +6348,9 @@ const set$3 = {
 			art: pet("corn cob", [
 				"..3131..",
 				".313132.",
-				".3o11o2.",
 				".131312.",
-				"41313125",
+				"4wo13wo5",
+				"4oo31oo5",
 				"44131255",
 				".441255.",
 				"..4455.."
@@ -6367,8 +6373,8 @@ const set$3 = {
 				".444455.",
 				"..3112..",
 				".311122.",
-				".3o11o2.",
-				"31111122",
+				"3wo11wo2",
+				"1oo11oo2",
 				"11111122",
 				".111222."
 			])
@@ -6829,9 +6835,9 @@ const set$2 = {
 				"..3112..",
 				".351152.",
 				"31444412",
-				"14o44o42",
-				"17466472",
-				"14566542",
+				"1wo44wo2",
+				"1oo66oo2",
+				"17566572",
 				".215512.",
 				"..1222.."
 			])
@@ -6852,11 +6858,11 @@ const set$2 = {
 			art: pet("ladybug", [
 				".6....6.",
 				"..6666..",
-				".656656.",
-				"33114112",
-				"34111142",
-				"11141122",
-				"14111422",
+				".666666.",
+				"33141132",
+				"3wo11wo2",
+				"1oo11oo2",
+				"14111412",
 				".111122."
 			])
 		},
@@ -6874,9 +6880,9 @@ const set$2 = {
 				"#FF9AA4"
 			],
 			art: pet("springy", [
-				".33..32.",
-				".3o33o2.",
-				"31111112",
+				".33..33.",
+				"3wo33wo2",
+				"3oo11oo2",
 				"35111152",
 				"11222211",
 				"11444412",
@@ -6900,8 +6906,8 @@ const set$2 = {
 			art: pet("ghost", [
 				".35..52.",
 				".311112.",
-				"31111112",
-				"31o11o12",
+				"3wo11wo2",
+				"3oo11oo2",
 				"14111412",
 				"11111122",
 				"11111122",
@@ -7251,8 +7257,8 @@ const set$1 = {
 				".244442.",
 				"24333342",
 				"21444412",
-				"65555556",
-				"65o55o57",
+				"6wo55wo6",
+				"6oo55oo7",
 				"76555677",
 				"21212121",
 				".111111."
@@ -7275,8 +7281,9 @@ const set$1 = {
 			],
 			art: pet("lil racer", [
 				"..3311..",
-				".374442.",
-				".4o44o4.",
+				".374472.",
+				"4wo44wo4",
+				"4oo44oo4",
 				"33111112",
 				"61122116",
 				"11111122",
@@ -7298,11 +7305,11 @@ const set$1 = {
 			art: pet("saguaro", [
 				"...454..",
 				"..33112.",
-				"..3o1o2.",
+				".3wo1wo2",
+				".3oo1oo2",
 				"3.31112.",
 				"33311122",
 				"..311.22",
-				"..31112.",
 				"..31112."
 			])
 		}
@@ -7335,10 +7342,10 @@ const set$1 = {
 				"...41...",
 				"..4112..",
 				"..3336..",
-				".4o11o2.",
 				".411112.",
-				".333336.",
-				"41111112",
+				"4wo11wo2",
+				"4oo11oo2",
+				"33333336",
 				"55555555"
 			])
 		},
@@ -7841,8 +7848,8 @@ const set = {
 			art: pet("kitten", [
 				".1....1.",
 				".141141.",
-				".311112.",
-				".1o11o2.",
+				"3wo11wo2",
+				"1oo11oo2",
 				".155452.",
 				"..1111.2",
 				"..15512.",
@@ -7866,10 +7873,10 @@ const set = {
 			art: pet("puppy", [
 				"..3112..",
 				"43111124",
-				"41o11o14",
-				"41755714",
+				"4wo11wo4",
+				"4oo11oo4",
+				".175571.",
 				".176671.",
-				"..1111..",
 				".311112.",
 				".22..22."
 			])
@@ -7891,8 +7898,9 @@ const set = {
 				"4.3113.4",
 				".431134.",
 				"54111145",
-				".1o11o1.",
-				"41166114",
+				"1wo11wo1",
+				"4oo11oo4",
+				".116611.",
 				".111122.",
 				".12..12."
 			])
@@ -7911,8 +7919,8 @@ const set = {
 				".13..13.",
 				".13..13.",
 				".13..12.",
-				".111112.",
-				"1o1111o2",
+				"1wo11wo2",
+				"1oo11oo2",
 				"11133112",
 				".111112.",
 				".12..12."
@@ -23768,7 +23776,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 9;
+const ART_VERSION = 10;
 const PART_KEYS = [
 	"head",
 	"eyes",

@@ -66,7 +66,8 @@ describe('animate', () => {
       expect(Math.min(...art.map(([x]) => x))).toBeGreaterThanOrEqual(GRID_SIZE);
       expect(W).toBeLessThanOrEqual(WIDE_FRAME_WIDTH);
       for (const move of MOVES) for (const [k, f] of animate(name, move, { equip: [buddy], rarity: false }).frames.entries()) {
-        const lifts = [0, 1, 2].filter(lift => art.every(([x, y, t]) => t === T.OUTLINE || f.slots[y - lift][x] === 4));
+        // Its outline and its eyes (outline ink and a white catchlight) are his colours, not the buddy's.
+        const lifts = [0, 1, 2].filter(lift => art.every(([x, y, t]) => t === T.OUTLINE || t === T.WHITE || f.slots[y - lift][x] === 4));
         if (lifts.length !== 1) { wrong.push(`${name} ${buddy} ${move} ${k}: not whole on the floor or a hop above it`); continue; }
         const lift = lifts[0], mine = new Set(art.map(([x, y]) => (y - lift) * W + x));
         f.colors.forEach((row, y) => row.forEach((c, x) => {
