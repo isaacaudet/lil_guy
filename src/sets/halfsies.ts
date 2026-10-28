@@ -7,26 +7,28 @@ import { grid16, on, pet, type MachineSet } from '../item-art';
 export const set: MachineSet = {
   add: [
     {
-      id: 'halfsies.burger', game: 'halfsies', slot: 'skin', name: 'Burger half', eyes: 7,
-      // Cut down the middle: the bun's dome peaks at the cut, the cut face on the right.
-      colors: ['#EFA352', '#C47A30', '#FFC98A', '#FFF6DC', '#7DC24A', '#FFC93A', '#8A4A26', '#5A2E16', '#FBE3B8'],
+      id: 'halfsies.burger', game: 'halfsies', slot: 'skin', name: 'Burger suit', eyes: 9, limb: 2,
+      // bun, bun shade, bun light, seed, lettuce, cheese, patty, patty shade
+      colors: ['#EFA352', '#C47A30', '#FFC98A', '#FFF6DC', '#7DC24A', '#FFC93A', '#8A4A26', '#5A2E16'],
       outline: '#4A2410',
-      art: grid16('burger half', [
+      // The guy in a burger: the top bun for a hood, lettuce, patty and cheese round his face, the bottom
+      // bun at his feet.
+      art: grid16('burger suit', [
         '................',
         '................',
-        '......33333339..',
-        '...33411411119..',
-        '..311114111119..',
-        '.3111111111119..',
-        '.1111111111119..',
-        '.2111111111119..',
-        '.2222222222229..',
-        '.5555555555555..',
-        '.6666666666666..',
-        '.7777777777777..',
-        '.8888888888888..',
-        '..111111111119..',
-        '...22222222222..',
+        '....33331112....',
+        '..331141114122..',
+        '.31411111141112.',
+        '.31111411111142.',
+        '.5555h####s5555.',
+        '.778########877.',
+        '.778########877.',
+        '.778########877.',
+        '.678s######s876.',
+        '.6666s####s6666.',
+        '.31631111613612.',
+        '.21111111111112.',
+        '..222222222222..',
         '................',
       ]),
     },

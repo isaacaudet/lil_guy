@@ -159,7 +159,7 @@ export const hairWeights = [
   30, // cap
   25, // bob
   25, // mushroom
-  0, // eggshell: never dealt, it reads as a bald patch
+  0, // eggshell: never dealt any more; guys an older deal gave one still wear it
   15, // frosting
   10, // leafy top
   15, // beret

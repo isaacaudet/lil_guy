@@ -287,12 +287,14 @@ export const hair: Topper[] = [
     ['..rrrr..', '.rwwrrr.', 'rrrrrwwr', 'rrrrrrrr'],
   ], 2),
 
-  // The top of a broken egg worn as a cap: a tall white dome, shaded on its
-  // right, its edge cracked into points that bite into the head.
+  // The top of a broken egg, tipped on the head like a chick's: a white
+  // shell shaded on its right, its hollow showing under the tilted rim and
+  // the crack's points biting into the head. Tipped, it reads as a shell
+  // rather than a bald patch.
   hat('eggshell', [
-    ['....ww....', '..wwwwww..', '.wwwwwwwh.', 'wwwwwwwwhh', 'w.ww.ww.wh'],
-    ['...ww...', '.wwwwww.', 'wwwwwwhh', 'w.ww.w.h'],
-  ], 2),
+    ['......ww..', '....wwwwwb', '..wwwwwwwb', '.wwwwwwwb.', 'wwoooowb..', 'w.w.ww....'],
+    ['.....ww.', '...wwwwb', '.wwwwwwb', 'wwooowb.', 'w.w.w...'],
+  ], 1),
 
   // A dollop of icing, dripping, with sprinkles and a cherry on top.
   hat('frosting', [
@@ -315,14 +317,13 @@ export const hair: Topper[] = [
     ['...A....', '.aaaaaa.', 'aaaaaaaa', 'AAAAAAaa', '......aA'],
   ], 2),
 
-  // A tall pointed hat, its tip bent over, a buckled band, and a wide brim.
-  // A tall hat in the accent's deep shade, its tip bent over, a buckled band
-  // and a brim wider than the head. In the outline's dark it read as part of the head.
+  // A tall pointed hat in the accent's colours, its tip bent over, a
+  // buckled band and a brim wider than the head. It sits down at the
+  // forehead, where the head is wide enough for the big one.
   hat('witch hat', [
-    ['........AA..', '......aAA...', '.....aAAA...', '....xxyxx...', 'aAAAAAAAAAAA'],
-    ['.......AA.', '.....aAA..', '....aAAA..', '...xxyxx..', 'aAAAAAAAAA'],
-    ['......A.', '....aAA.', '...aAA..', '..xxyxx.', 'aAAAAAAA'],
-  ], 1),
+    ['........aA..', '......aaA.A.', '.....aaAAA..', '....aaaAAA..', '...xxxyxxx..', 'aaAAAAAAAAAA'],
+    ['......aA..', '....aaA.A.', '...aaAAA..', '..xxxyxx..', 'aaAAAAAAAA'],
+  ], 3),
 
   {
     name: 'propeller',

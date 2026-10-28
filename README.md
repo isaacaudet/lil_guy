@@ -415,12 +415,12 @@ recognisable everywhere.
 | Game | Skins | Showpiece | Hats (first is free) | Frames | Buddies |
 |---|---|---|---|---|---|
 | Amountle | Jar of gems, Crystal, Gumball machine, Jellybean | Today’s jar | Gem band, Winners crown, Jar lid, Gumball globe, Wrapped sweet | Jelly beans, Jar glass, Shelf | Gemling, Gummy bear, Lil jar, Candy corn |
-| Halfsies | Avocado half, Peach, Burger half, Trophy half | Banana split | Chef’s hat, Gold star, Split beanie, Thirds cake, Pancake stack | Kitchen teal, Half and half, Dashed cut line | Half-shell chick, Avo, Lil acorn, Cake slice |
+| Halfsies | Avocado half, Peach, Burger suit, Trophy half | Banana split | Chef’s hat, Gold star, Split beanie, Thirds cake, Pancake stack | Kitchen teal, Half and half, Dashed cut line | Half-shell chick, Avo, Lil acorn, Cake slice |
 | Stackdle | Wedge, Keystone, Arch, Big L | Astronaut | Little block, Block tower, Battlement, Hard hat, Cloud nine | Valley sky, Height ruler, Space | Cubelet, Wobble, Lil yeti, Lil star |
 | Flipsies | Water bottle, Pencil, Duck onesie, Buttered toast | Moai | Bucket hat, Short stack, Fried egg, Popcorn bucket, Lampshade | Ring mat, Cork coaster, Book spines | Goldfish, Ketchup, Rubber duckling, Toaster |
 | Puttsies | Golf ball, Quilt pillow, Golfer, Eight ball hoodie | Engine driver | Golf cap, Hole-in-one crown, Magic top hat, Sleeping cat, Snail | Patchwork, Picnic check, Dimples | Gopher, Sprinkles, Wind-up mouse, Toy blocks |
 | Weighsies | Kettlebell, Panda onesie, Penguin onesie, Capybara | T. rex onesie | Bear ears, Apple shot, Sumo topknot, Pharaoh, Liberty crown | Lavender, Pennies, Gold bars | House cat, Lil whale, Hamster, Pigeon |
-| Cutsies | Kiwi hoodie, Strawberry hoodie, Donut floatie, Salmon nigiri | Watermelon suit | Chef’s headband, Chef's toque, Toadstool, Banana peel, Cupcake | Melon slice, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
+| Cutsies | Kiwi hoodie, Strawberry hoodie, Donut floatie, Salmon nigiri | Watermelon suit | Chef’s headband, Chef's toque, Toadstool, Peeled banana, Cupcake | Melon slice, Chopping board, Slice line-up | Pear, Tomato, Corn cob, Eggplant |
 | Tiltsies | Hamster ball, Biscuit hoodie, Mochi hoodie, Starfall pyjamas | Golden seed | Hamster ears, Head hamster, Mochi’s bow, Pebble’s sprout, Daisy crown | Course tiles, Cloudy sky, Seed trail | Pocket hamster, Ladybug, Springy, Ghost |
 | Trackdle | Cone suit, Pit crew, Snow parka, Dune rider | Formula 07 | Pit cap, Cowboy hat, Boost flame, Bobble hat, Chequered bandana | Canyon sunset, Kerb, Boost pad | Conelet, Tyre stack, Lil racer, Saguaro |
 | Pet shop | Cat onesie, Shiba onesie, Bunny hoodie, Frog hoodie | Kitsune | Cat ears, Head puppy, Fox ears, Bunny ears, Cat-ear headphones | Paw prints, Cozy cushion, Sakura | Kitten, Puppy, Axolotl, Bunny |

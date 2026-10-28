@@ -2460,9 +2460,15 @@ export function withItems(palette: Palette, config: AvatarConfig): Palette {
     painted(item.colors, paint).forEach((hex, i) => { colors[LAYER[slot] + i] = hex; });
     if (slot === 'skin') {
       if (item.outline) colors[T.OUTLINE] = item.outline;
-      // The face is drawn on the skin now, so its ink follows the skin.
-      const dark = '#15111C', light = '#FFF1D6';
-      colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light, item.colors[0]) ? dark : light;
+      // The face is drawn on the skin now, so its ink follows what it sits on. A costume that opens
+      // round the guy's own face (nothing but his own colours where his eyes go) keeps his own ink: a
+      // dark guy's eyes stay light in a white hood. A face on the skin's material takes ink for that.
+      const e = item.eyes ?? 0;
+      const own = !!item.art && item.art.slice(e - 2, e + 2).every(row => row.slice(4, 12).every(t => t > 0 && t < LOCAL));
+      if (!own) {
+        const dark = '#15111C', light = '#FFF1D6';
+        colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light, item.colors[0]) ? dark : light;
+      }
     }
   }
   return { name: palette.name, colors };
