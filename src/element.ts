@@ -26,7 +26,12 @@ export interface LilGuyOptions {
   tag?: string;
 }
 
-type Player = { el: LilGuyElement; frames: Frames; start: number; shown: number; total: number };
+type Player = { el: LilGuyElement; frames: Frames; images: (ImageData | undefined)[]; start: number; shown: number; total: number };
+
+/** The fastest a guy on the page is redrawn: about 15 frames a second, near enough to his own frames. */
+const FRAME_MS = 66;
+/** How many guys not seen before are baked in one frame, so a long board fills in instead of holding the page. */
+const BAKES_PER_FRAME = 2;
 
 /** Defines `<lil-guy>` (once per tag). */
 export function defineLilGuy(options: LilGuyOptions = {}): void {
@@ -34,21 +39,27 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
   if (typeof customElements === 'undefined' || customElements.get(tag)) return;
   const host = options.host?.replace(/\/+$/, '');
 
-  // One clock for every guy on the page, and only the ones on screen are drawn.
-  const playing = new Set<Player>();
-  let ticking = false;
+  // One clock for every guy on the page, and only the ones on screen are drawn. Guys coming on screen
+  // for the first time wait their turn to be baked, a few a frame.
+  const playing = new Set<Player>(), waiting = new Set<LilGuyElement>();
+  let ticking = false, last = 0;
   const tick = (now: number) => {
-    ticking = playing.size > 0;
+    ticking = playing.size > 0 || waiting.size > 0;
     if (!ticking) return;
+    requestAnimationFrame(tick);
+    let bakes = BAKES_PER_FRAME;
+    for (const el of waiting) { waiting.delete(el); if (el.isConnected) el.render(true); if (--bakes <= 0) break; }
+    if (now - last < FRAME_MS) return;
+    last = now;
     for (const p of playing) {
       if (!p.el.isConnected) { playing.delete(p); continue; }
       let t = (now - p.start) % p.total, k = 0;
       while (k < p.frames.delays.length - 1 && t >= p.frames.delays[k]) { t -= p.frames.delays[k]; k++; }
       if (k !== p.shown) { p.shown = k; p.el.paint(k); }
     }
-    requestAnimationFrame(tick);
   };
-  const play = (p: Player) => { playing.add(p); if (!ticking) { ticking = true; requestAnimationFrame(tick); } };
+  const wake = () => { if (!ticking) { ticking = true; requestAnimationFrame(tick); } };
+  const play = (p: Player) => { playing.add(p); wake(); };
   const seen = typeof IntersectionObserver !== 'undefined'
     ? new IntersectionObserver(es => es.forEach(e => (e.target as LilGuyElement).visible(e.isIntersecting)), { rootMargin: '100px' })
     : null;
@@ -67,7 +78,7 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
     set spec(v: CardSpec | null) { this._spec = v; this.render(); }
 
     connectedCallback() { this.style.display ||= 'inline-block'; this.style.lineHeight = '0'; seen?.observe(this); this.render(); }
-    disconnectedCallback() { seen?.unobserve(this); if (this.player) playing.delete(this.player); }
+    disconnectedCallback() { seen?.unobserve(this); waiting.delete(this); if (this.player) playing.delete(this.player); }
     attributeChangedCallback() { if (this.isConnected) this.render(); }
 
     /** What the guy is: a code, or `@name` for a claimed one. */
@@ -88,10 +99,10 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
     paint(k: number) {
       const p = this.player, c = this.canvas;
       if (!p || !c) return;
-      c.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(p.frames.frames[k]), p.frames.width, p.frames.height), 0, 0);
+      c.getContext('2d')!.putImageData(p.images[k] ??= new ImageData(new Uint8ClampedArray(p.frames.frames[k]), p.frames.width, p.frames.height), 0, 0);
     }
 
-    private render() {
+    render(bakeNow = false) {
       const who = this.who(), view = this.getAttribute('view') || 'idle';
       const size = Math.max(1, Math.min(32, Math.round(Number(this.getAttribute('size')) || 4)));
       const box = view.startsWith('card') ? BAKED_SIZE.card : BAKED_SIZE.guy;
@@ -114,14 +125,18 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
       // Baked when first on screen, so a long board costs only what is seen.
       if (!this.onScreen) { this.replaceChildren(); this.canvas = null; return; }
       const key = `${who}/${view}`;
-      if (!baked.has(key)) baked.set(key, options.bake(this._spec ?? who, view));
+      if (!baked.has(key)) {
+        // A guy not baked yet waits for the clock's next allowance.
+        if (!bakeNow) { waiting.add(this); wake(); return; }
+        baked.set(key, options.bake(this._spec ?? who, view));
+      }
       const frames = baked.get(key);
       if (!frames) { this.replaceChildren(); return; }
       const canvas = document.createElement('canvas');
       canvas.width = frames.width; canvas.height = frames.height; canvas.style.cssText = style(frames.width, frames.height);
       this.canvas = canvas;
       this.replaceChildren(canvas);
-      this.player = { el: this, frames, start: performance.now(), shown: -1, total: frames.delays.reduce((a, b) => a + b, 0) };
+      this.player = { el: this, frames, images: [], start: performance.now(), shown: -1, total: frames.delays.reduce((a, b) => a + b, 0) };
       this.paint(0); this.player.shown = 0;
       if (frames.frames.length > 1) play(this.player);
     }
@@ -129,4 +144,4 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
   customElements.define(tag, LilGuyElement);
 }
 
-type LilGuyElement = HTMLElement & { paint(k: number): void; visible(on: boolean): void };
+type LilGuyElement = HTMLElement & { paint(k: number): void; visible(on: boolean): void; render(bakeNow?: boolean): void };

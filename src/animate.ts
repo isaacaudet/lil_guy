@@ -85,6 +85,8 @@ export interface Animation {
   duration: number;
   /** Whether anything moves on its own clock (an aura, an effect, sparkles), not just with the move. */
   timed: boolean;
+  /** For a loop, how many turns of LOOP_MS it spans. */
+  turns?: number;
 }
 
 export interface AnimateOptions extends RenderOptions {
@@ -100,9 +102,10 @@ export interface AnimateOptions extends RenderOptions {
    * to the last bit.
    * `fine` cuts frames to 80 ms for a finish to move in. A lap is played first
    * and left out, so what carries from frame to frame (a trail) is already
-   * there at the start.
+   * there at the start. `{ fit: true }` picks the repeats and turns itself, as
+   * `fitLoop` does for the move's length, without building the move twice.
    */
-  loop?: { repeats: number; turns: number; fine?: boolean };
+  loop?: { repeats: number; turns: number; fine?: boolean } | { fit: true; fine?: boolean };
 }
 
 /**
@@ -815,8 +818,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
   const spots = sparkleSpots(layerOf('base')), headSpots = sparkleSpots(layerOf('base'), 3);
   // With effects on, long beats are cut into slices so the shine can move.
-  const loop = options.loop, laps = loop ? loop.repeats + 1 : 1;
-  const lapMs = beats.reduce((n, b) => n + b.ms, 0), span = loop ? lapMs * loop.repeats : 0;
+  const lapMs = beats.reduce((n, b) => n + b.ms, 0);
+  const loop = options.loop && 'fit' in options.loop ? { ...fitLoop(lapMs), fine: options.loop.fine } : options.loop;
+  const laps = loop ? loop.repeats + 1 : 1, span = loop ? lapMs * loop.repeats : 0;
   // Whole milliseconds in, an exact remainder, one division: the same moment in any lap is the same number.
   const clock = (ms: number) => (loop ? ((ms * loop.turns * LOOP_MS) % (LOOP_MS * span)) / span : ms);
   const slices: { beat: Beat; ms: number; t: number; lap: number }[] = [];
@@ -912,7 +916,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // In a loop the warm-up lap is left out.
   const frames = loop ? all.filter((_, i) => slices[i].lap > 0) : all;
 
-  return { move, width: W, height: FRAME_HEIGHT, frames, duration: frames.reduce((n, f) => n + f.ms, 0), timed };
+  return { move, width: W, height: FRAME_HEIGHT, frames, duration: frames.reduce((n, f) => n + f.ms, 0), timed, ...(loop ? { turns: loop.turns } : {}) };
 }
 
 /**
