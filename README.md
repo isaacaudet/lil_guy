@@ -568,6 +568,13 @@ A rare guy only means something if nobody can choose one. So:
   `2:e1`; `decodeLook` refuses old seven-number codes, out-of-range parts and
   rare parts the player didn't roll, and `lookOf(seed, code)` draws the
   result.
+- **Names are letters and digits, with underscores only between them.**
+  `nameKey(typed)` makes a key (`Cool__Guy_` is `cool_guy`) and `NAME_KEY`
+  checks one: no `_` at either end and never two together, 2 to 16 long.
+  Names claimed before underscores lost theirs, so the site treats names with
+  the same skeleton (`nameSkeleton`, the underscores taken out) as one name: a
+  new claim can't take `cool_guy` while `coolguy` is held, and `cool_guy`, from
+  Twitch chat say, finds `coolguy`'s guy.
 
 ### Upgrading from 0.1
 

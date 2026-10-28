@@ -2,6 +2,7 @@
 // players' guys by their Google sign-in, sha256("google:<sub>") as names.account keeps it, and draws
 // each one as he is here, his parts and what he has on, on its boards, parties and games. The ask is
 // signed with CLUB_SSO_SECRET, as the club's stats are (card-stats.js), and is at most five minutes old.
+import { NAME_KEY, nameSkeleton } from '../src/index-headless.ts';
 
 export const MAX_ASKED = 100;
 const FRESH = 300;
@@ -55,16 +56,22 @@ export async function namedGuys(request, env, guyOf, url = new URL(request.url))
   const headers = { 'Cache-Control': 'public, max-age=60', 'Access-Control-Allow-Origin': '*', 'X-Content-Type-Options': 'nosniff' };
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET' } });
   if (request.method !== 'GET') return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'GET' } });
-  const asked = [...new Set((url.searchParams.get('n') || '').toLowerCase().split(',').filter(n => /^[a-z0-9]{2,16}$/.test(n)))];
+  const asked = [...new Set((url.searchParams.get('n') || '').toLowerCase().split(',').filter(n => NAME_KEY.test(n)))];
   if (!asked.length || asked.length > MAX_ASKED) return Response.json({ error: 'Bad ask' }, { status: 400, headers });
-  const marks = asked.map(() => '?').join(',');
+  // A name with underscores nobody holds is the grandfathered one without them (./name-lookup.js).
+  const lookFor = [...new Set(asked.flatMap(n => [n, nameSkeleton(n)]))];
+  const marks = lookFor.map(() => '?').join(',');
   const { results: names } = await env.DB.prepare(`SELECT n.key, n.seed, COALESCE(p.look, '') AS look FROM names n LEFT JOIN players p ON p.key = n.key
-    WHERE n.key IN (${marks})`).bind(...asked).all();
+    WHERE n.key IN (${marks})`).bind(...lookFor).all();
   const keys = names.map(n => n.key);
   const { results: worn } = keys.length
     ? await env.DB.prepare(`SELECT key, code FROM copies WHERE worn = 1 AND key IN (${keys.map(() => '?').join(',')}) ORDER BY id`).bind(...keys).all()
     : { results: [] };
   const guys = {};
-  for (const n of names) guys[n.key] = { parts: guyOf(n.seed, n.look), worn: worn.filter(c => c.key === n.key).map(c => c.code) };
+  const held = new Map(names.map(n => [n.key, n]));
+  for (const a of asked) {
+    const n = held.get(a) || held.get(nameSkeleton(a));
+    if (n) guys[a] = { parts: guyOf(n.seed, n.look), worn: worn.filter(c => c.key === n.key).map(c => c.code) };
+  }
   return Response.json({ guys }, { headers });
 }

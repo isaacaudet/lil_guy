@@ -2,11 +2,12 @@ import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked } from './baked.js';
 import { clubGuys, namedGuys } from './club-guys.js';
 import { putOn, readClub, takeOff, withStats } from './card-stats.js';
+import { heldKey, skeletonTaken } from './name-lookup.js';
 import {
   roll, rollSeason, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
   cleanTag, tradeFloat, rollPart, partCode, readPart, partCost, unlocksOf, pickable, PART_REFUND,
-  smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE,
+  smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, NAME_KEY, nameKey, nameSkeleton,
 } from '../src/index-headless.ts';
 
 const json = (body, status = 200, extra = {}) => Response.json(body, {
@@ -303,9 +304,9 @@ async function me(request, env, key, action) {
   }
   if (action === 'swap') {
     // Offer one of your copies to another player, for one of theirs or as a gift. Nothing moves until they accept.
-    const to = String(body.to || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!/^[a-z0-9]{2,16}$/.test(to) || to === key) return json({ error: 'Pick another player' }, 400);
-    if (!(await env.DB.prepare('SELECT 1 FROM names WHERE key = ?').bind(to).first())) return json({ error: 'No one has claimed that name' }, 404);
+    const to = await heldKey(env, nameKey(String(body.to || '')));
+    if (to === key) return json({ error: 'Pick another player' }, 400);
+    if (!to) return json({ error: 'No one has claimed that name' }, 404);
     const give = await env.DB.prepare(`SELECT id FROM copies WHERE id = ? AND key = ? AND worn = 0 AND ${MOVABLE}`).bind(Number(body.give), key).first();
     if (!give) return json({ error: 'Offer one of your copies that isn’t worn or a starter' }, 400);
     let want = null;
@@ -438,9 +439,10 @@ async function guys(env, url) {
   const sort = url.searchParams.get('sort') === 'recent' ? 'n.at DESC' : 'COALESCE(p.guy_one_in, 0) DESC, n.at';
   const limit = Math.min(200, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '48') || 48));
   const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0') || 0);
-  const q = (url.searchParams.get('q') || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
+  // Searched by skeleton, so `cool_guy` finds `coolguy` and the other way round.
+  const q = nameSkeleton(nameKey(url.searchParams.get('q') || ''));
   const { results } = await env.DB.prepare(`SELECT n.key, n.seed, n.at, COALESCE(p.look, '') AS look, p.guy_one_in FROM names n LEFT JOIN players p ON p.key = n.key
-    WHERE n.key LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`).bind(`%${q}%`, limit, offset).all();
+    WHERE replace(n.key, '_', '') LIKE ? ORDER BY ${sort} LIMIT ? OFFSET ?`).bind(`%${q}%`, limit, offset).all();
   const keys = results.map(r => r.key);
   const owned = keys.length ? (await env.DB.prepare(`SELECT * FROM copies WHERE key IN (${keys.map(() => '?').join(',')}) AND (worn = 1 OR source <> 'starter')`).bind(...keys).all()).results : [];
   return json(results.map(r => {
@@ -460,7 +462,7 @@ async function market(env, url) {
     if (v && /^[a-z]{2,16}$/.test(v)) { where.push(`${f} = ?`); args.push(v); }
   }
   const holder = (url.searchParams.get('key') || '').toLowerCase();
-  if (/^[a-z0-9]{2,16}$/.test(holder)) { where.push('key = ?'); args.push(holder); }
+  if (NAME_KEY.test(holder)) { where.push('key = ?'); args.push(holder); }
   const sort = { float: 'scuff ASC', newest: 'id DESC' }[url.searchParams.get('sort')] || 'one_in DESC, scuff ASC';
   const limit = Math.min(96, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '60') || 60));
   const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0') || 0);
@@ -493,22 +495,24 @@ export async function api(request, env, url = new URL(request.url)) {
   if (request.method === 'GET' && url.pathname === '/api/market') return market(env, url);
   if (request.method === 'GET' && url.pathname === '/api/stats') return stats(env);
   if (request.method === 'GET' && url.pathname === '/api/rank') return rank(env, url);
-  const profile = /^\/api\/guys\/([a-z0-9]{2,16})$/.exec(url.pathname);
+  const profile = /^\/api\/guys\/([a-z0-9_]{2,16})$/.exec(url.pathname);
   if (profile && request.method === 'GET') {
-    const name = await env.DB.prepare('SELECT key, seed, at FROM names WHERE key = ?').bind(profile[1]).first();
+    const held = await heldKey(env, profile[1]);
+    const name = held && await env.DB.prepare('SELECT key, seed, at FROM names WHERE key = ?').bind(held).first();
     if (!name) return json({ error: 'Not claimed' }, 404);
     const p = await ensurePlayer(env, name);
     const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all()).results, today());
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9_]{2,16})\/(state|open|season|checkin|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
-  const match = /^\/api\/names\/([a-z0-9]{2,16})$/.exec(url.pathname);
-  if (!match) return json({ error: 'Invalid name or endpoint' }, 404);
+  const match = /^\/api\/names\/([a-z0-9_]{2,16})$/.exec(url.pathname);
+  if (!match || !NAME_KEY.test(match[1])) return json({ error: 'Invalid name or endpoint' }, 404);
   const key = match[1];
   if (request.method === 'GET') {
-    const name = await env.DB.prepare('SELECT key, seed, at FROM names WHERE key = ?').bind(key).first();
+    const held = await heldKey(env, key);
+    const name = held && await env.DB.prepare('SELECT key, seed, at FROM names WHERE key = ?').bind(held).first();
     return name ? json(name) : json({ error: 'Not claimed' }, 404);
   }
   if (!['POST', 'DELETE'].includes(request.method)) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, DELETE' });
@@ -543,6 +547,8 @@ export async function api(request, env, url = new URL(request.url)) {
     ON CONFLICT(hash) DO UPDATE SET attempts = attempts + 1 RETURNING attempts`).bind(hash, day).first();
   if (count.attempts > 10) return json({ error: 'Daily claim limit reached. Try tomorrow.' }, 429);
   await env.DB.prepare('DELETE FROM claim_limits WHERE day < ?').bind(day).run();
+  if (nameSkeleton(key) === 'isaac' && key !== 'isaac') return json({ error: 'This name is reserved' }, 403);
+  if (await skeletonTaken(env, key)) return json({ error: 'That name was just taken' }, 409);
   if (key === 'isaac' && (!env.FOUNDER_SECRET || !await equal(request.headers.get('X-Founder-Secret') || '', env.FOUNDER_SECRET))) {
     return json({ error: 'This name is reserved' }, 403);
   }

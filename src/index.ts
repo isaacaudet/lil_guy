@@ -88,3 +88,4 @@ export type { LilGuyOptions } from "./element";
 export { PAINTS, PAINT_IDS, PAINTABLE, painted } from "./paints";
 export type { PaintId } from "./paints";
 export { smeltValue, craftable, craftCopy, metalText, metalCoins, CRAFT_COST, PAINT_COST, SCRAP, RECLAIMED, REFINED } from "./craft";
+export { NAME_KEY, nameKey, nameSkeleton } from "./name-key";

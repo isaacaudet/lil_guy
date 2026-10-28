@@ -1,3 +1,4 @@
+import { heldKey } from './name-lookup.js';
 import { ART_VERSION, bakeGuy, bakedImage, bakeView, guyCode, isMove, readGuyCode, sheetOf } from '../src/index-headless.ts';
 
 /**
@@ -57,8 +58,8 @@ export async function baked(request, env, url, ctx, guyOf) {
     return new Response(null, { status: 301, headers: { Location: `/g/${ART_VERSION}/${who}/${view}`, 'Cache-Control': 'public, max-age=86400' } });
   }
   if (who.startsWith('@')) {
-    const key = who.slice(1).toLowerCase();
-    if (!/^[a-z0-9]{2,16}$/.test(key)) return fail(404, 'No such name');
+    const key = await heldKey(env, who.slice(1).toLowerCase());
+    if (!key) return fail(404, 'No such name');
     const code = await codeOfName(env, key, guyOf);
     if (!code) return fail(404, 'No such name');
     return new Response(null, { status: 302, headers: { Location: `/g/${ART_VERSION}/${code}/${view}`, 'Cache-Control': 'public, max-age=60', 'Access-Control-Allow-Origin': '*' } });

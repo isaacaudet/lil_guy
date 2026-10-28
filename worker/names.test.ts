@@ -41,3 +41,17 @@ test('rejects cross-origin writes and malformed keys', async () => {
   expect((await call('/UPPER','POST')).status).toBe(404);
   expect((await call('/tester','PUT')).status).toBe(405);
 });
+test('underscores only between letters, one at a time, and grandfathered names keep theirs', async () => {
+  for (const bad of ['/_cool', '/cool_', '/cool__guy']) expect((await call(bad, 'POST')).status).toBe(404);
+  // Claimed before underscores: `cool_guy` was kept as `coolguy`.
+  const old = await (await call('/coolguy', 'POST')).json();
+  expect((await call('/cool_guy', 'POST')).status).toBe(409);
+  expect((await call('/c_ool_guy', 'POST')).status).toBe(409);
+  // A name with underscores nobody holds finds the grandfathered guy.
+  const found = await (await call('/cool_guy')).json();
+  expect(found.key).toBe('coolguy'); expect(found.seed).toBe(old.seed);
+  // New underscore names, and their skeleton is then taken too.
+  expect((await call('/snow_pea', 'POST')).status).toBe(201);
+  expect((await call('/snowpea', 'POST')).status).toBe(409);
+  expect((await call('/i_saac', 'POST')).status).toBe(403);
+});

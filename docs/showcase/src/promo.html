@@ -1443,7 +1443,8 @@
     };
   }
   const animated = (seed, move, equip, size, emote) => { const c = guyConfig(seed); return LG.toAnimatedSvg(seed, move, { size, equip, emote, parts: partsOf(c), palette: LG.paletteOf(c) }); };
-  const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
+  // Letters and digits, underscores only between them (LG.nameKey).
+  const norm = s => LG.nameKey(s);
 
   /* ---------------------------------------------- state: your claim and collection.
    * Kept in the page's database when this view has one (your own private row), else in this browser. */
@@ -1650,8 +1651,10 @@
   let checkT = null, lastCheck = '';
   function setAvail(cls, text) { const a = $('avail'); a.className = 'avail ' + cls; a.textContent = text; }
   async function check() {
+    // While typing, a last underscore stays so the next letter can follow it.
     const raw = $('name').value, key = norm(raw);
-    if (raw && key !== raw.toLowerCase()) $('name').value = key;
+    const typed = raw.toLowerCase().replace(/[^a-z0-9_]/g, '').replace(/_+/g, '_').replace(/^_+/, '').slice(0, 16);
+    if (raw && typed !== raw) $('name').value = typed;
     $('claim-btn').disabled = true;
     lastCheck = key;
     if (key.length < 2) { setAvail('', ''); return; }
