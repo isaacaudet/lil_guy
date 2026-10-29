@@ -505,8 +505,20 @@ function buddyLift(move: Move, beat: Beat, t: number, roll: (k: number) => numbe
   if (move === 'dance') return beat.squash ? 1 : 0;
   // Not while he squashes down beside it: that would bring them closer than `movesRoom` allows.
   if ((beat.squash ?? 0) > 0) return 0;
-  const period = 2000 + 1000 * roll(61), f = cycle(t + roll(60) * LOOP_MS, period) * fit(period);
-  const double = roll(62) < 0.4;
+  return hopLift(hopOf(roll), t);
+}
+
+/** A buddy's own little hops, dealt from his name: how often (ms), where in LOOP_MS they start, and whether each is a double hop. */
+export type BuddyHop = [period: number, phase: number, double: number];
+
+const hopOf = (roll: (k: number) => number): BuddyHop => [2000 + 1000 * roll(61), roll(60) * LOOP_MS, roll(62) < 0.4 ? 1 : 0];
+
+/** The buddy's own hops for the guy `input` would render as, the same ones his moving pictures play. */
+export const buddyHop = (input: string): BuddyHop => hopOf(rollsOf(input));
+
+/** How many rows a buddy is up on its own hops `t` ms into the loop: 1 for a moment now and then, else 0. */
+export function hopLift([period, phase, double]: BuddyHop, t: number): number {
+  const f = cycle(t + phase, period) * fit(period);
   return f < 160 || (double && f >= 260 && f < 400) ? 1 : 0;
 }
 

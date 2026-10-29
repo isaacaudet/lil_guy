@@ -678,14 +678,24 @@ const BUDDY_HOPS = (move) => move !== "sleep" && move !== "sad";
 * stays put through the calm moves (sleep, sad), and keeps time with his steps
 * in a dance.
 */
-function buddyLift(move, beat, t, roll$1) {
+function buddyLift$1(move, beat, t, roll$1) {
 	const up = -(beat.dy ?? 0);
 	if (up >= 2) return Math.min(2, Math.ceil(up / 2));
 	if (!BUDDY_HOPS(move)) return 0;
 	if (move === "dance") return beat.squash ? 1 : 0;
 	if ((beat.squash ?? 0) > 0) return 0;
-	const period = 2e3 + 1e3 * roll$1(61), f = cycle(t + roll$1(60) * LOOP_MS, period) * fit(period);
-	const double = roll$1(62) < .4;
+	return hopLift(hopOf(roll$1), t);
+}
+const hopOf = (roll$1) => [
+	2e3 + 1e3 * roll$1(61),
+	roll$1(60) * LOOP_MS,
+	roll$1(62) < .4 ? 1 : 0
+];
+/** The buddy's own hops for the guy `input` would render as, the same ones his moving pictures play. */
+const buddyHop = (input) => hopOf(rollsOf(input));
+/** How many rows a buddy is up on its own hops `t` ms into the loop: 1 for a moment now and then, else 0. */
+function hopLift([period, phase, double], t) {
+	const f = cycle(t + phase, period) * fit(period);
 	return f < 160 || double && f >= 260 && f < 400 ? 1 : 0;
 }
 function shift(layer, dx, dy) {
@@ -1205,7 +1215,7 @@ function animate(input, move, options = {}) {
 		layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
 		if (buddyCells.length) {
 			layer = layer.map((row) => [...row]);
-			standBuddy(layer, buddyCells, buddyLift(move, beat, t$1, roll$1));
+			standBuddy(layer, buddyCells, buddyLift$1(move, beat, t$1, roll$1));
 		}
 		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
@@ -8145,8 +8155,10 @@ function toGuyGif(seed, move, options = {}, scale$1 = 12) {
 /**
 * The trading card a guy or an item is shown on: a 26×42 face printed in its
 * grade's colour, a dark plate across the top for the name, the guy standing
-* in a window, and a dark plate at the foot with the grade pips and the set's
-* symbol. Its words (name, print, odds) are the page's to write over it.
+* in a window, and a plain dark plate at the foot. Its words (name, print,
+* odds) are the page's to write over it. A buddy he wears stands at his full
+* size too, in front of the window's bottom-right corner and half over the
+* plate under it (`FaceSpec.buddy`), hopping now and then as it does beside him.
 *
 * Like Balatro's cards, each has an edition, from the finish that sets its
 * grade: Foil (Sunset), Holographic (Tempered, Nebula), Polychrome (Prism),
@@ -8160,6 +8172,18 @@ function toGuyGif(seed, move, options = {}, scale$1 = 12) {
 */
 const FACE_WIDTH = 26;
 const FACE_HEIGHT = 42;
+/**
+* Where a buddy he wears stands on the face, the guy and the face the same size
+* either way: `peek`, in front of the window's bottom-right corner, its feet on
+* the plate under it, as if peeking out; `floor`, wholly on the plate under the
+* window, to the right, where the page's words would otherwise run.
+*/
+const FACE_BUDDY_SPOTS = ["peek", "floor"];
+/** A buddy's right edge (its outline), and its lowest row for each spot: above the page's words for `peek`, the plate's foot for `floor`. */
+const BUDDY_RIGHT = FACE_WIDTH - 3, BUDDY_FOOT = {
+	peek: 33,
+	floor: FACE_HEIGHT - 3
+};
 const rgb$1 = (s) => [
 	parseInt(s.slice(1, 3), 16),
 	parseInt(s.slice(3, 5), 16),
@@ -8324,11 +8348,37 @@ function cardFace(spec) {
 		if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
 		put(x, y, y === 30 ? INK : plate, FIXED);
 	}
+	const buddy = new Uint8Array(W * H * 4), alone = buddyAlone(config), buddyOwned = owned.buddy;
+	const buddyCopy = [
+		buddyOwned ? SHADER_FINISHES.indexOf(buddyOwned.finish) : -1,
+		buddyOwned?.scuff ?? 0,
+		Math.floor((buddyOwned?.print ?? 0) / 4) * 4
+	];
+	if (alone) {
+		const tint = paint(alone, config, palette$1), cells = [];
+		alone.forEach((row, y) => row.forEach((t, x) => {
+			if (tint[y][x]) cells.push([
+				x,
+				y,
+				tint[y][x],
+				t >= LAYER.buddy
+			]);
+		}));
+		const ox = BUDDY_RIGHT - Math.max(...cells.map(([x]) => x)), oy = BUDDY_FOOT[spec.buddy ?? "peek"] - Math.max(...cells.map(([, y]) => y));
+		for (const [x, y, hex$1, art] of cells) {
+			const i = ((y + oy) * W + x + ox) * 4;
+			buddy.set([...rgb$1(hex$1), art ? 255 : 128], i);
+			noise$1[i + 1] = noiseOf(x + ox, y + oy, buddyCopy[2]);
+		}
+	}
 	const look = lookFor(edition, top?.finish, spec.look);
 	const face = {
 		base,
 		kind,
 		noise: noise$1,
+		buddy,
+		buddyCopy,
+		hop: alone ? buddyHop(spec.name) : null,
 		grade: g,
 		negative: copies.some((o) => o.finish === "negative"),
 		seed: last ? last.print : 0,
@@ -8349,7 +8399,9 @@ function cardFace(spec) {
 	return face;
 }
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
-const faceMoves = (f) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+const faceMoves = (f) => f.edition > 0 || !!f.hop || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+/** How many rows the face's buddy is up `ms` into its loop: 1 now and then, as it hops; 0 without one. */
+const buddyLift = (f, ms) => f.hop ? hopLift(f.hop, ms) : 0;
 /** Whether a face cell is on the card's bevel (`raised` in CARD_FRAGMENT). */
 function faceRaised(x, y) {
 	const ex = Math.min(x, FACE_WIDTH - 1 - x), ey = Math.min(y, FACE_HEIGHT - 1 - y);
@@ -8394,14 +8446,21 @@ function faceField(f) {
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 function cardFaceAt(f, ms, hover) {
 	const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
-	const time = loopSeconds(ms), { at, field, out: ed } = faceField(f);
+	const time = loopSeconds(ms), { at, field, out: ed } = faceField(f), lift = buddyLift(f, ms);
 	field(time, ed);
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const i = (y * W + x) * 4;
 		if (f.base[i + 3] < 128) continue;
 		let c;
-		const e = at[i >> 2];
-		if (e >= 0) c = [
+		const e = at[i >> 2], s = ((y + lift) * W + x) * 4, b$1 = y + lift < H ? f.buddy[s + 3] : 0;
+		if (b$1 >= 64) {
+			c = [
+				f.buddy[s] / 255,
+				f.buddy[s + 1] / 255,
+				f.buddy[s + 2] / 255
+			];
+			if (b$1 >= 192 && f.buddyCopy[0] >= 0) c = finishColor(c, f.buddyCopy[0], f.buddyCopy[1], f.noise[s + 1] / 255, x + y + lift, y + lift, f.buddyCopy[2], time, 1);
+		} else if (e >= 0) c = [
 			ed[e * 3],
 			ed[e * 3 + 1],
 			ed[e * 3 + 2]
@@ -8430,11 +8489,11 @@ function cardFaceAt(f, ms, hover) {
 	}
 	return out;
 }
-/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise` from `cardFace`. */
+/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise`, `buddy` from `cardFace`. */
 const CARD_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
-uniform sampler2D base, kind, noise;
-uniform float time, hover, edition, variant, look, contrast;
+uniform sampler2D base, kind, noise, buddy;
+uniform float time, hover, edition, variant, look, contrast, buddyLift, buddyFinish, buddyScuff, buddyPrint;
 uniform vec2 light, origin;
 uniform vec3 paint1, paint2, paint3;
 uniform vec4 paintForm;
@@ -8454,7 +8513,14 @@ void main() {
   float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
   float print = floor(kd.a * 255.0 + 0.5) * 4.0;
   float h = texture2D(noise, at).r;
-  if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  vec2 src = cell + vec2(0.0, buddyLift);
+  vec2 sat = (src + 0.5) / res;
+  vec4 bd = src.y < res.y ? texture2D(buddy, sat) : vec4(0.0);
+  if (bd.a > 0.25) {
+    c = bd.rgb;
+    if (bd.a > 0.75 && buddyFinish >= 0.0) c = finishColor(c, buddyFinish, buddyScuff, texture2D(noise, sat).g, src.x + src.y, src.y, buddyPrint, time, 1.0);
+  }
+  else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
   else if (k < 2.5) {
     vec2 e = min(cell, res - 1.0 - cell);
     float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
@@ -8517,16 +8583,23 @@ function createCardShader(canvas) {
 		"paint2",
 		"paint3",
 		"paintForm",
-		"paintPhase"
+		"paintPhase",
+		"buddy",
+		"buddyLift",
+		"buddyFinish",
+		"buddyScuff",
+		"buddyPrint"
 	].map((n) => [n, gl.getUniformLocation(program, n)]));
 	gl.uniform1i(u.base, 0);
 	gl.uniform1i(u.kind, 1);
 	gl.uniform1i(u.noise, 2);
+	gl.uniform1i(u.buddy, 3);
 	gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
 	const textures = [
 		0,
 		1,
-		2
+		2,
+		3
 	].map((unit) => {
 		const t = gl.createTexture();
 		gl.activeTexture(gl.TEXTURE0 + unit);
@@ -8541,7 +8614,8 @@ function createCardShader(canvas) {
 			[
 				face.base,
 				face.kind,
-				face.noise
+				face.noise,
+				face.buddy
 			].forEach((bytes, unit) => {
 				gl.activeTexture(gl.TEXTURE0 + unit);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
@@ -8569,6 +8643,10 @@ function createCardShader(canvas) {
 			];
 			gl.uniform4f(u.paintForm, form[0], form[1], form[2], form[3]);
 			gl.uniform1f(u.paintPhase, face.paint?.phase ?? 0);
+			gl.uniform1f(u.buddyLift, buddyLift(face, ms));
+			gl.uniform1f(u.buddyFinish, face.buddyCopy[0]);
+			gl.uniform1f(u.buddyScuff, face.buddyCopy[1]);
+			gl.uniform1f(u.buddyPrint, face.buddyCopy[2]);
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -8588,7 +8666,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 12;
+const ART_VERSION = 13;
 const PART_KEYS = [
 	"head",
 	"eyes",
@@ -9301,5 +9379,5 @@ function nameKey(typed) {
 const nameSkeleton = (key) => key.replace(/_/g, "");
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeView, bakedImage, bodies, buddyAlone, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

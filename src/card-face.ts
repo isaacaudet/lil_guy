@@ -1,5 +1,5 @@
-import { backdropColors, FRAME_WIDTH, HEADROOM } from './animate';
-import { compose } from './compose';
+import { backdropColors, buddyHop, FRAME_WIDTH, HEADROOM, hopLift, type BuddyHop } from './animate';
+import { buddyAlone, compose } from './compose';
 import { distance, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, withItems } from './items';
 import { auraColors, auraHue } from './auras';
@@ -14,8 +14,10 @@ import type { AvatarConfig } from './types';
 /**
  * The trading card a guy or an item is shown on: a 26×42 face printed in its
  * grade's colour, a dark plate across the top for the name, the guy standing
- * in a window, and a dark plate at the foot with the grade pips and the set's
- * symbol. Its words (name, print, odds) are the page's to write over it.
+ * in a window, and a plain dark plate at the foot. Its words (name, print,
+ * odds) are the page's to write over it. A buddy he wears stands at his full
+ * size too, in front of the window's bottom-right corner and half over the
+ * plate under it (`FaceSpec.buddy`), hopping now and then as it does beside him.
  *
  * Like Balatro's cards, each has an edition, from the finish that sets its
  * grade: Foil (Sunset), Holographic (Tempered, Nebula), Polychrome (Prism),
@@ -29,6 +31,17 @@ import type { AvatarConfig } from './types';
  */
 export const FACE_WIDTH = 26;
 export const FACE_HEIGHT = 42;
+
+/**
+ * Where a buddy he wears stands on the face, the guy and the face the same size
+ * either way: `peek`, in front of the window's bottom-right corner, its feet on
+ * the plate under it, as if peeking out; `floor`, wholly on the plate under the
+ * window, to the right, where the page's words would otherwise run.
+ */
+export const FACE_BUDDY_SPOTS = ['peek', 'floor'] as const;
+export type FaceBuddySpot = (typeof FACE_BUDDY_SPOTS)[number];
+/** A buddy's right edge (its outline), and its lowest row for each spot: above the page's words for `peek`, the plate's foot for `floor`. */
+const BUDDY_RIGHT = FACE_WIDTH - 3, BUDDY_FOOT: Record<FaceBuddySpot, number> = { peek: 33, floor: FACE_HEIGHT - 3 };
 
 export interface FaceSpec {
   /** The guy's seed or name. */
@@ -46,6 +59,8 @@ export interface FaceSpec {
   /** A look other than its edition's own (./card-looks), and an aura card's paint contrast. */
   look?: LookOptions['look'];
   contrast?: number;
+  /** Where his buddy stands, if he wears one. Default `peek`. */
+  buddy?: FaceBuddySpot;
 }
 
 export interface CardFace {
@@ -53,8 +68,18 @@ export interface CardFace {
   base: Uint8Array;
   /** Per pixel: what it is (card, window, guy, item, plate), its copy's finish, scuff and print. */
   kind: Uint8Array;
-  /** Per pixel noise, in the red channel. */
+  /** Per pixel noise, in the red channel; the buddy's (`buddy`), in the green. */
   noise: Uint8Array;
+  /**
+   * His buddy standing still, 26×42 RGBA, drawn over everything else and up a row
+   * while it hops (`buddyLift`): alpha 255 for its own colours, where its copy's
+   * finish runs, 128 for its outline, 0 elsewhere. All clear without one.
+   */
+  buddy: Uint8Array;
+  /** The buddy's copy: its finish (an index in SHADER_FINISHES, -1 for none), scuff and print. */
+  buddyCopy: [number, number, number];
+  /** The buddy's own hops, as his moving pictures play them; null without a buddy. */
+  hop: BuddyHop | null;
   grade: number;
   negative: boolean;
   /** Where the face's wide band starts: the last copy's print. */
@@ -169,8 +194,21 @@ export function cardFace(spec: FaceSpec): CardFace {
     if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
     put(x, y, y === 30 ? INK : plate, FIXED);
   }
+  // His buddy, its whole art and outline, against the face's right edge at the spot asked for.
+  const buddy = new Uint8Array(W * H * 4), alone = buddyAlone(config), buddyOwned = owned.buddy;
+  const buddyCopy: [number, number, number] = [buddyOwned ? SHADER_FINISHES.indexOf(buddyOwned.finish as (typeof SHADER_FINISHES)[number]) : -1, buddyOwned?.scuff ?? 0, Math.floor((buddyOwned?.print ?? 0) / 4) * 4];
+  if (alone) {
+    const tint = paint(alone, config, palette), cells: [number, number, string, boolean][] = [];
+    alone.forEach((row, y) => row.forEach((t, x) => { if (tint[y][x]) cells.push([x, y, tint[y][x]!, t >= LAYER.buddy]); }));
+    const ox = BUDDY_RIGHT - Math.max(...cells.map(([x]) => x)), oy = BUDDY_FOOT[spec.buddy ?? 'peek'] - Math.max(...cells.map(([, y]) => y));
+    for (const [x, y, hex, art] of cells) {
+      const i = ((y + oy) * W + x + ox) * 4;
+      buddy.set([...rgb(hex), art ? 255 : 128], i);
+      noise[i + 1] = noiseOf(x + ox, y + oy, buddyCopy[2]);
+    }
+  }
   const look = lookFor(edition, top?.finish, spec.look);
-  const face: CardFace = { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin, look };
+  const face: CardFace = { base, kind, noise, buddy, buddyCopy, hop: alone ? buddyHop(spec.name) : null, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin, look };
   if (look === 1) {
     const hues = auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, Math.min(g, GRADES.length - 1))].color];
     face.paint = { colors: paintColors(hues, auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]), contrast: spec.contrast ?? PAINT_CONTRAST, ...paintForm(auraCopy?.item ?? '', auraCopy?.print ?? 0) };
@@ -179,7 +217,10 @@ export function cardFace(spec: FaceSpec): CardFace {
 }
 
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
-export const faceMoves = (f: CardFace) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+export const faceMoves = (f: CardFace) => f.edition > 0 || !!f.hop || f.kind.some((v, i) => i % 4 === 1 && v > 0);
+
+/** How many rows the face's buddy is up `ms` into its loop: 1 now and then, as it hops; 0 without one. */
+export const buddyLift = (f: CardFace, ms: number) => (f.hop ? hopLift(f.hop, ms) : 0);
 
 /** Whether a face cell is on the card's bevel (`raised` in CARD_FRAGMENT). */
 function faceRaised(x: number, y: number) {
@@ -216,14 +257,17 @@ function faceField(f: CardFace) {
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8ClampedArray {
   const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
-  const time = loopSeconds(ms), { at, field, out: ed } = faceField(f);
+  const time = loopSeconds(ms), { at, field, out: ed } = faceField(f), lift = buddyLift(f, ms);
   field(time, ed);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4;
     if (f.base[i + 3] < 128) continue;
     let c: Vec3;
-    const e = at[i >> 2];
-    if (e >= 0) c = [ed[e * 3], ed[e * 3 + 1], ed[e * 3 + 2]];
+    const e = at[i >> 2], s = ((y + lift) * W + x) * 4, b = y + lift < H ? f.buddy[s + 3] : 0;
+    if (b >= 64) {
+      c = [f.buddy[s] / 255, f.buddy[s + 1] / 255, f.buddy[s + 2] / 255];
+      if (b >= 192 && f.buddyCopy[0] >= 0) c = finishColor(c, f.buddyCopy[0], f.buddyCopy[1], f.noise[s + 1] / 255, x + y + lift, y + lift, f.buddyCopy[2], time, 1);
+    } else if (e >= 0) c = [ed[e * 3], ed[e * 3 + 1], ed[e * 3 + 2]];
     else {
       c = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
       const k = Math.floor(f.kind[i] / 32 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
@@ -238,11 +282,11 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
   return out;
 }
 
-/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise` from `cardFace`. */
+/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise`, `buddy` from `cardFace`. */
 export const CARD_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
-uniform sampler2D base, kind, noise;
-uniform float time, hover, edition, variant, look, contrast;
+uniform sampler2D base, kind, noise, buddy;
+uniform float time, hover, edition, variant, look, contrast, buddyLift, buddyFinish, buddyScuff, buddyPrint;
 uniform vec2 light, origin;
 uniform vec3 paint1, paint2, paint3;
 uniform vec4 paintForm;
@@ -262,7 +306,14 @@ void main() {
   float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
   float print = floor(kd.a * 255.0 + 0.5) * 4.0;
   float h = texture2D(noise, at).r;
-  if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  vec2 src = cell + vec2(0.0, buddyLift);
+  vec2 sat = (src + 0.5) / res;
+  vec4 bd = src.y < res.y ? texture2D(buddy, sat) : vec4(0.0);
+  if (bd.a > 0.25) {
+    c = bd.rgb;
+    if (bd.a > 0.75 && buddyFinish >= 0.0) c = finishColor(c, buddyFinish, buddyScuff, texture2D(noise, sat).g, src.x + src.y, src.y, buddyPrint, time, 1.0);
+  }
+  else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
   else if (k < 2.5) {
     vec2 e = min(cell, res - 1.0 - cell);
     float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
@@ -301,10 +352,10 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
   const p = gl.getAttribLocation(program, 'p');
   gl.enableVertexAttribArray(p);
   gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
-  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin', 'look', 'contrast', 'paint1', 'paint2', 'paint3', 'paintForm', 'paintPhase'].map(n => [n, gl.getUniformLocation(program, n)]));
-  gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1); gl.uniform1i(u.noise, 2);
+  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin', 'look', 'contrast', 'paint1', 'paint2', 'paint3', 'paintForm', 'paintPhase', 'buddy', 'buddyLift', 'buddyFinish', 'buddyScuff', 'buddyPrint'].map(n => [n, gl.getUniformLocation(program, n)]));
+  gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1); gl.uniform1i(u.noise, 2); gl.uniform1i(u.buddy, 3);
   gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
-  const textures = [0, 1, 2].map(unit => {
+  const textures = [0, 1, 2, 3].map(unit => {
     const t = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, t);
@@ -315,7 +366,7 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
   return {
     canvas: target,
     draw(face, ms, hover) {
-      [face.base, face.kind, face.noise].forEach((bytes, unit) => {
+      [face.base, face.kind, face.noise, face.buddy].forEach((bytes, unit) => {
         gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FACE_WIDTH, FACE_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
@@ -328,6 +379,8 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
       [u.paint1, u.paint2, u.paint3].forEach((at, k) => gl.uniform3f(at, paint?.[k][0] ?? 0, paint?.[k][1] ?? 0, paint?.[k][2] ?? 0));
       const form = face.paint?.form ?? [5, 1, 0, 0];
       gl.uniform4f(u.paintForm, form[0], form[1], form[2], form[3]); gl.uniform1f(u.paintPhase, face.paint?.phase ?? 0);
+      gl.uniform1f(u.buddyLift, buddyLift(face, ms)); gl.uniform1f(u.buddyFinish, face.buddyCopy[0]);
+      gl.uniform1f(u.buddyScuff, face.buddyCopy[1]); gl.uniform1f(u.buddyPrint, face.buddyCopy[2]);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },

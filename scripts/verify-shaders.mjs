@@ -49,6 +49,20 @@ const result = await page.evaluate(() => {
       }
     }
   }));
+  // A buddy on the face, at each spot, in every finish, standing and mid-hop.
+  const buddies = LG.items.filter(i => i.slot === 'buddy' && !i.retired);
+  finishes.forEach((finish, f) => LG.FACE_BUDDY_SPOTS.forEach(spot => {
+    const b = buddies[(f * 7 + spot.length) % buddies.length];
+    const seed = `buddy${f}-${spot}`;
+    const face = LG.cardFace({ name: seed, copies: [LG.decode(`${b.id}~${finish}~${(0.03 + 0.09 * f).toFixed(7)}~${41 + f * 53}`)], buddy: spot });
+    const hops = [];
+    for (let ms = 0; ms < LG.LOOP_MS && hops.length < 3; ms += 20) if (LG.buddyLift(face, ms)) hops.push(ms);
+    if (!hops.length) throw new Error(`${seed}'s buddy never hops`);
+    for (const ms of [0, 2333, ...hops]) {
+      card.draw(face, ms);
+      compare(read(card.canvas, LG.FACE_WIDTH, LG.FACE_HEIGHT), LG.cardFaceAt(face, ms));
+    }
+  }));
   // The prototype looks (./card-looks) on faces whose editions they change, and on the rest, where they fall back.
   const auras = LG.items.filter(i => i.slot === 'aura');
   const auraFinishes = ['classic', 'fade', 'frost', 'toxic', 'ruby', 'pearl'];
