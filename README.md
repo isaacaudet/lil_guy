@@ -486,7 +486,7 @@ An item is a design. A copy someone owns is the item plus:
 | **Scuff** | 0–1, how worn it is. Box Fresh < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Box Fresh copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered comes in five tints the print picks (Steel, Rose, Emerald, Copper, Violet), and prints 661, 670, 321, 387 and 955 come out all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |
-| **Souvenir** | the day's free capsule for finishing every game is a souvenir of that day (`~s2026-10-25` in its code). No other capsule is one |
+| **Souvenir** | the day's free capsule, for finishing a DLE Club game that day, is a souvenir of that day (`~s2026-10-25` in its code). No other capsule is one |
 | **Pins** | up to three, earned and stuck on: a gold star (a perfect day), a flame (a 7-day streak), a heart (100 days played), a bolt (fastest of the day), a crown (top of a board) and a leaf (a first week). The club grants them; they are drawn on the item's own pixels |
 
 Grades follow from the finish: Everyday, Special, Prized, Mythic (a famous
@@ -552,6 +552,15 @@ Uncommon, Rare, Legendary, Chase): SVG strings in `currentColor` with a
 is one in how many capsules give a copy at least that good: its item, finish,
 a famous print if it has one, a scuff at least that low, and a tally.
 
+`guyRank(config)` places a guy among every guy dealt, as a card shows it
+("Epic", "Top 0.3%"), Common to Mythic (`GUY_TIERS`). The founder is the one
+exception: `FOUNDER_SEED` (`founder:isaac`, the lil guys site's "isaac") isn't
+dealt, so `resolve(FOUNDER_SEED)` gives the crowned guy he was picked as
+(`FOUNDER_LOOK`) with `founder: true`, and `guyRank` gives him `FOUNDER_RANK`:
+the top tier, "Founder", "One of one". A look laid over him keeps the flag.
+His two copies no capsule gives, the Gold flag and the Origin aura, are
+`FOUNDER_COPIES` (`isFounderCopy`). Every other guy resolves and ranks as before.
+
 | Copy | One in |
 |---|---|
 | A plain drop, Played With | ~20 |
@@ -586,7 +595,9 @@ typed by game, but any will pay for anything.
 
 Clearing the gauntlet gives 7: a mystery capsule a day and 2 towards the next.
 Games played before stamps began (`STAMPS_FROM`, 29 October 2026) give none.
-Today's machine still gives one free capsule a day. Beginner's luck (the first
+Today's machine still gives one free capsule a day, once the player has
+finished a DLE Club game that UTC day (a name without a DLE Club sign-in can't;
+the founder's is always open). Beginner's luck (the first
 three capsules), pity (Prized or better after 30 dry), trade-ups, smelting,
 crafting and swaps work as before. The Worker reads stamps from the club with
 the card stats (`worker/stamps.js`, DEPLOYMENT.md, Stamps).

@@ -13,6 +13,8 @@ import { keepDays, stampsReady, STAMPS_FROM } from './stamps.js';
 
 export const CLUB_STATS = 'https://dleclub.com/api/club/lilguys-stats';
 export const READ_EVERY = 10 * 60 * 1000;
+/** How often a player who hasn't finished a club game today is read again, so today's free capsule opens soon after one. */
+export const TODAY_EVERY = 60 * 1000;
 const DAY = 86400000;
 const dayOf = ms => new Date(ms).toISOString().slice(0, 10);
 const dayNum = d => Math.round(Date.parse(`${d}T00:00:00Z`) / DAY);
@@ -25,11 +27,20 @@ export function daysWorn(c, today) {
   return c.worn_days + (c.worn && c.worn_since ? Math.max(0, dayNum(today) - dayNum(from) + 1) : 0);
 }
 
+/** The days a worn copy has on as it comes off, banked: an UPDATE's SET, bound to the day twice. */
+export const BANK_DAYS = `worn_days = worn_days + MAX(0, CAST(julianday(?) - julianday(MAX(worn_since, COALESCE(date(worn_last, '+1 day'), worn_since))) AS INTEGER) + 1),
+      worn_last = ?, worn_since = ''`;
+
+/** Whether 0009 has been applied, so copies keep their days worn. */
+export async function statsReady(env) {
+  try { await env.DB.prepare('SELECT worn_since FROM copies LIMIT 1').first(); return true; }
+  catch { return false; }
+}
+
 /** Banks the days of the owner's worn copies (in one slot, or all) as they come off. */
 export async function takeOff(env, key, day, slot) {
   try {
-    await env.DB.prepare(`UPDATE copies SET worn_days = worn_days + MAX(0, CAST(julianday(?) - julianday(MAX(worn_since, COALESCE(date(worn_last, '+1 day'), worn_since))) AS INTEGER) + 1),
-      worn_last = ?, worn_since = '' WHERE key = ? AND worn = 1 AND worn_since <> ''${slot ? ' AND slot = ?' : ''}`).bind(day, day, key, ...(slot ? [slot] : [])).run();
+    await env.DB.prepare(`UPDATE copies SET ${BANK_DAYS} WHERE key = ? AND worn = 1 AND worn_since <> ''${slot ? ' AND slot = ?' : ''}`).bind(day, day, key, ...(slot ? [slot] : [])).run();
   } catch { /* before 0009 */ }
 }
 
@@ -48,14 +59,14 @@ export async function statsSignature(secret, a, since, t) {
 /**
  * Reads the owner's club days, gives each to the copies worn then and keeps it as stamps. Quiet on any
  * failure: the club being down, sign-in off, a name with no Google sign-in, no 0009 (nothing is read) or
- * no 0010 (no stamps are kept) all leave things as they were.
+ * no 0010 (no stamps are kept) all leave things as they were. At most once every `every` ms.
  */
-export async function readClub(env, key, now = Date.now(), fetcher = fetch) {
+export async function readClub(env, key, now = Date.now(), fetcher = fetch, every = READ_EVERY) {
   const secret = env.CLUB_SSO_SECRET;
   if (typeof secret !== 'string' || secret.length < 32) return;
   try {
     const p = await env.DB.prepare('SELECT club_read FROM players WHERE key = ?').bind(key).first();
-    if (!p || now - p.club_read < READ_EVERY) return;
+    if (!p || now - p.club_read < every) return;
     const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
     if (!name?.account) return;
     const { results: worn } = await env.DB.prepare("SELECT id, code, worn_since FROM copies WHERE key = ? AND worn = 1 AND worn_since <> ''").bind(key).all();

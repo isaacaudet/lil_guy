@@ -754,60 +754,6 @@ function weightedPick(weights, hashValue) {
 }
 
 //#endregion
-//#region src/resolve.ts
-/**
-* Resolves an input string to a full AvatarConfig.
-*
-* Each slot is hashed independently so adding or removing variants from one
-* part doesn't cascade into the others, and each pick is weighted (see
-* ./parts/weights) so the simple, sweet looks are the common ones.
-*/
-/** One name in this many gets the Lucky colour variant. */
-const LUCKY_ODDS = 400;
-/**
-* Seeds made now start with this. They draw from today's parts and weights;
-* an older seed draws from its own deal's frozen tables (`3-` from deal 3,
-* anything else, plain names included, from deal 2), so a guy already dealt
-* never changes when parts are added or weights move.
-*/
-const DEAL_PREFIX = "4-";
-/** Which deal an input draws from. */
-const dealOf = (input) => input.startsWith(DEAL_PREFIX) ? 4 : input.startsWith("3-") ? 3 : 2;
-const DEAL_4 = {
-	head: headWeights,
-	eyes: eyeWeights,
-	mouth: mouthWeights,
-	cheeks: cheekWeights,
-	hair: hairWeights,
-	body: bodyWeights,
-	accessory: accessoryWeights,
-	palette: paletteWeights
-};
-function resolve(input, overrides) {
-	const pick$1 = (slot, weights) => weightedPick(weights, hashNth(input, slot));
-	const deal = dealOf(input);
-	const w = deal === 4 ? DEAL_4 : deal === 3 ? DEAL_3 : DEAL_2;
-	let eyes$1 = overrides?.eyes ?? pick$1(1, w.eyes);
-	if (RETIRED_EYES.includes(eyes$1)) eyes$1 = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
-	return {
-		head: overrides?.head ?? pick$1(0, w.head),
-		eyes: eyes$1,
-		mouth: overrides?.mouth ?? pick$1(2, w.mouth),
-		hair: overrides?.hair ?? pick$1(3, w.hair),
-		body: overrides?.body ?? pick$1(4, w.body),
-		accessory: overrides?.accessory ?? pick$1(5, w.accessory),
-		palette: pick$1(6, w.palette),
-		rotation: overrides?.rotation ?? hashNth(input, 7) % 9,
-		flip: overrides?.flip ?? hashNth(input, 8) % 2 === 1,
-		shade: overrides?.shade ?? pick$1(9, shadeWeights),
-		feet: overrides?.feet ?? pick$1(10, footWeights),
-		cheeks: overrides?.cheeks ?? pick$1(11, w.cheeks),
-		arms: overrides?.arms ?? pick$1(12, armWeights),
-		lucky: overrides?.lucky ?? hashNth(input, 13) % LUCKY_ODDS === 0
-	};
-}
-
-//#endregion
 //#region src/parts/art.ts
 /**
 * Every part is drawn as text, one character per pixel, so the art can be
@@ -3005,6 +2951,644 @@ const accessories = [
 		}
 	}
 ];
+
+//#endregion
+//#region src/palette.ts
+const COLOURWAYS = [
+	{
+		name: "Peach",
+		body: "#FFB38A",
+		accent: "#7FC8F8",
+		trim: "#FFF3E0"
+	},
+	{
+		name: "Bubblegum",
+		body: "#FF9EC7",
+		accent: "#8C7CF0",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Butter",
+		body: "#FFE07A",
+		accent: "#FF7F96",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Mint",
+		body: "#8FE3B8",
+		accent: "#FF8FB1",
+		trim: "#FFF6C8"
+	},
+	{
+		name: "Sky",
+		body: "#8CCBFF",
+		accent: "#FFC857",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Lilac",
+		body: "#C9A7F5",
+		accent: "#FFD166",
+		trim: "#FFF0F6"
+	},
+	{
+		name: "Coral",
+		body: "#FF8E7F",
+		accent: "#5CC8C0",
+		trim: "#FFF6E8"
+	},
+	{
+		name: "Lime",
+		body: "#C6E86E",
+		accent: "#FF8C69",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Aqua",
+		body: "#78DCE8",
+		accent: "#FF7AA8",
+		trim: "#FFF8D6"
+	},
+	{
+		name: "Tangerine",
+		body: "#FFA552",
+		accent: "#6C8CF5",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Strawberry",
+		body: "#FF7A93",
+		accent: "#7FD1AE",
+		trim: "#FFF0F3"
+	},
+	{
+		name: "Periwinkle",
+		body: "#9DAEFF",
+		accent: "#FF9F7A",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Cream",
+		body: "#FFF1D0",
+		accent: "#FF8FAB",
+		trim: "#9AD9F5"
+	},
+	{
+		name: "Cocoa",
+		body: "#C69276",
+		accent: "#FF9FB5",
+		trim: "#FFF1DC"
+	},
+	{
+		name: "Caramel",
+		body: "#E8B074",
+		accent: "#7EC4CF",
+		trim: "#FFF6E6"
+	},
+	{
+		name: "Grape",
+		body: "#A68BF0",
+		accent: "#7FE0C8",
+		trim: "#FFF4C2"
+	},
+	{
+		name: "Teal",
+		body: "#5ED3C3",
+		accent: "#FFB86B",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Snow",
+		body: "#F2F5FA",
+		accent: "#7BB8FF",
+		trim: "#FFB5C8"
+	},
+	{
+		name: "Sage",
+		body: "#A9D6A0",
+		accent: "#F7A072",
+		trim: "#FFF8E7"
+	},
+	{
+		name: "Rose",
+		body: "#F6A6C1",
+		accent: "#6FC2B8",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Honey",
+		body: "#FFC94D",
+		accent: "#E86A8E",
+		trim: "#FFF4D6"
+	},
+	{
+		name: "Seafoam",
+		body: "#A8F0D8",
+		accent: "#9A8CF5",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Blush",
+		body: "#FFC4C4",
+		accent: "#7AA9F0",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Ocean",
+		body: "#6FB4F2",
+		accent: "#FFDD6B",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Plum",
+		body: "#D48BD8",
+		accent: "#FFD36B",
+		trim: "#FFF0FA"
+	},
+	{
+		name: "Sunflower",
+		body: "#FFD84A",
+		accent: "#6FA8F0",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Melon",
+		body: "#B8F28C",
+		accent: "#FF7A8A",
+		trim: "#FFF5E0"
+	},
+	{
+		name: "Lavender",
+		body: "#B8B6F7",
+		accent: "#FF9EBB",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Pumpkin",
+		body: "#FF9446",
+		accent: "#7C6BE0",
+		trim: "#FFE9A8"
+	},
+	{
+		name: "Cotton Candy",
+		body: "#A9DCFF",
+		accent: "#FFA3D1",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Matcha",
+		body: "#9CCB7A",
+		accent: "#E9A2C8",
+		trim: "#FFF7E0"
+	},
+	{
+		name: "Ruby",
+		body: "#F2697E",
+		accent: "#FFD56B",
+		trim: "#FFF3E0"
+	},
+	{
+		name: "Charcoal",
+		body: "#4A4E5E",
+		accent: "#E8483D",
+		trim: "#F2C230"
+	},
+	{
+		name: "Cobalt",
+		body: "#3D6FE0",
+		accent: "#F2C230",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Midnight",
+		body: "#2E3A66",
+		accent: "#5FE0B0",
+		trim: "#FFE066"
+	},
+	{
+		name: "Oxblood",
+		body: "#8E2A3A",
+		accent: "#F2C230",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Forest",
+		body: "#2F6B4A",
+		accent: "#F28A2E",
+		trim: "#FFF1D6"
+	},
+	{
+		name: "Grape Soda",
+		body: "#6B3FA0",
+		accent: "#3DE0B0",
+		trim: "#FFE066"
+	},
+	{
+		name: "Fuchsia",
+		body: "#F27ACF",
+		accent: "#6FD6C2",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Lemon",
+		body: "#EEF07A",
+		accent: "#8C7CF0",
+		trim: "#FFFFFF"
+	},
+	{
+		name: "Denim",
+		body: "#6A92E0",
+		accent: "#FFB38A",
+		trim: "#FFF3E0"
+	},
+	{
+		name: "Ice",
+		body: "#D2F1FF",
+		accent: "#FF8FB1",
+		trim: "#7BB8FF"
+	},
+	{
+		name: "Opal",
+		body: "#F4F0FA",
+		accent: "#7FE0C8",
+		trim: "#FFB5D8",
+		tones: {
+			2: "#C9B8F0",
+			3: "#D4FFF2",
+			13: "#FFE0F0",
+			19: "#9FD8F0"
+		}
+	},
+	{
+		name: "Obsidian",
+		body: "#433B5E",
+		accent: "#FFD45C",
+		trim: "#FFE9A8",
+		tones: {
+			2: "#2A2440",
+			3: "#B79CFF",
+			13: "#5A4F7A",
+			19: "#1E1A2E"
+		}
+	},
+	{
+		name: "Aurora",
+		body: "#2E5878",
+		accent: "#FF7AC8",
+		trim: "#B8FFE0",
+		tones: {
+			2: "#3B3F86",
+			3: "#7DFFC8",
+			13: "#3E8A8C",
+			19: "#4A2F7A"
+		}
+	}
+];
+/** Hand-set token colours by colourway name, applied over the derived ones. */
+const TONES = new Map(COLOURWAYS.filter((w) => w.tones).map((w) => [w.name, w.tones]));
+function hexToRgb(hex$3) {
+	return [
+		1,
+		3,
+		5
+	].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
+}
+function rgbToHex(r, g, b$1) {
+	return "#" + [
+		r,
+		g,
+		b$1
+	].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+function toHsl$1(hex$3) {
+	const [r, g, b$1] = hexToRgb(hex$3).map((v) => v / 255);
+	const max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
+	const l = (max + min) / 2;
+	if (max === min) return [
+		0,
+		0,
+		l
+	];
+	const d = max - min;
+	const s = l > .5 ? d / (2 - max - min) : d / (max + min);
+	const h = max === r ? (g - b$1) / d + (g < b$1 ? 6 : 0) : max === g ? (b$1 - r) / d + 2 : (r - g) / d + 4;
+	return [
+		h * 60,
+		s,
+		l
+	];
+}
+function fromHsl([h, s, l]) {
+	h = (h % 360 + 360) % 360;
+	s = Math.min(1, Math.max(0, s));
+	l = Math.min(1, Math.max(0, l));
+	const c = (1 - Math.abs(2 * l - 1)) * s;
+	const x = c * (1 - Math.abs(h / 60 % 2 - 1));
+	const m = l - c / 2;
+	const [r, g, b$1] = h < 60 ? [
+		c,
+		x,
+		0
+	] : h < 120 ? [
+		x,
+		c,
+		0
+	] : h < 180 ? [
+		0,
+		c,
+		x
+	] : h < 240 ? [
+		0,
+		x,
+		c
+	] : h < 300 ? [
+		x,
+		0,
+		c
+	] : [
+		c,
+		0,
+		x
+	];
+	return rgbToHex((r + m) * 255, (g + m) * 255, (b$1 + m) * 255);
+}
+function mix$6(a, b$1, amount) {
+	const [ar, ag, ab] = hexToRgb(a);
+	const [br, bg, bb] = hexToRgb(b$1);
+	return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
+}
+/** Moves a hue `amount` degrees towards `target` along the short way round. */
+function towards(hue$2, target, amount) {
+	const diff = (target - hue$2 + 540) % 360 - 180;
+	return hue$2 + Math.sign(diff) * Math.min(Math.abs(diff), amount);
+}
+function luminance(hex$3) {
+	const channel = (v) => {
+		v /= 255;
+		return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+	};
+	const [r, g, b$1] = hexToRgb(hex$3);
+	return .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b$1);
+}
+function contrast$1(a, b$1) {
+	const [hi, lo] = [luminance(a), luminance(b$1)].sort((x, y) => y - x);
+	return (hi + .05) / (lo + .05);
+}
+/**
+* Shade a colour by hand: darker and leaning towards violet, but never richer.
+* Adding saturation in the shadow is what turned a green body's shade neon.
+*/
+function shadeOf(hex$3, depth = .12) {
+	const [h, s, l] = toHsl$1(hex$3);
+	return fromHsl([
+		towards(h, 265, 12),
+		s * .85,
+		l - depth
+	]);
+}
+/** Builds the full set of token colours from a body, an accent and a trim. */
+function derive(name, body, accent, trim) {
+	const [h] = toHsl$1(body);
+	const outlineHue = towards(h, 285, 25);
+	const outline$1 = fromHsl([
+		outlineHue,
+		.42,
+		toHsl$1(body)[2] >= .5 ? .3 : toHsl$1(body)[2] * .25
+	]);
+	const dark = fromHsl([
+		outlineHue,
+		.38,
+		.14
+	]), deeper = fromHsl([
+		outlineHue,
+		.4,
+		.06
+	]);
+	const ink = contrast$1(dark, body) >= 4.2 || contrast$1(dark, body) > contrast$1("#FFF1D6", body) ? dark : contrast$1(deeper, body) >= 3.9 ? deeper : "#FFF1D6";
+	let blush = "#FF8FA8";
+	for (let i = 0; i < 8 && contrast$1(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
+	let tongue = "#FF6B88";
+	for (let i = 0; i < 8 && contrast$1(tongue, body) < 1.4; i++) tongue = shadeOf(tongue, .06);
+	const goldReads = contrast$1("#FFD45C", body) >= 1.45;
+	const gold = goldReads ? "#FFD45C" : "#E8901A";
+	const goldShade = goldReads ? "#F0A93A" : "#B3620E";
+	return {
+		name,
+		colors: {
+			1: body,
+			2: shadeOf(body),
+			3: mix$6(body, "#FFFFFF", .55),
+			4: outline$1,
+			5: ink,
+			6: "#FFFFFF",
+			7: blush,
+			8: ink,
+			9: tongue,
+			10: accent,
+			11: shadeOf(accent),
+			12: trim,
+			13: mix$6(body, "#FFFBF0", .6),
+			14: "#7DD87A",
+			15: "#4FAE5C",
+			16: gold,
+			17: goldShade,
+			18: "#FF6B78",
+			19: shadeOf(body, .24),
+			...TONES.get(name)
+		}
+	};
+}
+const palettes = COLOURWAYS.map((w) => derive(w.name, w.body, w.accent, w.trim));
+function getPalette(index) {
+	return palettes[index % palettes.length];
+}
+function resolveColor(palette$1, token) {
+	if (token === 0) return null;
+	return palette$1.colors[token] ?? null;
+}
+/** Tones a colourway can be worn in: pastel, as picked, vivid. */
+const SHADE_COUNT = 3;
+/**
+* Re-derives a palette in another tone. The pastel tone lifts the body and
+* accent towards white; the vivid tone deepens them. It deliberately barely
+* adds saturation — saturating an already-bright lime turns it acid. Either way
+* the outline, shading and blush are worked out again from the result, so a
+* toned palette is as coherent as the original.
+*/
+function shadePalette(palette$1, shade) {
+	if (shade === 1) return palette$1;
+	const tone = (hex$3) => {
+		if (shade === 0) return mix$6(hex$3, "#FFFFFF", .3);
+		const [h, s, l] = toHsl$1(hex$3);
+		return fromHsl([
+			h,
+			Math.min(.8, s + .04),
+			l > .4 ? l - .08 : l
+		]);
+	};
+	const c = palette$1.colors;
+	return derive(palette$1.name, tone(c[1]), tone(c[10]), c[12]);
+}
+/**
+* The Lucky variant: the same colourway turned round the colour wheel, with
+* gold trim. Derived again, so the face and outline read as well as ever.
+*/
+function luckyPalette(palette$1) {
+	const turn = (hex$3) => {
+		const [h, s, l] = toHsl$1(hex$3);
+		let hue$2 = (h + 150) % 360;
+		const dark = l < .45;
+		if (dark && hue$2 >= 10 && hue$2 <= 110) hue$2 += 130;
+		return fromHsl([
+			hue$2,
+			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.max(.7, Math.min(.92, s + .25)),
+			dark ? Math.min(Math.max(l, .22), .28) : Math.min(Math.max(l, .6), .68)
+		]);
+	};
+	const c = palette$1.colors;
+	return derive(`${palette$1.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
+}
+/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+const POINTED = [
+	3,
+	4,
+	6,
+	13,
+	14,
+	20
+];
+const NOT_BROWN = {
+	13: 0,
+	14: 20
+};
+/** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
+const shownPalette = (config) => POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
+function paletteOf(config) {
+	const toned$1 = shadePalette(getPalette(shownPalette(config)), config.shade);
+	return config.lucky ? luckyPalette(toned$1) : toned$1;
+}
+
+//#endregion
+//#region src/founder.ts
+/**
+* The founder: the lil guys site keeps the name "isaac" for the person who
+* made the DLE Club, and deals him this seed. He isn't dealt from it: he is a
+* clean guy in a crown, picked by hand, so `resolve(FOUNDER_SEED)` gives this
+* look with `founder: true`, and `guyRank` ranks him the one of one rather
+* than by his traits' odds. Anything that draws or ranks a guy from the
+* library (the site, the Worker, the club's games) agrees.
+*/
+const FOUNDER_SEED = "founder:isaac";
+const byName = (list, name) => list.findIndex((x) => x.name === name);
+/** His parts (laid over his seed's rotation) and colourway. */
+const FOUNDER_LOOK = {
+	parts: {
+		head: byName(heads, "round"),
+		eyes: byName(eyes, "glossy"),
+		mouth: byName(mouths, "smile"),
+		cheeks: byName(cheeks, "blush"),
+		hair: byName(hair, "crown"),
+		body: 0,
+		accessory: 0,
+		arms: 2,
+		feet: 0,
+		shade: 1,
+		flip: false,
+		lucky: false
+	},
+	palette: byName(palettes, "Ocean")
+};
+/** The two copies no capsule gives, both his: the Gold flag and the Origin aura. */
+const FOUNDER_COPIES = {
+	flag: {
+		item: "trackdle.flag",
+		finish: "gold",
+		scuff: 0,
+		print: 1,
+		tally: 999,
+		pins: [
+			"crown",
+			"star",
+			"flame"
+		]
+	},
+	aura: {
+		item: "aura.origin",
+		finish: "classic",
+		scuff: 0,
+		print: 1,
+		fx: "shimmer"
+	}
+};
+/** Whether a seed is the founder's. */
+const isFounder = (seed) => seed === FOUNDER_SEED;
+/** Whether a copy is one of the founder's own, which no capsule gives (in his locker, nobody else's). */
+const isFounderCopy = (o) => o.item === FOUNDER_COPIES.aura.item || o.item === FOUNDER_COPIES.flag.item && o.finish === "gold" && o.tally === 999 && o.print === 1;
+
+//#endregion
+//#region src/resolve.ts
+/**
+* Resolves an input string to a full AvatarConfig.
+*
+* Each slot is hashed independently so adding or removing variants from one
+* part doesn't cascade into the others, and each pick is weighted (see
+* ./parts/weights) so the simple, sweet looks are the common ones.
+*/
+/** One name in this many gets the Lucky colour variant. */
+const LUCKY_ODDS = 400;
+/**
+* Seeds made now start with this. They draw from today's parts and weights;
+* an older seed draws from its own deal's frozen tables (`3-` from deal 3,
+* anything else, plain names included, from deal 2), so a guy already dealt
+* never changes when parts are added or weights move.
+*/
+const DEAL_PREFIX = "4-";
+/** Which deal an input draws from. */
+const dealOf = (input) => input.startsWith(DEAL_PREFIX) ? 4 : input.startsWith("3-") ? 3 : 2;
+const DEAL_4 = {
+	head: headWeights,
+	eyes: eyeWeights,
+	mouth: mouthWeights,
+	cheeks: cheekWeights,
+	hair: hairWeights,
+	body: bodyWeights,
+	accessory: accessoryWeights,
+	palette: paletteWeights
+};
+function resolve(input, overrides) {
+	if (input === FOUNDER_SEED) return {
+		...dealFrom(input, {
+			...FOUNDER_LOOK.parts,
+			...overrides
+		}),
+		palette: FOUNDER_LOOK.palette,
+		founder: true
+	};
+	return dealFrom(input, overrides);
+}
+function dealFrom(input, overrides) {
+	const pick$1 = (slot, weights) => weightedPick(weights, hashNth(input, slot));
+	const deal = dealOf(input);
+	const w = deal === 4 ? DEAL_4 : deal === 3 ? DEAL_3 : DEAL_2;
+	let eyes$1 = overrides?.eyes ?? pick$1(1, w.eyes);
+	if (RETIRED_EYES.includes(eyes$1)) eyes$1 = weightedPick(withoutRetired(w.eyes, RETIRED_EYES), hashNth(input, 14));
+	return {
+		head: overrides?.head ?? pick$1(0, w.head),
+		eyes: eyes$1,
+		mouth: overrides?.mouth ?? pick$1(2, w.mouth),
+		hair: overrides?.hair ?? pick$1(3, w.hair),
+		body: overrides?.body ?? pick$1(4, w.body),
+		accessory: overrides?.accessory ?? pick$1(5, w.accessory),
+		palette: pick$1(6, w.palette),
+		rotation: overrides?.rotation ?? hashNth(input, 7) % 9,
+		flip: overrides?.flip ?? hashNth(input, 8) % 2 === 1,
+		shade: overrides?.shade ?? pick$1(9, shadeWeights),
+		feet: overrides?.feet ?? pick$1(10, footWeights),
+		cheeks: overrides?.cheeks ?? pick$1(11, w.cheeks),
+		arms: overrides?.arms ?? pick$1(12, armWeights),
+		lucky: overrides?.lucky ?? hashNth(input, 13) % LUCKY_ODDS === 0
+	};
+}
 
 //#endregion
 //#region src/parts/canvas.ts
@@ -9441,7 +10025,7 @@ const rgb$6 = (h) => [
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$6 = (a, b$1, t) => [
+const mix$5 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -9514,7 +10098,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			for (const band$1 of [at, at - 14]) {
 				const d = x + y - band$1;
 				if (d >= 0 && d < 1.5) return "#FFFFFF";
-				if (d >= -1.5 && d < 0) return hex$2(mix$6(c, [
+				if (d >= -1.5 && d < 0) return hex$2(mix$5(c, [
 					150,
 					220,
 					255
@@ -9524,19 +10108,19 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "pulse": {
 			const b$1 = Math.sin(tt / wave(260));
-			return hex$2(mix$6(c, b$1 > 0 ? WHITE$2 : [
+			return hex$2(mix$5(c, b$1 > 0 ? WHITE$2 : [
 				0,
 				0,
 				0
 			], (b$1 > 0 ? .45 : .14) * Math.abs(b$1)));
 		}
-		case "holo": return hex$2(mix$6(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit(1800)) % 360 + 360) % 360), .45));
+		case "holo": return hex$2(mix$5(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit(1800)) % 360 + 360) % 360), .45));
 		case "chroma": {
 			const h = ((tt * 360 / fit(2520) + (x + y) * 14) % 360 + 360) % 360, l = (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
-			return hex$2(mix$6(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
+			return hex$2(mix$5(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
 		}
 		case "starlight": {
-			const night = mix$6(mix$6(c, [
+			const night = mix$5(mix$5(c, [
 				24,
 				18,
 				66
@@ -9545,24 +10129,24 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				70,
 				220
 			], .16 * (1 + Math.sin(tt / wave(700) + x * .5 + y * .3)));
-			return noise$1(x, y, print) > .93 ? hex$2(mix$6(night, [
+			return noise$1(x, y, print) > .93 ? hex$2(mix$5(night, [
 				210,
 				200,
 				255
 			], .55)) : hex$2(night);
 		}
-		case "embers": return hex$2(mix$6(c, [
+		case "embers": return hex$2(mix$5(c, [
 			255,
 			120,
 			40
 		], .16 + .14 * Math.max(0, Math.sin(tt / wave(140) + x * 1.3 - y * .8))));
-		case "neon": return hex$2(mix$6(c, neonTube(print), .16 + .06 * Math.sin(tt / wave(380))));
-		case "bubbles": return hex$2(mix$6(c, [
+		case "neon": return hex$2(mix$5(c, neonTube(print), .16 + .06 * Math.sin(tt / wave(380))));
+		case "bubbles": return hex$2(mix$5(c, [
 			190,
 			235,
 			255
 		], .1 + .08 * Math.sin(tt / wave(300) + y)));
-		case "hearts": return hex$2(mix$6(c, [
+		case "hearts": return hex$2(mix$5(c, [
 			255,
 			140,
 			190
@@ -9571,7 +10155,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const reach = .5 + .5 * Math.sin(tt / wave(900) - y * .35);
 			const n = noise$1(x, y, tick(tt, 400), print);
 			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
-			return hex$2(mix$6(c, [
+			return hex$2(mix$5(c, [
 				190,
 				228,
 				255
@@ -9581,7 +10165,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const roll$1 = cycle(tt, 70 * 24) * 24 - 4, burst = noise$1(tick(tt, 90), print, 7) > .62;
 			if (burst) {
 				const r = noise$1(x, y, tick(tt, 60));
-				return r > .8 ? "#FFFFFF" : hex$2(mix$6(c, r > .45 ? [
+				return r > .8 ? "#FFFFFF" : hex$2(mix$5(c, r > .45 ? [
 					255,
 					60,
 					90
@@ -9591,8 +10175,8 @@ function fxColor(color, fx, x, y, t, print = 0) {
 					255
 				], .55));
 			}
-			if (Math.abs(y - roll$1) < 1) return hex$2(mix$6(c, WHITE$2, .45));
-			return y % 2 ? hex$2(mix$6(c, [
+			if (Math.abs(y - roll$1) < 1) return hex$2(mix$5(c, WHITE$2, .45));
+			return y % 2 ? hex$2(mix$5(c, [
 				0,
 				0,
 				0
@@ -9600,12 +10184,12 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "lava": {
 			const flow = Math.sin(y * 1.1 + tt / wave(220) + Math.sin(x * .9 + tt / wave(700)) * 2);
-			const crust = mix$6(c, [
+			const crust = mix$5(c, [
 				40,
 				18,
 				12
 			], .55);
-			return flow > .55 ? hex$2(mix$6([
+			return flow > .55 ? hex$2(mix$5([
 				255,
 				120,
 				30
@@ -9613,7 +10197,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				255,
 				230,
 				120
-			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$6(crust, [
+			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$5(crust, [
 				220,
 				70,
 				20
@@ -9621,13 +10205,13 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "electric": {
 			const flash = noise$1(tick(tt, 120), print, 11) > .8;
-			if (flash) return hex$2(mix$6(c, WHITE$2, .7));
+			if (flash) return hex$2(mix$5(c, WHITE$2, .7));
 			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / wave(90))) > .93;
-			return vein ? hex$2(mix$6(c, [
+			return vein ? hex$2(mix$5(c, [
 				200,
 				240,
 				255
-			], .75)) : hex$2(mix$6(c, [
+			], .75)) : hex$2(mix$5(c, [
 				110,
 				180,
 				255
@@ -9985,7 +10569,7 @@ function applyFx(colors, slots, copies, t) {
 			out[y][x] = fx;
 			return;
 		}
-		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$6(a, b$1, .42) : mix$6(a, b$1, 1.5));
+		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$5(a, b$1, .42) : mix$5(a, b$1, 1.5));
 	}));
 	copies.forEach((o, k) => {
 		if (!o?.fx || !small(k) || OWN_EDGE.includes(o.fx)) return;
@@ -9994,7 +10578,7 @@ function applyFx(colors, slots, copies, t) {
 			if (s || colors[y][x]) return;
 			const from = NEAR2.find(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1);
 			if (!from || noise$1(x, y, beat, o.print, 17) > .4) return;
-			out[y][x] = hex$2(mix$6(rgb$6(out[y + from[1]][x + from[0]]), WHITE$2, .15));
+			out[y][x] = hex$2(mix$5(rgb$6(out[y + from[1]][x + from[0]]), WHITE$2, .15));
 		}));
 	});
 	const cellsOf = (k) => {
@@ -10068,17 +10652,17 @@ function applyFx(colors, slots, copies, t) {
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$2(mix$6(rgb$6(colors[y][x]), WHITE$2, .25 + .3 * breath)));
+			]) put(x + dx, y + dy, hex$2(mix$5(rgb$6(colors[y][x]), WHITE$2, .25 + .3 * breath)));
 		}
 		if (o.fx === "neon" && !aura) {
 			const tube = neonTube(o.print), glow = .3 + .12 * Math.sin(tt / wave(380)), rim$2 = edgeOf(k);
-			for (const [x, y] of rim$2) out[y][x] = hex$2(mix$6(tube, WHITE$2, glow));
+			for (const [x, y] of rim$2) out[y][x] = hex$2(mix$5(tube, WHITE$2, glow));
 			for (const [x, y] of rim$2) for (const [dx, dy] of [
 				[1, 0],
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$2(mix$6(tube, [
+			]) put(x + dx, y + dy, hex$2(mix$5(tube, [
 				20,
 				12,
 				36
@@ -10090,7 +10674,7 @@ function applyFx(colors, slots, copies, t) {
 				const x = key % W, y = Math.floor(key / W);
 				if (d > reach) continue;
 				const glint$1 = noise$1(x, y, tick(tt, 300), o.print) > .82;
-				out[y][x] = glint$1 ? "#FFFFFF" : hex$2(mix$6(rgb$6(out[y][x]), [
+				out[y][x] = glint$1 ? "#FFFFFF" : hex$2(mix$5(rgb$6(out[y][x]), [
 					214,
 					240,
 					255
@@ -10538,7 +11122,7 @@ const rgb$5 = (hex$3) => [
 ].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
 const toHex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
 const light$1 = (c) => (.2126 * c[0] + .7152 * c[1] + .0722 * c[2]) / 255;
-const mix$5 = (a, b$1, t) => a.map((v, i) => v + (b$1[i] - v) * t);
+const mix$4 = (a, b$1, t) => a.map((v, i) => v + (b$1[i] - v) * t);
 /**
 * An item's colours under a paint: the first colour (an item's main one)
 * becomes the paint, and every other colour sits as much lighter or darker
@@ -10550,11 +11134,11 @@ function painted(colors, paint$1) {
 	const base$1 = rgb$5(p.hex), main = light$1(rgb$5(colors[0]));
 	return colors.map((hex$3) => {
 		const d = light$1(rgb$5(hex$3)) - main;
-		return toHex(d >= 0 ? mix$5(base$1, [
+		return toHex(d >= 0 ? mix$4(base$1, [
 			255,
 			255,
 			255
-		], Math.min(1, d * 1.5)) : mix$5(base$1, [
+		], Math.min(1, d * 1.5)) : mix$4(base$1, [
 			0,
 			0,
 			0
@@ -10982,7 +11566,7 @@ const rgb$4 = (h) => [
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$4 = (a, b$1, t) => [
+const mix$3 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -11006,11 +11590,11 @@ function cellNoise(...n) {
 */
 const shaded = (c, l) => {
 	const t = Math.max(0, Math.min(1, (l - .15) / .75));
-	return t < .5 ? mix$4(mix$4(c, [
+	return t < .5 ? mix$3(mix$3(c, [
 		0,
 		0,
 		0
-	], .5), c, t * 2) : mix$4(c, mix$4(c, [
+	], .5), c, t * 2) : mix$3(c, mix$3(c, [
 		255,
 		255,
 		255
@@ -11019,14 +11603,14 @@ const shaded = (c, l) => {
 /** A colour along a ramp of stops, `t` 0 to 1, blended smoothly between them. */
 const ramp = (stops, t) => {
 	const at = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(at));
-	return mix$4(stops[i], stops[i + 1], at - i);
+	return mix$3(stops[i], stops[i + 1], at - i);
 };
 /** A colour taken through its tone: `t` 0 its shadow, 0.5 itself, 1 its highlight. */
 const toned = (c, t, deep = [
 	16,
 	12,
 	34
-]) => t < .5 ? mix$4(mix$4(c, deep, .62), c, t * 2) : mix$4(c, mix$4(c, [
+]) => t < .5 ? mix$3(mix$3(c, deep, .62), c, t * 2) : mix$3(c, mix$3(c, [
 	255,
 	255,
 	255
@@ -11116,13 +11700,13 @@ const PAINT = {
 	"plain": (_x, _y, _t, _p, original) => original,
 	"sunset": (x, y, _t, p, _o, l) => {
 		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
-		const c = t < .5 ? mix$4(rgb$4("#F5C542"), rgb$4("#E55AA8"), t * 2) : mix$4(rgb$4("#E55AA8"), rgb$4("#7A4BE0"), (t - .5) * 2);
+		const c = t < .5 ? mix$3(rgb$4("#F5C542"), rgb$4("#E55AA8"), t * 2) : mix$3(rgb$4("#E55AA8"), rgb$4("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
 	"tempered": (x, y, tone, p, _o, l, part) => {
 		const [a, b$1, c] = TINTS[temperTint(p)].map(rgb$4);
 		const s = (across(x, y) * 1.5 + p % 11 / 11 + part * .4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
-		const band$1 = s < .5 ? mix$4(a, b$1, k) : mix$4(c, b$1, 1 - k);
+		const band$1 = s < .5 ? mix$3(a, b$1, k) : mix$3(c, b$1, 1 - k);
 		return toned(band$1, .28 + lit(tone, l) * .5, [
 			10,
 			16,
@@ -11138,21 +11722,21 @@ const PAINT = {
 			["#A82A8A", "#4A2AB8"]
 		][p % 4];
 		const cloud = Math.min(1, (.5 + .5 * Math.sin(x * .5 + p) * Math.cos(y * .42 - p * .7)) * (1 - part) + part * .95);
-		const t = .2 + lit(Math.pow(tone, 1.1), l) * .72, sky = mix$4(rgb$4(a), rgb$4(b$1), cloud);
+		const t = .2 + lit(Math.pow(tone, 1.1), l) * .72, sky = mix$3(rgb$4(a), rgb$4(b$1), cloud);
 		return ramp([
-			mix$4(sky, [
+			mix$3(sky, [
 				8,
 				6,
 				22
 			], .6),
 			sky,
-			mix$4(sky, rgb$4("#FFC4EC"), .5),
+			mix$3(sky, rgb$4("#FFC4EC"), .5),
 			rgb$4("#FFF0FA")
 		], t);
 	},
 	"prism": (x, y, tone, p) => {
 		const h = (across(x, y) * 300 + p * 7) % 360;
-		return mix$4(hsl(h, .6, .3 + .58 * tone), [
+		return mix$3(hsl(h, .6, .3 + .58 * tone), [
 			255,
 			255,
 			255
@@ -11164,7 +11748,7 @@ const PAINT = {
 			255 - original[1],
 			255 - original[2]
 		]);
-		return mix$4(hsl(h, Math.min(.7, s * .8 + .15), .26 + .6 * (1 - tone)), [
+		return mix$3(hsl(h, Math.min(.7, s * .8 + .15), .26 + .6 * (1 - tone)), [
 			92,
 			52,
 			160
@@ -11180,7 +11764,7 @@ const PAINT = {
 	"pearl": (_x, _y, _t, _p, original) => original,
 	"gold": (x, y, tone, _p, _o, _l, part) => {
 		const t = .1 + tone * .82 + Math.max(0, 1 - Math.abs(across(x, y) - .42) / .16) * .12;
-		return mix$4(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * .3);
+		return mix$3(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * .3);
 	}
 };
 const PRIMER = rgb$4("#8B9097");
@@ -11192,7 +11776,7 @@ function finishOutline(o) {
 	if (o.finish === "gold") return "#4A2400";
 	if (o.finish === "nebula") return "#160C30";
 	if (o.finish === "prism") return "#2C2048";
-	if (o.finish === "tempered") return hex$1(mix$4(rgb$4(TINTS[temperTint(o.print)][0]), [
+	if (o.finish === "tempered") return hex$1(mix$3(rgb$4(TINTS[temperTint(o.print)][0]), [
 		8,
 		10,
 		26
@@ -11209,8 +11793,8 @@ function finishOutline(o) {
 function paintCell(color, x, y, o, state, tone) {
 	const original = rgb$4(color), l = lum$1(original);
 	let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - .15) / .75)), o.print, original, l, tone?.part ?? 0);
-	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$4(c, PRIMER, Math.min(.75, .3 + o.scuff * .6));
-	c = mix$4(c, [
+	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$3(c, PRIMER, Math.min(.75, .3 + o.scuff * .6));
+	c = mix$3(c, [
 		120,
 		116,
 		112
@@ -15241,7 +15825,7 @@ function dress(config, options = {}, name) {
 	}
 	return out;
 }
-function contrast$1(a, b$1) {
+function contrast(a, b$1) {
 	const lum$2 = (hex$3) => {
 		const c = (i) => {
 			const v = parseInt(hex$3.slice(1 + i * 2, 3 + i * 2), 16) / 255;
@@ -15301,7 +15885,7 @@ function withItems(palette$1, config) {
 			const own$1 = !!item.art && item.art.slice(e - 2, e + 2).every((row) => row.slice(4, 12).every((t) => t > 0 && t < LOCAL));
 			if (!own$1) {
 				const dark = "#15111C", light$2 = "#FFF1D6";
-				colors[T.EYE] = colors[T.MOUTH] = contrast$1(dark, item.colors[0]) >= contrast$1(light$2, item.colors[0]) ? dark : light$2;
+				colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light$2, item.colors[0]) ? dark : light$2;
 			}
 		}
 	}
@@ -15309,522 +15893,6 @@ function withItems(palette$1, config) {
 		name: palette$1.name,
 		colors
 	};
-}
-
-//#endregion
-//#region src/palette.ts
-const COLOURWAYS = [
-	{
-		name: "Peach",
-		body: "#FFB38A",
-		accent: "#7FC8F8",
-		trim: "#FFF3E0"
-	},
-	{
-		name: "Bubblegum",
-		body: "#FF9EC7",
-		accent: "#8C7CF0",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Butter",
-		body: "#FFE07A",
-		accent: "#FF7F96",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Mint",
-		body: "#8FE3B8",
-		accent: "#FF8FB1",
-		trim: "#FFF6C8"
-	},
-	{
-		name: "Sky",
-		body: "#8CCBFF",
-		accent: "#FFC857",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Lilac",
-		body: "#C9A7F5",
-		accent: "#FFD166",
-		trim: "#FFF0F6"
-	},
-	{
-		name: "Coral",
-		body: "#FF8E7F",
-		accent: "#5CC8C0",
-		trim: "#FFF6E8"
-	},
-	{
-		name: "Lime",
-		body: "#C6E86E",
-		accent: "#FF8C69",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Aqua",
-		body: "#78DCE8",
-		accent: "#FF7AA8",
-		trim: "#FFF8D6"
-	},
-	{
-		name: "Tangerine",
-		body: "#FFA552",
-		accent: "#6C8CF5",
-		trim: "#FFF1D6"
-	},
-	{
-		name: "Strawberry",
-		body: "#FF7A93",
-		accent: "#7FD1AE",
-		trim: "#FFF0F3"
-	},
-	{
-		name: "Periwinkle",
-		body: "#9DAEFF",
-		accent: "#FF9F7A",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Cream",
-		body: "#FFF1D0",
-		accent: "#FF8FAB",
-		trim: "#9AD9F5"
-	},
-	{
-		name: "Cocoa",
-		body: "#C69276",
-		accent: "#FF9FB5",
-		trim: "#FFF1DC"
-	},
-	{
-		name: "Caramel",
-		body: "#E8B074",
-		accent: "#7EC4CF",
-		trim: "#FFF6E6"
-	},
-	{
-		name: "Grape",
-		body: "#A68BF0",
-		accent: "#7FE0C8",
-		trim: "#FFF4C2"
-	},
-	{
-		name: "Teal",
-		body: "#5ED3C3",
-		accent: "#FFB86B",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Snow",
-		body: "#F2F5FA",
-		accent: "#7BB8FF",
-		trim: "#FFB5C8"
-	},
-	{
-		name: "Sage",
-		body: "#A9D6A0",
-		accent: "#F7A072",
-		trim: "#FFF8E7"
-	},
-	{
-		name: "Rose",
-		body: "#F6A6C1",
-		accent: "#6FC2B8",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Honey",
-		body: "#FFC94D",
-		accent: "#E86A8E",
-		trim: "#FFF4D6"
-	},
-	{
-		name: "Seafoam",
-		body: "#A8F0D8",
-		accent: "#9A8CF5",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Blush",
-		body: "#FFC4C4",
-		accent: "#7AA9F0",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Ocean",
-		body: "#6FB4F2",
-		accent: "#FFDD6B",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Plum",
-		body: "#D48BD8",
-		accent: "#FFD36B",
-		trim: "#FFF0FA"
-	},
-	{
-		name: "Sunflower",
-		body: "#FFD84A",
-		accent: "#6FA8F0",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Melon",
-		body: "#B8F28C",
-		accent: "#FF7A8A",
-		trim: "#FFF5E0"
-	},
-	{
-		name: "Lavender",
-		body: "#B8B6F7",
-		accent: "#FF9EBB",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Pumpkin",
-		body: "#FF9446",
-		accent: "#7C6BE0",
-		trim: "#FFE9A8"
-	},
-	{
-		name: "Cotton Candy",
-		body: "#A9DCFF",
-		accent: "#FFA3D1",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Matcha",
-		body: "#9CCB7A",
-		accent: "#E9A2C8",
-		trim: "#FFF7E0"
-	},
-	{
-		name: "Ruby",
-		body: "#F2697E",
-		accent: "#FFD56B",
-		trim: "#FFF3E0"
-	},
-	{
-		name: "Charcoal",
-		body: "#4A4E5E",
-		accent: "#E8483D",
-		trim: "#F2C230"
-	},
-	{
-		name: "Cobalt",
-		body: "#3D6FE0",
-		accent: "#F2C230",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Midnight",
-		body: "#2E3A66",
-		accent: "#5FE0B0",
-		trim: "#FFE066"
-	},
-	{
-		name: "Oxblood",
-		body: "#8E2A3A",
-		accent: "#F2C230",
-		trim: "#FFF1D6"
-	},
-	{
-		name: "Forest",
-		body: "#2F6B4A",
-		accent: "#F28A2E",
-		trim: "#FFF1D6"
-	},
-	{
-		name: "Grape Soda",
-		body: "#6B3FA0",
-		accent: "#3DE0B0",
-		trim: "#FFE066"
-	},
-	{
-		name: "Fuchsia",
-		body: "#F27ACF",
-		accent: "#6FD6C2",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Lemon",
-		body: "#EEF07A",
-		accent: "#8C7CF0",
-		trim: "#FFFFFF"
-	},
-	{
-		name: "Denim",
-		body: "#6A92E0",
-		accent: "#FFB38A",
-		trim: "#FFF3E0"
-	},
-	{
-		name: "Ice",
-		body: "#D2F1FF",
-		accent: "#FF8FB1",
-		trim: "#7BB8FF"
-	},
-	{
-		name: "Opal",
-		body: "#F4F0FA",
-		accent: "#7FE0C8",
-		trim: "#FFB5D8",
-		tones: {
-			2: "#C9B8F0",
-			3: "#D4FFF2",
-			13: "#FFE0F0",
-			19: "#9FD8F0"
-		}
-	},
-	{
-		name: "Obsidian",
-		body: "#433B5E",
-		accent: "#FFD45C",
-		trim: "#FFE9A8",
-		tones: {
-			2: "#2A2440",
-			3: "#B79CFF",
-			13: "#5A4F7A",
-			19: "#1E1A2E"
-		}
-	},
-	{
-		name: "Aurora",
-		body: "#2E5878",
-		accent: "#FF7AC8",
-		trim: "#B8FFE0",
-		tones: {
-			2: "#3B3F86",
-			3: "#7DFFC8",
-			13: "#3E8A8C",
-			19: "#4A2F7A"
-		}
-	}
-];
-/** Hand-set token colours by colourway name, applied over the derived ones. */
-const TONES = new Map(COLOURWAYS.filter((w) => w.tones).map((w) => [w.name, w.tones]));
-function hexToRgb(hex$3) {
-	return [
-		1,
-		3,
-		5
-	].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
-}
-function rgbToHex(r, g, b$1) {
-	return "#" + [
-		r,
-		g,
-		b$1
-	].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-}
-function toHsl$1(hex$3) {
-	const [r, g, b$1] = hexToRgb(hex$3).map((v) => v / 255);
-	const max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
-	const l = (max + min) / 2;
-	if (max === min) return [
-		0,
-		0,
-		l
-	];
-	const d = max - min;
-	const s = l > .5 ? d / (2 - max - min) : d / (max + min);
-	const h = max === r ? (g - b$1) / d + (g < b$1 ? 6 : 0) : max === g ? (b$1 - r) / d + 2 : (r - g) / d + 4;
-	return [
-		h * 60,
-		s,
-		l
-	];
-}
-function fromHsl([h, s, l]) {
-	h = (h % 360 + 360) % 360;
-	s = Math.min(1, Math.max(0, s));
-	l = Math.min(1, Math.max(0, l));
-	const c = (1 - Math.abs(2 * l - 1)) * s;
-	const x = c * (1 - Math.abs(h / 60 % 2 - 1));
-	const m = l - c / 2;
-	const [r, g, b$1] = h < 60 ? [
-		c,
-		x,
-		0
-	] : h < 120 ? [
-		x,
-		c,
-		0
-	] : h < 180 ? [
-		0,
-		c,
-		x
-	] : h < 240 ? [
-		0,
-		x,
-		c
-	] : h < 300 ? [
-		x,
-		0,
-		c
-	] : [
-		c,
-		0,
-		x
-	];
-	return rgbToHex((r + m) * 255, (g + m) * 255, (b$1 + m) * 255);
-}
-function mix$3(a, b$1, amount) {
-	const [ar, ag, ab] = hexToRgb(a);
-	const [br, bg, bb] = hexToRgb(b$1);
-	return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
-}
-/** Moves a hue `amount` degrees towards `target` along the short way round. */
-function towards(hue$2, target, amount) {
-	const diff = (target - hue$2 + 540) % 360 - 180;
-	return hue$2 + Math.sign(diff) * Math.min(Math.abs(diff), amount);
-}
-function luminance(hex$3) {
-	const channel = (v) => {
-		v /= 255;
-		return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
-	};
-	const [r, g, b$1] = hexToRgb(hex$3);
-	return .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b$1);
-}
-function contrast(a, b$1) {
-	const [hi, lo] = [luminance(a), luminance(b$1)].sort((x, y) => y - x);
-	return (hi + .05) / (lo + .05);
-}
-/**
-* Shade a colour by hand: darker and leaning towards violet, but never richer.
-* Adding saturation in the shadow is what turned a green body's shade neon.
-*/
-function shadeOf(hex$3, depth = .12) {
-	const [h, s, l] = toHsl$1(hex$3);
-	return fromHsl([
-		towards(h, 265, 12),
-		s * .85,
-		l - depth
-	]);
-}
-/** Builds the full set of token colours from a body, an accent and a trim. */
-function derive(name, body, accent, trim) {
-	const [h] = toHsl$1(body);
-	const outlineHue = towards(h, 285, 25);
-	const outline$1 = fromHsl([
-		outlineHue,
-		.42,
-		toHsl$1(body)[2] >= .5 ? .3 : toHsl$1(body)[2] * .25
-	]);
-	const dark = fromHsl([
-		outlineHue,
-		.38,
-		.14
-	]), deeper = fromHsl([
-		outlineHue,
-		.4,
-		.06
-	]);
-	const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast("#FFF1D6", body) ? dark : contrast(deeper, body) >= 3.9 ? deeper : "#FFF1D6";
-	let blush = "#FF8FA8";
-	for (let i = 0; i < 8 && contrast(blush, body) < 1.3; i++) blush = shadeOf(blush, .06);
-	let tongue = "#FF6B88";
-	for (let i = 0; i < 8 && contrast(tongue, body) < 1.4; i++) tongue = shadeOf(tongue, .06);
-	const goldReads = contrast("#FFD45C", body) >= 1.45;
-	const gold = goldReads ? "#FFD45C" : "#E8901A";
-	const goldShade = goldReads ? "#F0A93A" : "#B3620E";
-	return {
-		name,
-		colors: {
-			1: body,
-			2: shadeOf(body),
-			3: mix$3(body, "#FFFFFF", .55),
-			4: outline$1,
-			5: ink,
-			6: "#FFFFFF",
-			7: blush,
-			8: ink,
-			9: tongue,
-			10: accent,
-			11: shadeOf(accent),
-			12: trim,
-			13: mix$3(body, "#FFFBF0", .6),
-			14: "#7DD87A",
-			15: "#4FAE5C",
-			16: gold,
-			17: goldShade,
-			18: "#FF6B78",
-			19: shadeOf(body, .24),
-			...TONES.get(name)
-		}
-	};
-}
-const palettes = COLOURWAYS.map((w) => derive(w.name, w.body, w.accent, w.trim));
-function getPalette(index) {
-	return palettes[index % palettes.length];
-}
-function resolveColor(palette$1, token) {
-	if (token === 0) return null;
-	return palette$1.colors[token] ?? null;
-}
-/** Tones a colourway can be worn in: pastel, as picked, vivid. */
-const SHADE_COUNT = 3;
-/**
-* Re-derives a palette in another tone. The pastel tone lifts the body and
-* accent towards white; the vivid tone deepens them. It deliberately barely
-* adds saturation — saturating an already-bright lime turns it acid. Either way
-* the outline, shading and blush are worked out again from the result, so a
-* toned palette is as coherent as the original.
-*/
-function shadePalette(palette$1, shade) {
-	if (shade === 1) return palette$1;
-	const tone = (hex$3) => {
-		if (shade === 0) return mix$3(hex$3, "#FFFFFF", .3);
-		const [h, s, l] = toHsl$1(hex$3);
-		return fromHsl([
-			h,
-			Math.min(.8, s + .04),
-			l > .4 ? l - .08 : l
-		]);
-	};
-	const c = palette$1.colors;
-	return derive(palette$1.name, tone(c[1]), tone(c[10]), c[12]);
-}
-/**
-* The Lucky variant: the same colourway turned round the colour wheel, with
-* gold trim. Derived again, so the face and outline read as well as ever.
-*/
-function luckyPalette(palette$1) {
-	const turn = (hex$3) => {
-		const [h, s, l] = toHsl$1(hex$3);
-		let hue$2 = (h + 150) % 360;
-		const dark = l < .45;
-		if (dark && hue$2 >= 10 && hue$2 <= 110) hue$2 += 130;
-		return fromHsl([
-			hue$2,
-			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.max(.7, Math.min(.92, s + .25)),
-			dark ? Math.min(Math.max(l, .22), .28) : Math.min(Math.max(l, .6), .68)
-		]);
-	};
-	const c = palette$1.colors;
-	return derive(`${palette$1.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
-}
-/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
-const POINTED = [
-	3,
-	4,
-	6,
-	13,
-	14,
-	20
-];
-const NOT_BROWN = {
-	13: 0,
-	14: 20
-};
-/** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
-const shownPalette = (config) => POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
-function paletteOf(config) {
-	const toned$1 = shadePalette(getPalette(shownPalette(config)), config.shade);
-	return config.lucky ? luckyPalette(toned$1) : toned$1;
 }
 
 //#endregion
@@ -15964,7 +16032,7 @@ const SCATTERED = new Set([
 ]);
 const darkSkin = (config) => {
 	const ink = paletteOf(config).colors[T.EYE];
-	return !!ink && contrast(ink, "#000000") > 10;
+	return !!ink && contrast$1(ink, "#000000") > 10;
 };
 /** Parts meant to be shown off: they always show. */
 const CHASE = new Set([
@@ -16556,11 +16624,11 @@ function forSmall(grid, palette$1) {
 		return t;
 	}));
 	const ink = palette$1.colors[T.EYE];
-	if (!ink || contrast("#FFFFFF", ink) < 3) return {
+	if (!ink || contrast$1("#FFFFFF", ink) < 3) return {
 		grid: out,
 		palette: palette$1
 	};
-	const deep = mix$3(ink, "#000000", .45);
+	const deep = mix$6(ink, "#000000", .45);
 	return {
 		grid: out,
 		palette: {
@@ -16588,10 +16656,10 @@ function catchlight(grid, x, y, palette$1) {
 	].map(([nx, ny]) => grid[ny]?.[nx] ?? 0);
 	if (!white || !near.includes(T.EYE)) return white;
 	const ink = resolveColor(palette$1, T.EYE);
-	if (ink && contrast(ink, "#000000") > 10) return resolveColor(palette$1, T.OUTLINE) ?? "#000000";
-	if (!ink || contrast(white, ink) < 3) return white;
-	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast(white, resolveColor(palette$1, t) ?? "#000000") < 1.6);
-	return pale ? mix$3(ink, white, .6) : white;
+	if (ink && contrast$1(ink, "#000000") > 10) return resolveColor(palette$1, T.OUTLINE) ?? "#000000";
+	if (!ink || contrast$1(white, ink) < 3) return white;
+	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast$1(white, resolveColor(palette$1, t) ?? "#000000") < 1.6);
+	return pale ? mix$6(ink, white, .6) : white;
 }
 
 //#endregion
@@ -18339,10 +18407,22 @@ function guyScore(config) {
 	return logs.reduce((a, b$1) => a + b$1, 0) + Math.max(...logs);
 }
 /**
+* The founder's rank (./founder). He was picked by hand, not dealt, so his
+* traits' odds don't place him: he is the one of one, at the top tier.
+*/
+const FOUNDER_RANK = {
+	top: 0,
+	tier: GUY_TIERS.length - 1,
+	name: "Founder",
+	label: "One of one"
+};
+/**
 * Where a guy stands among every guy dealt: "one in 56 billion" says every
 * combination is unique, which they all are, so a card shows this instead.
+* The founder (`founder: true`, as `resolve` gives him) is `FOUNDER_RANK`.
 */
 function guyRank(config) {
+	if (config.founder) return { ...FOUNDER_RANK };
 	const v = guyScore(config), last = GUY_RANK[GUY_RANK.length - 1];
 	let top = 1;
 	if (v > last[0]) top = last[1] * 10 ** (last[0] - v);
@@ -25364,6 +25444,10 @@ exports.FACE_WIDTH = FACE_WIDTH
 exports.FINISHES = FINISHES
 exports.FOOT_NAMES = FOOT_NAMES
 exports.FOOT_STYLES = FOOT_STYLES
+exports.FOUNDER_COPIES = FOUNDER_COPIES
+exports.FOUNDER_LOOK = FOUNDER_LOOK
+exports.FOUNDER_RANK = FOUNDER_RANK
+exports.FOUNDER_SEED = FOUNDER_SEED
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
@@ -25474,6 +25558,8 @@ exports.hash = hash
 exports.hashNth = hashNth
 exports.heads = heads
 exports.inSeason = inSeason
+exports.isFounder = isFounder
+exports.isFounderCopy = isFounderCopy
 exports.isMove = isMove
 exports.itemById = itemById
 exports.itemFrame = itemFrame

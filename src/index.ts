@@ -38,6 +38,7 @@ export { toPng } from "./export-png";
 
 export { hash, hashNth } from "./hash";
 export { resolve, LUCKY_ODDS, DEAL_PREFIX, dealOf } from "./resolve";
+export { FOUNDER_SEED, FOUNDER_LOOK, FOUNDER_COPIES, isFounder, isFounderCopy } from "./founder";
 export { RETIRED_EYES, CAPSULE_ONLY } from "./parts/weights";
 export { compose, composeBase, buddyAlone, FOOT_STYLES, shows } from "./compose";
 export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPalette, paletteOf } from "./palette";
@@ -58,7 +59,7 @@ export type { Emote, Move, Animation, AnimationFrame, AnimateOptions, AnimatedSv
 
 export { mergeRefs, useMergeRefs } from "./utils/merge-refs";
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from "./utils/colors";
-export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, type GuyRank, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from "./rarity";
+export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, FOUNDER_RANK, type GuyRank, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from "./rarity";
 export type { TraitOdds, TraitSlot } from "./rarity";
 export { TRAIT_ICONS, TIER_ICONS } from "./icons";
 export type { Tier } from "./icons";

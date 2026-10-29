@@ -4,6 +4,7 @@ import {
   bodyWeights, accessoryWeights, armWeights, footWeights, shadeWeights,
   paletteWeights, weightedPick, DEAL_2, DEAL_3, RETIRED_EYES, withoutRetired,
 } from './parts/weights';
+import { FOUNDER_LOOK, FOUNDER_SEED } from './founder';
 import type { AvatarConfig, RenderOptions } from './types';
 
 /**
@@ -33,6 +34,14 @@ const DEAL_4 = {
 };
 
 export function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig {
+  // The founder isn't dealt: his look was picked by hand (./founder). Parts asked for still go over it.
+  if (input === FOUNDER_SEED) {
+    return { ...dealFrom(input, { ...FOUNDER_LOOK.parts, ...overrides }), palette: FOUNDER_LOOK.palette, founder: true };
+  }
+  return dealFrom(input, overrides);
+}
+
+function dealFrom(input: string, overrides?: RenderOptions['parts']): AvatarConfig {
   const pick = (slot: number, weights: number[]): number => weightedPick(weights, hashNth(input, slot));
   const deal = dealOf(input);
   const w = deal === 4 ? DEAL_4 : deal === 3 ? DEAL_3 : DEAL_2;

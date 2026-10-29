@@ -3,7 +3,8 @@ import { Database } from 'bun:sqlite';
 import { api, RULES, todayGame, tradeGrade } from './index.js';
 import { GAMES } from '../src/index-headless.ts';
 import { readFileSync } from 'node:fs';
-import { decode, encode } from '../src/index-headless.ts';
+import { createHash } from 'node:crypto';
+import { decode, encode, guyRank, resolve } from '../src/index-headless.ts';
 
 let env: any;
 beforeEach(() => {
@@ -24,6 +25,17 @@ const claim = async (key: string) => (await (await call('/names/' + key, 'POST')
 const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
 // Stamps for a test that opens many capsules: a club day well after stamps began, as if read from the club.
 const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, ?, 0) ON CONFLICT(key, day) DO UPDATE SET n = n + excluded.n").run(key, n);
+const utcToday = () => new Date().toISOString().slice(0, 10);
+// A name signed in to DLE Club (a Google sign-in) that has finished one club game today, as if read from the
+// club. Linked, its browser token no longer works: it is signed in with a session, whose headers this returns.
+let sessions = 0;
+const playToday = (key: string) => {
+  const account = createHash('sha256').update('google:' + key).digest('hex'), session = (++sessions).toString(16).padStart(64, '0');
+  env.db.prepare('UPDATE names SET account = ? WHERE key = ?').run(account, key);
+  env.db.prepare('INSERT INTO auth_sessions(hash, account, expires, created) VALUES (?, ?, ?, 0)').run(createHash('sha256').update(session).digest('hex'), account, Math.floor(Date.now() / 1000) + 3600);
+  env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, ?, 'amountle', 1, 0) ON CONFLICT(key, day) DO NOTHING").run(key, utcToday());
+  return { Cookie: '__Host-lilguys-session=' + session };
+};
 
 test('a claim makes a player with ten stamps and a starter from every machine, one worn', async () => {
   const c = await claim('mia');
@@ -49,24 +61,26 @@ test('a player made before a machine joined gets its starter once', async () => 
 
 test('capsules are rolled and stored on the server, paid in stamps, and the free one is today’s machine once', async () => {
   const c = await claim('mia');
-  const free = await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, auth(c.owner));
+  // Today's game gives its stamp, and opens the free capsule.
+  const me = playToday('mia');
+  const free = await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, me);
   expect(free.status).toBe(201);
   const body: any = await free.json();
   expect(body.copy.code).toContain('~');
   // The free one is a souvenir of today; no other capsule is.
   expect(body.copy.code).toMatch(/~s\d{4}-\d{2}-\d{2}/);
   // The free one costs nothing.
-  expect(body.stamps.balance).toBe(RULES.stamps);
-  expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, auth(c.owner))).status).toBe(409);
+  expect(body.stamps.balance).toBe(RULES.stamps + 1);
+  expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, me)).status).toBe(409);
   // A picked machine costs eight stamps; the copy comes from it.
-  const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json();
+  const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, me)).json();
   expect(paid.game).toBe('puttsies');
-  expect(paid.stamps.balance).toBe(RULES.stamps - RULES.capsule);
+  expect(paid.stamps.balance).toBe(RULES.stamps + 1 - RULES.capsule);
   // Short: nothing is taken, and the answer says how many more and where they come from.
-  const short = await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner));
+  const short = await call('/me/mia/open', 'POST', { game: 'puttsies' }, me);
   expect(short.status).toBe(402);
-  expect(((await short.json()) as any)).toMatchObject({ error: '6 more stamps. Sign in to DLE Club and play to earn stamps.', need: 6, stamps: { balance: 2 } });
-  expect((await call('/me/mia/open', 'POST', { game: 'nope' }, auth(c.owner))).status).toBe(400);
+  expect(((await short.json()) as any)).toMatchObject({ error: '5 more stamps: play a game on DLE Club.', need: 5, stamps: { balance: 3 } });
+  expect((await call('/me/mia/open', 'POST', { game: 'nope' }, me)).status).toBe(400);
   expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'mia' AND source <> 'starter'").get().n).toBe(2);
 });
 
@@ -93,7 +107,8 @@ test('a mystery capsule costs five stamps and comes from any machine, rolled as 
 test('trade up: five unworn copies of one grade for one of the next, each copy traded once', async () => {
   const c = await claim('mia'), b = await claim('bo');
   const at = new Date().toISOString();
-  const put = (key: string, grade: number, extra = '') => env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, 'amountle.crown~plain~0.5000000~1', 'amountle.crown', 'amountle', 'hat', 'plain', ?, 100, 0.5, ${extra || "'capsule'"}, 0, ?)`).run(key, grade, at).lastInsertRowid as number;
+  const put = (key: string, grade: number, extra = '') => env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, ?, 'amountle.crown', 'amountle', 'hat', ?, ?, 100, 0.05, ${extra || "'capsule'"}, 0, ?)`)
+    .run(key, `amountle.crown~${grade ? 'sunset' : 'plain'}~0.0500000~1`, grade ? 'sunset' : 'plain', grade, at).lastInsertRowid as number;
   const five = [0, 1, 2, 3, 4].map(() => Number(put('mia', 0)));
   // Four is not a trade, nor is another player's copy, a starter or a mixed grade.
   expect((await call('/me/mia/trade', 'POST', { ids: five.slice(0, 4) }, auth(c.owner))).status).toBe(400);
@@ -221,16 +236,17 @@ test('beginner’s luck: a player’s first three capsules are the best of three
     const key = 'p' + i;
     // A fresh address for each, past the daily claim limit.
     const c: any = await (await call('/names/' + key, 'POST', undefined, { 'CF-Connecting-IP': `198.51.100.${i}` })).json();
+    const me = playToday(key);
     for (let k = 0; k < 3; k++) {
       // The first is the day's free one, then the two mystery capsules a claim's ten stamps pay for: both count.
-      const body: any = await (await call(`/me/${key}/open`, 'POST', k ? { mystery: true } : { game: todayGame(), free: true }, auth(c.owner))).json();
+      const body: any = await (await call(`/me/${key}/open`, 'POST', k ? { mystery: true } : { game: todayGame(), free: true }, me)).json();
       expect(body.luck).toBe('beginner');
       n++;
       if (body.copy.grade >= 1) good++;
     }
     if (i === 0) {
       give(key, 8);
-      const fourth: any = await (await call(`/me/${key}/open`, 'POST', { game: 'puttsies' }, auth(c.owner))).json();
+      const fourth: any = await (await call(`/me/${key}/open`, 'POST', { game: 'puttsies' }, me)).json();
       expect(fourth.luck).toBeNull();
     }
   }
@@ -429,4 +445,93 @@ test('before migration 0008, crafting says it isn’t open and nothing else chan
   expect((await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).status).toBe(201);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.metal).toBe(0);
+});
+
+// ------------------------------------------------------------ trading, as the page does it
+test('a trade reads each copy’s grade from its code, as the page does, whatever the stored column says', async () => {
+  const c = await claim('mia');
+  // Five Everyday copies whose stored grade has drifted (as rows written by an older Worker can): the page
+  // offers them as Everyday, so the trade takes them as Everyday.
+  const five = [0, 1, 2, 3, 4].map(i => put('mia', i % 2 ? 1 : 3));
+  const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
+  expect(r.status).toBe(201);
+  const got: any = await r.json();
+  expect({ dud: 0, up: 1, jump: 2 }[got.outcome as string]).toBe(got.copy.grade);
+  // And a stored grade that agrees can't pass off a mixed five.
+  const sunset = Number(env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES ('mia', ?, 'amountle.crown', 'amountle', 'hat', 'sunset', 0, 100, 0.05, 'capsule', 0, ?)`)
+    .run(encode({ item: 'amountle.crown', finish: 'sunset', scuff: 0.05, print: 1 }), new Date().toISOString()).lastInsertRowid);
+  const mixed = await call('/me/mia/trade', 'POST', { ids: [put('mia'), put('mia'), put('mia'), put('mia'), sunset] }, auth(c.owner));
+  expect(mixed.status).toBe(400);
+  expect(((await mixed.json()) as any).error).toBe('Trade five copies of one grade');
+});
+
+test('a trade with a copy the page has no id for is refused whole, with a reload, and nothing is lost', async () => {
+  const c = await claim('mia');
+  const four = [0, 1, 2, 3].map(() => put('mia'));
+  for (const missing of [null, undefined, 0, 'x']) {
+    const r = await call('/me/mia/trade', 'POST', { ids: [...four, missing] }, auth(c.owner));
+    expect(r.status).toBe(409);
+    expect(((await r.json()) as any).error).toBe('Your locker changed. Reload and try again.');
+  }
+  expect((await stateOf('mia', c.owner)).copies.filter((x: any) => four.includes(x.id))).toHaveLength(4);
+});
+
+test('a worn copy says to take it off; trading a copy that was on offer calls the offer off', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  const five = [0, 1, 2, 3, 4].map(() => put('mia'));
+  await call('/me/mia/wear', 'POST', { slot: 'hat', id: five[0] }, auth(c.owner));
+  const worn = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
+  expect(worn.status).toBe(400);
+  expect(((await worn.json()) as any).error).toBe('Take it off first: worn copies can’t be traded');
+  await call('/me/mia/wear', 'POST', { slot: 'hat', id: null }, auth(c.owner));
+  const offer: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: five[1] }, auth(c.owner))).json();
+  const asked: any = await (await call('/me/bo/swap', 'POST', { to: 'mia', give: put('bo'), want: five[2] }, auth(b.owner))).json();
+  expect((await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).status).toBe(201);
+  expect((await stateOf('mia', c.owner)).swaps).toHaveLength(0);
+  expect((await stateOf('bo', b.owner)).swaps).toHaveLength(0);
+  expect(env.db.query('SELECT state FROM swaps WHERE id IN (?, ?)').all(offer.id, asked.id).map((x: any) => x.state)).toEqual(['void', 'void']);
+});
+
+test('a swap for the copy a player has on goes through when they accept: it comes off them, its days banked', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  const theirs = put('bo'), mine = put('mia');
+  await call('/me/bo/wear', 'POST', { slot: 'hat', id: theirs }, auth(b.owner));
+  // Worn a day already.
+  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  env.db.prepare('UPDATE copies SET worn_since = ? WHERE id = ?').run(yesterday, theirs);
+  const offer: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: mine, want: theirs }, auth(c.owner))).json();
+  expect(offer.id).toBeTruthy();
+  const r = await call('/me/bo/swap-accept', 'POST', { id: offer.id }, auth(b.owner));
+  expect(r.status).toBe(200);
+  const moved = env.db.query('SELECT key, worn, worn_since, worn_days FROM copies WHERE id = ?').get(theirs);
+  expect(moved).toMatchObject({ key: 'mia', worn: 0, worn_since: '', worn_days: 2 });
+  expect((await stateOf('bo', b.owner)).copies.find((x: any) => x.id === mine)).toMatchObject({ worn: false });
+  // The one offering still has to leave theirs off: theirs is the offer.
+  const again = put('mia');
+  const o2: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: again, want: mine }, auth(c.owner))).json();
+  await call('/me/mia/wear', 'POST', { slot: 'hat', id: again }, auth(c.owner));
+  expect((await call('/me/bo/swap-accept', 'POST', { id: o2.id }, auth(b.owner))).status).toBe(409);
+});
+
+// ------------------------------------------------------------ the founder
+test('the founder is the library’s: rarest first lists him at the top, and the club reads him as the founder', async () => {
+  for (const k of ['mia', 'bo', 'di']) await claim(k);
+  await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' });
+  // Whatever his traits' odds, rarest first starts with him, even past the first page's limit.
+  env.db.exec("UPDATE players SET guy_one_in = 1e30 WHERE key <> 'isaac'");
+  const list: any = await (await call('/guys?sort=rarest&limit=2')).json();
+  expect(list[0].key).toBe('isaac');
+  expect(guyRank(resolve(list[0].seed))).toMatchObject({ name: 'Founder', label: 'One of one' });
+  // The club's named guys carry the flag, so a party chip or a game ranks him as the site does.
+  const named: any = await (await call('/club/named?n=isaac,mia')).json();
+  expect(named.guys.isaac.parts.founder).toBe(true);
+  expect(guyRank(named.guys.isaac.parts)).toMatchObject({ tier: 5, name: 'Founder' });
+  expect(named.guys.mia.parts.founder).toBeUndefined();
+  // A look he picks lays over his parts; he stays the founder.
+  const f: any = env.db.query("SELECT owner FROM names WHERE key = 'isaac'").get();
+  expect(f.owner).toBeTruthy();
+  env.db.exec("UPDATE players SET look = '2:p0' WHERE key = 'isaac'");
+  const picked: any = await (await call('/club/named?n=isaac')).json();
+  expect(picked.guys.isaac.parts.founder).toBe(true);
+  expect(guyRank(picked.guys.isaac.parts).name).toBe('Founder');
 });

@@ -4,6 +4,7 @@ export { GRID_SIZE } from './types';
 
 export { hash, hashNth } from './hash';
 export { resolve, LUCKY_ODDS, DEAL_PREFIX, dealOf } from './resolve';
+export { FOUNDER_SEED, FOUNDER_LOOK, FOUNDER_COPIES, isFounder, isFounderCopy } from './founder';
 export { RETIRED_EYES, CAPSULE_ONLY } from './parts/weights';
 export { compose, composeBase, buddyAlone, FOOT_STYLES, shows } from './compose';
 
@@ -23,7 +24,7 @@ export { toSvgString } from './render-string';
 export { toPng } from './export-png';
 
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from './utils/colors';
-export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, type GuyRank, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from './rarity';
+export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, FOUNDER_RANK, type GuyRank, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from './rarity';
 export type { TraitOdds, TraitSlot } from './rarity';
 export { TRAIT_ICONS, TIER_ICONS } from './icons';
 export type { Tier } from './icons';

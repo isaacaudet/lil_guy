@@ -1,12 +1,12 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked } from './baked.js';
 import { clubGuys, namedGuys } from './club-guys.js';
-import { putOn, readClub, takeOff, withStats } from './card-stats.js';
+import { BANK_DAYS, putOn, readClub, statsReady, takeOff, withStats, TODAY_EVERY } from './card-stats.js';
 import { heldKey, skeletonTaken } from './name-lookup.js';
-import { giveStarter, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
+import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
 import {
   roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
-  decodeLook, resolve, makeSeed, guyOneIn, heads, eyes, mouths, cheeks, hair, bodies, accessories, palettes,
+  decodeLook, resolve, makeSeed, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder,
   cleanTag, tradeFloat, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
   smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, NAME_KEY, nameKey, nameSkeleton,
 } from '../src/index-headless.ts';
@@ -51,16 +51,10 @@ export function tradeGrade(grade, u, top) {
 }
 export const todayGame = () => GAMES[Math.floor(Date.now() / 864e5) % GAMES.length];
 
-// "isaac" is the founder's: a clean guy in a crown, and two copies no capsule gives, the Gold flag and the
-// Origin aura (the page draws the same).
-const byName = (list, name) => list.findIndex(x => x.name === name);
-const FOUNDER = {
-  parts: { head: byName(heads, 'round'), eyes: byName(eyes, 'glossy'), mouth: byName(mouths, 'smile'), cheeks: byName(cheeks, 'blush'), hair: byName(hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false },
-  palette: byName(palettes, 'Ocean'),
-  copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
-  aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' },
-};
-const dealt = seed => seed === 'founder:isaac' ? { ...resolve(seed, FOUNDER.parts), palette: FOUNDER.palette } : resolve(seed);
+// "isaac" is the founder's: the library deals his seed the crowned guy he was picked as (FOUNDER_LOOK, with
+// `founder: true`, so `guyRank` says Founder · One of one), and he has two copies no capsule gives, the Gold
+// flag and the Origin aura (FOUNDER_COPIES).
+const dealt = seed => resolve(seed);
 // A stored look was checked against the player's own and earned parts when it was saved, so reading one only checks it draws.
 const guyOf = (seed, look) => { const base = dealt(seed); const picked = look ? decodeLook(look) : null; return picked ? { ...base, ...picked } : base; };
 
@@ -171,8 +165,8 @@ async function ensurePlayer(env, name) {
     // A player from before stamps is given the ten to start once, as a new one is (their tickets are gone).
     await giveStarter(env, name.key);
     // A founder made before Origin existed is given it once.
-    if (name.seed === 'founder:isaac' && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
-      await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
+    if (isFounder(name.seed) && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
+      await insertCopy(env, copyRow(FOUNDER_COPIES.aura, name.key, 'founder'), 1);
     }
     // A guy's rarity is recounted when the traits it counts change (tone, arms and feet joined them).
     // Rarity is the deal's: a picked look, earned parts and all, never changes it.
@@ -187,12 +181,12 @@ async function ensurePlayer(env, name) {
   const made = await env.DB.prepare('INSERT INTO players(key, guy_one_in, at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING')
     .bind(name.key, guyOneIn(dealt(name.seed)), at).run();
   if (made.meta.changes) {
-    const founder = name.seed === 'founder:isaac';
+    const founder = isFounder(name.seed);
     for (const [i, g] of GAMES.entries()) await insertCopy(env, copyRow(starter(name.seed, g), name.key, 'starter'), !founder && i === 0 ? 1 : 0);
     if (founder) {
       // He wears Origin on a clean background; the Gold flag is his to put on.
-      await insertCopy(env, copyRow(FOUNDER.copy, name.key, 'founder'), 0);
-      await insertCopy(env, copyRow(FOUNDER.aura, name.key, 'founder'), 1);
+      await insertCopy(env, copyRow(FOUNDER_COPIES.flag, name.key, 'founder'), 0);
+      await insertCopy(env, copyRow(FOUNDER_COPIES.aura, name.key, 'founder'), 1);
     }
   }
   await giveStarter(env, name.key);
@@ -216,6 +210,23 @@ async function pay(env, key, cost, what) {
   return json({ error: shortOf(need, s.linked), need, stamps: s }, 402);
 }
 
+/**
+ * Whether today's free capsule is open to a player: the founder's always is; anyone else's once they have
+ * finished a DLE Club game today (UTC), as the club's days say. Only a name with a Google sign-in can be read
+ * from the club. A player who hasn't played yet is read again, at most a minute apart, so a game just finished
+ * counts. `{ open, why }`, `why` saying what to do while it's shut.
+ */
+async function freeCapsule(env, key) {
+  if (free(key)) return { open: true, why: '' };
+  const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
+  if (!name?.account) return { open: false, why: FREE_SHUT.signin };
+  const day = today();
+  if (await playedOn(env, key, day)) return { open: true, why: '' };
+  await readClub(env, key, undefined, undefined, TODAY_EVERY);
+  return (await playedOn(env, key, day)) ? { open: true, why: '' } : { open: false, why: FREE_SHUT.play };
+}
+const FREE_SHUT = { signin: 'Sign in to DLE Club and finish a game today to open it.', play: 'Finish a DLE Club game today to open it.' };
+
 /** A player's stamps, with whether their name has a Google sign-in for the club to read and when it was claimed. */
 async function stampsOf(env, key) {
   const name = await env.DB.prepare('SELECT account, at FROM names WHERE key = ?').bind(key).first();
@@ -230,7 +241,7 @@ async function meState(env, name) {
   const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all()).results, today());
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, stamps: await stampsOf(env, name.key), freeDay: p.free_day, todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
+  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, stamps: await stampsOf(env, name.key), freeDay: p.free_day, freeCapsule: await freeCapsule(env, name.key), todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
     swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
@@ -248,12 +259,14 @@ async function me(request, env, key, action) {
 
   if (action === 'open') {
     // A mystery capsule (5 stamps) comes from any machine at random, drawn here; a picked machine costs 8.
-    // Today's machine is also free once a day.
+    // Today's machine is also free once a day, for a player who has finished a DLE Club game today.
     const mystery = !!body.mystery && !body.free;
     const game = mystery ? mysteryMachine(crypto.randomUUID()) : body.game;
     if (!GAMES.includes(game)) return json({ error: 'Unknown machine' }, 400);
     if (body.free) {
       if (game !== todayGame()) return json({ error: 'Only today’s machine is free' }, 409);
+      const shut = await freeCapsule(env, key);
+      if (!shut.open) return json({ error: shut.why, freeCapsule: shut }, 403);
       const r = await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day <> ?').bind(day, key, day).run();
       if (!r.meta.changes) return json({ error: 'Today’s free capsule is already open' }, 409);
     } else {
@@ -284,13 +297,20 @@ async function me(request, env, key, action) {
   if (action === 'trade') {
     // Trade up: five copies of one grade, none worn, starters and the founder's aside, for one copy of the next
     // grade from one of their games. The five go in one guarded delete, so a copy can never be traded twice.
-    const ids = Array.isArray(body.ids) ? [...new Set(body.ids.map(Number))].filter(Number.isInteger) : [];
+    const asked = Array.isArray(body.ids) ? body.ids : [];
+    const ids = [...new Set(asked.map(Number))];
+    // An id the page didn't have (a copy it hadn't heard about from the server) comes as null.
+    if (ids.some(id => !Number.isInteger(id) || id <= 0)) return json({ error: 'Your locker changed. Reload and try again.' }, 409);
     if (ids.length !== RULES.trade) return json({ error: `Pick ${RULES.trade} copies to trade` }, 400);
     const marks = ids.map(() => '?').join(',');
     const { results: give } = await env.DB.prepare(`SELECT * FROM copies WHERE key = ? AND id IN (${marks})`).bind(key, ...ids).all();
     if (give.length !== ids.length) return json({ error: 'Not your copies' }, 404);
-    const grade = give[0].grade;
-    if (give.some(c => c.grade !== grade || c.worn || c.source === 'starter' || c.source === 'founder')) return json({ error: 'Trade five copies of one grade, none worn' }, 400);
+    // A copy's grade is its code's, as the page reads it: the stored column is only an index for the Pulls page.
+    const grades = give.map(c => { const o = decode(c.code); return o ? gradeIndex(o) : -1; });
+    const grade = grades[0];
+    if (grades.some(g => g !== grade || g < 0)) return json({ error: 'Trade five copies of one grade' }, 400);
+    if (give.some(c => c.source === 'starter' || c.source === 'founder')) return json({ error: 'Starters and the founder’s copies can’t be traded' }, 400);
+    if (give.some(c => c.worn)) return json({ error: 'Take it off first: worn copies can’t be traded' }, 400);
     // A trade never makes an aura: they only come out of capsules.
     if (grade >= GRADES.findIndex(g => g.id === 'grail')) return json({ error: 'A Grail is as high as a trade goes' }, 400);
     // The result comes from one of the inputs' machines, each as likely as its share of the five, and its float
@@ -298,12 +318,15 @@ async function me(request, env, key, action) {
     const game = give[Math.floor(Math.random() * give.length)].game;
     const out = tradeGrade(grade, Math.random(), GRADES.findIndex(g => g.id === 'grail'));
     let o = null;
-    for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (GRADES.findIndex(g => g.id === gradeOf(r).id) === out.grade) { o = r; break; } }
+    for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (gradeIndex(r) === out.grade) { o = r; break; } }
     if (!o) return json({ error: 'Could not trade just now' }, 503);
     o = { ...o, scuff: tradeFloat(give.map(c => ({ finish: c.finish, scuff: c.scuff })), o.finish) };
-    const fits = `key = ? AND worn = 0 AND grade = ? AND source NOT IN ('starter', 'founder') AND id IN (${marks})`;
-    const gone = await env.DB.prepare(`DELETE FROM copies WHERE ${fits} AND (SELECT COUNT(*) FROM copies WHERE ${fits}) = ?`)
-      .bind(key, grade, ...ids, key, grade, ...ids, ids.length).run();
+    const fits = `key = ? AND worn = 0 AND source NOT IN ('starter', 'founder') AND id IN (${marks})`;
+    const [gone] = await env.DB.batch([
+      env.DB.prepare(`DELETE FROM copies WHERE ${fits} AND (SELECT COUNT(*) FROM copies WHERE ${fits}) = ?`).bind(key, ...ids, key, ...ids, ids.length),
+      // Offers of the traded copies can no longer happen.
+      env.DB.prepare(`UPDATE swaps SET state = 'void' WHERE state = 'open' AND (give IN (${marks}) OR want IN (${marks})) AND NOT EXISTS (SELECT 1 FROM copies WHERE id IN (${marks}))`).bind(...ids, ...ids, ...ids),
+    ]);
     if (gone.meta.changes !== ids.length) return json({ error: 'Those copies changed. Reload and try again.' }, 409);
     const copy = await insertCopy(env, copyRow(o, key, 'trade'));
     return json({ copy: publicCopy(copy), traded: ids, outcome: out.outcome }, 201);
@@ -335,15 +358,20 @@ async function me(request, env, key, action) {
     return json({ id: r.meta.last_row_id, from: key, to, give: give.id, want: want ? want.id : null, at }, 201);
   }
   if (action === 'swap-accept') {
-    // Both copies move in one transaction, and only if both are still where the offer found them and unworn.
+    // Both copies move in one transaction, and only if both are still where the offer found them. The one offered
+    // must still be unworn; the one asked for is the accepter's own, so if they have it on it comes off them (with
+    // its days worn banked), since an offer is most often for the copy a player shows on their guy.
     const id = Number(body.id), nonce = crypto.randomUUID();
     const s = await env.DB.prepare("SELECT * FROM swaps WHERE id = ? AND to_key = ? AND state = 'open'").bind(id, key).first();
     if (!s) return json({ error: 'That offer is gone' }, 404);
-    const ok = `EXISTS (SELECT 1 FROM copies WHERE id = swaps.give AND key = swaps.from_key AND worn = 0) AND (swaps.want IS NULL OR EXISTS (SELECT 1 FROM copies WHERE id = swaps.want AND key = swaps.to_key AND worn = 0))`;
+    const ok = `EXISTS (SELECT 1 FROM copies WHERE id = swaps.give AND key = swaps.from_key AND worn = 0) AND (swaps.want IS NULL OR EXISTS (SELECT 1 FROM copies WHERE id = swaps.want AND key = swaps.to_key))`;
     const won = 'EXISTS (SELECT 1 FROM swaps WHERE id = ? AND nonce = ?)';
     const moved = s.want ? [s.give, s.want] : [s.give];
+    const bank = s.want && await statsReady(env)
+      ? [env.DB.prepare(`UPDATE copies SET ${BANK_DAYS} WHERE id = ? AND key = ? AND worn = 1 AND worn_since <> '' AND ${won}`).bind(day, day, s.want, key, id, nonce)] : [];
     const r = await env.DB.batch([
       env.DB.prepare(`UPDATE swaps SET state = 'done', nonce = ? WHERE id = ? AND to_key = ? AND state = 'open' AND ${ok}`).bind(nonce, id, key),
+      ...bank,
       env.DB.prepare(`UPDATE copies SET key = ?, worn = 0 WHERE id = ? AND ${won}`).bind(s.to_key, s.give, id, nonce),
       env.DB.prepare(`UPDATE copies SET key = ?, worn = 0 WHERE id = ? AND ${won}`).bind(s.from_key, s.want ?? -1, id, nonce),
       // Other open offers for either copy can no longer happen.
@@ -450,7 +478,8 @@ async function me(request, env, key, action) {
 
 /** Everyone's guys, rarest or newest first, with what each wears and their best copy. */
 async function guys(env, url) {
-  const sort = url.searchParams.get('sort') === 'recent' ? 'n.at DESC' : 'COALESCE(p.guy_one_in, 0) DESC, n.at';
+  // Rarest first puts the founder at the top: he is ranked the one of one, whatever his traits' odds.
+  const sort = url.searchParams.get('sort') === 'recent' ? 'n.at DESC' : `n.seed = '${FOUNDER_SEED}' DESC, COALESCE(p.guy_one_in, 0) DESC, n.at`;
   const limit = Math.min(200, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '48') || 48));
   const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0') || 0);
   // Searched by skeleton, so `cool_guy` finds `coolguy` and the other way round.
@@ -569,7 +598,7 @@ export async function api(request, env, url = new URL(request.url)) {
   if (key === 'isaac' && (!env.FOUNDER_SECRET || !await equal(request.headers.get('X-Founder-Secret') || '', env.FOUNDER_SECRET))) {
     return json({ error: 'This name is reserved' }, 403);
   }
-  const seed = key === 'isaac' ? 'founder:isaac' : makeSeed();
+  const seed = key === 'isaac' ? FOUNDER_SEED : makeSeed();
   const ownerToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
   const at = new Date().toISOString();
   const session = await sessionAccount(request, env);

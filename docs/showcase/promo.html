@@ -127,6 +127,9 @@
   .mine .who p { font-size: 16px; color: var(--ink-2); line-height: 1.35; }
   .mine-actions { display: flex; gap: 8px; margin-top: 18px; }
   .mine-actions .btn { flex: 1; margin: 0; }
+  .mine-actions .btn.shut { --c: var(--panel-2); --d: var(--edge); color: var(--ink-2); }
+  .mine-actions .btn .lock, .mcard p .lock { margin-right: 6px; vertical-align: -1px; }
+  .free-why { margin: 10px 0 0; font-size: 16px; line-height: 1.35; color: var(--ink-2); }
   .claim-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; }
 
   /* the hand: the rarest drops fanned like cards */
@@ -1181,6 +1184,7 @@
             <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span><p id="me-odds"></p></div>
           </div>
           <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button><a class="btn" id="go-back" hidden></a></div>
+          <p class="free-why" id="free-why" hidden></p>
           <div class="claim-foot"><button class="linkish" type="button" id="save-google" hidden>Save with Google</button><button class="linkish" type="button" id="reset">Let the name go</button></div>
         </div>
       </div>
@@ -1917,15 +1921,9 @@
 
 
   /* ---------------------------------------------- the founder: "isaac" is reserved for the person who made the club.
-   * A clean guy in a crown, and two copies no capsule can give: the Gold flag and the Origin aura. */
-  const byName = (list, name) => list.findIndex(x => x.name === name);
-  const FOUNDER = {
-    parts: { head: byName(LG.heads, 'round'), eyes: byName(LG.eyes, 'glossy'), mouth: byName(LG.mouths, 'smile'), cheeks: byName(LG.cheeks, 'blush'), hair: byName(LG.hair, 'crown'), body: 0, accessory: 0, arms: 2, feet: 0, shade: 1, flip: false, lucky: false },
-    palette: byName(LG.palettes, 'Ocean'),
-    copy: { item: 'trackdle.flag', finish: 'gold', scuff: 0, print: 1, tally: 999, pins: ['crown', 'star', 'flame'] },
-    aura: { item: 'aura.origin', finish: 'classic', scuff: 0, print: 1, fx: 'shimmer' },
-  };
-  const RESERVED = { isaac: FOUNDER };
+   * The library knows him (LG.FOUNDER_SEED): his seed resolves to a clean guy in a crown, flagged `founder`, and
+   * LG.guyRank ranks him Founder · One of one. Two copies no capsule can give are his: the Gold flag and the Origin aura. */
+  const RESERVED = { isaac: true };
   // The founder claims the reserved name with ?founder=<the Worker's FOUNDER_SECRET>, kept for this tab only
   // and taken out of the address at once.
   let founderKey = null;
@@ -1934,11 +1932,10 @@
     if (f) { founderKey = f; sessionStorage.setItem('lil-guys-founder', f); q.delete('founder'); history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash); }
     else founderKey = sessionStorage.getItem('lil-guys-founder');
   } catch (e) {}
-  const founderOf = seed => seed === 'founder:isaac' ? FOUNDER : null;
-  const dealt = seed => { const f = founderOf(seed); return f ? { ...LG.resolve(seed, f.parts), palette: f.palette, founder: true } : LG.resolve(seed); };
-  // Where a guy stands. The founder was picked by hand, not dealt, so odds don't rank him: he's the one of one.
-  const FOUNDER_RANK = { top: 0, tier: 5, name: 'Founder', label: 'One of one' };
-  const guyRank = cfg => (cfg.base || cfg).founder ? FOUNDER_RANK : LG.guyRank(cfg.base || cfg);
+  const founderOf = seed => LG.isFounder(seed);
+  const dealt = seed => LG.resolve(seed);
+  // Where a guy stands, as dealt. The founder was picked by hand, not dealt, so the library ranks him the one of one.
+  const guyRank = cfg => LG.guyRank(cfg.base || cfg);
   const rankLine = r => r.label === r.name ? r.name : `${r.label} · ${r.name}`;
   // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
   const unlocks = () => LG.unlocksOf(state?.parts || []);
@@ -2073,12 +2070,13 @@
     if (body !== undefined) Object.assign(init, { method: 'POST', headers: { ...init.headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const r = await fetch(`/api/me/${state.key}/${action}`, init);
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw Object.assign(new Error(d.error || 'Something went wrong'), { status: r.status, need: d.need, stamps: d.stamps });
+    if (!r.ok) throw Object.assign(new Error(d.error || 'Something went wrong'), { status: r.status, need: d.need, stamps: d.stamps, freeCapsule: d.freeCapsule });
     return d;
   }
   function fromServer(s) {
     UNLIMITED = !!s.stamps?.unlimited;
-    state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', stamps: s.stamps, free: s.freeDay,
+    // `freeCapsule`: whether today's free capsule is open (a DLE Club game finished today), and if not, why.
+    state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', stamps: s.stamps, free: s.freeDay, freeCapsule: s.freeCapsule || { open: true, why: '' },
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
       tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), pulls: Object.fromEntries(s.copies.filter(c => c.pull).map(c => [c.code, c.pull])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
@@ -2290,7 +2288,7 @@
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
   async function claim(key) {
-    let seed = RESERVED[key] ? `founder:${key}` : LG.makeSeed(), ownerToken = null;
+    let seed = RESERVED[key] ? LG.FOUNDER_SEED : LG.makeSeed(), ownerToken = null;
     if (!backendReady) return;
     if (isLive()) {
       try { const claimed = await namesApi('/' + key, { method: 'POST', headers: RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {} }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
@@ -2313,8 +2311,7 @@
     }
     state = { v: 2, key, seed, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
-    const f = founderOf(seed);
-    if (f) { state.copies.push(LG.encode(f.copy), LG.encode(f.aura)); state.worn.aura = LG.encode(f.aura); }
+    if (founderOf(seed)) { state.copies.push(LG.encode(LG.FOUNDER_COPIES.flag), LG.encode(LG.FOUNDER_COPIES.aura)); state.worn.aura = LG.encode(LG.FOUNDER_COPIES.aura); }
     else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
     save();
     if (isLive() && (ownerToken || signedIn)) { try { fromServer(await meApi('state')); } catch (e) { toast(e.message); } }
@@ -2335,7 +2332,7 @@
     if (db) { try { const ref = db.doc(`names/${key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.delete(); } catch (e) {} }
     renderAll();
   });
-  $('go-free').addEventListener('click', () => { if (state.free !== today) { state.free = today; open(todayGame, 'Daily capsule'); } else $('roll').scrollIntoView({ behavior: 'smooth' }); });
+  $('go-free').addEventListener('click', () => { if (state.free !== today) openFree(todayGame); else $('roll').scrollIntoView({ behavior: 'smooth' }); });
 
   // Who else has claimed: the latest dozen, live.
   function showRecent(list) {
@@ -2387,8 +2384,10 @@
   const EARTH = 8.1e9;
   let DIST = null;
   const distSample = () => DIST || (DIST = Array.from({ length: 4000 }, () => Math.log10(LG.guyOneIn(LG.resolve(LG.makeSeed())))).sort((a, b) => a - b));
-  function meaning(host, n) {
+  function meaning(host, n, founder = false) {
     const d = distSample(), lg = Math.log10(n), below = d.filter(v => v < lg).length / d.length;
+    // The founder isn't ranked by his traits' odds: he was picked by hand, the one of one.
+    if (founder) { host.innerHTML = '<p>Picked by hand for the founder: <b>the one of one</b>.</p>'; return 1; }
     const people = EARTH / n;
     const line = people >= 1.5 ? `If everyone on Earth had a guy, about <b>${words(Math.round(people))}</b> would look like yours.`
       : people >= 0.67 ? `If everyone on Earth had a guy, <b>yours would be the only one</b> like it.`
@@ -2432,7 +2431,7 @@
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg.base || cfg);
-    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg)); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
+    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
     setTotal(scored ? +$('score').dataset.n : 1);
     if (scored) fire(heatOf(+$('score').dataset.n));
   }
@@ -2865,9 +2864,12 @@
     hydrate($('me-card'));
     const n = LG.guyOneIn(dealt(state.seed));
     $('me-odds').textContent = founderOf(state.seed) ? 'Picked by hand for the founder. The one of one.' : guyRank(guyConfig(state.seed)).top > 0.5 ? 'Dealt just for you.' : `Dealt just for you: the ${guyRank(guyConfig(state.seed)).label.toLowerCase()} of every guy dealt.`;
-    $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ One of a kind</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
+    $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${guyConfig(state.seed).founder ? 'Founder · one of one' : 'One of a kind'}</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy. See who everyone else got.`;
-    $('go-free').textContent = state.free === today ? 'Open a capsule' : "Open today's free capsule";
+    const why = state.free === today ? '' : freeWhy();
+    $('go-free').innerHTML = state.free === today ? 'Open a capsule' : why ? `${LOCK}Today's free capsule` : "Open today's free capsule";
+    $('go-free').classList.toggle('shut', !!why);
+    $('free-why').hidden = !why; $('free-why').textContent = why;
   }
 
   /* ---------------------------------------------- machines */
@@ -2907,7 +2909,7 @@
       const first = i === 0, free = first && state && state.free !== today, big = i === 1 ? ' big' : '';
       return `<div class="mwrap${first ? ' today' : big}"><button class="mcard${first ? ' today' : big}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : g === newest ? '<span class="pill flag">New</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? 'Free when you finish today' : `${tk} ${COST.machine} · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
+        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? `${first && state && freeWhy() ? LOCK : ''}Free when you finish today` : `${tk} ${COST.machine} · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
@@ -2917,7 +2919,7 @@
     const b = e.target.closest('[data-g]'); if (!b) return;
     if (!state) { $('name').focus(); toast('Claim a name first: your starters come with it.'); return; }
     const g = b.dataset.g;
-    if (g === todayGame && state.free !== today) { state.free = today; open(g, 'Daily capsule'); return; }
+    if (g === todayGame && state.free !== today) { openFree(g); return; }
     if (!pay(COST.machine)) return;
     open(g, 'Capsule');
   });
@@ -2976,7 +2978,7 @@
     $('mystery').classList.toggle('ghost', !enough);
     if (enough) $('pp-short').hidden = true;
     else if (st.ready) { $('pp-short').hidden = false; $('pp-short').innerHTML = esc(moreText(COST.mystery - st.balance, st.linked)).replace(/^(\d+ more stamps?)/, '<b>$1</b>'); }
-    $('pp-earn').textContent = !st.ready ? 'Stamps open soon. Today\'s free capsule is still yours.' : UNLIMITED ? 'The founder\'s stamps never run out.' : isLive() && !st.linked ? 'Sign in to DLE Club and play to earn stamps.' : '';
+    $('pp-earn').textContent = !st.ready ? 'Stamps open soon.' : UNLIMITED ? 'The founder\'s stamps never run out.' : isLive() && !st.linked ? 'Sign in to DLE Club and play to earn stamps.' : '';
     $('pp-earn').hidden = !$('pp-earn').textContent;
     // The demo has no club to play, so a pretend gauntlet stands in.
     $('earn').hidden = isLive();
@@ -3015,7 +3017,7 @@
   function pay(price) {
     const st = stampsOf();
     if (UNLIMITED || dev) return true;
-    if (!st.ready) { short(0, 'Stamps open soon. Today\'s free capsule is still yours.'); return false; }
+    if (!st.ready) { short(0, 'Stamps open soon.'); return false; }
     // The live balance may be behind a game just finished: the server reads the club before it decides.
     if (st.balance < price) { if (isLive()) return true; short(price - st.balance); return false; }
     if (!isLive()) st.balance -= price;
@@ -3056,6 +3058,19 @@
   }
 
   const LUCK_WORDS = { beginner: 'Beginner\'s luck', pity: 'Lucky break' };
+  // On the live site today's free capsule opens once the player has finished a DLE Club game today; the server
+  // says whether they have (`state.freeCapsule`) and, while not, what to do. The demo can't know, so it's open there.
+  function freeWhy() { return isLive() && state?.freeCapsule && !state.freeCapsule.open ? state.freeCapsule.why : ''; }
+  async function openFree(g) {
+    if (freeWhy()) {
+      // Ask again first: a game finished since the page loaded counts.
+      try { fromServer(await meApi('state')); } catch (e) {}
+      renderAll();
+      if (freeWhy()) { toast(freeWhy()); return; }
+    }
+    state.free = today;
+    open(g, 'Daily capsule');
+  }
   async function open(g, how) {
     const mystery = how === 'Mystery capsule';
     if (isLive()) {
@@ -3066,6 +3081,8 @@
         reveal(LG.decode(r.copy.code), r.game, r.luck ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part);
       } catch (e) {
         if (e.stamps) state.stamps = e.stamps;
+        // A free capsule the server kept shut is still to come today.
+        if (e.freeCapsule) { state.freeCapsule = e.freeCapsule; state.free = ''; }
         if (e.status === 402) short(e.need, e.message); else toast(e.message);
         renderAll();
       }
@@ -3697,7 +3714,7 @@
   const CATS = [{ id: '', name: 'All', one: 'capsule', c: '#5d6b8a' }, { id: 'skin', name: 'Skins', one: 'Skin', c: '#2f9b6e' }, { id: 'hat', name: 'Hats', one: 'Hat', c: '#d9702a' }, { id: 'frame', name: 'Frames', one: 'Frame', c: '#7a52d6' }, { id: 'buddy', name: 'Buddies', one: 'Buddy', c: '#cf4578' }, { id: 'aura', name: 'Auras', one: 'Aura', c: '#14a89c' }];
   const catOf = slot => CATS.find(c => c.id === slot) || CATS[0];
   const icon = id => pixIcon(id, catOf(id).c);
-  const founderCopy = o => !!founderOf(state.seed) && (o.item === 'aura.origin' || (o.tally === 999 && o.print === 1 && o.finish === 'gold'));
+  const founderCopy = o => founderOf(state.seed) && LG.isFounderCopy(o);
   let filter = -1, cat = '';
   // Ways to sort a collection; `at` is how new a copy is (bigger is newer).
   const SORTS = [['rarest', 'Rarest'], ['newest', 'Newest'], ['float', 'Best float'], ['game', 'By game'], ['slot', 'By slot'], ['name', 'A to Z']];
@@ -3916,16 +3933,26 @@
       renderTrades(); return;
     }
     const b = e.target.closest('[data-trade]'); if (!b || b.disabled) return;
-    const g = +b.dataset.trade, give = picked(g);
+    const g = +b.dataset.trade;
+    let give = picked(g);
     if (give.length < TRADE) return;
     $('trades').querySelectorAll('[data-trade]').forEach(x => { x.disabled = true; });
+    // The server takes copies by id. One the page has no id for (the locker changed in another tab, or a swap went
+    // through) means reading the locker again before asking.
+    if (isLive() && give.some(c => state.ids?.[c.code] == null)) {
+      try { fromServer(await meApi('state')); } catch (err) {}
+      give = picked(g);
+      if (give.length < TRADE || give.some(c => state.ids?.[c.code] == null)) { toast('Your locker changed. Pick again.'); renderAll(); return; }
+    }
     // Ask for the result now; the machine plays while it comes back.
     const result = isLive()
-      ? meApi('trade', { ids: give.map(c => state.ids?.[c.code]) }).then(r => { state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; return { o: LG.decode(r.copy.code), outcome: r.outcome || 'up' }; })
+      ? meApi('trade', { ids: give.map(c => state.ids[c.code]) }).then(r => { state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; return { o: LG.decode(r.copy.code), outcome: r.outcome || 'up' }; })
       : Promise.resolve(demoTrade(g, give));
     result.catch(() => {});
     const got = await tradeMachine(g, give, result);
-    if (!got) { renderColl(); return; }
+    // A trade the server turned down leaves the locker as the server has it.
+    if (!got) { if (isLive()) await refreshLive(); else renderColl(); return; }
+    for (const c of give) delete state.ids?.[c.code];
     const gone = new Set(give.map(c => c.code));
     state.copies = state.copies.filter(code => !gone.has(code));
     state.fresh = (state.fresh || []).filter(code => !gone.has(code));
@@ -3987,8 +4014,10 @@
     $('swap-send').addEventListener('click', async () => {
       const target = want ? to : norm($('swap-to').value);
       if (!target) { toast('Whose name?'); return; }
+      if (state.ids?.[pick] == null) { try { fromServer(await meApi('state')); } catch (err) {} }
+      if (state.ids?.[pick] == null) { $('swapd').close(); toast('Your locker changed. Pick again.'); renderAll(); return; }
       try {
-        await meApi('swap', { to: target, give: state.ids?.[pick], want: want ? want.id : null });
+        await meApi('swap', { to: target, give: state.ids[pick], want: want ? want.id : null });
         $('swapd').close(); SFX.equip(); toast(want ? `Offer sent to @${target}.` : `Gift sent to @${target}. It's theirs when they accept.`); refreshLive();
       } catch (err) { toast(err.message); }
     });
@@ -4235,7 +4264,7 @@
     const odds = LG.copyOneIn(o), item = LG.itemById(o.item), tag = ctx.mine ? tagOf(code) : ctx.tag || '';
     const st = ctx.stats ?? (ctx.mine ? state.stats?.[code] : null), pull = ctx.pull ?? (ctx.mine ? state.pulls?.[code] : null);
     const ownerLine = `<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`;
-    const one = !!founderOf(ctx.seed) && (o.item === 'aura.origin' || (o.tally === 999 && o.print === 1 && o.finish === 'gold'));
+    const one = founderOf(ctx.seed) && LG.isFounderCopy(o);
     const others = ctx.mine ? wornCopies() : (ctx.worn || []).map(LG.decode).filter(Boolean);
     const caption = `@${ctx.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', the only one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
     $('insp-body').className = 'insp insp2';
@@ -4402,7 +4431,7 @@
       ['Max float', 'Over 0.99. Some collect the most battered copy of everything.'],
       ['Tally', `One copy in ten counts the days its owner finished their games wearing it. ${tally}`],
       ['Pins', `Earned in the games and stuck on for good, three at most: ${LG.PINS.map(p => `${esc(p.name)} (${esc(p.how.toLowerCase())})`).join(', ')}.`],
-      ['Souvenir', '<span class="souv">Souvenir · ' + today + '</span><br>The free capsule for finishing every game that day. No other capsule is one.'],
+      ['Souvenir', '<span class="souv">Souvenir · ' + today + '</span><br>The free capsule for finishing a DLE Club game that day. No other capsule is one.'],
       ['Gold rim', `A tally of ${LG.GOLD_RIM_DAYS} days rims the copy in gold.`],
       ['Float rank', 'On the live site every copy shows where its float ranks against every copy of it in its finish.'],
       ['Pull cost', `Every copy shows about how many stamps of capsules (${PRICE} each, picking the machine) it takes to pull one as good: its odds, in stamps.`],
@@ -4517,7 +4546,7 @@
     out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, guyRank(cfg).tier))}</div></div>
       <div class="scoring"><div class="tiles">${LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('')}</div>
       <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b}</span></div><div class="meaning" id="lab-meaning"></div></div></div>`;
-    hydrate(out); meaning($('lab-meaning'), n);
+    hydrate(out); meaning($('lab-meaning'), n, !!(cfg.base || cfg).founder);
   }
 
   function route() {
@@ -4609,7 +4638,7 @@
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('');
-    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg)); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
+    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
     const [a, b] = split(LG.guyOneIn(cfg.base || cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
     userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
     uCat = '';
