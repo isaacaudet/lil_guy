@@ -465,7 +465,12 @@ and baked pictures are wider for it (`buddyBeside`): his sixteen columns, then
 the buddy's room to his right, a clear pixel between them in every frame of
 every move, and the buddy hops a little on its own and when he does. A buddy
 is drawn up to 8×8 (`BUDDY_BOX`). The 16×16 icon has no room beside him, so it
-leaves the buddy out.
+leaves the buddy out. The small 26×42 card face (`cardFace`) has no room beside
+him either, so its buddy stands in front of the window's bottom-right corner,
+its feet on the plate under it, as if peeking out (`buddy: 'peek'`), or wholly
+on the plate (`buddy: 'floor'`, `FACE_BUDDY_SPOTS`). The guy stays at his full
+size either way. It hops with his moving picture's buddy's own hops
+(`buddyLift`), on the GPU and in plain code alike.
 
 **Seasonal hats.** Club birthday (12 October – 16 October), Pumpkin (20 October – 2 November), Snow cap (15 December – 6 January), Sweetheart (10 February – 16 February), New Year top hat (29 December – 2 January), Red lantern (20 January – 12 February), Shamrock (10 March – 18 March), Cherry blossom (19 March – 14 April), Painted egg (22 March – 25 April), Daisy chain (1 May – 31 May), Sun hat (14 June – 20 July), Fireworks (1 July – 7 July), Ice cream (1 August – 25 August), Maple leaf (20 September – 30 November), Turkey feathers (18 November – 30 November), Reindeer antlers (1 December – 24 December)
 only drop in their days: `inSeason(day)` lists what's dropping and

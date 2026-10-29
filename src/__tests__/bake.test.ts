@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { AURA_PAD } from '../animate';
-import { animate, AURAS, BAKED_SIZE, BUDDY_GUY_WIDTH, GUY_HEIGHT, GUY_WIDTH, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode } from '../index-headless';
+import { animate, AURAS, BAKED_SIZE, BUDDY_GUY_WIDTH, GUY_HEIGHT, GUY_WIDTH, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode, decode, faceMoves, buddyLift, FACE_BUDDY_SPOTS, FACE_WIDTH, FACE_HEIGHT, FRAME_HEIGHT } from '../index-headless';
 
 const aura = `${AURAS[0].id}~gold~0.0123456~20`;
 const hat = `${items.find(i => i.slot === 'hat' && !i.free)!.id}~nebula~0.0500000~7`;
@@ -47,6 +47,50 @@ describe('baked guys', () => {
     expect(cardFaceAt(face, 0)).toEqual(cardFaceAt(face, LOOP_MS));
     expect(total(bakeCard(faceSpec({ seed: 'Lux7', equip: [hat], grade: 3 })).delays)).toBe(LOOP_MS);
     expect(bakeCard(faceSpec({ seed: 'Maya0' })).frames).toHaveLength(1);
+  });
+
+  test('a buddy stands on the small face, the guy at his full size and left as he was', () => {
+    const lit = (b: Uint8Array) => { let n = 0; for (let i = 3; i < b.length; i += 4) if (b[i]) n++; return n; };
+    for (const [seed, buddy] of [['Maya0', 'pets.kitten'], ['Lux7', 'pets.puppy'], ['Theo1', 'pets.axolotl'], ['Hazel Newt', 'pets.bunny-buddy'], ['Wide', 'weighsies.whale']]) {
+      const plain = cardFace({ name: seed, grade: 1 });
+      expect(plain.hop).toBeNull();
+      expect(lit(plain.buddy)).toBe(0);
+      for (const spot of FACE_BUDDY_SPOTS) {
+        const face = cardFace({ name: seed, copies: [decode(`${buddy}~prism~0.1000000~300`)!], grade: 1, buddy: spot });
+        // Underneath the buddy, the face is the plain one: nothing of him moves or shrinks.
+        expect(face.base).toEqual(plain.base);
+        expect(lit(face.buddy)).toBeGreaterThan(20);
+        expect(faceMoves(face)).toBe(true);
+        // On the face, inside its bevel, and all of it shows when it hops.
+        for (let i = 0; i < FACE_WIDTH * FACE_HEIGHT; i++) if (face.buddy[i * 4 + 3]) {
+          const x = i % FACE_WIDTH, y = Math.floor(i / FACE_WIDTH);
+          expect(x >= 2 && x <= FACE_WIDTH - 3 && y >= 3 && y <= FACE_HEIGHT - 3).toBe(true);
+        }
+        const hops = Array.from({ length: LOOP_MS / 20 }, (_, k) => k * 20).filter(ms => buddyLift(face, ms));
+        expect(hops.length).toBeGreaterThan(0);
+        expect(hops.length).toBeLessThan(LOOP_MS / 20 / 4);
+        expect(cardFaceAt(face, hops[0])).not.toEqual(cardFaceAt(face, hops[0] - 200));
+        expect(cardFaceAt(face, 0)).toEqual(cardFaceAt(face, LOOP_MS));
+      }
+      // The default is the peek; the floor stands lower.
+      const top = (b: Uint8Array) => { for (let i = 3; i < b.length; i += 4) if (b[i]) return Math.floor((i - 3) / 4 / FACE_WIDTH); return -1; };
+      const peek = cardFace({ name: seed, copies: [decode(`${buddy}~plain~0.1000000~300`)!] }), floor = cardFace({ name: seed, copies: [decode(`${buddy}~plain~0.1000000~300`)!], buddy: 'floor' });
+      expect(top(floor.buddy)).toBeGreaterThan(top(peek.buddy));
+    }
+  });
+
+  test('the small face\'s buddy hops when his moving picture\'s does, on its own', () => {
+    const equip = ['pets.kitten~plain~0.1000000~300'];
+    const face = cardFace(faceSpec({ seed: 'Maya0', equip }));
+    const anim = animate('Maya0', 'idle', { equip, loop: { fit: true } });
+    // In an idle beat he stands still: wherever his buddy is up a row, the face's is too.
+    let t = 0, checked = 0;
+    for (const f of anim.frames) {
+      const floor = f.colors.map(row => row.slice(16).some(Boolean));
+      if (!floor[FRAME_HEIGHT - 1] && floor[FRAME_HEIGHT - 2]) { expect(buddyLift(face, f.at ?? t)).toBe(1); checked++; }
+      t += f.ms;
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 
   test('views: a move, a still, a card; nothing for a view there is not', () => {
