@@ -410,7 +410,7 @@
   .it-more { position: absolute; z-index: 2; right: 14px; top: 86px; width: 32px; height: 32px; border-radius: 6px; font-size: 24px; line-height: 1; color: var(--ink-2); background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); }
   .it-more:hover { color: #fff; }
 
-  /* trade up */
+  /* the workshop */
   .metal { display: flex; align-items: center; gap: 8px; font-size: 18px; }
   .metal b { margin-left: 6px; font-size: 24px; }
   .ingot { display: inline-grid; place-items: center; min-width: 40px; height: 28px; padding: 0 6px; border-radius: 4px; font-size: 16px; color: #1b1626; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25), inset 0 3px 0 rgba(255,255,255,.45); }
@@ -432,18 +432,6 @@
   .swatches [data-paint][aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 1px; }
   .swatches .scrape { width: auto; padding: 0 10px; background: var(--panel-2); color: var(--ink-2); font-size: 14px; }
   .smelt-one { margin-top: 10px; }
-  .trades { display: grid; gap: 12px; }
-  .tr-btns { display: flex; gap: 8px; align-items: center; }
-  .trade .tr-math { grid-column: 1 / -1; }
-  .trade { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 12px 16px; padding: 12px 14px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
-  .tr-give { display: flex; gap: 8px; flex-wrap: wrap; }
-  .tr-c { width: 56px; height: 56px; border-radius: 8px; display: grid; place-items: center; background: var(--well); box-shadow: inset 0 -4px 0 var(--g); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .5s; }
-  .tr-c.gap { background: none; box-shadow: inset 0 0 0 2px var(--panel-2); }
-  .tr-c canvas { image-rendering: pixelated; max-width: 44px; max-height: 44px; }
-  .tr-arrow { font-size: 32px; color: var(--ink-3); }
-  .tr-get { display: grid; justify-items: center; gap: 4px; min-width: 96px; }
-  .tr-get small { font-size: 16px; color: var(--ink-3); }
-  .trade.going .tr-c:not(.gap) { transform: translateX(var(--fly)) scale(.3); opacity: 0; }
 
   /* anime */
   .anime { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 14px; }
@@ -573,35 +561,6 @@
   .rz { display: grid; gap: 64px; }
   .rz-sec h2 { font-size: 48px; }
   .rz-sec > p { margin: 8px 0 20px; color: var(--ink-2); font-size: 24px; max-width: 52ch; }
-  .rz-trade { display: grid; gap: 14px; padding: 16px; border-radius: 14px; background: var(--panel); box-shadow: 0 6px 0 var(--edge); }
-  .rt-from button { height: 36px; }
-  .rt-flow { display: grid; grid-template-columns: auto auto auto auto minmax(0, 1fr); align-items: center; gap: 14px; }
-  .rt-in { display: grid; grid-template-columns: repeat(5, 72px); gap: 8px; }
-  .rt-c { position: relative; display: grid; place-items: center; grid-template-rows: 1fr auto; height: 96px; padding: 6px 0 2px; border-radius: 8px; background: var(--well); border: 3px solid var(--g); box-shadow: 0 5px 0 color-mix(in srgb, var(--g) 30%, #05060c); animation: rt-feed 3s ease-in-out infinite; animation-delay: calc(var(--k) * .15s); }
-  .rt-c canvas { image-rendering: pixelated; width: 48px; height: 48px; object-fit: contain; }
-  .rt-c em { font-style: normal; font-size: 16px; line-height: 1.3; color: var(--ink-2); }
-  @keyframes rt-nudge { 0%, 55%, 100% { transform: none; } 70% { transform: translateY(-6px); } }
-  @keyframes rt-feed { 0%, 55%, 100% { transform: none; } 70% { transform: translate(6px, -6px) rotate(3deg); } 82% { transform: translateX(2px); } }
-  .rt-arrow { display: flex; gap: 4px; }
-  .rt-arrow i { width: 8px; height: 8px; background: var(--ink-3); animation: rt-dot 1.2s steps(1) infinite; }
-  .rt-arrow i:nth-child(2) { animation-delay: .2s; } .rt-arrow i:nth-child(3) { animation-delay: .4s; }
-  @keyframes rt-dot { 0% { background: var(--gold); } 40% { background: var(--ink-3); } }
-  .rt-mach { display: grid; justify-items: center; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--panel-2); box-shadow: 0 5px 0 var(--edge); text-align: center; }
-  .rt-mico .ci { width: 60px; height: 48px; animation: mbob 1.8s ease-in-out infinite; }
-  .rt-mach b { font-size: 24px; line-height: 1.3; }
-  .rt-mach small { font-size: 16px; color: var(--ink-3); }
-  .rt-outs { display: grid; gap: 8px; min-width: 0; }
-  .rt-o { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 10px 6px 6px; border-radius: 10px; background: var(--panel-2); border: 3px solid var(--g); box-shadow: 0 5px 0 color-mix(in srgb, var(--g) 30%, #05060c); }
-  .rt-op { display: grid; place-items: center; height: 56px; border-radius: 8px; background: var(--well); }
-  .rt-op canvas { image-rendering: pixelated; width: 44px; height: 44px; object-fit: contain; }
-  .rt-ot { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 4px 10px; min-width: 0; }
-  .rt-ot b { font-size: 32px; line-height: 1.1; }
-  .rt-ot small { font-size: 16px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .rt-bar { grid-column: 1 / -1; height: 8px; border-radius: 2px; background: var(--well); overflow: hidden; }
-  .rt-bar i { display: block; height: 100%; background: var(--g); }
-  .rt-note { margin: 0; font-size: 16px; line-height: 1.4; color: var(--ink-2); }
-  @media (max-width: 1100px) { .rt-flow { grid-template-columns: 1fr; justify-items: center; } .rt-arrow { transform: rotate(90deg); } .rt-outs { width: 100%; } }
-  @media (max-width: 480px) { .rt-in { grid-template-columns: repeat(5, minmax(0, 52px)); gap: 6px; } .rt-c { height: 80px; animation-name: rt-nudge; } .rt-ot small { white-space: normal; } .rt-c canvas { width: 40px; height: 40px; } .rt-ot { grid-template-columns: auto auto; } .rt-ot small { grid-column: 1 / -1; } }
   .rz-ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
   /* A grade as a card with depth: a flat face in its colour's frame, standing on a hard shadow, no gloss. Each
      says what a capsule of that grade holds: the finishes, their float range, the print, the chance of an effect. */
@@ -1001,15 +960,6 @@
   .set .badge-done { position: absolute; top: -10px; right: -6px; transform: rotate(5deg); }
   .sets.small { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-bottom: 16px; }
   .sets.small .set-items { display: none; }
-  /* trade-up picking */
-  .tr-pick { grid-column: 1 / -1; display: grid; gap: 8px; padding-top: 6px; }
-  .tr-pick .inv-mini { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tr-pick .tr-c { cursor: pointer; opacity: .5; }
-  .tr-pick .tr-c[aria-pressed="true"] { opacity: 1; box-shadow: inset 0 -4px 0 var(--g), 0 0 0 3px var(--gold); }
-  .tr-math { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 16px; color: var(--ink-2); }
-  .tr-math b { color: var(--ink); }
-  .tr-c small { position: absolute; left: 2px; bottom: 1px; font-size: 16px; line-height: 1; color: var(--ink-2); text-shadow: 0 1px 0 #000; }
-  .tr-c { position: relative; }
   /* swaps */
   .swaps { display: grid; gap: 10px; }
   .swap { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); }
@@ -1030,30 +980,6 @@
   .swapp .pickc em { font-style: normal; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .swapp .pickc[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
   @media (max-width: 760px) { .swap { grid-template-columns: auto auto auto; } .swap .sw-who, .swap .sw-acts { grid-column: 1 / -1; } }
-  /* the trade-up machine: five copies in, a dial that could land on a dud, the next grade or two up */
-  .tu { position: fixed; inset: 0; z-index: 45; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px 16px; background: #0b0e18; }
-  .tu-cap { font-size: 32px; text-shadow: var(--ts); text-align: center; }
-  .tu-in { display: flex; gap: 10px; height: 72px; position: relative; z-index: 1; }
-  .tu-in .tr-c { width: 64px; height: 64px; transition: transform .45s cubic-bezier(.55,0,.8,.4), opacity .45s; }
-  .tu-in .tr-c.in { transform: translate(var(--tx), 150px) scale(.25) rotate(var(--rot)); opacity: 0; }
-  .tu-mach { position: relative; width: 300px; padding: 28px 20px 20px; border-radius: 16px; background: var(--panel-2); box-shadow: 0 6px 0 var(--edge), inset 0 -8px 0 rgba(0,0,0,.25); display: grid; gap: 12px; }
-  .tu-mouth { position: absolute; left: 50%; top: -10px; width: 120px; height: 20px; translate: -50% 0; border-radius: 6px; background: var(--well); box-shadow: inset 0 4px 0 #000; }
-  .tu-screen { height: 72px; border-radius: 10px; background: var(--well); display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 3px #000; }
-  .tu-dial { font-size: 48px; line-height: 1; color: var(--dc, var(--ink-3)); text-shadow: 0 3px 0 #000; }
-  .tu-dial.land { animation: slam .45s cubic-bezier(.2,1.5,.35,1); }
-  .tu-lamps { display: flex; justify-content: center; gap: 10px; }
-  .tu-lamps i { width: 16px; height: 16px; border-radius: 3px; background: #3a4258; box-shadow: 0 3px 0 var(--edge); }
-  .tu-mach.working .tu-lamps i { animation: lamp .5s steps(2) infinite; }
-  .tu-mach.working .tu-lamps i:nth-child(2n) { animation-delay: .25s; }
-  @keyframes lamp { 50% { background: var(--gold); } }
-  .tu-bar { height: 16px; border-radius: 4px; background: var(--well); overflow: hidden; }
-  .tu-bar i { display: block; height: 100%; width: 0; background: conic-gradient(from 270deg at 8px 8px, var(--gold) 90deg, var(--gold-d) 0) 0 0 / 12px 16px; transition: width .2s steps(8); }
-  .tu-chute { justify-self: center; width: 96px; height: 18px; border-radius: 0 0 8px 8px; background: var(--well); }
-  .tu-mach.working { animation: churn .12s steps(2) infinite; }
-  @keyframes churn { 50% { translate: 2px -1px; } }
-  .tu-mach.done { animation: thud .35s cubic-bezier(.2,1.6,.4,1); }
-  @keyframes thud { 0% { transform: scale(1.06, .92); } 100% { transform: none; } }
-  .tu-odds { font-size: 16px; color: var(--ink-3); text-align: center; }
   .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; background: var(--paper); color: var(--paper-ink); padding: 10px 16px; border-radius: 10px; font-size: 16px; box-shadow: var(--lift), 0 12px 30px rgba(0,0,0,.4); }
 
   @media (max-width: 1000px) {
@@ -1091,9 +1017,6 @@
     .lk-slot .txt b { font-size: 16px; }
     .lk-slot .pic { width: 44px; height: 36px; }
     .inv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .trade { grid-template-columns: minmax(0, 1fr) auto; }
-    .tr-give { flex-wrap: nowrap; gap: 4px; } .tr-c { width: 40px; height: 40px; } .tr-c canvas { max-width: 32px; max-height: 32px; }
-    .tr-arrow { display: none; }
     .result.withinfo { grid-template-columns: minmax(0, 1fr); row-gap: 10px; }
     .result.withinfo .flip, .result.withinfo .won-info { grid-column: 1; grid-row: auto; }
     .result.withinfo .flip { width: 190px; }
@@ -1270,11 +1193,6 @@
   </section>
 
 
-  <section id="trade-sec">
-    <div class="sec-h"><div><h2>Trade up</h2><p>Five copies of one grade into the machine. Usually one of the next grade comes out; sometimes a dud, now and then two grades up.</p></div></div>
-    <div class="trades" id="trades"></div>
-  </section>
-
   <section id="ws-sec" hidden>
     <div class="sec-h"><div><h2>Workshop</h2><p>Smelt what you don't want into metal. Craft exactly the item you want, numbered. Paint a hat or a buddy.</p></div><div class="metal" id="metal"></div></div>
     <div class="ws">
@@ -1357,7 +1275,6 @@
     <div class="rz-sec"><h2>★ Auras</h2><p>One capsule in a thousand, from any machine. An aura goes round your guy and moves with it. Its float thins it, its print sets its timing, and it has its own finishes.</p><div class="rz-grid" id="rz-auras"></div><div class="rz-chips" id="rz-afin"></div></div>
     <div class="rz-sec"><h2>Effects</h2><p>A rare layer on top of the finish. About one item in fifteen has one, and about one aura in three, so an aura's effect is its version. The last three are the rarest.</p><div class="rz-grid" id="rz-fx"></div><div class="rz-grid" id="rz-fxa" style="margin-top:12px"></div></div>
     <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different. Collectors look for these.</p><div class="rz-extras" id="rz-extras"></div></div>
-    <div class="rz-sec"><h2>Trade up</h2><p>Five copies of one grade, none worn, go into the machine. Three times in four the next grade comes out, one time in five a dud at the same grade, one in twenty two grades up. Its float is the five's average place in their finishes, so clean inputs make a clean result, and it comes from one of their machines, each as likely as its share of the five. Trades stop at Grail: auras only come out of capsules.</p><div class="rz-trade" id="rz-trade"></div></div>
     <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, from twelve traits, each with its own odds. Multiply them for how rare yours is.</p><div class="traits-t" id="rz-traits"></div></div>
   </section>
  </div>
@@ -1410,18 +1327,6 @@
 </div>
 <dialog id="machd" aria-labelledby="mach-h"><div class="insp machp" id="mach-body"></div></dialog>
 <dialog id="swapd" aria-labelledby="swap-h"><div class="insp swapp" id="swap-body"></div></dialog>
-<div class="tu" id="tu" hidden role="dialog" aria-modal="true" aria-label="Trade up">
-  <p class="tu-cap" id="tu-cap"></p>
-  <div class="tu-in" id="tu-in"></div>
-  <div class="tu-mach" id="tu-mach">
-    <span class="tu-mouth"></span>
-    <div class="tu-screen"><span class="tu-dial" id="tu-dial"></span></div>
-    <div class="tu-lamps"><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="tu-bar"><i id="tu-fill"></i></div>
-    <span class="tu-chute"></span>
-  </div>
-  <p class="tu-odds" id="tu-odds"></p>
-</div>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="../lil-guy.js"></script>
@@ -3843,6 +3748,9 @@ onmessage = e => {
   // Ways to sort a collection; `at` is how new a copy is (bigger is newer).
   const SORTS = [['rarest', 'Rarest'], ['newest', 'Newest'], ['float', 'Best float'], ['game', 'By game'], ['slot', 'By slot'], ['name', 'A to Z']];
   const SLOT_ORDER = ['aura', 'skin', 'hat', 'frame', 'buddy'];
+  // How rare a copy is, worked out once per code: sorting a big locker asked it again on every comparison.
+  const oneInOf = new Map();
+  const copyOneIn = c => { if (!c.code) return LG.copyOneIn(c.o); let n = oneInOf.get(c.code); if (n === undefined) oneInOf.set(c.code, n = LG.copyOneIn(c.o)); return n; };
   const rarer = (a, b) => gradeIdx(b.o) - gradeIdx(a.o) || copyOneIn(b) - copyOneIn(a);
   function sortCopies(list, how) {
     const by = {
@@ -3860,7 +3768,7 @@ onmessage = e => {
   function renderColl() {
     const list = sortCopies(copies().map(c => ({ ...c, at: c.i })), lkSort);
     $('lk-sort').innerHTML = sortOptions(lkSort);
-    $('trade-sec').hidden = !state; $('ws-sec').hidden = !state;
+    $('ws-sec').hidden = !state;
     if (!state) {
       $('cats').innerHTML = ''; $('filters').innerHTML = ''; $('lk-slots').innerHTML = ''; $('lk-stage').innerHTML = '';
       $('grid').innerHTML = '<div class="empty" style="grid-column:1/-1">Claim a name and your nine starter hats land here.</div>'; return;
@@ -3903,7 +3811,6 @@ onmessage = e => {
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
     const byI = new Map(shown.map(c => [c.i, c]));
     itemsWhenNear('grid', [...$('grid').querySelectorAll('[data-i]')].map(b => [b.querySelector('canvas'), [byI.get(+b.dataset.i).o, state.seed, 120, 92]]));
-    renderTrades();
     renderWorkshop();
     renderSwaps();
   }
@@ -4012,82 +3919,6 @@ onmessage = e => {
     if (e.target.closest('#ws-craft')) craft(wsItem);
   });
 
-  /* ---------------------------------------------- trade up: five of a grade (the least rare first) for one of the next */
-  const TRADE = 5;
-  // How rare a copy is, worked out once per code: sorting a big locker asked it again on every comparison.
-  const oneInOf = new Map();
-  const copyOneIn = c => { if (!c.code) return LG.copyOneIn(c.o); let n = oneInOf.get(c.code); if (n === undefined) oneInOf.set(c.code, n = LG.copyOneIn(c.o)); return n; };
-  const tradeable = g => copies().filter(c => !LG.itemById(c.o.item).free && !wornCodes().includes(c.code) && !founderCopy(c.o) && gradeIdx(c.o) === g).sort((a, b) => copyOneIn(a) - copyOneIn(b));
-  // Which five go in: the player picks, starting from the five least worth keeping. The float that comes out is
-  // the five's average place in their finishes (CS's rule), and the game is each game's share of the five.
-  const tradePick = {}, tradeOpen = {}, tradeTouched = {};
-  function picked(g) {
-    const all = tradeable(g), have = new Set(all.map(c => c.code));
-    // Until the player changes the pick, it is always the five least worth keeping.
-    if (!tradeTouched[g]) tradePick[g] = all.slice(0, TRADE).map(c => c.code);
-    tradePick[g] = tradePick[g].filter(code => have.has(code));
-    return tradePick[g].map(code => all.find(c => c.code === code));
-  }
-  function tradeMath(give) {
-    if (give.length < TRADE) return '';
-    const share = give.reduce((a, c) => a + LG.floatShare(c.o), 0) / give.length;
-    const games = Object.entries(LG.tradeGames(give.map(c => c.o))).sort((a, b) => b[1] - a[1]);
-    return `<div class="tr-math"><span>Float lands <b>${Math.round(share * 100)}%</b> into its finish's range: about <b>${LG.tradeFloat(give.map(c => c.o), 'plain').toFixed(3)}</b> if Plain, <b>${LG.tradeFloat(give.map(c => c.o), 'sunset').toFixed(4)}</b> if a flashy finish</span><span>From ${games.map(([gm, p]) => `<b>${cap(gm)}</b> ${Math.round(p * 100)}%`).join(', ')}</span></div>`;
-  }
-  function renderTrades() {
-    $('trades').innerHTML = [0, 1, 2, 3].map(g => {
-      const all = tradeable(g), give = picked(g), from = LG.GRADES[g], to = LG.GRADES[g + 1];
-      const cells = Array.from({ length: TRADE }, (_, k) => give[k] ? `<span class="tr-c" style="--g:${from.color}"><canvas aria-hidden="true"></canvas><small>${give[k].o.scuff.toFixed(2)}</small></span>` : '<span class="tr-c gap"></span>').join('');
-      return `<div class="trade" data-row="${g}"><div class="tr-give" aria-label="Five ${esc(from.name)} copies">${cells}</div><span class="tr-arrow">→</span>
-        <span class="tr-get"><span class="bal" style="--b:${to.color}">${esc(to.name)}</span><small>${give.length} of ${TRADE} ${esc(from.name)}</small></span>
-        <span class="tr-btns"><button class="btn ghost small" type="button" data-choose="${g}"${all.length <= TRADE ? ' hidden' : ''}>${tradeOpen[g] ? 'Done' : `Choose (${all.length})`}</button><button class="btn" type="button" data-trade="${g}"${give.length < TRADE ? ' disabled' : ''}>Trade up</button></span>
-        ${tradeMath(give)}
-        ${tradeOpen[g] ? `<div class="tr-pick"><div class="inv-mini">${all.map(c => `<button class="tr-c" type="button" style="--g:${from.color}" data-pick="${g}" data-code="${esc(c.code)}" aria-pressed="${tradePick[g].includes(c.code)}" title="${esc(named(LG.nameOf(c.o).split(' | ')[0], tagOf(c.code)))} · float ${c.o.scuff.toFixed(4)}"><canvas aria-hidden="true"></canvas><small>${c.o.scuff.toFixed(2)}</small></button>`).join('')}</div></div>` : ''}</div>`;
-    }).join('');
-    $('trades').querySelectorAll('[data-row]').forEach(row => {
-      const g = +row.dataset.row, give = picked(g), all = tradeable(g);
-      row.querySelectorAll('.tr-give .tr-c canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 44, 44));
-      const byCode = new Map(all.map(c => [c.code, c]));
-      itemsWhenNear('trade-pick-' + g, [...row.querySelectorAll('[data-pick] canvas')].map(cv => [cv, [byCode.get(cv.parentElement.dataset.code).o, state.seed, 44, 44]]));
-    });
-  }
-  $('trades').addEventListener('click', async e => {
-    const ch = e.target.closest('[data-choose]');
-    if (ch) { const g = +ch.dataset.choose; tradeOpen[g] = !tradeOpen[g]; renderTrades(); return; }
-    const pk = e.target.closest('[data-pick]');
-    if (pk) {
-      const g = +pk.dataset.pick, code = pk.dataset.code, p = tradePick[g]; tradeTouched[g] = true;
-      if (p.includes(code)) p.splice(p.indexOf(code), 1); else { if (p.length >= TRADE) p.shift(); p.push(code); }
-      renderTrades(); return;
-    }
-    const b = e.target.closest('[data-trade]'); if (!b || b.disabled) return;
-    const g = +b.dataset.trade;
-    let give = picked(g);
-    if (give.length < TRADE) return;
-    $('trades').querySelectorAll('[data-trade]').forEach(x => { x.disabled = true; });
-    // The server takes copies by id. One the page has no id for (the locker changed in another tab, or a swap went
-    // through) means reading the locker again before asking.
-    if (isLive() && give.some(c => state.ids?.[c.code] == null)) {
-      try { fromServer(await meApi('state')); } catch (err) {}
-      give = picked(g);
-      if (give.length < TRADE || give.some(c => state.ids?.[c.code] == null)) { toast('Your locker changed. Pick again.'); renderAll(); return; }
-    }
-    // Ask for the result now; the machine plays while it comes back.
-    const result = isLive()
-      ? meApi('trade', { ids: give.map(c => state.ids[c.code]) }).then(r => { state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; return { o: LG.decode(r.copy.code), outcome: r.outcome || 'up' }; })
-      : Promise.resolve(demoTrade(g, give));
-    result.catch(() => {});
-    const got = await tradeMachine(g, give, result);
-    // A trade the server turned down leaves the locker as the server has it.
-    if (!got) { if (isLive()) await refreshLive(); else renderColl(); return; }
-    for (const c of give) delete state.ids?.[c.code];
-    const gone = new Set(give.map(c => c.code));
-    state.copies = state.copies.filter(code => !gone.has(code));
-    state.fresh = (state.fresh || []).filter(code => !gone.has(code));
-    delete tradePick[g]; delete tradeTouched[g];
-    reveal(got.o, null, `Trade up · ${TRADE_WORDS[got.outcome]}`);
-  });
-
   /* ---------------------------------------------- sets: every item a machine gives, in any finish */
   function renderSets(host, owned, full) {
     const sets = LG.GAMES.map(g => ({ g, ...LG.setProgress(g, owned) })).sort((a, b) => (b.got / b.total) - (a.got / a.total));
@@ -4152,51 +3983,6 @@ onmessage = e => {
     $('swapd').showModal();
   }
   $('swapd').addEventListener('click', e => { if (e.target === $('swapd')) $('swapd').close(); });
-
-  // The demo's trade, with the server's odds: a dud one time in five, two grades up one in twenty, never past Grail.
-  const TRADE_WORDS = { dud: 'A dud', up: 'One grade up', jump: 'Two grades up!' };
-  function demoTrade(g, give) {
-    const u = (strHash(`${state.seed}:trade-odds:${state.opened}`) % 10000) / 10000, top = 4;
-    const out = u < 0.2 ? { grade: g, outcome: 'dud' } : u >= 0.95 && g + 2 <= top ? { grade: g + 2, outcome: 'jump' } : { grade: Math.min(top, g + 1), outcome: 'up' };
-    const game = LG.itemById(give[strHash(`${state.seed}:${state.opened}`) % TRADE].o.item).game;
-    let o;
-    for (let i = 0; i < 50000; i++) { o = LG.roll(`${state.seed}:trade:${state.opened}:${i}`, game); if (gradeIdx(o) === out.grade) break; }
-    o = { ...o, scuff: LG.tradeFloat(give.map(c => c.o), o.finish) };
-    state.opened++;
-    return { o, outcome: out.outcome };
-  }
-  // The machine: the five drop in one by one, it churns while a dial flicks between what could come out, then it
-  // lands. Resolves to the result, or null if the trade failed.
-  async function tradeMachine(g, give, result) {
-    const from = LG.GRADES[g], cands = [g, g + 1, g + 2].filter(k => k <= 4).map(k => LG.GRADES[k]);
-    $('tu-cap').textContent = `Five ${from.name} in`;
-    $('tu-odds').textContent = `Usually ${LG.GRADES[Math.min(4, g + 1)].name}. One in five is a dud.${g + 2 <= 4 ? ` One in twenty jumps to ${LG.GRADES[g + 2].name}.` : ''}`;
-    $('tu-in').innerHTML = give.map((c, k) => `<span class="tr-c" style="--g:${from.color};--tx:${(2 - k) * 74}px;--rot:${(k - 2) * 40}deg"><canvas aria-hidden="true"></canvas></span>`).join('');
-    $('tu-in').querySelectorAll('canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 52, 52));
-    const dial = $('tu-dial'), fill = $('tu-fill'), mach = $('tu-mach');
-    dial.textContent = '?'; dial.style.removeProperty('--dc'); dial.classList.remove('land'); fill.style.width = '0'; mach.classList.remove('working', 'done');
-    $('tu').hidden = false; SFX.whoosh(0.22, 400, 2400, 0.06);
-    await sleep(500);
-    const cells = [...$('tu-in').children];
-    for (let k = 0; k < cells.length; k++) { cells[k].classList.add('in'); SFX.clunk(); fill.style.width = `${(k + 1) * 8}%`; await sleep(240); }
-    mach.classList.add('working'); SFX.riser(g + 1, 1.6);
-    // Flick between the outcomes, slowing down, until the result is in and the time is up.
-    let res = null, err = null; result.then(r => { res = r; }, e => { err = e; });
-    const t0 = performance.now();
-    for (let i = 0, wait = 60; ; i++) {
-      const c = cands[i % cands.length]; dial.textContent = c.name; dial.style.setProperty('--dc', c.color); SFX.reelTick(Math.min(1, (performance.now() - t0) / 2500));
-      fill.style.width = `${Math.min(96, 40 + (performance.now() - t0) / 30)}%`;
-      if (err) { $('tu').hidden = true; toast(err.message); return null; }
-      if (res && performance.now() - t0 > 1700 && LG.GRADES[gradeIdx(res.o)] === c) break;
-      await sleep(wait); if (performance.now() - t0 > 1000) wait = Math.min(260, wait * 1.18);
-    }
-    mach.classList.remove('working'); mach.classList.add('done'); fill.style.width = '100%';
-    dial.classList.add('land'); SFX.reelStop(); if (res.outcome === 'dud') SFX.bad(); else SFX.good();
-    $('tu-cap').textContent = res.outcome === 'dud' ? 'A dud.' : res.outcome === 'jump' ? 'Two grades up!' : `${LG.GRADES[gradeIdx(res.o)].name}!`;
-    await sleep(1100);
-    $('tu').hidden = true;
-    return res;
-  }
 
   /* ---------------------------------------------- who you could get: a deal of guys from fresh names, some wearing
    * something a capsule could give them */
@@ -4532,7 +4318,6 @@ onmessage = e => {
       + '<p class="oc-note">Bars on a log scale: each step left is ten times rarer.</p>';
     renderLab(seed);
     renderTraitTable();
-    renderTradeUp(seed);
 
     // Float: drag it and watch the copy wear.
     const fcv = $('rz-fcv'), slide = $('rz-f');
@@ -4585,34 +4370,6 @@ onmessage = e => {
       ['Pull cost', `Every copy shows about how many stamps of capsules (${PRICE} each, picking the machine) it takes to pull one as good: its odds, in stamps.`],
     ].map(([h, p]) => `<div class="rz-x"><h3>${esc(h)}</h3><p>${p}</p></div>`).join('');
 
-  }
-
-  // Trade up, shown working: five copies of a grade go into the machine and one comes out, with the real odds of
-  // each outcome and the float it would get. Pick the grade going in.
-  let rtFrom = 0;
-  function renderTradeUp(seed) {
-    const host = $('rz-trade'); if (!host) return;
-    const finOf = k => Object.entries(LG.FINISHES).find(([, f]) => f.grade === k && !f.aura)[0];
-    const hats = LG.GAMES.map(g => LG.gameItems(g).find(i => !i.free && i.slot !== 'aura')).filter(Boolean).slice(0, 5);
-    const floats = [0.12, 0.31, 0.06, 0.44, 0.22];
-    const ins = hats.map((it, k) => { const f = finOf(rtFrom), [lo, hi] = LG.FINISHES[f].scuffs; return { item: it.id, finish: f, scuff: +(lo + (Math.min(1, hi) - lo) * floats[k]).toFixed(4), print: 10 + k * 37 }; });
-    const top = 4, jump = rtFrom + 2 <= top;
-    const outs = [[rtFrom, 0.2, 'A dud: the same grade'], [rtFrom + 1, jump ? 0.75 : 0.8, 'The next grade up'], ...(jump ? [[rtFrom + 2, 0.05, 'Two grades up']] : [])];
-    const g0 = LG.GRADES[rtFrom];
-    host.innerHTML = `<div class="filters rt-from" role="group" aria-label="Grade going in">${[0, 1, 2, 3].map(k => `<button type="button" data-rf="${k}" style="--g:${LG.GRADES[k].color}" aria-pressed="${k === rtFrom}"><i></i>Five ${esc(LG.GRADES[k].name)}</button>`).join('')}</div>
-      <div class="rt-flow">
-        <div class="rt-in">${ins.map((o, k) => `<span class="rt-c" style="--g:${g0.color};--k:${k}"><canvas aria-hidden="true"></canvas><em>${o.scuff.toFixed(2)}</em></span>`).join('')}</div>
-        <span class="rt-arrow" aria-hidden="true">${'<i></i>'.repeat(3)}</span>
-        <div class="rt-mach"><span class="rt-mico">${pixIcon('', '#ff5f7e')}</span><b>Trade up</b><small>five in, one out</small></div>
-        <span class="rt-arrow" aria-hidden="true">${'<i></i>'.repeat(3)}</span>
-        <div class="rt-outs">${outs.map(([k, p, label]) => { const g = LG.GRADES[k], f = finOf(k), fl = LG.tradeFloat(ins, f); return `<div class="rt-o" style="--g:${g.color}">
-          <span class="rt-op"><canvas aria-hidden="true" data-k="${k}" data-fl="${fl}"></canvas></span>
-          <span class="rt-ot"><span class="bal" style="--b:${g.color}">${esc(g.name)}</span><b>${Math.round(p * 100)}%</b><small>${label} · float ${fl.toFixed(4)}</small><span class="rt-bar"><i style="width:${p * 100}%"></i></span></span></div>`; }).join('')}</div>
-      </div>
-      <p class="rt-note">The result comes from one of the five's machines, and its float is the five's average place in their finishes (${Math.round(ins.reduce((a, o) => a + LG.floatShare(o), 0) / 5 * 100)}% of the way here), carried into the new finish. Clean in, clean out.</p>`;
-    host.querySelectorAll('.rt-in canvas').forEach((c, k) => { own(c); showItem(c, ins[k], seed, 64, 64); });
-    host.querySelectorAll('.rt-op canvas').forEach(c => { own(c); const k = +c.dataset.k; showItem(c, { ...ins[0], finish: finOf(k), scuff: +c.dataset.fl }, seed, 64, 64); });
-    host.querySelector('.rt-from').onclick = e => { const b = e.target.closest('[data-rf]'); if (b) { rtFrom = +b.dataset.rf; renderTradeUp(seed); } };
   }
 
   // The twelve traits: how many ways each can go and how rare the rarest is, from a big deal.

@@ -234,12 +234,7 @@
   @keyframes wiggle { 0%,100% { rotate: 0deg } 25% { rotate: -6deg } 75% { rotate: 6deg } }
   .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
   .buyrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .swaps { display: grid; gap: 10px; }
-  .swap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--felt); border-radius: 6px; }
-  .swap .t { font: 600 14px/1.3 var(--pixel); }
-  .swap .t .chip { margin: 0 2px; }
-  .swap small { display: block; color: var(--muted); font-size: 12px; }
-  .shop-low { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .shop-low { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 
   /* ---------- reveal: reel, then a face-down card that trembles, then the flip and the payoff */
   .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(5, 7, 15, .9); padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
@@ -426,10 +421,6 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
       <div style="display:grid;gap:14px;min-width:0">
         <h3 class="room">Today's shelf</h3>
         <div class="shelf" id="shelf"></div>
-      </div>
-      <div style="display:grid;gap:14px;min-width:0">
-        <h3 class="room">Swap up</h3>
-        <div class="panel"><div class="swaps" id="swaps"></div><p class="fine">Trades the five least rare copies of that grade you aren't wearing. Starters can't be traded.</p></div>
       </div>
     </div>
   </section>
@@ -1534,7 +1525,7 @@ onmessage = e => {
 
   /* ------------------------------------------------ shop */
   const PRICE = { capsule: 8, skin: 30, hat: 20, frame: 24 };
-  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.stamps.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); renderSwaps(); }
+  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.stamps.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); }
 
   function renderCapsules() {
     const el = $('capsules');
@@ -1585,27 +1576,6 @@ onmessage = e => {
     if (state.stamps < price || state.bought.has(b.dataset.buy)) return;
     state.stamps -= price; state.bought.add(b.dataset.buy);
     reveal(o, 'Shop', null, "Today's shelf: always Plain, scuff and print set by the date");
-  });
-
-  const tradeable = g => state.locker.filter(c => c.source !== 'Starter' && !isWorn(c) && gradeIdx(c.o) === g).sort((a, b) => oneIn(a) - oneIn(b));
-  function renderSwaps() {
-    $('swaps').innerHTML = [0, 1, 2, 3].map(g => {
-      const n = tradeable(g).length, from = LG.GRADES[g], to = LG.GRADES[g + 1];
-      return `<div class="swap"><span class="t"><span class="chip grade" style="--grade:${from.color}">5 ${from.name}</span> → <span class="chip grade" style="--grade:${to.color}">1 ${to.name}</span><small>You have ${n}</small></span><button class="btn" type="button" data-swap="${g}"${n < 5 ? ' disabled' : ''}>Swap</button></div>`;
-    }).join('');
-  }
-  $('swaps').addEventListener('click', e => {
-    const b = e.target.closest('[data-swap]');
-    if (!b) return;
-    const g = +b.dataset.swap, give = tradeable(g).slice(0, 5);
-    if (give.length < 5) return;
-    state.locker = state.locker.filter(c => !give.includes(c));
-    // Re-roll until the finish lands on the next grade; the game is one of the traded copies'.
-    const game = give[strHash(`${state.name}:${state.opened}`) % 5].game;
-    let o;
-    let seed;
-    for (let i = 0; i < 20000; i++) { seed = `${state.name}:swap:${++state.opened}:${i}`; o = LG.roll(seed, game); if (gradeIdx(o) === g + 1) break; }
-    reveal(o, 'Swap-up', game, `roll("${seed}", "${game}")  ·  first roll of the next grade`);
   });
 
   /* ------------------------------------------------ reveal */
@@ -1767,7 +1737,7 @@ onmessage = e => {
     renderWallet();
     $('reveal').hidden = false;
     $('result').hidden = true;
-    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : source === 'Swap-up' ? `${cap(game)} swap-up` : `${cap(game)} capsule`;
+    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : `${cap(game)} capsule`;
     const g = gradeIdx(o);
     rush = false;
     if (game && !hold()) { $('skip').hidden = false; if (source === 'Capsule') await gacha(game); await spin(o, game, g); }
@@ -1778,7 +1748,7 @@ onmessage = e => {
     state.inspect = revealed.uid;
     $('reveal').hidden = true;
     revealed = null;
-    renderLocker(); renderDress(); renderSwaps(); renderInspect();
+    renderLocker(); renderDress(); renderInspect();
   }
   $('keep-it').addEventListener('click', () => closeReveal());
   $('skip').addEventListener('click', () => { rush = true; if (skipSpin) skipSpin(); });

@@ -1,6 +1,6 @@
 import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import { api, RULES, todayGame, tradeGrade } from './index.js';
+import { api, RULES, todayGame } from './index.js';
 import { GAMES } from '../src/index-headless.ts';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -102,43 +102,6 @@ test('a mystery capsule costs five stamps and comes from any machine, rolled as 
   expect(s.stamps).toMatchObject({ balance: 0, spent: 200 });
   const short: any = await (await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner))).json();
   expect(short.error).toBe('5 more stamps. Sign in to DLE Club and play to earn stamps.');
-});
-
-test('trade up: five unworn copies of one grade for one of the next, each copy traded once', async () => {
-  const c = await claim('mia'), b = await claim('bo');
-  const at = new Date().toISOString();
-  const put = (key: string, grade: number, extra = '') => env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES (?, ?, 'amountle.crown', 'amountle', 'hat', ?, ?, 100, 0.05, ${extra || "'capsule'"}, 0, ?)`)
-    .run(key, `amountle.crown~${grade ? 'sunset' : 'plain'}~0.0500000~1`, grade ? 'sunset' : 'plain', grade, at).lastInsertRowid as number;
-  const five = [0, 1, 2, 3, 4].map(() => Number(put('mia', 0)));
-  // Four is not a trade, nor is another player's copy, a starter or a mixed grade.
-  expect((await call('/me/mia/trade', 'POST', { ids: five.slice(0, 4) }, auth(c.owner))).status).toBe(400);
-  const theirs = Number(put('bo', 0));
-  expect((await call('/me/mia/trade', 'POST', { ids: [...five.slice(0, 4), theirs] }, auth(c.owner))).status).toBe(404);
-  const higher = Number(put('mia', 1));
-  expect((await call('/me/mia/trade', 'POST', { ids: [...five.slice(0, 4), higher] }, auth(c.owner))).status).toBe(400);
-  const starter: any = (await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json() as any).copies.find((x: any) => x.source === 'starter' && !x.worn);
-  expect((await call('/me/mia/trade', 'POST', { ids: [...five.slice(0, 4), starter.id] }, auth(c.owner))).status).toBe(400);
-  const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
-  expect(r.status).toBe(201);
-  const got: any = await r.json();
-  // Usually the next grade; a dud stays at the same grade and a jump goes two up.
-  expect({ dud: 0, up: 1, jump: 2 }[got.outcome as string]).toBe(got.copy.grade);
-  expect(got.copy.source).toBe('trade');
-  const left: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-  expect(left.copies.some((x: any) => five.includes(x.id))).toBe(false);
-  // Traded copies are gone: the same five cannot trade again.
-  expect((await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).status).toBe(404);
-  expect((await call('/me/mia/trade', 'POST', { ids: five })).status).toBe(401);
-  expect(b.owner).toBeTruthy();
-});
-
-test('a trade up is usually the next grade, sometimes a dud, now and then two up, never past Grail', () => {
-  const at = (u: number, g: number) => tradeGrade(g, u, 4);
-  expect(at(0.1, 0)).toEqual({ grade: 0, outcome: 'dud' });
-  expect(at(0.5, 0)).toEqual({ grade: 1, outcome: 'up' });
-  expect(at(0.97, 0)).toEqual({ grade: 2, outcome: 'jump' });
-  expect(at(0.97, 3)).toEqual({ grade: 4, outcome: 'up' });
-  expect(at(0.5, 3)).toEqual({ grade: 4, outcome: 'up' });
 });
 
 test('there are no tickets to collect: stamps only come from playing', async () => {
@@ -297,15 +260,6 @@ test('a name tag stays on its copy, only its owner can set it, and bad tags are 
   expect(pub.copies.find((x: any) => x.id === id).tag).toBe('Lucky Visor');
 });
 
-test('a trade up’s float comes from its inputs: five half-worn copies make a half-way result', async () => {
-  const c = await claim('mia');
-  const five = [0, 1, 2, 3, 4].map(() => put('mia', 0, 0.5));
-  const got: any = await (await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).json();
-  const o = decode(got.copy.code)!;
-  const [lo, hi] = ({ plain: [0, 1], tempered: [0, 1] } as any)[o.finish] || [0, 0.08];
-  expect(o.scuff).toBeCloseTo(lo + 0.5 * (hi - lo), 6);
-});
-
 test('a swap moves both copies only when accepted, and a gift moves one', async () => {
   const c = await claim('mia'), b = await claim('bo');
   const mine = put('mia'), theirs = put('bo');
@@ -447,49 +401,21 @@ test('before migration 0008, crafting says it isn’t open and nothing else chan
   expect(s.metal).toBe(0);
 });
 
-// ------------------------------------------------------------ trading, as the page does it
-test('a trade reads each copy’s grade from its code, as the page does, whatever the stored column says', async () => {
-  const c = await claim('mia');
-  // Five Everyday copies whose stored grade has drifted (as rows written by an older Worker can): the page
-  // offers them as Everyday, so the trade takes them as Everyday.
-  const five = [0, 1, 2, 3, 4].map(i => put('mia', i % 2 ? 1 : 3));
-  const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
-  expect(r.status).toBe(201);
-  const got: any = await r.json();
-  expect({ dud: 0, up: 1, jump: 2 }[got.outcome as string]).toBe(got.copy.grade);
-  // And a stored grade that agrees can't pass off a mixed five.
-  const sunset = Number(env.db.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES ('mia', ?, 'amountle.crown', 'amountle', 'hat', 'sunset', 0, 100, 0.05, 'capsule', 0, ?)`)
-    .run(encode({ item: 'amountle.crown', finish: 'sunset', scuff: 0.05, print: 1 }), new Date().toISOString()).lastInsertRowid);
-  const mixed = await call('/me/mia/trade', 'POST', { ids: [put('mia'), put('mia'), put('mia'), put('mia'), sunset] }, auth(c.owner));
-  expect(mixed.status).toBe(400);
-  expect(((await mixed.json()) as any).error).toBe('Trade five copies of one grade');
-});
-
-test('a trade with a copy the page has no id for is refused whole, with a reload, and nothing is lost', async () => {
-  const c = await claim('mia');
-  const four = [0, 1, 2, 3].map(() => put('mia'));
-  for (const missing of [null, undefined, 0, 'x']) {
-    const r = await call('/me/mia/trade', 'POST', { ids: [...four, missing] }, auth(c.owner));
-    expect(r.status).toBe(409);
-    expect(((await r.json()) as any).error).toBe('Your locker changed. Reload and try again.');
-  }
-  expect((await stateOf('mia', c.owner)).copies.filter((x: any) => four.includes(x.id))).toHaveLength(4);
-});
-
-test('a worn copy says to take it off; trading a copy that was on offer calls the offer off', async () => {
+// ------------------------------------------------------------ trade-ups, gone
+test('trade-ups are gone; a copy one made stays, and still smelts and swaps', async () => {
   const c = await claim('mia'), b = await claim('bo');
   const five = [0, 1, 2, 3, 4].map(() => put('mia'));
-  await call('/me/mia/wear', 'POST', { slot: 'hat', id: five[0] }, auth(c.owner));
-  const worn = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
-  expect(worn.status).toBe(400);
-  expect(((await worn.json()) as any).error).toBe('Take it off first: worn copies can’t be traded');
-  await call('/me/mia/wear', 'POST', { slot: 'hat', id: null }, auth(c.owner));
-  const offer: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: five[1] }, auth(c.owner))).json();
-  const asked: any = await (await call('/me/bo/swap', 'POST', { to: 'mia', give: put('bo'), want: five[2] }, auth(b.owner))).json();
-  expect((await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner))).status).toBe(201);
-  expect((await stateOf('mia', c.owner)).swaps).toHaveLength(0);
-  expect((await stateOf('bo', b.owner)).swaps).toHaveLength(0);
-  expect(env.db.query('SELECT state FROM swaps WHERE id IN (?, ?)').all(offer.id, asked.id).map((x: any) => x.state)).toEqual(['void', 'void']);
+  const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
+  expect(r.status).toBe(410);
+  expect(((await r.json()) as any).error).toBe('Trade-ups are gone. Smelt copies into metal and craft what you want.');
+  expect((await stateOf('mia', c.owner)).copies.filter((x: any) => five.includes(x.id))).toHaveLength(5);
+  // A copy a trade-up made before they went is like any other.
+  const [traded, smelted] = [put('mia', 1, 0.2, 'trade'), put('mia', 1, 0.3, 'trade')];
+  const offer: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: traded }, auth(c.owner))).json();
+  expect((await call('/me/bo/swap-accept', 'POST', { id: offer.id }, auth(b.owner))).status).toBe(200);
+  expect((await stateOf('bo', b.owner)).copies.some((x: any) => x.id === traded)).toBe(true);
+  const sm: any = await (await call('/me/mia/smelt', 'POST', { ids: [smelted] }, auth(c.owner))).json();
+  expect(sm.metal).toBeGreaterThan(0);
 });
 
 test('a swap for the copy a player has on goes through when they accept: it comes off them, its days banked', async () => {

@@ -7,7 +7,7 @@ import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, S
 import {
   roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder,
-  cleanTag, tradeFloat, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
+  cleanTag, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
   smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, NAME_KEY, nameKey, nameSkeleton,
 } from '../src/index-headless.ts';
 
@@ -32,23 +32,14 @@ export default {
 
 // ------------------------------------------------------------ the guys and their copies
 // The rules the page plays by, kept here so the server decides them: the stamps a player starts with, what
-// each capsule costs in stamps (stamps.js), how many copies a trade up takes and how many swap offers can be
-// out, and which machine's capsule is free today.
-export const RULES = { stamps: STARTER_STAMPS, mystery: STAMP_COST.mystery, capsule: STAMP_COST.machine, seasonal: STAMP_COST.seasonal, trade: 5, swaps: 10 };
+// each capsule costs in stamps (stamps.js) and how many swap offers can be out, and which machine's capsule is free today.
+export const RULES = { stamps: STARTER_STAMPS, mystery: STAMP_COST.mystery, capsule: STAMP_COST.machine, seasonal: STAMP_COST.seasonal, swaps: 10 };
 // The founder never pays.
 const free = key => key === 'isaac';
 // Capsule luck: a player's first few capsules are each the best of a few rolls (weighted toward good, never
 // promised), and after a long dry run below Prized the next capsule is Prized or better.
 export const LUCK = { beginner: 3, rolls: 3, pity: 30, tries: 5000 };
 const today = () => new Date().toISOString().slice(0, 10);
-// A trade up is a gamble, like CS's: usually the next grade, sometimes a dud back at the same grade, now and then
-// two grades up. Never past Grail.
-export const TRADE_ODDS = { dud: 0.2, jump: 0.05 };
-export function tradeGrade(grade, u, top) {
-  if (u < TRADE_ODDS.dud) return { grade, outcome: 'dud' };
-  if (u >= 1 - TRADE_ODDS.jump && grade + 2 <= top) return { grade: grade + 2, outcome: 'jump' };
-  return { grade: Math.min(top, grade + 1), outcome: 'up' };
-}
 export const todayGame = () => GAMES[Math.floor(Date.now() / 864e5) % GAMES.length];
 
 // "isaac" is the founder's: the library deals his seed the crowned guy he was picked as (FOUNDER_LOOK, with
@@ -245,7 +236,7 @@ async function meState(env, name) {
     swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
-/** Everything a signed-in owner does: read their state, open a capsule, wear, change their look, trade, craft and swap. */
+/** Everything a signed-in owner does: read their state, open a capsule, wear, change their look, tag, smelt, craft, paint and swap. */
 async function me(request, env, key, action) {
   const name = await owner(request, env, key);
   if (!name) return json({ error: 'Owner token required' }, 401);
@@ -294,43 +285,8 @@ async function me(request, env, key, action) {
     const copy = await insertCopy(env, copyRow(rollSeason(crypto.randomUUID(), day), key, 'seasonal'));
     return json({ copy: publicCopy(copy), stamps: await stampsOf(env, key) }, 201);
   }
-  if (action === 'trade') {
-    // Trade up: five copies of one grade, none worn, starters and the founder's aside, for one copy of the next
-    // grade from one of their games. The five go in one guarded delete, so a copy can never be traded twice.
-    const asked = Array.isArray(body.ids) ? body.ids : [];
-    const ids = [...new Set(asked.map(Number))];
-    // An id the page didn't have (a copy it hadn't heard about from the server) comes as null.
-    if (ids.some(id => !Number.isInteger(id) || id <= 0)) return json({ error: 'Your locker changed. Reload and try again.' }, 409);
-    if (ids.length !== RULES.trade) return json({ error: `Pick ${RULES.trade} copies to trade` }, 400);
-    const marks = ids.map(() => '?').join(',');
-    const { results: give } = await env.DB.prepare(`SELECT * FROM copies WHERE key = ? AND id IN (${marks})`).bind(key, ...ids).all();
-    if (give.length !== ids.length) return json({ error: 'Not your copies' }, 404);
-    // A copy's grade is its code's, as the page reads it: the stored column is only an index for the Pulls page.
-    const grades = give.map(c => { const o = decode(c.code); return o ? gradeIndex(o) : -1; });
-    const grade = grades[0];
-    if (grades.some(g => g !== grade || g < 0)) return json({ error: 'Trade five copies of one grade' }, 400);
-    if (give.some(c => c.source === 'starter' || c.source === 'founder')) return json({ error: 'Starters and the founder’s copies can’t be traded' }, 400);
-    if (give.some(c => c.worn)) return json({ error: 'Take it off first: worn copies can’t be traded' }, 400);
-    // A trade never makes an aura: they only come out of capsules.
-    if (grade >= GRADES.findIndex(g => g.id === 'grail')) return json({ error: 'A Grail is as high as a trade goes' }, 400);
-    // The result comes from one of the inputs' machines, each as likely as its share of the five, and its float
-    // is the inputs' average place in their finishes (CS's rule), so clean inputs make a clean result.
-    const game = give[Math.floor(Math.random() * give.length)].game;
-    const out = tradeGrade(grade, Math.random(), GRADES.findIndex(g => g.id === 'grail'));
-    let o = null;
-    for (let i = 0; i < 50000; i++) { const r = roll(crypto.randomUUID(), game); if (gradeIndex(r) === out.grade) { o = r; break; } }
-    if (!o) return json({ error: 'Could not trade just now' }, 503);
-    o = { ...o, scuff: tradeFloat(give.map(c => ({ finish: c.finish, scuff: c.scuff })), o.finish) };
-    const fits = `key = ? AND worn = 0 AND source NOT IN ('starter', 'founder') AND id IN (${marks})`;
-    const [gone] = await env.DB.batch([
-      env.DB.prepare(`DELETE FROM copies WHERE ${fits} AND (SELECT COUNT(*) FROM copies WHERE ${fits}) = ?`).bind(key, ...ids, key, ...ids, ids.length),
-      // Offers of the traded copies can no longer happen.
-      env.DB.prepare(`UPDATE swaps SET state = 'void' WHERE state = 'open' AND (give IN (${marks}) OR want IN (${marks})) AND NOT EXISTS (SELECT 1 FROM copies WHERE id IN (${marks}))`).bind(...ids, ...ids, ...ids),
-    ]);
-    if (gone.meta.changes !== ids.length) return json({ error: 'Those copies changed. Reload and try again.' }, 409);
-    const copy = await insertCopy(env, copyRow(o, key, 'trade'));
-    return json({ copy: publicCopy(copy), traded: ids, outcome: out.outcome }, 201);
-  }
+  // Trade-ups are gone (Isaac, October 29): metal and crafting do their job. Copies a trade-up made stay as they are.
+  if (action === 'trade') return json({ error: 'Trade-ups are gone. Smelt copies into metal and craft what you want.' }, 410);
   if (action === 'tag') {
     // A name tag on one of your copies; it stays with the copy wherever it goes. An empty tag takes it off.
     const tag = cleanTag(typeof body.tag === 'string' ? body.tag : '');
