@@ -2322,7 +2322,8 @@ onmessage = e => {
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
   // The game a player came from, when a game's link says (`?from=puttsies`): their one starter is its.
-  const cameFrom = () => { const g = new URLSearchParams(location.search).get('from') || new URLSearchParams(location.search).get('utm_source'); return LG.GAMES.includes(g) && g !== 'pets' ? g : null; };
+  // Kept for the visit, since the address loses `from` as the page loads.
+  const cameFrom = () => { let g = null; try { g = sessionStorage.getItem('lil-guys-came'); } catch (e) {} g = g || new URLSearchParams(location.search).get('from') || new URLSearchParams(location.search).get('utm_source'); return LG.GAMES.includes(g) && g !== 'pets' ? g : null; };
   async function claim(key) {
     let seed = RESERVED[key] ? LG.FOUNDER_SEED : LG.makeSeed(), ownerToken = null;
     if (!backendReady) return;
@@ -2759,8 +2760,10 @@ onmessage = e => {
    * Opens the editor on a tab, from what's saved. `part` and `index` try a face part on; `slot` and `code` an item
    * (an empty code takes the slot's item off).
    */
-  function openEditor(tab = 'look', o = {}) {
+  let lastTab = 'look';
+  function openEditor(tab = lastTab, o = {}) {
     if (!state) return;
+    lastTab = tab;
     ed.look = { ...savedLook() };
     ed.worn = Object.fromEntries(WEAR_SLOTS.filter(sl => state.worn[sl]).map(sl => [sl, state.worn[sl]]));
     ed.tags = {}; ed.saving = false; ed.shown = null; ed.tab = tab;
@@ -2781,7 +2784,7 @@ onmessage = e => {
   $('edd').addEventListener('click', e => { if (e.target === $('edd') && !edChanges().length) closeEditor(); });
   $('ed-x').addEventListener('click', closeEditor);
   $('ed-cancel').addEventListener('click', closeEditor);
-  $('ed-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && b.dataset.tab !== ed.tab) { ed.tab = b.dataset.tab; edRender(); } });
+  $('ed-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && b.dataset.tab !== ed.tab) { ed.tab = lastTab = b.dataset.tab; edRender(); } });
   $('ed-sub').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.part) ed.part = b.dataset.part;
@@ -2867,8 +2870,9 @@ onmessage = e => {
     save(); SFX.equip(); toast(`${LG.partName(p)} crafted`);
     renderWorkshop();
   }
-  $('guy-edit').addEventListener('click', () => openEditor('look'));
-  $('lk-edit').addEventListener('click', () => openEditor('wear'));
+  // One editor, opened the same way from anywhere: on the tab last used.
+  $('guy-edit').addEventListener('click', () => openEditor(lastTab));
+  $('lk-edit').addEventListener('click', () => openEditor(lastTab));
 
   /* ---------------------------------------------- the claim card */
   // The tab's icon is the guy in the corner, in whole pixels.
@@ -2913,8 +2917,8 @@ onmessage = e => {
     if (!state) { paintInto($('mark-guy'), 'lilguys', []); setFavicon(); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
     paintInto($('mark-guy'), state.seed, wornCodes()); setFavicon();
     $('me-name').textContent = '@' + state.key;
-    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
-    hydrate($('me-card'));
+    // The same card as Your guy's and the locker's, so his card looks one way everywhere.
+    guyStage('me-card', state.seed, wornCodes(), cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     const n = LG.guyOneIn(dealt(state.seed));
     $('me-odds').textContent = founderOf(state.seed) ? 'Picked by hand for the founder. The one of one.' : guyRank(guyConfig(state.seed)).top > 0.5 ? 'Dealt just for you.' : `Dealt just for you: the ${guyRank(guyConfig(state.seed)).label.toLowerCase()} of every guy dealt.`;
     $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${guyConfig(state.seed).founder ? 'Founder · one of one' : 'One of a kind'}</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
@@ -4622,7 +4626,7 @@ onmessage = e => {
     paint();
     $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
     $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
-    $('u-edit').onclick = () => openEditor('look');
+    $('u-edit').onclick = () => openEditor(lastTab);
     $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); };
   }
 
@@ -4824,6 +4828,7 @@ onmessage = e => {
     const q = new URLSearchParams(location.search), asked = q.get('claim'), from = q.get('from');
     if (asked !== null || from !== null) {
       if (BACK_TO[from]) sessionStorage.setItem('lil-guys-from', from);
+      if (LG.GAMES.includes(from)) sessionStorage.setItem('lil-guys-came', from);
       if (asked && !state) { $('name').value = norm(asked).slice(0, 16); setTimeout(() => $('claim').scrollIntoView({ block: 'center' }), 60); }
       q.delete('claim'); q.delete('from');
       history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash);
