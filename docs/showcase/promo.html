@@ -268,6 +268,11 @@
   .mcard p { margin: 2px 0 0; font-size: 16px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
   .mcard[aria-disabled="true"] { opacity: .5; }
   .mwrap { position: relative; display: grid; }
+  /* A press that can't open anything says why right where it was pressed. */
+  .nope { animation: nope .32s; }
+  @keyframes nope { 0%, 100% { transform: none } 25% { transform: translateX(-5px) } 50% { transform: translateX(4px) } 75% { transform: translateX(-2px) } }
+  .why-note { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); z-index: 6; width: max-content; max-width: min(280px, 90vw); background: var(--paper); color: var(--paper-ink); padding: 8px 12px; border-radius: 10px; font-size: 15px; line-height: 1.3; text-align: center; box-shadow: var(--lift), 0 10px 24px rgba(0,0,0,.35); pointer-events: none; }
+  .why-host { position: relative; }
   .mwrap.today, .mwrap.big { grid-column: span 2; grid-row: span 2; }
   .m-inside { position: absolute; top: 10px; right: 10px; z-index: 2; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 16px; color: var(--ink); background: rgba(12, 10, 28, .62); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
   .m-inside:hover { background: rgba(12, 10, 28, .85); color: #fff; }
@@ -2250,6 +2255,21 @@ onmessage = e => {
   }
   let toastT;
   // Over an open dialog the toast goes inside it, since a modal dialog sits above everything else on the page.
+  // The machine or button last pressed to open a capsule, so a refusal can say why right there.
+  let pressed = null;
+  function refuse(msg) {
+    toast(msg);
+    const el = pressed && pressed.isConnected ? pressed : null;
+    if (!el) return;
+    const host = el.closest('.mwrap') || el.parentElement;
+    host.classList.add('why-host');
+    host.querySelector(':scope > .why-note')?.remove();
+    const note = document.createElement('div');
+    note.className = 'why-note'; note.setAttribute('role', 'status'); note.textContent = msg;
+    host.append(note);
+    el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope');
+    setTimeout(() => note.remove(), 3600);
+  }
   const toast = msg => { const t = $('toast'), host = document.querySelector('dialog[open]') || document.body; if (t.parentNode !== host) host.append(t); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); };
   $('today').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -2938,7 +2958,7 @@ onmessage = e => {
       const first = i === 0, free = first && state && state.free !== today, big = i === 1 ? ' big' : '';
       return `<div class="mwrap${first ? ' today' : big}"><button class="mcard${first ? ' today' : big}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : g === newest ? '<span class="pill flag">New</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? `${first && state && freeWhy() ? LOCK : ''}Free when you finish today` : `${tk} ${COST.machine} · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
+        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? `${first && state && freeWhy() ? LOCK : ''}Free when you finish today` : `${isLive() && !UNLIMITED && !stampsOf().ready ? 'Opens soon' : `${tk} ${COST.machine}`} · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
@@ -2946,13 +2966,15 @@ onmessage = e => {
   $('machines').addEventListener('click', e => {
     const inside = e.target.closest('[data-inside]'); if (inside) return showInside(inside.dataset.inside);
     const b = e.target.closest('[data-g]'); if (!b) return;
-    if (!state) { $('name').focus(); toast('Claim a name first: your starters come with it.'); return; }
+    pressed = b;
+    if (!state) { $('name').focus(); refuse('Claim a name first: your starters come with it.'); return; }
     const g = b.dataset.g;
     if (g === todayGame && state.free !== today) { openFree(g); return; }
     if (!pay(COST.machine)) return;
     open(g, 'Capsule');
   });
   $('mystery').addEventListener('click', () => {
+    pressed = $('mystery');
     if (!state) { $('name').focus(); return; }
     if (!pay(COST.mystery)) return;
     open(null, 'Mystery capsule');
@@ -2973,7 +2995,7 @@ onmessage = e => {
     const st = stampsOf(), msg = why || moreText(n, st.linked);
     $('pp-short').hidden = false;
     $('pp-short').innerHTML = esc(msg).replace(/^(\d+ more stamps?)/, '<b>$1</b>');
-    toast(msg);
+    refuse(msg);
   }
   // Each game's stamp: its toy (the game's own skin on a plain guy) on a stamp in its colour, cropped to the toy.
   function paintToy(canvas, g) {
@@ -3046,7 +3068,7 @@ onmessage = e => {
   function pay(price) {
     const st = stampsOf();
     if (UNLIMITED || dev) return true;
-    if (!st.ready) { short(0, 'Stamps open soon.'); return false; }
+    if (!st.ready) { short(0, 'Bought capsules open once stamps do.'); return false; }
     // The live balance may be behind a game just finished: the server reads the club before it decides.
     if (st.balance < price) { if (isLive()) return true; short(price - st.balance); return false; }
     if (!isLive()) st.balance -= price;
@@ -3095,7 +3117,7 @@ onmessage = e => {
       // Ask again first: a game finished since the page loaded counts.
       try { fromServer(await meApi('state')); } catch (e) {}
       renderAll();
-      if (freeWhy()) { toast(freeWhy()); return; }
+      if (freeWhy()) { refuse(freeWhy()); return; }
     }
     state.free = today;
     open(g, 'Daily capsule');
@@ -3112,7 +3134,7 @@ onmessage = e => {
         if (e.stamps) state.stamps = e.stamps;
         // A free capsule the server kept shut is still to come today.
         if (e.freeCapsule) { state.freeCapsule = e.freeCapsule; state.free = ''; }
-        if (e.status === 402) short(e.need, e.message); else toast(e.message);
+        if (e.status === 402) short(e.need, e.message); else refuse(e.message);
         renderAll();
       }
       return;
