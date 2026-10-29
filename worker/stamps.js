@@ -105,6 +105,12 @@ export async function spendStamps(env, key, cost, what) {
   } catch { return null; }
 }
 
+/** Whether the player finished a DLE Club game on `day` (UTC), as the club's days kept here say. False before 0010. */
+export async function playedOn(env, key, day) {
+  try { return !!(await env.DB.prepare('SELECT 1 FROM club_days WHERE key = ? AND day = ? AND n > 0').bind(key, day).first()); }
+  catch { return false; }
+}
+
 /** What a player short of stamps is told: how many more, and where they come from. */
 export function shortOf(n, linked) {
   const more = `${n} more stamp${n === 1 ? '' : 's'}`;

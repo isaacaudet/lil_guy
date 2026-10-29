@@ -139,7 +139,7 @@ test('letting a name go takes its stamps with it', async () => {
   expect((await stamps('mia', again.owner)).balance).toBe(10);
 });
 
-test('before 0010, nothing breaks: no stamps to show, paid capsules wait, the free one, crafting and card stats carry on', async () => {
+test('before 0010, nothing breaks: no stamps to show, paid capsules wait, crafting and card stats carry on', async () => {
   env = makeEnv(MIGRATIONS.slice(0, -1));
   await claim('mia');
   const c = link('mia');
@@ -154,7 +154,8 @@ test('before 0010, nothing breaks: no stamps to show, paid capsules wait, the fr
   const paid = await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner));
   expect(paid.status).toBe(503);
   expect(((await paid.json()) as any).error).toBe('Stamps aren’t open yet');
-  expect((await call('/me/mia/open', 'POST', { game: s.todayGame, free: true }, auth(c.owner))).status).toBe(201);
+  // With no club days kept, nobody but the founder has played today, so the free capsule waits.
+  expect((await call('/me/mia/open', 'POST', { game: s.todayGame, free: true }, auth(c.owner))).status).toBe(403);
   expect((await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).status).toBe(402);
   expect((await call('/names/mia', 'DELETE', undefined, auth(c.owner))).status).toBe(200);
   const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
@@ -198,4 +199,65 @@ test('a player who loaded before 0010 is given the ten once it is applied', asyn
   env.db.exec(readFileSync(new URL('../migrations/0010_stamps.sql', import.meta.url), 'utf8'));
   expect((await stamps('mia', c.owner)).balance).toBe(10);
   expect((await stamps('mia', c.owner)).balance).toBe(10);
+});
+
+// ------------------------------------------------------------ today's free capsule
+const utcToday = () => new Date().toISOString().slice(0, 10);
+const openFree = async (key: string, owner: string) => {
+  const s: any = await (await call(`/me/${key}/state`, 'GET', undefined, auth(owner))).json();
+  return call(`/me/${key}/open`, 'POST', { game: s.todayGame, free: true }, auth(owner));
+};
+
+test('today’s free capsule opens once the player has finished a DLE Club game today', async () => {
+  const { c } = await linked('mia', [{ day: utcToday(), games: 1, score: 80, played: ['puttsies'], cleared: false }]);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.freeCapsule).toEqual({ open: true, why: '' });
+  const r = await openFree('mia', c.owner);
+  expect(r.status).toBe(201);
+  expect(((await r.json()) as any).freeDay).toBe(utcToday());
+  // Still once a day.
+  expect((await openFree('mia', c.owner)).status).toBe(409);
+});
+
+test('without a club game today it stays shut, and a game finished since opens it', async () => {
+  // A game yesterday doesn't count.
+  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const { c } = await linked('mia', []);
+  env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(yesterday);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.freeCapsule).toEqual({ open: false, why: 'Finish a DLE Club game today to open it.' });
+  const shut = await openFree('mia', c.owner);
+  expect(shut.status).toBe(403);
+  expect(((await shut.json()) as any).error).toBe('Finish a DLE Club game today to open it.');
+  // Nothing was taken: no copy, and today's free capsule is still to come.
+  expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'mia' AND source <> 'starter'").get().n).toBe(0);
+  expect(env.db.query("SELECT free_day FROM players WHERE key = 'mia'").get().free_day).toBe('');
+  // A minute on, the club is asked again before deciding, so a game just finished counts.
+  const asked: string[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: string) => { asked.push(url); return new Response(JSON.stringify({ days: [{ day: utcToday(), games: 1, score: 80, played: ['amountle'], cleared: false }] })); }) as any;
+  try {
+    env.db.prepare("UPDATE players SET club_read = ? WHERE key = 'mia'").run(Date.now() - 61 * 1000);
+    expect((await openFree('mia', c.owner)).status).toBe(201);
+  } finally { globalThis.fetch = real; }
+  expect(asked).toHaveLength(1);
+});
+
+test('a name with no DLE Club sign-in can’t open it, and is told to sign in', async () => {
+  const c = await claim('mia');
+  // Even with a day on the books, the club can't be asked about a name it can't read.
+  env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(utcToday());
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.freeCapsule).toEqual({ open: false, why: 'Sign in to DLE Club and finish a game today to open it.' });
+  const r = await openFree('mia', c.owner);
+  expect(r.status).toBe(403);
+  expect(((await r.json()) as any).error).toBe('Sign in to DLE Club and finish a game today to open it.');
+});
+
+test('the founder’s free capsule is always open', async () => {
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  const s: any = await (await call('/me/isaac/state', 'GET', undefined, auth(f.owner))).json();
+  expect(s.freeCapsule.open).toBe(true);
+  expect((await openFree('isaac', f.owner)).status).toBe(201);
+  expect((await openFree('isaac', f.owner)).status).toBe(409);
 });

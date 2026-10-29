@@ -25,7 +25,6 @@ describe('the deal', () => {
       ['alice', [7, 10, 11, 8, 23, 11, 10, 33]],
       ['okapi', [2, 7, 9, 12, 0, 2, 0, 1]],
       ['ud33mycomvkl', [14, 9, 4, 2, 8, 0, 5, 32]],
-      ['founder:isaac', [15, 3, 4, 2, 29, 4, 7, 18]],
       // Deal 3, frozen when deal 4 dealt fewer shut eyes.
       ['3-0a1b2c3d4e5f', [24, 10, 1, 4, 6, 0, 15, 23]],
       ['3-zzzzzzzzzzzz', [3, 7, 13, 0, 2, 0, 14, 36]],

@@ -136,10 +136,18 @@ export function guyScore(config: AvatarConfig): number {
 }
 
 /**
+ * The founder's rank (./founder). He was picked by hand, not dealt, so his
+ * traits' odds don't place him: he is the one of one, at the top tier.
+ */
+export const FOUNDER_RANK: GuyRank = { top: 0, tier: GUY_TIERS.length - 1, name: 'Founder', label: 'One of one' };
+
+/**
  * Where a guy stands among every guy dealt: "one in 56 billion" says every
  * combination is unique, which they all are, so a card shows this instead.
+ * The founder (`founder: true`, as `resolve` gives him) is `FOUNDER_RANK`.
  */
 export function guyRank(config: AvatarConfig): GuyRank {
+  if (config.founder) return { ...FOUNDER_RANK };
   const v = guyScore(config), last = GUY_RANK[GUY_RANK.length - 1];
   let top = 1;
   if (v > last[0]) top = last[1] * 10 ** (last[0] - v);          // past the table: rarer by as much again

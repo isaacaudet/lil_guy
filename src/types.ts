@@ -53,6 +53,8 @@ export interface AvatarConfig {
   flip: boolean;
   /** The rare Lucky colour variant: about one name in 400. */
   lucky?: boolean;
+  /** The founder's guy (./founder): picked by hand, not dealt, and ranked the one of one. */
+  founder?: boolean;
   rotation: number; // index into SPHERE_POSITIONS
   /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
   skin?: string;

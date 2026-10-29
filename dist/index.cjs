@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-C4bBTJEx.cjs');
+const require_paint = require('./paint-0cJY_XZo.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -2238,10 +2238,22 @@ function guyScore(config) {
 	return logs.reduce((a, b$1) => a + b$1, 0) + Math.max(...logs);
 }
 /**
+* The founder's rank (./founder). He was picked by hand, not dealt, so his
+* traits' odds don't place him: he is the one of one, at the top tier.
+*/
+const FOUNDER_RANK = {
+	top: 0,
+	tier: GUY_TIERS.length - 1,
+	name: "Founder",
+	label: "One of one"
+};
+/**
 * Where a guy stands among every guy dealt: "one in 56 billion" says every
 * combination is unique, which they all are, so a card shows this instead.
+* The founder (`founder: true`, as `resolve` gives him) is `FOUNDER_RANK`.
 */
 function guyRank(config) {
+	if (config.founder) return { ...FOUNDER_RANK };
 	const v = guyScore(config), last = GUY_RANK[GUY_RANK.length - 1];
 	let top = 1;
 	if (v > last[0]) top = last[1] * 10 ** (last[0] - v);
@@ -8438,6 +8450,10 @@ exports.FACE_WIDTH = FACE_WIDTH
 exports.FINISHES = require_paint.FINISHES
 exports.FOOT_NAMES = FOOT_NAMES
 exports.FOOT_STYLES = require_paint.FOOT_STYLES
+exports.FOUNDER_COPIES = require_paint.FOUNDER_COPIES
+exports.FOUNDER_LOOK = require_paint.FOUNDER_LOOK
+exports.FOUNDER_RANK = FOUNDER_RANK
+exports.FOUNDER_SEED = require_paint.FOUNDER_SEED
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
@@ -8546,6 +8562,8 @@ exports.hash = require_paint.hash
 exports.hashNth = require_paint.hashNth
 exports.heads = require_paint.heads
 exports.inSeason = require_paint.inSeason
+exports.isFounder = require_paint.isFounder
+exports.isFounderCopy = require_paint.isFounderCopy
 exports.isMove = isMove
 exports.itemById = require_paint.itemById
 exports.itemFrame = itemFrame

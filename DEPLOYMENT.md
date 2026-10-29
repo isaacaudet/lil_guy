@@ -97,8 +97,9 @@ above apply every pending migration) before deploying a Worker that reads it.
 - Owner-only (`Authorization: Bearer <owner token>`, same-origin writes):
   - `GET /api/me/:key/state`: stamps, today's free day, the look and every copy.
   - `POST /api/me/:key/open {game, free}` or `{mystery: true}`: one capsule, rolled on the
-    server from a random seed. Today's machine is free once a UTC day; otherwise 8 stamps for
-    a picked machine, or 5 for a mystery capsule from a machine the server draws. 402 when short.
+    server from a random seed. Today's machine is free once a UTC day for a player who has
+    finished a DLE Club game that day (below); otherwise 8 stamps for a picked machine, or 5 for
+    a mystery capsule from a machine the server draws. 402 when short.
   - `POST /api/me/:key/season`: the seasonal hat, 8 stamps, only while one is in season.
   - `POST /api/me/:key/wear {slot, id|null}`: only your own copy, for its own slot.
   - `POST /api/me/:key/look {look}`: only parts `decodeLook` allows for your dealt guy.
@@ -127,7 +128,11 @@ swaps fail. `0005_luck.sql` adds the beginner's-luck and pity counters to
 - `POST /api/me/:key/tag {id, tag}`: a name tag on one of your copies (up to 20
   letters, numbers and simple punctuation; a short word list is refused; `''`
   takes it off). It stays on the copy when it changes hands.
-- `POST /api/me/:key/trade {ids}`: the result comes from one of the five inputs'
+- `POST /api/me/:key/trade {ids}`: five copies of one grade, by id. A copy's grade is read
+  from its code, as the page reads it, never from the stored `grade` column. An id the page
+  didn't have (null) answers 409, "Your locker changed. Reload and try again.", and the page
+  reads the locker again; worn copies, starters and the founder's copies are refused with what
+  to do. Open offers of the traded copies are called off. The result comes from one of the five inputs'
   machines, each as likely as its share of the five, and its float is the
   inputs' average place in their finishes placed in the result's finish
   (`tradeFloat`). Usually the next grade, one in five a dud, one in twenty two up.
@@ -135,8 +140,10 @@ swaps fail. `0005_luck.sql` adds the beginner's-luck and pity counters to
   of theirs, or as a gift (`want: null`). Starters, the founder's copies and worn
   copies can't be offered. At most 10 open offers each.
 - `POST /api/me/:key/swap-accept {id}`: only the player it was made to. Both copies
-  move in one transaction, and only if both are still where the offer found them
-  and unworn; otherwise the offer lapses (409). Other offers for either copy lapse.
+  move in one transaction, and only if both are still where the offer found them, the
+  one offered still unworn; otherwise the offer lapses (409). The copy asked for may be
+  one the accepter has on (an offer is often for what a player shows on their guy): it
+  comes off them as it moves, its days worn banked. Other offers for either copy lapse.
 - `POST /api/me/:key/swap-cancel {id}`: the maker takes it back, the other side
   turns it down.
 - `GET /api/me/:key/state` lists open offers both ways; every copy carries its tag.
@@ -287,5 +294,21 @@ page tells them once: “Tickets are now stamps. Play DLE Club games to earn mor
 (dismissed in `localStorage` as `lil-guys-stamps-note`).
 
 Before 0010 is applied: `stamps.ready` is false, the page shows no balance, paid
-and mystery capsules answer 503 (`Stamps aren’t open yet`), and the free capsule,
-trades, crafting, swaps and card stats carry on.
+and mystery capsules answer 503 (`Stamps aren’t open yet`), the free capsule waits
+(no club days are kept, so only the founder's opens), and trades, crafting, swaps
+and card stats carry on.
+
+## Today's free capsule
+
+Today's machine gives one free capsule a UTC day, to a player who has finished at
+least one DLE Club game that day: a `club_days` row for today with `n > 0`, from the
+same read of the club as stamps and card stats (`readClub`). Before deciding, a player
+who hasn't played yet is read again, at most a minute apart (`TODAY_EVERY`, against
+the usual ten minutes), so a game just finished counts. A name without a DLE Club
+(Google) sign-in can't be read, so it can't qualify; the founder's is always open.
+`GET …/state` carries `freeCapsule: { open, why }`; `open {free: true}` answers 403
+with the same `why` while it's shut ("Finish a DLE Club game today to open it.", or
+"Sign in to DLE Club and finish a game today to open it.") and takes nothing. The page
+shows the button locked with that line and asks again when it's tapped. It needs
+`CLUB_SSO_SECRET` (DLE Club sign-in, above): without it the club is never read and
+only the founder's free capsule opens.
