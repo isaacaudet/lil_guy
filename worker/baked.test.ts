@@ -81,3 +81,13 @@ test('codes round-trip and refuse what they cannot draw', () => {
   expect(readGuyCode('')).toBeNull();
   expect(readGuyCode(guyCode({ seed: 'x', equip: ['nonsense~gold~0~1'] }))).toBeNull();
 });
+
+test('chat emotes come at Twitch and Discord sizes, moving as a GIF or still as a PNG', async () => {
+  const code = guyCode({ seed: 'Maya0' });
+  const size = async (path: string) => { const r = await get(path); expect(r.status).toBe(200); const b = new DataView(await r.arrayBuffer()); return b.getUint8(0) === 0x47 ? [b.getUint16(6, true), b.getUint16(8, true)] : [b.getUint32(16), b.getUint32(20)]; };
+  expect(await size(`/g/${ART_VERSION}/${code}/emote-love-still@2.png`)).toEqual([28, 28]);
+  expect(await size(`/g/${ART_VERSION}/${code}/emote-love-still@4.png`)).toEqual([56, 56]);
+  expect(await size(`/g/${ART_VERSION}/${code}/emote-love@8.gif`)).toEqual([112, 112]);
+  expect(await size(`/g/${ART_VERSION}/${code}/emote-love@9.gif`)).toEqual([126, 126]);
+  expect((await get(`/g/${ART_VERSION}/${code}/emote-nope.png`)).status).toBe(404);
+});

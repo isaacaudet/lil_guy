@@ -541,8 +541,9 @@ that hums and now and then flickers. Wear one like any item
 (`equip: ['aura.flames~ruby~0.0123~7']`); still pictures draw it at a still
 moment, `animate` moves it.
 
-**Everyone gets one.** `starter(name, game)` is the copy of a game's free hat
-every player has from the start: plain, with a scuff and print taken from
+**Everyone gets one.** `starter(name, game)` is the copy of a game's free hat:
+a player starts with the one from the game they came from, and each machine
+gives its own with the first capsule from it. Plain, with a scuff and print taken from
 their name, so everyone's is a little different and a lucky name gets a
 Box Fresh. `roll(seed, game)` opens a capsule. The seed decides everything,
 so in production it must be made on the server at drop time and stored with

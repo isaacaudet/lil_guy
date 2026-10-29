@@ -1,7 +1,7 @@
-import { test, expect, beforeEach } from 'bun:test';
+import { test, expect, beforeEach, setSystemTime } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { api, RULES, todayGame, founderRoll } from './index.js';
-import { GAMES } from '../src/index-headless.ts';
+import { GAMES, LIMITED_PAINT_COST } from '../src/index-headless.ts';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { decode, encode, gradeOf, GRADES, guyRank, resolve } from '../src/index-headless.ts';
@@ -37,26 +37,37 @@ const playToday = (key: string) => {
   return { Cookie: '__Host-lilguys-session=' + session };
 };
 
-test('a claim makes a player with ten stamps and a starter from every machine, one worn', async () => {
-  const c = await claim('mia');
+test('a claim makes a player with ten stamps and one starter, worn, from the game they came from', async () => {
+  const c: any = await (await call('/names/mia', 'POST', { game: 'puttsies' })).json();
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.stamps).toMatchObject({ ready: true, balance: RULES.stamps, unlimited: false, linked: false, gold: 0 });
   expect(RULES.stamps).toBe(10);
   expect(s.tickets).toBeUndefined();
-  expect(s.copies).toHaveLength(GAMES.length);
-  expect(new Set(s.copies.map((x: any) => decode(x.code)!.item.split('.')[0]))).toEqual(new Set(GAMES));
-  expect(s.copies.filter((x: any) => x.worn)).toHaveLength(1);
-  expect(s.copies.every((x: any) => x.source === 'starter')).toBe(true);
+  expect(s.copies).toHaveLength(1);
+  expect(decode(s.copies[0].code)!.item.split('.')[0]).toBe('puttsies');
+  expect(s.copies[0]).toMatchObject({ worn: true, source: 'starter' });
   expect((await call('/me/mia/state')).status).toBe(401);
+  // Without a game it's today's machine.
+  const b: any = await (await call('/names/bo', 'POST')).json();
+  const t: any = await (await call('/me/bo/state', 'GET', undefined, auth(b.owner))).json();
+  expect(decode(t.copies[0].code)!.item.split('.')[0]).toBe(todayGame());
 });
 
-test('a player made before a machine joined gets its starter once', async () => {
+test('a machine gives its free item with the first capsule from it, once; players from before keep theirs', async () => {
   const c = await claim('mia');
+  give('mia', 8);
+  const games = async () => ((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).copies.filter((x: any) => x.source === 'starter').map((x: any) => decode(x.code)!.item.split('.')[0]);
+  const other = GAMES.find(g => g !== todayGame() && g !== 'pets')!;
+  const first: any = await (await call('/me/mia/open', 'POST', { game: other }, auth(c.owner))).json();
+  expect(first.starter).toBeTruthy();
+  const second: any = await (await call('/me/mia/open', 'POST', { game: other }, auth(c.owner))).json();
+  expect(second.starter).toBeNull();
+  expect((await games()).filter((g: string) => g === other)).toHaveLength(1);
+  // A player who already had every starter keeps them all; nothing is taken away.
+  for (const g of GAMES) env.db.prepare("INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) SELECT 'mia', code, item, ?, slot, finish, grade, one_in, scuff, 'starter', 0, at FROM copies WHERE key = 'mia' AND source = 'starter' LIMIT 1").run(g);
+  const n = (await games()).length;
   await call('/me/mia/state', 'GET', undefined, auth(c.owner));
-  env.db.exec("DELETE FROM copies WHERE key = 'mia' AND game = 'pets'");
-  const games = async () => ((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).copies.map((x: any) => decode(x.code)!.item.split('.')[0]);
-  expect((await games()).filter((g: string) => g === 'pets')).toHaveLength(1);
-  expect(await games()).toHaveLength(GAMES.length);
+  expect((await games()).length).toBe(n);
 });
 
 test('capsules are rolled and stored on the server, paid in stamps, and the free one is today’s machine once', async () => {
@@ -116,6 +127,9 @@ test('wearing takes only your own copy for its slot; looks only take parts you m
   const a = await claim('mia'), b = await claim('bo');
   const bo: any = await (await call('/me/bo/state', 'GET', undefined, auth(b.owner))).json();
   const boHat = bo.copies.find((x: any) => x.slot === 'hat');
+  // A second hat to change to: a hat-giving machine's free item with a capsule from it.
+  give('mia', 8);
+  await call('/me/mia/open', 'POST', { game: GAMES.find(g => g !== todayGame() && ['amountle', 'stackdle', 'flipsies', 'puttsies', 'trackdle', 'pets', 'tiltsies'].includes(g)) }, auth(a.owner));
   expect((await call('/me/mia/wear', 'POST', { slot: 'hat', id: boHat.id }, auth(a.owner))).status).toBe(404);
   const mia: any = await (await call('/me/mia/state', 'GET', undefined, auth(a.owner))).json();
   const hats = mia.copies.filter((x: any) => x.slot === 'hat');
@@ -133,7 +147,7 @@ test('everyone is public: guys, profiles, the market and stats, without owner to
   expect(list.map((g: any) => g.key).sort()).toEqual(['bo', 'mia']);
   expect(JSON.stringify(list)).not.toContain(a.owner);
   const prof: any = await (await call('/guys/mia')).json();
-  expect(prof.copies).toHaveLength(GAMES.length + 1);
+  expect(prof.copies).toHaveLength(3);
   const market: any = await (await call('/market?sort=rarest')).json();
   expect(market).toHaveLength(1);
   expect(market[0].key).toBe('mia');
@@ -390,6 +404,23 @@ test('TF2 crafting: smelt spare copies into metal, craft the item you want with 
   expect(decode(off.copy.code)!.paint).toBeUndefined();
   expect(off.metal).toBe(2);
   expect((await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).status).toBe(402);
+});
+
+test('paints of the month: on sale only in their month, at two refined; a copy painted then keeps it', async () => {
+  const c = await claim('mia');
+  env.db.exec("UPDATE players SET metal = 40 WHERE key = 'mia'");
+  const made: any = await (await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).json();
+  setSystemTime(new Date('2026-10-20T12:00:00Z'));
+  try {
+    expect((await call('/me/mia/paint', 'POST', { id: made.copy.id, paint: 'frostbite' }, auth(c.owner))).status).toBe(409);
+    setSystemTime(new Date('2026-11-05T12:00:00Z'));
+    const p: any = await (await call('/me/mia/paint', 'POST', { id: made.copy.id, paint: 'frostbite' }, auth(c.owner))).json();
+    expect(decode(p.copy.code)!.paint).toBe('frostbite');
+    expect(p.metal).toBe(40 - 9 - LIMITED_PAINT_COST);
+    setSystemTime(new Date('2026-12-05T12:00:00Z'));
+    const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+    expect(decode(s.copies.find((x: any) => x.id === made.copy.id).code)!.paint).toBe('frostbite');
+  } finally { setSystemTime(); }
 });
 
 test('before migration 0008, crafting says it isn’t open and nothing else changes', async () => {

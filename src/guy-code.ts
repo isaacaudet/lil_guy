@@ -74,6 +74,6 @@ export const PICTURE_VIEWS = ['icon', 'face', 'still', 'pfp', 'card', 'art', 'ca
 /** A view's size at 1× (`BAKED_SIZE`), or null for one that depends on the guy (a move, `pfp`). */
 export function viewSize(view: string): { width: number; height: number } | null {
   const base = view.replace(/-still$/, '');
-  return base === 'icon' ? BAKED_SIZE.icon : base === 'face' ? BAKED_SIZE.face : base === 'card' ? BAKED_SIZE.card
+  return base === 'icon' ? BAKED_SIZE.icon : base === 'face' || base.startsWith('emote-') ? BAKED_SIZE.face : base === 'card' ? BAKED_SIZE.card
     : base === 'art' ? BAKED_SIZE.art : base === 'card-full' ? BAKED_SIZE.cardFull : null;
 }

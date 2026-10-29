@@ -52,9 +52,10 @@ export { BAKED_SIZE, PICTURE_VIEWS, TITLE_MAX, viewSize, type View } from './guy
 export { LILGUYS_HOST, LIL_GUY_PRESETS, LIL_GUY_PLACEHOLDER, BATCH_MAX, lilGuyUrl, lilGuyImg, lilGuySize, lilGuysFor, setLilGuysHost, lilGuysHost, type LilGuyInfo, type Who, type LilGuyPreset, type LilGuyPresetName, type LilGuyFormat, type LilGuyUrlOptions, type LilGuyImgOptions } from './kit';
 export type { LilGuyOptions } from './element';
 
-export { PAINTS, PAINT_IDS, PAINTABLE, painted } from './paints';
+export { PAINTS, PAINT_IDS, PAINTABLE, painted, LIMITED_PAINT_COST, paintMonth, paintOnSale, paintsOnSale, paintCost } from './paints';
 export type { PaintId } from './paints';
 export { smeltValue, craftable, craftCopy, metalText, metalCoins, CRAFT_COST, PAINT_COST, SCRAP, RECLAIMED, REFINED } from './craft';
 export { NAME_KEY, nameKey, nameSkeleton } from './name-key';
 export { crowdSprite, crowdSheet, crowdShine, CROWD_SIZES, type CrowdSize, type CrowdSprite, type CrowdShine } from './crowd';
 export { createCrowd, crowdSeats, crowdPicture, type Crowd, type CrowdOptions, type CrowdGuy, type CrowdSeat } from './crowd-stage';
+export { emoteFrames, EMOTE_SET, EMOTE_SIZE, isEmote } from './emotes';

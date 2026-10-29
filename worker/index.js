@@ -8,7 +8,7 @@ import {
   roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, makeSeed, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder,
   cleanTag, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
-  smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, NAME_KEY, nameKey, nameSkeleton,
+  smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, paintOnSale, paintCost, NAME_KEY, nameKey, nameSkeleton,
 } from '../src/index-headless.ts';
 
 const json = (body, status = 200, extra = {}) => Response.json(body, {
@@ -175,23 +175,17 @@ const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, gra
 // Copies that can change hands: not a starter, not the founder's.
 const MOVABLE = "source NOT IN ('starter', 'founder')";
 
-/** A claimed name's player record, made on first use: a starter from every machine (the founder's flag too). */
-async function ensurePlayer(env, name) {
+/** The machine a new player's one starter comes from: the game they came from, else today's. */
+export const starterGame = game => (typeof game === 'string' && GAMES.includes(game) && game !== 'pets' ? game : todayGame());
+
+/**
+ * A claimed name's player record, made on first use: one starter, from the game they came from
+ * (Isaac, October 29: ten near-identical starters were clutter; the machines fill the rest), worn.
+ * Players from before keep the starters they were given. The founder gets his flag and Origin too.
+ */
+async function ensurePlayer(env, name, game) {
   const found = await env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
   if (found) {
-    // A machine added since the player was made (the Pet shop) gives them its starter once.
-    const { results: had } = await env.DB.prepare("SELECT DISTINCT game FROM copies WHERE key = ? AND source = 'starter'").bind(name.key).all();
-    if (had.length < GAMES.length) {
-      const has = new Set(had.map(r => r.game));
-      for (const g of GAMES) {
-        if (has.has(g)) continue;
-        // Guarded, so two requests at once never give it twice.
-        const row = copyRow(starter(name.seed, g), name.key, 'starter');
-        await env.DB.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at)
-          SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'starter', 0, ? WHERE NOT EXISTS (SELECT 1 FROM copies WHERE key = ? AND game = ? AND source = 'starter')`)
-          .bind(row.key, row.code, row.item, row.game, row.slot, row.finish, row.grade, row.one_in, row.scuff, new Date().toISOString(), row.key, row.game).run();
-      }
-    }
     // A player from before stamps is given the ten to start once, as a new one is (their tickets are gone).
     await giveStarter(env, name.key);
     // A founder made before Origin existed is given it once.
@@ -212,7 +206,7 @@ async function ensurePlayer(env, name) {
     .bind(name.key, guyOneIn(dealt(name.seed)), at).run();
   if (made.meta.changes) {
     const founder = isFounder(name.seed);
-    for (const [i, g] of GAMES.entries()) await insertCopy(env, copyRow(starter(name.seed, g), name.key, 'starter'), !founder && i === 0 ? 1 : 0);
+    await insertCopy(env, copyRow(starter(name.seed, starterGame(game)), name.key, 'starter'), founder ? 0 : 1);
     if (founder) {
       // He wears Origin on a clean background; the Gold flag is his to put on.
       await insertCopy(env, copyRow(FOUNDER_COPIES.flag, name.key, 'founder'), 0);
@@ -321,8 +315,14 @@ async function me(request, env, key, action) {
     const mine = unlocksOf(await partsOf(env, key)), own = dealt(name.seed);
     const drop = rollPart(crypto.randomUUID(), p => pickable(own, p.slot, mine).includes(p.index));
     const part = drop ? await grantPart(env, name, drop) : null;
+    // A machine's free item comes with the first capsule from it, so the one starter a player began with
+    // fills out machine by machine. Guarded, so two capsules at once never give it twice.
+    const gift = copyRow(starter(name.seed, game), key, 'starter');
+    const given = await env.DB.prepare(`INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at)
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'starter', 0, ? WHERE NOT EXISTS (SELECT 1 FROM copies WHERE key = ? AND game = ? AND source = 'starter')`)
+      .bind(gift.key, gift.code, gift.item, gift.game, gift.slot, gift.finish, gift.grade, gift.one_in, gift.scuff, new Date().toISOString(), key, gift.game).run();
     const p = await env.DB.prepare('SELECT free_day FROM players WHERE key = ?').bind(key).first();
-    return json({ copy: publicCopy(copy), game, part, stamps: await stampsOf(env, key), freeDay: p.free_day, luck }, 201);
+    return json({ copy: publicCopy(copy), game, part, starter: given.meta.changes ? gift.code : null, stamps: await stampsOf(env, key), freeDay: p.free_day, luck }, 201);
   }
   if (action === 'season') {
     if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
@@ -456,13 +456,15 @@ async function me(request, env, key, action) {
   if (action === 'paint') {
     const paint = body.paint == null ? null : String(body.paint);
     if (paint && !PAINT_IDS.includes(paint)) return json({ error: 'Unknown paint' }, 400);
+    if (paint && !paintOnSale(paint, day)) return json({ error: 'That paint was only on sale in its month' }, 409);
     const c = await env.DB.prepare('SELECT * FROM copies WHERE id = ? AND key = ?').bind(Number(body.id), key).first();
     if (!c || !PAINTABLE.includes(c.slot)) return json({ error: 'Only your hats and buddies take paint' }, 404);
     const o = decode(c.code);
     if ((o.paint ?? null) === paint) return json({ copy: publicCopy(c) });
     // Painting costs metal; scraping it off is free.
     if (paint) {
-      const r = await env.DB.prepare('UPDATE players SET metal = metal - ? WHERE key = ? AND metal >= ?').bind(PAINT_COST, key, PAINT_COST).run();
+      const cost = paintCost(paint, PAINT_COST);
+      const r = await env.DB.prepare('UPDATE players SET metal = metal - ? WHERE key = ? AND metal >= ?').bind(cost, key, cost).run();
       if (!r.meta.changes) return json({ error: 'Not enough metal' }, 402);
       o.paint = paint;
     } else delete o.paint;
@@ -612,6 +614,8 @@ export async function api(request, env, url = new URL(request.url), ctx) {
   const result = await env.DB.prepare('INSERT INTO names(key, seed, owner, at, account) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING')
     .bind(key, seed, await digest(ownerToken), at, session?.account || null).run();
   if (!result.meta.changes) return json({ error: 'That name was just taken' }, 409);
-  await ensurePlayer(env, { key, seed });
+  let body = null;
+  try { body = await request.json(); } catch { body = null; }
+  await ensurePlayer(env, { key, seed }, body?.game);
   return json({ key, seed, owner: session ? null : ownerToken, linked: !!session, at }, 201);
 }
