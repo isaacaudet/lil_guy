@@ -26,3 +26,15 @@ export function sparkleAt(f: number): SparkleCell[] {
 
 /** The room a sparkle needs at its biggest: its centre and the cells beside and across from it. */
 export const SPARKLE_REACH: [number, number][] = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]];
+
+const STAR: SparkleCell[] = [...CROSS, [-2, 0, 2], [2, 0, 2], [0, -2, 2], [0, 2, 2]];
+
+/**
+ * The star a Lucky guy or a Gold copy throws off over his head (Isaac, October 29: the one-cell glint
+ * read as a stray pixel): the sparkle with its arms grown out a cell at its height, so it opens from a
+ * dot to a cross to a long four-point star and back.
+ */
+export function starAt(f: number): SparkleCell[] {
+  if (f < 0 || f >= 1) return [];
+  return f < 0.14 ? DOT_DEEP : f < 0.28 ? DOT : f < 0.43 ? CROSS : f < 0.71 ? STAR : f < 0.86 ? CROSS : DOT;
+}

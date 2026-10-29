@@ -2346,7 +2346,7 @@ declare function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas):
  * Bumped whenever the art changes. It is part of every baked image's address,
  * so a redraw reaches every board at once and an old address keeps its picture.
  */
-declare const ART_VERSION = 13;
+declare const ART_VERSION = 14;
 /** Everything that makes a guy look the way he does. */
 interface GuySpec {
   /** His seed, or the name or text he is drawn from. */
@@ -2571,7 +2571,7 @@ declare function defineLilGuyHere(options?: Omit<LilGuyOptions, 'bake'>): void;
  * for good, and plays in a plain `<img>`, so a board of a hundred animates with no script per frame.
  * GAMES.md has where each view goes.
  *
- *   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/13/~Sneaky%20Gumdrop/face.png
+ *   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/14/~Sneaky%20Gumdrop/face.png
  *   row.prepend(lilGuyImg('mia', 'row'))               → an <img> sized for a board's row
  *   const guys = await lilGuysFor(['mia', 'theo'])     → each name's code, claimed or not, in one read
  *

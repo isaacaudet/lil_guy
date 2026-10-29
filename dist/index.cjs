@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-Dmatm9r9.cjs');
+const require_paint = require('./paint-L5Ljb1_v.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -718,8 +718,8 @@ function rim(layer) {
 	return out;
 }
 /** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
-function sparkle(layer, x, y, f, colors) {
-	for (const [dx, dy, k] of require_paint.sparkleAt(f)) {
+function sparkle(layer, x, y, f, colors, shape = require_paint.sparkleAt) {
+	for (const [dx, dy, k] of shape(f)) {
 		const cx = x + dx, cy = y + dy;
 		if (cx >= 0 && cy >= 0 && cx < layer[0].length && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = {
 			c: colors[k],
@@ -758,12 +758,12 @@ function sparkleSpots(layer, above = Infinity) {
 * LOOP_MS) one opens at a spot dealt from `salt`, lives `life` of the period
 * and is gone for the rest. `at` is the clock with this run's own phase.
 */
-function sparkleRun(layer, spots, at, period, life, salt, colors) {
+function sparkleRun(layer, spots, at, period, life, salt, colors, shape = require_paint.sparkleAt) {
 	if (!spots.length) return;
 	const f = require_paint.cycle(at, period) / life;
 	if (f >= 1) return;
 	const [x, y] = spots[Math.floor(noise(require_paint.tick(at, period), salt) * spots.length)];
-	sparkle(layer, x, y, f, colors);
+	sparkle(layer, x, y, f, colors, shape);
 }
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
 const sparkleIn = (color) => [
@@ -1234,8 +1234,8 @@ function animate(input, move, options = {}) {
 		}
 		if (lucky) luckyShimmer(layer, t$1, seed);
 		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
-		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, spots, t$1 + seed * 7, 2300, .4, seed, GOLD_SPARKLE);
-		if (goldMark) sparkleRun(layer, spots, t$1 + goldCopy.print * 37, 2600, .4, goldCopy.print, GOLD_SPARKLE);
+		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t$1 + seed * 7, 2300, .55, seed, GOLD_SPARKLE, require_paint.starAt);
+		if (goldMark) sparkleRun(layer, headSpots, t$1 + goldCopy.print * 37, 2600, .55, goldCopy.print, GOLD_SPARKLE, require_paint.starAt);
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
 			const gold = sparkleIn(palette$1.colors[require_paint.T.GOLD] ?? "#F2C230");
@@ -8798,7 +8798,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 13;
+const ART_VERSION = 14;
 /** The longest name a big card's code carries. */
 const TITLE_MAX = 24;
 const PART_KEYS = [
@@ -8899,7 +8899,7 @@ function viewSize(view) {
 * for good, and plays in a plain `<img>`, so a board of a hundred animates with no script per frame.
 * GAMES.md has where each view goes.
 *
-*   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/13/~Sneaky%20Gumdrop/face.png
+*   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/14/~Sneaky%20Gumdrop/face.png
 *   row.prepend(lilGuyImg('mia', 'row'))               → an <img> sized for a board's row
 *   const guys = await lilGuysFor(['mia', 'theo'])     → each name's code, claimed or not, in one read
 *
