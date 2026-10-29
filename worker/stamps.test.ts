@@ -154,8 +154,8 @@ test('before 0010, nothing breaks: no stamps to show, paid capsules wait, crafti
   const paid = await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner));
   expect(paid.status).toBe(503);
   expect(((await paid.json()) as any).error).toBe('Stamps aren’t open yet');
-  // With no club days kept, nobody but the founder has played today, so the free capsule waits.
-  expect((await call('/me/mia/open', 'POST', { game: s.todayGame, free: true }, auth(c.owner))).status).toBe(403);
+  // With no club days kept the rule can't be checked, so today's free capsule stays open.
+  expect((await call('/me/mia/open', 'POST', { game: s.todayGame, free: true }, auth(c.owner))).status).toBe(201);
   expect((await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).status).toBe(402);
   expect((await call('/names/mia', 'DELETE', undefined, auth(c.owner))).status).toBe(200);
   const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
@@ -241,6 +241,18 @@ test('without a club game today it stays shut, and a game finished since opens i
     expect((await openFree('mia', c.owner)).status).toBe(201);
   } finally { globalThis.fetch = real; }
   expect(asked).toHaveLength(1);
+});
+
+test('when the club doesn’t answer, today’s free capsule stays open', async () => {
+  const { c } = await linked('mia', []);
+  const real = globalThis.fetch;
+  globalThis.fetch = (async () => new Response('Not found', { status: 404 })) as any;
+  try {
+    env.db.prepare("UPDATE players SET club_read = ? WHERE key = 'mia'").run(Date.now() - 61 * 1000);
+    const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+    expect(s.freeCapsule).toEqual({ open: true, why: '' });
+    expect((await openFree('mia', c.owner)).status).toBe(201);
+  } finally { globalThis.fetch = real; }
 });
 
 test('a name with no DLE Club sign-in can’t open it, and is told to sign in', async () => {

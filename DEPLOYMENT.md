@@ -294,9 +294,9 @@ page tells them once: “Tickets are now stamps. Play DLE Club games to earn mor
 (dismissed in `localStorage` as `lil-guys-stamps-note`).
 
 Before 0010 is applied: `stamps.ready` is false, the page shows no balance, paid
-and mystery capsules answer 503 (`Stamps aren’t open yet`), the free capsule waits
-(no club days are kept, so only the founder's opens), and trades, crafting, swaps
-and card stats carry on.
+and mystery capsules answer 503 (`Stamps aren’t open yet`), the free capsule stays
+open to everyone (no club days are kept, so the rule can't be checked), and crafting,
+swaps and card stats carry on.
 
 ## Today's free capsule
 
@@ -309,6 +309,9 @@ the usual ten minutes), so a game just finished counts. A name without a DLE Clu
 `GET …/state` carries `freeCapsule: { open, why }`; `open {free: true}` answers 403
 with the same `why` while it's shut ("Finish a DLE Club game today to open it.", or
 "Sign in to DLE Club and finish a game today to open it.") and takes nothing. The page
-shows the button locked with that line and asks again when it's tapped. It needs
-`CLUB_SSO_SECRET` (DLE Club sign-in, above): without it the club is never read and
-only the founder's free capsule opens.
+shows the button locked with that line and asks again when it's tapped.
+
+The rule only shuts the capsule when it can be checked. Before 0010, without
+`CLUB_SSO_SECRET` (DLE Club sign-in, above), or when the club didn't answer the last
+time it was asked (dle-club's `lilguys-stats` not deployed yet, or down), the free
+capsule stays open to every signed-in name, as it was before the rule.

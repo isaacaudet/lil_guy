@@ -220,10 +220,17 @@ async function freeCapsule(env, key) {
   if (free(key)) return { open: true, why: '' };
   const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
   if (!name?.account) return { open: false, why: FREE_SHUT.signin };
+  // Until the club's days can be kept and read (0010, the shared secret, dle-club's lilguys-stats), and
+  // whenever the club didn't answer the last time it was asked, the rule can't be checked: it stays open
+  // rather than shutting everyone out.
+  if (!(await stampsReady(env)) || typeof env.CLUB_SSO_SECRET !== 'string' || env.CLUB_SSO_SECRET.length < 32) return { open: true, why: '' };
   const day = today();
   if (await playedOn(env, key, day)) return { open: true, why: '' };
   await readClub(env, key, undefined, undefined, TODAY_EVERY);
-  return (await playedOn(env, key, day)) ? { open: true, why: '' } : { open: false, why: FREE_SHUT.play };
+  if (await playedOn(env, key, day)) return { open: true, why: '' };
+  const read = await env.DB.prepare('SELECT club_read, stamps_read FROM players WHERE key = ?').bind(key).first();
+  if (read && read.stamps_read < read.club_read) return { open: true, why: '' };
+  return { open: false, why: FREE_SHUT.play };
 }
 const FREE_SHUT = { signin: 'Sign in to DLE Club and finish a game today to open it.', play: 'Finish a DLE Club game today to open it.' };
 
