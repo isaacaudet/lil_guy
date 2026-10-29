@@ -276,6 +276,18 @@ keep their exact colours as PNGs; where a wall of a hundred of those matters, `.
 bytes or less (in 255 colours), and a `-still` is a few hundred bytes. Ask `@1`: `@3` adds a third
 to a half again for nothing CSS can't do.
 
+## A crowd of thousands
+
+For Twitch chat and anything bigger than a board (a stand of every chatter, the day's players),
+draw guys from crowd sprites on one canvas instead of an element each. `crowdSprite(spec, size)`
+gives a guy at 16, 10, 8, 6, 4 or 2 pixels square, standing on the cell's floor, made from his own
+drawing: at 16 his still, at 10 and 8 his shape, colours, eyes, mouth and outline, at 6 a face in his
+colours, at 4 and 2 his colours (hat or head over body). `crowdSheet(specs, size, columns)` puts many
+on one sheet, guy `n` at column `n % columns`. Each takes about 0.3 ms with no canvas, so a game makes a
+chatter's sprite as they first type and draws the crowd as one copy per guy, near rows at the bigger
+sizes and far rows at the smaller. Seed a chatter from the lowercased name, as chat's faces already do.
+They come with the headless build (below).
+
 ## Limits, CORS and privacy
 
 - **Rate limits.** A picture that isn't cached yet counts against the address: 3,000 new pictures a
