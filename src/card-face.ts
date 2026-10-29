@@ -1,9 +1,9 @@
 import { backdropColors, FRAME_WIDTH, HEADROOM } from './animate';
 import { compose } from './compose';
-import { distance, editionField, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
-import { dress, itemById, SET_COLORS, withItems } from './items';
+import { distance, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
+import { dress, itemById, withItems } from './items';
 import { auraColors, auraHue } from './auras';
-import { cardField, GLSL_LOOKS, lookIndex, paintColors, PAINT_CONTRAST, paintForm, polyColor, type LookOptions, type PaintSpec } from './card-looks';
+import { cardField, GLSL_LOOKS, lookFor, paintColors, PAINT_CONTRAST, paintForm, type LookOptions, type PaintSpec } from './card-looks';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -43,11 +43,7 @@ export interface FaceSpec {
   grade?: number;
   /** The window's tint when there's no grade. */
   tint?: string;
-  /** The machine whose set symbol it carries; by default its last copy's. */
-  set?: string;
-  /** `clean`: no grade pips and no set symbol on the plate at its foot. */
-  text?: 'now' | 'clean';
-  /** A prototype look for its edition (./card-looks), and its paint's contrast. None by default. */
+  /** A look other than its edition's own (./card-looks), and an aura card's paint contrast. */
   look?: LookOptions['look'];
   contrast?: number;
 }
@@ -70,8 +66,8 @@ export interface CardFace {
   edition: number;
   /** The window's middle, in face cells: where a Spectral swirl turns round. */
   origin: [number, number];
-  /** A prototype look (an index in CARD_LOOKS) and what its paint is drawn in; only on a face given one. */
-  look?: number;
+  /** Its edition's look, an index in CARD_LOOKS, and what an aura card's paint is drawn in. */
+  look: number;
   paint?: PaintSpec;
 }
 
@@ -94,8 +90,7 @@ export function cardFace(spec: FaceSpec): CardFace {
   const palette = withItems(paletteOf(config), config), colors = paint(grid, config, palette);
   const owned = config.owned ?? {};
   const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
-  const last = copies[copies.length - 1], lastItem = last ? itemById(last.item) : undefined;
-  const set = spec.set ?? (lastItem && lastItem.game !== 'club' ? lastItem.game : undefined);
+  const last = copies[copies.length - 1];
   const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish as (typeof SHADER_FINISHES)[number])) : 0;
   // The edition: the finish of the copy that sets the grade, or the grade's own for a card given one.
   const top = copies.filter(o => gradeIndex(o) === g).pop();
@@ -115,21 +110,30 @@ export function cardFace(spec: FaceSpec): CardFace {
   const gx0 = Math.floor((W - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
   const origin: [number, number] = [(left + right) / 2, (wTop + wBottom) / 2];
   // The stock the card is printed on, before its edition: the grade's colour (an aura's own on an
-  // aura card), gold for a Grail, pale for a Negative card so its edition turns it dark.
-  const stock = (x: number, y: number) => gold ? blend([255, 222, 110], [204, 124, 22], y / H * 0.85)
+  // aura card), dark round a Grail's gold window, pale for a Negative card so its edition turns it dark.
+  const stock = (x: number, y: number) => gold ? blend([46, 42, 64], [28, 24, 40], y / H)
     : neg ? blend(blend(IVORY, tone, 0.35), blend(IVORY, tone, 0.6), y / H)
       : blend(blend(tone, WHITE, 0.08), blend(tone, INK, 0.25), y / H);
-  const plate = gold ? [92, 52, 8] : aura ? blend(blend(tone, INK, 0.6), INK, 0.45) : PLATE;
-  const light = gold ? [112, 62, 10] : blend(IVORY, gc, g >= 0 ? 0.22 : spec.tint ? 0.3 : 0.12);
-  const glow = gold ? [232, 160, 48] : blend(light, gc, 0.2);
+  const plate = aura ? blend(blend(tone, INK, 0.6), INK, 0.45) : PLATE;
+  const light = blend(IVORY, gc, g >= 0 ? 0.22 : spec.tint ? 0.3 : 0.12), glow = blend(light, gc, 0.2);
+  /** A Grail's window: a few large soft bands of three golds, as the big card's. */
+  const fieldGold = (x: number, y: number) => {
+    const qx = (x - origin[0]) / 8, qy = (y - origin[1]) / 8;
+    const t = 0.5 + 0.5 * Math.sin(qy * 3.2 + 1.3 * Math.sin(qx * 2.4 + 0.6) + 0.6 * Math.sin(qx * 4.1 - qy * 1.7));
+    const k1 = Math.min(1, Math.max(0, (t - 0.35) / 0.12 + 0.5)), k2 = Math.min(1, Math.max(0, (t - 0.72) / 0.12 + 0.5));
+    return blend(blend([176, 112, 24], [226, 164, 52], k1), [250, 206, 110], k2);
+  };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
     if (cx + cy < 2) continue;
     // A dark outline, then a bevel: lit along the top and left, deep along the bottom and right.
     if (cx === 0 || cy === 0 || cx + cy === 2) { put(x, y, INK, FIXED); continue; }
     const bevel = cx === 1 || cy === 1 || cx + cy === 3;
+    const deep = (x > W / 2 && cx === 1) || (y > H / 2 && cy === 1);
+    // A Grail's bevel is a line of clean gold, its sheen's to catch; the dark round it holds still.
+    if (gold) { put(x, y, bevel ? (deep ? [201, 146, 30] : [255, 233, 160]) : stock(x, y), bevel ? CARD : FIXED); continue; }
     let c = stock(x, y);
-    if (bevel) c = (x > W / 2 && cx === 1) || (y > H / 2 && cy === 1) ? blend(c, INK, 0.3) : blend(c, WHITE, 0.35);
+    if (bevel) c = deep ? blend(c, INK, 0.3) : blend(c, WHITE, 0.35);
     // An aura card is full-art: its aura's colours fill the face, the swirl playing over them.
     if (aura && !bevel) { const d = Math.hypot((x - origin[0]) / 15, (y - origin[1]) / 19); put(x, y, blend(blend(tone, INK, 0.62), blend(tone, INK, 0.3), Math.max(0, 1 - d) ** 1.2), WINDOW); continue; }
     put(x, y, c, CARD);
@@ -139,11 +143,11 @@ export function cardFace(spec: FaceSpec): CardFace {
     if ((x === 2 || x === W - 3) && (y === 2 || y === 7)) continue;
     put(x, y, y === 2 ? blend(plate, WHITE, 0.16) : y === 7 ? INK : plate, FIXED);
   }
-  // The window, set in with a dark rim: light by grade, deep amber on a Grail; none on an aura card.
+  // The window, set in with a dark rim: light by grade, banded gold on a Grail; none on an aura card.
   if (!aura) for (let y = wTop; y <= wBottom; y++) for (let x = left; x <= right; x++) {
     const d = Math.hypot((x - origin[0]) / 10, (y - origin[1]) / 11);
     if (x === left || y === wTop || x === right || y === wBottom) put(x, y, INK, FIXED);
-    else put(x, y, blend(light, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
+    else put(x, y, gold ? fieldGold(x, y) : blend(light, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
   }
   // A frame he wears fills the window (an aura card's art) edge to edge, never a box smaller than what stands on it.
   const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
@@ -160,25 +164,14 @@ export function cardFace(spec: FaceSpec): CardFace {
     const fi = o ? SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]) : -1;
     if (x + gx0 > 1 && x + gx0 < W - 2) put(x + gx0, y + 11, rgb(hex), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
   }));
-  // The foot's plate: the grade's pips, and under them room for the page's words and the set's symbol.
+  // The foot's plate, plain: room for the page's words.
   for (let y = 30; y <= H - 3; y++) for (let x = 2; x <= W - 3; x++) {
     if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
     put(x, y, y === 30 ? INK : plate, FIXED);
   }
-  const empty = blend(plate, WHITE, 0.22);
-  // Clean, the foot's plate stays plain.
-  if (spec.text !== 'clean') {
-    if (g >= 0) for (let p = 0; p < 5; p++) {
-      const x0 = 6 + p * 3;
-      for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? (y === 31 ? blend(tone, WHITE, 0.3) : tone) : empty, FIXED);
-    } else for (let x = 8; x <= 17; x++) put(x, 31, empty, FIXED);
-  }
-  // The set's symbol, bottom right: a small badge in the machine's colour.
-  const mark = set && spec.text !== 'clean' ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
-  if (mark) for (let y = 36; y <= 38; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 36 ? blend(rgb(mark), WHITE, 0.5) : x === 22 || y === 38 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), FIXED);
-  const face: CardFace = { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin };
-  if (spec.look) {
-    face.look = lookIndex(spec.look);
+  const look = lookFor(edition, top?.finish, spec.look);
+  const face: CardFace = { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin, look };
+  if (look === 1) {
     const hues = auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, Math.min(g, GRADES.length - 1))].color];
     face.paint = { colors: paintColors(hues, auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]), contrast: spec.contrast ?? PAINT_CONTRAST, ...paintForm(auraCopy?.item ?? '', auraCopy?.print ?? 0) };
   }
@@ -188,7 +181,6 @@ export function cardFace(spec: FaceSpec): CardFace {
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
 export const faceMoves = (f: CardFace) => f.edition > 0 || f.kind.some((v, i) => i % 4 === 1 && v > 0);
 
-const PRISM = SHADER_FINISHES.indexOf('prism');
 /** Whether a face cell is on the card's bevel (`raised` in CARD_FRAGMENT). */
 function faceRaised(x: number, y: number) {
   const ex = Math.min(x, FACE_WIDTH - 1 - x), ey = Math.min(y, FACE_HEIGHT - 1 - y);
@@ -216,7 +208,7 @@ function faceField(f: CardFace) {
   // The bevel stands proud, for the sheen: the ring one cell inside the outline.
   const raised = Float32Array.from(x, (cx, k) => faceRaised(cx, y[k]));
   const pixels = { x, y, region, h, rgb, raised };
-  got = { at, field: f.look ? cardField(f.look, f.edition, f.variant, f.origin, 1, pixels, f.paint) : editionField(f.edition, f.variant, f.origin, 1, pixels), out: new Float32Array(n * 3) };
+  got = { at, field: cardField(f.look, f.edition, f.variant, f.origin, 1, pixels, f.paint), out: new Float32Array(n * 3) };
   fields.set(f, got);
   return got;
 }
@@ -235,8 +227,7 @@ export function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8Clamped
     else {
       c = [f.base[i] / 255, f.base[i + 1] / 255, f.base[i + 2] / 255];
       const k = Math.floor(f.kind[i] / 32 + 0.5), finish = Math.floor(f.kind[i + 1] / 32 + 0.5) - 1;
-      if (k === ITEM && finish === PRISM && f.look === 2) c = polyColor(c, [x, y], f.origin, time, Math.min(1, Math.max(0, 1 - f.kind[i + 2] / 255 * 1.4)));
-      else if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
+      if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
     }
     if (hover && hover.strength > 0) {
       const light = (1 - smoothstep(0, 0.34, distance([(x + 0.5) / W, (y + 0.5) / H], [hover.x, hover.y]))) * 0.35 * hover.strength;
@@ -271,14 +262,12 @@ void main() {
   float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
   float print = floor(kd.a * 255.0 + 0.5) * 4.0;
   float h = texture2D(noise, at).r;
-  if (k > 3.5 && k < 4.5 && finish > 3.5 && finish < 4.5 && look > 1.5 && look < 2.5) c = polyColor(c, cell, origin, time * TAU / 6.0, clamp(1.0 - kd.b * 1.4, 0.0, 1.0));
-  else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
-  else if (k < 2.5 && look > 0.5) {
+  if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);
+  else if (k < 2.5) {
     vec2 e = min(cell, res - 1.0 - cell);
     float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
     c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast, paintForm, paintPhase);
   }
-  else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
@@ -334,7 +323,7 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
       gl.uniform1f(u.time, loopSeconds(ms)); gl.uniform1f(u.edition, face.edition);
       gl.uniform1f(u.variant, face.variant); gl.uniform2f(u.origin, face.origin[0], face.origin[1]);
       gl.uniform1f(u.hover, hover?.strength ?? 0); gl.uniform2f(u.light, hover?.x ?? 0.5, hover?.y ?? 0.3);
-      gl.uniform1f(u.look, face.look ?? 0); gl.uniform1f(u.contrast, face.paint?.contrast ?? PAINT_CONTRAST);
+      gl.uniform1f(u.look, face.look); gl.uniform1f(u.contrast, face.paint?.contrast ?? PAINT_CONTRAST);
       const paint = face.paint?.colors;
       [u.paint1, u.paint2, u.paint3].forEach((at, k) => gl.uniform3f(at, paint?.[k][0] ?? 0, paint?.[k][1] ?? 0, paint?.[k][2] ?? 0));
       const form = face.paint?.form ?? [5, 1, 0, 0];

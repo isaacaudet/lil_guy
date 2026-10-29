@@ -1,6 +1,6 @@
 import { animate, backdropOf, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, WIDE_FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
-import { cardArtFrames, type CardPlayerOptions } from './card';
+import { cardArtFrames } from './card';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
 import { encodeApng, encodeGif, encodePng, type Frames } from './gif';
@@ -266,9 +266,6 @@ export function faceSpec(spec: CardSpec): FaceSpec {
   return { name: spec.seed, parts: spec.parts, palette: spec.palette, copies: (spec.equip ?? []).map(decode).filter((o): o is Owned => !!o), grade: spec.grade, tint: spec.tint };
 }
 
-/** How the `art` view draws a card's window. */
-const ART_STYLE: CardPlayerOptions = { edge: 'none', gold: 'fullart', text: 'clean' };
-
 /** Whether a move name is one this library plays. */
 export const isMove = (m: string): m is Move => (MOVES as readonly string[]).includes(m);
 
@@ -276,12 +273,12 @@ export const isMove = (m: string): m is Move => (MOVES as readonly string[]).inc
  * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
  * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
  * (a profile picture, `profileFrames`), `art` or `art-still` (his big card's window alone, a square:
- * `cardArtPlayer`, with no white edge and the full-art Grail).
+ * `cardArtPlayer`).
  * Null for a view there isn't.
  */
 export function bakeView(spec: CardSpec, view: string): Frames | null {
   if (view === 'art' || view === 'art-still') {
-    const art = cardArtFrames({ seed: spec.seed, parts: spec.parts, palette: animateOptions(spec).palette, copies: faceSpec(spec).copies, grade: spec.grade, title: '' }, 80, ART_STYLE);
+    const art = cardArtFrames({ seed: spec.seed, parts: spec.parts, palette: animateOptions(spec).palette, copies: faceSpec(spec).copies, grade: spec.grade, title: '' });
     return view === 'art' ? art : { ...art, frames: art.frames.slice(0, 1), delays: [LOOP_MS] };
   }
   if (view === 'card' || view === 'card-still') {

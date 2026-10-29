@@ -20,15 +20,14 @@ describe('cards', () => {
     const a = cardStill({ seed: 'maya', copies: [copy], title: 'A' }), b = cardStill({ seed: 'maya', copies: [copy], title: 'A' });
     expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true);
   });
-  test('long words wrap and are never cut off', () => {
+  test('a long title stays on one line, cut short with an ellipsis', () => {
     const long = 'A very long name for a card indeed';
     expect(textWidth(long)).toBeGreaterThan(CARD_WIDTH);
-    // Changing the very last letter changes the card: the end is on it.
-    const a = cardStill({ seed: 'maya', title: long, lines: ['Mythic', 'prism · electric · 1 in 83.3M'] });
-    const b = cardStill({ seed: 'maya', title: long.slice(0, -1) + 'X', lines: ['Mythic', 'prism · electric · 1 in 83.3M'] });
-    const c = cardStill({ seed: 'maya', title: long, lines: ['Mythic', 'prism · electric · 1 in 83.3K'] });
-    expect(a).not.toEqual(b);
-    expect(a).not.toEqual(c);
+    const card = (title: string, name = '@maya') => cardStill({ seed: 'maya', title, lines: ['Mythic', name] });
+    // Its end is cut off, its start is on the card.
+    expect(card(long)).toEqual(card(long.slice(0, -1) + 'X'));
+    expect(card(long)).not.toEqual(card('B' + long.slice(1)));
+    expect(card(long)).not.toEqual(card(long, '@mayb'));
   });
 });
 

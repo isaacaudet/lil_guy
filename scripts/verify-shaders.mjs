@@ -52,7 +52,7 @@ const result = await page.evaluate(() => {
   // The prototype looks (./card-looks) on faces whose editions they change, and on the rest, where they fall back.
   const auras = LG.items.filter(i => i.slot === 'aura');
   const auraFinishes = ['classic', 'fade', 'frost', 'toxic', 'ruby', 'pearl'];
-  LG.CARD_LOOKS.slice(1).forEach((look, l) => {
+  LG.CARD_LOOKS.forEach((look, l) => {
     const equips = [
       ...finishes.map((finish, f) => `${hats[f % 3].id}~${finish}~${(0.01 + 0.07 * f).toFixed(7)}~${23 + f * 17}`),
       ...auras.map((a, k) => `${a.id}~${auraFinishes[k % auraFinishes.length]}~${(0.04 * (k % 20)).toFixed(7)}~${(101 + k * 29) % 1000}`),

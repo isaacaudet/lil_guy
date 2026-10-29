@@ -1,68 +1,71 @@
 import { describe, expect, test } from 'bun:test';
 import { cardArtPlayer, cardStill } from '../card';
-import { bakeView } from '../bake';
 import { cardFace, cardFaceAt } from '../card-face';
-import { CARD_LOOKS, lookApplies, paintForm } from '../card-looks';
+import { CARD_LOOKS, lookFor } from '../card-looks';
+import { bakeView } from '../bake';
 import { LOOP_MS } from '../loop';
 import type { Owned } from '../owned';
 
 const aura: Owned = { item: 'aura.flames', finish: 'classic', scuff: 0.1, print: 41 };
 const prism: Owned = { item: 'amountle.crown', finish: 'prism', scuff: 0.02, print: 88 };
 const gold: Owned = { item: 'flipsies.cap', finish: 'gold', scuff: 0.01, print: 5 };
-const sunset: Owned = { item: 'puttsies.visor', finish: 'sunset', scuff: 0.03, print: 150 };
 const nebula: Owned = { item: 'cutsies.chef', finish: 'nebula', scuff: 0.04, print: 72 };
-const negative: Owned = { item: 'stackdle.tower', finish: 'negative', scuff: 0.02, print: 19 };
 const tempered: Owned = { item: 'trackdle.cap', finish: 'tempered', scuff: 0.1, print: 230 };
-const forLook = { paint: aura, polychrome: prism, foil: sunset, holo: nebula, sheen: gold, liquid: tempered, prism, opal: prism, scan: nebula, bands: nebula } as const;
+const sunset: Owned = { item: 'puttsies.visor', finish: 'sunset', scuff: 0.03, print: 150 };
+/** A card each look is its edition's own for (`classic` the Foil card's). */
+const forLook = { classic: sunset, paint: aura, sheen: gold, liquid: tempered, opal: prism, bands: nebula } as const;
 const differs = (a: ArrayLike<number>, b: ArrayLike<number>) => { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; };
 
-describe('prototype card looks', () => {
-  test('each look changes the card it is for, and leaves the rest as they are', () => {
-    for (const look of CARD_LOOKS.slice(1) as (keyof typeof forLook)[]) {
-      const input = { seed: 'looks', title: 'A', copies: [forLook[look]] };
-      // The sheen is still most of the loop: look at it mid-sweep.
-      const t = look === 'sheen' ? 0.5 : 0.6;
-      expect(differs(cardStill(input, t), cardStill(input, t, { look }))).toBeGreaterThan(500);
-      const other = { seed: 'looks', title: 'A', copies: [negative] };
-      expect(differs(cardStill(other), cardStill(other, 0.6, { look }))).toBe(0);
-    }
-    expect(lookApplies(0, 6)).toBe(false);
+describe('card looks', () => {
+  test('each edition has its own look, a Holographic card its finish\'s', () => {
+    expect(lookFor(6, 'classic')).toBe(CARD_LOOKS.indexOf('paint'));
+    expect(lookFor(5, 'gold')).toBe(CARD_LOOKS.indexOf('sheen'));
+    expect(lookFor(3, 'prism')).toBe(CARD_LOOKS.indexOf('opal'));
+    expect(lookFor(2, 'tempered')).toBe(CARD_LOOKS.indexOf('liquid'));
+    expect(lookFor(2, 'nebula')).toBe(CARD_LOOKS.indexOf('bands'));
+    expect(lookFor(1, 'sunset')).toBe(0);
+    expect(lookFor(2, 'nebula', 'liquid')).toBe(CARD_LOOKS.indexOf('liquid'));
+    // A look that doesn't fit the edition is passed over.
+    expect(lookFor(1, 'sunset', 'paint')).toBe(0);
   });
 
-  test('edge and gold options change only the cards asked', () => {
+  test('the earlier looks, gold and edge are still there to ask for', () => {
     const input = { seed: 'looks', title: 'A', copies: [gold], move: 'cheer' as const };
-    expect(differs(cardStill(input), cardStill(input, 0.6, { edge: 'now', gold: 'now' }))).toBe(0);
-    for (const edge of ['cell', 'round', 'shadow', 'none', 'pool'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { edge }))).toBeGreaterThan(200);
-    for (const g of ['champagne', 'trim', 'solid', 'fullart', 'warm'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { gold: g }))).toBeGreaterThan(2000);
-    expect(differs(cardStill(input), cardStill(input, 0.6, { plate: true }))).toBeGreaterThan(1000);
-  });
-
-  test('each aura paints its own pattern', () => {
-    const still = (item: string, print = 41) => cardStill({ seed: 'looks', title: 'A', copies: [{ item, finish: 'classic', scuff: 0.1, print }] }, 0.6, { look: 'paint', edge: 'round' });
-    const flames = still('aura.flames');
-    expect(differs(flames, still('aura.flames', 400))).toBeGreaterThan(500);
-    expect(paintForm('aura.flames', 41).form[0]).not.toBe(paintForm('aura.orbit', 41).form[0]);
-    expect(paintForm('aura.unknown', 3).form[0]).toBe(paintForm('aura.unknown', 3).form[0]);
+    expect(differs(cardStill(input), cardStill(input, 0.6, { gold: 'brushed' }))).toBeGreaterThan(2000);
+    expect(differs(cardStill(input), cardStill(input, 0.6, { edge: 'sticker' }))).toBeGreaterThan(200);
+    for (const copy of [aura, prism, nebula, tempered]) {
+      const card = { seed: 'looks', title: 'A', copies: [copy] };
+      expect(differs(cardStill(card), cardStill(card, 0.6, { look: 'classic' }))).toBeGreaterThan(500);
+    }
   });
 
   test('every look comes round in LOOP_MS', () => {
-    for (const look of CARD_LOOKS.slice(1) as (keyof typeof forLook)[]) {
-      const face = cardFace({ name: 'looks', copies: [forLook[look]], look });
+    for (const look of CARD_LOOKS) {
+      const face = cardFace({ name: 'looks', copies: [forLook[look]] });
+      expect(face.look).toBe(CARD_LOOKS.indexOf(look));
       expect(differs(cardFaceAt(face, 0), cardFaceAt(face, LOOP_MS))).toBe(0);
-      // A step before the loop closes is a step away from its start, not a jump.
+      // A step before the loop closes is a step away from its start; hard-banded looks may tip a pixel's band.
       const a = cardFaceAt(face, LOOP_MS - 20), b = cardFaceAt(face, 0);
       let worst = 0;
       for (let i = 0; i < a.length; i++) worst = Math.max(worst, Math.abs(a[i] - b[i]));
-      // Hard-banded looks may tip one pixel's band in 20 ms; the rest move a little.
-      expect(worst).toBeLessThan(look === 'paint' || look === 'liquid' || look === 'prism' ? 160 : 60);
+      expect(worst).toBeLessThan(look === 'paint' || look === 'liquid' ? 160 : 60);
       expect(differs(cardFaceAt(face, 700), b)).toBeGreaterThan(0);
     }
   });
 
-  test('clean words change the card, and the art view is its window as a square', () => {
-    const input = { seed: 'looks', title: '★ Flames | Classic', lines: ['★ Aura', '@mochi'], copies: [aura], footer: '#012 · 1st edition' };
-    expect(differs(cardStill(input, 0.6), cardStill(input, 0.6, { text: 'clean' }))).toBeGreaterThan(300);
-    const art = cardArtPlayer(input, 80, { edge: 'none', look: 'paint' });
+  test('each aura paints its own pattern', () => {
+    const still = (item: string, print = 41) => cardStill({ seed: 'looks', title: 'A', copies: [{ item, finish: 'classic', scuff: 0.1, print }] });
+    expect(differs(still('aura.flames'), still('aura.flames', 400))).toBeGreaterThan(500);
+    expect(differs(still('aura.flames'), still('aura.orbit'))).toBeGreaterThan(2000);
+  });
+
+  test('a card\'s words: no stars, no print number, the title alone', () => {
+    const input = (title: string, footer: string) => ({ seed: 'looks', title, lines: ['★ Aura', '@mochi'], copies: [aura], footer });
+    expect(differs(cardStill(input('★ Flames | Classic', '#012 · 1st edition')), cardStill(input('Flames', '1st edition')))).toBe(0);
+  });
+
+  test('the art view is the card\'s window as a square', () => {
+    const art = cardArtPlayer({ seed: 'looks', title: 'A', copies: [aura] });
     expect(art.width).toBe(art.height);
     expect(art.frame(0)).toHaveLength(art.width * art.height * 4);
     const view = bakeView({ seed: 'looks' }, 'art')!;

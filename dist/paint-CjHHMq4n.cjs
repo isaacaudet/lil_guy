@@ -13263,19 +13263,6 @@ const byId = new Map(items.map((i) => [i.id, i]));
 function itemById(id) {
 	return id ? byId.get(id) : void 0;
 }
-/** Each machine's own colour: its set symbol on a card, as the site's machines are painted. */
-const SET_COLORS = {
-	amountle: "#ff7eb6",
-	halfsies: "#f2b066",
-	stackdle: "#ffd447",
-	flipsies: "#5fb4ff",
-	puttsies: "#74d97c",
-	weighsies: "#a98bff",
-	cutsies: "#ff6b6b",
-	tiltsies: "#4fd6c4",
-	trackdle: "#ff8a3d",
-	pets: "#e48cf2"
-};
 /** Every machine, in the order they joined: a new one goes on the end, so nothing else moves. */
 const GAMES = [
 	"amountle",
@@ -16785,12 +16772,6 @@ Object.defineProperty(exports, 'RETIRED_EYES', {
     return RETIRED_EYES;
   }
 });
-Object.defineProperty(exports, 'SET_COLORS', {
-  enumerable: true,
-  get: function () {
-    return SET_COLORS;
-  }
-});
 Object.defineProperty(exports, 'SHADE_COUNT', {
   enumerable: true,
   get: function () {
@@ -17301,4 +17282,4 @@ Object.defineProperty(exports, 'wrap', {
     return wrap$1;
   }
 });
-//# sourceMappingURL=paint-D_7Zh0lR.cjs.map
+//# sourceMappingURL=paint-CjHHMq4n.cjs.map
