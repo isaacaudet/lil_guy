@@ -124,15 +124,15 @@
   .free-why { margin: 10px 0 0; font-size: 16px; line-height: 1.35; color: var(--ink-2); }
   .claim-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; }
 
-  /* the hand: the rarest drops fanned like cards */
+  /* the hand: the rarest drops fanned like cards, each the library's card at 140 px, its own width, so its words are pixel for pixel */
   .hand-h { margin-top: 56px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; position: relative; z-index: 2; }
   .hand-h .kicker { margin: 0; }
   .hand-h p { font-size: 16px; color: var(--ink-3); }
-  .hand { position: relative; z-index: 2; display: flex; justify-content: center; padding: 28px 0 56px; }
+  .hand { position: relative; z-index: 2; display: flex; justify-content: center; min-height: 330px; padding: 28px 0 56px; box-sizing: border-box; }
   /* The slot's own box is the only hover target and never moves; only the card inside it lifts (and
      takes no pointer). A hover area that moved with the card slid out from under a pointer near its
      edge, dropped, and was hovered again: a twitch. The strip above a hovered slot keeps its lifted top. */
-  .hand > .slot { flex: none; width: 150px; margin-left: -34px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; position: relative; z-index: var(--z); }
+  .hand > .slot { flex: none; width: 140px; margin-left: -18px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; position: relative; z-index: var(--z); }
   .hand > .slot:first-child { margin-left: 0; }
   .hand > .slot > .lift { transform-origin: 50% 120%; transition: transform .2s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
   .hand > .slot:hover::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 30px; }
@@ -144,6 +144,10 @@
 
   /* ------------------------------------------------------------ trading cards (the locker's) */
   .art { position: relative; display: block; transform-origin: 50% 60%; will-change: transform; container-type: inline-size; }
+  /* A still card in a long grid: no layer of its own and no moving foil until it's hovered, so a grid of hundreds scrolls freely. */
+  .art.still { will-change: auto; }
+  .art.still .ov .t { animation-play-state: paused; }
+  .card:hover .art.still .ov .t, .card:focus-visible .art.still .ov .t { animation-play-state: running; }
   canvas.px { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(var(--sx, 0px) 8px 0 rgba(5, 7, 16, .5)); }
   .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
   .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
@@ -218,6 +222,8 @@
   .gview > div:last-child { width: 100%; }
   /* The 3D guy takes the card's shape, so switching never moves the page. */
   canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; transition: transform .12s ease-out; }
+  .libslot { display: block; }
+  .art.lifted canvas.libcard { filter: drop-shadow(var(--sx, 0px) 8px 0 rgba(5, 7, 16, .5)); }
   .saves { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 280px; }
   .saves-h { grid-column: 1 / -1; font-size: 16px; color: var(--ink-3); text-align: center; }
   .saves .btn { height: 36px; font-size: 16px; padding: 0 6px; border-radius: 8px; white-space: nowrap; }
@@ -803,8 +809,8 @@
     .ed-head h3 { font-size: 24px; }
     .ed-tabs { margin: 8px 0 10px; gap: 6px; }
     .ed-tabs button { height: 40px; }
-    .ed-prev { grid-template-columns: 104px minmax(0, 1fr); justify-items: start; align-items: center; gap: 12px; padding: 10px 12px 14px; margin-bottom: 10px; overflow: visible; }
-    .ed-card { width: 104px; }
+    .ed-prev { grid-template-columns: 140px minmax(0, 1fr); justify-items: start; align-items: center; gap: 12px; padding: 10px 12px 14px; margin-bottom: 10px; overflow: visible; }
+    .ed-card { width: 140px; }
     .ed-now { justify-content: start; }
     .ed-sub { margin: 0 -12px 6px; padding: 0 12px 6px; }
     .ed-panel { margin: 0 -6px; }
@@ -1065,7 +1071,7 @@
     .maybe { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
     .mbc .tchip { white-space: normal; height: auto; padding: 2px 6px; justify-content: center; text-align: center; }
     .locker { grid-template-columns: minmax(0, 1fr); }
-    .lk-guy { position: static; grid-template-columns: 128px minmax(0, 1fr); align-items: start; }
+    .lk-guy { position: static; grid-template-columns: 140px minmax(0, 1fr); align-items: start; }
     .lk-stage { padding: 8px; }
     .ws { grid-template-columns: minmax(0, 1fr); } .ws-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .lk-eq { gap: 4px; margin-top: -12px; } .eq-op { font-size: 20px; }
@@ -1100,7 +1106,7 @@
     .guy-card > div:first-child { max-width: 200px; }
     .hand-h { flex-direction: column; gap: 4px; }
     .meaning { font-size: 16px; }
-    .hand > .slot { width: 112px; margin-left: -46px; }
+    .hand > .slot { width: 140px; margin-left: -78px; }
     .hand > .slot:nth-child(n+6) { display: none; }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .score b { font-size: 48px; }
@@ -1475,18 +1481,50 @@
   const guySpec = (seed, equip) => { const c = guyConfig(seed); return { seed, parts: partsOf(c), palette: c.palette, equip }; };
   LG.defineLilGuy();
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
-  // The card a player keeps: drawn by the library, so the one on the page is the one they save.
-  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, corner: spec.label.corner, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set || undefined, move });
-  const libCards = new Set();
-  function libCard(el, input) {
-    const canvas = document.createElement('canvas');
+  // The card a player keeps: drawn by the library, so the one on the page is the one they save. Its words are the
+  // library card's clean ones: no corner tag (a print number or a star) and no place in the set.
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set || undefined, move });
+  /*
+   * The library's card (LG.cardPlayer) on the page. Setting one up takes about 30 ms, so the loop sets up one a
+   * tick, the first time each comes on screen: a page of them fills in over a few frames and never holds the page.
+   * Then it draws a frame a step into one reused picture (about a millisecond), and only while on screen.
+   * `sway`: it bobs, tilts and jumps under the pointer like the locker's cards; else it leans toward the pointer.
+   * `now`: set up at once, for a card that is the whole moment (a reveal).
+   */
+  const libCards = new Set(), libByCanvas = new WeakMap(), libPending = [];
+  function libCard(el, input, { sway: swaying = false, now = false } = {}) {
+    const canvas = document.createElement('canvas'), art = document.createElement('span');
     canvas.width = LG.CARD_WIDTH; canvas.height = LG.CARD_HEIGHT; canvas.className = 'libcard';
     canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `${input.title} card`);
-    el.replaceChildren(canvas);
-    // Built when first on screen, then drawn into one picture each frame (a frame is about a millisecond).
-    libCards.add({ canvas, ctx: canvas.getContext('2d'), input, p: null, img: null, start: performance.now(), last: -1 });
-    canvas.addEventListener('pointermove', e => { const r = canvas.getBoundingClientRect(); canvas.style.transform = `perspective(700px) rotateY(${((e.clientX - r.left) / r.width - 0.5) * 18}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 14}deg)`; });
-    canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
+    art.className = swaying ? 'art lifted' : 'art'; art.append(canvas);
+    el.replaceChildren(art);
+    const s = { canvas, art, ctx: canvas.getContext('2d'), input, p: null, img: null, start: 0, last: -1, sway: swaying, still: false, phase: libCards.size * 0.7, hover: 0, tilt: [0, 0], juice: -1 };
+    libCards.add(s); libByCanvas.set(canvas, s);
+    if (now) libDraw(s, performance.now());
+    if (swaying) {
+      const host = el.closest('.card') || el;
+      host.addEventListener('pointerenter', () => { s.juice = performance.now() / 1000; });
+      host.addEventListener('pointermove', e => { const r = art.getBoundingClientRect(); s.hover = 1; s.tilt = [(e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5]; });
+      host.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
+    } else {
+      canvas.addEventListener('pointermove', e => { const r = canvas.getBoundingClientRect(); canvas.style.transform = `perspective(700px) rotateY(${((e.clientX - r.left) / r.width - 0.5) * 18}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 14}deg)`; });
+      canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
+    }
+    return s;
+  }
+  /** The card's frame for `now`, set up first if it isn't yet. */
+  function libDraw(s, now) {
+    if (!s.p) { s.p = LG.cardPlayer(s.input, 80, { keep: false }); s.start = now; }
+    const i = Math.floor((now - s.start) / s.p.delay);
+    if (i === s.last) return;
+    const px = s.p.frame(i);
+    if (s.img?.data !== px) s.img = new ImageData(px, LG.CARD_WIDTH, LG.CARD_HEIGHT);
+    s.ctx.putImageData(s.img, 0, 0); s.last = i;
+  }
+  /** A library card in markup built as a string: an empty slot that mountLib() gives its card once it is in the page. */
+  const libHtml = (input, options) => { libPending.push([input, options]); return `<span class="libslot" data-l="${libPending.length - 1}"></span>`; };
+  function mountLib(root) {
+    root.querySelectorAll('[data-l]').forEach(el => { const i = +el.dataset.l, [input, options] = libPending[i]; libPending[i] = null; el.removeAttribute('data-l'); libCard(el, input, options); });
   }
   const fileName = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'lil-guy';
   // Inside claude.ai the page can't download on its own, so it asks the viewer to save there.
@@ -1501,70 +1539,32 @@
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   };
-  // GIFs take a moment to encode, so the button says so and the page paints first.
-  /**
-   * The card exactly as the page shows it: the card's own canvas, drawn by its own shader at each moment, scaled up
-   * crisp, with its words laid over in the same font, size, colour and shadow (foil and gold titles moving as they do
-   * on the page). Returns frames for a GIF, or null when the card isn't on the page.
-   */
-  function pageCardFrames(host, scale = 12, n = 30, ms = 80) {
-    const canvas = host?.querySelector('canvas.px'), s = canvas && byCanvas.get(canvas), art = canvas?.closest('.art');
-    if (!s || !art) return null;
-    const W0 = canvas.width, H0 = canvas.height, W = W0 * scale, H = H0 * scale, k = W / art.offsetWidth;
-    const out = document.createElement('canvas'); out.width = W; out.height = H;
-    const ctx = out.getContext('2d', { willReadFrequently: true });
-    const words = [...art.querySelectorAll('.ov > span')].map(el => {
-      const cs = getComputedStyle(el), shadow = (cs.textShadow !== 'none' ? cs.textShadow : cs.filter).match(/(rgba?\([^)]*\))\s*0px\s*([\d.]+)px/);
-      return { el, text: el.textContent, x: el.offsetLeft * k, y: el.offsetTop * k, w: el.offsetWidth * k, h: el.offsetHeight * k,
-        size: parseFloat(cs.fontSize) * k, font: cs.fontFamily, color: cs.color, bg: cs.backgroundColor, radius: parseFloat(cs.borderTopLeftRadius) * k,
-        shadow: shadow ? { c: shadow[1], dy: parseFloat(shadow[2]) * k } : null,
-        foil: el.classList.contains('foil') ? ['#ff8fb1', '#ffe27a', '#8fffd2', '#8fb8ff', '#d79bff', '#ff8fb1'] : el.classList.contains('gold') ? ['#b8801c', '#ffe9a8', '#f2c230', '#fffbe6', '#c8901e', '#b8801c'] : null };
-    });
-    const frames = [];
-    for (let i = 0; i < n; i++) {
-      const t = 0.6 + i * ms / 1000;
-      draw(s, t, true);
-      ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = false; ctx.drawImage(canvas, 0, 0, W, H);
-      for (const w of words) {
-        if (w.bg && w.bg !== 'rgba(0, 0, 0, 0)') { ctx.fillStyle = w.bg; ctx.beginPath(); ctx.roundRect(w.x, w.y, w.w, w.h, w.radius); ctx.fill(); }
-        ctx.font = `${w.size}px ${w.font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const cx = w.x + w.w / 2, cy = w.y + w.h / 2;
-        if (w.shadow) { ctx.fillStyle = w.shadow.c; ctx.fillText(w.text, cx, cy + w.shadow.dy); }
-        if (w.foil) {
-          // The page slides a 300%-wide gradient across the words every 2.4 seconds.
-          const span = w.w * 3, off = ((t % 2.4) / 2.4) * span, g = ctx.createLinearGradient(w.x - off, 0, w.x - off + span * 2, 0);
-          [...w.foil, ...w.foil.slice(1)].forEach((c, j, a) => g.addColorStop(j / (a.length - 1), c));
-          ctx.fillStyle = g;
-        } else ctx.fillStyle = w.color;
-        ctx.fillText(w.text, cx, cy);
-      }
-      frames.push(new Uint8ClampedArray(ctx.getImageData(0, 0, W, H).data));
-    }
-    draw(s, performance.now() / 1000, true);
-    return { width: W, height: H, frames, delays: frames.map(() => ms) };
-  }
 
-  // `pfp`: the guy as he's drawn here, for a Discord profile picture (a still PNG, or a GIF for Nitro).
-  function saveButtons(el, input, name, host, pfp, heading = 'Save') {
+  /*
+   * A card's saves. Everything that moves saves moving: the card and its art as GIFs, the card as an animated PNG
+   * too, the guy dancing. Each is the library's card, the one on the page, encoded beside the page (a few seconds
+   * for a big one) while the button says so. Only the Discord PNG is still, since Discord only plays a GIF for Nitro.
+   * `pfp`: the guy as he's drawn here, for a Discord profile picture.
+   */
+  function saveButtons(el, input, name, pfp, heading = 'Save') {
     const base = fileName(name);
-    el.innerHTML = `<span class="saves-h">${heading}</span>` + '<button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png">Card PNG</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
-      + (pfp ? '<button class="btn small ghost" type="button" data-save="pfp" title="512 px, framed for Discord\'s round crop">Discord PNG</button><button class="btn small ghost" type="button" data-save="pfp-gif" title="Moving, for Nitro">Discord GIF</button>' : '');
-    el.onclick = e => {
+    const SAVES = {
+      gif: () => offThread('call', 'toCardGif', input, 4).then(b => [b, '-card.gif', 'image/gif']),
+      png: () => offThread('cardApng', input, 4).then(b => [b, '-card.png', 'image/png']),
+      art: () => offThread('call', 'toCardArtGif', input, 4).then(b => [b, '-art.gif', 'image/gif']),
+      guy: () => offThread('call', 'toGuyGif', input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16).then(b => [b, '.gif', 'image/gif']),
+      pfp: () => offThread('call', 'toProfilePng', pfp).then(b => [b, '-discord.png', 'image/png']),
+      'pfp-gif': () => offThread('call', 'toProfileGif', pfp).then(b => [b, '-discord.gif', 'image/gif']),
+    };
+    el.innerHTML = `<span class="saves-h">${heading}</span>` + '<button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png" title="The card moving, as an animated PNG">Card PNG</button><button class="btn small ghost" type="button" data-save="art" title="The card\'s art alone, square and moving">Art GIF</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
+      + (pfp ? '<button class="btn small ghost" type="button" data-save="pfp" title="512 px, still, framed for Discord\'s round crop">Discord PNG</button><button class="btn small ghost" type="button" data-save="pfp-gif" title="Moving, for Nitro">Discord GIF</button>' : '');
+    el.onclick = async e => {
       const b = e.target.closest('[data-save]');
       if (!b || b.disabled) return;
       const was = b.textContent; b.disabled = true; b.textContent = 'Making…';
-      setTimeout(async () => {
-        try {
-          // The card as the page shows it; the library's card only where the page has none.
-          const page = ['guy', 'pfp', 'pfp-gif'].includes(b.dataset.save) ? null : pageCardFrames(host?.());
-          if (b.dataset.save === 'gif') await saveFile(page ? LG.encodeGif(page, 1) : LG.toCardGif(input, 4), base + '-card.gif', 'image/gif');
-          else if (b.dataset.save === 'png') await saveFile(page ? await LG.encodePng(page.frames[0], page.width, page.height, 1) : await LG.toCardPng(input, 6), base + '-card.png', 'image/png');
-          else if (b.dataset.save === 'pfp') await saveFile(await LG.toProfilePng(pfp), base + '-discord.png', 'image/png');
-          else if (b.dataset.save === 'pfp-gif') await saveFile(LG.toProfileGif(pfp), base + '-discord.gif', 'image/gif');
-          else await saveFile(LG.toGuyGif(input.seed, 'dance', { parts: input.parts, palette: input.palette, equip: (input.copies || []).map(LG.encode) }, 16), base + '.gif', 'image/gif');
-        } catch (err) { toast('Couldn\'t make that file: ' + err.message); }
-        b.disabled = false; b.textContent = was;
-      }, 30);
+      try { const [bytes, end, type] = await SAVES[b.dataset.save](); await saveFile(bytes, base + end, type); }
+      catch (err) { toast('Couldn\'t make that file: ' + err.message); }
+      b.disabled = false; b.textContent = was;
     };
   }
   const animated = (seed, move, equip, size, emote) => { const c = guyConfig(seed); return LG.toAnimatedSvg(seed, move, { size, equip, emote, parts: partsOf(c), palette: LG.paletteOf(c) }); };
@@ -1626,7 +1626,10 @@
   // A name tag shows in quotes in place of the item's name; the real name stays underneath.
   const tagOf = code => state?.tags?.[code] || '';
   const named = (title, tag) => tag ? `"${tag}"` : title;
-  const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: LG.decode(code) })).filter(c => c.o) : [];
+  // A locker of hundreds is read many times a render, so each code is decoded once (nothing changes a decoded copy).
+  const decodedCopies = new Map();
+  const decodeCopy = code => { let o = decodedCopies.get(code); if (o === undefined) decodedCopies.set(code, o = LG.decode(code)); return o; };
+  const copies = () => state ? state.copies.map((code, i) => ({ i, code, o: decodeCopy(code) })).filter(c => c.o) : [];
   const wornCodes = () => state ? Object.values(state.worn).filter(Boolean) : [];
   const wornCopies = () => wornCodes().map(LG.decode).filter(Boolean);
 
@@ -1750,29 +1753,19 @@
   const toast = msg => { const t = $('toast'), host = document.querySelector('dialog[open]') || document.body; if (t.parentNode !== host) host.append(t); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); };
   $('today').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  /* ---------------------------------------------- the hand: the rarest copies a sample of 12,000 capsules turned up */
-  function rarest(n) {
-    const seen = new Set(), found = [];
-    for (let i = 0; i < 12000; i++) {
-      const game = LG.GAMES[i % LG.GAMES.length], o = LG.roll(`hand:${today}:${i}`, game);
-      if (gradeIdx(o) >= 2) found.push(o);
-    }
-    found.sort((a, b) => LG.copyOneIn(b) - LG.copyOneIn(a));
-    const out = [];
-    for (const o of found) { if (seen.has(o.item)) continue; seen.add(o.item); out.push(o); if (out.length === n) break; }
-    return out;
-  }
+  /* ---------------------------------------------- the hand: the rarest copies a sample of 12,000 capsules turned up
+   * Opened beside the page (a worker), then fanned as the library's cards, the ones the locker and saves show. */
   const HAND_GUYS = ['mo', 'pip', 'juno', 'bix', 'tam', 'odie', 'fen', 'lux', 'kit'];
-  function renderHand() {
-    const hand = rarest(9).sort((a, b) => LG.copyOneIn(a) - LG.copyOneIn(b));
-    // Rarest in the middle, like a fanned hand.
+  async function renderHand() {
+    const hand = (await offThread('rarestDrops', `hand:${today}`, 12000, 9)).sort((a, b) => LG.copyOneIn(a) - LG.copyOneIn(b));
+    // Rarest in the middle, like a fanned hand; each card over the one to its left, so every card's words show.
     const order = []; hand.forEach((o, i) => (i % 2 ? order.push(o) : order.unshift(o)));
     const mid = (order.length - 1) / 2;
     $('hand').innerHTML = order.map((o, i) => {
       const d = i - mid;
-      return `<div class="slot" style="--r:${d * 5}deg;--y:${Math.round(d * d * 4)}px;--z:${20 - Math.round(Math.abs(d) * 2)}" tabindex="0"><div class="lift">${px(cardSpec(HAND_GUYS[i], [o], itemLabel(o)))}</div><small>${esc(LG.nameOf(o).replace(' | ', ' · '))}</small></div>`;
+      return `<div class="slot" style="--r:${d * 5}deg;--y:${Math.round(d * d * 4)}px;--z:${i + 1}" tabindex="0"><div class="lift">${libHtml(cardInput(cardSpec(HAND_GUYS[i], [o], itemLabel(o))), { sway: true })}</div><small>${esc(LG.nameOf(o).replace(' | ', ' · '))}</small></div>`;
     }).join('');
-    hydrate($('hand'));
+    mountLib($('hand'));
     $('hand-note').textContent = `Out of 12,000 capsules opened just now, the rarest was 1 in ${words(LG.copyOneIn(hand.at(-1)))}.`;
   }
 
@@ -1888,7 +1881,7 @@
   // A guy's card: his tier sets its grade, and it says where he stands ("Epic", "Top 0.3%").
   const TIER_COLORS = LG.GRADES.map(g => g.color);
   const rankText = r => r.label === r.name ? r.name : `${r.name} · ${r.label}`;
-  const guyLabel = (cfg, title, corner = '★') => { const r = guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg.base || cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
+  const guyLabel = (cfg, title, corner = '') => { const r = guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg.base || cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
   const traitWord = t => t.slot === 'lucky' ? 'Lucky' : t.slot === 'tone' ? cap(t.name) : t.slot === 'arms' ? (t.name === 'none' ? 'No arms' : cap(t.name)) : t.slot === 'feet' ? `${cap(t.name)} feet` : `${cap(t.name)} ${t.slot}`;
   const traitChips = (cfg, n = 2) => `<span class="tchips">${rarestOf(cfg, n).map(t => `<span class="tchip" style="--tier:${traitTier(t).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`).join('')}</span>`;
   // One trait as a Balatro card: its icon and slot, what he got, a paper box saying how rare.
@@ -1903,22 +1896,37 @@
   };
   // What a number like 1 in 40 billion means: against everyone alive, and against every guy dealt.
   const EARTH = 8.1e9;
-  let DIST = null;
-  const distSample = () => DIST || (DIST = Array.from({ length: 4000 }, () => Math.log10(LG.guyOneIn(LG.resolve(LG.makeSeed())))).sort((a, b) => a - b));
+  // A deal of 4,000 guys, how rare each is (log10, sorted): dealt beside the page once and kept for the art version,
+  // since dealing them here held the page for a second. Each caller draws its words or chart when it lands.
+  let DIST = null, distWaits = null;
+  function withDist(fn) {
+    if (DIST) return fn(DIST);
+    if (!distWaits) { distWaits = []; kept('dealt:4000', 'dealt', 4000).then(d => { DIST = d; distWaits.splice(0).forEach(f => f(d)); }, () => {}); }
+    distWaits.push(fn);
+  }
   function meaning(host, n, founder = false) {
-    const d = distSample(), lg = Math.log10(n), below = d.filter(v => v < lg).length / d.length;
+    host.dataset.n = n;
     // The founder isn't ranked by his traits' odds: he was picked by hand, the one of one.
-    if (founder) { host.innerHTML = '<p>Picked by hand for the founder: <b>the one of one</b>.</p>'; return 1; }
+    if (founder) { host.innerHTML = '<p>Picked by hand for the founder: <b>the one of one</b>.</p>'; return; }
     const people = EARTH / n;
     const line = people >= 1.5 ? `If everyone on Earth had a guy, about <b>${words(Math.round(people))}</b> would look like yours.`
       : people >= 0.67 ? `If everyone on Earth had a guy, <b>yours would be the only one</b> like it.`
       : `Deal a guy to everyone on Earth <b>${words(Math.round(1 / people))} times over</b> before another like it turns up.`;
-    host.innerHTML = `<p>${line}</p><p>Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt.</p>`;
-    return below;
+    host.innerHTML = `<p>${line}</p><p>Rarer than <b>…</b> of guys dealt.</p>`;
+    withDist(d => {
+      if (host.dataset.n !== String(n)) return;
+      const below = d.filter(v => v < Math.log10(n)).length / d.length;
+      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt.`;
+    });
   }
   // Every guy dealt, by how rare: a bar per step on a log scale, his bar lit.
   function distChart(host, n) {
-    const d = distSample(), lo = Math.floor(d[0]), hi = Math.ceil(d[d.length - 1]), B = (hi - lo) * 4, W = 640, H = 120;
+    host.dataset.n = n;
+    if (!DIST) host.innerHTML = '<p class="dist-h">Every guy dealt, from common to rare</p><div class="dist-plot"></div><div class="dist-x"></div>';
+    withDist(d => { if (host.dataset.n === String(n)) drawDist(host, d, n); });
+  }
+  function drawDist(host, d, n) {
+    const lo = Math.floor(d[0]), hi = Math.ceil(d[d.length - 1]), B = (hi - lo) * 4, W = 640, H = 120;
     const bins = new Array(B).fill(0); d.forEach(v => bins[Math.min(B - 1, Math.floor((v - lo) / (hi - lo) * B))]++);
     const max = Math.max(...bins), bw = W / B, me = Math.min(B - 1, Math.max(0, Math.floor((Math.log10(n) - lo) / (hi - lo) * B)));
     const bars = bins.map((c, i) => { const h = Math.max(c ? 3 : 0, Math.round(c / max * (H - 8))); return `<rect x="${(i * bw + 1).toFixed(1)}" y="${H - h}" width="${(bw - 2).toFixed(1)}" height="${h}" rx="1" fill="${i === me ? 'var(--gold)' : 'var(--panel-2)'}"><title>1 in ${words(10 ** (lo + i / 4))} to ${words(10 ** (lo + (i + 1) / 4))}: ${(c / d.length * 100).toFixed(1)}% of guys</title></rect>`; }).join('');
@@ -1930,14 +1938,14 @@
   }
   const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
   let scored = false, scoring = false;
-  /** A guy's stage: the same card the Guys page draws (it reads best), only rebuilt when he or what he wears changes. */
+  /** A guy's stage: his card as the library draws it (the one his saves give), only rebuilt when he or what he wears changes. */
   const guyViews = {};
   function guyStage(id, seed, codes, spec) {
     const host = $(id), key = `${seed}|${lookFor[seed] ?? ''}|${state?.seed === seed ? state.look : ''}|${codes.join(',')}|${JSON.stringify(spec.label)}`;
     if (guyViews[id] === key && host.querySelector('canvas')) return;
     guyViews[id] = key;
-    host.innerHTML = `<div class="card">${px(spec)}</div>`;
-    hydrate(host);
+    host.innerHTML = '<div class="card"></div>';
+    libCard(host.firstChild, cardInput(spec), { sway: true });
   }
 
   function renderGuy() {
@@ -1947,7 +1955,7 @@
     const cfg = guyConfig(state.seed);
     const meCard = cardSpec(state.seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, guyRank(cfg).tier), guyCard = cardInput(meCard);
     guyStage('guy-stage', state.seed, wornCodes(), meCard);
-    saveButtons($('guy-saves'), guyCard, state.key, () => $('guy-stage'), guySpec(state.seed, wornCodes()));
+    saveButtons($('guy-saves'), guyCard, state.key, guySpec(state.seed, wornCodes()));
     const rank = guyRank(cfg);
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
@@ -2070,8 +2078,8 @@
       ed.shown = key;
       const spec = { name: state.seed, parts: partsOf(cfg), palette: cfg.palette, copies: codes.map(LG.decode).filter(Boolean), label: guyLabel(cfg, '@' + state.key), still: false, grade: guyRank(cfg).tier };
       ed.spec = spec;
-      $('ed-card').innerHTML = `<div class="card">${px(spec)}</div>`;
-      hydrate($('ed-card'));
+      $('ed-card').innerHTML = '<div class="card"></div>';
+      libCard($('ed-card').firstChild, cardInput(spec), { sway: true });
     }
     $('ed-now').innerHTML = changes.length
       ? changes.map(c => `<span class="bal${c.locked || c.bad ? ' locked' : ''}">${c.locked ? LOCK : ''}<i>${esc(c.label)}</i>${esc(c.value)}</span>`).join('')
@@ -2210,14 +2218,14 @@
     else if (ed.tab === 'wear') $('ed-panel').innerHTML = edWearPanel(specs);
     else {
       $('ed-panel').innerHTML = edCardPanel();
-      $('ed-panel').querySelectorAll('canvas[data-code]').forEach(c => showItem(c, LG.decode(c.dataset.code), state.seed, 120, 72));
+      itemsWhenNear('ed-panel', [...$('ed-panel').querySelectorAll('canvas[data-code]')].map(c => [c, [LG.decode(c.dataset.code), state.seed, 120, 72]]));
     }
     $('ed-panel').scrollTop = 0;
     edFeed(specs);
     edRefresh();
     if (ed.tab === 'card') {
       const cfg = edCfg(), codes = edCodes();
-      saveButtons($('ed-saves'), cardInput(ed.spec), state.key, () => $('ed-card'), edGuy(cfg, codes), 'Download');
+      saveButtons($('ed-saves'), cardInput(ed.spec), state.key, edGuy(cfg, codes), 'Download');
     }
     $('ed-sub').querySelector('[aria-pressed="true"], [aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     $('ed-panel').querySelector('.ed-tile[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' });
@@ -3088,7 +3096,7 @@
     res.hidden = false;
     if (faceUp) {
       // Everyday and Special rise; Prized and up spin in, more turns and slower the rarer.
-      back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front);
+      back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front); mountLib(front);
       $('skip').hidden = true;
       if (gr >= 2) { flip.style.setProperty('--turns', `${360 * (gr - 1)}deg`); flip.style.setProperty('--spin-ms', `${0.7 + 0.25 * gr}s`); void flip.offsetWidth; flip.classList.add('spin'); SFX.whoosh(0.5 + gr * 0.1, 300, 3000, 0.1); }
       else { void flip.offsetWidth; flip.classList.add('rise'); SFX.whoosh(0.3, 300, 2000, 0.07); }
@@ -3113,10 +3121,10 @@
     }
     if (!faceUp) {
       $('skip').hidden = true;
-      back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front);
+      back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front); mountLib(front);
     }
     flip.classList.remove('squash', 'tremble');
-    const s = byCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
+    const s = byCanvas.get(front.querySelector('canvas')) || libByCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
     const alone = front.querySelector('canvas.alone'); if (alone && won) { const fit = alone.closest('.won-art')?.clientWidth || 260; showItem(alone, won, state.seed, fit, fit); spinItem(alone.parentElement, won); }
     if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
     else shout.textContent = shoutText;
@@ -3175,7 +3183,7 @@
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet your guy';
     const n = LG.guyOneIn(dealt(state.seed));
-    await unveil(4, `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div>`,
+    await unveil(4, `<div class="card">${libHtml(cardInput(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier)), { sway: true, now: true })}</div>`,
       'One of a kind!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`, true);
     $('rv-keep').focus();
     await new Promise(r => { closeHook = r; });
@@ -3240,7 +3248,7 @@
   // Ways to sort a collection; `at` is how new a copy is (bigger is newer).
   const SORTS = [['rarest', 'Rarest'], ['newest', 'Newest'], ['float', 'Best float'], ['game', 'By game'], ['slot', 'By slot'], ['name', 'A to Z']];
   const SLOT_ORDER = ['aura', 'skin', 'hat', 'frame', 'buddy'];
-  const rarer = (a, b) => gradeIdx(b.o) - gradeIdx(a.o) || LG.copyOneIn(b.o) - LG.copyOneIn(a.o);
+  const rarer = (a, b) => gradeIdx(b.o) - gradeIdx(a.o) || copyOneIn(b) - copyOneIn(a);
   function sortCopies(list, how) {
     const by = {
       rarest: rarer,
@@ -3265,8 +3273,7 @@
     const worn = wornCodes(), fresh = state.fresh || [], devs = state.dev || [];
     // Your guy as he stands, and what's in each slot.
     // His card as it stands, so what you put on shows where it counts.
-    $('lk-stage').innerHTML = `<div class="card">${px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier))}</div>`;
-    hydrate($('lk-stage'));
+    guyStage('lk-stage', state.seed, worn, cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     // What the locker is for: the guy is dealt from the name and stays; the items are what changes, and the two together are what everyone sees.
     const nWorn = worn.length;
     $('lk-eq').hidden = false;
@@ -3299,7 +3306,8 @@
         <span class="it-act">${on ? '✓ Wearing' : 'Try on'}</span></button>
         <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button></div>`;
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
-    $('grid').querySelectorAll('[data-i]').forEach(b => { const c = copies().find(x => x.i === +b.dataset.i); if (c) showItem(b.querySelector('canvas'), c.o, state.seed, 120, 92); });
+    const byI = new Map(shown.map(c => [c.i, c]));
+    itemsWhenNear('grid', [...$('grid').querySelectorAll('[data-i]')].map(b => [b.querySelector('canvas'), [byI.get(+b.dataset.i).o, state.seed, 120, 92]]));
     renderTrades();
     renderWorkshop();
     renderSwaps();
@@ -3411,7 +3419,10 @@
 
   /* ---------------------------------------------- trade up: five of a grade (the least rare first) for one of the next */
   const TRADE = 5;
-  const tradeable = g => copies().filter(c => !LG.itemById(c.o.item).free && !wornCodes().includes(c.code) && !founderCopy(c.o) && gradeIdx(c.o) === g).sort((a, b) => LG.copyOneIn(a.o) - LG.copyOneIn(b.o));
+  // How rare a copy is, worked out once per code: sorting a big locker asked it again on every comparison.
+  const oneInOf = new Map();
+  const copyOneIn = c => { if (!c.code) return LG.copyOneIn(c.o); let n = oneInOf.get(c.code); if (n === undefined) oneInOf.set(c.code, n = LG.copyOneIn(c.o)); return n; };
+  const tradeable = g => copies().filter(c => !LG.itemById(c.o.item).free && !wornCodes().includes(c.code) && !founderCopy(c.o) && gradeIdx(c.o) === g).sort((a, b) => copyOneIn(a) - copyOneIn(b));
   // Which five go in: the player picks, starting from the five least worth keeping. The float that comes out is
   // the five's average place in their finishes (CS's rule), and the game is each game's share of the five.
   const tradePick = {}, tradeOpen = {}, tradeTouched = {};
@@ -3441,7 +3452,8 @@
     $('trades').querySelectorAll('[data-row]').forEach(row => {
       const g = +row.dataset.row, give = picked(g), all = tradeable(g);
       row.querySelectorAll('.tr-give .tr-c canvas').forEach((cv, k) => showItem(cv, give[k].o, state.seed, 44, 44));
-      row.querySelectorAll('[data-pick] canvas').forEach(cv => showItem(cv, all.find(c => c.code === cv.parentElement.dataset.code).o, state.seed, 44, 44));
+      const byCode = new Map(all.map(c => [c.code, c]));
+      itemsWhenNear('trade-pick-' + g, [...row.querySelectorAll('[data-pick] canvas')].map(cv => [cv, [byCode.get(cv.parentElement.dataset.code).o, state.seed, 44, 44]]));
     });
   }
   $('trades').addEventListener('click', async e => {
@@ -3529,7 +3541,7 @@
       ${want ? `<div class="inv" id="swap-pick" style="margin-top:14px">${mineList.length ? mineList.map(c => `<button class="pickc" type="button" data-code="${esc(c.code)}" aria-pressed="false"><span><canvas aria-hidden="true"></canvas></span><em>${esc(named(LG.nameOf(c.o).split(' | ')[0], tagOf(c.code)))}</em></button>`).join('') : '<div class="empty" style="grid-column:1/-1">Nothing to offer yet: starters and what you wear stay put.</div>'}</div>`
         : `<label class="field" style="margin-top:14px"><span>@</span><input id="swap-to" maxlength="16" spellcheck="false" placeholder="their name" aria-label="Their name"></label>`}
       <div class="look-actions"><button class="btn" type="button" id="swap-send" ${want ? 'disabled' : ''}>${want ? 'Send offer' : 'Send gift'}</button></div></div>`;
-    body.querySelectorAll('#swap-pick canvas').forEach(cv => showItem(cv, LG.decode(cv.closest('[data-code]').dataset.code), state.seed, 52, 52));
+    itemsWhenNear('swap-pick', [...body.querySelectorAll('#swap-pick canvas')].map(cv => [cv, [LG.decode(cv.closest('[data-code]').dataset.code), state.seed, 52, 52]]));
     $('swap-pick')?.addEventListener('click', e => { const b = e.target.closest('[data-code]'); if (!b) return; pick = b.dataset.code; body.querySelectorAll('[data-code]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('swap-send').disabled = false; });
     $('swap-close').addEventListener('click', () => $('swapd').close());
     $('swap-send').addEventListener('click', async () => {
@@ -3593,11 +3605,9 @@
 
   /* ---------------------------------------------- who you could get: a deal of guys from fresh names, some wearing
    * something a capsule could give them */
-  function renderMaybe() {
-    // Deal 400 and show the rarest 12, so the chase parts turn up.
-    const guys = Array.from({ length: 400 }, () => { const seed = LG.makeSeed(), cfg = LG.resolve(seed); return { seed, cfg, n: LG.guyOneIn(cfg.base || cfg) }; })
-      .sort((a, b) => b.n - a.n).slice(0, 12)
-      .map((g, i) => ({ ...g, copies: i % 3 === 0 ? [LG.roll(g.seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
+  async function renderMaybe() {
+    // Deal 400 (beside the page) and show the rarest 12, so the chase parts turn up.
+    const guys = (await offThread('dealRarest', 400, 12)).map((seed, i) => ({ seed, cfg: LG.resolve(seed), copies: i % 3 === 0 ? [LG.roll(seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
     $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, guyLabel(g.cfg, cardTrait(g.cfg), ''), true, guyRank(g.cfg).tier))}</div>${traitChips(g.cfg)}</div>`).join('');
     hydrate($('maybe'));
   }
@@ -3651,6 +3661,28 @@
     // Room round it for what an effect draws outside the item: things rising off it, a tube or bolts round it.
     if (o.fx) { const up = ['embers', 'bubbles', 'hearts'].includes(o.fx) ? 7 : o.fx === 'electric' ? 3 : 1; y0 = Math.max(0, y0 - up); x0 = Math.max(0, x0 - 1); x1 = Math.min(W - 1, x1 + 1); y1 = Math.min(H - 1, y1 + 1); }
     return { frame: { colors, slots, ms: 0 }, owned: { [slot]: o }, box: { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } };
+  }
+  /*
+   * A locker holds hundreds of copies, so a grid's pictures are drawn as they come near the screen, about ten
+   * milliseconds' worth a frame, instead of every one as the grid is built. `key` names the grid: building it
+   * again stops watching the old one.
+   */
+  const nearWatches = new Map();
+  function itemsWhenNear(key, list) {
+    nearWatches.get(key)?.disconnect();
+    const args = new Map(list), ready = [];
+    let queued = false;
+    const pump = () => {
+      const end = performance.now() + 10;
+      while (ready.length && performance.now() < end) { const c = ready.shift(); if (c.isConnected) showItem(c, ...args.get(c)); }
+      if (ready.length) requestAnimationFrame(pump); else queued = false;
+    };
+    const io = new IntersectionObserver(es => {
+      for (const e of es) if (e.isIntersecting) { io.unobserve(e.target); ready.push(e.target); }
+      if (ready.length && !queued) { queued = true; requestAnimationFrame(pump); }
+    }, { rootMargin: '300px' });
+    for (const [c] of list) io.observe(c);
+    nearWatches.set(key, io);
   }
   function showItem(canvas, o, seed, maxW, maxH) {
     if (LG.slotOf(o) === 'aura') {
@@ -3818,7 +3850,7 @@
       </div>`;
     const view = $('ins-view');
     const inspCard = cardInput(cardSpec(ctx.seed, [...others.filter(c => LG.slotOf(c) !== slot), o], itemLabel(o, item.free, one)));
-    saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`, () => $('ins-view').querySelector('.card') ? $('ins-view') : null);
+    saveButtons($('insp-saves'), inspCard, `${ctx.key}-${LG.itemById(o.item).name}`);
     const setView = v => {
       view.innerHTML = v === 'alone' ? '<div class="tilt"><div class="spin3d ins-spin"><canvas class="alone" aria-label="The item on its own"></canvas></div></div>'
         : '<div class="tilt"><div class="card"></div></div>';
@@ -4016,7 +4048,7 @@
       $('lab-count').textContent = `${shown.length} of ${all.length} items`;
       $('lab-items').innerHTML = shown.length ? shown.map(i => `<button type="button" class="lab-it" role="option" data-it="${i.id}" aria-selected="${i.id === lab.item}"><canvas aria-hidden="true"></canvas><span>${esc(i.slot === 'aura' ? '★ ' + i.name : i.name)}</span><small>${esc(i.slot === 'aura' ? 'aura' : cap(i.game) + ' ' + i.slot)}</small></button>`).join('')
         : '<p class="lab-none">Nothing by that name. Try "cap", "gem" or a game.</p>';
-      $('lab-items').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, { item: shown[k].id, finish: isAura(shown[k].id) ? 'classic' : 'plain', scuff: 0.05, print: 3 }, seed, 44, 44); });
+      itemsWhenNear('lab-items', [...$('lab-items').querySelectorAll('canvas')].map((c, k) => { own(c); return [c, [{ item: shown[k].id, finish: isAura(shown[k].id) ? 'classic' : 'plain', scuff: 0.05, print: 3 }, seed, 44, 44]]; }));
     }
     function fins() {
       const aura = isAura(lab.item), list = Object.entries(LG.FINISHES).filter(([, x]) => !!x.aura === aura);
@@ -4064,10 +4096,10 @@
       seed = key; // the demo deals a plain name the same guy every time
     }
     const cfg = guyConfig(seed), n = LG.guyOneIn(cfg.base || cfg), [a, b] = split(n);
-    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div>${px(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, guyRank(cfg).tier))}</div></div>
+    out.innerHTML = `<div class="odds-panel"><div class="stage guy-card"><div><div class="card">${libHtml(cardInput(cardSpec(seed, [], guyLabel(cfg, '@' + key), false, guyRank(cfg).tier)), { sway: true })}</div></div></div>
       <div class="scoring"><div class="tiles">${LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('')}</div>
       <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b}</span></div><div class="meaning" id="lab-meaning"></div></div></div>`;
-    hydrate(out); meaning($('lab-meaning'), n, !!(cfg.base || cfg).founder);
+    mountLib(out); meaning($('lab-meaning'), n, !!(cfg.base || cfg).founder);
   }
 
   function route() {
@@ -4154,7 +4186,7 @@
     $('page-sub').textContent = mine ? 'Your guy, as everyone sees it.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
     const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, guyRank(cfg).tier), uCard = cardInput(uSpec);
     guyStage('u-stage', u.seed, worn, uSpec);
-    saveButtons($('u-saves'), uCard, key, () => $('u-stage'), guySpec(u.seed, worn));
+    saveButtons($('u-saves'), uCard, key, guySpec(u.seed, worn));
     const uRank = guyRank(cfg);
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
@@ -4345,17 +4377,24 @@
     // Only what is on screen moves; a still item draws once.
     for (const b of balls) if (!b.canvas.isConnected) balls.delete(b); else if (onScreen(b.canvas)) b.tick(t);
     for (const s of live) if (s.visible) { draw(s, t); sway(s, t); }
-    for (const s of shows) {
+    // Items on their own: about 16 ms of them a tick, those that waited longest first, so a screenful of shining
+    // copies (each a few milliseconds) takes turns instead of holding a frame.
+    const showsEnd = performance.now() + 16;
+    for (const s of [...shows]) {
       if (!s.canvas.isConnected) { shows.delete(s); continue; }
       if (!onScreen(s.canvas) || (s.drawn && !s.moves)) continue;
+      if (performance.now() > showsEnd) break;
       drawShow(s, now); s.drawn = true;
+      shows.delete(s); shows.add(s);
     }
+    // The library's cards: one set up a tick (about 30 ms each), and only those on screen drawn.
+    let setUp = false;
     for (const s of libCards) {
       if (!s.canvas.isConnected) { libCards.delete(s); continue; }
       if (!onScreen(s.canvas)) continue;
-      if (!s.p) { s.p = LG.cardPlayer(s.input, 80, { keep: false }); s.start = now; }
-      const i = Math.floor((now - s.start) / s.p.delay);
-      if (i !== s.last) { const px = s.p.frame(i); if (s.img?.data !== px) s.img = new ImageData(px, LG.CARD_WIDTH, LG.CARD_HEIGHT); s.ctx.putImageData(s.img, 0, 0); s.last = i; }
+      if (!s.p) { if (setUp) continue; setUp = true; }
+      libDraw(s, now);
+      if (s.sway) sway(s, t);
     }
     fireTick();
     if (bandPaint) bandPaint.draw(now);
@@ -4379,7 +4418,7 @@
 
   renderHand();
   renderMaybe();
-  renderAnime();
+  whenNear($('anime'), renderAnime);
   // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
   // fills the box, and once it is theirs a button takes them back to the game.
   try {
