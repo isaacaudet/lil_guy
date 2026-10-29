@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { cardStill } from '../card';
+import { cardArtPlayer, cardStill } from '../card';
+import { bakeView } from '../bake';
 import { cardFace, cardFaceAt } from '../card-face';
 import { CARD_LOOKS, lookApplies, paintForm } from '../card-looks';
 import { LOOP_MS } from '../loop';
@@ -11,7 +12,8 @@ const gold: Owned = { item: 'flipsies.cap', finish: 'gold', scuff: 0.01, print: 
 const sunset: Owned = { item: 'puttsies.visor', finish: 'sunset', scuff: 0.03, print: 150 };
 const nebula: Owned = { item: 'cutsies.chef', finish: 'nebula', scuff: 0.04, print: 72 };
 const negative: Owned = { item: 'stackdle.tower', finish: 'negative', scuff: 0.02, print: 19 };
-const forLook = { paint: aura, polychrome: prism, foil: sunset, holo: nebula, sheen: gold } as const;
+const tempered: Owned = { item: 'trackdle.cap', finish: 'tempered', scuff: 0.1, print: 230 };
+const forLook = { paint: aura, polychrome: prism, foil: sunset, holo: nebula, sheen: gold, liquid: tempered, prism, opal: prism, scan: nebula, bands: nebula } as const;
 const differs = (a: ArrayLike<number>, b: ArrayLike<number>) => { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; };
 
 describe('prototype card looks', () => {
@@ -51,8 +53,20 @@ describe('prototype card looks', () => {
       const a = cardFaceAt(face, LOOP_MS - 20), b = cardFaceAt(face, 0);
       let worst = 0;
       for (let i = 0; i < a.length; i++) worst = Math.max(worst, Math.abs(a[i] - b[i]));
-      expect(worst).toBeLessThan(look === 'paint' ? 140 : 60);
+      // Hard-banded looks may tip one pixel's band in 20 ms; the rest move a little.
+      expect(worst).toBeLessThan(look === 'paint' || look === 'liquid' || look === 'prism' ? 160 : 60);
       expect(differs(cardFaceAt(face, 700), b)).toBeGreaterThan(0);
     }
+  });
+
+  test('clean words change the card, and the art view is its window as a square', () => {
+    const input = { seed: 'looks', title: '★ Flames | Classic', lines: ['★ Aura', '@mochi'], copies: [aura], footer: '#012 · 1st edition' };
+    expect(differs(cardStill(input, 0.6), cardStill(input, 0.6, { text: 'clean' }))).toBeGreaterThan(300);
+    const art = cardArtPlayer(input, 80, { edge: 'none', look: 'paint' });
+    expect(art.width).toBe(art.height);
+    expect(art.frame(0)).toHaveLength(art.width * art.height * 4);
+    const view = bakeView({ seed: 'looks' }, 'art')!;
+    expect(view.width).toBe(view.height);
+    expect(bakeView({ seed: 'looks' }, 'art-still')!.frames).toHaveLength(1);
   });
 });

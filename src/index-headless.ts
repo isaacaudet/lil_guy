@@ -39,7 +39,7 @@ export { AURAS, ONE_OF_ONE_AURAS, AURA_ODDS, auraById, auraCells, auraColor, aur
 export { collectorNotes, type Note } from './collector';
 export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, type Fx, type Effect } from './effects';
 export { TAG_MAX, cleanTag, floatShare, tradeFloat, tradeGames, machineSet, setProgress } from './collect';
-export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardPlayer, cardStill, toCardGif, toCardPng, toGuyGif, textWidth, CARD_EDGES, CARD_GOLDS, type CardInput, type CardPlayerOptions, type CardEdge, type CardGold, type CardStyle } from './card';
+export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardPlayer, cardStill, cardArtPlayer, cardArtFrames, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, textWidth, CARD_EDGES, CARD_GOLDS, type CardInput, type CardPlayerOptions, type CardEdge, type CardGold, type CardStyle } from './card';
 export { encodeGif, encodePng, encodeApng, upscale, type Frames } from './gif';
 export { LOOP_MS, SHADER_FINISHES, noiseOf, finishColor, GLSL_COMMON } from './finish-shader';
 export { shineFrame, shines, SHINE_FRAGMENT } from './shine';

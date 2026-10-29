@@ -62,10 +62,23 @@ const EXTRA: Record<string, [number, number[]]> = {
   '·': [5, [0, 0, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0]],
   '★': [9, [0, 0, 0, 8, 8, 28, 127, 62, 28, 54, 34, 0, 0, 0, 0, 0]],
   '#': [8, [0, 0, 0, 0, 18, 18, 63, 18, 18, 63, 18, 18, 0, 0, 0, 0]],
+  '…': [9, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 219, 0, 0, 0]],
 };
 const glyph = (ch: string) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS['?'];
 /** How wide a line of text is, in pixels. */
 export const textWidth = (s: string) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
+
+/** A line of text made to fit `width` on one line: as it is, a pixel tighter between letters, or cut short with "…". */
+function fitLine(text: string, width: number): { text: string; spacing: number } {
+  const wide = (t: string, spacing: number) => textWidth(t) + spacing * ([...t].length - 1);
+  if (wide(text, 0) <= width) return { text, spacing: 0 };
+  if (wide(text, -1) <= width) return { text, spacing: -1 };
+  const chars = [...text];
+  while (chars.length > 1 && wide(chars.join('').trimEnd() + '…', -1) > width) chars.pop();
+  return { text: chars.join('').trimEnd() + '…', spacing: -1 };
+}
+/** Card words without the ★ glyph. */
+const unstarred = (t: string) => t.replace(/★\s*/g, '').trim();
 /**
  * Words broken into lines that fit `width`: at spaces, and inside a word only
  * when the word alone is too wide. Nothing is ever cut off.
@@ -111,14 +124,14 @@ class Surface {
     this.px[i] = c[0]; this.px[i + 1] = c[1]; this.px[i + 2] = c[2]; this.px[i + 3] = 255;
     this.region[y * this.w + x] = region;
   }
-  /** Text with a hard drop shadow, its colour picked per pixel so foil can run along it. */
-  text(s: string, x: number, top: number, colour: (x: number, y: number) => RGB, shadow?: RGB): void {
+  /** Text with a hard drop shadow, its colour picked per pixel so foil can run along it; `spacing` added to each letter's advance. */
+  text(s: string, x: number, top: number, colour: (x: number, y: number) => RGB, shadow?: RGB, spacing = 0): void {
     const draw = (ox: number, oy: number, col: (x: number, y: number) => RGB) => {
       let cx = ox;
       for (const ch of s) {
         const [adv, rows] = glyph(ch);
         rows.forEach((bits, dy) => { for (let dx = 0; bits >> dx; dx++) if (bits & (1 << dx)) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy)); });
-        cx += adv;
+        cx += adv + spacing;
       }
     };
     if (shadow) draw(x, top + 1, () => shadow);
@@ -143,9 +156,15 @@ interface GoldPalette { hi: RGB; lo: RGB; amber: RGB; glow: RGB; ink: RGB; bevel
  * bright gold frame round a navy window; `fullart` a dark frame round a window of banded gold; `warm`
  * a gold frame whose hue drifts between amber and gold.
  */
-export const CARD_GOLDS = ['now', 'yellow', 'blackgold', 'champagne', 'rich', 'trim', 'solid', 'fullart', 'warm'] as const;
+export const CARD_GOLDS = ['now', 'yellow', 'blackgold', 'champagne', 'rich', 'trim', 'solid', 'fullart', 'warm', 'framed', 'studded', 'gilt'] as const;
 export type CardGold = (typeof CARD_GOLDS)[number];
-const GOLD_CONCEPTS: readonly CardGold[] = ['trim', 'solid', 'fullart', 'warm'];
+const GOLD_CONCEPTS: readonly CardGold[] = ['trim', 'solid', 'fullart', 'warm', 'framed', 'studded', 'gilt'];
+/**
+ * `fullart`'s window round other frames: `framed` a thin gold line at the window's edge and along the
+ * card's bevel; `studded` that and gold studs at the window's corners; `gilt` the whole bevel gold,
+ * the line and the studs.
+ */
+const FULL_ART: readonly CardGold[] = ['fullart', 'framed', 'studded', 'gilt'];
 /** The concepts' clean gold, its light top edge and its deep lower edge; their navy window, dark stock and badge words. */
 const BRIGHT_GOLD: RGB = [247, 201, 72], GOLD_LIGHT: RGB = [255, 233, 160], GOLD_DEEP: RGB = [201, 146, 30];
 const NAVY: RGB = [22, 26, 38], DARK_HI: RGB = [46, 42, 64], DARK_LO: RGB = [28, 24, 40], PILL_INK: RGB = [74, 46, 6];
@@ -159,7 +178,7 @@ const GOLDS: Record<CardGold, GoldPalette> = {
   blackgold: { hi: [255, 238, 140], lo: [226, 170, 40], amber: [22, 22, 32], glow: [80, 66, 36], rim: [24, 20, 31], ...SAME },
   champagne: { hi: [255, 247, 214], lo: [214, 182, 110], amber: [64, 52, 36], glow: [222, 196, 140], ink: [88, 68, 30], bevelLo: [160, 128, 70], rim: [60, 48, 30], quiet: [120, 98, 58], pill: [88, 68, 34] },
   rich: { hi: [255, 218, 96], lo: [212, 136, 18], amber: [44, 26, 8], glow: [226, 150, 30], ink: [84, 46, 4], bevelLo: [150, 88, 10], rim: [40, 22, 4], quiet: [110, 62, 6], pill: [84, 48, 6] },
-  trim: NOW_GOLD, solid: NOW_GOLD, fullart: NOW_GOLD, warm: NOW_GOLD,
+  trim: NOW_GOLD, solid: NOW_GOLD, fullart: NOW_GOLD, warm: NOW_GOLD, framed: NOW_GOLD, studded: NOW_GOLD, gilt: NOW_GOLD,
 };
 
 /** How tall the card itself is: the rows under it hold its shadow. */
@@ -274,7 +293,7 @@ export const CARD_EDGES = ['now', 'cell', 'round', 'shadow', 'none', 'pool'] as 
 export type CardEdge = (typeof CARD_EDGES)[number];
 
 /** A card's prototype options: a look for its edition, its gold, and its edge. */
-export type CardStyle = LookOptions & { gold?: CardGold; edge?: CardEdge; plate?: boolean };
+export type CardStyle = LookOptions & { gold?: CardGold; edge?: CardEdge; plate?: boolean; text?: 'now' | 'clean' };
 
 /**
  * Everything about a card that holds still, worked out once: the laid-out
@@ -305,6 +324,11 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // A Grail's words are struck into its gold, unless it is given the dark plate every other card has,
   // as every prototype gold concept is.
   const concept = gold && GOLD_CONCEPTS.includes(looks.gold ?? 'now') ? looks.gold : undefined;
+  const fullArt = !!concept && FULL_ART.includes(concept);
+  // Which of a concept's parts are gold: its whole bevel, the bevel's outer row alone, a line inside the window's rim, studs.
+  const goldBevel = concept === 'trim' || concept === 'solid' || concept === 'warm' || concept === 'gilt';
+  const goldLine = concept === 'trim' || concept === 'framed' || concept === 'studded' || concept === 'gilt';
+  const goldStuds = concept === 'trim' || concept === 'studded' || concept === 'gilt';
   const struck = gold && !looks.plate && !concept;
   const gc: RGB = g >= 0 ? rgb(GRADES[g].color) : [104, 118, 146];
   const auraCopy = owned.aura;
@@ -313,13 +337,23 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
 
   // ---------------------------------------------------------------- words
   const textW = W - M * 2 - 10;
-  const pill = input.lines?.[0], subs = (input.lines ?? []).slice(1).flatMap(l => wrapText(l, textW));
-  const titles = wrapText(input.title, textW);
+  // Clean words (`text: 'clean'`): no ★, the title its item's name alone on one line, the badge and his
+  // name on one line, the set line on one line without its print number or the set's symbol, all from
+  // one left edge.
+  const clean = looks.text === 'clean', left = side + 5;
+  const pill = clean && input.lines?.[0] ? unstarred(input.lines[0]) : input.lines?.[0];
+  const subs = clean ? (input.lines ?? []).slice(1, 2).map(unstarred) : (input.lines ?? []).slice(1).flatMap(l => wrapText(l, textW));
+  const titleFit = clean ? fitLine(unstarred(input.title.split(' | ')[0]), textW) : undefined;
+  const titles = titleFit ? [titleFit.text] : wrapText(input.title, textW);
   const titleH = titles.length * 12;
   const lastItem = input.copies?.length ? itemById(input.copies[input.copies.length - 1].item) : undefined;
-  const markHex = lastItem ? SET_COLORS[lastItem.game as keyof typeof SET_COLORS] : undefined;
+  const markHex = lastItem && !clean ? SET_COLORS[lastItem.game as keyof typeof SET_COLORS] : undefined;
   const foots: string[] = [];
-  for (const part of (input.footer ?? '').split(' · ').filter(Boolean)) {
+  // Clean, one line beside the symbol, a pixel tighter or cut short if it must be.
+  const footLine = clean ? (input.footer ?? '').split(' · ').filter(part => part && !part.startsWith('#')).join(' · ') : '';
+  const footFit = footLine ? fitLine(footLine, textW) : undefined;
+  if (footFit) foots.push(footFit.text);
+  else if (!clean) for (const part of (input.footer ?? '').split(' · ').filter(Boolean)) {
     const k = foots.length - 1, w = k <= 0 ? textW - 14 : textW;
     if (k >= 0 && textWidth(`${foots[k]} · ${part}`) <= w) foots[k] += ` · ${part}`;
     else if (foots.length < 2 && textWidth(part) <= textW) foots.push(part);
@@ -328,6 +362,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const footH = foots.length ? foots.length * 11 : markHex ? 11 : 0;
   // The grade's badge shares its row with a short line, as "Everyday  @mochi".
   const pillW = pill ? textWidth(pill) + 14 : 0;
+  if (clean && pill && subs.length) subs[0] = fitLine(subs[0], textW - pillW - 6).text;
   const paired = !!pill && subs.length === 1 && pillW + 6 + textWidth(subs[0]) <= W - M * 2 - 6;
   const rest = paired ? [] : subs;
   // From the foot up: the plate holds the title, the badge and the lines, and the set line.
@@ -344,6 +379,9 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const plateTop = y - 3;
   const WIN = { left: side, right: W - 1 - side, top: 6, bottom: plateTop - 4 };
   const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * 0.45;
+  // The biggest square inside the window's rim, centred: the art alone (`cardArtPlayer`).
+  const inW = WIN.right - WIN.left - 3, inH = WIN.bottom - WIN.top - 3, side2 = Math.min(inW, inH);
+  const square = { x: WIN.left + 2 + Math.floor((inW - side2) / 2), y: WIN.top + 2 + Math.floor((inH - side2) / 2), size: side2 };
 
   // ---------------------------------------------------------------- the card's stock
   // The colour the card is printed on, before its edition.
@@ -369,7 +407,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     if (d <= 2) { s.set(x, yy, INK); continue; }
     let c = rows[yy] ?? stock(x, yy);
     // A gold concept's bevel is clean gold, one light row along the top and left and one deep along the bottom and right.
-    if (concept && concept !== 'fullart' && bevel) { c = d === 3 ? (bevel === 1 ? GOLD_LIGHT : GOLD_DEEP) : BRIGHT_GOLD; trim[yy * W + x] = 1; }
+    if (bevel && (goldBevel || (goldLine && d === 3))) { c = d === 3 ? (bevel === 1 ? GOLD_LIGHT : GOLD_DEEP) : BRIGHT_GOLD; trim[yy * W + x] = 1; }
     // A Grail's bevel is raised gold, lit at the top left and running deeper to the bottom right.
     else if (gold && bevel) c = mix(mix([255, 238, 168], gp.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE : INK, 0.2);
     // A chunky bevel: lit along the top and left, deep along the bottom and right.
@@ -402,19 +440,19 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     if (rim) {
       const inner = x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1;
       // A concept's window is set in a dark line, `trim`'s with a clean gold line inside it.
-      if (concept) { if (concept === 'trim' && inner) trim[yy * W + x] = 1; s.set(x, yy, concept === 'trim' && inner ? BRIGHT_GOLD : INK); continue; }
+      if (concept) { if (goldLine && inner) trim[yy * W + x] = 1; s.set(x, yy, goldLine && inner ? BRIGHT_GOLD : INK); continue; }
       s.set(x, yy, gold && inner ? [255, 226, 140] : gold ? gp.rim : INK);
       continue;
     }
     const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-    let c: RGB = concept === 'solid' || concept === 'warm' ? NAVY : concept === 'fullart' ? fieldGold(x, yy) : concept === 'trim' || !gold ? mix(light, mix(light, gc, 0.35), depth * 0.6)
+    let c: RGB = concept === 'solid' || concept === 'warm' ? NAVY : fullArt ? fieldGold(x, yy) : concept === 'trim' || !gold ? mix(light, mix(light, gc, 0.35), depth * 0.6)
       : mix(mix(gp.amber, gp.glow, Math.max(0, 1 - r) ** 1.3), mix(gp.amber, INK, 0.3), depth * 0.3);
     // A shaded lip under the rim, so the window reads as set into the card.
     if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK, 0.35);
     s.set(x, yy, c, 2);
   }
   // A Grail's window is held by four raised gold studs at its corners.
-  if (gold && (!concept || concept === 'trim')) for (const [sx, sy] of [[WIN.left + 1, WIN.top + 1], [WIN.right - 1, WIN.top + 1], [WIN.left + 1, WIN.bottom - 1], [WIN.right - 1, WIN.bottom - 1]]) {
+  if (gold && (!concept || goldStuds)) for (const [sx, sy] of [[WIN.left + 1, WIN.top + 1], [WIN.right - 1, WIN.top + 1], [WIN.left + 1, WIN.bottom - 1], [WIN.right - 1, WIN.bottom - 1]]) {
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
       const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
       if (d > 10 || shape.depth[yy * W + x] <= 2) continue;
@@ -439,16 +477,16 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const quiet: RGB = struck ? gp.quiet : aura ? mix(ah, WHITE, 0.6) : [184, 176, 206];
   const titleInk = (x: number, yy: number, tm: number): RGB => mix(mix(ah, WHITE, 0.5), WHITE, 0.5 + 0.5 * Math.sin(x * 0.12 - tm / wave(1000 / 2) + yy * 0.1));
   const titlePixels: number[] = [];
-  titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
+  titles.forEach((l, k) => s.text(l, clean ? left : Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
     if (struck) return gp.ink;
     if (!aura) return WHITE;
     titlePixels.push(x, yy);
     return titleInk(x, yy, 0);
-  }, struck ? GOLD_CUT : INK));
+  }, struck ? GOLD_CUT : INK, titleFit?.spacing));
   rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
   // The grade's badge: a chunky pill in its colour with a deep lip, as Balatro's rarity badges.
   if (pill) {
-    const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
+    const w = pillW, x0 = clean ? left : paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
     const fill: RGB = struck ? gp.pill : concept ? BRIGHT_GOLD : tone;
     for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
       if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
@@ -458,7 +496,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     s.text(pill, x0 + 7, pillTop - 1, () => (struck ? [255, 222, 130] : concept ? PILL_INK : WHITE), concept ? GOLD_LIGHT : mix(fill, INK, 0.6));
     if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
   }
-  foots.forEach((l, k) => s.text(l, side + 5, footTop + k * 11 - 2, () => quiet));
+  foots.forEach((l, k) => s.text(l, left, footTop + k * 11 - 2, () => quiet, undefined, footFit?.spacing));
   if (markHex) {
     const m = rgb(markHex), x0 = W - side - 14, y0 = footTop;
     for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
@@ -519,7 +557,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // crosses everything inside the card's outline, its words, rim and studs counted as raised.
   // A gold concept plays over its own part: the sheen along `trim`'s trim, `solid`'s frame or `fullart`'s window, `warm`'s drift over its frame.
   const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = (looked && look === 5) || (!!concept && concept !== 'warm');
-  const plays = (i: number) => concept === 'trim' ? trim[i] === 1 : concept === 'fullart' ? s.region[i] === 2 : concept ? s.region[i] === 1
+  const plays = (i: number) => concept === 'trim' ? trim[i] === 1 : fullArt ? s.region[i] === 2 || trim[i] === 1 : concept ? s.region[i] === 1
     : sheen ? shape.depth[i] > 2 && !onPlate[i] : s.region[i] > 0;
   const edIdx: number[] = [];
   for (let i = 0; i < W * H; i++) if (plays(i)) edIdx.push(i);
@@ -528,7 +566,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   edIdx.forEach((i, k) => {
     const x = i % W, yy = (i - x) / W;
     ex[k] = x / 5; ey[k] = yy / 5; er[k] = s.region[i] || 1; eh[k] = shape.glint[(yy >> 1) * W + (x >> 1)];
-    if (sheen) raised[k] = concept === 'trim' || !s.region[i] || shape.bevel[i] ? 1 : 0;
+    if (sheen) raised[k] = concept === 'trim' || trim[i] || (!fullArt && (!s.region[i] || shape.bevel[i])) ? 1 : 0;
     for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
   });
   // Other prototype looks work their field out on blocks of two card pixels: crisp, and a quarter of the work.
@@ -722,8 +760,10 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
 
   // ---------------------------------------------------------------- on its shadow
   const body = s.px.slice();
+  let whole: Uint8ClampedArray | null = null;
 
   return {
+    square,
     /** Whether the card changes over time, apart from his move and its lift. */
     moves: ed > 0 || Object.values(owned).some(o => o && shines(o)),
     /** How far the card lifts off its shadow and how far he bobs at `t` seconds: with his frame, all a still card's picture depends on. */
@@ -750,6 +790,12 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
         const [a, b] = shape.runs[yy];
         if (a >= 0) out.set(body.subarray((yy * W + a) * 4, (yy * W + b + 1) * 4), ((yy + 2 - lift) * W + a) * 4);
       }
+      return out;
+    },
+    /** The window's square alone at `t` seconds, into `out` (`square.size` by `square.size`, RGBA). */
+    drawSquare(frame: CardFrame, t: number, out: Uint8ClampedArray): Uint8ClampedArray {
+      this.draw(frame, t, whole ??= new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+      for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W + square.x) * 4, ((square.y + yy) * W + square.x + square.size) * 4), yy * square.size * 4);
       return out;
     },
   };
@@ -799,6 +845,8 @@ export interface CardPlayerOptions {
   edge?: CardEdge;
   /** A Grail on the dark plate every other card has, its gold only in the frame. */
   plate?: boolean;
+  /** `clean`: the card's words tidied (no ★, one line each, one left edge). */
+  text?: 'now' | 'clean';
 }
 
 /**
@@ -808,19 +856,36 @@ export interface CardPlayerOptions {
  * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
  * card with nothing shining draws each pose of his once and shows it again.
  */
-export function cardPlayer(input: CardInput, ms = 80, { keep = true, look, contrast, gold, edge, plate }: CardPlayerOptions = {}) {
+export function cardPlayer(input: CardInput, ms = 80, options: CardPlayerOptions = {}) {
+  return playCard(input, ms, options, false);
+}
+
+/**
+ * The card's window alone, as a square, played as `cardPlayer` plays the whole card: the art behind
+ * him (its edition, look, frame item or aura ground) and him moving. Its side is the window's
+ * height or width, whichever is less; give it `edge: 'none'` (or another grid edge) so his whole move
+ * stays in the square.
+ */
+export function cardArtPlayer(input: CardInput, ms = 80, options: CardPlayerOptions = {}) {
+  return playCard(input, ms, options, true);
+}
+
+/** `cardPlayer`, or `cardArtPlayer` when `square`. */
+function playCard(input: CardInput, ms: number, { keep = true, ...style }: CardPlayerOptions, square: boolean) {
   const options = { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false };
   const anim = animate(input.seed, input.move ?? 'idle', { ...options, loop: { fit: true } }), turns = anim.turns ?? 1;
-  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), { look, contrast, gold, edge, plate });
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), style);
   const total = anim.duration, count = Math.max(1, Math.round(total / ms)), cache: Uint8ClampedArray[] = [];
   const delays = Array.from({ length: count }, (_, k) => Math.round((k + 1) * total / count) - Math.round(k * total / count));
   const frameOf = new Map(anim.frames.map((f, k) => [f, k]));
   // A card with nothing moving but him is the same picture whenever he holds the same pose at the same lift.
   const poses = new Map<number, Uint8ClampedArray>();
-  const one = keep ? null : new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
+  const width = square ? art.square.size : CARD_WIDTH, height = square ? art.square.size : CARD_HEIGHT;
+  const draw = (frame: CardFrame, t: number, out: Uint8ClampedArray) => (square ? art.drawSquare(frame, t, out) : art.draw(frame, t, out));
+  const one = keep ? null : new Uint8ClampedArray(width * height * 4);
   let shown = -1;
   return {
-    width: CARD_WIDTH, height: CARD_HEIGHT, count, delay: total / count, delays,
+    width, height, count, delay: total / count, delays,
     /** The frame showing at `i` (wraps round). Without `keep`, the same picture redrawn: show it before asking for the next. */
     frame(i: number): Uint8ClampedArray {
       const k = ((i % count) + count) % count;
@@ -828,12 +893,12 @@ export function cardPlayer(input: CardInput, ms = 80, { keep = true, look, contr
       const frame = frameAt(anim, k * total / count), t = ((k * turns * LOOP_MS) / count % LOOP_MS) / 1000;
       const { lift } = art.pose(t), pose = art.moves ? -1 : frameOf.get(frame)! * 4 + lift;
       if (!keep) {
-        if (pose < 0 || pose !== shown) art.draw(frame, t, one!);
+        if (pose < 0 || pose !== shown) draw(frame, t, one!);
         shown = pose;
         return one!;
       }
       let px = pose >= 0 ? poses.get(pose) : undefined;
-      if (!px) { px = art.draw(frame, t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4)); if (pose >= 0) poses.set(pose, px); }
+      if (!px) { px = draw(frame, t, new Uint8ClampedArray(width * height * 4)); if (pose >= 0) poses.set(pose, px); }
       return cache[k] = px;
     },
   };
@@ -856,6 +921,24 @@ function ownedBySlot(copies: Owned[]): Partial<Record<(typeof FRAME_SLOTS)[numbe
 /** The card as a looping GIF, each card pixel `scale` by `scale`. */
 export function toCardGif(input: CardInput, scale = 3): Uint8Array {
   return encodeGif(cardFrames(input), scale);
+}
+
+/** The card's window art alone as frames, as `cardFrames` gives the whole card. */
+export function cardArtFrames(input: CardInput, ms = 80, options: CardPlayerOptions = {}): Frames {
+  const art = cardArtPlayer(input, ms, options), frames: Uint8ClampedArray[] = [];
+  for (let i = 0; i < art.count; i++) frames.push(art.frame(i));
+  return { width: art.width, height: art.height, frames, delays: art.delays };
+}
+
+/** The card's window art alone as a looping GIF, each pixel `scale` by `scale`. */
+export function toCardArtGif(input: CardInput, scale = 3, options: CardPlayerOptions = {}): Uint8Array {
+  return encodeGif(cardArtFrames(input, 80, options), scale);
+}
+
+/** The card's window art alone as a PNG, its first frame. */
+export function toCardArtPng(input: CardInput, scale = 4, options: CardPlayerOptions = {}): Promise<Uint8Array> {
+  const art = cardArtPlayer(input, 80, options);
+  return encodePng(art.frame(0), art.width, art.height, scale);
 }
 
 /** The card as a PNG, each card pixel `scale` by `scale`. */

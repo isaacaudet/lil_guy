@@ -22483,6 +22483,16 @@ function encodeApng(input, scale$1 = 1) {
 *   light crossing it corner to corner, as light catches a metal card:
 *   brighter on what stands proud (the bevel, the words, the rim), a glint
 *   on the bevel as it passes, and still the rest of the time.
+* - `liquid`: a Holographic card (Tempered, steel) as liquid metal: its window
+*   flowing chrome, hard bands of dark, sky and silver round a white
+*   highlight, slowly swirling, and its frame chrome that catches the same
+*   highlights.
+* - `prism` and `opal`, for a Polychrome card: a few broad diagonal bands of
+*   the spectrum drifting across it like light through a prism; or a pale
+*   pearl with soft patches of colour shifting over it.
+* - `scan` and `bands`, for a Holographic card: holo's cool drifting tint
+*   with a soft shimmer running down its rows; or with a few slow broad
+*   bands of light, their edges in rainbow.
 *
 * Each is written twice, as GLSL (`GLSL_LOOKS`) and as plain code
 * (`lookField`, `polyColor`), with the same result, and every motion comes
@@ -22494,7 +22504,12 @@ const CARD_LOOKS = [
 	"polychrome",
 	"foil",
 	"holo",
-	"sheen"
+	"sheen",
+	"liquid",
+	"prism",
+	"opal",
+	"scan",
+	"bands"
 ];
 /** The look as the shaders number it, 0 for none. */
 const lookIndex = (look) => look ? CARD_LOOKS.indexOf(look) : 0;
@@ -22505,10 +22520,13 @@ function lookApplies(look, ed) {
 	if (look === 3) return ed === 1;
 	if (look === 4) return ed === 2;
 	if (look === 5) return ed === 5;
+	if (look === 6) return ed === 2;
+	if (look === 7 || look === 8) return ed === 3;
+	if (look === 9 || look === 10) return ed === 2;
 	return false;
 }
 /** The default hardness of `paint`'s bands. */
-const PAINT_CONTRAST = 5;
+const PAINT_CONTRAST = 7;
 const INK$2 = [
 	24 / 255,
 	20 / 255,
@@ -22604,11 +22622,11 @@ vec3 polyColor(vec3 c, vec2 p, vec2 o, float th, float k) {
 float paintField(vec2 p, vec2 o, float th, vec4 form, float phase) {
   vec2 q = (p - o - form.zw) / 9.0;
   float r = length(q), k = form.y;
-  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th));
-  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th)); }
-  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.35 * sin(q.x * 3.0 + q.y * 2.0 + th));
+  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th) + 0.5 * sin(q.x * 2.0 - q.y * 1.6 + th));
+  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th) + 0.6 * sin(u.y * 1.1 + u.x * 0.6 - 2.0 * th)); }
+  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.7 * sin(q.x * 3.0 + q.y * 2.0 + th) + 0.5 * sin(q.y * 2.4 - q.x * 1.3 - th));
   if (form.x < 3.5) return 0.5 + 0.5 * sin(q.x * 6.0 + 1.6 * sin(q.y * 2.4 + k * th + phase) + 0.8 * sin(q.x * 2.1 - th)) + 0.15 * q.y * k;
-  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) - th);
+  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) + 0.5 * sin(q.y * 3.1 + 2.0 * th) - th);
   float tw = 0.6 * r + 0.35 * sin(th);
   vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 1.9;
   float ct = 0.8 * cos(th + phase), st = 0.8 * sin(th + phase);
@@ -22659,13 +22677,57 @@ vec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time
   if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));
   return c;
 }
+float liquidField(vec2 p, vec2 o, float th) {
+  vec2 u = (p - o) / 10.0 * 1.6;
+  u += 0.6 * vec2(sin(1.4 * u.y + th), sin(1.2 * u.x - th + 0.8));
+  u += 0.5 * vec2(sin(2.1 * u.y - th + 1.7), sin(1.8 * u.x + 2.0 * th));
+  return 0.5 + 0.5 * sin(u.x * 1.3 + u.y * 2.1 + 0.6 * sin(u.x * 0.7 - th));
+}
+vec3 liquidColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float t = liquidField(p, o, th);
+  float a = clamp((t - 0.28) / 0.06 + 0.5, 0.0, 1.0), b = clamp((t - 0.5) / 0.06 + 0.5, 0.0, 1.0), d = clamp((t - 0.82) / 0.05 + 0.5, 0.0, 1.0);
+  vec3 metal = mix(mix(mix(vec3(0.1, 0.12, 0.18), vec3(0.55, 0.75, 0.95), a), vec3(0.78, 0.82, 0.88), b), vec3(1.0), d);
+  if (region > 1.5) return metal;
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  return mix(vec3(0.42 + 0.5 * l) * vec3(0.93, 0.96, 1.04), vec3(1.0), 0.4 * d);
+}
+vec3 prismColor(vec3 c, vec2 p, float region, float time) {
+  float h6 = fract((p.x * 0.35 + p.y * 0.55) / 20.0 - time / 6.0) * 6.0, k = floor(h6), e = clamp((h6 - k - 0.85) / 0.15, 0.0, 1.0);
+  vec3 band = fromHsl(vec3((k + e) / 6.0, 0.7, 0.7));
+  return mix(c, c * 0.35 + band * 0.7, region > 1.5 ? 0.6 : 0.4);
+}
+vec3 opalColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float f = polyField(p, o, th);
+  vec3 base = mix(c, vec3(0.94, 0.95, 0.98), 0.5);
+  vec3 fire = fromHsl(vec3(fract(0.5 + 0.35 * f), 0.55, 0.78));
+  return mix(base, fire, (region > 1.5 ? 0.45 : 0.3) * clamp(0.5 + f / 3.0, 0.0, 1.0));
+}
+vec3 holoTint(vec3 c, float f, float k) {
+  vec3 tint = fromHsl(vec3(fract(0.58 + 0.12 * f), 0.75, 0.66));
+  return mix(c, c * 0.5 + tint * 0.55, 0.5 * k);
+}
+vec3 scanColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float k = region > 1.5 ? 0.6 : 1.0, line = 0.5 + 0.5 * cos(p.y * TAU * 1.25), wave = 0.5 + 0.5 * sin(p.y * 0.8 + p.x * 0.15 - 2.0 * th);
+  return holoTint(c, polyField(p, o, th), k) + vec3(0.6, 0.75, 1.0) * line * wave * 0.22 * k;
+}
+vec3 bandsColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float k = region > 1.5 ? 0.6 : 1.0, b = sin((p.x * 0.3 + p.y * 0.5) * 0.45 - th);
+  float band = clamp((b - 0.6) / 0.3, 0.0, 1.0), edge = band * (1.0 - band) * 4.0;
+  vec3 rim = fromHsl(vec3(fract(0.55 + 0.3 * b + p.y * 0.01), 0.8, 0.7));
+  return holoTint(c, polyField(p, o, th), k) + vec3(0.9, 0.95, 1.0) * band * 0.16 * k + rim * edge * 0.3 * k;
+}
 vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {
   float th = time * TAU / 6.0;
   if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast, form, phase) : c;
   if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
   if (look > 2.5 && look < 3.5 && ed > 0.5 && ed < 1.5) return foilColor(c, p, o, region, th);
   if (look > 3.5 && look < 4.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
-  if (look > 4.5 && ed > 4.5 && ed < 5.5) return sheenColor(c, p, region, raised, px, time);
+  if (look > 4.5 && look < 5.5 && ed > 4.5 && ed < 5.5) return sheenColor(c, p, region, raised, px, time);
+  if (look > 5.5 && look < 6.5 && ed > 1.5 && ed < 2.5) return liquidColor(c, p, o, region, th);
+  if (look > 6.5 && look < 7.5 && ed > 2.5 && ed < 3.5) return prismColor(c, p, region, time);
+  if (look > 7.5 && look < 8.5 && ed > 2.5 && ed < 3.5) return opalColor(c, p, o, region, th);
+  if (look > 8.5 && look < 9.5 && ed > 1.5 && ed < 2.5) return scanColor(c, p, o, region, th);
+  if (look > 9.5 && ed > 1.5 && ed < 2.5) return bandsColor(c, p, o, region, th);
   return editionColor(c, ed, v, p, o, region, h, px, time);
 }
 `;
@@ -22677,6 +22739,42 @@ const sin = (x) => {
 	return SINES[j] + (SINES[j + 1] - SINES[j]) * (u - i);
 };
 const cos = (x) => sin(x + Math.PI / 2);
+/** Liquid metal's dark, sky and silver, and its chrome frame's tint. */
+const METAL = [
+	[
+		.1,
+		.12,
+		.18
+	],
+	[
+		.55,
+		.75,
+		.95
+	],
+	[
+		.78,
+		.82,
+		.88
+	]
+], CHROME = [
+	.93,
+	.96,
+	1.04
+];
+/** Opal's pale pearl, scan's shimmer and the bands' light. */
+const OPAL = [
+	.94,
+	.95,
+	.98
+], SCAN = [
+	.6,
+	.75,
+	1
+], BAND_LIGHT = [
+	.9,
+	.95,
+	1
+];
 /** The holo grid's cool light. */
 const HOLO_LIT = [
 	.65,
@@ -22955,14 +23053,14 @@ function lookField(look, ed, v, o, px, pixels, paint$1) {
 		const w = .5 / contrast$2, k1v = new Float32Array(nb), k2v = new Float32Array(nb), arms$1 = Math.abs(k), turn = Math.sign(k);
 		return (time, out) => {
 			const th = time * TAU / 6;
-			if (family === 0) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(arms$1 * aa[b$1] + turn * 5 * rr[b$1] - th + phase + .7 * sin(2.3 * rr[b$1] - th));
+			if (family === 0) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(arms$1 * aa[b$1] + turn * 5 * rr[b$1] - th + phase + .7 * sin(2.3 * rr[b$1] - th) + .5 * sin(qx[b$1] * 2 - qy[b$1] * 1.6 + th));
 			else if (family === 1) for (let b$1 = 0; b$1 < nb; b$1++) {
 				const ux = qx[b$1] * 2, uy = qy[b$1] * 2;
-				val[b$1] = .5 + .5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + .7 * sin(ux * 3.1 - uy * .8 - th));
+				val[b$1] = .5 + .5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + .7 * sin(ux * 3.1 - uy * .8 - th) + .6 * sin(uy * 1.1 + ux * .6 - 2 * th));
 			}
-			else if (family === 2) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(rr[b$1] * 6.5 - th + phase + .35 * sin(qx[b$1] * 3 + qy[b$1] * 2 + th));
+			else if (family === 2) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(rr[b$1] * 6.5 - th + phase + .7 * sin(qx[b$1] * 3 + qy[b$1] * 2 + th) + .5 * sin(qy[b$1] * 2.4 - qx[b$1] * 1.3 - th));
 			else if (family === 3) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(qx[b$1] * 6 + 1.6 * sin(qy[b$1] * 2.4 + k * th + phase) + .8 * sin(qx[b$1] * 2.1 - th)) + .15 * qy[b$1] * k;
-			else if (family === 4) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin((qx[b$1] + qy[b$1] * 1.7 * k) * 5 + .8 * sin((qx[b$1] - qy[b$1]) * 2.6 + th + phase) - th);
+			else if (family === 4) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin((qx[b$1] + qy[b$1] * 1.7 * k) * 5 + .8 * sin((qx[b$1] - qy[b$1]) * 2.6 + th + phase) + .5 * sin(qy[b$1] * 3.1 + 2 * th) - th);
 			else {
 				const tw = .35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = .8 * Math.cos(th + phase), st = .8 * Math.sin(th + phase);
 				for (let b$1 = 0; b$1 < nb; b$1++) {
@@ -23046,6 +23144,97 @@ function lookField(look, ed, v, o, px, pixels, paint$1) {
 				for (let i = 0; i < 3; i++) {
 					const c = rgb$7[j + i];
 					out[j + i] = c + (c * .5 + tint[b$1 * 3 + i] * .55 - c) * .5 * kk + HOLO_LIT[i] * g;
+				}
+			}
+		};
+	}
+	if (look >= 7) {
+		const ax = Float32Array.from(bx, (d) => d + o[0]), ay = Float32Array.from(by, (d) => d + o[1]);
+		const line = Float32Array.from(ay, (py) => .5 + .5 * Math.cos(py * TAU * 1.25));
+		const col = new Float32Array(nb * 3), tint = new Float32Array(nb * 3), w1 = new Float32Array(nb), w2 = new Float32Array(nb), rim$2 = new Float32Array(nb * 3);
+		/** `fromHsl`, written into `into` at `j`. */
+		const hsl$2 = (into, j, h, sat, l) => {
+			const ch = sat * (1 - Math.abs(2 * l - 1));
+			for (let i = 0; i < 3; i++) {
+				const q = Math.abs(fract(h + (i === 0 ? 0 : i === 1 ? 2 / 3 : 1 / 3)) * 6 - 3) - 1;
+				into[j + i] = l + ch * ((q < 0 ? 0 : q > 1 ? 1 : q) - .5);
+			}
+		};
+		return (time, out) => {
+			const th = time * TAU / 6;
+			if (look !== 7) polyCentres(th, m);
+			for (let b$1 = 0; b$1 < nb; b$1++) {
+				if (look === 7) {
+					const h6 = fract((ax[b$1] * .35 + ay[b$1] * .55) / 20 - time / 6) * 6, k = Math.floor(h6), e = clamp01((h6 - k - .85) / .15);
+					hsl$2(col, b$1 * 3, (k + e) / 6, .7, .7);
+					continue;
+				}
+				const f = polyAt(bx[b$1], by[b$1], m, th);
+				if (look === 8) {
+					hsl$2(col, b$1 * 3, fract(.5 + .35 * f), .55, .78);
+					w1[b$1] = clamp01(.5 + f / 3);
+					continue;
+				}
+				hsl$2(tint, b$1 * 3, fract(.58 + .12 * f), .75, .66);
+				if (look === 9) {
+					w1[b$1] = line[b$1] * (.5 + .5 * sin(ay[b$1] * .8 + ax[b$1] * .15 - 2 * th)) * .22;
+					continue;
+				}
+				const v$1 = sin((ax[b$1] * .3 + ay[b$1] * .5) * .45 - th), band$1 = clamp01((v$1 - .6) / .3);
+				w1[b$1] = band$1 * .16;
+				w2[b$1] = band$1 * (1 - band$1) * 4 * .3;
+				hsl$2(rim$2, b$1 * 3, fract(.55 + .3 * v$1 + ay[b$1] * .01), .8, .7);
+			}
+			for (let k = 0; k < n; k++) {
+				const j = k * 3, b$1 = blockOf[k], win = region[k] > 1.5;
+				for (let i = 0; i < 3; i++) {
+					const c = rgb$7[j + i];
+					if (look === 7) {
+						out[j + i] = c + (c * .35 + col[b$1 * 3 + i] * .7 - c) * (win ? .6 : .4);
+						continue;
+					}
+					if (look === 8) {
+						const base$1 = c + (OPAL[i] - c) * .5;
+						out[j + i] = base$1 + (col[b$1 * 3 + i] - base$1) * (win ? .45 : .3) * w1[b$1];
+						continue;
+					}
+					const kk = win ? .6 : 1, tinted = c + (c * .5 + tint[b$1 * 3 + i] * .55 - c) * .5 * kk;
+					out[j + i] = look === 9 ? tinted + SCAN[i] * w1[b$1] * kk : tinted + BAND_LIGHT[i] * w1[b$1] * kk + rim$2[b$1 * 3 + i] * w2[b$1] * kk;
+				}
+			}
+		};
+	}
+	if (look === 6) {
+		const ux0 = Float32Array.from(bx, (d) => d / 10 * 1.6), uy0 = Float32Array.from(by, (d) => d / 10 * 1.6), lum$3 = new Float32Array(n);
+		for (let k = 0; k < n; k++) lum$3[k] = .42 + .5 * (.299 * rgb$7[k * 3] + .587 * rgb$7[k * 3 + 1] + .114 * rgb$7[k * 3 + 2]);
+		const ea = new Float32Array(nb), eb = new Float32Array(nb), ed2 = new Float32Array(nb);
+		return (time, out) => {
+			const th = time * TAU / 6;
+			for (let b$1 = 0; b$1 < nb; b$1++) {
+				let ux = ux0[b$1], uy = uy0[b$1], dx;
+				dx = .6 * sin(1.4 * uy + th);
+				uy += .6 * sin(1.2 * ux - th + .8);
+				ux += dx;
+				dx = .5 * sin(2.1 * uy - th + 1.7);
+				uy += .5 * sin(1.8 * ux + 2 * th);
+				ux += dx;
+				const t = .5 + .5 * sin(ux * 1.3 + uy * 2.1 + .6 * sin(ux * .7 - th));
+				ea[b$1] = clamp01((t - .28) / .06 + .5);
+				eb[b$1] = clamp01((t - .5) / .06 + .5);
+				ed2[b$1] = clamp01((t - .82) / .05 + .5);
+			}
+			for (let k = 0; k < n; k++) {
+				const j = k * 3, b$1 = blockOf[k], d = ed2[b$1];
+				if (region[k] > 1.5) {
+					for (let i = 0; i < 3; i++) {
+						const lo = METAL[0][i] + (METAL[1][i] - METAL[0][i]) * ea[b$1], mid = lo + (METAL[2][i] - lo) * eb[b$1];
+						out[j + i] = mid + (1 - mid) * d;
+					}
+					continue;
+				}
+				for (let i = 0; i < 3; i++) {
+					const ch = lum$3[k] * CHROME[i];
+					out[j + i] = ch + (1 - ch) * .4 * d;
 				}
 			}
 		};
@@ -23247,11 +23436,49 @@ const EXTRA = {
 		0,
 		0,
 		0
+	]],
+	"…": [9, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		219,
+		219,
+		0,
+		0,
+		0
 	]]
 };
 const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
 /** How wide a line of text is, in pixels. */
 const textWidth = (s) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
+/** A line of text made to fit `width` on one line: as it is, a pixel tighter between letters, or cut short with "…". */
+function fitLine(text, width$1) {
+	const wide = (t, spacing) => textWidth(t) + spacing * ([...t].length - 1);
+	if (wide(text, 0) <= width$1) return {
+		text,
+		spacing: 0
+	};
+	if (wide(text, -1) <= width$1) return {
+		text,
+		spacing: -1
+	};
+	const chars = [...text];
+	while (chars.length > 1 && wide(chars.join("").trimEnd() + "…", -1) > width$1) chars.pop();
+	return {
+		text: chars.join("").trimEnd() + "…",
+		spacing: -1
+	};
+}
+/** Card words without the ★ glyph. */
+const unstarred = (t) => t.replace(/★\s*/g, "").trim();
 /**
 * Words broken into lines that fit `width`: at spaces, and inside a word only
 * when the word alone is too wide. Nothing is ever cut off.
@@ -23308,8 +23535,8 @@ var Surface = class {
 		this.px[i + 3] = 255;
 		this.region[y * this.w + x] = region;
 	}
-	/** Text with a hard drop shadow, its colour picked per pixel so foil can run along it. */
-	text(s, x, top, colour, shadow) {
+	/** Text with a hard drop shadow, its colour picked per pixel so foil can run along it; `spacing` added to each letter's advance. */
+	text(s, x, top, colour, shadow, spacing = 0) {
 		const draw = (ox, oy, col) => {
 			let cx = ox;
 			for (const ch of s) {
@@ -23317,7 +23544,7 @@ var Surface = class {
 				rows.forEach((bits, dy) => {
 					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
 				});
-				cx += adv;
+				cx += adv + spacing;
 			}
 		};
 		if (shadow) draw(x, top + 1, () => shadow);
@@ -23387,13 +23614,30 @@ const CARD_GOLDS = [
 	"trim",
 	"solid",
 	"fullart",
-	"warm"
+	"warm",
+	"framed",
+	"studded",
+	"gilt"
 ];
 const GOLD_CONCEPTS = [
 	"trim",
 	"solid",
 	"fullart",
-	"warm"
+	"warm",
+	"framed",
+	"studded",
+	"gilt"
+];
+/**
+* `fullart`'s window round other frames: `framed` a thin gold line at the window's edge and along the
+* card's bevel; `studded` that and gold studs at the window's corners; `gilt` the whole bevel gold,
+* the line and the studs.
+*/
+const FULL_ART = [
+	"fullart",
+	"framed",
+	"studded",
+	"gilt"
 ];
 /** The concepts' clean gold, its light top edge and its deep lower edge; their navy window, dark stock and badge words. */
 const BRIGHT_GOLD = [
@@ -23648,7 +23892,10 @@ const GOLDS = {
 	trim: NOW_GOLD,
 	solid: NOW_GOLD,
 	fullart: NOW_GOLD,
-	warm: NOW_GOLD
+	warm: NOW_GOLD,
+	framed: NOW_GOLD,
+	studded: NOW_GOLD,
+	gilt: NOW_GOLD
 };
 /** How tall the card itself is: the rows under it hold its shadow. */
 const BODY_HEIGHT = CARD_HEIGHT - 5;
@@ -23812,6 +24059,10 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const s = new Surface(W, H);
 	const gold = ed === 5, aura = ed === 6, neg = ed === 4, gp = GOLDS[looks.gold ?? "now"];
 	const concept = gold && GOLD_CONCEPTS.includes(looks.gold ?? "now") ? looks.gold : void 0;
+	const fullArt = !!concept && FULL_ART.includes(concept);
+	const goldBevel = concept === "trim" || concept === "solid" || concept === "warm" || concept === "gilt";
+	const goldLine = concept === "trim" || concept === "framed" || concept === "studded" || concept === "gilt";
+	const goldStuds = concept === "trim" || concept === "studded" || concept === "gilt";
 	const struck = gold && !looks.plate && !concept;
 	const gc = g >= 0 ? rgb$2(GRADES[g].color) : [
 		104,
@@ -23822,13 +24073,19 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const ah = aura && auraCopy ? rgb$2(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
 	const tone = aura ? ah : gc;
 	const textW = W - M * 2 - 10;
-	const pill = input.lines?.[0], subs = (input.lines ?? []).slice(1).flatMap((l) => wrapText(l, textW));
-	const titles = wrapText(input.title, textW);
+	const clean = looks.text === "clean", left = side + 5;
+	const pill = clean && input.lines?.[0] ? unstarred(input.lines[0]) : input.lines?.[0];
+	const subs = clean ? (input.lines ?? []).slice(1, 2).map(unstarred) : (input.lines ?? []).slice(1).flatMap((l) => wrapText(l, textW));
+	const titleFit = clean ? fitLine(unstarred(input.title.split(" | ")[0]), textW) : void 0;
+	const titles = titleFit ? [titleFit.text] : wrapText(input.title, textW);
 	const titleH = titles.length * 12;
 	const lastItem = input.copies?.length ? itemById(input.copies[input.copies.length - 1].item) : void 0;
-	const markHex = lastItem ? SET_COLORS[lastItem.game] : void 0;
+	const markHex = lastItem && !clean ? SET_COLORS[lastItem.game] : void 0;
 	const foots = [];
-	for (const part of (input.footer ?? "").split(" · ").filter(Boolean)) {
+	const footLine = clean ? (input.footer ?? "").split(" · ").filter((part) => part && !part.startsWith("#")).join(" · ") : "";
+	const footFit = footLine ? fitLine(footLine, textW) : void 0;
+	if (footFit) foots.push(footFit.text);
+	else if (!clean) for (const part of (input.footer ?? "").split(" · ").filter(Boolean)) {
 		const k = foots.length - 1, w = k <= 0 ? textW - 14 : textW;
 		if (k >= 0 && textWidth(`${foots[k]} · ${part}`) <= w) foots[k] += ` · ${part}`;
 		else if (foots.length < 2 && textWidth(part) <= textW) foots.push(part);
@@ -23836,6 +24093,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	}
 	const footH = foots.length ? foots.length * 11 : markHex ? 11 : 0;
 	const pillW = pill ? textWidth(pill) + 14 : 0;
+	if (clean && pill && subs.length) subs[0] = fitLine(subs[0], textW - pillW - 6).text;
 	const paired = !!pill && subs.length === 1 && pillW + 6 + textWidth(subs[0]) <= W - M * 2 - 6;
 	const rest = paired ? [] : subs;
 	const plateBottom = H - 1 - 6;
@@ -23856,6 +24114,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		bottom: plateTop - 4
 	};
 	const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * .45;
+	const inW = WIN.right - WIN.left - 3, inH = WIN.bottom - WIN.top - 3, side2 = Math.min(inW, inH);
+	const square = {
+		x: WIN.left + 2 + Math.floor((inW - side2) / 2),
+		y: WIN.top + 2 + Math.floor((inH - side2) / 2),
+		size: side2
+	};
 	const stock = (x, yy) => {
 		if (concept) return concept === "solid" || concept === "warm" ? BRIGHT_GOLD : mix(DARK_HI, DARK_LO, yy / H);
 		if (gold) {
@@ -23876,7 +24140,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			continue;
 		}
 		let c = rows[yy] ?? stock(x, yy);
-		if (concept && concept !== "fullart" && bevel) {
+		if (bevel && (goldBevel || goldLine && d === 3)) {
 			c = d === 3 ? bevel === 1 ? GOLD_LIGHT : GOLD_DEEP : BRIGHT_GOLD;
 			trim[yy * W + x] = 1;
 		} else if (gold && bevel) c = mix(mix([
@@ -23907,8 +24171,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		if (rim$2) {
 			const inner = x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1;
 			if (concept) {
-				if (concept === "trim" && inner) trim[yy * W + x] = 1;
-				s.set(x, yy, concept === "trim" && inner ? BRIGHT_GOLD : INK$1);
+				if (goldLine && inner) trim[yy * W + x] = 1;
+				s.set(x, yy, goldLine && inner ? BRIGHT_GOLD : INK$1);
 				continue;
 			}
 			s.set(x, yy, gold && inner ? [
@@ -23919,11 +24183,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			continue;
 		}
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-		let c = concept === "solid" || concept === "warm" ? NAVY : concept === "fullart" ? fieldGold(x, yy) : concept === "trim" || !gold ? mix(light$2, mix(light$2, gc, .35), depth * .6) : mix(mix(gp.amber, gp.glow, Math.max(0, 1 - r) ** 1.3), mix(gp.amber, INK$1, .3), depth * .3);
+		let c = concept === "solid" || concept === "warm" ? NAVY : fullArt ? fieldGold(x, yy) : concept === "trim" || !gold ? mix(light$2, mix(light$2, gc, .35), depth * .6) : mix(mix(gp.amber, gp.glow, Math.max(0, 1 - r) ** 1.3), mix(gp.amber, INK$1, .3), depth * .3);
 		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK$1, .35);
 		s.set(x, yy, c, 2);
 	}
-	if (gold && (!concept || concept === "trim")) for (const [sx, sy] of [
+	if (gold && (!concept || goldStuds)) for (const [sx, sy] of [
 		[WIN.left + 1, WIN.top + 1],
 		[WIN.right - 1, WIN.top + 1],
 		[WIN.left + 1, WIN.bottom - 1],
@@ -23962,15 +24226,15 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	];
 	const titleInk = (x, yy, tm) => mix(mix(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / wave(1e3 / 2) + yy * .1));
 	const titlePixels = [];
-	titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
+	titles.forEach((l, k) => s.text(l, clean ? left : Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
 		if (struck) return gp.ink;
 		if (!aura) return WHITE$1;
 		titlePixels.push(x, yy);
 		return titleInk(x, yy, 0);
-	}, struck ? GOLD_CUT : INK$1));
+	}, struck ? GOLD_CUT : INK$1, titleFit?.spacing));
 	rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
 	if (pill) {
-		const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
+		const w = pillW, x0 = clean ? left : paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
 		const fill = struck ? gp.pill : concept ? BRIGHT_GOLD : tone;
 		for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
@@ -23984,7 +24248,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		] : concept ? PILL_INK : WHITE$1, concept ? GOLD_LIGHT : mix(fill, INK$1, .6));
 		if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
 	}
-	foots.forEach((l, k) => s.text(l, side + 5, footTop + k * 11 - 2, () => quiet));
+	foots.forEach((l, k) => s.text(l, left, footTop + k * 11 - 2, () => quiet, void 0, footFit?.spacing));
 	if (markHex) {
 		const m = rgb$2(markHex), x0 = W - side - 14, y0 = footTop;
 		for (let yy = 0; yy < 9; yy++) for (let x = 0; x < 9; x++) {
@@ -24063,7 +24327,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		};
 	})() : null;
 	const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = looked && look === 5 || !!concept && concept !== "warm";
-	const plays = (i) => concept === "trim" ? trim[i] === 1 : concept === "fullart" ? s.region[i] === 2 : concept ? s.region[i] === 1 : sheen ? shape$1.depth[i] > 2 && !onPlate[i] : s.region[i] > 0;
+	const plays = (i) => concept === "trim" ? trim[i] === 1 : fullArt ? s.region[i] === 2 || trim[i] === 1 : concept ? s.region[i] === 1 : sheen ? shape$1.depth[i] > 2 && !onPlate[i] : s.region[i] > 0;
 	const edIdx = [];
 	for (let i = 0; i < W * H; i++) if (plays(i)) edIdx.push(i);
 	const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
@@ -24074,7 +24338,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		ey[k] = yy / 5;
 		er[k] = s.region[i] || 1;
 		eh[k] = shape$1.glint[(yy >> 1) * W + (x >> 1)];
-		if (sheen) raised[k] = concept === "trim" || !s.region[i] || shape$1.bevel[i] ? 1 : 0;
+		if (sheen) raised[k] = concept === "trim" || trim[i] || !fullArt && (!s.region[i] || shape$1.bevel[i]) ? 1 : 0;
 		for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
 	});
 	const paint$1 = look === 1 ? {
@@ -24325,7 +24589,9 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}
 	};
 	const body = s.px.slice();
+	let whole = null;
 	return {
+		square,
 		moves: ed > 0 || Object.values(owned).some((o) => o && shines$1(o)),
 		pose(t) {
 			const tm = t * 1e3 + shift$1;
@@ -24357,6 +24623,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				const [a, b$1] = shape$1.runs[yy];
 				if (a >= 0) out.set(body.subarray((yy * W + a) * 4, (yy * W + b$1 + 1) * 4), ((yy + 2 - lift) * W + a) * 4);
 			}
+			return out;
+		},
+		drawSquare(frame, t, out) {
+			this.draw(frame, t, whole ??= new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+			for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W + square.x) * 4, ((square.y + yy) * W + square.x + square.size) * 4), yy * square.size * 4);
 			return out;
 		}
 	};
@@ -24402,7 +24673,20 @@ function cardFrames(input, ms = 80) {
 * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
 * card with nothing shining draws each pose of his once and shows it again.
 */
-function cardPlayer(input, ms = 80, { keep = true, look, contrast: contrast$2, gold, edge, plate } = {}) {
+function cardPlayer(input, ms = 80, options = {}) {
+	return playCard(input, ms, options, false);
+}
+/**
+* The card's window alone, as a square, played as `cardPlayer` plays the whole card: the art behind
+* him (its edition, look, frame item or aura ground) and him moving. Its side is the window's
+* height or width, whichever is less; give it `edge: 'none'` (or another grid edge) so his whole move
+* stays in the square.
+*/
+function cardArtPlayer(input, ms = 80, options = {}) {
+	return playCard(input, ms, options, true);
+}
+/** `cardPlayer`, or `cardArtPlayer` when `square`. */
+function playCard(input, ms, { keep = true,...style }, square) {
 	const options = {
 		parts: input.parts,
 		palette: input.palette,
@@ -24413,22 +24697,18 @@ function cardPlayer(input, ms = 80, { keep = true, look, contrast: contrast$2, g
 		...options,
 		loop: { fit: true }
 	}), turns = anim.turns ?? 1;
-	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), {
-		look,
-		contrast: contrast$2,
-		gold,
-		edge,
-		plate
-	});
+	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), style);
 	const total = anim.duration, count$1 = Math.max(1, Math.round(total / ms)), cache = [];
 	const delays = Array.from({ length: count$1 }, (_, k) => Math.round((k + 1) * total / count$1) - Math.round(k * total / count$1));
 	const frameOf = new Map(anim.frames.map((f, k) => [f, k]));
 	const poses = new Map();
-	const one = keep ? null : new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4);
+	const width$1 = square ? art.square.size : CARD_WIDTH, height = square ? art.square.size : CARD_HEIGHT;
+	const draw = (frame, t, out) => square ? art.drawSquare(frame, t, out) : art.draw(frame, t, out);
+	const one = keep ? null : new Uint8ClampedArray(width$1 * height * 4);
 	let shown = -1;
 	return {
-		width: CARD_WIDTH,
-		height: CARD_HEIGHT,
+		width: width$1,
+		height,
 		count: count$1,
 		delay: total / count$1,
 		delays,
@@ -24438,13 +24718,13 @@ function cardPlayer(input, ms = 80, { keep = true, look, contrast: contrast$2, g
 			const frame = frameAt(anim, k * total / count$1), t = k * turns * LOOP_MS / count$1 % LOOP_MS / 1e3;
 			const { lift } = art.pose(t), pose = art.moves ? -1 : frameOf.get(frame) * 4 + lift;
 			if (!keep) {
-				if (pose < 0 || pose !== shown) art.draw(frame, t, one);
+				if (pose < 0 || pose !== shown) draw(frame, t, one);
 				shown = pose;
 				return one;
 			}
 			let px = pose >= 0 ? poses.get(pose) : void 0;
 			if (!px) {
-				px = art.draw(frame, t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+				px = draw(frame, t, new Uint8ClampedArray(width$1 * height * 4));
 				if (pose >= 0) poses.set(pose, px);
 			}
 			return cache[k] = px;
@@ -24474,6 +24754,26 @@ function ownedBySlot(copies) {
 /** The card as a looping GIF, each card pixel `scale` by `scale`. */
 function toCardGif(input, scale$1 = 3) {
 	return encodeGif(cardFrames(input), scale$1);
+}
+/** The card's window art alone as frames, as `cardFrames` gives the whole card. */
+function cardArtFrames(input, ms = 80, options = {}) {
+	const art = cardArtPlayer(input, ms, options), frames$1 = [];
+	for (let i = 0; i < art.count; i++) frames$1.push(art.frame(i));
+	return {
+		width: art.width,
+		height: art.height,
+		frames: frames$1,
+		delays: art.delays
+	};
+}
+/** The card's window art alone as a looping GIF, each pixel `scale` by `scale`. */
+function toCardArtGif(input, scale$1 = 3, options = {}) {
+	return encodeGif(cardArtFrames(input, 80, options), scale$1);
+}
+/** The card's window art alone as a PNG, its first frame. */
+function toCardArtPng(input, scale$1 = 4, options = {}) {
+	const art = cardArtPlayer(input, 80, options);
+	return encodePng(art.frame(0), art.width, art.height, scale$1);
 }
 /** The card as a PNG, each card pixel `scale` by `scale`. */
 function toCardPng(input, scale$1 = 4) {
@@ -24668,12 +24968,12 @@ function cardFace(spec) {
 		put(x, y, y === 30 ? INK : plate, FIXED);
 	}
 	const empty$1 = blend(plate, WHITE, .22);
-	if (g >= 0) for (let p = 0; p < 5; p++) {
+	if (spec.text !== "clean") if (g >= 0) for (let p = 0; p < 5; p++) {
 		const x0 = 6 + p * 3;
 		for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? y === 31 ? blend(tone, WHITE, .3) : tone : empty$1, FIXED);
 	}
 	else for (let x = 8; x <= 17; x++) put(x, 31, empty$1, FIXED);
-	const mark$1 = set$10 ? SET_COLORS[set$10] : void 0;
+	const mark$1 = set$10 && spec.text !== "clean" ? SET_COLORS[set$10] : void 0;
 	if (mark$1) for (let y = 36; y <= 38; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 36 ? blend(rgb$1(mark$1), WHITE, .5) : x === 22 || y === 38 ? blend(rgb$1(mark$1), [
 		0,
 		0,
@@ -25515,15 +25815,37 @@ function faceSpec(spec) {
 		tint: spec.tint
 	};
 }
+/** How the `art` view draws a card's window. */
+const ART_STYLE = {
+	edge: "none",
+	gold: "fullart",
+	text: "clean"
+};
 /** Whether a move name is one this library plays. */
 const isMove = (m) => MOVES.includes(m);
 /**
 * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
 * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
-* (a profile picture, `profileFrames`).
+* (a profile picture, `profileFrames`), `art` or `art-still` (his big card's window alone, a square:
+* `cardArtPlayer`, with no white edge and the full-art Grail).
 * Null for a view there isn't.
 */
 function bakeView(spec, view) {
+	if (view === "art" || view === "art-still") {
+		const art = cardArtFrames({
+			seed: spec.seed,
+			parts: spec.parts,
+			palette: animateOptions(spec).palette,
+			copies: faceSpec(spec).copies,
+			grade: spec.grade,
+			title: ""
+		}, 80, ART_STYLE);
+		return view === "art" ? art : {
+			...art,
+			frames: art.frames.slice(0, 1),
+			delays: [LOOP_MS]
+		};
+	}
 	if (view === "card" || view === "card-still") {
 		const card = bakeCard(faceSpec(spec));
 		return view === "card" ? card : {
@@ -25729,6 +26051,8 @@ exports.bakeView = bakeView
 exports.bakedImage = bakedImage
 exports.bodies = bodies
 exports.buddyAlone = buddyAlone
+exports.cardArtFrames = cardArtFrames
+exports.cardArtPlayer = cardArtPlayer
 exports.cardFace = cardFace
 exports.cardFaceAt = cardFaceAt
 exports.cardFrames = cardFrames
@@ -25835,6 +26159,8 @@ exports.tallyMarks = tallyMarks
 exports.temperTint = temperTint
 exports.textWidth = textWidth
 exports.toAnimatedSvg = toAnimatedSvg
+exports.toCardArtGif = toCardArtGif
+exports.toCardArtPng = toCardArtPng
 exports.toCardGif = toCardGif
 exports.toCardPng = toCardPng
 exports.toGuyGif = toGuyGif

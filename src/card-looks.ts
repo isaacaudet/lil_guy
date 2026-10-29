@@ -21,18 +21,28 @@ import { editionField, fract, type EditionPixels, type Vec3 } from './finish-sha
  *   light crossing it corner to corner, as light catches a metal card:
  *   brighter on what stands proud (the bevel, the words, the rim), a glint
  *   on the bevel as it passes, and still the rest of the time.
+ * - `liquid`: a Holographic card (Tempered, steel) as liquid metal: its window
+ *   flowing chrome, hard bands of dark, sky and silver round a white
+ *   highlight, slowly swirling, and its frame chrome that catches the same
+ *   highlights.
+ * - `prism` and `opal`, for a Polychrome card: a few broad diagonal bands of
+ *   the spectrum drifting across it like light through a prism; or a pale
+ *   pearl with soft patches of colour shifting over it.
+ * - `scan` and `bands`, for a Holographic card: holo's cool drifting tint
+ *   with a soft shimmer running down its rows; or with a few slow broad
+ *   bands of light, their edges in rainbow.
  *
  * Each is written twice, as GLSL (`GLSL_LOOKS`) and as plain code
  * (`lookField`, `polyColor`), with the same result, and every motion comes
  * round in LOOP_MS: time enters only as whole turns of the loop's angle.
  */
-export const CARD_LOOKS = ['none', 'paint', 'polychrome', 'foil', 'holo', 'sheen'] as const;
+export const CARD_LOOKS = ['none', 'paint', 'polychrome', 'foil', 'holo', 'sheen', 'liquid', 'prism', 'opal', 'scan', 'bands'] as const;
 export type CardLook = Exclude<(typeof CARD_LOOKS)[number], 'none'>;
 
 /** A look and what it is drawn with. */
 export interface LookOptions {
   look?: CardLook;
-  /** How hard `paint`'s bands are: 2 a soft wash, 5 the default, 12 near cut paper. */
+  /** How hard `paint`'s bands are: 2 a soft wash, 7 the default, 12 near cut paper. */
   contrast?: number;
 }
 
@@ -46,11 +56,14 @@ export function lookApplies(look: number, ed: number): boolean {
   if (look === 3) return ed === 1;
   if (look === 4) return ed === 2;
   if (look === 5) return ed === 5;
+  if (look === 6) return ed === 2;
+  if (look === 7 || look === 8) return ed === 3;
+  if (look === 9 || look === 10) return ed === 2;
   return false;
 }
 
 /** The default hardness of `paint`'s bands. */
-export const PAINT_CONTRAST = 5;
+export const PAINT_CONTRAST = 7;
 
 const INK: Vec3 = [24 / 255, 20 / 255, 31 / 255];
 const lerp = (a: Vec3, b: Vec3, t: number): Vec3 => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -124,11 +137,11 @@ vec3 polyColor(vec3 c, vec2 p, vec2 o, float th, float k) {
 float paintField(vec2 p, vec2 o, float th, vec4 form, float phase) {
   vec2 q = (p - o - form.zw) / 9.0;
   float r = length(q), k = form.y;
-  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th));
-  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th)); }
-  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.35 * sin(q.x * 3.0 + q.y * 2.0 + th));
+  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th) + 0.5 * sin(q.x * 2.0 - q.y * 1.6 + th));
+  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th) + 0.6 * sin(u.y * 1.1 + u.x * 0.6 - 2.0 * th)); }
+  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.7 * sin(q.x * 3.0 + q.y * 2.0 + th) + 0.5 * sin(q.y * 2.4 - q.x * 1.3 - th));
   if (form.x < 3.5) return 0.5 + 0.5 * sin(q.x * 6.0 + 1.6 * sin(q.y * 2.4 + k * th + phase) + 0.8 * sin(q.x * 2.1 - th)) + 0.15 * q.y * k;
-  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) - th);
+  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) + 0.5 * sin(q.y * 3.1 + 2.0 * th) - th);
   float tw = 0.6 * r + 0.35 * sin(th);
   vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 1.9;
   float ct = 0.8 * cos(th + phase), st = 0.8 * sin(th + phase);
@@ -179,13 +192,57 @@ vec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time
   if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));
   return c;
 }
+float liquidField(vec2 p, vec2 o, float th) {
+  vec2 u = (p - o) / 10.0 * 1.6;
+  u += 0.6 * vec2(sin(1.4 * u.y + th), sin(1.2 * u.x - th + 0.8));
+  u += 0.5 * vec2(sin(2.1 * u.y - th + 1.7), sin(1.8 * u.x + 2.0 * th));
+  return 0.5 + 0.5 * sin(u.x * 1.3 + u.y * 2.1 + 0.6 * sin(u.x * 0.7 - th));
+}
+vec3 liquidColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float t = liquidField(p, o, th);
+  float a = clamp((t - 0.28) / 0.06 + 0.5, 0.0, 1.0), b = clamp((t - 0.5) / 0.06 + 0.5, 0.0, 1.0), d = clamp((t - 0.82) / 0.05 + 0.5, 0.0, 1.0);
+  vec3 metal = mix(mix(mix(vec3(0.1, 0.12, 0.18), vec3(0.55, 0.75, 0.95), a), vec3(0.78, 0.82, 0.88), b), vec3(1.0), d);
+  if (region > 1.5) return metal;
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  return mix(vec3(0.42 + 0.5 * l) * vec3(0.93, 0.96, 1.04), vec3(1.0), 0.4 * d);
+}
+vec3 prismColor(vec3 c, vec2 p, float region, float time) {
+  float h6 = fract((p.x * 0.35 + p.y * 0.55) / 20.0 - time / 6.0) * 6.0, k = floor(h6), e = clamp((h6 - k - 0.85) / 0.15, 0.0, 1.0);
+  vec3 band = fromHsl(vec3((k + e) / 6.0, 0.7, 0.7));
+  return mix(c, c * 0.35 + band * 0.7, region > 1.5 ? 0.6 : 0.4);
+}
+vec3 opalColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float f = polyField(p, o, th);
+  vec3 base = mix(c, vec3(0.94, 0.95, 0.98), 0.5);
+  vec3 fire = fromHsl(vec3(fract(0.5 + 0.35 * f), 0.55, 0.78));
+  return mix(base, fire, (region > 1.5 ? 0.45 : 0.3) * clamp(0.5 + f / 3.0, 0.0, 1.0));
+}
+vec3 holoTint(vec3 c, float f, float k) {
+  vec3 tint = fromHsl(vec3(fract(0.58 + 0.12 * f), 0.75, 0.66));
+  return mix(c, c * 0.5 + tint * 0.55, 0.5 * k);
+}
+vec3 scanColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float k = region > 1.5 ? 0.6 : 1.0, line = 0.5 + 0.5 * cos(p.y * TAU * 1.25), wave = 0.5 + 0.5 * sin(p.y * 0.8 + p.x * 0.15 - 2.0 * th);
+  return holoTint(c, polyField(p, o, th), k) + vec3(0.6, 0.75, 1.0) * line * wave * 0.22 * k;
+}
+vec3 bandsColor(vec3 c, vec2 p, vec2 o, float region, float th) {
+  float k = region > 1.5 ? 0.6 : 1.0, b = sin((p.x * 0.3 + p.y * 0.5) * 0.45 - th);
+  float band = clamp((b - 0.6) / 0.3, 0.0, 1.0), edge = band * (1.0 - band) * 4.0;
+  vec3 rim = fromHsl(vec3(fract(0.55 + 0.3 * b + p.y * 0.01), 0.8, 0.7));
+  return holoTint(c, polyField(p, o, th), k) + vec3(0.9, 0.95, 1.0) * band * 0.16 * k + rim * edge * 0.3 * k;
+}
 vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {
   float th = time * TAU / 6.0;
   if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast, form, phase) : c;
   if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
   if (look > 2.5 && look < 3.5 && ed > 0.5 && ed < 1.5) return foilColor(c, p, o, region, th);
   if (look > 3.5 && look < 4.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
-  if (look > 4.5 && ed > 4.5 && ed < 5.5) return sheenColor(c, p, region, raised, px, time);
+  if (look > 4.5 && look < 5.5 && ed > 4.5 && ed < 5.5) return sheenColor(c, p, region, raised, px, time);
+  if (look > 5.5 && look < 6.5 && ed > 1.5 && ed < 2.5) return liquidColor(c, p, o, region, th);
+  if (look > 6.5 && look < 7.5 && ed > 2.5 && ed < 3.5) return prismColor(c, p, region, time);
+  if (look > 7.5 && look < 8.5 && ed > 2.5 && ed < 3.5) return opalColor(c, p, o, region, th);
+  if (look > 8.5 && look < 9.5 && ed > 1.5 && ed < 2.5) return scanColor(c, p, o, region, th);
+  if (look > 9.5 && ed > 1.5 && ed < 2.5) return bandsColor(c, p, o, region, th);
   return editionColor(c, ed, v, p, o, region, h, px, time);
 }
 `;
@@ -197,6 +254,10 @@ const TAU = Math.PI * 2;
 const SINES = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU));
 const sin = (x: number) => { const u = x * (4096 / TAU), i = Math.floor(u), j = i & 4095; return SINES[j] + (SINES[j + 1] - SINES[j]) * (u - i); };
 const cos = (x: number) => sin(x + Math.PI / 2);
+/** Liquid metal's dark, sky and silver, and its chrome frame's tint. */
+const METAL = [[0.1, 0.12, 0.18], [0.55, 0.75, 0.95], [0.78, 0.82, 0.88]], CHROME = [0.93, 0.96, 1.04];
+/** Opal's pale pearl, scan's shimmer and the bands' light. */
+const OPAL = [0.94, 0.95, 0.98], SCAN = [0.6, 0.75, 1], BAND_LIGHT = [0.9, 0.95, 1];
 /** The holo grid's cool light. */
 const HOLO_LIT = [0.65, 0.78, 1];
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -305,11 +366,11 @@ export function lookField(look: number, ed: number, v: number, o: [number, numbe
     const w = 0.5 / contrast, k1v = new Float32Array(nb), k2v = new Float32Array(nb), arms = Math.abs(k), turn = Math.sign(k);
     return (time, out) => {
       const th = time * TAU / 6;
-      if (family === 0) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(arms * aa[b] + turn * 5 * rr[b] - th + phase + 0.7 * sin(2.3 * rr[b] - th));
-      else if (family === 1) for (let b = 0; b < nb; b++) { const ux = qx[b] * 2, uy = qy[b] * 2; val[b] = 0.5 + 0.5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + 0.7 * sin(ux * 3.1 - uy * 0.8 - th)); }
-      else if (family === 2) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(rr[b] * 6.5 - th + phase + 0.35 * sin(qx[b] * 3 + qy[b] * 2 + th));
+      if (family === 0) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(arms * aa[b] + turn * 5 * rr[b] - th + phase + 0.7 * sin(2.3 * rr[b] - th) + 0.5 * sin(qx[b] * 2 - qy[b] * 1.6 + th));
+      else if (family === 1) for (let b = 0; b < nb; b++) { const ux = qx[b] * 2, uy = qy[b] * 2; val[b] = 0.5 + 0.5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + 0.7 * sin(ux * 3.1 - uy * 0.8 - th) + 0.6 * sin(uy * 1.1 + ux * 0.6 - 2 * th)); }
+      else if (family === 2) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(rr[b] * 6.5 - th + phase + 0.7 * sin(qx[b] * 3 + qy[b] * 2 + th) + 0.5 * sin(qy[b] * 2.4 - qx[b] * 1.3 - th));
       else if (family === 3) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(qx[b] * 6 + 1.6 * sin(qy[b] * 2.4 + k * th + phase) + 0.8 * sin(qx[b] * 2.1 - th)) + 0.15 * qy[b] * k;
-      else if (family === 4) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin((qx[b] + qy[b] * 1.7 * k) * 5 + 0.8 * sin((qx[b] - qy[b]) * 2.6 + th + phase) - th);
+      else if (family === 4) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin((qx[b] + qy[b] * 1.7 * k) * 5 + 0.8 * sin((qx[b] - qy[b]) * 2.6 + th + phase) + 0.5 * sin(qy[b] * 3.1 + 2 * th) - th);
       else {
         const tw = 0.35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = 0.8 * Math.cos(th + phase), st = 0.8 * Math.sin(th + phase);
         for (let b = 0; b < nb; b++) {
@@ -361,6 +422,71 @@ export function lookField(look: number, ed: number, v: number, o: [number, numbe
         }
         const b = blockOf[k], kk = win ? 0.6 : 1, g = glow[b] * kk;
         for (let i = 0; i < 3; i++) { const c = rgb[j + i]; out[j + i] = c + (c * 0.5 + tint[b * 3 + i] * 0.55 - c) * 0.5 * kk + HOLO_LIT[i] * g; }
+      }
+    };
+  }
+
+  if (look >= 7) {
+    // Prism, opal, scan and bands: the field a block, then a few multiplies a pixel.
+    const ax = Float32Array.from(bx, d => d + o[0]), ay = Float32Array.from(by, d => d + o[1]);
+    const line = Float32Array.from(ay, py => 0.5 + 0.5 * Math.cos(py * TAU * 1.25));
+    const col = new Float32Array(nb * 3), tint = new Float32Array(nb * 3), w1 = new Float32Array(nb), w2 = new Float32Array(nb), rim = new Float32Array(nb * 3);
+    /** `fromHsl`, written into `into` at `j`. */
+    const hsl = (into: Float32Array, j: number, h: number, sat: number, l: number) => {
+      const ch = sat * (1 - Math.abs(2 * l - 1));
+      for (let i = 0; i < 3; i++) { const q = Math.abs(fract(h + (i === 0 ? 0 : i === 1 ? 2 / 3 : 1 / 3)) * 6 - 3) - 1; into[j + i] = l + ch * ((q < 0 ? 0 : q > 1 ? 1 : q) - 0.5); }
+    };
+    return (time, out) => {
+      const th = time * TAU / 6;
+      if (look !== 7) polyCentres(th, m);
+      for (let b = 0; b < nb; b++) {
+        if (look === 7) {
+          const h6 = fract((ax[b] * 0.35 + ay[b] * 0.55) / 20 - time / 6) * 6, k = Math.floor(h6), e = clamp01((h6 - k - 0.85) / 0.15);
+          hsl(col, b * 3, (k + e) / 6, 0.7, 0.7);
+          continue;
+        }
+        const f = polyAt(bx[b], by[b], m, th);
+        if (look === 8) { hsl(col, b * 3, fract(0.5 + 0.35 * f), 0.55, 0.78); w1[b] = clamp01(0.5 + f / 3); continue; }
+        hsl(tint, b * 3, fract(0.58 + 0.12 * f), 0.75, 0.66);
+        if (look === 9) { w1[b] = line[b] * (0.5 + 0.5 * sin(ay[b] * 0.8 + ax[b] * 0.15 - 2 * th)) * 0.22; continue; }
+        const v = sin((ax[b] * 0.3 + ay[b] * 0.5) * 0.45 - th), band = clamp01((v - 0.6) / 0.3);
+        w1[b] = band * 0.16; w2[b] = band * (1 - band) * 4 * 0.3;
+        hsl(rim, b * 3, fract(0.55 + 0.3 * v + ay[b] * 0.01), 0.8, 0.7);
+      }
+      for (let k = 0; k < n; k++) {
+        const j = k * 3, b = blockOf[k], win = region[k] > 1.5;
+        for (let i = 0; i < 3; i++) {
+          const c = rgb[j + i];
+          if (look === 7) { out[j + i] = c + (c * 0.35 + col[b * 3 + i] * 0.7 - c) * (win ? 0.6 : 0.4); continue; }
+          if (look === 8) { const base = c + (OPAL[i] - c) * 0.5; out[j + i] = base + (col[b * 3 + i] - base) * (win ? 0.45 : 0.3) * w1[b]; continue; }
+          const kk = win ? 0.6 : 1, tinted = c + (c * 0.5 + tint[b * 3 + i] * 0.55 - c) * 0.5 * kk;
+          out[j + i] = look === 9 ? tinted + SCAN[i] * w1[b] * kk : tinted + BAND_LIGHT[i] * w1[b] * kk + rim[b * 3 + i] * w2[b] * kk;
+        }
+      }
+    };
+  }
+
+  if (look === 6) {
+    // Liquid metal: the field a block, its three edges, then each pixel's metal or chrome.
+    const ux0 = Float32Array.from(bx, d => d / 10 * 1.6), uy0 = Float32Array.from(by, d => d / 10 * 1.6), lum = new Float32Array(n);
+    for (let k = 0; k < n; k++) lum[k] = 0.42 + 0.5 * (0.299 * rgb[k * 3] + 0.587 * rgb[k * 3 + 1] + 0.114 * rgb[k * 3 + 2]);
+    const ea = new Float32Array(nb), eb = new Float32Array(nb), ed2 = new Float32Array(nb);
+    return (time, out) => {
+      const th = time * TAU / 6;
+      for (let b = 0; b < nb; b++) {
+        let ux = ux0[b], uy = uy0[b], dx: number;
+        dx = 0.6 * sin(1.4 * uy + th); uy += 0.6 * sin(1.2 * ux - th + 0.8); ux += dx;
+        dx = 0.5 * sin(2.1 * uy - th + 1.7); uy += 0.5 * sin(1.8 * ux + 2 * th); ux += dx;
+        const t = 0.5 + 0.5 * sin(ux * 1.3 + uy * 2.1 + 0.6 * sin(ux * 0.7 - th));
+        ea[b] = clamp01((t - 0.28) / 0.06 + 0.5); eb[b] = clamp01((t - 0.5) / 0.06 + 0.5); ed2[b] = clamp01((t - 0.82) / 0.05 + 0.5);
+      }
+      for (let k = 0; k < n; k++) {
+        const j = k * 3, b = blockOf[k], d = ed2[b];
+        if (region[k] > 1.5) {
+          for (let i = 0; i < 3; i++) { const lo = METAL[0][i] + (METAL[1][i] - METAL[0][i]) * ea[b], mid = lo + (METAL[2][i] - lo) * eb[b]; out[j + i] = mid + (1 - mid) * d; }
+          continue;
+        }
+        for (let i = 0; i < 3; i++) { const ch = lum[k] * CHROME[i]; out[j + i] = ch + (1 - ch) * 0.4 * d; }
       }
     };
   }

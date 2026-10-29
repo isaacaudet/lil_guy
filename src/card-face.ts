@@ -45,6 +45,8 @@ export interface FaceSpec {
   tint?: string;
   /** The machine whose set symbol it carries; by default its last copy's. */
   set?: string;
+  /** `clean`: no grade pips and no set symbol on the plate at its foot. */
+  text?: 'now' | 'clean';
   /** A prototype look for its edition (./card-looks), and its paint's contrast. None by default. */
   look?: LookOptions['look'];
   contrast?: number;
@@ -164,12 +166,15 @@ export function cardFace(spec: FaceSpec): CardFace {
     put(x, y, y === 30 ? INK : plate, FIXED);
   }
   const empty = blend(plate, WHITE, 0.22);
-  if (g >= 0) for (let p = 0; p < 5; p++) {
-    const x0 = 6 + p * 3;
-    for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? (y === 31 ? blend(tone, WHITE, 0.3) : tone) : empty, FIXED);
-  } else for (let x = 8; x <= 17; x++) put(x, 31, empty, FIXED);
+  // Clean, the foot's plate stays plain.
+  if (spec.text !== 'clean') {
+    if (g >= 0) for (let p = 0; p < 5; p++) {
+      const x0 = 6 + p * 3;
+      for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? (y === 31 ? blend(tone, WHITE, 0.3) : tone) : empty, FIXED);
+    } else for (let x = 8; x <= 17; x++) put(x, 31, empty, FIXED);
+  }
   // The set's symbol, bottom right: a small badge in the machine's colour.
-  const mark = set ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
+  const mark = set && spec.text !== 'clean' ? SET_COLORS[set as keyof typeof SET_COLORS] : undefined;
   if (mark) for (let y = 36; y <= 38; y++) for (let x = 20; x <= 22; x++) put(x, y, x === 20 && y === 36 ? blend(rgb(mark), WHITE, 0.5) : x === 22 || y === 38 ? blend(rgb(mark), [0, 0, 0], 0.35) : rgb(mark), FIXED);
   const face: CardFace = { base, kind, noise, grade: g, negative: copies.some(o => o.finish === 'negative'), seed: last ? last.print : 0, holo, variant: last ? last.print % 4 : 0, edition, origin };
   if (spec.look) {
