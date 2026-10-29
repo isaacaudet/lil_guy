@@ -301,6 +301,14 @@ with `w` and `h` (world pixels, up to 480 × 240), `fill` (plain made-up guys be
 `scale` (1 to 4) and `bg` (a hex colour). Named guys stand at the front middle as they are on the
 site. Cached for a minute; new pictures count against the address, 300 a day.
 
+## Chat emotes
+
+Every guy comes as twelve chat emotes (Hi, Lol, Pog, Love, Mad, Sad, Sleep, Hmm, Hype, Gg, Blep,
+Oops), 14 pixels square so they scale by whole numbers: `emote-<id>` moves (six frames, a GIF for
+Twitch's animated emotes), `emote-<id>-still` holds. Twitch takes `@2`, `@4` and `@8` (28, 56, 112),
+Discord `@9` (126). `/showcase/emotes.html?name=<name>` shows a player's set and zips it for either.
+In code: `emoteFrames(spec, id, moving)` and `EMOTE_SET`.
+
 ## Limits, CORS and privacy
 
 - **Rate limits.** A picture that isn't cached yet counts against the address: 3,000 new pictures a

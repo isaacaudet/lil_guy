@@ -1231,7 +1231,7 @@
     </div>
   </section>
   <section>
-    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Customise</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a></div></div>
+    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Customise</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a><a class="btn ghost" id="u-emotes" href="emotes.html">Emotes</a></div></div>
     <div class="u-sets" id="u-sets-wrap"><p class="u-sets-h" id="u-sets-h"></p><div class="sets small" id="u-sets"></div><details class="u-sets-more" id="u-sets-more"><summary>Every item in every set</summary><div class="sets" id="u-sets-full"></div></details></div>
     <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
@@ -1296,7 +1296,7 @@
   </section>
  </div>
 
-  <footer>A pretend collection to try the idea. Every capsule comes from playing the games and is rolled on the server. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>. Showing lil guys in a game: <a href="formats.html">formats</a>.</footer>
+  <footer>A pretend collection to try the idea. Every capsule comes from playing the games and is rolled on the server. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>. Showing lil guys in a game: <a href="formats.html">formats</a>. Chat emotes: <a href="emotes.html">emotes</a>.</footer>
 </main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
@@ -2321,11 +2321,13 @@ onmessage = e => {
   }
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
+  // The game a player came from, when a game's link says (`?from=puttsies`): their one starter is its.
+  const cameFrom = () => { const g = new URLSearchParams(location.search).get('from') || new URLSearchParams(location.search).get('utm_source'); return LG.GAMES.includes(g) && g !== 'pets' ? g : null; };
   async function claim(key) {
     let seed = RESERVED[key] ? LG.FOUNDER_SEED : LG.makeSeed(), ownerToken = null;
     if (!backendReady) return;
     if (isLive()) {
-      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {} }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
+      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
       catch (e) { setAvail('no', e.message); SFX.bad(); return; }
     }
     if (db) {
@@ -2344,9 +2346,11 @@ onmessage = e => {
       }
     }
     state = { v: 2, key, seed, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
-    for (const g of LG.GAMES) state.copies.push(LG.encode(LG.starter(seed, g)));
+    // One starter, from the game they came from; each machine gives its own with the first capsule from it.
+    const first = LG.encode(LG.starter(seed, cameFrom() || todayGame));
+    state.copies.push(first);
     if (founderOf(seed)) { state.copies.push(LG.encode(LG.FOUNDER_COPIES.flag), LG.encode(LG.FOUNDER_COPIES.aura)); state.worn.aura = LG.encode(LG.FOUNDER_COPIES.aura); }
-    else state.worn.hat = state.copies[strHash(seed) % LG.GAMES.length];
+    else state.worn[LG.slotOf(LG.decode(first))] = first;
     save();
     if (isLive() && (ownerToken || signedIn)) { try { fromServer(await meApi('state')); } catch (e) { toast(e.message); } }
     watchNames();
@@ -3129,6 +3133,8 @@ onmessage = e => {
         const r = await meApi('open', mystery ? { mystery: true } : { game: g, free: how === 'Daily capsule' });
         state.stamps = r.stamps; state.free = r.freeDay; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
         if (r.part?.new) state.parts = [...(state.parts || []), r.part.code];
+        // A machine's free item comes with the first capsule from it.
+        if (r.starter && !state.copies.includes(r.starter)) { state.copies.push(r.starter); toast(`Plus ${LG.itemById(LG.decode(r.starter).item).name}, ${LG.machineName(r.game)}'s free one`); }
         reveal(LG.decode(r.copy.code), r.game, r.luck ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part);
       } catch (e) {
         if (e.stamps) state.stamps = e.stamps;
@@ -3703,10 +3709,21 @@ onmessage = e => {
   async function dropName() {
     current = null; rush = false;
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
-    $('rv-again').hidden = true; $('rv-wear').hidden = true; $('rv-keep').textContent = 'Meet your guy';
+    $('rv-again').hidden = true; $('rv-wear').hidden = true;
+    // First the guy Twitch chat and the games drew for this name before it was claimed (dealt from the
+    // name itself), so the swap is a reveal, not a stranger turning up.
+    if (!founderOf(state.seed)) {
+      $('rv-keep').textContent = 'Meet your real one';
+      await unveil(0, `<div class="card">${libHtml(cardInput(cardSpec(state.key, [], guyLabel(guyConfig(state.key), state.key), false, guyRank(guyConfig(state.key)).tier)), { sway: true, now: true })}</div>`,
+        'Chat knew you as', `@${state.key}`, 'Claiming deals your real one.', true, true);
+      $('rv-keep').focus();
+      await new Promise(r => { closeHook = r; });
+      $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
+    }
+    $('rv-keep').textContent = 'Meet your guy';
     const n = LG.guyOneIn(dealt(state.seed));
     await unveil(4, `<div class="card">${libHtml(cardInput(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier)), { sway: true, now: true })}</div>`,
-      'One of a kind!', `@${state.key}`, `Your name, and a guy dealt just for it: 1 in ${words(n)}.`, true);
+      'Your real one', `@${state.key}`, `Dealt just for you: 1 in ${words(n)}. Chat sees this guy from now on.`, true);
     $('rv-keep').focus();
     await new Promise(r => { closeHook = r; });
   }
@@ -3904,13 +3921,14 @@ onmessage = e => {
   async function paintCopy(code, paint) {
     const o = LG.decode(code), had = o.paint || null;
     if (had === paint) return code;
-    if (paint && metalOf() < LG.PAINT_COST) { toast(`Paint takes ${LG.metalText(LG.PAINT_COST)}.`); return code; }
+    const cost = paint ? LG.paintCost(paint, LG.PAINT_COST) : 0;
+    if (paint && metalOf() < cost) { toast(`${LG.PAINTS[paint].name} takes ${LG.metalText(cost)}.`); return code; }
     let next;
     if (isLive()) {
       try { const r = await meApi('paint', { id: state.ids?.[code], paint }); next = r.copy.code; if (r.metal !== undefined) state.metal = r.metal; }
       catch (e) { toast(e.message); return code; }
     } else {
-      if (paint) state.metal = metalOf() - LG.PAINT_COST;
+      if (paint) state.metal = metalOf() - cost;
       const n = { ...o }; if (paint) n.paint = paint; else delete n.paint; next = LG.encode(n);
     }
     replaceCopy(code, next); save(); SFX.equip(); renderAll();
@@ -4240,7 +4258,13 @@ onmessage = e => {
         ${collectorPanel(o, g)}
         ${oddsBox(o, one)}
         ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Try it on'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
-          ${LG.PAINTABLE.includes(slot) ? `<div class="paints"><span>Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${LG.PAINT_IDS.map(p => `<button type="button" data-paint="${p}" style="--p:${LG.PAINTS[p].hex}" title="${esc(LG.PAINTS[p].name)}" aria-pressed="${o.paint === p}" aria-label="${esc(LG.PAINTS[p].name)}"></button>`).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div></div>` : ''}
+          ${LG.PAINTABLE.includes(slot) ? (() => {
+            // The shelf, then this month's paints (dearer, gone next month); a paint already on stays shown.
+            const shelf = LG.paintsOnSale(today).filter(p => !LG.paintMonth(p)), month = LG.paintsOnSale(today).filter(p => LG.paintMonth(p));
+            const extra = o.paint && !LG.paintsOnSale(today).includes(o.paint) ? [o.paint] : [];
+            const sw = p => `<button type="button" data-paint="${p}" style="--p:${LG.PAINTS[p].hex}" title="${esc(LG.PAINTS[p].name)}${LG.paintMonth(p) ? ` · ${LG.metalText(LG.LIMITED_PAINT_COST)}` : ''}" aria-pressed="${o.paint === p}" aria-label="${esc(LG.PAINTS[p].name)}"></button>`;
+            return `<div class="paints"><span>Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${[...shelf, ...extra].map(sw).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div>${month.length ? `<span>This month only · ${LG.metalText(LG.LIMITED_PAINT_COST)}</span><div class="swatches">${month.map(sw).join('')}</div>` : ''}</div>`;
+          })() : ''}
           ${!on && !one && !tag && LG.smeltValue(o) ? `<button class="btn ghost small smelt-one" type="button" id="insp-smelt">Smelt · +${LG.smeltValue(o)} scrap</button>` : ''}
           <form class="tagf" id="insp-tagf" autocomplete="off"><label class="field"><span>"</span><input id="insp-tag" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" aria-label="Name tag"></label><button class="btn small" type="submit">${tag ? 'Change tag' : 'Add tag'}</button>${tag ? '<button class="btn ghost small" type="button" id="insp-untag">Take off</button>' : ''}</form>`
           : state && isLive() && ctx.id && ctx.key !== state.key && !item.free && !one ? `<div class="ins-actions"><button class="btn" type="button" id="insp-ask">Offer a swap</button></div>${ownerLine}` : ownerLine}
@@ -4580,6 +4604,7 @@ onmessage = e => {
     $('u-coll-h').textContent = mine ? 'Your collection' : 'Collection';
     $('u-coll-sub').textContent = `${userCopies.length} copies, ${userCopies.filter(c => !LG.itemById(c.o.item).free).length} from capsules.`;
     $('u-market').href = '#/pulls';
+    $('u-emotes').href = 'emotes.html?name=' + encodeURIComponent(key);
     $('u-market').onclick = () => { mf.key = key; };
     const paint = () => {
       sortCopies(userCopies, uSort);

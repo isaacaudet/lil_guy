@@ -58,6 +58,8 @@ test('a copy counts the days it is worn, banks them as it comes off and never co
 
 test("club days go to the copies worn then: games finished, best score, and a Strange copy's tally", async () => {
   const c = await claim('mia');
+  // A second copy, never worn, to check it gets none of the days.
+  env.db.exec("INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) SELECT key, code, item, game, slot, finish, grade, one_in, scuff, 'starter', 0, at FROM copies WHERE key = 'mia' LIMIT 1");
   const s = await state(c);
   const worn = wornOne(s);
   const a = 'ab'.repeat(32), secret = 'x'.repeat(40);

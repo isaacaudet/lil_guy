@@ -102,9 +102,11 @@ Every copy is rolled and stored by the Worker, so what the Pulls page shows is w
 capsules really gave. Apply `migrations/0002_collections.sql` (the deploy commands
 above apply every pending migration) before deploying a Worker that reads it.
 
-- A claim creates the player record and a starter from every machine (the founder
-  also gets the one-of-one Gold flag). Names claimed before 0002 get theirs on first
-  use. Capsules are paid in stamps (migration 0010, below).
+- A claim (`POST /api/names/<key> {game?}`) creates the player record and one starter,
+  worn: the free item of the game they came from, else today's machine. Each machine
+  gives its own free item with the first capsule opened from it (`starter` in the open
+  answer). Players from before keep the starters they were given. The founder also gets
+  the one-of-one Gold flag and Origin. Capsules are paid in stamps (migration 0010, below).
 - Owner-only (`Authorization: Bearer <owner token>`, same-origin writes):
   - `GET /api/me/:key/state`: stamps, today's free day, the look and every copy.
   - `POST /api/me/:key/open {game, free}` or `{mystery: true}`: one capsule, rolled on the
@@ -244,7 +246,9 @@ the migration can go before or after the deploy.
 Prized 4, Mythic 9; never a starter, showpiece, Grail, aura, worn copy or one in
 an open swap), `…/craft { item }` spends `CRAFT_COST` (a refined) on that item,
 numbered by the `craft` counter, and `…/paint { id, paint }` paints a hat or a
-buddy for `PAINT_COST` (a reclaimed); `paint: null` scrapes it off for free.
+buddy for `PAINT_COST` (a reclaimed); `paint: null` scrapes it off for free. Paints of
+the month (`paintMonth` in `src/paints.ts`, two a month) are on sale only in their month,
+for `LIMITED_PAINT_COST` (two refined), the metal sink; a copy painted then keeps it.
 `GET …/state` includes `metal`. Until 0008 is applied these answer 503 and
 nothing else changes.
 

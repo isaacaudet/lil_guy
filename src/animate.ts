@@ -113,7 +113,7 @@ export interface AnimateOptions extends RenderOptions {
  * down, and with a few expressions — a laugh for a win, a wobble for a loss,
  * an "ooh" when squished. His own eyes stay: they are who he is.
  */
-type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep'
+export type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep'
   | 'blush' | 'blushLeft' | 'blushRight' | 'huff' | 'oops';
 
 /**
@@ -637,6 +637,31 @@ function sweatDrop(layer: Layer, slide: number): void {
     if (on || NEIGHBOURS.some(([dx, dy]) => ink_(rows[y - 1 + dy]?.[x - 1 + dx]))) cells.push([x0 + x, y0 + y, on ? (ch === '+' ? accent! : color) : ink]);
   }
   for (const [x, y, c] of cells) if (x >= 0 && y < FRAME_HEIGHT && !nearFace(x, y)) layer[y][x] = { c, item: false };
+}
+
+/**
+ * One still of him in a pose, his colours as rows (`FRAME_HEIGHT` by 16): what's worn on him, no frame,
+ * buddy or aura, no shine. What his chat emotes are drawn from (./emotes).
+ */
+export function poseStill(input: string, pose: Pose, options: AnimateOptions = {}): (string | null)[][] {
+  const { config, grid } = poser(input, options);
+  const palette = withItems(options.palette ?? paletteOf(config), config);
+  return painted(grid(pose), config, palette, false, null, FRAME_WIDTH).map(row => row.map(cell => cell?.c ?? null));
+}
+
+/** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
+export function emoteCells(kind: Emote): [number, number, string][] {
+  const { rows, color, accent, open } = EMOTES[kind];
+  const w = rows[0].length + 2, h = rows.length + 2;
+  const inside = (x: number, y: number) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
+  const ink = (ch: string | undefined) => ch === '#' || ch === '+';
+  const cells: [number, number, string][] = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = rows[y - 1]?.[x - 1], on = ink(ch);
+    const near = !on && !(open && inside(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+    if (on || near) cells.push([x, y, on ? (ch === '+' ? accent ?? color : color) : '#1B1428']);
+  }
+  return cells;
 }
 
 /** Puts an emote, outlined, in a top corner that is clear of him. */

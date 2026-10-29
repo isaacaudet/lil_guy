@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-Cb6LU5To.js";
+import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-P7QiUd6I.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -915,6 +915,33 @@ function sweatDrop(layer, slide) {
 		c,
 		item: false
 	};
+}
+/**
+* One still of him in a pose, his colours as rows (`FRAME_HEIGHT` by 16): what's worn on him, no frame,
+* buddy or aura, no shine. What his chat emotes are drawn from (./emotes).
+*/
+function poseStill(input, pose, options = {}) {
+	const { config, grid } = poser(input, options);
+	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
+	return painted$1(grid(pose), config, palette$1, false, null, FRAME_WIDTH).map((row) => row.map((cell) => cell?.c ?? null));
+}
+/** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
+function emoteCells(kind) {
+	const { rows, color, accent, open } = EMOTES[kind];
+	const w = rows[0].length + 2, h = rows.length + 2;
+	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
+	const ink = (ch) => ch === "#" || ch === "+";
+	const cells = [];
+	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+		const ch = rows[y - 1]?.[x - 1], on = ink(ch);
+		const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+		if (on || near) cells.push([
+			x,
+			y,
+			on ? ch === "+" ? accent ?? color : color : "#1B1428"
+		]);
+	}
+	return cells;
 }
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer, kind, left, lift = 0) {
@@ -8791,6 +8818,156 @@ function createCardShader(canvas) {
 }
 
 //#endregion
+//#region src/emotes.ts
+/** An emote's side, in pixels. */
+const EMOTE_SIZE = 14;
+/** The set, in the order a channel would upload them. `name` is the suffix a channel puts after its prefix. */
+const EMOTE_SET = [
+	{
+		id: "hi",
+		name: "Hi",
+		poses: ["smile", "base"],
+		symbol: "hearts",
+		motion: "bounce"
+	},
+	{
+		id: "lol",
+		name: "Lol",
+		poses: ["laugh", "smile"],
+		symbol: "note",
+		motion: "bounce"
+	},
+	{
+		id: "pog",
+		name: "Pog",
+		poses: ["ooh"],
+		symbol: "bang",
+		motion: "bounce"
+	},
+	{
+		id: "love",
+		name: "Love",
+		poses: ["blush"],
+		symbol: "heart",
+		motion: "rise"
+	},
+	{
+		id: "mad",
+		name: "Mad",
+		poses: ["huff"],
+		symbol: "anger",
+		motion: "shake"
+	},
+	{
+		id: "sad",
+		name: "Sad",
+		poses: ["frown"],
+		symbol: "sweat",
+		motion: "rise"
+	},
+	{
+		id: "sleep",
+		name: "Sleep",
+		poses: ["shut"],
+		symbol: "zzz",
+		motion: "rise"
+	},
+	{
+		id: "hmm",
+		name: "Hmm",
+		poses: ["left", "right"],
+		symbol: "question",
+		motion: "sway"
+	},
+	{
+		id: "hype",
+		name: "Hype",
+		poses: ["laugh"],
+		symbol: "fire",
+		motion: "bounce"
+	},
+	{
+		id: "gg",
+		name: "Gg",
+		poses: ["content"],
+		symbol: "crown",
+		motion: "bounce"
+	},
+	{
+		id: "blep",
+		name: "Blep",
+		poses: ["blep"],
+		motion: "sway"
+	},
+	{
+		id: "oops",
+		name: "Oops",
+		poses: ["oops"],
+		symbol: "sweat",
+		motion: "shake"
+	}
+];
+/** Whether `id` names an emote in the set. */
+const isEmote = (id) => EMOTE_SET.some((e) => e.id === id);
+const STEP_MS$1 = 180;
+const STEPS = 6;
+/**
+* Emote `id` for a guy: one frame still, or a loop of six. His head and shoulders fill it, top-aligned
+* to his head (or hat), the picture in the top right corner over him.
+*/
+function emoteFrames(spec, id, moving = true) {
+	const def = EMOTE_SET.find((e) => e.id === id);
+	if (!def) return null;
+	const options = {
+		...animateOptions(spec),
+		rarity: false
+	};
+	const stills = new Map();
+	const still = (pose) => {
+		if (!stills.has(pose)) stills.set(pose, poseStill(spec.seed, pose, options));
+		return stills.get(pose);
+	};
+	const first = still(def.poses[0]);
+	const top = Math.max(0, first.findIndex((row) => row.some(Boolean)) - 1);
+	const symbol = def.symbol ? emoteCells(def.symbol) : [];
+	const sw = symbol.reduce((w, [x]) => Math.max(w, x + 1), 0);
+	const frames = [];
+	const steps$1 = moving ? STEPS : 1;
+	for (let k = 0; k < steps$1; k++) {
+		const pose = def.poses[k % def.poses.length];
+		const rows = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
+		const beat = moving ? k % 2 : 0;
+		const dy = def.motion === "bounce" ? -beat : 0, dx = def.motion === "shake" ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
+		const lift = def.motion === "rise" && moving ? k % 3 : 0;
+		const put = (x, y, c) => {
+			if (x < 0 || y < 0 || x >= EMOTE_SIZE || y >= EMOTE_SIZE) return;
+			px.set([
+				parseInt(c.slice(1, 3), 16),
+				parseInt(c.slice(3, 5), 16),
+				parseInt(c.slice(5, 7), 16),
+				255
+			], (y * EMOTE_SIZE + x) * 4);
+		};
+		for (let y = 0; y < EMOTE_SIZE; y++) {
+			const from = top + y - dy;
+			if (from < 0 || from >= FRAME_HEIGHT) continue;
+			for (let x = 0; x < EMOTE_SIZE; x++) {
+				const c = rows[from]?.[x + 1 + dx];
+				if (c) put(x, y, c);
+			}
+		}
+		for (const [x, y, c] of symbol) put(EMOTE_SIZE - sw + x, y - lift, c);
+		frames.push(px);
+	}
+	return {
+		width: EMOTE_SIZE,
+		height: EMOTE_SIZE,
+		frames,
+		delays: frames.map(() => STEP_MS$1)
+	};
+}
+
+//#endregion
 //#region src/guy-code.ts
 /**
 * A guy as an address carries him, and the art version every address names.
@@ -8892,7 +9069,7 @@ const PICTURE_VIEWS = [
 /** A view's size at 1× (`BAKED_SIZE`), or null for one that depends on the guy (a move, `pfp`). */
 function viewSize(view) {
 	const base = view.replace(/-still$/, "");
-	return base === "icon" ? BAKED_SIZE.icon : base === "face" ? BAKED_SIZE.face : base === "card" ? BAKED_SIZE.card : base === "art" ? BAKED_SIZE.art : base === "card-full" ? BAKED_SIZE.cardFull : null;
+	return base === "icon" ? BAKED_SIZE.icon : base === "face" || base.startsWith("emote-") ? BAKED_SIZE.face : base === "card" ? BAKED_SIZE.card : base === "art" ? BAKED_SIZE.art : base === "card-full" ? BAKED_SIZE.cardFull : null;
 }
 
 //#endregion
@@ -9772,6 +9949,8 @@ function bakeView(spec, view) {
 			delays: [LOOP_MS]
 		};
 	}
+	const emote$1 = /^emote-([a-z]+?)(-still)?$/.exec(view);
+	if (emote$1) return emoteFrames(spec, emote$1[1], !emote$1[2]);
 	return isMove(view) ? bakeGuy(spec, view) : null;
 }
 /** `<lil-guy>` with the library on the page: baked in the page, or from a host if given. */
@@ -10400,5 +10579,5 @@ function nameKey(typed) {
 const nameSkeleton = (key) => key.replace(/_/g, "");
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

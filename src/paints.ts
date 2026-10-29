@@ -17,9 +17,33 @@ export const PAINTS = {
   'team-blue':     { name: 'Team Blue', hex: '#4E7FB3' },
   'mint':          { name: 'Mint Condition', hex: '#A8DDB5' },
   'clear-skies':   { name: 'Clear Skies', hex: '#8CC4F2' },
+  // The workshop's paints of the month (Isaac, October 29: something for metal to go on): each on sale
+  // only in its month, for LIMITED_PAINT_COST. A copy painted then keeps it. Append only, as ids are kept.
+  'frostbite':     { name: 'Frostbite', hex: '#9FD6F0', month: '2026-11' },
+  'last-ember':    { name: 'Last Ember', hex: '#C4502A', month: '2026-11' },
+  'evergreen':     { name: 'Evergreen', hex: '#2F6B45', month: '2026-12' },
+  'candy-cane':    { name: 'Candy Cane', hex: '#E04A5A', month: '2026-12' },
+  'midnight':      { name: 'Midnight Blue', hex: '#232F5C', month: '2027-01' },
+  'champagne':     { name: 'Champagne', hex: '#E9D9A6', month: '2027-01' },
+  'sweetheart':    { name: 'Sweetheart', hex: '#E36A8E', month: '2027-02' },
+  'sugar-plum':    { name: 'Sugar Plum', hex: '#6B3B6E', month: '2027-02' },
+  'lucky-clover':  { name: 'Lucky Clover', hex: '#3FA35B', month: '2027-03' },
+  'puddle':        { name: 'Puddle Grey', hex: '#8A93A0', month: '2027-03' },
+  'blossom':       { name: 'Cherry Blossom', hex: '#F3B8C8', month: '2027-04' },
+  'robins-egg':    { name: 'Robin’s Egg', hex: '#8FD3D0', month: '2027-04' },
 } as const;
 export type PaintId = keyof typeof PAINTS;
 export const PAINT_IDS = Object.keys(PAINTS) as PaintId[];
+/** Metal for a paint of the month: two refined, six times an ordinary tin. */
+export const LIMITED_PAINT_COST = 18;
+/** The month a paint of the month is on sale (`YYYY-MM`), or undefined for one always on the shelf. */
+export const paintMonth = (id: PaintId): string | undefined => (PAINTS[id] as { month?: string }).month;
+/** Whether a paint can be bought on `day` (`YYYY-MM-DD`): always, or in its month. */
+export const paintOnSale = (id: PaintId, day: string): boolean => { const m = paintMonth(id); return !m || day.startsWith(m); };
+/** The paints for sale on `day`: the shelf, then that month's. */
+export const paintsOnSale = (day: string): PaintId[] => PAINT_IDS.filter(id => paintOnSale(id, day));
+/** What a tin of `id` costs, in scrap. */
+export const paintCost = (id: PaintId, base: number): number => (paintMonth(id) ? LIMITED_PAINT_COST : base);
 /** What can be painted. */
 export const PAINTABLE = ['hat', 'buddy'] as const;
 

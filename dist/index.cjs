@@ -1,5 +1,5 @@
 "use strict";
-const require_paint = require('./paint-L5Ljb1_v.cjs');
+const require_paint = require('./paint-Bj8J4Awo.cjs');
 const react = require_paint.__toESM(require("react"));
 const react_jsx_runtime = require_paint.__toESM(require("react/jsx-runtime"));
 
@@ -911,6 +911,33 @@ function sweatDrop(layer, slide) {
 		c,
 		item: false
 	};
+}
+/**
+* One still of him in a pose, his colours as rows (`FRAME_HEIGHT` by 16): what's worn on him, no frame,
+* buddy or aura, no shine. What his chat emotes are drawn from (./emotes).
+*/
+function poseStill(input, pose, options = {}) {
+	const { config, grid } = poser(input, options);
+	const palette$1 = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
+	return painted$1(grid(pose), config, palette$1, false, null, FRAME_WIDTH).map((row) => row.map((cell) => cell?.c ?? null));
+}
+/** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
+function emoteCells(kind) {
+	const { rows, color, accent, open } = EMOTES[kind];
+	const w = rows[0].length + 2, h = rows.length + 2;
+	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
+	const ink = (ch) => ch === "#" || ch === "+";
+	const cells = [];
+	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+		const ch = rows[y - 1]?.[x - 1], on = ink(ch);
+		const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+		if (on || near) cells.push([
+			x,
+			y,
+			on ? ch === "+" ? accent ?? color : color : "#1B1428"
+		]);
+	}
+	return cells;
 }
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer, kind, left, lift = 0) {
@@ -8787,6 +8814,156 @@ function createCardShader(canvas) {
 }
 
 //#endregion
+//#region src/emotes.ts
+/** An emote's side, in pixels. */
+const EMOTE_SIZE = 14;
+/** The set, in the order a channel would upload them. `name` is the suffix a channel puts after its prefix. */
+const EMOTE_SET = [
+	{
+		id: "hi",
+		name: "Hi",
+		poses: ["smile", "base"],
+		symbol: "hearts",
+		motion: "bounce"
+	},
+	{
+		id: "lol",
+		name: "Lol",
+		poses: ["laugh", "smile"],
+		symbol: "note",
+		motion: "bounce"
+	},
+	{
+		id: "pog",
+		name: "Pog",
+		poses: ["ooh"],
+		symbol: "bang",
+		motion: "bounce"
+	},
+	{
+		id: "love",
+		name: "Love",
+		poses: ["blush"],
+		symbol: "heart",
+		motion: "rise"
+	},
+	{
+		id: "mad",
+		name: "Mad",
+		poses: ["huff"],
+		symbol: "anger",
+		motion: "shake"
+	},
+	{
+		id: "sad",
+		name: "Sad",
+		poses: ["frown"],
+		symbol: "sweat",
+		motion: "rise"
+	},
+	{
+		id: "sleep",
+		name: "Sleep",
+		poses: ["shut"],
+		symbol: "zzz",
+		motion: "rise"
+	},
+	{
+		id: "hmm",
+		name: "Hmm",
+		poses: ["left", "right"],
+		symbol: "question",
+		motion: "sway"
+	},
+	{
+		id: "hype",
+		name: "Hype",
+		poses: ["laugh"],
+		symbol: "fire",
+		motion: "bounce"
+	},
+	{
+		id: "gg",
+		name: "Gg",
+		poses: ["content"],
+		symbol: "crown",
+		motion: "bounce"
+	},
+	{
+		id: "blep",
+		name: "Blep",
+		poses: ["blep"],
+		motion: "sway"
+	},
+	{
+		id: "oops",
+		name: "Oops",
+		poses: ["oops"],
+		symbol: "sweat",
+		motion: "shake"
+	}
+];
+/** Whether `id` names an emote in the set. */
+const isEmote = (id) => EMOTE_SET.some((e) => e.id === id);
+const STEP_MS$1 = 180;
+const STEPS = 6;
+/**
+* Emote `id` for a guy: one frame still, or a loop of six. His head and shoulders fill it, top-aligned
+* to his head (or hat), the picture in the top right corner over him.
+*/
+function emoteFrames(spec, id, moving = true) {
+	const def = EMOTE_SET.find((e) => e.id === id);
+	if (!def) return null;
+	const options = {
+		...animateOptions(spec),
+		rarity: false
+	};
+	const stills = new Map();
+	const still = (pose) => {
+		if (!stills.has(pose)) stills.set(pose, poseStill(spec.seed, pose, options));
+		return stills.get(pose);
+	};
+	const first = still(def.poses[0]);
+	const top = Math.max(0, first.findIndex((row) => row.some(Boolean)) - 1);
+	const symbol = def.symbol ? emoteCells(def.symbol) : [];
+	const sw = symbol.reduce((w, [x]) => Math.max(w, x + 1), 0);
+	const frames = [];
+	const steps$1 = moving ? STEPS : 1;
+	for (let k = 0; k < steps$1; k++) {
+		const pose = def.poses[k % def.poses.length];
+		const rows = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
+		const beat = moving ? k % 2 : 0;
+		const dy = def.motion === "bounce" ? -beat : 0, dx = def.motion === "shake" ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
+		const lift = def.motion === "rise" && moving ? k % 3 : 0;
+		const put = (x, y, c) => {
+			if (x < 0 || y < 0 || x >= EMOTE_SIZE || y >= EMOTE_SIZE) return;
+			px.set([
+				parseInt(c.slice(1, 3), 16),
+				parseInt(c.slice(3, 5), 16),
+				parseInt(c.slice(5, 7), 16),
+				255
+			], (y * EMOTE_SIZE + x) * 4);
+		};
+		for (let y = 0; y < EMOTE_SIZE; y++) {
+			const from = top + y - dy;
+			if (from < 0 || from >= FRAME_HEIGHT) continue;
+			for (let x = 0; x < EMOTE_SIZE; x++) {
+				const c = rows[from]?.[x + 1 + dx];
+				if (c) put(x, y, c);
+			}
+		}
+		for (const [x, y, c] of symbol) put(EMOTE_SIZE - sw + x, y - lift, c);
+		frames.push(px);
+	}
+	return {
+		width: EMOTE_SIZE,
+		height: EMOTE_SIZE,
+		frames,
+		delays: frames.map(() => STEP_MS$1)
+	};
+}
+
+//#endregion
 //#region src/guy-code.ts
 /**
 * A guy as an address carries him, and the art version every address names.
@@ -8888,7 +9065,7 @@ const PICTURE_VIEWS = [
 /** A view's size at 1× (`BAKED_SIZE`), or null for one that depends on the guy (a move, `pfp`). */
 function viewSize(view) {
 	const base = view.replace(/-still$/, "");
-	return base === "icon" ? BAKED_SIZE.icon : base === "face" ? BAKED_SIZE.face : base === "card" ? BAKED_SIZE.card : base === "art" ? BAKED_SIZE.art : base === "card-full" ? BAKED_SIZE.cardFull : null;
+	return base === "icon" ? BAKED_SIZE.icon : base === "face" || base.startsWith("emote-") ? BAKED_SIZE.face : base === "card" ? BAKED_SIZE.card : base === "art" ? BAKED_SIZE.art : base === "card-full" ? BAKED_SIZE.cardFull : null;
 }
 
 //#endregion
@@ -9768,6 +9945,8 @@ function bakeView(spec, view) {
 			delays: [require_paint.LOOP_MS]
 		};
 	}
+	const emote$1 = /^emote-([a-z]+?)(-still)?$/.exec(view);
+	if (emote$1) return emoteFrames(spec, emote$1[1], !emote$1[2]);
 	return isMove(view) ? bakeGuy(spec, view) : null;
 }
 /** `<lil-guy>` with the library on the page: baked in the page, or from a host if given. */
@@ -10422,6 +10601,8 @@ exports.DEFAULT_COLORS = DEFAULT_COLORS
 exports.DEFAULT_COLORS_DARK = DEFAULT_COLORS_DARK
 exports.DEFAULT_COLORS_LIGHT = DEFAULT_COLORS_LIGHT
 exports.EFFECTS = require_paint.EFFECTS
+exports.EMOTE_SET = EMOTE_SET
+exports.EMOTE_SIZE = EMOTE_SIZE
 exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FACE_BUDDY_SPOTS = FACE_BUDDY_SPOTS
 exports.FACE_HEIGHT = FACE_HEIGHT
@@ -10452,6 +10633,7 @@ exports.ICON_SIZE = ICON_SIZE
 exports.LILGUYS_HOST = LILGUYS_HOST
 exports.LIL_GUY_PLACEHOLDER = LIL_GUY_PLACEHOLDER
 exports.LIL_GUY_PRESETS = LIL_GUY_PRESETS
+exports.LIMITED_PAINT_COST = require_paint.LIMITED_PAINT_COST
 exports.LOOP_MS = require_paint.LOOP_MS
 exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
@@ -10536,6 +10718,7 @@ exports.decodeLook = decodeLook
 exports.defineLilGuy = defineLilGuyHere
 exports.drawFrame = drawFrame
 exports.dress = require_paint.dress
+exports.emoteFrames = emoteFrames
 exports.encode = require_paint.encode
 exports.encodeApng = encodeApng
 exports.encodeGif = encodeGif
@@ -10563,6 +10746,7 @@ exports.hash = require_paint.hash
 exports.hashNth = require_paint.hashNth
 exports.heads = require_paint.heads
 exports.inSeason = require_paint.inSeason
+exports.isEmote = isEmote
 exports.isFounder = require_paint.isFounder
 exports.isFounderCopy = require_paint.isFounderCopy
 exports.isMove = isMove
@@ -10593,7 +10777,11 @@ exports.nebulaPhase = require_paint.nebulaPhase
 exports.noiseOf = noiseOf
 exports.ownedOf = ownedOf
 exports.paint = require_paint.paint
+exports.paintCost = require_paint.paintCost
+exports.paintMonth = require_paint.paintMonth
+exports.paintOnSale = require_paint.paintOnSale
 exports.painted = require_paint.painted
+exports.paintsOnSale = require_paint.paintsOnSale
 exports.paletteOf = require_paint.paletteOf
 exports.palettes = require_paint.palettes
 exports.partCode = partCode

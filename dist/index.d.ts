@@ -347,9 +347,79 @@ declare const PAINTS: {
     readonly name: "Clear Skies";
     readonly hex: "#8CC4F2";
   };
+  readonly frostbite: {
+    readonly name: "Frostbite";
+    readonly hex: "#9FD6F0";
+    readonly month: "2026-11";
+  };
+  readonly 'last-ember': {
+    readonly name: "Last Ember";
+    readonly hex: "#C4502A";
+    readonly month: "2026-11";
+  };
+  readonly evergreen: {
+    readonly name: "Evergreen";
+    readonly hex: "#2F6B45";
+    readonly month: "2026-12";
+  };
+  readonly 'candy-cane': {
+    readonly name: "Candy Cane";
+    readonly hex: "#E04A5A";
+    readonly month: "2026-12";
+  };
+  readonly midnight: {
+    readonly name: "Midnight Blue";
+    readonly hex: "#232F5C";
+    readonly month: "2027-01";
+  };
+  readonly champagne: {
+    readonly name: "Champagne";
+    readonly hex: "#E9D9A6";
+    readonly month: "2027-01";
+  };
+  readonly sweetheart: {
+    readonly name: "Sweetheart";
+    readonly hex: "#E36A8E";
+    readonly month: "2027-02";
+  };
+  readonly 'sugar-plum': {
+    readonly name: "Sugar Plum";
+    readonly hex: "#6B3B6E";
+    readonly month: "2027-02";
+  };
+  readonly 'lucky-clover': {
+    readonly name: "Lucky Clover";
+    readonly hex: "#3FA35B";
+    readonly month: "2027-03";
+  };
+  readonly puddle: {
+    readonly name: "Puddle Grey";
+    readonly hex: "#8A93A0";
+    readonly month: "2027-03";
+  };
+  readonly blossom: {
+    readonly name: "Cherry Blossom";
+    readonly hex: "#F3B8C8";
+    readonly month: "2027-04";
+  };
+  readonly 'robins-egg': {
+    readonly name: "Robin’s Egg";
+    readonly hex: "#8FD3D0";
+    readonly month: "2027-04";
+  };
 };
 type PaintId = keyof typeof PAINTS;
 declare const PAINT_IDS: PaintId[];
+/** Metal for a paint of the month: two refined, six times an ordinary tin. */
+declare const LIMITED_PAINT_COST = 18;
+/** The month a paint of the month is on sale (`YYYY-MM`), or undefined for one always on the shelf. */
+declare const paintMonth: (id: PaintId) => string | undefined;
+/** Whether a paint can be bought on `day` (`YYYY-MM-DD`): always, or in its month. */
+declare const paintOnSale: (id: PaintId, day: string) => boolean;
+/** The paints for sale on `day`: the shelf, then that month's. */
+declare const paintsOnSale: (day: string) => PaintId[];
+/** What a tin of `id` costs, in scrap. */
+declare const paintCost: (id: PaintId, base: number) => number;
 /** What can be painted. */
 declare const PAINTABLE: readonly ["hat", "buddy"];
 /**
@@ -1303,6 +1373,12 @@ interface AnimateOptions extends RenderOptions {
     fine?: boolean;
   };
 }
+/**
+ * Poses: the guy as he is, with eyes shut or glancing, with an arm up or
+ * down, and with a few expressions — a laugh for a win, a wobble for a loss,
+ * an "ooh" when squished. His own eyes stay: they are who he is.
+ */
+type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep' | 'blush' | 'blushLeft' | 'blushRight' | 'huff' | 'oops';
 /**
  * Little pictures that pop up beside his head. The last three are manga's
  * own: a sweat drop, the cross-shaped anger vein and a little floating heart.
@@ -2676,6 +2752,28 @@ declare function crowdPicture(guys: CrowdGuy[], width: number, height: number, o
 }): Uint8ClampedArray;
 
 //#endregion
+//#region src/emotes.d.ts
+/** An emote's side, in pixels. */
+declare const EMOTE_SIZE = 14;
+type Motion = 'bounce' | 'shake' | 'rise' | 'sway';
+interface EmoteDef {
+  id: string;
+  name: string;
+  poses: Pose[];
+  symbol?: Emote;
+  motion: Motion;
+}
+/** The set, in the order a channel would upload them. `name` is the suffix a channel puts after its prefix. */
+declare const EMOTE_SET: readonly EmoteDef[];
+/** Whether `id` names an emote in the set. */
+declare const isEmote: (id: string) => boolean;
+/**
+ * Emote `id` for a guy: one frame still, or a loop of six. His head and shoulders fill it, top-aligned
+ * to his head (or hat), the picture in the top right corner over him.
+ */
+declare function emoteFrames(spec: GuySpec, id: string, moving?: boolean): Frames | null;
+
+//#endregion
 //#region src/kit.d.ts
 /**
  * The lil guys kit for a game: a player's guy anywhere from one address or one line, with nothing of
@@ -2890,5 +2988,5 @@ declare function nameKey(typed: string): string;
 declare const nameSkeleton: (key: string) => string;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

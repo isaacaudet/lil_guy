@@ -1,3 +1,4 @@
+import { emoteFrames } from './emotes';
 import { animate, backdropOf, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, WIDE_FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
 import { cardArtFrames, cardFrames, cardPlayer, type CardInput } from './card';
@@ -404,6 +405,9 @@ export function bakeView(spec: CardSpec, view: string): Frames | null {
   }
   if (view === 'pfp' || view === 'pfp-still') { const p = profileFrames(spec); return view === 'pfp' ? p : { ...p, frames: p.frames.slice(0, 1), delays: [LOOP_MS] }; }
   if (view === 'still') { const g = bakeGuy(spec, 'idle'); return { ...g, frames: g.frames.slice(0, 1), delays: [LOOP_MS] }; }
+  // A chat emote (./emotes): `emote-<id>` moving, `emote-<id>-still` still.
+  const emote = /^emote-([a-z]+?)(-still)?$/.exec(view);
+  if (emote) return emoteFrames(spec, emote[1], !emote[2]);
   return isMove(view) ? bakeGuy(spec, view) : null;
 }
 
