@@ -11,7 +11,7 @@ import { LAYER, T } from './parts/art';
 import { hash } from './hash';
 import { auraById, auraCells, auraColor } from './auras';
 import { applyFx } from './effects';
-import { sparkleAt, SPARKLE_REACH } from './sparkle';
+import { sparkleAt, starAt, SPARKLE_REACH } from './sparkle';
 import type { AvatarConfig, Palette, PixelGrid, RenderOptions } from './types';
 import { GRID_SIZE } from './types';
 
@@ -547,8 +547,8 @@ function rim(layer: Layer): [number, number][] {
 type Sparkle = [string, string, string];
 
 /** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
-function sparkle(layer: Layer, x: number, y: number, f: number, colors: Sparkle): void {
-  for (const [dx, dy, k] of sparkleAt(f)) {
+function sparkle(layer: Layer, x: number, y: number, f: number, colors: Sparkle, shape = sparkleAt): void {
+  for (const [dx, dy, k] of shape(f)) {
     const cx = x + dx, cy = y + dy;
     if (cx >= 0 && cy >= 0 && cx < layer[0].length && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = { c: colors[k], item: false };
   }
@@ -582,12 +582,12 @@ function sparkleSpots(layer: Layer, above = Infinity): [number, number][] {
  * LOOP_MS) one opens at a spot dealt from `salt`, lives `life` of the period
  * and is gone for the rest. `at` is the clock with this run's own phase.
  */
-function sparkleRun(layer: Layer, spots: [number, number][], at: number, period: number, life: number, salt: number, colors: Sparkle): void {
+function sparkleRun(layer: Layer, spots: [number, number][], at: number, period: number, life: number, salt: number, colors: Sparkle, shape = sparkleAt): void {
   if (!spots.length) return;
   const f = cycle(at, period) / life;
   if (f >= 1) return;
   const [x, y] = spots[Math.floor(noise(tick(at, period), salt) * spots.length)];
-  sparkle(layer, x, y, f, colors);
+  sparkle(layer, x, y, f, colors, shape);
 }
 
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
@@ -898,9 +898,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
 
     if (lucky) luckyShimmer(layer, t, seed);
     if (liveEye) liveEyes(layer, liveEye, t, seed);
-    // Sparkles, sparingly: a Lucky guy's one gold glint, a Gold finish's mark.
-    if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, spots, t + seed * 7, 2300, 0.4, seed, GOLD_SPARKLE);
-    if (goldMark) sparkleRun(layer, spots, t + goldCopy!.print * 37, 2600, 0.4, goldCopy!.print, GOLD_SPARKLE);
+    // Sparkles, sparingly: a Lucky guy's gold star over his head, a Gold finish's mark.
+    if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t + seed * 7, 2300, 0.55, seed, GOLD_SPARKLE, starAt);
+    if (goldMark) sparkleRun(layer, headSpots, t + goldCopy!.print * 37, 2600, 0.55, goldCopy!.print, GOLD_SPARKLE, starAt);
 
     const aura = grade >= 2 ? rim(layer) : [];
     if (beat.stars) {

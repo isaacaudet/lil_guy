@@ -481,3 +481,21 @@ test('founderRoll keeps to the tier it drew and the best float in it', () => {
   expect(gradeOf(o).id).toBe('mythic');
   expect(founderRoll(one, GRADES.findIndex(g => g.id === 'grail'), 0.01).finish).toBe('gold');
 });
+
+test('what the founder holds stays off the Pulls page and its counts until he gives it to someone', async () => {
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  const b = await claim('bo');
+  await call('/me/isaac/state', 'GET', undefined, auth(f.owner));
+  const pulled: any = await (await call('/me/isaac/open', 'POST', { game: 'puttsies' }, auth(f.owner))).json();
+  expect(pulled.copy.pull ?? 0).toBe(0);
+  expect(await (await call('/market')).json()).toHaveLength(0);
+  expect(((await (await call('/stats')).json()) as any).copies).toBe(0);
+  expect(((await (await call('/rank?code=' + encodeURIComponent(pulled.copy.code))).json()) as any).pop).toBe(0);
+  // His own page still lists them, the Gold flag and Origin aura too.
+  expect(((await (await call('/market?key=isaac')).json()) as any[]).some(c => c.id === pulled.copy.id)).toBe(true);
+  const offer: any = await (await call('/me/isaac/swap', 'POST', { to: 'bo', give: pulled.copy.id }, auth(f.owner))).json();
+  expect((await call('/me/bo/swap-accept', 'POST', { id: offer.id }, auth(b.owner))).status).toBe(200);
+  const market: any = await (await call('/market')).json();
+  expect(market.map((c: any) => [c.id, c.key])).toEqual([[pulled.copy.id, 'bo']]);
+  expect(((await (await call('/stats')).json()) as any).copies).toBe(1);
+});

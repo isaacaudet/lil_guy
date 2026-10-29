@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-Cn_d5eOn.js";
+import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, painted, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-Cb6LU5To.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -722,8 +722,8 @@ function rim(layer) {
 	return out;
 }
 /** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
-function sparkle(layer, x, y, f, colors) {
-	for (const [dx, dy, k] of sparkleAt(f)) {
+function sparkle(layer, x, y, f, colors, shape = sparkleAt) {
+	for (const [dx, dy, k] of shape(f)) {
 		const cx = x + dx, cy = y + dy;
 		if (cx >= 0 && cy >= 0 && cx < layer[0].length && cy < FRAME_HEIGHT && !layer[cy][cx]) layer[cy][cx] = {
 			c: colors[k],
@@ -762,12 +762,12 @@ function sparkleSpots(layer, above = Infinity) {
 * LOOP_MS) one opens at a spot dealt from `salt`, lives `life` of the period
 * and is gone for the rest. `at` is the clock with this run's own phase.
 */
-function sparkleRun(layer, spots, at, period, life, salt, colors) {
+function sparkleRun(layer, spots, at, period, life, salt, colors, shape = sparkleAt) {
 	if (!spots.length) return;
 	const f = cycle(at, period) / life;
 	if (f >= 1) return;
 	const [x, y] = spots[Math.floor(noise(tick(at, period), salt) * spots.length)];
-	sparkle(layer, x, y, f, colors);
+	sparkle(layer, x, y, f, colors, shape);
 }
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
 const sparkleIn = (color) => [
@@ -1238,8 +1238,8 @@ function animate(input, move, options = {}) {
 		}
 		if (lucky) luckyShimmer(layer, t$1, seed);
 		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
-		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, spots, t$1 + seed * 7, 2300, .4, seed, GOLD_SPARKLE);
-		if (goldMark) sparkleRun(layer, spots, t$1 + goldCopy.print * 37, 2600, .4, goldCopy.print, GOLD_SPARKLE);
+		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t$1 + seed * 7, 2300, .55, seed, GOLD_SPARKLE, starAt);
+		if (goldMark) sparkleRun(layer, headSpots, t$1 + goldCopy.print * 37, 2600, .55, goldCopy.print, GOLD_SPARKLE, starAt);
 		const aura = grade >= 2 ? rim(layer) : [];
 		if (beat.stars) {
 			const gold = sparkleIn(palette$1.colors[T.GOLD] ?? "#F2C230");
@@ -8802,7 +8802,7 @@ function createCardShader(canvas) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 13;
+const ART_VERSION = 14;
 /** The longest name a big card's code carries. */
 const TITLE_MAX = 24;
 const PART_KEYS = [
@@ -8903,7 +8903,7 @@ function viewSize(view) {
 * for good, and plays in a plain `<img>`, so a board of a hundred animates with no script per frame.
 * GAMES.md has where each view goes.
 *
-*   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/13/~Sneaky%20Gumdrop/face.png
+*   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/14/~Sneaky%20Gumdrop/face.png
 *   row.prepend(lilGuyImg('mia', 'row'))               → an <img> sized for a board's row
 *   const guys = await lilGuysFor(['mia', 'theo'])     → each name's code, claimed or not, in one read
 *

@@ -81,8 +81,8 @@ blank without one.
 
 | Address | Cache |
 | --- | --- |
-| `/g/13/<code>/…` | `public, max-age=31536000, immutable` at the edge and in the browser. A code's picture never changes for an art version. |
-| `/g/13/~name/…`, `/g/13/@name/…` | `302` to the code's address, `max-age=60`: what he wears shows within a minute. |
+| `/g/14/<code>/…` | `public, max-age=31536000, immutable` at the edge and in the browser. A code's picture never changes for an art version. |
+| `/g/14/~name/…`, `/g/14/@name/…` | `302` to the code's address, `max-age=60`: what he wears shows within a minute. |
 | `/g/latest/…` | `302` to the current art version, `max-age=300`; a name goes straight to its code in one hop (`max-age=60`). |
 | `/g/<old version>/…` | `301` to the current version, a day. |
 
@@ -101,7 +101,7 @@ decode at 4×. Use `@2` to `@16` only where CSS doesn't reach: Discord, email, a
 ```json
 {
   "version": 13,
-  "base": "https://lilguys.dleclub.com/g/13/",
+  "base": "https://lilguys.dleclub.com/g/14/",
   "guys": {
     "mia": { "claimed": true, "name": "@mia", "code": "eyJzIjoi…", "founder": false, "wide": false,
              "urls": { "icon": "…/icon.png", "face": "…/face.png", "idle": "…", "still": "…", "pfp": "…", "card": "…", "cardFull": "…" } },
