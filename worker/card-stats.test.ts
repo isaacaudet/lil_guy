@@ -1,0 +1,136 @@
+import { test, expect, beforeEach } from 'bun:test';
+import { Database } from 'bun:sqlite';
+import { api } from './index.js';
+import { decode } from '../src/index-headless.ts';
+import { readClub, statsSignature, READ_EVERY } from './card-stats.js';
+import { createHmac } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { decode, encode } from '../src/index-headless.ts';
+
+let env: any;
+beforeEach(() => {
+  const db = new Database(':memory:');
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
+    let args: any[] = [];
+    const statement = { bind(...values: any[]) { args = values; return statement; },
+      async first() { return db.prepare(sql).get(...args); }, async all() { return { results: db.prepare(sql).all(...args) }; },
+      async run() { const r = db.prepare(sql).run(...args); return { meta: { changes: r.changes, last_row_id: Number(r.lastInsertRowid) } }; } };
+    return statement;
+  } } };
+});
+const call = (path: string, method = 'GET', body?: any, headers: any = {}) => api(new Request('https://example.test/api' + path, {
+  method, headers: { 'CF-Connecting-IP': '192.0.2.1', 'Content-Type': 'application/json', ...headers }, body: body ? JSON.stringify(body) : undefined,
+}), env);
+const claim = async (key: string) => (await (await call('/names/' + key, 'POST')).json()) as any;
+const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
+// Stamps for a test that opens many capsules: a club day well after stamps began, as if read from the club.
+const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, ?, 0) ON CONFLICT(key, day) DO UPDATE SET n = n + excluded.n").run(key, n);
+
+
+const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+const state = async (c: any) => (await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any;
+// Once a name is linked to a sign-in its browser token no longer works, so the public page is read.
+const pub = async () => (await (await call('/guys/mia')).json()) as any;
+const wornOne = (s: any) => s.copies.find((x: any) => x.worn);
+
+test('a copy counts the days it is worn, banks them as it comes off and never counts a day twice', async () => {
+  const c = await claim('mia');
+  let s = await state(c);
+  const first = wornOne(s);
+  expect(first.stats).toEqual({ worn: 1, games: 0, best: 0 });
+  env.db.exec(`UPDATE copies SET worn_since = '${day(-3)}' WHERE id = ${first.id}`);
+  expect(wornOne(await state(c)).stats.worn).toBe(4);
+  // Another copy for the same slot: the first banks its four days.
+  const other = s.copies.find((x: any) => !x.worn && x.slot === first.slot) ?? (await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json() as any).copy;
+  await call('/me/mia/wear', 'POST', { slot: other.slot, id: other.id }, auth(c.owner));
+  if (other.slot !== first.slot) await call('/me/mia/wear', 'POST', { slot: first.slot, id: null }, auth(c.owner));
+  s = await state(c);
+  expect(s.copies.find((x: any) => x.id === first.id).stats.worn).toBe(4);
+  expect(s.copies.find((x: any) => x.id === other.id).stats.worn).toBe(1);
+  // Back on the same day: today is already counted.
+  await call('/me/mia/wear', 'POST', { slot: first.slot, id: first.id }, auth(c.owner));
+  expect((await state(c)).copies.find((x: any) => x.id === first.id).stats.worn).toBe(4);
+  // Stats show on the public page too.
+  const pub: any = await (await call('/guys/mia')).json();
+  expect(pub.copies.find((x: any) => x.id === first.id).stats.worn).toBe(4);
+});
+
+test("club days go to the copies worn then: games finished, best score, and a Strange copy's tally", async () => {
+  const c = await claim('mia');
+  const s = await state(c);
+  const worn = wornOne(s);
+  const a = 'ab'.repeat(32), secret = 'x'.repeat(40);
+  env.CLUB_SSO_SECRET = secret;
+  env.db.exec(`UPDATE names SET account = '${a}' WHERE key = 'mia'`);
+  env.db.exec(`UPDATE copies SET worn_since = '${day(-2)}', code = code || '~t0' WHERE id = ${worn.id}`);
+  const asked: string[] = [];
+  const fetcher = async (url: string) => { asked.push(url); return new Response(JSON.stringify({ days: [
+    { day: day(-5), games: 5, score: 480 }, { day: day(-2), games: 3, score: 260 }, { day: day(-1), games: 6, score: 512 }] })); };
+  const now = Date.now();
+  await readClub(env, 'mia', now, fetcher as any);
+  // Asked from the day it went on, signed as the club checks it (dle-club api/_lib/lilguys-sso.js).
+  const u = new URL(asked[0]);
+  expect(u.searchParams.get('a')).toBe(a);
+  expect(u.searchParams.get('since')).toBe(day(-2));
+  const t = u.searchParams.get('t');
+  expect(u.searchParams.get('sig')).toBe(createHmac('sha256', secret).update(`stats.${a}.${day(-2)}.${t}`).digest('base64url'));
+  const after = wornOne(await pub());
+  expect(after.stats.games).toBe(9);
+  expect(after.stats.best).toBe(512);
+  expect(after.code).toMatch(/~t2(~|$)/);
+  // Read again within ten minutes: the club isn't asked.
+  await readClub(env, 'mia', now + 1000, fetcher as any);
+  expect(asked).toHaveLength(1);
+  // A copy that wasn't on gets none of it.
+  const off = (await pub()).copies.find((x: any) => !x.worn);
+  expect(off.stats.games).toBe(0);
+  // Later: settled days aren't asked for again; the club failing changes nothing.
+  await readClub(env, 'mia', now + READ_EVERY + 1, (async () => new Response('no', { status: 500 })) as any);
+  expect(wornOne(await pub()).stats.best).toBe(512);
+});
+
+test('no club sign-in or no secret: nothing is asked', async () => {
+  const c = await claim('mia');
+  await state(c);
+  let asked = 0;
+  const fetcher = (async () => { asked++; return new Response('{"days":[]}'); }) as any;
+  await readClub(env, 'mia', Date.now(), fetcher);
+  env.CLUB_SSO_SECRET = 'y'.repeat(40);
+  await readClub(env, 'mia', Date.now(), fetcher);
+  expect(asked).toBe(0);
+});
+
+test('signatures match the club’s', async () => {
+  const sig = await statsSignature('k'.repeat(40), 'cd'.repeat(32), '2026-10-01', 123);
+  expect(sig).toBe(createHmac('sha256', 'k'.repeat(40)).update(`stats.${'cd'.repeat(32)}.2026-10-01.123`).digest('base64url'));
+});
+
+test('every copy pulled is numbered in its item’s run; starters aren’t, and the numbers never repeat', async () => {
+  const c = await claim('mia');
+  give('mia', 8 * 12);
+  const s = await state(c);
+  expect(s.copies.every((x: any) => x.pull === undefined)).toBe(true);
+  const got: any[] = [];
+  for (let i = 0; i < 12; i++) got.push(((await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, auth(c.owner))).json()) as any).copy);
+  const byItem: Record<string, number[]> = {};
+  for (const x of got) (byItem[decode(x.code)!.item] ??= []).push(x.pull);
+  for (const pulls of Object.values(byItem)) expect(pulls).toEqual(pulls.map((_, i) => i + 1));
+  // The state carries them too.
+  const after = await state(c);
+  expect(after.copies.filter((x: any) => x.pull).length).toBe(got.filter(x => x.pull).length);
+});
+
+test('copies made before 0009 are numbered in the order they were made, and the count carries on', async () => {
+  const { Database } = await import('bun:sqlite');
+  const db = new Database(':memory:');
+  const all = ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql'];
+  for (const m of all) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  const add = (item: string, source: string, one_in: number) => db.prepare("INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, at) VALUES ('k', 'x', ?, 'g', 'hat', 'plain', 0, ?, 0.1, ?, 't')").run(item, one_in, source);
+  add('a', 'capsule', 10); add('b', 'capsule', 10); add('a', 'starter', 0); add('a', 'capsule', 10); add('a', 'founder', 1e15);
+  db.exec(readFileSync(new URL('../migrations/0009_card_stats.sql', import.meta.url), 'utf8'));
+  expect(db.prepare('SELECT item, source, pull FROM copies ORDER BY id').all()).toEqual([
+    { item: 'a', source: 'capsule', pull: 1 }, { item: 'b', source: 'capsule', pull: 1 }, { item: 'a', source: 'starter', pull: 0 },
+    { item: 'a', source: 'capsule', pull: 2 }, { item: 'a', source: 'founder', pull: 0 }]);
+  expect(db.prepare("SELECT name, n FROM counters ORDER BY name").all()).toEqual([{ name: 'pull:a', n: 2 }, { name: 'pull:b', n: 1 }]);
+});

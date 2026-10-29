@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { animate, closeEyes, drawFrame, frameAt, toAnimatedSvg, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM } from '../animate';
-import { compose } from '../compose';
+import { animate, animateLoop, closeEyes, drawFrame, frameAt, toAnimatedSvg, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM, WIDE_FRAME_WIDTH } from '../animate';
+import { LOOP_MS } from '../loop';
+import { buddyAlone, compose } from '../compose';
+import { T } from '../parts/art';
 import { resolve } from '../resolve';
 import { dress, withItems } from '../items';
 import { paint } from '../paint';
@@ -50,6 +52,51 @@ describe('animate', () => {
     for (let y = 0; y < GRID_SIZE; y++) expect(rest[y + HEADROOM]).toEqual(s[y]);
   });
 
+  test('a buddy stands beside him on the floor, whole, apart from him in every frame of every move', () => {
+    const wrong: string[] = [];
+    for (const name of NAMES) for (const buddy of ['amountle.gemling', 'flipsies.goldfish', 'trackdle.tyres', 'weighsies.cat', 'pets.bunny-buddy']) {
+      const config = dress(resolve(name), { equip: [buddy] }, name);
+      const alone = buddyAlone(config)!, W = alone[0].length;
+      const art = alone.flatMap((row, y) => row.flatMap((t, x) => (t ? [[x, y + HEADROOM, t]] : []))) as [number, number, number][];
+      const plain = still(name);
+      // Standing still, he is his still on his own sixteen columns, the buddy past them.
+      const rest = animate(name, 'blink', { equip: [buddy] }).frames[0].colors;
+      expect(rest[0].length).toBe(W);
+      for (let y = 0; y < GRID_SIZE; y++) expect(rest[y + HEADROOM].slice(0, GRID_SIZE)).toEqual(plain[y]);
+      expect(Math.min(...art.map(([x]) => x))).toBeGreaterThanOrEqual(GRID_SIZE);
+      expect(W).toBeLessThanOrEqual(WIDE_FRAME_WIDTH);
+      for (const move of MOVES) for (const [k, f] of animate(name, move, { equip: [buddy], rarity: false }).frames.entries()) {
+        // Its outline and its eyes (outline ink and a white catchlight) are his colours, not the buddy's.
+        const lifts = [0, 1, 2].filter(lift => art.every(([x, y, t]) => t === T.OUTLINE || t === T.WHITE || f.slots[y - lift][x] === 4));
+        if (lifts.length !== 1) { wrong.push(`${name} ${buddy} ${move} ${k}: not whole on the floor or a hop above it`); continue; }
+        const lift = lifts[0], mine = new Set(art.map(([x, y]) => (y - lift) * W + x));
+        f.colors.forEach((row, y) => row.forEach((c, x) => {
+          if (!c || mine.has(y * W + x)) return;
+          if (f.slots[y][x] === 4) wrong.push(`${name} ${buddy} ${move} ${k}: a stray buddy pixel at ${x},${y}`);
+          else if (art.some(([bx, by]) => Math.abs(bx - x) <= 1 && Math.abs(by - lift - y) <= 1)) wrong.push(`${name} ${buddy} ${move} ${k}: he touches it at ${x},${y}`);
+        }));
+      }
+    }
+    expect([...new Set(wrong)]).toEqual([]);
+  }, 60_000);
+
+  test('a buddy hops when he hops, and on its own now and then, but sleeps when he sleeps', () => {
+    const equip = ['pets.kitten'];
+    const lift = (f: { slots: number[][] }) => GRID_SIZE + HEADROOM - 1 - Math.max(...f.slots.flatMap((row, y) => (row.includes(4) ? [y] : [])));
+    const lifts = (move: (typeof MOVES)[number]) => animate('alice', move, { equip, rarity: false }).frames.map(lift);
+    // Its bottom art row sits a row over the floor, inside its outline.
+    const floor = Math.min(...lifts('sleep'));
+    expect(new Set(lifts('sleep'))).toEqual(new Set([floor]));
+    expect(Math.max(...lifts('hop')) - floor).toBe(2);
+    const idle = animateLoop('alice', 'idle', { equip, rarity: false });
+    expect(Math.max(...idle.frames.map(lift)) - floor).toBe(1);
+    expect(idle.duration % LOOP_MS).toBe(0);
+  });
+
+  test('a guy without a buddy keeps his sixteen columns', () => {
+    for (const move of MOVES) expect(animate('alice', move).width).toBe(FRAME_WIDTH);
+  });
+
   test('a hop goes up into the headroom', () => {
     for (const name of NAMES) {
       const a = animate(name, 'hop');
@@ -60,13 +107,14 @@ describe('animate', () => {
 
   test('a blink only changes the eyes', () => {
     // One-row eyes (a squint, shades) are already a line, so some guys don't change.
+    // The eyes are ink, shine and the accent's colour low in them (10, 11).
     let changed = 0;
     for (const name of NAMES) {
       const config = dress(resolve(name), {}, name);
       const grid = compose(config);
       const shut = closeEyes(grid, config);
       shut.forEach((row, y) => row.forEach((t, x) => {
-        if (t !== grid[y][x]) { changed++; expect([5, 6]).toContain(grid[y][x]); }
+        if (t !== grid[y][x]) { changed++; expect([5, 6, 10, 11]).toContain(grid[y][x]); }
       }));
     }
     expect(changed).toBeGreaterThan(0);
@@ -84,12 +132,13 @@ describe('animate', () => {
     expect(rich.frames.length).toBeGreaterThan(plain.frames.length);
   });
 
-  test('moves have expressions, emotes and dust', () => {
+  test('moves have expressions and emotes, and no stray pixels at his feet', () => {
     const colours = (a: ReturnType<typeof animate>) => new Set(a.frames.flatMap(f => f.colors.flat()));
     for (const name of NAMES) {
       expect(colours(animate(name, 'dance')).has('#FFE27A')).toBe(true);
       expect(colours(animate(name, 'look')).has('#FFFFFF')).toBe(true);
-      expect(colours(animate(name, 'hop')).has('#E8E0D2')).toBe(true);
+      // A landing once kicked up near-white dust that read as glitches on a light page.
+      expect(colours(animate(name, 'hop')).has('#E8E0D2')).toBe(false);
       const cheer = animate(name, 'cheer', { rarity: false }), rest = animate(name, 'blink').frames[0];
       expect(cheer.frames.some(f => JSON.stringify(f.colors) !== JSON.stringify(rest.colors))).toBe(true);
     }

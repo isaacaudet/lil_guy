@@ -20,6 +20,12 @@ interface Colourway {
   body: string;
   accent: string;
   trim: string;
+  /**
+   * Token colours set by hand instead of worked out from the body. Only the
+   * chase colourways have them: an opal's shading runs through other colours,
+   * which is what makes it a jewel and not just a pale body.
+   */
+  tones?: Record<number, string>;
 }
 
 const COLOURWAYS: Colourway[] = [
@@ -62,7 +68,22 @@ const COLOURWAYS: Colourway[] = [
   { name: 'Oxblood',      body: '#8E2A3A', accent: '#F2C230', trim: '#FFF1D6' },
   { name: 'Forest',       body: '#2F6B4A', accent: '#F28A2E', trim: '#FFF1D6' },
   { name: 'Grape Soda',   body: '#6B3FA0', accent: '#3DE0B0', trim: '#FFE066' },
+  // Added with deal 3.
+  { name: 'Fuchsia',      body: '#F27ACF', accent: '#6FD6C2', trim: '#FFFFFF' },
+  { name: 'Lemon',        body: '#EEF07A', accent: '#8C7CF0', trim: '#FFFFFF' },
+  { name: 'Denim',        body: '#6A92E0', accent: '#FFB38A', trim: '#FFF3E0' },
+  { name: 'Ice',          body: '#D2F1FF', accent: '#FF8FB1', trim: '#7BB8FF' },
+  // Chase colourways, one guy in several hundred, each with its own shading.
+  { name: 'Opal',         body: '#F4F0FA', accent: '#7FE0C8', trim: '#FFB5D8',
+    tones: { 2: '#C9B8F0', 3: '#D4FFF2', 13: '#FFE0F0', 19: '#9FD8F0' } },
+  { name: 'Obsidian',     body: '#433B5E', accent: '#FFD45C', trim: '#FFE9A8',
+    tones: { 2: '#2A2440', 3: '#B79CFF', 13: '#5A4F7A', 19: '#1E1A2E' } },
+  { name: 'Aurora',       body: '#2E5878', accent: '#FF7AC8', trim: '#B8FFE0',
+    tones: { 2: '#3B3F86', 3: '#7DFFC8', 13: '#3E8A8C', 19: '#4A2F7A' } },
 ];
+
+/** Hand-set token colours by colourway name, applied over the derived ones. */
+const TONES = new Map(COLOURWAYS.filter(w => w.tones).map(w => [w.name, w.tones!]));
 
 // ---------------------------------------------------------------- colour math
 
@@ -103,7 +124,7 @@ function fromHsl([h, s, l]: HSL): string {
   return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
 }
 
-function mix(a: string, b: string, amount: number): string {
+export function mix(a: string, b: string, amount: number): string {
   const [ar, ag, ab] = hexToRgb(a);
   const [br, bg, bb] = hexToRgb(b);
   return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
@@ -124,7 +145,7 @@ function luminance(hex: string): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
-function contrast(a: string, b: string): number {
+export function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
@@ -149,8 +170,12 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
   const outline = fromHsl([outlineHue, 0.42, toHsl(body)[2] >= 0.5 ? 0.3 : toHsl(body)[2] * 0.25]);
   // Dark eyes on most bodies; on a body too dark for them, the eyes and mouth
   // glow a light cream instead, which reads as a look rather than a mistake.
-  const dark = fromHsl([outlineHue, 0.38, 0.14]);
-  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark : '#FFF1D6';
+  // Cream is only for the truly dark: on a mid tone like cobalt, cream eyes
+  // ran into a mustache or a pair of glasses and the face became one pale
+  // blob, so there the eyes go a deeper near-black first.
+  const dark = fromHsl([outlineHue, 0.38, 0.14]), deeper = fromHsl([outlineHue, 0.4, 0.06]);
+  const ink = contrast(dark, body) >= 4.2 || contrast(dark, body) > contrast('#FFF1D6', body) ? dark
+    : contrast(deeper, body) >= 3.9 ? deeper : '#FFF1D6';
 
   // A rosy pink, deepened until it reads on this body.
   let blush = '#FF8FA8';
@@ -187,6 +212,7 @@ function derive(name: string, body: string, accent: string, trim: string): Palet
       17: goldShade,
       18: '#FF6B78',
       19: shadeOf(body, 0.24),
+      ...TONES.get(name),
     },
   };
 }
@@ -236,14 +262,24 @@ export function luckyPalette(palette: Palette): Palette {
     let hue = (h + 150) % 360;
     const dark = l < 0.45;
     if (dark && hue >= 10 && hue <= 110) hue += 130;
-    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.min(0.85, s + 0.05), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.max(l, 0.66)]);
+    // Light ones go vivid, never pastel: a Lucky guy has to look it from across a page.
+    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.max(0.7, Math.min(0.92, s + 0.25)), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.min(Math.max(l, 0.6), 0.68)]);
   };
   const c = palette.colors;
   return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');
 }
 
 /** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+// Gumdrop, onigiri, slime, gourd, flame and shard: heads that come to a point.
+const POINTED = [3, 4, 6, 13, 14, 20];
+// A pointed head in a brown reads as a poo emoji, so Cocoa and Caramel wear Peach and Honey there.
+const NOT_BROWN: Record<number, number> = { 13: 0, 14: 20 };
+
+/** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
+export const shownPalette = (config: Pick<AvatarConfig, 'head' | 'palette'>): number =>
+  POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
+
 export function paletteOf(config: AvatarConfig): Palette {
-  const toned = shadePalette(getPalette(config.palette), config.shade);
+  const toned = shadePalette(getPalette(shownPalette(config)), config.shade);
   return config.lucky ? luckyPalette(toned) : toned;
 }

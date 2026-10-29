@@ -38,7 +38,7 @@
   .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
   .fact { background: var(--tile); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
   .fact b { font: 700 18px/1 var(--pixel); display: block; margin-bottom: 2px; }
-  .ladder { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
   .rung { border-radius: 8px; padding: 10px 8px; color: #fff; display: grid; gap: 4px; align-content: start; min-width: 0; }
   .rung b { font: 700 15px/1.1 var(--pixel); }
   .rung span { font-size: 12px; opacity: .92; line-height: 1.3; }
@@ -56,19 +56,19 @@
 <div class="wrap">
   <header>
     <h1>Lil Guy Guide</h1>
-    <p class="sub">The whole system on one page: who your guy is, what he wears, what makes a copy rare, and how you get it.</p>
+    <p class="sub">The whole system on one page: who your guy is, what it wears, what makes a copy rare, and how you get it.</p>
   </header>
 
   <div class="card"><span class="n" style="background:#2f6fe0">1</span><div>
     <h2>Your guy comes from your name</h2>
-    <p class="what">Eight parts picked by the name. He never changes and looks the same in every game. About 1 name in 400 is Lucky.</p>
+    <p class="what">Eight parts picked by the name. It never changes and looks the same in every game. About 1 name in 400 is Lucky.</p>
     <div class="row" id="guys"></div>
     <div class="facts"><span class="fact"><b>4.6 trillion</b>possible guys</span><span class="fact"><b>27 · 19 · 16</b>shapes, eyes, mouths</span><span class="fact"><b>1 in 400</b>Lucky</span></div>
   </div></div>
 
   <div class="card"><span class="n" style="background:#1f9d5b">2</span><div>
     <h2>Items: wear your games</h2>
-    <p class="what">Every game has 3 skins (he becomes the game's object), 3 hats (one free) and 2 frames. 72 in all.</p>
+    <p class="what">Every game has 3 skins (the guy becomes the game's object), 3 hats (one free) and 2 frames. 72 in all.</p>
     <div class="row" id="items"></div>
   </div></div>
 
@@ -79,14 +79,15 @@
   </div></div>
 
   <div class="card"><span class="n" style="background:#eb4b4b">4</span><div>
-    <h2>Five grades</h2>
-    <p class="what">The finish sets the grade. A famous print bumps it up one.</p>
+    <h2>Six grades</h2>
+    <p class="what">The finish sets the grade. A famous print bumps it up one. An aura is a grade of its own.</p>
     <div class="ladder">
       <div class="rung" style="background:var(--g0)"><b>Everyday</b><span>Plain · 80%</span></div>
       <div class="rung" style="background:var(--g1)"><b>Special</b><span>Sunset · 16%</span></div>
       <div class="rung" style="background:var(--g2)"><b>Prized</b><span>Tempered, Nebula · 3%</span></div>
       <div class="rung" style="background:var(--g3)"><b>Mythic</b><span>Prism, Negative, famous prints · 0.9%</span></div>
       <div class="rung" style="background:var(--g4)"><b>★ Grail</b><span>Gold · 0.25%</span></div>
+      <div class="rung" style="background:#19D3C5"><b>★ Aura</b><span>Any machine · 0.1%</span></div>
     </div>
     <div class="row" id="finishes" style="margin-top:12px"></div>
   </div></div>
@@ -102,16 +103,16 @@
     <div class="flow">
       <div class="step"><b>Free</b>A starter hat for each game, the day you first play it.</div>
       <div class="step"><b>Daily capsule</b>Finish the gauntlet, open one capsule free. Same machine, same odds.</div>
-      <div class="step"><b>More capsules</b>The same machine, for tickets.</div>
-      <div class="step"><b>Shop</b>A rotating shelf of Plain items, for tickets.</div>
+      <div class="step"><b>Stamps</b>One for each club game you finish, two gold for clearing the gauntlet, ten to start.</div>
+      <div class="step"><b>More capsules</b>A mystery capsule from any machine for 5 stamps, or pick the machine for 8.</div>
       <div class="step"><b>Swap up</b>Five of one grade for one of the next.</div>
     </div>
-    <p class="never">Tickets come from playing. Rare finishes only come from capsules and swap-ups, never the shelf, so they stay rare.</p>
+    <p class="never">Stamps only come from playing. Rare finishes only come from capsules and swap-ups, so they stay rare.</p>
   </div></div>
 
   <div class="card"><span class="n" style="background:#d32ce6">7</span><div>
     <h2>Shown everywhere</h2>
-    <p class="what">On boards as a still with a grade bar; the top three and you move. In games he cheers, sulks, dances and sleeps.</p>
+    <p class="what">On boards as a still with a grade bar; the top three and you move. In games it cheers, sulks, dances and sleeps.</p>
     <div class="row" id="moves"></div>
   </div></div>
 </div>
@@ -155,7 +156,7 @@
   $('parts').innerHTML = [
     ['Item', 'Golf ball', 'What it is', '#2f6fe0'],
     ['Finish', 'Rose Tempered', 'Its paint: sets the grade', '#d32ce6'],
-    ['Scuff', '0.0123456 · Mint in Box', 'How worn, 0 to 1. Lower is cleaner', '#1f9d5b'],
+    ['Scuff', '0.0123456 · Box Fresh', 'How worn, 0 to 1. Lower is cleaner', '#1f9d5b'],
     ['Print', '#1', 'Where the paint and chips land, 0 to 999', '#e4ae39'],
     ['Tally', '120 days', '1 copy in 10 keeps one', '#eb4b4b'],
     ['Pins', 'Gold star', 'Earned, up to 3', '#8847ff'],
@@ -182,7 +183,7 @@
   const moves = ['cheer', 'sad', 'dance', 'sleep', 'wave'];
   const wear = [E({ item: 'trackdle.helmet', finish: 'gold', scuff: 0.01, print: 9 })];
   $('moves').innerHTML = moves.map(m => `<figure><canvas width="16" height="20" style="width:72px;height:90px"></canvas><figcaption><b>${m}</b></figcaption></figure>`).join('');
-  const anims = [...$('moves').querySelectorAll('canvas')].map((c, i) => ({ c, a: LG.animate('mia7', moves[i], { equip: wear }), last: null }));
+  const anims = [...$('moves').querySelectorAll('canvas')].map((c, i) => ({ c, a: LG.animateLoop('mia7', moves[i], { equip: wear }), last: null }));
   const calm = matchMedia('(prefers-reduced-motion: reduce)');
   const t0 = performance.now();
   const loop = now => {

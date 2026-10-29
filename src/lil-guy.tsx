@@ -5,7 +5,7 @@ import { compose } from "./compose";
 import { closeEyes } from "./animate";
 import { hash } from "./hash";
 import { paletteOf } from "./palette";
-import { paint } from "./paint";
+import { paint, SMALL_SIZE } from "./paint";
 import type { GameId, Intensity3D, Palette } from "./types";
 import { GRID_SIZE } from "./types";
 
@@ -236,7 +236,7 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 
 			const toRects = (source: number[][], keyPrefix: string) => {
 				const out: React.ReactElement[] = [];
-				const colors = paint(source, cfg, palette);
+				const colors = paint(source, cfg, palette, typeof size === "number" && size <= SMALL_SIZE);
 				for (let y = 0; y < GRID_SIZE; y++) {
 					for (let x = 0; x < GRID_SIZE; x++) {
 						const color = colors[y][x];
@@ -268,7 +268,7 @@ export const LilGuy = React.forwardRef<HTMLDivElement, LilGuyProps>(
 				config: cfg,
 				hashValue: hv,
 			};
-		}, [name, customPalette, partOverrides, game, equip?.join(",")]);
+		}, [name, customPalette, partOverrides, game, equip?.join(","), size]);
 
 		// 3D rotation
 		const preset = INTENSITY_PRESETS[intensity3d];

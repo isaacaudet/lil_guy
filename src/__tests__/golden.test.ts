@@ -30,7 +30,7 @@ describe('golden art', () => {
   });
 
   it('emits the same SVG for a fixed input', () => {
-    expect(toSvgString('alice', { size: 16, square: true })).toMatchSnapshot();
+    expect(toSvgString('alice', { size: 16, square: true, small: false })).toMatchSnapshot();
   });
 
   it('covers every head wearing every topper', () => {

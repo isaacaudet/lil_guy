@@ -65,7 +65,7 @@
   .chipbtn[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); }
   nav.rooms a:focus-visible, .chipbtn:focus-visible, .btn:focus-visible, select:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
   .wallet { font: 700 18px/1 var(--pixel); display: inline-flex; gap: 8px; align-items: center; background: var(--panel); padding: 9px 12px; border-radius: 6px; box-shadow: 0 3px 0 var(--panel-edge); }
-  .wallet svg { width: 22px; height: 14px; image-rendering: pixelated; }
+  .wallet svg { width: 20px; height: 20px; image-rendering: pixelated; }
 
   section.room { display: grid; gap: 22px; scroll-margin-top: 20px; }
   section.room > header h2 { font-size: 34px; line-height: 1; font-weight: 700; }
@@ -82,6 +82,10 @@
     filter: drop-shadow(var(--sx, 0px) 9px 0 rgba(5, 7, 16, .55));
   }
   .art { container-type: inline-size; }
+  /* A still card in a long grid: no layer of its own and no moving foil until it's hovered, so a grid of hundreds scrolls freely. */
+  .art.still { will-change: auto; }
+  .art.still .ov .t { animation-play-state: paused; }
+  .card:hover .art.still .ov .t, .card:focus-visible .art.still .ov .t { animation-play-state: running; }
   .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
   .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
     font-size: 8.6cqw; font-weight: 700; line-height: 1; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
@@ -92,6 +96,11 @@
   @keyframes foil { to { background-position: 300% 0; } }
   .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
   .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center;
+  .ov .t.on-light:not(.foil):not(.gold) { color: #2a2340; text-shadow: 0 .6cqw 0 rgba(255, 255, 255, .45); }
+  .ov .t.on-light.foil, .ov .t.on-light.gold { filter: drop-shadow(.4cqw 0 0 #1a1530) drop-shadow(-.4cqw 0 0 #1a1530) drop-shadow(0 .4cqw 0 #1a1530) drop-shadow(0 -.4cqw 0 #1a1530); }
+  .ov .n { position: absolute; left: 9%; right: 22%; top: 88.3%; height: 6.6%; display: flex; align-items: center; font-size: 4.2cqw; line-height: 1; color: #6a6284; white-space: nowrap; overflow: hidden; }
+  .ov .n.on-dark { color: #d9d2f0; text-shadow: 0 .4cqw 0 rgba(10, 8, 24, .6); }
+  .ov .b.on-dark { color: #f4efff; text-shadow: 0 .5cqw 0 rgba(10, 8, 24, .6); }
     font-size: 6.6cqw; font-weight: 600; line-height: 1; color: #3a3352; white-space: nowrap; overflow: hidden; }
   .no-gl .ov { display: none; }
   .card:focus-visible canvas.px { outline: 3px solid var(--amber); outline-offset: 4px; }
@@ -136,15 +145,13 @@
   .loadout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 28px; align-items: start; }
   .dress { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 16px; }
   .dress .card { width: 78%; justify-self: center; }
+  .dress .btn { text-decoration: none; }
   .slots { display: grid; gap: 8px; }
   .slotrow { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--felt); border-radius: 6px; }
   .slotrow .k { font: 600 11px/1 var(--pixel); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   .slotrow .v { font: 600 13px/1.25 var(--pixel); min-width: 0; }
   .slotrow .v small { display: block; font: 400 12px/1.3 var(--body); color: var(--muted); }
   .slotrow .v.empty { color: var(--muted); }
-  .x { appearance: none; border: 0; background: var(--line); color: var(--ink); font: 700 13px/1 var(--pixel); width: 26px; height: 26px; border-radius: 5px; cursor: pointer; }
-  .x:hover { background: #3a4570; }
-  .x:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
   .bar-tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; justify-content: space-between; }
   .bar-tools .group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .bar-tools .count { font: 600 13px/1 var(--pixel); color: var(--muted); }
@@ -227,12 +234,7 @@
   @keyframes wiggle { 0%,100% { rotate: 0deg } 25% { rotate: -6deg } 75% { rotate: 6deg } }
   .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
   .buyrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .swaps { display: grid; gap: 10px; }
-  .swap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--felt); border-radius: 6px; }
-  .swap .t { font: 600 14px/1.3 var(--pixel); }
-  .swap .t .chip { margin: 0 2px; }
-  .swap small { display: block; color: var(--muted); font-size: 12px; }
-  .shop-low { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .shop-low { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 
   /* ---------- reveal: reel, then a face-down card that trembles, then the flip and the payoff */
   .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(5, 7, 15, .9); padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
@@ -308,7 +310,7 @@
 
 <canvas id="swirl" aria-hidden="true"></canvas>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="ticket" viewBox="0 0 11 7" shape-rendering="crispEdges"><path fill="#ffcf5c" d="M0 0h11v2h-1v3h1v2H0V5h1V2H0z"/><path fill="#a5781a" d="M4 1h1v1H4zM4 3h1v1H4zM4 5h1v1H4z"/></symbol>
+  <symbol id="stamp" viewBox="0 0 11 11" shape-rendering="crispEdges"><path fill="#f3ead6" d="M0 0h1v1H0zM2 0h1v1H2zM4 0h1v1H4zM6 0h1v1H6zM8 0h1v1H8zM10 0h1v1h-1zM0 10h1v1H0zM2 10h1v1H2zM4 10h1v1H4zM6 10h1v1H6zM8 10h1v1H8zM10 10h1v1h-1zM0 2h1v1H0zM0 4h1v1H0zM0 6h1v1H0zM0 8h1v1H0zM10 2h1v1h-1zM10 4h1v1h-1zM10 6h1v1h-1zM10 8h1v1h-1zM1 1h9v9H1z"/><path fill="#fe5f55" d="M2 2h7v7H2z"/><path fill="#a8352e" d="M2 8h7v1H2zM8 2h1v6H8z"/><path fill="#f3ead6" d="M4 4h1v1H4zM6 4h1v1H6zM4 6h3v1H4z"/></symbol>
 </svg>
 
 <div class="wrap">
@@ -324,7 +326,7 @@
   </div>
 
   <section class="room" id="cool">
-    <header><h2>Rarest possible</h2><p id="cool-lede">Built from the parts, not found in names: the rarest trait in every slot. Each wears the rarest kind of copy as a frame, since a hat would cover the topper and a skin the shape. He moves on the left; the card shows him in it. Tap him to change his move.</p></header>
+    <header><h2>Rarest possible</h2><p id="cool-lede">Built from the parts, not found in names: the rarest trait in every slot. Each wears the rarest kind of copy as a frame, since a hat would cover the topper and a skin the shape. It moves on the left; the card shows it in that copy. Tap him to change his move.</p></header>
     <div class="cool" id="cool-grid"></div>
   </section>
 
@@ -338,7 +340,7 @@
   </section>
 
   <section class="room" id="locker">
-    <header><h2>Locker</h2><p>Every copy this player owns. Tap one to wear it and see what it's made of; tap it again to take it off. One skin, one hat and one frame at a time.</p></header>
+    <header><h2>Locker</h2><p>Every copy this player owns. Tap one to see what it's made of.</p></header>
     <div class="panel" id="inspect"></div>
     <div class="loadout">
       <div class="dress panel" id="dress"></div>
@@ -362,8 +364,8 @@
   </section>
 
   <section class="room" id="moves">
-    <header><h2>Moves</h2><p>The library's animations, for the games. Every frame is drawn from the guy's own pixels, and the best copy he wears shows in them.</p></header>
-    <h3 class="room">In what he's wearing now</h3>
+    <header><h2>Moves</h2><p>The library's animations, for the games. Every frame is drawn from the guy's own pixels, and the best copy it wears shows in them.</p></header>
+    <h3 class="room">In what it's wearing now</h3>
     <div class="moves" id="moves-all"></div>
     <h3 class="room">Same hop, every grade</h3>
     <div class="moves" id="moves-grades"></div>
@@ -393,10 +395,10 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
   </section>
 
   <section class="room" id="shop">
-    <header><h2>Shop</h2><p>A mock-up. Tickets are pretend here; in the club the server would roll every capsule and keep the copy.</p></header>
+    <header><h2>Shop</h2><p>A mock-up. Stamps are pretend here; in the club the server would roll every capsule and keep the copy.</p></header>
     <div class="shop-top">
       <div class="panel">
-        <h3>Capsules · 100 <svg class="tk" width="16" height="10" aria-label="tickets"><use href="#ticket"/></svg></h3>
+        <h3>Capsules · 8 <svg class="tk" width="16" height="16" aria-label="stamps"><use href="#stamp"/></svg></h3>
         <div class="capsules" id="capsules"></div>
       </div>
       <div style="display:grid;gap:16px;align-content:start">
@@ -406,12 +408,11 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
           <p class="fine">Then a scuff, a print from 0 to 999, and one in ten keeps a tally.</p>
         </div>
         <div class="panel">
-          <h3>Earn tickets</h3>
+          <h3>Earn stamps</h3>
           <ul class="earn">
-            <li><span>Finish a game in today's gauntlet</span><b>+20</b></li>
-            <li><span>Finish all five</span><b>+60</b></li>
-            <li><span>Each day of your streak, up to 10</span><b>+5</b></li>
-            <li><span>Your first day in a new game</span><b>+100</b></li>
+            <li><span>Finish a DLE Club game</span><b>+1</b></li>
+            <li><span>Clear all five of the gauntlet</span><b>+2 gold</b></li>
+            <li><span>Claim a name</span><b>+10</b></li>
           </ul>
         </div>
       </div>
@@ -420,10 +421,6 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
       <div style="display:grid;gap:14px;min-width:0">
         <h3 class="room">Today's shelf</h3>
         <div class="shelf" id="shelf"></div>
-      </div>
-      <div style="display:grid;gap:14px;min-width:0">
-        <h3 class="room">Swap up</h3>
-        <div class="panel"><div class="swaps" id="swaps"></div><p class="fine">Trades the five least rare copies of that grade you aren't wearing. Starters can't be traded.</p></div>
       </div>
     </div>
   </section>
@@ -447,8 +444,7 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
       <h3 id="reveal-name"></h3>
       <p class="chips" id="reveal-chips" style="justify-content:center"></p>
       <div class="actions" id="reveal-actions" hidden>
-        <button class="btn" type="button" id="wear-it">Wear it</button>
-        <button class="btn ghost" type="button" id="keep-it">Keep it</button>
+        <button class="btn" type="button" id="keep-it">Keep it</button>
       </div>
     </div>
   </div>
@@ -464,10 +460,10 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const cap = s => (LG.GAMES.includes(s) ? LG.machineName(s) : s[0].toUpperCase() + s.slice(1));
   const strHash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const $ = id => document.getElementById(id);
-  const ticket = '<svg width="16" height="10" aria-hidden="true"><use href="#ticket"/></svg>';
+  const stamp = '<svg width="16" height="16" aria-hidden="true"><use href="#stamp"/></svg>';
 
   const compile = (gl, vs, fs) => {
     const sh = (t, s) => { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); return x; };
@@ -524,126 +520,15 @@ void main() {
   }
 
   /* ------------------------------------------------ cards, drawn per pixel */
-  const W = 26, H = 42;
-  const glCanvas = document.createElement('canvas');
-  glCanvas.width = W; glCanvas.height = H;
-  const gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false });
-  // Each pixel carries its own finish, scuff and print in the kind texture, so a
-  // guy wearing a Gold hat and a Nebula skin shines differently on each.
-  const prog = gl && compile(gl, VS, `
-precision mediump float;
-varying vec2 uv;
-uniform sampler2D base, kind;
-uniform float time, hover, grade, neg, seed;
-uniform vec2 light;
-
-float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
-vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
-vec3 hueShift(vec3 c, float a) {
-  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
-  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
-  vec3 yiq = toYIQ * c;
-  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
-  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
-}
-
-void main() {
-  vec2 res = vec2(26.0, 42.0);
-  vec2 cell = floor(uv * res);
-  vec2 at = (cell + 0.5) / res;
-  vec4 b = texture2D(base, at);
-  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }
-  vec3 c = b.rgb;
-  vec4 kd = texture2D(kind, at);
-  float k = floor(kd.r * 4.0 + 0.5);                    // 1 card, 2 window, 3 guy, 4 item
-  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;
-  float scuff = kd.b;
-  float print = floor(kd.a * 255.0 + 0.5) * 4.0;
-  float d = cell.x + cell.y;
-  float h = hash(cell, print);
-  float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
-  float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
-  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 58.0) - 29.0) / 3.0, 0.0, 1.0);
-
-  if (k > 3.5 && finish >= 0.0) {
-    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
-    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
-    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
-    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
-    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
-    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); c *= 1.0 + 0.12 * step(mod(cell.y + floor(time * 10.0), 3.0), 0.5); }
-    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
-    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
-  } else if (k < 2.5) {
-    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);
-    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;
-    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * 2.4); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }
-    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * 0.7 + d * 0.18); c += wide * 0.12; }
-    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), twinkle * 0.8); }
-  }
-  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
-  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
-}`);
-  const u = {};
-  if (prog) {
-    for (const n of ['base', 'kind', 'time', 'hover', 'grade', 'neg', 'seed', 'light']) u[n] = gl.getUniformLocation(prog, n);
-    gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1);
-  }
-  const texture = bytes => {
-    const t = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
-    for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
-    for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
-    return t;
-  };
+  // The library's card face, drawn by its plain-code renderer a step at a time: the very frames the
+  // lil guys Worker serves as the card's picture (/g/…/card.png), so a card here is the card there.
+  const W = LG.FACE_WIDTH, H = LG.FACE_HEIGHT, STEP = 80;
   const rgb = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
   const blend = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
-
   /** A card face: rounded edge, cream face, a window tinted by grade, the guy, grade pips. */
-  function build(spec) {
-    const copies = spec.copies || [];
-    const r = LG.resolve(spec.name, spec.parts);
-    if (spec.palette !== undefined) r.palette = spec.palette;
-    const config = LG.dress(r, { equip: copies.map(LG.encode) });
-    const palette = LG.withItems(LG.paletteOf(config), config);
-    const grid = LG.compose(config);
-    const colors = LG.paint(grid, config, palette);
-    const owned = config.owned || {};
-    const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIdx)) : -1);
-    const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4);
-    const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
-      const i = (y * W + x) * 4;
-      base[i] = c[0]; base[i + 1] = c[1]; base[i + 2] = c[2]; base[i + 3] = 255;
-      kind[i] = Math.round(k / 4 * 255); kind[i + 1] = (fi + 1) * 32; kind[i + 2] = Math.round(sc * 255); kind[i + 3] = Math.floor(pr / 4);
-    };
-    const edge = [34, 38, 58], cream = [242, 236, 221], rim = [207, 199, 180];
-    const gc = g >= 0 ? rgb(GRADE[g]) : (spec.tint ? rgb(spec.tint) : [120, 140, 170]);
-    const win = blend(cream, gc, g >= 0 ? 0.28 : spec.tint ? 0.3 : 0.14);
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
-      if (cx + cy < 2) continue;
-      put(x, y, cx === 0 || cy === 0 || cx + cy === 2 ? edge : cream, 1);
-    }
-    // The title band, in the grade's colour: the name is written over it.
-    // Mythic and Grail names are written in foil, so their band goes dark to show it off.
-    const band = g >= 3 ? [30, 26, 52] : g >= 0 ? blend(gc, [24, 22, 44], 0.3) : [58, 66, 100];
-    const lip = g >= 3 ? gc : blend(band, [255, 255, 255], 0.25);
-    for (let y = 2; y <= 7; y++) for (let x = 2; x <= 23; x++) if (Math.min(x, W - 1 - x) + Math.min(y, H - 1 - y) >= 3) put(x, y, y === 7 ? (g >= 3 ? gc : blend(band, [0, 0, 0], 0.35)) : y === 2 ? lip : band, 1);
-    for (let y = 9; y <= 28; y++) for (let x = 3; x <= 22; x++) put(x, y, (x === 3 || y === 9 || x === 22 || y === 28) ? rim : win, 2);
-    grid.forEach((row, y) => row.forEach((t, x) => {
-      const hex = colors[y][x];
-      if (!hex) return;
-      const slot = t >= 40 ? 'frame' : t >= 30 ? 'hat' : t >= 20 ? 'skin' : null;
-      const o = slot && owned[slot];
-      put(x + 5, y + 11, rgb(hex), o ? 4 : 3, o ? FIN.indexOf(o.finish) : -1, o ? o.scuff : 0, o ? o.print : 0);
-    }));
-    if (g >= 0) for (let p = 0; p < 5; p++) {
-      const x0 = 6 + p * 3;
-      for (let y = 31; y <= 32; y++) for (let x = x0; x <= x0 + 1; x++) put(x, y, p <= g ? gc : rim, 1);
-    } else for (let x = 8; x <= 17; x++) put(x, 31, rim, 1);
-    return { base, kind, g, neg: copies.some(o => o.finish === 'negative'), seed: copies.length ? copies[copies.length - 1].print : 0 };
-  }
+  // Built from the guy's code, the same input the Worker reads, so the two can't drift.
+  const codeOf = spec => LG.guyCode({ seed: spec.name, parts: spec.parts, palette: spec.palette, equip: (spec.copies || []).map(LG.encode), grade: spec.grade, tint: spec.tint });
+  const build = code => LG.cardFace(LG.faceSpec(LG.readGuyCode(code)));
 
   const live = new Set();
   const byCanvas = new WeakMap();
@@ -653,20 +538,37 @@ void main() {
   const px = spec => {
     pending.push(spec);
     const l = spec.label;
-    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g >= 4 ? ' gold' : l.g >= 3 ? ' foil' : ''}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b">${l.bottom}</span></span>` : '';
-    return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}"></canvas>${ov}</span>`;
+    // --n is how many letters a line has, so a long one shrinks to fit the card instead of being cut off.
+    const len = h => String(h ?? '').replace(/<[^>]*>/g, '').length;
+    const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g === 4 ? ' gold' : l.g === 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
+    return `<span class="art${spec.still ? ' still' : ''}"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
   };
-  /** The words on an item's card: its name, its print, its grade and how rare it is. */
-  const itemLabel = (o, starter, one) => {
+  /**
+   * The small line at the card's foot: "1st ed" for one of an item's first 100 copies, else nothing. The card's
+   * words are the library card's clean ones (no star, print number or place in the set); everything else about
+   * a copy (its print, stats, craft number, tally) is in the inspect view, so the card stays quiet.
+   */
+  const FIRST_EDITION = 100;
+  const setLine = (o, about = {}) => (about.pull && about.pull <= FIRST_EDITION ? '1st ed' : '');
+  // A page that knows copies' pull numbers (the live site's locker) says so here.
+  const aboutFor = o => (typeof window.cardAbout === 'function' ? window.cardAbout(o) : null) || {};
+  /** The words on an item's card: its name, its grade and how rare it is. */
+  const itemLabel = (o, starter, one, about = aboutFor(o)) => {
     const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), bottom: one ? '★ 1 of 1' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    return { title: it.name, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? 'Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
+  // A face is built the first time it is drawn, and the loop builds at most this many a frame, so a long
+  // grid fills in over a few frames instead of holding the page. Each step of its shimmer is kept once drawn;
+  // a step not drawn yet waits for a frame with time to spare (TICK_MS of work), showing the one before.
+  const BUILDS_PER_FRAME = 3, TICK_MS = 12;
+  let builds = 0, tickEnd = 0;
+  /** The next frame of the loop: a fresh allowance of builds and time. */
+  const cardsTick = () => { builds = 0; tickEnd = performance.now() + TICK_MS; };
   function mount(canvas, spec) {
-    const f = build(spec);
-    const s = { canvas, ctx: canvas.getContext('2d'), f, art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: true, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
+    const s = { canvas, ctx: canvas.getContext('2d'), code: canvas.dataset.code || codeOf(spec), f: null, steps: new Map(), art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: false, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
     s.still = !!spec.still;
-    if (prog) { s.base = texture(f.base); s.kind = texture(f.kind); }
+    s.shown = -1;
     s.card.addEventListener('pointerenter', () => { s.juice = performance.now() / 1000; });
     s.card.addEventListener('focus', () => { s.juice = performance.now() / 1000; });
     s.card.addEventListener('pointermove', e => {
@@ -676,23 +578,163 @@ void main() {
     });
     s.card.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
     live.add(s); byCanvas.set(canvas, s); io.observe(canvas);
-    draw(s, performance.now() / 1000);
     return s;
   }
+  /** Builds a card's face the first time it is needed. */
+  function ready(s) {
+    if (s.f) return;
+    const f = s.f = build(s.code);
+    s.moves = LG.faceMoves(f);
+    // The bottom words sit on the card's own face: light on a dark face (a Negative copy), dark on cream.
+    // The title likewise: dark words on a pale band (a Negative copy's), white on a coloured one.
+    const face = LG.cardFaceAt(f, 0);
+    const light = (a, z) => {
+      let sum = 0, n = 0;
+      for (let y = Math.round(H * a); y < Math.round(H * z); y++) for (let x = 3; x < W - 3; x++) { const i = (y * W + x) * 4; if (face[i + 3] > 200) { sum += 0.2126 * face[i] + 0.7152 * face[i + 1] + 0.0722 * face[i + 2]; n++; } }
+      return n ? sum / n : 128;
+    };
+    s.art?.querySelector('.ov .b')?.classList.toggle('on-dark', light(0.8, 0.9) < 120);
+    s.art?.querySelector('.ov .n')?.classList.toggle('on-dark', light(0.88, 0.95) < 120);
+    s.art?.querySelector('.ov .t')?.classList.toggle('on-light', light(0.07, 0.17) > 170);
+  }
   function hydrate(root) {
-    root.querySelectorAll('canvas[data-p]').forEach(c => { const i = +c.dataset.p; c.removeAttribute('data-p'); mount(c, pending[i]); pending[i] = null; });
+    const mounted = [];
+    root.querySelectorAll('canvas[data-p]').forEach(c => { const i = +c.dataset.p; c.removeAttribute('data-p'); mounted.push(mount(c, pending[i])); pending[i] = null; });
+    // The first few show at once (a reveal, a single card); the rest as they come on screen.
+    const t = performance.now() / 1000;
+    mounted.slice(0, BUILDS_PER_FRAME).forEach(s => draw(s, t, true));
   }
-  function draw(s, t) {
-    if (!prog) { s.ctx.putImageData(new ImageData(new Uint8ClampedArray(s.f.base), W, H), 0, 0); return; }
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.base);
-    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, s.kind);
-    gl.uniform1f(u.time, t); gl.uniform1f(u.hover, s.hover); gl.uniform1f(u.grade, s.f.g);
-    gl.uniform1f(u.neg, s.f.neg ? 1 : 0); gl.uniform1f(u.seed, s.f.seed);
-    gl.uniform2f(u.light, s.light[0], s.light[1]);
-    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    s.ctx.clearRect(0, 0, W, H); s.ctx.drawImage(glCanvas, 0, 0);
+  /** The card at `t` seconds; one not built yet waits for the loop's allowance unless `now`. */
+  function draw(s, t, now = false) {
+    if (!s.f) { if (!now && (builds >= BUILDS_PER_FRAME || performance.now() > tickEnd)) return; builds++; ready(s); }
+    // Each step of the loop, as baked; under the pointer, its light on top.
+    const ms = Math.floor(t * 1000 / STEP) * STEP, at = s.hover ? -1 : s.moves ? ms % LG.LOOP_MS : 0;
+    if (at >= 0 && at === s.shown) return;
+    let img = at >= 0 && s.steps.get(at);
+    if (at >= 0 && !img && !now && s.shown >= 0 && performance.now() > tickEnd) return;
+    s.shown = at;
+    if (at < 0) { s.ctx.putImageData(new ImageData(LG.cardFaceAt(s.f, ms, { x: s.light[0], y: s.light[1], strength: s.hover }), W, H), 0, 0); return; }
+    if (!img) s.steps.set(at, img = new ImageData(LG.cardFaceAt(s.f, at), W, H));
+    s.ctx.putImageData(img, 0, 0);
   }
+
+  /* ------------------------------------------------ long sums, beside the page
+   * Counting through thousands of guys (the rarest names, a deal of thousands) or encoding a GIF takes seconds,
+   * so it runs in a worker with the library loaded and the page never waits on it. Where a worker can't start
+   * (no Worker, a blocked blob) the same job runs here, a few milliseconds at a time between frames.
+   * Each job is a generator: the worker runs it straight through, the page in slices. */
+  const JOBS = {
+    *call(LG, fn, ...args) { return LG[fn](...args); },
+    // The library's card as an animated PNG, each card pixel `scale` by `scale`.
+    *cardApng(LG, input, scale) { return LG.encodeApng(LG.cardFrames(input), scale); },
+    // The rarest `keep` among names made from each base, then the base with 1, 2… after it.
+    *rarestNames(LG, bases, per, keep) {
+      const found = [];
+      for (const base of bases) for (let n = 0; n < per; n++) {
+        const name = n ? base + n : base;
+        found.push([LG.guyOneIn(LG.resolve(name)), name]);
+        if (n % 32 === 0) yield;
+      }
+      return found.sort((a, b) => b[0] - a[0]).slice(0, keep);
+    },
+    // How rare the rarest of `prefix` + 0, 1, 2… is.
+    *rarestOf(LG, prefix, count) {
+      let best = 0;
+      for (let n = 0; n < count; n++) { best = Math.max(best, LG.guyOneIn(LG.resolve(prefix + n))); if (n % 32 === 0) yield; }
+      return best;
+    },
+    // `count` guys dealt at random: how rare each is, as log10, sorted.
+    *dealt(LG, count) {
+      const out = [];
+      for (let i = 0; i < count; i++) { out.push(Math.log10(LG.guyOneIn(LG.resolve(LG.makeSeed())))); if (i % 32 === 0) yield; }
+      return out.sort((a, b) => a - b);
+    },
+    // Deal `count` guys and keep the rarest `keep`: their seeds.
+    *dealRarest(LG, count, keep) {
+      const out = [];
+      for (let i = 0; i < count; i++) { const seed = LG.makeSeed(), cfg = LG.resolve(seed); out.push([LG.guyOneIn(cfg.base || cfg), seed]); if (i % 32 === 0) yield; }
+      return out.sort((a, b) => b[0] - a[0]).slice(0, keep).map(g => g[1]);
+    },
+    // Open `count` capsules round the machines and keep the rarest copy of each of `keep` items, from Prized up.
+    *rarestDrops(LG, salt, count, keep) {
+      const found = [], seen = new Set(), out = [];
+      for (let i = 0; i < count; i++) {
+        const o = LG.roll(`${salt}:${i}`, LG.GAMES[i % LG.GAMES.length]);
+        if (LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id) >= 2) found.push(o);
+        if (i % 128 === 0) yield;
+      }
+      found.sort((a, b) => LG.copyOneIn(b) - LG.copyOneIn(a));
+      for (const o of found) { if (seen.has(o.item)) continue; seen.add(o.item); out.push(o); if (out.length === keep) break; }
+      return out;
+    },
+  };
+  function runHere(job, args) {
+    const it = JOBS[job](LG, ...args);
+    return new Promise((done, fail) => {
+      const step = () => {
+        const end = performance.now() + 8;
+        try { for (let r = it.next(); ; r = it.next()) { if (r.done) return done(r.value); if (performance.now() > end) break; } } catch (err) { return fail(err); }
+        setTimeout(step, 0);
+      };
+      // A frame first, so whatever asked for it (a button saying "Making…") shows before the work starts.
+      requestAnimationFrame(() => setTimeout(step, 0));
+    });
+  }
+  const LIB_URL = document.querySelector('script[src$="lil-guy.js"]')?.src;
+  const WORKER_SRC = () => `importScripts(${JSON.stringify(LIB_URL)});
+const JOBS = {${Object.values(JOBS).map(String).join(',\n')}};
+onmessage = e => {
+  const [id, job, args] = e.data, send = value => postMessage([id, value], value instanceof Uint8Array ? [value.buffer] : []), fail = err => postMessage([id, undefined, String((err && err.message) || err)]);
+  try { const it = JOBS[job](LilGuy, ...args); let r = it.next(); while (!r.done) r = it.next(); Promise.resolve(r.value).then(send, fail); } catch (err) { fail(err); }
+};`;
+  // Two lanes, so a long count (200,000 names) never holds up a quick job (a move to draw, a GIF to save): up to
+  // two workers each. A job goes to an idle worker in its lane, else a new one, else the least busy.
+  const COUNTS = new Set(['rarestNames', 'rarestOf', 'dealt', 'dealRarest', 'rarestDrops']);
+  const LANE = Math.max(1, Math.min(2, Math.ceil(((navigator.hardwareConcurrency || 2) - 1) / 2)));
+  const LANE_SIZE = { counts: LANE, quick: LANE };
+  const workers = [];
+  let workersOk = !!LIB_URL && typeof Worker !== 'undefined', jobIds = 0;
+  function pickWorker(job) {
+    if (!workersOk) return null;
+    const lane = COUNTS.has(job) ? 'counts' : 'quick', mine = workers.filter(w => w.lane === lane);
+    const idle = mine.find(w => !w.jobs.size);
+    if (idle) return idle;
+    if (mine.length < LANE_SIZE[lane]) {
+      try {
+        const w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC()], { type: 'text/javascript' })));
+        w.lane = lane; w.jobs = new Map();
+        w.onmessage = e => { const [id, value, error] = e.data, job = w.jobs.get(id); if (!job) return; w.jobs.delete(id); if (error) job.fail(new Error(error)); else job.done(value); };
+        // The library didn't load in it: what was waiting, and everything after, runs on the page.
+        w.onerror = e => {
+          e.preventDefault(); w.terminate(); workersOk = false; workers.splice(workers.indexOf(w), 1);
+          for (const job of w.jobs.values()) runHere(job.job, job.args).then(job.done, job.fail);
+          w.jobs.clear();
+        };
+        workers.push(w);
+        return w;
+      } catch (err) { workersOk = false; return null; }
+    }
+    return mine.reduce((a, b) => (b.jobs.size < a.jobs.size ? b : a));
+  }
+  /** Runs a job from JOBS beside the page; resolves with what it returns. */
+  const offThread = (job, ...args) => new Promise((done, fail) => {
+    const w = pickWorker(job);
+    if (!w) { runHere(job, args).then(done, fail); return; }
+    const id = ++jobIds;
+    w.jobs.set(id, { job, args, done, fail });
+    try { w.postMessage([id, job, args]); } catch (err) { w.jobs.delete(id); runHere(job, args).then(done, fail); }
+  });
+  /** A job's answer kept in this browser for the library's art version, since it only changes with the art. */
+  async function kept(key, job, ...args) {
+    const k = `lil-guys-sum:${LG.ART_VERSION}:${key}`;
+    try { const v = localStorage.getItem(k); if (v) return JSON.parse(v); } catch (e) {}
+    const v = await offThread(job, ...args);
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    return v;
+  }
+  /** Calls `fn` once `el` comes near the screen. */
+  const whenNear = (el, fn) => { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); fn(); } }, { rootMargin: '600px' }); io.observe(el); };
+
   function move(s, t) {
     if (calm.matches || s.still) { s.art.style.transform = ''; return; }
     const bob = Math.sin(t * 1.3 + s.phase) * 2.5, sway = Math.sin(t * 0.9 + s.phase) * 0.8;
@@ -706,20 +748,26 @@ void main() {
     s.art.style.transform = `perspective(600px) translateY(${bob - (s.hover ? 6 : 0)}px) rotateX(${-s.tilt[1] * 18}deg) rotateY(${s.tilt[0] * 18}deg) rotate(${sway + spin}deg) scale(${scale})`;
     s.canvas.style.setProperty('--sx', `${-s.tilt[0] * 10}px`);
   }
+  // Cards move at about 15 frames a second, and only those on screen.
   let last = 0;
+  // What is near the screen, for the loop: a machine off screen doesn't tick.
+  const seenBy = new WeakMap();
+  const seenIo = new IntersectionObserver(es => es.forEach(e => seenBy.set(e.target, e.isIntersecting)), { rootMargin: '80px' });
+  const nearScreen = c => { if (!seenBy.has(c)) { seenBy.set(c, false); seenIo.observe(c); } return seenBy.get(c); };
   const loop = now => {
     requestAnimationFrame(loop);
-    if (now - last < 33) return;
+    if (now - last < 66) return;
     last = now;
+    cardsTick();
     const t = now / 1000;
     for (const s of live) if (!s.canvas.isConnected) {
       live.delete(s); io.unobserve(s.canvas);
-      if (prog) { gl.deleteTexture(s.base); gl.deleteTexture(s.kind); }
     }
+    makeMovers();
     if (calm.matches) return;
     paintSwirl(40 + t);
-    for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
-    for (const m of movers) if (m.canvas.isConnected) drawMover(m, now); else movers.delete(m);
+    for (const b of balls) if (!b.canvas.isConnected) balls.delete(b); else if (nearScreen(b.canvas)) b.tick(t);
+    for (const m of movers) if (m.visible && m.anim && typeof m.anim !== 'function') drawMover(m, now);
     for (const s of live) if (s.visible) { draw(s, t); move(s, t); }
   };
   requestAnimationFrame(loop);
@@ -729,7 +777,7 @@ void main() {
    * toy inside (the game's own object) shows through the top, with the little
    * folded paper insert behind it. Each game has its machine: a glass dome of
    * capsules on a body in its colour, a crank, a coin slot and a chute. */
-  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d' };
+  const CANDY = { amountle: '#ff7eb6', halfsies: '#f2b066', stackdle: '#ffd447', flipsies: '#5fb4ff', puttsies: '#74d97c', weighsies: '#a98bff', cutsies: '#ff6b6b', tiltsies: '#4fd6c4', trackdle: '#ff8a3d', pets: '#e48cf2' };
   const gameColor = g => CANDY[g];
   const balls = new Set();
   const WHITE = [255, 255, 255], INK = [22, 18, 34];
@@ -826,122 +874,255 @@ void main() {
     return st;
   }
 
-  /** A gacha machine, 40x56. */
+  /* Each game's machine has its own look: capsules in the game's colours, a pattern on the body, a sign
+   * with the game's own icon (some of them moving) and a topper on the dome. Everything is drawn on one
+   * 80×112 grid, a canvas pixel per pixel, so nothing is finer or coarser than anything else. Sprites are
+   * rows of letters from MPAL centred on a point; '.' is see-through. */
+  const MPAL = { k: [22, 18, 34], w: [252, 250, 244], W: [214, 206, 188], y: [255, 207, 92], Y: [196, 140, 30], o: [255, 150, 70], r: [232, 76, 82], R: [160, 40, 50],
+    g: [110, 200, 110], G: [46, 128, 70], P: [196, 70, 128], b: [95, 180, 255], B: [40, 96, 180], p: [255, 126, 182], s: [205, 210, 226], S: [128, 134, 160], n: [176, 116, 64], N: [110, 70, 40], v: [170, 140, 255], t: [80, 214, 196], d: [24, 30, 46] };
+  function sprite(hi, rows, cx, y0, dx = 0) {
+    const w = Math.max(...rows.map(r => r.length)), x0 = Math.round(cx - w / 2 + dx);
+    rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') hi.set(x0 + x, y0 + y, MPAL[ch]); }));
+  }
+  const DIGIT = ['111101101101111', '010110010010111', '111001111100111', '111001111001111', '101101111001001', '111100111001111', '111100111101111', '111001001001001', '111101111101111', '111101111001111'];
+  function digits(hi, text, x0, y0, c, s = 1) {
+    [...text].forEach((ch, i) => { const d = DIGIT[+ch]; if (!d) return; for (let k = 0; k < 15; k++) if (d[k] === '1') for (let j = 0; j < s * s; j++) hi.set(x0 + i * 4 * s + (k % 3) * s + (j % s), y0 + Math.floor(k / 3) * s + Math.floor(j / s), c); });
+  }
+  // The sign's plate: x 20 to 59, y 56 to 67 in the sign's own coordinates (drawn 10 rows lower, on the body).
+  const plate = (hi, fill) => { for (let y = 56; y <= 67; y++) for (let x = 20; x <= 59; x++) hi.set(x, y, typeof fill === 'function' ? fill(x, y) : fill); };
+  // The machine's parts, on the 80×112 grid. The coin slot sits at (54, 80) and the chute's mouth at
+  // (39, 99), the spots the reveal aims its coin and capsule at (40×56 halved).
+  const M = { DX: 40, DY: 35.5, DR: 25, BX0: 16, BX1: 63, BY0: 64, BY1: 102, SIGN: 10 };
+  const THEMES = {
+    amountle: { pile: ['#ff7eb6', '#ffd447', '#7fd1ff', '#9be37a', '#c79bff'], small: true,
+      body: (x, y, c) => ((y - 64) % 6 === 3 && (x + ((y - 64) % 12 < 6 ? 0 : 3)) % 6 === 0 ? blend(c, WHITE, 0.4) : c),
+      sign(hi, t) { plate(hi, MPAL.d); digits(hi, String(1000 + Math.floor(t * 7) % 9000).slice(-4), 23, 57, MPAL.y, 2); },
+      top: ['......yyyy......', '....yyYYYYyy....', '...yYyyyyyyYy...', '...yYyYYYYyYy...', '...yYyyyyyyYy...', '....yyYYYYyy....', '..ssssssssssss..', '.sSsSsSsSsSsSsS.', '.sssssssssssssss', '..SSSSSSSSSSSS..'] },
+    halfsies: { pile: ['#f2b066', '#fff1d6', '#ff8a5c', '#ffd28a'],
+      body: (x, y, c) => (x === 40 ? (y % 2 ? blend(c, INK, 0.45) : c) : x > 40 ? blend(c, WHITE, 0.55) : c),
+      sign(hi) { plate(hi, x => x < 40 ? MPAL.o : MPAL.w); digits(hi, '1', 28, 57, MPAL.w, 2); for (let k = 0; k < 10; k++) { hi.set(44 - Math.round(k / 2.5), 57 + k, MPAL.k); hi.set(45 - Math.round(k / 2.5), 57 + k, MPAL.k); } digits(hi, '2', 48, 57, MPAL.o, 2); },
+      top: ['...oooo..WWWW...', '..oooooo.wwwwW..', '.ooooooo.wwwwwW.', '.ooooooo.wwwwwW.', '.ooooooo.wwwwwW.', '..oooooo.wwwwW..', '...oooo..WWWW...', '.....SSSSSS.....', '..SSSSSSSSSSSS..'] },
+    stackdle: { pile: ['#ffd447', '#ff6b6b', '#5fb4ff', '#74d97c'],
+      body: (x, y, c) => { const row = Math.floor((y - 64) / 6); return (y - 64) % 6 === 5 || (x + (row % 2) * 5) % 10 === 0 ? blend(c, INK, 0.2) : c; },
+      sign(hi) { plate(hi, MPAL.w); const B = ['...rrr...', '...rRr...', '...rrr...', '..bbbyyy.', '..bBbyYy.', '..bbbyyy.', '.gggpppbb', '.gGgpPpbB', '.gggpppbb']; for (const cx of [28, 40, 52]) sprite(hi, B, cx, 57); },
+      top: ['.....rrr.....', '.....rRr.....', '.....rrr.....', '...bbbyyy....', '...bBbyYy....', '...bbbyyy....', '..gggpppbbb..', '..gGgpPpbBb..', '..gggpppbbb..', '.SSSSSSSSSSS.'] },
+    flipsies: { pile: ['#5fb4ff', '#d8f0ff', '#ffd447', '#9bd2ff'],
+      body: (x, y, c) => (y >= 94 ? ((x * 7 + y * 3) % 11 === 0 ? MPAL.N : MPAL.n) : (x + y) % 9 === 0 ? blend(c, WHITE, 0.18) : c),
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        sprite(hi, ['...rrrr...', '.rrwwwwrr.', 'rrwwrrwwrr', 'rwwrrrrwwr', 'rwrrwwrrwr', 'rwwrrrrwwr', 'rrwwrrwwrr', '.rrwwwwrr.', '...rrrr...'], 50, 57);
+        const up = ['.ss.', '.bb.', 'bbbb', 'bwbb', 'bwbb', 'bbbb', 'BBBB'], side = ['.......', 'sbbbbbB', 'bwwbbbB', 'bbbbbbB', '.......'];
+        sprite(hi, Math.floor(t * 2.5) % 2 ? up : side, 30, Math.floor(t * 2.5) % 2 ? 58 : 60);
+      },
+      top: ['..ss..', '..bb..', '..bb..', '.bbbb.', 'bbbbbB', 'bwbbbB', 'bwbbbB', 'bbbbbB', '.BBBB.'] },
+    puttsies: { pile: ['#74d97c', '#ffffff', '#ffd447', '#b6f0a0'],
+      body: (x, y, c) => (y >= 80 ? (Math.floor(x / 4) % 2 ? blend(c, INK, 0.12) : blend(c, WHITE, 0.1)) : c),
+      sign(hi, t) {
+        plate(hi, (x, y) => (x + y) % 6 < 3 ? MPAL.g : [96, 186, 98]);
+        sprite(hi, ['rrrr.', 'rrrrr', 'rrrr.', 'k....', 'k....', 'k....', 'k....', 'k....'], 54, 57);
+        for (const [x, y] of [[51, 65], [52, 65], [53, 65], [54, 65], [52, 66], [53, 66]]) hi.set(x, y, MPAL.k);
+        const k = (t * 0.45) % 1, bx = 24 + Math.floor(k * 26);
+        if (k < 0.95) sprite(hi, ['.ww.', 'wwww', 'wwww', '.ww.'], bx, 62);
+      },
+      top: ['...wwww...', '..wwSwww..', '.wwwwwSww.', '.wSwwwwww.', '.wwwSwwSw.', '..wwwwww..', '...wwww...', '....nn....', '....nn....', '..nnnnnn..'] },
+    weighsies: { pile: ['#a98bff', '#e0d6ff', '#ffd447', '#c7b6ff'],
+      body: (x, y, c) => ((x === 18 || x === 61) && y % 6 === 2 ? MPAL.s : y === 79 ? blend(c, INK, 0.2) : c),
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        for (let a = 0; a <= Math.PI; a += 0.04) hi.set(40 + Math.round(Math.cos(Math.PI + a) * 17), 67 + Math.round(Math.sin(Math.PI + a) * 10), MPAL.S);
+        for (let k = 0; k <= 6; k++) { const a = Math.PI + (k / 6) * Math.PI; hi.set(40 + Math.round(Math.cos(a) * 14), 67 + Math.round(Math.sin(a) * 8), k === 3 ? MPAL.r : MPAL.k); }
+        const n = Math.PI * (0.5 + 0.38 * Math.sin(t * 2.1));
+        for (let r = 0; r < 12; r++) hi.set(40 + Math.round(-Math.cos(n) * r), 67 - Math.round(Math.sin(n) * r * 0.75), MPAL.r);
+        hi.set(40, 67, MPAL.k); hi.set(39, 67, MPAL.k); hi.set(41, 67, MPAL.k);
+      },
+      top: ['........y........', '.......yYy.......', 'yyyyyyyyyyyyyyyyy', 's.......y.......s', 's.......y.......s', 's.......y.......s', 'Ss......y......sS', 'SSSs....y....sSSS', '.SS.....y.....SS.', '......yyyyy......'] },
+    cutsies: { pile: ['#ff6b6b', '#86cf55', '#ffd447', '#ffb3a8'],
+      body: (x, y, c) => { const line = 100 - Math.round((x - 16) * 0.75); return y === line ? WHITE : y < line ? blend(c, WHITE, 0.16) : c; },
+      sign(hi) { plate(hi, MPAL.w); const K = ['..GGGG..', '.GggggG.', 'GggkkggG', 'GgkwwkgG', 'GgkwwkgG', 'GggkkggG', '.GggggG.', '..GGGG..']; for (const cx of [27, 40, 53]) sprite(hi, K, cx, 58); },
+      top: ['rrrrrrrrrrrrrrrr', 'rrkrrrrrkrrrrkrr', '.rrrrrkrrrrrrrr.', '..rrrrrrrrkrrr..', '...rrrrrrrrrr...', '....wwwwwwww....', '.....gggggg.....', '......GGGG......'] },
+    tiltsies: { pile: ['#4fd6c4', '#ffffff', '#ffd447', '#a8f0e6'],
+      body: (x, y, c) => { const cx = Math.floor((x - 16) / 6), cy = Math.floor((y - 64) / 6); return ((x - 16) % 6 === 0 && strHash(`${cx}:${cy}`) % 3 === 0) || ((y - 64) % 6 === 0 && strHash(`${cy}:${cx}h`) % 3 === 0) ? blend(c, INK, 0.25) : c; },
+      sign(hi, t) {
+        plate(hi, (x, y) => ((x - 20) % 8 === 0 && y < 64) || ((y - 56) % 6 === 0 && x % 5 !== 0) ? MPAL.S : MPAL.w);
+        const k = (t * 0.5) % 1, bx = 23 + Math.round(34 * (k < 0.5 ? k * 2 : 2 - k * 2));
+        sprite(hi, ['.tt.', 'tttt', 'tttt', '.tt.'], bx, 60);
+      },
+      topFn(hi, t) { const s = Math.sin(t * 1.8); for (let x = -9; x <= 9; x++) { const y = 9 + Math.round(x * s * 0.25); hi.set(40 + x, y, MPAL.S); hi.set(40 + x, y + 1, MPAL.s); } sprite(hi, ['..wwww..', '.wwwwww.', 'wwwwwwww', 'wwwwwwww', '.wwwwww.', '..wwww..'], 40, 2 + Math.round(-s * 1.5), Math.round(s * 6)); } },
+    trackdle: { pile: ['#ff8a3d', '#ffffff', '#2a2a2a', '#ffd447'],
+      body: (x, y, c) => (x >= 37 && x <= 42 ? (((x >> 1) + (y >> 1)) % 2 ? MPAL.k : WHITE) : y === 66 || y === 67 ? WHITE : c),
+      sign(hi) { plate(hi, MPAL.w); for (let y = 56; y <= 67; y++) for (let x = 20; x <= 35; x++) hi.set(x, y, ((x >> 2) + (y >> 2)) % 2 ? MPAL.k : MPAL.w); digits(hi, '01', 41, 57, MPAL.r, 2); },
+      topFn(hi, t) { for (let y = 0; y < 11; y++) hi.set(31, y, MPAL.N), hi.set(32, y, MPAL.n); for (let x = 0; x < 15; x++) { const w = Math.round(Math.sin(t * 6 - x * 0.7) * 1.2); for (let y = 0; y < 6; y++) hi.set(33 + x, y + 1 + w, ((x >> 1) + (y >> 1)) % 2 ? MPAL.k : MPAL.w); } } },
+    pets: { pile: ['#e48cf2', '#ffc2d8', '#f6a04d', '#ffffff'],
+      // Paw prints walking up the body.
+      body: (x, y, c) => { const px = (x - 16 + (Math.floor((y - 64) / 7) % 2) * 6) % 12, py = (y - 64) % 7, PAW = ['.x.x.', 'x...x', '.xxx.', '.xxx.']; return PAW[py]?.[px] === 'x' ? blend(c, WHITE, 0.32) : c; },
+      // A cat's face that blinks now and then, between two paws.
+      sign(hi, t) {
+        plate(hi, MPAL.w);
+        const blink = (t % 3.2) < 0.18;
+        sprite(hi, ['o.......o', 'oo.....oo', 'ooooooooo', blink ? 'ooooooooo' : 'ookoookoo', 'oooopoooo', 'oookokooo', '.ooooooo.', '..ooooo..'], 40, 58);
+        for (const cx of [27, 53]) sprite(hi, ['p.p.p', '.ppp.', '.ppp.'], cx, 61);
+      },
+      // Cat ears on the dome, the left one twitching.
+      topFn(hi, t) {
+        const fur = rgb(CANDY.pets), inner = [255, 176, 214], twitch = (t % 4) < 0.25 ? 1 : 0;
+        const inside = (px, py, a, b, c) => { const d = (p, q, r) => (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1]); const s1 = d([px, py], a, b), s2 = d([px, py], b, c), s3 = d([px, py], c, a); return !((s1 < 0 || s2 < 0 || s3 < 0) && (s1 > 0 || s2 > 0 || s3 > 0)); };
+        for (const side of [-1, 1]) {
+          const tip = [40 + side * (17 + (side < 0 ? twitch : 0)), 3 + (side < 0 ? twitch : 0)], a = [40 + side * 21, 18], b = [40 + side * 8, 12];
+          const ia = [40 + side * 18.5, 15.5], ib = [40 + side * 11, 12.5], it = [40 + side * 16.8, 7 + (side < 0 ? twitch : 0)];
+          for (let y = 0; y < 20; y++) for (let x = 10; x < 70; x++) {
+            if (Math.hypot(x + 0.5 - M.DX, y + 0.5 - M.DY) <= M.DR - 1) continue;
+            if (inside(x + 0.5, y + 0.5, tip, a, b)) hi.set(x, y, inside(x + 0.5, y + 0.5, it, ia, ib) ? inner : x < 40 ? blend(fur, WHITE, 0.2) : fur);
+          }
+        }
+      } },
+  };
+
+  /* One capsule in the dome, flat like a sticker: a pale clear top, a candy bottom, a white seam, a dark
+   * rim in its own colour, one hard glint and a shade on the bottom right. Back-row capsules sit dimmer. */
+  function ballPx(dx, dy, r, c, back, turn) {
+    const d = Math.hypot(dx, dy);
+    if (d > r) return null;
+    // `turn` tips the seam, so a pile of them tumbles every which way; the light stays top left.
+    const up = -dx * Math.sin(turn) + dy * Math.cos(turn);
+    let col;
+    if (d > r - 1) col = blend(c, INK, 0.55);
+    else if (Math.hypot(dx + r * 0.4, dy + r * 0.42) < r * 0.22) col = WHITE;
+    else if (Math.abs(up) < 0.6) col = blend(c, WHITE, 0.7);
+    else if (up < 0) col = blend(c, [240, 246, 255], 0.42);
+    else col = c;
+    if (dx + dy > r * 0.6 && d <= r - 1) col = blend(col, INK, 0.2);
+    return back ? blend(col, [46, 54, 92], 0.4) : col;
+  }
+
+  /** A gacha machine in its game's own look: a glass dome of capsules on a slim body with a sign, a
+   *  crank, a coin slot and a chute, standing on two feet. 40×56 to callers, drawn on an 80×112 grid. */
   function addMachine(canvas, game, hoverEl) {
-    const body = rgb(CANDY[game]);
-    const others = LG.GAMES.map(g => rgb(CANDY[g]));
-    // The dome: a glass ball centred over the body, its top fully inside the canvas.
-    const DX = 19.5, DY = 15, DR = 13.6;
-    // Capsules piled in the dome about two thirds full, in two layers: a dimmer back
-    // layer peeking between the front one. Drawn top to bottom so lower ones overlap.
-    const pile = [];
-    for (const back of [1, 0]) for (let row = 0; row < 4; row++) {
-      const y = 19.5 - row * 5 - back * 2.5;
-      for (let x = 7.5 + ((row + back) % 2) * 4; x <= 32; x += 8) {
-        if (Math.hypot(x - DX, y - DY) > DR - 3.2) continue;
-        const k = `${game}:${back}:${x}:${y}`;
-        pile.push({ x, y, back, r: back ? 3.9 : 4.4, c: strHash(k) % 5 < 2 ? body : others[strHash(k + '#') % others.length], jx: 0, jy: 0 });
+    const body = rgb(CANDY[game]), TH = THEMES[game] || {};
+    const { DX, DY, DR, BX0, BX1, BY0, BY1 } = M;
+    // Capsules about two thirds up the dome, in two layers: a dimmer back one peeking between the front.
+    const colours = (TH.pile || [CANDY[game]]).map(rgb);
+    // Packed from the glass's floor up: each row sits in the dips of the one below, and the glass clips
+    // the ones at the edge, so the dome reads full. The back layer only shows through the gaps.
+    const r0 = TH.small ? 4.4 : 5.6, pile = [], rowH = Math.round(r0 * 1.72), top = DY - DR * 0.18;
+    for (const back of [1, 0]) for (let row = 0; ; row++) {
+      const y = Math.round(DY + DR - r0 + 1 - row * rowH - back * rowH / 2);
+      if (y < top) break;
+      for (let x = DX - DR + ((row + back) % 2) * r0; x <= DX + DR; x += 2 * r0) {
+        if (Math.hypot(x - DX, y - DY) > DR + r0 * 0.2) continue;
+        let h = strHash(game) ^ Math.imul(Math.round(x) + 1, 73856093) ^ Math.imul(row + 1, 19349663) ^ Math.imul(back + 1, 83492791);
+        h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d); h = (h ^ (h >>> 12)) >>> 0;
+        pile.push({ x: Math.round(x), y, back, r: r0, c: colours[h % colours.length], turn: [0, Math.PI, Math.PI / 2, -Math.PI / 2, 0.7, -0.7, 2.4, -2.4][(h >> 8) % 8], jx: 0, jy: 0 });
       }
     }
     pile.sort((a, b) => b.back - a.back || a.y - b.y);
-    // One shaded capsule pixel: a sphere lit from the top left, clear tinted plastic
-    // over a coloured half, a pale seam between them and a hard white highlight.
-    const LIGHT = [-0.5, -0.62, 0.6];
-    function ballPx(dx, dy, r, c, dim) {
-      const nx = dx / r, ny = dy / r, r2 = nx * nx + ny * ny;
-      if (r2 > 1) return null;
-      const nz = Math.sqrt(1 - r2);
-      const lit = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]);
-      let base = ny < -0.12 ? blend(c, [236, 242, 255], 0.62) : Math.abs(ny + 0.06) <= 0.12 ? blend(c, WHITE, 0.45) : c;
-      let col = lit < 0.55 ? blend(base, INK, (0.55 - lit) * (ny < 0 ? 0.8 : 1.15)) : blend(base, WHITE, (lit - 0.55) * 0.55);
-      if (r2 > 0.78) col = blend(col, INK, 0.28);
-      if (Math.hypot(nx + 0.42, ny + 0.5) < 0.24) col = WHITE;
-      return dim ? blend(col, [40, 46, 78], 0.42) : col;
+
+    // Everything that never moves, drawn once: the body, its sign's frame, the collar and the feet.
+    const base = Px(80, 112);
+    const shadeBody = (x, y) => {
+      let c = body;
+      if (x >= BX1 - 2) c = blend(body, INK, 0.22); else if (x <= BX0 + 2) c = blend(body, WHITE, 0.28);
+      if (TH.body) c = TH.body(x, y, c);
+      if (y === BY0) c = blend(c, WHITE, 0.32);
+      if (y === BY1) c = blend(body, INK, 0.3);
+      return c;
+    };
+    for (let y = BY0; y <= BY1; y++) for (let x = BX0; x <= BX1; x++) {
+      const corner = (x === BX0 || x === BX1) && (y === BY0 || y === BY1);
+      if (!corner) base.set(x, y, shadeBody(x, y));
     }
+    // the sign's frame (the plate itself is drawn each frame, some signs move)
+    for (let x = 19; x <= 60; x++) { base.set(x, 65, INK); base.set(x, 78, INK); }
+    for (let y = 65; y <= 78; y++) { base.set(19, y, INK); base.set(60, y, INK); }
+    // the coin slot: a steel plate with a dark slit
+    for (let y = 80; y <= 91; y++) for (let x = 50; x <= 58; x++) {
+      const edge = x === 50 || x === 58 || y === 80 || y === 91;
+      base.set(x, y, edge ? [96, 102, 128] : x === 54 && y > 82 && y < 89 ? [16, 12, 24] : x < 53 && y < 85 ? [228, 232, 242] : [178, 184, 204]);
+    }
+    // the chute's frame
+    for (let y = 93; y <= 101; y++) for (let x = 29; x <= 50; x++) if (x === 29 || x === 50 || y === 93 || y === 101) base.set(x, y, blend(body, INK, 0.55));
+    // the collar under the dome: a steel band a little wider than the body
+    for (let y = 59; y <= 63; y++) for (let x = 13; x <= 66; x++) {
+      if ((x === 13 || x === 66) && (y === 59 || y === 63)) continue;
+      base.set(x, y, y === 59 ? [236, 240, 250] : y === 63 ? [120, 126, 152] : x <= 15 ? [222, 226, 238] : x >= 64 ? [150, 156, 180] : [196, 202, 220]);
+    }
+    // a short plinth on two feet
+    for (let y = 103; y <= 105; y++) for (let x = BX0 + 2; x <= BX1 - 2; x++) base.set(x, y, y === 103 ? [70, 66, 96] : [44, 38, 64]);
+    for (const x0 of [BX0 + 3, BX1 - 10]) for (let y = 106; y <= 109; y++) for (let x = x0; x <= x0 + 7; x++) base.set(x, y, y === 106 ? [70, 66, 96] : [36, 30, 52]);
+    // the glass, behind the capsules
+    const glass = [];
+    for (let y = 0; y < 60; y++) for (let x = 0; x < 80; x++) {
+      const d = Math.hypot(x + 0.5 - DX, y + 0.5 - DY);
+      if (d > DR) continue;
+      if (d > DR - 1) base.set(x, y, [222, 234, 252], 245);
+      else if (d > DR - 2) base.set(x, y, [150, 170, 214], 210);
+      else { base.set(x, y, [186, 212, 248], 46); glass.push([x, y, d, Math.atan2(y + 0.5 - DY, x + 0.5 - DX)]); }
+    }
+
     canvas.width = 80; canvas.height = 112;
     const ctx = canvas.getContext('2d');
+    const sign = { set: (x, y, c, a) => hi.set(x, y + M.SIGN, c, a) };
+    let hi = base, last = '', jig = 0;
     const st = {
       canvas, angle: 0, flap: 0, hover: 0, phase: balls.size * 1.3,
-      jiggle() { for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 2 | 0); } },
+      jiggle() { jig++; for (const p of pile) { p.jx = (Math.random() * 3 | 0) - 1; p.jy = -(Math.random() * 3 | 0); } },
       tick(t) {
-        // Drawn at twice the pixel density: the body in 2×2 blocks, the glass and
-        // capsules on the fine grid, so the spheres can be shaded.
-        const hi = Px(80, 112);
-        const m = { set(x, y, c, a) { x = Math.round(x); y = Math.round(y); for (let j = 0; j < 4; j++) hi.set(x * 2 + (j & 1), y * 2 + (j >> 1), c, a); } };
-        const sweep = Math.floor(t * 14 + st.phase * 10) % 60;
-        // body
-        for (let y = 25; y <= 53; y++) for (let x = 5; x <= 34; x++) {
-          if ((x === 5 || x === 34) && (y === 25 || y === 53)) continue;
-          let c = body;
-          if (x >= 30) c = blend(body, INK, 0.22); else if (x <= 7) c = blend(body, WHITE, 0.28);
-          if (y === 25) c = blend(c, WHITE, 0.3);
-          m.set(x, y, c);
-        }
-        for (let x = 6; x <= 33; x++) { m.set(x, 54, [44, 38, 64]); m.set(x, 55, [30, 26, 46]); }
-        // the label: cream, with a strip of every game's colours
-        for (let y = 28; y <= 33; y++) for (let x = 9; x <= 30; x++) {
-          const edge = y === 28 || y === 33 || x === 9 || x === 30;
-          m.set(x, y, edge ? [214, 204, 182] : (y === 31 || y === 30) && x % 3 !== 0 ? others[Math.floor(x / 3) % others.length] : [250, 244, 228]);
-        }
-        // coin slot
-        for (let y = 37; y <= 46; y++) for (let x = 25; x <= 29; x++) {
-          const frame = x === 25 || x === 29 || y === 37 || y === 46;
-          m.set(x, y, frame ? [200, 205, 220] : x === 27 && y > 38 && y < 45 ? [16, 12, 24] : [150, 156, 178]);
-        }
-        // the crank
-        const cx = 14.5, cy = 41.5;
-        for (let y = 35; y <= 48; y++) for (let x = 8; x <= 21; x++) {
-          const d = Math.hypot(x - cx, y - cy);
-          if (d <= 5.6) m.set(x, y, d > 4.6 ? [140, 146, 170] : (x - cx + y - cy < -3 ? [246, 248, 252] : [222, 226, 238]));
-        }
-        const a = st.angle + (st.hover ? Math.sin(t * 7) * 0.22 : 0);
-        for (let k = -5; k <= 5; k += 0.5) {
-          const x = cx + Math.cos(a) * k, y = cy + Math.sin(a) * k;
-          m.set(x, y, [96, 102, 128]); m.set(x + Math.sin(a) * 0.7, y - Math.cos(a) * 0.7, [120, 126, 150]);
-        }
-        for (const k of [-5, 5]) m.set(cx + Math.cos(a) * k, cy + Math.sin(a) * k, blend(body, INK, 0.4));
-        // the chute and its flap
-        for (let y = 47; y <= 52; y++) for (let x = 12; x <= 27; x++) {
-          const frame = x === 12 || x === 27 || y === 47 || y === 52;
-          m.set(x, y, frame ? blend(body, INK, 0.5) : st.flap ? (y === 48 ? [60, 50, 80] : [14, 10, 22]) : y === 49 ? blend(body, WHITE, 0.2) : blend(body, INK, 0.3));
-        }
-        // the collar under the dome
-        for (let x = 6; x <= 33; x++) { m.set(x, 23, [210, 214, 228]); m.set(x, 24, [160, 166, 188]); }
-        // the dome: glass, capsules, then the shine on the glass, then the cap (fine grid)
-        const cx2 = DX + 0.5, cy2 = DY + 0.5, glass = [];
-        const at = (X, Y) => [(X + 0.5) / 2, (Y + 0.5) / 2];
-        for (let Y = 0; Y <= 45; Y++) for (let X = 0; X < 80; X++) {
-          const [x, y] = at(X, Y), d = Math.hypot(x - cx2, y - cy2);
-          if (d > DR) continue;
-          if (d > DR - 0.55) hi.set(X, Y, [214, 228, 250], 240);
-          else if (d > DR - 1.05) hi.set(X, Y, [150, 170, 210], 200);
-          else { hi.set(X, Y, [190, 215, 250], 42); glass.push([X, Y, d, Math.atan2(y - cy2, x - cx2)]); }
-        }
+        // Pixel animation runs at twelve frames a second; a turn of the crank or a jiggle redraws at once.
+        const step = Math.floor(t * 12), a = st.angle + (st.hover ? Math.sin(step / 12 * 7) * 0.22 : 0);
+        const key = `${step}|${a.toFixed(3)}|${st.flap}|${jig}|${st.hover}`;
+        if (key === last) return;
+        last = key;
+        hi = Px(80, 112); hi.d.set(base.d);
+        // capsules, then the shine on the glass
         for (const p of pile) {
-          const px = p.x + 0.5 + p.jx, py = p.y + 0.5 + p.jy, R = Math.ceil(p.r * 2) + 1;
-          for (let Y = Math.floor(py * 2) - R; Y <= Math.floor(py * 2) + R; Y++) for (let X = Math.floor(px * 2) - R; X <= Math.floor(px * 2) + R; X++) {
-            const [x, y] = at(X, Y);
-            if (Y > 45 || Math.hypot(x - cx2, y - cy2) > DR - 1.1) continue;
-            const c = ballPx(x - px, y - py, p.r, p.c, p.back);
-            if (c) hi.set(X, Y, c);
+          const px = p.x + p.jx, py = p.y + p.jy, R = Math.ceil(p.r);
+          for (let y = py - R; y <= py + R; y++) for (let x = px - R; x <= px + R; x++) {
+            if (Math.hypot(x + 0.5 - DX, y + 0.5 - DY) > DR - 2) continue;
+            const c = ballPx(x - px, y - py, p.r, p.c, p.back, p.turn);
+            if (c) hi.set(x, y, c);
           }
         }
-        for (const [X, Y, d, side] of glass) {
-          if (d > DR - 2.6 && d <= DR - 1.6 && side < -1.85 && side > -2.95) hi.set(X, Y, WHITE, 170);
-          if (d > DR - 2.2 && d <= DR - 1.6 && side > -0.45 && side < 0.35) hi.set(X, Y, WHITE, 70);
-          if ((X + Y + 120 - sweep * 2) % 120 < 3) hi.set(X, Y, WHITE, 60);
+        const sweep = Math.floor(t * 18 + st.phase * 10) % 90;
+        for (const [x, y, d, side] of glass) {
+          if (d > DR - 5 && d <= DR - 3 && side < -1.8 && side > -2.9) hi.set(x, y, WHITE, 200);
+          if (d > DR - 4 && d <= DR - 3 && side > -0.5 && side < 0.3) hi.set(x, y, WHITE, 90);
+          if ((x + y + 180 - sweep * 2) % 180 < 2) hi.set(x, y, WHITE, 70);
         }
-        for (let x = 16; x <= 23; x++) for (let y = 0; y <= 2; y++) {
-          if ((x === 16 || x === 23) && y === 0) continue;
-          m.set(x, y, y === 0 ? blend(body, WHITE, 0.35) : x <= 17 ? blend(body, WHITE, 0.2) : x >= 22 ? blend(body, INK, 0.25) : body);
+        if (TH.topFn) TH.topFn(hi, t);
+        else if (TH.top) sprite(hi, TH.top, 40, 11 - TH.top.length);
+        // the sign, and two lamps on the collar taking turns (quicker under the pointer)
+        if (TH.sign) TH.sign(sign, t);
+        const blink = Math.floor(t * (st.hover ? 6 : 2) + st.phase) % 2;
+        for (const [x0, on] of [[17, blink], [60, 1 - blink]]) for (let y = 60; y <= 62; y++) for (let x = x0; x <= x0 + 2; x++) {
+          hi.set(x, y, on ? (x === x0 && y === 60 ? WHITE : [255, 214, 92]) : [150, 110, 60]);
         }
+        // the crank: a steel disc with a handle across it and a knob in the body's colour at each end
+        const cx = 28, cy = 85.5;
+        for (let y = 78; y <= 93; y++) for (let x = 20; x <= 36; x++) {
+          const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+          if (d <= 7) hi.set(x, y, d > 6 ? [96, 102, 128] : x + y < cx + cy - 6 ? [246, 248, 252] : d > 4.5 ? [196, 202, 220] : [222, 226, 238]);
+        }
+        for (let k = -6; k <= 6; k += 0.5) {
+          const x = cx - 0.5 + Math.cos(a) * k, y = cy - 0.5 + Math.sin(a) * k;
+          hi.set(x, y, [70, 76, 104]); hi.set(x - Math.sin(a), y + Math.cos(a), [70, 76, 104]);
+        }
+        for (const k of [-6, 6]) {
+          const x = Math.round(cx - 0.5 + Math.cos(a) * k), y = Math.round(cy - 0.5 + Math.sin(a) * k);
+          for (const [ox, oy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) hi.set(x + ox - (Math.cos(a) < 0 ? 1 : 0), y + oy, ox + oy === 0 ? blend(body, WHITE, 0.4) : blend(body, INK, 0.15));
+        }
+        // the chute: a shut flap, or a dark mouth once it has let a capsule out
+        for (let y = 94; y <= 100; y++) for (let x = 30; x <= 49; x++) {
+          hi.set(x, y, st.flap ? (y === 94 ? [70, 60, 92] : [14, 10, 22]) : y === 94 ? blend(body, WHITE, 0.35) : y === 100 ? blend(body, INK, 0.4) : blend(body, INK, 0.18));
+        }
+        if (!st.flap) for (let x = 37; x <= 42; x++) hi.set(x, 97, blend(body, INK, 0.5));
         hi.outline(INK);
         ctx.putImageData(new ImageData(hi.d, 80, 112), 0, 0);
-        for (const p of pile) { if (p.jx && Math.random() < 0.2) p.jx = 0; if (p.jy && Math.random() < 0.2) p.jy = 0; }
+        for (const p of pile) { if (p.jx && Math.random() < 0.25) p.jx = 0; if (p.jy && Math.random() < 0.25) p.jy = 0; }
+        // Now and then a capsule settles by itself, so the dome is never quite still.
+        if (Math.random() < 0.02) { const p = pile[Math.random() * pile.length | 0]; p.jy = -1; }
       },
     };
     if (hoverEl) {
-      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; });
+      hoverEl.addEventListener('pointerenter', () => { st.hover = 1; st.jiggle(); });
       hoverEl.addEventListener('pointerleave', () => { st.hover = 0; });
     }
     balls.add(st); st.tick(0);
@@ -988,11 +1169,25 @@ void main() {
   }
 
   /* ------------------------------------------------ moves */
-  const movers = new Set();
+  // A move takes tens of milliseconds to work out, so a mover is given a function that asks a worker for it, run
+  // the first time he's near the screen. Only those on screen are drawn.
+  const movers = new Set(), moverOf = new WeakMap();
+  const moverIo = new IntersectionObserver(es => es.forEach(e => { const m = moverOf.get(e.target); if (m) m.visible = e.isIntersecting; }), { rootMargin: '200px' });
   function addMover(canvas, anim) {
-    const m = { canvas, ctx: canvas.getContext('2d'), anim, t0: performance.now() + Math.random() * 400, last: null };
-    movers.add(m); drawMover(m, m.t0);
+    const m = { canvas, ctx: canvas.getContext('2d'), anim, t0: performance.now() + Math.random() * 400, last: null, visible: false };
+    movers.add(m); moverOf.set(canvas, m); moverIo.observe(canvas);
     return m;
+  }
+  /** Asks for the move of each mover near the screen that has none yet; each shows his first frame when it lands. */
+  function makeMovers() {
+    for (const m of movers) {
+      if (!m.canvas.isConnected) { movers.delete(m); moverIo.unobserve(m.canvas); continue; }
+      if (m.visible && typeof m.anim === 'function') {
+        const make = m.anim;
+        m.anim = null;
+        Promise.resolve(make()).then(anim => { m.anim = anim; drawMover(m, performance.now()); }, () => {});
+      }
+    }
   }
   function drawMover(m, now) {
     const f = LG.frameAt(m.anim, Math.max(0, now - m.t0));
@@ -1005,12 +1200,13 @@ void main() {
     }));
     m.ctx.putImageData(img, 0, 0);
   }
-  const NOTE = { idle: 'breathing, blinks', blink: '', hop: 'squash and stretch', wave: 'arm up and down', look: 'glances', cheer: 'for a win', sad: 'for a loss', dance: 'turns side to side', squish: 'when tapped' };
+  const NOTE = { idle: 'breathing, blinks', blink: '', hop: 'squash and stretch', wave: 'arm up and down', look: 'glances', cheer: 'for a win', sad: 'for a loss', dance: 'turns side to side', squish: 'when tapped', shy: 'blushes, a heart', huff: 'hmph, an anger vein', oops: 'tehe, a sweat drop' };
   function renderMoves() {
     const equip = ['skin', 'hat', 'frame'].map(s => find(state.worn[s])).filter(Boolean).map(c => LG.encode(c.o));
     const el = $('moves-all');
     el.innerHTML = LG.MOVES.map(mv => `<figure class="mover"><canvas width="16" height="20" data-move="${mv}" aria-hidden="true"></canvas><figcaption>${mv}${NOTE[mv] ? `<small>${NOTE[mv]}</small>` : ''}</figcaption></figure>`).join('');
-    el.querySelectorAll('canvas').forEach(c => addMover(c, LG.animate(state.name, c.dataset.move, moveOpts(state.name, { equip }))));
+    const name = state.name;
+    el.querySelectorAll('canvas').forEach(c => addMover(c, () => offThread('call', 'animateLoop', name, c.dataset.move, moveOpts(name, { equip }))));
   }
   function renderGrades() {
     const hat = LG.items.find(i => i.game === 'puttsies' && i.slot === 'hat' && !i.free).id;
@@ -1019,7 +1215,8 @@ void main() {
     el.innerHTML = ladder.map(([f, sc, label], i) => `<figure class="mover"><canvas width="16" height="20" data-i="${i}" aria-hidden="true"></canvas><figcaption>${label}</figcaption></figure>`).join('');
     el.querySelectorAll('canvas').forEach(c => {
       const [f, sc] = ladder[+c.dataset.i];
-      addMover(c, LG.animate(state.name, 'hop', moveOpts(state.name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
+      const name = state.name;
+      addMover(c, () => offThread('call', 'animateLoop', name, 'hop', moveOpts(name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
     });
   }
 
@@ -1035,10 +1232,10 @@ void main() {
     const rarest = {};
     for (const sl of SLOTS) {
       const ch = sl.list.map((_, i) => chanceOf(sl.slot, sl.key, i));
-      const min = Math.min(...ch);
+      const min = Math.min(...ch.filter(c => c > 0));
       rarest[sl.key] = ch.map((c, i) => [c, i]).filter(([c]) => c === min).map(([, i]) => i);
     }
-    const frames = LG.items.filter(i => i.slot === 'frame');
+    const frames = LG.items.filter(i => i.slot === 'frame' && !i.retired && !i.free);
     // The rarest kinds of copy there are, at the lowest scuff there is, with a tally.
     const FINEST = [
       ['tempered', p => LG.DEEP_BLUE_PRINTS[p % LG.DEEP_BLUE_PRINTS.length]],
@@ -1061,7 +1258,7 @@ void main() {
       const gc = LG.gradeOf(g.copy).color;
       return `<figure class="star" style="--grade:${gc}">
         <div class="stage-row">
-          <button class="stage-btn" type="button" data-cool="${n}" aria-label="Change his move"><canvas width="16" height="20" aria-hidden="true"></canvas><span class="move">${g.move}</span></button>
+          <button class="stage-btn" type="button" data-cool="${n}" aria-label="Change its move"><canvas width="16" height="20" aria-hidden="true"></canvas><span class="move">${g.move}</span></button>
           <span class="card mini" style="--grade:${gc}">${px({ name: 'rarest', parts: g.parts, palette: g.palette, copies: [g.copy], label: { title: cap(traits[0].name), bottom: fmt(g.guy), g: 4 } })}</span>
         </div>
         <figcaption>
@@ -1075,7 +1272,7 @@ void main() {
     el.querySelectorAll('[data-cool]').forEach(b => {
       const g = guys[+b.dataset.cool];
       const opts = { parts: g.parts, palette: LG.paletteOf({ ...g.config, shade: g.config.shade }) };
-      const start = () => { g.mover = addMover(b.querySelector('canvas'), LG.animate('rarest', g.move, opts)); };
+      const start = () => { g.mover = addMover(b.querySelector('canvas'), () => offThread('call', 'animateLoop', 'rarest', g.move, opts)); };
       start();
       b.addEventListener('click', () => {
         g.move = COOL_MOVES[(COOL_MOVES.indexOf(g.move) + 1) % COOL_MOVES.length];
@@ -1083,14 +1280,17 @@ void main() {
         movers.delete(g.mover); start();
       });
     });
-    // Put it next to what names actually reach.
-    let bestName = 0;
-    for (let n = 0; n < 200000; n++) bestName = Math.max(bestName, LG.guyOneIn(LG.resolve('u' + n)));
-    $('cool-lede').insertAdjacentHTML('afterend', `<p>Every guy here is 1 in ${big(guys[0].guy)}. The rarest of 200,000 real names is 1 in ${big(bestName)}, so no player is likely to ever have one. The frames are the rarest copies a capsule can give: Mint in Box at a scuff of 0.0000000, famous prints, and a tally.</p>`);
+    // Put it next to what names actually reach: 200,000 of them, counted beside the page once he's near the screen.
+    const line = document.createElement('p');
+    const aboutFrames = 'The frames are the rarest copies a capsule can give: Box Fresh at a scuff of 0.0000000, famous prints, and a tally.';
+    const say = best => { line.innerHTML = `Every guy here is 1 in ${big(guys[0].guy)}. ${best ? `The rarest of 200,000 real names is 1 in ${big(best)}, so no player is likely to ever have one.` : 'Counting how rare the rarest of 200,000 real names is…'} ${aboutFrames}`; };
+    say(0);
+    $('cool-lede').after(line);
+    whenNear(el, () => kept('u:200000', 'rarestOf', 'u', 200000).then(say, () => {}));
   }
 
   /* ------------------------------------------------ the player */
-  const state = { name: 'luna', tickets: 640, locker: [], worn: { skin: null, hat: null, frame: null }, filter: 'all', sort: 'rare', bought: new Set(), opened: 0 };
+  const state = { name: 'luna', stamps: 42, locker: [], worn: { skin: null, hat: null, frame: null }, filter: 'all', sort: 'rare', bought: new Set(), opened: 0 };
   let uid = 0;
   const copyOf = (o, source, from) => ({ uid: ++uid, o, source, from, game: LG.itemById(o.item).game, slot: LG.slotOf(o), fresh: false });
   const find = id => state.locker.find(c => c.uid === id);
@@ -1119,7 +1319,7 @@ void main() {
     state.name = name;
     state.locker = LG.GAMES.map(g => copyOf(LG.starter(name, g), 'Starter', `starter("${name}", "${g}")`));
     for (let i = 0; i < 26; i++) {
-      const game = LG.GAMES[(i * 4) % 9], seed = `${name}:drop:${i}`;
+      const game = LG.GAMES[(i * 3) % LG.GAMES.length], seed = `${name}:drop:${i}`;
       const o = LG.roll(seed, game);
       if (o.tally !== undefined) o.tally = 3 + strHash(`${name}:${i}:days`) % 60;
       if (o.tally !== undefined && o.tally >= 20) o.pins = LG.PINS.filter((_, k) => (strHash(`${name}:${i}:pin`) >> k) & 1).slice(0, 1 + (o.tally >= 50)).map(pn => pn.id);
@@ -1152,10 +1352,16 @@ void main() {
     { slot: 'colour', key: 'palette', list: LG.palettes },
   ];
   const DEMO = { head: 0, eyes: 1, mouth: 0, cheeks: 1, hair: 0, body: 0, accessory: 0, arms: 1, feet: 0 };
+  // Asked for every option of every slot by several sections, so each is worked out once.
+  const chances = new Map();
   const chanceOf = (slot, key, i) => {
+    const k = `${slot}|${key}|${i}`;
+    if (chances.has(k)) return chances.get(k);
     const c = { ...LG.resolve('demo', DEMO), palette: 0 };
     c[key] = i;
-    return LG.traitOdds(c).find(t => t.slot === slot).chance;
+    const ch = LG.traitOdds(c).find(t => t.slot === slot).chance;
+    chances.set(k, ch);
+    return ch;
   };
   const tierOf = ch => ch <= 0.02 ? ['Rare', '#EB4B4B'] : ch <= 0.05 ? ['Uncommon', '#8847FF'] : ['Common', '#3a4570'];
 
@@ -1180,7 +1386,7 @@ void main() {
     const tiles = [];
     for (const s of SLOTS) {
       const ch = s.list.map((_, i) => chanceOf(s.slot, s.key, i));
-      const min = Math.min(...ch);
+      const min = Math.min(...ch.filter(c => c > 0));
       const picks = ch.map((c, i) => [c, i]).filter(([c]) => c === min).slice(0, s.slot === 'shape' ? 4 : 2);
       for (const [c, i] of picks) {
         const spec = s.key === 'palette' ? { name: 'demo', parts: DEMO, palette: i } : { name: 'demo', parts: { ...DEMO, [s.key]: i } };
@@ -1191,16 +1397,12 @@ void main() {
     hydrate($('rarest'));
   }
 
-  function renderNames() {
+  // The 20,000 names are counted beside the page once the list is near the screen.
+  async function renderNames() {
     const firsts = ['alex', 'sam', 'jo', 'max', 'kai', 'mia', 'zoe', 'leo', 'ivy', 'ben', 'ava', 'eli', 'noa', 'finn', 'ruby', 'theo', 'nina', 'omar', 'lena', 'yuki'];
-    const found = [];
-    for (const f of firsts) for (let n = 0; n < 1000; n++) {
-      const name = n ? f + n : f;
-      found.push([LG.guyOneIn(LG.resolve(name)), name]);
-    }
-    found.sort((a, b) => b[0] - a[0]);
+    const found = await kept('names:20000', 'rarestNames', firsts, 1000, 6);
     const el = $('names');
-    el.innerHTML = found.slice(0, 6).map(([n, name]) => `<figure class="card">${px({ name, label: { title: name, bottom: `1 in ${fmt(n)}` } })}<figcaption class="meta"><span class="h">${esc(name)}</span><span class="sub">1 in <b>${fmt(n)}</b> guys</span><button class="btn ghost" type="button" data-use="${esc(name)}">Use this name</button></figcaption></figure>`).join('');
+    el.innerHTML = found.map(([n, name]) => `<figure class="card">${px({ name, label: { title: name, bottom: `1 in ${fmt(n)}` } })}<figcaption class="meta"><span class="h">${esc(name)}</span><span class="sub">1 in <b>${fmt(n)}</b> guys</span><button class="btn ghost" type="button" data-use="${esc(name)}">Use this name</button></figcaption></figure>`).join('');
     hydrate(el);
   }
 
@@ -1219,7 +1421,7 @@ void main() {
       <span class="badge${c.fresh && !worn ? ' new' : ''}"${worn || c.fresh ? '' : ' hidden'}>${worn ? 'Worn' : 'New'}</span>
       ${o.tally !== undefined ? `<span class="tally">Tally ${o.tally}</span>` : ''}
       <span class="meta"><span class="h">${esc(LG.nameOf(o))}</span><span class="chips">${chipsFor(o)}</span>
-      <span class="sub">${cap(c.game)} · ${c.one ? '<b>1 of 1</b>' : c.source === 'Starter' ? 'Free starter' : `1 in <b>${fmt(oneIn(c))}</b>`}</span></span>
+      <span class="sub">${cap(c.game)} · ${c.one ? '<b>Only one</b>' : c.source === 'Starter' ? 'Free starter' : `1 in <b>${fmt(oneIn(c))}</b>`}</span></span>
     </button>`;
   }
   function renderLocker() {
@@ -1244,22 +1446,25 @@ void main() {
     const copies = worn.map(c => c.o);
     const top = worn.reduce((a, c) => (oneIn(c) > oneIn(a || c) ? c : a || c), null);
     const g = copies.length ? Math.max(...copies.map(gradeIdx)) : -1;
+    // What he wears, to read: changing it is the lil guys site's one editor (promo.html, "Your guy").
     const row = slot => {
       const c = find(state.worn[slot]);
       return `<div class="slotrow"><span class="k">${slot}</span>${c
-        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span><button class="x" type="button" data-off="${slot}" aria-label="Take off ${esc(LG.nameOf(c.o))}">×</button>`
-        : `<span class="v empty">Empty</span><span></span>`}</div>`;
+        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span>`
+        : '<span class="v empty">Empty</span>'}</div>`;
     };
-    $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>1 of 1</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
-      <div class="slots">${row('skin')}${row('hat')}${row('frame')}</div>`;
+    $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>Only one</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
+      <div class="slots">${row('skin')}${row('hat')}${row('frame')}</div>
+      <a class="btn" href="promo.html#/edit/wear">Dress your own guy</a>`;
     hydrate($('dress'));
     renderMoves();
   }
-  function toggle(c) {
-    state.worn[c.slot] = isWorn(c) ? null : c.uid;
+  /** A copy tapped in the locker: shown in the inspect panel above. */
+  function pick(c) {
     c.fresh = false;
     state.inspect = c.uid;
-    refreshWorn(); renderDress(); renderSwaps(); renderInspect();
+    refreshWorn(); renderInspect();
+    $('inspect').scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth', block: 'nearest' });
   }
 
   /** How a copy's name is put together, and every number behind it. */
@@ -1268,10 +1473,10 @@ void main() {
     if (!c) return;
     const o = c.o, item = LG.itemById(o.item), f = LG.FINISHES[o.finish], g = LG.gradeOf(o), w = LG.wearOf(o.scuff);
     const [left, right] = LG.nameOf(o).split(' | ');
-    const itemWord = left.replace(/^Tallied /, '');
+    const itemWord = left.replace(/^Strange /, '');
     const U = { tally: 'var(--amber)', item: 'var(--ink)', finish: g.color, scuff: '#6ee7b0', print: '#7fb6ff' };
     const seg = (text, key, n) => `<span style="--u:${U[key]}">${esc(text)}<sup>${n}</sup></span>`;
-    const name = [o.tally !== undefined ? seg('Tallied', 'tally', 5) : '', seg(itemWord, 'item', 1), right ? seg(right, 'finish', 2) : ''].join('');
+    const name = [o.tally !== undefined ? seg('Strange', 'tally', 5) : '', seg(itemWord, 'item', 1), right ? seg(right, 'finish', 2) : ''].join('');
     const segs = [['#3fbf7f', 0.07], ['#8fd14f', 0.15], ['#e0c341', 0.38], ['#e8893a', 0.45], ['#d94b4b', 1]];
     let prev = 0;
     const bar = segs.map(([col, max]) => { const wpx = (max - prev) * 100; prev = max; return `<i style="width:${wpx}%;background:${col}"></i>`; }).join('');
@@ -1295,7 +1500,7 @@ void main() {
           ${dt('Print', 'print', 4)}<dd><b>#${o.print}</b>${fam ? ` <span class="chip grade" style="--grade:#4B69FF">${esc(fam)}</span>` : ''}<small>${fam ? 'One of the famous prints.' : 'Where the shine and the scuffs land, 0 to 999.'}${o.finish === 'nebula' && !fam ? ' On Nebula it also picks the pattern in the name.' : ''}</small></dd>
           ${dt('Tally', 'tally', 5)}<dd>${o.tally !== undefined ? `<b>${o.tally} days</b><small>Days finished wearing it. Shows as "Tallied" in the name${o.tally >= 365 ? ', and a year of days has turned its outline gold' : o.tally >= 100 ? ', and as four marks on the item' : o.tally >= 30 ? ', and as two marks on the item' : ''}.</small>` : '<b>None</b><small>One copy in ten keeps a tally.</small>'}</dd>
           ${dt('Pins')}<dd>${o.pins?.length ? o.pins.map(id => { const pn = LG.PINS.find(x => x.id === id); return `<b>${esc(pn.name)}</b><small>${esc(pn.how)}</small>`; }).join('') : '<b>None yet</b><small>Earned in the games, up to three.</small>'}</dd>
-          ${dt('Rarity')}<dd>${c.one ? '<b>1 of 1</b><small>The only one. It exists because it was given, not rolled.</small>' : c.source === 'Starter' ? '<b>Free</b><small>Every player has one; the name decides its scuff and print.</small>' : `<b>1 in ${fmt(LG.copyOneIn(o))}</b><small>Capsules for ${cap(c.game)} that give this item, this finish${fam ? ', a famous print' : ''}, a scuff this low${o.tally !== undefined ? ' and a tally' : ''}.</small>`}</dd>
+          ${dt('Rarity')}<dd>${c.one ? '<b>Only one</b><small>The only one. It exists because it was given, not rolled.</small>' : c.source === 'Starter' ? '<b>Free</b><small>Every player has one; the name decides its scuff and print.</small>' : `<b>1 in ${fmt(LG.copyOneIn(o))}</b><small>Capsules for ${cap(c.game)} that give this item, this finish${fam ? ', a famous print' : ''}, a scuff this low${o.tally !== undefined ? ' and a tally' : ''}.</small>`}</dd>
           ${dt('Made from')}<dd><code>${esc(c.from || c.source)}</code><small>${c.source === 'Starter' ? 'The same name always gets the same starter, in every game.' : 'The same seed always opens the same copy.'}</small></dd>
           ${dt('Code')}<dd><code id="code">${esc(code)}</code><button class="btn ghost copybtn" type="button" id="copy-code">Copy</button><small>All a copy is: item~finish~scuff~print, plus ~t and the tally.</small></dd>
         </dl>
@@ -1310,8 +1515,7 @@ void main() {
     try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (err) { done(false); }
   });
 
-  $('grid').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) toggle(find(+b.dataset.uid)); });
-  $('dress').addEventListener('click', e => { const b = e.target.closest('[data-off]'); if (b) { state.worn[b.dataset.off] = null; refreshWorn(); renderDress(); renderSwaps(); } });
+  $('grid').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) pick(find(+b.dataset.uid)); });
   document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => {
     state.filter = b.dataset.filter;
     document.querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', x === b));
@@ -1320,21 +1524,21 @@ void main() {
   $('sort').addEventListener('change', e => { state.sort = e.target.value; renderLocker(); });
 
   /* ------------------------------------------------ shop */
-  const PRICE = { capsule: 100, skin: 450, hat: 300, frame: 350 };
-  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.tickets.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); renderSwaps(); }
+  const PRICE = { capsule: 8, skin: 30, hat: 20, frame: 24 };
+  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.stamps.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); }
 
   function renderCapsules() {
     const el = $('capsules');
     if (!el.children.length) {
-      el.innerHTML = LG.GAMES.map(g => `<div class="capsule"><canvas width="40" height="56" data-cap="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-open="${g}">${ticket} Turn</button></div>`).join('');
+      el.innerHTML = LG.GAMES.map(g => `<div class="capsule"><canvas width="40" height="56" data-cap="${g}" aria-hidden="true"></canvas><span class="g">${cap(g)}</span><button class="btn" type="button" data-open="${g}">${stamp} Turn</button></div>`).join('');
       el.querySelectorAll('canvas[data-cap]').forEach(c => addMachine(c, c.dataset.cap, c.closest('.capsule')));
     }
-    el.querySelectorAll('[data-open]').forEach(b => { b.disabled = state.tickets < PRICE.capsule; });
+    el.querySelectorAll('[data-open]').forEach(b => { b.disabled = state.stamps < PRICE.capsule; });
   }
   $('capsules').addEventListener('click', e => {
     const b = e.target.closest('[data-open]');
-    if (!b || state.tickets < PRICE.capsule) return;
-    state.tickets -= PRICE.capsule;
+    if (!b || state.stamps < PRICE.capsule) return;
+    state.stamps -= PRICE.capsule;
     const game = b.dataset.open;
     const seed = `${state.name}:capsule:${++state.opened}`;
     const o = LG.roll(seed, game);
@@ -1361,7 +1565,7 @@ void main() {
     el.innerHTML = shelfToday().map(o => {
       const slot = LG.slotOf(o), price = PRICE[slot], key = LG.encode(o), owned = state.bought.has(key);
       return `<figure class="card" style="--grade:${LG.gradeOf(o).color}">${px({ name: state.name, copies: [o], label: itemLabel(o) })}<figcaption class="meta"><span class="h">${esc(LG.nameOf(o))}</span><span class="chips">${chipsFor(o)}</span>
-        <span class="buyrow"><span class="sub">${cap(LG.itemById(o.item).game)} · ${slot}</span><button class="btn" type="button" data-buy="${esc(key)}"${owned || state.tickets < price ? ' disabled' : ''}>${owned ? 'Owned' : `${ticket} ${price}`}</button></span></figcaption></figure>`;
+        <span class="buyrow"><span class="sub">${cap(LG.itemById(o.item).game)} · ${slot}</span><button class="btn" type="button" data-buy="${esc(key)}"${owned || state.stamps < price ? ' disabled' : ''}>${owned ? 'Owned' : `${stamp} ${price}`}</button></span></figcaption></figure>`;
     }).join('');
     hydrate(el);
   }
@@ -1369,30 +1573,9 @@ void main() {
     const b = e.target.closest('[data-buy]');
     if (!b) return;
     const o = LG.decode(b.dataset.buy), price = PRICE[LG.slotOf(o)];
-    if (state.tickets < price || state.bought.has(b.dataset.buy)) return;
-    state.tickets -= price; state.bought.add(b.dataset.buy);
+    if (state.stamps < price || state.bought.has(b.dataset.buy)) return;
+    state.stamps -= price; state.bought.add(b.dataset.buy);
     reveal(o, 'Shop', null, "Today's shelf: always Plain, scuff and print set by the date");
-  });
-
-  const tradeable = g => state.locker.filter(c => c.source !== 'Starter' && !isWorn(c) && gradeIdx(c.o) === g).sort((a, b) => oneIn(a) - oneIn(b));
-  function renderSwaps() {
-    $('swaps').innerHTML = [0, 1, 2, 3].map(g => {
-      const n = tradeable(g).length, from = LG.GRADES[g], to = LG.GRADES[g + 1];
-      return `<div class="swap"><span class="t"><span class="chip grade" style="--grade:${from.color}">5 ${from.name}</span> → <span class="chip grade" style="--grade:${to.color}">1 ${to.name}</span><small>You have ${n}</small></span><button class="btn" type="button" data-swap="${g}"${n < 5 ? ' disabled' : ''}>Swap</button></div>`;
-    }).join('');
-  }
-  $('swaps').addEventListener('click', e => {
-    const b = e.target.closest('[data-swap]');
-    if (!b) return;
-    const g = +b.dataset.swap, give = tradeable(g).slice(0, 5);
-    if (give.length < 5) return;
-    state.locker = state.locker.filter(c => !give.includes(c));
-    // Re-roll until the finish lands on the next grade; the game is one of the traded copies'.
-    const game = give[strHash(`${state.name}:${state.opened}`) % 5].game;
-    let o;
-    let seed;
-    for (let i = 0; i < 20000; i++) { seed = `${state.name}:swap:${++state.opened}:${i}`; o = LG.roll(seed, game); if (gradeIdx(o) === g + 1) break; }
-    reveal(o, 'Swap-up', game, `roll("${seed}", "${game}")  ·  first roll of the next grade`);
   });
 
   /* ------------------------------------------------ reveal */
@@ -1432,14 +1615,6 @@ void main() {
     ctx.putImageData(img, 0, 0);
   })($('back'));
 
-  /** A filler for the reel: rarer than real odds, so the reel looks like it could be anything. */
-  function filler(seed, game, want) {
-    if (want === undefined) { const r = strHash(seed) % 100; want = r < 56 ? 0 : r < 80 ? 1 : r < 92 ? 2 : r < 97 ? 3 : 4; }
-    let o;
-    for (let i = 0; i < 6000; i++) { o = LG.roll(`${seed}:${i}`, game); if (gradeIdx(o) === want) break; }
-    return o;
-  }
-
   let skipSpin = null;
   /** The reel: about fifty cards rush past a marker and slow onto the one you got. */
   function spin(o, game, g) {
@@ -1447,14 +1622,13 @@ void main() {
       const reel = $('reel'), track = $('track');
       const N = 54, WIN = 46, CW = 104, STEP = CW + 10;
       const base = `${state.name}:reel:${state.opened}`;
-      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : filler(`${base}:${i}`, game));
-      // Below Mythic, something better sits right after it, and the reel stops just short.
-      if (g < 3) list[WIN + 1] = filler(`${base}:tease`, game, strHash(base) % 3 ? 3 : 4);
+      // Every filler is a real roll at the real odds; nothing better is planted next to yours.
+      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : LG.roll(`${base}:${i}:${Math.random()}`, game));
       reel.hidden = false;
       track.innerHTML = list.map((x, i) => `<div class="slot-card${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}">${px({ name: state.name, copies: [x], still: true })}<i class="g"></i></div>`).join('');
       hydrate(track);
       const mid = reel.clientWidth / 2;
-      const jitter = g < 3 ? 0.42 * CW : (strHash(base + 'j') % 100 / 100 - 0.5) * 0.6 * CW;
+      const jitter = (Math.random() - 0.5) * 0.9 * CW;            // anywhere inside the card, the same for every grade
       const x0 = mid + STEP * 1.5, x1 = mid - (WIN * STEP + CW / 2 + jitter);
       const dur = g >= 3 ? 7200 : 5800, t0 = performance.now();
       let over = false, lastIdx = null;
@@ -1488,7 +1662,7 @@ void main() {
     const S = 4;
     burst.width = Math.ceil(innerWidth / S); burst.height = Math.ceil(innerHeight / S);
     const cols = palette || [GRADE[g], '#ffffff', GRADE[g], g >= 3 ? '#ffcf5c' : '#c9d3ff'];
-    for (let i = 0, n = [26, 70, 130, 230, 420][g]; i < n; i++) {
+    for (let i = 0, n = [26, 70, 130, 230, 420, 600][g]; i < n; i++) {
       const a = Math.random() * Math.PI * 2, v = 0.5 + Math.random() * (1.4 + g * 0.7);
       bits.push({ x: x / S, y: y / S, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.9, life: 45 + Math.random() * (40 + g * 18), c: cols[i % 4], s: Math.random() < 0.25 ? 2 : 1 });
     }
@@ -1509,7 +1683,7 @@ void main() {
   async function unveil(o, g) {
     const res = $('result'), flip = $('flip'), front = $('reveal-card'), back = $('back'), shout = $('reveal-shout');
     res.style.setProperty('--grade', GRADE[g]);
-    res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.7][g]);
+    res.style.setProperty('--rays', [0, 0.25, 0.4, 0.55, 0.7, 0.9][g]);
     res.classList.remove('go'); shout.classList.remove('slam'); shout.textContent = '';
     front.hidden = true; front.innerHTML = ''; back.hidden = false;
     $('reveal-name').textContent = ''; $('reveal-chips').innerHTML = ''; $('reveal-actions').hidden = true;
@@ -1535,7 +1709,7 @@ void main() {
     if (s) s.juice = performance.now() / 1000;
 
     const grade = LG.gradeOf(o), famous = LG.special(o);
-    shout.textContent = famous ? famous + '!' : g === 0 ? (o.tally !== undefined ? 'Tallied!' : grade.name) : grade.name + '!';
+    shout.textContent = famous ? famous + '!' : g === 0 ? (o.tally !== undefined ? 'Strange!' : grade.name) : grade.name + '!';
     res.classList.add('go');
     fanfare(g);
     if (!hold()) {
@@ -1551,7 +1725,7 @@ void main() {
     $('reveal-name').textContent = LG.nameOf(o);
     $('reveal-chips').innerHTML = chipsFor(o) + `<span class="chip">1 in ${fmt(LG.copyOneIn(o))}</span>`;
     $('reveal-actions').hidden = false;
-    $('wear-it').focus();
+    $('keep-it').focus();
   }
 
   let revealed = null;
@@ -1563,27 +1737,25 @@ void main() {
     renderWallet();
     $('reveal').hidden = false;
     $('result').hidden = true;
-    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : source === 'Swap-up' ? `${cap(game)} swap-up` : `${cap(game)} capsule`;
+    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : `${cap(game)} capsule`;
     const g = gradeIdx(o);
     rush = false;
     if (game && !hold()) { $('skip').hidden = false; if (source === 'Capsule') await gacha(game); await spin(o, game, g); }
     await unveil(o, g);
   }
-  function closeReveal(wear) {
+  function closeReveal() {
     if (!revealed || $('reveal-actions').hidden) return;
-    if (wear) { state.worn[revealed.slot] = revealed.uid; revealed.fresh = false; }
     state.inspect = revealed.uid;
     $('reveal').hidden = true;
     revealed = null;
-    renderLocker(); renderDress(); renderSwaps(); renderInspect();
+    renderLocker(); renderDress(); renderInspect();
   }
-  $('wear-it').addEventListener('click', () => closeReveal(true));
-  $('keep-it').addEventListener('click', () => closeReveal(false));
+  $('keep-it').addEventListener('click', () => closeReveal());
   $('skip').addEventListener('click', () => { rush = true; if (skipSpin) skipSpin(); });
   addEventListener('keydown', e => {
     if ($('reveal').hidden) return;
     if (!$('skip').hidden && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); rush = true; if (skipSpin) skipSpin(); }
-    else if (e.key === 'Escape') closeReveal(false);
+    else if (e.key === 'Escape') closeReveal();
   });
 
   /* ------------------------------------------------ name */
@@ -1599,25 +1771,27 @@ void main() {
     // Lucky guys from real names, beside how they'd look otherwise.
     const lucky = [];
     for (let i = 0; lucky.length < 5 && i < 20000; i++) { const n = 'luck' + i; if (baseResolve(n).lucky) lucky.push(n); }
-    $('x-lucky-note').textContent = `About one name in ${LG.LUCKY_ODDS}. Same guy, colours turned round the wheel, gold trim. Left: Lucky. Right: how he'd look otherwise.`;
+    $('x-lucky-note').textContent = `About one name in ${LG.LUCKY_ODDS}. Same guy, colours turned round the wheel, gold trim. Left: Lucky. Right: how it would look otherwise.`;
     $('x-lucky').innerHTML = lucky.map(n => {
       const c = baseResolve(n);
       return `<figure class="star" style="--grade:#E4AE39"><div class="stage-row" style="grid-template-columns:1fr 1fr">
-        <span class="card">${px({ name: n, label: { title: n, bottom: '★ Lucky', g: 4 } })}</span>
+        <span class="card">${px({ name: n, label: { title: n, bottom: 'Lucky', g: 4 } })}</span>
         <span class="card">${px({ name: n, parts: { lucky: false }, label: { title: n, bottom: LG.palettes[c.palette].name } })}</span></div>
         <figcaption><span class="odds">1 in <b>${fmt(LG.guyOneIn(c))}</b> guys</span></figcaption></figure>`;
     }).join('');
     // Emotes over his idle.
     const em = $('x-emotes');
     em.innerHTML = LG.EMOTE_UNLOCKS.map(e => `<figure class="mover"><canvas width="16" height="20" data-emote="${e.id}" aria-hidden="true"></canvas><figcaption>${esc(e.name)}<small>${esc(e.how)}</small></figcaption></figure>`).join('');
-    em.querySelectorAll('canvas').forEach(c => addMover(c, LG.animate(me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
-    // The parts added in 0.5, each on a plain guy.
-    const NEW = [['cheeks', LG.cheeks, 8], ['body', LG.bodies, 8], ['accessory', LG.accessories, 8]];
-    $('x-parts').innerHTML = NEW.flatMap(([key, list, from]) => list.slice(from).map((part, k) => {
-      const i = from + k, spec = { name: 'demo', parts: { ...DEMO, [key]: i } };
-      const slot = { cheeks: 'cheeks', body: 'markings', accessory: 'accessory' }[key];
-      const ch = chanceOf(slot, key, i);
-      return `<figure class="card tile" tabindex="0">${px({ ...spec, label: { title: part.name, bottom: `1 in ${fmt(1 / ch)}` } })}<figcaption><small>${slot}</small>${esc(part.name)}<b>1 in ${fmt(1 / ch)}</b></figcaption></figure>`;
+    em.querySelectorAll('canvas').forEach(c => addMover(c, () => offThread('call', 'animateLoop', me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
+    // The anime set (capsules only), then the parts added in 0.5, each on a plain guy.
+    const anime = key => Object.keys(LG.CAPSULE_ONLY[key] ?? {}).map(Number);
+    const NEW = [['eyes', LG.eyes, anime('eyes')], ['mouth', LG.mouths, anime('mouth')], ['cheeks', LG.cheeks, anime('cheeks')],
+      ...[['cheeks', LG.cheeks], ['body', LG.bodies], ['accessory', LG.accessories]].map(([key, list]) => [key, list, list.map((_, i) => i).filter(i => i >= 8 && !anime(key).includes(i))])];
+    $('x-parts').innerHTML = NEW.flatMap(([key, list, which]) => which.map(i => {
+      const part = list[i], spec = { name: 'demo', parts: { ...DEMO, [key]: i } };
+      const slot = { eyes: 'eyes', mouth: 'mouth', cheeks: 'cheeks', body: 'markings', accessory: 'accessory' }[key];
+      const odds = anime(key).includes(i) ? 'capsules only' : `1 in ${fmt(1 / chanceOf(slot, key, i))}`;
+      return `<figure class="card tile" tabindex="0">${px({ ...spec, label: { title: part.name, bottom: odds } })}<figcaption><small>${slot}</small>${esc(part.name)}<b>${odds}</b></figcaption></figure>`;
     })).join('');
     $('x-frames').innerHTML = LG.GAMES.map(g => LG.gameItems(g).filter(it => it.slot === 'frame')[1]).map(it => {
       const o = { item: it.id, finish: 'plain', scuff: 0.03, print: 7 };
@@ -1641,11 +1815,11 @@ void main() {
   });
 
   // The wallet sits in the shop heading and the top bar.
-  document.querySelector('.rooms').insertAdjacentHTML('beforeend', `<span class="wallet"><svg aria-hidden="true"><use href="#ticket"/></svg><span data-wallet></span></span>`);
+  document.querySelector('.rooms').insertAdjacentHTML('beforeend', `<span class="wallet"><svg aria-hidden="true"><use href="#stamp"/></svg><span data-wallet></span></span>`);
 
   newPlayer('isaac');
   renderRarest(); renderOdds(); renderAll();
-  setTimeout(renderNames, 60);
+  whenNear($('names'), renderNames);
   setTimeout(renderCool, 30);
 })();
 </script>

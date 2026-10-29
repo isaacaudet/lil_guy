@@ -23,23 +23,30 @@ export const cheeks: Cheeks[] = [
     'cc......cc',
     '.c......c.',
   ]),
+  // In blush: dark dots read as spots.
   cheeks_('freckles', [
-    's.s....s.s',
+    'c.c....c.c',
   ]),
   cheeks_('scar', [
     '.......o..',
     '........o.',
   ]),
+  // A plaster stuck on at a slant, its pad in the middle.
   cheeks_('band-aid', [
-    '.......xx.',
+    '......xxc.',
+    '.......cxx',
   ]),
+  // Two bold stripes a side.
   cheeks_('war paint', [
     'rr......rr',
+    '..........',
+    'rr......rr',
   ]),
-  // Deep shade rather than outline: an outline-coloured cell at the edge
-  // would cost the body its own outline beside it.
+  // Two fine strokes a side, in the outline's colour: in the face's ink they were a smudge.
   cheeks_('whiskers', [
-    'mm......mm',
+    'oo......oo',
+    '..........',
+    'oo......oo',
   ]),
   cheeks_('hearts', [
     'r.r....r.r',
@@ -57,8 +64,39 @@ export const cheeks: Cheeks[] = [
     'yyy....yyy',
     '.y......y.',
   ]),
-  // The rarest: cheeks pressed with gold leaf.
+  // The rarest: cheeks pressed with a flake of gold leaf, catching the light.
   cheeks_('gold leaf', [
-    'yY......Yy',
+    '.y......y.',
+    'yYw....wYy',
+  ]),
+  cheeks_('flushed', [
+    'cc......cc',
+    'cc......cc',
+  ]),
+  // Bashful little marks, drawn in blush.
+  cheeks_('shy', [
+    'c.c....c.c',
+    '.c......c.',
+  ]),
+  // A beauty mark on one side only.
+  cheeks_('mole', [
+    '..........',
+    '........m.',
+  ]),
+  // Chase cheeks, one guy in several hundred.
+  cheeks_('jewels', [
+    '.a......a.',
+    'awA....awA',
+    '.A......A.',
+  ]),
+  cheeks_('rainbow', [
+    'rr......rr',
+    'yy......yy',
+    'gg......gg',
+  ]),
+  // The anime set, from capsules only: a manga blush, a pink cheek with one red stroke (/) through it.
+  cheeks_('manga blush', [
+    '.rc.....rc',
+    'rc.....rc.',
   ]),
 ];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { encode, decode, starter, roll, wearOf, gradeOf, nameOf, special, temperTint, FINISHES, type Owned } from '../owned';
-import { dress, freeItem, GAMES } from '../items';
+import { encode, decode, starter, roll, mysteryMachine, wearOf, gradeOf, nameOf, special, temperTint, FINISHES, type Owned } from '../owned';
+import { dress, freeItem, gameItems, itemWeight, GAMES } from '../items';
 import { resolve } from '../resolve';
 import { compose } from '../compose';
 import { toSvgString } from '../render-string';
@@ -22,7 +22,7 @@ describe('owned copies', () => {
   });
 
   it('name the condition from the scuff', () => {
-    expect([0.01, 0.1, 0.2, 0.4, 0.9].map(f => wearOf(f).short)).toEqual(['MIB', 'LN', 'PW', 'WL', 'BT']);
+    expect([0.01, 0.1, 0.2, 0.4, 0.9].map(f => wearOf(f).short)).toEqual(['BF', 'LN', 'PW', 'WL', 'BT']);
     expect(wearOf(1).short).toBe('BT');
   });
 
@@ -32,7 +32,7 @@ describe('owned copies', () => {
     expect(gradeOf(t(661)).name).toBe('Mythic');
     expect(gradeOf(t(117)).name).toBe('Prized');
     expect(nameOf({ item: 'puttsies.ball', finish: 'nebula', scuff: 0.01, print: 20, tally: 0 }))
-      .toBe('Tallied Golf ball | Red Giant');
+      .toBe('Strange Golf ball | Red Giant');
     expect(nameOf({ item: 'stackdle.block', finish: 'tempered', scuff: 0.1, print: 661 })).toBe('Toy block | Deep Blue');
   });
 
@@ -86,6 +86,24 @@ describe('capsules', () => {
     }
     for (const [id, f] of Object.entries(FINISHES)) {
       expect(Math.abs((counts[id] ?? 0) / n * 100 - f.odds)).toBeLessThan(Math.max(0.6, f.odds * 0.1));
+    }
+  });
+});
+
+describe('mystery capsules', () => {
+  it('come from any machine, each as likely as its share of every capsule pool', () => {
+    const pool = (g: string) => gameItems(g as any).filter(i => !i.free).reduce((a, i) => a + itemWeight(i), 0);
+    const total = GAMES.reduce((a, g) => a + pool(g), 0);
+    const n = 40000, counts: Record<string, number> = {};
+    for (let i = 0; i < n; i++) { const g = mysteryMachine(`mystery-${i}`); counts[g] = (counts[g] ?? 0) + 1; }
+    for (const g of GAMES) expect(Math.abs((counts[g] ?? 0) / n - pool(g) / total)).toBeLessThan(0.01);
+    expect(mysteryMachine('abc')).toBe(mysteryMachine('abc'));
+  });
+
+  it('open as that machine’s capsule', () => {
+    for (let i = 0; i < 50; i++) {
+      const seed = `m-${i}`, game = mysteryMachine(seed), o = roll(seed, game);
+      expect(o.item.startsWith(game + '.') || o.item.startsWith('aura.')).toBe(true);
     }
   });
 });

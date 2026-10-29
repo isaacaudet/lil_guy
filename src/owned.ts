@@ -1,6 +1,9 @@
 import { hash } from './hash';
-import { gameItems, freeItem, inSeason, itemById, type Item, type Slot } from './items';
+import { AURAS, AURA_ODDS } from './auras';
+import { EFFECTS, FX_IDS, rollFx, type Fx } from './effects';
+import { GAMES, gameItems, freeItem, inSeason, itemById, itemWeight, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
+import { PAINT_IDS, type PaintId } from './paints';
 import type { GameId } from './types';
 
 /**
@@ -11,20 +14,23 @@ import type { GameId } from './types';
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
  *   Prism, Negative and Gold are progressively rarer
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
- *   battered. The condition (Mint in Box … Battered) is a range of it, and
+ *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
  * - a **print** number between 0 and 999: where the finish lands. Most prints
  *   are ordinary; a few are famous (a Deep Blue Tempered, a Red Giant or
  *   Black Hole Nebula)
  * - sometimes a **tally**: a counter of the days its owner finished the game
- *   while wearing it
+ *   while wearing it (a Strange copy, as TF2 calls it)
+ * - a **craft number** if it was crafted from metal (see ./craft), and a
+ *   **paint** if someone painted it (see ./paints)
  *
  * Two copies of the same item are almost never the same: the scuff alone has
  * millions of values. Everything is deterministic from the stored numbers, so
  * a copy looks the same everywhere it is drawn.
  */
 
-export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold';
+export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold'
+  | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl';
 
 export interface Owned {
   item: string;
@@ -39,6 +45,14 @@ export interface Owned {
   pins?: string[];
   /** A seasonal copy's drop day, `YYYY-MM-DD`; it is part of what the copy is. */
   date?: string;
+  /** A souvenir: the day's free capsule for finishing every game, and that day. */
+  souvenir?: string;
+  /** A rare effect on top of the finish (see ./effects). */
+  fx?: Fx;
+  /** Crafted from metal: which craft it was, counting every copy ever crafted. */
+  craft?: number;
+  /** A hat or a buddy's paint (see ./paints). */
+  paint?: PaintId;
 }
 
 export const GRADES = [
@@ -47,6 +61,7 @@ export const GRADES = [
   { id: 'prized', name: 'Prized', color: '#D32CE6' },
   { id: 'mythic', name: 'Mythic', color: '#EB4B4B' },
   { id: 'grail', name: '★ Grail', color: '#E4AE39' },
+  { id: 'aura', name: '★ Aura', color: '#19D3C5' },
 ] as const;
 export type Grade = (typeof GRADES)[number];
 
@@ -55,7 +70,7 @@ export type Grade = (typeof GRADES)[number];
  * it can come in. The flashy finishes only exist barely worn, so there is no
  * Battered Nebula.
  */
-export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number] }> = {
+export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number]; aura?: number }> = {
   'plain':    { name: 'Plain',    grade: 0, odds: 79.87, scuffs: [0, 1] },
   'sunset':   { name: 'Sunset',   grade: 1, odds: 15.98, scuffs: [0, 0.08] },
   'tempered': { name: 'Tempered', grade: 2, odds: 1.6,   scuffs: [0, 1] },
@@ -63,11 +78,21 @@ export const FINISHES: Record<Finish, { name: string; grade: number; odds: numbe
   'prism':    { name: 'Prism',    grade: 3, odds: 0.5,   scuffs: [0, 0.08] },
   'negative': { name: 'Negative', grade: 3, odds: 0.2,   scuffs: [0, 0.08] },
   'gold':     { name: 'Gold',     grade: 4, odds: 0.25,  scuffs: [0, 0.08] },
+  // An aura's own finishes (./auras): never rolled on an item; `aura` is each
+  // one's share of auras, in percent. Any float, since a worn aura shows it.
+  'classic':  { name: 'Classic',  grade: 5, odds: 0, aura: 50,  scuffs: [0, 1] },
+  'fade':     { name: 'Fade',     grade: 5, odds: 0, aura: 22,  scuffs: [0, 1] },
+  'frost':    { name: 'Frost',    grade: 5, odds: 0, aura: 12,  scuffs: [0, 1] },
+  'toxic':    { name: 'Toxic',    grade: 5, odds: 0, aura: 8,   scuffs: [0, 1] },
+  'shadow':   { name: 'Shadow',   grade: 5, odds: 0, aura: 5,   scuffs: [0, 1] },
+  'sapphire': { name: 'Deep sea · Sapphire', grade: 5, odds: 0, aura: 1.5, scuffs: [0, 1] },
+  'ruby':     { name: 'Deep sea · Ruby', grade: 5, odds: 0, aura: 1.2, scuffs: [0, 1] },
+  'pearl':    { name: 'Deep sea · Black pearl', grade: 5, odds: 0, aura: 0.3, scuffs: [0, 1] },
 };
 
 /** Condition, by scuff, in the words toy collectors use. */
 export const WEAR = [
-  { name: 'Mint in Box', short: 'MIB', max: 0.07 },
+  { name: 'Box Fresh', short: 'BF', max: 0.07 },
   { name: 'Like New', short: 'LN', max: 0.15 },
   { name: 'Played With', short: 'PW', max: 0.38 },
   { name: 'Well Loved', short: 'WL', max: 0.45 },
@@ -115,7 +140,8 @@ export function special(o: Owned): string | undefined {
 }
 
 export function gradeOf(o: Owned): Grade {
-  // A famous print lifts a copy one grade.
+  if (FINISHES[o.finish].grade === 5) return GRADES[5];
+  // A famous print lifts a copy one grade, as far as Grail.
   return GRADES[Math.min(4, FINISHES[o.finish].grade + (special(o) ? 1 : 0))];
 }
 
@@ -123,7 +149,8 @@ export function gradeOf(o: Owned): Grade {
 export function nameOf(o: Owned): string {
   const item = itemById(o.item);
   const base = (o.date ? `${o.date.slice(0, 4)} ` : '') + (item?.name ?? o.item);
-  const tally = o.tally !== undefined ? 'Tallied ' : '';
+  const tally = (o.souvenir ? 'Souvenir ' : '') + (o.fx && o.fx !== item?.signature ? `${EFFECTS[o.fx].name} ` : '') + (o.tally !== undefined ? 'Strange ' : '');
+  if (FINISHES[o.finish].aura) return `${tally}★ ${base}${o.finish === 'classic' ? '' : ` | ${FINISHES[o.finish].name}`}`;
   if (o.finish === 'plain') return tally + base;
   const look = o.finish === 'nebula' ? nebulaPhase(o.print)
     : o.finish === 'tempered' ? (special(o) ? 'Deep Blue' : `${temperTint(o.print)} Tempered`) : FINISHES[o.finish].name;
@@ -142,6 +169,10 @@ export function encode(o: Owned): string {
   if (o.tally !== undefined) parts.push(`t${o.tally}`);
   if (o.pins?.length) parts.push(`p${o.pins.slice(0, MAX_PINS).join('+')}`);
   if (o.date) parts.push(`d${o.date}`);
+  if (o.souvenir) parts.push(`s${o.souvenir}`);
+  if (o.fx) parts.push(`x${o.fx}`);
+  if (o.craft !== undefined) parts.push(`c${o.craft}`);
+  if (o.paint) parts.push(`k${o.paint}`);
   return parts.join('~');
 }
 
@@ -154,6 +185,10 @@ export function decode(s: string): Owned | null {
   for (const part of extra) {
     if (part.startsWith('t') && /^\d+$/.test(part.slice(1))) o.tally = Number(part.slice(1));
     if (part.startsWith('d') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.date = part.slice(1);
+    if (part.startsWith('s') && /^\d{4}-\d{2}-\d{2}$/.test(part.slice(1))) o.souvenir = part.slice(1);
+    if (part.startsWith('x') && (FX_IDS as string[]).includes(part.slice(1))) o.fx = part.slice(1) as Fx;
+    if (part.startsWith('c') && /^\d{1,9}$/.test(part.slice(1))) o.craft = Number(part.slice(1));
+    if (part.startsWith('k') && (PAINT_IDS as string[]).includes(part.slice(1))) o.paint = part.slice(1) as PaintId;
     if (part.startsWith('p')) {
       const pins = part.slice(1).split('+').filter(id => pinById(id)).slice(0, MAX_PINS);
       if (pins.length) o.pins = pins;
@@ -172,7 +207,7 @@ function unit(seed: string): number {
 /**
  * The copy every player has from the start: their game's free hat, plain, with
  * a scuff and print taken from their name. Everyone gets one, and everyone's
- * is a little different — a lucky name gets a 0.003 Mint in Box.
+ * is a little different — a lucky name gets a 0.003 Box Fresh.
  */
 export function starter(name: string, game: GameId): Owned {
   return {
@@ -192,7 +227,37 @@ export function starter(name: string, game: GameId): Owned {
  * drop time and stored with the copy — never from anything a player picks.
  */
 export function roll(seed: string, game: GameId): Owned {
+  if (unit(`${seed}|aura`) < AURA_ODDS) return rollAura(seed);
   return rollFrom(gameItems(game).filter(i => !i.free), seed);
+}
+
+/**
+ * The machine a mystery capsule comes from: any of them, each as likely as its
+ * share of every machine's capsule pool (the items a capsule can give, by
+ * weight), so every item across the machines is as likely as it is in its own.
+ * Then `roll(seed, game)` opens it as that machine's capsule.
+ */
+export function mysteryMachine(seed: string): GameId {
+  const pools = GAMES.map(game => gameItems(game).filter(i => !i.free).reduce((a, i) => a + itemWeight(i), 0));
+  let r = unit(`${seed}|machine`) * pools.reduce((a, b) => a + b, 0);
+  return GAMES.find((_, i) => (r -= pools[i]) < 0) ?? GAMES[GAMES.length - 1];
+}
+
+/** An aura, from any machine: which one, its finish by share, any float, a print and maybe a tally. */
+function rollAura(seed: string): Owned {
+  const aura = AURAS[hash(`${seed}|which`) % AURAS.length];
+  let r = unit(`${seed}|finish`) * 100;
+  let finish: Finish = 'classic';
+  for (const [id, f] of Object.entries(FINISHES) as [Finish, (typeof FINISHES)[Finish]][]) {
+    if (!f.aura) continue;
+    r -= f.aura;
+    if (r < 0) { finish = id; break; }
+  }
+  const o: Owned = { item: aura.id, finish, scuff: Math.round(unit(`${seed}|float`) * 1e7) / 1e7, print: hash(`${seed}|pattern`) % 1000 };
+  if (unit(`${seed}|stattrak`) < 0.1) o.tally = 0;
+  const fx = rollFx(unit(`${seed}|fx`), true);
+  if (fx) o.fx = fx;
+  return o;
 }
 
 /**
@@ -206,7 +271,12 @@ export function rollSeason(seed: string, day: string): Owned | null {
 }
 
 function rollFrom(pool: Item[], seed: string): Owned {
-  const item = pool[hash(`${seed}|item`) % pool.length];
+  // A plain pool draws evenly as it always has; one with a showpiece weighs it lighter.
+  let item = pool[hash(`${seed}|item`) % pool.length];
+  if (pool.some(i => i.showpiece)) {
+    let r = unit(`${seed}|item`) * pool.reduce((a, i) => a + itemWeight(i), 0);
+    item = pool.find(i => (r -= itemWeight(i)) < 0) ?? pool[pool.length - 1];
+  }
 
   let r = unit(`${seed}|finish`) * 100;
   let finish: Finish = 'plain';
@@ -220,6 +290,8 @@ function rollFrom(pool: Item[], seed: string): Owned {
   const print = hash(`${seed}|pattern`) % 1000;
   const o: Owned = { item: item.id, finish, scuff, print };
   if (unit(`${seed}|stattrak`) < 0.1) o.tally = 0;
+  const fx = rollFx(unit(`${seed}|fx`), false) ?? item.signature;
+  if (fx) o.fx = fx;
   return o;
 }
 
@@ -258,61 +330,160 @@ const shaded = (c: RGB, l: number) => {
   return t < 0.5 ? mix(mix(c, [0, 0, 0], 0.5), c, t * 2) : mix(c, mix(c, [255, 255, 255], 0.6), (t - 0.5) * 2);
 };
 
-const PAINT: Record<Finish, (x: number, y: number, l: number, p: number, original: RGB) => RGB> = {
-  'plain': (_x, _y, _l, _p, original) => original,
-  'sunset': (x, y, l, p) => {
+/** A colour along a ramp of stops, `t` 0 to 1, blended smoothly between them. */
+const ramp = (stops: RGB[], t: number): RGB => {
+  const at = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(at));
+  return mix(stops[i], stops[i + 1], at - i);
+};
+
+/** A colour taken through its tone: `t` 0 its shadow, 0.5 itself, 1 its highlight. */
+const toned = (c: RGB, t: number, deep: RGB = [16, 12, 34]) =>
+  t < 0.5 ? mix(mix(c, deep, 0.62), c, t * 2) : mix(c, mix(c, [255, 255, 255], 0.72), (t - 0.5) * 2);
+
+const hsl = (h: number, s: number, l: number): RGB => {
+  const k = (n: number) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  return [0, 8, 4].map(n => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))) as RGB;
+};
+const hueOf = (c: RGB): { h: number; s: number } => {
+  const [r, g, b] = c.map(v => v / 255), max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  if (d < 1e-6) return { h: 0, s: 0 };
+  const l = (max + min) / 2, s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: (h * 60 + 360) % 360, s };
+};
+
+/** Rich polished gold, from a deep amber shade through saturated warm yellows to a light highlight. */
+const GOLD = ['#7A3E00', '#B06A04', '#E09A12', '#F8C424', '#FFDD4A', '#FFEFA0', '#FFF8D8'].map(rgb);
+const WHITE_GOLD = ['#3A3226', '#76695A', '#B3A58E', '#DDD2BC', '#F2EBDC', '#FFFBF2', '#FFFFFF'].map(rgb);
+
+/**
+ * A colour's tone with some of its own lightness kept: a pale item stays pale in a dark finish and a
+ * dark part stays darker than it, so a big costume keeps its light and dark instead of one blob.
+ */
+const lit = (tone: number, l: number) => tone * 0.6 + l * 0.4;
+
+/** How far across the item a cell is, corner to corner, about 0 to 1: what a finish's sweep runs along. */
+const across = (x: number, y: number) => (x + y * 0.8) / 26;
+
+/** Where one of an item's own colours sits for a finish (`toneOf`). */
+export interface Tone {
+  /** 0 deep shadow to 1 highlight, its main colour at 0.5. */
+  tone: number;
+  /** 0 the main colour's own hue to 1 a part in another colour altogether (a fox's white chest on its orange). */
+  part: number;
+}
+
+/**
+ * Where each of an item's own colours sits for a finish: its main colour (the
+ * first) in the middle, the rest by how much lighter or darker than it they
+ * are, and how far their colour is from it. A finish paints by these, so the
+ * item's shading and its parts (a hood, its lining, the ears' insides) keep
+ * the steps the artist drew between them.
+ */
+export function toneOf(colors: string[]): Map<string, Tone> {
+  const ls = colors.map(c => lum(rgb(c))), main = ls[0] ?? 0.5;
+  // Subtle shading is opened up a little; an item whose colours run far from its main one is fitted into the range.
+  const down = 0.47 / Math.max(0.33, main - Math.min(...ls)), up = 0.47 / Math.max(0.33, Math.max(...ls) - main);
+  const chroma = (c: RGB) => { const g = (c[0] + c[1] + c[2]) / 3; return c.map(v => v - g); };
+  const key = colors[0] ? chroma(rgb(colors[0])) : [0, 0, 0];
+  return new Map(colors.map((c, i) => {
+    const k = chroma(rgb(c));
+    return [c.toUpperCase(), { tone: 0.5 + (ls[i] - main) * (ls[i] < main ? down : up), part: Math.min(1, Math.hypot(k[0] - key[0], k[1] - key[1], k[2] - key[2]) / 120) }];
+  }));
+}
+
+/**
+ * Each finish as a clean, premium version of the item: its colours mapped
+ * through the finish's own ramp by tone, so the item's shading and parts all
+ * still read, and any colour shift runs in smooth bands across the whole
+ * item, never pixel by pixel. The shaders (./finish-shader) move a sheen over
+ * it.
+ */
+const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, original: RGB, l: number, part: number) => RGB> = {
+  'plain': (_x, _y, _t, _p, original) => original,
+  'sunset': (x, y, _t, p, _o, l) => {
     const t = Math.max(0, Math.min(1, (x + y * 0.5 - 2 + (p % 100) / 12) / 14));
     const c = t < 0.5 ? mix(rgb('#F5C542'), rgb('#E55AA8'), t * 2) : mix(rgb('#E55AA8'), rgb('#7A4BE0'), (t - 0.5) * 2);
     return shaded(c, l);
   },
-  'tempered': (x, y, l, p) => {
-    // Clean diagonal bands of heat tint, in the tint the print picks; the
-    // print also sets where the bands fall.
-    const stops = TINTS[temperTint(p)];
-    const band = Math.floor((((x + y + (p % 11)) % 12) + 12) % 12 / 3);
-    return shaded(rgb(stops[[0, 1, 2, 1][band]]), l);
+  'tempered': (x, y, tone, p, _o, l, part) => {
+    // Case-hardened steel: soft bands of heat tint running across the item,
+    // through the print's tint (blue, its pale, straw gold, its pale again).
+    const [a, b, c] = TINTS[temperTint(p)].map(rgb);
+    // Its darkest parts stay well off black, so a big item keeps its light and dark and never sinks into one blob.
+    const s = (across(x, y) * 1.5 + (p % 11) / 11 + part * 0.4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
+    const band = s < 0.5 ? mix(a, b, k) : mix(c, b, 1 - k);
+    return toned(band, 0.28 + lit(tone, l) * 0.5, [10, 16, 40]);
   },
-  'nebula': (x, y, l, p) => {
+  'nebula': (x, y, tone, p, _o, l, part) => {
+    // Deep space: two of the phase's colours drifting into each other in soft
+    // clouds across the item, dark in its shadows and lit pink in its lights.
+    // A part drawn in another colour takes the second one, so it still stands apart.
     const phase = nebulaPhase(p);
-    const base = phase === 'Red Giant' ? rgb('#D0102E') : phase === 'Blue Moon' ? rgb('#1E4FE8')
-      : phase === 'Black Hole' ? rgb('#2A1E3A') : rgb(['#8A2AB0', '#3A2AB0', '#2A6AB0', '#B02A8A'][p % 4]);
-    const c = cellNoise(p, x, y, 2) < 0.2 ? mix(base, rgb('#FFD6F0'), 0.55) : base;
-    return shaded(c, l);
+    const [a, b] = phase === 'Red Giant' ? ['#C8102E', '#FF6A3D'] : phase === 'Blue Moon' ? ['#1E4FE8', '#58B8FF']
+      : phase === 'Black Hole' ? ['#2A1E3A', '#4A2A6A'] : [['#7A2AB8', '#3A3AD0'], ['#3A2AB0', '#8A3AC8'], ['#2A5AC0', '#6A2AB0'], ['#A82A8A', '#4A2AB8']][p % 4];
+    const cloud = Math.min(1, (0.5 + 0.5 * Math.sin(x * 0.5 + p) * Math.cos(y * 0.42 - p * 0.7)) * (1 - part) + part * 0.95);
+    // Its darkest parts are the cloud's deep, not black, so a big item keeps its light and dark and never sinks into one blob.
+    const t = 0.2 + lit(Math.pow(tone, 1.1), l) * 0.72, sky = mix(rgb(a), rgb(b), cloud);
+    return ramp([mix(sky, [8, 6, 22], 0.6), sky, mix(sky, rgb('#FFC4EC'), 0.5), rgb('#FFF0FA')], t);
   },
-  'prism': (x, y, l, p) => {
-    // A rainbow running diagonally across the item, like holographic foil;
-    // the print sets where the bands start.
-    const h = ((x * 23 + y * 17 + p * 7) % 360 + 360) % 360;
-    const k = (n: number) => {
-      const t = (n + h / 30) % 12;
-      return 0.5 - 0.5 * Math.max(-1, Math.min(t - 3, 9 - t, 1));
-    };
-    const c: RGB = [k(0) * 255, k(8) * 255, k(4) * 255];
-    return mix(shaded(c, l), [255, 255, 255], 0.18);
+  'prism': (x, y, tone, p) => {
+    // One smooth rainbow sweeping corner to corner, the item's own tones
+    // from its shadows to near white, pearly.
+    const h = (across(x, y) * 300 + p * 7) % 360;
+    return mix(hsl(h, 0.6, 0.3 + 0.58 * tone), [255, 255, 255], 0.14);
   },
-  'negative': (_x, _y, _l, _p, original) => {
-    // The item's own colours turned inside out, pulled towards violet.
-    const inverted: RGB = [255 - original[0], 255 - original[1], 255 - original[2]];
-    return mix(inverted, [92, 52, 160], 0.22);
+  'negative': (_x, _y, tone, _p, original) => {
+    // A photographic negative: light parts go dark and dark go light, each
+    // in its colour's opposite, pulled towards violet. Kept off the extremes,
+    // so the item still stands clear of its own outline.
+    const { h, s } = hueOf([255 - original[0], 255 - original[1], 255 - original[2]]);
+    return mix(hsl(h, Math.min(0.7, s * 0.8 + 0.15), 0.26 + 0.6 * (1 - tone)), [92, 52, 160], 0.2);
   },
-  'gold': (x, y, l) => {
-    if ((x + y) % 6 === 0 && l > 0.5) return rgb('#FFFBE6');
-    return l > 0.75 ? rgb('#FFF1B0') : l > 0.5 ? rgb('#F2C230') : l > 0.3 ? rgb('#C8901E') : rgb('#7A5212');
+  // Auras are coloured by ./auras, not here.
+  'classic': (_x, _y, _t, _p, original) => original,
+  'fade': (_x, _y, _t, _p, original) => original,
+  'frost': (_x, _y, _t, _p, original) => original,
+  'toxic': (_x, _y, _t, _p, original) => original,
+  'shadow': (_x, _y, _t, _p, original) => original,
+  'sapphire': (_x, _y, _t, _p, original) => original,
+  'ruby': (_x, _y, _t, _p, original) => original,
+  'pearl': (_x, _y, _t, _p, original) => original,
+  'gold': (x, y, tone, _p, _o, _l, part) => {
+    // Polished gold: deep amber in the shadows, bright warm yellow in the middle, a light highlight,
+    // with one soft gleam lying across it. A part in another colour leans to white gold, so it still
+    // stands apart and still reads as gold.
+    const t = 0.1 + tone * 0.82 + Math.max(0, 1 - Math.abs(across(x, y) - 0.42) / 0.16) * 0.12;
+    return mix(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * 0.3);
   },
 };
 
 const PRIMER = rgb('#8B9097');
 
 /**
+ * A finished skin's outline: the deepest colour of its finish, so a purple
+ * Nebula frog isn't ringed in frog green. Negative and Sunset keep the skin's own.
+ */
+export function finishOutline(o: Owned): string | undefined {
+  if (o.finish === 'gold') return '#4A2400';
+  if (o.finish === 'nebula') return '#160C30';
+  if (o.finish === 'prism') return '#2C2048';
+  if (o.finish === 'tempered') return hex(mix(rgb(TINTS[temperTint(o.print)][0]), [8, 10, 26], 0.72));
+  return undefined;
+}
+
+/**
  * Paints one cell of an owned item: its finish, then its wear. Chips land in
  * places fixed by the print, so a copy always wears the same way, and how many
- * show is the scuff. `glint` is set once the first Mint in Box glint has been
- * placed.
+ * show is the scuff. `glint` is set once the first Box Fresh glint has been
+ * placed. `tone` is the colour's place among the item's own (`toneOf`); left
+ * out, its lightness stands in.
  */
-export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }): string {
-  const original = rgb(color);
-  let c = PAINT[o.finish](x, y, lum(original), o.print, original);
-  if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, 0.9) * 0.45) c = mix(PRIMER, c, 0.25);
+export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }, tone?: Tone): string {
+  const original = rgb(color), l = lum(original);
+  let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - 0.15) / 0.75)), o.print, original, l, tone?.part ?? 0);
+  // A chip shows more of the primer the more worn the copy is, so a nearly new one is barely flecked.
+  if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, 0.9) * 0.45) c = mix(c, PRIMER, Math.min(0.75, 0.3 + o.scuff * 0.6));
   c = mix(c, [120, 116, 112], Math.min(0.25, o.scuff * 0.3));
   if (o.scuff < 0.07 && !state.glint && lum(c) > 0.55) {
     c = [255, 255, 255];

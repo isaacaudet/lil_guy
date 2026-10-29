@@ -22,10 +22,10 @@ export interface Palette {
   colors: Record<number, string>; // token → hex colour; 0 is transparent
 }
 
-/** The DLE Club games that have items. */
+/** The capsule machines: the DLE Club games that have items, and the Pet shop. */
 export type GameId =
   | 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies'
-  | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle';
+  | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle' | 'pets';
 
 export type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 
@@ -53,6 +53,8 @@ export interface AvatarConfig {
   flip: boolean;
   /** The rare Lucky colour variant: about one name in 400. */
   lucky?: boolean;
+  /** The founder's guy (./founder): picked by hand, not dealt, and ranked the one of one. */
+  founder?: boolean;
   rotation: number; // index into SPHERE_POSITIONS
   /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
   skin?: string;
@@ -60,8 +62,10 @@ export interface AvatarConfig {
   frame?: string;
   /** A tiny pet that sits beside him. */
   buddy?: string;
+  /** An aura round him (see ./auras). */
+  aura?: string;
   /** The owned copies behind those items, if known: finish, scuff, print. */
-  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', import('./owned').Owned>>;
+  owned?: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy' | 'aura', import('./owned').Owned>>;
 }
 
 export interface RenderOptions {
@@ -87,6 +91,12 @@ export interface RenderOptions {
    * reader wants. Pass it when the avatar is the only identifier.
    */
   title?: string;
+  /**
+   * Draw for a small size: solid eyes, darker ink, no soft highlight, so the
+   * face still reads at a pixel or two a cell. `toSvgString` turns it on at
+   * 36px and under; pass `false` to keep the full drawing.
+   */
+  small?: boolean;
 }
 
 export const GRID_SIZE = 16;

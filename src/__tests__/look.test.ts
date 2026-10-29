@@ -1,19 +1,42 @@
 import { describe, expect, test } from 'bun:test';
-import { allowed, decodeLook, encodeLook, lookOf, makeSeed, pickable } from '../look';
-import { resolve } from '../resolve';
+import { allowed, decodeLook, encodeLook, lookOf, makeSeed, pickable, rareParts, readPart, partCode, rollPart, type LookSlot } from '../look';
+import { resolve, dealOf } from '../resolve';
 import { eyes, heads } from '../parts';
 import { palettes } from '../palette';
-import { eyeWeights, headWeights } from '../parts/weights';
+import { eyeWeights, headWeights, mouthWeights, cheekWeights, CAPSULE_ONLY } from '../parts/weights';
 
 const laser = eyes.findIndex(e => e.name === 'laser');
 const crab = heads.findIndex(h => h.name === 'crab');
 
 describe('seeds', () => {
-  test('are random, 12 characters, and draw a guy like any name', () => {
+  test('are random, the deal prefix and 12 characters, and draw a guy like any name', () => {
     const a = makeSeed(), b = makeSeed();
-    expect(a).toMatch(/^[0-9a-z]{12}$/);
+    expect(a).toMatch(/^4-[0-9a-z]{12}$/);
     expect(a).not.toBe(b);
     expect(lookOf(a)).toEqual(resolve(a));
+  });
+});
+
+describe('the deal', () => {
+  // A guy already dealt never changes: names and seeds from before deal 3 read
+  // the frozen deal 2 tables, whatever parts and weights are added later.
+  test('keeps every older seed and plain name exactly as it was dealt', () => {
+    const was: [string, number[]][] = [
+      ['alice', [7, 10, 11, 8, 23, 11, 10, 33]],
+      ['okapi', [2, 7, 9, 12, 0, 2, 0, 1]],
+      ['ud33mycomvkl', [14, 9, 4, 2, 8, 0, 5, 32]],
+      // Deal 3, frozen when deal 4 dealt fewer shut eyes.
+      ['3-0a1b2c3d4e5f', [24, 10, 1, 4, 6, 0, 15, 23]],
+      ['3-zzzzzzzzzzzz', [3, 7, 13, 0, 2, 0, 14, 36]],
+      ['3-k2m9q0w8e7r6', [12, 5, 1, 14, 15, 0, 11, 1]],
+    ];
+    for (const [name, parts] of was) {
+      const c = resolve(name);
+      expect([c.head, c.eyes, c.mouth, c.cheeks, c.hair, c.body, c.accessory, c.palette]).toEqual(parts);
+    }
+    expect(dealOf('alice')).toBe(2);
+    expect(dealOf('3-0a1b2c3d4e5f')).toBe(3);
+    expect(dealOf(makeSeed())).toBe(4);
   });
 });
 
@@ -22,7 +45,10 @@ describe('the picker', () => {
     const own = { ...resolve('x'), eyes: 0, head: 0 };
     expect(pickable(own, 'eyes')).not.toContain(laser);
     expect(pickable(own, 'head')).not.toContain(crab);
-    expect(pickable(own, 'eyes').every(i => eyeWeights[i] >= 2)).toBe(true);
+    // Common means at least 1 in 45 (`RARE` in look.ts); a part that is never
+    // dealt can't be picked either.
+    const total = eyeWeights.reduce((a, b) => a + b, 0);
+    expect(pickable(own, 'eyes').every(i => i === own.eyes || eyeWeights[i] / total >= 1 / 45)).toBe(true);
     const lucky = { ...own, eyes: laser, head: crab };
     expect(pickable(lucky, 'eyes')).toContain(laser);
     expect(pickable(lucky, 'head')).toContain(crab);
@@ -60,5 +86,31 @@ describe('look codes', () => {
     expect(g.mouth).toBe(0);
     expect(g.head).toBe(resolve(seed).head);
     expect(lookOf(seed, '3.5.0.12.4.0.17')).toEqual(resolve(seed));
+  });
+});
+
+describe('the anime set, from capsules only', () => {
+  const anime = Object.entries(CAPSULE_ONLY).flatMap(([slot, w]) => Object.keys(w!).map(i => ({ slot: slot as LookSlot, index: Number(i) })));
+
+  test('is never dealt: every deal draws exactly as it did', () => {
+    expect(anime.length).toBe(8);
+    for (const { slot, index } of anime) expect(({ eyes: eyeWeights, mouth: mouthWeights, cheeks: cheekWeights } as Record<string, number[]>)[slot][index]).toBe(0);
+    for (let n = 0; n < 3000; n++) {
+      const g = resolve(`4-anime${n}`);
+      expect(anime.some(({ slot, index }) => g[slot] === index)).toBe(false);
+    }
+  });
+
+  test('a capsule can unlock each one, and then it can be picked', () => {
+    const own = resolve('anime-owner');
+    for (const p of anime) {
+      expect(rareParts(p.slot)).toContain(p.index);
+      expect(pickable(own, p.slot)).not.toContain(p.index);
+      expect(pickable(own, p.slot, { [p.slot]: [p.index] })).toContain(p.index);
+      expect(readPart(partCode(p))).toEqual(p);
+    }
+    const got = new Set<string>();
+    for (let n = 0; n < 4000; n++) { const d = rollPart(`anime${n}`); if (d) got.add(partCode(d)); }
+    for (const p of anime) expect(got.has(partCode(p))).toBe(true);
   });
 });

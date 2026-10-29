@@ -1,6 +1,6 @@
 {
   "name": "lil_guy",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Deterministic pixel art avatars from any string",
   "type": "module",
   "sideEffects": false,
@@ -18,12 +18,19 @@
       "types": "./dist/next/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "bun test",
+    "verify:shaders": "node scripts/verify-shaders.mjs",
+    "verify:site": "node scripts/verify-site.mjs",
     "dev": "tsdown --watch",
-    "showcase": "tsdown && cp dist/lil-guy.js docs/lil-guy.js && bun scripts/build-showcase.ts"
+    "showcase": "tsdown && cp dist/lil-guy.js docs/lil-guy.js && cp dist/lil-guy-element.js docs/lil-guy-element.js && cp dist/lilguys.js docs/lilguys.js && cp dist/kit/lilguys.js docs/lilguys.mjs && bun scripts/build-showcase.ts",
+    "test:cloudflare-auto": "node --test scripts/auto-deploy.test.mjs",
+    "build:cloudflare-auto": "node scripts/auto-deploy.mjs",
+    "deploy:cloudflare-auto": "node scripts/auto-deploy.mjs --deploy"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -67,5 +74,8 @@
     "svg",
     "headless",
     "typescript"
-  ]
+  ],
+  "dependencies": {
+    "jose": "^6.2.13"
+  }
 }

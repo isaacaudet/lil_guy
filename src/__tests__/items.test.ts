@@ -1,5 +1,7 @@
+import { RETIRED_EYES } from '../parts/weights';
 import { describe, expect, it } from 'bun:test';
-import { compose, ARM_STYLES, FOOT_STYLES } from '../compose';
+import { compose, buddySpot, movesRoom, ARM_STYLES, BUDDY_ROOM, FOOT_STYLES } from '../compose';
+import { BUDDY_BOX } from '../item-art';
 import { heads, eyes, mouths, hair, accessories } from '../parts';
 import { T } from '../parts/art';
 import { items, itemById, gameItems, freeItem, dress, withItems, GAMES } from '../items';
@@ -47,20 +49,36 @@ describe('the catalog', () => {
     expect(new Set(items.map(i => i.id)).size).toBe(items.length);
   });
 
-  it('gives every game three skins, three hats (one free), two frames and a buddy', () => {
+  it('gives every game four skins and a showpiece, five hats (one free), three frames and four buddies', () => {
     for (const game of GAMES) {
       const own = gameItems(game);
-      const count = (slot: string) => own.filter(i => i.slot === slot).length;
-      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([3, 3, 2, 1]);
+      const count = (slot: string) => own.filter(i => i.slot === slot && !i.showpiece).length;
+      expect([count('skin'), count('hat'), count('frame'), count('buddy')]).toEqual([4, 5, 3, 4]);
+      expect(own.filter(i => i.showpiece).map(i => i.slot)).toEqual(['skin']);
+      // A capsule machine holds everything but the free hat: 12 to 16 items.
+      expect(own.filter(i => !i.free).length).toBeGreaterThanOrEqual(12);
+      expect(own.filter(i => !i.free).length).toBeLessThanOrEqual(16);
       expect(own.filter(i => i.free).map(i => i.slot)).toEqual(['hat']);
       expect(freeItem(game).free).toBe(true);
+    }
+  });
+
+  it('keeps every item id it has ever had, in order', () => {
+    // Saved copies store item ids, and a capsule's roll reads each game's
+    // list in order: items are only ever added, after the ones before.
+    const first = [
+      'amountle.jar', 'halfsies.pot', 'stackdle.block', 'flipsies.bottle', 'puttsies.ball', 'weighsies.cheese', 'cutsies.kiwi', 'tiltsies.ball', 'trackdle.racer',
+    ];
+    expect(skins.slice(0, first.length).map(i => i.id)).toEqual(first);
+    for (const id of ['amountle.gemling', 'trackdle.snail', 'club.birthday', 'club.sweetheart', 'trackdle.tarmac', 'trackdle.trophy']) {
+      expect(itemById(id)).toBeDefined();
     }
   });
 
   it('lists a colour for every item colour its art uses', () => {
     for (const item of items) {
       for (const hex of item.colors) expect(hex).toMatch(/^#[0-9A-F]{6}$/);
-      const grid = guy({ skin: item.slot === 'skin' ? item.id : undefined, hat: item.slot === 'hat' ? item.id : undefined, frame: item.slot === 'frame' ? item.id : undefined });
+      const grid = guy({ [item.slot]: item.id });
       const palette = withItems(palettes[0], { ...BASE, [item.slot]: item.id });
       for (const v of grid.flat()) if (v) expect(palette.colors[v]).toBeDefined();
     }
@@ -87,6 +105,7 @@ describe('skins', () => {
     for (const skin of skins) {
       for (const hat of [undefined, ...hats.map(h => h.id)]) {
         for (let e = 0; e < eyes.length; e++) {
+          if (RETIRED_EYES.includes(e)) continue;
           const g = guy({ skin: skin.id, hat, eyes: e, mouth: 1 });
           const used = new Set(eyes[e].art.flat().filter(Boolean));
           const drawn = g.flat().filter(v => used.has(v)).length;
@@ -124,6 +143,8 @@ describe('skins', () => {
       for (const p of palettes) for (let shade = 0; shade < SHADE_COUNT; shade++) {
         const ink = withItems(shadePalette(p, shade), { ...BASE, skin: skin.id }).colors[T.EYE];
         for (const token of under) {
+          // The guy's own colours (a Cyborg's human half) are legible by the palette's own rules.
+          if (token < 101) continue;
           const hex = skin.colors[token - 101];
           if (contrast(ink, hex) < 3.5) wrong.push(`${skin.id} colour ${token - 100} vs ${p.name}/${shade}`);
         }
@@ -165,6 +186,68 @@ describe('everything worn together', () => {
     const skinned = compose({ ...config, skin: skins[0].id });
     const face = (g: PixelGrid) => g.flat().filter(v => v === T.EYE).length;
     expect(face(skinned)).toBe(face(plain));
+  });
+});
+
+describe('buddies', () => {
+  const buddies = items.filter(i => i.slot === 'buddy');
+
+  it('fit their box: at most BUDDY_BOX, 8 across and 8 tall, and at least 4 of each', () => {
+    for (const b of buddies) {
+      const art = b.art!;
+      expect(art.length).toBeLessThanOrEqual(BUDDY_BOX.height);
+      expect(art.length).toBeGreaterThanOrEqual(4);
+      expect(Math.max(...art.map(r => r.length))).toBeLessThanOrEqual(BUDDY_BOX.width);
+      expect(Math.max(...art.map(r => r.length))).toBeGreaterThanOrEqual(4);
+      // Solid enough to read as a shape, not a scatter of pixels.
+      expect(art.flat().filter(Boolean).length).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  // The rule: a buddy stands apart, a clear pixel (diagonals too) between its
+  // outline and the guy in every frame of every move. The moving and baked
+  // pictures are BUDDY_ROOM columns wider at most, and there every head and
+  // skin has the room (`buddyBeside`). His 16x16 icon has none, so it leaves
+  // the buddy out.
+  const BOX = Array.from({ length: BUDDY_BOX.height }, () => new Array<number>(BUDDY_BOX.width).fill(1));
+  const all = [...heads.map((_, head) => ({ head })), ...skins.map(s => ({ skin: s.id }))];
+
+  it('are left off his 16x16 icon, flipped or not', () => {
+    const wrong: string[] = [];
+    for (const body of all) for (const flip of [false, true]) for (const b of buddies) {
+      if (JSON.stringify(guy({ ...body, flip, buddy: b.id })) !== JSON.stringify(guy({ ...body, flip }))) wrong.push(`${b.id} on ${JSON.stringify(body)}`);
+    }
+    expect(wrong).toEqual([]);
+  }, 60_000);
+
+  it('stand apart from him, a clear pixel between, within BUDDY_ROOM more columns', () => {
+    const wrong: string[] = [];
+    for (const body of all) for (let feet = 0; feet < FOOT_STYLES.length; feet++) for (const arms of [0, 1, 2]) for (const flip of [false, true]) {
+      const room = movesRoom({ ...BASE, ...body, feet, arms, flip }).map(row => [...row, ...new Array<boolean>(GRID_SIZE + BUDDY_ROOM - row.length).fill(false)]);
+      const spot = buddySpot(BOX, room);
+      if (!spot.apart) { wrong.push(`${JSON.stringify(body)} feet ${feet}`); continue; }
+      // Checked again here, not by buddySpot's own rule: nothing he covers within a pixel of it.
+      for (const [x, y] of spot.cells) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (room[y + dy]?.[x + dx]) wrong.push(`${JSON.stringify(body)} touches at ${x},${y}`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  }, 60_000);
+
+  it('use a light, a mid and a dark tone of their own, so they read on light and dark guys alike', () => {
+    const lum = (hex: string) => {
+      const c = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+      return 0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2);
+    };
+    for (const b of buddies) {
+      const used = [...new Set(b.art!.flat().filter(t => t >= 101).map(t => b.colors[t - 101]))].map(lum);
+      expect(Math.max(...used) - Math.min(...used)).toBeGreaterThan(0.2);
+    }
+  });
+
+  it('are different drawings, one from another', () => {
+    const seen = new Set(buddies.map(b => JSON.stringify(b.art)));
+    expect(seen.size).toBe(buddies.length);
   });
 });
 

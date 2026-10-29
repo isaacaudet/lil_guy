@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs';
 let env: any;
 beforeEach(() => {
   const db = new Database(':memory:');
-  db.exec(readFileSync(new URL('../migrations/0001_names.sql', import.meta.url), 'utf8'));
-  env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', DB: { prepare(sql: string) {
+  for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
+  env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
     let args: any[] = [];
     const statement = { bind(...values: any[]) { args = values; return statement; },
       async first() { return db.prepare(sql).get(...args); }, async all() { return { results: db.prepare(sql).all(...args) }; },
-      async run() { const r = db.prepare(sql).run(...args); return { meta: { changes: r.changes } }; } };
+      async run() { const r = db.prepare(sql).run(...args); return { meta: { changes: r.changes, last_row_id: Number(r.lastInsertRowid) } }; } };
     return statement;
   } }, db };
 });
@@ -40,4 +40,18 @@ test('rejects cross-origin writes and malformed keys', async () => {
   expect((await call('/tester','POST',{Origin:'https://other.test'})).status).toBe(403);
   expect((await call('/UPPER','POST')).status).toBe(404);
   expect((await call('/tester','PUT')).status).toBe(405);
+});
+test('underscores only between letters, one at a time, and grandfathered names keep theirs', async () => {
+  for (const bad of ['/_cool', '/cool_', '/cool__guy']) expect((await call(bad, 'POST')).status).toBe(404);
+  // Claimed before underscores: `cool_guy` was kept as `coolguy`.
+  const old = await (await call('/coolguy', 'POST')).json();
+  expect((await call('/cool_guy', 'POST')).status).toBe(409);
+  expect((await call('/c_ool_guy', 'POST')).status).toBe(409);
+  // A name with underscores nobody holds finds the grandfathered guy.
+  const found = await (await call('/cool_guy')).json();
+  expect(found.key).toBe('coolguy'); expect(found.seed).toBe(old.seed);
+  // New underscore names, and their skeleton is then taken too.
+  expect((await call('/snow_pea', 'POST')).status).toBe(201);
+  expect((await call('/snowpea', 'POST')).status).toBe(409);
+  expect((await call('/i_saac', 'POST')).status).toBe(403);
 });

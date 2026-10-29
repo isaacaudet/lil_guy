@@ -39,11 +39,15 @@ export const mouths: Mouth[] = [
     'mmmmmm',
     '.mttm.',
   ]),
+  // Open, a tongue in it and one fang hanging from the top.
   mouth('fang', [
-    'm..m',
-    '.mw.',
+    'mmmm',
+    'mwtm',
+    '.mm.',
   ]),
+  // Lopsided, and a row lower than the rest, clear of the eyes.
   mouth('smirk', [
+    '....',
     '...m',
     'mmm.',
   ]),
@@ -55,10 +59,10 @@ export const mouths: Mouth[] = [
   mouth('tiny', [
     '.mm.',
   ]),
+  // A wavy, giddy line.
   mouth('wobble', [
-    'm.mm.m',
-    '.m..m.',
-    '..tt..',
+    'm.m.m.',
+    '.m.m.m',
   ]),
   mouth('toothy', [
     'mwwwwm',
@@ -68,17 +72,74 @@ export const mouths: Mouth[] = [
     'mmmm',
     '..t.',
   ]),
+  // A level line over a soft pink lip: content, not bored.
   mouth('flat', [
     'mmmm',
+    '.tt.',
   ]),
+  // Teeth clenched in a big, sheepish grin: one white bar, rounded off.
   mouth('gritted', [
-    'mmmmmm',
-    'mwmwmm',
+    '.mmmm.',
+    'mwwwwm',
+    '.mmmm.',
   ]),
-  // A round pink bubble with a shine, beside a small mouth.
+  // Blowing a round pink bubble, with a shine on it.
   mouth('bubblegum', [
-    '...cc.',
-    'mm.cwc',
-    '...cc.',
+    '.cccc.',
+    'cwcccc',
+    '.cccc.',
+  ]),
+  // Buck teeth, framed by the mouth so they show on a white guy too.
+  mouth('bunny', [
+    'mmmm',
+    'mwwm',
+  ]),
+  // A grin with two fangs at its corners.
+  mouth('vampire', [
+    'm....m',
+    'mwmmwm',
+    '.mmmm.',
+  ]),
+  mouth('wide', [
+    'm....m',
+    '.mmmm.',
+  ]),
+  // Chase mouths, one guy in several hundred.
+  // An open grin, one of its teeth gold.
+  mouth('gold tooth', [
+    'm....m',
+    'mwwywm',
+    '.mmmm.',
+  ]),
+  // A grin full of gold.
+  mouth('grillz', [
+    'mmmmmm',
+    'myYyYm',
+    '.mmmm.',
+  ]),
+  // A handlebar curled up at both ends, in the face's ink, so a dark guy's is a dashing white.
+  mouth('mustache', [
+    'mm..mm',
+    'mmmmmm',
+    '..mm..',
+  ]),
+  // The anime set: never dealt, only unlocked from a capsule (CAPSULE_ONLY in ./weights).
+  // Puckered up for a kiss, a little 3.
+  mouth('kissy', [
+    'mm',
+    '.m',
+    'mm',
+  ]),
+  // Wide open and shouting for joy, a triangle with a tongue in it.
+  mouth('yay', [
+    'mmmmm',
+    '.mtm.',
+    '..m..',
+  ]),
+  // Tehe: a smile with the tip of the tongue poking out of one corner.
+  mouth('tehe', [
+    'm....m',
+    '.mmmm.',
+    '...tt.',
   ]),
 ];

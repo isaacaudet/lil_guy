@@ -1,6 +1,6 @@
 import { resolve } from './resolve';
 import { dress, withItems } from './items';
-import { paint } from './paint';
+import { paint, SMALL_SIZE } from './paint';
 import { compose } from './compose';
 import { paletteOf } from './palette';
 import type { RenderOptions } from './types';
@@ -41,18 +41,35 @@ function escapeText(value: string): string {
  * sits next to the name it stands for. Pass `title` when it is the only thing
  * identifying that person.
  */
+/** The smallest square round the drawn pixels, centred on them, kept inside the grid. */
+function bounds(colors: (string | null)[][], margin: number): { x: number; y: number; side: number } {
+  let left = GRID_SIZE, right = -1, top = GRID_SIZE, bottom = -1;
+  colors.forEach((row, y) => row.forEach((c, x) => {
+    if (!c) return;
+    left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+  }));
+  if (right < 0) return { x: 0, y: 0, side: GRID_SIZE };
+  const side = Math.min(GRID_SIZE, Math.max(right - left, bottom - top) + 1 + margin);
+  const at = (lo: number, hi: number) => Math.max(0, Math.min(GRID_SIZE - side, Math.floor((lo + hi + 1 - side) / 2)));
+  return { x: at(left, right), y: at(top, bottom), side };
+}
+
 export function toSvgString(input: string, options: RenderOptions = {}): string {
   const config = dress(resolve(input, options.parts), options, input);
   const palette = withItems(options.palette ?? paletteOf(config), config);
-  const colors = paint(compose(config), config, palette);
   const size = options.size ?? 128;
-  const pixelSize = size / GRID_SIZE;
+  const small = options.small ?? size <= SMALL_SIZE;
+  const colors = paint(compose(config), config, palette, small);
+  // Small, he fills the square: the empty rows and columns round him go.
+  // A round avatar keeps a margin so the circle doesn't clip his corners.
+  const box = small ? bounds(colors, options.square ? 0 : 3) : { x: 0, y: 0, side: GRID_SIZE };
+  const pixelSize = size / box.side;
 
   const rects: string[] = [];
   for (let y = 0; y < GRID_SIZE; y++) {
     for (const run of rowRuns(colors, y)) {
       rects.push(
-        `<rect x="${run.x * pixelSize}" y="${y * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`
+        `<rect x="${(run.x - box.x) * pixelSize}" y="${(y - box.y) * pixelSize}" width="${run.width * pixelSize}" height="${pixelSize}" fill="${run.color}"/>`
       );
     }
   }

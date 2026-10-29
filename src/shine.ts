@@ -1,5 +1,6 @@
 import { FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type AnimationFrame } from './animate';
-import type { Finish, Owned } from './owned';
+import { finishColor, GLSL_COMMON, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, toByte } from './finish-shader';
+import type { Owned } from './owned';
 import type { AvatarConfig } from './types';
 
 /**
@@ -14,44 +15,64 @@ import type { AvatarConfig } from './types';
  * returns null; draw the frame's colours as they are.
  */
 
-const FINISH_ORDER: Finish[] = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
-
 /**
- * A frame as the shader reads it: its colours, and for each pixel the finish,
- * scuff and print of the copy it belongs to. Two RGBA byte arrays, 16×20.
+ * A frame as the shader reads it: its colours; for each pixel the finish,
+ * scuff and print of the copy it belongs to; and each pixel's noise. Three
+ * RGBA byte arrays, the frame's size (16×20, wider with a buddy).
  */
-export function shineData(frame: AnimationFrame, owned: AvatarConfig['owned'] = {}): { colors: Uint8Array; info: Uint8Array } {
-  const colors = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
-  const info = new Uint8Array(FRAME_WIDTH * FRAME_HEIGHT * 4);
+export function shineData(frame: AnimationFrame, owned: AvatarConfig['owned'] = {}): { colors: Uint8Array; info: Uint8Array; noise: Uint8Array } {
+  const W = frame.colors[0].length;
+  const colors = new Uint8Array(W * FRAME_HEIGHT * 4);
+  const info = new Uint8Array(W * FRAME_HEIGHT * 4);
+  const noise = new Uint8Array(W * FRAME_HEIGHT * 4);
   frame.colors.forEach((row, y) => row.forEach((c, x) => {
     if (!c) return;
-    const i = (y * FRAME_WIDTH + x) * 4;
+    const i = (y * W + x) * 4;
     colors.set([parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16), 255], i);
     const slot = frame.slots[y][x];
     const copy: Owned | undefined = slot ? owned?.[FRAME_SLOTS[slot - 1]] : undefined;
-    if (copy) info.set([(FINISH_ORDER.indexOf(copy.finish) + 1) * 32, Math.round(copy.scuff * 255), Math.floor(copy.print / 4), 255], i);
+    const finish = copy ? SHADER_FINISHES.indexOf(copy.finish as (typeof SHADER_FINISHES)[number]) : -1;
+    if (copy && finish >= 0) {
+      const print = Math.floor(copy.print / 4);
+      info.set([(finish + 1) * 32, Math.round(copy.scuff * 255), print, 255], i);
+      noise[i] = noiseOf(x, y, print * 4);
+    }
   }));
-  return { colors, info };
+  return { colors, info, noise };
+}
+
+/** Whether any pixel of the frame belongs to a copy with a finish that shimmers. */
+export const shines = (frame: AnimationFrame, owned: AvatarConfig['owned'] = {}) =>
+  frame.slots.some(row => row.some(slot => slot > 0 && SHADER_FINISHES.includes(owned?.[FRAME_SLOTS[slot - 1]]?.finish as (typeof SHADER_FINISHES)[number])));
+
+/**
+ * The shader's picture, in plain code: the frame with each copy's finish
+ * running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
+ */
+export function shineFrame(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): Uint8ClampedArray {
+  const { colors, info, noise } = shineData(frame, owned);
+  const out = new Uint8ClampedArray(colors);
+  const time = loopSeconds(ms), W = frame.colors[0].length;
+  for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
+    const finish = Math.floor(info[i] / 32 + 0.5) - 1;
+    const c = finishColor([colors[i] / 255, colors[i + 1] / 255, colors[i + 2] / 255], finish, info[i + 1] / 255, noise[i] / 255, x + y, y, info[i + 2] * 4, time, 0);
+    out[i] = toByte(c[0]); out[i + 1] = toByte(c[1]); out[i + 2] = toByte(c[2]);
+  }
+  return out;
 }
 
 const VERTEX = 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }';
 
-const FRAGMENT = `
-precision mediump float;
+/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds, \`res\` the frame's size. */
+export const SHINE_FRAGMENT = `${GLSL_PRECISION}
 varying vec2 uv;
-uniform sampler2D base, info;
+uniform sampler2D base, info, noise;
 uniform float time;
-float hash(vec2 c, float p) { return fract(sin(dot(c, vec2(127.1, 311.7)) + p * 0.731) * 43758.5453); }
-vec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
-vec3 hueShift(vec3 c, float a) {
-  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
-  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
-  vec3 yiq = toYIQ * c;
-  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);
-  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));
-}
+uniform vec2 res;
+${GLSL_COMMON}
 void main() {
-  vec2 res = vec2(${FRAME_WIDTH}.0, ${FRAME_HEIGHT}.0);
   vec2 cell = floor(uv * res);
   vec2 at = (cell + 0.5) / res;
   vec4 b = texture2D(base, at);
@@ -59,25 +80,12 @@ void main() {
   vec3 c = b.rgb;
   vec4 k = texture2D(info, at);
   float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;
-  if (k.a > 0.5 && finish >= 0.0) {
-    float scuff = k.g, print = floor(k.b * 255.0 + 0.5) * 4.0;
-    float d = cell.x + cell.y, h = hash(cell, print);
-    float band = 1.0 - clamp(abs(mod(d - time * 10.0 + print, 58.0) - 29.0) - 0.5, 0.0, 1.0);
-    float twinkle = step(0.965, fract(h * 13.0 + time * 0.37));
-    float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);
-    if (finish < 0.5) c += band * 0.45 * step(scuff, 0.07);
-    else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * 3.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + band * 0.5 * coat; }
-    else if (finish < 2.5) c += twinkle * 0.55 * coat + band * 0.25 * coat;
-    else if (finish < 3.5) { c = hueShift(c, (time * 0.9 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }
-    else if (finish < 4.5) { vec3 rain = hsv(vec3(fract(d * 0.07 - time * 0.3 + print * 0.013), 0.65, 1.0)); c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat); }
-    else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * band * coat + 0.07 * sin(time * 2.0 + d * 0.5) * coat;
-    else c += band * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;
-  }
+  if (k.a > 0.5 && finish >= 0.0) c = finishColor(c, finish, k.g, texture2D(noise, at).r, cell.x + cell.y, cell.y, floor(k.b * 255.0 + 0.5) * 4.0, time, 0.0);
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
 
 export interface Shine {
-  /** The 16×20 canvas the shader draws into; copy it out with drawImage. */
+  /** The canvas the shader draws into, the size of the last frame drawn (16×20, wider with a buddy); copy it out with drawImage. */
   canvas: HTMLCanvasElement | OffscreenCanvas;
   /** Draws a frame with its copies' finishes `ms` into the shimmer. */
   draw(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): void;
@@ -96,7 +104,7 @@ export function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine
   const shader = (type: number, source: string) => { const s = gl.createShader(type)!; gl.shaderSource(s, source); gl.compileShader(s); return s; };
   const program = gl.createProgram()!;
   gl.attachShader(program, shader(gl.VERTEX_SHADER, VERTEX));
-  gl.attachShader(program, shader(gl.FRAGMENT_SHADER, FRAGMENT));
+  gl.attachShader(program, shader(gl.FRAGMENT_SHADER, SHINE_FRAGMENT));
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
   gl.useProgram(program);
@@ -107,8 +115,8 @@ export function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine
   gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
   gl.uniform1i(gl.getUniformLocation(program, 'base'), 0);
   gl.uniform1i(gl.getUniformLocation(program, 'info'), 1);
-  const time = gl.getUniformLocation(program, 'time');
-  gl.viewport(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+  gl.uniform1i(gl.getUniformLocation(program, 'noise'), 2);
+  const time = gl.getUniformLocation(program, 'time'), res = gl.getUniformLocation(program, 'res');
 
   const texture = (unit: number) => {
     const t = gl.createTexture();
@@ -118,18 +126,21 @@ export function createShine(canvas?: HTMLCanvasElement | OffscreenCanvas): Shine
     for (const k of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE);
     return t;
   };
-  const textures = [texture(0), texture(1)];
+  const textures = [texture(0), texture(1), texture(2)];
 
   return {
     canvas: target,
     draw(frame, owned, ms) {
-      const { colors, info } = shineData(frame, owned);
-      [colors, info].forEach((bytes, unit) => {
+      const { colors, info, noise } = shineData(frame, owned), W = frame.colors[0].length;
+      if (target.width !== W) target.width = W;
+      gl.viewport(0, 0, W, FRAME_HEIGHT);
+      [colors, info, noise].forEach((bytes, unit) => {
         gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, FRAME_WIDTH, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
       });
-      gl.uniform1f(time, ms / 1000);
+      gl.uniform1f(time, loopSeconds(ms));
+      gl.uniform2f(res, W, FRAME_HEIGHT);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
