@@ -37,7 +37,11 @@ function palette(frames: Uint8ClampedArray[]): number[] {
     const c = (f[i] << 16) | (f[i + 1] << 8) | f[i + 2];
     counts.set(c, (counts.get(c) || 0) + 1);
   }
-  const all = [...counts.entries()];
+  return medianCut([...counts.entries()]);
+}
+
+/** Up to 255 colours standing for these colours and how often each is used, by median cut. */
+function medianCut(all: [number, number][]): number[] {
   if (all.length <= 255) return all.map(([c]) => c);
   type Box = [number, number][];
   const ch = (c: number, k: number) => (c >> (16 - 8 * k)) & 255;
@@ -92,12 +96,28 @@ function nearestIn(table: number[]): (c: number) => number {
  * colours, so a picture that has been served exact stays exact.
  */
 export function fewerColours(input: Frames): Frames {
-  const table = [0, ...palette(input.frames)], indexOf = nearestIn(table);
+  // Colours gathered into 32,768 bins (five bits a channel), each standing as its pixels' average: a
+  // big card's tens of thousands of colours are counted and mapped by table, not one by one.
+  const counts = new Uint32Array(32768), sums = new Float64Array(32768 * 3), seen = new Set<number>();
+  for (const f of input.frames) for (let i = 0; i < f.length; i += 4) {
+    if (f[i + 3] < 128) continue;
+    if (seen.size <= 255) seen.add((f[i] << 16) | (f[i + 1] << 8) | f[i + 2]);
+    const b = ((f[i] >> 3) << 10) | ((f[i + 1] >> 3) << 5) | (f[i + 2] >> 3);
+    counts[b]++; sums[b * 3] += f[i]; sums[b * 3 + 1] += f[i + 1]; sums[b * 3 + 2] += f[i + 2];
+  }
+  // Few enough already: nothing to lose.
+  if (seen.size <= 255) return input;
+  const mean = (b: number) => (Math.round(sums[b * 3] / counts[b]) << 16) | (Math.round(sums[b * 3 + 1] / counts[b]) << 8) | Math.round(sums[b * 3 + 2] / counts[b]);
+  const all: [number, number][] = [];
+  for (let b = 0; b < 32768; b++) if (counts[b]) all.push([mean(b), counts[b]]);
+  const table = [0, ...medianCut(all)], indexOf = nearestIn(table), ofBin = new Int32Array(32768).fill(-1);
   const frames = input.frames.map(f => {
     const out = new Uint8ClampedArray(f.length);
     for (let i = 0; i < f.length; i += 4) {
       if (f[i + 3] < 128) continue;
-      const c = table[indexOf((f[i] << 16) | (f[i + 1] << 8) | f[i + 2])];
+      const b = ((f[i] >> 3) << 10) | ((f[i + 1] >> 3) << 5) | (f[i + 2] >> 3);
+      let c = ofBin[b];
+      if (c < 0) c = ofBin[b] = table[indexOf(mean(b))];
       out[i] = c >> 16; out[i + 1] = (c >> 8) & 255; out[i + 2] = c & 255; out[i + 3] = 255;
     }
     return out;

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
+</head>
+<body>
+<title>Lil Guy Formats</title>
+<meta name="description" content="Every way a DLE Club game can show a player's lil guy: each view at its real size, the sizes games use, and the address and HTML to copy.">
+<style>
+  @font-face { font-family: "m6x11plus"; src: url("../fonts/m6x11plus.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+  :root {
+    color-scheme: dark;
+    --bg: #131726; --panel: #232a40; --panel-2: #2e3752; --well: #0c0f1a; --edge: #05060c;
+    --ink: #ffffff; --ink-2: #c6cbdb; --ink-3: #8b93aa; --paper: #ecebe4; --paper-ink: #2a2e3b;
+    --blue: #009dff; --blue-d: #005f9e; --orange: #ff9a3c; --orange-d: #a65912; --gold: #f5b143; --green: #35b07d;
+    --ts: 0 2px 0 rgba(0,0,0,.6); --lift: 0 4px 0 var(--edge);
+    --pixel: "m6x11plus", "Pixelify Sans", "Courier New", monospace;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); overflow-x: clip; }
+  body { margin: 0; color: var(--ink); font: 400 24px/1.25 var(--pixel); -webkit-font-smoothing: none; overflow-x: clip;
+    background-image: conic-gradient(from 270deg at 2px 2px, rgba(255,255,255,.035) 90deg, transparent 0); background-size: 32px 32px; }
+  [hidden] { display: none !important; }
+  a { color: inherit; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; padding: 0; }
+  :focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1216px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 48px; }
+  h1, h2 { margin: 0; font-weight: 400; text-shadow: var(--ts); text-wrap: balance; }
+  h1 { font-size: 48px; line-height: 1; }
+  h2 { font-size: 32px; line-height: 1.1; margin: 40px 0 8px; }
+  p { margin: 0; }
+  .lede { color: var(--ink-2); font-size: 16px; line-height: 1.5; max-width: 62ch; margin-top: 8px; }
+  .lede code, td code, .note code { font: 13px/1.4 var(--mono); color: var(--ink); background: var(--well); padding: 1px 5px; border-radius: 4px; }
+  header { display: flex; align-items: center; gap: 12px; height: 72px; }
+  header a { font-size: 16px; color: var(--ink-3); text-decoration: none; }
+  header a:hover { color: var(--ink); }
+  header .home { font-size: 32px; color: var(--ink); text-shadow: var(--ts); }
+  header .right { margin-left: auto; display: flex; gap: 16px; }
+
+  .ask { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 24px 0 8px; }
+  .ask input { flex: 1 1 220px; min-width: 0; height: 48px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--well); box-shadow: inset 0 0 0 2px var(--panel-2); font-size: 24px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 20px; border-radius: 10px; font-size: 24px; color: #fff; background: var(--blue); box-shadow: 0 4px 0 var(--blue-d); text-shadow: var(--ts); position: relative; top: 0; }
+  .btn:active { top: 3px; box-shadow: 0 1px 0 var(--blue-d); }
+  .who { font-size: 16px; color: var(--ink-3); min-height: 20px; }
+  .who b { color: var(--ink); font-weight: 400; }
+  .toggle { display: inline-flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--well); }
+  .toggle button { height: 32px; padding: 0 10px; border-radius: 7px; font-size: 16px; color: var(--ink-3); }
+  .toggle button[aria-pressed="true"] { background: var(--panel-2); color: var(--ink); box-shadow: 0 2px 0 var(--edge); }
+
+  /* every view, on light and on dark */
+  .views { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 16px; }
+  .view { background: var(--panel); border-radius: 12px; box-shadow: var(--lift); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  h3 { margin: 0; font-size: 24px; font-weight: 400; text-shadow: var(--ts); }
+  .view.wide, .place.wide { grid-column: 1 / -1; }
+  .dim code { font: 13px/1.4 var(--mono); color: var(--ink-2); }
+  .view.wide .stage { min-height: 220px; }
+  .dim { font-size: 16px; color: var(--ink-3); }
+  .view .use { font-size: 16px; color: var(--ink-2); line-height: 1.4; }
+  .stages { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stage { border-radius: 8px; min-height: 120px; display: flex; align-items: flex-end; justify-content: center; gap: 14px; padding: 12px; flex-wrap: wrap; overflow: hidden; }
+  .stage.light { background: var(--paper); color: var(--paper-ink); }
+  .stage.dark { background: var(--well); }
+  .stage figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .stage figcaption { font-size: 16px; opacity: .7; }
+  .stage img { image-rendering: pixelated; display: block; }
+  .links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 16px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); color: var(--ink-2); }
+  .chip:hover { color: #fff; }
+  .chip.copied { background: var(--green); color: #fff; }
+  .url { font: 12px/1.45 var(--mono); color: var(--ink-2); background: var(--well); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; }
+
+  /* the places games put a guy */
+  .places { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+  .place { background: var(--panel); border-radius: 12px; box-shadow: var(--lift); padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .place .stage { min-height: 96px; align-items: center; justify-content: flex-start; }
+  .mock { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+  .mock .sc { margin-left: auto; font-variant-numeric: tabular-nums; }
+  pre { margin: 0; font: 12px/1.45 var(--mono); color: var(--ink-2); background: var(--well); border-radius: 8px; padding: 10px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  table { width: 100%; border-collapse: collapse; font: 14px/1.4 var(--mono); }
+  th { text-align: left; font: 400 16px var(--pixel); color: var(--ink-3); padding: 8px; }
+  td { padding: 8px; border-top: 1px solid rgba(255,255,255,.08); color: var(--ink-2); vertical-align: top; }
+  .scroll { overflow-x: auto; background: var(--panel); border-radius: 12px; box-shadow: var(--lift); }
+  .note { font-size: 16px; color: var(--ink-3); line-height: 1.5; margin-top: 12px; max-width: 70ch; }
+  footer { color: var(--ink-3); font-size: 16px; margin-top: 48px; }
+  @media (max-width: 480px) { h1 { font-size: 32px; } .stages { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="home" href="../">Lil Guys</a>
+    <span class="right"><a href="https://github.com/isaacaudet/lil_guy/blob/main/GAMES.md">GAMES.md</a></span>
+  </header>
+
+  <h1>Formats for games</h1>
+  <p class="lede">Any player's lil guy, from one address. Type a name: a claimed one shows as it's worn, any other name shows the guy it deals. Each picture plays by itself in a plain <code>&lt;img&gt;</code>.</p>
+
+  <form class="ask" id="ask">
+    <input id="name" value="isaac" maxlength="40" spellcheck="false" autocomplete="off" aria-label="A player's name">
+    <button class="btn" type="submit">Show</button>
+    <span class="toggle" role="group" aria-label="Moving or still">
+      <button type="button" id="moving" aria-pressed="true">Moving</button>
+      <button type="button" id="still" aria-pressed="false">Still</button>
+    </span>
+  </form>
+  <p class="who" id="who" aria-live="polite"></p>
+
+  <h2>Where it goes</h2>
+  <p class="lede">The sizes the club's games use, each one line of script: <code>LilGuys.lilGuyImg(name, 'row')</code>.</p>
+  <div class="places" id="places"></div>
+
+  <h2>Every view</h2>
+  <p class="lede">At 1× and at a size you'd show it. Every view comes as <code>.png</code> (animated when it moves), <code>.gif</code>, and a sprite sheet with its frame times.</p>
+  <div class="views" id="views"></div>
+
+  <h2>Sizes</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>View</th><th>1×</th><th>Moves</th><th>Use it for</th></tr></thead>
+    <tbody id="sizes"></tbody>
+  </table></div>
+  <p class="note">Ask for <code>@1</code> and scale it up in CSS with <code>image-rendering: pixelated</code>: as sharp at any whole-number size, a fraction of the bytes. <code>@2</code> to <code>@16</code> are for places that don't run CSS (Discord, email). Addresses under <code>/g/latest/</code> always find today's art.</p>
+
+  <h2>A whole board in one read</h2>
+  <p class="lede"><code>GET /api/club/batch?names=…</code> (up to 100) answers every name's guy, claimed or not, with ready addresses: <code>LilGuys.lilGuysFor(names)</code>.</p>
+  <pre id="batch">…</pre>
+
+  <footer>Every picture here comes from the lil guys Worker as a game would get it. <a href="https://github.com/isaacaudet/lil_guy/blob/main/GAMES.md">GAMES.md</a> has the snippets for HTML, canvas games, the iOS apps, Twitch chat and share cards.</footer>
+</div>
+
+<script src="../lilguys.js"></script>
+<script>
+  const L = window.LilGuys;
+  // On the lil guys site (or a local Worker) the pictures come from here; anywhere else, from the live site.
+  const HOST = /^(lilguys\.|localhost$|127\.0\.0\.1$)/.test(location.hostname) || location.hostname.endsWith('.test') ? location.origin : L.LILGUYS_HOST;
+  L.setLilGuysHost(HOST);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  const VIEWS = [
+    { view: 'icon', use: 'Menus, nav bars, chat at 16 to 32 px.', show: 2 },
+    { view: 'face', use: 'Leaderboard rows, chat lines, party chips at 20 to 48 px.', show: 3 },
+    { view: 'idle', use: 'Results and lobbies: him with his buddy, moving. Any move works: hop, wave, cheer, dance…', show: 4 },
+    { view: 'still', use: 'Dense lists that shouldn’t move.', show: 3, stillOnly: true },
+    { view: 'pfp', use: 'Profile pictures and round crops; Discord.', show: 3 },
+    { view: 'card', use: 'The small card face in lists and lockers.', show: 3 },
+    { view: 'art', use: 'His big card’s window alone: a square header or share picture.', show: 2, wide: true },
+    { view: 'card-full', use: 'His whole big card: a player page or a share.', show: 2, wide: true },
+  ];
+  const SIZE = { icon: '16 × 16', face: '14 × 14', idle: '22 × 20 (34 × 20 with a buddy)', still: '22 × 20 (34 × 20 with a buddy)', pfp: '20 to 34, square', card: '26 × 42', art: '128 × 128', 'card-full': '140 × 204' };
+  const PLACES = [
+    ['menu', 'A menu', '32 px icon'],
+    ['chat', 'A chat line', '28 px face'],
+    ['row', 'A leaderboard row', '42 px face'],
+    ['results', 'Results', '80 px tall'],
+    ['profile', 'A profile', '96 px square'],
+    ['card', 'A card in a list', '78 × 126'],
+    ['card-full', 'A player page', '280 × 408'],
+  ];
+  let moving = true, who = 'isaac', info = null;
+
+  const copy = (btn, text) => {
+    navigator.clipboard?.writeText(text).then(() => { const was = btn.textContent; btn.textContent = 'Copied'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = was; btn.classList.remove('copied'); }, 1200); });
+  };
+  const viewName = v => (moving || v === 'still' ? v : v === 'idle' ? 'still' : v + '-still');
+  // HTML to paste: the name's stable address (it follows what he wears and the art version), sized for the place.
+  const snippet = (name, place) => {
+    const p = L.LIL_GUY_PRESETS[place], view = viewName(p.view), box = L.lilGuySize(view, p.scale, info?.wide);
+    const url = L.lilGuyUrl(name, view, { version: 'latest' });
+    return `<img src="${esc(url)}"${box.width ? ` width="${box.width}"` : ''} height="${box.height}" alt="${esc(name)}"\n     loading="lazy" decoding="async" style="image-rendering:pixelated">`;
+  };
+
+  function img(name, view, scale) {
+    const el = L.lilGuyImg(info ?? name, view, { size: scale, alt: '' });
+    return el;
+  }
+
+  function draw() {
+    const name = who;
+    $('places').replaceChildren(...PLACES.map(([place, label, size]) => {
+      const p = L.LIL_GUY_PRESETS[place], view = viewName(p.view);
+      const card = document.createElement('div');
+      card.className = place === 'card-full' ? 'place wide' : 'place';
+      card.innerHTML = `<div class="top"><h3>${label}</h3> <span class="dim">${size} · <code>'${place}'</code></span></div>
+        <div class="stages"><div class="stage light"><div class="mock"></div></div><div class="stage dark"><div class="mock"></div></div></div>
+        <pre></pre><div class="links"><button class="chip" type="button">Copy HTML</button><button class="chip" type="button">Copy URL</button></div>`;
+      card.querySelectorAll('.mock').forEach(m => {
+        m.append(img(name, view, p.scale));
+        if (place === 'row' || place === 'chat' || place === 'menu') m.insertAdjacentHTML('beforeend', `<span>${esc(info?.name ?? name)}</span>`);
+      });
+      const html = snippet(name, place);
+      card.querySelector('pre').textContent = html;
+      const [h, u] = card.querySelectorAll('.chip');
+      h.onclick = () => copy(h, html);
+      u.onclick = () => copy(u, L.lilGuyUrl(name, view, { version: 'latest' }));
+      return card;
+    }));
+
+    $('views').replaceChildren(...VIEWS.map(({ view: base, use, show, stillOnly, wide }) => {
+      const view = stillOnly ? base : viewName(base);
+      const card = document.createElement('div');
+      card.className = wide ? 'view wide' : 'view';
+      card.innerHTML = `<div class="top"><h3>${view}</h3><span class="dim">${SIZE[base]}</span></div><p class="use">${use}</p>
+        <div class="stages"><div class="stage light"></div><div class="stage dark"></div></div>
+        <div class="url"></div><div class="links"></div>`;
+      card.querySelectorAll('.stage').forEach(stage => {
+        for (const s of [1, show]) {
+          const fig = document.createElement('figure');
+          fig.append(img(name, view, s));
+          fig.insertAdjacentHTML('beforeend', `<figcaption>${s}×</figcaption>`);
+          stage.append(fig);
+        }
+      });
+      const target = name;
+      card.querySelector('.url').textContent = L.lilGuyUrl(target, view, { version: 'latest' });
+      const links = card.querySelector('.links');
+      for (const [label, opts] of [['PNG', {}], ['GIF', { format: 'gif' }], ['Sheet', { format: 'sheet' }], ['Frames', { format: 'json' }], ['PNG 4×', { scale: 4 }]]) {
+        const b = document.createElement('button');
+        b.className = 'chip'; b.type = 'button'; b.textContent = label;
+        b.title = 'Copy the address';
+        b.onclick = () => copy(b, L.lilGuyUrl(target, view, { version: 'latest', ...opts }));
+        links.append(b);
+      }
+      return card;
+    }));
+
+    $('sizes').innerHTML = VIEWS.map(({ view, use }) => `<tr><td><code>${view}</code>${view === 'still' ? '' : `, <code>${view === 'idle' ? 'still' : view + '-still'}</code>`}</td><td>${SIZE[view]}</td><td>${view === 'still' ? 'no' : 'yes'}</td><td>${use}</td></tr>`).join('');
+  }
+
+  async function show(name) {
+    who = name.trim() || 'isaac';
+    info = null;
+    $('who').textContent = 'Looking…';
+    draw();
+    try {
+      const res = await fetch(`${HOST}/api/club/batch?names=${encodeURIComponent(who)}`);
+      const body = res.ok ? await res.json() : null;
+      info = body?.guys?.[who.toLowerCase()] ?? null;
+      const short = body && JSON.parse(JSON.stringify(body, (k, v) => (typeof v === 'string' && v.length > 72 ? v.slice(0, 60) + '…' : v)));
+      $('batch').textContent = short ? JSON.stringify(short, null, 2) : 'Couldn’t reach the lil guys Worker.';
+    } catch { $('batch').textContent = 'Couldn’t reach the lil guys Worker.'; }
+    $('who').innerHTML = info ? (info.claimed ? `<b>${esc(info.name)}</b> is claimed: shown as it's worn${info.founder ? ', the founder' : ''}.` : `<b>${esc(who)}</b> isn't claimed: this is the guy the name deals.`) : '';
+    if (info) draw();
+  }
+
+  $('ask').addEventListener('submit', e => { e.preventDefault(); show($('name').value); });
+  $('moving').onclick = () => { moving = true; $('moving').setAttribute('aria-pressed', 'true'); $('still').setAttribute('aria-pressed', 'false'); draw(); };
+  $('still').onclick = () => { moving = false; $('still').setAttribute('aria-pressed', 'true'); $('moving').setAttribute('aria-pressed', 'false'); draw(); };
+  const asked = new URLSearchParams(location.search).get('name');
+  if (asked) $('name').value = asked;
+  show($('name').value);
+</script>
+
+</body>
+</html>

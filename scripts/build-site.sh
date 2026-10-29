@@ -8,4 +8,4 @@ cp docs/lilguys.js site/lilguys.js
 cp docs/lilguys.mjs site/lilguys.mjs
 cp docs/fonts/* site/fonts/
 cp docs/showcase/*.html site/showcase/
-sed -e 's|../lil-guy.js|/lil-guy.js|g' -e 's|../fonts/|/fonts/|g' docs/showcase/promo.html > site/index.html
+sed -e 's|../lil-guy.js|/lil-guy.js|g' -e 's|../fonts/|/fonts/|g' -e 's|href="formats.html"|href="/showcase/formats.html"|g' docs/showcase/promo.html > site/index.html

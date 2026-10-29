@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime3 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -1675,7 +1675,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime3.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -2564,6 +2564,169 @@ declare function bakeView(spec: CardSpec, view: string): Frames | null;
 declare function defineLilGuyHere(options?: Omit<LilGuyOptions, 'bake'>): void;
 
 //#endregion
+//#region src/kit.d.ts
+/**
+ * The lil guys kit for a game: a player's guy anywhere from one address or one line, with nothing of
+ * the library on the page. Every picture comes from the lil guys Worker (`/g/`), finished and cached
+ * for good, and plays in a plain `<img>`, so a board of a hundred animates with no script per frame.
+ * GAMES.md has where each view goes.
+ *
+ *   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/13/~Sneaky%20Gumdrop/face.png
+ *   row.prepend(lilGuyImg('mia', 'row'))               → an <img> sized for a board's row
+ *   const guys = await lilGuysFor(['mia', 'theo'])     → each name's code, claimed or not, in one read
+ *
+ * The served copy (`/lilguys.js` as a classic script, `/lilguys.mjs` as a module) knows its own host;
+ * a copy bundled from the library talks to `LILGUYS_HOST` unless told otherwise (`setLilGuysHost`).
+ */
+/** The lil guys Worker. */
+declare const LILGUYS_HOST = "https://lilguys.dleclub.com";
+/** Where the helpers send for pictures when a call doesn't say: a local Worker while developing, say. */
+declare function setLilGuysHost(host: string): void;
+/** The host the helpers use. */
+declare const lilGuysHost: () => string;
+/** One player's guy as the batch read gives him (`lilGuysFor`). */
+interface LilGuyInfo {
+  /** Whether the name is claimed on the lil guys site. */
+  claimed: boolean;
+  /** The name to show: `@name` for a claimed one, else the name as asked (lowercased). */
+  name: string;
+  /** His guy code as he is worn now, for `/g/<version>/<code>/<view>`. */
+  code: string;
+  /** Whether he is the founder, the one of one. */
+  founder: boolean;
+  /** Whether his moves are drawn wide (`BAKED_SIZE.buddy`): he has a buddy beside him. */
+  wide: boolean;
+  /** Ready-made addresses for the views boards use most, at 1×. */
+  urls: {
+    icon: string;
+    face: string;
+    idle: string;
+    still: string;
+    pfp: string;
+    card: string;
+    cardFull: string;
+  };
+}
+/**
+ * A player, as the helpers take one: a name as typed (any player, claimed or not: `~name`), `@name`
+ * for a claimed name only, `{ code }` for an exact guy (`guyCode`), or what `lilGuysFor` gave.
+ */
+type Who = string | {
+  code: string;
+} | LilGuyInfo;
+/** A place in a game a guy goes, and the view and size that suit it. */
+interface LilGuyPreset {
+  /** The view (GAMES.md's table). */
+  view: string;
+  /** Screen pixels per art pixel. */
+  scale: number;
+}
+/** Where games put a guy, each with its view and size (GAMES.md, Where it goes). */
+declare const LIL_GUY_PRESETS: {
+  /** A menu or a nav bar: his icon, 32 px. */
+  readonly menu: {
+    readonly view: "icon";
+    readonly scale: 2;
+  };
+  /** A chat line: his face, 28 px. */
+  readonly chat: {
+    readonly view: "face";
+    readonly scale: 2;
+  };
+  /** A leaderboard row: his face, 42 px. */
+  readonly row: {
+    readonly view: "face";
+    readonly scale: 3;
+  };
+  /** A results screen: him idling, 80 px tall. */
+  readonly results: {
+    readonly view: "idle";
+    readonly scale: 4;
+  };
+  /** A profile: his profile picture in a 96 px square. */
+  readonly profile: {
+    readonly view: "pfp";
+    readonly scale: 3;
+  };
+  /** A card in a list: the small card face, 78 × 126. */
+  readonly card: {
+    readonly view: "card";
+    readonly scale: 3;
+  };
+  /** A player's page: the big card, 280 × 408. */
+  readonly 'card-full': {
+    readonly view: "card-full";
+    readonly scale: 2;
+  };
+};
+/** A preset's name. */
+type LilGuyPresetName = keyof typeof LIL_GUY_PRESETS;
+/** What a picture is saved as: `png` (animated when it moves), `gif`, or a game's `sheet` and its `json`. */
+type LilGuyFormat = 'png' | 'gif' | 'sheet' | 'json';
+interface LilGuyUrlOptions {
+  /** Whole pixels per art pixel, 1 to 16. Default 1: let CSS scale it (`image-rendering: pixelated`). */
+  scale?: number;
+  format?: LilGuyFormat;
+  /** The Worker; `lilGuysHost()` by default. */
+  host?: string;
+  /** The art version, or `latest`. Default the version this script was built with, which the Worker it came from serves. */
+  version?: number | 'latest';
+}
+/**
+ * A guy's picture's address: `lilGuyUrl('mia', 'face', { scale: 2, format: 'gif' })`. `view` is a view
+ * or a preset's name.
+ */
+declare function lilGuyUrl(who: Who, view?: string, {
+  scale,
+  format,
+  host,
+  version
+}?: LilGuyUrlOptions): string;
+/** A view's box at `scale`, in CSS pixels: null for the width of a move, which a buddy widens, when nothing says. */
+declare function lilGuySize(view: string, scale?: number, wide?: boolean): {
+  width: number | null;
+  height: number;
+};
+/** A 16 × 16 stand-in for when a picture can't be had: a plain lil guy's shape in grey. */
+declare const LIL_GUY_PLACEHOLDER: string;
+interface LilGuyImgOptions {
+  /** Screen pixels per art pixel, or a preset's name. Default: the preset's, else 3. */
+  size?: number | LilGuyPresetName;
+  /** What a screen reader says. Default the player's name; '' makes him decorative. */
+  alt?: string;
+  host?: string;
+  /**
+   * Offer 2× and 4× pictures for high-density screens (`srcset`). Off by default: a 1× picture
+   * scaled up with `image-rendering: pixelated` is exactly as sharp at any whole-number size, is
+   * a fraction of the bytes, and decodes a sixteenth of the pixels. Turn it on where the picture
+   * may be shown without CSS (an email, a copy pasted elsewhere).
+   */
+  srcset?: boolean;
+  /** Whether his moves are drawn wide; `lilGuysFor` says, as `wide`. */
+  wide?: boolean;
+  /** The picture's class. */
+  className?: string;
+}
+/**
+ * A ready `<img>` of a guy: `lilGuyImg('mia', 'row')` or `lilGuyImg(info, 'face', { size: 2 })`. Sized
+ * with `width` and `height` (no layout shift), pixelated, lazy, decoded off the main thread, with alt
+ * text, and a grey stand-in if the picture can't be had. Animated views play in the `<img>` itself.
+ */
+declare function lilGuyImg(who: Who, view?: string, options?: LilGuyImgOptions): HTMLImageElement;
+/** The most names one batch read takes. */
+declare const BATCH_MAX = 100;
+/**
+ * Every player on a board in one read (`GET /api/club/batch`), up to a hundred names to a request and
+ * as many requests as it takes: each name (lowercased) to its guy, claimed or not, or null when the
+ * Worker couldn't be reached. Answers are kept for the page's life, so asking again costs nothing.
+ */
+declare function lilGuysFor(names: string[], {
+  host
+}?: {
+  host?: string;
+}): Promise<Record<string, LilGuyInfo | null>>;
+
+//#endregion
 //#region src/craft.d.ts
 /**
  * Crafting, as in TF2. A copy you don't want smelts into metal, and metal
@@ -2615,5 +2778,5 @@ declare function nameKey(typed: string): string;
 declare const nameSkeleton: (key: string) => string;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

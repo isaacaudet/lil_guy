@@ -3,7 +3,7 @@ import { Database } from 'bun:sqlite';
 import { readFileSync } from 'node:fs';
 import worker, { api } from './index.js';
 import {
-  ART_VERSION, AURAS, BAKED_SIZE, bakeView, bakedImage, guyCode, readGuyCode, sheetColumns, viewSize, encodeGif, MOVES,
+  ART_VERSION, AURAS, BAKED_SIZE, animate, bakeView, bakedImage, guyCode, readGuyCode, sheetColumns, viewSize, encodeGif, MOVES,
   lilGuyUrl, lilGuyImg, lilGuysFor, setLilGuysHost, LIL_GUY_PRESETS, LIL_GUY_PLACEHOLDER, lilGuySize,
 } from '../src/index-headless.ts';
 import { playGif, playPng } from '../src/__tests__/decoders';
@@ -67,12 +67,19 @@ describe('every view in every format', () => {
     expect(icon.frames.length).toBeGreaterThan(1);
     expect(face.frames.length).toBeGreaterThan(1);
     expect(bakeView(spec, 'icon-still')!.frames[0]).toEqual(icon.frames[0]);
-    // Plain guys hop in their idle now and then: an icon keeps his feet on its bottom row.
-    for (let i = 0; i < 40; i++) for (const px of bakeView({ seed: 'g' + i }, 'icon')!.frames) {
-      let bottom = -1;
-      for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (px[(y * 16 + x) * 4 + 3] >= 128) bottom = y;
-      expect(bottom).toBe(15);
+    // Plain guys hop in their idle now and then: an icon keeps his feet on the ground in every frame.
+    for (let i = 0; i < 40; i++) {
+      const bottoms = bakeView({ seed: 'g' + i }, 'icon')!.frames.map(px => {
+        let bottom = -1;
+        for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (px[(y * 16 + x) * 4 + 3] >= 128) bottom = y;
+        return bottom;
+      });
+      expect(new Set(bottoms).size).toBe(1);
+      expect(bottoms[0]).toBeGreaterThanOrEqual(14);
     }
+    // At rest an icon is his own sixteen by sixteen, pixel for pixel.
+    const rest = animate('mia', 'idle').frames[0], still = bakeView({ seed: 'mia' }, 'icon-still')!.frames[0];
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) expect(still[(y * 16 + x) * 4 + 3] >= 128).toBe(!!rest.colors[y + 4][x]);
     // No buddy and no backdrop in a square.
     const pet = bakeView({ seed: 'Maya0', equip: ['pets.kitten~plain~0.3000000~900'] }, 'icon')!;
     expect(pet.width).toBe(16);

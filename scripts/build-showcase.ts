@@ -22,6 +22,7 @@ const PAGES: Record<string, string> = {
   review: 'Every part and item on four test guys, with what to keep, cut and add.',
   catalog: 'Everything a guy can be dealt or pull, with its odds, what is thin, and a tier above Grail.',
   voxels: 'A prototype: the same pixels as 3D figures, each finish a real material.',
+  formats: 'Every way a game can show a player\'s lil guy, live from the Worker, with the address and HTML to copy.',
 };
 
 // The shop and the promo draw the gacha machines with the locker's code, so it is shared from there.

@@ -25011,6 +25011,12 @@ function viewSize(view) {
 /** The lil guys Worker. */
 const LILGUYS_HOST = "https://lilguys.dleclub.com";
 let defaultHost = LILGUYS_HOST;
+/** Where the helpers send for pictures when a call doesn't say: a local Worker while developing, say. */
+function setLilGuysHost(host) {
+	defaultHost = host.replace(/\/+$/, "");
+}
+/** The host the helpers use. */
+const lilGuysHost = () => defaultHost;
 /** Where games put a guy, each with its view and size (GAMES.md, Where it goes). */
 const LIL_GUY_PRESETS = {
 	menu: {
@@ -25119,6 +25125,39 @@ function lilGuyImg(who, view = "row", options = {}) {
 		img.src = LIL_GUY_PLACEHOLDER;
 	}, { once: true });
 	return img;
+}
+/** The most names one batch read takes. */
+const BATCH_MAX = 100;
+const known = new Map();
+const KNOWN_MAX = 5e3;
+/**
+* Every player on a board in one read (`GET /api/club/batch`), up to a hundred names to a request and
+* as many requests as it takes: each name (lowercased) to its guy, claimed or not, or null when the
+* Worker couldn't be reached. Answers are kept for the page's life, so asking again costs nothing.
+*/
+async function lilGuysFor(names, { host = defaultHost } = {}) {
+	const asked = [...new Set(names.map((n) => String(n).toLowerCase()).filter((n) => n && !/[,/]/.test(n)))];
+	let missing = asked.filter((n) => !known.has(`${host}|${n}`));
+	if (known.size + missing.length > KNOWN_MAX) {
+		known.clear();
+		missing = asked;
+	}
+	for (let i = 0; i < missing.length; i += BATCH_MAX) {
+		const part = missing.slice(i, i + BATCH_MAX);
+		const read = fetch(`${host.replace(/\/+$/, "")}/api/club/batch?names=${part.map(encodeURIComponent).join(",")}`).then((r) => r.ok ? r.json() : null).catch(() => null);
+		for (const n of part) {
+			const one = read.then((body) => body?.guys?.[n] ?? null);
+			known.set(`${host}|${n}`, one);
+			one.then((info) => {
+				if (!info) known.delete(`${host}|${n}`);
+			});
+		}
+	}
+	const out = {};
+	await Promise.all(asked.map(async (n) => {
+		out[n] = await known.get(`${host}|${n}`) ?? null;
+	}));
+	return out;
 }
 
 //#endregion
@@ -25507,7 +25546,7 @@ function bakeSquare(spec, view, move = "idle") {
 		}
 		return out;
 	});
-	return merged(side, side, frames$1, raw.delays);
+	return fewerColours(merged(side, side, frames$1, raw.delays));
 }
 /**
 * How long each frame of a served big card shows: his move and the card's sheen at about six frames a
@@ -25930,6 +25969,7 @@ exports.ART_VERSION = ART_VERSION
 exports.AURAS = AURAS
 exports.AURA_ODDS = AURA_ODDS
 exports.BAKED_SIZE = BAKED_SIZE
+exports.BATCH_MAX = BATCH_MAX
 exports.BUDDY_GUY_WIDTH = BUDDY_GUY_WIDTH
 exports.CAPSULE_ONLY = CAPSULE_ONLY
 exports.CARD_EDGES = CARD_EDGES
@@ -25973,6 +26013,9 @@ exports.GUY_TIERS = GUY_TIERS
 exports.GUY_WIDTH = GUY_WIDTH
 exports.HEADROOM = HEADROOM
 exports.ICON_SIZE = ICON_SIZE
+exports.LILGUYS_HOST = LILGUYS_HOST
+exports.LIL_GUY_PLACEHOLDER = LIL_GUY_PLACEHOLDER
+exports.LIL_GUY_PRESETS = LIL_GUY_PRESETS
 exports.LOOP_MS = LOOP_MS
 exports.LUCKY_ODDS = LUCKY_ODDS
 exports.MAX_PINS = MAX_PINS
@@ -26083,6 +26126,11 @@ exports.itemById = itemById
 exports.itemFrame = itemFrame
 exports.itemWeight = itemWeight
 exports.items = items
+exports.lilGuyImg = lilGuyImg
+exports.lilGuySize = lilGuySize
+exports.lilGuyUrl = lilGuyUrl
+exports.lilGuysFor = lilGuysFor
+exports.lilGuysHost = lilGuysHost
 exports.lookFor = lookFor
 exports.lookOf = lookOf
 exports.luckyPalette = luckyPalette
@@ -26118,6 +26166,7 @@ exports.roll = roll
 exports.rollFx = rollFx
 exports.rollPart = rollPart
 exports.rollSeason = rollSeason
+exports.setLilGuysHost = setLilGuysHost
 exports.setProgress = setProgress
 exports.shadePalette = shadePalette
 exports.sheetColumns = sheetColumns

@@ -150,14 +150,16 @@ export function bakeSquare(spec: GuySpec, view: 'icon' | 'face', move: Move = 'i
   // its beats are the same, so the time into the lap finds the beat.
   const plain = animate(bare.seed, move, { ...animateOptions(without(bare, ['aura'])), rarity: false });
   const lit = plain.frames.map(rowsLit), ends: number[] = [];
+  // Where his feet are when he stands: the lowest any frame of the move reaches.
+  const ground = Math.max(...lit.map(([, bottom]) => bottom));
   plain.frames.reduce((t, f) => { ends.push(t + f.ms); return t + f.ms; }, 0);
   const liftAt = (t: number) => {
     const pos = t % plain.duration, k = ends.findIndex(e => pos < e);
-    return Math.max(0, FRAME_HEIGHT - 1 - lit[k < 0 ? 0 : k][1]);
+    return Math.max(0, ground - lit[k < 0 ? 0 : k][1]);
   };
   const side = view === 'icon' ? ICON_SIZE : FACE_SIZE;
   // An icon is his grid; a face starts at the top of his head (or hat) as he stands.
-  const rest = lit[0][0] + Math.max(0, FRAME_HEIGHT - 1 - lit[0][1]);
+  const rest = lit[0][0] + Math.max(0, ground - lit[0][1]);
   const top = view === 'icon' ? HEADROOM : Math.min(FRAME_HEIGHT - side, Math.max(0, rest));
   const left = raw.left + (FRAME_WIDTH - side) / 2, W = raw.width;
   let t = 0;
@@ -171,7 +173,8 @@ export function bakeSquare(spec: GuySpec, view: 'icon' | 'face', move: Move = 'i
     }
     return out;
   });
-  return merged(side, side, frames, raw.delays);
+  // In 255 colours at most, so a shining one packs as an indexed PNG as small as its GIF.
+  return fewerColours(merged(side, side, frames, raw.delays));
 }
 
 // ------------------------------------------------ the big card
