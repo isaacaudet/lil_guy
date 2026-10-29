@@ -1,18 +1,19 @@
 import { animate, backdropOf, AURA_PAD, HEADROOM, FRAME_HEIGHT, FRAME_WIDTH, WIDE_FRAME_WIDTH, type AnimateOptions, type AnimationFrame, type Move, MOVES } from './animate';
 import { cardFace, cardFaceAt, faceMoves, FACE_HEIGHT, FACE_WIDTH, type FaceSpec } from './card-face';
-import { cardArtFrames } from './card';
+import { cardArtFrames, cardFrames, cardPlayer, type CardInput } from './card';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
-import { encodeApng, encodeGif, encodePng, type Frames } from './gif';
+import { encodeApng, encodeGif, encodePng, fewerColours, type Frames } from './gif';
 import { decode, type Owned } from './owned';
 import { dress, itemById, withItems } from './items';
 import { LAYER } from './parts/art';
 import { paint } from './paint';
 import { paletteOf } from './palette';
 import { resolve } from './resolve';
+import { guyRank, traitOdds } from './rarity';
 import { shineFrame, shines } from './shine';
 import type { AvatarConfig } from './types';
-import { ART_VERSION, guyCode, PART_KEYS, type CardSpec, type GuySpec } from './guy-code';
+import { ART_VERSION, BAKED_SIZE, guyCode, PART_KEYS, TITLE_MAX, type CardSpec, type GuySpec } from './guy-code';
 import { defineLilGuy, type LilGuyOptions } from './element';
 
 export { ART_VERSION, guyCode, type CardSpec, type GuySpec };
@@ -96,6 +97,12 @@ export function bakeGuy(spec: GuySpec, move: Move = 'idle'): Frames {
 
 /** `bakeGuy`, and the column his frame starts at on the picture. */
 function bakeAt(spec: GuySpec, move: Move): { frames: Frames; left: number } {
+  const raw = rawFrames(spec, move);
+  return { frames: merged(raw.width, GUY_HEIGHT, raw.frames, raw.delays), left: raw.left };
+}
+
+/** Every frame `bakeGuy` bakes, before identical ones are merged, and the column his frame starts at. */
+function rawFrames(spec: GuySpec, move: Move): { width: number; left: number; frames: Uint8ClampedArray[]; delays: number[] } {
   const options = animateOptions(spec), owned = ownedOf(spec);
   const plain = animate(spec.seed, move, options);
   const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
@@ -103,10 +110,91 @@ function bakeAt(spec: GuySpec, move: Move): { frames: Frames; left: number } {
   const ground = backdropOf(spec.seed, options, -left, 0, W, FRAME_HEIGHT);
   const lay = (f: AnimationFrame) => (ground ? { frame: grounded(f, ground, left), left: 0 } : { frame: f, left });
   const shining = plain.frames.some(f => shines(f, owned));
-  if (!plain.timed && !shining) return { frames: merged(W, GUY_HEIGHT, plain.frames.map(f => { const l = lay(f); return place(l.frame, W, l.left); }), plain.frames.map(f => f.ms)), left };
+  if (!plain.timed && !shining) return { width: W, left, frames: plain.frames.map(f => { const l = lay(f); return place(l.frame, W, l.left); }), delays: plain.frames.map(f => f.ms) };
   const { repeats, turns } = shineFit(plain.duration);
   const anim = animate(spec.seed, move, { ...options, loop: { repeats, turns, fine: shining } });
-  return { frames: merged(W, GUY_HEIGHT, anim.frames.map(f => { const l = lay(f); return place(l.frame, W, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : undefined); }), anim.frames.map(f => f.ms)), left };
+  return { width: W, left, frames: anim.frames.map(f => { const l = lay(f); return place(l.frame, W, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : undefined); }), delays: anim.frames.map(f => f.ms) };
+}
+
+// ------------------------------------------------ icons and faces
+
+/** An icon's side: his own sixteen by sixteen, nothing round him. */
+export const ICON_SIZE = BAKED_SIZE.icon.width;
+/** A face's side: his head and shoulders, hat and all. */
+export const FACE_SIZE = BAKED_SIZE.face.width;
+
+/** The spec without what he wears in the given slots (a backdrop, a buddy, an aura). */
+function without(spec: GuySpec, slots: string[]): GuySpec {
+  const equip = spec.equip?.filter(code => !slots.includes(itemById(decode(code)?.item)?.slot ?? ''));
+  return { ...spec, equip: equip?.length ? equip : undefined };
+}
+
+/** The highest and lowest rows of his own sixteen columns with a pixel lit, in a frame of `animate`'s. */
+function rowsLit(f: AnimationFrame): [number, number] {
+  let top = FRAME_HEIGHT, bottom = -1;
+  f.colors.forEach((row, y) => { for (let x = 0; x < FRAME_WIDTH; x++) if (row[x]) { if (y < top) top = y; bottom = y; } });
+  return [top, bottom];
+}
+
+/**
+ * A small square of the guy, for a menu, a chat line or a board's row: `icon` his whole sixteen by
+ * sixteen, `face` a square of his head and shoulders, hat and all. Played as `bakeGuy` plays him,
+ * blinking, breathing, his copies shining and his aura round him, but always on the ground: a move's
+ * hops are taken out, so nothing he does leaves the square. No buddy and no backdrop: the square is
+ * his alone, on nothing.
+ */
+export function bakeSquare(spec: GuySpec, view: 'icon' | 'face', move: Move = 'idle'): Frames {
+  const bare = without(spec, ['frame', 'buddy']);
+  const raw = rawFrames(bare, move);
+  // How high he is off the ground in each frame, read off the same move with nothing round him:
+  // its beats are the same, so the time into the lap finds the beat.
+  const plain = animate(bare.seed, move, { ...animateOptions(without(bare, ['aura'])), rarity: false });
+  const lit = plain.frames.map(rowsLit), ends: number[] = [];
+  plain.frames.reduce((t, f) => { ends.push(t + f.ms); return t + f.ms; }, 0);
+  const liftAt = (t: number) => {
+    const pos = t % plain.duration, k = ends.findIndex(e => pos < e);
+    return Math.max(0, FRAME_HEIGHT - 1 - lit[k < 0 ? 0 : k][1]);
+  };
+  const side = view === 'icon' ? ICON_SIZE : FACE_SIZE;
+  // An icon is his grid; a face starts at the top of his head (or hat) as he stands.
+  const rest = lit[0][0] + Math.max(0, FRAME_HEIGHT - 1 - lit[0][1]);
+  const top = view === 'icon' ? HEADROOM : Math.min(FRAME_HEIGHT - side, Math.max(0, rest));
+  const left = raw.left + (FRAME_WIDTH - side) / 2, W = raw.width;
+  let t = 0;
+  const frames = raw.frames.map((px, k) => {
+    const lift = liftAt(t);
+    t += raw.delays[k];
+    const out = new Uint8ClampedArray(side * side * 4);
+    for (let y = 0; y < side; y++) {
+      const from = top + y - lift;
+      if (from >= 0 && from < FRAME_HEIGHT) out.set(px.subarray((from * W + left) * 4, (from * W + left + side) * 4), y * side * 4);
+    }
+    return out;
+  });
+  return merged(side, side, frames, raw.delays);
+}
+
+// ------------------------------------------------ the big card
+
+/**
+ * How long each frame of a served big card shows: his move and the card's sheen at about six frames a
+ * second, half the frames the lil guys site draws, and the picture in 255 colours (`fewerColours`), so
+ * a big card is a few hundred kilobytes, not a megabyte, and bakes in a fraction of the time.
+ */
+export const CARD_FULL_MS = 160;
+
+/**
+ * A guy's big card with the words the lil guys site puts on it: his name (a code's `title`, `@name`
+ * for a claimed one), how rare he was dealt and his rarest trait, at his rank's grade unless the code
+ * gives one.
+ */
+export function cardInputOf(spec: CardSpec, move: Move = 'idle'): CardInput {
+  const base = resolve(spec.seed), rank = guyRank(base);
+  const rarest = traitOdds(base).sort((a, b) => a.chance - b.chance)[0]?.name ?? '';
+  return {
+    seed: spec.seed, parts: spec.parts, palette: animateOptions(spec).palette, copies: faceSpec(spec).copies,
+    title: spec.title ?? '', lines: [rank.name, rank.label === rank.name ? rarest : rank.label], grade: spec.grade ?? rank.tier, move,
+  };
 }
 
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
@@ -209,22 +297,42 @@ export function bakeCard(spec: FaceSpec): Frames {
   return merged(FACE_WIDTH, FACE_HEIGHT, frames, delays);
 }
 
-/** The frames side by side in one strip, with how long each shows: a sprite sheet for a game. */
-export function sheetOf(f: Frames): { width: number; height: number; rgba: Uint8ClampedArray; delays: number[] } {
-  const W = f.width * f.frames.length, rgba = new Uint8ClampedArray(W * f.height * 4);
+/**
+ * The frames in a sprite sheet, with how long each shows: for a game. Left to right, `columns` to a
+ * row (all of them in one strip by default), then the next row down.
+ */
+export function sheetOf(f: Frames, columns = f.frames.length): { width: number; height: number; rgba: Uint8ClampedArray; delays: number[]; columns: number; rows: number } {
+  const cols = Math.max(1, Math.min(columns, f.frames.length)), rows = Math.ceil(f.frames.length / cols);
+  const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows * 4);
   f.frames.forEach((px, k) => {
-    for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), (y * W + k * f.width) * 4);
+    const ox = (k % cols) * f.width, oy = Math.floor(k / cols) * f.height;
+    for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W + ox) * 4);
   });
-  return { width: W, height: f.height, rgba, delays: f.delays };
+  return { width: W, height: f.height * rows, rgba, delays: f.delays, columns: cols, rows };
+}
+
+/** How wide a sheet may be at 1×, in pixels, before it wraps onto another row. */
+export const SHEET_MAX = 2048;
+
+/**
+ * How many frames to a row on a view's sheet: a move's frames all in one strip, as they always were;
+ * any other view's as many as fit in `SHEET_MAX` pixels at 1×, then the next row.
+ */
+export function sheetColumns(view: string, f: Frames): number {
+  return isMove(view) ? f.frames.length : Math.max(1, Math.min(f.frames.length, Math.floor(SHEET_MAX / f.width)));
 }
 
 /** The image a baked guy or card is served as. */
-export type BakedKind = 'loop' | 'still' | 'sheet';
+export type BakedKind = 'loop' | 'still' | 'sheet' | 'gif';
 
-/** Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), or a sprite strip (`sheet`). */
-export async function bakedImage(frames: Frames, kind: BakedKind, scale = 1): Promise<Uint8Array> {
+/**
+ * Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), a sprite sheet (`sheet`,
+ * `columns` frames to a row, all in one strip by default) or a looping GIF (`gif`).
+ */
+export async function bakedImage(frames: Frames, kind: BakedKind, scale = 1, columns?: number): Promise<Uint8Array> {
   if (kind === 'still') return encodePng(frames.frames[0], frames.width, frames.height, scale);
-  if (kind === 'sheet') { const s = sheetOf(frames); return encodePng(s.rgba, s.width, s.height, scale); }
+  if (kind === 'sheet') { const s = sheetOf(frames, columns); return encodePng(s.rgba, s.width, s.height, scale); }
+  if (kind === 'gif') return encodeGif(frames, scale);
   return encodeApng(frames, scale);
 }
 
@@ -257,6 +365,7 @@ export function readGuyCode(code: string): CardSpec | null {
     }
     if (o.g !== undefined) { if (!Number.isInteger(o.g) || o.g < -1 || o.g > 9) return null; spec.grade = o.g; }
     if (o.t !== undefined) { if (typeof o.t !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(o.t)) return null; spec.tint = o.t; }
+    if (o.n !== undefined) { if (typeof o.n !== 'string' || !o.n || [...o.n].length > TITLE_MAX || /[\u0000-\u001f\u007f]/.test(o.n)) return null; spec.title = o.n; }
     return spec;
   } catch { return null; }
 }
@@ -270,13 +379,18 @@ export function faceSpec(spec: CardSpec): FaceSpec {
 export const isMove = (m: string): m is Move => (MOVES as readonly string[]).includes(m);
 
 /**
- * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
- * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
- * (a profile picture, `profileFrames`), `art` or `art-still` (his big card's window alone, a square:
- * `cardArtPlayer`).
+ * A view as the Worker serves it and `<lil-guy>` plays it: a move looping (`idle`, `hop`…),
+ * `still` (his first idle frame), `icon` (his sixteen by sixteen alone, `bakeSquare`), `face` (a
+ * square of his head and shoulders), `card` (the small card face), `pfp` (a profile picture,
+ * `profileFrames`), `art` (his big card's window alone, a square: `cardArtPlayer`) and `card-full`
+ * (the whole big card, `cardInputOf`). Every view but a move has a `-still`: its first frame.
  * Null for a view there isn't.
  */
 export function bakeView(spec: CardSpec, view: string): Frames | null {
+  if (view === 'icon' || view === 'face') return bakeSquare(spec, view);
+  if (view === 'icon-still' || view === 'face-still') { const f = bakeSquare(spec, view === 'icon-still' ? 'icon' : 'face'); return { ...f, frames: f.frames.slice(0, 1), delays: [LOOP_MS] }; }
+  if (view === 'card-full') { const f = cardFrames(cardInputOf(spec), CARD_FULL_MS); return fewerColours(merged(f.width, f.height, f.frames, f.delays)); }
+  if (view === 'card-full-still') { const card = cardPlayer(cardInputOf(spec)); return { width: card.width, height: card.height, frames: [card.frame(0)], delays: [LOOP_MS] }; }
   if (view === 'art' || view === 'art-still') {
     const art = cardArtFrames({ seed: spec.seed, parts: spec.parts, palette: animateOptions(spec).palette, copies: faceSpec(spec).copies, grade: spec.grade, title: '' });
     return view === 'art' ? art : { ...art, frames: art.frames.slice(0, 1), delays: [LOOP_MS] };

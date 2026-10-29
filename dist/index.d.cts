@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime0 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -1675,7 +1675,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -1948,8 +1948,18 @@ interface Frames {
 /** Each pixel made a `scale` by `scale` block. */
 declare function upscale(rgba: Uint8ClampedArray, width: number, height: number, scale: number): Uint8ClampedArray;
 /**
- * An animated GIF that loops forever. Transparent pixels stay transparent
- * (each frame clears to them), so a guy can be saved without a background.
+ * The frames in at most 255 colours and transparent, each pixel the nearest colour of one palette made
+ * for all of them, as a GIF has them. A picture with thousands of colours (a big card's foil) then
+ * packs as an indexed PNG, several times smaller, and its GIF shows exactly the same pixels. It loses
+ * colours, so a picture that has been served exact stays exact.
+ */
+declare function fewerColours(input: Frames): Frames;
+/**
+ * An animated GIF that loops forever. Transparent pixels stay transparent, so
+ * a guy can be saved without a background. After the first frame only the box
+ * that changed is written, its unchanged pixels left to show through, so a
+ * shimmer on a hat costs the hat, not the whole picture; a frame that has to
+ * clear a pixel is written whole after a frame that clears itself away.
  */
 declare function encodeGif(input: Frames, scale?: number): Uint8Array;
 /** A PNG of one RGBA frame, scaled up by whole pixels. */
@@ -2354,14 +2364,20 @@ interface CardSpec extends GuySpec {
   grade?: number;
   /** The window's tint when there's no grade. */
   tint?: string;
+  /** The name across the top of his big card (`card-full`), at most `TITLE_MAX` characters. */
+  title?: string;
 }
+/** The longest name a big card's code carries. */
+declare const TITLE_MAX = 24;
 /** A spec as a short, address-safe code. Anything that draws the same guy gives the same code. */
 declare function guyCode(spec: CardSpec): string;
 /**
- * A baked guy's size (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a guy with a
- * buddy beside him (`BUDDY_GUY_WIDTH`), and a card's. Nothing tells a page
- * from an address alone which of the first two a guy is, so size a box by its
- * height and let the picture set its width.
+ * Every baked picture's size at 1×: a guy playing a move (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a
+ * guy with a buddy beside him (`BUDDY_GUY_WIDTH`), an icon, a face, the small card, the big card's
+ * art and the big card. Nothing tells a page from an address alone whether a guy has a buddy, so size
+ * a move's box by its height and let the picture set its width (the batch read says, as `wide`). A
+ * profile picture (`pfp`) is square but its side depends on the guy, 20 to 34: show it in a square
+ * box.
  */
 declare const BAKED_SIZE: {
   readonly guy: {
@@ -2376,20 +2392,47 @@ declare const BAKED_SIZE: {
     readonly width: 26;
     readonly height: 42;
   };
+  readonly icon: {
+    readonly width: 16;
+    readonly height: 16;
+  };
+  readonly face: {
+    readonly width: 14;
+    readonly height: 14;
+  };
+  readonly art: {
+    readonly width: 128;
+    readonly height: 128;
+  };
+  readonly cardFull: {
+    readonly width: 140;
+    readonly height: 204;
+  };
 };
 /** What a baked picture shows: a move looping, his still, or his card. */
 type View = string;
+/** The views that aren't moves, each with its `-still`. */
+declare const PICTURE_VIEWS: readonly ["icon", "face", "still", "pfp", "card", "art", "card-full"];
+/** A view's size at 1× (`BAKED_SIZE`), or null for one that depends on the guy (a move, `pfp`). */
+declare function viewSize(view: string): {
+  width: number;
+  height: number;
+} | null;
 
 //#endregion
 //#region src/element.d.ts
 /**
  * `<lil-guy>`: a guy, finished, in any page.
  *
- *   <lil-guy name="mia"></lil-guy>                 a claimed name, as he's worn (needs a host)
+ *   <lil-guy name="mia"></lil-guy>                 any player's name: a claimed one as he's worn, anyone
+ *                                                  else the guy the name deals (needs a host)
  *   <lil-guy seed="Sneaky Gumdrop"></lil-guy>      a guy drawn from any text
  *   <lil-guy code="eyJzIjoi…"></lil-guy>           an exact guy (`guyCode`), or set `.spec`
- *   view="idle"   a move looping (default), or `still`, `card`, `card-still`
- *   size="4"      screen pixels per art pixel (default 4); a guy with a buddy is wider (`BAKED_SIZE.buddy`)
+ *   view="idle"   a move looping (default), or `still`, `icon`, `face`, `pfp`, `card`, `art`,
+ *                 `card-full`, each with a `-still` (GAMES.md has their sizes)
+ *   preset="row"  a place in a game (`LIL_GUY_PRESETS`: menu, chat, row, results, profile, card,
+ *                 card-full), which sets the view and size unless they are given
+ *   size="4"      screen pixels per art pixel (default 4, or the preset's); a guy with a buddy is wider
  *   label="mia"   what a screen reader says; without it he's decorative
  *
  * With a host (`defineLilGuy({ host })`) it is an `<img>` of the Worker's
@@ -2438,6 +2481,30 @@ declare const shineFit: typeof fitLoop;
  * through without a jump.
  */
 declare function bakeGuy(spec: GuySpec, move?: Move): Frames;
+/** An icon's side: his own sixteen by sixteen, nothing round him. */
+declare const ICON_SIZE: 16;
+/** A face's side: his head and shoulders, hat and all. */
+declare const FACE_SIZE: 14;
+/**
+ * A small square of the guy, for a menu, a chat line or a board's row: `icon` his whole sixteen by
+ * sixteen, `face` a square of his head and shoulders, hat and all. Played as `bakeGuy` plays him,
+ * blinking, breathing, his copies shining and his aura round him, but always on the ground: a move's
+ * hops are taken out, so nothing he does leaves the square. No buddy and no backdrop: the square is
+ * his alone, on nothing.
+ */
+declare function bakeSquare(spec: GuySpec, view: 'icon' | 'face', move?: Move): Frames;
+/**
+ * How long each frame of a served big card shows: his move and the card's sheen at about six frames a
+ * second, half the frames the lil guys site draws, and the picture in 255 colours (`fewerColours`), so
+ * a big card is a few hundred kilobytes, not a megabyte, and bakes in a fraction of the time.
+ */
+declare const CARD_FULL_MS = 160;
+/**
+ * A guy's big card with the words the lil guys site puts on it: his name (a code's `title`, `@name`
+ * for a claimed one), how rare he was dealt and his rarest trait, at his rank's grade unless the code
+ * gives one.
+ */
+declare function cardInputOf(spec: CardSpec, move?: Move): CardInput;
 /** The size Discord shows a profile picture at, and asks for at least 128 of. */
 declare const PROFILE_SIZE = 512;
 /**
@@ -2452,17 +2519,32 @@ declare function toProfilePng(spec: GuySpec, size?: number): Promise<Uint8Array>
 declare function toProfileGif(spec: GuySpec, size?: number, move?: Move): Uint8Array;
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
 declare function bakeCard(spec: FaceSpec): Frames;
-/** The frames side by side in one strip, with how long each shows: a sprite sheet for a game. */
-declare function sheetOf(f: Frames): {
+/**
+ * The frames in a sprite sheet, with how long each shows: for a game. Left to right, `columns` to a
+ * row (all of them in one strip by default), then the next row down.
+ */
+declare function sheetOf(f: Frames, columns?: number): {
   width: number;
   height: number;
   rgba: Uint8ClampedArray;
   delays: number[];
+  columns: number;
+  rows: number;
 };
+/** How wide a sheet may be at 1×, in pixels, before it wraps onto another row. */
+declare const SHEET_MAX = 2048;
+/**
+ * How many frames to a row on a view's sheet: a move's frames all in one strip, as they always were;
+ * any other view's as many as fit in `SHEET_MAX` pixels at 1×, then the next row.
+ */
+declare function sheetColumns(view: string, f: Frames): number;
 /** The image a baked guy or card is served as. */
-type BakedKind = 'loop' | 'still' | 'sheet';
-/** Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), or a sprite strip (`sheet`). */
-declare function bakedImage(frames: Frames, kind: BakedKind, scale?: number): Promise<Uint8Array>;
+type BakedKind = 'loop' | 'still' | 'sheet' | 'gif';
+/**
+ * Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), a sprite sheet (`sheet`,
+ * `columns` frames to a row, all in one strip by default) or a looping GIF (`gif`).
+ */
+declare function bakedImage(frames: Frames, kind: BakedKind, scale?: number, columns?: number): Promise<Uint8Array>;
 /** A code back into a spec, or null for anything that isn't one. */
 declare function readGuyCode(code: string): CardSpec | null;
 /** A card spec as the face builder takes it. */
@@ -2470,10 +2552,11 @@ declare function faceSpec(spec: CardSpec): FaceSpec;
 /** Whether a move name is one this library plays. */
 declare const isMove: (m: string) => m is Move;
 /**
- * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
- * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
- * (a profile picture, `profileFrames`), `art` or `art-still` (his big card's window alone, a square:
- * `cardArtPlayer`).
+ * A view as the Worker serves it and `<lil-guy>` plays it: a move looping (`idle`, `hop`…),
+ * `still` (his first idle frame), `icon` (his sixteen by sixteen alone, `bakeSquare`), `face` (a
+ * square of his head and shoulders), `card` (the small card face), `pfp` (a profile picture,
+ * `profileFrames`), `art` (his big card's window alone, a square: `cardArtPlayer`) and `card-full`
+ * (the whole big card, `cardInputOf`). Every view but a move has a `-still`: its first frame.
  * Null for a view there isn't.
  */
 declare function bakeView(spec: CardSpec, view: string): Frames | null;
@@ -2532,5 +2615,5 @@ declare function nameKey(typed: string): string;
 declare const nameSkeleton: (key: string) => string;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

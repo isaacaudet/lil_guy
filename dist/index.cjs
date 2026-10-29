@@ -6111,13 +6111,22 @@ function palette(frames) {
 		}
 		return hi - lo;
 	};
+	const weigh = (box) => {
+		const used = Math.log2(1 + box.reduce((a, [, n]) => a + n, 0));
+		return [
+			0,
+			1,
+			2
+		].map((k) => range(box, k) * used);
+	};
 	let boxes = [all];
+	let weights = [weigh(all)];
 	while (boxes.length < 255) {
 		let best = -1, bk = 0, bw = -1;
 		boxes.forEach((box$1, i) => {
 			if (box$1.length < 2) return;
 			for (let k = 0; k < 3; k++) {
-				const w = range(box$1, k) * Math.log2(1 + box$1.reduce((a, [, n]) => a + n, 0));
+				const w = weights[i][k];
 				if (w > bw) {
 					bw = w;
 					best = i;
@@ -6136,7 +6145,9 @@ function palette(frames) {
 				break;
 			}
 		}
-		boxes.splice(best, 1, box.slice(0, cut), box.slice(cut));
+		const lo = box.slice(0, cut), hi = box.slice(cut);
+		boxes.splice(best, 1, lo, hi);
+		weights.splice(best, 1, weigh(lo), weigh(hi));
 	}
 	return boxes.map((box) => {
 		let r = 0, g = 0, b$1 = 0, n = 0;
@@ -6148,6 +6159,51 @@ function palette(frames) {
 		}
 		return Math.round(r / n) << 16 | Math.round(g / n) << 8 | Math.round(b$1 / n);
 	});
+}
+/** The nearest of `table`'s colours (from index 1; 0 is transparent) to each colour asked for, remembered. */
+function nearestIn(table) {
+	const nearest = new Map();
+	return (c) => {
+		let i = nearest.get(c);
+		if (i !== void 0) return i;
+		let best = 1, bd = Infinity;
+		for (let k = 1; k < table.length; k++) {
+			const p = table[k], dr = (c >> 16 & 255) - (p >> 16 & 255), dg = (c >> 8 & 255) - (p >> 8 & 255), db = (c & 255) - (p & 255);
+			const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+			if (d < bd) {
+				bd = d;
+				best = k;
+				if (!d) break;
+			}
+		}
+		nearest.set(c, best);
+		return best;
+	};
+}
+/**
+* The frames in at most 255 colours and transparent, each pixel the nearest colour of one palette made
+* for all of them, as a GIF has them. A picture with thousands of colours (a big card's foil) then
+* packs as an indexed PNG, several times smaller, and its GIF shows exactly the same pixels. It loses
+* colours, so a picture that has been served exact stays exact.
+*/
+function fewerColours(input) {
+	const table = [0, ...palette(input.frames)], indexOf = nearestIn(table);
+	const frames = input.frames.map((f) => {
+		const out = new Uint8ClampedArray(f.length);
+		for (let i = 0; i < f.length; i += 4) {
+			if (f[i + 3] < 128) continue;
+			const c = table[indexOf(f[i] << 16 | f[i + 1] << 8 | f[i + 2])];
+			out[i] = c >> 16;
+			out[i + 1] = c >> 8 & 255;
+			out[i + 2] = c & 255;
+			out[i + 3] = 255;
+		}
+		return out;
+	});
+	return {
+		...input,
+		frames
+	};
 }
 /** LZW-compresses colour indices into GIF data sub-blocks. */
 function lzw(indices, minCode, out) {
@@ -6195,18 +6251,48 @@ function lzw(indices, minCode, out) {
 	out.push(0);
 }
 /**
-* An animated GIF that loops forever. Transparent pixels stay transparent
-* (each frame clears to them), so a guy can be saved without a background.
+* The box of pixels that differ between two frames `W` wide, as `[x, y, w, h]`, or null when none do.
+* Two pixels both under half alpha count as the same (both transparent).
+*/
+function changed(a, b$1, W, H) {
+	let x0 = W, y0 = H, x1 = -1, y1 = -1;
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const i = (y * W + x) * 4;
+		if (a[i + 3] < 128 && b$1[i + 3] < 128) continue;
+		if (a[i] === b$1[i] && a[i + 1] === b$1[i + 1] && a[i + 2] === b$1[i + 2] && a[i + 3] === b$1[i + 3]) continue;
+		if (x < x0) x0 = x;
+		if (x > x1) x1 = x;
+		if (y < y0) y0 = y;
+		if (y > y1) y1 = y;
+	}
+	return x1 < 0 ? null : [
+		x0,
+		y0,
+		x1 - x0 + 1,
+		y1 - y0 + 1
+	];
+}
+/** Whether a pixel shown in `before` is transparent in `after`: something a GIF can only clear by disposing. */
+function clears(before, after) {
+	for (let i = 3; i < after.length; i += 4) if (after[i] < 128 && before[i] >= 128) return true;
+	return false;
+}
+/**
+* An animated GIF that loops forever. Transparent pixels stay transparent, so
+* a guy can be saved without a background. After the first frame only the box
+* that changed is written, its unchanged pixels left to show through, so a
+* shimmer on a hat costs the hat, not the whole picture; a frame that has to
+* clear a pixel is written whole after a frame that clears itself away.
 */
 function encodeGif(input, scale$1 = 1) {
-	const W = input.width * scale$1, H = input.height * scale$1;
+	const W = input.width * scale$1, H = input.height * scale$1, n = input.frames.length;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
 	const colours = palette(frames);
 	const table = [0, ...colours];
 	let bitsPer = 1;
 	while (1 << bitsPer < table.length) bitsPer++;
 	const out = [];
-	const word = (n) => out.push(n & 255, n >> 8 & 255);
+	const word = (n$1) => out.push(n$1 & 255, n$1 >> 8 & 255);
 	out.push(...[..."GIF89a"].map((c) => c.charCodeAt(0)));
 	word(W);
 	word(H);
@@ -6216,36 +6302,48 @@ function encodeGif(input, scale$1 = 1) {
 		out.push(c >> 16 & 255, c >> 8 & 255, c & 255);
 	}
 	out.push(33, 255, 11, ...[..."NETSCAPE2.0"].map((c) => c.charCodeAt(0)), 3, 1, 0, 0, 0);
-	const nearest = new Map();
-	const indexOf = (c) => {
-		let i = nearest.get(c);
-		if (i !== void 0) return i;
-		let best = 1, bd = Infinity;
-		for (let k = 1; k < table.length; k++) {
-			const p = table[k], dr = (c >> 16 & 255) - (p >> 16 & 255), dg = (c >> 8 & 255) - (p >> 8 & 255), db = (c & 255) - (p & 255);
-			const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
-			if (d < bd) {
-				bd = d;
-				best = k;
-				if (!d) break;
-			}
-		}
-		nearest.set(c, best);
-		return best;
-	};
-	frames.forEach((f, n) => {
-		const delay = Math.max(2, Math.round((input.delays[n] ?? 80) / 10));
-		out.push(33, 249, 4, 9);
+	const indexOf = nearestIn(table);
+	const src = input.frames, w0 = input.width, h0 = input.height;
+	const clearing = src.map((f, k) => n > 1 && clears(src[(k + n - 1) % n], f));
+	const whole = src.map((_, k) => k === 0 || clearing[k] || clearing[(k + 1) % n]);
+	frames.forEach((f, k) => {
+		const delay = Math.max(2, Math.round((input.delays[k] ?? 80) / 10));
+		const dispose = n > 1 && clearing[(k + 1) % n] ? 2 : 1;
+		const box = whole[k] ? [
+			0,
+			0,
+			w0,
+			h0
+		] : changed(src[k - 1], src[k], w0, h0) ?? [
+			0,
+			0,
+			1,
+			1
+		];
+		const [bx, by, bw, bh] = box.map((v) => v * scale$1);
+		out.push(33, 249, 4, dispose << 2 | 1);
 		word(delay);
 		out.push(0, 0);
 		out.push(44);
-		word(0);
-		word(0);
-		word(W);
-		word(H);
+		word(bx);
+		word(by);
+		word(bw);
+		word(bh);
 		out.push(0);
-		const idx = new Uint8Array(W * H);
-		for (let i = 0, p = 0; i < f.length; i += 4, p++) idx[p] = f[i + 3] < 128 ? 0 : indexOf(f[i] << 16 | f[i + 1] << 8 | f[i + 2]);
+		const before = whole[k] ? null : frames[k - 1];
+		const idx = new Uint8Array(bw * bh);
+		for (let y = 0, p = 0; y < bh; y++) for (let x = 0; x < bw; x++, p++) {
+			const i = ((by + y) * W + bx + x) * 4;
+			if (f[i + 3] < 128) {
+				idx[p] = 0;
+				continue;
+			}
+			if (before && before[i] === f[i] && before[i + 1] === f[i + 1] && before[i + 2] === f[i + 2] && before[i + 3] >= 128) {
+				idx[p] = 0;
+				continue;
+			}
+			idx[p] = indexOf(f[i] << 16 | f[i + 1] << 8 | f[i + 2]);
+		}
 		const min = Math.max(2, bitsPer);
 		out.push(min);
 		lzw(idx, min, out);
@@ -6342,6 +6440,13 @@ function layout(frames) {
 		}
 	};
 }
+/** The `w` by `h` box at `x`, `y` of a picture `W` wide. */
+function crop(rgba, W, x, y, w, h) {
+	if (x === 0 && w === W) return rgba.subarray(y * W * 4, (y + h) * W * 4);
+	const out = new Uint8ClampedArray(w * h * 4);
+	for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W + x) * 4, ((y + r) * W + x + w) * 4), r * w * 4);
+	return out;
+}
 async function png(input, scale$1, animated) {
 	const W = input.width * scale$1, H = input.height * scale$1;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
@@ -6380,17 +6485,29 @@ async function png(input, scale$1, animated) {
 	let seq = 0;
 	if (animated) parts.push(chunk("acTL", concat([u32(frames.length), u32(0)])));
 	for (let i = 0; i < frames.length; i++) {
+		const box = i === 0 ? null : changed(input.frames[i - 1], input.frames[i], input.width, input.height);
+		const [bx, by, bw, bh] = i === 0 ? [
+			0,
+			0,
+			W,
+			H
+		] : (box ?? [
+			0,
+			0,
+			1,
+			1
+		]).map((v) => v * scale$1);
 		if (animated) parts.push(chunk("fcTL", concat([
 			u32(seq++),
-			u32(W),
-			u32(H),
-			u32(0),
-			u32(0),
+			u32(bw),
+			u32(bh),
+			u32(bx),
+			u32(by),
 			u16(Math.max(1, Math.round(input.delays[i] ?? 100))),
 			u16(1e3),
 			new Uint8Array([0, 0])
 		])));
-		const data = await zlib(rows(frames[i], W, H));
+		const data = await zlib(rows(i === 0 ? frames[i] : crop(frames[i], W, bx, by, bw, bh), bw, bh));
 		parts.push(i === 0 ? chunk("IDAT", data) : chunk("fdAT", concat([u32(seq++), data])));
 		if (!animated) break;
 	}
@@ -8663,6 +8780,8 @@ function createCardShader(canvas) {
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
 const ART_VERSION = 13;
+/** The longest name a big card's code carries. */
+const TITLE_MAX = 24;
 const PART_KEYS = [
 	"head",
 	"eyes",
@@ -8690,7 +8809,8 @@ function guyCode(spec) {
 		c: spec.palette,
 		e: spec.equip?.length ? spec.equip : void 0,
 		g: spec.grade,
-		t: spec.tint
+		t: spec.tint,
+		n: spec.title || void 0
 	};
 	const json = JSON.stringify(short);
 	const bytes = new TextEncoder().encode(json);
@@ -8699,10 +8819,12 @@ function guyCode(spec) {
 	return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 /**
-* A baked guy's size (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a guy with a
-* buddy beside him (`BUDDY_GUY_WIDTH`), and a card's. Nothing tells a page
-* from an address alone which of the first two a guy is, so size a box by its
-* height and let the picture set its width.
+* Every baked picture's size at 1×: a guy playing a move (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a
+* guy with a buddy beside him (`BUDDY_GUY_WIDTH`), an icon, a face, the small card, the big card's
+* art and the big card. Nothing tells a page from an address alone whether a guy has a buddy, so size
+* a move's box by its height and let the picture set its width (the batch read says, as `wide`). A
+* profile picture (`pfp`) is square but its side depends on the guy, 20 to 34: show it in a square
+* box.
 */
 const BAKED_SIZE = {
 	guy: {
@@ -8716,8 +8838,167 @@ const BAKED_SIZE = {
 	card: {
 		width: 26,
 		height: 42
+	},
+	icon: {
+		width: 16,
+		height: 16
+	},
+	face: {
+		width: 14,
+		height: 14
+	},
+	art: {
+		width: 128,
+		height: 128
+	},
+	cardFull: {
+		width: 140,
+		height: 204
 	}
 };
+/** The views that aren't moves, each with its `-still`. */
+const PICTURE_VIEWS = [
+	"icon",
+	"face",
+	"still",
+	"pfp",
+	"card",
+	"art",
+	"card-full"
+];
+/** A view's size at 1× (`BAKED_SIZE`), or null for one that depends on the guy (a move, `pfp`). */
+function viewSize(view) {
+	const base = view.replace(/-still$/, "");
+	return base === "icon" ? BAKED_SIZE.icon : base === "face" ? BAKED_SIZE.face : base === "card" ? BAKED_SIZE.card : base === "art" ? BAKED_SIZE.art : base === "card-full" ? BAKED_SIZE.cardFull : null;
+}
+
+//#endregion
+//#region src/kit.ts
+/**
+* The lil guys kit for a game: a player's guy anywhere from one address or one line, with nothing of
+* the library on the page. Every picture comes from the lil guys Worker (`/g/`), finished and cached
+* for good, and plays in a plain `<img>`, so a board of a hundred animates with no script per frame.
+* GAMES.md has where each view goes.
+*
+*   lilGuyUrl('Sneaky Gumdrop', 'face')                → https://lilguys.dleclub.com/g/13/~Sneaky%20Gumdrop/face.png
+*   row.prepend(lilGuyImg('mia', 'row'))               → an <img> sized for a board's row
+*   const guys = await lilGuysFor(['mia', 'theo'])     → each name's code, claimed or not, in one read
+*
+* The served copy (`/lilguys.js` as a classic script, `/lilguys.mjs` as a module) knows its own host;
+* a copy bundled from the library talks to `LILGUYS_HOST` unless told otherwise (`setLilGuysHost`).
+*/
+/** The lil guys Worker. */
+const LILGUYS_HOST = "https://lilguys.dleclub.com";
+let defaultHost = LILGUYS_HOST;
+/** Where games put a guy, each with its view and size (GAMES.md, Where it goes). */
+const LIL_GUY_PRESETS = {
+	menu: {
+		view: "icon",
+		scale: 2
+	},
+	chat: {
+		view: "face",
+		scale: 2
+	},
+	row: {
+		view: "face",
+		scale: 3
+	},
+	results: {
+		view: "idle",
+		scale: 4
+	},
+	profile: {
+		view: "pfp",
+		scale: 3
+	},
+	card: {
+		view: "card",
+		scale: 3
+	},
+	"card-full": {
+		view: "card-full",
+		scale: 2
+	}
+};
+const isInfo = (who) => typeof who === "object" && "urls" in who;
+/** The guy part of an address. A big card shows a name, so an info's card goes by the card's own address. */
+function guyPart(who) {
+	if (typeof who === "string") return who[0] === "@" ? "@" + encodeURIComponent(who.slice(1).toLowerCase()) : "~" + encodeURIComponent(who.replace(/^~/, ""));
+	return who.code;
+}
+/** A preset's view, or the view itself. */
+const viewOf = (view) => view in LIL_GUY_PRESETS ? LIL_GUY_PRESETS[view].view : view;
+/**
+* A guy's picture's address: `lilGuyUrl('mia', 'face', { scale: 2, format: 'gif' })`. `view` is a view
+* or a preset's name.
+*/
+function lilGuyUrl(who, view = "idle", { scale: scale$1 = 1, format = "png", host = defaultHost, version = ART_VERSION } = {}) {
+	const v = viewOf(view), s = Math.max(1, Math.min(16, Math.round(scale$1)));
+	const at = s > 1 ? `@${s}` : "";
+	const file = format === "gif" ? `${v}${at}.gif` : format === "sheet" ? `${v}.sheet${at}.png` : format === "json" ? `${v}.sheet${at}.json` : `${v}${at}.png`;
+	if (isInfo(who) && (v === "card-full" || v === "card-full-still")) {
+		const card = who.urls.cardFull.split("/").slice(-2)[0];
+		return `${host.replace(/\/+$/, "")}/g/${version}/${card}/${file}`;
+	}
+	return `${host.replace(/\/+$/, "")}/g/${version}/${guyPart(who)}/${file}`;
+}
+/** A view's box at `scale`, in CSS pixels: null for the width of a move, which a buddy widens, when nothing says. */
+function lilGuySize(view, scale$1 = 1, wide) {
+	const v = viewOf(view), size = viewSize(v);
+	if (size) return {
+		width: size.width * scale$1,
+		height: size.height * scale$1
+	};
+	if (v === "pfp" || v === "pfp-still") return {
+		width: PFP_BOX * scale$1,
+		height: PFP_BOX * scale$1
+	};
+	return {
+		width: wide === void 0 ? null : (wide ? BAKED_SIZE.buddy.width : BAKED_SIZE.guy.width) * scale$1,
+		height: BAKED_SIZE.guy.height * scale$1
+	};
+}
+/** The square a profile picture is fitted into, per screen pixel of scale: its own side is 20 to 34, depending on the guy. */
+const PFP_BOX = 32;
+/** A 16 × 16 stand-in for when a picture can't be had: a plain lil guy's shape in grey. */
+const LIL_GUY_PLACEHOLDER = "data:image/svg+xml," + encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" shape-rendering=\"crispEdges\"><path fill=\"#9aa1ab\" d=\"M5 3h6v1h2v1h1v2h1v5h-1v2h-2v1H4v-1H2v-2H1V7h1V5h1V4h2z\"/><path fill=\"#5b616b\" d=\"M5 8h1v2H5zm5 0h1v2h-1zM7 11h2v1H7z\"/></svg>");
+/**
+* A ready `<img>` of a guy: `lilGuyImg('mia', 'row')` or `lilGuyImg(info, 'face', { size: 2 })`. Sized
+* with `width` and `height` (no layout shift), pixelated, lazy, decoded off the main thread, with alt
+* text, and a grey stand-in if the picture can't be had. Animated views play in the `<img>` itself.
+*/
+function lilGuyImg(who, view = "row", options = {}) {
+	const preset = view in LIL_GUY_PRESETS ? LIL_GUY_PRESETS[view] : null;
+	const v = viewOf(view);
+	const scale$1 = typeof options.size === "string" ? LIL_GUY_PRESETS[options.size].scale : options.size ?? preset?.scale ?? 3;
+	const wide = options.wide ?? (isInfo(who) ? who.wide : void 0);
+	const box = lilGuySize(v, scale$1, wide);
+	const host = options.host ?? defaultHost;
+	const img = document.createElement("img");
+	img.src = lilGuyUrl(who, v, { host });
+	if (options.srcset) img.srcset = [
+		1,
+		2,
+		4
+	].map((d) => `${lilGuyUrl(who, v, {
+		host,
+		scale: d
+	})} ${d}x`).join(", ");
+	if (box.width !== null) img.width = box.width;
+	img.height = box.height;
+	img.alt = options.alt ?? (typeof who === "string" ? who.replace(/^[@~]/, "") : isInfo(who) ? who.name : "");
+	img.loading = "lazy";
+	img.decoding = "async";
+	img.draggable = false;
+	if (options.className) img.className = options.className;
+	img.style.cssText = `image-rendering:pixelated;object-fit:contain;${box.width === null ? `width:auto;min-width:${BAKED_SIZE.guy.width * scale$1}px;` : ""}`;
+	img.addEventListener("error", () => {
+		img.removeAttribute("srcset");
+		img.src = LIL_GUY_PLACEHOLDER;
+	}, { once: true });
+	return img;
+}
 
 //#endregion
 //#region src/element.ts
@@ -8779,7 +9060,8 @@ function defineLilGuy(options = {}) {
 			"code",
 			"view",
 			"size",
-			"label"
+			"label",
+			"preset"
 		];
 		_spec = null;
 		player = null;
@@ -8830,9 +9112,10 @@ function defineLilGuy(options = {}) {
 			c.getContext("2d").putImageData(p.images[k] ??= new ImageData(new Uint8ClampedArray(p.frames.frames[k]), p.frames.width, p.frames.height), 0, 0);
 		}
 		render(bakeNow = false) {
-			const who = this.who(), view = this.getAttribute("view") || "idle";
-			const size = Math.max(1, Math.min(32, Math.round(Number(this.getAttribute("size")) || 4)));
-			const box = view.startsWith("card") ? BAKED_SIZE.card : BAKED_SIZE.guy;
+			const who = this.who(), named = this.getAttribute("preset");
+			const preset = named && named in LIL_GUY_PRESETS ? LIL_GUY_PRESETS[named] : null;
+			const view = this.getAttribute("view") || preset?.view || "idle";
+			const size = Math.max(1, Math.min(32, Math.round(Number(this.getAttribute("size")) || preset?.scale || 4)));
 			const label = this.getAttribute("label");
 			if (label) {
 				this.setAttribute("role", "img");
@@ -8849,13 +9132,12 @@ function defineLilGuy(options = {}) {
 			const pixels = "image-rendering:pixelated;image-rendering:crisp-edges";
 			const style = (width, height) => `width:${width * size}px;height:${height * size}px;${pixels}`;
 			if (host) {
-				const img = document.createElement("img");
-				img.src = `${host}/g/${ART_VERSION}/${who}/${view}.png`;
-				img.alt = "";
-				img.decoding = "async";
-				img.loading = "lazy";
-				img.style.cssText = box === BAKED_SIZE.card ? style(box.width, box.height) : `width:auto;min-width:${box.width * size}px;height:${box.height * size}px;${pixels}`;
-				this.replaceChildren(img);
+				const name = !this._spec && !this.getAttribute("code") && this.getAttribute("name");
+				this.replaceChildren(lilGuyImg(name || { code: who }, view, {
+					size,
+					host,
+					alt: ""
+				}));
 				return;
 			}
 			if (!options.bake || who.startsWith("@")) {
@@ -8995,6 +9277,14 @@ function bakeGuy(spec, move = "idle") {
 }
 /** `bakeGuy`, and the column his frame starts at on the picture. */
 function bakeAt(spec, move) {
+	const raw = rawFrames(spec, move);
+	return {
+		frames: merged(raw.width, GUY_HEIGHT, raw.frames, raw.delays),
+		left: raw.left
+	};
+}
+/** Every frame `bakeGuy` bakes, before identical ones are merged, and the column his frame starts at. */
+function rawFrames(spec, move) {
 	const options = animateOptions(spec), owned = ownedOf$1(spec);
 	const plain = animate(spec.seed, move, options);
 	const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
@@ -9008,11 +9298,13 @@ function bakeAt(spec, move) {
 	};
 	const shining = plain.frames.some((f) => shines(f, owned));
 	if (!plain.timed && !shining) return {
-		frames: merged(W, GUY_HEIGHT, plain.frames.map((f) => {
+		width: W,
+		left,
+		frames: plain.frames.map((f) => {
 			const l = lay(f);
 			return place(l.frame, W, l.left);
-		}), plain.frames.map((f) => f.ms)),
-		left
+		}),
+		delays: plain.frames.map((f) => f.ms)
 	};
 	const { repeats, turns } = shineFit(plain.duration);
 	const anim = animate(spec.seed, move, {
@@ -9024,11 +9316,101 @@ function bakeAt(spec, move) {
 		}
 	});
 	return {
-		frames: merged(W, GUY_HEIGHT, anim.frames.map((f) => {
+		width: W,
+		left,
+		frames: anim.frames.map((f) => {
 			const l = lay(f);
 			return place(l.frame, W, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : void 0);
-		}), anim.frames.map((f) => f.ms)),
-		left
+		}),
+		delays: anim.frames.map((f) => f.ms)
+	};
+}
+/** An icon's side: his own sixteen by sixteen, nothing round him. */
+const ICON_SIZE = BAKED_SIZE.icon.width;
+/** A face's side: his head and shoulders, hat and all. */
+const FACE_SIZE = BAKED_SIZE.face.width;
+/** The spec without what he wears in the given slots (a backdrop, a buddy, an aura). */
+function without(spec, slots) {
+	const equip = spec.equip?.filter((code) => !slots.includes(require_paint.itemById(require_paint.decode(code)?.item)?.slot ?? ""));
+	return {
+		...spec,
+		equip: equip?.length ? equip : void 0
+	};
+}
+/** The highest and lowest rows of his own sixteen columns with a pixel lit, in a frame of `animate`'s. */
+function rowsLit(f) {
+	let top = FRAME_HEIGHT, bottom = -1;
+	f.colors.forEach((row, y) => {
+		for (let x = 0; x < FRAME_WIDTH; x++) if (row[x]) {
+			if (y < top) top = y;
+			bottom = y;
+		}
+	});
+	return [top, bottom];
+}
+/**
+* A small square of the guy, for a menu, a chat line or a board's row: `icon` his whole sixteen by
+* sixteen, `face` a square of his head and shoulders, hat and all. Played as `bakeGuy` plays him,
+* blinking, breathing, his copies shining and his aura round him, but always on the ground: a move's
+* hops are taken out, so nothing he does leaves the square. No buddy and no backdrop: the square is
+* his alone, on nothing.
+*/
+function bakeSquare(spec, view, move = "idle") {
+	const bare = without(spec, ["frame", "buddy"]);
+	const raw = rawFrames(bare, move);
+	const plain = animate(bare.seed, move, {
+		...animateOptions(without(bare, ["aura"])),
+		rarity: false
+	});
+	const lit = plain.frames.map(rowsLit), ends = [];
+	plain.frames.reduce((t$1, f) => {
+		ends.push(t$1 + f.ms);
+		return t$1 + f.ms;
+	}, 0);
+	const liftAt = (t$1) => {
+		const pos = t$1 % plain.duration, k = ends.findIndex((e) => pos < e);
+		return Math.max(0, FRAME_HEIGHT - 1 - lit[k < 0 ? 0 : k][1]);
+	};
+	const side = view === "icon" ? ICON_SIZE : FACE_SIZE;
+	const rest = lit[0][0] + Math.max(0, FRAME_HEIGHT - 1 - lit[0][1]);
+	const top = view === "icon" ? HEADROOM : Math.min(FRAME_HEIGHT - side, Math.max(0, rest));
+	const left = raw.left + (FRAME_WIDTH - side) / 2, W = raw.width;
+	let t = 0;
+	const frames = raw.frames.map((px, k) => {
+		const lift = liftAt(t);
+		t += raw.delays[k];
+		const out = new Uint8ClampedArray(side * side * 4);
+		for (let y = 0; y < side; y++) {
+			const from = top + y - lift;
+			if (from >= 0 && from < FRAME_HEIGHT) out.set(px.subarray((from * W + left) * 4, (from * W + left + side) * 4), y * side * 4);
+		}
+		return out;
+	});
+	return merged(side, side, frames, raw.delays);
+}
+/**
+* How long each frame of a served big card shows: his move and the card's sheen at about six frames a
+* second, half the frames the lil guys site draws, and the picture in 255 colours (`fewerColours`), so
+* a big card is a few hundred kilobytes, not a megabyte, and bakes in a fraction of the time.
+*/
+const CARD_FULL_MS = 160;
+/**
+* A guy's big card with the words the lil guys site puts on it: his name (a code's `title`, `@name`
+* for a claimed one), how rare he was dealt and his rarest trait, at his rank's grade unless the code
+* gives one.
+*/
+function cardInputOf(spec, move = "idle") {
+	const base = require_paint.resolve(spec.seed), rank = guyRank(base);
+	const rarest = traitOdds(base).sort((a, b$1) => a.chance - b$1.chance)[0]?.name ?? "";
+	return {
+		seed: spec.seed,
+		parts: spec.parts,
+		palette: animateOptions(spec).palette,
+		copies: faceSpec(spec).copies,
+		title: spec.title ?? "",
+		lines: [rank.name, rank.label === rank.name ? rarest : rank.label],
+		grade: spec.grade ?? rank.tier,
+		move
 	};
 }
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
@@ -9157,26 +9539,46 @@ function bakeCard(spec) {
 	}
 	return merged(FACE_WIDTH, FACE_HEIGHT, frames, delays);
 }
-/** The frames side by side in one strip, with how long each shows: a sprite sheet for a game. */
-function sheetOf(f) {
-	const W = f.width * f.frames.length, rgba = new Uint8ClampedArray(W * f.height * 4);
+/**
+* The frames in a sprite sheet, with how long each shows: for a game. Left to right, `columns` to a
+* row (all of them in one strip by default), then the next row down.
+*/
+function sheetOf(f, columns = f.frames.length) {
+	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows = Math.ceil(f.frames.length / cols);
+	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows * 4);
 	f.frames.forEach((px, k) => {
-		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), (y * W + k * f.width) * 4);
+		const ox = k % cols * f.width, oy = Math.floor(k / cols) * f.height;
+		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W + ox) * 4);
 	});
 	return {
 		width: W,
-		height: f.height,
+		height: f.height * rows,
 		rgba,
-		delays: f.delays
+		delays: f.delays,
+		columns: cols,
+		rows
 	};
 }
-/** Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), or a sprite strip (`sheet`). */
-async function bakedImage(frames, kind, scale$1 = 1) {
+/** How wide a sheet may be at 1×, in pixels, before it wraps onto another row. */
+const SHEET_MAX = 2048;
+/**
+* How many frames to a row on a view's sheet: a move's frames all in one strip, as they always were;
+* any other view's as many as fit in `SHEET_MAX` pixels at 1×, then the next row.
+*/
+function sheetColumns(view, f) {
+	return isMove(view) ? f.frames.length : Math.max(1, Math.min(f.frames.length, Math.floor(SHEET_MAX / f.width)));
+}
+/**
+* Bakes and encodes: an animated PNG (`loop`), its first frame (`still`), a sprite sheet (`sheet`,
+* `columns` frames to a row, all in one strip by default) or a looping GIF (`gif`).
+*/
+async function bakedImage(frames, kind, scale$1 = 1, columns) {
 	if (kind === "still") return encodePng(frames.frames[0], frames.width, frames.height, scale$1);
 	if (kind === "sheet") {
-		const s = sheetOf(frames);
+		const s = sheetOf(frames, columns);
 		return encodePng(s.rgba, s.width, s.height, scale$1);
 	}
+	if (kind === "gif") return encodeGif(frames, scale$1);
 	return encodeApng(frames, scale$1);
 }
 /** A code back into a spec, or null for anything that isn't one. */
@@ -9215,6 +9617,10 @@ function readGuyCode(code) {
 			if (typeof o.t !== "string" || !/^#[0-9a-fA-F]{6}$/.test(o.t)) return null;
 			spec.tint = o.t;
 		}
+		if (o.n !== void 0) {
+			if (typeof o.n !== "string" || !o.n || [...o.n].length > TITLE_MAX || /[\u0000-\u001f\u007f]/.test(o.n)) return null;
+			spec.title = o.n;
+		}
 		return spec;
 	} catch {
 		return null;
@@ -9234,13 +9640,36 @@ function faceSpec(spec) {
 /** Whether a move name is one this library plays. */
 const isMove = (m) => MOVES.includes(m);
 /**
-* A view as the Worker serves it and `<lil-guy>` plays it: a move looping
-* (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
-* (a profile picture, `profileFrames`), `art` or `art-still` (his big card's window alone, a square:
-* `cardArtPlayer`).
+* A view as the Worker serves it and `<lil-guy>` plays it: a move looping (`idle`, `hop`…),
+* `still` (his first idle frame), `icon` (his sixteen by sixteen alone, `bakeSquare`), `face` (a
+* square of his head and shoulders), `card` (the small card face), `pfp` (a profile picture,
+* `profileFrames`), `art` (his big card's window alone, a square: `cardArtPlayer`) and `card-full`
+* (the whole big card, `cardInputOf`). Every view but a move has a `-still`: its first frame.
 * Null for a view there isn't.
 */
 function bakeView(spec, view) {
+	if (view === "icon" || view === "face") return bakeSquare(spec, view);
+	if (view === "icon-still" || view === "face-still") {
+		const f = bakeSquare(spec, view === "icon-still" ? "icon" : "face");
+		return {
+			...f,
+			frames: f.frames.slice(0, 1),
+			delays: [require_paint.LOOP_MS]
+		};
+	}
+	if (view === "card-full") {
+		const f = cardFrames(cardInputOf(spec), CARD_FULL_MS);
+		return fewerColours(merged(f.width, f.height, f.frames, f.delays));
+	}
+	if (view === "card-full-still") {
+		const card = cardPlayer(cardInputOf(spec));
+		return {
+			width: card.width,
+			height: card.height,
+			frames: [card.frame(0)],
+			delays: [require_paint.LOOP_MS]
+		};
+	}
 	if (view === "art" || view === "art-still") {
 		const art = cardArtFrames({
 			seed: spec.seed,
@@ -9387,6 +9816,7 @@ exports.BUDDY_GUY_WIDTH = BUDDY_GUY_WIDTH
 exports.CAPSULE_ONLY = require_paint.CAPSULE_ONLY
 exports.CARD_EDGES = CARD_EDGES
 exports.CARD_FRAGMENT = CARD_FRAGMENT
+exports.CARD_FULL_MS = CARD_FULL_MS
 exports.CARD_GOLDS = CARD_GOLDS
 exports.CARD_HEIGHT = CARD_HEIGHT
 exports.CARD_LOOKS = CARD_LOOKS
@@ -9401,6 +9831,7 @@ exports.EFFECTS = require_paint.EFFECTS
 exports.EMOTE_UNLOCKS = EMOTE_UNLOCKS
 exports.FACE_BUDDY_SPOTS = FACE_BUDDY_SPOTS
 exports.FACE_HEIGHT = FACE_HEIGHT
+exports.FACE_SIZE = FACE_SIZE
 exports.FACE_WIDTH = FACE_WIDTH
 exports.FINISHES = require_paint.FINISHES
 exports.FOOT_NAMES = FOOT_NAMES
@@ -9423,6 +9854,7 @@ exports.GUY_HEIGHT = GUY_HEIGHT
 exports.GUY_TIERS = GUY_TIERS
 exports.GUY_WIDTH = GUY_WIDTH
 exports.HEADROOM = HEADROOM
+exports.ICON_SIZE = ICON_SIZE
 exports.LOOP_MS = require_paint.LOOP_MS
 exports.LUCKY_ODDS = require_paint.LUCKY_ODDS
 exports.LilGuy = LilGuy
@@ -9437,6 +9869,7 @@ exports.PAINT_COST = PAINT_COST
 exports.PAINT_IDS = require_paint.PAINT_IDS
 exports.PART_ODDS = PART_ODDS
 exports.PART_SLOTS = PART_SLOTS
+exports.PICTURE_VIEWS = PICTURE_VIEWS
 exports.PINS = require_paint.PINS
 exports.PROFILE_SIZE = PROFILE_SIZE
 exports.RECLAIMED = RECLAIMED
@@ -9445,11 +9878,13 @@ exports.RETIRED_EYES = require_paint.RETIRED_EYES
 exports.SCRAP = SCRAP
 exports.SHADER_FINISHES = SHADER_FINISHES
 exports.SHADE_COUNT = require_paint.SHADE_COUNT
+exports.SHEET_MAX = SHEET_MAX
 exports.SHINE_FRAGMENT = SHINE_FRAGMENT
 exports.SHOWPIECE_WEIGHT = require_paint.SHOWPIECE_WEIGHT
 exports.SMALL_SIZE = require_paint.SMALL_SIZE
 exports.TAG_MAX = TAG_MAX
 exports.TIER_ICONS = TIER_ICONS
+exports.TITLE_MAX = TITLE_MAX
 exports.TONE_NAMES = TONE_NAMES
 exports.TRAIT_ICONS = TRAIT_ICONS
 exports.TRAIT_SLOTS = TRAIT_SLOTS
@@ -9467,6 +9902,7 @@ exports.auraColor = require_paint.auraColor
 exports.auraColors = require_paint.auraColors
 exports.bakeCard = bakeCard
 exports.bakeGuy = bakeGuy
+exports.bakeSquare = bakeSquare
 exports.bakeView = bakeView
 exports.bakedImage = bakedImage
 exports.bodies = require_paint.bodies
@@ -9477,6 +9913,7 @@ exports.cardArtPlayer = cardArtPlayer
 exports.cardFace = cardFace
 exports.cardFaceAt = cardFaceAt
 exports.cardFrames = cardFrames
+exports.cardInputOf = cardInputOf
 exports.cardPlayer = cardPlayer
 exports.cardStill = cardStill
 exports.cheeks = require_paint.cheeks
@@ -9504,6 +9941,7 @@ exports.encodePng = encodePng
 exports.eyes = require_paint.eyes
 exports.faceMoves = faceMoves
 exports.faceSpec = faceSpec
+exports.fewerColours = fewerColours
 exports.finishColor = finishColor
 exports.floatShare = floatShare
 exports.frameAt = frameAt
@@ -9567,6 +10005,7 @@ exports.rollPart = rollPart
 exports.rollSeason = require_paint.rollSeason
 exports.setProgress = setProgress
 exports.shadePalette = require_paint.shadePalette
+exports.sheetColumns = sheetColumns
 exports.sheetOf = sheetOf
 exports.shineData = shineData
 exports.shineFit = shineFit
@@ -9600,6 +10039,7 @@ exports.unlocksOf = unlocksOf
 exports.upscale = upscale
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
+exports.viewSize = viewSize
 exports.voxelColumns = voxelColumns
 exports.voxelItem = voxelItem
 exports.voxelMesh = voxelMesh

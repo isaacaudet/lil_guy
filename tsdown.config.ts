@@ -17,6 +17,20 @@ export default defineConfig([
     outDir: "dist",
   },
   {
+    // The kit the lil guys Worker serves: /lilguys.js (a classic script, window.LilGuys) and /lilguys.mjs.
+    entry: { lilguys: "src/kit-entry.ts" },
+    format: ["iife"],
+    globalName: "LilGuys",
+    outDir: "dist",
+    minify: true,
+  },
+  {
+    entry: { lilguys: "src/kit-module.ts" },
+    format: ["esm"],
+    outDir: "dist/kit",
+    minify: true,
+  },
+  {
     entry: { "lil-guy-element": "src/element-entry.ts" },
     format: ["iife"],
     globalName: "LilGuyElement",

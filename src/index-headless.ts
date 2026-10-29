@@ -41,14 +41,15 @@ export { collectorNotes, type Note } from './collector';
 export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, type Fx, type Effect } from './effects';
 export { TAG_MAX, cleanTag, floatShare, tradeFloat, tradeGames, machineSet, setProgress } from './collect';
 export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardPlayer, cardStill, cardArtPlayer, cardArtFrames, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, textWidth, CARD_EDGES, CARD_GOLDS, type CardInput, type CardPlayerOptions, type CardEdge, type CardGold, type CardStyle } from './card';
-export { encodeGif, encodePng, encodeApng, upscale, type Frames } from './gif';
+export { encodeGif, encodePng, encodeApng, fewerColours, upscale, type Frames } from './gif';
 export { LOOP_MS, SHADER_FINISHES, noiseOf, finishColor, GLSL_COMMON } from './finish-shader';
 export { shineFrame, shines, SHINE_FRAGMENT } from './shine';
 export { cardFace, cardFaceAt, faceMoves, buddyLift, createCardShader, CARD_FRAGMENT, FACE_WIDTH, FACE_HEIGHT, FACE_BUDDY_SPOTS, type CardFace, type FaceSpec, type FaceBuddySpot, type CardShader, type Hover } from './card-face';
 export { CARD_LOOKS, GLSL_LOOKS, lookFor, type CardLook, type LookOptions } from './card-looks';
-export { ART_VERSION, GUY_WIDTH, GUY_HEIGHT, BUDDY_GUY_WIDTH, bakeGuy, bakeCard, bakeView, profileFrames, toProfilePng, toProfileGif, PROFILE_SIZE, bakedImage, sheetOf, shineFit, guyCode, readGuyCode, faceSpec, animateOptions, isMove, type GuySpec, type CardSpec, type BakedKind } from './bake';
+export { ART_VERSION, GUY_WIDTH, GUY_HEIGHT, BUDDY_GUY_WIDTH, bakeGuy, bakeCard, bakeView, profileFrames, toProfilePng, toProfileGif, PROFILE_SIZE, bakedImage, sheetOf, sheetColumns, SHEET_MAX, bakeSquare, ICON_SIZE, FACE_SIZE, cardInputOf, CARD_FULL_MS, shineFit, guyCode, readGuyCode, faceSpec, animateOptions, isMove, type GuySpec, type CardSpec, type BakedKind } from './bake';
 export { defineLilGuyHere as defineLilGuy } from './bake';
-export { BAKED_SIZE, type View } from './guy-code';
+export { BAKED_SIZE, PICTURE_VIEWS, TITLE_MAX, viewSize, type View } from './guy-code';
+export { LILGUYS_HOST, LIL_GUY_PRESETS, LIL_GUY_PLACEHOLDER, BATCH_MAX, lilGuyUrl, lilGuyImg, lilGuySize, lilGuysFor, setLilGuysHost, lilGuysHost, type LilGuyInfo, type Who, type LilGuyPreset, type LilGuyPresetName, type LilGuyFormat, type LilGuyUrlOptions, type LilGuyImgOptions } from './kit';
 export type { LilGuyOptions } from './element';
 
 export { PAINTS, PAINT_IDS, PAINTABLE, painted } from './paints';

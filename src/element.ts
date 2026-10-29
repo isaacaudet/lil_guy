@@ -1,14 +1,19 @@
-import { ART_VERSION, BAKED_SIZE, guyCode, type CardSpec } from './guy-code';
+import { guyCode, type CardSpec } from './guy-code';
+import { LIL_GUY_PRESETS, lilGuyImg, type LilGuyPresetName } from './kit';
 import type { Frames } from './gif';
 
 /**
  * `<lil-guy>`: a guy, finished, in any page.
  *
- *   <lil-guy name="mia"></lil-guy>                 a claimed name, as he's worn (needs a host)
+ *   <lil-guy name="mia"></lil-guy>                 any player's name: a claimed one as he's worn, anyone
+ *                                                  else the guy the name deals (needs a host)
  *   <lil-guy seed="Sneaky Gumdrop"></lil-guy>      a guy drawn from any text
  *   <lil-guy code="eyJzIjoi…"></lil-guy>           an exact guy (`guyCode`), or set `.spec`
- *   view="idle"   a move looping (default), or `still`, `card`, `card-still`
- *   size="4"      screen pixels per art pixel (default 4); a guy with a buddy is wider (`BAKED_SIZE.buddy`)
+ *   view="idle"   a move looping (default), or `still`, `icon`, `face`, `pfp`, `card`, `art`,
+ *                 `card-full`, each with a `-still` (GAMES.md has their sizes)
+ *   preset="row"  a place in a game (`LIL_GUY_PRESETS`: menu, chat, row, results, profile, card,
+ *                 card-full), which sets the view and size unless they are given
+ *   size="4"      screen pixels per art pixel (default 4, or the preset's); a guy with a buddy is wider
  *   label="mia"   what a screen reader says; without it he's decorative
  *
  * With a host (`defineLilGuy({ host })`) it is an `<img>` of the Worker's
@@ -67,7 +72,7 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
   const baked = new Map<string, Frames | null>();
 
   class LilGuyElement extends HTMLElement {
-    static observedAttributes = ['name', 'seed', 'code', 'view', 'size', 'label'];
+    static observedAttributes = ['name', 'seed', 'code', 'view', 'size', 'label', 'preset'];
     private _spec: CardSpec | null = null;
     private player: Player | null = null;
     private canvas: HTMLCanvasElement | null = null;
@@ -103,9 +108,10 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
     }
 
     render(bakeNow = false) {
-      const who = this.who(), view = this.getAttribute('view') || 'idle';
-      const size = Math.max(1, Math.min(32, Math.round(Number(this.getAttribute('size')) || 4)));
-      const box = view.startsWith('card') ? BAKED_SIZE.card : BAKED_SIZE.guy;
+      const who = this.who(), named = this.getAttribute('preset');
+      const preset = named && named in LIL_GUY_PRESETS ? LIL_GUY_PRESETS[named as LilGuyPresetName] : null;
+      const view = this.getAttribute('view') || preset?.view || 'idle';
+      const size = Math.max(1, Math.min(32, Math.round(Number(this.getAttribute('size')) || preset?.scale || 4)));
       const label = this.getAttribute('label');
       if (label) { this.setAttribute('role', 'img'); this.setAttribute('aria-label', label); } else this.setAttribute('aria-hidden', 'true');
       if (this.player) { playing.delete(this.player); this.player = null; }
@@ -113,12 +119,9 @@ export function defineLilGuy(options: LilGuyOptions = {}): void {
       const pixels = 'image-rendering:pixelated;image-rendering:crisp-edges';
       const style = (width: number, height: number) => `width:${width * size}px;height:${height * size}px;${pixels}`;
       if (host) {
-        const img = document.createElement('img');
-        img.src = `${host}/g/${ART_VERSION}/${who}/${view}.png`;
-        // A guy with a buddy beside him is wider: the box holds the narrower size until the picture says.
-        img.alt = ''; img.decoding = 'async'; img.loading = 'lazy';
-        img.style.cssText = box === BAKED_SIZE.card ? style(box.width, box.height) : `width:auto;min-width:${box.width * size}px;height:${box.height * size}px;${pixels}`;
-        this.replaceChildren(img);
+        // The Worker's picture in a plain <img>: a name goes by `~name`, so anyone's name draws a guy.
+        const name = !this._spec && !this.getAttribute('code') && this.getAttribute('name');
+        this.replaceChildren(lilGuyImg(name || { code: who }, view, { size, host, alt: '' }));
         return;
       }
       if (!options.bake || who.startsWith('@')) { this.replaceChildren(); return; }

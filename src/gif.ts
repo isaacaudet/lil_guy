@@ -42,25 +42,67 @@ function palette(frames: Uint8ClampedArray[]): number[] {
   type Box = [number, number][];
   const ch = (c: number, k: number) => (c >> (16 - 8 * k)) & 255;
   const range = (box: Box, k: number) => { let lo = 255, hi = 0; for (const [c] of box) { const v = ch(c, k); if (v < lo) lo = v; if (v > hi) hi = v; } return hi - lo; };
+  // Each box's spread along each channel, weighted by how much it is used, worked out once when it is made.
+  const weigh = (box: Box) => { const used = Math.log2(1 + box.reduce((a, [, n]) => a + n, 0)); return [0, 1, 2].map(k => range(box, k) * used); };
   let boxes: Box[] = [all];
+  let weights = [weigh(all)];
   while (boxes.length < 255) {
     let best = -1, bk = 0, bw = -1;
     boxes.forEach((box, i) => {
       if (box.length < 2) return;
-      for (let k = 0; k < 3; k++) { const w = range(box, k) * Math.log2(1 + box.reduce((a, [, n]) => a + n, 0)); if (w > bw) { bw = w; best = i; bk = k; } }
+      for (let k = 0; k < 3; k++) { const w = weights[i][k]; if (w > bw) { bw = w; best = i; bk = k; } }
     });
     if (best < 0) break;
     const box = boxes[best].sort((a, b) => ch(a[0], bk) - ch(b[0], bk));
     const total = box.reduce((a, [, n]) => a + n, 0);
     let run = 0, cut = 1;
     for (let i = 0; i < box.length - 1; i++) { run += box[i][1]; if (run >= total / 2) { cut = i + 1; break; } }
-    boxes.splice(best, 1, box.slice(0, cut), box.slice(cut));
+    const lo = box.slice(0, cut), hi = box.slice(cut);
+    boxes.splice(best, 1, lo, hi);
+    weights.splice(best, 1, weigh(lo), weigh(hi));
   }
   return boxes.map(box => {
     let r = 0, g = 0, b = 0, n = 0;
     for (const [c, k] of box) { r += ch(c, 0) * k; g += ch(c, 1) * k; b += ch(c, 2) * k; n += k; }
     return (Math.round(r / n) << 16) | (Math.round(g / n) << 8) | Math.round(b / n);
   });
+}
+
+/** The nearest of `table`'s colours (from index 1; 0 is transparent) to each colour asked for, remembered. */
+function nearestIn(table: number[]): (c: number) => number {
+  const nearest = new Map<number, number>();
+  return (c: number) => {
+    let i = nearest.get(c);
+    if (i !== undefined) return i;
+    let best = 1, bd = Infinity;
+    for (let k = 1; k < table.length; k++) {
+      const p = table[k], dr = ((c >> 16) & 255) - ((p >> 16) & 255), dg = ((c >> 8) & 255) - ((p >> 8) & 255), db = (c & 255) - (p & 255);
+      const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+      if (d < bd) { bd = d; best = k; if (!d) break; }
+    }
+    nearest.set(c, best);
+    return best;
+  };
+}
+
+/**
+ * The frames in at most 255 colours and transparent, each pixel the nearest colour of one palette made
+ * for all of them, as a GIF has them. A picture with thousands of colours (a big card's foil) then
+ * packs as an indexed PNG, several times smaller, and its GIF shows exactly the same pixels. It loses
+ * colours, so a picture that has been served exact stays exact.
+ */
+export function fewerColours(input: Frames): Frames {
+  const table = [0, ...palette(input.frames)], indexOf = nearestIn(table);
+  const frames = input.frames.map(f => {
+    const out = new Uint8ClampedArray(f.length);
+    for (let i = 0; i < f.length; i += 4) {
+      if (f[i + 3] < 128) continue;
+      const c = table[indexOf((f[i] << 16) | (f[i + 1] << 8) | f[i + 2])];
+      out[i] = c >> 16; out[i + 1] = (c >> 8) & 255; out[i + 2] = c & 255; out[i + 3] = 255;
+    }
+    return out;
+  });
+  return { ...input, frames };
 }
 
 /** LZW-compresses colour indices into GIF data sub-blocks. */
@@ -90,11 +132,35 @@ function lzw(indices: Uint8Array, minCode: number, out: number[]): void {
 }
 
 /**
- * An animated GIF that loops forever. Transparent pixels stay transparent
- * (each frame clears to them), so a guy can be saved without a background.
+ * The box of pixels that differ between two frames `W` wide, as `[x, y, w, h]`, or null when none do.
+ * Two pixels both under half alpha count as the same (both transparent).
+ */
+function changed(a: Uint8ClampedArray, b: Uint8ClampedArray, W: number, H: number): [number, number, number, number] | null {
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    if (a[i + 3] < 128 && b[i + 3] < 128) continue;
+    if (a[i] === b[i] && a[i + 1] === b[i + 1] && a[i + 2] === b[i + 2] && a[i + 3] === b[i + 3]) continue;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return x1 < 0 ? null : [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
+}
+
+/** Whether a pixel shown in `before` is transparent in `after`: something a GIF can only clear by disposing. */
+function clears(before: Uint8ClampedArray, after: Uint8ClampedArray): boolean {
+  for (let i = 3; i < after.length; i += 4) if (after[i] < 128 && before[i] >= 128) return true;
+  return false;
+}
+
+/**
+ * An animated GIF that loops forever. Transparent pixels stay transparent, so
+ * a guy can be saved without a background. After the first frame only the box
+ * that changed is written, its unchanged pixels left to show through, so a
+ * shimmer on a hat costs the hat, not the whole picture; a frame that has to
+ * clear a pixel is written whole after a frame that clears itself away.
  */
 export function encodeGif(input: Frames, scale = 1): Uint8Array {
-  const W = input.width * scale, H = input.height * scale;
+  const W = input.width * scale, H = input.height * scale, n = input.frames.length;
   const frames = input.frames.map(f => upscale(f, input.width, input.height, scale));
   const colours = palette(frames);
   const table = [0, ...colours];                       // index 0 is transparent
@@ -106,25 +172,28 @@ export function encodeGif(input: Frames, scale = 1): Uint8Array {
   out.push(0x80 | ((bitsPer - 1) << 4) | (bitsPer - 1), 0, 0);
   for (let i = 0; i < 1 << bitsPer; i++) { const c = table[i] ?? 0; out.push((c >> 16) & 255, (c >> 8) & 255, c & 255); }
   out.push(0x21, 0xff, 11, ...[...'NETSCAPE2.0'].map(c => c.charCodeAt(0)), 3, 1, 0, 0, 0);
-  const nearest = new Map<number, number>();
-  const indexOf = (c: number) => {
-    let i = nearest.get(c);
-    if (i !== undefined) return i;
-    let best = 1, bd = Infinity;
-    for (let k = 1; k < table.length; k++) {
-      const p = table[k], dr = ((c >> 16) & 255) - ((p >> 16) & 255), dg = ((c >> 8) & 255) - ((p >> 8) & 255), db = (c & 255) - (p & 255);
-      const d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
-      if (d < bd) { bd = d; best = k; if (!d) break; }
+  const indexOf = nearestIn(table);
+  // A frame that turns a shown pixel transparent comes after one that clears itself (disposal 2), and
+  // a frame that clears itself must cover the whole picture; every other frame leaves itself (disposal 1).
+  const src = input.frames, w0 = input.width, h0 = input.height;
+  const clearing = src.map((f, k) => n > 1 && clears(src[(k + n - 1) % n], f));
+  const whole = src.map((_, k) => k === 0 || clearing[k] || clearing[(k + 1) % n]);
+  frames.forEach((f, k) => {
+    const delay = Math.max(2, Math.round((input.delays[k] ?? 80) / 10));
+    const dispose = n > 1 && clearing[(k + 1) % n] ? 2 : 1;
+    const box = whole[k] ? [0, 0, w0, h0] : changed(src[k - 1], src[k], w0, h0) ?? [0, 0, 1, 1];
+    const [bx, by, bw, bh] = box.map(v => v * scale);
+    out.push(0x21, 0xf9, 4, (dispose << 2) | 1); word(delay); out.push(0, 0);
+    out.push(0x2c); word(bx); word(by); word(bw); word(bh); out.push(0);
+    const before = whole[k] ? null : frames[k - 1];
+    const idx = new Uint8Array(bw * bh);
+    for (let y = 0, p = 0; y < bh; y++) for (let x = 0; x < bw; x++, p++) {
+      const i = ((by + y) * W + bx + x) * 4;
+      if (f[i + 3] < 128) { idx[p] = 0; continue; }
+      // Unchanged under a frame that stays: left to show through, which packs smaller.
+      if (before && before[i] === f[i] && before[i + 1] === f[i + 1] && before[i + 2] === f[i + 2] && before[i + 3] >= 128) { idx[p] = 0; continue; }
+      idx[p] = indexOf((f[i] << 16) | (f[i + 1] << 8) | f[i + 2]);
     }
-    nearest.set(c, best);
-    return best;
-  };
-  frames.forEach((f, n) => {
-    const delay = Math.max(2, Math.round((input.delays[n] ?? 80) / 10));
-    out.push(0x21, 0xf9, 4, (2 << 2) | 1); word(delay); out.push(0, 0);
-    out.push(0x2c); word(0); word(0); word(W); word(H); out.push(0);
-    const idx = new Uint8Array(W * H);
-    for (let i = 0, p = 0; i < f.length; i += 4, p++) idx[p] = f[i + 3] < 128 ? 0 : indexOf((f[i] << 16) | (f[i + 1] << 8) | f[i + 2]);
     const min = Math.max(2, bitsPer);
     out.push(min);
     lzw(idx, min, out);
@@ -188,6 +257,14 @@ function layout(frames: Uint8ClampedArray[]): { indexed: boolean; colours: numbe
   } };
 }
 
+/** The `w` by `h` box at `x`, `y` of a picture `W` wide. */
+function crop(rgba: Uint8ClampedArray, W: number, x: number, y: number, w: number, h: number): Uint8ClampedArray {
+  if (x === 0 && w === W) return rgba.subarray(y * W * 4, (y + h) * W * 4);
+  const out = new Uint8ClampedArray(w * h * 4);
+  for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W + x) * 4, ((y + r) * W + x + w) * 4), r * w * 4);
+  return out;
+}
+
 async function png(input: Frames, scale: number, animated: boolean): Promise<Uint8Array> {
   const W = input.width * scale, H = input.height * scale;
   const frames = input.frames.map(f => upscale(f, input.width, input.height, scale));
@@ -201,9 +278,12 @@ async function png(input: Frames, scale: number, animated: boolean): Promise<Uin
   let seq = 0;
   if (animated) parts.push(chunk('acTL', concat([u32(frames.length), u32(0)])));
   for (let i = 0; i < frames.length; i++) {
-    // Every frame whole, replacing the one before (no disposal, source blend), each shown its own time.
-    if (animated) parts.push(chunk('fcTL', concat([u32(seq++), u32(W), u32(H), u32(0), u32(0), u16(Math.max(1, Math.round(input.delays[i] ?? 100))), u16(1000), new Uint8Array([0, 0])])));
-    const data = await zlib(rows(frames[i], W, H));
+    // The first frame whole; after it only the box that changed, replacing what was there (no
+    // disposal, source blend, so a pixel can turn transparent too), each shown its own time.
+    const box = i === 0 ? null : changed(input.frames[i - 1], input.frames[i], input.width, input.height);
+    const [bx, by, bw, bh] = i === 0 ? [0, 0, W, H] : (box ?? [0, 0, 1, 1]).map(v => v * scale);
+    if (animated) parts.push(chunk('fcTL', concat([u32(seq++), u32(bw), u32(bh), u32(bx), u32(by), u16(Math.max(1, Math.round(input.delays[i] ?? 100))), u16(1000), new Uint8Array([0, 0])])));
+    const data = await zlib(rows(i === 0 ? frames[i] : crop(frames[i], W, bx, by, bw, bh), bw, bh));
     parts.push(i === 0 ? chunk('IDAT', data) : chunk('fdAT', concat([u32(seq++), data])));
     if (!animated) break;
   }

@@ -69,7 +69,7 @@ test('old versions, other spellings and nonsense are turned away or redirected',
   // The same guy written another way (keys in another order) goes to his one address.
   const moved = await get(`/g/${ART_VERSION}/${btoa('{"p":null,"s":"Maya0"}').replace(/=+$/, '')}/idle.png`);
   expect([moved.status, moved.headers.get('location')]).toEqual([301, `/g/${ART_VERSION}/${code}/idle.png`]);
-  for (const path of [`/g/${ART_VERSION}/${code}/moonwalk.png`, `/g/${ART_VERSION}/${code}/idle@99.png`, `/g/${ART_VERSION}/${code}/idle.gif`, `/g/${ART_VERSION}/not-a-code/idle.png`, `/g/${ART_VERSION}/${code}`]) {
+  for (const path of [`/g/${ART_VERSION}/${code}/moonwalk.png`, `/g/${ART_VERSION}/${code}/idle@99.png`, `/g/${ART_VERSION}/${code}/idle.sheet.gif`, `/g/${ART_VERSION}/${code}/idle.json`, `/g/${ART_VERSION}/${code}/Idle.png`, `/g/${ART_VERSION}/not-a-code/idle.png`, `/g/${ART_VERSION}/${code}`]) {
     expect((await get(path)).status).toBe(404);
   }
   expect((await worker.fetch(new Request(`https://lilguys.test/g/${ART_VERSION}/${code}/idle.png`, { method: 'POST' }), env, {})).status).toBe(405);

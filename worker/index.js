@@ -1,6 +1,6 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
-import { baked } from './baked.js';
-import { clubGuys, namedGuys } from './club-guys.js';
+import { baked, overBudget } from './baked.js';
+import { batchGuys, clubGuys, namedGuys } from './club-guys.js';
 import { BANK_DAYS, putOn, readClub, statsReady, takeOff, withStats, TODAY_EVERY } from './card-stats.js';
 import { heldKey, skeletonTaken } from './name-lookup.js';
 import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
@@ -17,6 +17,19 @@ const json = (body, status = 200, extra = {}) => Response.json(body, {
 const digest = async value => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), b => b.toString(16).padStart(2, '0')).join('');
 const equal = async (a, b) => (await digest(a)) === (await digest(b));
 
+// The kit a game loads (GAMES.md): /lilguys.js (a classic script) and /lilguys.mjs (a module), from the
+// site's files with a short cache, since each carries the art version, and readable from any page, which
+// a module imported from another site needs.
+const KIT = new Set(['/lilguys.js', '/lilguys.mjs']);
+async function kit(request, env) {
+  const file = await env.ASSETS.fetch(request);
+  const headers = new Headers(file.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Cache-Control', 'public, max-age=300');
+  if (file.ok) headers.set('Content-Type', 'text/javascript; charset=utf-8');
+  return new Response(file.body, { status: file.status, headers });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -24,8 +37,9 @@ export default {
       try { return await baked(request, env, url, ctx, guyOf); }
       catch { return Response.json({ error: 'Pictures are temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
     }
+    if (KIT.has(url.pathname)) return kit(request, env);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
-    try { return await api(request, env, url); }
+    try { return await api(request, env, url, ctx); }
     catch { return json({ error: 'Names are temporarily unavailable. Please try again.' }, 503); }
   },
 };
@@ -488,10 +502,11 @@ async function stats(env) {
   return json({ players: players.n, copies: grades.reduce((a, b) => a + b, 0), grades, counts, todayGame: todayGame(), rules: RULES });
 }
 
-export async function api(request, env, url = new URL(request.url)) {
+export async function api(request, env, url = new URL(request.url), ctx) {
   if (url.pathname.startsWith('/api/auth/')) return authApi(request, env, url);
   if (url.pathname === '/api/club/guys') return clubGuys(request, env, guyOf);
   if (url.pathname === '/api/club/named') return namedGuys(request, env, guyOf, url);
+  if (url.pathname === '/api/club/batch') return batchGuys(request, env, ctx, guyOf, url, () => overBudget(request, env, 'batch', 2000));
   if (request.method === 'GET' && url.pathname === '/api/names') {
     const limit = Math.min(12, Math.max(1, Number.parseInt(url.searchParams.get('recent') || '12') || 12));
     const { results } = await env.DB.prepare('SELECT key, seed, at FROM names ORDER BY at DESC LIMIT ?').bind(limit).all();

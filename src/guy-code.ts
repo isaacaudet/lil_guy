@@ -31,7 +31,12 @@ export interface CardSpec extends GuySpec {
   grade?: number;
   /** The window's tint when there's no grade. */
   tint?: string;
+  /** The name across the top of his big card (`card-full`), at most `TITLE_MAX` characters. */
+  title?: string;
 }
+
+/** The longest name a big card's code carries. */
+export const TITLE_MAX = 24;
 
 export const PART_KEYS = ['head', 'eyes', 'mouth', 'cheeks', 'hair', 'body', 'accessory', 'arms', 'feet', 'shade', 'flip', 'lucky', 'rotation'] as const;
 
@@ -40,7 +45,7 @@ export function guyCode(spec: CardSpec): string {
   const parts = spec.parts && Object.keys(spec.parts).length
     ? PART_KEYS.map(k => { const v = (spec.parts as Record<string, unknown>)[k]; return v === undefined ? '' : typeof v === 'boolean' ? (v ? 't' : 'f') : String(v); }).join('.')
     : undefined;
-  const short = { s: spec.seed, p: parts, c: spec.palette, e: spec.equip?.length ? spec.equip : undefined, g: spec.grade, t: spec.tint };
+  const short = { s: spec.seed, p: parts, c: spec.palette, e: spec.equip?.length ? spec.equip : undefined, g: spec.grade, t: spec.tint, n: spec.title || undefined };
   const json = JSON.stringify(short);
   const bytes = new TextEncoder().encode(json);
   let bin = ''; for (const b of bytes) bin += String.fromCharCode(b);
@@ -48,12 +53,27 @@ export function guyCode(spec: CardSpec): string {
 }
 
 /**
- * A baked guy's size (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a guy with a
- * buddy beside him (`BUDDY_GUY_WIDTH`), and a card's. Nothing tells a page
- * from an address alone which of the first two a guy is, so size a box by its
- * height and let the picture set its width.
+ * Every baked picture's size at 1×: a guy playing a move (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a
+ * guy with a buddy beside him (`BUDDY_GUY_WIDTH`), an icon, a face, the small card, the big card's
+ * art and the big card. Nothing tells a page from an address alone whether a guy has a buddy, so size
+ * a move's box by its height and let the picture set its width (the batch read says, as `wide`). A
+ * profile picture (`pfp`) is square but its side depends on the guy, 20 to 34: show it in a square
+ * box.
  */
-export const BAKED_SIZE = { guy: { width: 22, height: 20 }, buddy: { width: 34, height: 20 }, card: { width: 26, height: 42 } } as const;
+export const BAKED_SIZE = {
+  guy: { width: 22, height: 20 }, buddy: { width: 34, height: 20 }, card: { width: 26, height: 42 },
+  icon: { width: 16, height: 16 }, face: { width: 14, height: 14 }, art: { width: 128, height: 128 }, cardFull: { width: 140, height: 204 },
+} as const;
 
 /** What a baked picture shows: a move looping, his still, or his card. */
 export type View = string;
+
+/** The views that aren't moves, each with its `-still`. */
+export const PICTURE_VIEWS = ['icon', 'face', 'still', 'pfp', 'card', 'art', 'card-full'] as const;
+
+/** A view's size at 1× (`BAKED_SIZE`), or null for one that depends on the guy (a move, `pfp`). */
+export function viewSize(view: string): { width: number; height: number } | null {
+  const base = view.replace(/-still$/, '');
+  return base === 'icon' ? BAKED_SIZE.icon : base === 'face' ? BAKED_SIZE.face : base === 'card' ? BAKED_SIZE.card
+    : base === 'art' ? BAKED_SIZE.art : base === 'card-full' ? BAKED_SIZE.cardFull : null;
+}
