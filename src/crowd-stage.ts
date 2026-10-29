@@ -50,7 +50,7 @@ export type CrowdGuy = Partial<GuySpec>;
 export interface CrowdOptions {
   /** The colour behind the crowd: the haze over far rows is drawn in it. Default the club's navy. */
   backdrop?: string;
-  /** Screen pixels to a world pixel. Default 3 from 900 CSS pixels wide, else 2. */
+  /** CSS pixels to a world pixel (made a whole number of screen pixels). Default 3 from 900 CSS pixels wide, else 2. */
   scale?: number;
   /** Above 1 packs the crowd tighter, below 1 looser. */
   density?: number;
@@ -90,12 +90,12 @@ interface Sheet { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; next
 const SHEET_COLUMNS = 64, SHEET_ROWS = 64;
 
 /**
- * A crowd on `canvas`. The canvas keeps its CSS size; its pixels are world pixels, scaled up by CSS
- * (`image-rendering: pixelated` is set on it). Draws only while something moves.
+ * A crowd on `canvas`, which the page sizes with CSS. It draws at the screen's own pixels, each world
+ * pixel a whole number of them with smoothing off, so guys stay sharp at any size, zoom or density;
+ * call `resize()` when the canvas's size or the zoom changes. Draws only while something moves.
  */
 export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {}): Crowd {
   const ctx = canvas.getContext('2d')!;
-  canvas.style.imageRendering = 'pixelated';
   const backdrop = options.backdrop ?? '#1d2030';
   const haze = (a: number) => {
     const n = parseInt(backdrop.slice(1, 7), 16);
@@ -104,6 +104,9 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
   const members: Member[] = [], byKey = new Map<string, Member>(), queue: [Member, CrowdSize][] = [];
   const sheets = new Map<CrowdSize, Sheet[]>();
   let order: Member[] | null = null;
+  // The world is drawn at whole screen pixels per world pixel (`k`), with smoothing off, so a guy is
+  // never stretched by a fraction or blurred, at any size, zoom or pixel density.
+  let worldW = 1, worldH = 1, k = 1, dpr = 1;
   let seats: CrowdSeat[] = [], waving = !!options.wave, frame = 0, start = 0, gone = false;
   let lit: { member: Member; label: string; from: number; until: number } | null = null;
 
@@ -134,11 +137,15 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
   }
 
   function layout() {
-    const w = canvas.clientWidth || canvas.width, h = canvas.clientHeight || canvas.height;
+    const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
     const z = options.scale ?? (w >= 900 ? 3 : 2);
-    canvas.width = Math.max(1, Math.floor(w / z));
-    canvas.height = Math.max(1, Math.floor(h / z));
-    seats = crowdSeats(canvas.width, canvas.height, options.density ?? 1);
+    dpr = globalThis.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(w * dpr));
+    canvas.height = Math.max(1, Math.round(h * dpr));
+    k = Math.max(1, Math.round(z * dpr));
+    worldW = Math.ceil(canvas.width / k);
+    worldH = Math.ceil(canvas.height / k);
+    seats = crowdSeats(worldW, worldH, options.density ?? 1);
     order = null;
     for (const m of members) if (m.seat < seats.length) queue.push([m, seats[m.seat].size]);
   }
@@ -153,10 +160,13 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
     // A few milliseconds of sprite making a frame.
     const budget = performance.now() + 4;
     while (queue.length && performance.now() < budget) { const [m, size] = queue.shift()!; make(m, size); }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     // Back to front, worked out again only when someone sits down or the seats change.
     const shown = order ??= members.filter(m => m.seat < seats.length).sort((a, b) => seats[a.seat].row - seats[b.seat].row);
-    const W = canvas.width, wx = ((t - start) / 4200 % 1) * (W + 120) - 60;
+    const W = worldW, wx = ((t - start) / 4200 % 1) * (W + 120) - 60;
     let group: CrowdSize | undefined;
     for (const m of shown) {
       if (lit?.member === m) continue;
@@ -179,20 +189,26 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
     if (t >= until) { lit = null; return; }
     if (!member.cells.has(16)) make(member, 16);
     const rise = Math.min(1, (t - from) / 350, (until - t) / 350), ease = 1 - Math.pow(1 - rise, 3);
-    const scale = Math.max(1, Math.min(3, Math.floor(canvas.height / 40))), side = 16 * scale;
-    const x = Math.round((canvas.width - side) / 2), y = Math.round(canvas.height - (side + 14) * ease);
+    const scale = Math.max(2, Math.min(4, Math.floor(worldH / 40))), side = 16 * scale;
+    // His line is written at the screen's own resolution under him, so it stays sharp.
+    const css = k / dpr, lineH = Math.ceil(26 / css);
+    const x = Math.round((worldW - side) / 2), y = Math.round(worldH - (side + lineH + 2) * ease);
     ctx.fillStyle = haze(0.55 * ease);
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, worldW, worldH);
     blit(member, 16, x, y, scale);
     if (label) {
-      ctx.font = options.font ?? 'bold 8px monospace';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = options.font ?? '700 15px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      const ty = y + side + 2, tw = Math.ceil(ctx.measureText(label).width) + 6;
-      ctx.fillStyle = haze(0.9);
-      ctx.fillRect(Math.round(canvas.width / 2 - tw / 2), ty - 1, tw, 11);
+      ctx.textBaseline = 'middle';
+      const cx = worldW * css / 2, cy = (y + side + 2) * css + 13, tw = Math.ceil(ctx.measureText(label).width) + 20;
+      ctx.fillStyle = haze(0.92);
+      ctx.beginPath();
+      ctx.roundRect(cx - tw / 2, cy - 13, tw, 26, 13);
+      ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(label, Math.round(canvas.width / 2), ty);
+      ctx.fillText(label, cx, cy + 1);
+      ctx.setTransform(k, 0, 0, k, 0, 0);
     }
   }
   const wake = () => { if (!frame && !gone) frame = requestAnimationFrame(draw); };

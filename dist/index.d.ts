@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime0 from "react/jsx-runtime";
+import * as react_jsx_runtime1 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -1675,7 +1675,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime1.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -2625,7 +2625,7 @@ type CrowdGuy = Partial<GuySpec>;
 interface CrowdOptions {
   /** The colour behind the crowd: the haze over far rows is drawn in it. Default the club's navy. */
   backdrop?: string;
-  /** Screen pixels to a world pixel. Default 3 from 900 CSS pixels wide, else 2. */
+  /** CSS pixels to a world pixel (made a whole number of screen pixels). Default 3 from 900 CSS pixels wide, else 2. */
   scale?: number;
   /** Above 1 packs the crowd tighter, below 1 looser. */
   density?: number;
@@ -2657,8 +2657,9 @@ interface Crowd {
   readonly seats: number;
 }
 /**
- * A crowd on `canvas`. The canvas keeps its CSS size; its pixels are world pixels, scaled up by CSS
- * (`image-rendering: pixelated` is set on it). Draws only while something moves.
+ * A crowd on `canvas`, which the page sizes with CSS. It draws at the screen's own pixels, each world
+ * pixel a whole number of them with smoothing off, so guys stay sharp at any size, zoom or density;
+ * call `resize()` when the canvas's size or the zoom changes. Draws only while something moves.
  */
 declare function createCrowd(canvas: HTMLCanvasElement, options?: CrowdOptions): Crowd;
 /**
