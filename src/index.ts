@@ -87,6 +87,7 @@ export { defineLilGuyHere as defineLilGuy } from "./bake";
 export { crowdSprite, crowdSheet, crowdShine, CROWD_SIZES, type CrowdSize, type CrowdSprite, type CrowdShine } from "./crowd";
 export { createCrowd, crowdSeats, crowdPicture, type Crowd, type CrowdOptions, type CrowdGuy, type CrowdSeat } from "./crowd-stage";
 export { emoteFrames, EMOTE_SET, EMOTE_SIZE, isEmote } from "./emotes";
+export { createStadium, stadiumSeats, venueFor, VENUES, type Stadium, type StadiumOptions, type StadiumSeat, type VenueId } from "./stadium";
 export { BAKED_SIZE, PICTURE_VIEWS, TITLE_MAX, viewSize, type View } from "./guy-code";
 export { LILGUYS_HOST, LIL_GUY_PRESETS, LIL_GUY_PLACEHOLDER, BATCH_MAX, lilGuyUrl, lilGuyImg, lilGuySize, lilGuysFor, setLilGuysHost, lilGuysHost, type LilGuyInfo, type Who, type LilGuyPreset, type LilGuyPresetName, type LilGuyFormat, type LilGuyUrlOptions, type LilGuyImgOptions } from "./kit";
 export type { LilGuyOptions } from "./element";

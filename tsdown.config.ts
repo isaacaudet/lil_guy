@@ -31,6 +31,20 @@ export default defineConfig([
     minify: true,
   },
   {
+    // Only the crowd and the stadium (src/stadium-entry.ts): /lilguys-stadium.js and /lilguys-stadium.mjs.
+    entry: { "lilguys-stadium": "src/stadium-entry.ts" },
+    format: ["iife"],
+    globalName: "LilGuyStadium",
+    outDir: "dist",
+    minify: true,
+  },
+  {
+    entry: { "lilguys-stadium": "src/stadium-entry.ts" },
+    format: ["esm"],
+    outDir: "dist/kit",
+    minify: true,
+  },
+  {
     entry: { "lil-guy-element": "src/element-entry.ts" },
     format: ["iife"],
     globalName: "LilGuyElement",

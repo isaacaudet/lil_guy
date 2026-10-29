@@ -20,7 +20,7 @@ const equal = async (a, b) => (await digest(a)) === (await digest(b));
 // The kit a game loads (GAMES.md): /lilguys.js (a classic script) and /lilguys.mjs (a module), from the
 // site's files with a short cache, since each carries the art version, and readable from any page, which
 // a module imported from another site needs.
-const KIT = new Set(['/lilguys.js', '/lilguys.mjs']);
+const KIT = new Set(['/lilguys.js', '/lilguys.mjs', '/lilguys-stadium.js', '/lilguys-stadium.mjs']);
 async function kit(request, env) {
   const file = await env.ASSETS.fetch(request);
   const headers = new Headers(file.headers);

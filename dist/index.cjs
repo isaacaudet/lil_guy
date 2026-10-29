@@ -640,20 +640,20 @@ function liveEyes(layer, kind, t, seed) {
 */
 function squash(layer, s) {
 	if (!s) return layer;
-	const { n, row: r } = s, rows = layer.map((row) => [...row]);
+	const { n, row: r } = s, rows$1 = layer.map((row) => [...row]);
 	if (n > 0) {
-		const blank = Array.from({ length: n }, () => new Array(rows[0].length).fill(null));
+		const blank = Array.from({ length: n }, () => new Array(rows$1[0].length).fill(null));
 		return [
 			...blank,
-			...rows.slice(0, r - n + 1),
-			...rows.slice(r + 1)
+			...rows$1.slice(0, r - n + 1),
+			...rows$1.slice(r + 1)
 		];
 	}
 	const k = -n;
 	return [
-		...rows.slice(k, r + 1),
-		...Array.from({ length: k }, () => [...rows[r]]),
-		...rows.slice(r + 1)
+		...rows$1.slice(k, r + 1),
+		...Array.from({ length: k }, () => [...rows$1[r]]),
+		...rows$1.slice(r + 1)
 	];
 }
 /**
@@ -884,14 +884,14 @@ const EMOTES = {
 * beside it, as manga draws one. It never covers his eyes or mouth.
 */
 function sweatDrop(layer, slide) {
-	const { rows, color, accent } = EMOTES.sweat, ink = "#2B6CA8";
+	const { rows: rows$1, color, accent } = EMOTES.sweat, ink = "#2B6CA8";
 	let top = -1;
 	layer.forEach((row, y) => {
 		if (top < 0 && row.some(Boolean)) top = y;
 	});
 	if (top < 0) return;
 	const edge = (layer[top + 2] ?? []).reduce((r, cell, x) => cell ? x : r, -1);
-	const w = rows[0].length + 2, h = rows.length + 2;
+	const w = rows$1[0].length + 2, h = rows$1.length + 2;
 	const x0 = Math.min(edge, FRAME_WIDTH - w), y0 = Math.max(0, top - 1 + slide);
 	const nearFace = (x, y) => {
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.feature) return true;
@@ -900,8 +900,8 @@ function sweatDrop(layer, slide) {
 	const ink_ = (ch) => ch === "#" || ch === "+";
 	const cells = [];
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-		const ch = rows[y - 1]?.[x - 1], on = ink_(ch);
-		if (on || NEIGHBOURS.some(([dx, dy]) => ink_(rows[y - 1 + dy]?.[x - 1 + dx]))) cells.push([
+		const ch = rows$1[y - 1]?.[x - 1], on = ink_(ch);
+		if (on || NEIGHBOURS.some(([dx, dy]) => ink_(rows$1[y - 1 + dy]?.[x - 1 + dx]))) cells.push([
 			x0 + x,
 			y0 + y,
 			on ? ch === "+" ? accent : color : ink
@@ -923,14 +923,14 @@ function poseStill(input, pose, options = {}) {
 }
 /** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
 function emoteCells(kind) {
-	const { rows, color, accent, open } = EMOTES[kind];
-	const w = rows[0].length + 2, h = rows.length + 2;
+	const { rows: rows$1, color, accent, open } = EMOTES[kind];
+	const w = rows$1[0].length + 2, h = rows$1.length + 2;
 	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
 	const ink = (ch) => ch === "#" || ch === "+";
 	const cells = [];
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-		const ch = rows[y - 1]?.[x - 1], on = ink(ch);
-		const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+		const ch = rows$1[y - 1]?.[x - 1], on = ink(ch);
+		const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows$1[y - 1 + dy]?.[x - 1 + dx]));
 		if (on || near) cells.push([
 			x,
 			y,
@@ -941,8 +941,8 @@ function emoteCells(kind) {
 }
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer, kind, left, lift = 0) {
-	const { rows, color, accent, open } = EMOTES[kind];
-	const w = rows[0].length + 2, h = rows.length + 2;
+	const { rows: rows$1, color, accent, open } = EMOTES[kind];
+	const w = rows$1[0].length + 2, h = rows$1.length + 2;
 	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
@@ -957,9 +957,9 @@ function emote(layer, kind, left, lift = 0) {
 	const at = ([x0, y0]) => {
 		const cells = [];
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const ch = rows[y - 1]?.[x - 1];
+			const ch = rows$1[y - 1]?.[x - 1];
 			const on = ink(ch);
-			const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
+			const near = !on && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows$1[y - 1 + dy]?.[x - 1 + dx]));
 			if (on || near) cells.push([
 				x0 + x,
 				y0 + y,
@@ -1142,7 +1142,7 @@ function squashPlan(config, figure, grid) {
 */
 function squashRows(input, options = {}) {
 	const { config, figure, grid } = poser(input, options);
-	const plan = squashPlan(config, figure, grid), rows = {};
+	const plan = squashPlan(config, figure, grid), rows$1 = {};
 	for (const n of [
 		-2,
 		-1,
@@ -1150,11 +1150,11 @@ function squashRows(input, options = {}) {
 		2
 	]) {
 		const s = plan.at(n);
-		rows[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
+		rows$1[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
 	}
 	return {
 		face: plan.face,
-		rows
+		rows: rows$1
 	};
 }
 /**
@@ -2326,13 +2326,13 @@ function guyRank(config) {
 * readable from 24px.
 */
 /** A grid's letters: `#` is `currentColor`, the rest its accents, `.` empty. */
-function icon(rows, accents = {}) {
+function icon(rows$1, accents = {}) {
 	const fills = {
 		"#": "currentColor",
 		...accents
 	};
 	const rects = [];
-	rows.forEach((row, y) => {
+	rows$1.forEach((row, y) => {
 		for (let x = 0; x < row.length;) {
 			const ch = row[x];
 			let end = x + 1;
@@ -2341,8 +2341,8 @@ function icon(rows, accents = {}) {
 			x = end;
 		}
 	});
-	const w = Math.max(...rows.map((r) => r.length));
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${rects.join("")}</svg>`;
+	const w = Math.max(...rows$1.map((r) => r.length));
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${rows$1.length}" shape-rendering="crispEdges" aria-hidden="true">${rects.join("")}</svg>`;
 }
 const PINK = "#FF6F9F";
 const GREEN = "#4CC25A";
@@ -6460,7 +6460,7 @@ function chunk(type, data) {
 * when they use 256 colours or fewer, which pixel art nearly always does and
 * which packs several times smaller, else full RGBA.
 */
-function layout(frames) {
+function layout$1(frames) {
 	const key = (px, i) => px[i + 3] < 128 ? -1 : px[i] << 16 | px[i + 1] << 8 | px[i + 2];
 	const index = new Map([[-1, 0]]);
 	for (const px of frames) for (let i = 0; i < px.length && index.size <= 256; i += 4) {
@@ -6496,7 +6496,7 @@ function crop(rgba, W, x, y, w, h) {
 async function png(input, scale$1, animated) {
 	const W = input.width * scale$1, H = input.height * scale$1;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
-	const { indexed, colours, rows } = layout(frames);
+	const { indexed, colours, rows: rows$1 } = layout$1(frames);
 	const head = new Uint8Array([
 		...u32(W),
 		...u32(H),
@@ -6553,7 +6553,7 @@ async function png(input, scale$1, animated) {
 			u16(1e3),
 			new Uint8Array([0, 0])
 		])));
-		const data = await zlib(rows(i === 0 ? frames[i] : crop(frames[i], W, bx, by, bw, bh), bw, bh));
+		const data = await zlib(rows$1(i === 0 ? frames[i] : crop(frames[i], W, bx, by, bw, bh), bw, bh));
 		parts.push(i === 0 ? chunk("IDAT", data) : chunk("fdAT", concat([u32(seq++), data])));
 		if (!animated) break;
 	}
@@ -7409,8 +7409,8 @@ var Surface = class {
 		const draw = (ox, oy, col) => {
 			let cx = ox;
 			for (const ch of s) {
-				const [adv, rows] = glyph(ch);
-				rows.forEach((bits, dy) => {
+				const [adv, rows$1] = glyph(ch);
+				rows$1.forEach((bits, dy) => {
 					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
 				});
 				cx += adv + spacing;
@@ -7732,7 +7732,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		if (neg) return mix(mix(IVORY$1, tone, .35), mix(IVORY$1, tone, .6), yy / H);
 		return mix(mix(tone, WHITE$1, .08), mix(tone, INK$1, .25), yy / H);
 	};
-	const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
+	const rows$1 = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
 	const auraDeep = mix(ah, INK$1, .62), auraLight = mix(ah, INK$1, .3), inlay = mix(ah, WHITE$1, .7);
 	const trim = new Uint8Array(W * H);
 	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
@@ -7742,7 +7742,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			s.set(x, yy, INK$1);
 			continue;
 		}
-		let c = rows[yy] ?? stock(x, yy);
+		let c = rows$1[yy] ?? stock(x, yy);
 		if (framed && bevel && d === 3) {
 			c = bevel === 1 ? GOLD_LIGHT : GOLD_DEEP;
 			trim[yy * W + x] = 1;
@@ -8931,7 +8931,7 @@ function emoteFrames(spec, id, moving = true) {
 	const steps$1 = moving ? STEPS : 1;
 	for (let k = 0; k < steps$1; k++) {
 		const pose = def.poses[k % def.poses.length];
-		const rows = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
+		const rows$1 = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
 		const beat = moving ? k % 2 : 0;
 		const dy = def.motion === "bounce" ? -beat : 0, dx = def.motion === "shake" ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
 		const lift = def.motion === "rise" && moving ? k % 3 : 0;
@@ -8948,7 +8948,7 @@ function emoteFrames(spec, id, moving = true) {
 			const from = top + y - dy;
 			if (from < 0 || from >= FRAME_HEIGHT) continue;
 			for (let x = 0; x < EMOTE_SIZE; x++) {
-				const c = rows[from]?.[x + 1 + dx];
+				const c = rows$1[from]?.[x + 1 + dx];
 				if (c) put(x, y, c);
 			}
 		}
@@ -9780,19 +9780,19 @@ function bakeCard(spec) {
 * row (all of them in one strip by default), then the next row down.
 */
 function sheetOf(f, columns = f.frames.length) {
-	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows = Math.ceil(f.frames.length / cols);
-	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows * 4);
+	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows$1 = Math.ceil(f.frames.length / cols);
+	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows$1 * 4);
 	f.frames.forEach((px, k) => {
 		const ox = k % cols * f.width, oy = Math.floor(k / cols) * f.height;
 		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W + ox) * 4);
 	});
 	return {
 		width: W,
-		height: f.height * rows,
+		height: f.height * rows$1,
 		rgba,
 		delays: f.delays,
 		columns: cols,
-		rows
+		rows: rows$1
 	};
 }
 /** How wide a sheet may be at 1×, in pixels, before it wraps onto another row. */
@@ -10055,18 +10055,24 @@ function crowdSprite(spec, size, options = {}) {
 		...config,
 		palette: spec.palette
 	}) : require_paint.paletteOf(config);
-	const colors = require_paint.withItems(base, config).colors;
-	const drawn = size === 16 ? grid.map((row) => row.map((t) => t ? colors[t] ?? null : null)) : shrink(grid, colors, MAKE[size]);
+	const palette$1 = require_paint.withItems(base, config), colors = palette$1.colors;
+	const painted$2 = require_paint.paint(grid, {
+		...config,
+		aura: void 0
+	}, palette$1, false, true);
+	const drawn = size === 16 ? painted$2.map((row) => [...row]) : shrink(grid, colors, MAKE[size], painted$2);
 	const lit = drawn.map((row) => row.some(Boolean)), first = lit.indexOf(true), last = lit.lastIndexOf(true);
 	const cells = first < 0 ? [] : drawn.slice(first, last + 1);
 	const shine = options.shine === false ? null : crowdShine(spec);
 	if (shine && cells.length) {
-		const ink = colors[require_paint.T.OUTLINE];
-		if (size === 16 || size >= 6) {
-			for (const row of cells) for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = shine.color;
-		} else {
+		const ink = colors[require_paint.T.OUTLINE], aura = require_paint.auraById(config.aura);
+		const edge = (i, j) => aura ? aura.colors[(i + j) % aura.colors.length] : shine.color;
+		if (size === 16 || size >= 6) cells.forEach((row, j) => {
+			for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = edge(i, j);
+		});
+		else {
 			const top = cells[0], mid = top.findIndex(Boolean) + Math.floor(top.filter(Boolean).length / 2);
-			top[Math.max(0, mid)] = shine.color;
+			top[Math.max(0, mid)] = aura ? aura.colors[0] : shine.color;
 		}
 	}
 	const rgba = new Uint8ClampedArray(size * size * 4);
@@ -10092,8 +10098,8 @@ function crowdSprite(spec, size, options = {}) {
 * column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
 */
 function crowdSheet(specs, size, columns = 64, options = {}) {
-	const cols = Math.max(1, Math.min(columns, specs.length)), rows = Math.ceil(specs.length / cols);
-	const width = cols * size, height = rows * size, rgba = new Uint8ClampedArray(width * height * 4);
+	const cols = Math.max(1, Math.min(columns, specs.length)), rows$1 = Math.ceil(specs.length / cols);
+	const width = cols * size, height = rows$1 * size, rgba = new Uint8ClampedArray(width * height * 4);
 	specs.forEach((spec, n) => {
 		const s = crowdSprite(spec, size, options), ox = n % cols * size, oy = Math.floor(n / cols) * size;
 		for (let y = 0; y < size; y++) rgba.set(s.rgba.subarray(y * size * 4, (y + 1) * size * 4), ((oy + y) * width + ox) * 4);
@@ -10110,7 +10116,7 @@ function isEdge(cells, row, i) {
 	const j = cells.indexOf(row);
 	return SIDES.some(([dx, dy]) => !cells[j + dy]?.[i + dx]);
 }
-function shrink(grid, colors, make) {
+function shrink(grid, colors, make, painted$2) {
 	const S = grid.length, ink = colors[require_paint.T.OUTLINE];
 	const isOutline = (t) => t === require_paint.T.OUTLINE || colors[t] !== void 0 && colors[t] === ink;
 	let x0 = S, x1 = -1, y0 = S, y1 = -1;
@@ -10138,7 +10144,7 @@ function shrink(grid, colors, make) {
 			const t = grid[y]?.[x];
 			if (a <= 0 || !t || isOutline(t)) continue;
 			cover += a;
-			const c = colors[t];
+			const c = painted$2[y]?.[x] ?? colors[t];
 			if (!FACE.has(t) && c) weight.set(c, (weight.get(c) ?? 0) + a);
 		}
 		if (cover < k * k * .45) continue;
@@ -10218,18 +10224,18 @@ const HAZE = {
 * `density` above 1 packs more in (smaller guys sooner); the same arguments give the same seats.
 */
 function crowdSeats(width, height, density = 1, seed = "crowd") {
-	const rows = [];
+	const rows$1 = [];
 	for (let y = 6; y < height + 4;) {
 		const d = Math.min(1, y / height), want = 2 + 15 * Math.pow(d, 2.1) / Math.sqrt(density);
 		const size = want < 3 ? 2 : want < 5 ? 4 : want < 7 ? 6 : want < 9 ? 8 : want < 12.5 ? 10 : 16;
-		rows.push({
+		rows$1.push({
 			y,
 			size
 		});
 		y += Math.max(2, Math.round(size * (size <= 2 ? 1 : size <= 4 ? .75 : .6)));
 	}
 	const seats = [];
-	rows.forEach(({ y, size }, row) => {
+	rows$1.forEach(({ y, size }, row) => {
 		const step$1 = size <= 2 ? 3 : size <= 4 ? size : Math.round(size * .92);
 		const r = (k$1) => require_paint.hash(`${seed}:${row}:${k$1}`) % 1e3 / 1e3;
 		let x = -size + Math.floor(r(-1) * step$1) - (row % 2 * step$1 >> 1), k = 0;
@@ -10296,7 +10302,7 @@ function createCrowd(canvas, options = {}) {
 		const sheet = sheets.get(size)[Math.floor(at / (SHEET_COLUMNS * SHEET_ROWS))], cell = at % (SHEET_COLUMNS * SHEET_ROWS);
 		ctx.drawImage(sheet.canvas, cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size, size, size, x, y, size * scale$1, size * scale$1);
 	}
-	function layout$1() {
+	function layout$2() {
 		const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
 		const z = options.scale ?? (w >= 900 ? 3 : 2);
 		dpr = globalThis.devicePixelRatio || 1;
@@ -10381,7 +10387,7 @@ function createCrowd(canvas, options = {}) {
 	const wake = () => {
 		if (!frame && !gone) frame = requestAnimationFrame(draw);
 	};
-	layout$1();
+	layout$2();
 	return {
 		add(name, guy = {}) {
 			const key = name.toLowerCase();
@@ -10430,7 +10436,7 @@ function createCrowd(canvas, options = {}) {
 			wake();
 		},
 		resize() {
-			layout$1();
+			layout$2();
 			wake();
 		},
 		destroy() {
@@ -10491,6 +10497,498 @@ function crowdPicture(guys, width, height, options = {}) {
 		}
 	}
 	return rgba;
+}
+
+//#endregion
+//#region src/stadium.ts
+/** The venues, smallest first: who fits, and how big the picture of it is in world pixels. */
+const VENUES = [
+	{
+		id: "porch",
+		name: "The porch",
+		upTo: 20
+	},
+	{
+		id: "bleachers",
+		name: "The bleachers",
+		upTo: 50
+	},
+	{
+		id: "gym",
+		name: "The gym",
+		upTo: 100
+	},
+	{
+		id: "hall",
+		name: "The hall",
+		upTo: 200
+	},
+	{
+		id: "arena",
+		name: "The arena",
+		upTo: 1e3
+	},
+	{
+		id: "stadium",
+		name: "The stadium",
+		upTo: 5e3
+	},
+	{
+		id: "bowl",
+		name: "The bowl",
+		upTo: 12e3
+	}
+];
+/** The venue for `count` people: the smallest that seats them all (the bowl past its size). */
+const venueFor = (count$1) => (VENUES.find((v) => count$1 <= v.upTo) ?? VENUES[VENUES.length - 1]).id;
+const SIZES = [
+	2,
+	4,
+	6,
+	8,
+	10,
+	16
+];
+const sizeNear = (px) => SIZES.reduce((best, s) => Math.abs(s - px) < Math.abs(best - px) ? s : best, SIZES[0]);
+/** Straight rows of seats, nearest first, `size` from the front row's to the back row's. */
+function rows(x0, x1, yFront, count$1, front, back, seats, up = true) {
+	for (let r = 0, y = yFront; r < count$1; r++) {
+		const size = sizeNear(front + (back - front) * (count$1 > 1 ? r / (count$1 - 1) : 0));
+		const step$1 = Math.max(2, Math.round(size * .9));
+		for (let x = x0 + r % 2 * (step$1 >> 1); x + size <= x1; x += step$1) seats.push({
+			x,
+			y: y - size,
+			size,
+			row: r
+		});
+		y += up ? -Math.max(2, Math.round(size * .62)) : Math.max(2, Math.round(size * .62));
+	}
+}
+/**
+* An oval of stands round a centre, raked back: `count` rows from the front, sizes bigger on the near
+* side; `gap` leaves the bottom of the oval open (a stage end), as a fraction of the turn.
+*/
+function oval(cx, cy, a0, b0, count$1, da, db, rise, near, far, seats, gap = 0, first = 0) {
+	for (let r = 0; r < count$1; r++) {
+		const a = a0 + r * da, b$1 = b0 + r * db;
+		for (let t = 0; t < Math.PI * 2;) {
+			const sin$1 = Math.sin(t), cos$1 = Math.cos(t);
+			const px = far + (near - far) * (sin$1 + 1) / 2, size = sizeNear(px * (1 - r * .004));
+			const open = gap > 0 && Math.abs(t - Math.PI / 2) < gap * Math.PI;
+			if (!open) seats.push({
+				x: Math.round(cx + a * cos$1 - size / 2),
+				y: Math.round(cy + b$1 * sin$1 - r * rise - size),
+				size,
+				row: first + r
+			});
+			t += Math.max(.004, size * .95 / Math.hypot(a * sin$1, b$1 * cos$1));
+		}
+	}
+}
+/** Every venue's seats and its picture, in world pixels. */
+function layout(id) {
+	const seats = [];
+	switch (id) {
+		case "porch": {
+			const W = 200, H = 80;
+			rows(14, W - 14, 66, 2, 16, 16, seats);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#1c2238");
+					for (let i = 0; i < 9; i++) p.rect(10 + i * 15, 8 + i % 2 * 2, 2, 2, [
+						"#ffd45c",
+						"#ff8a8a",
+						"#8fd8ff"
+					][i % 3]);
+					p.rect(0, 9, W, 1, "#3a3f55");
+					p.rect(0, 40, W, 40, "#6b4a33");
+					for (let x = 0; x < W; x += 10) p.rect(x, 40, 1, 40, "#5a3d2a");
+					p.rect(8, 50, W - 16, 4, "#8a5f3e");
+					p.rect(8, 66, W - 16, 4, "#8a5f3e");
+					p.rect(0, 74, W, 6, "#4a3324");
+				}
+			};
+		}
+		case "bleachers": {
+			const W = 200, H = 110;
+			rows(8, W - 8, 92, 4, 14, 10, seats);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#1e2a44");
+					p.rect(0, 0, W, 40, "#22304e");
+					for (let i = 0; i < 4; i++) p.rect(4, 92 - i * 8, W - 8, 2, "#9aa6b8");
+					p.rect(0, 94, W, 16, "#2f7a43");
+					p.rect(0, 100, W, 1, "#3f9455");
+				}
+			};
+		}
+		case "gym": {
+			const W = 260, H = 160;
+			rows(10, W - 10, 46, 3, 10, 8, seats, true);
+			rows(10, W - 10, 150, 3, 14, 12, seats, true);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#2a2433");
+					p.rect(0, 48, W, 64, "#c58b4f");
+					for (let x = 0; x < W; x += 12) p.rect(x, 48, 1, 64, "#b47c44");
+					p.rect(20, 52, W - 40, 56, "#d39a5c");
+					p.oval(W / 2, 80, 16, 10, "#e9b47a");
+					p.rect(W / 2, 52, 1, 56, "#f3e6d0");
+					p.rect(4, 70, 6, 20, "#e8792f");
+					p.rect(W - 10, 70, 6, 20, "#e8792f");
+				}
+			};
+		}
+		case "hall": {
+			const W = 320, H = 200, cx = W / 2, cy = 120;
+			oval(cx, cy, 70, 38, 7, 12, 7, 2.6, 12, 8, seats, .18);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#181d2e");
+					p.oval(cx, cy - 6, 168, 92, "#262d44");
+					p.oval(cx, cy, 62, 32, "#3b2f4f");
+					p.rect(cx - 40, cy + 18, 80, 30, "#4e3a63");
+					p.rect(cx - 40, cy + 18, 80, 2, "#ff7a5c");
+				}
+			};
+		}
+		case "arena": {
+			const W = 440, H = 280, cx = W / 2, cy = 150;
+			oval(cx, cy, 104, 50, 13, 9, 5.2, 2.6, 10, 6, seats);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#141826");
+					p.oval(cx, cy - 18, 228, 124, "#232a3b");
+					p.oval(cx, cy - 14, 212, 112, "#2c3448");
+					p.oval(cx, cy, 98, 46, "#1d4f8a");
+					p.oval(cx, cy, 84, 38, "#2a62a3");
+					p.rect(cx - 1, cy - 38, 2, 76, "#e9eef7");
+					p.rect(cx - 22, cy - 98, 44, 18, "#0b0e18");
+					p.rect(cx - 20, cy - 96, 40, 14, "#29364f");
+					p.rect(cx - 1, cy - 112, 2, 14, "#5b6478");
+				}
+			};
+		}
+		case "stadium": {
+			const W = 680, H = 420, cx = W / 2, cy = 225;
+			oval(cx, cy, 196, 88, 22, 8, 4.6, 2.4, 8, 4, seats);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#10131f");
+					p.oval(cx, cy - 26, 340, 182, "#202737");
+					p.oval(cx, cy - 22, 324, 170, "#29314a");
+					p.oval(cx, cy, 186, 82, "#1f6b3e");
+					p.stripes(cx, cy, 186, 82, 26, "#237646");
+					p.rect(cx - 1, cy - 78, 2, 156, "#d9f0de");
+					p.oval(cx, cy, 26, 12, "#2f8a51");
+					for (const sx of [24, W - 30]) {
+						p.rect(sx, 20, 6, 120, "#3a4258");
+						p.rect(sx - 8, 14, 22, 8, "#fff3c4");
+					}
+				}
+			};
+		}
+		default: {
+			const W = 1120, H = 640, cx = W / 2, cy = 350;
+			oval(cx, cy, 250, 110, 16, 7, 4, 2.2, 8, 4, seats);
+			oval(cx, cy - 46, 372, 176, 14, 6, 3.4, 2.2, 6, 2, seats, 0, 16);
+			oval(cx, cy - 92, 470, 230, 10, 5, 2.8, 2.2, 4, 2, seats, 0, 30);
+			return {
+				width: W,
+				height: H,
+				seats,
+				paint: (p) => {
+					p.rect(0, 0, W, H, "#0d1019");
+					p.oval(cx, cy - 70, 548, 300, "#1d2333");
+					p.oval(cx, cy - 64, 532, 288, "#262d42");
+					p.oval(cx, cy, 240, 104, "#1f6b3e");
+					p.stripes(cx, cy, 240, 104, 28, "#237646");
+					p.rect(cx - 1, cy - 100, 2, 200, "#d9f0de");
+					p.oval(cx, cy, 34, 15, "#2f8a51");
+					for (const sx of [
+						20,
+						230,
+						W - 236,
+						W - 26
+					]) {
+						p.rect(sx, 10, 6, 150, "#3a4258");
+						p.rect(sx - 10, 4, 26, 8, "#fff3c4");
+					}
+				}
+			};
+		}
+	}
+}
+/**
+* The seats of venue `id`, in the order they fill: the front row first, all the way round, from the
+* middle of the near side out, then the row behind, so a part-full venue is full at the front.
+*/
+function stadiumSeats(id) {
+	const l = layout(id);
+	const mid = l.width / 2;
+	return [...l.seats].sort((p, q) => p.row - q.row || q.size - p.size || Math.abs(p.x - mid) - Math.abs(q.x - mid));
+}
+/**
+* A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; when
+* the venue changes they take their places in the new one, the old venue fading out under it.
+*/
+function createStadium(canvas, options = {}) {
+	const ctx = canvas.getContext("2d");
+	const fans = [], byKey = new Map();
+	let venue = "porch", seats = stadiumSeats(venue), lay = layout(venue), backdrop = paintVenue(lay);
+	let fading = null;
+	let waving = !!options.wave, frame = 0, gone = false, dpr = 1, k = 1, ox = 0, oy = 0;
+	let lit = null;
+	let order = null;
+	const sprites = new Map(), queue = [], queued = new Set();
+	function paintVenue(l) {
+		const c = document.createElement("canvas");
+		c.width = l.width;
+		c.height = l.height;
+		const g = c.getContext("2d");
+		const span = (a, b$1, y) => Math.round(a * Math.sqrt(Math.max(0, 1 - (y / b$1) ** 2)));
+		l.paint({
+			rect: (x, y, w, h, col) => {
+				g.fillStyle = col;
+				g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+			},
+			oval: (cx, cy, a, b$1, col) => {
+				g.fillStyle = col;
+				for (let y = -b$1; y <= b$1; y++) {
+					const w = span(a, b$1, y);
+					g.fillRect(Math.round(cx - w), Math.round(cy + y), w * 2, 1);
+				}
+			},
+			stripes: (cx, cy, a, b$1, w, col) => {
+				g.fillStyle = col;
+				for (let y = -b$1; y <= b$1; y++) {
+					const half = span(a, b$1, y);
+					for (let x = -half; x < half; x++) if (Math.floor((x + 1e4 * w) / w) % 2) g.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1);
+				}
+			}
+		});
+		return c;
+	}
+	function layoutCanvas() {
+		const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
+		dpr = globalThis.devicePixelRatio || 1;
+		canvas.width = Math.max(1, Math.round(w * dpr));
+		canvas.height = Math.max(1, Math.round(h * dpr));
+		k = Math.max(1, Math.floor(Math.min(canvas.width / lay.width, canvas.height / lay.height)));
+		ox = Math.round((canvas.width - lay.width * k) / 2);
+		oy = Math.round((canvas.height - lay.height * k) / 2);
+	}
+	function reseat() {
+		const next = venueFor(fans.length);
+		if (next === venue) return;
+		fading = {
+			picture: backdrop,
+			until: performance.now() + 900
+		};
+		venue = next;
+		seats = stadiumSeats(venue);
+		lay = layout(venue);
+		backdrop = paintVenue(lay);
+		order = null;
+		layoutCanvas();
+		options.onVenue?.(venue);
+	}
+	function sprite(f, size) {
+		const key = f.key + ":" + size, have = sprites.get(key);
+		if (!have && !queued.has(key)) {
+			queued.add(key);
+			queue.push([f, size]);
+		}
+		return have;
+	}
+	function make(f, size) {
+		const key = f.key + ":" + size;
+		queued.delete(key);
+		if (sprites.has(key) || !byKey.has(f.key)) return;
+		const s = crowdSprite(f.spec, size), c = document.createElement("canvas");
+		c.width = c.height = size;
+		c.getContext("2d").putImageData(new ImageData(s.rgba, size, size), 0, 0);
+		sprites.set(key, c);
+	}
+	function draw(now) {
+		frame = 0;
+		if (gone) return;
+		const budget = performance.now() + 5;
+		while (queue.length && performance.now() < budget) {
+			const [f, size] = queue.shift();
+			make(f, size);
+		}
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.fillStyle = "#0b0e18";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.setTransform(k, 0, 0, k, ox, oy);
+		ctx.imageSmoothingEnabled = false;
+		ctx.drawImage(backdrop, 0, 0);
+		if (fading) {
+			const left = (fading.until - now) / 900;
+			if (left <= 0) fading = null;
+			else {
+				ctx.globalAlpha = left;
+				ctx.drawImage(fading.picture, 0, 0, lay.width, lay.height);
+				ctx.globalAlpha = 1;
+			}
+		}
+		const shown = order ??= fans.slice(0, seats.length).map((f, i) => [f, seats[i]]).sort((p, q) => p[1].y + p[1].size - (q[1].y + q[1].size));
+		const wave$1 = now / 7e3 % 1 * (lay.width + 80) - 40;
+		for (const [f, seat] of shown) {
+			if (lit?.fan === f) continue;
+			const s = sprite(f, seat.size) ?? smaller(f, seat.size);
+			if (!s) continue;
+			let dy = 0;
+			if (waving) {
+				const d = Math.abs(seat.x - wave$1);
+				if (d < 30) dy -= Math.round((1 - d / 30) * Math.max(1, seat.size * .45));
+			}
+			const since = now - f.hopAt;
+			if (since < 400) dy -= Math.round(Math.sin(since / 400 * Math.PI) * Math.max(1, seat.size / 4));
+			const arrive = Math.min(1, (now - f.joined) / 500);
+			if (arrive < 1) {
+				ctx.globalAlpha = arrive;
+				dy -= Math.round((1 - arrive) * seat.size * .6);
+			}
+			ctx.drawImage(s, seat.x, seat.y + dy, seat.size, seat.size);
+			ctx.globalAlpha = 1;
+			if (f.glint && (now / 90 + require_paint.hash(f.key) % 97) % 60 < 2) {
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect(seat.x + seat.size - 1, seat.y + dy - 1, 1, 1);
+			}
+		}
+		if (lit) spot(now);
+		if (waving || lit || fading || queue.length || fans.some((f) => now - f.hopAt < 400 || now - f.joined < 500)) frame = requestAnimationFrame(draw);
+	}
+	function smaller(f, size) {
+		for (const s of [...SIZES].reverse()) if (s < size && sprites.has(f.key + ":" + s)) return sprites.get(f.key + ":" + s);
+		return void 0;
+	}
+	function spot(now) {
+		const { fan, label, from, until } = lit;
+		if (now >= until) {
+			lit = null;
+			return;
+		}
+		const big = sprite(fan, 16);
+		if (!big) return;
+		const rise = Math.min(1, (now - from) / 350, (until - now) / 350), ease = 1 - Math.pow(1 - rise, 3);
+		const scale$1 = Math.max(2, Math.min(5, Math.floor(lay.height / 40))), side = 16 * scale$1;
+		ctx.fillStyle = `rgba(11,14,24,${.55 * ease})`;
+		ctx.fillRect(0, 0, lay.width, lay.height);
+		const x = Math.round((lay.width - side) / 2), y = Math.round(lay.height - (side + 14) * ease);
+		ctx.drawImage(big, x, y, side, side);
+		if (label) {
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			const css = k / dpr, cx = ox / dpr + lay.width * css / 2, cy = oy / dpr + (y + side + 1) * css + 12;
+			ctx.font = options.font ?? "700 15px system-ui, sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			const tw = Math.ceil(ctx.measureText(label).width) + 20;
+			ctx.fillStyle = "rgba(11,14,24,.92)";
+			ctx.beginPath();
+			ctx.roundRect(cx - tw / 2, cy - 13, tw, 26, 13);
+			ctx.fill();
+			ctx.fillStyle = "#ffffff";
+			ctx.fillText(label, cx, cy + 1);
+		}
+	}
+	const wake = () => {
+		if (!frame && !gone) frame = requestAnimationFrame(draw);
+	};
+	layoutCanvas();
+	return {
+		add(name, guy = {}) {
+			const key = name.toLowerCase();
+			if (byKey.has(key)) return;
+			const spec = {
+				...guy,
+				seed: guy.seed ?? key
+			};
+			const f = {
+				key,
+				spec,
+				joined: performance.now(),
+				hopAt: -1e9,
+				glint: (crowdShine(spec)?.grade ?? 0) >= 3
+			};
+			fans.push(f);
+			byKey.set(key, f);
+			order = null;
+			reseat();
+			wake();
+		},
+		remove(name) {
+			const f = byKey.get(name.toLowerCase());
+			if (!f) return;
+			byKey.delete(f.key);
+			fans.splice(fans.indexOf(f), 1);
+			order = null;
+			for (const s of SIZES) sprites.delete(f.key + ":" + s);
+			reseat();
+			wake();
+		},
+		has: (name) => byKey.has(name.toLowerCase()),
+		hop(name) {
+			const f = byKey.get(name.toLowerCase());
+			if (f) {
+				f.hopAt = performance.now();
+				wake();
+			}
+		},
+		wave(on) {
+			waving = on;
+			wake();
+		},
+		spotlight(name, label, ms = 2600) {
+			const f = byKey.get(name.toLowerCase());
+			if (!f) return;
+			const now = performance.now();
+			lit = {
+				fan: f,
+				label: label ?? name,
+				from: now,
+				until: now + ms
+			};
+			wake();
+		},
+		resize() {
+			layoutCanvas();
+			wake();
+		},
+		destroy() {
+			gone = true;
+			if (frame) cancelAnimationFrame(frame);
+			sprites.clear();
+			fans.length = 0;
+			byKey.clear();
+		},
+		get count() {
+			return fans.length;
+		},
+		get venue() {
+			return venue;
+		}
+	};
 }
 
 //#endregion
@@ -10667,6 +11165,7 @@ exports.TITLE_MAX = TITLE_MAX
 exports.TONE_NAMES = TONE_NAMES
 exports.TRAIT_ICONS = TRAIT_ICONS
 exports.TRAIT_SLOTS = TRAIT_SLOTS
+exports.VENUES = VENUES
 exports.WEAR = require_paint.WEAR
 exports.WIDE_FRAME_WIDTH = WIDE_FRAME_WIDTH
 exports.accessories = require_paint.accessories
@@ -10707,6 +11206,7 @@ exports.craftable = craftable
 exports.createCardShader = createCardShader
 exports.createCrowd = createCrowd
 exports.createShine = createShine
+exports.createStadium = createStadium
 exports.crowdPicture = crowdPicture
 exports.crowdSeats = crowdSeats
 exports.crowdSheet = crowdSheet
@@ -10813,6 +11313,7 @@ exports.slotOf = require_paint.slotOf
 exports.smeltValue = smeltValue
 exports.special = require_paint.special
 exports.squashRows = squashRows
+exports.stadiumSeats = stadiumSeats
 exports.starter = require_paint.starter
 exports.surfaceOf = surfaceOf
 exports.tallyMarks = require_paint.tallyMarks
@@ -10836,6 +11337,7 @@ exports.unlocksOf = unlocksOf
 exports.upscale = upscale
 exports.useAvatarContext = useAvatarContext
 exports.useMergeRefs = useMergeRefs
+exports.venueFor = venueFor
 exports.viewSize = viewSize
 exports.voxelColumns = voxelColumns
 exports.voxelItem = voxelItem
