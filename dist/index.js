@@ -6103,7 +6103,10 @@ function palette(frames) {
 		const c = f[i] << 16 | f[i + 1] << 8 | f[i + 2];
 		counts.set(c, (counts.get(c) || 0) + 1);
 	}
-	const all = [...counts.entries()];
+	return medianCut([...counts.entries()]);
+}
+/** Up to 255 colours standing for these colours and how often each is used, by median cut. */
+function medianCut(all) {
 	if (all.length <= 255) return all.map(([c]) => c);
 	const ch = (c, k) => c >> 16 - 8 * k & 255;
 	const range = (box, k) => {
@@ -6191,12 +6194,28 @@ function nearestIn(table) {
 * colours, so a picture that has been served exact stays exact.
 */
 function fewerColours(input) {
-	const table = [0, ...palette(input.frames)], indexOf = nearestIn(table);
+	const counts = new Uint32Array(32768), sums = new Float64Array(32768 * 3), seen = new Set();
+	for (const f of input.frames) for (let i = 0; i < f.length; i += 4) {
+		if (f[i + 3] < 128) continue;
+		if (seen.size <= 255) seen.add(f[i] << 16 | f[i + 1] << 8 | f[i + 2]);
+		const b$1 = f[i] >> 3 << 10 | f[i + 1] >> 3 << 5 | f[i + 2] >> 3;
+		counts[b$1]++;
+		sums[b$1 * 3] += f[i];
+		sums[b$1 * 3 + 1] += f[i + 1];
+		sums[b$1 * 3 + 2] += f[i + 2];
+	}
+	if (seen.size <= 255) return input;
+	const mean = (b$1) => Math.round(sums[b$1 * 3] / counts[b$1]) << 16 | Math.round(sums[b$1 * 3 + 1] / counts[b$1]) << 8 | Math.round(sums[b$1 * 3 + 2] / counts[b$1]);
+	const all = [];
+	for (let b$1 = 0; b$1 < 32768; b$1++) if (counts[b$1]) all.push([mean(b$1), counts[b$1]]);
+	const table = [0, ...medianCut(all)], indexOf = nearestIn(table), ofBin = new Int32Array(32768).fill(-1);
 	const frames = input.frames.map((f) => {
 		const out = new Uint8ClampedArray(f.length);
 		for (let i = 0; i < f.length; i += 4) {
 			if (f[i + 3] < 128) continue;
-			const c = table[indexOf(f[i] << 16 | f[i + 1] << 8 | f[i + 2])];
+			const b$1 = f[i] >> 3 << 10 | f[i + 1] >> 3 << 5 | f[i + 2] >> 3;
+			let c = ofBin[b$1];
+			if (c < 0) c = ofBin[b$1] = table[indexOf(mean(b$1))];
 			out[i] = c >> 16;
 			out[i + 1] = c >> 8 & 255;
 			out[i + 2] = c & 255;
@@ -9406,16 +9425,17 @@ function bakeSquare(spec, view, move = "idle") {
 		rarity: false
 	});
 	const lit = plain.frames.map(rowsLit), ends = [];
+	const ground = Math.max(...lit.map(([, bottom]) => bottom));
 	plain.frames.reduce((t$1, f) => {
 		ends.push(t$1 + f.ms);
 		return t$1 + f.ms;
 	}, 0);
 	const liftAt = (t$1) => {
 		const pos = t$1 % plain.duration, k = ends.findIndex((e) => pos < e);
-		return Math.max(0, FRAME_HEIGHT - 1 - lit[k < 0 ? 0 : k][1]);
+		return Math.max(0, ground - lit[k < 0 ? 0 : k][1]);
 	};
 	const side = view === "icon" ? ICON_SIZE : FACE_SIZE;
-	const rest = lit[0][0] + Math.max(0, FRAME_HEIGHT - 1 - lit[0][1]);
+	const rest = lit[0][0] + Math.max(0, ground - lit[0][1]);
 	const top = view === "icon" ? HEADROOM : Math.min(FRAME_HEIGHT - side, Math.max(0, rest));
 	const left = raw.left + (FRAME_WIDTH - side) / 2, W = raw.width;
 	let t = 0;

@@ -27,6 +27,7 @@
   <a href="#nextjs">Next.js</a> ·
   <a href="#headless">Headless</a> ·
   <a href="#api">API</a> ·
+  <a href="GAMES.md">In a game</a> ·
   <a href="demo.html">Demo</a> ·
   <a href="https://isaacaudet.github.io/lil_guy/">Explore</a>
 </p>
@@ -283,6 +284,10 @@ Club games do; pass `stillWhenReduced: true` to hold the first frame instead.
 
 ## Finished guys anywhere
 
+A DLE Club game showing players' guys (menus, boards, chat, results, share cards) should start
+with [GAMES.md](GAMES.md): every format, its size and where it goes, the kit, and snippets for each
+kind of game.
+
 Every guy can be delivered finished: its move, aura, effects, emotes and its
 copies' finishes all baked into frames, the same pixels everywhere. One
 renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
@@ -327,17 +332,26 @@ one picture (about a millisecond a frame) instead of keeping every frame, and on
 <lil-guy name="mia" view="card" size="4"></lil-guy>  <!-- its card, shimmering -->
 ```
 
-Or the addresses themselves, `/g/<art version>/<guy>/<view>`:
+Or the addresses themselves, `/g/<art version>/<guy>/<view>` (`latest` for the version always finds today's art):
 
 | | |
 | --- | --- |
-| `<guy>` | a guy code (`guyCode({ seed, parts, palette, equip })`) or `@name` for a claimed name |
+| `<guy>` | a guy code (`guyCode({ seed, parts, palette, equip })`), `@name` for a claimed name, or `~name` for any player's name (claimed, or the guy it deals) |
+| `icon.png` | his own 16 × 16, moving, on the ground: menus and chat |
+| `face.png` | his head and shoulders, 14 × 14, moving: a board's rows |
 | `idle.png`, `hop.png`… | the move looping, an animated PNG (plays in a plain `<img>`) |
 | `still.png` | its first frame, for dense lists |
 | `card.png`, `card-still.png` | its card, its shimmer looping |
 | `pfp.png`, `pfp-still.png` | a profile picture: square, on a ground of its own colour, with room so a round crop never cuts it (`pfp-still@16.png` is about Discord's 512 px) |
-| `idle.sheet.png` + `idle.sheet.json` | the frames in a strip and their times, for a game's sprite |
+| `art.png`, `card-full.png` | his big card's window, and the whole big card (140 × 204) |
+| `face-still.png`… | every view but a move has a still: its first frame |
+| `idle.gif` | any of these as a looping GIF |
+| `idle.sheet.png` + `idle.sheet.json` | the frames in a sheet and their times, for a game's sprite |
 | `idle@4.png` | any of these scaled up by whole pixels (1 to 16) |
+
+`GET /api/club/batch?names=a,b,c` answers a whole board (up to 100 names, claimed or not) with each
+guy's code and ready addresses, and `/lilguys.js` (or `/lilguys.mjs`) is the kit: `lilGuyUrl`,
+`lilGuyImg`, `lilGuysFor` and `<lil-guy>`, also exported from the library.
 
 A guy is 22×20 (`BAKED_SIZE.guy`), and 34×20 with a buddy beside him
 (`BAKED_SIZE.buddy`), the two of them centred. `<lil-guy>` sizes its box by the

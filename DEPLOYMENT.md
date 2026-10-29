@@ -57,15 +57,26 @@ To turn it on:
 ## Finished guys: `/g/`
 
 The Worker serves baked guys and cards at `/g/<art version>/<guy>/<view>`
-(README, Finished guys anywhere; `worker/baked.js`), and the standalone element
-at `/lil-guy-element.js`. A code's pictures are immutable and kept in
-Cloudflare's cache; `@name` redirects to the current code for a minute at a
-time. A cache miss renders in plain code (a plain guy in a few milliseconds, a
-shimmering card in about 30 to 60): on Workers' free plan, with 10 ms of CPU a
-request, larger renders can fail, so the paid plan is assumed. Renders on a
-miss count against the address, 3,000 a day, in `claim_limits` (with
-`CLAIM_SALT`), so made-up codes can't run up the bill. Before deploying a
-change to the art, bump `ART_VERSION` in `src/guy-code.ts`.
+(GAMES.md has every view; `worker/baked.js`), the standalone element at
+`/lil-guy-element.js`, and the games' kit at `/lilguys.js` and `/lilguys.mjs`
+(through the Worker, `run_worker_first`, for CORS and a five-minute cache). A
+code's pictures are immutable and kept in Cloudflare's cache; `@name` and
+`~name` redirect to the current code for a minute at a time (each Worker
+remembers a name for that minute, so a board's redirects ask D1 once), and
+`/g/latest/` redirects to the current version for five minutes.
+`GET /api/club/batch?names=` answers up to 100 names, cached a minute.
+
+A cache miss renders in plain code. CPU on a miss, measured warm in Bun on a
+plain guy, a shining one and one with an aura (the Worker's V8 is about the
+same; a cold isolate adds to the first): `icon`/`face` 8 to 55 ms, a move 8 to
+55 ms, `still` and `pfp` 7 to 45 ms, `card` 2 to 30 ms, `art` 25 to 60 ms
+(plus 15 to 60 ms to encode), and `card-full` 100 to 190 ms with its encoding,
+the one view over 50 ms; `card-full-still` is 20 to 40 ms. On Workers' free
+plan, with 10 ms of CPU a request, larger renders can fail, so the paid plan is
+assumed. Renders on a miss count against the address, 3,000 a day, and batch
+reads that miss the cache 2,000 a day, in `claim_limits` (with `CLAIM_SALT`),
+so made-up codes can't run up the bill. No migration is needed. Before
+deploying a change to the art, bump `ART_VERSION` in `src/guy-code.ts`.
 
 Checks: `bun test` (worker/baked.test.ts serves exactly the library's bytes),
 `bun run verify:shaders` and `node scripts/verify-site.mjs` (both need a
