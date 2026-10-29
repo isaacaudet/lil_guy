@@ -4,7 +4,7 @@ import * as React$3 from "react";
 import * as React$2 from "react";
 import * as React$1 from "react";
 import * as React from "react";
-import * as react_jsx_runtime3 from "react/jsx-runtime";
+import * as react_jsx_runtime0 from "react/jsx-runtime";
 
 //#region src/effects.d.ts
 /**
@@ -122,11 +122,12 @@ declare class Canvas {
   setFace(eye: Stamp, mouth: Stamp): void;
   /**
    * The mouth's top row goes just under the eyes, unless a pixel of it would
-   * sit right under an eye: eyes that run into a mouth turn a face into one
-   * shape (an H, a box), and it stops reading as eyes and a mouth. Then the
-   * mouth drops a row where the head has room for it, with a column of face
-   * either side. Where it hasn't (a heart's point, a bat), it stays put:
-   * taking the corners off a smile left a frown.
+   * sit beside, under or at a corner of an eye pixel: eyes that run into a mouth
+   * turn a face into one shape (an H, a box, a zigzag), and it stops reading as
+   * eyes and a mouth. Then the mouth drops a row or two where the head has
+   * room for it, with a column of face either side if it can. Where it hasn't
+   * (a heart's point, a car's bumper), the eyes go up a row instead, and only
+   * if neither works is a corner touch allowed.
    */
   private placeMouth;
   /**
@@ -172,6 +173,8 @@ declare class Canvas {
    * of running off the edge with no outline.
    */
   set(x: number, y: number, token: number): void;
+  /** Pixels `set` turned away at the border: what a part lost off the edge (`hatCut` counts them). */
+  refused: number;
   /** First row the bare body covers in this column, or null. */
   topOf(x: number): number | null;
   /** First row at least `min` wide — where ears can sit on a pointed head. */
@@ -230,25 +233,44 @@ interface Item {
   art?: Stamp;
   /** Skins: the row the bottom of the eyes sits on. */
   eyes?: number;
-  /** Skins: which of the item's colours arms and feet are drawn in, or none. */
-  limb?: number;
+  /**
+   * Skins: which of the item's colours arms and feet are drawn in, or none.
+   * `'own'` draws them in the guy's own colour, for a costume worn as a hood
+   * or a hat with his own body showing under it.
+   */
+  limb?: number | 'own';
   /** Hats: draws onto the head. */
   draw?: (c: Canvas) => void;
   /** Frames: which of the item's colours fills a background cell. */
   fill?: (x: number, y: number) => number;
+  /** A machine's showpiece: its standout item, rarer than the rest. */
+  showpiece?: boolean;
+  /** A showpiece's own effect: every copy of it moves this way. */
+  signature?: Fx;
   /** Seasonal items: the days of the year they drop, as `MM-DD`, inclusive. */
   season?: {
     from: string;
     to: string;
   };
+  /** Out of its machine (./sets): copies people own still read and draw, but no capsule gives one. */
+  retired?: boolean;
 }
 /** The seasonal items that drop on a day (`YYYY-MM-DD` or a Date, read in UTC). */
 declare function inSeason(day: string | Date): Item[];
-/** Every item: each game's skins, then hats, then frames, then buddies, then the seasonal hats. */
+/** Every item: the first lists, each machine's set laid over them (redraws, retirements), then its new items. */
 declare const items: Item[];
 declare function itemById(id: string | undefined): Item | undefined;
+/** Each machine's own colour: its set symbol on a card, as the site's machines are painted. */
+
+/** Every machine, in the order they joined: a new one goes on the end, so nothing else moves. */
 declare const GAMES: GameId[];
-/** A game's items. */
+/** What a machine is called: its game's name, or the Pet shop. */
+declare const machineName: (game: GameId) => string;
+/** How often a showpiece comes out of its machine, against 1 for every other item. */
+declare const SHOWPIECE_WEIGHT = 0.5;
+/** An item's weight in its machine's draw: none once it's retired. */
+declare const itemWeight: (item: Item) => number;
+/** A game's items: what its machine holds now. Retired ones are left out; `itemById` still finds them. */
 declare function gameItems(game: ItemGame): Item[];
 /** The hat every player wears in a game until they put something else on. */
 declare function freeItem(game: GameId): Item;
@@ -259,7 +281,83 @@ declare function freeItem(game: GameId): Item;
  */
 declare function dress(config: AvatarConfig, options?: Pick<RenderOptions, 'game' | 'equip'>, name?: string): AvatarConfig;
 /** Adds the equipped items' own colours to a palette. */
+/**
+ * The guy's own colours a hat can be drawn in (cat ears in his fur), in the
+ * order a finished copy takes them into the hat's layer after the hat's own
+ * colours (`ownFinishTokens`), so its finish reaches them too. Outline and
+ * face ink stay his.
+ */
+
 declare function withItems(palette: Palette, config: AvatarConfig): Palette;
+
+//#endregion
+//#region src/paints.d.ts
+/**
+ * Paint, as in TF2: a tin of one colour brushed over a hat or a buddy. It
+ * tints every colour of the item to the paint, keeping each one's light and
+ * shade, so the drawing reads as before, only in the new colour. Paint never
+ * changes a copy's finish, float or rarity, and it scrapes off.
+ */
+declare const PAINTS: {
+  readonly 'lack-of-hue': {
+    readonly name: "A Lack of Hue";
+    readonly hex: "#2D2B36";
+  };
+  readonly abundance: {
+    readonly name: "An Abundance of White";
+    readonly hex: "#EEEDE6";
+  };
+  readonly 'pure-gold': {
+    readonly name: "Pure Gold";
+    readonly hex: "#E7B53B";
+  };
+  readonly 'pink-as-heck': {
+    readonly name: "Pink as Heck";
+    readonly hex: "#FF6EB4";
+  };
+  readonly 'noble-violet': {
+    readonly name: "Noble Violet";
+    readonly hex: "#7D4FA6";
+  };
+  readonly 'zesty-lime': {
+    readonly name: "Zesty Lime";
+    readonly hex: "#8FD43A";
+  };
+  readonly 'deep-sea': {
+    readonly name: "Deep Sea Teal";
+    readonly hex: "#2E8C8A";
+  };
+  readonly 'club-orange': {
+    readonly name: "Club Orange";
+    readonly hex: "#E8792F";
+  };
+  readonly 'team-red': {
+    readonly name: "Team Red";
+    readonly hex: "#C2403F";
+  };
+  readonly 'team-blue': {
+    readonly name: "Team Blue";
+    readonly hex: "#4E7FB3";
+  };
+  readonly mint: {
+    readonly name: "Mint Condition";
+    readonly hex: "#A8DDB5";
+  };
+  readonly 'clear-skies': {
+    readonly name: "Clear Skies";
+    readonly hex: "#8CC4F2";
+  };
+};
+type PaintId = keyof typeof PAINTS;
+declare const PAINT_IDS: PaintId[];
+/** What can be painted. */
+declare const PAINTABLE: readonly ["hat", "buddy"];
+/**
+ * An item's colours under a paint: the first colour (an item's main one)
+ * becomes the paint, and every other colour sits as much lighter or darker
+ * than the paint as it did than the main one.
+ */
+declare function painted(colors: string[], paint: PaintId | undefined): string[];
 
 //#endregion
 //#region src/owned.d.ts
@@ -277,7 +375,9 @@ declare function withItems(palette: Palette, config: AvatarConfig): Palette;
  *   are ordinary; a few are famous (a Deep Blue Tempered, a Red Giant or
  *   Black Hole Nebula)
  * - sometimes a **tally**: a counter of the days its owner finished the game
- *   while wearing it
+ *   while wearing it (a Strange copy, as TF2 calls it)
+ * - a **craft number** if it was crafted from metal (see ./craft), and a
+ *   **paint** if someone painted it (see ./paints)
  *
  * Two copies of the same item are almost never the same: the scuff alone has
  * millions of values. Everything is deterministic from the stored numbers, so
@@ -301,6 +401,10 @@ interface Owned {
   souvenir?: string;
   /** A rare effect on top of the finish (see ./effects). */
   fx?: Fx;
+  /** Crafted from metal: which craft it was, counting every copy ever crafted. */
+  craft?: number;
+  /** A hat or a buddy's paint (see ./paints). */
+  paint?: PaintId;
 }
 declare const GRADES: readonly [{
   readonly id: "everyday";
@@ -417,6 +521,13 @@ declare function starter(name: string, game: GameId): Owned;
  */
 declare function roll(seed: string, game: GameId): Owned;
 /**
+ * The machine a mystery capsule comes from: any of them, each as likely as its
+ * share of every machine's capsule pool (the items a capsule can give, by
+ * weight), so every item across the machines is as likely as it is in its own.
+ * Then `roll(seed, game)` opens it as that machine's capsule.
+ */
+declare function mysteryMachine(seed: string): GameId;
+/**
  * A seasonal drop: one of the hats in season on `day` (`YYYY-MM-DD`), rolled
  * like a capsule and stamped with the day. Null when nothing is in season.
  */
@@ -426,12 +537,7 @@ declare function slotOf(o: Owned): Slot | undefined;
 
 //#endregion
 //#region src/types.d.ts
-/**
- * Paints one cell of an owned item: its finish, then its wear. Chips land in
- * places fixed by the print, so a copy always wears the same way, and how many
- * show is the scuff. `glint` is set once the first Box Fresh glint has been
- * placed.
- */
+/** Where one of an item's own colours sits for a finish (`toneOf`). */
 /**
  * A 16x16 grid where each cell is a colour token. Tokens are roles, not
  * colours — "body", "blush", "hat" — and a palette decides what each looks
@@ -453,8 +559,8 @@ interface Palette {
   name: string;
   colors: Record<number, string>;
 }
-/** The DLE Club games that have items. */
-type GameId = 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies' | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle';
+/** The capsule machines: the DLE Club games that have items, and the Pet shop. */
+type GameId = 'amountle' | 'halfsies' | 'stackdle' | 'flipsies' | 'puttsies' | 'weighsies' | 'cutsies' | 'tiltsies' | 'trackdle' | 'pets';
 type Intensity3D = "none" | "subtle" | "medium" | "dramatic";
 interface AvatarConfig {
   /** Body silhouette. */
@@ -480,6 +586,8 @@ interface AvatarConfig {
   flip: boolean;
   /** The rare Lucky colour variant: about one name in 400. */
   lucky?: boolean;
+  /** The founder's guy (./founder): picked by hand, not dealt, and ranked the one of one. */
+  founder?: boolean;
   rotation: number;
   /** Equipped item ids (see `items`). A skin replaces the body, a hat the topper. */
   skin?: string;
@@ -821,7 +929,56 @@ declare const dealOf: (input: string) => 2 | 3 | 4;
 declare function resolve(input: string, overrides?: RenderOptions['parts']): AvatarConfig;
 
 //#endregion
+//#region src/founder.d.ts
+/**
+ * The founder: the lil guys site keeps the name "isaac" for the person who
+ * made the DLE Club, and deals him this seed. He isn't dealt from it: he is a
+ * clean guy in a crown, picked by hand, so `resolve(FOUNDER_SEED)` gives this
+ * look with `founder: true`, and `guyRank` ranks him the one of one rather
+ * than by his traits' odds. Anything that draws or ranks a guy from the
+ * library (the site, the Worker, the club's games) agrees.
+ */
+declare const FOUNDER_SEED = "founder:isaac";
+/** His parts (laid over his seed's rotation) and colourway. */
+declare const FOUNDER_LOOK: {
+  parts: {
+    head: number;
+    eyes: number;
+    mouth: number;
+    cheeks: number;
+    hair: number;
+    body: number;
+    accessory: number;
+    arms: number;
+    feet: number;
+    shade: number;
+    flip: boolean;
+    lucky: boolean;
+  };
+  palette: number;
+};
+/** The two copies no capsule gives, both his: the Gold flag and the Origin aura. */
+declare const FOUNDER_COPIES: {
+  flag: Owned;
+  aura: Owned;
+};
+/** Whether a seed is the founder's. */
+declare const isFounder: (seed: string) => boolean;
+/** Whether a copy is one of the founder's own, which no capsule gives (in his locker, nobody else's). */
+declare const isFounderCopy: (o: Owned) => boolean;
+
+//#endregion
 //#region src/parts/weights.d.ts
+/**
+ * Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
+ * and metal crafts them. Each weighs 0 in its table above, so every guy dealt
+ * from any deal stays exactly as he was, and the weight here is its share
+ * among a slot's rare parts when a capsule picks one, as a dealt part's
+ * weight is. The anime set, October 2026.
+ */
+declare const CAPSULE_ONLY: Partial<Record<'eyes' | 'mouth' | 'cheeks', Record<number, number>>>;
+/** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */
+
 /**
  * Picks an index from a weight table using a hash value, so the result is
  * deterministic for a given input and the distribution follows the weights.
@@ -850,6 +1007,22 @@ declare const FOOT_STYLES: (null | {
  * The blink frame fills vacated eye cells from here.
  */
 declare function composeBase(config: AvatarConfig): PixelGrid;
+/** Where a buddy stands, as `buddySpot` works it out. */
+
+/**
+ * His buddy on its own, its whole art (in the buddy's layer) and outline where
+ * it stands beside him (`buddyBeside`), on a grid that wide: what a moving
+ * picture draws for it, and an item view of a buddy shows.
+ */
+declare function buddyAlone(config: AvatarConfig): PixelGrid | undefined;
+/**
+ * The cells he covers in any frame of any move, on his sixteen columns and the one a step takes him past them, as
+ * ./animate moves him: his still with either arm out, turned round, a step to
+ * either side (a dance's, an oops), down two rows where a squash lowers him
+ * and up one for the hop a buddy takes on its own (it hops higher only while
+ * he is off the ground too). Tighter than `roomFor`, which allows two steps.
+ */
+
 /**
  * Composes every part into one 16x16 grid of colour tokens.
  *
@@ -860,6 +1033,13 @@ declare function composeBase(config: AvatarConfig): PixelGrid;
  * drawn around the finished shape so hats, ears and arms all get one too.
  */
 declare function compose(config: AvatarConfig): PixelGrid;
+/**
+ * How many of a hat's pixels the guy it is on cuts off: painted where the
+ * face's room begins (and taken back), or off the grid's edge. Zero for every
+ * hat on every head and skin: a hat too tall or wide for the room is fitted
+ * to it (`fitRoom` in ./item-art), never chopped.
+ */
+
 /**
  * Whether a guy's markings (`body`) or cheeks are drawn at all: on a crowded or
  * small guy one may give way, and then it is the same guy as without it.
@@ -886,7 +1066,8 @@ declare function shadePalette(palette: Palette, shade: number): Palette;
  * gold trim. Derived again, so the face and outline read as well as ever.
  */
 declare function luckyPalette(palette: Palette): Palette;
-/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
+/** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
+
 declare function paletteOf(config: AvatarConfig): Palette;
 
 //#endregion
@@ -924,7 +1105,13 @@ declare const heads: Head[];
  * Every pair keeps the same spacing — the inner edges four columns apart —
  * which is the wide-set look that reads as friendly. Any eye with a solid
  * dark area gets a white catchlight: a flat dark square with no shine is what
- * made the old set look dead-eyed.
+ * made the old set look dead-eyed. Most also carry a pixel of the accent low
+ * in the eye, a little colour on the far side from the shine, so a face isn't
+ * only black dots.
+ *
+ * An eye's bottom row stays on the outer columns where it can (the inner
+ * edges four apart): the mouth goes just under it, and a mouth pixel right
+ * under an eye pixel makes them one shape (compose then has to move it).
  */
 interface Eyes {
   name: string;
@@ -1031,21 +1218,33 @@ declare const SMALL_SIZE = 36;
  * eyes close and glance by moving their own pixels — so nothing is ever
  * resampled or blurred. Frames are 16 wide and 20 tall: the guy stands in the
  * bottom 16 rows exactly as he does in the still, and the 4 rows above are
- * room to jump into.
+ * room to jump into. A guy with a buddy gets wider frames: his sixteen
+ * columns, then the buddy's own room to his right (`buddyBeside`), where it
+ * stands on the floor with a little life of its own, never on him.
  *
  * Rarity shows in the frames too, so it reads in any game without a shader:
  * from Special up a shine sweeps across the item, from Prized up a ring in the
  * grade's colour pulses around the guy, and Mythic and Grail copies throw off
  * sparkles.
+ *
+ * Each guy keeps his own time. His idle is dealt from his name like his parts
+ * are: how many breaths he takes in a loop, where in it he starts, and his
+ * habits (a blink or a double blink, a glance, a smile, an "ooh", a little
+ * hop). The same guy always moves the same way, and two guys side by side are
+ * never in step. A squash never cuts his face: rows are only lost or repeated
+ * below his mouth or above his eyes, and a guy with no room there bobs instead.
  */
-declare const MOVES: readonly ["idle", "blink", "hop", "wave", "look", "cheer", "sad", "dance", "squish", "sleep"];
+declare const MOVES: readonly ["idle", "blink", "hop", "wave", "look", "cheer", "sad", "dance", "squish", "sleep", "shy", "huff", "oops"];
 type Move = (typeof MOVES)[number];
 /** Rows of room above the guy for jumps. */
 declare const HEADROOM = 4;
+/** A frame's width: his own sixteen columns. A guy with a buddy is wider (`Animation.width`, at most `WIDE_FRAME_WIDTH`). */
 declare const FRAME_WIDTH = 16;
+/** The widest a frame is: his sixteen columns and a buddy's room beside him. */
+declare const WIDE_FRAME_WIDTH: number;
 declare const FRAME_HEIGHT: number;
 interface AnimationFrame {
-  /** FRAME_HEIGHT rows of FRAME_WIDTH colours; null is transparent. */
+  /** FRAME_HEIGHT rows of `Animation.width` colours (FRAME_WIDTH, or more with a buddy); null is transparent. */
   colors: (string | null)[][];
   /**
    * Which worn item each pixel belongs to: 0 none, 1 skin, 2 hat, 3 frame,
@@ -1059,7 +1258,7 @@ interface AnimationFrame {
   at?: number;
   /**
    * A rare aura's cells that fall past the frame's sides, as `[x, y, colour]`
-   * with x from -AURA_PAD to FRAME_WIDTH + AURA_PAD - 1. Only there when there
+   * with x from -AURA_PAD to width + AURA_PAD - 1. Only there when there
    * are some; a picture with room round the guy (a card) draws them, anything
    * else can leave them out.
    */
@@ -1076,6 +1275,8 @@ interface Animation {
   duration: number;
   /** Whether anything moves on its own clock (an aura, an effect, sparkles), not just with the move. */
   timed: boolean;
+  /** For a loop, how many turns of LOOP_MS it spans. */
+  turns?: number;
 }
 interface AnimateOptions extends RenderOptions {
   /** Show the best equipped copy's grade: shine, aura, sparkles and a trail. Default true. */
@@ -1090,16 +1291,23 @@ interface AnimateOptions extends RenderOptions {
    * to the last bit.
    * `fine` cuts frames to 80 ms for a finish to move in. A lap is played first
    * and left out, so what carries from frame to frame (a trail) is already
-   * there at the start.
+   * there at the start. `{ fit: true }` picks the repeats and turns itself, as
+   * `fitLoop` does for the move's length, without building the move twice.
    */
   loop?: {
     repeats: number;
     turns: number;
     fine?: boolean;
+  } | {
+    fit: true;
+    fine?: boolean;
   };
 }
-/** Little pictures that pop up beside his head. */
-type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire';
+/**
+ * Little pictures that pop up beside his head. The last three are manga's
+ * own: a sweat drop, the cross-shaped anger vein and a little floating heart.
+ */
+type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire' | 'sweat' | 'anger' | 'hearts';
 /**
  * Emotes a player can show after a game, and how each is unlocked. The
  * moves use some on their own; `emote` in the options shows one over any move.
@@ -1117,6 +1325,19 @@ declare const EMOTE_UNLOCKS: {
 declare function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid;
 /** The order of `AnimationFrame.slots`, from 1. */
 declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy", "aura"];
+/** A buddy's own little hops, dealt from his name: how often (ms), where in LOOP_MS they start, and whether each is a double hop. */
+type BuddyHop = [period: number, phase: number, double: number];
+/** The buddy's own hops for the guy `input` would render as, the same ones his moving pictures play. */
+
+/**
+ * What each squash in his moves does to the guy `input` would render as: the
+ * frame rows it takes out (or, for a negative one, repeats), or null where he
+ * has no room and bobs instead; and the rows of his face, which it never touches.
+ */
+declare function squashRows(input: string, options?: AnimateOptions): {
+  face: number[];
+  rows: Record<number, number[] | null>;
+};
 /**
  * Builds the frames of a move for the guy `input` would render as. Takes the
  * same options as `toSvgString` (game, equip, parts, palette).
@@ -1138,7 +1359,7 @@ interface PixelTarget {
 /** Draws a frame at (x, y), each pixel `scale` units square. */
 declare function drawFrame(ctx: PixelTarget, frame: AnimationFrame, x?: number, y?: number, scale?: number): void;
 interface AnimatedSvgOptions extends AnimateOptions {
-  /** Width in pixels; the height is a quarter more. Default 128. */
+  /** His width in pixels (his own sixteen columns); the height is a quarter more, and a buddy beside him adds its room. Default 128. */
   size?: number;
   /** Play once and hold the last frame. Default false: loop. */
   once?: boolean;
@@ -1286,8 +1507,14 @@ interface GuyRank {
  */
 declare function guyScore(config: AvatarConfig): number;
 /**
+ * The founder's rank (./founder). He was picked by hand, not dealt, so his
+ * traits' odds don't place him: he is the one of one, at the top tier.
+ */
+declare const FOUNDER_RANK: GuyRank;
+/**
  * Where a guy stands among every guy dealt: "one in 56 billion" says every
  * combination is unique, which they all are, so a card shows this instead.
+ * The founder (`founder: true`, as `resolve` gives him) is `FOUNDER_RANK`.
  */
 declare function guyRank(config: AvatarConfig): GuyRank;
 
@@ -1317,20 +1544,63 @@ declare const TIER_ICONS: Record<Tier, string>;
  *
  * Picked looks are saved as versioned codes (`2:h3.e5…`), so a later change to
  * the parts can't silently turn a saved look into someone else.
+ *
+ * A rare part can also be earned: every capsule unlocks one the player hasn't
+ * got (`rollPart`), and metal crafts the exact one they want (`partCost`).
+ * Then it's theirs to pick (`Unlocks`). Capsules are how a player builds the
+ * guy they want; earned parts change how a guy looks, never how rare the guy
+ * is: that stays the deal's.
  */
 /** A slot in a look code: its letter, its config key and its weights. */
 declare const SLOTS: readonly [readonly ["h", "head", number[]], readonly ["e", "eyes", number[]], readonly ["m", "mouth", number[]], readonly ["c", "cheeks", number[]], readonly ["t", "hair", number[]], readonly ["b", "body", number[]], readonly ["a", "accessory", number[]], readonly ["p", "palette", number[]]];
 type LookSlot = (typeof SLOTS)[number][1];
 type Look = Partial<Record<LookSlot, number>>;
+/** Rare parts a player has earned from capsules, by slot. */
+type Unlocks = Partial<Record<LookSlot, number[]>>;
 /**
  * A random seed to draw a new player's guy from, made once and kept: the deal
  * prefix (`3-`), then 12 characters of base 36, about 62 bits.
  */
 declare function makeSeed(): string;
-/** Which options a player may pick in a slot: every common one, and their own. */
-declare function pickable(own: AvatarConfig, slot: LookSlot): number[];
+/** Which options a player may pick in a slot: every common one, their own, and any they've earned. */
+declare function pickable(own: AvatarConfig, slot: LookSlot, unlocks?: Unlocks): number[];
 /** Whether a look only uses parts this player may pick. */
-declare function allowed(own: AvatarConfig, look: Look): boolean;
+declare function allowed(own: AvatarConfig, look: Look, unlocks?: Unlocks): boolean;
+/** The slots a capsule can unlock a part in: every one, the shape and the colour too. */
+declare const PART_SLOTS: LookSlot[];
+/** One capsule in this many also unlocks a part: every one, until there's none left to unlock. */
+declare const PART_ODDS = 1;
+/** A part a capsule unlocked. */
+interface PartDrop {
+  slot: LookSlot;
+  index: number;
+}
+/**
+ * The rare parts in a slot, the ones a picker locks: what a capsule can
+ * unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+ */
+declare function rareParts(slot: LookSlot): number[];
+/**
+ * The part a capsule unlocks. Only rare parts, since common ones can already
+ * be picked, and the rarer a part is to be dealt the rarer it is to unlock.
+ * Given what the player `has`, it's one they don't have, from a slot that
+ * still has some, so a capsule never wastes its part; null once there's none
+ * left. Like `roll`, the seed must come from the server.
+ */
+declare function rollPart(seed: string, has?: (p: PartDrop) => boolean): PartDrop | null;
+/**
+ * Scrap to craft a part (./craft's metal): a reclaimed for one dealt about
+ * one guy in 200 or more, a refined for rarer, two for the rarest (rarer than
+ * one in 2,000).
+ */
+declare function partCost(p: PartDrop): number;
+/** A part's name, as a player reads it: "Galaxy eyes", "Crown topper". */
+declare function partName(p: PartDrop): string;
+/** A part as a short code, like a look's (`e12`), and back. */
+declare const partCode: (p: PartDrop) => string;
+declare function readPart(code: string): PartDrop | null;
+/** Earned part codes as `Unlocks`. */
+declare function unlocksOf(codes: string[]): Unlocks;
 /** A picked look as a versioned code: `2:h3.e5.p17`, only the slots picked. */
 declare function encodeLook(look: Look): string;
 /**
@@ -1338,9 +1608,9 @@ declare function encodeLook(look: Look): string;
  * this library can draw: an old seven-number code from before 0.2, a part out
  * of range, or (given the player's own guy) a rare part they didn't roll.
  */
-declare function decodeLook(code: string, own?: AvatarConfig): Look | null;
+declare function decodeLook(code: string, own?: AvatarConfig, unlocks?: Unlocks): Look | null;
 /** A player's guy: from their seed, with their picked look laid over it. */
-declare function lookOf(seed: string, code?: string): AvatarConfig;
+declare function lookOf(seed: string, code?: string, unlocks?: Unlocks): AvatarConfig;
 
 //#endregion
 //#region src/share.d.ts
@@ -1405,7 +1675,7 @@ declare function LilGuyAnimated({
   title,
   style,
   ...props
-}: LilGuyAnimatedProps): react_jsx_runtime3.JSX.Element;
+}: LilGuyAnimatedProps): react_jsx_runtime0.JSX.Element;
 
 //#endregion
 //#region src/shine.d.ts
@@ -1423,7 +1693,7 @@ declare function LilGuyAnimated({
 /**
  * A frame as the shader reads it: its colours; for each pixel the finish,
  * scuff and print of the copy it belongs to; and each pixel's noise. Three
- * RGBA byte arrays, 16×20.
+ * RGBA byte arrays, the frame's size (16×20, wider with a buddy).
  */
 declare function shineData(frame: AnimationFrame, owned?: AvatarConfig['owned']): {
   colors: Uint8Array;
@@ -1437,10 +1707,10 @@ declare const shines: (frame: AnimationFrame, owned?: AvatarConfig["owned"]) => 
  * running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
  */
 declare function shineFrame(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): Uint8ClampedArray;
-/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds. */
-declare const SHINE_FRAGMENT = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 uv;\nuniform sampler2D base, info, noise;\nuniform float time;\n\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;\n  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }\n  else if (finish < 4.5) {\n    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));\n    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);\n    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);\n  }\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;\n  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;\n  return c;\n}\n\nvoid main() {\n  vec2 res = vec2(16.0, 20.0);\n  vec2 cell = floor(uv * res);\n  vec2 at = (cell + 0.5) / res;\n  vec4 b = texture2D(base, at);\n  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }\n  vec3 c = b.rgb;\n  vec4 k = texture2D(info, at);\n  float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;\n  if (k.a > 0.5 && finish >= 0.0) c = finishColor(c, finish, k.g, texture2D(noise, at).r, cell.x + cell.y, cell.y, floor(k.b * 255.0 + 0.5) * 4.0, time, 0.0);\n  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);\n}";
+/** The shader, for a game that runs its own WebGL: textures \`base\`, \`info\`, \`noise\` from shineData, \`time\` in loop seconds, \`res\` the frame's size. */
+declare const SHINE_FRAGMENT = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 uv;\nuniform sampler2D base, info, noise;\nuniform float time;\nuniform vec2 res;\n\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nfloat soft(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) / 3.0, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float w = soft(d, time, print);\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c = mix(c, c * vec3(0.9, 0.98, 1.1) + vec3(0.2, 0.2, 0.16), w * 0.5 * coat) + b * 0.2 * coat;\n  else if (finish < 3.5) {\n    c = hueShift(c, 0.32 * sin(time * TAU / 6.0 + d * 0.12 + fract(print * 0.618) * TAU) * coat);\n    float s = max(0.0, sin(time * TAU / 3.0 + h * 97.0));\n    c = mix(c, vec3(1.0, 0.94, 1.0), step(0.972, h) * s * s * s * coat);\n  }\n  else if (finish < 4.5) c = hueShift(c, time * TAU / 6.0 * coat) + w * 0.14 * coat;\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;\n  else c = mix(c, vec3(1.0, 0.94, 0.66), w * 0.45 * coat) + vec3(0.36, 0.3, 0.16) * b * coat;\n  return c;\n}\n\nvoid main() {\n  vec2 cell = floor(uv * res);\n  vec2 at = (cell + 0.5) / res;\n  vec4 b = texture2D(base, at);\n  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }\n  vec3 c = b.rgb;\n  vec4 k = texture2D(info, at);\n  float finish = floor(k.r * 255.0 / 32.0 + 0.5) - 1.0;\n  if (k.a > 0.5 && finish >= 0.0) c = finishColor(c, finish, k.g, texture2D(noise, at).r, cell.x + cell.y, cell.y, floor(k.b * 255.0 + 0.5) * 4.0, time, 0.0);\n  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);\n}";
 interface Shine {
-  /** The 16×20 canvas the shader draws into; copy it out with drawImage. */
+  /** The canvas the shader draws into, the size of the last frame drawn (16×20, wider with a buddy); copy it out with drawImage. */
   canvas: HTMLCanvasElement | OffscreenCanvas;
   /** Draws a frame with its copies' finishes `ms` into the shimmer. */
   draw(frame: AnimationFrame, owned: AvatarConfig['owned'], ms: number): void;
@@ -1588,7 +1858,15 @@ declare function auraCells(id: string, mask: Mask, t: number, copy?: Owned, pad?
  * The colour of one aura cell in a finish. Fade runs its sunset down the aura
  * and drifts; the Deep sea finishes glint; Black pearl glints in every colour.
  */
-declare function auraColor(id: string, k: number, finish: string, x: number, y: number, t: number): string;
+declare function auraColor(id: string, k: number, finish: string, x: number, y: number, t: number, print?: number): string;
+/**
+ * The one colour an aura copy is known by, in its finish: its most vivid
+ * colour (Flames' orange, Frost's ice blue, a Neon copy's tube). Its card is
+ * dressed in it.
+ */
+
+/** The colours an aura copy's card is dressed from, in its finish: the list `auraHue` picks the most vivid of. */
+declare function auraColors(id: string, finish: string, print?: number): string[];
 
 //#endregion
 //#region src/collector.d.ts
@@ -1685,76 +1963,6 @@ declare function encodePng(rgba: Uint8ClampedArray, width: number, height: numbe
 declare function encodeApng(input: Frames, scale?: number): Promise<Uint8Array>;
 
 //#endregion
-//#region src/card.d.ts
-/**
- * Trading cards, drawn by the library so every game, the site and an export
- * show the same card: a guy wearing his copies, moving, each copy's finish
- * shining on its own pixels, its effect playing, the card's face dressed for
- * the grade, and the words written in the club's pixel type.
- *
- * A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, six to each of the
- * guy's pixels, so a shine can sweep across a single pixel of a hat. Scale it
- * up by whole numbers to show it; `toCardGif` and `toCardPng` do that for you.
- */
-declare const CARD_WIDTH = 140;
-declare const CARD_HEIGHT = 204;
-interface CardInput {
-  /** The guy: a name or a seed, as for `animate`. */
-  seed: string;
-  /** His parts and colours when they aren't the ones the seed deals (a picked look). */
-  parts?: AnimateOptions['parts'];
-  palette?: AnimateOptions['palette'];
-  /** What he wears. The rarest sets the card's grade unless `grade` says. */
-  copies?: Owned[];
-  /** Across the top band. */
-  title: string;
-  /** A tag in the window's top-right corner, such as a print number. */
-  corner?: string;
-  /** Up to two lines under the grade pips. */
-  lines?: string[];
-  /** 0 Everyday to 5 Aura; -1 for a plain card. */
-  grade?: number;
-  /** How he moves on the card. Default `idle`. */
-  move?: Move;
-}
-/** How wide a line of text is, in pixels. */
-declare const textWidth: (s: string) => number;
-/**
- * The card as frames, `ms` apart, covering one loop of his move (at least two
- * seconds, so a shine gets across). Every frame is the whole card in RGBA;
- * the corners are transparent.
- */
-declare function cardFrames(input: CardInput, ms?: number): Frames;
-/**
- * A card to play on screen: each frame is drawn the first time it is asked
- * for and kept, so a page can show a card at once and spread the work out.
- * It loops perfectly: his move played the whole number of times that fits
- * whole turns of LOOP_MS, with every sheen on the card on the same clock.
- */
-declare function cardPlayer(input: CardInput, ms?: number): {
-  width: number;
-  height: number;
-  count: number;
-  delay: number;
-  delays: number[];
-  /** The frame showing at `i` (wraps round). */
-  frame(i: number): Uint8ClampedArray;
-};
-/** The card standing still, for a picture. */
-declare function cardStill(input: CardInput, t?: number): Uint8ClampedArray;
-/** The card as a looping GIF, each card pixel `scale` by `scale`. */
-declare function toCardGif(input: CardInput, scale?: number): Uint8Array;
-/** The card as a PNG, each card pixel `scale` by `scale`. */
-declare function toCardPng(input: CardInput, scale?: number): Promise<Uint8Array>;
-/**
- * The guy on his own as a looping GIF: his move with everything he wears,
- * effects and auras moving, on a transparent background or `background`.
- */
-declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
-  background?: string;
-}, scale?: number): Uint8Array;
-
-//#endregion
 //#region src/loop.d.ts
 /**
  * Everything that moves on its own clock (auras, effects, finishes, a Lucky
@@ -1802,20 +2010,229 @@ declare const SHADER_FINISHES: readonly ["plain", "sunset", "tempered", "nebula"
 declare const noiseOf: (x: number, y: number, print: number) => number;
 /** Highest precision the device has: mediump is 16-bit on phones, too coarse for the bands. */
 
-declare const GLSL_COMMON = "\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;\n  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }\n  else if (finish < 4.5) {\n    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));\n    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);\n    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);\n  }\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;\n  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;\n  return c;\n}\n";
+declare const GLSL_COMMON = "\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nfloat soft(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) / 3.0, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float w = soft(d, time, print);\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c = mix(c, c * vec3(0.9, 0.98, 1.1) + vec3(0.2, 0.2, 0.16), w * 0.5 * coat) + b * 0.2 * coat;\n  else if (finish < 3.5) {\n    c = hueShift(c, 0.32 * sin(time * TAU / 6.0 + d * 0.12 + fract(print * 0.618) * TAU) * coat);\n    float s = max(0.0, sin(time * TAU / 3.0 + h * 97.0));\n    c = mix(c, vec3(1.0, 0.94, 1.0), step(0.972, h) * s * s * s * coat);\n  }\n  else if (finish < 4.5) c = hueShift(c, time * TAU / 6.0 * coat) + w * 0.14 * coat;\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;\n  else c = mix(c, vec3(1.0, 0.94, 0.66), w * 0.45 * coat) + vec3(0.36, 0.3, 0.16) * b * coat;\n  return c;\n}\n";
 type Vec3 = [number, number, number];
-/** `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES. */
+/**
+ * `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES.
+ * Each finish moves in smooth light across the whole item, never pixel by
+ * pixel: Tempered and Gold a soft sheen and a fine glint, Nebula a slow drift
+ * of its colours and a few fixed stars pulsing, Prism its rainbow sweeping
+ * round, Negative a slow pulse.
+ */
 declare function finishColor(c: Vec3, finish: number, scuff: number, h: number, d: number, row: number, print: number, time: number, scan: number): Vec3;
 
 //#endregion
-//#region src/card-face.d.ts
+//#region src/card-looks.d.ts
 /** A colour channel as the GPU stores it. */
 /**
- * The trading card a guy or an item is shown on: a 26×42 face, its window
- * tinted by grade, the guy standing in it, grade pips under him. The face
- * shimmers by grade (a sheen, foil, holo, gold) and each worn copy's pixels by
- * their finish, all in `LOOP_MS`. Its words (name, print, odds) are the page's
- * to write over it.
+ * How a card's edition is painted, after the way Balatro paints its cards.
+ * Each edition has its look, chosen by `lookFor`:
+ *
+ * - `paint` (an aura card): its ground as banded paint in the aura's own
+ *   colours, cut in hard bands: each aura its own pattern (a spiral, waves,
+ *   rings, rising tongues, streaks or a nebula; `paintForm`), its copy's
+ *   print nudging the middle and the timing.
+ * - `sheen` (a Grail): once a loop a band of light crosses the card corner to
+ *   corner, as light catches metal: brighter on what stands proud, a glint on
+ *   the bevel as it passes, and still the rest of the time.
+ * - `liquid` (a Tempered card): its window flowing chrome, hard bands of dark,
+ *   sky and silver round a white highlight, slowly swirling, and its frame
+ *   chrome that catches the same highlights.
+ * - `opal` (a Polychrome card): a pale pearl with soft patches of colour
+ *   shifting over it.
+ * - `bands` (a Holographic card): a cool drifting tint and a few slow broad
+ *   bands of light, their edges in rainbow.
+ * - `classic`: the edition as `editionColor` draws it (./finish-shader), the
+ *   only look for Foil and Negative cards, and any card's if asked for.
+ *
+ * Each is written twice, as GLSL (`GLSL_LOOKS`) and as plain code
+ * (`lookField`), with the same result, and every motion comes round in
+ * LOOP_MS: time enters only as whole turns of the loop's angle.
+ */
+declare const CARD_LOOKS: readonly ["classic", "paint", "sheen", "liquid", "opal", "bands"];
+type CardLook = (typeof CARD_LOOKS)[number];
+/** A look and what it is drawn with. */
+interface LookOptions {
+  /** A look other than the edition's own, where it fits the edition (`classic` always does). */
+  look?: CardLook;
+  /** How hard `paint`'s bands are: 2 a soft wash, 7 the default, 12 near cut paper. */
+  contrast?: number;
+}
+/** Whether a look (as the shaders number it) can paint a card of edition `ed` (an index in EDITIONS). */
+
+/**
+ * The look a card of edition `ed` is painted in, as the shaders number it: its
+ * edition's own (a Holographic card's by its finish: Tempered is liquid metal,
+ * Nebula bands), or `look` where that fits.
+ */
+declare function lookFor(ed: number, finish: string | undefined, look?: CardLook): number;
+/** The default hardness of `paint`'s bands. */
+
+/**
+ * `lookColor` falls back to `editionColor` (GLSL_EDITIONS) for `classic`, so
+ * it goes after it. `p` is the cell in face cells, `o` the window's middle,
+ * `region` 1 face and 2 window, `th` the loop's angle.
+ */
+declare const GLSL_LOOKS = "\nvec3 fromHsl(vec3 c) {\n  vec3 k = clamp(abs(fract(c.x + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);\n  return c.z + c.y * (1.0 - abs(2.0 * c.z - 1.0)) * (k - 0.5);\n}\nfloat polyField(vec2 p, vec2 o, float th) {\n  vec2 a = p - o - vec2(7.0 * cos(th), 9.0 * sin(th));\n  vec2 b = p - o - vec2(-8.0 * sin(th), 6.0 * cos(2.0 * th));\n  vec2 e = p - o - vec2(6.0 * cos(2.0 * th + 1.3), -7.0 * sin(th + 0.4));\n  return cos(length(a) * 0.38) + sin(length(b) * 0.27 + th) * cos(b.y * 0.21) + cos(length(e) * 0.33 - th) * sin(e.x * 0.19);\n}\nfloat paintField(vec2 p, vec2 o, float th, vec4 form, float phase) {\n  vec2 q = (p - o - form.zw) / 9.0;\n  float r = length(q), k = form.y;\n  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th) + 0.5 * sin(q.x * 2.0 - q.y * 1.6 + th));\n  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th) + 0.6 * sin(u.y * 1.1 + u.x * 0.6 - 2.0 * th)); }\n  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.7 * sin(q.x * 3.0 + q.y * 2.0 + th) + 0.5 * sin(q.y * 2.4 - q.x * 1.3 - th));\n  if (form.x < 3.5) return 0.5 + 0.5 * sin(q.x * 6.0 + 1.6 * sin(q.y * 2.4 + k * th + phase) + 0.8 * sin(q.x * 2.1 - th)) + 0.15 * q.y * k;\n  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) + 0.5 * sin(q.y * 3.1 + 2.0 * th) - th);\n  float tw = 0.6 * r + 0.35 * sin(th);\n  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 1.9;\n  float ct = 0.8 * cos(th + phase), st = 0.8 * sin(th + phase);\n  u += 0.8 * vec2(sin(1.3 * u.y + ct), sin(1.1 * u.x + st));\n  u += 0.8 * vec2(sin(1.7 * u.y - st + 0.9), sin(1.5 * u.x + ct - 0.7));\n  u += 0.8 * vec2(sin(2.1 * u.y + ct + 1.8), sin(1.9 * u.x - st + 2.6));\n  return 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5);\n}\nvec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {\n  float t = paintField(p, o, th, form, phase), w = 0.5 / contrast;\n  float k1 = clamp((t - 0.38) / w + 0.5, 0.0, 1.0), k2 = clamp((t - 0.74) / w + 0.5, 0.0, 1.0);\n  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(length(p - o) / 9.0 * 0.5 - 0.35, 0.0, 1.0));\n}\nfloat sheenPos(float time) { return -6.0 + 84.0 * clamp(time / 1.4, 0.0, 1.0); }\nfloat glint(vec2 p, vec2 g, float pos) {\n  vec2 q = abs(p - g) * 5.0;\n  float a = min(q.x, q.y), b = max(q.x, q.y);\n  float star = b < 0.5 ? 1.0 : (a < 0.5 && b < 3.5 ? 0.8 - 0.2 * b : 0.0);\n  return star * clamp(1.0 - abs(g.x + g.y - pos) / 1.2, 0.0, 1.0);\n}\nvec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time) {\n  float pos = sheenPos(time), d = abs(p.x + p.y - pos);\n  float halo = clamp(1.0 - d / 4.5, 0.0, 1.0), glow = clamp(1.0 - d / 2.2, 0.0, 1.0), core = clamp(1.0 - d / 0.7, 0.0, 1.0);\n  float k = (0.65 + 0.35 * raised) * (region > 1.5 ? 0.6 : 1.0);\n  c = mix(c, vec3(1.0, 0.88, 0.52), halo * halo * 0.35 * k);\n  c = mix(c, vec3(1.0, 0.93, 0.7), glow * 0.55 * k);\n  c = mix(c, vec3(1.0, 0.99, 0.93), core * 0.85 * k);\n  if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));\n  return c;\n}\nfloat liquidField(vec2 p, vec2 o, float th) {\n  vec2 u = (p - o) / 10.0 * 1.6;\n  u += 0.6 * vec2(sin(1.4 * u.y + th), sin(1.2 * u.x - th + 0.8));\n  u += 0.5 * vec2(sin(2.1 * u.y - th + 1.7), sin(1.8 * u.x + 2.0 * th));\n  return 0.5 + 0.5 * sin(u.x * 1.3 + u.y * 2.1 + 0.6 * sin(u.x * 0.7 - th));\n}\nvec3 liquidColor(vec3 c, vec2 p, vec2 o, float region, float th) {\n  float t = liquidField(p, o, th);\n  float a = clamp((t - 0.28) / 0.06 + 0.5, 0.0, 1.0), b = clamp((t - 0.5) / 0.06 + 0.5, 0.0, 1.0), d = clamp((t - 0.82) / 0.05 + 0.5, 0.0, 1.0);\n  vec3 metal = mix(mix(mix(vec3(0.1, 0.12, 0.18), vec3(0.55, 0.75, 0.95), a), vec3(0.78, 0.82, 0.88), b), vec3(1.0), d);\n  if (region > 1.5) return metal;\n  float l = dot(c, vec3(0.299, 0.587, 0.114));\n  return mix(vec3(0.42 + 0.5 * l) * vec3(0.93, 0.96, 1.04), vec3(1.0), 0.4 * d);\n}\nvec3 opalColor(vec3 c, vec2 p, vec2 o, float region, float th) {\n  float f = polyField(p, o, th);\n  vec3 base = mix(c, vec3(0.94, 0.95, 0.98), 0.5);\n  vec3 fire = fromHsl(vec3(fract(0.5 + 0.35 * f), 0.55, 0.78));\n  return mix(base, fire, (region > 1.5 ? 0.45 : 0.3) * clamp(0.5 + f / 3.0, 0.0, 1.0));\n}\nvec3 bandsColor(vec3 c, vec2 p, vec2 o, float region, float th) {\n  float k = region > 1.5 ? 0.6 : 1.0, b = sin((p.x * 0.3 + p.y * 0.5) * 0.45 - th);\n  float band = clamp((b - 0.6) / 0.3, 0.0, 1.0), edge = band * (1.0 - band) * 4.0;\n  vec3 tint = fromHsl(vec3(fract(0.58 + 0.12 * polyField(p, o, th)), 0.75, 0.66));\n  vec3 rim = fromHsl(vec3(fract(0.55 + 0.3 * b + p.y * 0.01), 0.8, 0.7));\n  return mix(c, c * 0.5 + tint * 0.55, 0.5 * k) + vec3(0.9, 0.95, 1.0) * band * 0.16 * k + rim * edge * 0.3 * k;\n}\nvec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {\n  float th = time * TAU / 6.0;\n  if (look > 0.5 && look < 1.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast, form, phase) : c;\n  if (look > 1.5 && look < 2.5) return sheenColor(c, p, region, raised, px, time);\n  if (look > 2.5 && look < 3.5) return liquidColor(c, p, o, region, th);\n  if (look > 3.5 && look < 4.5) return opalColor(c, p, o, region, th);\n  if (look > 4.5) return bandsColor(c, p, o, region, th);\n  return editionColor(c, ed, v, p, o, region, h, px, time);\n}\n";
+/**
+ * What `paint` is drawn in: three colours, 0 to 1, how hard its bands are, and its pattern: a
+ * family, a number for it (a spiral's arms, signed for the way it turns; waves' tightness;
+ * which way tongues and streaks run), where its middle is from the window's, in face cells, and
+ * where its motion starts.
+ */
+interface PaintSpec {
+  colors: [Vec3, Vec3, Vec3];
+  contrast: number;
+  form: [number, number, number, number];
+  phase: number;
+}
+
+//#endregion
+//#region src/card.d.ts
+/** The pattern families `paint` draws, in the order the shaders number them. */
+/**
+ * Trading cards, drawn by the library so every game, the site and an export
+ * show the same card: a guy wearing his copies, moving, each copy's finish
+ * shining on its own pixels, its effect playing, the card's face dressed for
+ * the grade, and the words written in the club's pixel type.
+ *
+ * A card is `CARD_WIDTH` by `CARD_HEIGHT` card pixels, several to each of
+ * the guy's pixels, so a shine can sweep across a single pixel of a hat. Scale it
+ * up by whole numbers to show it; `toCardGif` and `toCardPng` do that for you.
+ */
+declare const CARD_WIDTH = 140;
+declare const CARD_HEIGHT = 204;
+interface CardInput {
+  /** The guy: a name or a seed, as for `animate`. */
+  seed: string;
+  /** His parts and colours when they aren't the ones the seed deals (a picked look). */
+  parts?: AnimateOptions['parts'];
+  palette?: AnimateOptions['palette'];
+  /** What he wears. The rarest sets the card's grade unless `grade` says. */
+  copies?: Owned[];
+  /** Across the top band. */
+  title: string;
+  /** A tag in the window's top-right corner, such as a print number. */
+  corner?: string;
+  /** The grade's badge, then a short line beside it (his @name). Any ★ is left off. */
+  lines?: string[];
+  /** The small line at the foot, as "1st edition", on one line; a part starting with "#" (a print number) is left off. */
+  footer?: string;
+  /** 0 Everyday to 5 Aura; -1 for a plain card. */
+  grade?: number;
+  /** How he moves on the card. Default `idle`. */
+  move?: Move;
+}
+/** How wide a line of text is, in pixels. */
+declare const textWidth: (s: string) => number;
+/**
+ * A Grail: `framed` (the default) a dark card round a window of gold in a few large soft bands, a thin
+ * bright gold line along its bevel and inside the window's rim, on the dark plate every card has;
+ * `brushed` the earlier brushed gold card, its words struck into the gold.
+ */
+declare const CARD_GOLDS: readonly ["framed", "brushed"];
+type CardGold = (typeof CARD_GOLDS)[number];
+/**
+ * How he stands out from the window: `none` (the default) on his own dark outline, everything in the
+ * window on his own grid and his whole move kept inside it; `sticker` the earlier white sticker edge a
+ * card pixel or two round him, a tall hat poking out over the window.
+ */
+declare const CARD_EDGES: readonly ["none", "sticker"];
+type CardEdge = (typeof CARD_EDGES)[number];
+/** How a card is drawn, where it differs from the defaults: its edition's look, a Grail's gold, his edge. */
+type CardStyle = LookOptions & {
+  gold?: CardGold;
+  edge?: CardEdge;
+};
+/**
+ * The card as frames, `ms` apart, covering one loop of his move (at least two
+ * seconds, so a shine gets across). Every frame is the whole card in RGBA;
+ * the corners are transparent.
+ */
+declare function cardFrames(input: CardInput, ms?: number): Frames;
+/** How a page plays a card. */
+interface CardPlayerOptions {
+  /**
+   * Keep every frame once drawn (the default), so the next loop only shows
+   * them; or `false` to draw each frame into one picture that is reused, for
+   * a page showing many cards: a frame costs about a millisecond.
+   */
+  keep?: boolean;
+  /** A look other than the edition's own (./card-looks), such as `classic` or `liquid`. */
+  look?: LookOptions['look'];
+  /** How hard an aura card's paint bands are. */
+  contrast?: number;
+  /** A Grail's gold: `framed` (the default) or `brushed`. */
+  gold?: CardGold;
+  /** How he stands out from the window: `none` (the default) or `sticker`. */
+  edge?: CardEdge;
+}
+/**
+ * A card to play on screen: each frame is drawn the first time it is asked
+ * for and kept, so a page can show a card at once and spread the work out.
+ * It loops perfectly: his move played the whole number of times that fits
+ * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
+ * card with nothing shining draws each pose of his once and shows it again.
+ */
+declare function cardPlayer(input: CardInput, ms?: number, options?: CardPlayerOptions): {
+  width: number;
+  height: number;
+  count: number;
+  delay: number;
+  delays: number[];
+  /** The frame showing at `i` (wraps round). Without `keep`, the same picture redrawn: show it before asking for the next. */
+  frame(i: number): Uint8ClampedArray;
+};
+/**
+ * The card's window alone, as a square, played as `cardPlayer` plays the whole card: the art behind
+ * him (its edition, look, frame item or aura ground) and him moving. Its side is the window's
+ * height or width, whichever is less; give it `edge: 'none'` (or another grid edge) so his whole move
+ * stays in the square.
+ */
+declare function cardArtPlayer(input: CardInput, ms?: number, options?: CardPlayerOptions): {
+  width: number;
+  height: number;
+  count: number;
+  delay: number;
+  delays: number[];
+  /** The frame showing at `i` (wraps round). Without `keep`, the same picture redrawn: show it before asking for the next. */
+  frame(i: number): Uint8ClampedArray;
+};
+/** The card standing still, for a picture. */
+declare function cardStill(input: CardInput, t?: number, looks?: CardStyle): Uint8ClampedArray;
+/** The card as a looping GIF, each card pixel `scale` by `scale`. */
+declare function toCardGif(input: CardInput, scale?: number): Uint8Array;
+/** The card's window art alone as frames, as `cardFrames` gives the whole card. */
+declare function cardArtFrames(input: CardInput, ms?: number, options?: CardPlayerOptions): Frames;
+/** The card's window art alone as a looping GIF, each pixel `scale` by `scale`. */
+declare function toCardArtGif(input: CardInput, scale?: number, options?: CardPlayerOptions): Uint8Array;
+/** The card's window art alone as a PNG, its first frame. */
+declare function toCardArtPng(input: CardInput, scale?: number, options?: CardPlayerOptions): Promise<Uint8Array>;
+/** The card as a PNG, each card pixel `scale` by `scale`. */
+declare function toCardPng(input: CardInput, scale?: number): Promise<Uint8Array>;
+/**
+ * The guy on his own as a looping GIF: his move with everything he wears,
+ * effects and auras moving, on a transparent background or `background`.
+ */
+declare function toGuyGif(seed: string, move: Move, options?: AnimateOptions & {
+  background?: string;
+}, scale?: number): Uint8Array;
+
+//#endregion
+//#region src/card-face.d.ts
+/**
+ * The trading card a guy or an item is shown on: a 26×42 face printed in its
+ * grade's colour, a dark plate across the top for the name, the guy standing
+ * in a window, and a plain dark plate at the foot. Its words (name, print,
+ * odds) are the page's to write over it. A buddy he wears stands at his full
+ * size too, in front of the window's bottom-right corner and half over the
+ * plate under it (`FaceSpec.buddy`), hopping now and then as it does beside him.
+ *
+ * Like Balatro's cards, each has an edition, from the finish that sets its
+ * grade: Foil (Sunset), Holographic (Tempered, Nebula), Polychrome (Prism),
+ * Negative, Gold for a Grail, and Spectral for an aura card, which is
+ * full-art: its aura's own colours swirl edge to edge. Each worn copy's pixels
+ * shine in their own finish, and everything comes round in `LOOP_MS`.
  *
  * The face is built once (`cardFace`), then drawn at a time either by the GPU
  * (`CARD_FRAGMENT`, `createCardShader`) or in plain code (`cardFaceAt`), with
@@ -1823,6 +2240,14 @@ declare function finishColor(c: Vec3, finish: number, scuff: number, h: number, 
  */
 declare const FACE_WIDTH = 26;
 declare const FACE_HEIGHT = 42;
+/**
+ * Where a buddy he wears stands on the face, the guy and the face the same size
+ * either way: `peek`, in front of the window's bottom-right corner, its feet on
+ * the plate under it, as if peeking out; `floor`, wholly on the plate under the
+ * window, to the right, where the page's words would otherwise run.
+ */
+declare const FACE_BUDDY_SPOTS: readonly ["peek", "floor"];
+type FaceBuddySpot = (typeof FACE_BUDDY_SPOTS)[number];
 interface FaceSpec {
   /** The guy's seed or name. */
   name: string;
@@ -1836,23 +2261,50 @@ interface FaceSpec {
   grade?: number;
   /** The window's tint when there's no grade. */
   tint?: string;
+  /** A look other than its edition's own (./card-looks), and an aura card's paint contrast. */
+  look?: LookOptions['look'];
+  contrast?: number;
+  /** Where his buddy stands, if he wears one. Default `peek`. */
+  buddy?: FaceBuddySpot;
 }
 interface CardFace {
   /** Colours, 26×42 RGBA. */
   base: Uint8Array;
-  /** Per pixel: what it is (card, window, guy, item), its copy's finish, scuff and print. */
+  /** Per pixel: what it is (card, window, guy, item, plate), its copy's finish, scuff and print. */
   kind: Uint8Array;
-  /** Per pixel noise, in the red channel. */
+  /** Per pixel noise, in the red channel; the buddy's (`buddy`), in the green. */
   noise: Uint8Array;
+  /**
+   * His buddy standing still, 26×42 RGBA, drawn over everything else and up a row
+   * while it hops (`buddyLift`): alpha 255 for its own colours, where its copy's
+   * finish runs, 128 for its outline, 0 elsewhere. All clear without one.
+   */
+  buddy: Uint8Array;
+  /** The buddy's copy: its finish (an index in SHADER_FINISHES, -1 for none), scuff and print. */
+  buddyCopy: [number, number, number];
+  /** The buddy's own hops, as his moving pictures play them; null without a buddy. */
+  hop: BuddyHop | null;
   grade: number;
   negative: boolean;
   /** Where the face's wide band starts: the last copy's print. */
   seed: number;
+  /** The last copy's finish, an index in SHADER_FINISHES (0 for none), and its print's variant 0–3. */
+  holo: number;
+  variant: number;
+  /** The card's edition, an index in EDITIONS. */
+  edition: number;
+  /** The window's middle, in face cells: where a Spectral swirl turns round. */
+  origin: [number, number];
+  /** Its edition's look, an index in CARD_LOOKS, and what an aura card's paint is drawn in. */
+  look: number;
+  paint?: PaintSpec;
 }
 /** The card's face, ready to draw at any time. */
 declare function cardFace(spec: FaceSpec): CardFace;
 /** Whether a face changes over time at all: a plain card with no finishes is one picture. */
 declare const faceMoves: (f: CardFace) => boolean;
+/** How many rows the face's buddy is up `ms` into its loop: 1 now and then, as it hops; 0 without one. */
+declare const buddyLift: (f: CardFace, ms: number) => number;
 /** The pointer's light on a card (a page's hover): where it is, 0 to 1 across and down, and how strong. */
 interface Hover {
   x: number;
@@ -1861,8 +2313,8 @@ interface Hover {
 }
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 declare function cardFaceAt(f: CardFace, ms: number, hover?: Hover): Uint8ClampedArray;
-/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise` from `cardFace`. */
-declare const CARD_FRAGMENT = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 uv;\nuniform sampler2D base, kind, noise;\nuniform float time, hover, grade, neg, seed;\nuniform vec2 light;\n\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float twinkle = step(0.965, fract(h * 13.0 + time / 3.0));\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c += twinkle * 0.55 * coat + b * 0.25 * coat;\n  else if (finish < 3.5) { c = hueShift(c, (time * TAU / 6.0 + d * 0.22) * coat); c = mix(c, vec3(1.0), twinkle * coat); }\n  else if (finish < 4.5) {\n    vec3 rain = hsv(vec3(fract(d * 0.07 - time / 3.0 + print * 0.013), 0.65, 1.0));\n    c = mix(c, c * 0.45 + rain * 0.75, 0.6 * coat);\n    c *= 1.0 + 0.12 * scan * step(mod(row + floor(time * 10.0), 3.0), 0.5);\n  }\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5) * coat;\n  else c += b * 0.7 * coat + vec3(1.0, 0.9, 0.5) * twinkle * 0.6 * coat;\n  return c;\n}\n\nvoid main() {\n  vec2 res = vec2(26.0, 42.0);\n  vec2 cell = floor(uv * res);\n  vec2 at = (cell + 0.5) / res;\n  vec4 b = texture2D(base, at);\n  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }\n  vec3 c = b.rgb;\n  vec4 kd = texture2D(kind, at);\n  float k = floor(kd.r * 4.0 + 0.5);\n  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;\n  float print = floor(kd.a * 255.0 + 0.5) * 4.0;\n  float h = texture2D(noise, at).r;\n  float d = cell.x + cell.y;\n  float wide = 1.0 - clamp(abs(mod(d - time * 10.0 + seed, 60.0) - 30.0) / 3.0, 0.0, 1.0);\n  if (k > 3.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, d, cell.y, print, time, 1.0);\n  else if (k < 2.5) {\n    if (neg > 0.5) c = mix(vec3(1.0) - c, vec3(0.36, 0.2, 0.62), 0.25);\n    if (grade > 0.5 && grade < 1.5) c += wide * 0.08;\n    else if (grade > 1.5 && grade < 2.5) { float s = 0.5 + 0.5 * sin(d * 0.55 - time * TAU / 3.0); c = mix(c, c * vec3(0.82, 0.94, 1.2) + 0.06, 0.45 * s) + wide * 0.12; }\n    else if (grade > 2.5 && grade < 3.5) { if (k > 1.5) c = hueShift(c, time * TAU / 6.0 + d * 0.18); c += wide * 0.12; }\n    else if (grade > 3.5) { if (k < 1.5) c = mix(c, vec3(1.0, 0.82, 0.36), 0.35 + 0.2 * wide); c = mix(c, vec3(1.0, 0.95, 0.7), step(0.965, fract(h * 13.0 + time / 3.0)) * 0.8); }\n  }\n  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;\n  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);\n}";
+/** The face's shader, for a page or a game with WebGL: textures `base`, `kind`, `noise`, `buddy` from `cardFace`. */
+declare const CARD_FRAGMENT = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 uv;\nuniform sampler2D base, kind, noise, buddy;\nuniform float time, hover, edition, variant, look, contrast, buddyLift, buddyFinish, buddyScuff, buddyPrint;\nuniform vec2 light, origin;\nuniform vec3 paint1, paint2, paint3;\nuniform vec4 paintForm;\nuniform float paintPhase;\n\nconst float TAU = 6.28318530718;\nvec3 hsv(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }\nvec3 hueShift(vec3 c, float a) {\n  const mat3 toYIQ = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);\n  const mat3 toRGB = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);\n  vec3 yiq = toYIQ * c;\n  float h = atan(yiq.z, yiq.y) + a, ch = length(yiq.yz);\n  return toRGB * vec3(yiq.x, ch * cos(h), ch * sin(h));\n}\nfloat band(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) - 0.5, 0.0, 1.0); }\nfloat soft(float d, float time, float print) { return 1.0 - clamp(abs(mod(d - time * 10.0 + print, 60.0) - 30.0) / 3.0, 0.0, 1.0); }\nvec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row, float print, float time, float scan) {\n  float b = band(d, time, print);\n  float w = soft(d, time, print);\n  float coat = clamp(1.0 - scuff * 1.4, 0.0, 1.0) * step(scuff * 0.55, h);\n  if (finish < 0.5) c += b * 0.45 * step(scuff, 0.07);\n  else if (finish < 1.5) { float s = 0.5 + 0.5 * sin(d * 0.8 - time * TAU / 2.0 + print); c = mix(c, c * vec3(0.86, 0.96, 1.18) + 0.08, 0.4 * s * coat) + b * 0.5 * coat; }\n  else if (finish < 2.5) c = mix(c, c * vec3(0.9, 0.98, 1.1) + vec3(0.2, 0.2, 0.16), w * 0.5 * coat) + b * 0.2 * coat;\n  else if (finish < 3.5) {\n    c = hueShift(c, 0.32 * sin(time * TAU / 6.0 + d * 0.12 + fract(print * 0.618) * TAU) * coat);\n    float s = max(0.0, sin(time * TAU / 3.0 + h * 97.0));\n    c = mix(c, vec3(1.0, 0.94, 1.0), step(0.972, h) * s * s * s * coat);\n  }\n  else if (finish < 4.5) c = hueShift(c, time * TAU / 6.0 * coat) + w * 0.14 * coat;\n  else if (finish < 5.5) c += vec3(0.28, 0.12, 0.45) * b * coat + 0.07 * sin(time * TAU / 3.0 + d * 0.5 + fract(print * 0.618) * TAU) * coat;\n  else c = mix(c, vec3(1.0, 0.94, 0.66), w * 0.45 * coat) + vec3(0.36, 0.3, 0.16) * b * coat;\n  return c;\n}\n\n\nfloat sweep(float s, float time, float width) { return 1.0 - clamp(abs(mod(s - time * 10.0, 60.0) - 30.0) / width, 0.0, 1.0); }\nvec3 editionColor(vec3 c, float ed, float v, vec2 p, vec2 o, float region, float h, float px, float time) {\n  if (ed < 0.5) return c;\n  float wide = sweep(p.x + p.y * 0.6 + v * 13.0, time, 5.0);\n  float glint = step(0.965, h) * pow(max(0.0, sin(time * TAU / 2.0 + h * 91.0)), 6.0);\n  if (ed < 1.5) {\n    float l = dot(c, vec3(0.299, 0.587, 0.114));\n    float fine = pow(0.5 + 0.5 * sin((p.x * 0.7 + p.y * 0.45 + v * 3.0) * 1.3 - time * TAU / 2.0), 6.0);\n    return mix(c, l * vec3(0.8, 0.92, 1.1) + vec3(0.05, 0.08, 0.16), 0.6) + vec3(0.6, 0.75, 1.0) * (fine * 0.22 + wide * 0.4);\n  }\n  if (ed < 2.5) {\n    vec3 tint = mix(vec3(1.0, 0.3, 0.42), vec3(0.28, 0.62, 1.0), 0.5 + 0.5 * sin(p.x * 0.35 - p.y * 0.55 + v * 2.0 - time * TAU / 3.0));\n    float k = region > 1.5 ? 0.6 : 1.0;\n    return mix(c, c * 0.5 + tint * 0.55, 0.55 * k) + step(0.5, fract(p.y / (px * 2.0))) * 0.05 * (2.0 - region) + wide * 0.25;\n  }\n  if (ed < 3.5) {\n    vec3 rb = hsv(vec3(fract((p.x + p.y) * 0.03 + v * 0.25 - time / 6.0), 0.6, 1.0));\n    return mix(hueShift(c, (p.x - p.y) * 0.05 - time * TAU / 6.0), c * 0.45 + rb * 0.6, 0.5) + wide * 0.18;\n  }\n  if (ed < 4.5) {\n    vec3 n = vec3(1.0) - c;\n    return mix(n, n * vec3(0.75, 0.68, 1.1) + vec3(0.02, 0.0, 0.06), 0.55) + vec3(0.3, 0.16, 0.5) * wide * 0.6;\n  }\n  if (ed < 5.5) {\n    if (region > 1.5) return mix(c, vec3(1.0, 0.94, 0.78), sweep(p.x + p.y * 0.6 + v * 13.0, time, 9.0) * 0.16);\n    return mix(c, vec3(1.0, 0.97, 0.84), wide * 0.6);\n  }\n  vec2 q = (p - o) / (region > 1.5 ? 7.0 : 12.0);\n  float r = length(q), a = atan(q.y, q.x) + r * 1.8 - time * TAU / 6.0;\n  vec2 w = vec2(cos(a), sin(a)) * r;\n  float f = floor((0.5 + 0.5 * sin(w.x * 3.2 + sin(w.y * 2.6 + time * TAU / 3.0) * 1.5)) * 3.99);\n  if (region > 1.5) return c * (0.7 + 0.25 * f) + wide * 0.12 + glint * 0.6;\n  return hueShift(c * (0.86 + 0.1 * f), 0.4 * sin((p.x - p.y) * 0.16 + time * TAU / 6.0 + v)) + wide * 0.35 + glint * 0.6;\n}\n\n\nvec3 fromHsl(vec3 c) {\n  vec3 k = clamp(abs(fract(c.x + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);\n  return c.z + c.y * (1.0 - abs(2.0 * c.z - 1.0)) * (k - 0.5);\n}\nfloat polyField(vec2 p, vec2 o, float th) {\n  vec2 a = p - o - vec2(7.0 * cos(th), 9.0 * sin(th));\n  vec2 b = p - o - vec2(-8.0 * sin(th), 6.0 * cos(2.0 * th));\n  vec2 e = p - o - vec2(6.0 * cos(2.0 * th + 1.3), -7.0 * sin(th + 0.4));\n  return cos(length(a) * 0.38) + sin(length(b) * 0.27 + th) * cos(b.y * 0.21) + cos(length(e) * 0.33 - th) * sin(e.x * 0.19);\n}\nfloat paintField(vec2 p, vec2 o, float th, vec4 form, float phase) {\n  vec2 q = (p - o - form.zw) / 9.0;\n  float r = length(q), k = form.y;\n  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th) + 0.5 * sin(q.x * 2.0 - q.y * 1.6 + th));\n  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th) + 0.6 * sin(u.y * 1.1 + u.x * 0.6 - 2.0 * th)); }\n  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.7 * sin(q.x * 3.0 + q.y * 2.0 + th) + 0.5 * sin(q.y * 2.4 - q.x * 1.3 - th));\n  if (form.x < 3.5) return 0.5 + 0.5 * sin(q.x * 6.0 + 1.6 * sin(q.y * 2.4 + k * th + phase) + 0.8 * sin(q.x * 2.1 - th)) + 0.15 * q.y * k;\n  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) + 0.5 * sin(q.y * 3.1 + 2.0 * th) - th);\n  float tw = 0.6 * r + 0.35 * sin(th);\n  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 1.9;\n  float ct = 0.8 * cos(th + phase), st = 0.8 * sin(th + phase);\n  u += 0.8 * vec2(sin(1.3 * u.y + ct), sin(1.1 * u.x + st));\n  u += 0.8 * vec2(sin(1.7 * u.y - st + 0.9), sin(1.5 * u.x + ct - 0.7));\n  u += 0.8 * vec2(sin(2.1 * u.y + ct + 1.8), sin(1.9 * u.x - st + 2.6));\n  return 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5);\n}\nvec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {\n  float t = paintField(p, o, th, form, phase), w = 0.5 / contrast;\n  float k1 = clamp((t - 0.38) / w + 0.5, 0.0, 1.0), k2 = clamp((t - 0.74) / w + 0.5, 0.0, 1.0);\n  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(length(p - o) / 9.0 * 0.5 - 0.35, 0.0, 1.0));\n}\nfloat sheenPos(float time) { return -6.0 + 84.0 * clamp(time / 1.4, 0.0, 1.0); }\nfloat glint(vec2 p, vec2 g, float pos) {\n  vec2 q = abs(p - g) * 5.0;\n  float a = min(q.x, q.y), b = max(q.x, q.y);\n  float star = b < 0.5 ? 1.0 : (a < 0.5 && b < 3.5 ? 0.8 - 0.2 * b : 0.0);\n  return star * clamp(1.0 - abs(g.x + g.y - pos) / 1.2, 0.0, 1.0);\n}\nvec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time) {\n  float pos = sheenPos(time), d = abs(p.x + p.y - pos);\n  float halo = clamp(1.0 - d / 4.5, 0.0, 1.0), glow = clamp(1.0 - d / 2.2, 0.0, 1.0), core = clamp(1.0 - d / 0.7, 0.0, 1.0);\n  float k = (0.65 + 0.35 * raised) * (region > 1.5 ? 0.6 : 1.0);\n  c = mix(c, vec3(1.0, 0.88, 0.52), halo * halo * 0.35 * k);\n  c = mix(c, vec3(1.0, 0.93, 0.7), glow * 0.55 * k);\n  c = mix(c, vec3(1.0, 0.99, 0.93), core * 0.85 * k);\n  if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));\n  return c;\n}\nfloat liquidField(vec2 p, vec2 o, float th) {\n  vec2 u = (p - o) / 10.0 * 1.6;\n  u += 0.6 * vec2(sin(1.4 * u.y + th), sin(1.2 * u.x - th + 0.8));\n  u += 0.5 * vec2(sin(2.1 * u.y - th + 1.7), sin(1.8 * u.x + 2.0 * th));\n  return 0.5 + 0.5 * sin(u.x * 1.3 + u.y * 2.1 + 0.6 * sin(u.x * 0.7 - th));\n}\nvec3 liquidColor(vec3 c, vec2 p, vec2 o, float region, float th) {\n  float t = liquidField(p, o, th);\n  float a = clamp((t - 0.28) / 0.06 + 0.5, 0.0, 1.0), b = clamp((t - 0.5) / 0.06 + 0.5, 0.0, 1.0), d = clamp((t - 0.82) / 0.05 + 0.5, 0.0, 1.0);\n  vec3 metal = mix(mix(mix(vec3(0.1, 0.12, 0.18), vec3(0.55, 0.75, 0.95), a), vec3(0.78, 0.82, 0.88), b), vec3(1.0), d);\n  if (region > 1.5) return metal;\n  float l = dot(c, vec3(0.299, 0.587, 0.114));\n  return mix(vec3(0.42 + 0.5 * l) * vec3(0.93, 0.96, 1.04), vec3(1.0), 0.4 * d);\n}\nvec3 opalColor(vec3 c, vec2 p, vec2 o, float region, float th) {\n  float f = polyField(p, o, th);\n  vec3 base = mix(c, vec3(0.94, 0.95, 0.98), 0.5);\n  vec3 fire = fromHsl(vec3(fract(0.5 + 0.35 * f), 0.55, 0.78));\n  return mix(base, fire, (region > 1.5 ? 0.45 : 0.3) * clamp(0.5 + f / 3.0, 0.0, 1.0));\n}\nvec3 bandsColor(vec3 c, vec2 p, vec2 o, float region, float th) {\n  float k = region > 1.5 ? 0.6 : 1.0, b = sin((p.x * 0.3 + p.y * 0.5) * 0.45 - th);\n  float band = clamp((b - 0.6) / 0.3, 0.0, 1.0), edge = band * (1.0 - band) * 4.0;\n  vec3 tint = fromHsl(vec3(fract(0.58 + 0.12 * polyField(p, o, th)), 0.75, 0.66));\n  vec3 rim = fromHsl(vec3(fract(0.55 + 0.3 * b + p.y * 0.01), 0.8, 0.7));\n  return mix(c, c * 0.5 + tint * 0.55, 0.5 * k) + vec3(0.9, 0.95, 1.0) * band * 0.16 * k + rim * edge * 0.3 * k;\n}\nvec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {\n  float th = time * TAU / 6.0;\n  if (look > 0.5 && look < 1.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast, form, phase) : c;\n  if (look > 1.5 && look < 2.5) return sheenColor(c, p, region, raised, px, time);\n  if (look > 2.5 && look < 3.5) return liquidColor(c, p, o, region, th);\n  if (look > 3.5 && look < 4.5) return opalColor(c, p, o, region, th);\n  if (look > 4.5) return bandsColor(c, p, o, region, th);\n  return editionColor(c, ed, v, p, o, region, h, px, time);\n}\n\nvoid main() {\n  vec2 res = vec2(26.0, 42.0);\n  vec2 cell = floor(uv * res);\n  vec2 at = (cell + 0.5) / res;\n  vec4 b = texture2D(base, at);\n  if (b.a < 0.5) { gl_FragColor = vec4(0.0); return; }\n  vec3 c = b.rgb;\n  vec4 kd = texture2D(kind, at);\n  float k = floor(kd.r * 255.0 / 32.0 + 0.5);\n  float finish = floor(kd.g * 255.0 / 32.0 + 0.5) - 1.0;\n  float print = floor(kd.a * 255.0 + 0.5) * 4.0;\n  float h = texture2D(noise, at).r;\n  vec2 src = cell + vec2(0.0, buddyLift);\n  vec2 sat = (src + 0.5) / res;\n  vec4 bd = src.y < res.y ? texture2D(buddy, sat) : vec4(0.0);\n  if (bd.a > 0.25) {\n    c = bd.rgb;\n    if (bd.a > 0.75 && buddyFinish >= 0.0) c = finishColor(c, buddyFinish, buddyScuff, texture2D(noise, sat).g, src.x + src.y, src.y, buddyPrint, time, 1.0);\n  }\n  else if (k > 3.5 && k < 4.5 && finish >= 0.0) c = finishColor(c, finish, kd.b, h, cell.x + cell.y, cell.y, print, time, 1.0);\n  else if (k < 2.5) {\n    vec2 e = min(cell, res - 1.0 - cell);\n    float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;\n    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast, paintForm, paintPhase);\n  }\n  c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;\n  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);\n}";
 interface CardShader {
   /** The 26×42 canvas the shader draws into; copy it out with drawImage. */
   canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -1884,7 +2336,7 @@ declare function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas):
  * Bumped whenever the art changes. It is part of every baked image's address,
  * so a redraw reaches every board at once and an old address keeps its picture.
  */
-declare const ART_VERSION = 1;
+declare const ART_VERSION = 13;
 /** Everything that makes a guy look the way he does. */
 interface GuySpec {
   /** His seed, or the name or text he is drawn from. */
@@ -1905,10 +2357,19 @@ interface CardSpec extends GuySpec {
 }
 /** A spec as a short, address-safe code. Anything that draws the same guy gives the same code. */
 declare function guyCode(spec: CardSpec): string;
-/** A baked guy's size, and a card's. */
+/**
+ * A baked guy's size (`GUY_WIDTH` by `GUY_HEIGHT` in ./bake), a guy with a
+ * buddy beside him (`BUDDY_GUY_WIDTH`), and a card's. Nothing tells a page
+ * from an address alone which of the first two a guy is, so size a box by its
+ * height and let the picture set its width.
+ */
 declare const BAKED_SIZE: {
   readonly guy: {
     readonly width: 22;
+    readonly height: 20;
+  };
+  readonly buddy: {
+    readonly width: 34;
     readonly height: 20;
   };
   readonly card: {
@@ -1928,7 +2389,7 @@ type View = string;
  *   <lil-guy seed="Sneaky Gumdrop"></lil-guy>      a guy drawn from any text
  *   <lil-guy code="eyJzIjoi…"></lil-guy>           an exact guy (`guyCode`), or set `.spec`
  *   view="idle"   a move looping (default), or `still`, `card`, `card-still`
- *   size="4"      screen pixels per art pixel (default 4)
+ *   size="4"      screen pixels per art pixel (default 4); a guy with a buddy is wider (`BAKED_SIZE.buddy`)
  *   label="mia"   what a screen reader says; without it he's decorative
  *
  * With a host (`defineLilGuy({ host })`) it is an `<img>` of the Worker's
@@ -1956,8 +2417,14 @@ interface LilGuyOptions {
  * `<lil-guy>` element plays them, and the lil guys site shows them, all from
  * this one function, so a guy is the same wherever he turns up.
  */
-/** A baked guy is his frame with room for a rare aura's rings either side: the same size for every guy. */
+/**
+ * A baked guy is his frame with room for a rare aura's rings either side: the
+ * same size for every guy without a buddy. A guy with a buddy is
+ * `BUDDY_GUY_WIDTH` across, the buddy on the floor beside him and the two of
+ * them centred, so every buddy picture is one size too.
+ */
 declare const GUY_WIDTH: number;
+declare const BUDDY_GUY_WIDTH: number;
 declare const GUY_HEIGHT: number;
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
 declare function animateOptions(spec: GuySpec): AnimateOptions;
@@ -1971,6 +2438,18 @@ declare const shineFit: typeof fitLoop;
  * through without a jump.
  */
 declare function bakeGuy(spec: GuySpec, move?: Move): Frames;
+/** The size Discord shows a profile picture at, and asks for at least 128 of. */
+declare const PROFILE_SIZE = 512;
+/**
+ * A guy as a profile picture (Discord and the like): square, with room all round so the round crop
+ * never cuts him, his buddy or his aura, centred on all of them, on a solid ground in a light tint
+ * of his own colour, or on the backdrop he wears, run out to every edge. Every frame of the move.
+ */
+declare function profileFrames(spec: GuySpec, move?: Move): Frames;
+/** A still profile picture as a PNG, about `size` across. */
+declare function toProfilePng(spec: GuySpec, size?: number): Promise<Uint8Array>;
+/** A moving profile picture as a GIF, about `size` across: Discord takes animated pictures only as GIFs. */
+declare function toProfileGif(spec: GuySpec, size?: number, move?: Move): Uint8Array;
 /** The guy's card face over one turn of its shimmer (a single frame if it doesn't shimmer). */
 declare function bakeCard(spec: FaceSpec): Frames;
 /** The frames side by side in one strip, with how long each shows: a sprite sheet for a game. */
@@ -1992,7 +2471,9 @@ declare function faceSpec(spec: CardSpec): FaceSpec;
 declare const isMove: (m: string) => m is Move;
 /**
  * A view as the Worker serves it and `<lil-guy>` plays it: a move looping
- * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`.
+ * (`idle`, `hop`…), `still` (his first idle frame), `card` or `card-still`, `pfp` or `pfp-still`
+ * (a profile picture, `profileFrames`), `art` or `art-still` (his big card's window alone, a square:
+ * `cardArtPlayer`).
  * Null for a view there isn't.
  */
 declare function bakeView(spec: CardSpec, view: string): Frames | null;
@@ -2000,5 +2481,56 @@ declare function bakeView(spec: CardSpec, view: string): Frames | null;
 declare function defineLilGuyHere(options?: Omit<LilGuyOptions, 'bake'>): void;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BakedKind, CARD_FRAGMENT, CARD_HEIGHT, CARD_WIDTH, CardFace, CardInput, CardShader, CardSpec, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookSlot, MAX_PINS, MOVES, Move, Note, ONE_OF_ONE_AURAS, Owned, PINS, Palette, Pin, PixelGrid, PixelTarget, RETIRED_EYES, RenderOptions, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, bakeCard, bakeGuy, bakeView, bakedImage, bodies, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isMove, itemById, itemFrame, items, lookOf, luckyPalette, machineSet, makeSeed, mergeRefs, mouths, nameOf, nebulaPhase, noiseOf, ownedOf, paint, paletteOf, palettes, pickable, pinById, readGuyCode, resolve, resolveColor, roll, rollFx, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, special, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardGif, toCardPng, toGuyGif, toPng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/craft.d.ts
+/**
+ * Crafting, as in TF2. A copy you don't want smelts into metal, and metal
+ * crafts the exact item you want.
+ *
+ * Metal comes in scrap: three scrap are a reclaimed, three reclaimed a
+ * refined. A crafted copy is Plain, with a craft number: the count of every
+ * copy ever crafted, so the first ones are worth having for that alone.
+ */
+declare const SCRAP = 1;
+declare const RECLAIMED = 3;
+declare const REFINED = 9;
+/** Metal to craft one item of your choice. */
+declare const CRAFT_COST = 9;
+/** Metal to paint a hat or a buddy. Scraping the paint off is free. */
+declare const PAINT_COST = 3;
+/**
+ * What a copy smelts into, or 0 when it can't be: a starter (it's free), a
+ * Grail or an aura (too rare to melt down by accident), or a showpiece.
+ */
+declare function smeltValue(o: Owned): number;
+/** Whether an item can be crafted: anything a machine holds but its showpiece and the free hat. */
+declare const craftable: (it: Item | undefined) => boolean;
+/** Metal as TF2 writes it: refined with a hundredth per scrap, `2.44 ref`. */
+declare function metalText(scrap: number): string;
+/** Metal as coins: `{ refined, reclaimed, scrap }`. */
+declare function metalCoins(scrap: number): {
+  refined: number;
+  reclaimed: number;
+  scrap: number;
+};
+/** A crafted copy: Plain, a float and print from the seed, and its craft number. */
+declare function craftCopy(itemId: string, seed: string, number: number): Owned;
+
+//#endregion
+//#region src/name-key.d.ts
+/**
+ * A claimed name as it is kept: lowercase letters and digits, with underscores only between them
+ * (`cool_guy`, never `_cool`, `cool_` or `cool__guy`), 2 to 16 long.
+ */
+declare const NAME_KEY: RegExp;
+/** Whatever a player typed, as a name key: other characters dropped, runs of underscores made one, none at the ends. */
+declare function nameKey(typed: string): string;
+/**
+ * The name with its underscores taken out. Names claimed before underscores were allowed lost theirs
+ * (`cool_guy` was claimed as `coolguy`), so two names with the same skeleton are one name: a new claim
+ * can't take `cool_guy` while `coolguy` is held, and `cool_guy` finds `coolguy`'s guy.
+ */
+declare const nameSkeleton: (key: string) => string;
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, Intensity3D, Item, ItemGame, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyOptions, LilGuyProps, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setProgress, shadePalette, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map
