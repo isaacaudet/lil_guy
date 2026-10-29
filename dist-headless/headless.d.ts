@@ -2453,13 +2453,31 @@ interface CrowdSprite {
   size: CrowdSize;
   rgba: Uint8ClampedArray;
 }
-/** The guy as he stands in a crowd, `size` pixels square, bottom-centred. */
-declare function crowdSprite(spec: GuySpec, size: CrowdSize): CrowdSprite;
+/** How a guy stands out in a crowd: his best copy's grade from Prized up (an aura counts), or the founder's gold. */
+interface CrowdShine {
+  grade: number;
+  color: string;
+}
+/**
+ * Whether a guy stands out in a crowd, and in what colour: the grade of the best copy he wears, from
+ * Prized up, or Grail gold for the founder. Everyday and Special copies, and nothing worn, don't.
+ */
+declare function crowdShine(spec: GuySpec): CrowdShine | null;
+/**
+ * The guy as he stands in a crowd, `size` pixels square, bottom-centred. A guy who stands out
+ * (`crowdShine`) is outlined in his grade's colour where he has an outline, and further back, where he
+ * is only his colours, his top cell takes it. `shine: false` leaves that off.
+ */
+declare function crowdSprite(spec: GuySpec, size: CrowdSize, options?: {
+  shine?: boolean;
+}): CrowdSprite;
 /**
  * Many guys at one size on one sheet, `columns` to a row, in the order given: guy `n` is the cell at
  * column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
  */
-declare function crowdSheet(specs: GuySpec[], size: CrowdSize, columns?: number): {
+declare function crowdSheet(specs: GuySpec[], size: CrowdSize, columns?: number, options?: {
+  shine?: boolean;
+}): {
   width: number;
   height: number;
   columns: number;
@@ -2467,4 +2485,74 @@ declare function crowdSheet(specs: GuySpec[], size: CrowdSize, columns?: number)
 };
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, crowdSheet, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/crowd-stage.d.ts
+/** A seat in the crowd: where a guy stands (his cell's top-left), at what size, in which row (0 is the back). */
+interface CrowdSeat {
+  x: number;
+  y: number;
+  size: CrowdSize;
+  row: number;
+}
+/**
+ * The seats of a crowd filling `width` × `height` world pixels: rows from the back (top) to the
+ * front (bottom), each row's size growing with nearness, jittered a cell so far rows never line up.
+ * In the order a crowd fills them: the front row first, from the middle out, then the row behind.
+ * `density` above 1 packs more in (smaller guys sooner); the same arguments give the same seats.
+ */
+declare function crowdSeats(width: number, height: number, density?: number, seed?: string): CrowdSeat[];
+/** What a game passes for each guy: his name, and his club look when he has one (`seed`, `parts`, `palette`, `equip`). */
+type CrowdGuy = Partial<GuySpec>;
+interface CrowdOptions {
+  /** The colour behind the crowd: the haze over far rows is drawn in it. Default the club's navy. */
+  backdrop?: string;
+  /** Screen pixels to a world pixel. Default 3 from 900 CSS pixels wide, else 2. */
+  scale?: number;
+  /** Above 1 packs the crowd tighter, below 1 looser. */
+  density?: number;
+  /** A slow stadium wave across the crowd. */
+  wave?: boolean;
+  /** Guys at 6 pixels and up hop a pixel now and then on their own. */
+  idle?: boolean;
+  /** The pixel font for a spotlit guy's name, as a CSS font. */
+  font?: string;
+}
+interface Crowd {
+  /** Seats a guy (by the lowercased name, so a name seats once) in the next seat from the front. */
+  add(name: string, guy?: CrowdGuy): void;
+  /** Whether a name is in the crowd. */
+  has(name: string): boolean;
+  /** Makes a guy hop, as when he guesses. */
+  hop(name: string): void;
+  /** Turns the wave on or off. */
+  wave(on: boolean): void;
+  /** Lifts a guy out to the front, big, with a line under him (his name by default), for `ms`. */
+  spotlight(name: string, label?: string, ms?: number): void;
+  /** Lays the seats out again for the canvas's size now (keeping who sits where in order). */
+  resize(): void;
+  /** Stops drawing and lets go of the sprites. */
+  destroy(): void;
+  /** How many guys have been added; past the seats there are, the rest aren't drawn. */
+  readonly count: number;
+  /** How many seats the crowd has at its size. */
+  readonly seats: number;
+}
+/**
+ * A crowd on `canvas`. The canvas keeps its CSS size; its pixels are world pixels, scaled up by CSS
+ * (`image-rendering: pixelated` is set on it). Draws only while something moves.
+ */
+declare function createCrowd(canvas: HTMLCanvasElement, options?: CrowdOptions): Crowd;
+/**
+ * A still crowd as one picture, with no canvas: `guys` take the seats from the front middle back, and
+ * `fill` more fill the rest with made-up guys, dealt from `seed` with nothing on (no pet shop items, no
+ * buddies), so a short board still stands in a full stand. Opaque on `backdrop`, haze and all, as
+ * `createCrowd` draws it. `width` × `height` world pixels, RGBA.
+ */
+declare function crowdPicture(guys: CrowdGuy[], width: number, height: number, options?: {
+  backdrop?: string;
+  density?: number;
+  fill?: number;
+  seed?: string;
+}): Uint8ClampedArray;
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };

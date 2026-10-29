@@ -26076,8 +26076,25 @@ const ROUND = [
 	[1, -1],
 	[-1, -1]
 ];
-/** The guy as he stands in a crowd, `size` pixels square, bottom-centred. */
-function crowdSprite(spec, size) {
+/**
+* Whether a guy stands out in a crowd, and in what colour: the grade of the best copy he wears, from
+* Prized up, or Grail gold for the founder. Everyday and Special copies, and nothing worn, don't.
+*/
+function crowdShine(spec) {
+	const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
+	const grades = Object.values(config.owned ?? {}).filter(Boolean).map((o) => GRADES.findIndex((g) => g.id === gradeOf(o).id));
+	const grade = Math.max(-1, ...grades, config.founder ? 4 : -1);
+	return grade >= 2 ? {
+		grade,
+		color: GRADES[grade].color
+	} : null;
+}
+/**
+* The guy as he stands in a crowd, `size` pixels square, bottom-centred. A guy who stands out
+* (`crowdShine`) is outlined in his grade's colour where he has an outline, and further back, where he
+* is only his colours, his top cell takes it. `shine: false` leaves that off.
+*/
+function crowdSprite(spec, size, options = {}) {
 	const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
 	const grid = compose({
 		...config,
@@ -26093,6 +26110,16 @@ function crowdSprite(spec, size) {
 	const drawn = size === 16 ? grid.map((row) => row.map((t) => t ? colors[t] ?? null : null)) : shrink(grid, colors, MAKE[size]);
 	const lit$1 = drawn.map((row) => row.some(Boolean)), first = lit$1.indexOf(true), last = lit$1.lastIndexOf(true);
 	const cells = first < 0 ? [] : drawn.slice(first, last + 1);
+	const shine = options.shine === false ? null : crowdShine(spec);
+	if (shine && cells.length) {
+		const ink = colors[T.OUTLINE];
+		if (size === 16 || size >= 6) {
+			for (const row of cells) for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = shine.color;
+		} else {
+			const top = cells[0], mid = top.findIndex(Boolean) + Math.floor(top.filter(Boolean).length / 2);
+			top[Math.max(0, mid)] = shine.color;
+		}
+	}
 	const rgba = new Uint8ClampedArray(size * size * 4);
 	const h = cells.length, w = cells[0]?.length ?? 0;
 	const ox = Math.floor((size - w) / 2), oy = size - h;
@@ -26115,11 +26142,11 @@ function crowdSprite(spec, size) {
 * Many guys at one size on one sheet, `columns` to a row, in the order given: guy `n` is the cell at
 * column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
 */
-function crowdSheet(specs, size, columns = 64) {
+function crowdSheet(specs, size, columns = 64, options = {}) {
 	const cols = Math.max(1, Math.min(columns, specs.length)), rows = Math.ceil(specs.length / cols);
 	const width$1 = cols * size, height = rows * size, rgba = new Uint8ClampedArray(width$1 * height * 4);
 	specs.forEach((spec, n) => {
-		const s = crowdSprite(spec, size), ox = n % cols * size, oy = Math.floor(n / cols) * size;
+		const s = crowdSprite(spec, size, options), ox = n % cols * size, oy = Math.floor(n / cols) * size;
 		for (let y = 0; y < size; y++) rgba.set(s.rgba.subarray(y * size * 4, (y + 1) * size * 4), ((oy + y) * width$1 + ox) * 4);
 	});
 	return {
@@ -26128,6 +26155,11 @@ function crowdSheet(specs, size, columns = 64) {
 		columns: cols,
 		rgba
 	};
+}
+/** Whether an outline cell is on his outside edge (beside nothing), so lines inside him keep their ink. */
+function isEdge(cells, row, i) {
+	const j = cells.indexOf(row);
+	return SIDES.some(([dx, dy]) => !cells[j + dy]?.[i + dx]);
 }
 function shrink(grid, colors, make) {
 	const S = grid.length, ink = colors[T.OUTLINE];
@@ -26220,4 +26252,284 @@ function shrink(grid, colors, make) {
 }
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, crowdSheet, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/crowd-stage.ts
+/** How much haze lies over everything further back than each size, once that size is drawn. */
+const HAZE = {
+	2: .38,
+	4: .3,
+	6: .2,
+	8: .12,
+	10: .06,
+	16: 0
+};
+/**
+* The seats of a crowd filling `width` × `height` world pixels: rows from the back (top) to the
+* front (bottom), each row's size growing with nearness, jittered a cell so far rows never line up.
+* In the order a crowd fills them: the front row first, from the middle out, then the row behind.
+* `density` above 1 packs more in (smaller guys sooner); the same arguments give the same seats.
+*/
+function crowdSeats(width$1, height, density = 1, seed = "crowd") {
+	const rows = [];
+	for (let y = 6; y < height + 4;) {
+		const d = Math.min(1, y / height), want = 2 + 15 * Math.pow(d, 2.1) / Math.sqrt(density);
+		const size = want < 3 ? 2 : want < 5 ? 4 : want < 7 ? 6 : want < 9 ? 8 : want < 12.5 ? 10 : 16;
+		rows.push({
+			y,
+			size
+		});
+		y += Math.max(2, Math.round(size * (size <= 2 ? 1 : size <= 4 ? .75 : .6)));
+	}
+	const seats = [];
+	rows.forEach(({ y, size }, row) => {
+		const step$1 = size <= 2 ? 3 : size <= 4 ? size : Math.round(size * .92);
+		const r = (k$1) => hash(`${seed}:${row}:${k$1}`) % 1e3 / 1e3;
+		let x = -size + Math.floor(r(-1) * step$1) - (row % 2 * step$1 >> 1), k = 0;
+		while (x < width$1 + size) {
+			seats.push({
+				x,
+				y: y + (size <= 6 ? Math.floor(r(k * 2) * 2) : 0),
+				size,
+				row
+			});
+			x += step$1 + Math.floor(r(k * 2 + 1) * 2);
+			k++;
+		}
+	});
+	const mid = width$1 / 2;
+	return seats.sort((a, b$1) => b$1.row - a.row || Math.abs(a.x + a.size / 2 - mid) - Math.abs(b$1.x + b$1.size / 2 - mid));
+}
+const SHEET_COLUMNS = 64, SHEET_ROWS = 64;
+/**
+* A crowd on `canvas`. The canvas keeps its CSS size; its pixels are world pixels, scaled up by CSS
+* (`image-rendering: pixelated` is set on it). Draws only while something moves.
+*/
+function createCrowd(canvas, options = {}) {
+	const ctx = canvas.getContext("2d");
+	canvas.style.imageRendering = "pixelated";
+	const backdrop$1 = options.backdrop ?? "#1d2030";
+	const haze = (a) => {
+		const n = parseInt(backdrop$1.slice(1, 7), 16);
+		return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+	};
+	const members = [], byKey = new Map(), queue = [];
+	const sheets = new Map();
+	let order = null;
+	let seats = [], waving = !!options.wave, frame = 0, start = 0, gone = false;
+	let lit$1 = null;
+	function sheetFor(size) {
+		const list = sheets.get(size) ?? [];
+		sheets.set(size, list);
+		let s = list[list.length - 1];
+		if (!s || s.next >= SHEET_COLUMNS * SHEET_ROWS) {
+			const c = document.createElement("canvas");
+			c.width = SHEET_COLUMNS * size;
+			c.height = SHEET_ROWS * size;
+			s = {
+				canvas: c,
+				ctx: c.getContext("2d"),
+				next: 0
+			};
+			list.push(s);
+		}
+		return [s, list.length - 1];
+	}
+	function make(m, size) {
+		if (m.cells.has(size)) return;
+		const [sheet, which] = sheetFor(size), cell = sheet.next++;
+		const sprite = crowdSprite(m.spec, size);
+		sheet.ctx.putImageData(new ImageData(sprite.rgba, size, size), cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size);
+		m.cells.set(size, which * SHEET_COLUMNS * SHEET_ROWS + cell);
+	}
+	function blit(m, size, x, y, scale$1 = 1) {
+		const at = m.cells.get(size);
+		if (at === void 0) return;
+		const sheet = sheets.get(size)[Math.floor(at / (SHEET_COLUMNS * SHEET_ROWS))], cell = at % (SHEET_COLUMNS * SHEET_ROWS);
+		ctx.drawImage(sheet.canvas, cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size, size, size, x, y, size * scale$1, size * scale$1);
+	}
+	function layout$1() {
+		const w = canvas.clientWidth || canvas.width, h = canvas.clientHeight || canvas.height;
+		const z = options.scale ?? (w >= 900 ? 3 : 2);
+		canvas.width = Math.max(1, Math.floor(w / z));
+		canvas.height = Math.max(1, Math.floor(h / z));
+		seats = crowdSeats(canvas.width, canvas.height, options.density ?? 1);
+		order = null;
+		for (const m of members) if (m.seat < seats.length) queue.push([m, seats[m.seat].size]);
+	}
+	function moving(t) {
+		return waving || options.idle || !!lit$1 || queue.length > 0 || members.some((m) => t - m.hopAt < 400);
+	}
+	function draw(t) {
+		frame = 0;
+		if (gone) return;
+		if (!start) start = t;
+		const budget = performance.now() + 4;
+		while (queue.length && performance.now() < budget) {
+			const [m, size] = queue.shift();
+			make(m, size);
+		}
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		const shown = order ??= members.filter((m) => m.seat < seats.length).sort((a, b$1) => seats[a.seat].row - seats[b$1.seat].row);
+		const W = canvas.width, wx = (t - start) / 4200 % 1 * (W + 120) - 60;
+		let group;
+		for (const m of shown) {
+			if (lit$1?.member === m) continue;
+			const seat$1 = seats[m.seat];
+			if (group !== void 0 && seat$1.size !== group && HAZE[group]) {
+				ctx.fillStyle = haze(HAZE[group]);
+				ctx.fillRect(0, 0, W, seat$1.y + seat$1.size);
+			}
+			group = seat$1.size;
+			let dy = 0;
+			if (waving) {
+				const d = Math.abs(seat$1.x - wx + seat$1.row * .6);
+				if (d < 26) dy -= Math.round((1 - d / 26) * Math.max(1, seat$1.size * .45));
+			}
+			const since = t - m.hopAt;
+			if (since < 400) dy -= Math.round(Math.sin(since / 400 * Math.PI) * Math.max(1, seat$1.size / 4));
+			else if (options.idle && seat$1.size >= 6 && (t + m.phase) % 3e3 < 160) dy -= 1;
+			blit(m, seat$1.size, seat$1.x, seat$1.y + dy);
+		}
+		if (lit$1) spot(t);
+		if (moving(t)) frame = requestAnimationFrame(draw);
+	}
+	function spot(t) {
+		const { member, label, from, until } = lit$1;
+		if (t >= until) {
+			lit$1 = null;
+			return;
+		}
+		if (!member.cells.has(16)) make(member, 16);
+		const rise = Math.min(1, (t - from) / 350, (until - t) / 350), ease = 1 - Math.pow(1 - rise, 3);
+		const scale$1 = Math.max(1, Math.min(3, Math.floor(canvas.height / 40))), side = 16 * scale$1;
+		const x = Math.round((canvas.width - side) / 2), y = Math.round(canvas.height - (side + 14) * ease);
+		ctx.fillStyle = haze(.55 * ease);
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		blit(member, 16, x, y, scale$1);
+		if (label) {
+			ctx.font = options.font ?? "bold 8px monospace";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "top";
+			const ty = y + side + 2, tw = Math.ceil(ctx.measureText(label).width) + 6;
+			ctx.fillStyle = haze(.9);
+			ctx.fillRect(Math.round(canvas.width / 2 - tw / 2), ty - 1, tw, 11);
+			ctx.fillStyle = "#ffffff";
+			ctx.fillText(label, Math.round(canvas.width / 2), ty);
+		}
+	}
+	const wake = () => {
+		if (!frame && !gone) frame = requestAnimationFrame(draw);
+	};
+	layout$1();
+	return {
+		add(name, guy = {}) {
+			const key = name.toLowerCase();
+			if (byKey.has(key)) return;
+			const m = {
+				key,
+				spec: {
+					...guy,
+					seed: guy.seed ?? key
+				},
+				seat: members.length,
+				hopAt: -1e9,
+				phase: hash(key) % 3e3,
+				cells: new Map()
+			};
+			members.push(m);
+			byKey.set(key, m);
+			order = null;
+			if (m.seat < seats.length) {
+				queue.push([m, seats[m.seat].size]);
+				wake();
+			}
+		},
+		has: (name) => byKey.has(name.toLowerCase()),
+		hop(name) {
+			const m = byKey.get(name.toLowerCase());
+			if (m) {
+				m.hopAt = performance.now();
+				wake();
+			}
+		},
+		wave(on$1) {
+			waving = on$1;
+			wake();
+		},
+		spotlight(name, label, ms = 2600) {
+			const m = byKey.get(name.toLowerCase());
+			if (!m) return;
+			const now = performance.now();
+			lit$1 = {
+				member: m,
+				label: label ?? name,
+				from: now,
+				until: now + ms
+			};
+			wake();
+		},
+		resize() {
+			layout$1();
+			wake();
+		},
+		destroy() {
+			gone = true;
+			if (frame) cancelAnimationFrame(frame);
+			sheets.clear();
+			members.length = 0;
+			byKey.clear();
+		},
+		get count() {
+			return members.length;
+		},
+		get seats() {
+			return seats.length;
+		}
+	};
+}
+/**
+* A still crowd as one picture, with no canvas: `guys` take the seats from the front middle back, and
+* `fill` more fill the rest with made-up guys, dealt from `seed` with nothing on (no pet shop items, no
+* buddies), so a short board still stands in a full stand. Opaque on `backdrop`, haze and all, as
+* `createCrowd` draws it. `width` × `height` world pixels, RGBA.
+*/
+function crowdPicture(guys, width$1, height, options = {}) {
+	const seats = crowdSeats(width$1, height, options.density ?? 1);
+	const seed = options.seed ?? "crowd";
+	const count$1 = Math.min(seats.length, guys.length + Math.max(0, options.fill ?? 0));
+	const n = parseInt((options.backdrop ?? "#1d2030").slice(1, 7), 16), bg = [
+		n >> 16 & 255,
+		n >> 8 & 255,
+		n & 255
+	];
+	const rgba = new Uint8ClampedArray(width$1 * height * 4);
+	for (let i = 0; i < rgba.length; i += 4) {
+		rgba[i] = bg[0];
+		rgba[i + 1] = bg[1];
+		rgba[i + 2] = bg[2];
+		rgba[i + 3] = 255;
+	}
+	const sat = Array.from({ length: count$1 }, (_, k) => k).sort((a, b$1) => seats[a].row - seats[b$1].row);
+	let group;
+	for (const k of sat) {
+		const seat$1 = seats[k];
+		if (group !== void 0 && seat$1.size !== group && HAZE[group]) {
+			const a = HAZE[group], bottom = Math.min(height, seat$1.y + seat$1.size);
+			for (let i = 0; i < bottom * width$1 * 4; i += 4) for (let c = 0; c < 3; c++) rgba[i + c] = Math.round(rgba[i + c] * (1 - a) + bg[c] * a);
+		}
+		group = seat$1.size;
+		const spec = k < guys.length ? {
+			...guys[k],
+			seed: guys[k].seed ?? `${seed}:${k}`
+		} : { seed: `${seed}:${k}` };
+		const sprite = crowdSprite(spec, seat$1.size);
+		for (let y = 0; y < seat$1.size; y++) for (let x = 0; x < seat$1.size; x++) {
+			const px = seat$1.x + x, py = seat$1.y + y, o = (y * seat$1.size + x) * 4;
+			if (!sprite.rgba[o + 3] || px < 0 || py < 0 || px >= width$1 || py >= height) continue;
+			rgba.set(sprite.rgba.subarray(o, o + 4), (py * width$1 + px) * 4);
+		}
+	}
+	return rgba;
+}
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
