@@ -74,6 +74,10 @@
     filter: drop-shadow(var(--sx, 0px) 9px 0 rgba(5, 7, 16, .55));
   }
   .art { container-type: inline-size; }
+  /* A still card in a long grid: no layer of its own and no moving foil until it's hovered, so a grid of hundreds scrolls freely. */
+  .art.still { will-change: auto; }
+  .art.still .ov .t { animation-play-state: paused; }
+  .card:hover .art.still .ov .t, .card:focus-visible .art.still .ov .t { animation-play-state: running; }
   .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
   .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
     font-size: 8.6cqw; font-weight: 700; line-height: 1; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
@@ -222,12 +226,7 @@
   @keyframes wiggle { 0%,100% { rotate: 0deg } 25% { rotate: -6deg } 75% { rotate: 6deg } }
   .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 14px; }
   .buyrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .swaps { display: grid; gap: 10px; }
-  .swap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--felt); border-radius: 6px; }
-  .swap .t { font: 600 14px/1.3 var(--pixel); }
-  .swap .t .chip { margin: 0 2px; }
-  .swap small { display: block; color: var(--muted); font-size: 12px; }
-  .shop-low { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .shop-low { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 
   /* ---------- reveal: reel, then a face-down card that trembles, then the flip and the payoff */
   .reveal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; overflow: hidden; background: rgba(5, 7, 15, .9); padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
@@ -415,10 +414,6 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
         <h3 class="room">Today's shelf</h3>
         <div class="shelf" id="shelf"></div>
       </div>
-      <div style="display:grid;gap:14px;min-width:0">
-        <h3 class="room">Swap up</h3>
-        <div class="panel"><div class="swaps" id="swaps"></div><p class="fine">Trades the five least rare copies of that grade you aren't wearing. Starters can't be traded.</p></div>
-      </div>
     </div>
   </section>
 </div>
@@ -537,33 +532,30 @@ void main() {
     // --n is how many letters a line has, so a long one shrinks to fit the card instead of being cut off.
     const len = h => String(h ?? '').replace(/<[^>]*>/g, '').length;
     const ov = l ? `<span class="ov" aria-hidden="true"><span class="t${l.g === 4 ? ' gold' : l.g === 3 ? ' foil' : ''}" style="--n:${len(l.title)}">${esc(l.title)}</span>${l.corner ? `<span class="c">${esc(l.corner)}</span>` : ''}<span class="b" style="--n:${len(l.bottom)}">${l.bottom}</span>${l.set ? `<span class="n">${esc(l.set)}</span>` : ''}</span>` : '';
-    return `<span class="art"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
+    return `<span class="art${spec.still ? ' still' : ''}"><canvas class="px" width="26" height="42" data-p="${pending.length - 1}" data-code="${codeOf(spec)}"></canvas>${ov}</span>`;
   };
   /**
-   * The small line by the set's symbol: where the item sits in its machine's set ("07/16") and, for one of
-   * an item's first 100 copies, "1st ed". Everything else about a copy (its stats, craft number, tally) is
-   * in the inspect view, so the card stays quiet.
+   * The small line at the card's foot: "1st ed" for one of an item's first 100 copies, else nothing. The card's
+   * words are the library card's clean ones (no star, print number or place in the set); everything else about
+   * a copy (its print, stats, craft number, tally) is in the inspect view, so the card stays quiet.
    */
   const FIRST_EDITION = 100;
-  const setLine = (o, about = {}) => {
-    const it = LG.itemById(o.item), set = it && it.game !== 'club' ? LG.gameItems(it.game) : null;
-    const pad = n => String(n).padStart(2, '0');
-    return [set ? `${pad(set.indexOf(it) + 1)}/${pad(set.length)}` : '', about.pull && about.pull <= FIRST_EDITION ? '1st ed' : ''].filter(Boolean).join(' · ');
-  };
+  const setLine = (o, about = {}) => (about.pull && about.pull <= FIRST_EDITION ? '1st ed' : '');
   // A page that knows copies' pull numbers (the live site's locker) says so here.
   const aboutFor = o => (typeof window.cardAbout === 'function' ? window.cardAbout(o) : null) || {};
-  /** The words on an item's card: its name, its print, its grade and how rare it is. */
+  /** The words on an item's card: its name, its grade and how rare it is. */
   const itemLabel = (o, starter, one, about = aboutFor(o)) => {
     const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, corner: `#${o.print}`, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? '★ Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    return { title: it.name, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? 'Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
   // A face is built the first time it is drawn, and the loop builds at most this many a frame, so a long
-  // grid fills in over a few frames instead of holding the page. Each step of its shimmer is kept once drawn.
-  const BUILDS_PER_FRAME = 3;
-  let builds = 0;
-  /** The next frame of the loop: a fresh allowance of builds. */
-  const cardsTick = () => { builds = 0; };
+  // grid fills in over a few frames instead of holding the page. Each step of its shimmer is kept once drawn;
+  // a step not drawn yet waits for a frame with time to spare (TICK_MS of work), showing the one before.
+  const BUILDS_PER_FRAME = 3, TICK_MS = 12;
+  let builds = 0, tickEnd = 0;
+  /** The next frame of the loop: a fresh allowance of builds and time. */
+  const cardsTick = () => { builds = 0; tickEnd = performance.now() + TICK_MS; };
   function mount(canvas, spec) {
     const s = { canvas, ctx: canvas.getContext('2d'), code: canvas.dataset.code || codeOf(spec), f: null, steps: new Map(), art: canvas.closest('.art'), card: canvas.closest('.card') || canvas.parentElement, visible: false, hover: 0, light: [0.5, 0.3], tilt: [0, 0], juice: -1, phase: live.size * 0.7 };
     s.still = !!spec.still;
@@ -605,16 +597,135 @@ void main() {
   }
   /** The card at `t` seconds; one not built yet waits for the loop's allowance unless `now`. */
   function draw(s, t, now = false) {
-    if (!s.f) { if (!now && builds >= BUILDS_PER_FRAME) return; builds++; ready(s); }
+    if (!s.f) { if (!now && (builds >= BUILDS_PER_FRAME || performance.now() > tickEnd)) return; builds++; ready(s); }
     // Each step of the loop, as baked; under the pointer, its light on top.
     const ms = Math.floor(t * 1000 / STEP) * STEP, at = s.hover ? -1 : s.moves ? ms % LG.LOOP_MS : 0;
     if (at >= 0 && at === s.shown) return;
+    let img = at >= 0 && s.steps.get(at);
+    if (at >= 0 && !img && !now && s.shown >= 0 && performance.now() > tickEnd) return;
     s.shown = at;
     if (at < 0) { s.ctx.putImageData(new ImageData(LG.cardFaceAt(s.f, ms, { x: s.light[0], y: s.light[1], strength: s.hover }), W, H), 0, 0); return; }
-    let img = s.steps.get(at);
     if (!img) s.steps.set(at, img = new ImageData(LG.cardFaceAt(s.f, at), W, H));
     s.ctx.putImageData(img, 0, 0);
   }
+
+  /* ------------------------------------------------ long sums, beside the page
+   * Counting through thousands of guys (the rarest names, a deal of thousands) or encoding a GIF takes seconds,
+   * so it runs in a worker with the library loaded and the page never waits on it. Where a worker can't start
+   * (no Worker, a blocked blob) the same job runs here, a few milliseconds at a time between frames.
+   * Each job is a generator: the worker runs it straight through, the page in slices. */
+  const JOBS = {
+    *call(LG, fn, ...args) { return LG[fn](...args); },
+    // The library's card as an animated PNG, each card pixel `scale` by `scale`.
+    *cardApng(LG, input, scale) { return LG.encodeApng(LG.cardFrames(input), scale); },
+    // The rarest `keep` among names made from each base, then the base with 1, 2… after it.
+    *rarestNames(LG, bases, per, keep) {
+      const found = [];
+      for (const base of bases) for (let n = 0; n < per; n++) {
+        const name = n ? base + n : base;
+        found.push([LG.guyOneIn(LG.resolve(name)), name]);
+        if (n % 32 === 0) yield;
+      }
+      return found.sort((a, b) => b[0] - a[0]).slice(0, keep);
+    },
+    // How rare the rarest of `prefix` + 0, 1, 2… is.
+    *rarestOf(LG, prefix, count) {
+      let best = 0;
+      for (let n = 0; n < count; n++) { best = Math.max(best, LG.guyOneIn(LG.resolve(prefix + n))); if (n % 32 === 0) yield; }
+      return best;
+    },
+    // `count` guys dealt at random: how rare each is, as log10, sorted.
+    *dealt(LG, count) {
+      const out = [];
+      for (let i = 0; i < count; i++) { out.push(Math.log10(LG.guyOneIn(LG.resolve(LG.makeSeed())))); if (i % 32 === 0) yield; }
+      return out.sort((a, b) => a - b);
+    },
+    // Deal `count` guys and keep the rarest `keep`: their seeds.
+    *dealRarest(LG, count, keep) {
+      const out = [];
+      for (let i = 0; i < count; i++) { const seed = LG.makeSeed(), cfg = LG.resolve(seed); out.push([LG.guyOneIn(cfg.base || cfg), seed]); if (i % 32 === 0) yield; }
+      return out.sort((a, b) => b[0] - a[0]).slice(0, keep).map(g => g[1]);
+    },
+    // Open `count` capsules round the machines and keep the rarest copy of each of `keep` items, from Prized up.
+    *rarestDrops(LG, salt, count, keep) {
+      const found = [], seen = new Set(), out = [];
+      for (let i = 0; i < count; i++) {
+        const o = LG.roll(`${salt}:${i}`, LG.GAMES[i % LG.GAMES.length]);
+        if (LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id) >= 2) found.push(o);
+        if (i % 128 === 0) yield;
+      }
+      found.sort((a, b) => LG.copyOneIn(b) - LG.copyOneIn(a));
+      for (const o of found) { if (seen.has(o.item)) continue; seen.add(o.item); out.push(o); if (out.length === keep) break; }
+      return out;
+    },
+  };
+  function runHere(job, args) {
+    const it = JOBS[job](LG, ...args);
+    return new Promise((done, fail) => {
+      const step = () => {
+        const end = performance.now() + 8;
+        try { for (let r = it.next(); ; r = it.next()) { if (r.done) return done(r.value); if (performance.now() > end) break; } } catch (err) { return fail(err); }
+        setTimeout(step, 0);
+      };
+      // A frame first, so whatever asked for it (a button saying "Making…") shows before the work starts.
+      requestAnimationFrame(() => setTimeout(step, 0));
+    });
+  }
+  const LIB_URL = document.querySelector('script[src$="lil-guy.js"]')?.src;
+  const WORKER_SRC = () => `importScripts(${JSON.stringify(LIB_URL)});
+const JOBS = {${Object.values(JOBS).map(String).join(',\n')}};
+onmessage = e => {
+  const [id, job, args] = e.data, send = value => postMessage([id, value], value instanceof Uint8Array ? [value.buffer] : []), fail = err => postMessage([id, undefined, String((err && err.message) || err)]);
+  try { const it = JOBS[job](LilGuy, ...args); let r = it.next(); while (!r.done) r = it.next(); Promise.resolve(r.value).then(send, fail); } catch (err) { fail(err); }
+};`;
+  // Two lanes, so a long count (200,000 names) never holds up a quick job (a move to draw, a GIF to save): up to
+  // two workers each. A job goes to an idle worker in its lane, else a new one, else the least busy.
+  const COUNTS = new Set(['rarestNames', 'rarestOf', 'dealt', 'dealRarest', 'rarestDrops']);
+  const LANE = Math.max(1, Math.min(2, Math.ceil(((navigator.hardwareConcurrency || 2) - 1) / 2)));
+  const LANE_SIZE = { counts: LANE, quick: LANE };
+  const workers = [];
+  let workersOk = !!LIB_URL && typeof Worker !== 'undefined', jobIds = 0;
+  function pickWorker(job) {
+    if (!workersOk) return null;
+    const lane = COUNTS.has(job) ? 'counts' : 'quick', mine = workers.filter(w => w.lane === lane);
+    const idle = mine.find(w => !w.jobs.size);
+    if (idle) return idle;
+    if (mine.length < LANE_SIZE[lane]) {
+      try {
+        const w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC()], { type: 'text/javascript' })));
+        w.lane = lane; w.jobs = new Map();
+        w.onmessage = e => { const [id, value, error] = e.data, job = w.jobs.get(id); if (!job) return; w.jobs.delete(id); if (error) job.fail(new Error(error)); else job.done(value); };
+        // The library didn't load in it: what was waiting, and everything after, runs on the page.
+        w.onerror = e => {
+          e.preventDefault(); w.terminate(); workersOk = false; workers.splice(workers.indexOf(w), 1);
+          for (const job of w.jobs.values()) runHere(job.job, job.args).then(job.done, job.fail);
+          w.jobs.clear();
+        };
+        workers.push(w);
+        return w;
+      } catch (err) { workersOk = false; return null; }
+    }
+    return mine.reduce((a, b) => (b.jobs.size < a.jobs.size ? b : a));
+  }
+  /** Runs a job from JOBS beside the page; resolves with what it returns. */
+  const offThread = (job, ...args) => new Promise((done, fail) => {
+    const w = pickWorker(job);
+    if (!w) { runHere(job, args).then(done, fail); return; }
+    const id = ++jobIds;
+    w.jobs.set(id, { job, args, done, fail });
+    try { w.postMessage([id, job, args]); } catch (err) { w.jobs.delete(id); runHere(job, args).then(done, fail); }
+  });
+  /** A job's answer kept in this browser for the library's art version, since it only changes with the art. */
+  async function kept(key, job, ...args) {
+    const k = `lil-guys-sum:${LG.ART_VERSION}:${key}`;
+    try { const v = localStorage.getItem(k); if (v) return JSON.parse(v); } catch (e) {}
+    const v = await offThread(job, ...args);
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    return v;
+  }
+  /** Calls `fn` once `el` comes near the screen. */
+  const whenNear = (el, fn) => { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); fn(); } }, { rootMargin: '600px' }); io.observe(el); };
+
   function move(s, t) {
     if (calm.matches || s.still) { s.art.style.transform = ''; return; }
     const bob = Math.sin(t * 1.3 + s.phase) * 2.5, sway = Math.sin(t * 0.9 + s.phase) * 0.8;
@@ -630,6 +741,10 @@ void main() {
   }
   // Cards move at about 15 frames a second, and only those on screen.
   let last = 0;
+  // What is near the screen, for the loop: a machine off screen doesn't tick.
+  const seenBy = new WeakMap();
+  const seenIo = new IntersectionObserver(es => es.forEach(e => seenBy.set(e.target, e.isIntersecting)), { rootMargin: '80px' });
+  const nearScreen = c => { if (!seenBy.has(c)) { seenBy.set(c, false); seenIo.observe(c); } return seenBy.get(c); };
   const loop = now => {
     requestAnimationFrame(loop);
     if (now - last < 66) return;
@@ -639,10 +754,11 @@ void main() {
     for (const s of live) if (!s.canvas.isConnected) {
       live.delete(s); io.unobserve(s.canvas);
     }
+    makeMovers();
     if (calm.matches) return;
     paintSwirl(40 + t);
-    for (const b of balls) if (b.canvas.isConnected) b.tick(t); else balls.delete(b);
-    for (const m of movers) if (m.canvas.isConnected) drawMover(m, now); else movers.delete(m);
+    for (const b of balls) if (!b.canvas.isConnected) balls.delete(b); else if (nearScreen(b.canvas)) b.tick(t);
+    for (const m of movers) if (m.visible && m.anim && typeof m.anim !== 'function') drawMover(m, now);
     for (const s of live) if (s.visible) { draw(s, t); move(s, t); }
   };
   requestAnimationFrame(loop);
@@ -1044,11 +1160,25 @@ void main() {
   }
 
   /* ------------------------------------------------ moves */
-  const movers = new Set();
+  // A move takes tens of milliseconds to work out, so a mover is given a function that asks a worker for it, run
+  // the first time he's near the screen. Only those on screen are drawn.
+  const movers = new Set(), moverOf = new WeakMap();
+  const moverIo = new IntersectionObserver(es => es.forEach(e => { const m = moverOf.get(e.target); if (m) m.visible = e.isIntersecting; }), { rootMargin: '200px' });
   function addMover(canvas, anim) {
-    const m = { canvas, ctx: canvas.getContext('2d'), anim, t0: performance.now() + Math.random() * 400, last: null };
-    movers.add(m); drawMover(m, m.t0);
+    const m = { canvas, ctx: canvas.getContext('2d'), anim, t0: performance.now() + Math.random() * 400, last: null, visible: false };
+    movers.add(m); moverOf.set(canvas, m); moverIo.observe(canvas);
     return m;
+  }
+  /** Asks for the move of each mover near the screen that has none yet; each shows his first frame when it lands. */
+  function makeMovers() {
+    for (const m of movers) {
+      if (!m.canvas.isConnected) { movers.delete(m); moverIo.unobserve(m.canvas); continue; }
+      if (m.visible && typeof m.anim === 'function') {
+        const make = m.anim;
+        m.anim = null;
+        Promise.resolve(make()).then(anim => { m.anim = anim; drawMover(m, performance.now()); }, () => {});
+      }
+    }
   }
   function drawMover(m, now) {
     const f = LG.frameAt(m.anim, Math.max(0, now - m.t0));
@@ -1066,7 +1196,8 @@ void main() {
     const equip = ['skin', 'hat', 'frame'].map(s => find(state.worn[s])).filter(Boolean).map(c => LG.encode(c.o));
     const el = $('moves-all');
     el.innerHTML = LG.MOVES.map(mv => `<figure class="mover"><canvas width="16" height="20" data-move="${mv}" aria-hidden="true"></canvas><figcaption>${mv}${NOTE[mv] ? `<small>${NOTE[mv]}</small>` : ''}</figcaption></figure>`).join('');
-    el.querySelectorAll('canvas').forEach(c => addMover(c, LG.animateLoop(state.name, c.dataset.move, moveOpts(state.name, { equip }))));
+    const name = state.name;
+    el.querySelectorAll('canvas').forEach(c => addMover(c, () => offThread('call', 'animateLoop', name, c.dataset.move, moveOpts(name, { equip }))));
   }
   function renderGrades() {
     const hat = LG.items.find(i => i.game === 'puttsies' && i.slot === 'hat' && !i.free).id;
@@ -1075,7 +1206,8 @@ void main() {
     el.innerHTML = ladder.map(([f, sc, label], i) => `<figure class="mover"><canvas width="16" height="20" data-i="${i}" aria-hidden="true"></canvas><figcaption>${label}</figcaption></figure>`).join('');
     el.querySelectorAll('canvas').forEach(c => {
       const [f, sc] = ladder[+c.dataset.i];
-      addMover(c, LG.animateLoop(state.name, 'hop', moveOpts(state.name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
+      const name = state.name;
+      addMover(c, () => offThread('call', 'animateLoop', name, 'hop', moveOpts(name, { equip: [LG.encode({ item: hat, finish: f, scuff: sc, print: 40 })] })));
     });
   }
 
@@ -1131,7 +1263,7 @@ void main() {
     el.querySelectorAll('[data-cool]').forEach(b => {
       const g = guys[+b.dataset.cool];
       const opts = { parts: g.parts, palette: LG.paletteOf({ ...g.config, shade: g.config.shade }) };
-      const start = () => { g.mover = addMover(b.querySelector('canvas'), LG.animateLoop('rarest', g.move, opts)); };
+      const start = () => { g.mover = addMover(b.querySelector('canvas'), () => offThread('call', 'animateLoop', 'rarest', g.move, opts)); };
       start();
       b.addEventListener('click', () => {
         g.move = COOL_MOVES[(COOL_MOVES.indexOf(g.move) + 1) % COOL_MOVES.length];
@@ -1139,10 +1271,13 @@ void main() {
         movers.delete(g.mover); start();
       });
     });
-    // Put it next to what names actually reach.
-    let bestName = 0;
-    for (let n = 0; n < 200000; n++) bestName = Math.max(bestName, LG.guyOneIn(LG.resolve('u' + n)));
-    $('cool-lede').insertAdjacentHTML('afterend', `<p>Every guy here is 1 in ${big(guys[0].guy)}. The rarest of 200,000 real names is 1 in ${big(bestName)}, so no player is likely to ever have one. The frames are the rarest copies a capsule can give: Box Fresh at a scuff of 0.0000000, famous prints, and a tally.</p>`);
+    // Put it next to what names actually reach: 200,000 of them, counted beside the page once he's near the screen.
+    const line = document.createElement('p');
+    const aboutFrames = 'The frames are the rarest copies a capsule can give: Box Fresh at a scuff of 0.0000000, famous prints, and a tally.';
+    const say = best => { line.innerHTML = `Every guy here is 1 in ${big(guys[0].guy)}. ${best ? `The rarest of 200,000 real names is 1 in ${big(best)}, so no player is likely to ever have one.` : 'Counting how rare the rarest of 200,000 real names is…'} ${aboutFrames}`; };
+    say(0);
+    $('cool-lede').after(line);
+    whenNear(el, () => kept('u:200000', 'rarestOf', 'u', 200000).then(say, () => {}));
   }
 
   /* ------------------------------------------------ the player */
@@ -1208,10 +1343,16 @@ void main() {
     { slot: 'colour', key: 'palette', list: LG.palettes },
   ];
   const DEMO = { head: 0, eyes: 1, mouth: 0, cheeks: 1, hair: 0, body: 0, accessory: 0, arms: 1, feet: 0 };
+  // Asked for every option of every slot by several sections, so each is worked out once.
+  const chances = new Map();
   const chanceOf = (slot, key, i) => {
+    const k = `${slot}|${key}|${i}`;
+    if (chances.has(k)) return chances.get(k);
     const c = { ...LG.resolve('demo', DEMO), palette: 0 };
     c[key] = i;
-    return LG.traitOdds(c).find(t => t.slot === slot).chance;
+    const ch = LG.traitOdds(c).find(t => t.slot === slot).chance;
+    chances.set(k, ch);
+    return ch;
   };
   const tierOf = ch => ch <= 0.02 ? ['Rare', '#EB4B4B'] : ch <= 0.05 ? ['Uncommon', '#8847FF'] : ['Common', '#3a4570'];
 
@@ -1247,16 +1388,12 @@ void main() {
     hydrate($('rarest'));
   }
 
-  function renderNames() {
+  // The 20,000 names are counted beside the page once the list is near the screen.
+  async function renderNames() {
     const firsts = ['alex', 'sam', 'jo', 'max', 'kai', 'mia', 'zoe', 'leo', 'ivy', 'ben', 'ava', 'eli', 'noa', 'finn', 'ruby', 'theo', 'nina', 'omar', 'lena', 'yuki'];
-    const found = [];
-    for (const f of firsts) for (let n = 0; n < 1000; n++) {
-      const name = n ? f + n : f;
-      found.push([LG.guyOneIn(LG.resolve(name)), name]);
-    }
-    found.sort((a, b) => b[0] - a[0]);
+    const found = await kept('names:20000', 'rarestNames', firsts, 1000, 6);
     const el = $('names');
-    el.innerHTML = found.slice(0, 6).map(([n, name]) => `<figure class="card">${px({ name, label: { title: name, bottom: `1 in ${fmt(n)}` } })}<figcaption class="meta"><span class="h">${esc(name)}</span><span class="sub">1 in <b>${fmt(n)}</b> guys</span><button class="btn ghost" type="button" data-use="${esc(name)}">Use this name</button></figcaption></figure>`).join('');
+    el.innerHTML = found.map(([n, name]) => `<figure class="card">${px({ name, label: { title: name, bottom: `1 in ${fmt(n)}` } })}<figcaption class="meta"><span class="h">${esc(name)}</span><span class="sub">1 in <b>${fmt(n)}</b> guys</span><button class="btn ghost" type="button" data-use="${esc(name)}">Use this name</button></figcaption></figure>`).join('');
     hydrate(el);
   }
 
@@ -1379,7 +1516,7 @@ void main() {
 
   /* ------------------------------------------------ shop */
   const PRICE = { capsule: 8, skin: 30, hat: 20, frame: 24 };
-  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.stamps.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); renderSwaps(); }
+  function renderWallet() { document.querySelectorAll('[data-wallet]').forEach(el => { el.textContent = state.stamps.toLocaleString('en-US'); }); renderCapsules(); renderShelf(); }
 
   function renderCapsules() {
     const el = $('capsules');
@@ -1430,27 +1567,6 @@ void main() {
     if (state.stamps < price || state.bought.has(b.dataset.buy)) return;
     state.stamps -= price; state.bought.add(b.dataset.buy);
     reveal(o, 'Shop', null, "Today's shelf: always Plain, scuff and print set by the date");
-  });
-
-  const tradeable = g => state.locker.filter(c => c.source !== 'Starter' && !isWorn(c) && gradeIdx(c.o) === g).sort((a, b) => oneIn(a) - oneIn(b));
-  function renderSwaps() {
-    $('swaps').innerHTML = [0, 1, 2, 3].map(g => {
-      const n = tradeable(g).length, from = LG.GRADES[g], to = LG.GRADES[g + 1];
-      return `<div class="swap"><span class="t"><span class="chip grade" style="--grade:${from.color}">5 ${from.name}</span> → <span class="chip grade" style="--grade:${to.color}">1 ${to.name}</span><small>You have ${n}</small></span><button class="btn" type="button" data-swap="${g}"${n < 5 ? ' disabled' : ''}>Swap</button></div>`;
-    }).join('');
-  }
-  $('swaps').addEventListener('click', e => {
-    const b = e.target.closest('[data-swap]');
-    if (!b) return;
-    const g = +b.dataset.swap, give = tradeable(g).slice(0, 5);
-    if (give.length < 5) return;
-    state.locker = state.locker.filter(c => !give.includes(c));
-    // Re-roll until the finish lands on the next grade; the game is one of the traded copies'.
-    const game = give[strHash(`${state.name}:${state.opened}`) % 5].game;
-    let o;
-    let seed;
-    for (let i = 0; i < 20000; i++) { seed = `${state.name}:swap:${++state.opened}:${i}`; o = LG.roll(seed, game); if (gradeIdx(o) === g + 1) break; }
-    reveal(o, 'Swap-up', game, `roll("${seed}", "${game}")  ·  first roll of the next grade`);
   });
 
   /* ------------------------------------------------ reveal */
@@ -1612,7 +1728,7 @@ void main() {
     renderWallet();
     $('reveal').hidden = false;
     $('result').hidden = true;
-    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : source === 'Swap-up' ? `${cap(game)} swap-up` : `${cap(game)} capsule`;
+    $('reel-title').textContent = source === 'Shop' ? "Today's shelf" : `${cap(game)} capsule`;
     const g = gradeIdx(o);
     rush = false;
     if (game && !hold()) { $('skip').hidden = false; if (source === 'Capsule') await gacha(game); await spin(o, game, g); }
@@ -1623,7 +1739,7 @@ void main() {
     state.inspect = revealed.uid;
     $('reveal').hidden = true;
     revealed = null;
-    renderLocker(); renderDress(); renderSwaps(); renderInspect();
+    renderLocker(); renderDress(); renderInspect();
   }
   $('keep-it').addEventListener('click', () => closeReveal());
   $('skip').addEventListener('click', () => { rush = true; if (skipSpin) skipSpin(); });
@@ -1650,14 +1766,14 @@ void main() {
     $('x-lucky').innerHTML = lucky.map(n => {
       const c = baseResolve(n);
       return `<figure class="star" style="--grade:#E4AE39"><div class="stage-row" style="grid-template-columns:1fr 1fr">
-        <span class="card">${px({ name: n, label: { title: n, bottom: '★ Lucky', g: 4 } })}</span>
+        <span class="card">${px({ name: n, label: { title: n, bottom: 'Lucky', g: 4 } })}</span>
         <span class="card">${px({ name: n, parts: { lucky: false }, label: { title: n, bottom: LG.palettes[c.palette].name } })}</span></div>
         <figcaption><span class="odds">1 in <b>${fmt(LG.guyOneIn(c))}</b> guys</span></figcaption></figure>`;
     }).join('');
     // Emotes over his idle.
     const em = $('x-emotes');
     em.innerHTML = LG.EMOTE_UNLOCKS.map(e => `<figure class="mover"><canvas width="16" height="20" data-emote="${e.id}" aria-hidden="true"></canvas><figcaption>${esc(e.name)}<small>${esc(e.how)}</small></figcaption></figure>`).join('');
-    em.querySelectorAll('canvas').forEach(c => addMover(c, LG.animateLoop(me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
+    em.querySelectorAll('canvas').forEach(c => addMover(c, () => offThread('call', 'animateLoop', me, 'idle', moveOpts(me, { emote: c.dataset.emote }))));
     // The anime set (capsules only), then the parts added in 0.5, each on a plain guy.
     const anime = key => Object.keys(LG.CAPSULE_ONLY[key] ?? {}).map(Number);
     const NEW = [['eyes', LG.eyes, anime('eyes')], ['mouth', LG.mouths, anime('mouth')], ['cheeks', LG.cheeks, anime('cheeks')],
@@ -1694,7 +1810,7 @@ void main() {
 
   newPlayer('isaac');
   renderRarest(); renderOdds(); renderAll();
-  setTimeout(renderNames, 60);
+  whenNear($('names'), renderNames);
   setTimeout(renderCool, 30);
 })();
 </script>

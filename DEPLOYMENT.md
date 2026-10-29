@@ -128,14 +128,9 @@ swaps fail. `0005_luck.sql` adds the beginner's-luck and pity counters to
 - `POST /api/me/:key/tag {id, tag}`: a name tag on one of your copies (up to 20
   letters, numbers and simple punctuation; a short word list is refused; `''`
   takes it off). It stays on the copy when it changes hands.
-- `POST /api/me/:key/trade {ids}`: five copies of one grade, by id. A copy's grade is read
-  from its code, as the page reads it, never from the stored `grade` column. An id the page
-  didn't have (null) answers 409, "Your locker changed. Reload and try again.", and the page
-  reads the locker again; worn copies, starters and the founder's copies are refused with what
-  to do. Open offers of the traded copies are called off. The result comes from one of the five inputs'
-  machines, each as likely as its share of the five, and its float is the
-  inputs' average place in their finishes placed in the result's finish
-  (`tradeFloat`). Usually the next grade, one in five a dud, one in twenty two up.
+- `POST /api/me/:key/trade`: answers 410, "Trade-ups are gone. Smelt copies into metal and craft
+  what you want." (29 October 2026). Copies a trade-up made (`source = 'trade'`) stay, and wear,
+  swap and smelt like any other.
 - `POST /api/me/:key/swap {to, give, want|null}`: offer one of your copies for one
   of theirs, or as a gift (`want: null`). Starters, the founder's copies and worn
   copies can't be offered. At most 10 open offers each.
