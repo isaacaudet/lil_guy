@@ -15,6 +15,7 @@ import { compose } from './compose';
 import { paletteOf } from './palette';
 import { T } from './parts/art';
 import type { GuySpec } from './guy-code';
+import { GRADES, gradeOf } from './owned';
 
 /** The sizes a crowd sprite comes in, in pixels square. */
 export const CROWD_SIZES = [16, 10, 8, 6, 4, 2] as const;
@@ -37,8 +38,26 @@ const ROUND = [...SIDES, [1, 1], [-1, 1], [1, -1], [-1, -1]];
 /** A crowd sprite: `size` square, RGBA. */
 export interface CrowdSprite { size: CrowdSize; rgba: Uint8ClampedArray }
 
-/** The guy as he stands in a crowd, `size` pixels square, bottom-centred. */
-export function crowdSprite(spec: GuySpec, size: CrowdSize): CrowdSprite {
+/** How a guy stands out in a crowd: his best copy's grade from Prized up (an aura counts), or the founder's gold. */
+export interface CrowdShine { grade: number; color: string }
+
+/**
+ * Whether a guy stands out in a crowd, and in what colour: the grade of the best copy he wears, from
+ * Prized up, or Grail gold for the founder. Everyday and Special copies, and nothing worn, don't.
+ */
+export function crowdShine(spec: GuySpec): CrowdShine | null {
+  const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
+  const grades = Object.values(config.owned ?? {}).filter(Boolean).map(o => GRADES.findIndex(g => g.id === gradeOf(o!).id));
+  const grade = Math.max(-1, ...grades, config.founder ? 4 : -1);
+  return grade >= 2 ? { grade, color: GRADES[grade].color } : null;
+}
+
+/**
+ * The guy as he stands in a crowd, `size` pixels square, bottom-centred. A guy who stands out
+ * (`crowdShine`) is outlined in his grade's colour where he has an outline, and further back, where he
+ * is only his colours, his top cell takes it. `shine: false` leaves that off.
+ */
+export function crowdSprite(spec: GuySpec, size: CrowdSize, options: { shine?: boolean } = {}): CrowdSprite {
   const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
   const grid = compose({ ...config, frame: undefined, aura: undefined, buddy: undefined }) as number[][];
   const base = spec.palette !== undefined ? paletteOf({ ...config, palette: spec.palette }) : paletteOf(config);
@@ -47,6 +66,16 @@ export function crowdSprite(spec: GuySpec, size: CrowdSize): CrowdSprite {
   // Empty rows above and below him go, so he stands on the cell's floor.
   const lit = drawn.map(row => row.some(Boolean)), first = lit.indexOf(true), last = lit.lastIndexOf(true);
   const cells = first < 0 ? [] : drawn.slice(first, last + 1);
+  const shine = options.shine === false ? null : crowdShine(spec);
+  if (shine && cells.length) {
+    const ink = colors[T.OUTLINE];
+    if (size === 16 || size >= 6) {
+      for (const row of cells) for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = shine.color;
+    } else {
+      const top = cells[0], mid = top.findIndex(Boolean) + Math.floor(top.filter(Boolean).length / 2);
+      top[Math.max(0, mid)] = shine.color;
+    }
+  }
   const rgba = new Uint8ClampedArray(size * size * 4);
   const h = cells.length, w = cells[0]?.length ?? 0;
   const ox = Math.floor((size - w) / 2), oy = size - h;
@@ -62,14 +91,20 @@ export function crowdSprite(spec: GuySpec, size: CrowdSize): CrowdSprite {
  * Many guys at one size on one sheet, `columns` to a row, in the order given: guy `n` is the cell at
  * column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
  */
-export function crowdSheet(specs: GuySpec[], size: CrowdSize, columns = 64): { width: number; height: number; columns: number; rgba: Uint8ClampedArray } {
+export function crowdSheet(specs: GuySpec[], size: CrowdSize, columns = 64, options: { shine?: boolean } = {}): { width: number; height: number; columns: number; rgba: Uint8ClampedArray } {
   const cols = Math.max(1, Math.min(columns, specs.length)), rows = Math.ceil(specs.length / cols);
   const width = cols * size, height = rows * size, rgba = new Uint8ClampedArray(width * height * 4);
   specs.forEach((spec, n) => {
-    const s = crowdSprite(spec, size), ox = (n % cols) * size, oy = Math.floor(n / cols) * size;
+    const s = crowdSprite(spec, size, options), ox = (n % cols) * size, oy = Math.floor(n / cols) * size;
     for (let y = 0; y < size; y++) rgba.set(s.rgba.subarray(y * size * 4, (y + 1) * size * 4), ((oy + y) * width + ox) * 4);
   });
   return { width, height, columns: cols, rgba };
+}
+
+/** Whether an outline cell is on his outside edge (beside nothing), so lines inside him keep their ink. */
+function isEdge(cells: (string | null)[][], row: (string | null)[], i: number): boolean {
+  const j = cells.indexOf(row);
+  return SIDES.some(([dx, dy]) => !cells[j + dy]?.[i + dx]);
 }
 
 function shrink(grid: number[][], colors: Record<number, string>, make: (typeof MAKE)[keyof typeof MAKE]): (string | null)[][] {

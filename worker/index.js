@@ -1,6 +1,6 @@
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked, overBudget } from './baked.js';
-import { batchGuys, clubGuys, namedGuys } from './club-guys.js';
+import { batchGuys, clubGuys, crowdImage, namedGuys } from './club-guys.js';
 import { BANK_DAYS, putOn, readClub, statsReady, takeOff, withStats, TODAY_EVERY } from './card-stats.js';
 import { heldKey, skeletonTaken } from './name-lookup.js';
 import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
@@ -535,6 +535,7 @@ export async function api(request, env, url = new URL(request.url), ctx) {
   if (url.pathname === '/api/club/guys') return clubGuys(request, env, guyOf);
   if (url.pathname === '/api/club/named') return namedGuys(request, env, guyOf, url);
   if (url.pathname === '/api/club/batch') return batchGuys(request, env, ctx, guyOf, url, () => overBudget(request, env, 'batch', 2000));
+  if (url.pathname === '/api/club/crowd.png') return crowdImage(request, env, ctx, guyOf, url, () => overBudget(request, env, 'crowd', 300));
   if (request.method === 'GET' && url.pathname === '/api/names') {
     const limit = Math.min(12, Math.max(1, Number.parseInt(url.searchParams.get('recent') || '12') || 12));
     const { results } = await env.DB.prepare('SELECT key, seed, at FROM names ORDER BY at DESC LIMIT ?').bind(limit).all();

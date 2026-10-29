@@ -288,6 +288,19 @@ chatter's sprite as they first type and draws the crowd as one copy per guy, nea
 sizes and far rows at the smaller. Seed a chatter from the lowercased name, as chat's faces already do.
 They come with the headless build (below).
 
+Most games want the whole crowd, not the sprites: `createCrowd(canvas, { backdrop, wave })` lays the
+canvas out in rows (`crowdSeats`), seats each guy you `add(name, look)` from the front middle back,
+makes his sprite a few milliseconds a frame, sinks the far rows into a haze of `backdrop`, and draws
+only while something moves. `hop(name)` when a chatter guesses, `wave(true)` for a stadium wave,
+`spotlight(name, label)` to lift the round's winner out to the front, big, with a line under him.
+A guy wearing a Prized copy or better is outlined in its grade's colour (`crowdShine`), so rare guys
+show from the back. Made-up guys in a crowd wear nothing: no pet shop items, no buddies.
+
+For a page that isn't a game, the Worker draws a still crowd: `GET /api/club/crowd.png?names=a,b,c`
+with `w` and `h` (world pixels, up to 480 × 240), `fill` (plain made-up guys behind, up to 4,000),
+`scale` (1 to 4) and `bg` (a hex colour). Named guys stand at the front middle as they are on the
+site. Cached for a minute; new pictures count against the address, 300 a day.
+
 ## Limits, CORS and privacy
 
 - **Rate limits.** A picture that isn't cached yet counts against the address: 3,000 new pictures a

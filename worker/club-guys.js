@@ -2,7 +2,7 @@
 // players' guys by their Google sign-in, sha256("google:<sub>") as names.account keeps it, and draws
 // each one as he is here, his parts and what he has on, on its boards, parties and games. The ask is
 // signed with CLUB_SSO_SECRET, as the club's stats are (card-stats.js), and is at most five minutes old.
-import { ART_VERSION, NAME_KEY, guyCode, isFounder, itemById, decode, nameSkeleton } from '../src/index-headless.ts';
+import { ART_VERSION, NAME_KEY, guyCode, isFounder, itemById, decode, nameSkeleton, crowdPicture, bakedImage } from '../src/index-headless.ts';
 
 export const MAX_ASKED = 100;
 const FRESH = 300;
@@ -141,6 +141,43 @@ export async function batchGuys(request, env, ctx, guyOf, url = new URL(request.
     guys[name] = { claimed: !!g, name: g ? '@' + g.key : name, code, founder: isFounder(seed), wide: wideOf(equip), urls };
   }
   const response = Response.json({ version: ART_VERSION, base, guys }, { headers });
+  if (cache) ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
+/** The biggest crowd picture, in world pixels, and the most made-up guys behind the named ones. */
+export const CROWD_MAX = { w: 480, h: 240, fill: 4000, scale: 4 };
+const clampInt = (v, lo, hi, d) => { const n = Number.parseInt(v ?? ''); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
+
+/**
+ * GET /api/club/crowd.png?names=a,b&w=&h=&fill=&scale=&bg=: a still crowd for a page that isn't a game (a
+ * board, the day's players, a share card). The named guys stand at the front middle as they are here
+ * (claimed ones in their look and what they have on), `fill` plain made-up guys behind them, on `bg`.
+ * Cached for a minute; new pictures count against the address as batch reads do.
+ */
+export async function crowdImage(request, env, ctx, guyOf, url = new URL(request.url), budget = async () => false) {
+  const headers = { 'Access-Control-Allow-Origin': '*', 'X-Content-Type-Options': 'nosniff' };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET' } });
+  if (request.method !== 'GET' && request.method !== 'HEAD') return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'GET' } });
+  const asked = [...new Set((url.searchParams.get('names') ?? '').split(',').map(n => n.toLowerCase()).filter(anyName))];
+  if (asked.length > MAX_ASKED) return Response.json({ error: `Ask for at most ${MAX_ASKED} names, comma separated` }, { status: 400, headers });
+  const w = clampInt(url.searchParams.get('w'), 32, CROWD_MAX.w, 320), h = clampInt(url.searchParams.get('h'), 24, CROWD_MAX.h, 160);
+  const fill = clampInt(url.searchParams.get('fill'), 0, CROWD_MAX.fill, 0), scale = clampInt(url.searchParams.get('scale'), 1, CROWD_MAX.scale, 1);
+  const bg = /^[0-9a-f]{6}$/i.test(url.searchParams.get('bg') ?? '') ? '#' + url.searchParams.get('bg').toLowerCase() : '#1d2030';
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const cacheKey = new Request(`${url.origin}/api/club/crowd.png?v=${ART_VERSION}&names=${asked.map(encodeURIComponent).join(',')}&w=${w}&h=${h}&fill=${fill}&scale=${scale}&bg=${bg.slice(1)}`);
+  const hit = cache && await cache.match(cacheKey);
+  if (hit) return hit;
+  if (await budget()) return Response.json({ error: 'Too many new pictures from here today' }, { status: 429, headers: { ...headers, 'Cache-Control': 'no-store' } });
+  const found = await claimedGuys(env, asked, guyOf);
+  const guys = asked.map(name => {
+    const g = found.get(name);
+    if (!g) return { seed: name };
+    const { palette, ...parts } = g.parts;
+    return { seed: g.seed, parts, palette, equip: g.worn };
+  });
+  const png = await bakedImage({ width: w, height: h, frames: [crowdPicture(guys, w, h, { fill, backdrop: bg })], delays: [1000] }, 'still', scale);
+  const response = new Response(png, { headers: { ...headers, 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=60' } });
   if (cache) ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
   return response;
 }

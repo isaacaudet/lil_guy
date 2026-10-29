@@ -62,3 +62,18 @@ test('Twitch chat and the games read claimed names’ guys, publicly', async () 
   expect((await call('/club/named?n=')).status).toBe(400);
   expect((await call('/club/named?n=mia', 'POST')).status).toBe(405);
 });
+
+test('a crowd picture: named guys at the front middle as they are here, plain made-up guys behind, size capped', async () => {
+  await claim('mia');
+  const r = await call('/club/crowd.png?names=mia,somechatter&w=120&h=60&fill=300&scale=2');
+  expect(r.status).toBe(200);
+  expect(r.headers.get('content-type')).toBe('image/png');
+  expect(r.headers.get('access-control-allow-origin')).toBe('*');
+  const png = new Uint8Array(await r.arrayBuffer());
+  const view = new DataView(png.buffer);
+  expect([view.getUint32(16), view.getUint32(20)]).toEqual([240, 120]);
+  const big = await call('/club/crowd.png?w=99999&h=99999');
+  const bv = new DataView(await big.arrayBuffer());
+  expect([bv.getUint32(16), bv.getUint32(20)]).toEqual([480, 240]);
+  expect((await call('/club/crowd.png?names=' + Array.from({ length: 101 }, (_, i) => 'n' + i).join(','))).status).toBe(400);
+});

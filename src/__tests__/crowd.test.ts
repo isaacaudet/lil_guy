@@ -47,3 +47,34 @@ test('a sheet puts guy n at column n % columns', () => {
   const third = crowdSprite({ seed: seeds[2] }, 8).rgba;
   for (let y = 0; y < 8; y++) expect(sheet.rgba.subarray(((8 + y) * 16) * 4, ((8 + y) * 16 + 8) * 4)).toEqual(third.subarray(y * 32, (y + 1) * 32));
 });
+
+import { crowdShine } from '../crowd';
+import { crowdSeats } from '../crowd-stage';
+
+test('a guy wearing a Prized copy or better stands out in its grade colour; plain ones and the deal alone don\'t', () => {
+  const hat = items.find(i => i.slot === 'hat' && !i.retired && !i.free)!;
+  const seed = 'crowd-shine';
+  expect(crowdShine({ seed })).toBeNull();
+  expect(crowdShine({ seed, equip: [encode({ item: hat.id, finish: 'plain', scuff: 0.2, print: 1 })] })).toBeNull();
+  const gold = crowdShine({ seed, equip: [encode({ item: hat.id, finish: 'gold', scuff: 0.02, print: 1 })] })!;
+  expect(gold.grade).toBe(4);
+  for (const size of [10, 2] as const) {
+    const shone = colours(crowdSprite({ seed, equip: [encode({ item: hat.id, finish: 'gold', scuff: 0.02, print: 1 })] }, size));
+    expect(shone.has(hex(gold.color))).toBe(true);
+  }
+  expect(crowdShine({ seed: 'founder:isaac' })!.grade).toBe(4);
+});
+
+test('seats fill from the front middle, grow with nearness, and come out the same every time', () => {
+  const seats = crowdSeats(400, 200);
+  expect(crowdSeats(400, 200)).toEqual(seats);
+  expect(seats.length).toBeGreaterThan(1000);
+  expect(seats[0].row).toBe(Math.max(...seats.map(s => s.row)));
+  expect(Math.abs(seats[0].x + seats[0].size / 2 - 200)).toBeLessThan(seats[0].size * 2);
+  const byRow = new Map<number, number>();
+  for (const s of seats) byRow.set(s.row, s.size);
+  const sizes = [...byRow.entries()].sort((a, b) => a[0] - b[0]).map(e => e[1]);
+  expect(sizes).toEqual([...sizes].sort((a, b) => a - b));
+  expect(sizes[0]).toBe(2);
+  expect(crowdSeats(400, 200, 2).length).toBeGreaterThan(seats.length);
+});
