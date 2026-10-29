@@ -3751,7 +3751,10 @@
     $('insp-ask')?.addEventListener('click', () => { $('insp').close(); swapDialog({ to: ctx.key, want: { id: ctx.id, code, tag } }); });
     if (!ctx.mine) $('insp-owner').addEventListener('click', () => $('insp').close());
     $('insp-copy').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
+      // a link that unfurls as him wearing it, beside his card (the Worker's /s/ page and its og.png)
+      const cfg = guyConfig(ctx.seed), worn = [...others.filter(c => LG.slotOf(c) !== slot), o];
+      const link = `https://lilguys.dleclub.com/s/${LG.guyCode({ seed: ctx.seed, parts: partsOf(cfg), palette: cfg.palette, equip: worn.map(LG.encode), title: '@' + ctx.key })}`;
+      try { await navigator.clipboard.writeText(caption + ' ' + link); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
     });
     SFX.whoosh(0.22, 400, 2400, 0.06);

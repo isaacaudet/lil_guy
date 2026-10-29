@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Get your own guy. A free capsule a day, with things to wear from every DLE Club game.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lil Guys">
+<meta property="og:title" content="Lil Guys">
+<meta property="og:description" content="Get your own guy. A free capsule a day, with things to wear from every DLE Club game.">
+<meta property="og:url" content="https://lilguys.dleclub.com/">
+<meta property="og:image" content="https://lilguys.dleclub.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Five lil guys in their best hats and auras">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://lilguys.dleclub.com/og.png">
 <style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
 </head>
 <body>
@@ -4346,7 +4358,10 @@ onmessage = e => {
     $('insp-ask')?.addEventListener('click', () => { $('insp').close(); swapDialog({ to: ctx.key, want: { id: ctx.id, code, tag } }); });
     if (!ctx.mine) $('insp-owner').addEventListener('click', () => $('insp').close());
     $('insp-copy').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
+      // a link that unfurls as him wearing it, beside his card (the Worker's /s/ page and its og.png)
+      const cfg = guyConfig(ctx.seed), worn = [...others.filter(c => LG.slotOf(c) !== slot), o];
+      const link = `https://lilguys.dleclub.com/s/${LG.guyCode({ seed: ctx.seed, parts: partsOf(cfg), palette: cfg.palette, equip: worn.map(LG.encode), title: '@' + ctx.key })}`;
+      try { await navigator.clipboard.writeText(caption + ' ' + link); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
     });
     SFX.whoosh(0.22, 400, 2400, 0.06);

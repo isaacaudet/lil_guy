@@ -9929,6 +9929,7 @@ function bakeView(spec, view) {
 			delays: [require_paint.LOOP_MS]
 		};
 	}
+	if (view === "og") return ogFrames(spec);
 	if (view === "pfp" || view === "pfp-still") {
 		const p = profileFrames(spec);
 		return view === "pfp" ? p : {
@@ -9948,6 +9949,69 @@ function bakeView(spec, view) {
 	const emote$1 = /^emote-([a-z]+?)(-still)?$/.exec(view);
 	if (emote$1) return emoteFrames(spec, emote$1[1], !emote$1[2]);
 	return isMove(view) ? bakeGuy(spec, view) : null;
+}
+/** A link preview's width: what Discord, iMessage, X and the rest show a shared link at. */
+const OG_WIDTH = 1200;
+/** A link preview's height. */
+const OG_HEIGHT = 630;
+/** Lays `src` (RGBA, w×h) on `dst` at (x, y), each pixel `s` across; alpha under 128 stays see-through, as the frames have it. */
+function blit(dst, src, w, h, x, y, s) {
+	for (let sy = 0; sy < h; sy++) for (let sx = 0; sx < w; sx++) {
+		const i = (sy * w + sx) * 4;
+		if (src[i + 3] < 128) continue;
+		for (let dy = 0; dy < s; dy++) {
+			const py = y + sy * s + dy;
+			if (py < 0 || py >= OG_HEIGHT) continue;
+			for (let dx = 0; dx < s; dx++) {
+				const px = x + sx * s + dx;
+				if (px < 0 || px >= OG_WIDTH) continue;
+				const o = (py * OG_WIDTH + px) * 4;
+				dst[o] = src[i];
+				dst[o + 1] = src[i + 1];
+				dst[o + 2] = src[i + 2];
+				dst[o + 3] = 255;
+			}
+		}
+	}
+}
+/**
+* A shared guy as a link preview, 1200 × 630 and still: him big on the left, standing in a pool of
+* light with everything he wears (an aura and all), and his whole big card on the right, with his name,
+* rank and rarest trait. On the site's own dark table with its faint grid, so a link to him reads as
+* lil guys at a glance.
+*/
+function ogFrames(spec) {
+	const rgba = new Uint8ClampedArray(OG_WIDTH * OG_HEIGHT * 4);
+	const cx = 345, cy = 300;
+	for (let y = 0; y < OG_HEIGHT; y++) for (let x = 0; x < OG_WIDTH; x++) {
+		const o = (y * OG_WIDTH + x) * 4;
+		const grid = x % 32 < 2 && y % 32 < 2 ? 6 : 0;
+		const d = Math.hypot((x - cx) / 1.25, y - cy), light = Math.max(0, 1 - d / 330) ** 2 * 34;
+		rgba[o] = 19 + grid + light;
+		rgba[o + 1] = 23 + grid + light;
+		rgba[o + 2] = 38 + grid + light * 1.25;
+		rgba[o + 3] = 255;
+	}
+	const guy = bakeGuy(spec, "idle");
+	const s = Math.max(1, Math.floor(Math.min(500 / guy.width, 360 / guy.height)));
+	const gx = Math.round(cx - guy.width * s / 2), gy = Math.round(cy + 170 - guy.height * s);
+	for (let y = -14; y <= 14; y++) for (let x = -170; x <= 170; x++) {
+		if ((x / 170) ** 2 + (y / 14) ** 2 > 1) continue;
+		const o = ((cy + 166 + y) * OG_WIDTH + cx + x) * 4;
+		rgba[o] *= .55;
+		rgba[o + 1] *= .55;
+		rgba[o + 2] *= .55;
+	}
+	blit(rgba, guy.frames[0], guy.width, guy.height, gx, gy, s);
+	const card = cardPlayer(cardInputOf(spec));
+	const cs = Math.max(1, Math.floor((OG_HEIGHT - 12) / card.height));
+	blit(rgba, card.frame(0), card.width, card.height, OG_WIDTH - 60 - card.width * cs, Math.round((OG_HEIGHT - card.height * cs) / 2), cs);
+	return {
+		width: OG_WIDTH,
+		height: OG_HEIGHT,
+		frames: [rgba],
+		delays: [require_paint.LOOP_MS]
+	};
 }
 /** `<lil-guy>` with the library on the page: baked in the page, or from a host if given. */
 function defineLilGuyHere(options = {}) {
@@ -10290,7 +10354,7 @@ function createCrowd(canvas, options = {}) {
 		sheet.ctx.putImageData(new ImageData(sprite.rgba, size, size), cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size);
 		m.cells.set(size, which * SHEET_COLUMNS * SHEET_ROWS + cell);
 	}
-	function blit(m, size, x, y, scale$1 = 1) {
+	function blit$1(m, size, x, y, scale$1 = 1) {
 		const at = m.cells.get(size);
 		if (at === void 0) return;
 		const sheet = sheets.get(size)[Math.floor(at / (SHEET_COLUMNS * SHEET_ROWS))], cell = at % (SHEET_COLUMNS * SHEET_ROWS);
@@ -10344,7 +10408,7 @@ function createCrowd(canvas, options = {}) {
 			const since = t - m.hopAt;
 			if (since < 400) dy -= Math.round(Math.sin(since / 400 * Math.PI) * Math.max(1, seat.size / 4));
 			else if (options.idle && seat.size >= 6 && (t + m.phase) % 3e3 < 160) dy -= 1;
-			blit(m, seat.size, seat.x, seat.y + dy);
+			blit$1(m, seat.size, seat.x, seat.y + dy);
 		}
 		if (lit) spot(t);
 		if (moving(t)) frame = requestAnimationFrame(draw);
@@ -10362,7 +10426,7 @@ function createCrowd(canvas, options = {}) {
 		const x = Math.round((worldW - side) / 2), y = Math.round(worldH - (side + lineH + 2) * ease);
 		ctx.fillStyle = haze(.55 * ease);
 		ctx.fillRect(0, 0, worldW, worldH);
-		blit(member, 16, x, y, scale$1);
+		blit$1(member, 16, x, y, scale$1);
 		if (label) {
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			ctx.font = options.font ?? "700 15px system-ui, sans-serif";
@@ -10641,6 +10705,8 @@ exports.LilGuyAnimated = LilGuyAnimated
 exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.NAME_KEY = NAME_KEY
+exports.OG_HEIGHT = OG_HEIGHT
+exports.OG_WIDTH = OG_WIDTH
 exports.ONE_OF_ONE_AURAS = require_paint.ONE_OF_ONE_AURAS
 exports.PAINTABLE = require_paint.PAINTABLE
 exports.PAINTS = require_paint.PAINTS
@@ -10775,6 +10841,7 @@ exports.nameOf = require_paint.nameOf
 exports.nameSkeleton = nameSkeleton
 exports.nebulaPhase = require_paint.nebulaPhase
 exports.noiseOf = noiseOf
+exports.ogFrames = ogFrames
 exports.ownedOf = ownedOf
 exports.paint = require_paint.paint
 exports.paintCost = require_paint.paintCost

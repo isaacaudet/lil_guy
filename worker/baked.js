@@ -29,8 +29,8 @@ const head = (type, cache) => ({ 'Content-Type': type, 'Cache-Control': cache, '
 const fail = (status, error) => Response.json({ error }, { status, headers: head('application/json', 'no-store') });
 const redirect = (status, location, cache) => new Response(null, { status, headers: { Location: location, 'Cache-Control': cache, 'Access-Control-Allow-Origin': '*' } });
 
-/** The big card carries his name; every other view draws the same for any title, so its address has none. */
-const isCardFull = view => view === 'card-full' || view === 'card-full-still';
+/** The big card carries his name, as does the link preview it's in; every other view draws the same for any title, so its address has none. */
+const isCardFull = view => view === 'card-full' || view === 'card-full-still' || view === 'og';
 
 /** Renders on a cache miss count against the address, so made-up codes can't run up the bill. */
 export async function overBudget(request, env, what = 'render', limit = 3000) {
@@ -77,7 +77,7 @@ async function render(spec, name, sheet, ext, scale) {
     const image = `${name}.sheet${scale > 1 ? '@' + scale : ''}.png`;
     return new Response(JSON.stringify({ image, frameWidth: frames.width * scale, frameHeight: frames.height * scale, frames: frames.frames.length, columns, rows: Math.ceil(frames.frames.length / columns), delays: frames.delays }), { headers: head('application/json', IMMUTABLE) });
   }
-  const kind = sheet ? 'sheet' : ext === 'gif' ? 'gif' : name.endsWith('still') ? 'still' : 'loop';
+  const kind = sheet ? 'sheet' : ext === 'gif' ? 'gif' : name.endsWith('still') || name === 'og' ? 'still' : 'loop';
   return new Response(await bakedImage(frames, kind, scale, columns), { headers: head(ext === 'gif' ? 'image/gif' : 'image/png', IMMUTABLE) });
 }
 
@@ -97,6 +97,8 @@ export async function baked(request, env, url, ctx, guyOf) {
   if (!m) return fail(404, 'Not found');
   const [, name, sheet, digits, ext] = m;
   if ((ext === 'json' && !sheet) || (ext === 'gif' && sheet)) return fail(404, 'Not found');
+  // the link preview is one still PNG at the size previews show
+  if (name === 'og' && (sheet || digits || ext !== 'png')) return fail(404, 'The preview is og.png');
   if (who[0] === '@' || who[0] === '~') {
     const code = await codeOfName(env, who, name, guyOf);
     if (!code) return fail(404, 'No such name');

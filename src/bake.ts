@@ -403,12 +403,71 @@ export function bakeView(spec: CardSpec, view: string): Frames | null {
     const card = bakeCard(faceSpec(spec));
     return view === 'card' ? card : { ...card, frames: card.frames.slice(0, 1), delays: [LOOP_MS] };
   }
+  if (view === 'og') return ogFrames(spec);
   if (view === 'pfp' || view === 'pfp-still') { const p = profileFrames(spec); return view === 'pfp' ? p : { ...p, frames: p.frames.slice(0, 1), delays: [LOOP_MS] }; }
   if (view === 'still') { const g = bakeGuy(spec, 'idle'); return { ...g, frames: g.frames.slice(0, 1), delays: [LOOP_MS] }; }
   // A chat emote (./emotes): `emote-<id>` moving, `emote-<id>-still` still.
   const emote = /^emote-([a-z]+?)(-still)?$/.exec(view);
   if (emote) return emoteFrames(spec, emote[1], !emote[2]);
   return isMove(view) ? bakeGuy(spec, view) : null;
+}
+
+// ------------------------------------------------ the link preview
+
+/** A link preview's width: what Discord, iMessage, X and the rest show a shared link at. */
+export const OG_WIDTH = 1200;
+/** A link preview's height. */
+export const OG_HEIGHT = 630;
+
+/** Lays `src` (RGBA, w×h) on `dst` at (x, y), each pixel `s` across; alpha under 128 stays see-through, as the frames have it. */
+function blit(dst: Uint8ClampedArray, src: Uint8ClampedArray, w: number, h: number, x: number, y: number, s: number): void {
+  for (let sy = 0; sy < h; sy++) for (let sx = 0; sx < w; sx++) {
+    const i = (sy * w + sx) * 4;
+    if (src[i + 3] < 128) continue;
+    for (let dy = 0; dy < s; dy++) {
+      const py = y + sy * s + dy;
+      if (py < 0 || py >= OG_HEIGHT) continue;
+      for (let dx = 0; dx < s; dx++) {
+        const px = x + sx * s + dx;
+        if (px < 0 || px >= OG_WIDTH) continue;
+        const o = (py * OG_WIDTH + px) * 4;
+        dst[o] = src[i]; dst[o + 1] = src[i + 1]; dst[o + 2] = src[i + 2]; dst[o + 3] = 255;
+      }
+    }
+  }
+}
+
+/**
+ * A shared guy as a link preview, 1200 × 630 and still: him big on the left, standing in a pool of
+ * light with everything he wears (an aura and all), and his whole big card on the right, with his name,
+ * rank and rarest trait. On the site's own dark table with its faint grid, so a link to him reads as
+ * lil guys at a glance.
+ */
+export function ogFrames(spec: CardSpec): Frames {
+  const rgba = new Uint8ClampedArray(OG_WIDTH * OG_HEIGHT * 4);
+  // the table: #131726, a 32 px grid a shade lighter, and a soft pool of light where he stands
+  const cx = 345, cy = 300;
+  for (let y = 0; y < OG_HEIGHT; y++) for (let x = 0; x < OG_WIDTH; x++) {
+    const o = (y * OG_WIDTH + x) * 4;
+    const grid = x % 32 < 2 && y % 32 < 2 ? 6 : 0;
+    const d = Math.hypot((x - cx) / 1.25, y - cy), light = Math.max(0, 1 - d / 330) ** 2 * 34;
+    rgba[o] = 0x13 + grid + light; rgba[o + 1] = 0x17 + grid + light; rgba[o + 2] = 0x26 + grid + light * 1.25; rgba[o + 3] = 255;
+  }
+  // him, as large as fits the left side in whole pixels, standing on a shadow
+  const guy = bakeGuy(spec, 'idle');
+  const s = Math.max(1, Math.floor(Math.min(500 / guy.width, 360 / guy.height)));
+  const gx = Math.round(cx - (guy.width * s) / 2), gy = Math.round(cy + 170 - guy.height * s);
+  for (let y = -14; y <= 14; y++) for (let x = -170; x <= 170; x++) {
+    if ((x / 170) ** 2 + (y / 14) ** 2 > 1) continue;
+    const o = ((cy + 166 + y) * OG_WIDTH + cx + x) * 4;
+    rgba[o] *= .55; rgba[o + 1] *= .55; rgba[o + 2] *= .55;
+  }
+  blit(rgba, guy.frames[0], guy.width, guy.height, gx, gy, s);
+  // his big card, as tall as the picture allows in whole pixels
+  const card = cardPlayer(cardInputOf(spec));
+  const cs = Math.max(1, Math.floor((OG_HEIGHT - 12) / card.height));
+  blit(rgba, card.frame(0), card.width, card.height, OG_WIDTH - 60 - card.width * cs, Math.round((OG_HEIGHT - card.height * cs) / 2), cs);
+  return { width: OG_WIDTH, height: OG_HEIGHT, frames: [rgba], delays: [LOOP_MS] };
 }
 
 /** `<lil-guy>` with the library on the page: baked in the page, or from a host if given. */

@@ -1,3 +1,4 @@
+import { sharePage } from './share-page.js';
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked, overBudget } from './baked.js';
 import { batchGuys, clubGuys, crowdImage, namedGuys } from './club-guys.js';
@@ -37,6 +38,7 @@ export default {
       try { return await baked(request, env, url, ctx, guyOf); }
       catch { return Response.json({ error: 'Pictures are temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
     }
+    if (url.pathname.startsWith('/s/')) return sharePage(url);
     if (KIT.has(url.pathname)) return kit(request, env);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try { return await api(request, env, url, ctx); }
