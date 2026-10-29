@@ -105,6 +105,27 @@ export function luckyRoll(game, opened, dry) {
   return { o: one(), luck: null };
 }
 
+/**
+ * The founder's capsules (Isaac, October 29): always Mythic or better, from any machine he picks, but not
+ * always the very top: about half Mythic, a third Grail and one in seven an aura (a seasonal capsule has no
+ * auras, so its share goes to Grail). At that grade he gets the cleanest of a few, so the best floats too.
+ * `rollOne` is one plain roll; `top` the highest grade it can give.
+ */
+export const FOUNDER_ODDS = { aura: 0.15, grail: 0.35 };
+export function founderRoll(rollOne, top = GRADES.length - 1, u = Math.random()) {
+  const grail = GRADES.findIndex(g => g.id === 'grail');
+  const want = Math.min(top, u < FOUNDER_ODDS.aura ? GRADES.length - 1 : u < FOUNDER_ODDS.aura + FOUNDER_ODDS.grail ? grail : grail - 1);
+  // An aura is rare enough that the first one is kept, so a capsule never spends long rolling.
+  let best = null, hits = 0;
+  const need = want === GRADES.length - 1 ? 1 : 3;
+  for (let i = 0; i < 50000 && hits < need; i++) {
+    const o = rollOne(), g = gradeIndex(o), b = best ? gradeIndex(best) : -1;
+    if (g === want) hits++;
+    if (!best || (g === want && (b !== want || o.scuff < best.scuff)) || (b !== want && g > b)) best = o;
+  }
+  return best;
+}
+
 function copyRow(o, key, source) {
   const item = itemById(o.item);
   return {
@@ -287,7 +308,7 @@ async function me(request, env, key, action) {
     }
     // Count the capsule before rolling it, so two opened at once never share a beginner's roll.
     const count = await env.DB.prepare('UPDATE players SET opened = opened + 1 WHERE key = ? RETURNING opened, dry').bind(key).first();
-    const { o, luck } = luckyRoll(game, count.opened - 1, count.dry);
+    const { o, luck } = free(key) ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1, count.dry);
     await env.DB.prepare('UPDATE players SET dry = CASE WHEN ? THEN 0 ELSE dry + 1 END WHERE key = ?').bind(gradeIndex(o) >= PRIZED ? 1 : 0, key).run();
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
@@ -303,7 +324,8 @@ async function me(request, env, key, action) {
     if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
     const short = await pay(env, key, RULES.seasonal, 'seasonal');
     if (short) return short;
-    const copy = await insertCopy(env, copyRow(rollSeason(crypto.randomUUID(), day), key, 'seasonal'));
+    const season = () => rollSeason(crypto.randomUUID(), day);
+    const copy = await insertCopy(env, copyRow(free(key) ? founderRoll(season, GRADES.findIndex(g => g.id === 'grail')) : season(), key, 'seasonal'));
     return json({ copy: publicCopy(copy), stamps: await stampsOf(env, key) }, 201);
   }
   // Trade-ups are gone (Isaac, October 29): metal and crafting do their job. Copies a trade-up made stay as they are.

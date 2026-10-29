@@ -1,10 +1,10 @@
 import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import { api, RULES, todayGame } from './index.js';
+import { api, RULES, todayGame, founderRoll } from './index.js';
 import { GAMES } from '../src/index-headless.ts';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { decode, encode, guyRank, resolve } from '../src/index-headless.ts';
+import { decode, encode, gradeOf, GRADES, guyRank, resolve } from '../src/index-headless.ts';
 
 let env: any;
 beforeEach(() => {
@@ -460,4 +460,24 @@ test('the founder is the library’s: rarest first lists him at the top, and the
   const picked: any = await (await call('/club/named?n=isaac')).json();
   expect(picked.guys.isaac.parts.founder).toBe(true);
   expect(guyRank(picked.guys.isaac.parts).name).toBe('Founder');
+});
+
+test('the founder’s capsules are always Mythic or better, from any machine, and not always the top', async () => {
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  const grades: string[] = [];
+  for (let i = 0; i < 24; i++) {
+    const r: any = await (await call('/me/isaac/open', 'POST', { game: GAMES[i % GAMES.length] }, auth(f.owner))).json();
+    expect(r.luck).toBe('founder');
+    grades.push(gradeOf(decode(r.copy.code)!).id);
+  }
+  for (const g of grades) expect(['mythic', 'grail', 'aura']).toContain(g);
+  expect(new Set(grades).size).toBeGreaterThan(1);
+});
+
+test('founderRoll keeps to the tier it drew and the best float in it', () => {
+  let n = 0;
+  const one = () => ({ item: 'puttsies.flag', finish: ['plain', 'prism', 'gold', 'prism'][n % 4], scuff: 0.5 - (n++ % 7) * 0.05, print: 1 });
+  const o = founderRoll(one, GRADES.length - 1, 0.9);
+  expect(gradeOf(o).id).toBe('mythic');
+  expect(founderRoll(one, GRADES.findIndex(g => g.id === 'grail'), 0.01).finish).toBe('gold');
 });

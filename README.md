@@ -619,7 +619,9 @@ finished a DLE Club game that UTC day (a name without a DLE Club sign-in can't;
 the founder's is always open). Beginner's luck (the first
 three capsules), pity (Prized or better after 30 dry), smelting, crafting and
 swaps work as before. Trade-ups are gone (29 October 2026): metal and crafting
-do their job, and copies a trade-up made stay as they are. The Worker reads
+do their job, and copies a trade-up made stay as they are. The founder never
+pays, and every capsule he opens, from any machine, is Mythic or better: about
+half Mythic, a third Grail, one in seven an aura (`founderRoll`). The Worker reads
 stamps from the club with the card stats (`worker/stamps.js`, DEPLOYMENT.md, Stamps).
 
 ### Keeping rarity real
