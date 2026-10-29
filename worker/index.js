@@ -49,7 +49,11 @@ export default {
 // each capsule costs in stamps (stamps.js) and how many swap offers can be out, and which machine's capsule is free today.
 export const RULES = { stamps: STARTER_STAMPS, mystery: STAMP_COST.mystery, capsule: STAMP_COST.machine, seasonal: STAMP_COST.seasonal, swaps: 10 };
 // The founder never pays.
-const free = key => key === 'isaac';
+const FOUNDER_KEY = 'isaac';
+const free = key => key === FOUNDER_KEY;
+// What the founder holds stays out of everyone's counts (Isaac, October 29): the Pulls page, its totals, float
+// ranks and 1st editions. A copy joins them once he gives or swaps it to someone.
+const NOT_HELD_BACK = `key <> '${FOUNDER_KEY}'`;
 // Capsule luck: a player's first few capsules are each the best of a few rolls (weighted toward good, never
 // promised), and after a long dry run below Prized the next capsule is Prized or better.
 export const LUCK = { beginner: 3, rolls: 3, pity: 30, tries: 5000 };
@@ -141,8 +145,8 @@ function copyRow(o, key, source) {
 async function rank(env, url) {
   const o = decode(url.searchParams.get('code') || '');
   if (!o) return json({ error: 'Not a copy' }, 400);
-  const same = await env.DB.prepare('SELECT COUNT(*) AS pop, SUM(scuff < ?) AS cleaner FROM copies WHERE item = ? AND finish = ?').bind(o.scuff, o.item, o.finish).first();
-  const all = await env.DB.prepare('SELECT COUNT(*) AS pop FROM copies WHERE item = ?').bind(o.item).first();
+  const same = await env.DB.prepare(`SELECT COUNT(*) AS pop, SUM(scuff < ?) AS cleaner FROM copies WHERE item = ? AND finish = ? AND ${NOT_HELD_BACK}`).bind(o.scuff, o.item, o.finish).first();
+  const all = await env.DB.prepare(`SELECT COUNT(*) AS pop FROM copies WHERE item = ? AND ${NOT_HELD_BACK}`).bind(o.item).first();
   return json({ pop: same.pop, rank: (same.cleaner || 0) + 1, itemPop: all.pop }, 200, { 'Cache-Control': 'public, max-age=60' });
 }
 
@@ -158,7 +162,7 @@ async function insertCopy(env, row, worn = 0) {
  * edition. Starters and the founder's copies aren't counted. Before 0009, none.
  */
 async function numberCopy(env, row, id) {
-  if (row.source === 'starter' || row.source === 'founder' || !(row.one_in > 0)) return 0;
+  if (row.source === 'starter' || row.source === 'founder' || free(row.key) || !(row.one_in > 0)) return 0;
   try {
     // Only count once the column is there, so the run never skips numbers while 0009 waits.
     await env.DB.prepare('SELECT pull FROM copies WHERE id = ?').bind(id).first();
@@ -505,6 +509,8 @@ async function market(env, url) {
   }
   const holder = (url.searchParams.get('key') || '').toLowerCase();
   if (NAME_KEY.test(holder)) { where.push('key = ?'); args.push(holder); }
+  // His own page still lists what he holds.
+  if (!free(holder)) where.push(NOT_HELD_BACK);
   const sort = { float: 'scuff ASC', newest: 'id DESC' }[url.searchParams.get('sort')] || 'one_in DESC, scuff ASC';
   const limit = Math.min(96, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '60') || 60));
   const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0') || 0);
@@ -515,11 +521,11 @@ async function market(env, url) {
 
 async function stats(env) {
   const players = await env.DB.prepare('SELECT COUNT(*) AS n FROM names').first();
-  const { results } = await env.DB.prepare("SELECT grade, COUNT(*) AS n FROM copies WHERE source <> 'starter' GROUP BY grade").all();
+  const { results } = await env.DB.prepare(`SELECT grade, COUNT(*) AS n FROM copies WHERE source <> 'starter' AND ${NOT_HELD_BACK} GROUP BY grade`).all();
   const grades = [0, 0, 0, 0, 0];
   for (const r of results) grades[r.grade] = r.n;
   // How many of each item in each finish have ever been pulled, for the Pulls page: [item, finish, n].
-  const byItem = await env.DB.prepare("SELECT item, finish, COUNT(*) AS n FROM copies WHERE source <> 'starter' GROUP BY item, finish").all();
+  const byItem = await env.DB.prepare(`SELECT item, finish, COUNT(*) AS n FROM copies WHERE source <> 'starter' AND ${NOT_HELD_BACK} GROUP BY item, finish`).all();
   const counts = byItem.results.map(r => [r.item, r.finish, r.n]);
   return json({ players: players.n, copies: grades.reduce((a, b) => a + b, 0), grades, counts, todayGame: todayGame(), rules: RULES });
 }
