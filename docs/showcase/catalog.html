@@ -196,7 +196,7 @@
   const specs = [];
   const cv = spec => { specs.push(spec); return `<canvas width="16" height="16" data-s="${specs.length - 1}" aria-hidden="true"></canvas>`; };
   const paintAll = () => document.querySelectorAll('canvas[data-s]').forEach(c => { put(c, colorsOf(specs[+c.dataset.s])); c.removeAttribute('data-s'); });
-  const ANIME = { name: 'Anime', c: '#e2558f' };
+  const ANIME = { name: 'Capsule', c: '#e2558f' };
   const tile = (name, p, canvas, extra = '', capsule = false) => { const t = capsule ? ANIME : tierOf(p); return `<div class="t${extra}">${canvas}<span class="n">${esc(name)}</span><span class="o">${capsule ? 'capsules only' : p ? oneIn(p) : 'retired'}<span class="chip" style="--k:${t.c}">${t.name}</span></span></div>`; };
 
   // Each option's chance, from the library's own weights.

@@ -13,7 +13,7 @@ import type { AvatarConfig } from '../types';
  */
 const find = <T extends { name: string }>(list: T[], name: string) => list.findIndex(x => x.name === name);
 const base: AvatarConfig = { head: 0, eyes: 0, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, shade: 1, flip: false, lucky: false, palette: 0 };
-const faces = [['shiny', 'smile'], ['glossy', 'laugh'], ['anime', 'grillz'], ['beans', 'tiny']].map(([e, m]) => ({ eyes: find(eyes, e), mouth: find(mouths, m) }));
+const faces = [['shiny', 'smile'], ['glossy', 'laugh'], ['big eyes', 'grillz'], ['beans', 'tiny']].map(([e, m]) => ({ eyes: find(eyes, e), mouth: find(mouths, m) }));
 const hats = items.filter(i => i.slot === 'hat');
 const skins = items.filter(i => i.slot === 'skin');
 // The eyes and mouth by their own colours (white alone is also the gleam on the head, which a hat may cover).

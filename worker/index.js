@@ -306,7 +306,9 @@ async function me(request, env, key, action) {
     }
     // Count the capsule before rolling it, so two opened at once never share a beginner's roll.
     const count = await env.DB.prepare('UPDATE players SET opened = opened + 1 WHERE key = ? RETURNING opened, dry').bind(key).first();
-    const { o, luck } = free(key) ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1, count.dry);
+    // The founder can turn his odds off (`fair`) and roll as anyone does.
+    const rigged = free(key) && body.fair !== true;
+    const { o, luck } = rigged ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1, count.dry);
     await env.DB.prepare('UPDATE players SET dry = CASE WHEN ? THEN 0 ELSE dry + 1 END WHERE key = ?').bind(gradeIndex(o) >= PRIZED ? 1 : 0, key).run();
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
@@ -325,11 +327,16 @@ async function me(request, env, key, action) {
     return json({ copy: publicCopy(copy), game, part, starter: given.meta.changes ? gift.code : null, stamps: await stampsOf(env, key), freeDay: p.free_day, luck }, 201);
   }
   if (action === 'season') {
-    if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
+    // The founder can open any season's capsule, in season or not, by naming one of its items.
+    const picked = free(key) && typeof body.item === 'string' ? itemById(body.item) : null;
+    const on = picked?.season ? `${day.slice(0, 4)}-${picked.season.from}` : day;
+    if (!inSeason(on).length) return json({ error: 'Nothing is in season' }, 409);
     const short = await pay(env, key, RULES.seasonal, 'seasonal');
     if (short) return short;
-    const season = () => rollSeason(crypto.randomUUID(), day);
-    const copy = await insertCopy(env, copyRow(free(key) ? founderRoll(season, GRADES.findIndex(g => g.id === 'grail')) : season(), key, 'seasonal'));
+    // A named item is what comes out; its finish, float and print are rolled as ever.
+    const season = () => { const o = rollSeason(crypto.randomUUID(), on); return picked?.season ? { ...o, item: picked.id } : o; };
+    const rigged = free(key) && body.fair !== true;
+    const copy = await insertCopy(env, copyRow(rigged ? founderRoll(season, GRADES.findIndex(g => g.id === 'grail')) : season(), key, 'seasonal'));
     return json({ copy: publicCopy(copy), stamps: await stampsOf(env, key) }, 201);
   }
   // Trade-ups are gone (Isaac, October 29): metal and crafting do their job. Copies a trade-up made stay as they are.

@@ -44,7 +44,7 @@ export interface TraitOdds {
 }
 
 /**
- * A part's chance. A part no deal gives (the capsule-only anime set) counts
+ * A part's chance. A part no deal gives (the capsule-only set) counts
  * as if it were dealt at its capsule weight, so a look wearing one stays a
  * number; every dealt part's chance is as it was.
  */

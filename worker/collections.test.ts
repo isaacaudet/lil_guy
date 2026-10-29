@@ -530,3 +530,26 @@ test('what the founder holds stays off the Pulls page and its counts until he gi
   expect(market.map((c: any) => [c.id, c.key])).toEqual([[pulled.copy.id, 'bo']]);
   expect(((await (await call('/stats')).json()) as any).copies).toBe(1);
 });
+
+test('the founder can roll at fair odds, and open any season’s capsule out of season', async () => {
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  await call('/me/isaac/state', 'GET', undefined, auth(f.owner));
+  const fair: string[] = [];
+  for (let i = 0; i < 40; i++) {
+    const r: any = await (await call('/me/isaac/open', 'POST', { game: 'puttsies', fair: true }, auth(f.owner))).json();
+    expect(r.luck).not.toBe('founder');
+    fair.push(gradeOf(decode(r.copy.code)!).id);
+  }
+  // At fair odds most capsules are Everyday, which founder odds never give.
+  expect(fair.filter(g => g === 'everyday').length).toBeGreaterThan(10);
+  setSystemTime(new Date('2026-06-05T12:00:00Z'));
+  try {
+    const r = await call('/me/isaac/season', 'POST', { item: 'club.snowcap' }, auth(f.owner));
+    expect(r.status).toBe(201);
+    expect(decode(((await r.json()) as any).copy.code)!.item).toBe('club.snowcap');
+    // Anyone else still gets nothing out of season.
+    const b = await claim('bo');
+    give('bo', 8);
+    expect((await call('/me/bo/season', 'POST', { item: 'club.snowcap' }, auth(b.owner))).status).toBe(409);
+  } finally { setSystemTime(); }
+});

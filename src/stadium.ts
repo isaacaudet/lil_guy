@@ -1,5 +1,5 @@
 /**
- * The stadium: the crowd (./crowd) in a venue that grows with it. A handful sit on a porch; fifty fill
+ * The stadium: the crowd (./crowd) in the stands behind a game, a venue that grows with it. A handful sit on a porch; fifty fill
  * the bleachers; a hundred a gym; two hundred a hall; a thousand an arena; five thousand a stadium; ten
  * thousand and more a three-tier bowl. Only who a game adds is there: nobody is made up. Each guy is drawn
  * from his own drawing at the size his seat calls for, in his finishes, a rare one outlined in his grade's
@@ -34,106 +34,68 @@ type Painter = { rect: (x: number, y: number, w: number, h: number, c: string) =
 const SIZES: CrowdSize[] = [2, 4, 6, 8, 10, 16];
 const sizeNear = (px: number): CrowdSize => SIZES.reduce((best, s) => (Math.abs(s - px) < Math.abs(best - px) ? s : best), SIZES[0]);
 
-/** Straight rows of seats, nearest first, `size` from the front row's to the back row's. */
-function rows(x0: number, x1: number, yFront: number, count: number, front: number, back: number, seats: StadiumSeat[], up = true): void {
-  for (let r = 0, y = yFront; r < count; r++) {
-    const size = sizeNear(front + (back - front) * (count > 1 ? r / (count - 1) : 0));
-    const step = Math.max(2, Math.round(size * 0.9));
-    for (let x = x0 + (r % 2) * (step >> 1); x + size <= x1; x += step) seats.push({ x, y: y - size, size, row: r });
-    y += up ? -Math.max(2, Math.round(size * 0.62)) : Math.max(2, Math.round(size * 0.62));
-  }
-}
+/** A venue's grandstand: its rows, how they bow and rise, the sizes front to back, and its colours. */
+interface Grandstand { W: number; rows: number; a: number; da: number; b: number; db: number; rise: number; front: number; back: number; breaks: number[]; floor: string; sky: string; concrete: string; rail: string; lights: number }
 
 /**
- * An oval of stands round a centre, raked back: `count` rows from the front, sizes bigger on the near
- * side; `gap` leaves the bottom of the oval open (a stage end), as a fraction of the turn.
+ * Every venue: one grandstand round the far side of a floor, a backdrop a game stands in front of. All
+ * 16:9; the bigger the crowd, the more rows and the further back the camera, so the guys are smaller.
+ * Rows bow away from you in the middle and come round toward you at the ends; `breaks` are the
+ * walkways between tiers.
  */
-function oval(cx: number, cy: number, a0: number, b0: number, count: number, da: number, db: number, rise: number, near: number, far: number, seats: StadiumSeat[], gap = 0, first = 0): void {
-  for (let r = 0; r < count; r++) {
-    const a = a0 + r * da, b = b0 + r * db;
-    for (let t = 0; t < Math.PI * 2;) {
-      const sin = Math.sin(t), cos = Math.cos(t);
-      const px = far + (near - far) * (sin + 1) / 2, size = sizeNear(px * (1 - r * 0.004));
-      const open = gap > 0 && Math.abs(t - Math.PI / 2) < gap * Math.PI;
-      if (!open) seats.push({ x: Math.round(cx + a * cos - size / 2), y: Math.round(cy + b * sin - r * rise - size), size, row: first + r });
-      t += Math.max(0.004, (size * 0.95) / Math.hypot(a * sin, b * cos));
-    }
-  }
-}
+const STANDS: Record<VenueId, Grandstand> = {
+  porch: { W: 200, rows: 2, a: 150, da: 0, b: 4, db: 0, rise: 13, front: 16, back: 16, breaks: [], floor: '#6b4a33', sky: '#1c2238', concrete: '#5a3d2a', rail: '#8a5f3e', lights: 0 },
+  bleachers: { W: 256, rows: 5, a: 150, da: 4, b: 12, db: 1, rise: 9, front: 16, back: 10, breaks: [], floor: '#2f7a43', sky: '#1e2a44', concrete: '#4c566b', rail: '#9aa6b8', lights: 0 },
+  gym: { W: 320, rows: 8, a: 170, da: 5, b: 26, db: 2, rise: 7, front: 10, back: 8, breaks: [], floor: '#c58b4f', sky: '#2a2433', concrete: '#3d3548', rail: '#7a6a8e', lights: 0 },
+  hall: { W: 384, rows: 12, a: 190, da: 6, b: 46, db: 3, rise: 6, front: 10, back: 8, breaks: [], floor: '#3b2f4f', sky: '#181d2e', concrete: '#2c2a40', rail: '#ff7a5c', lights: 0 },
+  arena: { W: 512, rows: 22, a: 230, da: 7, b: 78, db: 3, rise: 4.6, front: 8, back: 6, breaks: [13], floor: '#1d4f8a', sky: '#141826', concrete: '#29314a', rail: '#5b6478', lights: 2 },
+  stadium: { W: 768, rows: 36, a: 320, da: 8, b: 120, db: 3.4, rise: 3.7, front: 6, back: 4, breaks: [16], floor: '#1f6b3e', sky: '#10131f', concrete: '#262d42', rail: '#5b6478', lights: 4 },
+  bowl: { W: 1024, rows: 56, a: 400, da: 9, b: 160, db: 3.2, rise: 3.1, front: 6, back: 2, breaks: [18, 37], floor: '#1f6b3e', sky: '#0d1019', concrete: '#232a3e', rail: '#5b6478', lights: 6 },
+};
+/** How far up row `r` sits: its rise, and a walkway's worth more past each break. */
+const liftOf = (g: Grandstand, r: number) => r * g.rise + g.breaks.filter(k => k <= r).length * g.rise * 2.5;
+/** How far back the curve bows at `x` for row `r`: 1 in the middle, 0 at its ends and past them. */
+const bowOf = (g: Grandstand, cx: number, r: number, x: number) => { const u = Math.min(1, Math.abs(x - cx) / (g.a + r * g.da)); return Math.sqrt(1 - u * u); };
 
 /** Every venue's seats and its picture, in world pixels. */
 function layout(id: VenueId): Layout {
+  const g = STANDS[id], W = g.W, H = Math.round(W * 9 / 16), cx = W / 2;
+  // The stands rise from just above the bottom, round a hollow of floor the game stands in.
+  const floorY = Math.round(H * 0.84), wall = Math.max(3, Math.round(H * 0.025)), baseY = floorY - wall;
   const seats: StadiumSeat[] = [];
-  switch (id) {
-    case 'porch': {
-      const W = 200, H = 80;
-      rows(14, W - 14, 66, 2, 16, 16, seats);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#1c2238'); for (let i = 0; i < 9; i++) p.rect(10 + i * 15, 8 + (i % 2) * 2, 2, 2, ['#ffd45c', '#ff8a8a', '#8fd8ff'][i % 3]);
-        p.rect(0, 9, W, 1, '#3a3f55'); p.rect(0, 40, W, 40, '#6b4a33'); for (let x = 0; x < W; x += 10) p.rect(x, 40, 1, 40, '#5a3d2a');
-        p.rect(8, 50, W - 16, 4, '#8a5f3e'); p.rect(8, 66, W - 16, 4, '#8a5f3e'); p.rect(0, 74, W, 6, '#4a3324');
-      } };
-    }
-    case 'bleachers': {
-      const W = 200, H = 110;
-      rows(8, W - 8, 92, 4, 14, 10, seats);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#1e2a44'); p.rect(0, 0, W, 40, '#22304e');
-        for (let i = 0; i < 4; i++) p.rect(4, 92 - i * 8, W - 8, 2, '#9aa6b8');
-        p.rect(0, 94, W, 16, '#2f7a43'); p.rect(0, 100, W, 1, '#3f9455');
-      } };
-    }
-    case 'gym': {
-      const W = 260, H = 160;
-      rows(10, W - 10, 46, 3, 10, 8, seats, true);
-      rows(10, W - 10, 150, 3, 14, 12, seats, true);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#2a2433'); p.rect(0, 48, W, 64, '#c58b4f');
-        for (let x = 0; x < W; x += 12) p.rect(x, 48, 1, 64, '#b47c44');
-        p.rect(20, 52, W - 40, 56, '#d39a5c'); p.oval(W / 2, 80, 16, 10, '#e9b47a'); p.rect(W / 2, 52, 1, 56, '#f3e6d0');
-        p.rect(4, 70, 6, 20, '#e8792f'); p.rect(W - 10, 70, 6, 20, '#e8792f');
-      } };
-    }
-    case 'hall': {
-      const W = 320, H = 200, cx = W / 2, cy = 120;
-      oval(cx, cy, 70, 38, 7, 12, 7, 2.6, 12, 8, seats, 0.18);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#181d2e'); p.oval(cx, cy - 6, 168, 92, '#262d44');
-        p.oval(cx, cy, 62, 32, '#3b2f4f'); p.rect(cx - 40, cy + 18, 80, 30, '#4e3a63'); p.rect(cx - 40, cy + 18, 80, 2, '#ff7a5c');
-      } };
-    }
-    case 'arena': {
-      const W = 440, H = 280, cx = W / 2, cy = 150;
-      oval(cx, cy, 104, 50, 13, 9, 5.2, 2.6, 10, 6, seats);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#141826'); p.oval(cx, cy - 18, 228, 124, '#232a3b'); p.oval(cx, cy - 14, 212, 112, '#2c3448');
-        p.oval(cx, cy, 98, 46, '#1d4f8a'); p.oval(cx, cy, 84, 38, '#2a62a3'); p.rect(cx - 1, cy - 38, 2, 76, '#e9eef7');
-        p.rect(cx - 22, cy - 98, 44, 18, '#0b0e18'); p.rect(cx - 20, cy - 96, 40, 14, '#29364f'); p.rect(cx - 1, cy - 112, 2, 14, '#5b6478');
-      } };
-    }
-    case 'stadium': {
-      const W = 680, H = 420, cx = W / 2, cy = 225;
-      oval(cx, cy, 196, 88, 22, 8, 4.6, 2.4, 8, 4, seats);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#10131f'); p.oval(cx, cy - 26, 340, 182, '#202737'); p.oval(cx, cy - 22, 324, 170, '#29314a');
-        p.oval(cx, cy, 186, 82, '#1f6b3e'); p.stripes(cx, cy, 186, 82, 26, '#237646');
-        p.rect(cx - 1, cy - 78, 2, 156, '#d9f0de'); p.oval(cx, cy, 26, 12, '#2f8a51');
-        for (const sx of [24, W - 30]) { p.rect(sx, 20, 6, 120, '#3a4258'); p.rect(sx - 8, 14, 22, 8, '#fff3c4'); }
-      } };
-    }
-    default: {
-      const W = 1120, H = 640, cx = W / 2, cy = 350;
-      oval(cx, cy, 250, 110, 16, 7, 4, 2.2, 8, 4, seats);
-      oval(cx, cy - 46, 372, 176, 14, 6, 3.4, 2.2, 6, 2, seats, 0, 16);
-      oval(cx, cy - 92, 470, 230, 10, 5, 2.8, 2.2, 4, 2, seats, 0, 30);
-      return { width: W, height: H, seats, paint: p => {
-        p.rect(0, 0, W, H, '#0d1019'); p.oval(cx, cy - 70, 548, 300, '#1d2333'); p.oval(cx, cy - 64, 532, 288, '#262d42');
-        p.oval(cx, cy, 240, 104, '#1f6b3e'); p.stripes(cx, cy, 240, 104, 28, '#237646');
-        p.rect(cx - 1, cy - 100, 2, 200, '#d9f0de'); p.oval(cx, cy, 34, 15, '#2f8a51');
-        for (const sx of [20, 230, W - 236, W - 26]) { p.rect(sx, 10, 6, 150, '#3a4258'); p.rect(sx - 10, 4, 26, 8, '#fff3c4'); }
-      } };
+  // A deep bow puts the middle well back, so it draws smaller; a shallow one barely.
+  const shrink = 0.3 * Math.min(1, g.b / (H * 0.3));
+  const yOf = (r: number, x: number) => baseY - (g.b + r * g.db) * bowOf(g, cx, r, x) - liftOf(g, r);
+  for (let r = 0; r < g.rows; r++) {
+    const px = g.front + (g.back - g.front) * (g.rows > 1 ? r / (g.rows - 1) : 0);
+    // Seats step across; the middle is further away, so a little smaller.
+    for (let x = (r * 3) % 5; x < W;) {
+      const size = sizeNear(px * (1 - shrink * bowOf(g, cx, r, x)));
+      const y = Math.round(yOf(r, x + size / 2) - size);
+      if (x + size <= W && y >= 0) seats.push({ x, y, size, row: r });
+      x += Math.max(2, Math.round(size * 0.92));
     }
   }
+  const colours = ['#e8792f', '#2e8c8a', '#4e7fb3', '#c2403f', '#3fa35b', '#7d4fa6', '#e36a8e', '#e7b53b', '#8a93a0'];
+  return { width: W, height: H, seats, paint: p => {
+    p.rect(0, 0, W, H, g.sky);
+    const top = g.rows - 1, back = (x: number) => Math.round(yOf(top, x) - g.back * 1.5);
+    for (let x = 0; x < W; x++) {
+      // The stands' concrete from the back row down to the floor, each walkway a lighter step.
+      const y0 = Math.max(0, back(x));
+      p.rect(x, y0, 1, floorY - y0, g.concrete);
+      for (const k of g.breaks) p.rect(x, Math.round(yOf(k, x) + 1), 1, 1, g.rail);
+      // Under the front row, a strip of boards in the games' colours, then the floor in the bowl's hollow.
+      const yw = Math.round(yOf(0, x)) + 1;
+      p.rect(x, yw, 1, 1, g.rail);
+      p.rect(x, yw + 1, 1, wall, colours[Math.floor(x / Math.max(16, W / 12)) % colours.length]);
+      p.rect(x, yw + 1 + wall, 1, H - yw - 1 - wall, g.floor);
+      if (g.floor === '#1f6b3e' && Math.floor(x / Math.max(12, W / 24)) % 2) p.rect(x, yw + 1 + wall, 1, H - yw - 1 - wall, '#237646');
+    }
+    // Floodlights on poles over the top of the stands.
+    for (let i = 0; i < g.lights; i++) { const x = Math.round(W * (i + 0.5) / g.lights), y = Math.max(4, back(x) - 30); p.rect(x, y, 2, 30, '#3a4258'); p.rect(x - 6, y - 2, 14, 4, '#fff3c4'); }
+    if (id === 'porch') for (let i = 0; i < 12; i++) p.rect(8 + i * 16, 10 + (i % 2) * 2, 2, 2, ['#ffd45c', '#ff8a8a', '#8fd8ff'][i % 3]);
+  } };
 }
 
 /**

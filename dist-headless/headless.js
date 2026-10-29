@@ -830,8 +830,8 @@ const LAYER = {
 	buddy: 50,
 	aura: 60
 };
-function stamp(rows$1) {
-	return rows$1.map((row) => [...row].map((ch) => {
+function stamp(rows) {
+	return rows.map((row) => [...row].map((ch) => {
 		const token = KEY[ch];
 		if (token === void 0) throw new Error(`Unknown art character "${ch}" in "${row}"`);
 		return token;
@@ -843,11 +843,11 @@ function width(s) {
 
 //#endregion
 //#region src/parts/heads.ts
-const head = (name, eyes$1, feet$1, rows$1) => {
-	if (rows$1.length !== 16 || rows$1.some((r) => r.length !== 16)) throw new Error(`Head "${name}" must be drawn on a 16x16 grid`);
+const head = (name, eyes$1, feet$1, rows) => {
+	if (rows.length !== 16 || rows.some((r) => r.length !== 16)) throw new Error(`Head "${name}" must be drawn on a 16x16 grid`);
 	return {
 		name,
-		art: stamp(rows$1),
+		art: stamp(rows),
 		eyes: eyes$1,
 		feet: feet$1
 	};
@@ -1433,9 +1433,9 @@ const heads = [
 
 //#endregion
 //#region src/parts/eyes.ts
-const eyes_ = (name, rows$1) => ({
+const eyes_ = (name, rows) => ({
 	name,
-	art: stamp(rows$1)
+	art: stamp(rows)
 });
 const eyes = [
 	eyes_("beans", [
@@ -1513,7 +1513,7 @@ const eyes = [
 		".e....e.",
 		"e.e..e.e"
 	]),
-	eyes_("anime", [
+	eyes_("big eyes", [
 		".ee....ee.",
 		"eew....wee",
 		".aA....Aa."
@@ -1533,7 +1533,7 @@ const eyes = [
 		"yey....yey",
 		"YeY....YeY"
 	]),
-	eyes_("shoujo", [
+	eyes_("starry", [
 		".ee....ee.",
 		"ewA....Awe",
 		"eAw....wAe"
@@ -1553,9 +1553,9 @@ const eyes = [
 
 //#endregion
 //#region src/parts/mouths.ts
-const mouth = (name, rows$1) => ({
+const mouth = (name, rows) => ({
 	name,
-	art: stamp(rows$1)
+	art: stamp(rows)
 });
 const mouths = [
 	mouth("smile", ["m..m", ".mm."]),
@@ -1643,9 +1643,9 @@ const mouths = [
 
 //#endregion
 //#region src/parts/cheeks.ts
-const cheeks_ = (name, rows$1) => ({
+const cheeks_ = (name, rows) => ({
 	name,
-	art: stamp(rows$1)
+	art: stamp(rows)
 });
 const cheeks = [
 	cheeks_("bare", []),
@@ -1687,7 +1687,7 @@ const cheeks = [
 		"yy......yy",
 		"gg......gg"
 	]),
-	cheeks_("manga blush", [".rc.....rc", "rc.....rc."])
+	cheeks_("big blush", [".rc.....rc", "rc.....rc."])
 ];
 
 //#endregion
@@ -1712,8 +1712,8 @@ function seat(c, s, x, sink = 1) {
 }
 const mirror = (s) => s.map((row) => [...row].reverse());
 /** A drawing centred on the crown, nudged `dx` columns to the right. */
-const centre = (name, rows$1, dx = 0, sink = 1) => {
-	const s = stamp(rows$1);
+const centre = (name, rows, dx = 0, sink = 1) => {
+	const s = stamp(rows);
 	return {
 		name,
 		draw: (c) => seat(c, s, c.centred(s) + dx, sink)
@@ -1724,8 +1724,8 @@ const centre = (name, rows$1, dx = 0, sink = 1) => {
 * from the edge of the head's shoulder row, so ears stay on narrow and wide
 * heads alike.
 */
-const pair = (name, rows$1, inset$1 = 0, sink = 1) => {
-	const left = stamp(rows$1);
+const pair = (name, rows, inset$1 = 0, sink = 1) => {
+	const left = stamp(rows);
 	const right = mirror(left);
 	return {
 		name,
@@ -3873,9 +3873,9 @@ var Canvas = class Canvas {
 
 //#endregion
 //#region src/item-art.ts
-const grid16 = (name, rows$1) => {
-	if (rows$1.length !== GRID_SIZE || rows$1.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
-	return stamp(rows$1);
+const grid16 = (name, rows) => {
+	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE)) throw new Error(`Skin "${name}" must be drawn on a 16x16 grid`);
+	return stamp(rows);
 };
 /** How many cells a row spans, first filled to last. */
 const span = (row) => {
@@ -3981,12 +3981,12 @@ function wear(c, s, dx, sink) {
 	c.draw(fitted$1, Math.max(1, Math.min(GRID_SIZE - 1 - width(fitted$1), c.centred(fitted$1) + dx)), y);
 	for (let yy = 0; yy < y; yy++) for (let x = 0; x < GRID_SIZE; x++) if (c.grid[yy][x] && c.grid[yy][x] < LAYER.skin) c.grid[yy][x] = 0;
 }
-const on = (rows$1, dx = 0, sink = 1) => {
-	const s = stamp(rows$1);
+const on = (rows, dx = 0, sink = 1) => {
+	const s = stamp(rows);
 	return (c) => wear(c, s, dx, sink);
 };
-const onPair = (rows$1, inset$1 = 0) => {
-	const left = stamp(rows$1);
+const onPair = (rows, inset$1 = 0) => {
+	const left = stamp(rows);
 	const right = mirror(left);
 	return (c) => {
 		const r = c.rows[c.shoulder()], l = fitRoom(c, left), rr = fitRoom(c, right);
@@ -4012,18 +4012,18 @@ const BUDDY_BOX = {
 * buddy's own, so no finish repaints them: the eyes stay dark and shining on
 * Gold, Negative and Nebula alike.
 */
-const pet = (name, rows$1) => {
-	if (rows$1.length > BUDDY_BOX.height || rows$1.some((r) => r.length > BUDDY_BOX.width)) throw new Error(`Buddy "${name}" must fit in ${BUDDY_BOX.width} across and ${BUDDY_BOX.height} tall`);
-	return stamp(rows$1);
+const pet = (name, rows) => {
+	if (rows.length > BUDDY_BOX.height || rows.some((r) => r.length > BUDDY_BOX.width)) throw new Error(`Buddy "${name}" must fit in ${BUDDY_BOX.width} across and ${BUDDY_BOX.height} tall`);
+	return stamp(rows);
 };
 /**
 * A frame drawn as a 16x16 picture: `1`–`9` are its colours and `.` its
 * ground (colour 1). It repeats past the edges, for the card face's bigger
 * backdrop.
 */
-const backdrop = (name, rows$1) => {
-	if (rows$1.length !== GRID_SIZE || rows$1.some((r) => r.length !== GRID_SIZE || /[^.1-9]/.test(r))) throw new Error(`Frame "${name}" must be drawn on a 16x16 grid in its own colours`);
-	const at = rows$1.map((r) => [...r].map((ch) => ch === "." ? 1 : +ch));
+const backdrop = (name, rows) => {
+	if (rows.length !== GRID_SIZE || rows.some((r) => r.length !== GRID_SIZE || /[^.1-9]/.test(r))) throw new Error(`Frame "${name}" must be drawn on a 16x16 grid in its own colours`);
+	const at = rows.map((r) => [...r].map((ch) => ch === "." ? 1 : +ch));
 	return (x, y) => at[(y % GRID_SIZE + GRID_SIZE) % GRID_SIZE][(x % GRID_SIZE + GRID_SIZE) % GRID_SIZE];
 };
 
@@ -5310,8 +5310,8 @@ const set$7 = {
 //#endregion
 //#region src/sets/flipsies.ts
 /** A hat stood on the crown as drawn, however wide, rather than pulled down round the head like a cap. */
-const perch$3 = (rows$1, sink = 1) => {
-	const s = stamp(rows$1);
+const perch$3 = (rows, sink = 1) => {
+	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
 /**
@@ -5757,8 +5757,8 @@ const set$6 = {
 //#endregion
 //#region src/sets/puttsies.ts
 /** A hat that lies on top of the head as drawn, rather than pulled down round it like a cap. */
-const perch$2 = (rows$1, sink = 1) => {
-	const s = stamp(rows$1);
+const perch$2 = (rows, sink = 1) => {
+	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
 /**
@@ -6169,8 +6169,8 @@ const set$5 = {
 //#endregion
 //#region src/sets/weighsies.ts
 /** A hat stood on the crown as drawn, rather than pulled down round the head like a cap. */
-const perch$1 = (rows$1, sink = 1) => {
-	const s = stamp(rows$1);
+const perch$1 = (rows, sink = 1) => {
+	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
 /**
@@ -8014,8 +8014,8 @@ const set$1 = {
 //#endregion
 //#region src/sets/pets.ts
 /** A hat stood on the crown as drawn, rather than pulled down round the head like a cap. */
-const perch = (rows$1, sink = 1) => {
-	const s = stamp(rows$1);
+const perch = (rows, sink = 1) => {
+	const s = stamp(rows);
 	return (c) => sit(c, s, 0, sink);
 };
 /**
@@ -8024,8 +8024,8 @@ const perch = (rows$1, sink = 1) => {
 * than meeting in the middle on a narrow head. Drawn for the left side; the
 * right is its mirror.
 */
-const earsOut = (rows$1, out) => {
-	const left = stamp(rows$1), right = mirror(left);
+const earsOut = (rows, out) => {
+	const left = stamp(rows), right = mirror(left);
 	return (c) => {
 		const r = c.rows[c.shoulder()], l = fitRoom(c, left), rr = fitRoom(c, right);
 		seat(c, l, Math.max(1, r.left - out));
@@ -16378,8 +16378,8 @@ function markings(c, config, face, worn, cheekAt) {
 	const specks = SPECKS.has(name);
 	const marks = new Set([...worn, ...specks ? cheekAt.map(([x, y]) => y * GRID_SIZE + x) : []]);
 	const crowded = painted$2.filter(([x, y]) => near(x, y, specks ? 2 : 1, marks));
-	const rows$1 = new Set(crowded.map(([, y]) => y));
-	let clear = BANDS.has(name) ? painted$2.filter(([, y]) => rows$1.has(y)) : crowded;
+	const rows = new Set(crowded.map(([, y]) => y));
+	let clear = BANDS.has(name) ? painted$2.filter(([, y]) => rows.has(y)) : crowded;
 	if (clear.length === painted$2.length) clear = painted$2.filter(([x, y]) => near(x, y, 1, new Set()));
 	for (const [x, y] of clear) c.grid[y][x] = before[y][x];
 }
@@ -17348,12 +17348,12 @@ const LIVE_EYE_TOKENS = [
 	T.GOLD,
 	T.GOLD_SHADE
 ];
-/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and shoujo eyes, which glisten. */
+/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and starry eyes, which glisten. */
 const LIVE_EYES = new Map([
 	"galaxy",
 	"diamond",
 	"dragon",
-	"shoujo"
+	"starry"
 ].map((n) => [eyes.findIndex((e) => e.name === n), n]));
 const hue = (h, s, l) => {
 	const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -17373,7 +17373,7 @@ function luckyShimmer(layer, t, seed) {
 		if (d < 3) cell.c = mix$2(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, .95, .68), d < 1.2 ? .6 : .3);
 	}));
 }
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, shoujo eyes glisten. */
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. */
 function liveEyes(layer, kind, t, seed) {
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		if (!cell?.eye) return;
@@ -17388,7 +17388,7 @@ function liveEyes(layer, kind, t, seed) {
 		} else if (kind === "dragon") {
 			const flash = cycle(t + seed, 2e3) * fit(2e3) < 160;
 			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
-		} else if (kind === "shoujo") {
+		} else if (kind === "starry") {
 			const ms = cycle(t + seed, 2400) * fit(2400);
 			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$2(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
 		}
@@ -17401,20 +17401,20 @@ function liveEyes(layer, kind, t, seed) {
 */
 function squash(layer, s) {
 	if (!s) return layer;
-	const { n, row: r } = s, rows$1 = layer.map((row) => [...row]);
+	const { n, row: r } = s, rows = layer.map((row) => [...row]);
 	if (n > 0) {
-		const blank = Array.from({ length: n }, () => new Array(rows$1[0].length).fill(null));
+		const blank = Array.from({ length: n }, () => new Array(rows[0].length).fill(null));
 		return [
 			...blank,
-			...rows$1.slice(0, r - n + 1),
-			...rows$1.slice(r + 1)
+			...rows.slice(0, r - n + 1),
+			...rows.slice(r + 1)
 		];
 	}
 	const k = -n;
 	return [
-		...rows$1.slice(k, r + 1),
-		...Array.from({ length: k }, () => [...rows$1[r]]),
-		...rows$1.slice(r + 1)
+		...rows.slice(k, r + 1),
+		...Array.from({ length: k }, () => [...rows[r]]),
+		...rows.slice(r + 1)
 	];
 }
 /**
@@ -17645,14 +17645,14 @@ const EMOTES = {
 * beside it, as manga draws one. It never covers his eyes or mouth.
 */
 function sweatDrop(layer, slide) {
-	const { rows: rows$1, color, accent } = EMOTES.sweat, ink = "#2B6CA8";
+	const { rows, color, accent } = EMOTES.sweat, ink = "#2B6CA8";
 	let top = -1;
 	layer.forEach((row, y) => {
 		if (top < 0 && row.some(Boolean)) top = y;
 	});
 	if (top < 0) return;
 	const edge = (layer[top + 2] ?? []).reduce((r, cell, x) => cell ? x : r, -1);
-	const w = rows$1[0].length + 2, h = rows$1.length + 2;
+	const w = rows[0].length + 2, h = rows.length + 2;
 	const x0 = Math.min(edge, FRAME_WIDTH - w), y0 = Math.max(0, top - 1 + slide);
 	const nearFace$1 = (x, y) => {
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (layer[y + dy]?.[x + dx]?.feature) return true;
@@ -17661,8 +17661,8 @@ function sweatDrop(layer, slide) {
 	const ink_ = (ch) => ch === "#" || ch === "+";
 	const cells = [];
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-		const ch = rows$1[y - 1]?.[x - 1], on$1 = ink_(ch);
-		if (on$1 || NEIGHBOURS.some(([dx, dy]) => ink_(rows$1[y - 1 + dy]?.[x - 1 + dx]))) cells.push([
+		const ch = rows[y - 1]?.[x - 1], on$1 = ink_(ch);
+		if (on$1 || NEIGHBOURS.some(([dx, dy]) => ink_(rows[y - 1 + dy]?.[x - 1 + dx]))) cells.push([
 			x0 + x,
 			y0 + y,
 			on$1 ? ch === "+" ? accent : color : ink
@@ -17684,14 +17684,14 @@ function poseStill(input, pose, options = {}) {
 }
 /** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
 function emoteCells(kind) {
-	const { rows: rows$1, color, accent, open } = EMOTES[kind];
-	const w = rows$1[0].length + 2, h = rows$1.length + 2;
+	const { rows, color, accent, open } = EMOTES[kind];
+	const w = rows[0].length + 2, h = rows.length + 2;
 	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
 	const ink = (ch) => ch === "#" || ch === "+";
 	const cells = [];
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-		const ch = rows$1[y - 1]?.[x - 1], on$1 = ink(ch);
-		const near = !on$1 && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows$1[y - 1 + dy]?.[x - 1 + dx]));
+		const ch = rows[y - 1]?.[x - 1], on$1 = ink(ch);
+		const near = !on$1 && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 		if (on$1 || near) cells.push([
 			x,
 			y,
@@ -17702,8 +17702,8 @@ function emoteCells(kind) {
 }
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer, kind, left, lift = 0) {
-	const { rows: rows$1, color, accent, open } = EMOTES[kind];
-	const w = rows$1[0].length + 2, h = rows$1.length + 2;
+	const { rows, color, accent, open } = EMOTES[kind];
+	const w = rows[0].length + 2, h = rows.length + 2;
 	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
@@ -17718,9 +17718,9 @@ function emote(layer, kind, left, lift = 0) {
 	const at = ([x0, y0]) => {
 		const cells = [];
 		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const ch = rows$1[y - 1]?.[x - 1];
+			const ch = rows[y - 1]?.[x - 1];
 			const on$1 = ink(ch);
-			const near = !on$1 && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows$1[y - 1 + dy]?.[x - 1 + dx]));
+			const near = !on$1 && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 			if (on$1 || near) cells.push([
 				x0 + x,
 				y0 + y,
@@ -17777,7 +17777,7 @@ const POSES = [
 	"huff",
 	"oops"
 ];
-const MANGA_BLUSH = cheeks.findIndex((c) => c.name === "manga blush");
+const MANGA_BLUSH = cheeks.findIndex((c) => c.name === "big blush");
 /**
 * The guy as he is drawn into his poses: dressed, without the frame and aura
 * (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
@@ -17903,7 +17903,7 @@ function squashPlan(config, figure, grid) {
 */
 function squashRows(input, options = {}) {
 	const { config, figure, grid } = poser(input, options);
-	const plan = squashPlan(config, figure, grid), rows$1 = {};
+	const plan = squashPlan(config, figure, grid), rows = {};
 	for (const n of [
 		-2,
 		-1,
@@ -17911,11 +17911,11 @@ function squashRows(input, options = {}) {
 		2
 	]) {
 		const s = plan.at(n);
-		rows$1[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
+		rows[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
 	}
 	return {
 		face: plan.face,
-		rows: rows$1
+		rows
 	};
 }
 /**
@@ -18408,7 +18408,7 @@ const FOOT_NAMES = [
 	"tucked"
 ];
 /**
-* A part's chance. A part no deal gives (the capsule-only anime set) counts
+* A part's chance. A part no deal gives (the capsule-only set) counts
 * as if it were dealt at its capsule weight, so a look wearing one stays a
 * number; every dealt part's chance is as it was.
 */
@@ -18596,13 +18596,13 @@ function guyRank(config) {
 * readable from 24px.
 */
 /** A grid's letters: `#` is `currentColor`, the rest its accents, `.` empty. */
-function icon(rows$1, accents = {}) {
+function icon(rows, accents = {}) {
 	const fills = {
 		"#": "currentColor",
 		...accents
 	};
 	const rects = [];
-	rows$1.forEach((row, y) => {
+	rows.forEach((row, y) => {
 		for (let x = 0; x < row.length;) {
 			const ch = row[x];
 			let end = x + 1;
@@ -18611,8 +18611,8 @@ function icon(rows$1, accents = {}) {
 			x = end;
 		}
 	});
-	const w = Math.max(...rows$1.map((r) => r.length));
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${rows$1.length}" shape-rendering="crispEdges" aria-hidden="true">${rects.join("")}</svg>`;
+	const w = Math.max(...rows.map((r) => r.length));
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${rects.join("")}</svg>`;
 }
 const PINK = "#FF6F9F";
 const GREEN = "#4CC25A";
@@ -18991,7 +18991,7 @@ const SLOT_WORD = {
 };
 /**
 * The rare parts in a slot, the ones a picker locks: what a capsule can
-* unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+* unlock. The parts no deal gives (`CAPSULE_ONLY`, the capsule-only set) are among them.
 */
 function rareParts(slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
@@ -22718,7 +22718,7 @@ function crop(rgba, W, x, y, w, h) {
 async function png(input, scale$1, animated) {
 	const W = input.width * scale$1, H = input.height * scale$1;
 	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
-	const { indexed, colours, rows: rows$1 } = layout$1(frames$1);
+	const { indexed, colours, rows } = layout$1(frames$1);
 	const head$1 = new Uint8Array([
 		...u32(W),
 		...u32(H),
@@ -22775,7 +22775,7 @@ async function png(input, scale$1, animated) {
 			u16(1e3),
 			new Uint8Array([0, 0])
 		])));
-		const data = await zlib(rows$1(i === 0 ? frames$1[i] : crop(frames$1[i], W, bx, by, bw, bh), bw, bh));
+		const data = await zlib(rows(i === 0 ? frames$1[i] : crop(frames$1[i], W, bx, by, bw, bh), bw, bh));
 		parts.push(i === 0 ? chunk("IDAT", data) : chunk("fdAT", concat([u32(seq++), data])));
 		if (!animated) break;
 	}
@@ -23631,8 +23631,8 @@ var Surface = class {
 		const draw = (ox, oy, col) => {
 			let cx = ox;
 			for (const ch of s) {
-				const [adv, rows$1] = glyph(ch);
-				rows$1.forEach((bits, dy) => {
+				const [adv, rows] = glyph(ch);
+				rows.forEach((bits, dy) => {
 					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
 				});
 				cx += adv + spacing;
@@ -23954,7 +23954,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		if (neg) return mix(mix(IVORY$1, tone, .35), mix(IVORY$1, tone, .6), yy / H);
 		return mix(mix(tone, WHITE$1, .08), mix(tone, INK$1, .25), yy / H);
 	};
-	const rows$1 = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
+	const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
 	const auraDeep = mix(ah, INK$1, .62), auraLight = mix(ah, INK$1, .3), inlay = mix(ah, WHITE$1, .7);
 	const trim = new Uint8Array(W * H);
 	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
@@ -23964,7 +23964,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			s.set(x, yy, INK$1);
 			continue;
 		}
-		let c = rows$1[yy] ?? stock(x, yy);
+		let c = rows[yy] ?? stock(x, yy);
 		if (framed && bevel && d === 3) {
 			c = bevel === 1 ? GOLD_LIGHT : GOLD_DEEP;
 			trim[yy * W + x] = 1;
@@ -25153,7 +25153,7 @@ function emoteFrames(spec, id, moving = true) {
 	const steps$1 = moving ? STEPS : 1;
 	for (let k = 0; k < steps$1; k++) {
 		const pose = def.poses[k % def.poses.length];
-		const rows$1 = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
+		const rows = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
 		const beat = moving ? k % 2 : 0;
 		const dy = def.motion === "bounce" ? -beat : 0, dx = def.motion === "shake" ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
 		const lift = def.motion === "rise" && moving ? k % 3 : 0;
@@ -25170,7 +25170,7 @@ function emoteFrames(spec, id, moving = true) {
 			const from = top + y - dy;
 			if (from < 0 || from >= FRAME_HEIGHT) continue;
 			for (let x = 0; x < EMOTE_SIZE; x++) {
-				const c = rows$1[from]?.[x + 1 + dx];
+				const c = rows[from]?.[x + 1 + dx];
 				if (c) put(x, y, c);
 			}
 		}
@@ -26002,19 +26002,19 @@ function bakeCard(spec) {
 * row (all of them in one strip by default), then the next row down.
 */
 function sheetOf(f, columns = f.frames.length) {
-	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows$1 = Math.ceil(f.frames.length / cols);
-	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows$1 * 4);
+	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows = Math.ceil(f.frames.length / cols);
+	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows * 4);
 	f.frames.forEach((px, k) => {
 		const ox = k % cols * f.width, oy = Math.floor(k / cols) * f.height;
 		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W + ox) * 4);
 	});
 	return {
 		width: W,
-		height: f.height * rows$1,
+		height: f.height * rows,
 		rgba,
 		delays: f.delays,
 		columns: cols,
-		rows: rows$1
+		rows
 	};
 }
 /** How wide a sheet may be at 1×, in pixels, before it wraps onto another row. */
@@ -26401,8 +26401,8 @@ function crowdSprite(spec, size, options = {}) {
 * column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
 */
 function crowdSheet(specs, size, columns = 64, options = {}) {
-	const cols = Math.max(1, Math.min(columns, specs.length)), rows$1 = Math.ceil(specs.length / cols);
-	const width$1 = cols * size, height = rows$1 * size, rgba = new Uint8ClampedArray(width$1 * height * 4);
+	const cols = Math.max(1, Math.min(columns, specs.length)), rows = Math.ceil(specs.length / cols);
+	const width$1 = cols * size, height = rows * size, rgba = new Uint8ClampedArray(width$1 * height * 4);
 	specs.forEach((spec, n) => {
 		const s = crowdSprite(spec, size, options), ox = n % cols * size, oy = Math.floor(n / cols) * size;
 		for (let y = 0; y < size; y++) rgba.set(s.rgba.subarray(y * size * 4, (y + 1) * size * 4), ((oy + y) * width$1 + ox) * 4);
@@ -26527,18 +26527,18 @@ const HAZE = {
 * `density` above 1 packs more in (smaller guys sooner); the same arguments give the same seats.
 */
 function crowdSeats(width$1, height, density = 1, seed = "crowd") {
-	const rows$1 = [];
+	const rows = [];
 	for (let y = 6; y < height + 4;) {
 		const d = Math.min(1, y / height), want = 2 + 15 * Math.pow(d, 2.1) / Math.sqrt(density);
 		const size = want < 3 ? 2 : want < 5 ? 4 : want < 7 ? 6 : want < 9 ? 8 : want < 12.5 ? 10 : 16;
-		rows$1.push({
+		rows.push({
 			y,
 			size
 		});
 		y += Math.max(2, Math.round(size * (size <= 2 ? 1 : size <= 4 ? .75 : .6)));
 	}
 	const seats = [];
-	rows$1.forEach(({ y, size }, row) => {
+	rows.forEach(({ y, size }, row) => {
 		const step$1 = size <= 2 ? 3 : size <= 4 ? size : Math.round(size * .92);
 		const r = (k$1) => hash(`${seed}:${row}:${k$1}`) % 1e3 / 1e3;
 		let x = -size + Math.floor(r(-1) * step$1) - (row % 2 * step$1 >> 1), k = 0;
@@ -26853,192 +26853,201 @@ const SIZES = [
 	16
 ];
 const sizeNear = (px) => SIZES.reduce((best, s) => Math.abs(s - px) < Math.abs(best - px) ? s : best, SIZES[0]);
-/** Straight rows of seats, nearest first, `size` from the front row's to the back row's. */
-function rows(x0, x1, yFront, count$1, front, back, seats, up = true) {
-	for (let r = 0, y = yFront; r < count$1; r++) {
-		const size = sizeNear(front + (back - front) * (count$1 > 1 ? r / (count$1 - 1) : 0));
-		const step$1 = Math.max(2, Math.round(size * .9));
-		for (let x = x0 + r % 2 * (step$1 >> 1); x + size <= x1; x += step$1) seats.push({
-			x,
-			y: y - size,
-			size,
-			row: r
-		});
-		y += up ? -Math.max(2, Math.round(size * .62)) : Math.max(2, Math.round(size * .62));
-	}
-}
 /**
-* An oval of stands round a centre, raked back: `count` rows from the front, sizes bigger on the near
-* side; `gap` leaves the bottom of the oval open (a stage end), as a fraction of the turn.
+* Every venue: one grandstand round the far side of a floor, a backdrop a game stands in front of. All
+* 16:9; the bigger the crowd, the more rows and the further back the camera, so the guys are smaller.
+* Rows bow away from you in the middle and come round toward you at the ends; `breaks` are the
+* walkways between tiers.
 */
-function oval(cx, cy, a0, b0, count$1, da, db, rise, near, far, seats, gap = 0, first = 0) {
-	for (let r = 0; r < count$1; r++) {
-		const a = a0 + r * da, b$1 = b0 + r * db;
-		for (let t = 0; t < Math.PI * 2;) {
-			const sin$1 = Math.sin(t), cos$1 = Math.cos(t);
-			const px = far + (near - far) * (sin$1 + 1) / 2, size = sizeNear(px * (1 - r * .004));
-			const open = gap > 0 && Math.abs(t - Math.PI / 2) < gap * Math.PI;
-			if (!open) seats.push({
-				x: Math.round(cx + a * cos$1 - size / 2),
-				y: Math.round(cy + b$1 * sin$1 - r * rise - size),
-				size,
-				row: first + r
-			});
-			t += Math.max(.004, size * .95 / Math.hypot(a * sin$1, b$1 * cos$1));
-		}
+const STANDS = {
+	porch: {
+		W: 200,
+		rows: 2,
+		a: 150,
+		da: 0,
+		b: 4,
+		db: 0,
+		rise: 13,
+		front: 16,
+		back: 16,
+		breaks: [],
+		floor: "#6b4a33",
+		sky: "#1c2238",
+		concrete: "#5a3d2a",
+		rail: "#8a5f3e",
+		lights: 0
+	},
+	bleachers: {
+		W: 256,
+		rows: 5,
+		a: 150,
+		da: 4,
+		b: 12,
+		db: 1,
+		rise: 9,
+		front: 16,
+		back: 10,
+		breaks: [],
+		floor: "#2f7a43",
+		sky: "#1e2a44",
+		concrete: "#4c566b",
+		rail: "#9aa6b8",
+		lights: 0
+	},
+	gym: {
+		W: 320,
+		rows: 8,
+		a: 170,
+		da: 5,
+		b: 26,
+		db: 2,
+		rise: 7,
+		front: 10,
+		back: 8,
+		breaks: [],
+		floor: "#c58b4f",
+		sky: "#2a2433",
+		concrete: "#3d3548",
+		rail: "#7a6a8e",
+		lights: 0
+	},
+	hall: {
+		W: 384,
+		rows: 12,
+		a: 190,
+		da: 6,
+		b: 46,
+		db: 3,
+		rise: 6,
+		front: 10,
+		back: 8,
+		breaks: [],
+		floor: "#3b2f4f",
+		sky: "#181d2e",
+		concrete: "#2c2a40",
+		rail: "#ff7a5c",
+		lights: 0
+	},
+	arena: {
+		W: 512,
+		rows: 22,
+		a: 230,
+		da: 7,
+		b: 78,
+		db: 3,
+		rise: 4.6,
+		front: 8,
+		back: 6,
+		breaks: [13],
+		floor: "#1d4f8a",
+		sky: "#141826",
+		concrete: "#29314a",
+		rail: "#5b6478",
+		lights: 2
+	},
+	stadium: {
+		W: 768,
+		rows: 36,
+		a: 320,
+		da: 8,
+		b: 120,
+		db: 3.4,
+		rise: 3.7,
+		front: 6,
+		back: 4,
+		breaks: [16],
+		floor: "#1f6b3e",
+		sky: "#10131f",
+		concrete: "#262d42",
+		rail: "#5b6478",
+		lights: 4
+	},
+	bowl: {
+		W: 1024,
+		rows: 56,
+		a: 400,
+		da: 9,
+		b: 160,
+		db: 3.2,
+		rise: 3.1,
+		front: 6,
+		back: 2,
+		breaks: [18, 37],
+		floor: "#1f6b3e",
+		sky: "#0d1019",
+		concrete: "#232a3e",
+		rail: "#5b6478",
+		lights: 6
 	}
-}
+};
+/** How far up row `r` sits: its rise, and a walkway's worth more past each break. */
+const liftOf = (g, r) => r * g.rise + g.breaks.filter((k) => k <= r).length * g.rise * 2.5;
+/** How far back the curve bows at `x` for row `r`: 1 in the middle, 0 at its ends and past them. */
+const bowOf = (g, cx, r, x) => {
+	const u = Math.min(1, Math.abs(x - cx) / (g.a + r * g.da));
+	return Math.sqrt(1 - u * u);
+};
 /** Every venue's seats and its picture, in world pixels. */
 function layout(id) {
+	const g = STANDS[id], W = g.W, H = Math.round(W * 9 / 16), cx = W / 2;
+	const floorY = Math.round(H * .84), wall = Math.max(3, Math.round(H * .025)), baseY = floorY - wall;
 	const seats = [];
-	switch (id) {
-		case "porch": {
-			const W = 200, H = 80;
-			rows(14, W - 14, 66, 2, 16, 16, seats);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#1c2238");
-					for (let i = 0; i < 9; i++) p.rect(10 + i * 15, 8 + i % 2 * 2, 2, 2, [
-						"#ffd45c",
-						"#ff8a8a",
-						"#8fd8ff"
-					][i % 3]);
-					p.rect(0, 9, W, 1, "#3a3f55");
-					p.rect(0, 40, W, 40, "#6b4a33");
-					for (let x = 0; x < W; x += 10) p.rect(x, 40, 1, 40, "#5a3d2a");
-					p.rect(8, 50, W - 16, 4, "#8a5f3e");
-					p.rect(8, 66, W - 16, 4, "#8a5f3e");
-					p.rect(0, 74, W, 6, "#4a3324");
-				}
-			};
-		}
-		case "bleachers": {
-			const W = 200, H = 110;
-			rows(8, W - 8, 92, 4, 14, 10, seats);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#1e2a44");
-					p.rect(0, 0, W, 40, "#22304e");
-					for (let i = 0; i < 4; i++) p.rect(4, 92 - i * 8, W - 8, 2, "#9aa6b8");
-					p.rect(0, 94, W, 16, "#2f7a43");
-					p.rect(0, 100, W, 1, "#3f9455");
-				}
-			};
-		}
-		case "gym": {
-			const W = 260, H = 160;
-			rows(10, W - 10, 46, 3, 10, 8, seats, true);
-			rows(10, W - 10, 150, 3, 14, 12, seats, true);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#2a2433");
-					p.rect(0, 48, W, 64, "#c58b4f");
-					for (let x = 0; x < W; x += 12) p.rect(x, 48, 1, 64, "#b47c44");
-					p.rect(20, 52, W - 40, 56, "#d39a5c");
-					p.oval(W / 2, 80, 16, 10, "#e9b47a");
-					p.rect(W / 2, 52, 1, 56, "#f3e6d0");
-					p.rect(4, 70, 6, 20, "#e8792f");
-					p.rect(W - 10, 70, 6, 20, "#e8792f");
-				}
-			};
-		}
-		case "hall": {
-			const W = 320, H = 200, cx = W / 2, cy = 120;
-			oval(cx, cy, 70, 38, 7, 12, 7, 2.6, 12, 8, seats, .18);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#181d2e");
-					p.oval(cx, cy - 6, 168, 92, "#262d44");
-					p.oval(cx, cy, 62, 32, "#3b2f4f");
-					p.rect(cx - 40, cy + 18, 80, 30, "#4e3a63");
-					p.rect(cx - 40, cy + 18, 80, 2, "#ff7a5c");
-				}
-			};
-		}
-		case "arena": {
-			const W = 440, H = 280, cx = W / 2, cy = 150;
-			oval(cx, cy, 104, 50, 13, 9, 5.2, 2.6, 10, 6, seats);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#141826");
-					p.oval(cx, cy - 18, 228, 124, "#232a3b");
-					p.oval(cx, cy - 14, 212, 112, "#2c3448");
-					p.oval(cx, cy, 98, 46, "#1d4f8a");
-					p.oval(cx, cy, 84, 38, "#2a62a3");
-					p.rect(cx - 1, cy - 38, 2, 76, "#e9eef7");
-					p.rect(cx - 22, cy - 98, 44, 18, "#0b0e18");
-					p.rect(cx - 20, cy - 96, 40, 14, "#29364f");
-					p.rect(cx - 1, cy - 112, 2, 14, "#5b6478");
-				}
-			};
-		}
-		case "stadium": {
-			const W = 680, H = 420, cx = W / 2, cy = 225;
-			oval(cx, cy, 196, 88, 22, 8, 4.6, 2.4, 8, 4, seats);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#10131f");
-					p.oval(cx, cy - 26, 340, 182, "#202737");
-					p.oval(cx, cy - 22, 324, 170, "#29314a");
-					p.oval(cx, cy, 186, 82, "#1f6b3e");
-					p.stripes(cx, cy, 186, 82, 26, "#237646");
-					p.rect(cx - 1, cy - 78, 2, 156, "#d9f0de");
-					p.oval(cx, cy, 26, 12, "#2f8a51");
-					for (const sx of [24, W - 30]) {
-						p.rect(sx, 20, 6, 120, "#3a4258");
-						p.rect(sx - 8, 14, 22, 8, "#fff3c4");
-					}
-				}
-			};
-		}
-		default: {
-			const W = 1120, H = 640, cx = W / 2, cy = 350;
-			oval(cx, cy, 250, 110, 16, 7, 4, 2.2, 8, 4, seats);
-			oval(cx, cy - 46, 372, 176, 14, 6, 3.4, 2.2, 6, 2, seats, 0, 16);
-			oval(cx, cy - 92, 470, 230, 10, 5, 2.8, 2.2, 4, 2, seats, 0, 30);
-			return {
-				width: W,
-				height: H,
-				seats,
-				paint: (p) => {
-					p.rect(0, 0, W, H, "#0d1019");
-					p.oval(cx, cy - 70, 548, 300, "#1d2333");
-					p.oval(cx, cy - 64, 532, 288, "#262d42");
-					p.oval(cx, cy, 240, 104, "#1f6b3e");
-					p.stripes(cx, cy, 240, 104, 28, "#237646");
-					p.rect(cx - 1, cy - 100, 2, 200, "#d9f0de");
-					p.oval(cx, cy, 34, 15, "#2f8a51");
-					for (const sx of [
-						20,
-						230,
-						W - 236,
-						W - 26
-					]) {
-						p.rect(sx, 10, 6, 150, "#3a4258");
-						p.rect(sx - 10, 4, 26, 8, "#fff3c4");
-					}
-				}
-			};
+	const shrink$1 = .3 * Math.min(1, g.b / (H * .3));
+	const yOf = (r, x) => baseY - (g.b + r * g.db) * bowOf(g, cx, r, x) - liftOf(g, r);
+	for (let r = 0; r < g.rows; r++) {
+		const px = g.front + (g.back - g.front) * (g.rows > 1 ? r / (g.rows - 1) : 0);
+		for (let x = r * 3 % 5; x < W;) {
+			const size = sizeNear(px * (1 - shrink$1 * bowOf(g, cx, r, x)));
+			const y = Math.round(yOf(r, x + size / 2) - size);
+			if (x + size <= W && y >= 0) seats.push({
+				x,
+				y,
+				size,
+				row: r
+			});
+			x += Math.max(2, Math.round(size * .92));
 		}
 	}
+	const colours = [
+		"#e8792f",
+		"#2e8c8a",
+		"#4e7fb3",
+		"#c2403f",
+		"#3fa35b",
+		"#7d4fa6",
+		"#e36a8e",
+		"#e7b53b",
+		"#8a93a0"
+	];
+	return {
+		width: W,
+		height: H,
+		seats,
+		paint: (p) => {
+			p.rect(0, 0, W, H, g.sky);
+			const top = g.rows - 1, back = (x) => Math.round(yOf(top, x) - g.back * 1.5);
+			for (let x = 0; x < W; x++) {
+				const y0 = Math.max(0, back(x));
+				p.rect(x, y0, 1, floorY - y0, g.concrete);
+				for (const k of g.breaks) p.rect(x, Math.round(yOf(k, x) + 1), 1, 1, g.rail);
+				const yw = Math.round(yOf(0, x)) + 1;
+				p.rect(x, yw, 1, 1, g.rail);
+				p.rect(x, yw + 1, 1, wall, colours[Math.floor(x / Math.max(16, W / 12)) % colours.length]);
+				p.rect(x, yw + 1 + wall, 1, H - yw - 1 - wall, g.floor);
+				if (g.floor === "#1f6b3e" && Math.floor(x / Math.max(12, W / 24)) % 2) p.rect(x, yw + 1 + wall, 1, H - yw - 1 - wall, "#237646");
+			}
+			for (let i = 0; i < g.lights; i++) {
+				const x = Math.round(W * (i + .5) / g.lights), y = Math.max(4, back(x) - 30);
+				p.rect(x, y, 2, 30, "#3a4258");
+				p.rect(x - 6, y - 2, 14, 4, "#fff3c4");
+			}
+			if (id === "porch") for (let i = 0; i < 12; i++) p.rect(8 + i * 16, 10 + i % 2 * 2, 2, 2, [
+				"#ffd45c",
+				"#ff8a8a",
+				"#8fd8ff"
+			][i % 3]);
+		}
+	};
 }
 /**
 * The seats of venue `id`, in the order they fill: the front row first, all the way round, from the

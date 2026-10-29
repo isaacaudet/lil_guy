@@ -1367,7 +1367,7 @@ interface PartDrop {
 }
 /**
  * The rare parts in a slot, the ones a picker locks: what a capsule can
- * unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+ * unlock. The parts no deal gives (`CAPSULE_ONLY`, the capsule-only set) are among them.
  */
 declare function rareParts(slot: LookSlot): number[];
 /**
