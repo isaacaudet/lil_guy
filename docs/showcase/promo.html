@@ -720,6 +720,14 @@
   .ed-sub .ed-reset { margin-left: 10px; box-shadow: inset 2px 0 0 var(--panel-2); border-radius: 0 8px 8px 0; padding-left: 16px; }
   .ed-prev { grid-area: prev; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 28px 18px 18px; border-radius: 12px; background: var(--well); overflow: auto; }
   .ed-card { width: min(100%, 272px); }
+  .editable { cursor: pointer; position: relative; }
+  .editable::after { content: 'Edit'; position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; font-size: 14px; background: rgba(5,7,16,.75); color: #fff; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .editable:hover::after, .editable:focus-visible::after { opacity: 1; }
+  @media (hover: none) { .editable::after { opacity: .85; } }
+  .ed-rare { display: grid; gap: 6px; width: 100%; max-width: 260px; font-size: 16px; color: var(--ink-2); }
+  .ed-rare div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--panel); }
+  .ed-rare b { color: var(--ink); font-weight: 400; }
+  .ed-rare small { display: block; font-size: 14px; color: var(--ink-3); }
   .ed-now { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 6px; min-height: 24px; }
   .ed-now .bal { --b: var(--panel-2); color: var(--ink); }
   .ed-now .bal i { font-style: normal; color: var(--ink-3); margin-right: 6px; }
@@ -1132,7 +1140,7 @@
 <main class="wrap">
  <div class="view" id="v-home">
   <section id="guy-sec" hidden>
-    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="guy-edit">Customise</button></div>
+    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="guy-edit">Edit your guy</button></div>
     <div class="odds-panel">
       <div class="stage guy-card"><div class="gview"><div id="guy-stage"></div></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
       <div class="scoring">
@@ -1189,7 +1197,7 @@
   </section>
 
   <section id="coll">
-    <div class="sec-h"><div><h2>Your locker</h2></div><button class="btn" type="button" id="lk-edit">Customise</button></div>
+    <div class="sec-h"><div><h2>Your locker</h2></div><button class="btn" type="button" id="lk-edit">Edit your guy</button></div>
     <div class="lk-eq" id="lk-eq" hidden></div>
     <div class="locker">
       <div class="lk-guy"><div class="lk-stage" id="lk-stage"></div><div class="lk-slots" id="lk-slots"></div></div>
@@ -1231,7 +1239,7 @@
     </div>
   </section>
   <section>
-    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Customise</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a><a class="btn ghost" id="u-emotes" href="emotes.html">Emotes</a></div></div>
+    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Edit your guy</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a><a class="btn ghost" id="u-emotes" href="emotes.html">Emotes</a></div></div>
     <div class="u-sets" id="u-sets-wrap"><p class="u-sets-h" id="u-sets-h"></p><div class="sets small" id="u-sets"></div><details class="u-sets-more" id="u-sets-more"><summary>Every item in every set</summary><div class="sets" id="u-sets-full"></div></details></div>
     <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
@@ -1306,7 +1314,7 @@
   <div class="ed-tabs" id="ed-tabs" role="tablist" aria-label="Change">
     <button type="button" role="tab" id="ed-t-look" data-tab="look" aria-controls="ed-panel">Look</button><button type="button" role="tab" id="ed-t-wear" data-tab="wear" aria-controls="ed-panel">Wear</button><button type="button" role="tab" id="ed-t-card" data-tab="card" aria-controls="ed-panel">Card</button>
   </div>
-  <div class="ed-prev"><div class="ed-card" id="ed-card"></div><div class="ed-now" id="ed-now" aria-live="polite"></div></div>
+  <div class="ed-prev"><div class="ed-card" id="ed-card"></div><div class="ed-rare" id="ed-rare" aria-live="polite"></div><div class="ed-now" id="ed-now" aria-live="polite"></div></div>
   <div class="ed-sub" id="ed-sub"></div>
   <div class="ed-panel" id="ed-panel" role="tabpanel"></div>
   <div class="ed-foot"><p class="ed-msg" id="ed-msg" aria-live="polite"></p><button class="btn ghost" type="button" id="ed-cancel">Cancel</button><button class="btn green" type="button" id="ed-save">Save</button></div>
@@ -2429,7 +2437,7 @@ onmessage = e => {
     if (!distWaits) { distWaits = []; kept('dealt:4000', 'dealt', 4000).then(d => { DIST = d; distWaits.splice(0).forEach(f => f(d)); }, () => {}); }
     distWaits.push(fn);
   }
-  function meaning(host, n, founder = false) {
+  function meaning(host, n, founder = false, top = null) {
     host.dataset.n = n;
     // The founder isn't ranked by his traits' odds: he was picked by hand, the one of one.
     if (founder) { host.innerHTML = '<p>Picked by hand for the founder: <b>the one of one</b>.</p>'; return; }
@@ -2440,8 +2448,10 @@ onmessage = e => {
     host.innerHTML = `<p>${line}</p><p>Rarer than <b>…</b> of guys dealt.</p>`;
     withDist(d => {
       if (host.dataset.n !== String(n)) return;
-      const below = d.filter(v => v < Math.log10(n)).length / d.length;
-      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt.`;
+      // His rank's own share (`guyRank`, as his card says) when given, else where he falls among guys dealt.
+      const below = top !== null ? 1 - top : d.filter(v => v < Math.log10(n)).length / d.length, mid = 10 ** d[Math.floor(d.length / 2)];
+      // Every exact guy is a long shot, so "1 in 2.5 million" reads rare even when most guys are rarer: say which side.
+      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt. Half of all guys are rarer than 1 in ${words(mid)}, so that's ${below < 0.5 ? 'the <b>common side</b>' : 'the <b>rare side</b>'}.`;
     });
   }
   // Every guy dealt, by how rare: a bar per step on a log scale, his bar lit.
@@ -2485,7 +2495,7 @@ onmessage = e => {
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg.base || cfg);
-    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
+    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder, guyRank(cfg).top); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
     setTotal(scored ? +$('score').dataset.n : 1);
     if (scored) fire(heatOf(+$('score').dataset.n));
   }
@@ -2606,9 +2616,22 @@ onmessage = e => {
       $('ed-card').innerHTML = '<div class="card"></div>';
       libCard($('ed-card').firstChild, cardInput(spec), { sway: true });
     }
+    edRarity();
     $('ed-now').innerHTML = changes.length
       ? changes.map(c => `<span class="bal${c.locked || c.bad ? ' locked' : ''}">${c.locked ? LOCK : ''}<i>${esc(c.label)}</i>${esc(c.value)}</span>`).join('')
       : '<span class="bal"><i>Tap anything to try it on</i></span>';
+  }
+
+  /**
+   * His look's rarity, which moves as parts are tried on, beside his rank, which is the deal's and never
+   * moves: both as "rarer than N%" against every guy dealt, so a rare look reads rare.
+   */
+  function edRarity() {
+    // Both counted the way his card's rank is (`guyRank`), so the numbers on the page agree.
+    const cfg = edCfg(), look = LG.guyRank({ ...cfg }), rank = guyRank(cfg);
+    const line = r => (r.label === r.name || r.label === 'Common' ? esc(r.name) : `${esc(r.name)} · ${esc(r.label.toLowerCase())}`);
+    $('ed-rare').innerHTML = `<div><span>His look<small>Changes as you pick parts</small></span><b>${line(look)}</b></div>`
+      + `<div><span>His rank<small>As dealt, never changes</small></span><b>${line(rank)}</b></div>`;
   }
 
   /** The foot: what's changed, or why it can't be saved yet and how to fix that. */
@@ -2872,6 +2895,8 @@ onmessage = e => {
   }
   // One editor, opened the same way from anywhere: on the tab last used.
   $('guy-edit').addEventListener('click', () => openEditor(lastTab));
+  // His card opens the editor too, wherever it's his own.
+  for (const id of ['guy-stage', 'me-card', 'lk-stage']) { const el = $(id); el.classList.add('editable'); el.title = 'Edit your guy'; el.addEventListener('click', () => openEditor(lastTab)); }
   $('lk-edit').addEventListener('click', () => openEditor(lastTab));
 
   /* ---------------------------------------------- the claim card */
@@ -4593,7 +4618,7 @@ onmessage = e => {
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('');
-    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
+    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder, guyRank(cfg).top); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
     const [a, b] = split(LG.guyOneIn(cfg.base || cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
     userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
     uCat = '';
