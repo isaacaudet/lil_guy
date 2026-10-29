@@ -2303,7 +2303,13 @@
     link.type = 'image/svg+xml'; link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
   /** The games that send players here to claim, and where to send them back. */
-  const BACK_TO = { amountle: ['Back to Amountle', 'https://amountle.dev/'] };
+  const BACK_TO = {
+    amountle: ['Back to Amountle', 'https://amountle.dev/'], halfsies: ['Back to Halfsies', 'https://halfsies.dev/'],
+    stackdle: ['Back to Stackdle', 'https://stackdle.dev/'], flipsies: ['Back to Flipsies', 'https://flipsies.dev/'],
+    puttsies: ['Back to Puttsies', 'https://puttsies.dev/'], weighsies: ['Back to Weighsies', 'https://weighsies.dev/'],
+    cutsies: ['Back to Cutsies', 'https://cutsies.dev/'], tiltsies: ['Back to Tiltsies', 'https://www.tiltsies.dev/'],
+    trackdle: ['Back to Trackdle', 'https://trackdle1.vercel.app/'],
+  };
   function renderBack() {
     let from = null;
     try { from = BACK_TO[sessionStorage.getItem('lil-guys-from')] || null; } catch (e) {}
