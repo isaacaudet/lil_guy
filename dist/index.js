@@ -9786,6 +9786,214 @@ function defineLilGuyHere(options = {}) {
 }
 
 //#endregion
+//#region src/crowd.ts
+/** The sizes a crowd sprite comes in, in pixels square. */
+const CROWD_SIZES = [
+	16,
+	10,
+	8,
+	6,
+	4,
+	2
+];
+/** How each size is made: the inside's longer side, and whether the outline, eyes and mouth go back. */
+const MAKE = {
+	10: {
+		inner: 8,
+		ring: true,
+		eyes: true,
+		mouth: true
+	},
+	8: {
+		inner: 6,
+		ring: true,
+		eyes: true,
+		mouth: true
+	},
+	6: {
+		inner: 4,
+		ring: true,
+		eyes: true,
+		mouth: false
+	},
+	4: {
+		inner: 3,
+		ring: false,
+		eyes: false,
+		mouth: false
+	},
+	2: {
+		inner: 2,
+		ring: false,
+		eyes: false,
+		mouth: false
+	}
+};
+/** Tokens that make a face; they never decide a cell's colour, the eyes and mouth go back on their own. */
+const FACE = new Set([
+	T.EYE,
+	T.WHITE,
+	T.MOUTH,
+	T.TONGUE,
+	T.BLUSH
+]);
+const SIDES = [
+	[1, 0],
+	[-1, 0],
+	[0, 1],
+	[0, -1]
+];
+const ROUND = [
+	...SIDES,
+	[1, 1],
+	[-1, 1],
+	[1, -1],
+	[-1, -1]
+];
+/** The guy as he stands in a crowd, `size` pixels square, bottom-centred. */
+function crowdSprite(spec, size) {
+	const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
+	const grid = compose({
+		...config,
+		frame: void 0,
+		aura: void 0,
+		buddy: void 0
+	});
+	const base = spec.palette !== void 0 ? paletteOf({
+		...config,
+		palette: spec.palette
+	}) : paletteOf(config);
+	const colors = withItems(base, config).colors;
+	const drawn = size === 16 ? grid.map((row) => row.map((t) => t ? colors[t] ?? null : null)) : shrink(grid, colors, MAKE[size]);
+	const lit = drawn.map((row) => row.some(Boolean)), first = lit.indexOf(true), last = lit.lastIndexOf(true);
+	const cells = first < 0 ? [] : drawn.slice(first, last + 1);
+	const rgba = new Uint8ClampedArray(size * size * 4);
+	const h = cells.length, w = cells[0]?.length ?? 0;
+	const ox = Math.floor((size - w) / 2), oy = size - h;
+	cells.forEach((row, j) => row.forEach((c, i) => {
+		const x = ox + i, y = oy + j;
+		if (!c || x < 0 || y < 0 || x >= size || y >= size) return;
+		rgba.set([
+			parseInt(c.slice(1, 3), 16),
+			parseInt(c.slice(3, 5), 16),
+			parseInt(c.slice(5, 7), 16),
+			255
+		], (y * size + x) * 4);
+	}));
+	return {
+		size,
+		rgba
+	};
+}
+/**
+* Many guys at one size on one sheet, `columns` to a row, in the order given: guy `n` is the cell at
+* column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
+*/
+function crowdSheet(specs, size, columns = 64) {
+	const cols = Math.max(1, Math.min(columns, specs.length)), rows = Math.ceil(specs.length / cols);
+	const width = cols * size, height = rows * size, rgba = new Uint8ClampedArray(width * height * 4);
+	specs.forEach((spec, n) => {
+		const s = crowdSprite(spec, size), ox = n % cols * size, oy = Math.floor(n / cols) * size;
+		for (let y = 0; y < size; y++) rgba.set(s.rgba.subarray(y * size * 4, (y + 1) * size * 4), ((oy + y) * width + ox) * 4);
+	});
+	return {
+		width,
+		height,
+		columns: cols,
+		rgba
+	};
+}
+function shrink(grid, colors, make) {
+	const S = grid.length, ink = colors[T.OUTLINE];
+	const isOutline = (t) => t === T.OUTLINE || colors[t] !== void 0 && colors[t] === ink;
+	let x0 = S, x1 = -1, y0 = S, y1 = -1;
+	for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+		const t = grid[y][x];
+		if (t && !isOutline(t)) {
+			x0 = Math.min(x0, x);
+			x1 = Math.max(x1, x);
+			y0 = Math.min(y0, y);
+			y1 = Math.max(y1, y);
+		}
+	}
+	if (x1 < 0) return [[]];
+	const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = Math.max(bw, bh) / make.inner;
+	const w = Math.max(1, Math.round(bw / k)), h = Math.max(1, Math.round(bh / k));
+	const P = make.ring ? 1 : 0, W = w + 2 * P, H = h + 2 * P;
+	const out = Array.from({ length: H }, () => Array(W).fill(null));
+	const ox = x0 + (bw - w * k) / 2, oy = y0 + (bh - h * k) / 2;
+	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+		const sx0 = ox + i * k, sx1 = sx0 + k, sy0 = oy + j * k, sy1 = sy0 + k;
+		const weight = new Map();
+		let cover = 0;
+		for (let y = Math.floor(sy0); y < Math.ceil(sy1); y++) for (let x = Math.floor(sx0); x < Math.ceil(sx1); x++) {
+			const a = (Math.min(x + 1, sx1) - Math.max(x, sx0)) * (Math.min(y + 1, sy1) - Math.max(y, sy0));
+			const t = grid[y]?.[x];
+			if (a <= 0 || !t || isOutline(t)) continue;
+			cover += a;
+			const c = colors[t];
+			if (!FACE.has(t) && c) weight.set(c, (weight.get(c) ?? 0) + a);
+		}
+		if (cover < k * k * .45) continue;
+		let best = colors[T.BODY], most = -1;
+		for (const [c, v] of weight) if (v > most) {
+			best = c;
+			most = v;
+		}
+		out[j + P][i + P] = best;
+	}
+	const inside$1 = out.map((row) => row.map(Boolean));
+	const spot = (cells) => {
+		const mx = cells.reduce((s, c) => s + c[0], 0) / cells.length + .5, my = cells.reduce((s, c) => s + c[1], 0) / cells.length + .5;
+		return [Math.min(w - 1, Math.max(0, Math.floor((mx - ox) / k))) + P, Math.min(h - 1, Math.max(0, Math.floor((my - oy) / k))) + P];
+	};
+	const parts = (want) => {
+		const seen = new Set(), found = [];
+		for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+			if (!want(grid[y][x]) || seen.has(y * S + x)) continue;
+			const stack = [[x, y]], cells = [];
+			seen.add(y * S + x);
+			while (stack.length) {
+				const [cx, cy] = stack.pop();
+				cells.push([cx, cy]);
+				for (const [dx, dy] of ROUND) {
+					const nx = cx + dx, ny = cy + dy;
+					if (nx >= 0 && ny >= 0 && nx < S && ny < S && want(grid[ny][nx]) && !seen.has(ny * S + nx)) {
+						seen.add(ny * S + nx);
+						stack.push([nx, ny]);
+					}
+				}
+			}
+			found.push(cells);
+		}
+		return found;
+	};
+	const taken = new Set();
+	if (make.eyes) {
+		const spots = parts((t) => t === T.EYE).sort((a, b$1) => b$1.length - a.length).slice(0, 2).map(spot).sort((a, b$1) => a[0] - b$1[0]);
+		if (spots.length === 2 && spots[0][0] === spots[1][0] && spots[0][1] === spots[1][1]) {
+			spots[0][0] = Math.max(P, spots[0][0] - 1);
+			spots[1][0] = Math.min(W - 1 - P, spots[1][0] + 1);
+		}
+		for (const [i, j] of spots) if (inside$1[j]?.[i]) {
+			out[j][i] = colors[T.EYE];
+			taken.add(`${i},${j}`);
+		}
+	}
+	if (make.mouth) {
+		const mouth = parts((t) => t === T.MOUTH || t === T.TONGUE).sort((a, b$1) => b$1.length - a.length)[0];
+		if (mouth) {
+			const [i, j] = spot(mouth);
+			if (inside$1[j]?.[i] && !taken.has(`${i},${j}`)) out[j][i] = colors[T.MOUTH];
+		}
+	}
+	if (make.ring) {
+		for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (!inside$1[j][i] && SIDES.some(([dx, dy]) => inside$1[j + dy]?.[i + dx])) out[j][i] = ink;
+	}
+	return out;
+}
+
+//#endregion
 //#region src/craft.ts
 /**
 * Crafting, as in TF2. A copy you don't want smelts into metal, and metal
@@ -9867,5 +10075,5 @@ function nameKey(typed) {
 const nameSkeleton = (key) => key.replace(/_/g, "");
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createShine, crowdSheet, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, painted, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

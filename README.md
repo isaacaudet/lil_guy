@@ -293,6 +293,11 @@ copies' finishes all baked into frames, the same pixels everywhere. One
 renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
 server, a page and a game all get the same picture.
 
+For crowds of thousands (Twitch chat, a stand of the day's players), `crowdSprite(spec, size)` and
+`crowdSheet(specs, size)` (`src/crowd.ts`) give each guy at 16, 10, 8, 6, 4 or 2 pixels, shrunk from
+his own drawing with his eyes, mouth and outline kept while there's room (GAMES.md, A crowd of
+thousands).
+
 A card is a trading card, after Balatro's: printed in its grade's colour with a
 dark outline and a chunky bevel, the guy in a window (at the same size on every
 card, buddy or not), his name on a dark plate with the grade's badge, and a hard
