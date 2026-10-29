@@ -6,8 +6,10 @@ import { editionField, fract, type EditionPixels, type Vec3 } from './finish-sha
  * (`cardPlayer(input, ms, { look })`, `cardFace({ ..., look })`), so every
  * card, finish and saved guy keeps the picture it has.
  *
- * - `paint`: an aura card's ground as banded paint, a twisted swirl warped a
- *   few times over and cut into the aura's own colours in hard bands.
+ * - `paint`: an aura card's ground as banded paint in the aura's own colours,
+ *   cut in hard bands: each aura its own pattern (a spiral, waves, rings,
+ *   rising tongues, streaks or a nebula; `paintForm`), its copy's print
+ *   nudging the middle and the timing.
  * - `polychrome`: a Polychrome card, and every Prism copy on it, turned
  *   through the spectrum by a slow field of a few drifting rings, its colours
  *   lifted.
@@ -119,17 +121,26 @@ vec3 polyColor(vec3 c, vec2 p, vec2 o, float th, float k) {
   float f = polyField(p, o, th);
   return mix(c, fromHsl(vec3(fract(s.x + 0.22 * f + 0.1), min(0.78, s.y + 0.45), s.z * 0.84 + 0.08)), k);
 }
-vec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast) {
-  vec2 q = (p - o) / 9.0;
-  float r = length(q), tw = 1.5 * r + 0.35 * sin(th);
-  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 2.6;
-  float ct = 0.8 * cos(th), st = 0.8 * sin(th);
+float paintField(vec2 p, vec2 o, float th, vec4 form, float phase) {
+  vec2 q = (p - o - form.zw) / 9.0;
+  float r = length(q), k = form.y;
+  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th));
+  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th)); }
+  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.35 * sin(q.x * 3.0 + q.y * 2.0 + th));
+  if (form.x < 3.5) return 0.5 + 0.5 * sin(q.x * 6.0 + 1.6 * sin(q.y * 2.4 + k * th + phase) + 0.8 * sin(q.x * 2.1 - th)) + 0.15 * q.y * k;
+  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) - th);
+  float tw = 0.6 * r + 0.35 * sin(th);
+  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 1.9;
+  float ct = 0.8 * cos(th + phase), st = 0.8 * sin(th + phase);
   u += 0.8 * vec2(sin(1.3 * u.y + ct), sin(1.1 * u.x + st));
   u += 0.8 * vec2(sin(1.7 * u.y - st + 0.9), sin(1.5 * u.x + ct - 0.7));
   u += 0.8 * vec2(sin(2.1 * u.y + ct + 1.8), sin(1.9 * u.x - st + 2.6));
-  float t = 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5), w = 0.5 / contrast;
+  return 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5);
+}
+vec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {
+  float t = paintField(p, o, th, form, phase), w = 0.5 / contrast;
   float k1 = clamp((t - 0.38) / w + 0.5, 0.0, 1.0), k2 = clamp((t - 0.74) / w + 0.5, 0.0, 1.0);
-  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(r * 0.5 - 0.35, 0.0, 1.0));
+  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(length(p - o) / 9.0 * 0.5 - 0.35, 0.0, 1.0));
 }
 float foilWave(vec2 p, vec2 o, float th) {
   vec2 a = p - o - vec2(5.0 * cos(th) - 9.0, 6.0 * sin(th) - 14.0);
@@ -168,9 +179,9 @@ vec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time
   if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));
   return c;
 }
-vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
+vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {
   float th = time * TAU / 6.0;
-  if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast) : c;
+  if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast, form, phase) : c;
   if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
   if (look > 2.5 && look < 3.5 && ed > 0.5 && ed < 1.5) return foilColor(c, p, o, region, th);
   if (look > 3.5 && look < 4.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
@@ -213,8 +224,51 @@ export function polyColor(c: Vec3, p: [number, number], o: [number, number], tim
   return [c[0] + (t[0] - c[0]) * k, c[1] + (t[1] - c[1]) * k, c[2] + (t[2] - c[2]) * k];
 }
 
-/** What `paint` is drawn in: three colours, 0 to 1, and how hard its bands are. */
-export interface PaintSpec { colors: [Vec3, Vec3, Vec3]; contrast: number }
+/**
+ * What `paint` is drawn in: three colours, 0 to 1, how hard its bands are, and its pattern: a
+ * family, a number for it (a spiral's arms, signed for the way it turns; waves' tightness;
+ * which way tongues and streaks run), where its middle is from the window's, in face cells, and
+ * where its motion starts.
+ */
+export interface PaintSpec { colors: [Vec3, Vec3, Vec3]; contrast: number; form: [number, number, number, number]; phase: number }
+
+/** The pattern families `paint` draws, in the order the shaders number them. */
+export const PAINT_FAMILIES = ['spiral', 'waves', 'rings', 'tongues', 'streaks', 'nebula'] as const;
+/** Each aura's pattern, picked for it: family, its number, and its middle's offset in face cells. */
+export const AURA_PAINT: Record<string, [number, number, number, number]> = {
+  'aura.flames': [3, 1, 0, 2],
+  'aura.orbit': [0, 2, 0, 0],
+  'aura.halo': [2, 1, 0, -9],
+  'aura.sparkles': [5, 1, 3, -3],
+  'aura.hearts': [2, 1, 7, 8],
+  'aura.bubbles': [2, 1, -6, 11],
+  'aura.storm': [1, 1.4, 0, 0],
+  'aura.lightning': [4, -1, 0, 0],
+  'aura.notes': [1, 1, 0, 0],
+  'aura.snow': [4, 1, 0, 0],
+  'aura.petals': [0, -3, 5, -4],
+  'aura.galaxy': [5, 1, 0, 0],
+  'aura.rainbow': [1, 0.7, 0, 0],
+  'aura.glitch': [4, -1, 3, 0],
+  'aura.fireflies': [5, 1, -4, 5],
+  'aura.neon': [2, 1, 0, 0],
+  'aura.echo': [2, 1, 0, 3],
+  'aura.comet': [4, 1, -3, -3],
+  'aura.butterflies': [0, 4, 0, 0],
+  'aura.aurora': [1, 0.8, 0, -4],
+  'aura.datarain': [3, -1, 0, 0],
+  'aura.vortex': [0, -5, 0, 0],
+  'aura.fireworks': [2, 1, 4, -7],
+  'aura.ripple': [2, 1, -3, 5],
+  'aura.origin': [0, 1, 0, 0],
+};
+/** An aura copy's pattern: its own from AURA_PAINT (or one dealt from its id), the print nudging its middle and timing. */
+export function paintForm(id: string, print: number): Pick<PaintSpec, 'form' | 'phase'> {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const [family, k, cx, cy] = AURA_PAINT[id] ?? [h % 6, [1, 2, 3][(h >> 4) % 3] * ((h >> 6) % 2 ? 1 : -1), 0, 0];
+  return { form: [family, k, cx + ((print % 7) - 3) * 0.5, cy + ((Math.floor(print / 7) % 7) - 3) * 0.5], phase: (print % 13) * 0.48 };
+}
 
 /**
  * `lookColor` over a fixed set of pixels, as `editionField` is for the
@@ -238,25 +292,35 @@ export function lookField(look: number, ed: number, v: number, o: [number, numbe
   const nb = bx.length, val = new Float32Array(nb), m = new Float64Array(6);
 
   if (look === 1) {
-    const { colors: [c1, c2, c3], contrast } = paint ?? { colors: [[0, 0, 0], [0.5, 0.5, 0.5], [1, 1, 1]] as [Vec3, Vec3, Vec3], contrast: PAINT_CONTRAST };
-    // What doesn't move: each block's place, twisted by its distance out, and its shade.
-    const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), shade = new Float32Array(nb);
+    const { colors: [c1, c2, c3], contrast, form: [family, k, ox, oy], phase } = paint ?? { colors: [[0, 0, 0], [0.5, 0.5, 0.5], [1, 1, 1]] as [Vec3, Vec3, Vec3], contrast: PAINT_CONTRAST, form: [5, 1, 0, 0], phase: 0 };
+    // What doesn't move: each block's place in the pattern, its distance and angle from the pattern's
+    // middle (the nebula's twisted by that distance), and its shade.
+    const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), aa = new Float32Array(nb), shade = new Float32Array(nb);
     for (let b = 0; b < nb; b++) {
-      const px = bx[b] / 9, py = by[b] / 9, r = Math.sqrt(px * px + py * py), a = 1.5 * r;
-      qx[b] = px * Math.cos(a) - py * Math.sin(a); qy[b] = px * Math.sin(a) + py * Math.cos(a);
-      rr[b] = r; shade[b] = 1 - 0.22 * clamp01(r * 0.5 - 0.35);
+      const px = (bx[b] - ox) / 9, py = (by[b] - oy) / 9, r = Math.sqrt(px * px + py * py), a = 0.6 * r;
+      qx[b] = px; qy[b] = py; rr[b] = r; aa[b] = Math.atan2(py, px + 1e-4);
+      if (family === 5) { qx[b] = px * Math.cos(a) - py * Math.sin(a); qy[b] = px * Math.sin(a) + py * Math.cos(a); }
+      shade[b] = 1 - 0.22 * clamp01(Math.sqrt(bx[b] * bx[b] + by[b] * by[b]) / 9 * 0.5 - 0.35);
     }
-    const w = 0.5 / contrast, k1v = new Float32Array(nb), k2v = new Float32Array(nb);
+    const w = 0.5 / contrast, k1v = new Float32Array(nb), k2v = new Float32Array(nb), arms = Math.abs(k), turn = Math.sign(k);
     return (time, out) => {
-      const th = time * TAU / 6, tw = 0.35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = 0.8 * Math.cos(th), st = 0.8 * Math.sin(th);
-      for (let b = 0; b < nb; b++) {
-        let ux = (qx[b] * ca - qy[b] * sa) * 2.6, uy = (qx[b] * sa + qy[b] * ca) * 2.6, dx: number;
-        dx = 0.8 * sin(1.3 * uy + ct); uy += 0.8 * sin(1.1 * ux + st); ux += dx;
-        dx = 0.8 * sin(1.7 * uy - st + 0.9); uy += 0.8 * sin(1.5 * ux + ct - 0.7); ux += dx;
-        dx = 0.8 * sin(2.1 * uy + ct + 1.8); uy += 0.8 * sin(1.9 * ux - st + 2.6); ux += dx;
-        const t = 0.5 + 0.5 * sin(ux * 0.9 + uy * 1.2 + rr[b] * 1.5);
-        k1v[b] = clamp01((t - 0.38) / w + 0.5); k2v[b] = clamp01((t - 0.74) / w + 0.5);
+      const th = time * TAU / 6;
+      if (family === 0) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(arms * aa[b] + turn * 5 * rr[b] - th + phase + 0.7 * sin(2.3 * rr[b] - th));
+      else if (family === 1) for (let b = 0; b < nb; b++) { const ux = qx[b] * 2, uy = qy[b] * 2; val[b] = 0.5 + 0.5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + 0.7 * sin(ux * 3.1 - uy * 0.8 - th)); }
+      else if (family === 2) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(rr[b] * 6.5 - th + phase + 0.35 * sin(qx[b] * 3 + qy[b] * 2 + th));
+      else if (family === 3) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin(qx[b] * 6 + 1.6 * sin(qy[b] * 2.4 + k * th + phase) + 0.8 * sin(qx[b] * 2.1 - th)) + 0.15 * qy[b] * k;
+      else if (family === 4) for (let b = 0; b < nb; b++) val[b] = 0.5 + 0.5 * sin((qx[b] + qy[b] * 1.7 * k) * 5 + 0.8 * sin((qx[b] - qy[b]) * 2.6 + th + phase) - th);
+      else {
+        const tw = 0.35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = 0.8 * Math.cos(th + phase), st = 0.8 * Math.sin(th + phase);
+        for (let b = 0; b < nb; b++) {
+          let ux = (qx[b] * ca - qy[b] * sa) * 1.9, uy = (qx[b] * sa + qy[b] * ca) * 1.9, dx: number;
+          dx = 0.8 * sin(1.3 * uy + ct); uy += 0.8 * sin(1.1 * ux + st); ux += dx;
+          dx = 0.8 * sin(1.7 * uy - st + 0.9); uy += 0.8 * sin(1.5 * ux + ct - 0.7); ux += dx;
+          dx = 0.8 * sin(2.1 * uy + ct + 1.8); uy += 0.8 * sin(1.9 * ux - st + 2.6); ux += dx;
+          val[b] = 0.5 + 0.5 * sin(ux * 0.9 + uy * 1.2 + rr[b] * 1.5);
+        }
       }
+      for (let b = 0; b < nb; b++) { const t = val[b]; k1v[b] = clamp01((t - 0.38) / w + 0.5); k2v[b] = clamp01((t - 0.74) / w + 0.5); }
       for (let k = 0; k < n; k++) {
         const j = k * 3;
         if (region[k] < 1.5) { out[j] = rgb[j]; out[j + 1] = rgb[j + 1]; out[j + 2] = rgb[j + 2]; continue; }

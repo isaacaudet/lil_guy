@@ -3,7 +3,7 @@ import { compose } from './compose';
 import { distance, editionField, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PRECISION, loopSeconds, noiseOf, SHADER_FINISHES, smoothstep, toByte, type Vec3 } from './finish-shader';
 import { dress, itemById, SET_COLORS, withItems } from './items';
 import { auraColors, auraHue } from './auras';
-import { cardField, GLSL_LOOKS, lookIndex, paintColors, PAINT_CONTRAST, polyColor, type LookOptions, type PaintSpec } from './card-looks';
+import { cardField, GLSL_LOOKS, lookIndex, paintColors, PAINT_CONTRAST, paintForm, polyColor, type LookOptions, type PaintSpec } from './card-looks';
 import { encode, GRADES, gradeOf, type Owned } from './owned';
 import { paint } from './paint';
 import { paletteOf } from './palette';
@@ -175,7 +175,7 @@ export function cardFace(spec: FaceSpec): CardFace {
   if (spec.look) {
     face.look = lookIndex(spec.look);
     const hues = auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, Math.min(g, GRADES.length - 1))].color];
-    face.paint = { colors: paintColors(hues, auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]), contrast: spec.contrast ?? PAINT_CONTRAST };
+    face.paint = { colors: paintColors(hues, auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]), contrast: spec.contrast ?? PAINT_CONTRAST, ...paintForm(auraCopy?.item ?? '', auraCopy?.print ?? 0) };
   }
   return face;
 }
@@ -249,6 +249,8 @@ uniform sampler2D base, kind, noise;
 uniform float time, hover, edition, variant, look, contrast;
 uniform vec2 light, origin;
 uniform vec3 paint1, paint2, paint3;
+uniform vec4 paintForm;
+uniform float paintPhase;
 ${GLSL_COMMON}
 ${GLSL_EDITIONS}
 ${GLSL_LOOKS}
@@ -269,7 +271,7 @@ void main() {
   else if (k < 2.5 && look > 0.5) {
     vec2 e = min(cell, res - 1.0 - cell);
     float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
-    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast);
+    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast, paintForm, paintPhase);
   }
   else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
@@ -305,7 +307,7 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
   const p = gl.getAttribLocation(program, 'p');
   gl.enableVertexAttribArray(p);
   gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
-  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin', 'look', 'contrast', 'paint1', 'paint2', 'paint3'].map(n => [n, gl.getUniformLocation(program, n)]));
+  const u = Object.fromEntries(['base', 'kind', 'noise', 'time', 'hover', 'edition', 'variant', 'light', 'origin', 'look', 'contrast', 'paint1', 'paint2', 'paint3', 'paintForm', 'paintPhase'].map(n => [n, gl.getUniformLocation(program, n)]));
   gl.uniform1i(u.base, 0); gl.uniform1i(u.kind, 1); gl.uniform1i(u.noise, 2);
   gl.viewport(0, 0, FACE_WIDTH, FACE_HEIGHT);
   const textures = [0, 1, 2].map(unit => {
@@ -330,6 +332,8 @@ export function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas): 
       gl.uniform1f(u.look, face.look ?? 0); gl.uniform1f(u.contrast, face.paint?.contrast ?? PAINT_CONTRAST);
       const paint = face.paint?.colors;
       [u.paint1, u.paint2, u.paint3].forEach((at, k) => gl.uniform3f(at, paint?.[k][0] ?? 0, paint?.[k][1] ?? 0, paint?.[k][2] ?? 0));
+      const form = face.paint?.form ?? [5, 1, 0, 0];
+      gl.uniform4f(u.paintForm, form[0], form[1], form[2], form[3]); gl.uniform1f(u.paintPhase, face.paint?.phase ?? 0);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },

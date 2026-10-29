@@ -6,7 +6,7 @@ import { GLYPHS } from './font';
 import { encodeGif, encodePng, type Frames } from './gif';
 import { itemById, SET_COLORS } from './items';
 import { auraColors, auraHue } from './auras';
-import { lookApplies, lookField, lookIndex, paintColors, PAINT_CONTRAST, polyColor, type LookOptions } from './card-looks';
+import { lookApplies, lookField, lookIndex, paintColors, PAINT_CONTRAST, paintForm, polyColor, type LookOptions } from './card-looks';
 
 /**
  * Trading cards, drawn by the library so every game, the site and an export
@@ -256,7 +256,7 @@ export const CARD_EDGES = ['now', 'cell', 'round', 'shadow'] as const;
 export type CardEdge = (typeof CARD_EDGES)[number];
 
 /** A card's prototype options: a look for its edition, its gold, and its edge. */
-export type CardStyle = LookOptions & { gold?: CardGold; edge?: CardEdge };
+export type CardStyle = LookOptions & { gold?: CardGold; edge?: CardEdge; plate?: boolean };
 
 /**
  * Everything about a card that holds still, worked out once: the laid-out
@@ -284,6 +284,8 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
   const s = new Surface(W, H);
   const gold = ed === 5, aura = ed === 6, neg = ed === 4, gp = GOLDS[looks.gold ?? 'now'];
+  // A Grail's words are struck into its gold, unless it is given the dark plate every other card has.
+  const struck = gold && !looks.plate;
   const gc: RGB = g >= 0 ? rgb(GRADES[g].color) : [104, 118, 146];
   const auraCopy = owned.aura;
   const ah: RGB = aura && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
@@ -381,36 +383,38 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   }
 
   // ---------------------------------------------------------------- the plate and its words
-  // A Grail has no plate: its words are struck into the gold.
-  if (!gold) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
+  // A Grail has no plate, its words struck into the gold, unless given one (`plate`).
+  const onPlate = new Uint8Array(W * H);
+  if (!struck) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
     const pw = W - side * 2, ph = plateBottom - plateTop + 1;
     if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
     const edge = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
     const base: RGB = aura ? mix(mix(ah, INK, 0.6), INK, 0.45) : PLATE;
+    onPlate[yy * W + x] = 1;
     s.set(x, yy, edge ? INK : yy === plateTop + 1 ? mix(base, WHITE, 0.16) : yy >= plateBottom - 2 ? mix(base, INK, 0.45) : base);
   }
   // The words sit on the dark plate: white, an aura card's title in its colour with a light running
   // along it. A Grail's are struck into the gold, dark, the light catching each cut's lower edge.
-  const quiet: RGB = gold ? gp.quiet : aura ? mix(ah, WHITE, 0.6) : [184, 176, 206];
+  const quiet: RGB = struck ? gp.quiet : aura ? mix(ah, WHITE, 0.6) : [184, 176, 206];
   const titleInk = (x: number, yy: number, tm: number): RGB => mix(mix(ah, WHITE, 0.5), WHITE, 0.5 + 0.5 * Math.sin(x * 0.12 - tm / wave(1000 / 2) + yy * 0.1));
   const titlePixels: number[] = [];
   titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
-    if (gold) return gp.ink;
+    if (struck) return gp.ink;
     if (!aura) return WHITE;
     titlePixels.push(x, yy);
     return titleInk(x, yy, 0);
-  }, gold ? GOLD_CUT : INK));
+  }, struck ? GOLD_CUT : INK));
   rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
   // The grade's badge: a chunky pill in its colour with a deep lip, as Balatro's rarity badges.
   if (pill) {
     const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
-    const fill: RGB = gold ? gp.pill : tone;
+    const fill: RGB = struck ? gp.pill : tone;
     for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
       if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
       const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
       s.set(x, yy, edge ? INK : yy >= pillTop + 12 ? mix(fill, INK, 0.45) : yy === pillTop + 1 ? mix(fill, WHITE, 0.4) : fill);
     }
-    s.text(pill, x0 + 7, pillTop - 1, () => (gold ? [255, 222, 130] : WHITE), mix(fill, INK, 0.6));
+    s.text(pill, x0 + 7, pillTop - 1, () => (struck ? [255, 222, 130] : WHITE), mix(fill, INK, 0.6));
     if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
   }
   foots.forEach((l, k) => s.text(l, side + 5, footTop + k * 11 - 2, () => quiet));
@@ -474,7 +478,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // crosses everything inside the card's outline, its words, rim and studs counted as raised.
   const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = looked && look === 5;
   const edIdx: number[] = [];
-  for (let i = 0; i < W * H; i++) if (sheen ? shape.depth[i] > 2 : s.region[i]) edIdx.push(i);
+  for (let i = 0; i < W * H; i++) if (sheen ? shape.depth[i] > 2 && !onPlate[i] : s.region[i]) edIdx.push(i);
   const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
   const raised = new Float32Array(sheen ? n : 0);
   edIdx.forEach((i, k) => {
@@ -484,7 +488,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
   });
   // Other prototype looks work their field out on blocks of two card pixels: crisp, and a quarter of the work.
-  const paint = look === 1 ? { colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color), contrast: looks.contrast ?? PAINT_CONTRAST } : undefined;
+  const paint = look === 1 ? { colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color), contrast: looks.contrast ?? PAINT_CONTRAST, ...paintForm(auraCopy?.item ?? '', auraCopy?.print ?? 0) } : undefined;
   const block = (k: number) => (Math.floor(k * 2.5) * 2) / 5;
   const field = looked
     ? lookField(look, ed, v, [wcx / 5, wcy / 5], 0.2, sheen ? { x: ex, y: ey, region: er, h: eh, rgb: ergb, raised } : { x: ex.map(block), y: ey.map(block), region: er, h: eh, rgb: ergb }, paint)!
@@ -738,6 +742,8 @@ export interface CardPlayerOptions {
   gold?: CardGold;
   /** A prototype edge round him, which also fits his whole move in the window. */
   edge?: CardEdge;
+  /** A Grail on the dark plate every other card has, its gold only in the frame. */
+  plate?: boolean;
 }
 
 /**
@@ -747,10 +753,10 @@ export interface CardPlayerOptions {
  * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
  * card with nothing shining draws each pose of his once and shows it again.
  */
-export function cardPlayer(input: CardInput, ms = 80, { keep = true, look, contrast, gold, edge }: CardPlayerOptions = {}) {
+export function cardPlayer(input: CardInput, ms = 80, { keep = true, look, contrast, gold, edge, plate }: CardPlayerOptions = {}) {
   const options = { parts: input.parts, palette: input.palette, equip: (input.copies ?? []).map(encode), rarity: false };
   const anim = animate(input.seed, input.move ?? 'idle', { ...options, loop: { fit: true } }), turns = anim.turns ?? 1;
-  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), { look, contrast, gold, edge });
+  const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), { look, contrast, gold, edge, plate });
   const total = anim.duration, count = Math.max(1, Math.round(total / ms)), cache: Uint8ClampedArray[] = [];
   const delays = Array.from({ length: count }, (_, k) => Math.round((k + 1) * total / count) - Math.round(k * total / count));
   const frameOf = new Map(anim.frames.map((f, k) => [f, k]));

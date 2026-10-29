@@ -6402,8 +6402,10 @@ function encodeApng(input, scale$1 = 1) {
 * (`cardPlayer(input, ms, { look })`, `cardFace({ ..., look })`), so every
 * card, finish and saved guy keeps the picture it has.
 *
-* - `paint`: an aura card's ground as banded paint, a twisted swirl warped a
-*   few times over and cut into the aura's own colours in hard bands.
+* - `paint`: an aura card's ground as banded paint in the aura's own colours,
+*   cut in hard bands: each aura its own pattern (a spiral, waves, rings,
+*   rising tongues, streaks or a nebula; `paintForm`), its copy's print
+*   nudging the middle and the timing.
 * - `polychrome`: a Polychrome card, and every Prism copy on it, turned
 *   through the spectrum by a slow field of a few drifting rings, its colours
 *   lifted.
@@ -6533,17 +6535,26 @@ vec3 polyColor(vec3 c, vec2 p, vec2 o, float th, float k) {
   float f = polyField(p, o, th);
   return mix(c, fromHsl(vec3(fract(s.x + 0.22 * f + 0.1), min(0.78, s.y + 0.45), s.z * 0.84 + 0.08)), k);
 }
-vec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast) {
-  vec2 q = (p - o) / 9.0;
-  float r = length(q), tw = 1.5 * r + 0.35 * sin(th);
-  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 2.6;
-  float ct = 0.8 * cos(th), st = 0.8 * sin(th);
+float paintField(vec2 p, vec2 o, float th, vec4 form, float phase) {
+  vec2 q = (p - o - form.zw) / 9.0;
+  float r = length(q), k = form.y;
+  if (form.x < 0.5) return 0.5 + 0.5 * sin(abs(k) * atan(q.y, q.x + 1e-4) + sign(k) * 5.0 * r - th + phase + 0.7 * sin(2.3 * r - th));
+  if (form.x < 1.5) { vec2 u = q * 2.0; return 0.5 + 0.5 * sin(u.y * 2.2 * k + 1.3 * sin(u.x * 1.4 + th + phase) + 0.7 * sin(u.x * 3.1 - u.y * 0.8 - th)); }
+  if (form.x < 2.5) return 0.5 + 0.5 * sin(r * 6.5 - th + phase + 0.35 * sin(q.x * 3.0 + q.y * 2.0 + th));
+  if (form.x < 3.5) return 0.5 + 0.5 * sin(q.x * 6.0 + 1.6 * sin(q.y * 2.4 + k * th + phase) + 0.8 * sin(q.x * 2.1 - th)) + 0.15 * q.y * k;
+  if (form.x < 4.5) return 0.5 + 0.5 * sin((q.x + q.y * 1.7 * k) * 5.0 + 0.8 * sin((q.x - q.y) * 2.6 + th + phase) - th);
+  float tw = 0.6 * r + 0.35 * sin(th);
+  vec2 u = vec2(q.x * cos(tw) - q.y * sin(tw), q.x * sin(tw) + q.y * cos(tw)) * 1.9;
+  float ct = 0.8 * cos(th + phase), st = 0.8 * sin(th + phase);
   u += 0.8 * vec2(sin(1.3 * u.y + ct), sin(1.1 * u.x + st));
   u += 0.8 * vec2(sin(1.7 * u.y - st + 0.9), sin(1.5 * u.x + ct - 0.7));
   u += 0.8 * vec2(sin(2.1 * u.y + ct + 1.8), sin(1.9 * u.x - st + 2.6));
-  float t = 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5), w = 0.5 / contrast;
+  return 0.5 + 0.5 * sin(u.x * 0.9 + u.y * 1.2 + r * 1.5);
+}
+vec3 paintColor(vec2 p, vec2 o, float th, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {
+  float t = paintField(p, o, th, form, phase), w = 0.5 / contrast;
   float k1 = clamp((t - 0.38) / w + 0.5, 0.0, 1.0), k2 = clamp((t - 0.74) / w + 0.5, 0.0, 1.0);
-  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(r * 0.5 - 0.35, 0.0, 1.0));
+  return mix(mix(c1, c2, k1), c3, k2) * (1.0 - 0.22 * clamp(length(p - o) / 9.0 * 0.5 - 0.35, 0.0, 1.0));
 }
 float foilWave(vec2 p, vec2 o, float th) {
   vec2 a = p - o - vec2(5.0 * cos(th) - 9.0, 6.0 * sin(th) - 14.0);
@@ -6582,9 +6593,9 @@ vec3 sheenColor(vec3 c, vec2 p, float region, float raised, float px, float time
   if (px < 0.5) c += vec3(1.0, 0.97, 0.88) * (glint(p, vec2(4.8, 0.8), pos) + glint(p, vec2(23.0, 38.8), pos));
   return c;
 }
-vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast) {
+vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float region, float raised, float h, float px, float time, vec3 c1, vec3 c2, vec3 c3, float contrast, vec4 form, float phase) {
   float th = time * TAU / 6.0;
-  if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast) : c;
+  if (look > 0.5 && look < 1.5 && ed > 5.5) return region > 1.5 ? paintColor(p, o, th, c1, c2, c3, contrast, form, phase) : c;
   if (look > 1.5 && look < 2.5 && ed > 2.5 && ed < 3.5) return polyColor(c, p, o, th, region > 1.5 ? 0.85 : 1.0);
   if (look > 2.5 && look < 3.5 && ed > 0.5 && ed < 1.5) return foilColor(c, p, o, region, th);
   if (look > 3.5 && look < 4.5 && ed > 1.5 && ed < 2.5) return holoColor(c, p, o, region, th);
@@ -6634,6 +6645,183 @@ function polyColor(c, p, o, time, k) {
 		c[2] + (t[2] - c[2]) * k
 	];
 }
+/** Each aura's pattern, picked for it: family, its number, and its middle's offset in face cells. */
+const AURA_PAINT = {
+	"aura.flames": [
+		3,
+		1,
+		0,
+		2
+	],
+	"aura.orbit": [
+		0,
+		2,
+		0,
+		0
+	],
+	"aura.halo": [
+		2,
+		1,
+		0,
+		-9
+	],
+	"aura.sparkles": [
+		5,
+		1,
+		3,
+		-3
+	],
+	"aura.hearts": [
+		2,
+		1,
+		7,
+		8
+	],
+	"aura.bubbles": [
+		2,
+		1,
+		-6,
+		11
+	],
+	"aura.storm": [
+		1,
+		1.4,
+		0,
+		0
+	],
+	"aura.lightning": [
+		4,
+		-1,
+		0,
+		0
+	],
+	"aura.notes": [
+		1,
+		1,
+		0,
+		0
+	],
+	"aura.snow": [
+		4,
+		1,
+		0,
+		0
+	],
+	"aura.petals": [
+		0,
+		-3,
+		5,
+		-4
+	],
+	"aura.galaxy": [
+		5,
+		1,
+		0,
+		0
+	],
+	"aura.rainbow": [
+		1,
+		.7,
+		0,
+		0
+	],
+	"aura.glitch": [
+		4,
+		-1,
+		3,
+		0
+	],
+	"aura.fireflies": [
+		5,
+		1,
+		-4,
+		5
+	],
+	"aura.neon": [
+		2,
+		1,
+		0,
+		0
+	],
+	"aura.echo": [
+		2,
+		1,
+		0,
+		3
+	],
+	"aura.comet": [
+		4,
+		1,
+		-3,
+		-3
+	],
+	"aura.butterflies": [
+		0,
+		4,
+		0,
+		0
+	],
+	"aura.aurora": [
+		1,
+		.8,
+		0,
+		-4
+	],
+	"aura.datarain": [
+		3,
+		-1,
+		0,
+		0
+	],
+	"aura.vortex": [
+		0,
+		-5,
+		0,
+		0
+	],
+	"aura.fireworks": [
+		2,
+		1,
+		4,
+		-7
+	],
+	"aura.ripple": [
+		2,
+		1,
+		-3,
+		5
+	],
+	"aura.origin": [
+		0,
+		1,
+		0,
+		0
+	]
+};
+/** An aura copy's pattern: its own from AURA_PAINT (or one dealt from its id), the print nudging its middle and timing. */
+function paintForm(id, print) {
+	let h = 0;
+	for (const ch of id) h = h * 31 + ch.charCodeAt(0) >>> 0;
+	const [family, k, cx, cy] = AURA_PAINT[id] ?? [
+		h % 6,
+		[
+			1,
+			2,
+			3
+		][(h >> 4) % 3] * ((h >> 6) % 2 ? 1 : -1),
+		0,
+		0
+	];
+	return {
+		form: [
+			family,
+			k,
+			cx + (print % 7 - 3) * .5,
+			cy + (Math.floor(print / 7) % 7 - 3) * .5
+		],
+		phase: print % 13 * .48
+	};
+}
 /**
 * `lookColor` over a fixed set of pixels, as `editionField` is for the
 * editions, or null where the look doesn't change this edition. Pixels on
@@ -6658,7 +6846,7 @@ function lookField(look, ed, v, o, px, pixels, paint$1) {
 	}
 	const nb = bx.length, val = new Float32Array(nb), m = new Float64Array(6);
 	if (look === 1) {
-		const { colors: [c1, c2, c3], contrast } = paint$1 ?? {
+		const { colors: [c1, c2, c3], contrast, form: [family, k, ox, oy], phase } = paint$1 ?? {
 			colors: [
 				[
 					0,
@@ -6676,43 +6864,69 @@ function lookField(look, ed, v, o, px, pixels, paint$1) {
 					1
 				]
 			],
-			contrast: PAINT_CONTRAST
+			contrast: PAINT_CONTRAST,
+			form: [
+				5,
+				1,
+				0,
+				0
+			],
+			phase: 0
 		};
-		const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), shade = new Float32Array(nb);
+		const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), aa = new Float32Array(nb), shade = new Float32Array(nb);
 		for (let b$1 = 0; b$1 < nb; b$1++) {
-			const px$1 = bx[b$1] / 9, py = by[b$1] / 9, r = Math.sqrt(px$1 * px$1 + py * py), a = 1.5 * r;
-			qx[b$1] = px$1 * Math.cos(a) - py * Math.sin(a);
-			qy[b$1] = px$1 * Math.sin(a) + py * Math.cos(a);
+			const px$1 = (bx[b$1] - ox) / 9, py = (by[b$1] - oy) / 9, r = Math.sqrt(px$1 * px$1 + py * py), a = .6 * r;
+			qx[b$1] = px$1;
+			qy[b$1] = py;
 			rr[b$1] = r;
-			shade[b$1] = 1 - .22 * clamp01(r * .5 - .35);
+			aa[b$1] = Math.atan2(py, px$1 + 1e-4);
+			if (family === 5) {
+				qx[b$1] = px$1 * Math.cos(a) - py * Math.sin(a);
+				qy[b$1] = px$1 * Math.sin(a) + py * Math.cos(a);
+			}
+			shade[b$1] = 1 - .22 * clamp01(Math.sqrt(bx[b$1] * bx[b$1] + by[b$1] * by[b$1]) / 9 * .5 - .35);
 		}
-		const w = .5 / contrast, k1v = new Float32Array(nb), k2v = new Float32Array(nb);
+		const w = .5 / contrast, k1v = new Float32Array(nb), k2v = new Float32Array(nb), arms = Math.abs(k), turn = Math.sign(k);
 		return (time, out) => {
-			const th = time * TAU / 6, tw = .35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = .8 * Math.cos(th), st = .8 * Math.sin(th);
+			const th = time * TAU / 6;
+			if (family === 0) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(arms * aa[b$1] + turn * 5 * rr[b$1] - th + phase + .7 * sin(2.3 * rr[b$1] - th));
+			else if (family === 1) for (let b$1 = 0; b$1 < nb; b$1++) {
+				const ux = qx[b$1] * 2, uy = qy[b$1] * 2;
+				val[b$1] = .5 + .5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + .7 * sin(ux * 3.1 - uy * .8 - th));
+			}
+			else if (family === 2) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(rr[b$1] * 6.5 - th + phase + .35 * sin(qx[b$1] * 3 + qy[b$1] * 2 + th));
+			else if (family === 3) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(qx[b$1] * 6 + 1.6 * sin(qy[b$1] * 2.4 + k * th + phase) + .8 * sin(qx[b$1] * 2.1 - th)) + .15 * qy[b$1] * k;
+			else if (family === 4) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin((qx[b$1] + qy[b$1] * 1.7 * k) * 5 + .8 * sin((qx[b$1] - qy[b$1]) * 2.6 + th + phase) - th);
+			else {
+				const tw = .35 * Math.sin(th), ca = Math.cos(tw), sa = Math.sin(tw), ct = .8 * Math.cos(th + phase), st = .8 * Math.sin(th + phase);
+				for (let b$1 = 0; b$1 < nb; b$1++) {
+					let ux = (qx[b$1] * ca - qy[b$1] * sa) * 1.9, uy = (qx[b$1] * sa + qy[b$1] * ca) * 1.9, dx;
+					dx = .8 * sin(1.3 * uy + ct);
+					uy += .8 * sin(1.1 * ux + st);
+					ux += dx;
+					dx = .8 * sin(1.7 * uy - st + .9);
+					uy += .8 * sin(1.5 * ux + ct - .7);
+					ux += dx;
+					dx = .8 * sin(2.1 * uy + ct + 1.8);
+					uy += .8 * sin(1.9 * ux - st + 2.6);
+					ux += dx;
+					val[b$1] = .5 + .5 * sin(ux * .9 + uy * 1.2 + rr[b$1] * 1.5);
+				}
+			}
 			for (let b$1 = 0; b$1 < nb; b$1++) {
-				let ux = (qx[b$1] * ca - qy[b$1] * sa) * 2.6, uy = (qx[b$1] * sa + qy[b$1] * ca) * 2.6, dx;
-				dx = .8 * sin(1.3 * uy + ct);
-				uy += .8 * sin(1.1 * ux + st);
-				ux += dx;
-				dx = .8 * sin(1.7 * uy - st + .9);
-				uy += .8 * sin(1.5 * ux + ct - .7);
-				ux += dx;
-				dx = .8 * sin(2.1 * uy + ct + 1.8);
-				uy += .8 * sin(1.9 * ux - st + 2.6);
-				ux += dx;
-				const t = .5 + .5 * sin(ux * .9 + uy * 1.2 + rr[b$1] * 1.5);
+				const t = val[b$1];
 				k1v[b$1] = clamp01((t - .38) / w + .5);
 				k2v[b$1] = clamp01((t - .74) / w + .5);
 			}
-			for (let k = 0; k < n; k++) {
-				const j = k * 3;
-				if (region[k] < 1.5) {
+			for (let k$1 = 0; k$1 < n; k$1++) {
+				const j = k$1 * 3;
+				if (region[k$1] < 1.5) {
 					out[j] = rgb$4[j];
 					out[j + 1] = rgb$4[j + 1];
 					out[j + 2] = rgb$4[j + 2];
 					continue;
 				}
-				const b$1 = blockOf[k], k1 = k1v[b$1], k2 = k2v[b$1], s = shade[b$1];
+				const b$1 = blockOf[k$1], k1 = k1v[b$1], k2 = k2v[b$1], s = shade[b$1];
 				for (let i = 0; i < 3; i++) {
 					const lo = c1[i] + (c2[i] - c1[i]) * k1;
 					out[j + i] = (lo + (c3[i] - lo) * k2) * s;
@@ -7426,6 +7640,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
 	const s = new Surface(W, H);
 	const gold = ed === 5, aura = ed === 6, neg = ed === 4, gp = GOLDS[looks.gold ?? "now"];
+	const struck = gold && !looks.plate;
 	const gc = g >= 0 ? rgb$2(require_paint.GRADES[g].color) : [
 		104,
 		118,
@@ -7536,14 +7751,16 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			26
 		], (dx + dy + 4) / 8));
 	}
-	if (!gold) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
+	const onPlate = new Uint8Array(W * H);
+	if (!struck) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
 		const pw = W - side * 2, ph = plateBottom - plateTop + 1;
 		if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
 		const edge$1 = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
 		const base = aura ? mix(mix(ah, INK$1, .6), INK$1, .45) : PLATE$1;
+		onPlate[yy * W + x] = 1;
 		s.set(x, yy, edge$1 ? INK$1 : yy === plateTop + 1 ? mix(base, WHITE$1, .16) : yy >= plateBottom - 2 ? mix(base, INK$1, .45) : base);
 	}
-	const quiet = gold ? gp.quiet : aura ? mix(ah, WHITE$1, .6) : [
+	const quiet = struck ? gp.quiet : aura ? mix(ah, WHITE$1, .6) : [
 		184,
 		176,
 		206
@@ -7551,21 +7768,21 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const titleInk = (x, yy, tm) => mix(mix(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / require_paint.wave(1e3 / 2) + yy * .1));
 	const titlePixels = [];
 	titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
-		if (gold) return gp.ink;
+		if (struck) return gp.ink;
 		if (!aura) return WHITE$1;
 		titlePixels.push(x, yy);
 		return titleInk(x, yy, 0);
-	}, gold ? GOLD_CUT : INK$1));
+	}, struck ? GOLD_CUT : INK$1));
 	rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
 	if (pill) {
 		const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
-		const fill = gold ? gp.pill : tone;
+		const fill = struck ? gp.pill : tone;
 		for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
 			const edge$1 = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
 			s.set(x, yy, edge$1 ? INK$1 : yy >= pillTop + 12 ? mix(fill, INK$1, .45) : yy === pillTop + 1 ? mix(fill, WHITE$1, .4) : fill);
 		}
-		s.text(pill, x0 + 7, pillTop - 1, () => gold ? [
+		s.text(pill, x0 + 7, pillTop - 1, () => struck ? [
 			255,
 			222,
 			130
@@ -7652,7 +7869,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	})() : null;
 	const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = looked && look === 5;
 	const edIdx = [];
-	for (let i = 0; i < W * H; i++) if (sheen ? shape.depth[i] > 2 : s.region[i]) edIdx.push(i);
+	for (let i = 0; i < W * H; i++) if (sheen ? shape.depth[i] > 2 && !onPlate[i] : s.region[i]) edIdx.push(i);
 	const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
 	const raised = new Float32Array(sheen ? n : 0);
 	edIdx.forEach((i, k) => {
@@ -7666,7 +7883,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	});
 	const paint$1 = look === 1 ? {
 		colors: paintColors(auraCopy ? require_paint.auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [require_paint.GRADES[Math.max(0, g)].color], auraCopy ? require_paint.auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : require_paint.GRADES[Math.max(0, g)].color),
-		contrast: looks.contrast ?? PAINT_CONTRAST
+		contrast: looks.contrast ?? PAINT_CONTRAST,
+		...paintForm(auraCopy?.item ?? "", auraCopy?.print ?? 0)
 	} : void 0;
 	const block = (k) => Math.floor(k * 2.5) * 2 / 5;
 	const field = looked ? lookField(look, ed, v, [wcx / 5, wcy / 5], .2, sheen ? {
@@ -7968,7 +8186,7 @@ function cardFrames(input, ms = 80) {
 * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
 * card with nothing shining draws each pose of his once and shows it again.
 */
-function cardPlayer(input, ms = 80, { keep = true, look, contrast, gold, edge } = {}) {
+function cardPlayer(input, ms = 80, { keep = true, look, contrast, gold, edge, plate } = {}) {
 	const options = {
 		parts: input.parts,
 		palette: input.palette,
@@ -7983,7 +8201,8 @@ function cardPlayer(input, ms = 80, { keep = true, look, contrast, gold, edge } 
 		look,
 		contrast,
 		gold,
-		edge
+		edge,
+		plate
 	});
 	const total = anim.duration, count$1 = Math.max(1, Math.round(total / ms)), cache = [];
 	const delays = Array.from({ length: count$1 }, (_, k) => Math.round((k + 1) * total / count$1) - Math.round(k * total / count$1));
@@ -8261,7 +8480,8 @@ function cardFace(spec) {
 		const hues = auraCopy ? require_paint.auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [require_paint.GRADES[Math.max(0, Math.min(g, require_paint.GRADES.length - 1))].color];
 		face.paint = {
 			colors: paintColors(hues, auraCopy ? require_paint.auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : hues[0]),
-			contrast: spec.contrast ?? PAINT_CONTRAST
+			contrast: spec.contrast ?? PAINT_CONTRAST,
+			...paintForm(auraCopy?.item ?? "", auraCopy?.print ?? 0)
 		};
 	}
 	return face;
@@ -8357,6 +8577,8 @@ uniform sampler2D base, kind, noise;
 uniform float time, hover, edition, variant, look, contrast;
 uniform vec2 light, origin;
 uniform vec3 paint1, paint2, paint3;
+uniform vec4 paintForm;
+uniform float paintPhase;
 ${GLSL_COMMON}
 ${GLSL_EDITIONS}
 ${GLSL_LOOKS}
@@ -8377,7 +8599,7 @@ void main() {
   else if (k < 2.5 && look > 0.5) {
     vec2 e = min(cell, res - 1.0 - cell);
     float raised = e.x == 1.0 || e.y == 1.0 || e.x + e.y == 3.0 ? 1.0 : 0.0;
-    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast);
+    c = lookColor(c, look, edition, variant, cell, origin, k, raised, h, 1.0, time, paint1, paint2, paint3, contrast, paintForm, paintPhase);
   }
   else if (k < 2.5) c = editionColor(c, edition, variant, cell, origin, k, h, 1.0, time);
   c += (1.0 - smoothstep(0.0, 0.34, distance(at, light))) * 0.35 * hover;
@@ -8435,7 +8657,9 @@ function createCardShader(canvas) {
 		"contrast",
 		"paint1",
 		"paint2",
-		"paint3"
+		"paint3",
+		"paintForm",
+		"paintPhase"
 	].map((n) => [n, gl.getUniformLocation(program, n)]));
 	gl.uniform1i(u.base, 0);
 	gl.uniform1i(u.kind, 1);
@@ -8479,6 +8703,14 @@ function createCardShader(canvas) {
 				u.paint2,
 				u.paint3
 			].forEach((at, k) => gl.uniform3f(at, paint$1?.[k][0] ?? 0, paint$1?.[k][1] ?? 0, paint$1?.[k][2] ?? 0));
+			const form = face.paint?.form ?? [
+				5,
+				1,
+				0,
+				0
+			];
+			gl.uniform4f(u.paintForm, form[0], form[1], form[2], form[3]);
+			gl.uniform1f(u.paintPhase, face.paint?.phase ?? 0);
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

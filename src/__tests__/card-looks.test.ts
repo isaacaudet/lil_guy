@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { cardStill } from '../card';
 import { cardFace, cardFaceAt } from '../card-face';
-import { CARD_LOOKS, lookApplies } from '../card-looks';
+import { CARD_LOOKS, lookApplies, paintForm } from '../card-looks';
 import { LOOP_MS } from '../loop';
 import type { Owned } from '../owned';
 
@@ -32,6 +32,15 @@ describe('prototype card looks', () => {
     expect(differs(cardStill(input), cardStill(input, 0.6, { edge: 'now', gold: 'now' }))).toBe(0);
     for (const edge of ['cell', 'round', 'shadow'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { edge }))).toBeGreaterThan(200);
     expect(differs(cardStill(input), cardStill(input, 0.6, { gold: 'champagne' }))).toBeGreaterThan(2000);
+    expect(differs(cardStill(input), cardStill(input, 0.6, { plate: true }))).toBeGreaterThan(1000);
+  });
+
+  test('each aura paints its own pattern', () => {
+    const still = (item: string, print = 41) => cardStill({ seed: 'looks', title: 'A', copies: [{ item, finish: 'classic', scuff: 0.1, print }] }, 0.6, { look: 'paint', edge: 'round' });
+    const flames = still('aura.flames');
+    expect(differs(flames, still('aura.flames', 400))).toBeGreaterThan(500);
+    expect(paintForm('aura.flames', 41).form[0]).not.toBe(paintForm('aura.orbit', 41).form[0]);
+    expect(paintForm('aura.unknown', 3).form[0]).toBe(paintForm('aura.unknown', 3).form[0]);
   });
 
   test('every look comes round in LOOP_MS', () => {
