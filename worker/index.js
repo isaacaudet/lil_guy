@@ -244,12 +244,12 @@ async function pay(env, key, cost, what) {
  */
 async function freeCapsule(env, key) {
   if (free(key)) return { open: true, why: '' };
+  // Until the club's days can be kept and read (0010, the shared secret, dle-club's lilguys-stats), and
+  // whenever the club didn't answer the last time it was asked, the rule can't be checked: it stays open to
+  // every name, signed in or not, rather than shutting everyone out.
+  if (!(await stampsReady(env)) || typeof env.CLUB_SSO_SECRET !== 'string' || env.CLUB_SSO_SECRET.length < 32) return { open: true, why: '' };
   const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
   if (!name?.account) return { open: false, why: FREE_SHUT.signin };
-  // Until the club's days can be kept and read (0010, the shared secret, dle-club's lilguys-stats), and
-  // whenever the club didn't answer the last time it was asked, the rule can't be checked: it stays open
-  // rather than shutting everyone out.
-  if (!(await stampsReady(env)) || typeof env.CLUB_SSO_SECRET !== 'string' || env.CLUB_SSO_SECRET.length < 32) return { open: true, why: '' };
   const day = today();
   if (await playedOn(env, key, day)) return { open: true, why: '' };
   await readClub(env, key, undefined, undefined, TODAY_EVERY);

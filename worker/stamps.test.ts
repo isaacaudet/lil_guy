@@ -257,6 +257,9 @@ test('when the club doesn’t answer, today’s free capsule stays open', async 
 
 test('a name with no DLE Club sign-in can’t open it, and is told to sign in', async () => {
   const c = await claim('mia');
+  // Without the shared secret the rule can't be checked, so it stays open even to a name with no sign-in.
+  expect(((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).freeCapsule).toEqual({ open: true, why: '' });
+  env.CLUB_SSO_SECRET = 'x'.repeat(40);
   // Even with a day on the books, the club can't be asked about a name it can't read.
   env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(utcToday());
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
