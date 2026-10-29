@@ -27,6 +27,13 @@ describe('prototype card looks', () => {
     expect(lookApplies(0, 6)).toBe(false);
   });
 
+  test('edge and gold options change only the cards asked', () => {
+    const input = { seed: 'looks', title: 'A', copies: [gold], move: 'cheer' as const };
+    expect(differs(cardStill(input), cardStill(input, 0.6, { edge: 'now', gold: 'now' }))).toBe(0);
+    for (const edge of ['cell', 'round', 'shadow'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { edge }))).toBeGreaterThan(200);
+    expect(differs(cardStill(input), cardStill(input, 0.6, { gold: 'champagne' }))).toBeGreaterThan(2000);
+  });
+
   test('every look comes round in LOOP_MS', () => {
     for (const look of CARD_LOOKS.slice(1) as (keyof typeof forLook)[]) {
       const face = cardFace({ name: 'looks', copies: [forLook[look]], look });

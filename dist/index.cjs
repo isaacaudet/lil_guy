@@ -7067,6 +7067,215 @@ const GOLD_INK = [
 	240,
 	186
 ];
+/** Prototype golds to compare (`CardPlayerOptions.gold`); `now` is the Grail as it is. */
+const CARD_GOLDS = [
+	"now",
+	"yellow",
+	"blackgold",
+	"champagne",
+	"rich"
+];
+const SAME = {
+	ink: [
+		92,
+		60,
+		8
+	],
+	bevelLo: [
+		170,
+		118,
+		20
+	],
+	quiet: [
+		120,
+		84,
+		14
+	],
+	pill: [
+		92,
+		62,
+		10
+	]
+};
+const GOLDS = {
+	now: {
+		hi: GOLD_HI,
+		lo: GOLD_LO,
+		amber: AMBER,
+		glow: AMBER_GLOW,
+		ink: GOLD_INK,
+		bevelLo: [
+			150,
+			92,
+			18
+		],
+		rim: [
+			72,
+			40,
+			6
+		],
+		quiet: [
+			110,
+			66,
+			10
+		],
+		pill: [
+			96,
+			56,
+			10
+		]
+	},
+	yellow: {
+		hi: [
+			255,
+			238,
+			140
+		],
+		lo: [
+			226,
+			170,
+			40
+		],
+		amber: [
+			70,
+			48,
+			14
+		],
+		glow: [
+			236,
+			190,
+			70
+		],
+		rim: [
+			66,
+			44,
+			8
+		],
+		...SAME
+	},
+	blackgold: {
+		hi: [
+			255,
+			238,
+			140
+		],
+		lo: [
+			226,
+			170,
+			40
+		],
+		amber: [
+			22,
+			22,
+			32
+		],
+		glow: [
+			80,
+			66,
+			36
+		],
+		rim: [
+			24,
+			20,
+			31
+		],
+		...SAME
+	},
+	champagne: {
+		hi: [
+			255,
+			247,
+			214
+		],
+		lo: [
+			214,
+			182,
+			110
+		],
+		amber: [
+			64,
+			52,
+			36
+		],
+		glow: [
+			222,
+			196,
+			140
+		],
+		ink: [
+			88,
+			68,
+			30
+		],
+		bevelLo: [
+			160,
+			128,
+			70
+		],
+		rim: [
+			60,
+			48,
+			30
+		],
+		quiet: [
+			120,
+			98,
+			58
+		],
+		pill: [
+			88,
+			68,
+			34
+		]
+	},
+	rich: {
+		hi: [
+			255,
+			218,
+			96
+		],
+		lo: [
+			212,
+			136,
+			18
+		],
+		amber: [
+			44,
+			26,
+			8
+		],
+		glow: [
+			226,
+			150,
+			30
+		],
+		ink: [
+			84,
+			46,
+			4
+		],
+		bevelLo: [
+			150,
+			88,
+			10
+		],
+		rim: [
+			40,
+			22,
+			4
+		],
+		quiet: [
+			110,
+			62,
+			6
+		],
+		pill: [
+			84,
+			48,
+			6
+		]
+	}
+};
 /** How tall the card itself is: the rows under it hold its shadow. */
 const BODY_HEIGHT = CARD_HEIGHT - 5;
 /** Whether a pixel is inside a rounded box. */
@@ -7173,7 +7382,7 @@ function cardFit(frames, width, cellX) {
 * columns between them in every frame of the move but two card pixels, room
 * for a sticker edge between them, so the two stand a size bigger.
 */
-function buddyNudge(anim) {
+function buddyNudge(anim, grid = false) {
 	if (anim.width <= FRAME_WIDTH) return 0;
 	let guy = -1, buddy = anim.width;
 	for (const f of anim.frames) f.colors.forEach((row, y) => row.forEach((c, x) => {
@@ -7181,8 +7390,20 @@ function buddyNudge(anim) {
 		if (x < FRAME_WIDTH) guy = Math.max(guy, x);
 		else buddy = Math.min(buddy, x);
 	}));
-	return Math.max(0, (buddy - guy - 1) * ZOOM - 2);
+	return grid ? Math.max(0, (buddy - guy - 2) * ZOOM) : Math.max(0, (buddy - guy - 1) * ZOOM - 2);
 }
+/**
+* Prototype ways of setting him off the window (`CardPlayerOptions.edge`). `now`: the sticker edge
+* as it is, a card pixel or two round him. `cell`: the edge in whole cells of his own grid, one cell
+* thick. `round`: the same with diagonal cells too. `shadow`: no edge, his silhouette a cell down and
+* right, dark. All but `now` also fit every frame of his move inside the window.
+*/
+const CARD_EDGES = [
+	"now",
+	"cell",
+	"round",
+	"shadow"
+];
 /**
 * Everything about a card that holds still, worked out once: the laid-out
 * face, plate and words, the edition's field, and the guy's placement. Its
@@ -7195,7 +7416,8 @@ function buddyNudge(anim) {
 * and the aura card's Spectral.
 */
 function cardArt(input, anim, owned, g, ed, looks = {}) {
-	const zoom = ZOOM, nudge = buddyNudge(anim);
+	const edge = looks.edge ?? "now", grid = edge !== "now";
+	const zoom = ZOOM, nudge = buddyNudge(anim, grid);
 	const cellX = (gx, slot) => gx * zoom - (gx >= FRAME_WIDTH && slot !== 5 ? nudge : 0);
 	const fit$1 = cardFit(anim.frames, anim.width, cellX), shape = cardShape();
 	const lastCopy = input.copies?.[input.copies.length - 1];
@@ -7203,7 +7425,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const v = lastCopy ? lastCopy.print % 4 : 0;
 	const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
 	const s = new Surface(W, H);
-	const gold = ed === 5, aura = ed === 6, neg = ed === 4;
+	const gold = ed === 5, aura = ed === 6, neg = ed === 4, gp = GOLDS[looks.gold ?? "now"];
 	const gc = g >= 0 ? rgb$2(require_paint.GRADES[g].color) : [
 		104,
 		118,
@@ -7249,8 +7471,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const wcx = (WIN.left + WIN.right) / 2, wcy = WIN.top + (WIN.bottom - WIN.top) * .45;
 	const stock = (x, yy) => {
 		if (gold) {
-			const base = mix(GOLD_HI, GOLD_LO, yy / H * .9 + .08 * Math.sin(x * .05 + yy * .02));
-			return yy % 3 === 0 ? mix(base, GOLD_LO, .12) : base;
+			const base = mix(gp.hi, gp.lo, yy / H * .9 + .08 * Math.sin(x * .05 + yy * .02));
+			return yy % 3 === 0 ? mix(base, gp.lo, .12) : base;
 		}
 		if (neg) return mix(mix(IVORY$1, tone, .35), mix(IVORY$1, tone, .6), yy / H);
 		return mix(mix(tone, WHITE$1, .08), mix(tone, INK$1, .25), yy / H);
@@ -7269,11 +7491,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			255,
 			238,
 			168
-		], [
-			150,
-			92,
-			18
-		], (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE$1 : INK$1, .2);
+		], gp.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE$1 : INK$1, .2);
 		else if (bevel === 1) c = mix(c, WHITE$1, .35);
 		else if (bevel) c = mix(c, INK$1, .3);
 		else if (aura && d <= 5) c = inlay;
@@ -7292,15 +7510,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				255,
 				226,
 				140
-			] : gold ? [
-				72,
-				40,
-				6
-			] : INK$1);
+			] : gold ? gp.rim : INK$1);
 			continue;
 		}
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-		let c = gold ? mix(mix(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix(AMBER, INK$1, .3), depth * .3) : mix(light, mix(light, gc, .35), depth * .6);
+		let c = gold ? mix(mix(gp.amber, gp.glow, Math.max(0, 1 - r) ** 1.3), mix(gp.amber, INK$1, .3), depth * .3) : mix(light, mix(light, gc, .35), depth * .6);
 		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK$1, .35);
 		s.set(x, yy, c, 2);
 	}
@@ -7312,11 +7526,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	]) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
 		const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
 		if (d > 10 || shape.depth[yy * W + x] <= 2) continue;
-		s.set(x, yy, d > 6 ? [
-			110,
-			66,
-			10
-		] : mix([
+		s.set(x, yy, d > 6 ? gp.quiet : mix([
 			255,
 			244,
 			196
@@ -7329,15 +7539,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	if (!gold) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
 		const pw = W - side * 2, ph = plateBottom - plateTop + 1;
 		if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
-		const edge = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
+		const edge$1 = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
 		const base = aura ? mix(mix(ah, INK$1, .6), INK$1, .45) : PLATE$1;
-		s.set(x, yy, edge ? INK$1 : yy === plateTop + 1 ? mix(base, WHITE$1, .16) : yy >= plateBottom - 2 ? mix(base, INK$1, .45) : base);
+		s.set(x, yy, edge$1 ? INK$1 : yy === plateTop + 1 ? mix(base, WHITE$1, .16) : yy >= plateBottom - 2 ? mix(base, INK$1, .45) : base);
 	}
-	const quiet = gold ? [
-		110,
-		66,
-		10
-	] : aura ? mix(ah, WHITE$1, .6) : [
+	const quiet = gold ? gp.quiet : aura ? mix(ah, WHITE$1, .6) : [
 		184,
 		176,
 		206
@@ -7345,7 +7551,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const titleInk = (x, yy, tm) => mix(mix(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / require_paint.wave(1e3 / 2) + yy * .1));
 	const titlePixels = [];
 	titles.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), titleTop + k * 12 - 2, (x, yy) => {
-		if (gold) return GOLD_INK;
+		if (gold) return gp.ink;
 		if (!aura) return WHITE$1;
 		titlePixels.push(x, yy);
 		return titleInk(x, yy, 0);
@@ -7353,15 +7559,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	rest.forEach((l, k) => s.text(l, Math.floor((W - textWidth(l)) / 2), subTop + k * 11 - 2, () => quiet));
 	if (pill) {
 		const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
-		const fill = gold ? [
-			96,
-			56,
-			10
-		] : tone;
+		const fill = gold ? gp.pill : tone;
 		for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
-			const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
-			s.set(x, yy, edge ? INK$1 : yy >= pillTop + 12 ? mix(fill, INK$1, .45) : yy === pillTop + 1 ? mix(fill, WHITE$1, .4) : fill);
+			const edge$1 = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
+			s.set(x, yy, edge$1 ? INK$1 : yy >= pillTop + 12 ? mix(fill, INK$1, .45) : yy === pillTop + 1 ? mix(fill, WHITE$1, .4) : fill);
 		}
 		s.text(pill, x0 + 7, pillTop - 1, () => gold ? [
 			255,
@@ -7398,7 +7600,10 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	}
 	const soul = aura;
 	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit$1.mid);
-	const oy0 = soul ? Math.max(5 - fit$1.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - (fit$1.topAll + fit$1.footAll + 1) * zoom / 2) - 10) : Math.round((WIN.top + WIN.bottom + 1) / 2 - (fit$1.rest + fit$1.foot + 1) * zoom / 2) + 4;
+	const stand = soul ? Math.max(5 - fit$1.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - (fit$1.topAll + fit$1.footAll + 1) * zoom / 2) - 10) : Math.round((WIN.top + WIN.bottom + 1) / 2 - (fit$1.rest + fit$1.foot + 1) * zoom / 2) + 4;
+	const roomTop = soul ? 3 : WIN.top + 2, roomFoot = WIN.bottom - 2, over = edge === "cell" || edge === "round" ? 1 : 0;
+	const highest = roomTop - (fit$1.topAll - over) * zoom, lowest = roomFoot + 1 - (fit$1.footAll + 1) * zoom;
+	const oy0 = !grid ? stand : highest > lowest ? highest : Math.min(lowest, Math.max(highest, stand));
 	const floor = Uint8Array.from(s.region, (r) => r === 2 ? 1 : 0);
 	const ground = input.copies?.some((o) => require_paint.itemById(o.item)?.slot === "frame") ? (() => {
 		let x0 = W, y0 = H, x1 = -1, y1 = -1;
@@ -7485,7 +7690,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		rgb: ergb
 	});
 	const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
-	const pop = soul || oy0 + fit$1.top * zoom < WIN.top + 3;
+	const pop = soul || !grid && oy0 + fit$1.top * zoom < WIN.top + 3;
 	const clip = (cx, cy) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1 : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
 	const edgeC = aura ? mix(ah, WHITE$1, .55) : gold ? [
 		255,
@@ -7537,6 +7742,10 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		if (!byY) edges.set(frame, byY = new Map());
 		let got = byY.get(oy);
 		if (got) return got;
+		if (grid) {
+			byY.set(oy, got = cellEdges(frame, oy));
+			return got;
+		}
 		const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0;
 		const bx = ox - 2, by = oy - 2, bw = fw * zoom + 4, bh = fh * zoom + 4, out = [];
 		mask.fill(0, 0, bw * bh);
@@ -7556,6 +7765,28 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}
 		byY.set(oy, got = Int32Array.from(out));
 		return got;
+	};
+	/**
+	* The edge on his own grid: whole cells next to him (orthogonally, or diagonally too for `round`),
+	* or for `shadow` the cells his silhouette covers a cell down and right. Card pixel indices, doubled,
+	* plus one against the window's rim, as `edgesOf` gives them.
+	*/
+	const cellEdges = (frame, oy) => {
+		const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0, gw = fw + 2, gh = fh + 2;
+		const solid = new Uint8Array(gw * gh), out = [];
+		for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) if (colors[gy][gx] && slots[gy][gx] !== 5 && slots[gy][gx] !== 3) solid[(gy + 1) * gw + cellX(gx, slots[gy][gx]) / zoom + 1] = 1;
+		const at = (i, j) => i >= 0 && j >= 0 && i < gw && j < gh && solid[j * gw + i] === 1;
+		for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+			if (solid[j * gw + i]) continue;
+			const on = edge === "shadow" ? at(i - 1, j - 1) : at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1) || edge === "round" && (at(i - 1, j - 1) || at(i + 1, j - 1) || at(i - 1, j + 1) || at(i + 1, j + 1));
+			if (!on) continue;
+			for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+				const x = ox + (i - 1) * zoom + dx, yy = oy + (j - 1) * zoom + dy;
+				if (x < 0 || yy < 0 || x >= W || yy >= H || !room[yy * W + x]) continue;
+				out.push((yy * W + x) * 2 + (room[yy * W + x] === 2 ? 1 : 0));
+			}
+		}
+		return Int32Array.from(out);
 	};
 	const frameCopy = owned.frame, DIAGS = zoom * 2 - 1;
 	const groundShine = ground && frameCopy && shines$1(frameCopy) ? SHADER_FINISHES.indexOf(frameCopy.finish) : -1;
@@ -7589,9 +7820,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		const fl = aura ? [] : floorsOf(frame, oy);
 		for (let f = 0; f < fl.length; f += 3) {
 			const sx = fl[f], sy = fl[f + 1], rx = fl[f + 2];
-			for (let yy = Math.ceil(sy - 4); yy <= sy + 4; yy++) for (let x = Math.ceil(sx - rx); x <= sx + rx; x++) {
+			const gy = grid ? sy + zoom : sy, reach = grid ? zoom : 0;
+			for (let yy = Math.ceil(gy - 4 - reach); yy <= gy + 4 + reach; yy++) for (let x = Math.ceil(sx - rx - reach); x <= sx + rx + reach; x++) {
 				if (x < 0 || yy < 0 || x >= W || yy >= H || !floor[yy * W + x]) continue;
-				const fx = (x - sx) / rx, fy = (yy - sy) / 4, d = fx * fx + fy * fy;
+				const px = grid ? ox + Math.floor((x - ox) / zoom) * zoom + zoom / 2 : x, py = grid ? oy + Math.floor((yy - oy) / zoom) * zoom + zoom / 2 : yy;
+				const fx = (px - sx) / rx, fy = (py - gy) / 4, d = fx * fx + fy * fy;
 				if (d >= 1) continue;
 				const i = (yy * W + x) * 4, k = 1 - .16 * (1 - d);
 				body$1[i] *= k;
@@ -7599,7 +7832,13 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				body$1[i + 2] *= k;
 			}
 		}
-		for (const e of edgesOf(frame, oy)) {
+		if (edge === "shadow") for (const e of edgesOf(frame, oy)) {
+			const i = (e >> 1) * 4;
+			body$1[i] = body$1[i] * .5 + 12;
+			body$1[i + 1] = body$1[i + 1] * .5 + 10;
+			body$1[i + 2] = body$1[i + 2] * .5 + 16;
+		}
+		else for (const e of edgesOf(frame, oy)) {
 			const c = e & 1 ? WHITE$1 : edgeC;
 			put(e >> 1, c[0], c[1], c[2]);
 		}
@@ -7658,7 +7897,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			const tm = t * 1e3 + shift$1;
 			return {
 				lift: Math.round(1 + Math.sin(TAU_MS(tm, 3e3))),
-				bob: soul ? Math.round(Math.sin(tm / require_paint.wave(1e3 / 2.6)) * 2) : 0
+				bob: soul && !grid ? Math.round(Math.sin(tm / require_paint.wave(1e3 / 2.6)) * 2) : 0
 			};
 		},
 		draw(frame, t, out) {
@@ -7729,7 +7968,7 @@ function cardFrames(input, ms = 80) {
 * whole turns of LOOP_MS, with every sheen on the card on the same clock. A
 * card with nothing shining draws each pose of his once and shows it again.
 */
-function cardPlayer(input, ms = 80, { keep = true, look, contrast } = {}) {
+function cardPlayer(input, ms = 80, { keep = true, look, contrast, gold, edge } = {}) {
 	const options = {
 		parts: input.parts,
 		palette: input.palette,
@@ -7742,7 +7981,9 @@ function cardPlayer(input, ms = 80, { keep = true, look, contrast } = {}) {
 	}), turns = anim.turns ?? 1;
 	const owned = ownedBySlot(input.copies ?? []), g = cardGrade(input), art = cardArt(input, anim, owned, g, cardEdition(input, g), {
 		look,
-		contrast
+		contrast,
+		gold,
+		edge
 	});
 	const total = anim.duration, count$1 = Math.max(1, Math.round(total / ms)), cache = [];
 	const delays = Array.from({ length: count$1 }, (_, k) => Math.round((k + 1) * total / count$1) - Math.round(k * total / count$1));
@@ -8964,7 +9205,9 @@ exports.AvatarImage = AvatarImage
 exports.BAKED_SIZE = BAKED_SIZE
 exports.BUDDY_GUY_WIDTH = BUDDY_GUY_WIDTH
 exports.CAPSULE_ONLY = require_paint.CAPSULE_ONLY
+exports.CARD_EDGES = CARD_EDGES
 exports.CARD_FRAGMENT = CARD_FRAGMENT
+exports.CARD_GOLDS = CARD_GOLDS
 exports.CARD_HEIGHT = CARD_HEIGHT
 exports.CARD_LOOKS = CARD_LOOKS
 exports.CARD_WIDTH = CARD_WIDTH
