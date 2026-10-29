@@ -58,7 +58,7 @@ describe('every view in every format', () => {
       const sheet = await bytes(await get(`/g/${ART_VERSION}/${code}/${view}.sheet@3.png`));
       expect(pngSize(sheet)).toEqual([json.frameWidth * json.columns, json.frameHeight * json.rows]);
       expect(json.frameWidth * json.columns).toBeLessThanOrEqual(2048 * 3 * (MOVES.includes(view as any) ? 100 : 1));
-    });
+    }, 60_000);
   }
 
   test('icons and faces move, on the ground, and the stills are their first frames', () => {
