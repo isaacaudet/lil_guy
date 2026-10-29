@@ -428,6 +428,24 @@ const SHEEN_HALO = [1, 0.88, 0.52], SHEEN_GLOW = [1, 0.93, 0.7], SHEEN_CORE = [1
 /** What a look plays over: the edition's pixels, and for the sheen how proud each one stands, 0 or 1. */
 export type LookPixels = EditionPixels & { raised?: Float32Array };
 
+/**
+ * The `warm` gold card's frame: polychrome's drifting field with the hue held between amber and
+ * gold, saturated, each pixel keeping its own lightness. On the big card only, in plain code.
+ */
+export function warmField(o: [number, number], { x, y, rgb }: EditionPixels) {
+  const n = x.length, light = new Float32Array(n), m = new Float64Array(6);
+  for (let k = 0; k < n; k++) light[k] = toHsl([rgb[k * 3], rgb[k * 3 + 1], rgb[k * 3 + 2]])[2];
+  return (time: number, out: Float32Array) => {
+    const th = time * TAU / 6;
+    polyCentres(th, m);
+    for (let k = 0; k < n; k++) {
+      const f = polyAt(x[k] - o[0], y[k] - o[1], m, th), h = 0.072 + 0.05 * clamp01(0.5 + f / 4.5), l = light[k];
+      const ch = 0.9 * (1 - Math.abs(2 * l - 1));
+      for (let i = 0; i < 3; i++) { const q = Math.abs(fract(h + (i === 0 ? 0 : i === 1 ? 2 / 3 : 1 / 3)) * 6 - 3) - 1; out[k * 3 + i] = l + ch * ((q < 0 ? 0 : q > 1 ? 1 : q) - 0.5); }
+    }
+  };
+}
+
 /** `lookColor`'s choice over a set of pixels: the look's field where it applies, else the edition's own. */
 export function cardField(look: number, ed: number, v: number, o: [number, number], px: number, pixels: LookPixels, paint?: PaintSpec) {
   return lookField(look, ed, v, o, px, pixels, paint) ?? editionField(ed, v, o, px, pixels);

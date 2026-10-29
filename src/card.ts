@@ -6,7 +6,7 @@ import { GLYPHS } from './font';
 import { encodeGif, encodePng, type Frames } from './gif';
 import { itemById, SET_COLORS } from './items';
 import { auraColors, auraHue } from './auras';
-import { lookApplies, lookField, lookIndex, paintColors, PAINT_CONTRAST, paintForm, polyColor, type LookOptions } from './card-looks';
+import { lookApplies, lookField, lookIndex, paintColors, PAINT_CONTRAST, paintForm, polyColor, warmField, type LookOptions } from './card-looks';
 
 /**
  * Trading cards, drawn by the library so every game, the site and an export
@@ -136,16 +136,30 @@ const GOLD_INK: RGB = [96, 54, 6], GOLD_CUT: RGB = [255, 240, 186];
 
 /** A Grail's gold: its foil's light and deep, the window's amber and glow, the struck words, the bevel's deep, the window's rim, the quiet words and studs, and the badge. */
 interface GoldPalette { hi: RGB; lo: RGB; amber: RGB; glow: RGB; ink: RGB; bevelLo: RGB; rim: RGB; quiet: RGB; pill: RGB }
-/** Prototype golds to compare (`CardPlayerOptions.gold`); `now` is the Grail as it is. */
-export const CARD_GOLDS = ['now', 'yellow', 'blackgold', 'champagne', 'rich'] as const;
+/**
+ * Prototype golds to compare (`CardPlayerOptions.gold`). `now` is the Grail as it is; the next four
+ * are its palette changed. The last four are other ideas of a gold card, each on the dark plate every
+ * card has: `trim` a dark card with gold only in its bevel, rim, studs and badge; `solid` a flat
+ * bright gold frame round a navy window; `fullart` a dark frame round a window of banded gold; `warm`
+ * a gold frame whose hue drifts between amber and gold.
+ */
+export const CARD_GOLDS = ['now', 'yellow', 'blackgold', 'champagne', 'rich', 'trim', 'solid', 'fullart', 'warm'] as const;
 export type CardGold = (typeof CARD_GOLDS)[number];
+const GOLD_CONCEPTS: readonly CardGold[] = ['trim', 'solid', 'fullart', 'warm'];
+/** The concepts' clean gold, its light top edge and its deep lower edge; their navy window, dark stock and badge words. */
+const BRIGHT_GOLD: RGB = [247, 201, 72], GOLD_LIGHT: RGB = [255, 233, 160], GOLD_DEEP: RGB = [201, 146, 30];
+const NAVY: RGB = [22, 26, 38], DARK_HI: RGB = [46, 42, 64], DARK_LO: RGB = [28, 24, 40], PILL_INK: RGB = [74, 46, 6];
+/** `fullart`'s three golds, deep to light. */
+const FIELD_GOLDS: [RGB, RGB, RGB] = [[176, 112, 24], [226, 164, 52], [250, 206, 110]];
 const SAME = { ink: [92, 60, 8] as RGB, bevelLo: [170, 118, 20] as RGB, quiet: [120, 84, 14] as RGB, pill: [92, 62, 10] as RGB };
+const NOW_GOLD: GoldPalette = { hi: GOLD_HI, lo: GOLD_LO, amber: AMBER, glow: AMBER_GLOW, ink: GOLD_INK, bevelLo: [150, 92, 18], rim: [72, 40, 6], quiet: [110, 66, 10], pill: [96, 56, 10] };
 const GOLDS: Record<CardGold, GoldPalette> = {
-  now: { hi: GOLD_HI, lo: GOLD_LO, amber: AMBER, glow: AMBER_GLOW, ink: GOLD_INK, bevelLo: [150, 92, 18], rim: [72, 40, 6], quiet: [110, 66, 10], pill: [96, 56, 10] },
+  now: NOW_GOLD,
   yellow: { hi: [255, 238, 140], lo: [226, 170, 40], amber: [70, 48, 14], glow: [236, 190, 70], rim: [66, 44, 8], ...SAME },
   blackgold: { hi: [255, 238, 140], lo: [226, 170, 40], amber: [22, 22, 32], glow: [80, 66, 36], rim: [24, 20, 31], ...SAME },
   champagne: { hi: [255, 247, 214], lo: [214, 182, 110], amber: [64, 52, 36], glow: [222, 196, 140], ink: [88, 68, 30], bevelLo: [160, 128, 70], rim: [60, 48, 30], quiet: [120, 98, 58], pill: [88, 68, 34] },
   rich: { hi: [255, 218, 96], lo: [212, 136, 18], amber: [44, 26, 8], glow: [226, 150, 30], ink: [84, 46, 4], bevelLo: [150, 88, 10], rim: [40, 22, 4], quiet: [110, 62, 6], pill: [84, 48, 6] },
+  trim: NOW_GOLD, solid: NOW_GOLD, fullart: NOW_GOLD, warm: NOW_GOLD,
 };
 
 /** How tall the card itself is: the rows under it hold its shadow. */
@@ -202,6 +216,8 @@ type CardFrame = AnimationFrame & { outside?: [number, number, string][] };
 type OwnedBySlot = Partial<Record<(typeof FRAME_SLOTS)[number], Owned>>;
 
 const PRISM = SHADER_FINISHES.indexOf('prism');
+/** How far `pool`'s rings lift the window, nearest him first. */
+const POOL = [0, 0.2, 0.12, 0.05];
 /** Whether a copy's finish moves on the card (a heavily scuffed plain copy's sweep is worn away). */
 const shines = (o: Owned) => { const f = SHADER_FINISHES.indexOf(o.finish as (typeof SHADER_FINISHES)[number]); return f > 0 || (f === 0 && o.scuff <= 0.07); };
 
@@ -250,9 +266,11 @@ function buddyNudge(anim: Animation, grid = false): number {
  * Prototype ways of setting him off the window (`CardPlayerOptions.edge`). `now`: the sticker edge
  * as it is, a card pixel or two round him. `cell`: the edge in whole cells of his own grid, one cell
  * thick. `round`: the same with diagonal cells too. `shadow`: no edge, his silhouette a cell down and
- * right, dark. All but `now` also fit every frame of his move inside the window.
+ * right, dark. `none`: his own dark outline alone. `pool`: no edge, the window lifted behind him in a
+ * few rings of whole cells, lighter toward him. All but `now` also fit every frame of his move
+ * inside the window.
  */
-export const CARD_EDGES = ['now', 'cell', 'round', 'shadow'] as const;
+export const CARD_EDGES = ['now', 'cell', 'round', 'shadow', 'none', 'pool'] as const;
 export type CardEdge = (typeof CARD_EDGES)[number];
 
 /** A card's prototype options: a look for its edition, its gold, and its edge. */
@@ -284,8 +302,10 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
   const s = new Surface(W, H);
   const gold = ed === 5, aura = ed === 6, neg = ed === 4, gp = GOLDS[looks.gold ?? 'now'];
-  // A Grail's words are struck into its gold, unless it is given the dark plate every other card has.
-  const struck = gold && !looks.plate;
+  // A Grail's words are struck into its gold, unless it is given the dark plate every other card has,
+  // as every prototype gold concept is.
+  const concept = gold && GOLD_CONCEPTS.includes(looks.gold ?? 'now') ? looks.gold : undefined;
+  const struck = gold && !looks.plate && !concept;
   const gc: RGB = g >= 0 ? rgb(GRADES[g].color) : [104, 118, 146];
   const auraCopy = owned.aura;
   const ah: RGB = aura && auraCopy ? rgb(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
@@ -328,6 +348,8 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // ---------------------------------------------------------------- the card's stock
   // The colour the card is printed on, before its edition.
   const stock = (x: number, yy: number): RGB => {
+    // A gold concept's flat gold frame, or its dark one.
+    if (concept) return concept === 'solid' || concept === 'warm' ? BRIGHT_GOLD : mix(DARK_HI, DARK_LO, yy / H);
     // Brushed gold foil: bright at the top, deep at the foot, a fine line every third row.
     if (gold) {
       const base = mix(gp.hi, gp.lo, yy / H * 0.9 + 0.08 * Math.sin(x * 0.05 + yy * 0.02));
@@ -339,13 +361,17 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   };
   const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
   const auraDeep = mix(ah, INK, 0.62), auraLight = mix(ah, INK, 0.3), inlay = mix(ah, WHITE, 0.7);
+  // A gold concept's trim, which its sheen crosses: the bevel, the window's gold line, the studs.
+  const trim = new Uint8Array(W * H);
   for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
     const d = shape.depth[yy * W + x], bevel = shape.bevel[yy * W + x];
     if (!d) continue;
     if (d <= 2) { s.set(x, yy, INK); continue; }
     let c = rows[yy] ?? stock(x, yy);
+    // A gold concept's bevel is clean gold, one light row along the top and left and one deep along the bottom and right.
+    if (concept && concept !== 'fullart' && bevel) { c = d === 3 ? (bevel === 1 ? GOLD_LIGHT : GOLD_DEEP) : BRIGHT_GOLD; trim[yy * W + x] = 1; }
     // A Grail's bevel is raised gold, lit at the top left and running deeper to the bottom right.
-    if (gold && bevel) c = mix(mix([255, 238, 168], gp.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE : INK, 0.2);
+    else if (gold && bevel) c = mix(mix([255, 238, 168], gp.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE : INK, 0.2);
     // A chunky bevel: lit along the top and left, deep along the bottom and right.
     else if (bevel === 1) c = mix(c, WHITE, 0.35);
     else if (bevel) c = mix(c, INK, 0.3);
@@ -363,21 +389,36 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // ---------------------------------------------------------------- the window
   // Light by grade, deep amber with a warm glow behind a Grail's guy; none on an aura card.
   const light: RGB = g >= 0 ? mix(IVORY, gc, 0.22) : mix(IVORY, gc, 0.12);
+  /** `fullart`'s window: a few large soft bands of three golds, on blocks of two card pixels, holding still. */
+  const fieldGold = (x: number, yy: number): RGB => {
+    const qx = ((x >> 1) * 2 - wcx) / 40, qy = ((yy >> 1) * 2 - wcy) / 40;
+    const t = 0.5 + 0.5 * Math.sin(qy * 3.2 + 1.3 * Math.sin(qx * 2.4 + 0.6) + 0.6 * Math.sin(qx * 4.1 - qy * 1.7));
+    const k1 = Math.min(1, Math.max(0, (t - 0.35) / 0.12 + 0.5)), k2 = Math.min(1, Math.max(0, (t - 0.72) / 0.12 + 0.5));
+    return mix(mix(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
+  };
   if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
     const rim = x - WIN.left < 2 || WIN.right - x < 2 || yy - WIN.top < 2 || WIN.bottom - yy < 2;
     // A Grail's window is set in a dark line with a bright gold rim inside it.
-    if (rim) { s.set(x, yy, gold && (x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1) ? [255, 226, 140] : gold ? gp.rim : INK); continue; }
+    if (rim) {
+      const inner = x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1;
+      // A concept's window is set in a dark line, `trim`'s with a clean gold line inside it.
+      if (concept) { if (concept === 'trim' && inner) trim[yy * W + x] = 1; s.set(x, yy, concept === 'trim' && inner ? BRIGHT_GOLD : INK); continue; }
+      s.set(x, yy, gold && inner ? [255, 226, 140] : gold ? gp.rim : INK);
+      continue;
+    }
     const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-    let c: RGB = gold ? mix(mix(gp.amber, gp.glow, Math.max(0, 1 - r) ** 1.3), mix(gp.amber, INK, 0.3), depth * 0.3) : mix(light, mix(light, gc, 0.35), depth * 0.6);
+    let c: RGB = concept === 'solid' || concept === 'warm' ? NAVY : concept === 'fullart' ? fieldGold(x, yy) : concept === 'trim' || !gold ? mix(light, mix(light, gc, 0.35), depth * 0.6)
+      : mix(mix(gp.amber, gp.glow, Math.max(0, 1 - r) ** 1.3), mix(gp.amber, INK, 0.3), depth * 0.3);
     // A shaded lip under the rim, so the window reads as set into the card.
     if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK, 0.35);
     s.set(x, yy, c, 2);
   }
   // A Grail's window is held by four raised gold studs at its corners.
-  if (gold) for (const [sx, sy] of [[WIN.left + 1, WIN.top + 1], [WIN.right - 1, WIN.top + 1], [WIN.left + 1, WIN.bottom - 1], [WIN.right - 1, WIN.bottom - 1]]) {
+  if (gold && (!concept || concept === 'trim')) for (const [sx, sy] of [[WIN.left + 1, WIN.top + 1], [WIN.right - 1, WIN.top + 1], [WIN.left + 1, WIN.bottom - 1], [WIN.right - 1, WIN.bottom - 1]]) {
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
       const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
       if (d > 10 || shape.depth[yy * W + x] <= 2) continue;
+      if (concept) { trim[yy * W + x] = 1; s.set(x, yy, d > 6 ? GOLD_DEEP : mix(GOLD_LIGHT, BRIGHT_GOLD, (dx + dy + 4) / 8)); continue; }
       s.set(x, yy, d > 6 ? gp.quiet : mix([255, 244, 196], [196, 128, 26], (dx + dy + 4) / 8));
     }
   }
@@ -408,13 +449,13 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // The grade's badge: a chunky pill in its colour with a deep lip, as Balatro's rarity badges.
   if (pill) {
     const w = pillW, x0 = paired ? Math.floor((W - w - 6 - textWidth(subs[0])) / 2) : Math.floor((W - w) / 2);
-    const fill: RGB = struck ? gp.pill : tone;
+    const fill: RGB = struck ? gp.pill : concept ? BRIGHT_GOLD : tone;
     for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
       if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
       const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
       s.set(x, yy, edge ? INK : yy >= pillTop + 12 ? mix(fill, INK, 0.45) : yy === pillTop + 1 ? mix(fill, WHITE, 0.4) : fill);
     }
-    s.text(pill, x0 + 7, pillTop - 1, () => (struck ? [255, 222, 130] : WHITE), mix(fill, INK, 0.6));
+    s.text(pill, x0 + 7, pillTop - 1, () => (struck ? [255, 222, 130] : concept ? PILL_INK : WHITE), concept ? GOLD_LIGHT : mix(fill, INK, 0.6));
     if (paired) s.text(subs[0], x0 + w + 6, pillTop - 1, () => quiet);
   }
   foots.forEach((l, k) => s.text(l, side + 5, footTop + k * 11 - 2, () => quiet));
@@ -476,22 +517,26 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // ---------------------------------------------------------------- the edition's field
   // Pixels the edition plays over: the card's face and its window. The prototype sheen (./card-looks)
   // crosses everything inside the card's outline, its words, rim and studs counted as raised.
-  const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = looked && look === 5;
+  // A gold concept plays over its own part: the sheen along `trim`'s trim, `solid`'s frame or `fullart`'s window, `warm`'s drift over its frame.
+  const look = lookIndex(looks.look), looked = lookApplies(look, ed), sheen = (looked && look === 5) || (!!concept && concept !== 'warm');
+  const plays = (i: number) => concept === 'trim' ? trim[i] === 1 : concept === 'fullart' ? s.region[i] === 2 : concept ? s.region[i] === 1
+    : sheen ? shape.depth[i] > 2 && !onPlate[i] : s.region[i] > 0;
   const edIdx: number[] = [];
-  for (let i = 0; i < W * H; i++) if (sheen ? shape.depth[i] > 2 && !onPlate[i] : s.region[i]) edIdx.push(i);
+  for (let i = 0; i < W * H; i++) if (plays(i)) edIdx.push(i);
   const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
   const raised = new Float32Array(sheen ? n : 0);
   edIdx.forEach((i, k) => {
     const x = i % W, yy = (i - x) / W;
     ex[k] = x / 5; ey[k] = yy / 5; er[k] = s.region[i] || 1; eh[k] = shape.glint[(yy >> 1) * W + (x >> 1)];
-    if (sheen) raised[k] = !s.region[i] || shape.bevel[i] ? 1 : 0;
+    if (sheen) raised[k] = concept === 'trim' || !s.region[i] || shape.bevel[i] ? 1 : 0;
     for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
   });
   // Other prototype looks work their field out on blocks of two card pixels: crisp, and a quarter of the work.
   const paint = look === 1 ? { colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color), contrast: looks.contrast ?? PAINT_CONTRAST, ...paintForm(auraCopy?.item ?? '', auraCopy?.print ?? 0) } : undefined;
   const block = (k: number) => (Math.floor(k * 2.5) * 2) / 5;
-  const field = looked
-    ? lookField(look, ed, v, [wcx / 5, wcy / 5], 0.2, sheen ? { x: ex, y: ey, region: er, h: eh, rgb: ergb, raised } : { x: ex.map(block), y: ey.map(block), region: er, h: eh, rgb: ergb }, paint)!
+  const field = concept === 'warm' ? warmField([wcx / 5, wcy / 5], { x: ex, y: ey, region: er, h: eh, rgb: ergb })
+    : sheen ? lookField(5, 5, v, [wcx / 5, wcy / 5], 0.2, { x: ex, y: ey, region: er, h: eh, rgb: ergb, raised })!
+    : looked ? lookField(look, ed, v, [wcx / 5, wcy / 5], 0.2, { x: ex.map(block), y: ey.map(block), region: er, h: eh, rgb: ergb }, paint)!
     : editionField(ed, v, [wcx / 5, wcy / 5], 0.2, { x: ex, y: ey, region: er, h: eh, rgb: ergb });
   const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
 
@@ -572,21 +617,29 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
    * plus one against the window's rim, as `edgesOf` gives them.
    */
   const cellEdges = (frame: CardFrame, oy: number) => {
-    const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0, gw = fw + 2, gh = fh + 2;
+    if (edge === 'none') return new Int32Array(0);
+    const pad = edge === 'pool' ? 4 : 1;
+    const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0, gw = fw + pad * 2, gh = fh + pad * 2;
     const solid = new Uint8Array(gw * gh), out: number[] = [];
     for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
-      if (colors[gy][gx] && slots[gy][gx] !== 5 && slots[gy][gx] !== 3) solid[(gy + 1) * gw + cellX(gx, slots[gy][gx]) / zoom + 1] = 1;
+      if (colors[gy][gx] && slots[gy][gx] !== 5 && slots[gy][gx] !== 3) solid[(gy + pad) * gw + cellX(gx, slots[gy][gx]) / zoom + pad] = 1;
     }
     const at = (i: number, j: number) => i >= 0 && j >= 0 && i < gw && j < gh && solid[j * gw + i] === 1;
+    /** For `pool`: which ring round him a cell is in, 1 to 3 cells out by straight-line distance, else 0. */
+    const ring = (i: number, j: number) => {
+      let best = 99;
+      for (let b = -3; b <= 3; b++) for (let a = -3; a <= 3; a++) if (at(i + a, j + b)) best = Math.min(best, a * a + b * b);
+      return best <= 2 ? 1 : best <= 6 ? 2 : best <= 12 ? 3 : 0;
+    };
     for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
       if (solid[j * gw + i]) continue;
-      const on = edge === 'shadow' ? at(i - 1, j - 1)
-        : at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1) || (edge === 'round' && (at(i - 1, j - 1) || at(i + 1, j - 1) || at(i - 1, j + 1) || at(i + 1, j + 1)));
-      if (!on) continue;
+      const level = edge === 'pool' ? ring(i, j) : edge === 'shadow' ? +at(i - 1, j - 1)
+        : +(at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1) || (edge === 'round' && (at(i - 1, j - 1) || at(i + 1, j - 1) || at(i - 1, j + 1) || at(i + 1, j + 1))));
+      if (!level) continue;
       for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
-        const x = ox + (i - 1) * zoom + dx, yy = oy + (j - 1) * zoom + dy;
+        const x = ox + (i - pad) * zoom + dx, yy = oy + (j - pad) * zoom + dy;
         if (x < 0 || yy < 0 || x >= W || yy >= H || !room[yy * W + x]) continue;
-        out.push((yy * W + x) * 2 + (room[yy * W + x] === 2 ? 1 : 0));
+        out.push(edge === 'pool' ? (yy * W + x) * 4 + level : (yy * W + x) * 2 + (room[yy * W + x] === 2 ? 1 : 0));
       }
     }
     return Int32Array.from(out);
@@ -626,7 +679,9 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
         body[i] *= k; body[i + 1] *= k; body[i + 2] *= k;
       }
     }
-    if (edge === 'shadow') for (const e of edgesOf(frame, oy)) { const i = (e >> 1) * 4; body[i] = body[i] * 0.5 + 12; body[i + 1] = body[i + 1] * 0.5 + 10; body[i + 2] = body[i + 2] * 0.5 + 16; }
+    // The pool lifts the window toward white, a step more each ring nearer him.
+    if (edge === 'pool') for (const e of edgesOf(frame, oy)) { const i = (e >> 2) * 4, k = POOL[e & 3]; body[i] += (255 - body[i]) * k; body[i + 1] += (255 - body[i + 1]) * k; body[i + 2] += (255 - body[i + 2]) * k; }
+    else if (edge === 'shadow') for (const e of edgesOf(frame, oy)) { const i = (e >> 1) * 4; body[i] = body[i] * 0.5 + 12; body[i + 1] = body[i + 1] * 0.5 + 10; body[i + 2] = body[i + 2] * 0.5 + 16; }
     else for (const e of edgesOf(frame, oy)) { const c = e & 1 ? WHITE : edgeC; put(e >> 1, c[0], c[1], c[2]); }
     // His pixels and his buddy's; a frame item's backdrop is the window's own ground (`ground`).
     for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {

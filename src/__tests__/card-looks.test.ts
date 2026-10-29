@@ -30,8 +30,8 @@ describe('prototype card looks', () => {
   test('edge and gold options change only the cards asked', () => {
     const input = { seed: 'looks', title: 'A', copies: [gold], move: 'cheer' as const };
     expect(differs(cardStill(input), cardStill(input, 0.6, { edge: 'now', gold: 'now' }))).toBe(0);
-    for (const edge of ['cell', 'round', 'shadow'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { edge }))).toBeGreaterThan(200);
-    expect(differs(cardStill(input), cardStill(input, 0.6, { gold: 'champagne' }))).toBeGreaterThan(2000);
+    for (const edge of ['cell', 'round', 'shadow', 'none', 'pool'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { edge }))).toBeGreaterThan(200);
+    for (const g of ['champagne', 'trim', 'solid', 'fullart', 'warm'] as const) expect(differs(cardStill(input), cardStill(input, 0.6, { gold: g }))).toBeGreaterThan(2000);
     expect(differs(cardStill(input), cardStill(input, 0.6, { plate: true }))).toBeGreaterThan(1000);
   });
 
