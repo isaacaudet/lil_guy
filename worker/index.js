@@ -1,3 +1,4 @@
+import { sharePage as codeSharePage } from './share-page.js';
 import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked, overBudget } from './baked.js';
 import { batchGuys, clubGuys, crowdImage, namedGuys } from './club-guys.js';
@@ -6,7 +7,7 @@ import { FOUNDER_KEY, NOT_HELD_BACK } from './founder.js';
 import { heldKey, nameRefused, skeletonTaken } from './name-lookup.js';
 import { firstOwner, ownersOf, swapOwners } from './owners.js';
 import { isSharePath, sharePage } from './share.js';
-import { accountOpened, carryLuck, giveStarter, holderOf, keepLuck, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
+import { accountOpened, capsulesOn, carryLuck, giveStarter, holderOf, keepLuck, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
 import { copiesBySeen, guyPlace, rarestPulls, topCopies, topGuys } from './top.js';
 import { emotesFor } from './emotes.js';
 import {
@@ -77,6 +78,7 @@ export default {
       try { return await baked(request, env, url, ctx, guyOf); }
       catch (e) { failed(url, e); return Response.json({ error: 'Pictures are temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
     }
+    if (url.pathname.startsWith('/s/')) return codeSharePage(url);
     if (KIT.has(url.pathname)) return kit(request, env);
     if (isSharePath(url.pathname) && (request.method === 'GET' || request.method === 'HEAD')) {
       // A share page that can't be told about still opens: the page as it is.
@@ -325,28 +327,42 @@ async function pay(env, key, cost, what) {
 }
 
 /**
- * Whether today's free capsule is open to a player: the founder's always is; anyone else's once they have
- * finished a DLE Club game today (UTC), as the club's days say. Only a name with a Google sign-in can be read
- * from the club. A player who hasn't played yet is read again, at most a minute apart, so a game just finished
- * counts. `{ open, why }`, `why` saying what to do while it's shut.
+ * Today's free capsules (Isaac, October 30): one once the player has finished the five of today's DLE Club
+ * gauntlet (UTC), a second once they've finished its extras too, as the club's days say. Only a name with a
+ * Google sign-in can be read from the club; one that hasn't earned them yet is read again, at most a minute
+ * apart, so a game just finished counts. `free_day` keeps how many are open: the day after the first, the
+ * day and a + after the second. `{ open, why, earned, used }`: `why` says what to do while one is still to
+ * earn, and is empty once there is nothing more today. The founder always has both.
  */
 async function freeCapsule(env, key) {
-  if (free(key)) return { open: true, why: '' };
-  // Until the club's days can be kept and read (0010, the shared secret, dle-club's lilguys-stats), and
-  // whenever the club didn't answer the last time it was asked, the rule can't be checked: it stays open to
-  // every name, signed in or not, rather than shutting everyone out.
-  if (!(await stampsReady(env)) || typeof env.CLUB_SSO_SECRET !== 'string' || env.CLUB_SSO_SECRET.length < 32) return { open: true, why: '' };
-  const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
-  if (!name?.account) return { open: false, why: FREE_SHUT.signin };
   const day = today();
-  if (await playedOn(env, name.account, day)) return { open: true, why: '' };
-  await readClub(env, key, undefined, undefined, TODAY_EVERY);
-  if (await playedOn(env, name.account, day)) return { open: true, why: '' };
-  const read = await env.DB.prepare('SELECT club_read, stamps_read FROM players WHERE key = ?').bind(key).first();
-  if (read && read.stamps_read < read.club_read) return { open: true, why: '' };
-  return { open: false, why: FREE_SHUT.play };
+  const p = await env.DB.prepare('SELECT free_day FROM players WHERE key = ?').bind(key).first();
+  const used = freeUsed(p?.free_day, day);
+  if (free(key)) return { open: used < 2, why: '', earned: 2, used };
+  // Until the club's days can be kept and read (0010, the shared secret, dle-club's lilguys-stats), and
+  // whenever the club didn't answer the last time it was asked, the rule can't be checked: one a day stays
+  // open to every name, signed in or not, rather than shutting everyone out.
+  const unread = { open: used < 1, why: '', earned: 1, used };
+  if (!(await stampsReady(env)) || typeof env.CLUB_SSO_SECRET !== 'string' || env.CLUB_SSO_SECRET.length < 32) return unread;
+  const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
+  if (!name?.account) return { open: false, why: used ? '' : FREE_SHUT.signin, earned: 0, used };
+  let earned = await capsulesOn(env, name.account, day);
+  if (earned < 2) {
+    await readClub(env, key, undefined, undefined, TODAY_EVERY);
+    earned = await capsulesOn(env, name.account, day);
+    const read = await env.DB.prepare('SELECT club_read, stamps_read FROM players WHERE key = ?').bind(key).first();
+    if (!earned && read && read.stamps_read < read.club_read) return unread;
+  }
+  if (used < earned) return { open: true, why: '', earned, used };
+  return { open: false, why: used >= 2 ? '' : used ? FREE_SHUT.extras : FREE_SHUT.play, earned, used };
 }
-const FREE_SHUT = { signin: 'Sign in to DLE Club and finish a game today to open it.', play: 'Finish a DLE Club game today to open it.' };
+const FREE_SHUT = {
+  signin: 'Sign in to DLE Club and finish today’s gauntlet to open it.',
+  play: 'Finish today’s gauntlet on DLE Club to open it.',
+  extras: 'Finish today’s extras on DLE Club for a second.',
+};
+/** How many of `day`'s free capsules a `free_day` says are open. */
+export const freeUsed = (freeDay, day) => freeDay === `${day}+` ? 2 : freeDay === day ? 1 : 0;
 
 /** A player's stamps, with whether their name has a Google sign-in for the club to read and when it was claimed. */
 async function stampsOf(env, key) {
@@ -391,7 +407,7 @@ async function me(request, env, key, action) {
 
   if (action === 'open') {
     // A mystery capsule (5 stamps) comes from any machine at random, drawn here; a picked machine costs 8.
-    // Today's machine is also free once a day, for a player who has finished a DLE Club game today.
+    // Today's machine is also free: once for today's gauntlet on DLE Club, again for its extras.
     const mystery = !!body.mystery && !body.free;
     const game = mystery ? mysteryMachine(crypto.randomUUID()) : body.game;
     if (!GAMES.includes(game)) return json({ error: 'Unknown machine' }, 400);
@@ -399,7 +415,11 @@ async function me(request, env, key, action) {
       if (game !== todayGame()) return json({ error: 'Only today’s machine is free' }, 409);
       const shut = await freeCapsule(env, key);
       if (!shut.open) return json({ error: shut.why, freeCapsule: shut }, 403);
-      const r = await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day <> ?').bind(day, key, day).run();
+      // One at a time, guarded in the update: the first moves free_day on to today, the second adds its +.
+      const second = shut.used === 1;
+      const r = second
+        ? await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day = ?').bind(`${day}+`, key, day).run()
+        : await env.DB.prepare('UPDATE players SET free_day = ? WHERE key = ? AND free_day < ?').bind(day, key, day).run();
       if (!r.meta.changes) return json({ error: 'Today’s free capsule is already open' }, 409);
     } else {
       const short = await pay(env, key, mystery ? RULES.mystery : RULES.capsule, mystery ? 'mystery' : `machine:${game}`);
@@ -427,7 +447,7 @@ async function me(request, env, key, action) {
       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'starter', 0, ? WHERE NOT EXISTS (SELECT 1 FROM copies WHERE key = ? AND game = ? AND source = 'starter')`)
       .bind(gift.key, gift.code, gift.item, gift.game, gift.slot, gift.finish, gift.grade, gift.one_in, gift.scuff, new Date().toISOString(), key, gift.game).run();
     const p = await env.DB.prepare('SELECT free_day FROM players WHERE key = ?').bind(key).first();
-    return json({ copy: publicCopy(copy), game, part, starter: given.meta.changes ? gift.code : null, stamps: await stampsOf(env, key), freeDay: p.free_day, luck }, 201);
+    return json({ copy: publicCopy(copy), game, part, starter: given.meta.changes ? gift.code : null, stamps: await stampsOf(env, key), freeDay: p.free_day, freeCapsule: await freeCapsule(env, key), luck }, 201);
   }
   if (action === 'season') {
     // The founder can open any season's capsule, in season or not, by naming one of its items.

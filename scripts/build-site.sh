@@ -6,6 +6,7 @@ cp docs/lil-guy.js site/lil-guy.js
 cp docs/lil-guy-element.js site/lil-guy-element.js
 cp docs/lilguys.js site/lilguys.js
 cp docs/lilguys.mjs site/lilguys.mjs
+cp docs/og.png site/og.png
 cp docs/lilguys-stadium.js site/lilguys-stadium.js
 cp docs/lilguys-stadium.mjs site/lilguys-stadium.mjs
 cp docs/fonts/*.ttf docs/fonts/*.txt site/fonts/

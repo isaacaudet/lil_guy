@@ -13,8 +13,10 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 /** "900", "12K", "1.2M": as the site writes odds. */
 export const fmt = n => n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
 const cap = s => s[0].toUpperCase() + s.slice(1);
-// The big card, still, at four times: 560 × 816, crisp in any preview.
+// A guy's link is his wide preview (src/og.ts), 1200 × 630, the shape every chat shows biggest; a copy's
+// is the big card, still, at four times, 560 × 816, crisp in any preview.
 const CARD = { view: 'card-full-still@4.png', width: 560, height: 816 };
+const WIDE = { view: 'og.png', width: 1200, height: 630 };
 
 /** A guy's rarest trait that shows in the drawing, as the site's chip says it ("Galaxy eyes · 1 in 900"), when it is rare. */
 export function standout(config) {
@@ -23,7 +25,7 @@ export function standout(config) {
   return `${t.slot === 'lucky' ? 'Lucky' : `${cap(t.name)} ${t.slot}`} · 1 in ${fmt(1 / t.chance)}`;
 }
 
-const picture = (url, guy, equip) => `${url.origin}/g/${ART_VERSION}/${claimedCode({ ...guy, worn: equip ?? guy.worn }, '@' + guy.key)}/${CARD.view}`;
+const picture = (url, guy, equip, size = CARD) => `${url.origin}/g/${ART_VERSION}/${claimedCode({ ...guy, worn: equip ?? guy.worn }, '@' + guy.key)}/${size.view}`;
 
 /** A claimed guy's page: its rank, its standout trait, its big card as it is worn. Null for a name nobody holds. */
 async function guyMeta(env, url, who, guyOf) {
@@ -36,7 +38,7 @@ async function guyMeta(env, url, who, guyOf) {
     title: `@${guy.key} · ${rank.name}${rank.label === rank.name ? '' : ` · ${rank.label}`}`,
     description: standout(dealt) || 'Lil guys on DLE Club',
     url: `${url.origin}/u/${guy.key}`,
-    image: picture(url, guy),
+    image: picture(url, guy, undefined, WIDE), size: WIDE,
   };
 }
 
@@ -56,7 +58,7 @@ async function copyMeta(env, url, id, guyOf) {
     description: held,
     url: `${url.origin}/p/${c.id}`,
     // On the holder's card in its place: whatever is worn in that slot comes off for it.
-    image: picture(url, guy, [...guy.worn.filter(w => slotOf(decode(w)) !== slotOf(o)), c.code]),
+    image: picture(url, guy, [...guy.worn.filter(w => slotOf(decode(w)) !== slotOf(o)), c.code]), size: CARD,
   };
 }
 
@@ -65,7 +67,7 @@ export function shareTags(m) {
   const tags = [
     ['property', 'og:type', 'website'], ['property', 'og:site_name', 'Lil Guys'],
     ['property', 'og:title', m.title], ['property', 'og:description', m.description], ['property', 'og:url', m.url],
-    ['property', 'og:image', m.image], ['property', 'og:image:width', CARD.width], ['property', 'og:image:height', CARD.height],
+    ['property', 'og:image', m.image], ['property', 'og:image:width', (m.size || CARD).width], ['property', 'og:image:height', (m.size || CARD).height],
     ['name', 'twitter:card', 'summary_large_image'], ['name', 'twitter:title', m.title],
     ['name', 'twitter:description', m.description], ['name', 'twitter:image', m.image],
   ];

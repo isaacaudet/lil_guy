@@ -17,6 +17,7 @@ import { shineFrame, shines } from './shine';
 import type { AvatarConfig } from './types';
 import { ART_VERSION, BAKED_SIZE, guyCode, PART_KEYS, TITLE_MAX, type CardSpec, type GuySpec } from './guy-code';
 import { defineLilGuy, type LilGuyOptions } from './element';
+import { ogFrames } from './og';
 
 export { ART_VERSION, guyCode, type CardSpec, type GuySpec };
 
@@ -439,6 +440,7 @@ export function bakeView(spec: CardSpec, view: string): Frames | null {
     const card = bakeCard(faceSpec(spec));
     return view === 'card' ? card : { ...card, frames: card.frames.slice(0, 1), delays: [LOOP_MS] };
   }
+  if (view === 'og') return ogFrames(spec);
   if (view === 'pfp' || view === 'pfp-still') { const p = profileFrames(spec); return view === 'pfp' ? p : { ...p, frames: p.frames.slice(0, 1), delays: [LOOP_MS] }; }
   if (view === 'still') { const g = bakeGuy(spec, 'idle'); return { ...g, frames: g.frames.slice(0, 1), delays: [LOOP_MS] }; }
   // A chat emote (./emotes): `emote-<id>` moving, `emote-<id>-still` still.

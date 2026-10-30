@@ -79,8 +79,9 @@ test('a machine gives its free item with the first capsule from it, once; player
 
 test('capsules are rolled and stored on the server, paid in stamps, and the free one is today’s machine once', async () => {
   const c = await claim('mia');
-  // Today's game gives its stamp, and opens the free capsule.
+  // Today's game gives its stamp; today's gauntlet cleared, its two gold, and opens the free capsule.
   const me = playToday('mia');
+  env.db.prepare('UPDATE club_days SET cleared = 1').run();
   const free = await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, me);
   expect(free.status).toBe(201);
   const body: any = await free.json();
@@ -88,16 +89,17 @@ test('capsules are rolled and stored on the server, paid in stamps, and the free
   // The free one is a souvenir of today; no other capsule is.
   expect(body.copy.code).toMatch(/~s\d{4}-\d{2}-\d{2}/);
   // The free one costs nothing.
-  expect(body.stamps.balance).toBe(RULES.stamps + 1);
-  expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, me)).status).toBe(409);
+  expect(body.stamps.balance).toBe(RULES.stamps + 1 + 2);
+  // Here the club can't be asked (no shared secret), so the extras' second can't be checked: one a day.
+  expect((await call('/me/mia/open', 'POST', { game: todayGame(), free: true }, me)).status).toBe(403);
   // A picked machine costs eight stamps; the copy comes from it.
   const paid: any = await (await call('/me/mia/open', 'POST', { game: 'puttsies' }, me)).json();
   expect(paid.game).toBe('puttsies');
-  expect(paid.stamps.balance).toBe(RULES.stamps + 1 - RULES.capsule);
+  expect(paid.stamps.balance).toBe(RULES.stamps + 1 + 2 - RULES.capsule);
   // Short: nothing is taken, and the answer says how many more and where they come from.
   const short = await call('/me/mia/open', 'POST', { game: 'puttsies' }, me);
   expect(short.status).toBe(402);
-  expect(((await short.json()) as any)).toMatchObject({ error: '5 more stamps: play a game on DLE Club.', need: 5, stamps: { balance: 3 } });
+  expect(((await short.json()) as any)).toMatchObject({ error: '3 more stamps: play a game on DLE Club.', need: 3, stamps: { balance: 5 } });
   expect((await call('/me/mia/open', 'POST', { game: 'nope' }, me)).status).toBe(400);
   expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'mia' AND source <> 'starter'").get().n).toBe(2);
 });

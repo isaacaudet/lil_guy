@@ -1638,7 +1638,7 @@
   function fromServer(s) {
     UNLIMITED = !!s.stamps?.unlimited;
     renderFounderBar();
-    // `freeCapsule`: whether today's free capsule is open (a DLE Club game finished today), and if not, why.
+    // `freeCapsule`: whether a free capsule is open today (one for the gauntlet, two with its extras), and if not, why.
     // The three a claim dealt, while their pick is open (`pick`, null once settled), so another device can pick
     // too; a server from before `pick` leaves this browser's. One picked in this browser stays picked.
     const mine = state?.key === s.key, server = 'pick' in s && !(mine && state.picked);
@@ -1949,7 +1949,7 @@
     if (db) { try { const ref = db.doc(`names/${key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.delete(); } catch (e) {} }
     renderAll();
   });
-  $('go-free').addEventListener('click', () => { if (state.free !== today) openFree(todayGame); else { buildNow('roll'); $('roll').scrollIntoView({ behavior: 'smooth' }); } });
+  $('go-free').addEventListener('click', () => { if (freeLeft()) openFree(todayGame); else { buildNow('roll'); $('roll').scrollIntoView({ behavior: 'smooth' }); } });
 
   // Who else has claimed: the latest dozen, live.
   function showRecent(list) {
@@ -2610,8 +2610,8 @@
     const n = LG.guyOneIn(dealt(state.seed));
     $('me-badges').innerHTML = `${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours. Nobody else has this guy.`;
-    const why = state.free === today ? '' : freeWhy();
-    $('go-free').innerHTML = state.free === today ? 'Open a capsule' : why ? `${LOCK}Today's free capsule` : "Open today's free capsule";
+    const why = !freeLeft() ? '' : freeWhy();
+    $('go-free').innerHTML = !freeLeft() ? 'Open a capsule' : why ? `${LOCK}Today's free capsule` : "Open today's free capsule";
     $('go-free').classList.toggle('shut', !!why);
     $('free-why').hidden = !why; $('free-why').innerHTML = clubLinked(why);
   }
@@ -2655,10 +2655,10 @@
     const order = [todayGame, second, ...LG.GAMES.filter(g => g !== todayGame && g !== second)];
     $('machines').innerHTML = order.map((g, i) => {
       const n = LG.gameItems(g).filter(it => !it.free).length, star = LG.gameItems(g).find(it => it.showpiece);
-      const first = i === 0, free = first && state && state.free !== today, big = i === 1 ? ' big' : '';
+      const first = i === 0, free = first && state && freeLeft(), big = i === 1 ? ' big' : '';
       return `<div class="mwrap${first ? ' today' : big}"><button class="mcard${first ? ' today' : big}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : g === newest ? '<span class="pill flag">New</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${clubIcon(g)}${cap(g)}</h3><p>${first && (!state || state.free !== today) ? `${first && state && freeWhy() ? LOCK : ''}Free when you finish today` : `${isLive() && !UNLIMITED && !stampsOf().ready ? 'Opens soon' : `${tk}&nbsp;${COST.machine}`} · ${n}&nbsp;items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
+        <span class="body"><div><h3>${clubIcon(g)}${cap(g)}</h3><p>${first && (!state || freeLeft()) ? `${first && state && freeWhy() ? LOCK : ''}${state?.freeCapsule?.used === 1 ? 'Free again with today’s extras' : 'Free when you finish today'}` : `${isLive() && !UNLIMITED && !stampsOf().ready ? 'Opens soon' : `${tk}&nbsp;${COST.machine}`} · ${n}&nbsp;items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
@@ -2669,7 +2669,7 @@
     pressed = b;
     if (!state) { $('name').focus(); refuse('Claim a name first: your starters come with it.'); return; }
     const g = b.dataset.g;
-    if (g === todayGame && state.free !== today) { openFree(g); return; }
+    if (g === todayGame && freeLeft()) { openFree(g); return; }
     if (!pay(COST.machine)) return;
     open(g, 'Capsule');
   });
@@ -2823,7 +2823,8 @@
       .catch(e => toast(e.message));
   });
   const LUCK_WORDS = { beginner: 'Beginner’s luck', pity: 'Lucky break', founder: 'Founder’s pick' };
-  // On the live site today's free capsule opens once the player has finished a DLE Club game today; the server
+  // On the live site today's free capsule opens once the player has finished today's gauntlet on DLE Club, and a
+  // second once they've finished its extras; the server
   // says whether they have (`state.freeCapsule`) and, while not, what to do. The demo can't know, so it's open there.
   /** Up to the header's sign-in, open, saying why it is needed. */
   function askSignIn(why) {
@@ -2834,6 +2835,9 @@
   // Everything is earned by playing the club's games, so where the words say DLE Club they go there.
   const clubLinked = text => esc(text).replace(/DLE Club/g, '<a href="https://dleclub.com" target="_blank" rel="noopener">DLE Club</a>');
   function freeWhy() { return isLive() && state?.freeCapsule && !state.freeCapsule.open ? state.freeCapsule.why : ''; }
+  // Whether a free capsule is still to come today: open, or still to be earned (the server's `why` says how).
+  // One for today's gauntlet on DLE Club, another for its extras; the demo has the one.
+  function freeLeft() { return isLive() && state?.freeCapsule ? state.freeCapsule.open || !!state.freeCapsule.why : state?.free !== today; }
   async function openFree(g) {
     if (freeWhy()) {
       // Ask again first: a game finished since the page loaded counts.
@@ -2849,7 +2853,7 @@
     if (isLive()) {
       try {
         const r = await meApi('open', { ...(mystery ? { mystery: true } : { game: g, free: how === 'Daily capsule' }), ...(UNLIMITED && fairOdds ? { fair: true } : {}) });
-        state.stamps = r.stamps; state.free = r.freeDay; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
+        state.stamps = r.stamps; state.free = r.freeDay; if (r.freeCapsule) state.freeCapsule = r.freeCapsule; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
         if (r.part?.new) state.parts = [...(state.parts || []), r.part.code];
         // A machine's free item comes with the first capsule from it.
         if (r.starter && !state.copies.includes(r.starter)) { state.copies.push(r.starter); toast(`Plus ${LG.itemById(LG.decode(r.starter).item).name}, ${LG.machineName(r.game)}'s free one`); }
@@ -2857,7 +2861,7 @@
       } catch (e) {
         if (e.stamps) state.stamps = e.stamps;
         // A free capsule the server kept shut is still to come today.
-        if (e.freeCapsule) { state.freeCapsule = e.freeCapsule; state.free = ''; }
+        if (e.freeCapsule) state.freeCapsule = e.freeCapsule;
         if (e.status === 402) short(e.need, e.message); else refuse(e.message);
         renderAll();
       }
@@ -4272,7 +4276,7 @@
       ['Max float', 'Over 0.99. Some collect the most battered copy of everything.'],
       ['Tally', `One copy in ten counts the days its owner finished their games wearing it. ${tally}`],
       ['Pins', `Earned in the games and stuck on for good, three at most: ${LG.PINS.map(p => `${esc(p.name)} (${esc(p.how.toLowerCase())})`).join(', ')}.`],
-      ['Souvenir', '<span class="souv">Souvenir · ' + today + '</span><br>The free capsule for finishing a DLE Club game that day. No other capsule is one.'],
+      ['Souvenir', '<span class="souv">Souvenir · ' + today + '</span><br>A free capsule for finishing that day’s gauntlet on DLE Club. No other capsule is one.'],
       ['Gold rim', `A tally of ${LG.GOLD_RIM_DAYS} days rims the copy in gold.`],
       ['Float rank', 'On the live site every copy shows where its float ranks against every copy of it in its finish.'],
       ['Serial', 'Every pulled copy is numbered in its item’s run: No. 1 is the first ever pulled, and the first hundred are its 1st edition.'],

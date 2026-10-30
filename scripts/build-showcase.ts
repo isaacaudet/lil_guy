@@ -38,16 +38,33 @@ const cards = locker.slice(locker.indexOf('  const compile = (gl, vs, fs) => {')
 
 const LOAD = '<script src="../lil-guy.js"></script>\n<script>window.LG = window.LilGuy;</script>';
 
+const SITE_LINE = 'Get your own guy. A free capsule a day, with things to wear from every DLE Club game.';
+
 for (const file of readdirSync(SRC).filter(f => f.endsWith('.html'))) {
   const body = (await Bun.file(new URL(file, SRC)).text())
     .replace('<script>/*LIB*/</script>', () => LOAD)
     .replace('/*MACHINE*/', () => machine)
     .replace('/*CARDS*/', () => cards);
+  // The pitch is the site's front page (scripts/build-site.sh), so its link preview is the site's: docs/og.png
+  // (scripts/og-site.ts), five guys in their best.
+  const preview = file !== 'promo.html' ? '' : `
+<meta name="description" content="${SITE_LINE}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lil Guys">
+<meta property="og:title" content="Lil Guys">
+<meta property="og:description" content="${SITE_LINE}">
+<meta property="og:url" content="https://lilguys.dleclub.com/">
+<meta property="og:image" content="https://lilguys.dleclub.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Five lil guys in their best hats and auras">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://lilguys.dleclub.com/og.png">`;
   const page = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">${preview}
 <style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
 </head>
 <body>

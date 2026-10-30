@@ -25,9 +25,10 @@ test('/u/<name> is the site’s page with that guy’s card, rank and standout t
   expect(unescape(meta(html, 'og:description')!)).toBe(standout(resolve(seed)) || 'Lil guys on DLE Club');
   expect(meta(html, 'og:url')).toBe('https://lilguys.test/u/mia');
   expect(meta(html, 'twitter:card')).toBe('summary_large_image');
-  // The image is the big card as the guy is worn, still and crisp, and the Worker draws it.
+  // The image is his wide preview as the guy is worn, and the Worker draws it.
   const image = meta(html, 'og:image')!;
-  expect(image).toMatch(new RegExp(`^https://lilguys\\.test/g/${ART_VERSION}/[^/]+/card-full-still@4\\.png$`));
+  expect(image).toMatch(new RegExp(`^https://lilguys\\.test/g/${ART_VERSION}/[^/]+/og\\.png$`));
+  expect([meta(html, 'og:image:width'), meta(html, 'og:image:height')]).toEqual(['1200', '630']);
   expect(meta(html, 'twitter:image')).toBe(image);
   const spec = readGuyCode(image.split('/')[5])!;
   expect(spec.seed).toBe(seed);

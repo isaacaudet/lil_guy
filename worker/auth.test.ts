@@ -50,9 +50,9 @@ test('links an existing name without changing its guy, stamps, copies or worn lo
   const again = await login();
   const restored = await (await call('/me/mia/state', 'GET', undefined, sessionCookie(again))).json();
   // Everything is as it was, and now the club can be read for its stamps.
-  // Linked, the free capsule waits for a club game today rather than a sign-in; here the club isn't there
-  // to answer, so the rule can't be checked and it stays open.
-  expect(restored).toEqual({ ...before, stamps: { ...before.stamps, linked: true }, freeCapsule: { open: true, why: '' } });
+  // Linked, the free capsule waits for today's gauntlet rather than a sign-in; here the club isn't there
+  // to answer, so the rule can't be checked and one stays open.
+  expect(restored).toEqual({ ...before, stamps: { ...before.stamps, linked: true }, freeCapsule: { open: true, why: '', earned: 1, used: 0 } });
   expect((await call('/me/mia/state', 'GET', undefined, '', { Authorization: 'Bearer ' + guest.owner })).status).toBe(401);
   const raw = env.db.query('SELECT account FROM names').get();
   expect(raw.account).toBe(await digest('google:account-a'));
