@@ -40,8 +40,11 @@ export async function clubAccount(note, secret, nonce, now = Math.floor(Date.now
   return claims.a;
 }
 
+// Framed in a game (the club's sheet), this site's cookies are a third party's and never stick, so the
+// page keeps its session for the visit and sends it as a header instead.
+const sessionValue = request => readCookie(request, SESSION) || request.headers.get('X-Lilguys-Session');
 export async function sessionAccount(request, env) {
-  const value = readCookie(request, SESSION);
+  const value = sessionValue(request);
   if (!/^[a-f0-9]{64}$/.test(value || '')) return null;
   return env.DB.prepare('SELECT account FROM auth_sessions WHERE hash = ? AND expires > ?')
     .bind(await digest(value), Math.floor(Date.now() / 1000)).first();
@@ -73,7 +76,7 @@ export async function authApi(request, env, url, verify = googleAccount) {
   // These routes are only called by our own page. Require Origin even when a cookie is absent.
   if (request.headers.get('Origin') !== url.origin) return reply({ error: 'Same-origin request required' }, 403);
   if (action === 'logout') {
-    const value = readCookie(request, SESSION);
+    const value = sessionValue(request);
     if (value) await env.DB.prepare('DELETE FROM auth_sessions WHERE hash = ?').bind(await digest(value)).run();
     return reply({ signedIn: false }, 200, [cookie(SESSION, '', 0), cookie(NONCE, '', 0)]);
   }
@@ -98,7 +101,10 @@ export async function authApi(request, env, url, verify = googleAccount) {
   if (text.length > 16000) return reply({ error: 'Sign-in is too large' }, 413);
   let body;
   try { body = JSON.parse(text); } catch { return reply({ error: 'Invalid sign-in' }, 400); }
-  const nonce = readCookie(request, NONCE);
+  // A club note in a game's frame comes with its nonce, since the nonce cookie never stuck; the
+  // session it makes goes back in the reply, never as a cookie, so it signs in nothing but that frame.
+  const embed = action === 'club' && body?.embed === true;
+  const nonce = embed ? body.nonce : readCookie(request, NONCE);
   const proof = action === 'club' ? body?.note : body?.credential;
   if (!/^[a-f0-9]{64}$/.test(nonce || '') || typeof proof !== 'string') return reply({ error: 'Start sign-in again' }, 401);
   const pending = await env.DB.prepare('SELECT hash FROM auth_nonces WHERE hash = ? AND expires > ?').bind(await digest(nonce), now).first();
@@ -125,5 +131,6 @@ export async function authApi(request, env, url, verify = googleAccount) {
   await env.DB.prepare('INSERT INTO auth_sessions(hash, account, expires, created) VALUES (?, ?, ?, ?)').bind(await digest(token), account, now + MONTH, now).run();
   // Keep at most twelve device sessions. No Google tokens or profile information are stored.
   await env.DB.prepare('DELETE FROM auth_sessions WHERE account = ? AND hash IN (SELECT hash FROM auth_sessions WHERE account = ? ORDER BY created DESC, rowid DESC LIMIT -1 OFFSET 12)').bind(account, account).run();
+  if (embed) return reply({ signedIn: true, name, session: token });
   return reply({ signedIn: true, name }, 200, [cookie(SESSION, token, MONTH), cookie(NONCE, '', 0)]);
 }

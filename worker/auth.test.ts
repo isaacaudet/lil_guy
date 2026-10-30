@@ -192,6 +192,28 @@ test('a DLE Club note must be signed, in date, for this audience and for this br
   expect((await call('/auth/club', 'POST', { note }, mine.cookie, { Origin: 'https://evil.test' })).status).toBe(403);
 });
 
+test('in a game’s frame a DLE Club note signs in that frame alone, by a header, never a cookie', async () => {
+  env.CLUB_SSO_SECRET = CLUB_SECRET;
+  const google = await login('account-a');
+  await call('/names/mia', 'POST', undefined, sessionCookie(google));
+  const account = await digest('google:account-a');
+  const s = await start();
+  const framed = await call('/auth/club', 'POST', { note: await clubNote(s.nonce, account), nonce: s.nonce, embed: true });
+  expect(framed.status).toBe(200);
+  expect(framed.headers.get('Set-Cookie')).toBeNull();
+  const { session, name } = await framed.json();
+  expect(name.key).toBe('mia');
+  expect(session).toMatch(/^[a-f0-9]{64}$/);
+  const seen = await (await call('/auth/session', 'GET', undefined, undefined, { 'X-Lilguys-Session': session })).json();
+  expect(seen.signedIn).toBe(true);
+  expect(seen.name.key).toBe('mia');
+  // the nonce is still the server's own, and spent once
+  const again = await call('/auth/club', 'POST', { note: await clubNote(s.nonce, account), nonce: s.nonce, embed: true });
+  expect(again.status).toBe(401);
+  const made = 'a'.repeat(64);
+  expect((await call('/auth/club', 'POST', { note: await clubNote(made, account), nonce: made, embed: true })).status).toBe(401);
+});
+
 test('without the shared secret, DLE Club sign-in is off', async () => {
   expect((await (await call('/auth/session')).json()).club).toBe(false);
   const s = await start();
