@@ -249,8 +249,11 @@
 
   // ---------------------------------------------------------------- the ladder
   const per = f => LG.FINISHES[f].odds / 100;
-  const gradeP = g => g === 5 ? LG.AURA_ODDS : Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === g).reduce((a, f) => a + per(f), 0) * (1 - LG.AURA_ODDS);
-  $('ladder-rungs').innerHTML = LG.GRADES.map((g, k) => `<div class="rung" style="background:${g.color}"><b>${esc(g.name)}</b><span>${oneIn(gradeP(k))} capsules</span><span>${k === 5 ? 'Any machine, its own finishes' : Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].grade === k).map(f => LG.FINISHES[f].name).join(', ')}</span></div>`).join('')
+  // The finishes a capsule rolls, by grade then commonest first; one at 0% isn't dealt, so it isn't listed.
+  const ROLLED = Object.keys(LG.FINISHES).filter(f => LG.FINISHES[f].odds > 0).sort((a, b) => LG.FINISHES[a].grade - LG.FINISHES[b].grade || LG.FINISHES[b].odds - LG.FINISHES[a].odds);
+  // A grade's odds are its finishes' odds summed, the same figures as the finish table below.
+  const gradeP = g => g === 5 ? LG.AURA_ODDS : ROLLED.filter(f => LG.FINISHES[f].grade === g).reduce((a, f) => a + per(f), 0);
+  $('ladder-rungs').innerHTML = LG.GRADES.map((g, k) => `<div class="rung" style="background:${g.color}"><b>${esc(g.name)}</b><span>${oneIn(gradeP(k))} capsules</span><span>${k === 5 ? 'Any machine, its own finishes' : ROLLED.filter(f => LG.FINISHES[f].grade === k).map(f => LG.FINISHES[f].name).join(', ')}</span></div>`).join('')
 ;
   $('tier-key').innerHTML = 'Parts are tiered by how often they turn up: ' + TIERS.slice(0, 5).map((t, k) => `<span><i style="background:${t.c}"></i>${t.name} ${k === 4 ? 'rarer than 1 in 300' : `to ${oneIn(t.min)}`}</span>`).join('');
 
@@ -271,7 +274,7 @@
 
   // ---------------------------------------------------------------- finishes, prints, wear, earned
   const sample = f => cv({ equip: [LG.encode({ item: 'stackdle.block', finish: f, scuff: 0.02, print: 40 })] });
-  $('fin-table').innerHTML = `<tr><th></th><th>Finish</th><th>Grade</th><th>Chance a capsule</th><th>Condition range</th></tr>` + Object.entries(LG.FINISHES).filter(([, x]) => !x.aura).map(([f, x]) =>
+  $('fin-table').innerHTML = `<tr><th></th><th>Finish</th><th>Grade</th><th>Chance a capsule</th><th>Condition range</th></tr>` + ROLLED.map(f => [f, LG.FINISHES[f]]).map(([f, x]) =>
     `<tr><td>${sample(f)}</td><td><b>${esc(x.name)}</b></td><td><span class="chip" style="--k:${LG.GRADES[x.grade].color}">${esc(LG.GRADES[x.grade].name)}</span></td><td class="num">${x.odds}% · ${oneIn(x.odds / 100)}</td><td class="num">${x.scuffs[1] < 1 ? 'Box Fresh to Like New' : 'any'}</td></tr>`).join('');
   const nebula = per('nebula'), tempered = per('tempered');
   $('print-table').innerHTML = `<tr><th></th><th>Famous print</th><th>What it is</th><th>Chance a capsule</th></tr>` + [

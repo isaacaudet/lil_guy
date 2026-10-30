@@ -264,7 +264,8 @@ type PaintId = keyof typeof PAINTS; //#endregion
  * An item (`puttsies.ball`) is a design. A copy someone owns adds:
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
- *   Prism, Negative and Gold are progressively rarer
+ *   Prism, Negative and Gold are progressively rarer, and three graphic ones,
+ *   Op, Impossible and Grid, sit beside Prism and Negative
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -280,7 +281,7 @@ type PaintId = keyof typeof PAINTS; //#endregion
  * millions of values. Everything is deterministic from the stored numbers, so
  * a copy looks the same everywhere it is drawn.
  */
-type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold' | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl';
+type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold' | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl' | 'op' | 'impossible' | 'grid';
 interface Owned {
   item: string;
   finish: Finish;
@@ -529,6 +530,7 @@ declare const accessories: Accessory[];
 //#region src/palette.d.ts
 declare const palettes: Palette[];
 declare function getPalette(index: number): Palette;
+/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
 declare function paletteOf(config: AvatarConfig): Palette;
 
 //#endregion

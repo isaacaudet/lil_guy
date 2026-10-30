@@ -3,7 +3,7 @@ import { allowed, decodeLook, encodeLook, lookOf, makeSeed, pickable, rareParts,
 import { resolve, dealOf } from '../resolve';
 import { eyes, heads } from '../parts';
 import { palettes } from '../palette';
-import { eyeWeights, headWeights, mouthWeights, cheekWeights, CAPSULE_ONLY } from '../parts/weights';
+import { eyeWeights, headWeights, mouthWeights, cheekWeights, hairWeights, bodyWeights, CAPSULE_ONLY } from '../parts/weights';
 
 const laser = eyes.findIndex(e => e.name === 'laser');
 const crab = heads.findIndex(h => h.name === 'crab');
@@ -90,27 +90,29 @@ describe('look codes', () => {
 });
 
 describe('the capsule-only set, from capsules only', () => {
-  const anime = Object.entries(CAPSULE_ONLY).flatMap(([slot, w]) => Object.keys(w!).map(i => ({ slot: slot as LookSlot, index: Number(i) })));
+  const capsuleOnly = Object.entries(CAPSULE_ONLY).flatMap(([slot, w]) => Object.keys(w!).map(i => ({ slot: slot as LookSlot, index: Number(i) })));
 
   test('is never dealt: every deal draws exactly as it did', () => {
-    expect(anime.length).toBe(8);
-    for (const { slot, index } of anime) expect(({ eyes: eyeWeights, mouth: mouthWeights, cheeks: cheekWeights } as Record<string, number[]>)[slot][index]).toBe(0);
+    // Starry, kitty, joy and puppy eyes, three mouths, big blush; then the night set: eclipse and void eyes, idea and thought, op art.
+    expect(capsuleOnly.length).toBe(13);
+    const weights: Record<string, number[]> = { eyes: eyeWeights, mouth: mouthWeights, cheeks: cheekWeights, hair: hairWeights, body: bodyWeights };
+    for (const { slot, index } of capsuleOnly) expect(weights[slot][index]).toBe(0);
     for (let n = 0; n < 3000; n++) {
-      const g = resolve(`4-anime${n}`);
-      expect(anime.some(({ slot, index }) => g[slot] === index)).toBe(false);
+      const g = resolve(`4-capsule${n}`);
+      expect(capsuleOnly.some(({ slot, index }) => g[slot] === index)).toBe(false);
     }
   });
 
   test('a capsule can unlock each one, and then it can be picked', () => {
-    const own = resolve('anime-owner');
-    for (const p of anime) {
+    const own = resolve('capsule-owner');
+    for (const p of capsuleOnly) {
       expect(rareParts(p.slot)).toContain(p.index);
       expect(pickable(own, p.slot)).not.toContain(p.index);
       expect(pickable(own, p.slot, { [p.slot]: [p.index] })).toContain(p.index);
       expect(readPart(partCode(p))).toEqual(p);
     }
     const got = new Set<string>();
-    for (let n = 0; n < 4000; n++) { const d = rollPart(`anime${n}`); if (d) got.add(partCode(d)); }
-    for (const p of anime) expect(got.has(partCode(p))).toBe(true);
+    for (let n = 0; n < 12000; n++) { const d = rollPart(`capsule${n}`); if (d) got.add(partCode(d)); }
+    for (const p of capsuleOnly) expect(got.has(partCode(p))).toBe(true);
   });
 });

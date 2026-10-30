@@ -134,10 +134,23 @@ export const loopSeconds = (ms: number) => mod(ms, LOOP_MS) / 1000;
  */
 export const EDITIONS = ['base', 'foil', 'holographic', 'polychrome', 'negative', 'gold', 'spectral'] as const;
 
-/** The edition a finish puts on its card: Sunset is foil, Tempered and Nebula holographic, an aura's finishes spectral. */
+/**
+ * The graphic finishes (`GRAPHIC_FINISHES` in ./owned): a printed pattern, not
+ * a shimmer, so they have no number here and their card's window is the
+ * pattern itself.
+ */
+const GRAPHIC: readonly string[] = ['op', 'impossible', 'grid'];
+
+/**
+ * The edition a finish puts on its card: Sunset is foil, Tempered and Nebula
+ * holographic, an aura's finishes spectral. A graphic finish (Op, Impossible,
+ * Grid) keeps the plain stock: its pattern is the card's window, and a sheen
+ * over it would muddy the ink and ivory.
+ */
 export function editionOf(finish: string | undefined): number {
+  if (!finish || GRAPHIC.includes(finish)) return 0;
   const i = SHADER_FINISHES.indexOf(finish as (typeof SHADER_FINISHES)[number]);
-  return i < 0 ? (finish ? 6 : 0) : [0, 1, 2, 2, 3, 4, 5][i];
+  return i < 0 ? 6 : [0, 1, 2, 2, 3, 4, 5][i];
 }
 
 /**

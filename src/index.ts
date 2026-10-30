@@ -45,8 +45,8 @@ export { palettes, getPalette, resolveColor, shadePalette, SHADE_COUNT, luckyPal
 export { heads, eyes, mouths, cheeks, hair, bodies, accessories } from "./parts";
 export { items, itemById, gameItems, freeItem, dress, withItems, inSeason, GAMES, machineName, SHOWPIECE_WEIGHT, itemWeight } from "./items";
 export type { Item, Slot, ItemGame } from "./items";
-export { encode, decode, starter, roll, mysteryMachine, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS } from "./owned";
-export type { Owned, Finish, Grade } from "./owned";
+export { encode, decode, starter, roll, mysteryMachine, wearOf, gradeOf, nameOf, special, nebulaPhase, temperTint, slotOf, rollSeason, FINISHES, GRADES, WEAR, DEEP_BLUE_PRINTS, GRAPHIC_FINISHES, unusual, UNUSUAL_ONE_IN, boxOf } from "./owned";
+export type { Owned, Finish, Grade, ItemBox } from "./owned";
 export { paint, SMALL_SIZE } from "./paint";
 export { animate, animateLoop, frameAt, drawFrame, toAnimatedSvg, closeEyes, squashRows, MOVES, HEADROOM, FRAME_WIDTH, WIDE_FRAME_WIDTH, FRAME_HEIGHT, EMOTE_UNLOCKS } from "./animate";
 export { PINS, MAX_PINS, pinById, tallyMarks, GOLD_RIM_DAYS } from "./pins";
@@ -59,7 +59,7 @@ export type { Emote, Move, Animation, AnimationFrame, AnimateOptions, AnimatedSv
 
 export { mergeRefs, useMergeRefs } from "./utils/merge-refs";
 export { DEFAULT_COLORS, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK, getColor } from "./utils/colors";
-export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, FOUNDER_RANK, type GuyRank, copyOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from "./rarity";
+export { traitOdds, guyOneIn, guyRank, guyScore, GUY_TIERS, FOUNDER_RANK, type GuyRank, copyOneIn, visibleOneIn, TRAIT_SLOTS, TONE_NAMES, ARM_NAMES, FOOT_NAMES } from "./rarity";
 export type { TraitOdds, TraitSlot } from "./rarity";
 export { TRAIT_ICONS, TIER_ICONS } from "./icons";
 export type { Tier } from "./icons";
@@ -75,9 +75,9 @@ export type { VoxelColumn, VoxelMesh, VoxelSource, VoxelOptions, Surface, Surfac
 export { FRAME_SLOTS } from "./animate";
 export { AURAS, ONE_OF_ONE_AURAS, AURA_ODDS, auraById, auraCells, auraColor, auraColors } from "./auras";
 export { collectorNotes, type Note } from "./collector";
-export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, type Fx, type Effect } from "./effects";
+export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, layered, FX_BADGES, BADGE_INKS, type Fx, type Effect } from "./effects";
 export { TAG_MAX, cleanTag, floatShare, tradeFloat, tradeGames, machineSet, setProgress } from "./collect";
-export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardPlayer, cardStill, cardArtPlayer, cardArtFrames, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, textWidth, CARD_EDGES, CARD_GOLDS, type CardInput, type CardPlayerOptions, type CardEdge, type CardGold, type CardStyle } from "./card";
+export { CARD_WIDTH, CARD_HEIGHT, cardFrames, cardPlayer, cardStill, cardArtPlayer, cardArtFrames, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, textWidth, hasGlyph, CARD_EDGES, CARD_GOLDS, type CardInput, type CardPlayerOptions, type CardEdge, type CardGold, type CardStyle } from "./card";
 export { encodeGif, encodePng, encodeApng, fewerColours, upscale, type Frames } from "./gif";
 export { LOOP_MS, SHADER_FINISHES, noiseOf, finishColor, GLSL_COMMON } from "./finish-shader";
 export { shineFrame, shines, SHINE_FRAGMENT } from "./shine";

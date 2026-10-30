@@ -1,4 +1,5 @@
 import { anyName, claimedCode, claimedGuys } from './club-guys.js';
+import { mayShow } from './emotes.js';
 import { ART_VERSION, bakeView, bakedImage, guyCode, readGuyCode, sheetColumns } from '../src/index-headless.ts';
 
 /**
@@ -20,6 +21,9 @@ import { ART_VERSION, bakeView, bakedImage, guyCode, readGuyCode, sheetColumns }
  * in the browser; a new art version is a new address. `@name` and `~name` follow what he wears, so
  * they redirect to his code's address for a minute at a time. Everything is drawn by the library's
  * plain-code renderer, the same one `<lil-guy>` and the lil guys site use.
+ *
+ * An emote kept for what a player holds (Galaxybrain, ./emotes.js) is drawn only for a claimed guy who has
+ * earned it, by name or by code (the code's seed is the claimed guy's): anyone else's is a 404, never kept.
  */
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
@@ -89,7 +93,9 @@ export async function baked(request, env, url, ctx, guyOf) {
   if (version === 'latest' && m && (who[0] === '@' || who[0] === '~')) {
     // One hop from a stable address to the picture: the name straight to its code at today's version.
     const code = await codeOfName(env, who, m[1], guyOf);
-    return code ? redirect(302, `/g/${ART_VERSION}/${code}/${view}`, `public, max-age=${NAME_TTL}`) : fail(404, 'No such name');
+    if (!code) return fail(404, 'No such name');
+    if (!(await mayShow(env, readGuyCode(code), m[1]))) return fail(404, 'Not earned');
+    return redirect(302, `/g/${ART_VERSION}/${code}/${view}`, `public, max-age=${NAME_TTL}`);
   }
   if (version === 'latest') return redirect(302, `/g/${ART_VERSION}/${who}/${view}`, `public, max-age=${LATEST_TTL}`);
   // An old art version's address shows today's art.
@@ -100,6 +106,7 @@ export async function baked(request, env, url, ctx, guyOf) {
   if (who[0] === '@' || who[0] === '~') {
     const code = await codeOfName(env, who, name, guyOf);
     if (!code) return fail(404, 'No such name');
+    if (!(await mayShow(env, readGuyCode(code), name))) return fail(404, 'Not earned');
     return redirect(302, `/g/${ART_VERSION}/${code}/${view}`, `public, max-age=${NAME_TTL}`);
   }
   const spec = readGuyCode(who);
@@ -110,6 +117,8 @@ export async function baked(request, env, url, ctx, guyOf) {
   if (canonical !== who) return redirect(301, `/g/${ART_VERSION}/${canonical}/${view}`, IMMUTABLE);
   const scale = digits ? Number(digits) : 1;
   if (scale < 1 || scale > 16 || (digits && digits.startsWith('0'))) return fail(404, 'Scale is 1 to 16');
+  // Asked before the cache, so an emote whose earner has let it go stops being served.
+  if (!(await mayShow(env, spec, name))) return fail(404, 'Not earned');
 
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheKey = new Request(url.origin + url.pathname);

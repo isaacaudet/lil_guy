@@ -40,6 +40,32 @@ export const EFFECTS: Record<Fx, Effect> = {
 
 export const FX_IDS = Object.keys(EFFECTS) as Fx[];
 
+/**
+ * Each effect's badge: a five-by-five picture of it in its own colours, for a
+ * card's corner and anywhere a copy's effect is named. Each letter is a
+ * colour in `BADGE_INKS`; `.` is empty.
+ */
+export const FX_BADGES: Record<Fx, string[]> = {
+  shimmer:   ['..w..', '..s..', 'wsWsw', '..s..', '..w..'],
+  pulse:     ['.vvv.', 'v...v', 'v.W.v', 'v...v', '.vvv.'],
+  holo:      ['r.y.g', '.y.g.', 'y.g.b', '.g.b.', 'g.b.v'],
+  neon:      ['.ppp.', 'p...p', 'p...p', 'p...p', '.ppp.'],
+  bubbles:   ['.bb..', 'bWb..', '.bb..', '...bb', '...bW'],
+  hearts:    ['pp.pp', 'pPPPp', 'pPPPp', '.pPp.', '..p..'],
+  chroma:    ['rrrrr', 'yyyyy', 'ggggg', 'bbbbb', 'vvvvv'],
+  rime:      ['s.s.s', '.sWs.', 'sWWWs', '.sWs.', 's.s.s'],
+  embers:    ['..o..', '.oy..', '.oyo.', 'oyWyo', '.ooo.'],
+  static:    ['rrr..', '..ccc', 'rrrr.', '.cccc', 'rr...'],
+  lava:      ['..o..', '.oyo.', 'oyWyo', 'oyyyo', '.ooo.'],
+  starlight: ['..W..', '..v..', 'WvWvW', '..v..', '..W..'],
+  electric:  ['..yy.', '.yy..', 'yyyyy', '..yy.', '.yy..'],
+};
+/** The colours a badge is drawn in. */
+export const BADGE_INKS: Record<string, string> = {
+  W: '#FFFFFF', w: '#E6F4FF', s: '#9ED8FF', v: '#A98BFF', r: '#FF5A6E', y: '#FFD23F', g: '#5FD38A', b: '#5FA8FF',
+  p: '#FF6FAE', P: '#FFC2DB', o: '#FF8A2B', c: '#3DD8FF',
+};
+
 /** The effect a uniform number in [0, 1) gives, rarest checked first, or none. */
 export function rollFx(u: number, aura: boolean): Fx | undefined {
   let edge = 0;
@@ -78,9 +104,34 @@ const hue = (h: number, s = 0.9, l = 0.65): RGB => {
 const NEON_TUBES: RGB[] = [[255, 63, 164], [47, 217, 255], [255, 90, 60], [180, 92, 255], [61, 255, 143], [255, 194, 58]];
 const neonTube = (print: number) => NEON_TUBES[print % NEON_TUBES.length];
 
-/** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
-export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print = 0): string {
+/**
+ * The finishes an effect repaints whole: Plain and Sunset, the commonest, so
+ * a cheap copy with an effect changes a lot, and an aura's own, whose few
+ * scattered cells the effect only marks. On every other finish an effect is a
+ * layer over it (`layered`): the finish shows through and the effect runs
+ * over it as a band, a sheen or a few cells, never as a new coat of paint, so
+ * a Deep Blue with Chroma looks like both.
+ */
+const REPAINTS = new Set(['plain', 'sunset', 'classic', 'fade', 'frost', 'toxic', 'shadow', 'sapphire', 'ruby', 'pearl']);
+
+/** Whether an effect on a copy in `finish` is a layer over the finish rather than a repaint of it. */
+export const layered = (finish: string | undefined): boolean => !!finish && !REPAINTS.has(finish);
+
+/** A colour's lightness, 0 to 1. */
+const light = (c: RGB) => (c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11) / 255;
+
+/**
+ * One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two
+ * copies move together. Given the copy's `finish`, an effect that recolours
+ * is laid over a finish other than Plain or Sunset instead of repainting it
+ * (`layered`).
+ */
+export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print = 0, finish?: string): string {
   const c = rgb(color), tt = t + print * 37;
+  if (layered(finish)) {
+    const over = overFinish(c, fx, x, y, tt, print);
+    if (over) return hex(over);
+  }
   switch (fx) {
     case 'shimmer': {
       // Two glint bands chase across it, edged in a cool tint so they show on white too.
@@ -150,6 +201,57 @@ export function fxColor(color: string, fx: Fx, x: number, y: number, t: number, 
   }
 }
 
+/**
+ * An effect that would recolour a copy, as a layer over its finish instead
+ * (`layered`), or null for one that already leaves the colour alone. Chroma is
+ * a rainbow band crossing it, Holo a light foil sheen with a bright line, Lava
+ * veins only in its darkest parts, Starlight a few stars and no night, Rime a
+ * thin frost, Static a lighter glitch and Electric a weaker flash.
+ */
+function overFinish(c: RGB, fx: Fx, x: number, y: number, tt: number, print: number): RGB | null {
+  switch (fx) {
+    case 'chroma': {
+      // A band four cells wide crossing it diagonally, each cell a step round the rainbow; a faint tint behind it.
+      const at = cycle(tt, 2520) * 40 - 8, d = x + y - at, h = ((tt * 360 / fit(2520) + (x + y) * 14) % 360 + 360) % 360;
+      if (d >= 0 && d < 4) return mix(c, hue((h + Math.floor(d) * 60) % 360, 0.95, Math.min(0.72, Math.max(0.4, light(c)))), 0.62);
+      return mix(c, hue(h, 0.9, Math.min(0.7, Math.max(0.35, light(c)))), 0.1);
+    }
+    case 'holo': {
+      // A light rainbow foil, and a bright line sweeping across it.
+      const d = x * 0.8 + y - (cycle(tt, 1800) * 40 - 8);
+      const foil = mix(c, hue(((x * 22 + y * 14 + tt * 360 / fit(1800)) % 360 + 360) % 360), 0.16);
+      return d >= 0 && d < 1.2 ? mix(foil, WHITE, 0.55) : foil;
+    }
+    case 'lava': {
+      // Molten veins only through its darkest third; the finish untouched everywhere else.
+      if (light(c) > 0.3) return c;
+      const flow = Math.sin(y * 1.1 + tt / wave(220) + Math.sin(x * 0.9 + tt / wave(700)) * 2);
+      return flow > 0.55 ? mix([255, 120, 30], [255, 230, 120], (flow - 0.55) * 2.2) : flow > 0.25 ? mix(c, [220, 70, 20], 0.45) : mix(c, [40, 18, 12], 0.25);
+    }
+    case 'starlight':
+      // Stars on the finish, no night sky over it (applyFx twinkles more in).
+      return noise(x, y, print) > 0.93 ? mix(c, [236, 230, 255], 0.75) : c;
+    case 'rime': {
+      const reach = 0.5 + 0.5 * Math.sin(tt / wave(900) - y * 0.35), n = noise(x, y, tick(tt, 400), print);
+      if (reach > 0.45 && n > 0.93) return n > 0.97 ? WHITE : [221, 244, 255];
+      return mix(c, [200, 234, 255], 0.22 * reach);
+    }
+    case 'static': {
+      const roll = cycle(tt, 70 * 24) * 24 - 4, burst = noise(tick(tt, 90), print, 7) > 0.62;
+      if (burst) { const r = noise(x, y, tick(tt, 60)); return r > 0.9 ? WHITE : mix(c, r > 0.45 ? [255, 60, 90] : [60, 200, 255], 0.3); }
+      if (Math.abs(y - roll) < 1) return mix(c, WHITE, 0.4);
+      return y % 2 ? mix(c, [0, 0, 0], 0.08) : c;
+    }
+    case 'electric': {
+      const flash = noise(tick(tt, 120), print, 11) > 0.8;
+      if (flash) return mix(c, WHITE, 0.3);
+      const vein = Math.abs(Math.sin(x * 1.7 + y * 0.9 + tt / wave(90))) > 0.93;
+      return vein ? mix(c, [200, 240, 255], 0.5) : mix(c, [110, 180, 255], 0.06);
+    }
+    default: return null;
+  }
+}
+
 /** Under this many cells a copy is small: its effect is pushed harder and glows round it. */
 const SMALL_COPY = 80;
 /** An effect that darkens an item; on a small copy it keeps more of the item's colour. */
@@ -198,7 +300,7 @@ function signature(fx: Fx, f: number, t: number, i: number): { cells: [number, n
  * it, nothing is drawn round its scattered cells, and its signature (hearts,
  * bubbles, sparks, a strike) rises off it more sparingly than off an item.
  */
-export function applyFx(colors: (string | null)[][], slots: number[][], copies: (({ fx?: Fx; print: number }) | undefined)[], t: number): (string | null)[][] {
+export function applyFx(colors: (string | null)[][], slots: number[][], copies: (({ fx?: Fx; print: number; finish?: string }) | undefined)[], t: number): (string | null)[][] {
   if (!copies.some(o => o?.fx)) return colors;
   const out = colors.map(row => [...row]);
   const H = out.length, W = out[0].length;
@@ -212,11 +314,12 @@ export function applyFx(colors: (string | null)[][], slots: number[][], copies: 
   slots.forEach((row, y) => row.forEach((s, x) => {
     const o = copies[s - 1];
     if (!s || !o?.fx || !colors[y][x]) return;
-    const fx = fxColor(colors[y][x]!, o.fx, x, y, t, o.print);
+    const fx = fxColor(colors[y][x]!, o.fx, x, y, t, o.print, o.finish);
     const a = rgb(colors[y][x]!), b = rgb(fx);
     // An aura's own pieces take the effect whole: they are few, so it marks them without flooding.
     if (s === AURA_SLOT) { out[y][x] = fx; return; }
-    if (!small(s - 1)) { out[y][x] = fx; return; }
+    // Over a finish it is a layer, never pushed past what it lays over.
+    if (!small(s - 1) || layered(o.finish)) { out[y][x] = fx; return; }
     out[y][x] = hex(DARKENS.includes(o.fx) ? mix(a, b, 0.42) : mix(a, b, 1.5));
   }));
   // Round a small copy, a halo of its effect twinkles in the empty cells beside it.
@@ -304,8 +407,8 @@ export function applyFx(colors: (string | null)[][], slots: number[][], copies: 
       for (const [key, d] of depth(k)) {
         const x = key % W, y = Math.floor(key / W);
         if (d > reach) continue;
-        const glint = noise(x, y, tick(tt, 300), o.print) > 0.82;
-        out[y][x] = glint ? '#FFFFFF' : hex(mix(rgb(out[y][x]!), [214, 240, 255], aura ? 0.5 : d <= 1 ? 0.85 : 0.6));
+        const glint = noise(x, y, tick(tt, 300), o.print) > (layered(o.finish) ? 0.95 : 0.82);
+        out[y][x] = glint ? '#FFFFFF' : hex(mix(rgb(out[y][x]!), [214, 240, 255], aura ? 0.5 : layered(o.finish) ? (d <= 1 ? 0.3 : 0.15) : d <= 1 ? 0.85 : 0.6));
       }
       if (!aura) for (const [x, y] of edgeOf(k)) if (noise(x, y, tick(tt, 300), 3) > 0.7 && out[y][x] && dark(colors[y][x] ?? '#000000')) out[y][x] = '#BFE6FF';
     }

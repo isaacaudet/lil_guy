@@ -95,6 +95,14 @@
   .dl .for { font-size: 16px; color: var(--ink-3); width: 64px; }
   .all { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 8px 0 20px; }
   .all .btn.orange { background: var(--orange); box-shadow: 0 4px 0 var(--orange-d); }
+  /* One still to unlock: shown dimmed, with how to get it in place of its downloads. */
+  .emote.locked .stage img { opacity: .4; filter: grayscale(.5); }
+  .lock { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 6px; font-size: 16px; background: var(--well); color: var(--ink-2); }
+  .lock svg { width: 9px; height: 10px; shape-rendering: crispEdges; }
+  .how { font-size: 16px; line-height: 1.35; color: var(--ink-2); }
+  .locked-art { width: 56px; height: 56px; display: grid; place-items: center; opacity: .5; }
+  .locked-art svg { width: 21px; height: 24px; shape-rendering: crispEdges; }
+  h2.thoughts { margin: 32px 0 12px; font-size: 24px; }
 </style>
 
 <div class="wrap">
@@ -104,7 +112,7 @@
   </header>
 
   <h1>Emotes</h1>
-  <p class="lede">Your lil guy as twelve Twitch and Discord emotes, still and moving. Type your name.</p>
+  <p class="lede">Your lil guy as Twitch and Discord emotes, still and moving. Type your name.</p>
 
   <form class="ask" id="ask">
     <input id="name" value="isaac" maxlength="40" spellcheck="false" autocomplete="off" aria-label="Your name">
@@ -119,6 +127,8 @@
   </div>
 
   <div class="emotes" id="emotes"></div>
+  <h2 class="thoughts">Thoughts</h2>
+  <div class="emotes" id="thoughts"></div>
 
   <div class="scroll" style="margin-top:24px"><table>
     <thead><tr><th>Where</th><th>Files</th><th>Upload</th></tr></thead>
@@ -138,6 +148,14 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const SET = [['hi', 'Hi'], ['lol', 'Lol'], ['pog', 'Pog'], ['love', 'Love'], ['mad', 'Mad'], ['sad', 'Sad'], ['sleep', 'Sleep'], ['hmm', 'Hmm'], ['hype', 'Hype'], ['gg', 'Gg'], ['blep', 'Blep'], ['oops', 'Oops']];
+  // The thoughts, after the twelve in the set's order (the library's EMOTE_SET); one has to be earned first.
+  const THOUGHTS = [['idea', 'Idea'], ['mindblown', 'Mindblown'], ['daydream', 'Daydream'], ['galaxybrain', 'Galaxybrain']];
+  // How to earn one (the library's EMOTE_UNLOCKS, its `unlock`), and when a player's copies show they have. Copies
+  // can show it but never rule it out: the palettes that earn it too aren't on a player's page.
+  const EARN = { galaxybrain: { unlock: 'galaxy', how: 'A Mythic or Grail copy, an aura, or eclipse, void, idea, thought or op art', has: copies => copies.some(c => c.slot === 'aura' || c.grade >= 3) } };
+  const LOCK = '<svg viewBox="0 0 7 8" aria-hidden="true"><path fill="currentColor" d="M2 0h3v1h1v2h1v5H0V3h1V1h1zM2 1v2h3V1z"/></svg>';
+  // For the name shown, each one to earn: 'yes', 'no' (only where the Worker says so), or missing while not known.
+  let earned = {};
   // Twitch's three sizes are 14 × 2, 4 and 8; Discord's 126 is 14 × 9.
   const FILES = {
     twitch: id => [[`${id}_28.png`, `emote-${id}-still`, 2, 'png'], [`${id}_56.png`, `emote-${id}-still`, 4, 'png'], [`${id}_112.png`, `emote-${id}-still`, 8, 'png'], [`${id}_animated_112.gif`, `emote-${id}`, 8, 'gif']],
@@ -147,19 +165,51 @@
   const url = (view, scale, format) => L.lilGuyUrl(who, view, { version: 'latest', scale, format });
   const slug = () => who.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'lilguy';
 
-  function show() {
-    $('who').innerHTML = `Emotes for <b>${esc(who)}</b>`;
-    $('emotes').innerHTML = SET.map(([id, name]) => `<div class="emote">
+  const has = id => !EARN[id] || earned[id] === 'yes';
+  /**
+   * What `name` has earned, from their page on the lil guys Worker: its `emotes` (the ids it has unlocked) where
+   * the Worker sends them, else what their copies show. Read into its own answer, so a slow one for an earlier
+   * name never lands on the next.
+   */
+  async function readEarned(name) {
+    const found = {};
+    try {
+      const r = await fetch(`${HOST}/api/guys/${encodeURIComponent(name.toLowerCase().replace(/[^a-z0-9_]/g, ''))}`);
+      if (r.ok) {
+        const u = await r.json();
+        for (const [id, e] of Object.entries(EARN)) {
+          if (Array.isArray(u.emotes)) found[id] = u.emotes.includes(id) || u.emotes.includes(e.unlock) ? 'yes' : 'no';
+          else if (e.has(u.copies || [])) found[id] = 'yes';
+        }
+      }
+    } catch (e) {}
+    return found;
+  }
+  // The Worker draws one to earn only for a guy who has (else a 404), so until the page knows, the lock stands in.
+  const art = (id, name, said) => has(id)
+    ? `<img src="${url('emote-' + id, 4, 'gif')}" width="56" height="56" alt="${said ? `${esc(name)}, moving` : ''}"><img src="${url('emote-' + id + '-still', 2, 'png')}" width="28" height="28" alt="${said ? `${esc(name)} at 28 px` : ''}">`
+    : `<span class="locked-art" aria-hidden="true">${LOCK}</span>`;
+  // Not earned says Locked; not yet known only says how to earn it.
+  const card = ([id, name]) => `<div class="emote${earned[id] === 'no' ? ' locked' : ''}">
       <h3>${esc(name)} <small>${esc(slug())}${esc(name)}</small></h3>
       <div class="stages">
-        <div class="stage dark"><img src="${url('emote-' + id, 4, 'gif')}" width="56" height="56" alt="${esc(name)}, moving"><img src="${url('emote-' + id + '-still', 2, 'png')}" width="28" height="28" alt="${esc(name)} at 28 px"></div>
-        <div class="stage light"><img src="${url('emote-' + id, 4, 'gif')}" width="56" height="56" alt=""><img src="${url('emote-' + id + '-still', 2, 'png')}" width="28" height="28" alt=""></div>
+        <div class="stage dark">${art(id, name, true)}</div>
+        <div class="stage light">${art(id, name, false)}</div>
       </div>
-      ${[['twitch', 'Twitch', ['28', '56', '112', 'GIF']], ['discord', 'Discord', ['PNG', 'GIF']]].map(([where, label, names]) => `<div class="dl"><span class="for">${label}</span>${FILES[where](id).map(([file, view, scale, format], k) =>
+      ${!has(id) ? `${earned[id] === 'no' ? `<span class="lock">${LOCK}Locked</span>` : ''}<p class="how">${esc(EARN[id].how)}</p>` : [['twitch', 'Twitch', ['28', '56', '112', 'GIF']], ['discord', 'Discord', ['PNG', 'GIF']]].map(([where, label, names]) => `<div class="dl"><span class="for">${label}</span>${FILES[where](id).map(([file, view, scale, format], k) =>
         `<a class="chip" download="${esc(slug() + '_' + file)}" href="${url(view, scale, format)}">${names[k]}</a>`).join('')}</div>`).join('')}
-    </div>`).join('');
+    </div>`;
+  async function show() {
+    const asked = who;
+    earned = {};
+    $('who').innerHTML = `Emotes for <b>${esc(who)}</b>`;
+    $('emotes').innerHTML = SET.map(card).join('');
+    $('thoughts').innerHTML = THOUGHTS.map(card).join('');
+    const found = await readEarned(asked);
+    if (asked !== who) return;
+    earned = found;
+    $('thoughts').innerHTML = THOUGHTS.map(card).join('');
   }
-
   // A plain zip (stored, no compression: PNGs and GIFs are compressed already), written in the page.
   const CRC = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
   const crc32 = b => { let c = 0xFFFFFFFF; for (const x of b) c = CRC[(c ^ x) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
@@ -180,7 +230,8 @@
     return new Blob([...parts, ...dir, new Uint8Array(end.buffer)], { type: 'application/zip' });
   }
   async function download(where) {
-    const note = $('zip-note'), list = SET.flatMap(([id]) => FILES[where](id));
+    // Every emote they have, in the set's order: the twelve, then the thoughts they're known to have.
+    const note = $('zip-note'), list = [...SET, ...THOUGHTS].filter(([id]) => has(id)).flatMap(([id]) => FILES[where](id));
     note.textContent = 'Getting them…';
     try {
       const files = [];

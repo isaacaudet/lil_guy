@@ -4,7 +4,8 @@ import { distance, editionOf, finishColor, GLSL_COMMON, GLSL_EDITIONS, GLSL_PREC
 import { dress, itemById, withItems } from './items';
 import { auraColors, auraHue } from './auras';
 import { cardField, GLSL_LOOKS, lookFor, paintColors, PAINT_CONTRAST, paintForm, type LookOptions, type PaintSpec } from './card-looks';
-import { encode, GRADES, gradeOf, type Owned } from './owned';
+import { encode, GRADES, gradeOf, GRAPHIC_FINISHES, type Owned } from './owned';
+import { fxColor } from './effects';
 import { paint } from './paint';
 import { paletteOf } from './palette';
 import { LAYER } from './parts/art';
@@ -104,6 +105,18 @@ const INK = [24, 20, 31], WHITE = [255, 255, 255], IVORY = [246, 240, 227], PLAT
 /** Kinds of pixel, as the shader reads them. */
 const CARD = 1, WINDOW = 2, GUY = 3, ITEM = 4, FIXED = 5;
 
+/** Which worn slot a grid token belongs to, as ./paint reads it. */
+const slotOfToken = (t: number) => (t >= LAYER.aura ? 'aura' : t >= LAYER.buddy ? 'buddy' : t >= LAYER.frame ? 'frame' : t >= LAYER.hat ? 'hat' : t >= LAYER.skin ? 'skin' : null);
+
+/** A grid's still colours, each copy's effect as it stands at the start, laid over its finish (./effects `fxColor`). */
+function still(grid: number[][], config: AvatarConfig, palette: ReturnType<typeof withItems>): (string | null)[][] {
+  const colors = paint(grid, config, palette, false, false);
+  return colors.map((row, y) => row.map((c, x) => {
+    const slot = slotOfToken(grid[y][x]), o = slot ? config.owned?.[slot] : undefined;
+    return c && o?.fx ? fxColor(c, o.fx, x, y, 0, o.print, o.finish) : c;
+  }));
+}
+
 /** The card's face, ready to draw at any time. */
 export function cardFace(spec: FaceSpec): CardFace {
   const W = FACE_WIDTH, H = FACE_HEIGHT;
@@ -112,14 +125,15 @@ export function cardFace(spec: FaceSpec): CardFace {
   if (spec.palette !== undefined) r.palette = spec.palette;
   const config: AvatarConfig = dress(r, { equip: copies.map(encode) });
   const grid = compose(config);
-  const palette = withItems(paletteOf(config), config), colors = paint(grid, config, palette);
+  const palette = withItems(paletteOf(config), config), colors = still(grid, config, palette);
   const owned = config.owned ?? {};
   const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
   const last = copies[copies.length - 1];
   const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish as (typeof SHADER_FINISHES)[number])) : 0;
   // The edition: the finish of the copy that sets the grade, or the grade's own for a card given one.
   const top = copies.filter(o => gradeIndex(o) === g).pop();
-  const edition = top ? editionOf(top.finish) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][Math.min(g, 5)];
+  // A graphic finish (Op, Impossible, Grid) is too fine a pattern for this small a card: it takes its grade's Polychrome.
+  const edition = top ? (GRAPHIC_FINISHES.includes(top.finish) ? 3 : editionOf(top.finish)) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][Math.min(g, 5)];
   const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise = new Uint8Array(W * H * 4);
   const put = (x: number, y: number, c: number[], k: number, fi = -1, sc = 0, pr = 0) => {
     const i = (y * W + x) * 4, print = Math.floor(pr / 4);
@@ -198,7 +212,7 @@ export function cardFace(spec: FaceSpec): CardFace {
   const buddy = new Uint8Array(W * H * 4), alone = buddyAlone(config), buddyOwned = owned.buddy;
   const buddyCopy: [number, number, number] = [buddyOwned ? SHADER_FINISHES.indexOf(buddyOwned.finish as (typeof SHADER_FINISHES)[number]) : -1, buddyOwned?.scuff ?? 0, Math.floor((buddyOwned?.print ?? 0) / 4) * 4];
   if (alone) {
-    const tint = paint(alone, config, palette), cells: [number, number, string, boolean][] = [];
+    const tint = still(alone, config, palette), cells: [number, number, string, boolean][] = [];
     alone.forEach((row, y) => row.forEach((t, x) => { if (tint[y][x]) cells.push([x, y, tint[y][x]!, t >= LAYER.buddy]); }));
     const ox = BUDDY_RIGHT - Math.max(...cells.map(([x]) => x)), oy = BUDDY_FOOT[spec.buddy ?? 'peek'] - Math.max(...cells.map(([, y]) => y));
     for (const [x, y, hex, art] of cells) {

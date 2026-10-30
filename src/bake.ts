@@ -5,11 +5,12 @@ import { cardArtFrames, cardFrames, cardPlayer, type CardInput } from './card';
 import { LOOP_MS } from './finish-shader';
 import { fitLoop } from './loop';
 import { encodeApng, encodeGif, encodePng, fewerColours, type Frames } from './gif';
-import { decode, type Owned } from './owned';
+import { decode, FINISHES, GRADES, gradeOf, nebulaPhase, special, temperTint, type Owned } from './owned';
+import { EFFECTS } from './effects';
 import { dress, itemById, withItems } from './items';
-import { LAYER } from './parts/art';
+import { LAYER, T } from './parts/art';
 import { paint } from './paint';
-import { paletteOf } from './palette';
+import { contrast, mix, paletteOf } from './palette';
 import { resolve } from './resolve';
 import { guyRank, traitOdds } from './rarity';
 import { shineFrame, shines } from './shine';
@@ -102,9 +103,9 @@ function bakeAt(spec: GuySpec, move: Move): { frames: Frames; left: number } {
   return { frames: merged(raw.width, GUY_HEIGHT, raw.frames, raw.delays), left: raw.left };
 }
 
-/** Every frame `bakeGuy` bakes, before identical ones are merged, and the column his frame starts at. */
-function rawFrames(spec: GuySpec, move: Move): { width: number; left: number; frames: Uint8ClampedArray[]; delays: number[] } {
-  const options = animateOptions(spec), owned = ownedOf(spec);
+/** Every frame `bakeGuy` bakes, before identical ones are merged, and the column the guy's frame starts at. `more` goes to `animate` too. */
+function rawFrames(spec: GuySpec, move: Move, more: AnimateOptions = {}): { width: number; left: number; frames: Uint8ClampedArray[]; delays: number[] } {
+  const options = { ...animateOptions(spec), ...more }, owned = ownedOf(spec);
   const plain = animate(spec.seed, move, options);
   const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
   // A backdrop he wears runs out to the picture's every edge, behind an aura's rings too.
@@ -138,18 +139,22 @@ function rowsLit(f: AnimationFrame): [number, number] {
 }
 
 /**
- * A small square of the guy, for a menu, a chat line or a board's row: `icon` his whole sixteen by
- * sixteen, `face` a square of his head and shoulders, hat and all. Played as `bakeGuy` plays him,
- * blinking, breathing, his copies shining and his aura round him, but always on the ground: a move's
- * hops are taken out, so nothing he does leaves the square. No buddy and no backdrop: the square is
- * his alone, on nothing.
+ * A small square of the guy, for a menu, a chat line or a board's row: `icon` the whole sixteen by
+ * sixteen, `face` a square of the head and shoulders, hat and all. Played as `bakeGuy` plays the
+ * guy, blinking, breathing and copies shining, but always on the ground: a move's hops are taken
+ * out, so nothing the guy does leaves the square. What marks a guy rare shows at a glance: the ring a
+ * copy of Prized or better puts round them, and an aura as a ring in its own colours by turns
+ * (`glanceRing`), as the chat emotes show them. No buddy and no backdrop: the square is the guy's
+ * alone, on nothing.
  */
 export function bakeSquare(spec: GuySpec, view: 'icon' | 'face', move: Move = 'idle'): Frames {
   const bare = without(spec, ['frame', 'buddy']);
-  const raw = rawFrames(bare, move);
-  // How high he is off the ground in each frame, read off the same move with nothing round him:
-  // its beats are the same, so the time into the lap finds the beat.
-  const plain = animate(bare.seed, move, { ...animateOptions(without(bare, ['aura'])), rarity: false });
+  const raw = rawFrames(bare, move, { glance: true });
+  // How high he is off the ground in each frame, read off the same move with nothing round him (no
+  // aura, no copy's sparkles, no Lucky star over the head): its beats are the same, so the time into
+  // the lap finds the beat, and the face's top is the head's (or hat's).
+  const unworn = without(bare, ['aura']), plainOptions = animateOptions({ ...unworn, equip: unworn.equip?.map(code => decode(code)?.item ?? code) });
+  const plain = animate(bare.seed, move, { ...plainOptions, parts: { ...plainOptions.parts, lucky: false }, rarity: false });
   const lit = plain.frames.map(rowsLit), ends: number[] = [];
   // Where his feet are when he stands: the lowest any frame of the move reaches.
   const ground = Math.max(...lit.map(([, bottom]) => bottom));
@@ -193,12 +198,31 @@ export const CARD_FULL_MS = 160;
  * gives one.
  */
 export function cardInputOf(spec: CardSpec, move: Move = 'idle'): CardInput {
-  const base = resolve(spec.seed), rank = guyRank(base);
+  const base = resolve(spec.seed), rank = guyRank(base), copies = faceSpec(spec).copies ?? [];
   const rarest = traitOdds(base).sort((a, b) => a.chance - b.chance)[0]?.name ?? '';
+  const plate = plateOf(copies);
   return {
-    seed: spec.seed, parts: spec.parts, palette: animateOptions(spec).palette, copies: faceSpec(spec).copies,
+    seed: spec.seed, parts: spec.parts, palette: animateOptions(spec).palette, copies,
     title: spec.title ?? '', lines: [rank.name, rank.label === rank.name ? rarest : rank.label], grade: spec.grade ?? rank.tier, move,
+    ...(plate ? { plate } : {}),
   };
+}
+
+/**
+ * The second plate on a big card: the best copy the guy wears, Prized or better, by its grade and
+ * what it is (`★ Grail · Gold Goldfish`, `★ Aura · Shadow Galaxy`, `Mythic · Electric Prism Top hat`),
+ * so what a player wears shows on the card they share. The guy's rank stays the card's own line.
+ */
+export function plateOf(copies: Owned[]): { text: string; grade: number } | undefined {
+  const gradeIn = (o: Owned) => GRADES.findIndex(g => g.id === gradeOf(o).id);
+  const best = copies.reduce<Owned | undefined>((a, o) => (!a || gradeIn(o) > gradeIn(a) ? o : a), undefined);
+  if (!best || gradeIn(best) < 2) return undefined;
+  const item = itemById(best.item), finish = FINISHES[best.finish];
+  const look = finish.aura ? (best.finish === 'classic' ? '' : finish.name.split(' · ').pop()!)
+    : best.finish === 'nebula' ? nebulaPhase(best.print)
+      : best.finish === 'tempered' ? (special(best) ?? `${temperTint(best.print)} Tempered`) : finish.name;
+  const fx = best.fx && best.fx !== item?.signature ? EFFECTS[best.fx].name : '';
+  return { text: `${GRADES[gradeIn(best)].name} · ${[fx, look, item?.name ?? best.item].filter(Boolean).join(' ')}`, grade: gradeIn(best) };
 }
 
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
@@ -238,7 +262,8 @@ export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
     if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
   }
   const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-  const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H);
+  const colors = paletteOf({ ...resolve(spec.seed, spec.parts), ...(spec.palette !== undefined ? { palette: spec.palette } : {}) }).colors;
+  const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H, colors[T.BODY], colors[T.ACCENT]);
   const frames = g.frames.map(px => {
     const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
     if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
@@ -263,8 +288,15 @@ function backdropGround(spec: GuySpec, side: number, ox: number, oy: number): Ui
   return out;
 }
 
-/** His commonest colour that isn't an outline, most of the way to white. */
-function groundOf(px: Uint8ClampedArray, W: number, H: number): number[] {
+/** Under this contrast a guy melts into a ground taken from their own colour; on their accent's they stand off it at `STAND_OFF` or more. */
+const PALE = 1.3, STAND_OFF = 1.6;
+
+/**
+ * A profile picture's ground: the guy's commonest colour that isn't an outline, most of the way to
+ * white. A pale guy (Snow, Opal, Ice, Cream, Lemon) would melt into that and read as a blank, so
+ * theirs is a tint of their `accent` instead, deepened toward night until their `body` stands off it.
+ */
+function groundOf(px: Uint8ClampedArray, W: number, H: number, body: string, accent: string): number[] {
   const counts = new Map<number, number>();
   for (let i = 0; i < W * H; i++) {
     const [r, g, b, a] = px.subarray(i * 4, i * 4 + 4);
@@ -273,8 +305,12 @@ function groundOf(px: Uint8ClampedArray, W: number, H: number): number[] {
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0xdddddd;
-  const c = [top >> 16, (top >> 8) & 255, top & 255];
-  return [...c.map(v => Math.round(v + (255 - v) * 0.72)), 255];
+  let ground = mix('#' + top.toString(16).padStart(6, '0'), '#FFFFFF', 0.72);
+  if (contrast(ground, body) < PALE) {
+    ground = mix(accent, '#FFFFFF', 0.25);
+    for (let i = 0; i < 12 && contrast(ground, body) < STAND_OFF; i++) ground = mix(ground, '#11151B', 0.12);
+  }
+  return [...rgb(ground), 255];
 }
 
 /** The scale that brings a profile picture nearest `size` without going over. */

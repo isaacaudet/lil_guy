@@ -104,11 +104,11 @@ export const eyes: Eyes[] = [
     'rre....err',
     '.ey....ye.',
   ]),
-  // A dark ring round a burning core, and a red flare shooting out of each side.
+  // White-hot cores in a red ring, in fixed colours (EYE_COLORS in ../paint): amber pupils read as plain eyes.
   eyes_('laser', [
-    '.ee....ee.',
-    'rey....yer',
-    '.ee....ee.',
+    '.rr....rr.',
+    'rwwr..rwwr',
+    '.rY....Yr.',
   ]),
   eyes_('cyclops', [
     '.ww.',
@@ -134,12 +134,14 @@ export const eyes: Eyes[] = [
   ]),
   // Chase eyes, one guy in several hundred. Each is a material, not a
   // mood: a little night sky, a cut jewel in the accent, a dragon's gold.
-  // The galaxy is the one pair four wide: round, so it holds a sky.
-  // A dark sphere with a purple nebula swirling through it, a pink star and a white one.
+  // The galaxy is four wide: a tilted disc, pale over deep violet, round a
+  // void with a white star in it, in fixed colours (EYE_COLORS in ../paint):
+  // a dark sphere with a nebula through it came out two blue dots, and a thin
+  // ring round it two violet ones.
   eyes_('galaxy', [
-    '.ew....we.',
-    'eAye..eyAe',
-    '.Ae....eA.',
+    '.aaA..aaA.',
+    'aewA..aewA',
+    'AAA....AAA',
   ]),
   // A cut gem: a pale crown with a sparkle, a deep pavilion, a dark point.
   eyes_('diamond', [
@@ -175,5 +177,18 @@ export const eyes: Eyes[] = [
     '.ee....ee.',
     'wee....wee',
     'eew....eew',
+  ]),
+  // The night set: capsules only (CAPSULE_ONLY in ./weights), in fixed colours (EYE_COLORS in ../paint).
+  // Eclipse: a black disc in a gold corona, a white bead where the light breaks round it.
+  eyes_('eclipse', [
+    '.yw....yw.',
+    'yeey..yeey',
+    '.yy....yy.',
+  ]),
+  // Void: two black pits, one pinprick star in the right one.
+  eyes_('void', [
+    '.ee....ee.',
+    'eeee..ewee',
+    '.ee....ee.',
   ]),
 ];

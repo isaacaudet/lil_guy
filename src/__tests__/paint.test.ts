@@ -1,8 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from '../resolve';
-import { compose } from '../compose';
-import { paint } from '../paint';
-import { paletteOf, contrast } from '../palette';
+import { compose, faceOf } from '../compose';
+import { paint, luckyRim, onRim, underEyes, LUCKY_RIM } from '../paint';
+import { dress, withItems } from '../items';
+import { encode } from '../owned';
+import { fxColor } from '../effects';
+import { LAYER } from '../parts/art';
+import { paletteOf, palettes, contrast, deltaE } from '../palette';
+import { eyes, hair, heads, accessories, bodies as markings, mouths } from '../parts';
+import { animate, poseStill } from '../animate';
 import { T } from '../parts/art';
 import { toSvgString } from '../render-string';
 
@@ -41,5 +47,234 @@ describe('small', () => {
     }
     // At 37px and up the full drawing stays.
     expect(toSvgString('alice', { size: 40 })).toBe(toSvgString('alice', { size: 40, small: false }));
+  });
+});
+
+describe('Lucky', () => {
+  const parts = { head: 0, eyes: 1, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, shade: 1, flip: false, rotation: 0 };
+  const named = (name: string) => palettes.findIndex(p => p.name === name);
+
+  test('keeps the colourway the card names, chase colourways included', () => {
+    for (const palette of [0, named('Midnight'), named('Opal'), named('Obsidian'), named('Aurora')]) for (const shade of [0, 1, 2]) {
+      const plain = { ...parts, palette, shade, lucky: false };
+      expect(paletteOf({ ...plain, lucky: true })).toEqual(paletteOf(plain));
+    }
+  });
+
+  test('steps through the rim on the outer outline only, never on the face', () => {
+    for (const palette of [0, named('Snow'), named('Midnight')]) {
+      const config = { ...parts, palette, lucky: true }, grid = compose(config);
+      const lucky = paint(grid, config, paletteOf(config)), plain = paint(grid, { ...config, lucky: false }, paletteOf(config));
+      let rim = 0;
+      grid.forEach((row, y) => row.forEach((t, x) => {
+        if (onRim(grid, x, y)) { rim++; expect(lucky[y][x]).toBe(luckyRim(x, y)); }
+        else expect(lucky[y][x]).toBe(plain[y][x]);
+      }));
+      expect(rim).toBeGreaterThan(20);
+    }
+  });
+
+  test('moves the rim a step a beat, round the whole ramp', () => {
+    expect(new Set(Array.from({ length: LUCKY_RIM.length }, (_, beat) => luckyRim(3, 4, beat))).size).toBe(LUCKY_RIM.length);
+    expect(luckyRim(3, 4, LUCKY_RIM.length)).toBe(luckyRim(3, 4));
+  });
+});
+
+describe('chase colourways', () => {
+  const parts = { head: 1, eyes: 1, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, flip: false, rotation: 0, lucky: false };
+  const skin = new Set<number>([T.BODY, T.SHADE, T.DEEP, T.BELLY]);
+  const skinColours = (palette: number, shade: number) => {
+    const config = { ...parts, palette, shade }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
+    return grid.flatMap((row, y) => row.flatMap((t, x) => (skin.has(t) ? [colors[y][x]] : [])));
+  };
+
+  test('are a material, the same in every tone', () => {
+    for (const name of ['Opal', 'Obsidian', 'Aurora']) {
+      const i = palettes.findIndex(p => p.name === name), picked = skinColours(i, 1);
+      expect(skinColours(i, 0)).toEqual(picked);
+      expect(skinColours(i, 2)).toEqual(picked);
+      // A material, not one flat colour.
+      expect(new Set(picked).size).toBeGreaterThan(3);
+    }
+  });
+
+  test('Aurora is its own colour, off Midnight\'s navy, and always shows its curtains', () => {
+    const aurora = palettes.findIndex(p => p.name === 'Aurora'), midnight = palettes.findIndex(p => p.name === 'Midnight');
+    const body = (palette: number) => {
+      const config = { ...parts, palette, shade: 1 }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
+      return colors[grid.findLastIndex(row => row.includes(T.BODY))][grid[grid.findLastIndex(row => row.includes(T.BODY))].indexOf(T.BODY)]!;
+    };
+    expect(deltaE(body(aurora), body(midnight))).toBeGreaterThan(15);
+    // Under a beanie, a cap or a star sticker, the curtains hang lower instead of hiding.
+    const curtain = new Set(['#5CE6A4', '#3FD0D6', '#9C7CFF']);
+    for (let n = 0; n < 400; n++) {
+      const config = { ...resolve(`4-aurora${n}`), palette: aurora }, colors = paint(compose(config), config, paletteOf(config));
+      expect(colors.flat().filter(c => c && curtain.has(c)).length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  test('Obsidian\'s glint keeps off the face', () => {
+    const obsidian = palettes.findIndex(p => p.name === 'Obsidian'), glint = new Set(['#C9B2FF', '#7E68C8']);
+    const face = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
+    let seen = 0;
+    for (let n = 0; n < 200; n++) {
+      const config = { ...resolve(`obsidian${n}`), palette: obsidian }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
+      colors.forEach((row, y) => row.forEach((c, x) => {
+        if (!c || !glint.has(c) || !grid[y][x] || grid[y][x] >= 20) return;
+        seen++;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) expect(face.has(grid[y + dy]?.[x + dx] ?? 0)).toBe(false);
+      }));
+    }
+    expect(seen).toBeGreaterThan(200);
+  });
+
+  test('Opal no longer looks like Snow', () => {
+    const opal = skinColours(palettes.findIndex(p => p.name === 'Opal'), 1), snow = skinColours(palettes.findIndex(p => p.name === 'Snow'), 1);
+    expect(new Set(opal).size).toBeGreaterThan(new Set(snow).size);
+  });
+});
+
+describe('chase parts', () => {
+  const plain = { head: 0, eyes: 1, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, shade: 1, flip: false, rotation: 0, lucky: false };
+  const find = (list: { name: string }[], name: string) => list.findIndex(p => p.name === name);
+  const bodies = ['Snow', 'Peach', 'Butter', 'Midnight', 'Oxblood'].map(n => palettes.findIndex(p => p.name === n));
+  /** The colours a part paints its own token in, on each body. */
+  const coloursOf = (over: Partial<typeof plain>, token: number, region: (x: number, y: number) => boolean) => bodies.map(palette => {
+    const config = { ...plain, ...over, palette }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
+    return [...new Set(grid.flatMap((row, y) => row.flatMap((t, x) => (t === token && region(x, y) ? [colors[y][x]] : []))))].sort().join();
+  });
+
+  test('keep their own colours on every body', () => {
+    const top = (_: number, y: number) => y < 6;
+    for (const [over, token, region] of [
+      [{ hair: find(hair, 'on fire') }, T.RED, top],
+      [{ hair: find(hair, 'idea') }, T.TRIM, top],
+      // The mask's gold rim.
+      [{ accessory: find(accessories, 'masquerade') }, T.TRIM, (_: number, y: number) => y >= 5 && y <= 8],
+      [{ eyes: find(eyes, 'laser') }, T.RED, (_: number, y: number) => y >= 6 && y <= 8],
+      [{ eyes: find(eyes, 'eclipse') }, T.EYE, (_: number, y: number) => y >= 6 && y <= 8],
+    ] as const) {
+      const seen = coloursOf(over, token, region);
+      expect(seen[0]).not.toBe('');
+      expect(new Set(seen).size).toBe(1);
+    }
+  });
+
+  test('the mask, the corona and the seams hold apart from every body', () => {
+    for (const [over, token] of [
+      [{ accessory: find(accessories, 'masquerade') }, T.LEAF_SHADE],
+      [{ eyes: find(eyes, 'eclipse') }, T.GOLD],
+    ] as const) for (let palette = 0; palette < palettes.length; palette++) for (const shade of [0, 1, 2]) {
+      const config = { ...plain, ...over, palette, shade }, grid = compose(config), pal = paletteOf(config), colors = paint(grid, config, pal);
+      const cells = grid.flatMap((row, y) => row.flatMap((t, x) => (t === token ? [colors[y][x]!] : [])));
+      expect(cells.length).toBeGreaterThan(0);
+      for (const c of cells) expect(deltaE(c, pal.colors[T.BODY]!)).toBeGreaterThan(20);
+    }
+  });
+
+  test('a marking or mask keeps its own colours in every pose, on every mouth', () => {
+    const leaf = new Set(['#7DD87A', '#4FAE5C']);
+    const poses = ['base', 'shut', 'left', 'right', 'wave', 'sides', 'laugh', 'laughWave', 'frown', 'ooh', 'smile', 'content', 'blep', 'blush', 'huff', 'oops'] as const;
+    for (const over of [{ body: find(markings, 'kintsugi') }, { body: find(markings, 'op art') }, { accessory: find(accessories, 'masquerade') }]) {
+      for (let mouth = 0; mouth < mouths.length; mouth += 3) for (const pose of poses) {
+        const cells = poseStill('k', pose, { parts: { ...plain, ...over, mouth, palette: palettes.findIndex(p => p.name === 'Snow') } });
+        expect(cells.flat().filter(c => c && leaf.has(c.toUpperCase()))).toEqual([]);
+      }
+    }
+  });
+
+  test('a blink never punches through the mask', () => {
+    const mask = new Set(['#5A2D9C', '#8657D6', '#FFD45C']);
+    for (const name of ['shiny', 'star', 'happy', 'laser', 'galaxy', 'eclipse']) {
+      const opts = { parts: { ...plain, eyes: find(eyes, name), accessory: find(accessories, 'masquerade'), palette: palettes.findIndex(p => p.name === 'Peach') } };
+      const count = (pose: 'base' | 'shut') => poseStill('m', pose, opts).flat().filter(c => c && mask.has(c.toUpperCase())).length;
+      expect(count('shut')).toBeGreaterThanOrEqual(count('base'));
+    }
+  });
+
+  test('a glance or a blink leaves no hole in a mask, a monocle or glasses', () => {
+    const skin = [T.BODY, T.SHADE, T.LIGHT, T.DEEP, T.BELLY];
+    for (const acc of ['masquerade', 'monocle', 'glasses']) for (const name of ['beans', 'shiny', 'star', 'big eyes', 'laser', 'galaxy']) for (const body of ['Peach', 'Snow', 'Midnight']) {
+      const parts = { ...plain, eyes: find(eyes, name), accessory: find(accessories, acc), palette: palettes.findIndex(p => p.name === body) };
+      const config = { ...resolve('m', parts) }, under = underEyes(config)!, pal = paletteOf(config);
+      const bare = new Set(skin.map(t => pal.colors[t]?.toUpperCase()));
+      const base = poseStill('m', 'base', { parts });
+      // A glance moves the eyes; a blink, Sleep, Sad, Mad, Gg, Oops and Daydream shut them.
+      for (const pose of ['left', 'right', 'blushLeft', 'blushRight', 'shut', 'frown', 'content', 'huff', 'oops'] as const) {
+        const cells = poseStill('m', pose, { parts });
+        under.forEach((row, y) => row.forEach((t, x) => {
+          // Where the accessory lies under an eye in its own colour, a cell the eye leaves never shows bare skin.
+          const c = cells[y + 4][x]?.toUpperCase();
+          if (t && !skin.includes(t) && c !== base[y + 4][x]?.toUpperCase()) expect(bare.has(c)).toBe(false);
+        }));
+      }
+    }
+    // Only a face accessory lies under the eyes: none, an eye patch drawn over them, a scarf.
+    for (const acc of ['none', 'eye patch', 'scarf', 'heart shades']) expect(underEyes(resolve('m', { ...plain, accessory: find(accessories, acc) }))).toBeNull();
+    // A frame behind the guy is painted on a taller grid than the guy's own.
+    expect(() => animate('m', 'idle', { parts: { ...plain, accessory: find(accessories, 'masquerade') }, equip: ['flipsies.target'] })).not.toThrow();
+  });
+
+  test('a glance that uncovers a monocle\'s ring keeps the shine as white as the still has it', () => {
+    const parts = { ...plain, head: find(heads, 'round'), eyes: find(eyes, 'beans'), accessory: find(accessories, 'monocle') };
+    const opts = { parts, palette: paletteOf({ ...resolve('g', parts), palette: palettes.findIndex(p => p.name === 'Midnight') }), equip: ['stackdle.block~plain~0.5000000~1'] };
+    const still = new Set(poseStill('g', 'base', opts).flat());
+    for (const pose of ['left', 'right'] as const) expect(poseStill('g', pose, opts).flat().filter(c => !still.has(c))).toEqual([]);
+  });
+
+  test('an eye\'s colour a glance moves onto the mask stays the eye\'s, never the feather\'s pink', () => {
+    for (const body of ['Peach', 'Snow', 'Midnight']) for (const head of [0, 2, 5]) {
+      const parts = { ...plain, head, eyes: find(eyes, 'big eyes'), accessory: find(accessories, 'masquerade'), palette: palettes.findIndex(p => p.name === body) };
+      const f = faceOf(resolve('m', parts));
+      for (const pose of ['left', 'right'] as const) {
+        // The feather is over the mask's corner, well above the eyes' rows.
+        const rows = poseStill('m', pose, { parts }).slice(4 + f.top, 4 + f.line + 1);
+        expect(rows.flat().filter(c => c?.toUpperCase() === '#FF6FA8')).toEqual([]);
+      }
+    }
+  });
+
+  test('chase eyes keep their star or bead when drawn small', () => {
+    for (const name of ['galaxy', 'void', 'eclipse']) {
+      const config = { ...plain, eyes: find(eyes, name), palette: palettes.findIndex(p => p.name === 'Midnight') }, grid = compose(config);
+      const small = paint(grid, config, paletteOf(config), true);
+      expect(small.flat().filter(c => c === '#FFFFFF').length).toBeGreaterThan(0);
+    }
+  });
+
+  test('void eyes get a rim of the body\'s own light tone on a dark body, and none on a light one', () => {
+    const rimmed = (name: string) => {
+      const config = { ...plain, eyes: find(eyes, 'void'), palette: palettes.findIndex(p => p.name === name) };
+      const grid = compose(config), palette = paletteOf(config), colors = paint(grid, config, palette);
+      return grid.some((row, y) => row.some((t, x) => t === T.BODY && colors[y][x] === palette.colors[T.LIGHT]));
+    };
+    expect(rimmed('Midnight')).toBe(true);
+    expect(rimmed('Oxblood')).toBe(true);
+    expect(rimmed('Peach')).toBe(false);
+  });
+});
+
+describe('stills', () => {
+  test('lay an effect over its finish, as a moving frame does', () => {
+    // A Deep Blue piano with Chroma: the still keeps the blue and runs the rainbow band over it.
+    for (const [finish, print] of [['tempered', 661], ['gold', 5], ['prism', 5]] as const) {
+      const copy = { item: 'weighsies.piano', finish, scuff: 0.01, print };
+      const at = (fx?: 'chroma' | 'holo') => {
+        const config = dress(resolve('pip'), { equip: [encode({ ...copy, ...(fx ? { fx } : {}) })] }, 'pip');
+        const grid = compose(config);
+        return { grid, colors: paint(grid, config, withItems(paletteOf(config), config)) };
+      };
+      const bare = at();
+      for (const fx of ['chroma', 'holo'] as const) {
+        const { grid, colors } = at(fx);
+        let n = 0;
+        grid.forEach((row, y) => row.forEach((t, x) => {
+          if (t < LAYER.skin || t >= LAYER.hat) return;
+          n++;
+          expect(colors[y][x]).toBe(fxColor(bare.colors[y][x]!, fx, x, y, 0, print, finish));
+        }));
+        expect(n).toBeGreaterThan(40);
+      }
+    }
   });
 });

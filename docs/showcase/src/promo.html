@@ -131,19 +131,25 @@
   .hand-h { margin-top: 56px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; position: relative; z-index: 2; }
   .hand-h .kicker { margin: 0; }
   .hand-h p { font-size: 16px; color: var(--ink-3); }
-  .hand { position: relative; z-index: 2; display: flex; justify-content: center; min-height: 330px; padding: 28px 0 56px; box-sizing: border-box; }
+  /* Side by side with a gap, never overlapping: each card's bottom line (its odds) reads in full. Seven show on a
+     wide screen; under 1100px the nine lie flat in a row to swipe. */
+  .hand { position: relative; z-index: 2; display: flex; justify-content: center; gap: 12px; min-height: 330px; padding: 28px 0 56px; box-sizing: border-box; }
+  .hand > .slot.edge { display: none; }
   /* The slot's own box is the only hover target and never moves; only the card inside it lifts (and
      takes no pointer). A hover area that moved with the card slid out from under a pointer near its
      edge, dropped, and was hovered again: a twitch. The strip above a hovered slot keeps its lifted top. */
-  .hand > .slot { flex: none; width: 140px; margin-left: -18px; transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 120%; position: relative; z-index: var(--z); }
-  .hand > .slot:first-child { margin-left: 0; }
+  .hand > .slot { flex: none; width: 140px; transform: translateY(var(--y)); position: relative; z-index: var(--z); color: inherit; text-decoration: none; }
   .hand > .slot > .lift { transform-origin: 50% 120%; transition: transform .2s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
   .hand > .slot:hover::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 30px; }
   .hand > .slot:hover, .hand > .slot:focus-within { z-index: 30; }
-  .hand > .slot:hover > .lift, .hand > .slot:focus-within > .lift { transform: translateY(-26px) rotate(calc(-1 * var(--r))); }
+  .hand > .slot:hover > .lift, .hand > .slot:focus-within > .lift, .hand > .slot:focus-visible > .lift { transform: translateY(-26px); }
   /* the name under a card on hover: a Balatro tag, never clipped */
   .hand > .slot small { position: absolute; left: 50%; top: calc(100% + 8px); translate: -50% 0; padding: 4px 8px; border-radius: 6px; background: var(--paper); color: var(--paper-ink); box-shadow: 0 3px 0 var(--edge); font-size: 16px; opacity: 0; transition: opacity .15s; white-space: nowrap; pointer-events: none; }
-  .hand > .slot:hover small, .hand > .slot:focus-within small { opacity: 1; }
+  .hand > .slot:hover small, .hand > .slot:focus-within small, .hand > .slot:focus-visible small { opacity: 1; }
+  .hand > .slot:focus-visible { z-index: 30; }
+  .hand > .slot small i { font-style: normal; color: #6a6f80; }
+  /* A card the sample rolled, not anyone's pull. */
+  .hand > .slot .maybe-tag { position: absolute; z-index: 3; top: -32px; left: 50%; translate: -50% 0; height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 6px; font-size: 16px; white-space: nowrap; background: var(--panel-2); color: var(--ink-2); box-shadow: 0 3px 0 var(--edge); pointer-events: none; }
 
   /* ------------------------------------------------------------ trading cards (the locker's) */
   .art { position: relative; display: block; transform-origin: 50% 60%; will-change: transform; container-type: inline-size; }
@@ -525,9 +531,6 @@
   .lcd small { font-size: 16px; color: #b5703a; }
   .lcd b { font-size: 32px; color: #ff9a3c; text-shadow: 0 0 8px rgba(255,138,43,.6); font-variant-numeric: tabular-nums; }
   .souv { justify-self: start; font-size: 16px; color: #fff; background: var(--gold-d); padding: 4px 10px; border-radius: 6px; box-shadow: 0 3px 0 #5a3d0c; text-shadow: var(--ts); }
-  .pull { margin: 10px 0 0; font-size: 16px; color: var(--ink-2); }
-  .pull b { color: var(--gold); }
-  .won-pull { margin: 2px 0 0; font-size: 16px; color: var(--gold); }
   .oddsbox { margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--panel-2); box-shadow: var(--lift); }
   .oddsbox .tiles { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
   .oddsbox .score { margin-top: 12px; cursor: default; padding: 12px 16px 14px; }
@@ -733,11 +736,7 @@
   .founder-bar button[aria-pressed] { height: 32px; padding: 0 12px; border-radius: 8px; background: var(--panel-2); color: var(--ink); }
   .founder-bar button[aria-pressed="true"] { background: #e4ae39; color: #1b1428; }
   .founder-bar select { margin-left: 6px; height: 32px; border-radius: 8px; border: 0; background: var(--panel-2); color: var(--ink); font: inherit; padding: 0 8px; }
-  .pick3 { display: grid; justify-items: center; gap: 18px; width: min(100%, 760px); }
-  .pick3-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; }
-  .pick3-row > div { display: grid; justify-items: center; gap: 10px; }
-  .pick3-row .card { width: min(100%, 180px); }
-  @media (max-width: 560px) { .pick3-row { gap: 8px; } }
+  .pick3 { display: grid; justify-items: center; gap: 18px; }
   .ed-rare { display: grid; gap: 6px; width: 100%; max-width: 260px; font-size: 16px; color: var(--ink-2); }
   .ed-rare div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--panel); }
   .ed-rare b { color: var(--ink); font-weight: 400; }
@@ -1058,14 +1057,18 @@
     .guys { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
   }
   @media (max-width: 900px) { .passport { grid-template-columns: minmax(0, 1fr); } }
+  /* Under seven cards' width the hand lies flat in a row to swipe, all nine, opened on the rarest in the middle. */
+  @media (max-width: 1099px) {
+    .hand { justify-content: flex-start; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; min-height: 0; padding: 36px 16px 64px; margin: 0 -16px; }
+    .hand::-webkit-scrollbar { display: none; }
+    .hand > .slot, .hand > .slot.edge { display: block; transform: none; scroll-snap-align: center; }
+  }
   @media (max-width: 640px) {
     .tt .ti { font-size: 0; gap: 0; } .tt .ti svg { width: 12px; height: 12px; }
     .tt .foot { white-space: nowrap; }
     .guy-card > div:first-child { max-width: 200px; }
     .hand-h { flex-direction: column; gap: 4px; }
     .meaning { font-size: 16px; }
-    .hand > .slot { width: 140px; margin-left: -78px; }
-    .hand > .slot:nth-child(n+6) { display: none; }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .score b { font-size: 48px; }
     .mcard.today, .mwrap.today, .mcard.big, .mwrap.big { grid-column: span 2; grid-row: auto; }
@@ -1082,6 +1085,89 @@
     .result.withinfo .won-cap { display: none; }
     .mcard .body { padding: 10px; gap: 8px; } .mcard h3 { font-size: 24px; } .mcard .play { width: 34px; height: 34px; }
   }
+  /* ------------------------------------------------------------ what's scarce leads */
+  /* Your guy: the rank big, the place among everyone claimed, and the trait people see as rare with its own odds.
+     The twelve multiplied is the breakdown's last line. */
+  .score.rank .unit { align-self: center; }
+  .rk-place { flex-basis: 100%; font-size: 24px; color: var(--ink-2); }
+  .rk-place em { font-style: normal; color: #fff; }
+  .rk-trait { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 32px; }
+  .rk-trait .tchip { height: 32px; padding: 0 10px; font-size: 24px; }
+  .rk-trait .tchip i { font-size: 16px; }
+  .mult { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin: 0; font-size: 16px; color: var(--ink-3); }
+  .mult b { font-size: 24px; color: #fff; font-variant-numeric: tabular-nums; }
+  .mult.bump b { display: inline-block; animation: bumpn .2s ease-out; }
+
+  /* The drop: a Mythic or better lifts out of the strip to the middle, at whole pixels of its face, for the held breath. */
+  .held-card { position: fixed; left: 0; top: 0; z-index: 6; pointer-events: none; transform-origin: 0 0; will-change: transform; filter: drop-shadow(0 12px 0 rgba(5, 7, 16, .6)); }
+  .held-card .art { width: 100%; transform: none !important; }
+  .held-card.hold { animation: holdshake .07s steps(2) infinite; }
+  /* What leads the result: its serial, how many exist, its grade. The float is a quiet line unless it's one to collect. */
+  .won-lead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; font-size: 24px; color: var(--ink-2); }
+  .won-lead b { font-size: 32px; line-height: 1; color: #fff; text-shadow: var(--ts); }
+  .won-lead b.first { color: var(--gold); }
+  .won-lead .bal { height: 32px; font-size: 24px; padding: 0 10px; }
+  /* Each dot sits in the gap before its part; a part that starts a line pushes its dot past the left edge, out of sight. */
+  .won-lead { column-gap: calc(20px + .5em); overflow: clip visible; }
+  .won-lead .lp { display: inline-flex; align-items: center; gap: 10px; margin-left: calc(-10px - .5em); }
+  .won-lead .lp > [aria-hidden] { width: .5em; text-align: center; flex: none; }
+  .won-float { margin: 0; font-size: 16px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .won-float b { color: var(--ink-2); }
+  .won-float.note { color: var(--ink-2); }
+  .won-float.note b { color: var(--wc, #fff); }
+  .won-from { margin: 0; font-size: 16px; color: var(--ink-3); }
+  .won-from a { color: var(--gold); }
+  .rv-actions .cost { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; padding: 0 8px; border-radius: 999px; background: rgba(0, 0, 0, .18); }
+  .rv-actions .cost .tk, .rv-actions .cost .inf { width: 20px; height: 20px; }
+  .rv-actions .cost .inf { width: 18px; height: 10px; }
+
+  /* Keep one: three dealt face down in one spread, turned over one after another. Whole pixels of the card: 2× on
+     a wide screen, 1× and swiped on a phone. */
+  .pick3 { width: min(100%, 920px); }
+  .pick3-row { display: flex; justify-content: center; gap: 24px; width: 100%; }
+  .pick3-c { position: relative; flex: none; width: 280px; display: grid; justify-items: center; align-content: start; gap: 10px; text-align: center; }
+  .pick3-c .flip3 { position: relative; width: 100%; aspect-ratio: 140 / 204; transition: transform .17s cubic-bezier(.55,0,.8,.2); }
+  .pick3-c .flip3.squash { transform: scaleX(0); }
+  .pick3-c .flip3.tremble { animation: tremble .09s steps(2) infinite; }
+  .pick3-c .flip3 > canvas.back3 { display: block; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(0 8px 0 rgba(5, 7, 16, .55)); }
+  .pick3-c .flip3 > .card { width: 100%; }
+  .pick3-c .why { display: grid; justify-items: center; gap: 6px; min-height: 64px; opacity: 0; transition: opacity .3s; }
+  .pick3-c.shown .why { opacity: 1; }
+  .pick3-c .why .tchip { height: auto; min-height: 24px; white-space: normal; }
+  .pick3-c .enter { font-size: 16px; color: var(--gold); }
+  .pick3-c .best { position: absolute; z-index: 3; top: -10px; right: -6px; transform: rotate(5deg); opacity: 0; transition: opacity .3s; }
+  .pick3-c.rarest.shown .best { opacity: 1; }
+  .pick3-c .btn { visibility: hidden; }
+  .pick3.ready .pick3-c .btn { visibility: visible; }
+  @media (max-width: 600px) {
+    .pick3-row { justify-content: flex-start; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 12px 16px 8px; margin: 0 -16px; width: calc(100% + 32px); scrollbar-width: none; }
+    .pick3-row::-webkit-scrollbar { display: none; }
+    .pick3-c { width: 140px; scroll-snap-align: center; }
+  }
+
+  /* The Top 100: places on the Guys page, every one numbered. */
+  .gcard .rank.all { font-size: 16px; padding: 2px 6px; }
+  /* A long trait wraps rather than widening its column, so every card in the grid is the same size. */
+  .gcard { min-width: 0; }
+  .gcard .tchip { max-width: 100%; white-space: normal; height: auto; min-height: 24px; }
+  .mcopy { position: relative; }
+  .mcopy .pic .place { position: absolute; left: 8px; bottom: 12px; font-size: 24px; line-height: 1; padding: 2px 8px 4px; border-radius: 6px; background: var(--paper); color: var(--paper-ink); box-shadow: 0 3px 0 var(--edge); }
+  .mcopy .meta .no { color: var(--gold); }
+  .top-note { margin: -8px 0 20px; font-size: 16px; color: var(--ink-3); }
+
+  /* A profile's shelf: the three copies its owner pinned, at whole pixels of the card. */
+  .shelf { display: grid; gap: 12px; }
+  .shelf-row { display: flex; justify-content: center; align-items: flex-start; gap: 24px; }
+  .shelf-c { margin: 0; display: grid; justify-items: center; gap: 8px; width: calc(var(--k, 8) * 26px); text-align: center; cursor: pointer; }
+  .shelf-c .art { width: 100%; }
+  .shelf-c b { font-size: 24px; line-height: 1.2; text-shadow: var(--ts); }
+  .shelf-c small { font-size: 16px; color: var(--ink-3); }
+  @media (max-width: 600px) { .shelf-row { gap: 8px; } .shelf-c b { font-size: 16px; } }
+  /* Pinning from the locker: up to three. */
+  .it-pin { position: absolute; z-index: 2; right: 52px; top: 86px; width: 32px; height: 32px; border-radius: 6px; display: grid; place-items: center; color: var(--ink-3); background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); }
+  .it-pin:hover { color: #fff; }
+  .it-pin svg { width: 14px; height: 18px; shape-rendering: crispEdges; }
+  .it-pin[aria-pressed="true"] { color: #2a1a00; background: var(--gold); box-shadow: 0 3px 0 var(--gold-d); }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1147,7 +1233,7 @@
       </div>
     </div>
 
-    <div class="hand-h"><p class="kicker" style="margin:0;color:var(--cream-2)">The rarest drops in the machines</p><p id="hand-note"></p></div>
+    <div class="hand-h"><p class="kicker" id="hand-k" style="margin:0;color:var(--cream-2)">Possible drops</p><p id="hand-note"></p></div>
     <div class="hand" id="hand"></div>
   </div>
 </header>
@@ -1155,13 +1241,14 @@
 <main class="wrap">
  <div class="view" id="v-home">
   <section id="guy-sec" hidden>
-    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="guy-edit">Edit your guy</button></div>
+    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds.</p></div><button class="btn" type="button" id="guy-edit">Edit your guy</button></div>
     <div class="odds-panel">
       <div class="stage guy-card"><div class="gview"><div id="guy-stage"></div></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
       <div class="scoring">
+        <div class="score rank" id="score" role="button" tabindex="0" aria-label="Count again"><canvas class="fire" id="fire" width="96" height="32" aria-hidden="true"></canvas><b id="rk-top"></b><span class="unit" id="rk-tier"></span><span class="rk-place" id="rk-place"></span></div>
+        <div class="rk-trait" id="guy-trait"></div>
         <div class="tiles" id="tiles"></div>
-        <div class="score" id="score" role="button" tabindex="0" aria-label="Count again"><canvas class="fire" id="fire" width="96" height="32" aria-hidden="true"></canvas><span class="lbl">1 in</span><b id="total">1</b><span class="unit" id="unit"></span></div>
-        <div class="meaning" id="guy-meaning"></div>
+        <p class="mult" id="mult">Every trait multiplied <span>1 in <b id="total">1</b> <span id="unit"></span></span></p>
         <div class="dist" id="guy-dist"></div>
       </div>
     </div>
@@ -1209,7 +1296,7 @@
   </section>
 
   <section id="fin-sec">
-    <div class="sec-h"><div><h2>Every finish</h2><p>One item in all seven, live. The rarer the finish, the louder it moves.</p></div><div class="filters" id="fin-items"></div></div>
+    <div class="sec-h"><div><h2>Every finish</h2><p>One item in every finish, live. The rarer the finish, the louder it moves.</p></div><div class="filters" id="fin-items"></div></div>
     <div class="fins" id="fins"></div>
   </section>
 
@@ -1239,19 +1326,23 @@
 
  <div class="view" id="v-guys" hidden>
   <section>
-    <div class="sec-h"><div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
-    <label class="search"><span>@</span><input id="guys-q" placeholder="find a name" maxlength="16" spellcheck="false" aria-label="Find a name"></label>
+    <div class="sec-h"><div class="filters" id="guys-tabs" role="tablist" aria-label="Boards"><button type="button" role="tab" data-t="top" aria-pressed="true">Top 100</button><button type="button" role="tab" data-t="copies" aria-pressed="false">Top 100 copies</button><button type="button" role="tab" data-t="all" aria-pressed="false">Everyone</button></div>
+      <div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
+    <label class="search" id="guys-find"><span>@</span><input id="guys-q" placeholder="find a name" maxlength="16" spellcheck="false" aria-label="Find a name"></label>
     <div class="guys" id="guys-grid"></div>
+    <div class="mgrid" id="top-copies" hidden></div>
   </section>
  </div>
 
  <div class="view" id="v-u" hidden>
+  <section class="shelf" id="u-shelf" hidden><div class="shelf-row" id="u-shelf-row"></div></section>
   <section class="odds-panel profile">
     <div class="stage guy-card"><div class="gview"><div id="u-stage"></div></div><div class="badges" id="u-badges"></div><div class="saves" id="u-saves"></div></div>
     <div class="scoring">
+      <div class="score rank"><b id="u-top"></b><span class="unit" id="u-tier"></span><span class="rk-place" id="u-place"></span></div>
+      <div class="rk-trait" id="u-trait"></div>
       <div class="tiles" id="u-tiles"></div>
-      <div class="score"><span class="lbl">1 in</span><b id="u-total"></b><span class="unit" id="u-unit"></span></div>
-      <div class="meaning" id="u-meaning"></div>
+      <p class="mult">Every trait multiplied <span>1 in <b id="u-total"></b> <span id="u-unit"></span></span></p>
       <div class="dist" id="u-dist"></div>
     </div>
   </section>
@@ -1365,7 +1456,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const calm = { matches: false };                 // motion plays whatever the reduced-motion setting says (the club's rule)
-  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   // What a capsule costs in stamps: a mystery one, a picked machine (the price behind every pull cost) and a seasonal.
@@ -1407,7 +1498,7 @@
   const dealt = seed => LG.resolve(seed);
   // Where a guy stands, as dealt. The founder was picked by hand, not dealt, so the library ranks him the one of one.
   const guyRank = cfg => LG.guyRank(cfg.base || cfg);
-  const rankLine = r => r.label === r.name ? r.name : `${r.label} · ${r.name}`;
+  const rankLine = r => r.top <= 0 ? `${r.name} · 1 of 1` : r.label === r.name ? r.name : `${r.label} · ${r.name}`;
   // The guy as the player has him: as dealt, with any common parts they picked laid over (a versioned look code).
   const unlocks = () => LG.unlocksOf(state?.parts || []);
   // The guy as they look; `.base` is the guy as dealt, which is what rarity is counted on.
@@ -1427,7 +1518,9 @@
   const cardSpec = (seed, copies, label, still, grade) => { const c = guyConfig(seed); return { name: seed, parts: partsOf(c), palette: c.palette, copies, label, still, grade }; };
   // The card a player keeps: drawn by the library, so the one on the page is the one they save. Its words are the
   // library card's clean ones: no corner tag (a print number or a star) and no place in the set.
-  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), rest.join(' · ')].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set || undefined, move });
+  // Beside the Everyday badge "1 in 9,754" is cut short to "1 in 9,7…", so a card says "1 in 9.8K"; 10K and up already fit.
+  const cardOdds = line => line.replace(/^1 in (\d),(\d{3})$/, (_, a, b) => `1 in ${+((+(a + b)) / 1e3).toFixed(1)}K`);
+  const cardInput = (spec, move = 'idle') => ({ seed: spec.name, parts: spec.parts, palette: LG.paletteOf({ ...spec.parts, palette: spec.palette }), copies: spec.copies, title: spec.label.title, lines: spec.label.lines ?? (spec.label.bottom ? (([pill, ...rest]) => [pill.replace('★ ', ''), cardOdds(rest.join(' · '))].filter(Boolean))(spec.label.bottom.split(' · ')) : []), grade: spec.grade ?? spec.label.g, footer: spec.label.set || undefined, move });
   /*
    * The library's card (LG.cardPlayer) on the page. Setting one up takes about 30 ms, so the loop sets up one a
    * tick, the first time each comes on screen: a page of them fills in over a few frames and never holds the page.
@@ -1436,21 +1529,21 @@
    * `now`: set up at once, for a card that is the whole moment (a reveal).
    */
   const libCards = new Set(), libByCanvas = new WeakMap(), libPending = [];
-  function libCard(el, input, { sway: swaying = false, now = false } = {}) {
+  function libCard(el, input, { sway: swaying = false, now = false, flat = false } = {}) {
     const canvas = document.createElement('canvas'), art = document.createElement('span');
     canvas.width = LG.CARD_WIDTH; canvas.height = LG.CARD_HEIGHT; canvas.className = 'libcard';
     canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `${input.title} card`);
     art.className = swaying ? 'art lifted' : 'art'; art.append(canvas);
     el.replaceChildren(art);
-    const s = { canvas, art, ctx: canvas.getContext('2d'), input, p: null, img: null, start: 0, last: -1, sway: swaying, still: false, phase: libCards.size * 0.7, hover: 0, tilt: [0, 0], juice: -1 };
+    const s = { canvas, art, ctx: canvas.getContext('2d'), input, p: null, img: null, start: 0, last: -1, sway: swaying, flat, still: false, phase: libCards.size * 0.7, hover: 0, tilt: [0, 0], juice: -1 };
     libCards.add(s); libByCanvas.set(canvas, s);
     if (now) libDraw(s, performance.now());
-    if (swaying) {
+    if (swaying && !flat) {
       const host = el.closest('.card') || el;
       host.addEventListener('pointerenter', () => { s.juice = performance.now() / 1000; });
       host.addEventListener('pointermove', e => { const r = art.getBoundingClientRect(); s.hover = 1; s.tilt = [(e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5]; });
       host.addEventListener('pointerleave', () => { s.hover = 0; s.tilt = [0, 0]; });
-    } else {
+    } else if (!flat) {
       canvas.addEventListener('pointermove', e => { const r = canvas.getBoundingClientRect(); canvas.style.transform = `perspective(700px) rotateY(${((e.clientX - r.left) / r.width - 0.5) * 18}deg) rotateX(${-((e.clientY - r.top) / r.height - 0.5) * 14}deg)`; });
       canvas.addEventListener('pointerleave', () => { canvas.style.transform = ''; });
     }
@@ -1554,7 +1647,7 @@
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, choices, pickUntil, look: s.look || '', stamps: s.stamps, free: s.freeDay, freeCapsule: s.freeCapsule || { open: true, why: '' },
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
-      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), pulls: Object.fromEntries(s.copies.filter(c => c.pull).map(c => [c.code, c.pull])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
+      tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), pulls: Object.fromEntries(s.copies.filter(c => c.pull).map(c => [c.code, c.pull])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0, pins: Array.isArray(s.pins) ? s.pins : state?.key === s.key ? state.pins || [] : [] };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   async function namesApi(path, options) {
@@ -1723,20 +1816,52 @@
   const toast = msg => { const t = $('toast'), host = document.querySelector('dialog[open]') || document.body; if (t.parentNode !== host) host.append(t); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); };
   $('today').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  /* ---------------------------------------------- the hand: the rarest copies a sample of 12,000 capsules turned up
-   * Opened beside the page (a worker), then fanned as the library's cards, the ones the locker and saves show. */
+  /* ---------------------------------------------- the hand: the week's rarest real pulls, each on its owner's guy and
+   * linking to its own page, fanned as the library's cards. Where there are few, a sample of 12,000 capsules
+   * rolled beside the page tops it up, each of those marked as a possible drop. The cards are fanned by height,
+   * never turned or overlapped, so every card stays at its own pixels with its odds in full. */
   const HAND_GUYS = ['mo', 'pip', 'juno', 'bix', 'tam', 'odie', 'fen', 'lux', 'kit'];
+  const HAND_SIZE = 9;
+  // How far from the middle a card can sit and still show on a wide screen: seven of the nine side by side.
+  const HAND_WIDE = 3;
+  // Each pull's owner's guy, kept for the visit.
+  const ownerSeeds = new Map();
+  /** Finds the owners' guys: from the pull where the Worker sends them, else the Top 100, else each owner's page. */
+  async function ownersOf(pulls) {
+    for (const p of pulls) if (p.seed) { ownerSeeds.set(p.key, p.seed); lookFor[p.seed] ??= p.look || ''; }
+    let need = [...new Set(pulls.filter(p => !ownerSeeds.has(p.key)).map(p => p.key))];
+    if (!need.length) return;
+    for (const g of await topGuys().catch(() => [])) if (need.includes(g.key)) { ownerSeeds.set(g.key, g.seed); lookFor[g.seed] ??= g.look || ''; }
+    need = need.filter(key => !ownerSeeds.has(key));
+    await Promise.all(need.map(async key => { try { const u = await getUser(key); ownerSeeds.set(key, u.seed); lookFor[u.seed] ??= u.look || ''; } catch (e) {} }));
+  }
+  const rarestFirst = (a, b) => visOneIn(b.o) - visOneIn(a.o);
   async function renderHand() {
-    const hand = (await offThread('rarestDrops', `hand:${today}`, 12000, 9)).sort((a, b) => LG.copyOneIn(a) - LG.copyOneIn(b));
-    // Rarest in the middle, like a fanned hand; each card over the one to its left, so every card's words show.
-    const order = []; hand.forEach((o, i) => (i % 2 ? order.push(o) : order.unshift(o)));
+    const real = (await maybeJSON('/pulls/rarest?days=7'))?.pulls;
+    if (Array.isArray(real)) paths = true;
+    const pulls = (real || []).map(p => ({ ...p, o: LG.decode(p.code) })).filter(p => p.o).slice(0, HAND_SIZE).sort(rarestFirst);
+    await ownersOf(pulls);
+    const sample = pulls.length < HAND_SIZE ? (await offThread('rarestDrops', `hand:${today}`, 12000, HAND_SIZE)).map(o => ({ o, maybe: true })).sort(rarestFirst) : [];
+    // The fan deals from the middle out, so real pulls take the middle, the rarest at the centre, and possible
+    // drops only the ends, however rare they roll.
+    const hand = [...pulls, ...sample.slice(0, HAND_SIZE - pulls.length)];
+    const order = []; hand.forEach((c, i) => (i % 2 ? order.push(c) : order.unshift(c)));
     const mid = (order.length - 1) / 2;
-    $('hand').innerHTML = order.map((o, i) => {
-      const d = i - mid;
-      return `<div class="slot" style="--r:${d * 5}deg;--y:${Math.round(d * d * 4)}px;--z:${i + 1}" tabindex="0"><div class="lift">${libHtml(cardInput(cardSpec(HAND_GUYS[i], [o], itemLabel(o))), { sway: true })}</div><small>${esc(LG.nameOf(o).replace(' | ', ' · '))}</small></div>`;
+    $('hand').innerHTML = order.map((c, i) => {
+      const d = i - mid, seed = c.maybe ? HAND_GUYS[i % HAND_GUYS.length] : ownerSeeds.get(c.key) || c.key, name = esc(LG.nameOf(c.o).replace(' | ', ' · '));
+      // Each sampled card says so only beside real pulls; a hand of them all is headed "Possible drops".
+      const card = `<div class="lift">${c.maybe && pulls.length ? '<span class="maybe-tag">Possible drop</span>' : ''}${libHtml(cardInput(cardSpec(seed, [c.o], itemLabel(c.o, false, false, { pull: c.no }))), { sway: true, flat: true })}</div>`;
+      // The middle card on top; a wide screen leaves the outer two out (`edge`).
+      const style = `style="--y:${Math.round(d * d * 4)}px;--z:${order.length - Math.round(Math.abs(d) * 2)}"`, edge = Math.abs(d) > HAND_WIDE ? ' edge' : '';
+      return c.maybe ? `<div class="slot${edge}" ${style} tabindex="0">${card}<small>${name}</small></div>`
+        : `<a class="slot${edge}" ${style} href="/p/${encodeURIComponent(c.id)}">${card}<small>${name} <i>@${esc(c.key)} · ${shortDate(c.at)}</i></small></a>`;
     }).join('');
     mountLib($('hand'));
-    $('hand-note').textContent = `Out of 12,000 capsules opened just now, the rarest was 1 in ${words(LG.copyOneIn(hand.at(-1)))}.`;
+    // On a phone the row opens on the rarest, in the middle.
+    const centre = $('hand').children[Math.floor(mid)];
+    if (centre && $('hand').scrollWidth > $('hand').clientWidth) $('hand').scrollLeft = centre.offsetLeft - ($('hand').clientWidth - centre.offsetWidth) / 2;
+    $('hand-k').textContent = pulls.length ? 'This week’s rarest pulls' : 'Possible drops';
+    $('hand-note').textContent = pulls.length ? (sample.length ? 'Topped up with possible drops' : '') : 'The rarest of 12,000 capsules rolled just now';
   }
 
   /* ---------------------------------------------- claiming a name */
@@ -1859,7 +1984,8 @@
   // A guy's card: his tier sets its grade, and it says where he stands ("Epic", "Top 0.3%").
   const TIER_COLORS = LG.GRADES.map(g => g.color);
   const rankText = r => r.label === r.name ? r.name : `${r.name} · ${r.label}`;
-  const guyLabel = (cfg, title, corner = '') => { const r = guyRank(cfg); return { title, g: r.tier, corner, bottom: r.label, lines: [r.name, r.label === r.name ? LG.traitOdds(cfg.base || cfg).sort((a, b) => a.chance - b.chance)[0].name : r.label] }; };
+  // The founder's rank says "1 of 1", short enough for the card's line beside the badge.
+  const guyLabel = (cfg, title, corner = '') => { const r = guyRank(cfg), label = r.top <= 0 ? '1 of 1' : r.label; return { title, g: r.tier, corner, bottom: r.top <= 0 ? `${r.name} · ${label}` : label, lines: [r.name, label === r.name ? LG.traitOdds(cfg.base || cfg).sort((a, b) => a.chance - b.chance)[0].name : label] }; };
   const traitWord = t => t.slot === 'lucky' ? 'Lucky' : t.slot === 'tone' ? cap(t.name) : t.slot === 'arms' ? (t.name === 'none' ? 'No arms' : cap(t.name)) : t.slot === 'feet' ? `${cap(t.name)} feet` : `${cap(t.name)} ${t.slot}`;
   const traitChips = (cfg, n = 2) => `<span class="tchips">${rarestOf(cfg, n).map(t => `<span class="tchip" style="--tier:${traitTier(t).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`).join('')}</span>`;
   // One trait as a Balatro card: its icon and slot, what he got, a paper box saying how rare.
@@ -1911,6 +2037,96 @@
     host.innerHTML = `<p class="dist-h">Every guy dealt, from common to rare</p><div class="dist-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars}</svg><i class="dist-me" style="left:${(me + 0.5) / B * 100}%"><em>You</em></i></div><div class="dist-x">${ticks.join('')}</div>`;
   }
   const setTotal = n => { const [a, b] = split(n); $('total').textContent = a; $('unit').textContent = b; };
+  /*
+   * What leads a guy: its rank, big ("Top 6.3%"), its place among everyone claimed once there are others
+   * ("#412 of 1,203 claimed"), and the trait people see as rare, with its own odds ("Galaxy eyes · 1 in 900").
+   * The twelve multiplied is the breakdown's last line.
+   */
+  const rankShown = r => r.top <= 0 ? '1 of 1' : `Top ${r.top * 100 >= 10 ? Math.round(r.top * 100) : r.top * 100 >= 1 ? +(r.top * 100).toFixed(1) : +(r.top * 100).toPrecision(2)}%`;
+  // The trait to lead with: the rarest that shows in the drawing (tone, arms and feet don't stand out), when it's rare.
+  const standoutOf = cfg => LG.traitOdds(cfg.base || cfg).filter(t => !['tone', 'arms', 'feet'].includes(t.slot) && (t.slot !== 'lucky' || t.name === 'Lucky')).sort((a, b) => a.chance - b.chance)[0];
+  const standoutChip = cfg => {
+    const t = standoutOf(cfg);
+    if (!t || (t.chance >= 1 / 30 && t.slot !== 'lucky')) return '';
+    return `<span class="tchip" style="--tier:${traitTier(t).c}">${esc(traitWord(t))}<i>1 in ${fmt(1 / t.chance)}</i></span>`;
+  };
+  /*
+   * Every claimed guy in order, the rarest first and a tie to the earlier claim: the Worker's whole list on the live
+   * site (kept for five minutes), this browser's in the demo. Each with its rank's share, `top`, worked out beside the
+   * page (`ranks`) once a visit per seed, since a seed's rank never changes. Only read where the Worker can't say.
+   */
+  let ladder = null, ladderAt = 0;
+  const seedTops = new Map();
+  async function claimedLadder() {
+    if (ladder && Date.now() - ladderAt < 300000) return ladder;
+    const list = await listGuys('rarest', '').catch(() => []);
+    const fresh = [...new Set(list.map(g => g.seed).filter(seed => !seedTops.has(seed)))];
+    if (fresh.length) (await offThread('ranks', fresh)).forEach((top, i) => seedTops.set(fresh[i], top));
+    ladder = list.map(g => ({ key: g.key, seed: g.seed, look: g.look || '', at: String(g.at || ''), top: seedTops.get(g.seed) }))
+      .sort((a, b) => a.top - b.top || a.at.localeCompare(b.at) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    // Only kept once the page knows whether the Worker is there, so a list read before that isn't reused.
+    ladderAt = backendReady ? Date.now() : 0;
+    return ladder;
+  }
+  /*
+   * The Top 100: the Worker's board where it keeps one, else the first hundred of every claimed guy. Both go by
+   * rank, then the earlier claim, then the name. Each { place, key, seed, look, top, since }, kept for a minute.
+   */
+  let topCache = null, topAt = 0, paths = false;
+  async function topGuys() {
+    if (topCache && Date.now() - topAt < 60000) return topCache;
+    const d = await maybeJSON('/top?kind=guys');
+    if (Array.isArray(d?.guys)) { paths = true; topCache = d.guys.map(g => ({ ...g, top: g.top ?? LG.guyRank(dealt(g.seed)).top })); }
+    else topCache = (await claimedLadder()).slice(0, 100).map((g, i) => ({ place: i + 1, key: g.key, seed: g.seed, look: g.look, top: g.top, since: g.at }));
+    topAt = backendReady ? Date.now() : 0;
+    return topCache;
+  }
+  // How many guys are claimed (`/api/stats`), kept for a minute; null where the Worker isn't there.
+  let claimedN = null, claimedNAt = 0;
+  async function claimedCount() {
+    if (claimedN != null && Date.now() - claimedNAt < 60000) return claimedN;
+    const s = await maybeJSON('/stats');
+    claimedN = Number.isInteger(s?.players) ? s.players : null;
+    claimedNAt = Date.now();
+    return claimedN;
+  }
+  // Whether the Worker answers a guy's place itself; off after its first miss (an older Worker), for the visit.
+  let placeRead = true;
+  /**
+   * A claimed guy's place, or null where there's nobody to be placed against: the Worker's own read where it has one
+   * (`/api/top?kind=place&key=`), else the Top 100's place over the claimed count, and only for a guy below the
+   * board (or with no board), every claimed guy ranked beside the page.
+   */
+  async function placeOf(key) {
+    const placed = p => (p && p.of >= 2 ? p : null);
+    if (placeRead && isLive()) {
+      const d = await maybeJSON('/top?kind=place&key=' + encodeURIComponent(key));
+      if (Number.isInteger(d?.place) && Number.isInteger(d?.of)) return placed(d);
+      placeRead = false;
+    }
+    const [board, of] = await Promise.all([topGuys(), claimedCount()]), at = board.find(g => g.key === key);
+    if (at && of) return placed({ place: at.place, of });
+    const list = await claimedLadder(), i = list.findIndex(g => g.key === key);
+    return i < 0 ? null : placed({ place: i + 1, of: list.length });
+  }
+  /**
+   * Fills a guy's lead: `ids` names its rank, tier, place and trait elements. The place is the Top 100's own, so
+   * it isn't said twice.
+   */
+  function rankLead(ids, key, cfg) {
+    const r = guyRank(cfg);
+    $(ids.top).textContent = rankShown(r);
+    $(ids.tier).textContent = r.name;
+    $(ids.trait).innerHTML = standoutChip(cfg);
+    $(ids.place).textContent = '';
+    const want = key;
+    $(ids.place).dataset.for = want;
+    placeOf(key).then(p => {
+      if (p && $(ids.place).dataset.for === want) $(ids.place).innerHTML = `<em>#${p.place.toLocaleString('en-US')}</em> of ${p.of.toLocaleString('en-US')} claimed`;
+    }).catch(() => {});
+  }
+  // The rank box burns for the rarest tiers: Epic a little, Mythic and the founder most.
+  const heatOfTier = tier => Math.max(0, (tier - 2) / 3);
   let scored = false, scoring = false;
   /** A guy's stage: his card as the library draws it (the one his saves give), only rebuilt when he or what he wears changes. */
   const guyViews = {};
@@ -1933,19 +2149,22 @@
     guyStage('guy-stage', state.seed, wornCodes(), meCard);
     saveButtons($('guy-saves'), guyCard, state.key, guySpec(state.seed, wornCodes()));
     const rank = guyRank(cfg);
-    $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    // The founder's one of one is on the card and in the rank box already, so only Lucky gets a badge here.
+    $('guy-badges').innerHTML = `${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    rankLead({ top: 'rk-top', tier: 'rk-tier', place: 'rk-place', trait: 'guy-trait' }, state.key, cfg);
     $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg.base || cfg);
-    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder, guyRank(cfg).top); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
-    setTotal(scored ? +$('score').dataset.n : 1);
-    if (scored) fire(heatOf(+$('score').dataset.n));
+    $('score').dataset.tier = rank.tier;
+    distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
+    // The product shows from the start; counting it up again is the tiles' show.
+    setTotal(+$('score').dataset.n);
+    if (scored) fire(heatOfTier(rank.tier));
   }
-  const heatOf = n => Math.min(1, Math.max(0, (Math.log10(n) - 8) / 7));
   const frames = (ms, fn) => new Promise(r => { const t0 = performance.now(); const f = now => { const p = Math.min(1, (now - t0) / ms); fn(1 - Math.pow(1 - p, 3)); if (p < 1) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); });
   async function score() {
     if (scoring || !state) return;
     scoring = true; scored = true;
-    const tiles = [...$('tiles').children], box = $('score');
+    const tiles = [...$('tiles').children], box = $('mult');
     let v = 1; setTotal(1); fire(0);
     $('tiles').classList.add('counting');
     tiles.forEach(x => x.classList.remove('hit', 'done'));
@@ -1961,11 +2180,13 @@
       await frames(220, e => setTotal(Math.pow(10, Math.log10(from) + (Math.log10(v) - Math.log10(from)) * e)));
       await sleep(Math.max(110, 300 - i * 24));
     }
-    const final = +box.dataset.n;
+    const final = +$('score').dataset.n;
     setTotal(final);
-    box.classList.remove('slam'); void box.offsetWidth; box.classList.add('slam');
+    // The count lands on the rank.
+    const rankBox = $('score');
+    rankBox.classList.remove('slam'); void rankBox.offsetWidth; rankBox.classList.add('slam');
     SFX.total(final);
-    fire(heatOf(final));
+    fire(heatOfTier(+rankBox.dataset.tier || 0));
     $('tiles').classList.remove('counting');
     scoring = false;
   }
@@ -2070,7 +2291,7 @@
   function edRarity() {
     // Both counted the way his card's rank is (`guyRank`), so the numbers on the page agree.
     const cfg = edCfg(), look = LG.guyRank({ ...cfg }), rank = guyRank(cfg);
-    const line = r => (r.label === r.name || r.label === 'Common' ? esc(r.name) : `${esc(r.name)} · ${esc(r.label.toLowerCase())}`);
+    const line = r => (r.top <= 0 ? `${esc(r.name)} · 1 of 1` : r.label === r.name || r.label === 'Common' ? esc(r.name) : `${esc(r.name)} · ${esc(r.label.toLowerCase())}`);
     // One row while the look says what the deal says; the look's own row only once it differs.
     $('ed-rare').innerHTML = (line(look) === line(rank) ? '' : `<div><span>His look<small>Changes as you pick parts</small></span><b>${line(look)}</b></div>`)
       + `<div><span>His rank<small>As dealt, never changes</small></span><b>${line(rank)}</b></div>`;
@@ -2387,7 +2608,7 @@
     // The same card as Your guy's and the locker's, so his card looks one way everywhere.
     guyStage('me-card', state.seed, wornCodes(), cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     const n = LG.guyOneIn(dealt(state.seed));
-    $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${guyConfig(state.seed).founder ? 'Founder · one of one' : 'One of a kind'}</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
+    $('me-badges').innerHTML = `${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours. Nobody else has this guy.`;
     const why = state.free === today ? '' : freeWhy();
     $('go-free').innerHTML = state.free === today ? 'Open a capsule' : why ? `${LOCK}Today's free capsule` : "Open today's free capsule";
@@ -2403,7 +2624,7 @@
     const its = LG.gameItems(g).filter(x => !x.free), owned = state ? copies() : [];
     const total = its.reduce((a, x) => a + LG.itemWeight(x), 0), oneIn = x => Math.round(total / LG.itemWeight(x) / (1 - LG.AURA_ODDS));
     const star = its.find(x => x.showpiece), plain = its.find(x => !x.showpiece);
-    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
     const set = state ? LG.setProgress(g, owned.map(c => c.o)) : null;
     const slots = ['showpiece', 'skin', 'hat', 'frame', 'buddy'].filter(sl => its.some(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece));
     const inSlot = sl => its.filter(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece);
@@ -2530,7 +2751,7 @@
     $('season-buy').addEventListener('click', () => {
       if (!state) { $('name').focus(); return; }
       if (!pay(COST.seasonal)) return;
-      if (isLive()) { meApi('season', UNLIMITED && fairOdds ? { fair: true } : {}).then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); }).catch(e => { if (e.stamps) { state.stamps = e.stamps; renderWallet(); } e.status === 402 ? short(e.need, e.message) : toast(e.message); }); return; }
+      if (isLive()) { meApi('season', UNLIMITED && fairOdds ? { fair: true } : {}).then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal', null, r.copy.pull); }).catch(e => { if (e.stamps) { state.stamps = e.stamps; renderWallet(); } e.status === 402 ? short(e.need, e.message) : toast(e.message); }); return; }
       const o = dev ? best(i => LG.rollSeason(`${state.seed}:dev:${i}`, today)) : LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
       reveal(o, null, 'Seasonal');
     });
@@ -2598,10 +2819,10 @@
   $('fb-odds').addEventListener('click', () => { fairOdds = !fairOdds; try { localStorage.setItem('lil-guys-fair', fairOdds ? '1' : '0'); } catch (e) {} renderFounderBar(); toast(fairOdds ? 'Rolling at fair odds, as anyone does.' : 'Founder odds back on.'); });
   $('fb-open').addEventListener('click', () => {
     meApi('season', { item: $('fb-season').value, ...(fairOdds ? { fair: true } : {}) })
-      .then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); })
+      .then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal', null, r.copy.pull); })
       .catch(e => toast(e.message));
   });
-  const LUCK_WORDS = { beginner: 'Beginner\'s luck', pity: 'Lucky break' };
+  const LUCK_WORDS = { beginner: 'Beginner’s luck', pity: 'Lucky break', founder: 'Founder’s pick' };
   // On the live site today's free capsule opens once the player has finished a DLE Club game today; the server
   // says whether they have (`state.freeCapsule`) and, while not, what to do. The demo can't know, so it's open there.
   /** Up to the header's sign-in, open, saying why it is needed. */
@@ -2632,7 +2853,7 @@
         if (r.part?.new) state.parts = [...(state.parts || []), r.part.code];
         // A machine's free item comes with the first capsule from it.
         if (r.starter && !state.copies.includes(r.starter)) { state.copies.push(r.starter); toast(`Plus ${LG.itemById(LG.decode(r.starter).item).name}, ${LG.machineName(r.game)}'s free one`); }
-        reveal(LG.decode(r.copy.code), r.game, r.luck ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part);
+        reveal(LG.decode(r.copy.code), r.game, LUCK_WORDS[r.luck] ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part, r.copy.pull);
       } catch (e) {
         if (e.stamps) state.stamps = e.stamps;
         // A free capsule the server kept shut is still to come today.
@@ -2832,27 +3053,29 @@
     if (bits.length) requestAnimationFrame(fly); else { bursting = false; bctx.clearRect(0, 0, burst.width, burst.height); }
   }
 
-  /* A face-down card: navy with a diamond weave and an amber gem. */
-  (function cardBack(canvas) {
-    const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H);
+  /* A face-down card at its canvas's own size: navy with a diamond weave and an amber gem in the middle. */
+  function paintBack(canvas) {
+    const w = canvas.width, h = canvas.height, mx = (w - 1) / 2, my = (h - 1) / 2;
+    const ctx = canvas.getContext('2d'), img = ctx.createImageData(w, h);
     const edge = [34, 38, 58], navy = [30, 38, 66], weave = [44, 56, 96], gem = [255, 207, 92], gemS = [165, 120, 26];
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const cx = Math.min(x, w - 1 - x), cy = Math.min(y, h - 1 - y);
       if (cx + cy < 2) continue;
       let c = cx === 0 || cy === 0 || cx + cy === 2 ? edge : (cx === 2 || cy === 2) ? gemS : ((x + y) % 4 === 0 || (x - y + 64) % 4 === 0) ? weave : navy;
-      const m = Math.abs(x - 12.5) + Math.abs(y - 20.5);
+      const m = Math.abs(x - mx) + Math.abs(y - my);
       if (m < 6) c = m < 3 ? gem : m < 4.5 ? gemS : edge;
-      if (m < 3 && x < 12 && y < 20) c = [255, 240, 190];
-      img.data.set([...c, 255], (y * W + x) * 4);
+      if (m < 3 && x < mx - 0.5 && y < my - 0.5) c = [255, 240, 190];
+      img.data.set([...c, 255], (y * w + x) * 4);
     }
     ctx.putImageData(img, 0, 0);
-  })($('back'));
+  }
+  paintBack($('back'));
 
   /* ---------------------------------------------- the drop */
   let rush = false, current = null;
   const wait = ms => rush ? Promise.resolve() : sleep(ms);
   /* ---------------------------------------------- motion: tweens on the frame clock; Skip jumps every one to its end */
-  const ease = { out: t => 1 - Math.pow(1 - t, 3), in: t => t * t * t, inOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, lin: t => t };
+  const ease = { out: t => 1 - Math.pow(1 - t, 3), in: t => t * t * t, inOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, lin: t => t, back: t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2) };
   function tween(ms, fn, e = ease.out) {
     return new Promise(res => {
       if (rush) { fn(1, 1); res(); return; }
@@ -2912,12 +3135,14 @@
   })($('coin'));
 
   /* The open, in the stage's own 300×440 box: the machine falls in and lands with a squash, a coin arcs
-   * into the slot, the crank turns three times, a capsule drops from the chute, bounces and rolls out
-   * toward you while the machine steps back, twists twice (the seam cracks and light leaks out in the
-   * grade's colour) and pops. Every step is a tween, so Skip lands each on its last frame. */
+   * into the slot, the crank turns twice, a capsule drops from the chute, bounces and rolls out
+   * toward you while the machine steps back, twists (the seam cracks and warm light leaks out)
+   * and pops. Every step is a tween, so Skip lands each on its last frame.
+   * `quick`: an Everyday or Special pop, three seconds or so: the machine is already standing, the crank
+   * turns once and everything is a little faster. Only Prized and better get the scroll after it. */
   const MW = 240, MH = 336, MX = 30, MY = 440 - 40 - MH, FLOOR = 400, RAD = 88.5;
   const inMach = (x, y) => [MX + x / 40 * MW, MY + y / 56 * MH];
-  async function gacha(g) {
+  async function gacha(g, quick = false) {
     const box = $('gacha'), mc = $('bigmach'), cp = $('cap2'), ct = $('cap-top'), cb = $('cap-bot'), coin = $('coin'), floor = $('g-floor'), leak = $('leak');
     box.hidden = false; cp.hidden = true; coin.hidden = true;
     box.style.setProperty('--grade', '#ffe2a0');                 // the same warm light whatever is inside: the scroll tells
@@ -2929,26 +3154,31 @@
     const setC = (x, y, s, r) => { cp.style.transform = `translate(${x - 96}px, ${y - 96}px) scale(${s}) rotate(${r}deg)`; };
     const at = (x, y) => { const r = box.getBoundingClientRect(); return [r.left + x * r.width / 300, r.top + y * r.height / 440]; };
 
-    // 1. the drop and the landing
-    SFX.whoosh(0.3, 250, 1600, 0.08);
-    await tween(340, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
-    SFX.land(); shake(7);
-    dust(...at(70, FLOOR), -1); dust(...at(230, FLOOR), 1);
-    await tween(440, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
+    const T = ms => (quick ? Math.round(ms * 0.7) : ms);
+    // 1. the drop and the landing; a quick pop's machine is just there
+    if (quick) {
+      await tween(200, e => { setM(0, 0.92 + 0.08 * e, 0.92 + 0.08 * e); mc.style.opacity = e; floor.style.opacity = e; floor.style.transform = 'translateX(-50%)'; }, ease.out);
+    } else {
+      SFX.whoosh(0.3, 250, 1600, 0.08);
+      await tween(340, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
+      SFX.land(); shake(7);
+      dust(...at(70, FLOOR), -1); dust(...at(230, FLOOR), 1);
+      await tween(440, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
+    }
 
     // 2. a coin, into the slot
     const [sx, sy] = inMach(27, 40);
     coin.hidden = false; SFX.coin();
-    await tween(360, (e, p) => {
+    await tween(T(360), (e, p) => {
       const x = 10 + (sx - 18 - 10) * e, y = 150 + (sy - 18 - 150) * e - Math.sin(p * Math.PI) * 120;
       coin.style.transform = `translate(${x}px, ${y}px) scaleX(${Math.max(0.15, Math.abs(Math.cos(p * 14)))})`;
     }, ease.inOut);
     coin.hidden = true; SFX.slot();
 
-    // 3. two turns of the crank, the machine leaning into each
-    for (let k = 0; k < 2; k++) {
+    // 3. two turns of the crank (one for a quick pop), the machine leaning into each
+    for (let k = 0; k < (quick ? 1 : 2); k++) {
       const a0 = m.angle; m.jiggle(); SFX.crank();
-      await tween(300, (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
+      await tween(T(300), (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
       SFX.clunk();
       await wait(60);
     }
@@ -2959,18 +3189,18 @@
     leak.style.opacity = 0;
     const [cx, cy] = inMach(19.5, 49.5), s0 = 0.3, ground = FLOOR - RAD * s0;
     cp.hidden = false; SFX.drop();
-    await tween(220, e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
+    await tween(T(220), e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
     SFX.bounce(1);
-    await tween(260, (e, p) => setC(cx + 6 * p, ground - Math.sin(p * Math.PI) * 30, s0, 40 * p), ease.lin);
+    await tween(T(260), (e, p) => setC(cx + 6 * p, ground - Math.sin(p * Math.PI) * 30, s0, 40 * p), ease.lin);
     SFX.bounce(0.4); SFX.roll(0.55);
-    await tween(560, e => {
+    await tween(T(560), e => {
       setC(cx + 6 + (150 - cx - 6) * e, ground + (232 - ground) * e - Math.sin(e * Math.PI) * 30, s0 + (1 - s0) * e, 40 + 680 * e);
       setM(-24 * e, 1, 1, 0, 1 - 0.14 * e); mc.style.opacity = 1 - 0.78 * e; floor.style.opacity = 1 - e;
     }, ease.inOut);
 
     // 5. one twist: the seam cracks and warm light leaks out
     SFX.twist(1, 0);
-    await tween(420, (e, p) => {
+    await tween(T(420), (e, p) => {
       const w = Math.sin(p * Math.PI * 3) * (1 - p * 0.6) * 11;
       setC(150, 232, 1 + 0.03 * Math.sin(p * Math.PI), w);
       ct.style.transform = `translateY(${-e * 4}px) rotate(${w * 0.5}deg)`;
@@ -2981,7 +3211,7 @@
     // 6. pop: the dome flies off, the candy half drops away, light pours out, and the scroll comes up out of it
     SFX.pop(1); flash(0.45); if (dropPaint) dropPaint.kick(0.8);
     boom(1, ...at(150, 232), [CANDY[g], '#ffffff', '#ffe2a0', '#ffe9b0']);
-    await tween(460, (e, p) => {
+    await tween(T(460), (e, p) => {
       ct.style.transform = `translate(${-70 * p}px, ${-280 * p + 320 * p * p}px) rotate(${-150 * p}deg)`; ct.style.opacity = 1 - p * p;
       cb.style.transform = `translate(${36 * p}px, ${220 * p * p}px) rotate(${50 * p}deg)`; cb.style.opacity = 1 - p;
       leak.style.opacity = 1 - p * 0.7; leak.style.transform = `translate(-50%, -50%) scale(${1 + 1.6 * e})`;
@@ -2993,21 +3223,33 @@
 
   /* The scroll: cards rush past the marker and slow onto yours. Every filler is a real roll at the real
    * odds, the winner sits at a random place in the strip, and where the marker stops inside its card is
-   * random too, so nothing better is ever planted just past it. Same length whatever you got. */
-  function reel(o, g) {
-    return new Promise(done => {
-      const wrap = $('reelwrap'), box = $('reel'), track = $('track');
-      const N = 60, WIN = 42 + Math.floor(Math.random() * 8), CW = 112, STEP = CW + 12;
-      const list = Array.from({ length: N }, (_, i) => i === WIN ? o : LG.roll(`reel:${Math.random()}:${i}`, g));
-      wrap.hidden = false; box.classList.remove('done', 'dim');
-      track.innerHTML = list.map((x, i) => `<div class="rc${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}"><span class="glow"></span>${px(cardSpec(state.seed, [x], itemLabel(x), true))}<i class="g"></i></div>`).join('');
-      hydrate(track);
+   * random too, so nothing better is ever planted just past it. Only Prized and better get the scroll, so
+   * the scroll itself says something good is coming. The strip is laid out and its cards painted while the
+   * machine plays, a few a frame, so no card is blank when it moves; the returned run() moves it. */
+  function prepReel(o, g) {
+    const wrap = $('reelwrap'), box = $('reel'), track = $('track');
+    const N = 60, WIN = 42 + Math.floor(Math.random() * 8), CW = 112, STEP = CW + 12;
+    const list = Array.from({ length: N }, (_, i) => i === WIN ? o : LG.roll(`reel:${Math.random()}:${i}`, g));
+    box.classList.remove('done', 'dim'); track.style.transform = '';
+    track.innerHTML = list.map((x, i) => `<div class="rc${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}"><span class="glow"></span>${px(cardSpec(state.seed, [x], itemLabel(x), true))}<i class="g"></i></div>`).join('');
+    hydrate(track);
+    // The strip's start and the stretch round the winner first: what shows as it starts and as it stops.
+    const cards = [...track.querySelectorAll('canvas.px')].map(c => byCanvas.get(c));
+    const order = cards.map((_, i) => i).sort((a, b) => (a < 10 ? a : Math.abs(a - WIN) < 7 ? 10 + Math.abs(a - WIN) : 100 + a) - (b < 10 ? b : Math.abs(b - WIN) < 7 ? 10 + Math.abs(b - WIN) : 100 + b));
+    let k = 0;
+    const paintSome = ms => { const end = performance.now() + ms; while (k < order.length && performance.now() < end) { const c = cards[order[k++]]; if (c && !c.f) draw(c, performance.now() / 1000, true); } };
+    const pump = () => { if (!track.isConnected || k >= order.length) return; paintSome(8); requestAnimationFrame(pump); };
+    requestAnimationFrame(pump);
+    return () => new Promise(done => {
+      paintSome(Infinity);
+      wrap.hidden = false;
       const mid = box.clientWidth / 2;
       const offset = (Math.random() - 0.5) * 0.92 * CW;
       const x0 = mid + STEP * 2, x1 = mid - (WIN * STEP + CW / 2 + offset);
       const dur = 5400, t0 = performance.now();
       let lastIdx = null, over = false;
       const settle = () => { if (over) return; over = true; track.style.transform = `translateX(${x1}px)`; box.classList.add('done'); SFX.reelStop(); done(); };
+      track.style.transform = `translateX(${x0}px)`;
       if (rush) { settle(); return; }
       const step = now => {
         if (over) return;
@@ -3022,16 +3264,38 @@
       requestAnimationFrame(step);
     });
   }
-  // A held breath on a Mythic or a Grail: the rest of the strip goes dark and the card shakes with a heartbeat.
-  async function holdFor(gr) {
-    await wait(gr >= 3 ? 150 : 450);
-    if (gr < 3 || rush) return;
-    const win = $('track').querySelector('.win'), box = $('reel');
-    box.classList.add('dim'); win.classList.add('hold');
+  /*
+   * A held breath on a Mythic or better (an Unusual counts as a Mythic): the strip goes dark, the winning card
+   * lifts out of it to the middle at whole pixels of its face, two to three times its size in the strip, and
+   * shakes with a heartbeat; then it punches toward you and the result comes out of the flash.
+   */
+  async function holdFor(tier) {
+    await wait(tier >= 3 ? 150 : 450);
+    if (tier < 3 || rush) return;
+    const win = $('track').querySelector('.win'), box = $('reel'), art = win?.querySelector('.art');
+    if (!art) return;
+    box.classList.add('dim');
     dropColour('#000000', 0.2, 300);
-    SFX.riser(Math.min(4, gr), gr >= 4 ? 1.4 + (gr - 4) * 0.8 : 0.85);
-    await wait(gr >= 4 ? 1400 + (gr - 4) * 800 : 850);
-    win.classList.remove('hold');
+    const from = art.getBoundingClientRect();
+    const k = Math.max(4, Math.min(12, Math.floor(Math.min(innerWidth * 0.66 / W, (innerHeight - 120) / H)), Math.round(from.width * 3 / W)));
+    const w = W * k, h = H * k, x = Math.round((innerWidth - w) / 2), y = Math.round((innerHeight - h) / 2);
+    const lift = document.createElement('div');
+    lift.className = 'held-card'; lift.style.width = w + 'px';
+    $('reveal').append(lift); lift.append(art);
+    const place = e => { lift.style.transform = `translate(${from.left + (x - from.left) * e}px, ${from.top + (y - from.top) * e}px) scale(${(from.width + (w - from.width) * e) / w})`; };
+    place(0);
+    SFX.whoosh(0.45, 300, 2400, 0.08);
+    await tween(460, place, ease.back);
+    lift.style.transform = `translate(${x}px, ${y}px)`;      // at rest on whole pixels
+    if (!rush) {
+      lift.classList.add('hold');
+      SFX.riser(Math.min(4, tier), tier >= 4 ? 1.4 + (tier - 4) * 0.8 : 0.85);
+      await wait(tier >= 4 ? 1400 + (tier - 4) * 800 : 850);
+      lift.classList.remove('hold');
+    }
+    flash(0.55);
+    await tween(170, e => { lift.style.transform = `translate(${x - w * 0.07 * e}px, ${y - h * 0.07 * e}px) scale(${1 + 0.14 * e})`; lift.style.opacity = 1 - e; }, ease.in);
+    lift.remove();
   }
 
   // The payoff, bigger with every grade: shockwaves, a spinning entrance, a title that lands a letter at a
@@ -3067,26 +3331,48 @@
     if (gr >= 5) { setTimeout(() => flash(0.9), 900); setTimeout(() => boom(4, cx, cy, AURA_RAIN), 1300); }
   }
 
-  // What you won, spelled out: what it is, its finish and grade, its float on the wear bar (the number counts
-  // up while the marker slides into place), how rare it is, and a look at it on you.
-  function wonInfo(o, how) {
-    const it = LG.itemById(o.item), g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
+  // What you won, spelled out: what leads is what's scarce about it (its serial, how many exist in its finish, its grade), then
+  // what it is and how rare it looks. The float is one quiet line unless it's one collectors look for: under 0.01,
+  // the best of its wear, the most worn. An aura's float only thins it, so its line stays quiet.
+  const FLOAT_NOTES = ['triple-zero', 'double-zero', 'max-float', 'top-of-tier'];
+  const printName = name => name.replace(/^Print #/, 'Print ').replace(/^#(\d+)/, 'Print $1');
+  // The serial counts the item in every finish and the population only this finish, so the population names it
+  // ("No. 4 · 3 exist in Plain"); a Deep sea aura goes by its own name, so the line keeps one kind of dot.
+  const finWord = o => LG.FINISHES[o.finish].name.split(' · ').pop();
+  function wonLead(o, f = {}) {
+    const g = LG.gradeOf(o), parts = [];
+    if (f.pull) parts.push(`<b class="${f.pull <= FIRST_EDITION ? 'first' : ''}"${f.pull <= FIRST_EDITION ? ' title="1st edition"' : ''}>No. ${f.pull.toLocaleString('en-US')}</b>`);
+    if (f.pop) parts.push(`<span>${f.pop.toLocaleString('en-US')} exist${f.pop === 1 ? 's' : ''} in ${esc(finWord(o))}</span>`);
+    parts.push(`<span class="bal" style="--b:${g.color}">${esc(g.name)}</span>`);
+    // Each dot goes with what follows it, so a narrow line wraps before a dot, never after one.
+    return parts.map((p, i) => (i ? `<span class="lp"><span aria-hidden="true">·</span>${p}</span>` : p)).join('');
+  }
+  function wonInfo(o, how, facts = {}) {
+    const it = LG.itemById(o.item), [title, look] = LG.nameOf(o).split(' | ');
     const fin = LG.FINISHES[o.finish], [lo, hi] = fin.scuffs, wear = LG.wearOf(o.scuff), wc = WEAR_COLOURS[LG.WEAR.indexOf(wear)];
+    const notes = LG.collectorNotes(o), floatNote = notes.find(n => FLOAT_NOTES.includes(n.id));
     let prev = 0;
     const segs = LG.WEAR.map((w, k) => { const a = prev, b = Math.min(1, w.max); prev = b; return `<span style="flex:${(b - a).toFixed(3)};background:${WEAR_COLOURS[k]}">${b - a >= 0.1 ? `<em>${w.short}</em>` : ''}</span>`; }).join('');
-    const within = hi > lo ? (o.scuff - lo) / (hi - lo) : 0, cleaner = Math.round((1 - within) * 100);
-    const [a, b] = split(LG.copyOneIn(o));
-    return `<p class="won-how">${esc(how)} · ${cap(it.game)} ${it.slot}${o.date ? ' · ' + o.date : ''}</p>
+    const [a, b] = split(visOneIn(o));
+    const fx = o.fx && o.fx !== it.signature ? LG.EFFECTS[o.fx].name : '';
+    const marks = [LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : '', fx ? `<span class="bal poly">${esc(fx)}</span>` : '',
+      facts.pull && facts.pull <= FIRST_EDITION ? `<span class="bal" style="--b:#c8901e">${facts.pull === 1 ? 'First ever pulled' : '1st edition'}</span>` : '',
+      ...notes.filter(n => ['print-1', 'print-0', 'lucky-print', 'triple-print', 'straight-print', 'souvenir'].includes(n.id)).slice(0, 1).map(n => `<span class="bal poly">${esc(printName(n.name))}</span>`),
+      o.tally !== undefined ? '<span class="bal" style="--b:#5d6b8a">Counts days</span>' : ''].join('');
+    const float = floatNote && !fin.aura
+      ? `<div class="wf" style="--wc:${wc}">
+          <div class="wf-h"><small>FLOAT</small><b id="wf-n">0.000000</b><span class="bal" style="--b:${wc}">${esc(floatNote.name)}</span></div>
+          <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk${o.scuff < .06 ? ' lo' : o.scuff > .94 ? ' hi' : ''}" id="wf-mk" data-v="${o.scuff.toFixed(4)}" style="left:0%"></b></div>
+        </div>`
+      : `<p class="won-float">Float <b>${o.scuff.toFixed(4)}</b> · ${esc(fin.aura && floatNote ? floatNote.name : wear.name)}</p>`;
+    return `<p class="won-lead" id="won-lead">${wonLead(o, facts)}</p>
       <h3 class="won-title">${esc(title)}</h3>
       <p class="won-fin">${esc(look || plainOf(o))}</p>${it.about ? `<p class="about">${esc(it.about)}</p>` : ''}
-      <div class="badges"><span class="bal" style="--b:${g.color}">${esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}<span class="bal" style="--b:#5d6b8a">#${o.print}</span>${o.tally !== undefined ? '<span class="bal" style="--b:#5d6b8a">Counts days</span>' : ''}${LG.collectorNotes(o).filter(n => n.id !== 'tally' && n.id !== 'famous-print').slice(0, 2).map(n => `<span class="bal poly">${esc(n.name)}</span>`).join('')}</div>
-      <div class="wf" style="--wc:${wc}">
-        <div class="wf-h"><small>FLOAT</small><b id="wf-n">0.000000</b><span class="bal" style="--b:${wc}">${wear.name}</span></div>
-        <div class="fl-bar">${segs}${lo > 0 ? `<i class="out l" style="left:0;width:${lo * 100}%"></i>` : ''}${hi < 1 ? `<i class="out r" style="left:${hi * 100}%;right:0"></i>` : ''}<b class="mk${o.scuff < .06 ? ' lo' : o.scuff > .94 ? ' hi' : ''}" id="wf-mk" data-v="${o.scuff.toFixed(4)}" style="left:0%"></b></div>
-        <p>${hi < 1 ? `${fin.name} only rolls ${lo.toFixed(2)} to ${hi.toFixed(2)}. ` : ''}Cleaner than <b>${cleaner}%</b> of ${fin.name} copies.</p>
-      </div>
-      ${it.free ? '' : `<div class="won-odds"><span>1 in</span><b>${a}</b><span class="u">${b ? b + ' ' : ''}capsules</span></div><p class="won-pull">≈ ${words(LG.copyOneIn(o) * PRICE)} stamps to pull</p>`}
-      ${LG.slotOf(o) === 'frame' ? '' : `<div class="won-on"><canvas width="16" height="16" aria-hidden="true"></canvas><span>On ${state.key ? '@' + esc(state.key) : 'you'}</span></div>`}`;
+      ${it.free ? '' : `<div class="won-odds"><span>1 in</span><b>${a}</b><span class="u">${b ? b + ' ' : ''}capsules</span></div>`}
+      ${marks ? `<div class="badges">${marks}</div>` : ''}
+      ${float}
+      ${LG.slotOf(o) === 'frame' ? '' : `<div class="won-on"><canvas width="16" height="16" aria-hidden="true"></canvas><span>On ${state.key ? '@' + esc(state.key) : 'you'}</span></div>`}
+      <p class="won-how">${esc(how)} · ${cap(it.game)} ${it.slot}${o.date ? ' · ' + o.date : ''}</p>`;
   }
   function playWon(o) {
     const n = $('wf-n'), mk = $('wf-mk');
@@ -3119,9 +3405,13 @@
     res.classList.toggle('withinfo', !!won); $('rv-info').hidden = true; $('rv-info').innerHTML = ''; $('rv-part').hidden = true;
     flip.style.setProperty('--glow', '0px');
     res.hidden = false;
+    // The won item, painted the moment its canvas is in the page, so it spins in rather than an empty square.
+    let painted = false;
+    const paintAlone = () => { const alone = front.querySelector('canvas.alone'); if (painted || !alone || !won) return; painted = true; const fit = alone.closest('.won-art')?.clientWidth || 260; showItem(alone, won, state.seed, fit, fit); spinItem(alone.parentElement, won); };
     if (faceUp) {
       // Everyday and Special rise; Prized and up spin in, more turns and slower the rarer.
       back.hidden = true; front.hidden = false; front.innerHTML = cardHtml; hydrate(front); mountLib(front);
+      paintAlone();
       $('skip').hidden = true;
       if (gr >= 2) { flip.style.setProperty('--turns', `${360 * (gr - 1)}deg`); flip.style.setProperty('--spin-ms', `${0.7 + 0.25 * gr}s`); void flip.offsetWidth; flip.classList.add('spin'); SFX.whoosh(0.5 + gr * 0.1, 300, 3000, 0.1); }
       else { void flip.offsetWidth; flip.classList.add('rise'); SFX.whoosh(0.3, 300, 2000, 0.07); }
@@ -3150,7 +3440,7 @@
     }
     flip.classList.remove('squash', 'tremble');
     const s = byCanvas.get(front.querySelector('canvas')) || libByCanvas.get(front.querySelector('canvas')); if (s) s.juice = performance.now() / 1000;
-    const alone = front.querySelector('canvas.alone'); if (alone && won) { const fit = alone.closest('.won-art')?.clientWidth || 260; showItem(alone, won, state.seed, fit, fit); spinItem(alone.parentElement, won); }
+    paintAlone();
     if (gr >= 3) { shout.classList.add('big'); shout.innerHTML = [...shoutText].map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join(''); }
     else shout.textContent = shoutText;
     res.classList.add('go'); placeRays(); setTimeout(placeRays, 560);
@@ -3161,7 +3451,7 @@
     celebrate(gr);
     $('rv-name').textContent = name;
     $('rv-sub').textContent = sub;
-    if (won) { $('rv-info').innerHTML = wonInfo(won, sub); $('rv-info').hidden = false; playWon(won); }
+    if (won) { $('rv-info').innerHTML = wonInfo(won, sub, current?.o === won ? current.facts : {}); $('rv-info').hidden = false; playWon(won); }
     $('rv-actions').hidden = false;
   }
 
@@ -3179,26 +3469,42 @@
     if (part.new) SFX.good?.();
     $('rv-part-try')?.addEventListener('click', () => { closeReveal(); openEditor('look', { part: p.slot, index: p.index }); });
   }
-  async function reveal(o, g, how, part) {
+  /** How big a drop plays: its grade, and a Mythic's at least for an Unusual (a showpiece, a rare effect). */
+  const dropTier = o => Math.max(gradeIdx(o), isUnusual(o) ? 3 : 0);
+  /*
+   * A capsule's drop. Everyday and Special pop out of the capsule in about three seconds; Prized and better go on
+   * to the scroll, and a Mythic or better lifts out of it for a held breath. `pull`: its serial, where the Worker
+   * numbered it; how many exist in its finish is asked for while the machine plays.
+   */
+  async function reveal(o, g, how, part, pull) {
     const code = LG.encode(o);
     state.copies.push(code); state.fresh = [...(state.fresh || []), code];
     if (how === 'Dev drop') state.dev = [...(state.dev || []), code];
     save(); renderWallet();
-    current = { o, code, g, how };
+    const facts = { pull: pull || 0, pop: 0 };
+    current = { o, code, g, how, facts };
+    // The founder's own pulls are held back from every count, so theirs say nothing about how many exist.
+    if (isLive() && !UNLIMITED && !LG.itemById(o.item)?.free) fetch('/api/rank?code=' + encodeURIComponent(code)).then(r => r.json()).then(d => { facts.pop = d.pop || 0; const lead = $('won-lead'); if (lead && current?.code === code) lead.innerHTML = wonLead(o, facts); }).catch(() => {});
     rush = false;
     $('reveal').hidden = false; $('result').hidden = true; $('skip').hidden = false;
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
-    const gr = gradeIdx(o), famous = LG.special(o), grade = LG.gradeOf(o), sp = !!LG.itemById(o.item)?.showpiece;
+    const gr = gradeIdx(o), tier = dropTier(o), famous = LG.special(o), grade = LG.gradeOf(o), sp = !!LG.itemById(o.item)?.showpiece;
     $('reelwrap').hidden = true;
-    if (g) { await gacha(g); await reel(o, g); await holdFor(gr); $('reelwrap').hidden = true; }
+    if (g) {
+      // The scroll is the tell: only Prized and better (and an Unusual) get it.
+      const run = tier >= 2 ? prepReel(o, g) : null;
+      await gacha(g, !run);
+      if (run) { await run(); await holdFor(tier); $('reelwrap').hidden = true; }
+    }
     const [wonTitle, wonLook] = LG.nameOf(o).split(' | ');
-    // A showpiece lands like a Mythic at least, whatever its finish.
-    await unveil(sp ? Math.max(gr, 3) : gr, `<div class="won-art"><div class="spin3d"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div></div>
+    const fx = unusualFx(o).toUpperCase();
+    const shout = sp ? '★ SHOWPIECE ★' : fx && gr < 3 && !famous ? `${fx}!` : (o.fx && o.fx !== LG.itemById(o.item)?.signature ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!');
+    await unveil(tier, `<div class="won-art"><div class="spin3d"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div></div>
       <p class="won-cap"><b>${esc(wonTitle)}</b><span>${sp ? '<span class="bal showp">★ Showpiece</span>' : ''}<span class="bal" style="--b:${grade.color}">${esc(grade.name)}</span><span class="bal" style="--b:#5d6b8a">${esc(wonLook || LG.FINISHES[o.finish].name)}</span>${o.fx ? `<span class="bal poly">${esc(LG.EFFECTS[o.fx].name)}</span>` : ''}</span></p>`,
-      sp ? '★ SHOWPIECE ★' : (o.fx ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!'),
-      LG.nameOf(o), how, false, !!g, o);
+      shout, LG.nameOf(o), how, false, !!g, o);
     showPart(part);
     $('rv-again').hidden = !g;
+    $('rv-again').innerHTML = `Another <span class="cost">${tk} ${COST.machine}</span>`;
     $('rv-wear').focus();
   }
 
@@ -3217,20 +3523,8 @@
       await new Promise(r => { closeHook = r; });
       $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     }
-    if (state.choices?.length === 3) {
-      // The card roll three times, then all three side by side to keep one.
-      for (let i = 0; i < 3; i++) {
-        const seed = state.choices[i], cfg = guyConfig(seed), rank = guyRank(cfg);
-        $('rv-keep').textContent = i < 2 ? 'Next roll' : 'Choose';
-        $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
-        await unveil(Math.min(4, rank.tier), `<div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div>`,
-          `Roll ${i + 1} of 3`, '', '', true);
-        $('rv-keep').focus();
-        await new Promise(r => { closeHook = r; });
-      }
-      await keepOne();
-      return;
-    }
+    // Three dealt face down in one spread, to keep one.
+    if (state.choices?.length === 3) { await keepOne(); return; }
     $('rv-keep').textContent = 'Meet your guy';
     const n = LG.guyOneIn(dealt(state.seed));
     await unveil(4, `<div class="card">${libHtml(cardInput(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier)), { sway: true, now: true })}</div>`,
@@ -3242,15 +3536,56 @@
   // The server takes a pick for an hour after the claim, before any capsule is opened.
   const PICK_FOR_MS = 60 * 60 * 1000;
   const pickOpen = () => state?.choices?.length === 3 && !(state.pickUntil < Date.now());
-  /** The three a claim dealt, side by side: the one picked becomes his guy (on the server first when live). */
+  /*
+   * The three a claim dealt, face down in one spread, turned over one after another, each a beat longer the
+   * rarer; under each the trait people would see as rare, with its odds, and where it would enter the Top 100.
+   * The rarest is marked. The one kept is the player's guy (on the server first when live).
+   */
   async function keepOne() {
     if (!pickOpen()) return;
-    $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = true; $('result').hidden = true;
-    $('pick3').hidden = false;
-    $('pick3-row').innerHTML = state.choices.map((seed, i) => { const cfg = guyConfig(seed), rank = guyRank(cfg);
-      return `<div><div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div><button class="btn cream" type="button" data-keep="${i}">Keep</button></div>`; }).join('');
-    hydrate($('pick3-row')); mountLib($('pick3-row'));
-    const seed = await new Promise(r => $('pick3-row').onclick = e => { const b = e.target.closest('[data-keep]'); if (b) r(state.choices[+b.dataset.keep]); });
+    rush = false;
+    $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false; $('result').hidden = true; $('reelwrap').hidden = true;
+    const pick = $('pick3'), row = $('pick3-row');
+    pick.hidden = false; pick.classList.remove('ready');
+    dropColour('#3a4366', 0.5, 400);
+    const guys = state.choices.map(seed => { const cfg = guyConfig(seed); return { seed, cfg, rank: guyRank(cfg) }; });
+    const rarest = guys.reduce((a, g, i) => (g.rank.top < guys[a].rank.top ? i : a), 0);
+    row.innerHTML = guys.map((g, i) => `<div class="pick3-c${i === rarest ? ' rarest' : ''}"><span class="pill tag new best">Rarest</span>
+      <div class="flip3"><canvas class="back3" width="35" height="51" aria-hidden="true"></canvas></div>
+      <div class="why">${standoutChip(g.cfg) || `<span class="tchip" style="--tier:${TIER_COLORS[g.rank.tier]}">${esc(rankShown(g.rank))}</span>`}<span class="enter"></span></div>
+      <button class="btn cream" type="button" data-keep="${i}">Keep</button></div>`).join('');
+    row.querySelectorAll('canvas.back3').forEach(paintBack);
+    // Where each would enter the Top 100, from the board as it stands, this name's own first deal left out.
+    if (isLive()) topGuys().then(board => {
+      const others = board.filter(g => g.key !== state.key);
+      guys.forEach((g, i) => { const at = others.filter(x => x.top <= g.rank.top).length + 1; if (at <= 100 && at <= others.length) row.children[i].querySelector('.enter').textContent = `Enters the Top 100 at #${at}`; });
+    }).catch(() => {});
+    await wait(300);
+    for (let i = 0; i < 3; i++) {
+      const c = row.children[i], flip = c.querySelector('.flip3'), g = guys[i], tier = Math.min(5, g.rank.tier);
+      c.scrollIntoView?.({ block: 'nearest', inline: 'center', behavior: rush ? 'auto' : 'smooth' });
+      if (!rush) {
+        flip.style.setProperty('--amp', `${0.6 + tier}px`); flip.classList.add('tremble');
+        SFX.riser(Math.min(4, tier), (280 + tier * 160) / 1000);
+        await wait(280 + tier * 160);
+        flip.classList.remove('tremble');
+      }
+      flip.classList.add('squash'); SFX.flip();
+      await wait(170);
+      flip.innerHTML = `<div class="card">${libHtml(cardInput(cardSpec(g.seed, wornCopies(), guyLabel(g.cfg, '@' + state.key), false, g.rank.tier)), { sway: true, now: true, flat: true })}</div>`;
+      mountLib(flip);
+      flip.classList.remove('squash');
+      c.classList.add('shown');
+      SFX.stinger(Math.min(4, tier));
+      const r = flip.getBoundingClientRect();
+      boom(Math.min(4, tier), r.left + r.width / 2, r.top + r.height / 2, [GRADE[tier], '#ffffff', GRADE[tier], tier >= 3 ? '#ffcf5c' : '#c9d3ff']);
+      await wait(tier >= 3 ? 420 : 240);
+    }
+    $('skip').hidden = true;
+    pick.classList.add('ready');
+    row.children[rarest].scrollIntoView?.({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    row.querySelector(`[data-keep="${rarest}"]`)?.focus({ preventScroll: true });
+    const seed = await new Promise(r => row.onclick = e => { const b = e.target.closest('[data-keep]'); if (b) r(state.choices[+b.dataset.keep]); });
     let kept = seed, settled = true;
     // Sent even for the guy already held, to check the pick is still open (the server allows changes within the hour).
     if (isLive()) {
@@ -3260,6 +3595,7 @@
     // The demo's names list holds the claim's first roll; it shows the one kept.
     if (db && kept !== state.seed) { try { const ref = db.doc(`names/${state.key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.set({ ...s.data(), seed: kept }); } catch (e) {} }
     state.seed = kept; if (settled) { delete state.choices; delete state.pickUntil; state.picked = true; } save();
+    ladder = topCache = null;                       // a new place to find
     $('pick3').hidden = true; $('reveal').hidden = true;
     renderAll(); watchNames();
     setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120);
@@ -3280,7 +3616,7 @@
   $('rv-again').addEventListener('click', () => {
     const c = closeReveal();
     if (!c || !c.g) return;
-    pay(120);
+    if (!pay(COST.machine)) return;
     open(c.g, 'Capsule');
   });
   $('skip').addEventListener('click', () => { rush = true; });
@@ -3339,7 +3675,8 @@
     return list.sort(by);
   }
   const sortOptions = cur => SORTS.map(([k, label]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${label}</option>`).join('');
-  let lkSort = 'rarest', uSort = 'rarest', uCat = '';
+  let lkSort = 'rarest', uSort = 'rarest', uCat = '', pinsRead = false;
+  const PIN_SVG = '<svg viewBox="0 0 7 9" aria-hidden="true"><path fill="currentColor" d="M1 0h5v1H1zM2 1h3v3H2zM0 4h7v1H0zM3 5h1v4H3z"/></svg>';
   function renderColl() {
     const list = sortCopies(copies().map(c => ({ ...c, at: c.i })), lkSort);
     $('lk-sort').innerHTML = sortOptions(lkSort);
@@ -3374,8 +3711,10 @@
         <span class="it-cat">${icon(it.slot)}${k.one}</span>${it.showpiece ? '<span class="bal showp">★ Showpiece</span>' : ''}<b class="${tagOf(c.code) ? 'tagged' : ''}">${esc(named(title, tagOf(c.code)))}</b><span class="it-fin">${esc(one ? '★ Only one' : look || (it.free ? 'Starter' : plainOf(c.o)))}</span>
         <span class="it-wear">${esc(it.free ? 'Starter' : g.name)} · ${LG.wearOf(c.o.scuff).name}</span><span class="mf" title="Float ${c.o.scuff.toFixed(6)}"><i style="left:${Math.min(100, c.o.scuff * 100)}%"></i></span>
         <span class="it-act">${on ? '✓ Wearing' : 'Try on'}</span></button>
-        <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button></div>`;
+        <button class="it-more" type="button" data-more="${c.i}" aria-label="Details">i</button>${pinsOpen && pinKey(c.code) != null ? `<button class="it-pin" type="button" data-pin="${c.i}" aria-pressed="${isPinned(c.code)}" aria-label="${isPinned(c.code) ? 'Take off your shelf' : 'Pin to your shelf'}" title="${isPinned(c.code) ? 'On your shelf' : 'Pin to your shelf'}">${PIN_SVG}</button>` : ''}</div>`;
     }).join('') : `<div class="empty" style="grid-column:1/-1">Nothing here yet. Open a ${catOf(cat).one.toLowerCase()} from the machines.</div>`;
+    // Pins made on another device: read once from the player's page.
+    if (isLive() && !pinsRead) { pinsRead = true; maybeJSON('/guys/' + state.key).then(d => { if (Array.isArray(d?.pins) && state) { state.pins = d.pins; save(); sectionNear('coll', renderColl); } }); }
     const byI = new Map(shown.map(c => [c.i, c]));
     itemsWhenNear('grid', [...$('grid').querySelectorAll('[data-i]')].map(b => [b.querySelector('canvas'), [byI.get(+b.dataset.i).o, state.seed, 120, 92]]));
     renderWorkshop();
@@ -3389,6 +3728,7 @@
   $('filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = +b.dataset.f; renderColl(); } });
   $('grid').addEventListener('click', e => {
     const more = e.target.closest('[data-more]'); if (more) return inspect(+more.dataset.more);
+    const pin = e.target.closest('[data-pin]'); if (pin) return togglePin(copies().find(x => x.i === +pin.dataset.pin)?.code);
     const b = e.target.closest('[data-i]'); if (!b) return;
     const c = copies().find(x => x.i === +b.dataset.i); if (!c) return;
     openEditor('wear', { slot: LG.slotOf(c.o), code: c.code });
@@ -3556,7 +3896,8 @@
    * something a capsule could give them */
   async function renderMaybe() {
     // Deal 400 (beside the page) and show the rarest 12, so the chase parts turn up.
-    const guys = (await offThread('dealRarest', 400, 12)).map((seed, i) => ({ seed, cfg: LG.resolve(seed), copies: i % 3 === 0 ? [LG.roll(seed, LG.GAMES[i % LG.GAMES.length])] : [] }));
+    const guys = (await offThread('dealRarest', 400, 12)).map((seed, i) => ({ seed, cfg: LG.resolve(seed), copies: i % 3 === 0 ? [LG.roll(seed, LG.GAMES[i % LG.GAMES.length])] : [] }))
+      .sort((a, b) => LG.guyRank(a.cfg).top - LG.guyRank(b.cfg).top);
     $('maybe').innerHTML = guys.map(g => `<div class="mbc"><div class="card">${px(cardSpec(g.seed, g.copies, guyLabel(g.cfg, cardTrait(g.cfg), ''), true, guyRank(g.cfg).tier))}</div>${traitChips(g.cfg)}</div>`).join('');
     hydrate($('maybe'));
   }
@@ -3678,11 +4019,13 @@
   const fillWear = (root, o, seed) => root.querySelectorAll('.wear-strip canvas').forEach(c => showItem(c, { ...o, scuff: +c.dataset.scuff, fx: undefined }, seed, 96, 80));
   // What a collector looks at in a copy: its notes (floats, prints, souvenir, tally), where its float ranks
   // against every copy of it, and its tally on a counter.
-  function collectorPanel(o, g) {
-    const notes = LG.collectorNotes(o).filter(n => n.id !== 'tally');
+  function collectorPanel(o, g, pull) {
+    // Its serial is something to chase too: the first ever pulled, or one of the first hundred.
+    const serial = pull && pull <= FIRST_EDITION ? [{ name: pull === 1 ? 'No. 1' : '1st edition', why: pull === 1 ? 'The first ever pulled.' : `No. ${pull}: one of the first hundred pulled.`, oneIn: 1 }] : [];
+    const notes = [...serial, ...LG.collectorNotes(o).filter(n => n.id !== 'tally')];
     return `<div class="cn" style="--g:${g.color}"><p class="kicker">What collectors look for</p>
       ${o.souvenir ? `<span class="souv">Souvenir · ${esc(o.souvenir)}</span>` : ''}
-      ${notes.length ? `<div class="cn-list">${notes.map(n => `<div class="cn-i"><b>${esc(n.name)}</b>${n.oneIn > 1 ? `<em>1 in ${fmt(n.oneIn)}</em>` : ''}<span>${esc(n.why)}</span></div>`).join('')}</div>`
+      ${notes.length ? `<div class="cn-list">${notes.map(n => `<div class="cn-i"><b>${esc(printName(n.name))}</b>${n.oneIn > 1 ? `<em>1 in ${fmt(n.oneIn)}</em>` : ''}<span>${esc(n.why)}</span></div>`).join('')}</div>`
         : '<p class="cn-none">Nothing to chase on this one: an ordinary print and float. <a href="#/rarity" class="odds-more">What to look for</a></p>'}
       <div class="cn-rank" id="cn-rank"></div>
       ${o.tally !== undefined ? `<span class="lcd"><small>TALLY</small><b>${String(o.tally).padStart(6, '0')}</b></span>` : ''}
@@ -3720,15 +4063,14 @@
     ].filter(Boolean) : [
       ['item', item.name, pool],
       ['finish', fin.name, 100 / fin.odds],
-      famous ? ['print', `${famous} #${o.print}`, famous === 'Deep Blue' ? 1000 / LG.DEEP_BLUE_PRINTS.length : 20] : null,
+      famous ? ['print', `Print ${o.print} · ${famous}`, famous === 'Deep Blue' ? 1000 / LG.DEEP_BLUE_PRINTS.length : 20] : null,
       ['float', `≤ ${o.scuff.toFixed(4)}`, 1 / Math.max(1e-7, (o.scuff - lo) / (hi - lo))],
       o.tally !== undefined ? ['tally', 'Counts days', 10] : null,
       o.fx ? ['effect', LG.EFFECTS[o.fx].name, LG.EFFECTS[o.fx].item] : null,
     ].filter(Boolean);
     const [a, b] = split(LG.copyOneIn(o));
     return `<div class="oddsbox"><p class="kicker" style="margin:0 0 10px;color:var(--cream-2)">Odds, multiplied</p><div class="tiles">${tiles.map(([slot, name, n]) => { const tr = tierFor(n); return `<div class="tt" style="--tier:${tr.c}"><span class="slot">${slot}</span><b>${esc(name)}</b><span class="foot"><span class="bal" style="--b:${tr.c}">${tr.name}</span><span class="x">×${n >= 100 ? fmt(n) : n < 10 && Math.abs(n - Math.round(n)) > 0.05 ? n.toFixed(1) : Math.round(n)}</span></span></div>`; }).join('')}</div>
-      <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b ? b + ' ' : ''}capsules</span></div>
-      <p class="pull">About <b>${words(LG.copyOneIn(o) * PRICE)}</b> stamps of capsules to pull one this good.</p></div>`;
+      <div class="score"><span class="lbl">1 in</span><b>${a}</b><span class="unit">${b ? b + ' ' : ''}capsules</span></div></div>`;
   }
 
   function inspect(i) {
@@ -3741,9 +4083,11 @@
     if (!o) return;
     const code = ctx.code;
     const g = LG.gradeOf(o), slot = LG.slotOf(o), on = ctx.mine && state.worn[slot] === code, [title, look] = LG.nameOf(o).split(' | ');
-    const odds = LG.copyOneIn(o), item = LG.itemById(o.item), tag = ctx.mine ? tagOf(code) : ctx.tag || '';
+    const odds = visOneIn(o), item = LG.itemById(o.item), tag = ctx.mine ? tagOf(code) : ctx.tag || '';
     const st = ctx.stats ?? (ctx.mine ? state.stats?.[code] : null), pull = ctx.pull ?? (ctx.mine ? state.pulls?.[code] : null);
-    const ownerLine = `<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`;
+    // Who has had it, where the Worker keeps a copy's owners: "Pulled by @mia · Oct 30 → @pip · Nov 2".
+    const chain = (ctx.owners || []).length > 1 ? `<p class="owner-line">${ctx.owners.map((w, i) => `${i ? '→ ' : `${HOW[w.how] || 'Pulled'} by `}<a href="#/u/${esc(w.key)}">@${esc(w.key)}</a> · ${shortDate(w.at)}`).join(' ')}</p>` : '';
+    const ownerLine = `${chain}<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`;
     const one = founderOf(ctx.seed) && LG.isFounderCopy(o);
     const others = ctx.mine ? wornCopies() : (ctx.worn || []).map(LG.decode).filter(Boolean);
     const caption = `@${ctx.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', the only one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
@@ -3753,15 +4097,15 @@
       <div class="ins-stage">
         <div class="ins-tabs" role="group" aria-label="View"><button type="button" data-v="alone" aria-pressed="true">On its own</button><button type="button" data-v="guy" aria-pressed="false">On your guy</button></div>
         <div class="ins-view" id="ins-view"></div>
-        <p class="ins-cap">#${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
+        <p class="ins-cap">Print ${o.print} · ${cap(item.game)} ${item.slot}${o.date ? ' · ' + o.date : ''}</p>
         <div class="saves" id="insp-saves"></div>
       </div>
       <div>
         <h3 id="insp-name" class="${tag ? 'tagged' : ''}">${esc(named(title, tag))}${tag ? `<span class="realname">${esc(title)}</span>` : ''}</h3>${look ? `<p class="fin">${esc(look)}</p>` : ''}${item.about ? `<p class="about">${esc(item.about)}</p>` : ''}
-        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ Only one' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${pull ? `<span class="bal" style="--b:${pull <= FIRST_EDITION ? '#c8901e' : '#5d6b8a'}">${pull <= FIRST_EDITION ? '1st edition · ' : ''}#${pull.toLocaleString('en-US')} of this item</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
+        <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ Only one' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${pull ? `<span class="bal" style="--b:${pull <= FIRST_EDITION ? '#c8901e' : '#5d6b8a'}">No. ${pull.toLocaleString('en-US')}${pull <= FIRST_EDITION ? ' · 1st edition' : ''}</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
         ${st ? `<div class="ins-stats"><span><b>${st.worn}</b>day${st.worn === 1 ? '' : 's'} worn</span><span><b>${st.games}</b>club game${st.games === 1 ? '' : 's'}</span><span><b>${st.best || '—'}</b>best club day</span></div>` : ''}
         ${floatPanel(o)}
-        ${collectorPanel(o, g)}
+        ${collectorPanel(o, g, pull)}
         ${oddsBox(o, one)}
         ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Try it on'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
           ${LG.PAINTABLE.includes(slot) ? (() => {
@@ -3833,7 +4177,9 @@
     $('insp-ask')?.addEventListener('click', () => { $('insp').close(); swapDialog({ to: ctx.key, want: { id: ctx.id, code, tag } }); });
     if (!ctx.mine) $('insp-owner').addEventListener('click', () => $('insp').close());
     $('insp-copy').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(caption + ' dleclub.com'); $('insp-copied').textContent = 'Copied'; }
+      // The copy's own page where the Worker serves one (its picture unfurls in chat), else the club.
+      const id = ctx.id ?? (ctx.mine ? state.ids?.[code] : null);
+      try { await navigator.clipboard.writeText(caption + ' ' + (paths && id != null ? `${location.origin}/p/${id}` : 'dleclub.com')); $('insp-copied').textContent = 'Copied'; }
       catch (e) { $('insp-copied').textContent = 'Select the text to copy it'; }
     });
     SFX.whoosh(0.22, 400, 2400, 0.06);
@@ -3842,7 +4188,7 @@
 
   /* ---------------------------------------------- pages: #/ (claim and your guy), #/guys, #/u/<name>, #/pulls */
   const PAGES = {
-    guys: ['Everyone', 'Every claimed guy', 'Each one dealt once, to one name. The rarest dealt guys come first.'],
+    guys: ['Guys', 'The Top 100', ''],
     u: ['Player', '', ''],
     pulls: ['Pulls', 'Everyone\'s pulls', 'Every capsule anyone has opened, rarest first, and how many of each have ever been pulled.'],
     rarity: ['Rarity', 'How rarity works', 'Grades, floats, prints, auras and what collectors look for, with the real odds.'],
@@ -3901,8 +4247,8 @@
       [{ item: 'stackdle.block', finish: 'nebula', scuff: 0.02, print: 0 }, 'Red Giant', 'Nebula on one print in 20: a grade up'],
       [{ item: 'stackdle.block', finish: 'nebula', scuff: 0.02, print: 1 }, 'Blue Moon', 'Nebula on one print in 20: a grade up'],
       [{ item: 'stackdle.block', finish: 'nebula', scuff: 0.02, print: 2 }, 'Black Hole', 'Nebula on one print in 20: a grade up'],
-      [{ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: 1 }, 'Print #1', 'The first print of any run'],
-      [{ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: 777 }, '#777 · Jackpot', 'Also #7, #100, #404, #999, triples like #444 and straights like #456'],
+      [{ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: 1 }, 'Print 1', 'The first print of any run'],
+      [{ item: 'stackdle.block', finish: 'sunset', scuff: 0.02, print: 777 }, 'Print 777 · Jackpot', 'Also 7, 100, 404, 999, triples like 444 and straights like 456'],
     ];
     $('rz-prints').innerHTML = prints.map(([, n, why]) => `<div class="rz-t"><span class="pic"><canvas aria-hidden="true"></canvas></span><b>${esc(n)}</b><span>${esc(why)}</span></div>`).join('');
     $('rz-prints').querySelectorAll('canvas').forEach((c, k) => { own(c); showItem(c, prints[k][0], seed, 120, 120); });
@@ -3929,7 +4275,7 @@
       ['Souvenir', '<span class="souv">Souvenir · ' + today + '</span><br>The free capsule for finishing a DLE Club game that day. No other capsule is one.'],
       ['Gold rim', `A tally of ${LG.GOLD_RIM_DAYS} days rims the copy in gold.`],
       ['Float rank', 'On the live site every copy shows where its float ranks against every copy of it in its finish.'],
-      ['Pull cost', `Every copy shows about how many stamps of capsules (${PRICE} each, picking the machine) it takes to pull one as good: its odds, in stamps.`],
+      ['Serial', 'Every pulled copy is numbered in its item’s run: No. 1 is the first ever pulled, and the first hundred are its 1st edition.'],
     ].map(([h, p]) => `<div class="rz-x"><h3>${esc(h)}</h3><p>${p}</p></div>`).join('');
 
   }
@@ -3994,9 +4340,10 @@
       own($('lab-cv')); showItem($('lab-cv'), o, seed, 220, 220);
       $('lab-badges').innerHTML = `<span class="bal" style="--b:${g.color}">${esc(g.name)}</span><span class="bal" style="--b:${WEAR_COLOURS[LG.WEAR.indexOf(w)]}">${w.name}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}`;
       $('lab-n').textContent = a; $('lab-u').textContent = (b ? b + ' ' : '') + 'capsules';
-      $('lab-pull').textContent = `≈ ${fmt(n * PRICE)} stamps of capsules to pull one as good`;
+      // The card leads with what you can see; the float is only in this full count.
+      $('lab-pull').textContent = `On its card: 1 in ${fmt(visOneIn(o))}`;
       const notes = LG.collectorNotes(o);
-      $('lab-notes').innerHTML = notes.length ? notes.map(t => `<div class="cn-i" style="--g:${g.color}"><b>${esc(t.name)}</b>${t.oneIn > 1 ? `<em>1 in ${fmt(t.oneIn)}</em>` : ''}<span>${esc(t.why)}</span></div>`).join('') : '<p class="cn-none">Nothing extra to chase. Try a float under 0.01, print 1 or 777, or an effect.</p>';
+      $('lab-notes').innerHTML = notes.length ? notes.map(t => `<div class="cn-i" style="--g:${g.color}"><b>${esc(printName(t.name))}</b>${t.oneIn > 1 ? `<em>1 in ${fmt(t.oneIn)}</em>` : ''}<span>${esc(t.why)}</span></div>`).join('') : '<p class="cn-none">Nothing extra to chase. Try a float under 0.01, print 1 or 777, or an effect.</p>';
     }
     items(); fins(); draw();
   }
@@ -4016,12 +4363,17 @@
     mountLib(out); meaning($('lab-meaning'), n, !!(cfg.base || cfg).founder);
   }
 
+  // A player's and a copy's own addresses (/u/<name>, /p/<id>), which the Worker serves with their own picture
+  // for a link's preview. A hash link from one goes back to the page's root.
+  const ownPath = () => /^\/(u|p)\/([a-z0-9_]{1,16})\/?$/.exec(location.pathname);
   function route() {
-    let [r, arg] = location.hash.replace(/^#\/?/, '').split('/');
+    const path = ownPath();
+    if (path && location.hash) history.replaceState(null, '', '/' + location.search + location.hash);
+    let [r, arg] = path && !location.hash ? [path[1], path[2]] : location.hash.replace(/^#\/?/, '').split('/');
     if (r === 'market') r = 'pulls'; // old links
     // #/edit/wear opens your guy's editor on that tab, once the page knows who you are.
     if (r === 'edit' && restored) { history.replaceState(null, '', location.pathname + location.search + '#/'); if (state) setTimeout(() => openEditor(['look', 'wear', 'card'].includes(arg) ? arg : 'look'), 0); }
-    const view = PAGES[r] ? r : 'home';
+    const view = r === 'p' ? 'u' : PAGES[r] ? r : 'home';
     document.body.dataset.route = view;
     for (const v of ['home', 'guys', 'u', 'pulls', 'rarity']) $('v-' + v).hidden = v !== view;
     $('nav').querySelectorAll('a').forEach(a => a.toggleAttribute('aria-current', a.dataset.r === view && (view !== 'u' || arg === 'me' || arg === state?.key)));
@@ -4030,10 +4382,26 @@
     if (view === 'guys') renderGuys();
     if (view === 'pulls') renderMarket(true);
     if (view === 'rarity') renderRarity();
-    if (view === 'u') renderUser(arg === 'me' || !arg ? state?.key : arg);
+    if (view === 'u') { if (r === 'p') showCopyPage(arg); else renderUser(arg === 'me' || !arg ? state?.key : arg); }
     scrollTo(0, 0);
   }
   addEventListener('hashchange', route);
+  addEventListener('popstate', route);
+  // Links to those addresses stay on this page.
+  document.addEventListener('click', e => {
+    const a = e.target.closest?.('a[href^="/p/"], a[href^="/u/"]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    e.preventDefault(); history.pushState(null, '', a.getAttribute('href')); route();
+  });
+  /** A copy's own page: its owner's page, with the copy open over it. */
+  async function showCopyPage(id) {
+    if (!backendReady) return;           // routed again once the page knows the Worker is there
+    const d = await maybeJSON('/copies/' + encodeURIComponent(id));
+    if (!d?.copy) { $('page-kicker').textContent = 'Pull'; $('page-title').textContent = 'Not found'; $('page-sub').textContent = 'No copy has that number.'; $('u-grid').innerHTML = ''; $('u-tiles').innerHTML = ''; return; }
+    paths = true;
+    await renderUser(d.copy.key);
+    openCopy({ ...d.copy, no: d.copy.pull, owners: d.owners });
+  }
 
   // Where the pages read from: the Worker on the live site; in the demo, your own collection (and names others claimed here).
   const myGuy = () => { const list = copies().filter(c => !LG.itemById(c.o.item).free).sort((a, b) => LG.copyOneIn(b.o) - LG.copyOneIn(a.o)); const b = list[0]; return { key: state.key, seed: state.seed, look: state.look || '', worn: wornCodes(), oneIn: LG.guyOneIn(dealt(state.seed)), best: b ? { code: b.code, grade: gradeIdx(b.o), oneIn: LG.copyOneIn(b.o) } : null }; };
@@ -4067,8 +4435,68 @@
     return list.sort(by).slice(f.offset, f.offset + f.limit);
   }
 
-  let guysSort = 'rarest', guysQ = '', guysT;
+  /*
+   * The Guys page: the Top 100 (places #1 to #100 for the rarest claimed guys), the hundred rarest copies with
+   * their serials, and everyone. Places are scarce in their own right, so every one is numbered.
+   */
+  let guysTab = 'top', guysSort = 'rarest', guysQ = '', guysT, topCopyList = [];
+  const heldFor = since => { const d = since ? Math.floor((Date.now() - Date.parse(since)) / 864e5) : NaN; return !isFinite(d) ? '' : d < 1 ? ' · new today' : ` · held ${d} day${d === 1 ? '' : 's'}`; };
+  async function renderTopGuys() {
+    const host = $('guys-grid');
+    const list = await topGuys().catch(() => []);
+    if (guysTab !== 'top') return;
+    if (!list.length) { host.innerHTML = '<div class="empty" style="grid-column:1/-1">No one has claimed a guy yet. Be the first.</div>'; return; }
+    for (const g of list) if (typeof g.look === 'string') lookFor[g.seed] = g.look;
+    host.innerHTML = list.map(g => {
+      const cfg = guyConfig(g.seed), r = guyRank(cfg);
+      return `<a class="gcard card" href="#/u/${esc(g.key)}"><span class="rank${g.place > 3 ? ' all' : ''}">#${g.place}</span>
+        ${px(cardSpec(g.seed, [], guyLabel(cfg, '@' + g.key, ''), list.length > 30, r.tier))}
+        <span><b>@${esc(g.key)}</b><small>${esc(rankLine(r) + heldFor(g.since))}</small></span>${standoutChip(cfg) ? `<span class="tchips">${standoutChip(cfg)}</span>` : ''}</a>`;
+    }).join('');
+    hydrate(host);
+  }
+  async function renderTopCopies() {
+    const host = $('top-copies');
+    let list = (await maybeJSON('/top?kind=copies'))?.copies;
+    if (Array.isArray(list)) paths = true;
+    else {
+      // An older Worker: the hundred rarest from Pulls.
+      const f = { grade: '', slot: '', game: '', finish: '', key: '', sort: 'rarest', offset: 0, limit: 96 };
+      const a = await listMarket(f).catch(() => []), b = a.length === 96 ? await listMarket({ ...f, offset: 96, limit: 4 }).catch(() => []) : [];
+      list = [...a, ...b].filter(c => LG.decode(c.code)).sort((x, y) => visOneIn(LG.decode(y.code)) - visOneIn(LG.decode(x.code)))
+        .map((c, i) => ({ place: i + 1, id: c.id, key: c.key, code: c.code, no: c.pull || null, at: c.at, seed: c.seed, tag: c.tag }));
+    }
+    if (guysTab !== 'copies') return;
+    topCopyList = list;
+    if (!list.length) { host.innerHTML = '<div class="empty" style="grid-column:1/-1">Nothing pulled yet.</div>'; return; }
+    host.innerHTML = list.map((c, k) => {
+      const o = LG.decode(c.code); if (!o) return '';
+      const g = LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
+      return `<button class="mcopy" type="button" data-tc="${k}" style="--g:${g.color}">
+        <span class="pic"><span class="bal" style="--b:${g.color}">${esc(g.name)}</span><span class="one">1 in ${fmt(visOneIn(o))}</span><canvas aria-hidden="true"></canvas><span class="place">#${c.place}</span></span>
+        <span class="meta"><b>${esc(title)}</b><span>${c.no ? `<span class="no">No. ${c.no.toLocaleString('en-US')}</span> · ` : ''}${esc(look || plainOf(o))}</span><span class="own"><span>@${esc(c.key)}</span><em>${shortDate(c.at)}</em></span></span></button>`;
+    }).join('');
+    itemsWhenNear('top-copies', [...host.querySelectorAll('[data-tc]')].map(b => { const c = list[+b.dataset.tc]; return [b.querySelector('canvas'), [LG.decode(c.code), c.seed || 'lilguys', 150, 120]]; }));
+  }
+  $('top-copies').addEventListener('click', e => { const b = e.target.closest('[data-tc]'); if (b) openCopy(topCopyList[+b.dataset.tc]); });
+  $('guys-tabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { guysTab = b.dataset.t; renderGuys(); } });
+  /** Any copy a board or a link names: its owner's guy and who has had it are looked up, then it's inspected. */
+  async function openCopy(c) {
+    if (!c) return;
+    if (c.id != null && !c.owners) { const d = await maybeJSON('/copies/' + encodeURIComponent(c.id)); if (d?.copy) { paths = true; c = { ...c, ...d.copy, no: c.no ?? d.copy.pull, owners: d.owners }; } }
+    const o = LG.decode(c.code); if (!o) return;
+    if (state && c.key === state.key) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); }
+    let seed = c.seed, worn = [];
+    try { const u = await getUser(c.key); seed = u.seed; lookFor[u.seed] = u.look || ''; worn = u.copies.filter(x => x.worn).map(x => x.code); } catch (e) {}
+    inspectCopy(o, { code: c.code, key: c.key, seed: seed || c.key, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.no ?? c.pull, owners: c.owners });
+  }
   async function renderGuys() {
+    $('guys-tabs').querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === guysTab));
+    $('guys-sort').hidden = $('guys-find').hidden = guysTab !== 'all';
+    $('guys-grid').hidden = guysTab === 'copies'; $('top-copies').hidden = guysTab !== 'copies';
+    [$('page-title').textContent, $('page-sub').textContent] = { top: ['The Top 100', 'The hundred rarest guys claimed.'], copies: ['The rarest copies', 'The hundred rarest copies pulled.'], all: ['Everyone', 'Every claimed guy.'] }[guysTab];
+    if (guysTab === 'top') return renderTopGuys();
+    if (guysTab === 'copies') return renderTopCopies();
     $('guys-sort').querySelectorAll('[data-s]').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === guysSort));
     let list = [];
     try { list = await listGuys(guysSort, guysQ); } catch (e) { $('guys-grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${esc(e.message)}</div>`; return; }
@@ -4087,6 +4515,67 @@
   $('guys-sort').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b) { guysSort = b.dataset.s; renderGuys(); } });
   $('guys-q').addEventListener('input', () => { clearTimeout(guysT); guysT = setTimeout(() => { guysQ = norm($('guys-q').value); renderGuys(); }, 250); });
 
+  /* ---------------------------------------------- the shelf: up to three copies a player pinned, first on their page.
+   * Pins are copy ids on the live site (the Worker keeps them) and copy codes in the demo, which has no ids. */
+  const PIN_MAX = 3;
+  let pinsOpen = true;                       // false once the Worker turns pinning down (older, or 0012 not applied)
+  const pinKey = code => (isLive() ? state?.ids?.[code] : code);
+  const isPinned = code => { const k = pinKey(code); return k != null && (state?.pins || []).includes(k); };
+  // A date as "Oct 30"; nothing for a copy whose date isn't known (the demo numbers its copies instead).
+  const shortDate = at => { const t = typeof at === 'number' ? at : Date.parse(at); return t > 1e11 ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; };
+  const HOW = { capsule: 'Pulled', daily: 'Pulled', seasonal: 'Pulled', mystery: 'Pulled', pulled: 'Pulled', season: 'Pulled', craft: 'Crafted', crafted: 'Crafted', starter: 'Starter', founder: 'The founder’s', swapped: 'Swapped', gift: 'A gift' };
+  /** Where a copy came from, in a few words: "From @isaac" once it has changed hands, else "Pulled Oct 30". */
+  function fromLine(c, owners) {
+    if (c.source === 'starter' || LG.itemById(c.o?.item)?.free) return '';
+    if (c.source === 'founder') return HOW.founder;
+    const first = owners?.[0];
+    if (first && first.key !== c.key) return first.key === 'isaac' ? 'From @isaac' : `Pulled by @${first.key}`;
+    return `${HOW[first?.how || c.source] || 'Pulled'} ${shortDate(first?.at || c.at)}`.trim();
+  }
+  /** A copy's serial and grade, as its shelf and the result lead with them: "No. 14 · ★ Grail". */
+  const serialLine = (o, pull, one) => [pull ? `No. ${pull.toLocaleString('en-US')}` : '', one ? '★ Only one' : LG.itemById(o.item)?.free ? 'Starter' : LG.gradeOf(o).name].filter(Boolean).join(' · ');
+  function renderShelf(u, list, mine) {
+    const pins = (mine && !isLive() ? state?.pins : u.pins ?? (mine ? state?.pins : null)) || [];
+    const shown = pins.map(p => list.find(c => (isLive() ? c.id === p : c.code === p))).filter(Boolean).slice(0, PIN_MAX);
+    const host = $('u-shelf-row');
+    $('u-shelf').hidden = !shown.length;
+    if (!shown.length) { host.innerHTML = ''; return; }
+    // Whole pixels of the card: as many 26-pixel columns as three fit.
+    const gap = innerWidth <= 600 ? 8 : 24, k = Math.max(3, Math.min(10, Math.floor((Math.min(host.clientWidth || innerWidth, 900) - gap * 2) / 3 / 26)));
+    host.innerHTML = shown.map(c => {
+      const it = LG.itemById(c.o.item);
+      return `<figure class="shelf-c card" style="--k:${k}" data-u="${list.indexOf(c)}" tabindex="0">${px(cardSpec(u.seed, [c.o], itemLabel(c.o, it.free, c.one, { stats: c.stats, pull: c.pull })))}<b>${esc(serialLine(c.o, c.pull, c.one))}</b><small data-from="${c.id ?? ''}">${esc(fromLine(c))}</small></figure>`;
+    }).join('');
+    hydrate(host);
+    // Who had it first, where the Worker keeps each copy's owners.
+    host.querySelectorAll('[data-from]').forEach(async el => {
+      const c = list[+el.closest('[data-u]').dataset.u], d = c.id != null ? await maybeJSON('/copies/' + c.id) : null;
+      if (d?.owners?.length && el.isConnected) { c.owners = d.owners; el.textContent = fromLine(c, d.owners); }
+    });
+  }
+  // The Worker's newer reads (the Top 100, the week's rarest pulls, a copy and its owners): null where an older
+  // Worker answers 404, or off the live site, so each falls back to what the page did before them.
+  async function maybeJSON(path) {
+    if (!isLive()) return null;
+    try { const r = await fetch('/api' + path); return r.ok ? await r.json() : null; } catch (e) { return null; }
+  }
+  /** Pins a copy to its owner's shelf, or takes it off: three at most. */
+  async function togglePin(code) {
+    const k = pinKey(code);
+    if (k == null) return;
+    const now = state.pins || [], on = now.includes(k);
+    if (!on && now.length >= PIN_MAX) { toast('Three at most. Unpin one first.'); return; }
+    const next = on ? now.filter(x => x !== k) : [...now, k];
+    if (isLive()) {
+      try { await meApi('pin', { ids: next }); }
+      // An older Worker (404), or one whose pins column waits on its migration (503): pinning closes for the visit.
+      catch (e) { if (e.status === 404 || e.status === 503) { pinsOpen = false; toast('Pinning isn’t open yet.'); renderColl(); } else toast(e.message); return; }
+    }
+    state.pins = next; save(); SFX.equip();
+    toast(on ? 'Taken off your shelf.' : `On your shelf (${next.length} of ${PIN_MAX}).`);
+    renderColl();
+  }
+
   // A player's page: their guy dancing, his traits scored, and every copy he owns.
   let userCopies = [];
   async function renderUser(key) {
@@ -4097,17 +4586,20 @@
     const mine = state && key === state.key, cfg = guyConfig(u.seed), worn = u.copies.filter(c => c.worn).map(c => c.code);
     $('page-kicker').textContent = mine ? 'You' : 'Player';
     $('page-title').textContent = '@' + key;
-    $('page-sub').textContent = mine ? 'Your guy, as everyone sees it.' : `Claimed ${u.at ? new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}. One of a kind.`;
+    $('page-sub').textContent = mine ? 'Your guy, as everyone sees it.' : u.at ? `Claimed ${new Date(u.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.` : '';
     const uSpec = cardSpec(u.seed, worn.map(LG.decode).filter(Boolean), guyLabel(cfg, '@' + key), false, guyRank(cfg).tier), uCard = cardInput(uSpec);
     guyStage('u-stage', u.seed, worn, uSpec);
     saveButtons($('u-saves'), uCard, key, guySpec(u.seed, worn));
-    const uRank = guyRank(cfg);
-    $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    $('u-badges').innerHTML = `${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
+    rankLead({ top: 'u-top', tier: 'u-tier', place: 'u-place', trait: 'u-trait' }, key, cfg);
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('');
-    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder, guyRank(cfg).top); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
+    distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
     const [a, b] = split(LG.guyOneIn(cfg.base || cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
-    userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
+    userCopies = u.copies.map((c, i) => ({ ...c, key, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
+    const openUserCopy = i => { const c = userCopies[i]; if (!c) return; if (mine) { const at = state.copies.indexOf(c.code); if (at >= 0) return inspect(at); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull, owners: c.owners }); };
+    renderShelf(u, userCopies, mine);
+    $('u-shelf-row').onclick = $('u-shelf-row').onkeydown = e => { if (e.type === 'keydown' && e.key !== 'Enter') return; const f = e.target.closest('[data-u]'); if (f) openUserCopy(+f.dataset.u); };
     uCat = '';
     // Sets live here, on the player's own page: on yours with every item, ticked off; on anyone else's, just how far.
     const setOwned = userCopies.map(c => c.o), more = $('u-sets-more');
@@ -4139,7 +4631,7 @@
     $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
     $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
     $('u-edit').onclick = () => openEditor(lastTab);
-    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); };
+    $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (b) openUserCopy(+b.dataset.u); };
   }
 
   // Pulls: every copy anyone has opened, the object itself on show, filtered and sorted.
@@ -4148,7 +4640,7 @@
   $('m-grade').innerHTML = `<button type="button" data-g="" aria-pressed="true">All grades</button>` + LG.GRADES.map((g, k) => `<button type="button" data-g="${k}" style="--g:${g.color}" aria-pressed="false"><i></i>${esc(g.name)}</button>`).join('');
   $('m-slot').innerHTML = [['', 'Everything'], ['hat', 'Hats'], ['skin', 'Skins'], ['frame', 'Frames'], ['buddy', 'Buddies'], ['aura', '★ Auras']].map(([v, l]) => `<button type="button" data-sl="${v}" aria-pressed="${v === ''}">${l}</button>`).join('');
   $('m-game').innerHTML = '<option value="">Every game</option>' + LG.GAMES.map(g => `<option value="${g}">${cap(g)}</option>`).join('');
-  $('m-finish').innerHTML = '<option value="">Every finish</option>' + ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'].map(f => `<option value="${f}">${LG.FINISHES[f].name}</option>`).join('');
+  $('m-finish').innerHTML = '<option value="">Every finish</option>' + ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'].map(f => `<option value="${f}">${LG.FINISHES[f].name}</option>`).join('');
   $('m-grade').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; mf.grade = b.dataset.g; $('m-grade').querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
   $('m-slot').addEventListener('click', e => { const b = e.target.closest('[data-sl]'); if (!b) return; mf.slot = b.dataset.sl; $('m-slot').querySelectorAll('[data-sl]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
   for (const [id, k] of [['m-game', 'game'], ['m-finish', 'finish'], ['m-sort', 'sort']]) $(id).addEventListener('change', () => { mf[k] = $(id).value; renderMarket(true); });
@@ -4196,7 +4688,7 @@
       const o = LG.decode(c.code); if (!o) return '';
       const g = LG.GRADES[c.grade] || LG.gradeOf(o), [title, look] = LG.nameOf(o).split(' | ');
       return `<button class="mcopy" type="button" data-m="${start + k}" style="--g:${g.color}">
-        <span class="pic"><span class="bal" style="--b:${g.color}">${esc(c.one ? '★ Only one' : g.name)}</span><span class="one">${c.one ? 'Only one' : '1 in ' + fmt(c.oneIn ?? LG.copyOneIn(o))}</span><canvas aria-hidden="true"></canvas></span>
+        <span class="pic"><span class="bal" style="--b:${g.color}">${esc(c.one ? '★ Only one' : g.name)}</span><span class="one">${c.one ? 'Only one' : '1 in ' + fmt(visOneIn(o))}</span><canvas aria-hidden="true"></canvas></span>
         <span class="meta"><b class="${c.tag ? 'tagged' : ''}">${esc(named(title, c.tag))}</b><span>${esc(look || plainOf(o))} · ${LG.wearOf(o.scuff).name} · ${o.scuff.toFixed(4)}</span><span class="mf"><i style="left:${Math.min(100, o.scuff * 100)}%"></i></span>
         ${pulledLine(o)}<span class="own"><span>@${esc(c.key)}</span><em>${c.at ? new Date(c.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</em></span></span></button>`;
     }).join('');
@@ -4205,14 +4697,14 @@
   }
   $('m-grid').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const c = marketList[+b.dataset.m]; const mine = state && c.key === state.key; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(LG.decode(c.code), { code: c.code, key: c.key, seed: c.seed, mine: false, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); });
 
-  /* ---------------------------------------------- every finish: one of today's items in all seven, live */
+  /* ---------------------------------------------- every finish: one of today's items in each, live */
   let finItem = null;
   function renderFins() {
     const its = LG.gameItems(todayGame).filter(x => !x.free);
     const pick = ['hat', 'skin', 'frame', 'buddy'].map(sl => its.find(x => x.slot === sl)).filter(Boolean);
     if (!finItem) finItem = pick[0].id;
     $('fin-items').innerHTML = pick.map(x => `<button type="button" data-it="${x.id}" aria-pressed="${x.id === finItem}">${esc(x.name)}</button>`).join('');
-    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
     const pool = its.length;
     $('fins').innerHTML = order.map(f => { const fin = LG.FINISHES[f], g = LG.GRADES[fin.grade]; return `<div class="fintile" style="--g:${g.color}"><div class="pic"><canvas aria-hidden="true"></canvas></div><b>${fin.name}</b><span class="bal" style="--b:${g.color}">${esc(g.name)}</span><small>1 in ${fmt(pool * 100 / fin.odds)} capsules</small></div>`; }).join('');
     $('fins').querySelectorAll('canvas').forEach((c, k) => { const f = order[k], [lo, hi] = LG.FINISHES[f].scuffs; showItem(c, { item: finItem, finish: f, scuff: lo + (hi - lo) * 0.03, print: f === 'tempered' ? 3 : 7 }, 'finishes', 112, 112); });
@@ -4269,6 +4761,8 @@
   /* ---------------------------------------------- the loop: card shaders, tilt and bob, machines */
   function sway(s, t) {
     if (s.still) { s.art.style.transform = ''; return; }
+    // A card drawn at whole pixels (the hand, the three to keep) only bobs, a whole pixel at a time.
+    if (s.flat) { s.art.style.transform = `translateY(${Math.round(Math.sin(t * 1.3 + s.phase) * 2)}px)`; return; }
     const bob = Math.sin(t * 1.3 + s.phase) * 2, tilt = Math.sin(t * 0.9 + s.phase) * 0.6;
     let scale = 1, spin = 0;
     if (s.juice >= 0) { const e = t - s.juice; if (e < 0.45) { const f = 1 - e / 0.45; scale += 0.07 * Math.sin(e * 48) * f * f * f; spin = 4 * Math.sin(e * 38) * f * f; } else s.juice = -1; }
@@ -4348,7 +4842,6 @@
   addEventListener('pointerout', e => { if (overCard && !overCard.contains(e.relatedTarget)) overCard = null; });
   addEventListener('click', e => { if (e.target.closest && e.target.closest('button')) SFX.click(); }, { capture: true });
 
-  renderHand();
   sectionNear('maybe-sec', renderMaybe);
   // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
   // fills the box, and once it is theirs a button takes them back to the game.
@@ -4372,6 +4865,7 @@
     if (!d) {
       try { const r = await fetch('/api/stats'); apiUp = r.ok && (r.headers.get('content-type') || '').includes('json'); } catch (e) { apiUp = false; }
       backendReady = true;
+      renderHand();
       watchNames(); if ($('name').value) check();
       if (apiUp) {
       try {
@@ -4394,6 +4888,7 @@
     }
     backendReady = true;
     db = d;
+    renderHand();
     try { owner = user ? await user.isOwner() : false; uid = user ? await user.id() : null; } catch (e) {}
     watchNames();
     if (uid) {

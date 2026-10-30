@@ -12,13 +12,14 @@ https://lilguys.isaac-audet.workers.dev. Only the
 bun install
 bun run showcase
 bash scripts/build-site.sh
-npx wrangler d1 migrations apply lilguys-names --remote   # through 0010_stamps
+npx wrangler d1 migrations apply lilguys-names --remote   # through 0014_names_seed
 npx wrangler deploy
 ```
 
 `site/` is ignored. The root page uses `/lil-guy.js`; the showcase pages
 keep their relative `../lil-guy.js` reference. Static requests go directly to
-Cloudflare assets. The Worker script runs for `/api/*` to provide shared claims.
+Cloudflare assets. The Worker script runs for `/api/*` to provide shared claims,
+for `/g/*` and the kit, and for the share links `/u/*` and `/p/*` (`run_worker_first`).
 
 The D1 database is dedicated to this promo. Two Worker secrets must be set:
 `CLAIM_SALT` (a random private salt) and `FOUNDER_SECRET` (the private founder
@@ -44,6 +45,103 @@ free capsule is open to every name.
    The Worker logs only a failure's route (names as `:key`) and message, and the
    club's HTTP status when it isn't 200, so a wrong secret shows as a 401 there.
 
+## Going live with the Top 100, copy histories and shelves (Isaac's steps, in this order)
+
+Automatic deploys ship the Worker but never run migrations. Every new read works before its
+migration (below), so the deploy can come first; the migrations are best applied before it.
+
+1. Note the time in UTC (`date -u +%FT%H:%M`), then apply 0011, 0012 and 0013:
+   `npx wrangler d1 migrations apply lilguys-names --remote`.
+   Check: `npx wrangler d1 migrations list lilguys-names --remote` shows nothing pending, and
+   `npx wrangler d1 execute lilguys-names --remote --command "SELECT COUNT(*) AS missing FROM copies c WHERE c.at < '<that time>' AND NOT EXISTS (SELECT 1 FROM copy_owners o WHERE o.copy_id = c.id)"`
+   says 0 (0011 gives every copy made before it its first owner). Don't compare the totals: a
+   starter or the founder's own copy never gets a row (they never change hands, so their holder is
+   their history), nor does a copy the old Worker makes before the deploy, until it first moves.
+2. Deploy (or let the merge deploy). Check, with any claimed name:
+   - `curl -s https://lilguys.dleclub.com/u/isaac | grep og:image` prints a
+     `/g/<version>/…/card-full-still@4.png` address, and that address is a 560 × 816 PNG.
+     Pasting `https://lilguys.dleclub.com/u/isaac` in Discord shows the founder's card.
+   - `GET /api/top?kind=guys` and `GET /api/top?kind=copies` answer 100 places (or every claimed
+     guy and listed copy, if fewer). Each read while the boards are new also writes back a few
+     hundred ranks; after a few minutes of reads,
+     `SELECT COUNT(*) FROM players p JOIN names n ON n.key = p.key WHERE p.top_seed <> n.seed`
+     is 0, or only the names claimed or picked since the last read.
+   - `GET /api/guys/<name>` carries `pins: []`.
+3. Nothing else: no secret, no variable.
+
+## Going live with earned emotes (Isaac's step)
+
+1. Apply 0014 (one index, `names_seed`): `npx wrangler d1 migrations apply lilguys-names --remote`.
+   It can come before or after the deploy: without it the Worker gives the same answers, reading
+   all of `names` to find a code's guy. Check: `npx wrangler d1 migrations list lilguys-names --remote`
+   shows nothing pending, and `curl -sI https://lilguys.dleclub.com/g/latest/@isaac/emote-galaxybrain.png`
+   is a 302 while `…/@<a name with no Mythic, aura or night part>/emote-galaxybrain.png` is a 404.
+
+## The Top 100, copy histories and shelves (migrations 0011 to 0013)
+
+Public reads, cached a minute at the edge (the query is cut down to the parameters each reads,
+so made-up parameters always hit the cache):
+
+- `GET /api/top?kind=guys`: `{ guys: [{ place, key, seed, look, top, since }] }`, the 100 rarest
+  claimed guys by `guyRank` (the deal's rank, never a picked look's; `top` its share, 0 to 1).
+  The founder's guy is first, as on every list (its `top` is 0); a tie goes to the earlier claim.
+  `since` is when a guy took its place: the latest claim among it and everyone above it. A name
+  let go above it isn't seen, so after one a guy has really held its place a little less long.
+- `GET /api/top?kind=copies`: `{ copies: [{ place, id, key, code, no, at }] }`, the 100 rarest
+  copies anyone holds, by what the eye can see (`visibleOneIn`: item, finish, famous print,
+  effect and aura, not float), the cleaner float then the earlier pull on a tie. `no` is its
+  number in its item's run (`copies.pull`), null for one with none. Never a starter, never a copy
+  the founder still holds (as on the Pulls page); one he gave away is listed.
+- `GET /api/top?kind=place&key=<name>`: `{ place, of }`, one claimed guy's place in the guys
+  board's order over every claimed guy (the founder first, then by rank, the earlier claim on a
+  tie), out of how many are claimed; 404 for a name nobody holds. Counted in D1 from the kept
+  ranks (`players_top`); only guys claimed since the board last kept them are worked out on the
+  read, and only the board writes ranks back. Before 0013 every guy is worked out on each read.
+- `GET /api/pulls/rarest?days=7&limit=12`: `{ pulls: [{ id, key, code, no, at, seed, look }] }`,
+  the rarest copies capsules gave in the last `days` (1 to 30), rarest first as above: capsules,
+  mystery capsules, today's free one and seasonals, never a crafted copy, a starter or one the
+  founder holds. `key` is who holds it now, `seed` and `look` their guy. `limit` is 1 to 100.
+- `GET /api/copies/<id>`: `{ copy, owners: [{ key, at, how }] }`, the copy as the profile lists it
+  and its owners in turn, first first. `how` is `pulled`, `daily`, `mystery`, `season`, `swapped`,
+  `gift` or `crafted`. Names and moments only.
+- `GET /u/<name>` and `GET /p/<copy id>`: the site's page, unchanged but for og: and twitter: tags
+  in its head (`worker/share.js`), so a shared link shows the guy's big card
+  (`card-full-still@4.png`, the name on it), its rank and its standout trait, or the copy on its
+  holder's card in its slot, its grade and number, and who pulled it. A name nobody holds or a
+  copy that's gone is the plain page with a 404; if D1 fails, the plain page. Cached a minute.
+
+A guy's rank and a copy's visible odds are worked out by the library (a rank takes about a third
+of a millisecond), so 0013 keeps each in a column once worked out (`players.guy_top`,
+`copies.seen_in`), for the database to sort by. Each board read works out what isn't kept yet (new
+claims and pulls) and writes back up to 200 ranks and 500 copies' odds. A place or a Pulls page
+that finds some not kept asks for that board after answering, at most once a minute per Worker
+instance, so a backlog clears without anyone opening the boards; neither writes anything itself. `top_rule` and
+`seen_rule` say which rules worked a figure out: a hash of the library's figures for a set of
+probes that between them take in every part, item, finish, aura, effect and famous print, every
+step of the rank table, the chase parts and past the table's end (`guyProbes`, `copyProbes`;
+about 40 ms once per Worker instance). So when an update changes the ranks or the odds anywhere,
+the kept figures are worked out again over the next reads, and the boards are right meanwhile.
+`top_seed` is the seed a rank was worked out for, so a pick in a new name's first hour is ranked
+again. Before 0013, every read works the boards out in full and writes nothing.
+
+Copy histories (0011, `copy_owners`): a capsule, today's free capsule, a mystery or seasonal
+capsule and a craft keep the copy's first owner as it's made; an accepted swap or gift keeps who
+each copy went to, in the same transaction as the move (a copy with nothing kept yet gets its
+first owner as it stood). 0011 gives every copy there is its first owner (whoever gave it in its
+first finished swap, else its holder, from when it was made) and each finished swap and gift (as
+of when it was offered). Starters, the founder's flag and Origin never move, so they keep one owner.
+Letting a name go or smelting a copy takes its owners with it. Before 0011, a copy's owners are
+its holder since it was made, and swaps go on as ever.
+
+Shelves (0012, `players.pins`): `POST /api/me/:key/pin {ids}` pins up to three of your own copies
+in that order (`[]` takes them down; 400 for more than three, 404 for one that isn't yours). The
+profile (`GET /api/guys/:key`) and `GET …/state` carry `pins`, the ids still yours. Changes are
+capped at 200 a day from one address (`claim_limits`, as renders are). Before 0012, pinning
+answers 503 (`Pins aren’t open yet`) and `pins` is `[]`.
+
+The founder's capsules all say `luck: 'founder'` (`open` and `season`) unless he rolls at fair
+odds (`fair: true`).
+
 ## DLE Club sign-in
 
 Lil guys and DLE Club share one sign-in. Both use the same Google client, and both
@@ -65,7 +163,7 @@ Signing out here stops it until the next sign-in in this browser. A club player
 with no Google sign-in (a guest, or Apple only) stays signed out here. Without the
 secret, `GET /api/auth/session` says `club: false` and nothing is framed.
 
-To turn it on, steps 2 and 3 of Going live, above. The secret is never committed.
+To turn it on, steps 2 and 3 of Going live with stamps, above. The secret is never committed.
 
 ## Finished guys: `/g/`
 
@@ -91,6 +189,12 @@ assumed. Renders on a miss count against the address, 3,000 a day, and batch
 reads that miss the cache 2,000 a day, in `claim_limits` (with `CLAIM_SALT`),
 so made-up codes can't run up the bill. No migration is needed. Before
 deploying a change to the art, bump `ART_VERSION` in `src/guy-code.ts`.
+
+Galaxybrain (`emote-galaxybrain`, `-still`, its sheets) is drawn only for a claimed guy whose
+player has earned it (`worker/emotes.js`): by name, or by any code whose seed is that guy's
+(found with 0014's `names_seed`). Anyone else's, a chatter's dealt from their name or a code
+nobody claimed, is a 404 (`Not earned`, never cached); the answer is kept a minute per Worker.
+It's asked before the cache, so one let go stops being served there.
 
 Checks: `bun test` (worker/baked.test.ts serves exactly the library's bytes;
 `bun test worker` is the Worker's own tests),
@@ -146,11 +250,19 @@ above apply every pending migration) before deploying a Worker that reads it.
   - `POST /api/me/:key/look {look}`: only parts `decodeLook` allows for your dealt guy.
 - Public, never with owner tokens:
   - `GET /api/guys?sort=rarest|recent&q=`: every guy with what it wears and its best copy.
-  - `GET /api/guys/:key`: one player's guy and collection.
+  - `GET /api/guys/:key`: one player's guy and collection, the copies pinned on their shelf (`pins`),
+    and the chat emotes it may use (`emotes`, ids from `EMOTE_SET`): all but Galaxybrain until the
+    player holds a Mythic or better copy, an aura, or a night set part (eclipse or void eyes, the
+    idea or thought topper, op art; `worker/emotes.js`). Hype and Gg (fire, crown) are everyone's.
   - `POST /api/club/guys {a, t}`: for dleclub.com only, signed with `CLUB_SSO_SECRET` (`X-Club-Signature`, HMAC-SHA256 of `guys.<t>.<a joined by commas>`, at most five minutes old): each linked Google sign-in's name, his parts as drawn and the codes of the copies he has on, so the club draws him as he is here.
   - `GET /api/club/named?n=<names>`: public, any origin, cached a minute: up to 100 claimed names' parts as drawn and the codes of the copies each has on, so Twitch chat in the club's gauntlet, parties, Amountle and Weighsies draws a chatter with a name here as he is here.
   - `GET /api/market?grade=&game=&slot=&finish=&key=&sort=rarest|float|newest`: every
-    copy from a capsule (starters aside).
+    copy from a capsule (starters aside). Rarest is what the eye can see (`visibleOneIn`, as the
+    copies board ranks them: the cleaner float, then the earlier pull, on a tie), sorted in D1 by
+    the odds 0013 keeps, with up to 1,000 not kept yet worked out on the read. Past that (after
+    the rules change, or before 0013 on a bigger collection) it lists by the odds each copy was
+    pulled with (`one_in`) until the copies board catches up. The founder's one-of-ones lead his
+    own page. `grade` is 0 to 5 (5, auras).
   - `GET /api/stats`: claims, copies and counts by grade.
 - Releasing a name (`DELETE /api/names/:key`) deletes, in one transaction, its player
   record, copies, face parts and those copies' card stats, and lapses its open offers

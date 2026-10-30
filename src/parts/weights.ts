@@ -75,7 +75,7 @@ export const eyeWeights = [
   8, // cyclops
   15, // sleepy: eyes shut, so fewer of them (deal 4)
   12, // dizzy
-  35, // anime
+  35, // big eyes
   1, // galaxy: chase
   2, // diamond: chase
   2, // dragon: chase
@@ -83,6 +83,8 @@ export const eyeWeights = [
   0, // kitty: capsules only
   0, // joy: capsules only
   0, // puppy: capsules only
+  0, // eclipse: capsules only
+  0, // void: capsules only
 ];
 
 export const mouthWeights = [
@@ -174,6 +176,8 @@ export const hairWeights = [
   2, // laurel: chase
   2, // star crown: chase
   2, // on fire: chase
+  0, // idea: capsules only
+  0, // thought: capsules only
 ];
 
 export const bodyWeights = [
@@ -196,6 +200,7 @@ export const bodyWeights = [
   30, // sprinkles
   1, // kintsugi: chase
   2, // gold dipped: chase
+  0, // op art: capsules only
 ];
 
 export const accessoryWeights = [
@@ -286,14 +291,18 @@ export const paletteWeights = [
 /**
  * Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
  * and metal crafts them. Each weighs 0 in its table above, so every guy dealt
- * from any deal stays exactly as he was, and the weight here is its share
+ * from any deal stays exactly as dealt, and the weight here is its share
  * among a slot's rare parts when a capsule picks one, as a dealt part's
- * weight is. The anime set, October 2026.
+ * weight is. The starry, kitty, joy and puppy set, October 2026; then the
+ * night set, the rarest to unlock: eclipse and void eyes, the idea and
+ * thought toppers, op art markings.
  */
-export const CAPSULE_ONLY: Partial<Record<'eyes' | 'mouth' | 'cheeks', Record<number, number>>> = {
-  eyes: { 23: 6, 24: 6, 25: 8, 26: 8 },     // shoujo, kitty, joy, puppy
-  mouth: { 22: 8, 23: 8, 24: 6 },           // kissy, yay, tehe
-  cheeks: { 19: 8 },                        // manga blush
+export const CAPSULE_ONLY: Partial<Record<'eyes' | 'mouth' | 'cheeks' | 'hair' | 'body', Record<number, number>>> = {
+  eyes: { 23: 6, 24: 6, 25: 8, 26: 8, 27: 3, 28: 3 },  // starry, kitty, joy, puppy, eclipse, void
+  mouth: { 22: 8, 23: 8, 24: 6 },                      // kissy, yay, tehe
+  cheeks: { 19: 8 },                                   // big blush
+  hair: { 37: 4, 38: 4 },                              // idea, thought
+  body: { 19: 3 },                                     // op art
 };
 
 /** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */

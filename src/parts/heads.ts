@@ -459,8 +459,8 @@ export const heads: Head[] = [
     '................',
     '................',
   ]),
-  // Pincers held up, each open towards the head like a C, on short arms; a wide shell and three
-  // little legs a side.
+  // Pincers held up, each open towards the head like a C, on short arms; a wide shell, rounded
+  // under, and two little legs a side (three a side, and a spike off each side, made a fussy fringe).
   head('crab', 8, false, [
     '................',
     '.hhh#......#hhh.',
@@ -474,8 +474,8 @@ export const heads: Head[] = [
     '.##############.',
     '.##############.',
     '..############..',
-    '.s.##########.s.',
-    '.s.s.s....s.s.s.',
+    '...##########...',
+    '..s.s......s.s..',
     '................',
     '................',
   ]),
@@ -594,22 +594,24 @@ export const heads: Head[] = [
     '................',
     '................',
   ]),
+  // Four leaves, each lit on its outer edge, deep notches between them running in towards the
+  // face, and a stem: as a square blob with shallow notches it read as a blob.
   head('clover', 7, false, [
     '................',
-    '..####....####..',
-    '.######..######.',
+    '..###......###..',
+    '.#h###....###h#.',
     '.######..######.',
     '.######ss######.',
-    '.##############.',
+    '..#####ss#####..',
     '...##########...',
     '...##########...',
-    '.##############.',
-    '.##############.',
+    '..#####ss#####..',
     '.######ss######.',
+    '.#h####ss####h#.',
     '.######..######.',
-    '..####.##.####..',
+    '..###......###..',
+    '.......##.......',
     '........#.......',
-    '.........#......',
     '................',
   ]),
   head('disco', 8, true, [

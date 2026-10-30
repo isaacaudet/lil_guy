@@ -62,14 +62,14 @@ export function traitOdds(config: AvatarConfig): TraitOdds[] {
   // What he shows: a marking or cheeks a crowded guy has no room for count as none.
   const body = shows(config, 'body') ? config.body : 0, cheek = shows(config, 'cheeks') ? config.cheeks : 0;
   return [
-    { slot: 'shape', name: heads[config.head].name, chance: dealt('head', headWeights, config.head) },
+    { slot: 'shape', name: heads[config.head].name, chance: dealt('head', headWeights, config.head, 'head') },
     { slot: 'eyes', name: eyes[config.eyes].name, chance: share(withoutRetired(eyeWeights, RETIRED_EYES), config.eyes, 'eyes') },
     { slot: 'mouth', name: mouths[config.mouth].name, chance: dealt('mouth', mouthWeights, config.mouth, 'mouth') },
     { slot: 'cheeks', name: cheeks[cheek].name, chance: dealt('cheeks', cheekWeights, cheek, 'cheeks') },
-    { slot: 'topper', name: hair[config.hair].name, chance: dealt('hair', hairWeights, config.hair) },
-    { slot: 'markings', name: bodies[body].name, chance: dealt('body', bodyWeights, body) },
-    { slot: 'accessory', name: accessories[config.accessory].name, chance: dealt('accessory', accessoryWeights, config.accessory) },
-    { slot: 'colour', name: palettes[shownPalette(config)].name, chance: dealt('palette', paletteWeights, config.palette) },
+    { slot: 'topper', name: hair[config.hair].name, chance: dealt('hair', hairWeights, config.hair, 'hair') },
+    { slot: 'markings', name: bodies[body].name, chance: dealt('body', bodyWeights, body, 'body') },
+    { slot: 'accessory', name: accessories[config.accessory].name, chance: dealt('accessory', accessoryWeights, config.accessory, 'accessory') },
+    { slot: 'colour', name: palettes[shownPalette(config)].name, chance: dealt('palette', paletteWeights, config.palette, 'palette') },
     { slot: 'tone', name: TONE_NAMES[config.shade], chance: share(shadeWeights, config.shade) },
     { slot: 'arms', name: ARM_NAMES[config.arms], chance: share(armWeights, config.arms) },
     { slot: 'feet', name: FOOT_NAMES[config.feet], chance: share(footWeights, config.feet) },
@@ -84,6 +84,20 @@ export function guyOneIn(config: AvatarConfig): number {
 
 /** One in how many capsules for its game give a copy at least this good. */
 export function copyOneIn(o: Owned): number {
+  return oneIn(o, true);
+}
+
+/**
+ * One in how many capsules give a copy that looks like this one: its item, its
+ * finish, a famous print if it has one, its effect and, for an aura, which
+ * aura. What the eye can see, so it is what a card leads with; the float and a
+ * tally, which you can't see, are left out (`copyOneIn` has them).
+ */
+export function visibleOneIn(o: Owned): number {
+  return oneIn(o, false);
+}
+
+function oneIn(o: Owned, unseen: boolean): number {
   const item = itemById(o.item);
   if (!item) return Infinity;
   const f = FINISHES[o.finish];
@@ -95,11 +109,12 @@ export function copyOneIn(o: Owned): number {
   if (special(o) === 'Deep Blue') p *= DEEP_BLUE_PRINTS.length / 1000;
   else if (special(o)) p *= 1 / 20;
 
-  // A scuff at least this low, within the finish's range.
-  const [lo, hi] = f.scuffs;
-  p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
-
-  if (o.tally !== undefined) p *= 0.1;
+  if (unseen) {
+    // A scuff at least this low, within the finish's range.
+    const [lo, hi] = f.scuffs;
+    p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
+    if (o.tally !== undefined) p *= 0.1;
+  }
   // A showpiece always has its own effect; only a different one is the lucky roll.
   if (o.fx && o.fx !== item.signature) p *= 1 / EFFECTS[o.fx][f.aura ? 'aura' : 'item'];
   return 1 / p;

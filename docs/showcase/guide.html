@@ -85,8 +85,8 @@
       <div class="rung" style="background:var(--g0)"><b>Everyday</b><span>Plain · 80%</span></div>
       <div class="rung" style="background:var(--g1)"><b>Special</b><span>Sunset · 16%</span></div>
       <div class="rung" style="background:var(--g2)"><b>Prized</b><span>Tempered, Nebula · 3%</span></div>
-      <div class="rung" style="background:var(--g3)"><b>Mythic</b><span>Prism, Negative, famous prints · 0.9%</span></div>
-      <div class="rung" style="background:var(--g4)"><b>★ Grail</b><span>Gold · 0.25%</span></div>
+      <div class="rung" style="background:var(--g3)"><b>Mythic</b><span>Prism, Negative, Op, Impossible, Grid, famous prints · 1.1%</span></div>
+      <div class="rung" style="background:var(--g4)"><b>★ Grail</b><span>Gold · 0.2%</span></div>
       <div class="rung" style="background:#19D3C5"><b>★ Aura</b><span>Any machine · 0.1%</span></div>
     </div>
     <div class="row" id="finishes" style="margin-top:12px"></div>
@@ -157,13 +157,13 @@
     ['Item', 'Golf ball', 'What it is', '#2f6fe0'],
     ['Finish', 'Rose Tempered', 'Its paint: sets the grade', '#d32ce6'],
     ['Scuff', '0.0123456 · Box Fresh', 'How worn, 0 to 1. Lower is cleaner', '#1f9d5b'],
-    ['Print', '#1', 'Where the paint and chips land, 0 to 999', '#e4ae39'],
+    ['Print', '1', 'Where the paint and chips land, 0 to 999', '#e4ae39'],
     ['Tally', '120 days', '1 copy in 10 keeps one', '#eb4b4b'],
     ['Pins', 'Gold star', 'Earned, up to 3', '#8847ff'],
   ].map(([k, v, w, c]) => `<div class="part" style="--c:${c}"><b>${k}: ${v}</b>${w}</div>`).join('');
 
   // 4. the finishes on one skin
-  const fins = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+  const fins = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
   fill('finishes', fins.map((f, k) => {
     const o = { item: 'stackdle.brick', finish: f, scuff: 0.02, print: 3 + k * 7 };
     return { label: LG.FINISHES[f].name, sub: LG.gradeOf(o).name, colors: still('mia7', [E(o)]) };

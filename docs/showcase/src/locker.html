@@ -446,7 +446,7 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
 <script>
 (() => {
   const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
@@ -543,10 +543,25 @@ void main() {
   const setLine = (o, about = {}) => (about.pull && about.pull <= FIRST_EDITION ? '1st ed' : '');
   // A page that knows copies' pull numbers (the live site's locker) says so here.
   const aboutFor = o => (typeof window.cardAbout === 'function' ? window.cardAbout(o) : null) || {};
-  /** The words on an item's card: its name, its grade and how rare it is. */
+  /**
+   * How rare a copy looks: its item, finish, a famous print, its effect and its aura, without the float you
+   * can't see (`LG.visibleOneIn`; a library from before it has only the full count).
+   */
+  const visOneIn = o => (LG.visibleOneIn || LG.copyOneIn)(o);
+  /** Whether a copy is an Unusual (a showpiece, or an effect rarer than about 1 in 250), celebrated like a Mythic. */
+  const isUnusual = o => {
+    if (LG.unusual) return LG.unusual(o);
+    const it = LG.itemById(o.item);
+    if (it?.showpiece) return true;
+    if (!o.fx || o.fx === it?.signature || !LG.EFFECTS[o.fx]) return false;
+    return LG.EFFECTS[o.fx][LG.FINISHES[o.finish]?.aura ? 'aura' : 'item'] >= 250;
+  };
+  /** An Unusual's effect, for the front of its name ("Electric Top hat"), as the library's card has it; else ''. */
+  const unusualFx = o => (o.fx && o.fx !== LG.itemById(o.item)?.signature && isUnusual(o) ? LG.EFFECTS[o.fx].name : '');
+  /** The words on an item's card: its name, its grade and how rare it looks. */
   const itemLabel = (o, starter, one, about = aboutFor(o)) => {
-    const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? 'Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    const it = LG.itemById(o.item), g = LG.gradeOf(o), fx = unusualFx(o);
+    return { title: fx ? `${fx} ${it.name}` : it.name, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? 'Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(visOneIn(o))}` };
   };
 
   // A face is built the first time it is drawn, and the loop builds at most this many a frame, so a long
@@ -646,6 +661,12 @@ void main() {
       for (let i = 0; i < count; i++) { const seed = LG.makeSeed(), cfg = LG.resolve(seed); out.push([LG.guyOneIn(cfg.base || cfg), seed]); if (i % 32 === 0) yield; }
       return out.sort((a, b) => b[0] - a[0]).slice(0, keep).map(g => g[1]);
     },
+    // Each seed's rank, `guyRank().top`, in the order given: the claimed guys' ladder.
+    *ranks(LG, seeds) {
+      const out = [];
+      for (let i = 0; i < seeds.length; i++) { out.push(LG.guyRank(LG.resolve(seeds[i])).top); if (i % 16 === 0) yield; }
+      return out;
+    },
     // Open `count` capsules round the machines and keep the rarest copy of each of `keep` items, from Prized up.
     *rarestDrops(LG, salt, count, keep) {
       const found = [], seen = new Set(), out = [];
@@ -680,7 +701,7 @@ onmessage = e => {
 };`;
   // Two lanes, so a long count (200,000 names) never holds up a quick job (a move to draw, a GIF to save): up to
   // two workers each. A job goes to an idle worker in its lane, else a new one, else the least busy.
-  const COUNTS = new Set(['rarestNames', 'rarestOf', 'dealt', 'dealRarest', 'rarestDrops']);
+  const COUNTS = new Set(['rarestNames', 'rarestOf', 'dealt', 'dealRarest', 'rarestDrops', 'ranks']);
   const LANE = Math.max(1, Math.min(2, Math.ceil(((navigator.hardwareConcurrency || 2) - 1) / 2)));
   const LANE_SIZE = { counts: LANE, quick: LANE };
   const workers = [];
@@ -1329,7 +1350,7 @@ onmessage = e => {
     state.inspect = state.locker.slice().sort((a, b) => oneIn(b) - oneIn(a))[0].uid;
   }
 
-  const chipsFor = o => `<span class="chip grade">${LG.gradeOf(o).name}</span><span class="chip">${LG.wearOf(o.scuff).short} ${o.scuff.toFixed(4)}</span><span class="chip">#${o.print}</span>`;
+  const chipsFor = o => `<span class="chip grade">${LG.gradeOf(o).name}</span><span class="chip">${LG.wearOf(o.scuff).short} ${o.scuff.toFixed(4)}</span><span class="chip">Print ${o.print}</span>`;
 
   /* ------------------------------------------------ traits */
   const SLOTS = [
@@ -1441,7 +1462,7 @@ onmessage = e => {
     const row = slot => {
       const c = find(state.worn[slot]);
       return `<div class="slotrow"><span class="k">${slot}</span>${c
-        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · #${c.o.print} · ${cap(c.game)}</small></span>`
+        ? `<span class="v">${esc(LG.nameOf(c.o))}<small>${LG.wearOf(c.o.scuff).name} · Print ${c.o.print} · ${cap(c.game)}</small></span>`
         : '<span class="v empty">Empty</span>'}</div>`;
     };
     $('dress').innerHTML = `<figure class="card" style="--grade:${g >= 0 ? GRADE[g] : 'var(--line)'}">${px({ name: state.name, copies, label: { title: state.name, g, bottom: g >= 0 ? `${LG.GRADES[g].name} look` : 'Starter kit' } })}<figcaption class="meta" style="text-align:center"><span class="h">${esc(state.name)}</span><span class="sub">${top?.one ? 'Best piece <b>Only one</b>' : top && oneIn(top) ? `Best piece 1 in <b>${fmt(oneIn(top))}</b>` : 'Starter kit'}</span></figcaption></figure>
@@ -1488,7 +1509,7 @@ onmessage = e => {
             <div class="fbar"><div class="segs">${bar}</div><span class="range" style="left:${lo * 100}%;width:${(hi - lo) * 100}%"></span><span class="mark" style="left:${o.scuff * 100}%"></span>
             <div class="ticks"><span style="left:0;translate:0 0">0</span><span style="left:7%">.07</span><span style="left:15%">.15</span><span style="left:38%">.38</span><span style="left:45%">.45</span><span style="left:100%;translate:-100% 0">1</span></div></div>
             <small>Lower is cleaner. ${f.name} only comes between ${lo.toFixed(2)} and ${hi.toFixed(2)}${o.scuff > 0.07 ? '; past .07 the paint starts to chip' : ''}.</small></dd>
-          ${dt('Print', 'print', 4)}<dd><b>#${o.print}</b>${fam ? ` <span class="chip grade" style="--grade:#4B69FF">${esc(fam)}</span>` : ''}<small>${fam ? 'One of the famous prints.' : 'Where the shine and the scuffs land, 0 to 999.'}${o.finish === 'nebula' && !fam ? ' On Nebula it also picks the pattern in the name.' : ''}</small></dd>
+          ${dt('Print', 'print', 4)}<dd><b>${o.print}</b>${fam ? ` <span class="chip grade" style="--grade:#4B69FF">${esc(fam)}</span>` : ''}<small>${fam ? 'One of the famous prints.' : 'Where the shine and the scuffs land, 0 to 999.'}${o.finish === 'nebula' && !fam ? ' On Nebula it also picks the pattern in the name.' : ''}</small></dd>
           ${dt('Tally', 'tally', 5)}<dd>${o.tally !== undefined ? `<b>${o.tally} days</b><small>Days finished wearing it. Shows as "Tallied" in the name${o.tally >= 365 ? ', and a year of days has turned its outline gold' : o.tally >= 100 ? ', and as four marks on the item' : o.tally >= 30 ? ', and as two marks on the item' : ''}.</small>` : '<b>None</b><small>One copy in ten keeps a tally.</small>'}</dd>
           ${dt('Pins')}<dd>${o.pins?.length ? o.pins.map(id => { const pn = LG.PINS.find(x => x.id === id); return `<b>${esc(pn.name)}</b><small>${esc(pn.how)}</small>`; }).join('') : '<b>None yet</b><small>Earned in the games, up to three.</small>'}</dd>
           ${dt('Rarity')}<dd>${c.one ? '<b>Only one</b><small>The only one. It exists because it was given, not rolled.</small>' : c.source === 'Starter' ? '<b>Free</b><small>Every player has one; the name decides its scuff and print.</small>' : `<b>1 in ${fmt(LG.copyOneIn(o))}</b><small>Capsules for ${cap(c.game)} that give this item, this finish${fam ? ', a famous print' : ''}, a scuff this low${o.tally !== undefined ? ' and a tally' : ''}.</small>`}</dd>
@@ -1537,8 +1558,10 @@ onmessage = e => {
   });
 
   function renderOdds() {
-    const max = Math.log(100 / 0.2);
-    $('odds').innerHTML = Object.values(LG.FINISHES).map(f => `<li><span class="n">${f.name}</span><div class="bar" style="--c:${GRADE[f.grade]}"><i style="width:${Math.max(4, (1 - Math.log(100 / f.odds) / max) * 100 + 6).toFixed(0)}%"></i></div><span class="p">${f.odds}%</span></li>`).join('');
+    // What a capsule rolls, by grade then commonest first; a finish at 0% (an aura's own) isn't dealt here.
+    const rolled = Object.values(LG.FINISHES).filter(f => f.odds > 0).sort((a, b) => a.grade - b.grade || b.odds - a.odds);
+    const max = Math.log(100 / Math.min(...rolled.map(f => f.odds)));
+    $('odds').innerHTML = rolled.map(f => `<li><span class="n">${f.name}</span><div class="bar" style="--c:${GRADE[f.grade]}"><i style="width:${Math.max(4, (1 - Math.log(100 / f.odds) / max) * 100 + 6).toFixed(0)}%"></i></div><span class="p">${f.odds}%</span></li>`).join('');
   }
 
   function shelfToday() {

@@ -23,7 +23,7 @@ const PAGES: Record<string, string> = {
   catalog: 'Everything a guy can be dealt or pull, with its odds, what is thin, and a tier above Grail.',
   voxels: 'A prototype: the same pixels as 3D figures, each finish a real material.',
   formats: 'Every way a game can show a player\'s lil guy, live from the Worker, with the address and HTML to copy.',
-  emotes: 'Any lil guy as twelve Twitch and Discord emotes, still and moving, to download.',
+  emotes: 'Any lil guy as Twitch and Discord emotes, still and moving, to download.',
 };
 
 // The shop and the promo draw the gacha machines with the locker's code, so it is shared from there.

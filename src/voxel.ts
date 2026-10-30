@@ -61,6 +61,10 @@ const SURFACES: Record<SurfaceKind, Omit<Surface, 'kind'>> = {
   sapphire: { roughness: .1,  metalness: .4,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: .2, sheen: 0, glow: .6 },
   ruby:     { roughness: .1,  metalness: .4,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: .2, sheen: 0, glow: .6 },
   pearl:    { roughness: .08, metalness: .5,  clearcoat: 1,   clearcoatRoughness: .02, iridescence: .6, sheen: 0, glow: .3 },
+  // The graphic finishes: ink, ivory and coral printed flat, matte as Plain, never a glow.
+  op:         { roughness: .5, metalness: 0, clearcoat: .3, clearcoatRoughness: .4, iridescence: 0, sheen: 0, glow: 0 },
+  impossible: { roughness: .5, metalness: 0, clearcoat: .3, clearcoatRoughness: .4, iridescence: 0, sheen: 0, glow: 0 },
+  grid:       { roughness: .5, metalness: 0, clearcoat: .3, clearcoatRoughness: .4, iridescence: 0, sheen: 0, glow: 0 },
 };
 
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */

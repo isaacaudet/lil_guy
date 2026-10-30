@@ -3,7 +3,7 @@ import type { Canvas } from './parts/canvas';
 import { capRows, mirror, seat } from './parts/hair';
 import { elastic, grid16, L, on, onPair, pet, span, wear } from './item-art';
 import { SETS } from './sets';
-import { decode, finishOutline, starter } from './owned';
+import { decode, faceInk, finishOutline, starter } from './owned';
 import { AURAS, ONE_OF_ONE_AURAS } from './auras';
 import type { Fx } from './effects';
 import { painted, PAINTABLE } from './paints';
@@ -2490,7 +2490,7 @@ export function withItems(palette: Palette, config: AvatarConfig): Palette {
       const own = !!item.art && item.art.slice(e - 2, e + 2).every(row => row.slice(4, 12).every(t => t > 0 && t < LOCAL));
       if (!own) {
         const dark = '#15111C', light = '#FFF1D6';
-        colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light, item.colors[0]) ? dark : light;
+        colors[T.EYE] = colors[T.MOUTH] = (owned && faceInk(owned)) ?? (contrast(dark, item.colors[0]) >= contrast(light, item.colors[0]) ? dark : light);
       }
     }
   }

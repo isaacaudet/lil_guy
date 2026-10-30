@@ -25,9 +25,9 @@ export type AuraCell = [x: number, y: number, k: number];
 export type Mask = boolean[][];
 
 export interface Aura extends Pick<Item, 'id' | 'name' | 'colors'> {
-  /** The cells to light at `t` ms, round the guy in `mask`. */
+  /** The cells to light at `t` ms, round the guy in `mask`: never fewer than about eight in any frame. */
   cells: (mask: Mask, t: number, print: number) => AuraCell[];
-  /** The moment a still picture shows. */
+  /** The moment a still picture shows: the aura at its fullest. */
   still: number;
 }
 
@@ -72,9 +72,56 @@ function ring(mask: Mask, reach: number): [number, number, number][] {
 const plus = (x: number, y: number, k: number, arm = 1): AuraCell[] => [[x, y, 0], [x - arm, y, k], [x + arm, y, k], [x, y - arm, k], [x, y + arm, k]];
 const wrap = (v: number, n: number) => ((v % n) + n) % n;
 
+/**
+ * A still piece every frame shows, so even an aura of a few moving specks
+ * always has something there: a picture (rows of `0`–`3` for its colours,
+ * `.` empty) of at least eight cells, in the empty spot nearest one of the
+ * top corners beside the guy's head, the print choosing which, a cell clear
+ * of the guy on every side. The first of `arts` that fits is drawn: a big one
+ * where there is room, a small one over the head of a guy who nearly fills
+ * the frame. The last is three cells wide at most: for a guy who leaves no
+ * room at all, it goes just past the frame's edge beside the head, in the
+ * columns a padded picture keeps for an aura (`auraCells`' `pad`). It bobs a
+ * cell every `bob` ms when given.
+ */
+function anchor(mask: Mask, t: number, print: number, arts: string[][], bob = 0): AuraCell[] {
+  const H = mask.length, W = mask[0].length, s = shape(mask), right = print % 2 === 1;
+  const on = (x: number, y: number) => !!mask[y]?.[x];
+  const draw = (art: string[], x0: number, y0: number) => {
+    const out: AuraCell[] = [];
+    art.forEach((row, dy) => [...row].forEach((ch, dx) => { if (ch !== '.') out.push([x0 + dx, y0 + dy, Number(ch)]); }));
+    return out;
+  };
+  for (const art of arts) {
+    // Only the big picture bobs: a small one sits where there is barely room.
+    const bobs = bob && art === arts[0], h = art.length + (bobs ? 1 : 0), w = art[0].length, tx = right ? W - w : 0, ty = Math.max(0, s.top - h);
+    let best: [number, number] | null = null, far = Infinity;
+    for (let y = 0; y + h <= H; y++) for (let x = 0; x + w <= W; x++) {
+      let clear = true;
+      for (let dy = 0; dy < h && clear; dy++) for (let dx = 0; dx < w && clear; dx++) {
+        const X = x + dx, Y = y + dy;
+        if (on(X, Y) || on(X - 1, Y) || on(X + 1, Y) || on(X, Y - 1) || on(X, Y + 1)) clear = false;
+      }
+      const d = Math.abs(x - tx) + Math.abs(y - ty) * 1.5;
+      if (clear && d < far) { far = d; best = [x, y]; }
+    }
+    if (best) return draw(art, best[0], best[1] + (bobs && Math.floor(t / steps(bob, 2)) % 2 ? 1 : 0));
+  }
+  // Past the frame's edge: on the row nearest the head's top whose edge column is clear of the guy
+  // beside it, a row either side too, so it never touches the guy; on the head's top when none is.
+  const art = arts[arts.length - 1], w = art[0].length, h = art.length, edge = right ? W - 1 : 0;
+  let y0 = Math.max(0, Math.min(H - h, s.top)), far = Infinity;
+  for (let y = 0; y + h <= H; y++) {
+    let clear = true;
+    for (let Y = y - 1; Y <= y + h && clear; Y++) if (on(edge, Y)) clear = false;
+    if (clear && Math.abs(y - s.top) < far) { far = Math.abs(y - s.top); y0 = y; }
+  }
+  return draw(art, right ? W : -w, y0);
+}
+
 export const AURAS: Aura[] = [
   {
-    id: 'aura.flames', name: 'Flames', colors: ['#FFE27A', '#FF8A2B', '#E5484D'], still: 300,
+    id: 'aura.flames', name: 'Flames', colors: ['#FFE27A', '#FF8A2B', '#E5484D'], still: 2510,
     cells: (mask, t, print) => {
       const s = shape(mask), step = tick(t, 110) + print, out: AuraCell[] = [];
       s.tops.forEach((top, x) => {
@@ -89,15 +136,18 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.orbit', name: 'Orbit', colors: ['#FFFFFF', '#FFD45C', '#C98A1A'], still: 900,
+    id: 'aura.orbit', name: 'Orbit', colors: ['#FFFFFF', '#FFD45C', '#C98A1A'], still: 330,
     cells: (mask, t, print) => {
       // A tilted ring round his head, where he's narrowest, kept inside the frame.
       const s = shape(mask), out: AuraCell[] = [], turn = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+      // The ring they ride, dotted in its deep gold, so the orbit shows whole between them.
+      for (let k = 0; k < 28; k += 2) { const a = (k / 28) * Math.PI * 2; out.push([Math.round(s.w / 2 - 0.5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 2]); }
       for (let i = 0; i < 3; i++) {
         const a = turn * t / wave(560) + i * 2.094 + print;
         out.push(...plus(Math.round(s.w / 2 - 0.5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 1));
       }
-      return out;
+      // A ringed planet they circle sits by the head.
+      return [...out, ...anchor(mask, t, print, [['.111.', '21012', '.111.'], ['.1.', '111', '202', '111', '.1.']])];
     },
   },
   {
@@ -110,7 +160,7 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.sparkles', name: 'Sparkles', colors: ['#FFFFFF', '#FFF3B0', '#8FD8FF'], still: 500,
+    id: 'aura.sparkles', name: 'Sparkles', colors: ['#FFFFFF', '#FFF3B0', '#8FD8FF'], still: 5660,
     cells: (mask, t, print) => {
       const near = ring(mask, 3), out: AuraCell[] = [];
       for (let i = 0; i < 5; i++) {
@@ -118,11 +168,15 @@ export const AURAS: Aura[] = [
         const [x, y] = near[Math.floor(noise(i, life, print) * near.length)] ?? [0, 0];
         out.push(...glint(x, y, phase));
       }
-      return out;
+      // One big sparkle that stays, its heart twinkling.
+      const on = Math.floor(t / steps(260, 2)) % 2 === 0;
+      return [...out, ...anchor(mask, t, print, on
+        ? [['..2..', '..1..', '21012', '..1..', '..2..'], ['.2.2.', '21012', '.2.2.'], ['2.2', '.1.', '101', '.1.', '2.2']]
+        : [['.2.2.', '2.1.2', '.101.', '2.1.2', '.2.2.'], ['2.1.2', '.101.', '2.1.2'], ['.1.', '212', '.0.', '212', '.1.']])];
     },
   },
   {
-    id: 'aura.hearts', name: 'Hearts', colors: ['#FFC2D4', '#FF5C8A', '#C2335F'], still: 700,
+    id: 'aura.hearts', name: 'Hearts', colors: ['#FFC2D4', '#FF5C8A', '#C2335F'], still: 4670,
     cells: (mask, t, print) => {
       // Hearts float up the top corners and over his head, and fade at the top.
       const s = shape(mask), out: AuraCell[] = [], lanes = [0, s.w - 3, Math.round(s.w / 2) - 1];
@@ -131,11 +185,15 @@ export const AURAS: Aura[] = [
         const x = lanes[i];
         out.push([x, y, 1], [x + 2, y, 1], [x, y + 1, 1], [x + 1, y + 1, 0], [x + 2, y + 1, 1], [x + 1, y + 2, 2]);
       }
-      return out;
+      // A big heart by the head that beats.
+      const beat = cycle(t + print * 13, 700) < 0.2;
+      return [...out, ...anchor(mask, t, print, beat
+        ? [['.1.1.', '10111', '11111', '.111.', '..2..'], ['11.11', '10111', '.121.'], ['1.1', '101', '111', '.1.', '.2.']]
+        : [['.1.1.', '10111', '.111.', '..2..'], ['.1.1.', '10111', '.121.'], ['1.1', '101', '111', '.2.']])];
     },
   },
   {
-    id: 'aura.bubbles', name: 'Bubbles', colors: ['#FFFFFF', '#A9E4FF', '#3E9BE0'], still: 400,
+    id: 'aura.bubbles', name: 'Bubbles', colors: ['#FFFFFF', '#A9E4FF', '#3E9BE0'], still: 4740,
     cells: (mask, t, print) => {
       const s = shape(mask), out: AuraCell[] = [];
       for (let i = 0; i < 4; i++) {
@@ -144,11 +202,12 @@ export const AURAS: Aura[] = [
         if (big) out.push([x + 1, y, 1], [x, y + 1, 2], [x + 2, y + 1, 2], [x + 1, y + 2, 1], [x + 1, y + 1, -1]);
         else out.push([x, y, 1], [x + 1, y, 0], [x, y + 1, 2], [x + 1, y + 1, 1]);
       }
-      return out.filter(c => c[2] >= 0);
+      // A big bubble by the head, bobbing.
+      return [...out.filter(c => c[2] >= 0), ...anchor(mask, t, print, [['.11.', '10.2', '1..2', '.22.'], ['.11.', '1002', '.22.'], ['11.', '102', '1.2', '.22']], 300)];
     },
   },
   {
-    id: 'aura.storm', name: 'Rain cloud', colors: ['#F4F6FB', '#B9C3D6', '#4F8BE8'], still: 600,
+    id: 'aura.storm', name: 'Rain cloud', colors: ['#F4F6FB', '#B9C3D6', '#4F8BE8'], still: 1120,
     cells: (mask, t, print) => {
       const s = shape(mask), cy = Math.max(1, s.top - 3), x0 = Math.round(s.cx) - 3, out: AuraCell[] = [];
       for (let x = x0 + 1; x <= x0 + 2; x++) out.push([x, cy - 2, 0]);
@@ -162,25 +221,26 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.lightning', name: 'Lightning', colors: ['#FFFFFF', '#8FD8FF', '#7C5CFF'], still: 200,
+    id: 'aura.lightning', name: 'Lightning', colors: ['#FFFFFF', '#8FD8FF', '#7C5CFF'], still: 0,
     cells: (mask, t, print) => {
       // Bolts crackle down the top corners towards his shoulders, flickering.
+      // Between strikes the last bolt glows on dimly, so the sky is never empty.
       const s = shape(mask), out: AuraCell[] = [], beat = Math.floor((t + print * 31) / steps(110, 15)), flash = beat % 5;
-      if (flash === 4) return out;
       for (const [side, x0] of [[0, 1], [1, s.w - 2]] as const) {
-        if ((beat + side) % 3 === 2) continue;
+        if ((beat + side) % 3 === 2 && flash !== 4) continue;
         let x = x0;
         for (let y = 0; y <= s.cy; y++) {
           if (mask[y]?.[x]) break;
-          out.push([x, y, flash === 0 ? 0 : 1]);
+          out.push([x, y, flash === 0 ? 0 : flash === 4 ? 2 : 1]);
           if ((y + beat + side) % 3 === 0) { x += side ? -1 : 1; out.push([x, y, 2]); }
         }
       }
-      return out;
+      // A small bolt sits by the head, flaring on a strike.
+      return [...out, ...anchor(mask, t, print, [flash === 0 ? ['.11', '.1.', '101', '.1.', '11.'] : ['.22', '.2.', '212', '.2.', '22.']])];
     },
   },
   {
-    id: 'aura.notes', name: 'Music', colors: ['#FFFFFF', '#B9A4FF', '#6A4BD8'], still: 500,
+    id: 'aura.notes', name: 'Music', colors: ['#FFFFFF', '#B9A4FF', '#6A4BD8'], still: 4670,
     cells: (mask, t, print) => {
       const s = shape(mask), out: AuraCell[] = [];
       for (let i = 0; i < 2; i++) {
@@ -188,22 +248,27 @@ export const AURAS: Aura[] = [
         const x = (i ? s.w - 4 : 0) + (Math.floor(t / steps(340, 2) + i) % 2);
         out.push([x + 1, y, 1], [x + 2, y, 1], [x + 1, y + 1, 1], [x + 1, y + 2, 1], [x, y + 3, 2], [x + 1, y + 3, 2]);
       }
-      return out;
+      // A big note by the head, bobbing to the beat.
+      return [...out, ...anchor(mask, t, print, [['..11', '..12', '..1.', '011.', '12..'], ['..11', '..12', '011.', '11..'], ['.11', '.12', '.1.', '11.', '12.']], 340)];
     },
   },
   {
-    id: 'aura.snow', name: 'Snowfall', colors: ['#FFFFFF', '#DCEEFF', '#8FBCE8'], still: 800,
+    id: 'aura.snow', name: 'Snowfall', colors: ['#FFFFFF', '#DCEEFF', '#8FBCE8'], still: 2740,
     cells: (mask, t, print) => {
       const s = shape(mask), out: AuraCell[] = [];
       for (let i = 0; i < 12; i++) {
         const fall = wrap(Math.floor((t + i * 311 + print * 7) / steps(170, s.h)), s.h), x = wrap(Math.round(noise(i, print) * s.w + Math.sin((t + i * 400) / wave(600)) * 1.2), s.w);
         out.push([x, fall, i % 3 === 0 ? 0 : i % 3]);
       }
-      return out;
+      // One big flake by the head, turning.
+      const turn = Math.floor(t / steps(500, 2)) % 2;
+      return [...out, ...anchor(mask, t, print, turn
+        ? [['2.1.2', '.212.', '11011', '.212.', '2.1.2'], ['2.1.2', '.101.', '2.1.2'], ['2.2', '.1.', '101', '.1.', '2.2']]
+        : [['..1..', '2.1.2', '11011', '2.1.2', '..1..'], ['.212.', '11011', '.212.'], ['.1.', '212', '101', '212', '.1.']])];
     },
   },
   {
-    id: 'aura.petals', name: 'Petals', colors: ['#FFE4EE', '#FF9EC2', '#E0558E'], still: 800,
+    id: 'aura.petals', name: 'Petals', colors: ['#FFE4EE', '#FF9EC2', '#E0558E'], still: 5820,
     cells: (mask, t, print) => {
       const s = shape(mask), out: AuraCell[] = [];
       for (let i = 0; i < 8; i++) {
@@ -213,11 +278,12 @@ export const AURAS: Aura[] = [
         const x = wrap(Math.round(noise(i, print, gen) * s.w) - Math.floor(step / 2), s.w);
         out.push([x, y, 1], [x + 1, y + (i % 2), i % 2 ? 2 : 0]);
       }
-      return out;
+      // A blossom by the head.
+      return [...out, ...anchor(mask, t, print, [['2.1.2', '.111.', '11011', '.111.', '2.1.2'], ['2.1.2', '11011', '2.1.2'], ['.2.', '212', '101', '212', '.2.']])];
     },
   },
   {
-    id: 'aura.galaxy', name: 'Galaxy', colors: ['#FFFFFF', '#A88BFF', '#5B3FC8'], still: 600,
+    id: 'aura.galaxy', name: 'Galaxy', colors: ['#FFFFFF', '#A88BFF', '#5B3FC8'], still: 3670,
     cells: (mask, t, print) => {
       // Clouds of nebula, each a soft clump of violet with a lit core, wheel
       // slowly round him two cells out, and stars twinkle open between them.
@@ -256,24 +322,32 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.glitch', name: 'Glitch', colors: ['#FFFFFF', '#2EF2FF', '#FF3DCB'], still: 260,
+    id: 'aura.glitch', name: 'Glitch', colors: ['#FFFFFF', '#2EF2FF', '#FF3DCB'], still: 1920,
     cells: (mask, t, print) => {
       const step = tick(t + print * 13, 120), out: AuraCell[] = [];
-      mask.forEach((row, y) => {
-        if (noise(y, step, print) < 0.55) return;
-        const shove = noise(y, step, 2) < 0.5 ? 1 : 2;
+      // The rows that slip: every one the noise picks, then the next likeliest until at least eight cells show.
+      const slipped = (y: number): AuraCell[] => {
+        const row = mask[y], shove = noise(y, step, 2) < 0.5 ? 1 : 2, cells: AuraCell[] = [];
         row.forEach((on, x) => {
           if (!on) return;
-          if (!row[x - 1]) out.push([x - shove, y, 1]);
-          if (!row[x + 1]) out.push([x + shove, y, 2]);
+          if (!row[x - 1] && x - shove >= 0 && !row[x - shove]) cells.push([x - shove, y, 1]);
+          if (!row[x + 1] && x + shove < row.length && !row[x + shove]) cells.push([x + shove, y, 2]);
         });
-      });
-      return out;
+        return cells;
+      };
+      const rows = mask.map((_, y) => [y, noise(y, step, print)] as const).sort((a, b) => b[1] - a[1]);
+      for (const [y, n] of rows) {
+        if (n < 0.55 && out.length >= 8) break;
+        out.push(...slipped(y));
+      }
+      // A torn-off strip of scanline hangs by the head, flipping its colours.
+      const flip = noise(step, print, 4) > 0.5;
+      return [...out, ...anchor(mask, t, print, flip ? [['111.2', '.2221'], ['112', '.21', '221']] : [['1.222', '2111.'], ['122', '21.', '211']])];
     },
   },
   // ---------------------------------------------------------------- added Oct 26, 2026 (append only)
   {
-    id: 'aura.fireflies', name: 'Fireflies', colors: ['#FFFDE0', '#FFE45C', '#9ED45A'], still: 450,
+    id: 'aura.fireflies', name: 'Fireflies', colors: ['#FFFDE0', '#FFE45C', '#9ED45A'], still: 3540,
     cells: (mask, t, print) => {
       // Warm dots that drift close round him and blink in their own time, glowing at the peak.
       const near = ring(mask, 3), out: AuraCell[] = [];
@@ -281,10 +355,14 @@ export const AURAS: Aura[] = [
         const [ax, ay] = near[Math.floor(noise(i, print, 3) * near.length)] ?? [0, 0];
         const x = ax + Math.round(Math.sin(t / wave(700) + i * 1.7) * 1.5), y = ay + Math.round(Math.cos(t / wave(900) + i * 2.3));
         const phase = cycle(t + i * 397 + print * 29, 1600);
-        if (phase > 0.65) continue;
+        if (phase > 0.65 && i > 1) continue;
         out.push(...(phase > 0.15 && phase < 0.45 ? plus(x, y, 2) : [[x, y, 1] as AuraCell]));
       }
-      return out;
+      // Two resting by the head, glowing in turn, slowly.
+      const glow = Math.floor(t / steps(400, 2)) % 2 === 0;
+      return [...out, ...anchor(mask, t, print, glow
+        ? [['.2...', '202..', '.2.1.', '..101', '...1.'], ['.2.', '202', '.2.', '.1.', '101', '.1.']]
+        : [['.1...', '101..', '.1.2.', '..202', '...2.'], ['.1.', '101', '.1.', '.2.', '202', '.2.']])];
     },
   },
   {
@@ -321,7 +399,7 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.comet', name: 'Comet', colors: ['#FFFFFF', '#8FE3FF', '#4A6BD8'], still: 300,
+    id: 'aura.comet', name: 'Comet', colors: ['#FFFFFF', '#8FE3FF', '#4A6BD8'], still: 4830,
     cells: (mask, t, print) => {
       // A bright comet races round him two pixels out, a long tail streaming behind it.
       const s = shape(mask), turn = print % 2 ? -1 : 1;
@@ -335,7 +413,7 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.butterflies', name: 'Butterflies', colors: ['#FFF5D6', '#FF9F43', '#8A4DFF'], still: 0,
+    id: 'aura.butterflies', name: 'Butterflies', colors: ['#FFF5D6', '#FF9F43', '#8A4DFF'], still: 3720,
     cells: (mask, t, print) => {
       // Two butterflies flutter in loops by his shoulders, wings opening and closing.
       const s = shape(mask), out: AuraCell[] = [];
@@ -351,11 +429,13 @@ export const AURAS: Aura[] = [
           for (const d of [-1, 1]) out.push([x + d, y - 1, 1], [x + d, y - 2, 1], [x + d, y, 2]);
         }
       }
-      return out;
+      // A third rests by the head, slowly opening and closing its wings.
+      const open = Math.floor(t / steps(600, 2)) % 2 === 0;
+      return [...out, ...anchor(mask, t, print, open ? [['11.11', '21012', '.2.2.'], ['1.1', '101', '1.1', '2.2']] : [['.111.', '.101.', '.2.2.'], ['1.1', '101', '.1.', '2.2']])];
     },
   },
   {
-    id: 'aura.aurora', name: 'Aurora', colors: ['#F2FFF8', '#46F0B4', '#2BB59A', '#8A6BFF'], still: 700,
+    id: 'aura.aurora', name: 'Aurora', colors: ['#F2FFF8', '#46F0B4', '#2BB59A', '#8A6BFF'], still: 2380,
     cells: (mask, t, print) => {
       // A curtain of northern light across the sky behind him: violet high up,
       // green at its wavy hem, brighter and dimmer rays drifting along it, a
@@ -381,12 +461,14 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.datarain', name: 'Data rain', colors: ['#E6FFE9', '#3CFF6B', '#159A3C'], still: 500,
+    id: 'aura.datarain', name: 'Data rain', colors: ['#E6FFE9', '#3CFF6B', '#159A3C'], still: 5740,
     cells: (mask, t, print) => {
       // Green code pours down behind him in nearly every column, each at its
       // own speed, long trails under a white glyph at the head that flickers.
+      // It runs on past the frame's edges, into the three columns either side a
+      // padded picture keeps for an aura, so a guy who fills the frame still has rain.
       const s = shape(mask), out: AuraCell[] = [];
-      for (let x = 0; x < s.w; x++) {
+      for (let x = -3; x < s.w + 3; x++) {
         if (noise(x, print, 11) < 0.15) continue;
         const speed = 40 + Math.floor(noise(x, print, 12) * 50), len = 6 + Math.floor(noise(x, print, 13) * 4);
         const head = wrap(Math.floor((t + noise(x, print) * 3000) / steps(speed, s.h + len + 2)), s.h + len + 2) - 1;
@@ -399,7 +481,7 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.vortex', name: 'Vortex', colors: ['#FFFFFF', '#5FD3FF', '#3A3FD9'], still: 300,
+    id: 'aura.vortex', name: 'Vortex', colors: ['#FFFFFF', '#5FD3FF', '#3A3FD9'], still: 1790,
     cells: (mask, t, print) => {
       // Three spiral arms wheel round him, tightest close in.
       const s = shape(mask), turn = print % 2 ? -1 : 1, out: AuraCell[] = [];
@@ -412,7 +494,7 @@ export const AURAS: Aura[] = [
     },
   },
   {
-    id: 'aura.fireworks', name: 'Fireworks', colors: ['#FFFFFF', '#FF5C8A', '#FFD45C'], still: 650,
+    id: 'aura.fireworks', name: 'Fireworks', colors: ['#FFFFFF', '#FF5C8A', '#FFD45C'], still: 4260,
     cells: (mask, t, print) => {
       // Rockets climb the top corners and burst into stars that open out and fade.
       const s = shape(mask), out: AuraCell[] = [];
@@ -420,7 +502,7 @@ export const AURAS: Aura[] = [
         const cycle = fit(1500), local = wrap(t + i * 750 + print * 37, cycle), shot = tick(t + i * 750 + print * 37, 1500);
         const cx = i ? s.w - 3 - Math.floor(noise(shot, i) * 2) : 2 + Math.floor(noise(shot, i) * 2), cy = 2 + Math.floor(noise(shot, i, 2) * 3), p = local / cycle;
         if (p < 0.2) { const y = Math.round(cy + (1 - p / 0.2) * 6); out.push([cx, y, 0], [cx, y + 1, 2]); continue; }
-        if (p > 0.85) continue;
+        if (p > 0.92) continue;
         const r = Math.min(3, 1 + Math.floor((p - 0.2) / 0.14)), k = p < 0.45 ? 0 : p < 0.65 ? 1 : 2;
         out.push([cx, cy, k]);
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
@@ -428,7 +510,9 @@ export const AURAS: Aura[] = [
           out.push([cx + dx * reach, cy + dy * reach, k], ...(r > 1 && k < 2 ? [[cx + dx * (reach - 1), cy + dy * (reach - 1), 2] as AuraCell] : []));
         }
       }
-      return out;
+      // A spark from the last burst glows on by the head between them.
+      const lit = Math.floor(t / steps(300, 2)) % 2 === 0;
+      return [...out, ...anchor(mask, t, print, [lit ? ['2.2', '.1.', '101', '.1.', '2.2'] : ['.2.', '212', '.0.', '212', '.2.']])];
     },
   },
   {
@@ -571,6 +655,8 @@ const RAMPS: Record<string, string[]> = {
   ruby: ['#FFE3EA', '#FF5279', '#CF1F48'],
   pearl: ['#F6F0FF', '#CDBEFF', '#9A86E0'],
 };
+/** Black pearl, as its card is dressed: its nacre's pale sheen, then the teal and rose its highlights catch. */
+const PEARL = ['#A995E8', '#46B5A6', '#C863A0'];
 const FADE = ['#FFE07A', '#FF6FB5', '#7C5CFF'];
 
 /**
@@ -623,9 +709,15 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
   }
   const ramp = RAMPS[finish];
   if (!ramp) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-  // Black pearl is nacre: pale lilac leaning to rose and to sea-green along the
-  // aura and back, slowly, brighter where the light runs. Never the whole rainbow.
-  if (finish === 'pearl') return hsl(wrap(275 + 55 * Math.sin((x + y) * 0.35 + t / wave(520)), 360), 0.5, sweep ? 0.93 : [0.86, 0.76, 0.66][Math.min(2, k % 3)]);
+  // Black pearl is nacre: the aura's pieces lit, catching teal, violet and
+  // rose in bands that drift along it, as an oil slick does, brightest where
+  // the light runs; only its deepest cells, its edges, keep the pearl's dark
+  // body. Never the whole rainbow.
+  if (finish === 'pearl') {
+    const hue = [168, 278, 328][wrap(Math.floor((x + y * 0.7) / 3 + t / steps(420, 3)), 3)];
+    if (sweep) return hsl(hue, 0.5, 0.9);
+    return [hsl(hue, 0.55, 0.84), hsl(hue, 0.5, 0.66), hsl(hue, 0.3, 0.34)][Math.min(2, k)];
+  }
   if (sweep && (finish === 'sapphire' || finish === 'ruby')) return ramp[0];
   return ramp[Math.min(2, k % 3)];
 }
@@ -636,6 +728,8 @@ export function auraColor(id: string, k: number, finish: string, x: number, y: n
  * dressed in it.
  */
 export function auraHue(id: string, finish: string, print = 0): string {
+  // Black pearl is known by its nacre's sheen, not the colours its highlights catch.
+  if (finish === 'pearl' && id !== 'aura.neon' && !ONE_OF_ONE_AURAS.some(a => a.id === id)) return PEARL[0];
   const colors = auraColors(id, finish, print);
   const vivid = (hex: string) => {
     const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -650,5 +744,5 @@ export function auraColors(id: string, finish: string, print = 0): string[] {
   const aura = auraById(id);
   return id === 'aura.neon' ? [neonRamp(finish, print)[0], NEON_TUBES[finish]?.[print % NEON_TUBES[finish].length] ?? '#FF3FA4']
     : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors
-      : finish === 'fade' ? FADE : finish === 'pearl' ? ['#B9A2FF'] : RAMPS[finish] ?? aura?.colors ?? ['#19D3C5'];
+      : finish === 'fade' ? FADE : finish === 'pearl' ? PEARL : RAMPS[finish] ?? aura?.colors ?? ['#19D3C5'];
 }

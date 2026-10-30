@@ -85,6 +85,14 @@ const COLOURWAYS: Colourway[] = [
 /** Hand-set token colours by colourway name, applied over the derived ones. */
 const TONES = new Map(COLOURWAYS.filter(w => w.tones).map(w => [w.name, w.tones!]));
 
+/** The night colourways: deep bodies that a pastel tone softens but keeps deep. */
+export const NIGHT_COLOURWAYS: ReadonlySet<string> = new Set(['Charcoal', 'Cobalt', 'Midnight', 'Oxblood', 'Forest', 'Grape Soda']);
+/**
+ * The chase colourways: each is a material painted cell by cell (`chaseSkin` in ./paint), in fixed
+ * colours, so a tone never washes one out and it looks the same on every guy who has it.
+ */
+export const CHASE_COLOURWAYS: ReadonlySet<string> = new Set(COLOURWAYS.filter(w => w.tones).map(w => w.name));
+
 // ---------------------------------------------------------------- colour math
 
 type HSL = [number, number, number];
@@ -148,6 +156,25 @@ function luminance(hex: string): number {
 export function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
+}
+
+function toLab(hex: string): [number, number, number] {
+  const lin = hexToRgb(hex).map(v => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  const [x, y, z] = [
+    (0.4124 * lin[0] + 0.3576 * lin[1] + 0.1805 * lin[2]) / 0.95047,
+    0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2],
+    (0.0193 * lin[0] + 0.1192 * lin[1] + 0.9505 * lin[2]) / 1.08883,
+  ].map(v => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116));
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+/**
+ * How far apart two colours look (CIE76 in Lab): under about 20 a part in one
+ * melts into a body in the other, however different their brightness.
+ */
+export function deltaE(a: string, b: string): number {
+  const p = toLab(a), q = toLab(b);
+  return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
 }
 
 /**
@@ -237,39 +264,35 @@ export const SHADE_COUNT = 3;
  * adds saturation — saturating an already-bright lime turns it acid. Either way
  * the outline, shading and blush are worked out again from the result, so a
  * toned palette is as coherent as the original.
+ *
+ * A night colourway's pastel lifts its body a little and keeps its
+ * saturation, so it stays a night colour: mixed towards white, oxblood went
+ * mauve and forest grey-green. A chase colourway is a material in fixed
+ * colours, so it looks as picked in every tone.
  */
 export function shadePalette(palette: Palette, shade: number): Palette {
-  if (shade === 1) return palette;
-  const tone = (hex: string) => {
-    if (shade === 0) return mix(hex, '#FFFFFF', 0.3);
+  if (shade === 1 || CHASE_COLOURWAYS.has(palette.name)) return palette;
+  const night = NIGHT_COLOURWAYS.has(palette.name);
+  const tone = (hex: string, body = false) => {
     const [h, s, l] = toHsl(hex);
+    if (shade === 0) return night && body ? fromHsl([h, s, l + 0.1]) : mix(hex, '#FFFFFF', 0.3);
     return fromHsl([h, Math.min(0.8, s + 0.04), l > 0.4 ? l - 0.08 : l]);
   };
   const c = palette.colors;
-  return derive(palette.name, tone(c[1]), tone(c[10]), c[12]);
+  return derive(palette.name, tone(c[1], true), tone(c[10]), c[12]);
 }
 
 /**
- * The Lucky variant: the same colourway turned round the colour wheel, with
- * gold trim. Derived again, so the face and outline read as well as ever.
+ * The Lucky palette: the guy's own. Lucky used to turn a colourway round the
+ * colour wheel, which hid the colourway the card names (a Lucky Opal came out
+ * plain yellow) and turned night colours neon. Now a Lucky guy keeps their
+ * colours, and Lucky shows as a stepped rim (`luckyRim` in ./paint) and a gold
+ * star. Kept so code that calls it still runs.
  */
 export function luckyPalette(palette: Palette): Palette {
-  // Lightness is pushed away from the middle, where neither dark nor cream
-  // eyes would read. A dark colour turned into the oranges and yellows comes
-  // out brown or olive, so dark ones skip on to jewel tones instead.
-  const turn = (hex: string) => {
-    const [h, s, l] = toHsl(hex);
-    let hue = (h + 150) % 360;
-    const dark = l < 0.45;
-    if (dark && hue >= 10 && hue <= 110) hue += 130;
-    // Light ones go vivid, never pastel: a Lucky guy has to look it from across a page.
-    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.max(0.7, Math.min(0.92, s + 0.25)), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.min(Math.max(l, 0.6), 0.68)]);
-  };
-  const c = palette.colors;
-  return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');
+  return palette;
 }
 
-/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
 // Gumdrop, onigiri, slime, gourd, flame and shard: heads that come to a point.
 const POINTED = [3, 4, 6, 13, 14, 20];
 // A pointed head in a brown reads as a poo emoji, so Cocoa and Caramel wear Peach and Honey there.
@@ -279,7 +302,7 @@ const NOT_BROWN: Record<number, number> = { 13: 0, 14: 20 };
 export const shownPalette = (config: Pick<AvatarConfig, 'head' | 'palette'>): number =>
   POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
 
+/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
 export function paletteOf(config: AvatarConfig): Palette {
-  const toned = shadePalette(getPalette(shownPalette(config)), config.shade);
-  return config.lucky ? luckyPalette(toned) : toned;
+  return shadePalette(getPalette(shownPalette(config)), config.shade);
 }

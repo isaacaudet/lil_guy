@@ -11,7 +11,8 @@ export function fakeCanvas(clientWidth = 300, clientHeight = 150): FakeCanvas {
   const ctx = new Proxy({} as Record<string | symbol, unknown>, {
     get(target, key) {
       if (key in target) return target[key];
-      if (key === 'measureText') return () => ({ width: 0 });
+      if (key === 'measureText') return (text: string) => ({ width: String(text).length * 8 });
+      if (key === 'createImageData') return (w: number, h: number) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) });
       return (...args: unknown[]) => { calls.push({ name: String(key), args }); };
     },
     set(target, key, value) { target[key] = value; return true; },
@@ -21,12 +22,16 @@ export function fakeCanvas(clientWidth = 300, clientHeight = 150): FakeCanvas {
 
 let frames: ((t: number) => void)[] = [];
 
+/** Every canvas the code under test made since `installPage`, in order. */
+export const made: FakeCanvas[] = [];
+
 /** Puts the stand-ins on globalThis; call the returned function to take them off again. */
 export function installPage(): () => void {
   const g = globalThis as Record<string, unknown>;
   const before = { document: g.document, ImageData: g.ImageData, requestAnimationFrame: g.requestAnimationFrame, cancelAnimationFrame: g.cancelAnimationFrame };
   frames = [];
-  g.document = { createElement: () => fakeCanvas() };
+  made.length = 0;
+  g.document = { createElement: () => { const c = fakeCanvas(); made.push(c); return c; } };
   g.ImageData = class { constructor(public data: Uint8ClampedArray, public width: number, public height: number) {} };
   g.requestAnimationFrame = (cb: (t: number) => void) => frames.push(cb);
   g.cancelAnimationFrame = () => {};
