@@ -1059,6 +1059,9 @@
     .result.withinfo .won-cap { display: none; }
     .mcard .body { padding: 10px; gap: 8px; } .mcard h3 { font-size: 24px; } .mcard .play { width: 34px; height: 34px; }
   }
+  /* In a game's club sheet (?embed): the claim alone. */
+  html[data-embed] #nav, html[data-embed] #page-h, html[data-embed] .recent, html[data-embed] .hand-h, html[data-embed] #hand, html[data-embed] main,
+  html[data-embed] #wallet-pill, html[data-embed] #devpill, html[data-embed] #go-free, html[data-embed] #free-why, html[data-embed] footer { display: none !important; }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -2094,6 +2097,12 @@ onmessage = e => {
   // club's sign-in comes from the game's page and its session is kept for the visit and sent as a header.
   const EMBED = window.parent !== window && new URLSearchParams(location.search).has('embed');
   const EMBED_SESSION = 'lilguys-embed-session';
+  // For now a game's sheet only gets a player their first guy: the claim, and nothing past it.
+  if (EMBED) {
+    document.documentElement.dataset.embed = '';
+    document.querySelector('#band .hero h1').textContent = 'Claim your lil guy.';
+    $('sub').hidden = true;
+  }
   function apiFetch(url, init = {}) {
     let session = null;
     if (EMBED) { try { session = sessionStorage.getItem(EMBED_SESSION); } catch (e) {} }
@@ -4540,7 +4549,7 @@ onmessage = e => {
     if (r === 'market') r = 'pulls'; // old links
     // #/edit/wear opens your guy's editor on that tab, once the page knows who you are.
     if (r === 'edit' && restored) { history.replaceState(null, '', location.pathname + location.search + '#/'); if (state) setTimeout(() => openEditor(['look', 'wear', 'card'].includes(arg) ? arg : 'look'), 0); }
-    const view = PAGES[r] ? r : 'home';
+    const view = PAGES[r] && !EMBED ? r : 'home';
     document.body.dataset.route = view;
     for (const v of ['home', 'guys', 'u', 'pulls', 'rarity']) $('v-' + v).hidden = v !== view;
     $('nav').querySelectorAll('a').forEach(a => a.toggleAttribute('aria-current', a.dataset.r === view && (view !== 'u' || arg === 'me' || arg === state?.key)));
