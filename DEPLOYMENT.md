@@ -102,6 +102,9 @@ Every copy is rolled and stored by the Worker, so what the Pulls page shows is w
 capsules really gave. Apply `migrations/0002_collections.sql` (the deploy commands
 above apply every pending migration) before deploying a Worker that reads it.
 
+- A claim deals three guys (`choices` in the answer, a keyed hash of the name and the moment, so
+  nothing new is stored) and holds the first; `POST /api/me/<key>/pick {seed}` keeps another of the
+  three, within the hour and before any capsule. The founder's is picked by hand.
 - A claim (`POST /api/names/<key> {game?}`) creates the player record and one starter,
   worn: the free item of the game they came from, else today's machine. Each machine
   gives its own free item with the first capsule opened from it (`starter` in the open

@@ -723,6 +723,11 @@
   .founder-bar button[aria-pressed] { height: 32px; padding: 0 12px; border-radius: 8px; background: var(--panel-2); color: var(--ink); }
   .founder-bar button[aria-pressed="true"] { background: #e4ae39; color: #1b1428; }
   .founder-bar select { margin-left: 6px; height: 32px; border-radius: 8px; border: 0; background: var(--panel-2); color: var(--ink); font: inherit; padding: 0 8px; }
+  .pick3 { display: grid; justify-items: center; gap: 18px; width: min(100%, 760px); }
+  .pick3-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; }
+  .pick3-row > div { display: grid; justify-items: center; gap: 10px; }
+  .pick3-row .card { width: min(100%, 180px); }
+  @media (max-width: 560px) { .pick3-row { gap: 8px; } }
   .ed-rare { display: grid; gap: 6px; width: 100%; max-width: 260px; font-size: 16px; color: var(--ink-2); }
   .ed-rare div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--panel); }
   .ed-rare b { color: var(--ink); font-weight: 400; }
@@ -1123,7 +1128,7 @@
         <div id="claim-mine" hidden>
           <div class="mine">
             <div id="me-card"></div>
-            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span><p id="me-odds"></p></div>
+            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span></div>
           </div>
           <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button><a class="btn" id="go-back" hidden></a></div>
           <p class="free-why" id="free-why" hidden></p>
@@ -1166,7 +1171,7 @@
       <div class="pp-spend">
         <div class="pp-bal"><svg aria-hidden="true"><use href="#stamp"/></svg><b id="pp-n">0</b><span id="pp-word">stamps</span></div>
         <button class="btn cream" type="button" id="mystery">Mystery capsule <span class="cost">5 <svg class="tk" aria-label="stamps"><use href="#stamp"/></svg></span></button>
-        <p>An item from any machine at random. Or pick a machine below for 8.</p>
+        <p>An item from any machine.</p>
         <p class="pp-short" id="pp-short" role="status" hidden></p>
         <p class="pp-earn" id="pp-earn"></p>
         <button class="linkish" type="button" id="earn" hidden></button>
@@ -1176,7 +1181,7 @@
 
   <section id="roll">
     <div class="sec-h">
-      <div><h2>Capsule machines</h2><p>One for each game: skins, hats, a frame and a buddy. Pick one for 8 stamps. Finish the day's games for a free one.</p></div>
+      <div><h2>Capsule machines</h2><p>Pick a machine for 8 stamps. Today's is free after a club game.</p></div>
       <div class="odds-line" id="odds"></div>
     </div>
     <div class="founder-bar" id="founder-bar" hidden>
@@ -1328,6 +1333,7 @@
   <div class="stage2" id="stage">
     <div class="gacha" id="gacha" hidden aria-hidden="true"><span class="spot"></span><span class="floor" id="g-floor"></span><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><canvas class="coin" id="coin" width="12" height="12" hidden></canvas><div class="cap2" id="cap2" hidden><span class="leak" id="leak"></span><canvas id="cap-bot" width="64" height="64"></canvas><canvas id="cap-top" width="64" height="64"></canvas></div></div>
     <div class="reelwrap" id="reelwrap" hidden><div class="reel" id="reel"><div class="track" id="track"></div></div></div>
+    <div class="pick3" id="pick3" hidden><p class="shout">Keep one</p><div class="pick3-row" id="pick3-row"></div></div>
     <div class="result" id="result" hidden>
       <span class="rays" id="rays"><i></i><i class="tear"></i></span>
       <p class="shout" id="shout"></p>
@@ -1750,9 +1756,11 @@
   const cameFrom = () => { let g = null; try { g = sessionStorage.getItem('lil-guys-came'); } catch (e) {} g = g || new URLSearchParams(location.search).get('from') || new URLSearchParams(location.search).get('utm_source'); return LG.GAMES.includes(g) && g !== 'pets' ? g : null; };
   async function claim(key) {
     let seed = RESERVED[key] ? LG.FOUNDER_SEED : LG.makeSeed(), ownerToken = null;
+    // Three guys to choose from; the demo deals its own.
+    let choices = RESERVED[key] ? null : [seed, LG.makeSeed(), LG.makeSeed()];
     if (!backendReady) return;
     if (isLive()) {
-      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
+      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; choices = claimed.choices || null; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
       catch (e) { setAvail('no', e.message); SFX.bad(); return; }
     }
     if (db) {
@@ -1770,7 +1778,7 @@
         return;
       }
     }
-    state = { v: 2, key, seed, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
+    state = { v: 2, key, seed, choices, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     // One starter, from the game they came from; each machine gives its own with the first capsule from it.
     const first = LG.encode(LG.starter(seed, cameFrom() || todayGame));
     state.copies.push(first);
@@ -1844,7 +1852,6 @@
       <span class="foot"><span class="ti" style="color:${tier.c}">${icon}${tier.name}</span><span>1 in ${fmt(n)}</span></span></div>`;
   };
   // What a number like 1 in 40 billion means: against everyone alive, and against every guy dealt.
-  const EARTH = 8.1e9;
   // A deal of 4,000 guys, how rare each is (log10, sorted): dealt beside the page once and kept for the art version,
   // since dealing them here held the page for a second. Each caller draws its words or chart when it lands.
   let DIST = null, distWaits = null;
@@ -1857,11 +1864,7 @@
     host.dataset.n = n;
     // The founder isn't ranked by his traits' odds: he was picked by hand, the one of one.
     if (founder) { host.innerHTML = '<p>Picked by hand for the founder: <b>the one of one</b>.</p>'; return; }
-    const people = EARTH / n;
-    const line = people >= 1.5 ? `Out of 8 billion guys, about <b>${words(Math.round(people))}</b> would look like yours.`
-      : people >= 0.67 ? `Out of 8 billion guys, <b>yours would be the only one</b>.`
-      : `Out of 8 billion guys, <b>none</b> would look like yours.`;
-    host.innerHTML = `<p>${line}</p><p>Rarer than <b>…</b> of guys dealt.</p>`;
+    host.innerHTML = `<p>Rarer than <b>…</b> of guys dealt.</p>`;
     withDist(d => {
       if (host.dataset.n !== String(n)) return;
       // His rank's own share (`guyRank`, as his card says) when given, else where he falls among guys dealt.
@@ -2361,7 +2364,6 @@
     // The same card as Your guy's and the locker's, so his card looks one way everywhere.
     guyStage('me-card', state.seed, wornCodes(), cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     const n = LG.guyOneIn(dealt(state.seed));
-    $('me-odds').textContent = founderOf(state.seed) ? 'Picked by hand for the founder. The one of one.' : guyRank(guyConfig(state.seed)).top > 0.5 ? 'Dealt just for you.' : `Dealt just for you: the ${guyRank(guyConfig(state.seed)).label.toLowerCase()} of every guy dealt.`;
     $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${guyConfig(state.seed).founder ? 'Founder · one of one' : 'One of a kind'}</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
     $('sub').textContent = `@${state.key} is yours. Nobody else has this guy.`;
     const why = state.free === today ? '' : freeWhy();
@@ -3176,6 +3178,20 @@
       await new Promise(r => { closeHook = r; });
       $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     }
+    if (state.choices?.length === 3) {
+      // The card roll three times, then all three side by side to keep one.
+      for (let i = 0; i < 3; i++) {
+        const seed = state.choices[i], cfg = guyConfig(seed), rank = guyRank(cfg);
+        $('rv-keep').textContent = i < 2 ? 'Next roll' : 'Choose';
+        $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
+        await unveil(Math.min(4, rank.tier), `<div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div>`,
+          `Roll ${i + 1} of 3`, '', '', true);
+        $('rv-keep').focus();
+        await new Promise(r => { closeHook = r; });
+      }
+      await keepOne();
+      return;
+    }
     $('rv-keep').textContent = 'Meet your guy';
     const n = LG.guyOneIn(dealt(state.seed));
     await unveil(4, `<div class="card">${libHtml(cardInput(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier)), { sway: true, now: true })}</div>`,
@@ -3184,6 +3200,23 @@
     await new Promise(r => { closeHook = r; });
   }
   let closeHook = null;
+  /** The three a claim dealt, side by side: the one picked becomes his guy (on the server first when live). */
+  async function keepOne() {
+    $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = true; $('result').hidden = true;
+    $('pick3').hidden = false;
+    $('pick3-row').innerHTML = state.choices.map((seed, i) => { const cfg = guyConfig(seed), rank = guyRank(cfg);
+      return `<div><div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div><button class="btn cream" type="button" data-keep="${i}">Keep</button></div>`; }).join('');
+    hydrate($('pick3-row')); mountLib($('pick3-row'));
+    const seed = await new Promise(r => $('pick3-row').onclick = e => { const b = e.target.closest('[data-keep]'); if (b) r(state.choices[+b.dataset.keep]); });
+    let kept = seed;
+    if (isLive() && seed !== state.seed) {
+      try { await meApi('pick', { seed }); } catch (e) { toast(e.message); kept = state.seed; }
+    }
+    state.seed = kept; delete state.choices; save();
+    $('pick3').hidden = true; $('reveal').hidden = true;
+    renderAll();
+    setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120);
+  }
   function closeReveal() {
     if ($('rv-actions').hidden) return;
     $('reveal').hidden = true;
@@ -3273,14 +3306,6 @@
     // His card as it stands, so what you put on shows where it counts.
     guyStage('lk-stage', state.seed, worn, cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     // What the locker is for: the guy is dealt from the name and stays; the items are what changes, and the two together are what everyone sees.
-    const nWorn = worn.length;
-    $('lk-eq').hidden = false;
-    $('lk-eq').innerHTML = `<div class="eq"><canvas id="eq-guy" width="16" height="16" aria-hidden="true"></canvas><span><b>Your guy</b><small>Dealt once from @${esc(state.key)}. Nobody else has one.</small></span></div>`
-      + '<i class="eq-op" aria-hidden="true">+</i>'
-      + `<div class="eq"><span class="eq-slots">${['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => `<span class="${state.worn[sl] ? 'on' : ''}" style="--cat:${catOf(sl).c}" title="${catOf(sl).one}">${icon(sl)}</span>`).join('')}</span><span><b>Your items</b><small>From capsules. One per slot, ${nWorn} on now. Swap any time.</small></span></div>`
-      + '<i class="eq-op" aria-hidden="true">=</i>'
-      + `<div class="eq"><canvas id="eq-dressed" width="16" height="16" aria-hidden="true"></canvas><span><b>What everyone sees</b><small>On boards and results in every DLE game.</small></span></div>`;
-    paintInto($('eq-guy'), state.seed, []); paintInto($('eq-dressed'), state.seed, worn);
     $('lk-slots').innerHTML = ['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => {
       const k = catOf(sl), code = state.worn[sl], o = code && LG.decode(code), name = o ? LG.nameOf(o).split(' | ')[0] : '';
       const have = list.filter(c => LG.slotOf(c.o) === sl).length;
@@ -3395,9 +3420,9 @@
     const m = LG.metalCoins(metalOf());
     $('metal').innerHTML = `<span class="ingot ref" title="Refined">${m.refined}</span><span class="ingot rec" title="Reclaimed">${m.reclaimed}</span><span class="ingot scrap" title="Scrap">${m.scrap}</span><b>${LG.metalText(metalOf())}</b>`;
     const sp = spares(), worth = sp.reduce((a, c) => a + LG.smeltValue(c.o), 0);
-    $('ws-smelt').innerHTML = `<h3>Smelt</h3><p>Everyday copies give a scrap, Special two, Prized four, Mythic a refined. Starters, showpieces, Grails and auras never melt.</p>`
+    $('ws-smelt').innerHTML = `<h3>Smelt</h3><p>Everyday gives a scrap, Special two, Prized four, Mythic a refined.</p>`
       + `<button class="btn" type="button" id="ws-spares"${sp.length ? '' : ' disabled'}>${sp.length ? `Smelt ${sp.length} spare${sp.length === 1 ? '' : 's'} · +${worth} scrap` : 'No spares to smelt'}</button>`
-      + `<small>Spares: every copy past your best of each item, Special or below, not worn or tagged. Any other copy smelts from its details.</small>`;
+      + `<small>Spares: copies past your best of each, Special or below, not worn or tagged.</small>`;
     const games = LG.GAMES;
     wsGame = wsGame || todayGame;
     $('ws-games').innerHTML = games.map(g => `<button type="button" data-ws-g="${g}" aria-pressed="${g === wsGame}">${cap(g)}</button>`).join('');

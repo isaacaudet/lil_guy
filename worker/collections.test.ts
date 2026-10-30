@@ -553,3 +553,21 @@ test('the founder can roll at fair odds, and open any season’s capsule out of 
     expect((await call('/me/bo/season', 'POST', { item: 'club.snowcap' }, auth(b.owner))).status).toBe(409);
   } finally { setSystemTime(); }
 });
+
+test('a claim deals three guys; the player keeps one of them, while the name is new', async () => {
+  const c: any = await (await call('/names/mia', 'POST')).json();
+  expect(c.choices).toHaveLength(3);
+  expect(new Set(c.choices).size).toBe(3);
+  expect(c.seed).toBe(c.choices[0]);
+  const pick = (seed: string) => call('/me/mia/pick', 'POST', { seed }, auth(c.owner));
+  expect((await pick('4-notmine000000')).status).toBe(400);
+  expect((await pick(c.choices[2])).status).toBe(200);
+  expect(((await (await call('/guys/mia')).json()) as any).seed).toBe(c.choices[2]);
+  // Changing their mind among the three is fine until a capsule is opened.
+  expect((await pick(c.choices[1])).status).toBe(200);
+  env.db.exec("UPDATE players SET opened = 1 WHERE key = 'mia'");
+  expect((await pick(c.choices[0])).status).toBe(409);
+  // The founder's is picked by hand.
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  expect(f.choices).toBeNull();
+});
