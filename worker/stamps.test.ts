@@ -227,6 +227,16 @@ test('today’s gauntlet cleared opens one free capsule, and its extras a second
   expect((await stamps('mia', c.owner)).gold).toBe(2);
 });
 
+test('four taps at once on two earned capsules open two, and a reload says both are open', async () => {
+  const { c } = await linked('mia', [{ day: utcToday(), games: 8, score: 600, played: [...CORE, 'slicies', 'flipsies', 'tiltsies'], cleared: true, extras: true }]);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  const taps = await Promise.all([0, 1, 2, 3].map(() => call('/me/mia/open', 'POST', { game: s.todayGame, free: true }, auth(c.owner))));
+  expect(taps.filter(r => r.status === 201)).toHaveLength(2);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'mia' AND source = 'daily'").get().n).toBe(2);
+  const again: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(again.freeCapsule).toEqual({ open: false, why: '', earned: 2, used: 2 });
+});
+
 test('a club game today without the gauntlet cleared opens nothing', async () => {
   const { c } = await linked('mia', [{ day: utcToday(), games: 1, score: 80, played: ['puttsies'], cleared: false }]);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
