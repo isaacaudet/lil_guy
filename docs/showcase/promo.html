@@ -2090,11 +2090,20 @@ onmessage = e => {
   // a saved copy) is the demo, and keeps the collection in this browser.
   let apiUp = false;
   const isLive = () => !db && apiUp;
-  async function getJSON(path) { const r = await fetch('/api' + path); const d = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(d.error || 'Unavailable'), { status: r.status }); return d; }
+  // Opened in a game's DLE Club sheet (?embed, in a frame): this site's cookies don't stick there, so the
+  // club's sign-in comes from the game's page and its session is kept for the visit and sent as a header.
+  const EMBED = window.parent !== window && new URLSearchParams(location.search).has('embed');
+  const EMBED_SESSION = 'lilguys-embed-session';
+  function apiFetch(url, init = {}) {
+    let session = null;
+    if (EMBED) { try { session = sessionStorage.getItem(EMBED_SESSION); } catch (e) {} }
+    return fetch(url, session ? { ...init, headers: { ...init.headers, 'X-Lilguys-Session': session } } : init);
+  }
+  async function getJSON(path) { const r = await apiFetch('/api' + path); const d = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(d.error || 'Unavailable'), { status: r.status }); return d; }
   async function meApi(action, body) {
     const init = { headers: state.ownerToken ? { Authorization: 'Bearer ' + state.ownerToken } : {} };
     if (body !== undefined) Object.assign(init, { method: 'POST', headers: { ...init.headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const r = await fetch(`/api/me/${state.key}/${action}`, init);
+    const r = await apiFetch(`/api/me/${state.key}/${action}`, init);
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw Object.assign(new Error(d.error || 'Something went wrong'), { status: r.status, need: d.need, stamps: d.stamps, freeCapsule: d.freeCapsule });
     return d;
@@ -2109,7 +2118,7 @@ onmessage = e => {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   async function namesApi(path, options) {
-    const response = await fetch(`/api/names${path}`, options);
+    const response = await apiFetch(`/api/names${path}`, options);
     const data = await response.json();
     if (!response.ok) throw Object.assign(new Error(data.error || 'Names unavailable'), { status: response.status });
     return data;
@@ -2141,7 +2150,7 @@ onmessage = e => {
   /* ---------------------------------------------- Google accounts on the live site only */
   let googleLoading = null, restoreSaved = false;
   async function accountApi(action, body = {}) {
-    const r = await fetch('/api/auth/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await apiFetch('/api/auth/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json();
     if (!r.ok) throw Object.assign(new Error(d.error || 'Could not sign in'), d, { status: r.status });
     return d;
@@ -2157,6 +2166,21 @@ onmessage = e => {
   // Signing out here stops it until the next sign-in.
   const CLUB = 'https://dleclub.com', CLUB_OFF = 'lilguys-club-off';
   const clubHost = () => location.hostname === 'lilguys.dleclub.com';
+  // In a game's frame the game's own page holds the club sign-in (club.js), so it is asked instead.
+  function parentNote() {
+    return new Promise(resolve => {
+      let done = false;
+      const finish = note => { if (done) return; done = true; clearTimeout(timer); removeEventListener('message', heard); resolve(note); };
+      const timer = setTimeout(() => finish(null), 10000);
+      let nonce = null;
+      function heard(e) {
+        if (e.source !== window.parent || e.data?.type !== 'dleclub-sso') return;
+        finish(typeof e.data.note === 'string' ? { note: e.data.note, nonce } : null);
+      }
+      addEventListener('message', heard);
+      accountApi('start').then(s => { nonce = s.nonce; window.parent.postMessage({ type: 'lilguys-sso', nonce }, '*'); }, () => finish(null));
+    });
+  }
   function clubNote() {
     return new Promise(resolve => {
       const frame = document.createElement('iframe');
@@ -2178,10 +2202,15 @@ onmessage = e => {
   }
   async function clubSignIn() {
     try { if (localStorage.getItem(CLUB_OFF)) return; } catch {}
-    const note = await clubNote();
+    const framed = EMBED ? await parentNote() : null;
+    const note = EMBED ? framed?.note : await clubNote();
     if (!note || signedIn) return;
     const guest = state?.ownerToken ? { key: state.key, ownerToken: state.ownerToken } : {};
-    try { await signedInAs(await accountApi('club', { note, ...guest })); }
+    try {
+      const result = await accountApi('club', EMBED ? { note, nonce: framed.nonce, embed: true, ...guest } : { note, ...guest });
+      if (result.session) { try { sessionStorage.setItem(EMBED_SESSION, result.session); } catch (e) {} }
+      await signedInAs(result);
+    }
     catch (e) { /* the Google button still works; a name kept by another account stays as it is */ }
   }
   function renderAccount() {
@@ -2238,7 +2267,7 @@ onmessage = e => {
   $('account-restore').addEventListener('click', () => { restoreSaved = true; startGoogle(); });
   $('account-out').addEventListener('click', async () => {
     try {
-      await accountApi('logout'); signedIn = false; accountKey = null; state = state?.ownerToken ? state : null;
+      await accountApi('logout'); try { sessionStorage.removeItem(EMBED_SESSION); } catch (e) {} signedIn = false; accountKey = null; state = state?.ownerToken ? state : null;
       if (clubHost()) { try { localStorage.setItem(CLUB_OFF, '1'); } catch {} }
       try { const previous = JSON.parse(localStorage.getItem(KEY + '-unlinked') || 'null'); if (previous?.ownerToken) state = previous; localStorage.removeItem(KEY + '-unlinked'); } catch {}
       window.google?.accounts?.id?.disableAutoSelect(); save(); renderAll(); route();
@@ -2908,7 +2937,7 @@ onmessage = e => {
   function renderBack() {
     let from = null;
     try { from = BACK_TO[sessionStorage.getItem('lil-guys-from')] || null; } catch (e) {}
-    $('go-back').hidden = !(from && state);
+    $('go-back').hidden = EMBED || !(from && state);
     if (from) { $('go-back').textContent = from[0]; $('go-back').href = from[1]; }
   }
   function renderClaim() {
