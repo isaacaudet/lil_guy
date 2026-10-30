@@ -8,6 +8,9 @@
  * and 2 he is his colours: hat or head over body. Every sprite sits at the
  * bottom-centre of a square cell, so a crowd draws from a sheet of them with no
  * offsets. Built from his token grid, so it needs no canvas and runs anywhere.
+ *
+ * What he wears is painted in its finish first (Gold reads gold, Prism prism) and the shrink keeps
+ * those colours; an aura he wears outlines him in its own colours.
  */
 import { resolve } from './resolve';
 import { dress, withItems } from './items';
@@ -16,6 +19,8 @@ import { paletteOf } from './palette';
 import { T } from './parts/art';
 import type { GuySpec } from './guy-code';
 import { GRADES, gradeOf } from './owned';
+import { paint } from './paint';
+import { auraById } from './auras';
 
 /** The sizes a crowd sprite comes in, in pixels square. */
 export const CROWD_SIZES = [16, 10, 8, 6, 4, 2] as const;
@@ -61,19 +66,23 @@ export function crowdSprite(spec: GuySpec, size: CrowdSize, options: { shine?: b
   const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
   const grid = compose({ ...config, frame: undefined, aura: undefined, buddy: undefined }) as number[][];
   const base = spec.palette !== undefined ? paletteOf({ ...config, palette: spec.palette }) : paletteOf(config);
-  const colors = withItems(base, config).colors as Record<number, string>;
-  const drawn = size === 16 ? grid.map(row => row.map(t => (t ? colors[t] ?? null : null))) : shrink(grid, colors, MAKE[size]);
+  const palette = withItems(base, config), colors = palette.colors as Record<number, string>;
+  // Every cell in its finish, as his still paints it.
+  const painted = paint(grid, { ...config, aura: undefined }, palette, false, true);
+  const drawn = size === 16 ? painted.map(row => [...row]) : shrink(grid, colors, MAKE[size], painted);
   // Empty rows above and below him go, so he stands on the cell's floor.
   const lit = drawn.map(row => row.some(Boolean)), first = lit.indexOf(true), last = lit.lastIndexOf(true);
   const cells = first < 0 ? [] : drawn.slice(first, last + 1);
   const shine = options.shine === false ? null : crowdShine(spec);
   if (shine && cells.length) {
-    const ink = colors[T.OUTLINE];
+    const ink = colors[T.OUTLINE], aura = auraById(config.aura);
+    // An aura's own colours round him, by turns; otherwise his grade's.
+    const edge = (i: number, j: number) => (aura ? aura.colors[(i + j) % aura.colors.length] : shine.color);
     if (size === 16 || size >= 6) {
-      for (const row of cells) for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = shine.color;
+      cells.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = edge(i, j); });
     } else {
       const top = cells[0], mid = top.findIndex(Boolean) + Math.floor(top.filter(Boolean).length / 2);
-      top[Math.max(0, mid)] = shine.color;
+      top[Math.max(0, mid)] = aura ? aura.colors[0] : shine.color;
     }
   }
   const rgba = new Uint8ClampedArray(size * size * 4);
@@ -107,7 +116,7 @@ function isEdge(cells: (string | null)[][], row: (string | null)[], i: number): 
   return SIDES.some(([dx, dy]) => !cells[j + dy]?.[i + dx]);
 }
 
-function shrink(grid: number[][], colors: Record<number, string>, make: (typeof MAKE)[keyof typeof MAKE]): (string | null)[][] {
+function shrink(grid: number[][], colors: Record<number, string>, make: (typeof MAKE)[keyof typeof MAKE], painted: (string | null)[][]): (string | null)[][] {
   const S = grid.length, ink = colors[T.OUTLINE];
   const isOutline = (t: number) => t === T.OUTLINE || (colors[t] !== undefined && colors[t] === ink);
   let x0 = S, x1 = -1, y0 = S, y1 = -1;
@@ -131,7 +140,7 @@ function shrink(grid: number[][], colors: Record<number, string>, make: (typeof 
       const t = grid[y]?.[x];
       if (a <= 0 || !t || isOutline(t)) continue;
       cover += a;
-      const c = colors[t];
+      const c = painted[y]?.[x] ?? colors[t];
       if (!FACE.has(t) && c) weight.set(c, (weight.get(c) ?? 0) + a);
     }
     if (cover < k * k * 0.45) continue;

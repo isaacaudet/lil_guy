@@ -1653,7 +1653,7 @@ interface PartDrop {
 }
 /**
  * The rare parts in a slot, the ones a picker locks: what a capsule can
- * unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+ * unlock. The parts no deal gives (`CAPSULE_ONLY`, the capsule-only set) are among them.
  */
 declare function rareParts(slot: LookSlot): number[];
 /**
@@ -2774,6 +2774,83 @@ declare const isEmote: (id: string) => boolean;
 declare function emoteFrames(spec: GuySpec, id: string, moving?: boolean): Frames | null;
 
 //#endregion
+//#region src/stadium.d.ts
+/** A seat: where a guy stands (his cell's top-left), at what crowd size, and which row he is in (0 nearest). */
+interface StadiumSeat {
+  x: number;
+  y: number;
+  size: CrowdSize;
+  row: number;
+}
+/** The venues, smallest first: who fits, and how big the picture of it is in world pixels. */
+declare const VENUES: readonly [{
+  readonly id: "porch";
+  readonly name: "The porch";
+  readonly upTo: 20;
+}, {
+  readonly id: "bleachers";
+  readonly name: "The bleachers";
+  readonly upTo: 50;
+}, {
+  readonly id: "gym";
+  readonly name: "The gym";
+  readonly upTo: 100;
+}, {
+  readonly id: "hall";
+  readonly name: "The hall";
+  readonly upTo: 200;
+}, {
+  readonly id: "arena";
+  readonly name: "The arena";
+  readonly upTo: 1000;
+}, {
+  readonly id: "stadium";
+  readonly name: "The stadium";
+  readonly upTo: 5000;
+}, {
+  readonly id: "bowl";
+  readonly name: "The bowl";
+  readonly upTo: 12000;
+}];
+type VenueId = (typeof VENUES)[number]['id'];
+/** The venue for `count` people: the smallest that seats them all (the bowl past its size). */
+declare const venueFor: (count: number) => VenueId;
+/**
+ * The seats of venue `id`, in the order they fill: the front row first, all the way round, from the
+ * middle of the near side out, then the row behind, so a part-full venue is full at the front.
+ */
+declare function stadiumSeats(id: VenueId): StadiumSeat[];
+interface StadiumOptions {
+  /** A slow wave round the stands. */
+  wave?: boolean;
+  /** Called when the crowd moves to a bigger (or smaller) venue. */
+  onVenue?: (id: VenueId) => void;
+  /** The pixel font for a spotlit guy's name, as a CSS font. */
+  font?: string;
+}
+interface Stadium {
+  /** Seats a guy by name (lowercased, once), in his club look when given. The venue grows to fit. */
+  add(name: string, guy?: Partial<GuySpec>): void;
+  /** Takes a guy out; the venue shrinks again if it can. */
+  remove(name: string): void;
+  has(name: string): boolean;
+  /** Makes a guy hop, as when he guesses. */
+  hop(name: string): void;
+  wave(on: boolean): void;
+  /** Lifts a guy out of his seat, big, with a line under him, for `ms`. */
+  spotlight(name: string, label?: string, ms?: number): void;
+  resize(): void;
+  destroy(): void;
+  readonly count: number;
+  readonly venue: VenueId;
+}
+/**
+ * A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; when
+ * the venue changes they take their places in the new one, the old venue fading out under it.
+ */
+declare function createStadium(canvas: HTMLCanvasElement, options?: StadiumOptions): Stadium;
+
+//#endregion
 //#region src/kit.d.ts
 /**
  * The lil guys kit for a game: a player's guy anywhere from one address or one line, with nothing of
@@ -2988,5 +3065,5 @@ declare function nameKey(typed: string): string;
 declare const nameSkeleton: (key: string) => string;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, venueFor, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.cts.map

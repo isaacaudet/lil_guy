@@ -127,7 +127,7 @@ export const eyes: Eyes[] = [
     'e.e..e.e',
   ]),
   // Big eyes with a lash flicked out at the side, a shine, and a coloured iris.
-  eyes_('anime', [
+  eyes_('big eyes', [
     '.ee....ee.',
     'eew....wee',
     '.aA....Aa.',
@@ -154,7 +154,7 @@ export const eyes: Eyes[] = [
   ]),
   // The anime set: never dealt, only unlocked from a capsule (CAPSULE_ONLY in ./weights).
   // Shoujo: big glossy eyes under a dark lid, a catchlight high and another low, the iris in his accent.
-  eyes_('shoujo', [
+  eyes_('starry', [
     '.ee....ee.',
     'ewA....Awe',
     'eAw....wAe',

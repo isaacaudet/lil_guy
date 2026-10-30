@@ -79,7 +79,7 @@ export const eyeWeights = [
   1, // galaxy: chase
   2, // diamond: chase
   2, // dragon: chase
-  0, // shoujo: capsules only
+  0, // starry: capsules only
   0, // kitty: capsules only
   0, // joy: capsules only
   0, // puppy: capsules only
@@ -133,7 +133,7 @@ export const cheekWeights = [
   15, // mole
   1, // jewels: chase
   1, // rainbow: chase
-  0, // manga blush: capsules only
+  0, // big blush: capsules only
 ];
 
 export const hairWeights = [

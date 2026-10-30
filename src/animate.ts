@@ -294,7 +294,7 @@ const BEATS: Record<Move, (g: Guy) => Beat[]> = {
     const ms = 1000 + 50 * Math.floor(roll(44) * 6);
     return [b('shut', ms, { squash: 1, emote: 'zzz' }), b('shut', ms, { emote: 'zzz', rise: true }), b('shut', ms, { squash: 1, emote: 'zzz' }), b('shut', ms, { emote: 'zzz', rise: true })];
   },
-  // The anime reactions. Shy: a manga blush comes up, he looks away to one side
+  // The reactions. Shy: a manga blush comes up, he looks away to one side
   // and back, and two little hearts float up beside him. For a compliment, a gift, a friend.
   shy: ({ roll }) => {
     const away: Pose = roll(45) < 0.5 ? 'blushLeft' : 'blushRight', left = away === 'blushLeft';
@@ -420,8 +420,8 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small 
 /** An eye, its shine, the mouth or the tongue: what a sweat drop keeps off. */
 const FEATURE_TOKENS = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
 const LIVE_EYE_TOKENS: number[] = [T.EYE, T.WHITE, T.ACCENT, T.ACCENT_SHADE, T.GOLD, T.GOLD_SHADE];
-/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and shoujo eyes, which glisten. */
-const LIVE_EYES = new Map(['galaxy', 'diamond', 'dragon', 'shoujo'].map(n => [EYES.findIndex(e => e.name === n), n]));
+/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and starry eyes, which glisten. */
+const LIVE_EYES = new Map(['galaxy', 'diamond', 'dragon', 'starry'].map(n => [EYES.findIndex(e => e.name === n), n]));
 
 const hue = (h: number, s: number, l: number) => {
   const k = (n: number) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -439,7 +439,7 @@ function luckyShimmer(layer: Layer, t: number, seed: number): void {
   }));
 }
 
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, shoujo eyes glisten. */
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. */
 function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
   layer.forEach((row, y) => row.forEach((cell, x) => {
     if (!cell?.eye) return;
@@ -454,7 +454,7 @@ function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
     } else if (kind === 'dragon') {
       const flash = cycle(t + seed, 2000) * fit(2000) < 160;
       if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? '#FFF6B0' : mix(cell.c, '#FF4A1C', 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(t / wave(260))));
-    } else if (kind === 'shoujo') {
+    } else if (kind === 'starry') {
       // Every couple of seconds a soft gleam wells up through the iris and fades.
       const ms = cycle(t + seed, 2400) * fit(2400);
       if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix(cell.c, '#FFFFFF', 0.55 * Math.sin(Math.PI * ms / 360));
@@ -707,7 +707,7 @@ function poseMouth(pose: Pose, own: number): number | undefined {
 }
 
 const POSES: Pose[] = ['base', 'shut', 'left', 'right', 'wave', 'sides', 'laugh', 'laughWave', 'frown', 'ooh', 'smile', 'content', 'blep', 'blush', 'blushLeft', 'blushRight', 'huff', 'oops'];
-const MANGA_BLUSH = cheeks.findIndex(c => c.name === 'manga blush');
+const MANGA_BLUSH = cheeks.findIndex(c => c.name === 'big blush');
 
 /**
  * The guy as he is drawn into his poses: dressed, without the frame and aura

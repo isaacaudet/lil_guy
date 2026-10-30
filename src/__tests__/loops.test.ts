@@ -58,7 +58,7 @@ describe('every loop closes perfectly', () => {
 
   test('a Lucky guy and live eyes', () => {
     expectSeamless({ seed: 'looplucky', parts: { lucky: true } });
-    for (const name of ['galaxy', 'diamond', 'dragon', 'shoujo']) expectSeamless({ seed: 'loopeyes', parts: { eyes: eyes.findIndex(e => e.name === name) } }, 'look');
+    for (const name of ['galaxy', 'diamond', 'dragon', 'starry']) expectSeamless({ seed: 'loopeyes', parts: { eyes: eyes.findIndex(e => e.name === name) } }, 'look');
   });
 
   test('a baked loop is whole plays of the move whenever anything is on its own clock', () => {

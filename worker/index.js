@@ -6,7 +6,7 @@ import { heldKey, skeletonTaken } from './name-lookup.js';
 import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
 import {
   roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
-  decodeLook, resolve, makeSeed, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder,
+  decodeLook, resolve, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder, DEAL_PREFIX,
   cleanTag, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
   smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, paintOnSale, paintCost, NAME_KEY, nameKey, nameSkeleton,
 } from '../src/index-headless.ts';
@@ -20,7 +20,7 @@ const equal = async (a, b) => (await digest(a)) === (await digest(b));
 // The kit a game loads (GAMES.md): /lilguys.js (a classic script) and /lilguys.mjs (a module), from the
 // site's files with a short cache, since each carries the art version, and readable from any page, which
 // a module imported from another site needs.
-const KIT = new Set(['/lilguys.js', '/lilguys.mjs']);
+const KIT = new Set(['/lilguys.js', '/lilguys.mjs', '/lilguys-stadium.js', '/lilguys-stadium.mjs']);
 async function kit(request, env) {
   const file = await env.ASSETS.fetch(request);
   const headers = new Headers(file.headers);
@@ -217,6 +217,23 @@ async function ensurePlayer(env, name, game) {
   return env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
 }
 
+/**
+ * A claim deals three guys and the player keeps the one they like best (Isaac, October 30). The three are
+ * a keyed hash of the name and the moment it was claimed, so the server can tell them again without
+ * keeping them, and a player can only ever pick among their own three.
+ */
+export const CHOICES = 3, PICK_FOR_MS = 60 * 60 * 1000;
+export async function claimChoices(env, key, at) {
+  const out = [];
+  for (let i = 0; i < CHOICES; i++) {
+    const mac = new Uint8Array(await crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', new TextEncoder().encode(env.CLAIM_SALT), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']), new TextEncoder().encode(`choice:${key}:${at}:${i}`)));
+    let n = 0n;
+    for (const b of mac.slice(0, 8)) n = (n << 8n) | BigInt(b);
+    out.push(DEAL_PREFIX + n.toString(36).padStart(12, '0').slice(-12));
+  }
+  return out;
+}
+
 const owner = ownedName;
 
 /**
@@ -306,7 +323,9 @@ async function me(request, env, key, action) {
     }
     // Count the capsule before rolling it, so two opened at once never share a beginner's roll.
     const count = await env.DB.prepare('UPDATE players SET opened = opened + 1 WHERE key = ? RETURNING opened, dry').bind(key).first();
-    const { o, luck } = free(key) ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1, count.dry);
+    // The founder can turn his odds off (`fair`) and roll as anyone does.
+    const rigged = free(key) && body.fair !== true;
+    const { o, luck } = rigged ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1, count.dry);
     await env.DB.prepare('UPDATE players SET dry = CASE WHEN ? THEN 0 ELSE dry + 1 END WHERE key = ?').bind(gradeIndex(o) >= PRIZED ? 1 : 0, key).run();
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
@@ -325,11 +344,16 @@ async function me(request, env, key, action) {
     return json({ copy: publicCopy(copy), game, part, starter: given.meta.changes ? gift.code : null, stamps: await stampsOf(env, key), freeDay: p.free_day, luck }, 201);
   }
   if (action === 'season') {
-    if (!inSeason(day).length) return json({ error: 'Nothing is in season' }, 409);
+    // The founder can open any season's capsule, in season or not, by naming one of its items.
+    const picked = free(key) && typeof body.item === 'string' ? itemById(body.item) : null;
+    const on = picked?.season ? `${day.slice(0, 4)}-${picked.season.from}` : day;
+    if (!inSeason(on).length) return json({ error: 'Nothing is in season' }, 409);
     const short = await pay(env, key, RULES.seasonal, 'seasonal');
     if (short) return short;
-    const season = () => rollSeason(crypto.randomUUID(), day);
-    const copy = await insertCopy(env, copyRow(free(key) ? founderRoll(season, GRADES.findIndex(g => g.id === 'grail')) : season(), key, 'seasonal'));
+    // A named item is what comes out; its finish, float and print are rolled as ever.
+    const season = () => { const o = rollSeason(crypto.randomUUID(), on); return picked?.season ? { ...o, item: picked.id } : o; };
+    const rigged = free(key) && body.fair !== true;
+    const copy = await insertCopy(env, copyRow(rigged ? founderRoll(season, GRADES.findIndex(g => g.id === 'grail')) : season(), key, 'seasonal'));
     return json({ copy: publicCopy(copy), stamps: await stampsOf(env, key) }, 201);
   }
   // Trade-ups are gone (Isaac, October 29): metal and crafting do their job. Copies a trade-up made stay as they are.
@@ -472,6 +496,18 @@ async function me(request, env, key, action) {
     const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
     return json({ copy: publicCopy({ ...c, code: encode(o) }), metal: p.metal });
   }
+  if (action === 'pick') {
+    // One of the three a claim dealt, while the name is new: within the hour, before any capsule.
+    if (free(key)) return json({ error: 'The founder was picked by hand' }, 409);
+    const n = await env.DB.prepare('SELECT seed, at FROM names WHERE key = ?').bind(key).first();
+    const choices = await claimChoices(env, key, n.at);
+    if (!choices.includes(body.seed)) return json({ error: 'That isn’t one of yours' }, 400);
+    const p = await env.DB.prepare('SELECT opened FROM players WHERE key = ?').bind(key).first();
+    if (Date.now() - Date.parse(n.at) > PICK_FOR_MS || (p?.opened ?? 0) > 0) return json({ error: 'Your guy is settled now' }, 409);
+    await env.DB.prepare('UPDATE names SET seed = ? WHERE key = ?').bind(body.seed, key).run();
+    await env.DB.prepare("UPDATE players SET guy_one_in = ?, look = '' WHERE key = ?").bind(guyOneIn(dealt(body.seed)), key).run();
+    return json({ seed: body.seed });
+  }
   if (action === 'look') {
     const look = typeof body.look === 'string' ? body.look : '';
     if (look && !decodeLook(look, dealt(name.seed), unlocksOf(await partsOf(env, key)))) return json({ error: 'That look isn’t yours to pick' }, 400);
@@ -556,7 +592,7 @@ export async function api(request, env, url = new URL(request.url), ctx) {
     const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY one_in DESC, id').bind(name.key).all()).results, today());
     return json({ key: name.key, seed: name.seed, at: name.at, look: p.look, oneIn: p.guy_one_in, copies: results.map(publicCopy) });
   }
-  const mine = /^\/api\/me\/([a-z0-9_]{2,16})\/(state|open|season|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint)$/.exec(url.pathname);
+  const mine = /^\/api\/me\/([a-z0-9_]{2,16})\/(state|open|season|wear|look|trade|tag|swap|swap-accept|swap-cancel|smelt|craft|craft-part|paint|pick)$/.exec(url.pathname);
   if (mine) return me(request, env, mine[1], mine[2]);
 
   const match = /^\/api\/names\/([a-z0-9_]{2,16})$/.exec(url.pathname);
@@ -607,9 +643,11 @@ export async function api(request, env, url = new URL(request.url), ctx) {
   if (key === 'isaac' && (!env.FOUNDER_SECRET || !await equal(request.headers.get('X-Founder-Secret') || '', env.FOUNDER_SECRET))) {
     return json({ error: 'This name is reserved' }, 403);
   }
-  const seed = key === 'isaac' ? FOUNDER_SEED : makeSeed();
-  const ownerToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
   const at = new Date().toISOString();
+  // Three to choose from (`pick`), the first held until a choice is made; the founder's was picked by hand.
+  const choices = key === 'isaac' ? null : await claimChoices(env, key, at);
+  const seed = choices ? choices[0] : FOUNDER_SEED;
+  const ownerToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
   const session = await sessionAccount(request, env);
   const result = await env.DB.prepare('INSERT INTO names(key, seed, owner, at, account) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING')
     .bind(key, seed, await digest(ownerToken), at, session?.account || null).run();
@@ -617,5 +655,5 @@ export async function api(request, env, url = new URL(request.url), ctx) {
   let body = null;
   try { body = await request.json(); } catch { body = null; }
   await ensurePlayer(env, { key, seed }, body?.game);
-  return json({ key, seed, owner: session ? null : ownerToken, linked: !!session, at }, 201);
+  return json({ key, seed, choices, owner: session ? null : ownerToken, linked: !!session, at }, 201);
 }

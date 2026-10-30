@@ -72,7 +72,7 @@
   .site-header .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   /* Stamps: a lifted coral-edged chip like the other header buttons, the stamp drawn big and the count beside it. */
   .wallet { height: 40px; padding: 0 12px 0 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; font-size: 24px; line-height: 1;
-    background: var(--panel-2); box-shadow: 0 3px 0 var(--edge), inset 0 0 0 2px rgba(254, 95, 85, .4); color: #ffe2d6; text-shadow: var(--ts); font-variant-numeric: tabular-nums; }
+    background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); color: var(--ink); text-shadow: var(--ts); font-variant-numeric: tabular-nums; }
   .wallet:hover { filter: brightness(1.1); }
   .wallet .tk { width: 22px; height: 22px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.5)); }
   .wallet .inf { width: 27px; height: 15px; shape-rendering: crispEdges; filter: drop-shadow(0 2px 0 rgba(0,0,0,.6)); }
@@ -294,17 +294,21 @@
   .mcard .flag { position: absolute; left: 12px; top: 12px; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-d); text-shadow: var(--ts); }
   /* Your stamps: a passport page of each game's stamps, gold for cleared days, and what they buy. */
   .passport { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: stretch; }
-  .pp-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; padding: 16px; border-radius: 14px; background: var(--paper); box-shadow: var(--lift);
-    background-image: repeating-linear-gradient(0deg, transparent 0 31px, rgba(42, 46, 59, .08) 31px 32px); }
-  .pp-st { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; color: var(--paper-ink); }
-  .pp-st .face { position: relative; width: 72px; height: 72px; display: grid; place-items: center; }
-  .pp-st .face svg { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--c); shape-rendering: crispEdges; filter: drop-shadow(0 3px 0 rgba(42, 46, 59, .35)); }
-  .pp-st .face canvas { position: relative; width: 40px; height: 40px; image-rendering: pixelated; }
-  .pp-st small { font-size: 16px; line-height: 1; }
-  .pp-st b { font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
-  .pp-st.none .face { opacity: .35; filter: grayscale(1); }
-  .pp-st.none b { color: rgba(42, 46, 59, .45); }
-  .pp-st.gold .face svg { color: var(--gold); }
+  .pp-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; padding: 18px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
+  .pp-st { position: relative; display: grid; justify-items: center; gap: 6px; color: var(--ink); }
+  .pp-st .face { position: relative; width: 66px; height: 66px; display: grid; place-items: center; }
+  .pp-st .face svg { position: absolute; inset: 0; width: 100%; height: 100%; color: #e9dfc9; shape-rendering: crispEdges; filter: drop-shadow(0 3px 0 var(--edge)); }
+  .pp-st .face img { position: relative; width: 44px; height: 44px; object-fit: contain; }
+  .pp-st small { font-size: 16px; line-height: 1; color: var(--ink-2); }
+  /* How many, as a badge on the stamp's corner. */
+  .pp-st b { position: absolute; top: -6px; left: calc(50% + 22px); min-width: 26px; height: 22px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center; font-size: 16px; font-weight: 400; line-height: 1; background: var(--ink); color: var(--bg); box-shadow: 0 2px 0 var(--edge); font-variant-numeric: tabular-nums; }
+  /* One not got yet: an empty slot where the stamp goes. */
+  .pp-st.none .face svg { display: none; }
+  .pp-st.none .face img { opacity: .25; filter: grayscale(.6); }
+  .pp-st.none .face { border-radius: 6px; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12); background: repeating-linear-gradient(45deg, transparent 0 6px, rgba(255, 255, 255, .03) 6px 12px); }
+  .pp-st.none b { display: none; }
+  .pp-st.none small { color: var(--ink-3); }
+  .pp-st.gold .face svg { color: #f3d58a; }
   .pp-spend { display: grid; align-content: start; gap: 12px; padding: 20px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); }
   .pp-bal { display: flex; align-items: center; gap: 12px; }
   .pp-bal svg { width: 48px; height: 48px; shape-rendering: crispEdges; filter: drop-shadow(0 3px 0 rgba(0,0,0,.5)); }
@@ -313,7 +317,8 @@
   .pp-bal .inf { width: 54px; height: 30px; }
   .pp-spend .btn { width: 100%; height: auto; min-height: 64px; padding: 8px 16px; font-size: 24px; border-radius: 12px; white-space: normal; text-align: center; }
   .pp-spend .btn .tk { width: 28px; height: 28px; }
-  .pp-spend .btn .cost { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .pp-spend .btn { justify-content: space-between; }
+  .pp-spend .btn .cost { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 2px 10px; border-radius: 999px; background: rgba(0, 0, 0, .14); }
   .pp-spend p { font-size: 16px; color: var(--ink-2); line-height: 1.35; }
   .pp-short { padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--red) 22%, var(--panel-2)); color: #fff; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--red) 60%, transparent); }
   .pp-short b { color: #ffd0c8; }
@@ -430,9 +435,6 @@
   .swatches .scrape { width: auto; padding: 0 10px; background: var(--panel-2); color: var(--ink-2); font-size: 14px; }
   .smelt-one { margin-top: 10px; }
 
-  /* anime */
-  .anime { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 14px; }
-  .anime .mb canvas { width: 80px; height: 100px; animation: none; }
 
   /* who you could get */
   .maybe { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 18px 14px; }
@@ -712,6 +714,24 @@
   .ed-sub .ed-reset { margin-left: 10px; box-shadow: inset 2px 0 0 var(--panel-2); border-radius: 0 8px 8px 0; padding-left: 16px; }
   .ed-prev { grid-area: prev; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 28px 18px 18px; border-radius: 12px; background: var(--well); overflow: auto; }
   .ed-card { width: min(100%, 272px); }
+  .editable { cursor: pointer; position: relative; }
+  .editable::after { content: 'Edit'; position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; font-size: 14px; background: rgba(5,7,16,.75); color: #fff; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .editable:hover::after, .editable:focus-visible::after { opacity: 1; }
+  @media (hover: none) { .editable::after { opacity: .85; } }
+  .founder-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; background: var(--well); font-size: 16px; color: var(--ink-2); }
+  .founder-bar b { color: #e4ae39; font-weight: 400; }
+  .founder-bar button[aria-pressed] { height: 32px; padding: 0 12px; border-radius: 8px; background: var(--panel-2); color: var(--ink); }
+  .founder-bar button[aria-pressed="true"] { background: #e4ae39; color: #1b1428; }
+  .founder-bar select { margin-left: 6px; height: 32px; border-radius: 8px; border: 0; background: var(--panel-2); color: var(--ink); font: inherit; padding: 0 8px; }
+  .pick3 { display: grid; justify-items: center; gap: 18px; width: min(100%, 760px); }
+  .pick3-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; }
+  .pick3-row > div { display: grid; justify-items: center; gap: 10px; }
+  .pick3-row .card { width: min(100%, 180px); }
+  @media (max-width: 560px) { .pick3-row { gap: 8px; } }
+  .ed-rare { display: grid; gap: 6px; width: 100%; max-width: 260px; font-size: 16px; color: var(--ink-2); }
+  .ed-rare div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--panel); }
+  .ed-rare b { color: var(--ink); font-weight: 400; }
+  .ed-rare small { display: block; font-size: 14px; color: var(--ink-3); }
   .ed-now { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 6px; min-height: 24px; }
   .ed-now .bal { --b: var(--panel-2); color: var(--ink); }
   .ed-now .bal i { font-style: normal; color: var(--ink-3); margin-right: 6px; }
@@ -1039,8 +1059,9 @@
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .score b { font-size: 48px; }
     .mcard.today, .mwrap.today, .mcard.big, .mwrap.big { grid-column: span 2; grid-row: auto; }
-    .pp-book { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 10px; gap: 6px; }
-    .pp-st .face { width: 60px; height: 60px; } .pp-st .face canvas { width: 32px; height: 32px; }
+    .pp-book { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 14px 10px; gap: 14px 6px; }
+    .pp-st .face { width: 56px; height: 56px; } .pp-st .face img { width: 38px; height: 38px; }
+    .pp-st b { left: calc(50% + 16px); }
     .mcard.today .pic, .mcard.big .pic { min-height: 220px; }
     .mine { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; }
     .mine .who h3 { font-size: 24px; }
@@ -1057,7 +1078,7 @@
   <!-- A stamp: perforated paper round a picture. #stamp is the club's (ivory and coral), #stamp-c takes its
        picture's colour from currentColor, #stamp-gold is a cleared gauntlet's. -->
   <symbol id="stamp-edge" viewBox="0 0 11 11"><path d="M0 0h1v1H0zM2 0h1v1H2zM4 0h1v1H4zM6 0h1v1H6zM8 0h1v1H8zM10 0h1v1h-1zM0 10h1v1H0zM2 10h1v1H2zM4 10h1v1H4zM6 10h1v1H6zM8 10h1v1H8zM10 10h1v1h-1zM0 2h1v1H0zM0 4h1v1H0zM0 6h1v1H0zM0 8h1v1H0zM10 2h1v1h-1zM10 4h1v1h-1zM10 6h1v1h-1zM10 8h1v1h-1zM1 1h9v9H1z"/></symbol>
-  <symbol id="stamp" viewBox="0 0 11 11" shape-rendering="crispEdges"><use href="#stamp-edge" fill="#f3ead6"/><path fill="#fe5f55" d="M2 2h7v7H2z"/><path fill="#a8352e" d="M2 8h7v1H2zM8 2h1v6H8z"/><path fill="#f3ead6" d="M4 4h1v1H4zM6 4h1v1H6zM4 6h3v1H4z"/></symbol>
+  <symbol id="stamp" viewBox="0 0 11 11" shape-rendering="crispEdges"><use href="#stamp-edge" fill="#f3ead6"/><path fill="#fffaf0" d="M2 2h7v7H2z"/><path fill="#1f3a6b" d="M3 3h3v1H3zM3 4h1v3H3zM6 4h1v3H6zM3 7h3v1H3z"/><path fill="#e0d4bb" d="M2 8h7v1H2zM8 2h1v6H8z"/></symbol>
   <symbol id="stamp-c" viewBox="0 0 11 11" shape-rendering="crispEdges"><use href="#stamp-edge" fill="#f3ead6"/><path fill="currentColor" d="M2 2h7v7H2z"/><path fill="#000" fill-opacity=".22" d="M2 8h7v1H2zM8 2h1v6H8z"/></symbol>
   <symbol id="stamp-gold" viewBox="0 0 11 11" shape-rendering="crispEdges"><use href="#stamp-edge" fill="#ffe7a6"/><path fill="#f5b143" d="M2 2h7v7H2z"/><path fill="#9c6a17" d="M2 8h7v1H2zM8 2h1v6H8z"/><path fill="#fff6d8" d="M5 3h1v1H5zM4 4h3v1H4zM3 5h5v1H3zM4 6h1v1H4zM6 6h1v1H6z"/></symbol>
   <symbol id="tri" viewBox="0 0 12 12"><path fill="currentColor" d="M2 1.2v9.6c0 .8.9 1.3 1.6.8l7-4.8c.6-.4.6-1.2 0-1.6l-7-4.8C2.9-.1 2 .4 2 1.2z"/></symbol>
@@ -1107,7 +1128,7 @@
         <div id="claim-mine" hidden>
           <div class="mine">
             <div id="me-card"></div>
-            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span><p id="me-odds"></p></div>
+            <div class="who"><p class="claim-h" style="margin:0">Claimed</p><h3 id="me-name"></h3><span class="badges" id="me-badges"></span></div>
           </div>
           <div class="mine-actions"><button class="btn cream" type="button" id="go-free">Open today's capsule</button><a class="btn" id="go-back" hidden></a></div>
           <p class="free-why" id="free-why" hidden></p>
@@ -1124,7 +1145,7 @@
 <main class="wrap">
  <div class="view" id="v-home">
   <section id="guy-sec" hidden>
-    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="guy-edit">Customise</button></div>
+    <div class="sec-h"><div><h2 id="guy-title">Your guy</h2><p>Twelve traits, each dealt with its own odds. Multiply them for how rare yours is.</p></div><button class="btn" type="button" id="guy-edit">Edit your guy</button></div>
     <div class="odds-panel">
       <div class="stage guy-card"><div class="gview"><div id="guy-stage"></div></div><span class="badges" id="guy-badges"></span><div class="saves" id="guy-saves"></div></div>
       <div class="scoring">
@@ -1141,10 +1162,6 @@
     <div class="maybe" id="maybe"></div>
   </section>
 
-  <section id="anime-sec">
-    <div class="sec-h"><div><h2>Anime</h2><p>Shoujo, kitty, joy and puppy eyes, a kissy, a yay, a tehe and a manga blush, from capsules only. Three new moves: shy, huff and oops.</p></div></div>
-    <div class="anime" id="anime"></div>
-  </section>
 
   <section id="stamps-sec" hidden>
     <div class="sec-h"><div><h2>Your stamps</h2><p>A stamp for each DLE Club game you finish. Two gold for clearing the gauntlet.</p></div></div>
@@ -1153,8 +1170,8 @@
       <div class="pp-book" id="pp-book"></div>
       <div class="pp-spend">
         <div class="pp-bal"><svg aria-hidden="true"><use href="#stamp"/></svg><b id="pp-n">0</b><span id="pp-word">stamps</span></div>
-        <button class="btn cream" type="button" id="mystery">Open a mystery capsule <span class="cost">· 5 <svg class="tk" aria-label="stamps"><use href="#stamp"/></svg></span></button>
-        <p>An item from any machine at random. Or pick a machine below for 8.</p>
+        <button class="btn cream" type="button" id="mystery">Mystery capsule <span class="cost">5 <svg class="tk" aria-label="stamps"><use href="#stamp"/></svg></span></button>
+        <p>An item from any machine.</p>
         <p class="pp-short" id="pp-short" role="status" hidden></p>
         <p class="pp-earn" id="pp-earn"></p>
         <button class="linkish" type="button" id="earn" hidden></button>
@@ -1164,8 +1181,14 @@
 
   <section id="roll">
     <div class="sec-h">
-      <div><h2>Capsule machines</h2><p>One for each game: skins, hats, a frame and a buddy. Pick one for 8 stamps. Finish the day's games for a free one.</p></div>
+      <div><h2>Capsule machines</h2><p>Pick a machine for 8 stamps. Today's is free after a club game.</p></div>
       <div class="odds-line" id="odds"></div>
+    </div>
+    <div class="founder-bar" id="founder-bar" hidden>
+      <b>Founder</b>
+      <button type="button" id="fb-odds" aria-pressed="true">Founder odds</button>
+      <label>Any season <select id="fb-season" aria-label="A season's capsule"></select></label>
+      <button class="btn small" type="button" id="fb-open">Open</button>
     </div>
     <div class="machines" id="machines"></div>
     <div class="season" id="season" hidden>
@@ -1181,7 +1204,7 @@
   </section>
 
   <section id="coll">
-    <div class="sec-h"><div><h2>Your locker</h2></div><button class="btn" type="button" id="lk-edit">Customise</button></div>
+    <div class="sec-h"><div><h2>Your locker</h2></div><button class="btn" type="button" id="lk-edit">Edit your guy</button></div>
     <div class="lk-eq" id="lk-eq" hidden></div>
     <div class="locker">
       <div class="lk-guy"><div class="lk-stage" id="lk-stage"></div><div class="lk-slots" id="lk-slots"></div></div>
@@ -1223,7 +1246,7 @@
     </div>
   </section>
   <section>
-    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Customise</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a><a class="btn ghost" id="u-emotes" href="emotes.html">Emotes</a></div></div>
+    <div class="sec-h"><div><h2 id="u-coll-h">Collection</h2><p id="u-coll-sub"></p></div><div class="u-acts"><button class="btn" type="button" id="u-edit" hidden>Edit your guy</button><a class="btn ghost" id="u-market" href="#/pulls">All their pulls</a><a class="btn ghost" id="u-emotes" href="emotes.html">Emotes</a></div></div>
     <div class="u-sets" id="u-sets-wrap"><p class="u-sets-h" id="u-sets-h"></p><div class="sets small" id="u-sets"></div><details class="u-sets-more" id="u-sets-more"><summary>Every item in every set</summary><div class="sets" id="u-sets-full"></div></details></div>
     <div class="tools"><div class="filters" id="u-cats"></div><label class="sortby">Sort <select id="u-sort" aria-label="Sort"></select></label></div>
     <div class="grid" id="u-grid"></div>
@@ -1271,7 +1294,7 @@
     <div class="rz-sec"><h2>Prints</h2><p>Every copy has a print from 0 to 999. It sets where the pattern falls, and a few prints are famous.</p><div class="rz-grid" id="rz-prints"></div></div>
     <div class="rz-sec"><h2>★ Auras</h2><p>One capsule in a thousand, from any machine. An aura goes round your guy and moves with it. Its float thins it, its print sets its timing, and it has its own finishes.</p><div class="rz-grid" id="rz-auras"></div><div class="rz-chips" id="rz-afin"></div></div>
     <div class="rz-sec"><h2>Effects</h2><p>A rare layer on top of the finish. About one item in fifteen has one, and about one aura in three, so an aura's effect is its version. The last three are the rarest.</p><div class="rz-grid" id="rz-fx"></div><div class="rz-grid" id="rz-fxa" style="margin-top:12px"></div></div>
-    <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different. Collectors look for these.</p><div class="rz-extras" id="rz-extras"></div></div>
+    <div class="rz-sec"><h2>What makes one copy special</h2><p>Two copies of the same item in the same finish are still different.</p><div class="rz-extras" id="rz-extras"></div></div>
     <div class="rz-sec"><h2>Your guy</h2><p>Every name is dealt its own guy once, from twelve traits, each with its own odds. Multiply them for how rare yours is.</p><div class="traits-t" id="rz-traits"></div></div>
   </section>
  </div>
@@ -1288,7 +1311,7 @@
   </section>
  </div>
 
-  <footer>A pretend collection to try the idea. Every capsule comes from playing the games and is rolled on the server. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>. Showing lil guys in a game: <a href="formats.html">formats</a>. Chat emotes: <a href="emotes.html">emotes</a>.</footer>
+  <footer>Every capsule comes from playing the games and is rolled on the server. Pixel font: <a href="https://managore.itch.io/m6x11">m6x11 by Daniel Linssen</a>. Showing lil guys in a game: <a href="formats.html">formats</a>. Chat emotes: <a href="emotes.html">emotes</a>.</footer>
 </main>
 
 <dialog id="insp" aria-labelledby="insp-name"><div class="insp" id="insp-body"></div></dialog>
@@ -1298,7 +1321,7 @@
   <div class="ed-tabs" id="ed-tabs" role="tablist" aria-label="Change">
     <button type="button" role="tab" id="ed-t-look" data-tab="look" aria-controls="ed-panel">Look</button><button type="button" role="tab" id="ed-t-wear" data-tab="wear" aria-controls="ed-panel">Wear</button><button type="button" role="tab" id="ed-t-card" data-tab="card" aria-controls="ed-panel">Card</button>
   </div>
-  <div class="ed-prev"><div class="ed-card" id="ed-card"></div><div class="ed-now" id="ed-now" aria-live="polite"></div></div>
+  <div class="ed-prev"><div class="ed-card" id="ed-card"></div><div class="ed-rare" id="ed-rare" aria-live="polite"></div><div class="ed-now" id="ed-now" aria-live="polite"></div></div>
   <div class="ed-sub" id="ed-sub"></div>
   <div class="ed-panel" id="ed-panel" role="tabpanel"></div>
   <div class="ed-foot"><p class="ed-msg" id="ed-msg" aria-live="polite"></p><button class="btn ghost" type="button" id="ed-cancel">Cancel</button><button class="btn green" type="button" id="ed-save">Save</button></div>
@@ -1310,6 +1333,7 @@
   <div class="stage2" id="stage">
     <div class="gacha" id="gacha" hidden aria-hidden="true"><span class="spot"></span><span class="floor" id="g-floor"></span><canvas class="mach big" id="bigmach" width="40" height="56"></canvas><canvas class="coin" id="coin" width="12" height="12" hidden></canvas><div class="cap2" id="cap2" hidden><span class="leak" id="leak"></span><canvas id="cap-bot" width="64" height="64"></canvas><canvas id="cap-top" width="64" height="64"></canvas></div></div>
     <div class="reelwrap" id="reelwrap" hidden><div class="reel" id="reel"><div class="track" id="track"></div></div></div>
+    <div class="pick3" id="pick3" hidden><p class="shout">Keep one</p><div class="pick3-row" id="pick3-row"></div></div>
     <div class="result" id="result" hidden>
       <span class="rays" id="rays"><i></i><i class="tear"></i></span>
       <p class="shout" id="shout"></p>
@@ -1506,6 +1530,7 @@
   }
   function fromServer(s) {
     UNLIMITED = !!s.stamps?.unlimited;
+    renderFounderBar();
     // `freeCapsule`: whether today's free capsule is open (a DLE Club game finished today), and if not, why.
     state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', stamps: s.stamps, free: s.freeDay, freeCapsule: s.freeCapsule || { open: true, why: '' },
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
@@ -1727,12 +1752,15 @@
   $('name').addEventListener('input', () => { clearTimeout(checkT); checkT = setTimeout(check, 280); });
 
   // The game a player came from, when a game's link says (`?from=puttsies`): their one starter is its.
-  const cameFrom = () => { const g = new URLSearchParams(location.search).get('from') || new URLSearchParams(location.search).get('utm_source'); return LG.GAMES.includes(g) && g !== 'pets' ? g : null; };
+  // Kept for the visit, since the address loses `from` as the page loads.
+  const cameFrom = () => { let g = null; try { g = sessionStorage.getItem('lil-guys-came'); } catch (e) {} g = g || new URLSearchParams(location.search).get('from') || new URLSearchParams(location.search).get('utm_source'); return LG.GAMES.includes(g) && g !== 'pets' ? g : null; };
   async function claim(key) {
     let seed = RESERVED[key] ? LG.FOUNDER_SEED : LG.makeSeed(), ownerToken = null;
+    // Three guys to choose from; the demo deals its own.
+    let choices = RESERVED[key] ? null : [seed, LG.makeSeed(), LG.makeSeed()];
     if (!backendReady) return;
     if (isLive()) {
-      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
+      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; choices = claimed.choices || null; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
       catch (e) { setAvail('no', e.message); SFX.bad(); return; }
     }
     if (db) {
@@ -1750,7 +1778,7 @@
         return;
       }
     }
-    state = { v: 2, key, seed, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
+    state = { v: 2, key, seed, choices, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     // One starter, from the game they came from; each machine gives its own with the first capsule from it.
     const first = LG.encode(LG.starter(seed, cameFrom() || todayGame));
     state.copies.push(first);
@@ -1824,7 +1852,6 @@
       <span class="foot"><span class="ti" style="color:${tier.c}">${icon}${tier.name}</span><span>1 in ${fmt(n)}</span></span></div>`;
   };
   // What a number like 1 in 40 billion means: against everyone alive, and against every guy dealt.
-  const EARTH = 8.1e9;
   // A deal of 4,000 guys, how rare each is (log10, sorted): dealt beside the page once and kept for the art version,
   // since dealing them here held the page for a second. Each caller draws its words or chart when it lands.
   let DIST = null, distWaits = null;
@@ -1833,19 +1860,17 @@
     if (!distWaits) { distWaits = []; kept('dealt:4000', 'dealt', 4000).then(d => { DIST = d; distWaits.splice(0).forEach(f => f(d)); }, () => {}); }
     distWaits.push(fn);
   }
-  function meaning(host, n, founder = false) {
+  function meaning(host, n, founder = false, top = null) {
     host.dataset.n = n;
     // The founder isn't ranked by his traits' odds: he was picked by hand, the one of one.
     if (founder) { host.innerHTML = '<p>Picked by hand for the founder: <b>the one of one</b>.</p>'; return; }
-    const people = EARTH / n;
-    const line = people >= 1.5 ? `If everyone on Earth had a guy, about <b>${words(Math.round(people))}</b> would look like yours.`
-      : people >= 0.67 ? `If everyone on Earth had a guy, <b>yours would be the only one</b> like it.`
-      : `Deal a guy to everyone on Earth <b>${words(Math.round(1 / people))} times over</b> before another like it turns up.`;
-    host.innerHTML = `<p>${line}</p><p>Rarer than <b>…</b> of guys dealt.</p>`;
+    host.innerHTML = `<p>Rarer than <b>…</b> of guys dealt.</p>`;
     withDist(d => {
       if (host.dataset.n !== String(n)) return;
-      const below = d.filter(v => v < Math.log10(n)).length / d.length;
-      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt.`;
+      // His rank's own share (`guyRank`, as his card says) when given, else where he falls among guys dealt.
+      const below = top !== null ? 1 - top : d.filter(v => v < Math.log10(n)).length / d.length, mid = 10 ** d[Math.floor(d.length / 2)];
+      // Every exact guy is a long shot, so "1 in 2.5 million" reads rare even when most guys are rarer: say which side.
+      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt. Half of all guys are rarer than 1 in ${words(mid)}, so that's ${below < 0.5 ? 'the <b>common side</b>' : 'the <b>rare side</b>'}.`;
     });
   }
   // Every guy dealt, by how rare: a bar per step on a log scale, his bar lit.
@@ -1889,7 +1914,7 @@
     $('guy-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     $('tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, false)).join('');
     $('score').dataset.n = LG.guyOneIn(cfg.base || cfg);
-    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
+    meaning($('guy-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder, guyRank(cfg).top); distChart($('guy-dist'), LG.guyOneIn(cfg.base || cfg));
     setTotal(scored ? +$('score').dataset.n : 1);
     if (scored) fire(heatOf(+$('score').dataset.n));
   }
@@ -2010,9 +2035,22 @@
       $('ed-card').innerHTML = '<div class="card"></div>';
       libCard($('ed-card').firstChild, cardInput(spec), { sway: true });
     }
+    edRarity();
     $('ed-now').innerHTML = changes.length
       ? changes.map(c => `<span class="bal${c.locked || c.bad ? ' locked' : ''}">${c.locked ? LOCK : ''}<i>${esc(c.label)}</i>${esc(c.value)}</span>`).join('')
       : '<span class="bal"><i>Tap anything to try it on</i></span>';
+  }
+
+  /**
+   * His look's rarity, which moves as parts are tried on, beside his rank, which is the deal's and never
+   * moves: both as "rarer than N%" against every guy dealt, so a rare look reads rare.
+   */
+  function edRarity() {
+    // Both counted the way his card's rank is (`guyRank`), so the numbers on the page agree.
+    const cfg = edCfg(), look = LG.guyRank({ ...cfg }), rank = guyRank(cfg);
+    const line = r => (r.label === r.name || r.label === 'Common' ? esc(r.name) : `${esc(r.name)} · ${esc(r.label.toLowerCase())}`);
+    $('ed-rare').innerHTML = `<div><span>His look<small>Changes as you pick parts</small></span><b>${line(look)}</b></div>`
+      + `<div><span>His rank<small>As dealt, never changes</small></span><b>${line(rank)}</b></div>`;
   }
 
   /** The foot: what's changed, or why it can't be saved yet and how to fix that. */
@@ -2164,8 +2202,10 @@
    * Opens the editor on a tab, from what's saved. `part` and `index` try a face part on; `slot` and `code` an item
    * (an empty code takes the slot's item off).
    */
-  function openEditor(tab = 'look', o = {}) {
+  let lastTab = 'look';
+  function openEditor(tab = lastTab, o = {}) {
     if (!state) return;
+    lastTab = tab;
     ed.look = { ...savedLook() };
     ed.worn = Object.fromEntries(WEAR_SLOTS.filter(sl => state.worn[sl]).map(sl => [sl, state.worn[sl]]));
     ed.tags = {}; ed.saving = false; ed.shown = null; ed.tab = tab;
@@ -2186,7 +2226,7 @@
   $('edd').addEventListener('click', e => { if (e.target === $('edd') && !edChanges().length) closeEditor(); });
   $('ed-x').addEventListener('click', closeEditor);
   $('ed-cancel').addEventListener('click', closeEditor);
-  $('ed-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && b.dataset.tab !== ed.tab) { ed.tab = b.dataset.tab; edRender(); } });
+  $('ed-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && b.dataset.tab !== ed.tab) { ed.tab = lastTab = b.dataset.tab; edRender(); } });
   $('ed-sub').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.part) ed.part = b.dataset.part;
@@ -2272,8 +2312,11 @@
     save(); SFX.equip(); toast(`${LG.partName(p)} crafted`);
     renderWorkshop();
   }
-  $('guy-edit').addEventListener('click', () => openEditor('look'));
-  $('lk-edit').addEventListener('click', () => openEditor('wear'));
+  // One editor, opened the same way from anywhere: on the tab last used.
+  $('guy-edit').addEventListener('click', () => openEditor(lastTab));
+  // His card opens the editor too, wherever it's his own.
+  for (const id of ['guy-stage', 'me-card', 'lk-stage']) { const el = $(id); el.classList.add('editable'); el.title = 'Edit your guy'; el.addEventListener('click', () => openEditor(lastTab)); }
+  $('lk-edit').addEventListener('click', () => openEditor(lastTab));
 
   /* ---------------------------------------------- the claim card */
   // The tab's icon is the guy in the corner, in whole pixels.
@@ -2318,12 +2361,11 @@
     if (!state) { paintInto($('mark-guy'), 'lilguys', []); setFavicon(); $('sub').textContent = 'Claim your own and see who everyone else got.'; return; }
     paintInto($('mark-guy'), state.seed, wornCodes()); setFavicon();
     $('me-name').textContent = '@' + state.key;
-    $('me-card').innerHTML = px(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
-    hydrate($('me-card'));
+    // The same card as Your guy's and the locker's, so his card looks one way everywhere.
+    guyStage('me-card', state.seed, wornCodes(), cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     const n = LG.guyOneIn(dealt(state.seed));
-    $('me-odds').textContent = founderOf(state.seed) ? 'Picked by hand for the founder. The one of one.' : guyRank(guyConfig(state.seed)).top > 0.5 ? 'Dealt just for you.' : `Dealt just for you: the ${guyRank(guyConfig(state.seed)).label.toLowerCase()} of every guy dealt.`;
     $('me-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${guyConfig(state.seed).founder ? 'Founder · one of one' : 'One of a kind'}</span>${guyConfig(state.seed).lucky ? '<span class="bal poly">Lucky</span>' : ''}${traitChips(guyConfig(state.seed), 3)}`;
-    $('sub').textContent = `@${state.key} is yours for good: no one else can take the name, and no one else has this guy. See who everyone else got.`;
+    $('sub').textContent = `@${state.key} is yours. Nobody else has this guy.`;
     const why = state.free === today ? '' : freeWhy();
     $('go-free').innerHTML = state.free === today ? 'Open a capsule' : why ? `${LOCK}Today's free capsule` : "Open today's free capsule";
     $('go-free').classList.toggle('shut', !!why);
@@ -2396,6 +2438,9 @@
   /* ---------------------------------------------- stamps: one for each DLE Club game finished, two gold for a
    * cleared gauntlet, ten to start. The live site's come from the server; the demo's are pretend. */
   const STAMP_GAMES = ['amountle', 'puttsies', 'weighsies', 'stackdle', 'halfsies', 'cutsies', 'flipsies', 'tiltsies'];
+  // The club's own game icons (dleclub.com/game-icons/, copied into ../club-icons/): the gauntlet's is its trophy.
+  const CLUB_ICONS = {"amountle": {"96": "amountle-96-c5e3c75fbf.webp", "192": "amountle-192-edcd73d720.webp"}, "halfsies": {"96": "halfsies-96-b37afa9367.webp", "192": "halfsies-192-cfa052fab8.webp"}, "stackdle": {"96": "stackdle-96-a56c21cf92.webp", "192": "stackdle-192-a96fe8a86c.webp"}, "flipsies": {"96": "flipsies-96-6bd01c58e1.webp", "192": "flipsies-192-1b74d3fcb7.webp"}, "puttsies": {"96": "puttsies-96-5b9c37b10e.webp", "192": "puttsies-192-74bc6b55dd.webp"}, "weighsies": {"96": "weighsies-96-2a98c6aa83.webp", "192": "weighsies-192-1a59e6239f.webp"}, "cutsies": {"96": "cutsies-toy-96-994b9f1c18.webp", "192": "cutsies-toy-192-69df5f300e.webp"}, "tiltsies": {"96": "tiltsies-96-7a6f20544f.webp", "192": "tiltsies-192-72724a2ca6.webp"}, "gauntlet": {"96": "club-board-96-356bde2953.webp", "192": "club-board-192-e73b8c39a2.webp"}};
+  const clubIcon = id => CLUB_ICONS[id] ? `<img src="../club-icons/${CLUB_ICONS[id][96]}" srcset="../club-icons/${CLUB_ICONS[id][192]} 2x" alt="" loading="lazy" decoding="async">` : '';
   function demoStamps() { return { ready: true, balance: 10, games: {}, gold: 0, other: 0, unlimited: false, linked: true, demo: true }; }
   const stampsOf = () => state?.stamps || { ready: false, balance: 0, games: {}, gold: 0, other: 0 };
   const moreText = (n, linked) => `${n} more stamp${n === 1 ? '' : 's'}${linked ? ': play a game on DLE Club.' : '. Sign in to DLE Club and play to earn stamps.'}`;
@@ -2406,16 +2451,6 @@
     $('pp-short').innerHTML = esc(msg).replace(/^(\d+ more stamps?)/, '<b>$1</b>');
     refuse(msg);
   }
-  // Each game's stamp: its toy (the game's own skin on a plain guy) on a stamp in its colour, cropped to the toy.
-  function paintToy(canvas, g) {
-    const colors = toyOf(g);
-    let x0 = 99, y0 = 99, x1 = -1, y1 = -1;
-    colors.forEach((row, y) => row.forEach((c, x) => { if (c) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }));
-    const w = x1 - x0 + 1, h = y1 - y0 + 1, n = Math.max(w, h);
-    canvas.width = n; canvas.height = n;
-    const ctx = canvas.getContext('2d');
-    colors.forEach((row, y) => row.forEach((c, x) => { if (c) { ctx.fillStyle = c; ctx.fillRect(x - x0 + Math.floor((n - w) / 2), y - y0 + Math.floor((n - h) / 2), 1, 1); } }));
-  }
   function renderStamps() {
     $('stamps-sec').hidden = !state;
     if (!state) return;
@@ -2425,11 +2460,10 @@
     const games = [...STAMP_GAMES, ...Object.keys(st.games || {}).filter(g => !STAMP_GAMES.includes(g))];
     $('pp-book').innerHTML = games.map(g => {
       const n = st.games?.[g] || 0, named = LG.GAMES.includes(g) ? cap(g) : g[0].toUpperCase() + g.slice(1);
-      return `<div class="pp-st${n ? '' : ' none'}" style="--c:${CANDY[g] || '#8b93aa'}"><span class="face"><svg aria-hidden="true"><use href="#stamp-c"/></svg>${LG.GAMES.includes(g) ? `<canvas data-toy="${g}" aria-hidden="true"></canvas>` : ''}</span><small>${esc(named)}</small><b>×${n}</b></div>`;
+      return `<div class="pp-st${n ? '' : ' none'}"><span class="face"><svg aria-hidden="true"><use href="#stamp-c"/></svg>${clubIcon(g)}</span><small>${esc(named)}</small><b>×${n}</b></div>`;
     }).join('')
-      + `<div class="pp-st gold${st.gold ? '' : ' none'}"><span class="face"><svg aria-hidden="true"><use href="#stamp-gold"/></svg></span><small>Gauntlet gold</small><b>×${st.gold || 0}</b></div>`
+      + `<div class="pp-st gold${st.gold ? '' : ' none'}"><span class="face"><svg aria-hidden="true"><use href="#stamp-c"/></svg>${clubIcon('gauntlet')}</span><small>Gauntlet</small><b>×${st.gold || 0}</b></div>`
       + (st.other ? `<div class="pp-st"><span class="face" style="--c:#fe5f55"><svg aria-hidden="true"><use href="#stamp"/></svg></span><small>Club</small><b>×${st.other}</b></div>` : '');
-    $('pp-book').querySelectorAll('[data-toy]').forEach(c => paintToy(c, c.dataset.toy));
     let told = false;
     try { told = !!localStorage.getItem(TOLD); } catch (e) {}
     $('pp-told').hidden = !st.carried || told;
@@ -2465,7 +2499,7 @@
     $('season-buy').addEventListener('click', () => {
       if (!state) { $('name').focus(); return; }
       if (!pay(COST.seasonal)) return;
-      if (isLive()) { meApi('season', {}).then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); }).catch(e => { if (e.stamps) { state.stamps = e.stamps; renderWallet(); } e.status === 402 ? short(e.need, e.message) : toast(e.message); }); return; }
+      if (isLive()) { meApi('season', UNLIMITED && fairOdds ? { fair: true } : {}).then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); }).catch(e => { if (e.stamps) { state.stamps = e.stamps; renderWallet(); } e.status === 402 ? short(e.need, e.message) : toast(e.message); }); return; }
       const o = dev ? best(i => LG.rollSeason(`${state.seed}:dev:${i}`, today)) : LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
       reveal(o, null, 'Seasonal');
     });
@@ -2517,6 +2551,25 @@
     return top;
   }
 
+  /*
+   * The founder's own controls: his odds off (fair, as anyone rolls) or on, and any season's capsule, in
+   * season or not. Shown only to him; the server checks it's him either way.
+   */
+  var fairOdds = false;
+  try { fairOdds = localStorage.getItem('lil-guys-fair') === '1'; } catch (e) {}
+  function renderFounderBar() {
+    $('founder-bar').hidden = !UNLIMITED;
+    if (!UNLIMITED) return;
+    $('fb-odds').setAttribute('aria-pressed', String(!fairOdds));
+    $('fb-odds').textContent = fairOdds ? 'Fair odds' : 'Founder odds';
+    if (!$('fb-season').options.length) $('fb-season').innerHTML = LG.items.filter(i => i.season && !i.retired).map(i => `<option value="${i.id}">${esc(i.name)}</option>`).join('');
+  }
+  $('fb-odds').addEventListener('click', () => { fairOdds = !fairOdds; try { localStorage.setItem('lil-guys-fair', fairOdds ? '1' : '0'); } catch (e) {} renderFounderBar(); toast(fairOdds ? 'Rolling at fair odds, as anyone does.' : 'Founder odds back on.'); });
+  $('fb-open').addEventListener('click', () => {
+    meApi('season', { item: $('fb-season').value, ...(fairOdds ? { fair: true } : {}) })
+      .then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal'); })
+      .catch(e => toast(e.message));
+  });
   const LUCK_WORDS = { beginner: 'Beginner\'s luck', pity: 'Lucky break' };
   // On the live site today's free capsule opens once the player has finished a DLE Club game today; the server
   // says whether they have (`state.freeCapsule`) and, while not, what to do. The demo can't know, so it's open there.
@@ -2535,7 +2588,7 @@
     const mystery = how === 'Mystery capsule';
     if (isLive()) {
       try {
-        const r = await meApi('open', mystery ? { mystery: true } : { game: g, free: how === 'Daily capsule' });
+        const r = await meApi('open', { ...(mystery ? { mystery: true } : { game: g, free: how === 'Daily capsule' }), ...(UNLIMITED && fairOdds ? { fair: true } : {}) });
         state.stamps = r.stamps; state.free = r.freeDay; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id };
         if (r.part?.new) state.parts = [...(state.parts || []), r.part.code];
         // A machine's free item comes with the first capsule from it.
@@ -3125,6 +3178,20 @@
       await new Promise(r => { closeHook = r; });
       $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
     }
+    if (state.choices?.length === 3) {
+      // The card roll three times, then all three side by side to keep one.
+      for (let i = 0; i < 3; i++) {
+        const seed = state.choices[i], cfg = guyConfig(seed), rank = guyRank(cfg);
+        $('rv-keep').textContent = i < 2 ? 'Next roll' : 'Choose';
+        $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = false;
+        await unveil(Math.min(4, rank.tier), `<div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div>`,
+          `Roll ${i + 1} of 3`, '', '', true);
+        $('rv-keep').focus();
+        await new Promise(r => { closeHook = r; });
+      }
+      await keepOne();
+      return;
+    }
     $('rv-keep').textContent = 'Meet your guy';
     const n = LG.guyOneIn(dealt(state.seed));
     await unveil(4, `<div class="card">${libHtml(cardInput(cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier)), { sway: true, now: true })}</div>`,
@@ -3133,6 +3200,23 @@
     await new Promise(r => { closeHook = r; });
   }
   let closeHook = null;
+  /** The three a claim dealt, side by side: the one picked becomes his guy (on the server first when live). */
+  async function keepOne() {
+    $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = true; $('result').hidden = true;
+    $('pick3').hidden = false;
+    $('pick3-row').innerHTML = state.choices.map((seed, i) => { const cfg = guyConfig(seed), rank = guyRank(cfg);
+      return `<div><div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div><button class="btn cream" type="button" data-keep="${i}">Keep</button></div>`; }).join('');
+    hydrate($('pick3-row')); mountLib($('pick3-row'));
+    const seed = await new Promise(r => $('pick3-row').onclick = e => { const b = e.target.closest('[data-keep]'); if (b) r(state.choices[+b.dataset.keep]); });
+    let kept = seed;
+    if (isLive() && seed !== state.seed) {
+      try { await meApi('pick', { seed }); } catch (e) { toast(e.message); kept = state.seed; }
+    }
+    state.seed = kept; delete state.choices; save();
+    $('pick3').hidden = true; $('reveal').hidden = true;
+    renderAll();
+    setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120);
+  }
   function closeReveal() {
     if ($('rv-actions').hidden) return;
     $('reveal').hidden = true;
@@ -3222,14 +3306,6 @@
     // His card as it stands, so what you put on shows where it counts.
     guyStage('lk-stage', state.seed, worn, cardSpec(state.seed, wornCopies(), guyLabel(guyConfig(state.seed), '@' + state.key), false, guyRank(guyConfig(state.seed)).tier));
     // What the locker is for: the guy is dealt from the name and stays; the items are what changes, and the two together are what everyone sees.
-    const nWorn = worn.length;
-    $('lk-eq').hidden = false;
-    $('lk-eq').innerHTML = `<div class="eq"><canvas id="eq-guy" width="16" height="16" aria-hidden="true"></canvas><span><b>Your guy</b><small>Dealt once from @${esc(state.key)}. Nobody else has one.</small></span></div>`
-      + '<i class="eq-op" aria-hidden="true">+</i>'
-      + `<div class="eq"><span class="eq-slots">${['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => `<span class="${state.worn[sl] ? 'on' : ''}" style="--cat:${catOf(sl).c}" title="${catOf(sl).one}">${icon(sl)}</span>`).join('')}</span><span><b>Your items</b><small>From capsules. One per slot, ${nWorn} on now. Swap any time.</small></span></div>`
-      + '<i class="eq-op" aria-hidden="true">=</i>'
-      + `<div class="eq"><canvas id="eq-dressed" width="16" height="16" aria-hidden="true"></canvas><span><b>What everyone sees</b><small>On boards and results in every DLE game.</small></span></div>`;
-    paintInto($('eq-guy'), state.seed, []); paintInto($('eq-dressed'), state.seed, worn);
     $('lk-slots').innerHTML = ['hat', 'skin', 'frame', 'buddy', 'aura'].map(sl => {
       const k = catOf(sl), code = state.worn[sl], o = code && LG.decode(code), name = o ? LG.nameOf(o).split(' | ')[0] : '';
       const have = list.filter(c => LG.slotOf(c.o) === sl).length;
@@ -3344,9 +3420,9 @@
     const m = LG.metalCoins(metalOf());
     $('metal').innerHTML = `<span class="ingot ref" title="Refined">${m.refined}</span><span class="ingot rec" title="Reclaimed">${m.reclaimed}</span><span class="ingot scrap" title="Scrap">${m.scrap}</span><b>${LG.metalText(metalOf())}</b>`;
     const sp = spares(), worth = sp.reduce((a, c) => a + LG.smeltValue(c.o), 0);
-    $('ws-smelt').innerHTML = `<h3>Smelt</h3><p>Everyday copies give a scrap, Special two, Prized four, Mythic a refined. Starters, showpieces, Grails and auras never melt.</p>`
+    $('ws-smelt').innerHTML = `<h3>Smelt</h3><p>Everyday gives a scrap, Special two, Prized four, Mythic a refined.</p>`
       + `<button class="btn" type="button" id="ws-spares"${sp.length ? '' : ' disabled'}>${sp.length ? `Smelt ${sp.length} spare${sp.length === 1 ? '' : 's'} · +${worth} scrap` : 'No spares to smelt'}</button>`
-      + `<small>Spares: every copy past your best of each item, Special or below, not worn or tagged. Any other copy smelts from its details.</small>`;
+      + `<small>Spares: copies past your best of each, Special or below, not worn or tagged.</small>`;
     const games = LG.GAMES;
     wsGame = wsGame || todayGame;
     $('ws-games').innerHTML = games.map(g => `<button type="button" data-ws-g="${g}" aria-pressed="${g === wsGame}">${cap(g)}</button>`).join('');
@@ -3439,28 +3515,6 @@
   }
   $('maybe-more').addEventListener('click', renderMaybe);
 
-  /* ---------------------------------------------- the anime set: its face parts on a few guys, and its three moves */
-  function renderAnime() {
-    const at = (list, n) => list.findIndex(p => p.name === n);
-    const E = n => at(LG.eyes, n), M = n => at(LG.mouths, n), C = n => at(LG.cheeks, n);
-    const guys = [
-      ['sakura', { head: 0, eyes: E('shoujo'), mouth: M('yay') }, 'idle', 'Shoujo eyes'],
-      ['neko', { head: 1, eyes: E('kitty'), mouth: M('cat'), hair: 1 }, 'idle', 'Kitty eyes'],
-      ['hana', { head: 3, eyes: E('joy') }, 'shy', 'shy'],
-      ['taro', { head: 4, eyes: E('puppy') }, 'huff', 'huff'],
-      ['yuki', { head: 2, eyes: E('wink') }, 'oops', 'oops'],
-      ['momo', { head: 6, eyes: E('shoujo'), cheeks: C('manga blush'), mouth: M('kissy') }, 'idle', 'Manga blush'],
-      ['pochi', { head: 0, eyes: E('puppy'), mouth: M('tehe'), hair: 2 }, 'idle', 'Puppy eyes'],
-      ['riku', { head: 10, eyes: E('joy'), mouth: M('yay') }, 'cheer', 'Joy eyes'],
-    ];
-    $('anime').innerHTML = guys.map(g => `<div class="mb"><canvas aria-hidden="true"></canvas><small>${esc(g[3])}</small></div>`).join('');
-    $('anime').querySelectorAll('canvas').forEach((canvas, k) => {
-      const [seed, parts, move] = guys[k], W = LG.FRAME_WIDTH, H = LG.FRAME_HEIGHT;
-      canvas.width = W; canvas.height = H;
-      const s = { canvas, ctx: canvas.getContext('2d'), anim: LG.animateLoop(seed, move, { parts: { body: 0, accessory: 0, hair: 0, cheeks: 0, ...parts }, rarity: false }), box: { x: 0, y: 0, w: W, h: H }, moves: true };
-      shows.add(s); drawShow(s, performance.now());
-    });
-  }
 
   /* ---------------------------------------------- an item on its own: the pixels that are the item (by layer, or by
    * what changes when the guy puts it on), outlined, on a frame the library's finish shader reads, so the finish
@@ -3994,7 +4048,7 @@
     $('u-badges').innerHTML = `<span class="bal" style="--b:#e4ae39">★ ${cfg.founder ? 'Founder · one of one' : 'One of a kind'}</span>${cfg.lucky ? '<span class="bal poly">Lucky</span>' : ''}`;
     const setBadges = () => { const done = LG.GAMES.filter(g => LG.setProgress(g, userCopies.map(c => c.o)).complete); $('u-badges').insertAdjacentHTML('beforeend', done.map(g => `<span class="bal" style="--b:${CANDY[g] || '#5d6b8a'}">${cap(g)} set</span>`).join('')); };
     $('u-tiles').innerHTML = LG.traitOdds(cfg.base || cfg).map(x => traitTile(x, true)).join('');
-    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
+    meaning($('u-meaning'), LG.guyOneIn(cfg.base || cfg), !!(cfg.base || cfg).founder, guyRank(cfg).top); distChart($('u-dist'), LG.guyOneIn(cfg.base || cfg));
     const [a, b] = split(LG.guyOneIn(cfg.base || cfg)); $('u-total').textContent = a; $('u-unit').textContent = b;
     userCopies = u.copies.map((c, i) => ({ ...c, at: c.at ? Date.parse(c.at) || i : i, o: LG.decode(c.code) })).filter(c => c.o);
     uCat = '';
@@ -4027,7 +4081,7 @@
     paint();
     $('u-sort').onchange = e => { uSort = e.target.value; paint(); };
     $('u-cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { uCat = b.dataset.c; paint(); } };
-    $('u-edit').onclick = () => openEditor('look');
+    $('u-edit').onclick = () => openEditor(lastTab);
     $('u-grid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; const c = userCopies[+b.dataset.u]; if (mine) { const i = state.copies.indexOf(c.code); if (i >= 0) return inspect(i); } inspectCopy(c.o, { code: c.code, key, seed: u.seed, mine: false, worn, id: c.id, tag: c.tag, stats: c.stats, pull: c.pull }); };
   }
 
@@ -4222,13 +4276,13 @@
 
   renderHand();
   renderMaybe();
-  whenNear($('anime'), renderAnime);
   // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
   // fills the box, and once it is theirs a button takes them back to the game.
   try {
     const q = new URLSearchParams(location.search), asked = q.get('claim'), from = q.get('from');
     if (asked !== null || from !== null) {
       if (BACK_TO[from]) sessionStorage.setItem('lil-guys-from', from);
+      if (LG.GAMES.includes(from)) sessionStorage.setItem('lil-guys-came', from);
       if (asked && !state) { $('name').value = norm(asked).slice(0, 16); setTimeout(() => $('claim').scrollIntoView({ block: 'center' }), 60); }
       q.delete('claim'); q.delete('from');
       history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash);

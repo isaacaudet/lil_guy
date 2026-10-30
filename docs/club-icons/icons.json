@@ -1,0 +1,38 @@
+{
+ "amountle": {
+  "96": "amountle-96-c5e3c75fbf.webp",
+  "192": "amountle-192-edcd73d720.webp"
+ },
+ "halfsies": {
+  "96": "halfsies-96-b37afa9367.webp",
+  "192": "halfsies-192-cfa052fab8.webp"
+ },
+ "stackdle": {
+  "96": "stackdle-96-a56c21cf92.webp",
+  "192": "stackdle-192-a96fe8a86c.webp"
+ },
+ "flipsies": {
+  "96": "flipsies-96-6bd01c58e1.webp",
+  "192": "flipsies-192-1b74d3fcb7.webp"
+ },
+ "puttsies": {
+  "96": "puttsies-96-5b9c37b10e.webp",
+  "192": "puttsies-192-74bc6b55dd.webp"
+ },
+ "weighsies": {
+  "96": "weighsies-96-2a98c6aa83.webp",
+  "192": "weighsies-192-1a59e6239f.webp"
+ },
+ "cutsies": {
+  "96": "cutsies-toy-96-994b9f1c18.webp",
+  "192": "cutsies-toy-192-69df5f300e.webp"
+ },
+ "tiltsies": {
+  "96": "tiltsies-96-7a6f20544f.webp",
+  "192": "tiltsies-192-72724a2ca6.webp"
+ },
+ "gauntlet": {
+  "96": "club-board-96-356bde2953.webp",
+  "192": "club-board-192-e73b8c39a2.webp"
+ }
+}

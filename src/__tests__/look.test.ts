@@ -89,7 +89,7 @@ describe('look codes', () => {
   });
 });
 
-describe('the anime set, from capsules only', () => {
+describe('the capsule-only set, from capsules only', () => {
   const anime = Object.entries(CAPSULE_ONLY).flatMap(([slot, w]) => Object.keys(w!).map(i => ({ slot: slot as LookSlot, index: Number(i) })));
 
   test('is never dealt: every deal draws exactly as it did', () => {
