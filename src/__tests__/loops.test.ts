@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { animate, AURAS, ONE_OF_ONE_AURAS, FX_IDS, items, eyes, animateOptions, shineFit, shineFrame, dress, resolve, bakeGuy, type Move } from '../index-headless';
+import { animate, AURAS, ONE_OF_ONE_AURAS, TESTER_AURAS, FX_IDS, items, eyes, animateOptions, shineFit, shineFrame, dress, resolve, bakeGuy, type Move } from '../index-headless';
 import { fit, steps, tick, cycle, wave, LOOP_MS } from '../loop';
 
 /**
@@ -41,7 +41,7 @@ describe('every loop closes perfectly', () => {
     }
   });
 
-  test.each([...AURAS, ...ONE_OF_ONE_AURAS].map(a => a.id))('aura %s', id => {
+  test.each([...AURAS, ...ONE_OF_ONE_AURAS, ...TESTER_AURAS].map(a => a.id))('aura %s', id => {
     for (const finish of ['classic', 'fade', 'pearl']) expectSeamless({ seed: 'loopaura', equip: [code(id, finish)] });
   });
 

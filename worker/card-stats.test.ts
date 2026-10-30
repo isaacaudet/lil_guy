@@ -1,6 +1,6 @@
 import { test, expect, beforeEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import { api } from './index.js';
+import { api, readFromClub } from './index.js';
 import { decode } from '../src/index-headless.ts';
 import { readClub, statsSignature, READ_EVERY } from './card-stats.js';
 import { createHmac } from 'node:crypto';
@@ -135,4 +135,28 @@ test('copies made before 0009 are numbered in the order they were made, and the 
     { item: 'a', source: 'capsule', pull: 1 }, { item: 'b', source: 'capsule', pull: 1 }, { item: 'a', source: 'starter', pull: 0 },
     { item: 'a', source: 'capsule', pull: 2 }, { item: 'a', source: 'founder', pull: 0 }]);
   expect(db.prepare("SELECT name, n FROM counters ORDER BY name").all()).toEqual([{ name: 'pull:a', n: 2 }, { name: 'pull:b', n: 1 }]);
+});
+
+test('a beta tester gets the Beta aura once, numbered, and can’t trade it', async () => {
+  const c = await claim('mia');
+  await state(c);
+  env.CLUB_SSO_SECRET = 'x'.repeat(40);
+  env.db.exec(`UPDATE names SET account = '${'ab'.repeat(32)}' WHERE key = 'mia'`);
+  const club = (async () => new Response(JSON.stringify({ beta: 7, days: [] }))) as any;
+  await readFromClub(env, 'mia', Date.now(), club);
+  await readFromClub(env, 'mia', Date.now() + READ_EVERY + 1, club);
+  const betas = (await pub()).copies.filter((x: any) => x.code.startsWith('aura.beta'));
+  expect(betas).toHaveLength(1);
+  expect(betas[0].worn).toBe(true);
+  expect(decode(betas[0].code)?.print).toBe(7);
+  expect(env.db.prepare("SELECT source, one_in FROM copies WHERE item = 'aura.beta'").get()).toEqual({ source: 'beta', one_in: 0 });
+});
+
+test('the club answers its beta number with the days, and nothing without one', async () => {
+  const c = await claim('mia');
+  await state(c);
+  env.CLUB_SSO_SECRET = 'x'.repeat(40);
+  env.db.exec(`UPDATE names SET account = '${'ab'.repeat(32)}' WHERE key = 'mia'`);
+  expect(await readClub(env, 'mia', Date.now(), (async () => new Response('{"days":[],"beta":3}')) as any)).toBe(3);
+  expect(await readClub(env, 'mia', Date.now() + READ_EVERY + 1, (async () => new Response('{"days":[]}')) as any)).toBeUndefined();
 });

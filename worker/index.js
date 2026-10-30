@@ -6,7 +6,7 @@ import { heldKey, skeletonTaken } from './name-lookup.js';
 import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
 import {
   roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
-  decodeLook, resolve, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder, DEAL_PREFIX,
+  decodeLook, resolve, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder, DEAL_PREFIX, testerCopy,
   cleanTag, rollPart, partCode, readPart, partCost, unlocksOf, pickable,
   smeltValue, craftable, craftCopy, CRAFT_COST, PAINT_COST, PAINT_IDS, PAINTABLE, paintOnSale, paintCost, NAME_KEY, nameKey, nameSkeleton,
 } from '../src/index-headless.ts';
@@ -135,7 +135,7 @@ function copyRow(o, key, source) {
   return {
     key, code: encode(o), item: o.item, game: item.game, slot: slotOf(o), finish: o.finish,
     grade: GRADES.findIndex(g => g.id === gradeOf(o).id),
-    one_in: source === 'founder' ? ONE_OF_ONE : item.free ? 0 : copyOneIn(o), scuff: o.scuff, source,
+    one_in: source === 'founder' ? ONE_OF_ONE : item.free || source === 'beta' ? 0 : copyOneIn(o), scuff: o.scuff, source,
   };
 }
 /**
@@ -162,7 +162,7 @@ async function insertCopy(env, row, worn = 0) {
  * edition. Starters and the founder's copies aren't counted. Before 0009, none.
  */
 async function numberCopy(env, row, id) {
-  if (row.source === 'starter' || row.source === 'founder' || free(row.key) || !(row.one_in > 0)) return 0;
+  if (row.source === 'starter' || row.source === 'founder' || row.source === 'beta' || free(row.key) || !(row.one_in > 0)) return 0;
   try {
     // Only count once the column is there, so the run never skips numbers while 0009 waits.
     await env.DB.prepare('SELECT pull FROM copies WHERE id = ?').bind(id).first();
@@ -172,8 +172,19 @@ async function numberCopy(env, row, id) {
   } catch { return 0; }
 }
 const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '', ...(c.pull ? { pull: c.pull } : {}), ...(c.stats ? { stats: c.stats } : {}) });
-// Copies that can change hands: not a starter, not the founder's.
-const MOVABLE = "source NOT IN ('starter', 'founder')";
+// Copies that can change hands: not a starter, not the founder's, not a beta tester's Beta aura.
+const MOVABLE = "source NOT IN ('starter', 'founder', 'beta')";
+
+/**
+ * Reads the owner's club days (card-stats.js), and gives a beta tester their Beta aura once, numbered as
+ * they were let in, put on if they wear no aura. It stays theirs if they later leave the beta.
+ */
+export async function readFromClub(env, key, ...rest) {
+  const tester = await readClub(env, key, ...rest);
+  if (!tester || await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.beta'").bind(key).first()) return;
+  const wearing = await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND slot = 'aura' AND worn = 1").bind(key).first();
+  await insertCopy(env, copyRow(testerCopy(tester), key, 'beta'), wearing ? 0 : 1);
+}
 
 /** The machine a new player's one starter comes from: the game they came from, else today's. */
 export const starterGame = game => (typeof game === 'string' && GAMES.includes(game) && game !== 'pets' ? game : todayGame());
@@ -242,7 +253,7 @@ const owner = ownedName;
  */
 async function pay(env, key, cost, what) {
   if (free(key)) return null;
-  await readClub(env, key);
+  await readFromClub(env, key);
   const paid = await spendStamps(env, key, cost, what);
   if (paid === null) return json({ error: 'Stamps aren’t open yet' }, 503);
   if (paid) return null;
@@ -267,7 +278,7 @@ async function freeCapsule(env, key) {
   if (!name?.account) return { open: false, why: FREE_SHUT.signin };
   const day = today();
   if (await playedOn(env, key, day)) return { open: true, why: '' };
-  await readClub(env, key, undefined, undefined, TODAY_EVERY);
+  await readFromClub(env, key, undefined, undefined, TODAY_EVERY);
   if (await playedOn(env, key, day)) return { open: true, why: '' };
   const read = await env.DB.prepare('SELECT club_read, stamps_read FROM players WHERE key = ?').bind(key).first();
   if (read && read.stamps_read < read.club_read) return { open: true, why: '' };
@@ -285,7 +296,7 @@ async function meState(env, name) {
   const p = await ensurePlayer(env, name);
   // The card stats: count whatever is on, and credit the owner's club days to it.
   await putOn(env, name.key, today());
-  await readClub(env, name.key);
+  await readFromClub(env, name.key);
   const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all()).results, today());
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
@@ -425,7 +436,7 @@ async function me(request, env, key, action) {
       if (!c) return json({ error: 'Not your copy' }, 404);
     }
     // What comes off takes its club days and its days worn with it; what goes on starts counting today.
-    await readClub(env, key);
+    await readFromClub(env, key);
     await takeOff(env, key, day, slot);
     await env.DB.prepare('UPDATE copies SET worn = 0 WHERE key = ? AND slot = ?').bind(key, slot).run();
     if (body.id != null) await env.DB.prepare('UPDATE copies SET worn = 1 WHERE id = ? AND key = ?').bind(Number(body.id), key).run();

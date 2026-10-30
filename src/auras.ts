@@ -475,17 +475,33 @@ export const ONE_OF_ONE_AURAS: Aura[] = [
   },
 ];
 
-const byId = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map(a => [a.id, a]));
+/**
+ * Auras no capsule gives that more than one player holds: Beta, for everyone Isaac lets into the
+ * games' betas, in the club's coral and ivory, sparkles inside two orbs going round. Each copy's
+ * print is its tester's number. Append only.
+ */
+export const TESTER_AURAS: Aura[] = [
+  {
+    id: 'aura.beta', name: 'Beta', colors: ['#FBF8F2', '#FF7A5C', '#C2462E'], still: 600,
+    cells: (mask, t, print) => [
+      ...AURAS.find(a => a.id === 'aura.sparkles')!.cells(mask, t, print),
+      ...AURAS.find(a => a.id === 'aura.orbit')!.cells(mask, t, print),
+    ],
+  },
+];
+
+const byId = new Map([...AURAS, ...ONE_OF_ONE_AURAS, ...TESTER_AURAS].map(a => [a.id, a]));
 export const auraById = (id: string | undefined) => (id ? byId.get(id) : undefined);
 
 /**
  * How much an aura copy does on top of its aura, by how rare its finish is
  * among auras: 0 for Classic (half of all auras) up to 4 for Black pearl
- * (three in a thousand); Origin, one of one, is 5 whatever its finish.
+ * (three in a thousand); Origin, one of one, is 5 whatever its finish, and Beta 3.
  */
 const INTENSITY: Record<string, number> = { classic: 0, fade: 1, frost: 1, toxic: 2, shadow: 2, sapphire: 3, ruby: 3, pearl: 4 };
 export function auraIntensity(id: string, finish?: string): number {
   if (ONE_OF_ONE_AURAS.some(a => a.id === id)) return 5;
+  if (TESTER_AURAS.some(a => a.id === id)) return 3;
   return INTENSITY[finish ?? 'classic'] ?? 0;
 }
 

@@ -35,3 +35,6 @@ export const isFounder = (seed: string): boolean => seed === FOUNDER_SEED;
 /** Whether a copy is one of the founder's own, which no capsule gives (in his locker, nobody else's). */
 export const isFounderCopy = (o: Owned): boolean =>
   o.item === FOUNDER_COPIES.aura.item || (o.item === FOUNDER_COPIES.flag.item && o.finish === 'gold' && o.tally === 999 && o.print === 1);
+
+/** A beta tester's Beta aura, no capsule's, its print their tester number (the club's betas). */
+export const testerCopy = (number: number): Owned => ({ item: 'aura.beta', finish: 'classic', scuff: 0, print: number, fx: 'shimmer' });
