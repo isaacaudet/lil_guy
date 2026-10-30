@@ -187,7 +187,7 @@
     return `<div class="item${c.feature ? ' feature' : ''}">${c.feature ? '<span class="tag">Featured</span>' : ''}
       <div class="art"><canvas width="16" height="16" aria-hidden="true"></canvas></div>
       <span class="nm">${esc(LG.nameOf(c.o))}</span>
-      <span class="ds">${cap(it.game)} ${it.slot} · <span class="grade" style="--g:${g.color}">${g.name}</span> · ${LG.wearOf(c.o.scuff).short} #${c.o.print}</span>
+      <span class="ds">${cap(it.game)} ${it.slot} · <span class="grade" style="--g:${g.color}">${g.name}</span> · ${LG.wearOf(c.o.scuff).short} · Print ${c.o.print}</span>
       <div class="buy"><span class="ds">${c.feature ? 'Today only' : 'Plain'}</span><button class="btn" type="button" data-price="${c.price}" data-i="${i}">${tk} ${c.price}</button></div></div>`;
   }).join('');
   [...$('shelf').querySelectorAll('canvas')].forEach((cv, i) => paintInto(cv, [LG.encode(cards[i].o)]));
@@ -240,7 +240,7 @@
     paintInto(t.querySelector('canvas'), [LG.encode(o)]);
     const g = LG.gradeOf(o);
     $('toast-name').textContent = LG.nameOf(o);
-    $('toast-sub').textContent = `${how} · ${g.name} · ${LG.wearOf(o.scuff).name} · #${o.print}`;
+    $('toast-sub').textContent = `${how} · ${g.name} · ${LG.wearOf(o.scuff).name} · Print ${o.print}`;
     t.hidden = false; clearTimeout(hide); hide = setTimeout(() => { t.hidden = true; }, 3800);
   }
 

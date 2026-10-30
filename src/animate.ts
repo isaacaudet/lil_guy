@@ -4,12 +4,12 @@ import { dress, itemById, withItems } from './items';
 import { BUDDY_ROOM, buddyAlone, compose, composeBase, faceOf } from './compose';
 import { mouths, cheeks, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
-import { paint } from './paint';
+import { luckyRim, paint, underEyes } from './paint';
 import { paletteOf } from './palette';
 import { GRADES, gradeOf, type Owned } from './owned';
 import { LAYER, T } from './parts/art';
 import { hash } from './hash';
-import { auraById, auraCells, auraColor } from './auras';
+import { auraById, auraCells, auraColor, auraColors, auraHue, type Aura } from './auras';
 import { applyFx } from './effects';
 import { sparkleAt, starAt, SPARKLE_REACH } from './sparkle';
 import type { AvatarConfig, Palette, PixelGrid, RenderOptions } from './types';
@@ -92,7 +92,7 @@ export interface Animation {
 export interface AnimateOptions extends RenderOptions {
   /** Show the best equipped copy's grade: shine, aura, sparkles and a trail. Default true. */
   rarity?: boolean;
-  /** An emote to show over the whole move, bobbing beside his head. */
+  /** An emote to show over the whole move, bobbing beside his head; mind blown and galaxy brain open the head instead (`openHead`). */
   emote?: Emote;
   /**
    * Play the move `repeats` times with everything on its own clock (auras,
@@ -106,6 +106,12 @@ export interface AnimateOptions extends RenderOptions {
    * `fitLoop` does for the move's length, without building the move twice.
    */
   loop?: { repeats: number; turns: number; fine?: boolean } | { fit: true; fine?: boolean };
+  /**
+   * Drawn for a small view (an icon, a face), where an aura's pieces are a stray pixel or two: the
+   * aura shows as one ring round the guy in bands of its own colours (`glanceRing`), as a copy of
+   * Prized or better already rings the guy in its grade's colour.
+   */
+  glance?: boolean;
 }
 
 /**
@@ -117,14 +123,17 @@ export type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laug
   | 'blush' | 'blushLeft' | 'blushRight' | 'huff' | 'oops';
 
 /**
- * Little pictures that pop up beside his head. The last three are manga's
- * own: a sweat drop, the cross-shaped anger vein and a little floating heart.
+ * Little pictures that pop up beside the head. Three are manga's own: a sweat
+ * drop, the cross-shaped anger vein and a little floating heart. The last four
+ * are thoughts: a light bulb, a burst, a daydream's cloud and a galaxy.
  */
-export type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire' | 'sweat' | 'anger' | 'hearts';
+export type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire' | 'sweat' | 'anger' | 'hearts'
+  | 'bulb' | 'burst' | 'cloud' | 'galaxy';
 
 /**
  * Emotes a player can show after a game, and how each is unlocked. The
- * moves use some on their own; `emote` in the options shows one over any move.
+ * moves use some on their own; `emote` in the options shows one over any move
+ * (mind blown and galaxy brain by opening the head, `openHead`).
  */
 export const EMOTE_UNLOCKS: { id: Emote; name: string; how: string }[] = [
   { id: 'heart', name: 'Heart', how: 'Everyone has it' },
@@ -137,6 +146,10 @@ export const EMOTE_UNLOCKS: { id: Emote; name: string; how: string }[] = [
   { id: 'hearts', name: 'Smitten', how: 'Everyone has it' },
   { id: 'sweat', name: 'Sweat drop', how: 'Everyone has it' },
   { id: 'anger', name: 'Hmph', how: 'Everyone has it' },
+  { id: 'bulb', name: 'Idea', how: 'Everyone has it' },
+  { id: 'burst', name: 'Mind blown', how: 'Everyone has it' },
+  { id: 'cloud', name: 'Daydream', how: 'Everyone has it' },
+  { id: 'galaxy', name: 'Galaxy brain', how: 'A Mythic or Grail copy, an aura, or eclipse, void, idea, thought or op art' },
 ];
 
 /** One beat of a move: a pose, held for `ms`, moved and squashed. */
@@ -353,29 +366,57 @@ function eyeCells(grid: PixelGrid, config: AvatarConfig): [number, number][] {
 
 /**
  * The same guy with his eyes shut: each eye drops to a line on its bottom row
- * and the cells it leaves show whatever the body has there. Derived, not
- * drawn, so it works for every eye part.
+ * and the cells it leaves show what the guy wears there (a mask, a monocle's
+ * glass: `underEyes`), else the body. Derived, not drawn, so it works for
+ * every eye part.
  */
 export function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid {
   const shut = grid.map(row => [...row]);
-  const bare = bareOf(config);
+  const bare = bareOf(config), under = underEyes(config);
+  const cells = eyeCells(grid, config);
   const lowest = new Map<number, number>();
-  for (const [x, y] of eyeCells(grid, config)) lowest.set(x, Math.max(lowest.get(x) ?? -1, y));
-  for (const [x, y] of eyeCells(grid, config)) shut[y][x] = y === lowest.get(x) ? T.EYE : (bare[y][x] ?? 0);
+  for (const [x, y] of cells) lowest.set(x, Math.max(lowest.get(x) ?? -1, y));
+  for (const [x, y] of cells) shut[y][x] = y === lowest.get(x) ? T.EYE : under?.[y][x] || (bare[y][x] ?? 0);
   return shut;
 }
 
-/** The same guy glancing sideways: his eye pixels move one column, staying on his face. */
+/**
+ * The same guy glancing sideways: the eye pixels move one column, staying on
+ * the face. The cells they leave show what the guy wears there (a mask, a
+ * monocle's glass: `underEyes`), else the body.
+ */
 function glance(grid: PixelGrid, config: AvatarConfig, dx: number): PixelGrid {
   const out = grid.map(row => [...row]);
-  const bare = bareOf(config);
+  const bare = bareOf(config), under = underEyes(config);
   const cells = eyeCells(grid, config);
-  for (const [x, y] of cells) out[y][x] = bare[y][x] ?? 0;
+  for (const [x, y] of cells) out[y][x] = under?.[y][x] || (bare[y][x] ?? 0);
   for (const [x, y] of cells) {
     const nx = x + dx;
     if (nx >= 0 && nx < GRID_SIZE && bare[y][nx]) out[y][nx] = grid[y][x];
   }
   return out;
+}
+
+/** Each glance pose: the pose it looks from, and which way. */
+const GLANCES: Partial<Record<Pose, [Pose, number]>> = { left: ['base', -1], right: ['base', 1], blushLeft: ['blush', -1], blushRight: ['blush', 1] };
+
+/**
+ * A glance's shines keep the colour they have in the pose it looks from. ./paint
+ * tints a shine by what is beside it, and a glance puts other things there (a
+ * monocle's ring it uncovers), so painted afresh a white shine went grey for the
+ * glance alone. `from` is that pose painted the same way, `grid` its tokens.
+ */
+function keepShine(layer: Layer, from: Layer, grid: PixelGrid, config: AvatarConfig, dx: number): void {
+  // Where each moved cell came from, as `glance` moves them: a later one landing on a cell wins.
+  const bare = bareOf(config), source = new Map<number, [number, number]>();
+  for (const [x, y] of eyeCells(grid, config)) {
+    const nx = x + dx;
+    if (nx >= 0 && nx < GRID_SIZE && bare[y][nx]) source.set(y * GRID_SIZE + nx, [x, y]);
+  }
+  for (const [at, [x, y]] of source) {
+    const to = layer[y + HEADROOM]?.[at % GRID_SIZE], was = from[y + HEADROOM]?.[x];
+    if (to && was && grid[y][x] === T.WHITE) to.c = was.c;
+  }
 }
 
 // ---------------------------------------------------------------- colour helpers
@@ -390,8 +431,11 @@ const mix = (a: string, b: string, t: number) => {
 
 // ---------------------------------------------------------------- frames
 
-/** `body`: the guy's own skin, which a Lucky shimmer crosses. `eye`: the token of an eye pixel, for eyes that move. */
-interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; feature?: boolean }
+/**
+ * `body`: the guy's own skin. `eye`: the token of an eye pixel, for eyes that move. `rim`: a Lucky
+ * guy's outline cell, at its place on the guy's grid, which steps through the rim's hues (`luckyShimmer`).
+ */
+interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; feature?: boolean; rim?: [number, number] }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
@@ -412,6 +456,8 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small 
     if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
     if (FEATURE_TOKENS.has(t)) cell.feature = true;
     if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
+    // The rim is the outline where ./paint drew it in Lucky's hues.
+    if (config.lucky && t === T.OUTLINE && c.toUpperCase() === luckyRim(x, y, 0).toUpperCase()) cell.rim = [x, y];
     out[y + HEADROOM][x] = cell;
   }));
   return out;
@@ -429,24 +475,67 @@ const hue = (h: number, s: number, l: number) => {
   return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('');
 };
 
-/** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
-function luckyShimmer(layer: Layer, t: number, seed: number): void {
-  const at = cycle(t + seed, 2200) * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
-  layer.forEach((row, y) => row.forEach((cell, x) => {
-    if (!cell?.body) return;
-    const d = Math.abs(x + y * 0.8 - at);
-    if (d < 3) cell.c = mix(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, 0.95, 0.68), d < 1.2 ? 0.6 : 0.3);
-  }));
+/** A colour's HSL hue (degrees), saturation and lightness (0 to 1): what `hue` takes back. */
+const hsl = (c: string): [number, number, number] => {
+  const [r, g, b] = rgb(c).map(v => v / 255), max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+  if (d === 0) return [0, 0, l];
+  const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, d / (1 - Math.abs(2 * l - 1)), l];
+};
+
+/**
+ * The hues a galaxy eye's ring swirls through: blue round violet to magenta,
+ * kept 50° clear of a body near them, so on Ocean or Cobalt the ring runs
+ * violet to magenta and never takes the body's own blue.
+ */
+function galaxyBand(body: string | undefined): [number, number] {
+  // How much colour the body has: a pale one (Snow, Opal) never takes the ring's colour, however its hue reads.
+  const chroma = body ? Math.max(...rgb(body)) / 255 - Math.min(...rgb(body)) / 255 : 0, h = body ? hsl(body)[0] : 0;
+  if (chroma < 0.3 || h < 170 || h > 340) return [210, 300];
+  if (h < 255) return [h + 50, Math.max(300, h + 80)];
+  return h < 300 ? [h + 50, h + 80] : [210, h - 50];
 }
 
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. */
-function liveEyes(layer: Layer, kind: string, t: number, seed: number): void {
+/** How long a Lucky guy's rim holds each step of its hues: thirty steps a LOOP_MS, so five or six hues come round. */
+const LUCKY_BEAT = 200;
+
+/**
+ * A Lucky guy's rim: the outline in Lucky's hues (./paint's `luckyRim`), moved on a hue every
+ * beat. Whole colours, never blended, and only ever the outline, so it never crosses the face.
+ */
+function luckyShimmer(layer: Layer, beat: number): void {
+  for (const row of layer) for (const cell of row) if (cell?.rim) cell.c = luckyRim(cell.rim[0], cell.rim[1], beat);
+}
+
+/** How far through its life a Lucky star is at its fullest: `starAt`'s long four points. */
+const STAR_OPEN = 0.57;
+const LUCKY_STAR = { period: 2300, life: 0.55 };
+
+/** A Lucky guy's gold star at `spot`, twinkling every couple of seconds and wide open at the start of the loop, so a still shows it whole. */
+function luckyStar(layer: Layer, [x, y]: [number, number], t: number): void {
+  const f = cycle(t + STAR_OPEN * LUCKY_STAR.life * fit(LUCKY_STAR.period), LUCKY_STAR.period) / LUCKY_STAR.life;
+  if (f < 1) sparkle(layer, x, y, f, GOLD_SPARKLE, starAt);
+}
+
+/** Where a Lucky star sits: the top-right-most spot over the head, where its whole four points fit if any does. */
+function starSpot(layer: Layer, spots: [number, number][]): [number, number] | undefined {
+  const whole = spots.filter(([x, y]) => starAt(STAR_OPEN).every(([dx, dy]) => x + dx >= 0 && x + dx < GRID_SIZE && y + dy >= 0 && y + dy < FRAME_HEIGHT && !layer[y + dy][x + dx]));
+  return (whole.length ? whole : spots).reduce<[number, number] | undefined>((a, s) => (!a || s[0] - s[1] > a[0] - a[1] ? s : a), undefined);
+}
+
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. `body` is the body's colour. */
+function liveEyes(layer: Layer, kind: string, t: number, seed: number, body?: string): void {
+  const [lo, hi] = kind === 'galaxy' ? galaxyBand(body) : [0, 0];
   layer.forEach((row, y) => row.forEach((cell, x) => {
     if (!cell?.eye) return;
     const k = cell.eye;
     if (kind === 'galaxy') {
       if (k === T.WHITE) cell.c = wrap(t / steps(160, 5) + x * 3 + y * 2, 5) < 1.2 ? '#FFFFFF' : '#CBB8FF';
-      else if (k !== T.EYE) cell.c = hue(255 + 45 * Math.sin(t / wave(380) + x * 0.9 + y * 0.7), 0.8, 0.55);
+      // Only the ring's hue swirls: each cell keeps its saturation and lightness, so the pale ring stays over the deep one.
+      else if (k !== T.EYE) {
+        const [, s, l] = hsl(cell.c);
+        cell.c = hue((lo + hi) / 2 + (hi - lo) / 2 * Math.sin(t / wave(380) + x * 0.9 + y * 0.7), s, l);
+      }
     } else if (kind === 'diamond') {
       const at = cycle(t + seed, 1400) * 24 - 4, d = Math.abs(x - y * 0.5 - at);
       if (k !== T.EYE) cell.c = mix(cell.c, '#E6FCFF', 0.25 + 0.2 * Math.sin(t / wave(250) + x));
@@ -544,7 +633,7 @@ function rim(layer: Layer): [number, number][] {
 }
 
 /** A sparkle's three colours: its white heart, its bright arms, its deep edges. */
-type Sparkle = [string, string, string];
+export type Sparkle = [string, string, string];
 
 /** The sparkle `f` of the way through its life at (x, y), only where there is nothing. */
 function sparkle(layer: Layer, x: number, y: number, f: number, colors: Sparkle, shape = sparkleAt): void {
@@ -593,12 +682,15 @@ function sparkleRun(layer: Layer, spots: [number, number][], at: number, period:
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
 const sparkleIn = (color: string): Sparkle => ['#FFFFFF', mix(color, '#FFFFFF', 0.45), color];
 /** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
-const GOLD_SPARKLE: Sparkle = ['#FFFFFF', '#FFF0B8', '#F5C342'];
+export const GOLD_SPARKLE: Sparkle = ['#FFFFFF', '#FFF0B8', '#F5C342'];
 
 const mouthIndex = (name: string) => Math.max(0, mouths.findIndex(m => m.name === name));
 
-/** `#` is the emote's colour, `+` its second colour. `open`: outlined round its outside only, its gaps left clear. */
-const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string; open?: boolean }> = {
+/**
+ * `#` is the emote's colour, `+` its second colour, any other letter one of `more`. `open`: outlined
+ * round its outside only, its gaps left clear.
+ */
+const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string; more?: Record<string, string>; open?: boolean }> = {
   note: { rows: ['.##', '.#.', '##.', '##.'], color: '#FFE27A' },
   question: { rows: ['###', '..#', '.#.', '...', '.#.'], color: '#FFFFFF' },
   bang: { rows: ['#', '#', '#', '.', '#'], color: '#FF6B6B' },
@@ -611,7 +703,20 @@ const EMOTES: Record<Emote, { rows: string[]; color: string; accent?: string; op
   anger: { rows: ['.#.#.', '##.##', '.....', '##.##', '.#.#.'], color: '#FF4D5E', open: true },
   // A little heart that floats up as a beat lifts it.
   hearts: { rows: ['#.#', '###', '.#.'], color: '#FF7AAE' },
+  // The thoughts, a size up from the rest so they read at 28 px. A light bulb: glass, its glint, the screw base.
+  bulb: { rows: ['.###.', '#+###', '#####', '.###.', '.===.', '.===.'], color: '#FFE27A', accent: '#FFFFFF', more: { '=': '#9AA3B5' } },
+  burst: { rows: ['#.#.#', '.###.', '##+##', '.###.', '#.#.#'], color: '#FF8A2B', accent: '#FFF3B8', open: true },
+  // A cloud with a star in it, and two bubbles trailing down from it.
+  cloud: { rows: ['..##.##.', '.#######', '.###+###', '..#####.', '........', '##......', '##......'], color: '#F4F2FF', accent: '#FFC93D' },
+  galaxy: { rows: ['.####.', '#+#==#', '#==#+#', '.####.'], color: '#4B2BA8', accent: '#FFFFFF', more: { '=': '#8F6BFF' } },
 };
+
+/** An emote picture's colour for a character of its rows, or null for a clear cell. */
+function emoteInk(kind: Emote, ch: string | undefined): string | null {
+  if (ch === undefined || ch === '.') return null;
+  const { color, accent, more } = EMOTES[kind];
+  return ch === '#' ? color : ch === '+' ? accent ?? color : more?.[ch] ?? color;
+}
 
 /**
  * A manga sweat drop on his temple, `slide` rows down from the top of his
@@ -639,55 +744,268 @@ function sweatDrop(layer: Layer, slide: number): void {
   for (const [x, y, c] of cells) if (x >= 0 && y < FRAME_HEIGHT && !nearFace(x, y)) layer[y][x] = { c, item: false };
 }
 
+export interface PoseOptions extends AnimateOptions {
+  /**
+   * Keep what marks the guy rare at a glance, as step `step` of `of` round a little loop shows it:
+   * the ring the best worn copy or an aura puts round them (`glanceRing`, a turn a step), a Lucky
+   * guy's rim a hue on each step, and the worn copies' effects `step / of` of
+   * the way round LOOP_MS, so a loop of `of` steps closes.
+   */
+  rare?: { step: number; of: number };
+}
+
 /**
  * One still of him in a pose, his colours as rows (`FRAME_HEIGHT` by 16): what's worn on him, no frame,
  * buddy or aura, no shine. What his chat emotes are drawn from (./emotes).
  */
-export function poseStill(input: string, pose: Pose, options: AnimateOptions = {}): (string | null)[][] {
+export function poseStill(input: string, pose: Pose, options: PoseOptions = {}): (string | null)[][] {
+  return poseCells(input, pose, options).colors;
+}
+
+/**
+ * `poseStill`, with which cells are the guy's own skin (`body`) and the frame row the eyes start on
+ * (`eyes`): what an emote that opens the head needs to know.
+ */
+export function poseCells(input: string, pose: Pose, options: PoseOptions = {}): { colors: (string | null)[][]; body: boolean[][]; eyes: number } {
   const { config, grid } = poser(input, options);
   const palette = withItems(options.palette ?? paletteOf(config), config);
-  return painted(grid(pose), config, palette, false, null, FRAME_WIDTH).map(row => row.map(cell => cell?.c ?? null));
+  const layer = painted(grid(pose), config, palette, false, null, FRAME_WIDTH);
+  const looks = GLANCES[pose];
+  if (looks) keepShine(layer, painted(grid(looks[0]), config, palette, false, null, FRAME_WIDTH), grid(looks[0]), config, looks[1]);
+  const body = layer.map(row => row.map(cell => !!cell?.body)), eyes = faceOf(config).top + HEADROOM;
+  if (!options.rare) return { colors: layer.map(row => row.map(cell => cell?.c ?? null)), body, eyes };
+  const { step, of } = options.rare;
+  luckyShimmer(layer, step);
+  const ring = ringOf(config, options.rarity !== false);
+  if (ring) for (const [x, y] of rim(layer)) layer[y][x] = { c: ringCell(ring, x, y, step), item: false };
+  const colors = layer.map(row => row.map(cell => cell?.c ?? null)), slots = layer.map(row => row.map(cell => cell?.slot ?? 0));
+  return { colors: applyFx(colors, slots, FRAME_SLOTS.map(slot => config.owned?.[slot]), step * LOOP_MS / Math.max(1, of)), body, eyes };
+}
+
+// ---------------------------------------------------------------- rare at a glance
+
+/** How long each of a ring's colours shows in turn: three a second, so two or three colours come round in LOOP_MS. */
+const RING_STEP = 1000 / 3;
+
+/** How much colour there is in a colour, 0 for a grey or white to 1 for a pure hue. */
+const chroma = (h: string) => { const c = rgb(h); return (Math.max(...c) - Math.min(...c)) / 255; };
+
+/** A colour's relative luminance, as contrast ratios read it. */
+const luminance = (h: string) => {
+  const [r, g, b] = rgb(h).map(v => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+/** The luminance an aura's ring keeps between: 2 to 1 or more against a dark page (#18181B) and against white. */
+const RING_DARKEST = 0.07, RING_LIGHTEST = 0.47;
+
+/** `c` taken darker or lighter, as little as it needs, into the luminance a ring reads at on any page. */
+function legible(c: string): string {
+  const l = luminance(c), toward = l > RING_LIGHTEST ? '#000000' : l < RING_DARKEST ? '#FFFFFF' : null;
+  if (!toward) return c;
+  for (let i = 1; i <= 20; i++) {
+    const m = mix(c, toward, i / 20), lm = luminance(m);
+    if (lm >= RING_DARKEST && lm <= RING_LIGHTEST) return m;
+  }
+  return c;
+}
+
+/** A colour's hue, 0 to 360. */
+const hueOf = (h: string) => {
+  const [r, g, b] = rgb(h), max = Math.max(r, g, b), d = max - Math.min(r, g, b);
+  if (!d) return 0;
+  const k = max === r ? (g - b) / d + 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (k * 60) % 360;
+};
+/** How far apart two hues are round the wheel. */
+const hueGap = (a: string, b: string) => { const d = Math.abs(hueOf(a) - hueOf(b)) % 360; return Math.min(d, 360 - d); };
+
+/** Whether two colours are near enough to read as one at a glance. */
+const alike = (a: string, b: string) => { const x = rgb(a), y = rgb(b); return Math.max(...x.map((v, i) => Math.abs(v - y[i]))) < 28; };
+
+/**
+ * A ring round a guy: its colours, and whether they run round the guy in bands (an aura's) or show
+ * a colour at a time over the whole ring (a copy's grade's).
+ */
+interface Ring { colors: string[]; bands: boolean }
+
+/**
+ * The ring round a guy. A copy's grade's colour and a darker one (a Grail's two golds), the whole
+ * ring a colour at a time. An aura's own colours, its most vivid first, two or three, none grey,
+ * each taken into the luminance that reads on a dark page and on white, in bands round the guy,
+ * so an aura never rings like a grade; one whose colours are all one hue (a gold aura beside a
+ * Grail) takes the aura grade's teal among them.
+ */
+function ringColours(grade: number, aura?: Aura, copy?: Owned): Ring | null {
+  if (aura) {
+    const all = copy ? auraColors(aura.id, copy.finish, copy.print) : aura.colors;
+    const lead = copy ? auraHue(aura.id, copy.finish, copy.print) : all.reduce((a, c) => (chroma(c) > chroma(a) ? c : a), all[0]);
+    const vivid = [lead, ...all.filter(c => c.toUpperCase() !== lead.toUpperCase()).sort((a, c) => chroma(c) - chroma(a))].filter(c => chroma(c) >= 0.25);
+    const colors: string[] = [];
+    for (const c of (vivid.length ? vivid : [lead]).map(legible)) if (colors.length < 3 && !colors.some(k => alike(k, c))) colors.push(c);
+    // One hue only (a gold aura, a pink one) would ring like a grade: the aura grade's teal joins it.
+    if (colors.every(c => hueGap(c, colors[0]) < 45)) colors.splice(Math.min(colors.length, 2), 1, legible(GRADES[5].color));
+    return { colors, bands: true };
+  }
+  if (grade < 2) return null;
+  const color = GRADES[grade].color;
+  return { colors: grade === 4 ? ['#FFE27A', '#E4AE39'] : [color, mix(color, '#000000', 0.35)], bands: false };
+}
+
+/** The best grade among the copies a guy wears, an aura aside (-1 for none). */
+const bestGrade = (config: AvatarConfig) => Math.max(-1, ...Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== 'aura').map(([, o]) => GRADES.findIndex(g => g.id === gradeOf(o!).id)));
+
+/** The aura a dressed guy wears, if any. */
+const auraOf = (config: AvatarConfig) => auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
+
+/** `ringColours` for a dressed guy: the aura's, else the best copy's when `rarity` shows. */
+function ringOf(config: AvatarConfig, rarity: boolean): Ring | null {
+  const aura = auraOf(config);
+  return aura ? ringColours(-1, aura, config.owned?.aura) : rarity ? ringColours(bestGrade(config)) : null;
+}
+
+/** Which turn a ring is on `at` ms in: a turn every RING_STEP, round its colours. */
+function ringTurn(ring: Ring, at: number): number {
+  const s = steps(RING_STEP, ring.colors.length);
+  return Math.floor(wrap(at, s * ring.colors.length) / s);
+}
+
+/** A ring cell's colour at (x, y) on turn `turn`: a grade's ring all one colour; an aura's in diagonal bands two cells wide, moved on a band a turn. */
+function ringCell(ring: Ring, x: number, y: number, turn: number): string {
+  const n = ring.colors.length, band = ring.bands ? Math.floor((x - y) / 2) : 0;
+  return ring.colors[(((band + turn) % n) + n) % n];
+}
+
+/**
+ * What shows a guy is rare in a small view (a chat emote, a face, an icon), where an aura's pieces
+ * and a copy's sparkles are a stray pixel or two: one ring round the guy, a pixel out from the
+ * outline, in whole pixels so it stays crisp at any whole-number size. A worn copy of Prized or better
+ * rings the guy in its grade's colour, breathing with a darker one (a Grail in its two golds); an
+ * aura in bands of its own colours that run round the guy. Its colours; null for a guy with neither.
+ */
+export function glanceRing(input: string, options: AnimateOptions = {}): string[] | null {
+  return ringOf(dress(resolve(input, options.parts), options, input), options.rarity !== false)?.colors ?? null;
 }
 
 /** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
 export function emoteCells(kind: Emote): [number, number, string][] {
-  const { rows, color, accent, open } = EMOTES[kind];
+  const { rows, open } = EMOTES[kind];
   const w = rows[0].length + 2, h = rows.length + 2;
   const inside = (x: number, y: number) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
-  const ink = (ch: string | undefined) => ch === '#' || ch === '+';
+  const ink = (ch: string | undefined) => emoteInk(kind, ch) !== null;
   const cells: [number, number, string][] = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const ch = rows[y - 1]?.[x - 1], on = ink(ch);
+    const ch = rows[y - 1]?.[x - 1], on = emoteInk(kind, ch);
     const near = !on && !(open && inside(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
-    if (on || near) cells.push([x, y, on ? (ch === '+' ? accent ?? color : color) : '#1B1428']);
+    if (on || near) cells.push([x, y, on ?? EMOTE_INK]);
   }
   return cells;
 }
 
+/** The dark outline round every emote picture. */
+export const EMOTE_INK = '#1B1428';
+
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer: Layer, kind: Emote, left: boolean, lift = 0): void {
-  const { rows, color, accent, open } = EMOTES[kind];
+  const { rows } = EMOTES[kind];
   const w = rows[0].length + 2, h = rows.length + 2;
-  const inside = (x: number, y: number) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
   const spots: [number, number][] = [[FRAME_WIDTH - w, 0], [0, 0], [FRAME_WIDTH - w, 1], [0, 1], [FRAME_WIDTH - w, 2], [0, 2]]
     .map(([x, y]) => [x, Math.max(0, y + 1 - lift)] as [number, number]);
   if (left) spots.sort((a, b) => a[0] - b[0]);
-  const ink = (ch: string | undefined) => ch === '#' || ch === '+';
-  const at = ([x0, y0]: [number, number]) => {
-    const cells: [number, number, string][] = [];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const ch = rows[y - 1]?.[x - 1];
-      const on = ink(ch);
-      const near = !on && !(open && inside(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
-      if (on || near) cells.push([x0 + x, y0 + y, on ? (ch === '+' ? accent ?? color : color) : '#1B1428']);
-    }
-    return cells;
-  };
+  const cells = emoteCells(kind);
+  const at = ([x0, y0]: [number, number]) => cells.map(([x, y, c]) => [x0 + x, y0 + y, c] as [number, number, string]);
   // A clear corner if there is one; on a guy too tall for that, it overlaps
   // his edge like a speech bubble rather than not showing at all.
   const clear = spots.map(at).find(cells => cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x]));
   for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = { c, item: false };
 }
+
+// ---------------------------------------------------------------- the open head
+
+/** The two thoughts that open the head rather than sit in a corner: mind blown's burst and galaxy brain's starfield. */
+export type OpenThought = 'burst' | 'galaxy';
+/** Whether a little picture is one that opens the head (`openHead`). */
+export const opensHead = (kind: Emote | undefined): kind is OpenThought => kind === 'burst' || kind === 'galaxy';
+
+/** How many rows the lid of the head is up at each of six steps, and in a still. */
+export const LID_LIFT: Record<OpenThought, readonly number[]> = { burst: [2, 3, 4, 4, 4, 3], galaxy: [2, 3, 4, 4, 4, 4] };
+export const LID_STILL = 4;
+/** How long each of the lid's six steps is in a moving guy. */
+const LID_STEP_MS = 200;
+
+/** A burst's flame and the spark in its middle. */
+const FLAME = '#FF8A2B', SPARK = '#FFE27A';
+/** A starfield's deep violet, its dust and its stars. */
+const VOID = '#4B2BA8', DUST = '#8F6BFF', STARS = ['#FFFFFF', '#E3D6FF'];
+
+/**
+ * The top of the head lifted off as a lid, `lift` rows, at step `step` of six: every row over the
+ * cut, a hat with it, its underside closed in ink. The cut is two rows into the skin (into the head,
+ * for a costume, which covers all of it) and never as far as the eyes (row `eyes`). Under the lid,
+ * mind blown has a jagged column of flame round a spark, throwing sparks out to the sides; galaxy
+ * brain a dome of violet starfield bulging up out of the head, edged in ink, stars twinkling beside
+ * it. Flat colours, whole cells. `cols` is how many of the grid's columns are the guy (a buddy beside
+ * him stays put); `skin` says which cells are his own skin and `cell` makes a cell of a colour.
+ */
+export function openHead<C>(grid: (C | null)[][], skin: (x: number, y: number) => boolean, cell: (c: string) => C, eyes: number, kind: OpenThought, lift: number, step: number, cols = grid[0]?.length ?? 0): void {
+  const height = grid.length, width = grid[0]?.length ?? 0;
+  const lit = (row: (C | null)[]) => row.slice(0, cols).some(Boolean);
+  const head = grid.findIndex(lit);
+  if (head < 0) return;
+  let skinTop = -1;
+  for (let y = 0; y < height && skinTop < 0; y++) for (let x = 0; x < cols; x++) if (skin(x, y)) { skinTop = y; break; }
+  const cut = Math.max(head + 1, Math.min((skinTop < 0 ? head : skinTop) + 2, eyes - 1));
+  const span = (row: (C | null)[] | undefined): [number, number] | null => {
+    const xs = (row ?? []).slice(0, cols).flatMap((c, x) => (c ? [x] : []));
+    return xs.length ? [xs[0], xs[xs.length - 1]] : null;
+  };
+  const at = cut < height ? span(grid[cut]) : null;
+  if (!at || lift < 1) return;
+  const [left, right] = at, mid = (left + right) / 2;
+  const put = (x: number, y: number, c: string) => { if (x >= 0 && y >= 0 && x < width && y < height && !grid[y][x]) grid[y][x] = cell(c); };
+  // The lid, lifted, and its underside in ink.
+  const lid = grid.slice(0, cut).map(row => row.slice(0, cols));
+  for (let y = 0; y < cut; y++) for (let x = 0; x < cols; x++) grid[y][x] = null;
+  lid.forEach((row, y) => row.forEach((c, x) => { if (c && y - lift >= 0) grid[y - lift][x] = c; }));
+  const [ul, ur] = span(lid[cut - 1]) ?? at;
+  for (let x = ul; x <= ur; x++) put(x, cut - lift, EMOTE_INK);
+  // What's under it, from the row below the lid's underside to the row over the cut.
+  const top = cut - lift + 1;
+  if (kind === 'burst') {
+    // A column of flame half the head's width, jagged a cell each side by turns, a spark up its middle,
+    // throwing sparks out to the sides.
+    const half = Math.max(2, Math.round((right - left + 1) / 4));
+    for (let y = top; y < cut; y++) {
+      const w = half + ((y + step) % 2), a = Math.ceil(mid - w), b = Math.floor(mid + w);
+      for (let x = a; x <= b; x++) put(x, y, x === a || x === b ? EMOTE_INK : Math.abs(x - mid) < 1 ? SPARK : FLAME);
+    }
+    const y0 = Math.max(top, cut - 2);
+    for (let i = 0; i < 2; i++) {
+      const s = (step + i * 2) % 4, reach = Math.ceil(half + 1 + s);
+      put(Math.floor(mid - reach), y0 - Math.floor(s / 2), SPARK);
+      put(Math.ceil(mid + reach), y0 - Math.floor((s + 1) / 2), SPARK);
+    }
+  } else {
+    // A dome of starfield bulging out of the head up to the lid, two cells in from the head's sides
+    // (fewer on a narrow head, so there's always some sky) and rounded at its top, with stars
+    // twinkling out beside it.
+    const room = right - left + 1, inset = room >= 9 ? 2 : room >= 6 ? 1 : 0;
+    for (let y = top; y < cut; y++) {
+      const j = cut - 1 - y, d = Math.min(inset + Math.max(0, j - 1), Math.floor((room - 3) / 2)), a = left + d, b = right - d;
+      for (let x = a; x <= b; x++) {
+        const star = (x * 5 + y * 3 + step) % 7 === 0, dust = (x * 3 + y * 7) % 5 === 0;
+        put(x, y, x === a || x === b ? EMOTE_INK : star ? STARS[(x + y) % 2] : dust ? DUST : VOID);
+      }
+    }
+    for (let i = 0; i < 2; i++) {
+      const s = (step + i * 3) % 6, side = i ? 1 : -1;
+      put(Math.round(mid + side * ((right - left) / 2 - 1 + (s >> 1))), top + 1 - (s >> 1), STARS[i]);
+    }
+  }
+}
+
+/** The lid's step `at` ms into a move: six steps of LID_STEP_MS, round and round. */
+const lidStep = (at: number) => Math.floor(wrap(at, fit(LID_STEP_MS * 6)) / (fit(LID_STEP_MS * 6) / 6)) % 6;
 
 // ---------------------------------------------------------------- poses and squashes
 
@@ -743,15 +1061,13 @@ function poser(input: string, options: AnimateOptions) {
   const grids = new Map<Pose, PixelGrid>();
   const grid = (pose: Pose): PixelGrid => {
     if (!grids.has(pose)) {
-      const base = compose(figure), mouth = poseMouth(pose, config.mouth);
+      const base = compose(figure), mouth = poseMouth(pose, config.mouth), looks = GLANCES[pose];
       const worn = mouth === undefined ? base : compose({ ...figure, mouth, arms: pose === 'laughWave' ? 2 : figure.arms });
       grids.set(pose,
         pose === 'shut' ? closeEyes(base, config)
-        : pose === 'left' ? glance(base, config, -1)
-        : pose === 'right' ? glance(base, config, 1)
+        : looks ? glance(grid(looks[0]), config, looks[1])
         : pose === 'frown' || pose === 'content' || pose === 'huff' || pose === 'oops' ? closeEyes(worn, config)
         : pose === 'blush' ? compose({ ...figure, cheeks: MANGA_BLUSH })
-        : pose === 'blushLeft' || pose === 'blushRight' ? glance(grid('blush'), config, pose === 'blushLeft' ? -1 : 1)
         : pose === 'wave' || pose === 'sides' ? compose({ ...figure, arms: pose === 'wave' ? 2 : 1 })
         : worn);
     }
@@ -826,20 +1142,24 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const palette = withItems(options.palette ?? paletteOf(config), config);
   // His buddy is drawn per frame beside him, not into his poses: it stays on the floor while he moves.
   const alone = buddyAlone(config), W = alone?.[0].length ?? FRAME_WIDTH;
-  const wornAura = auraById(itemById(config.aura)?.slot === 'aura' ? config.aura : undefined);
+  const wornAura = auraOf(config);
   // Effects move, so a guy wearing one gets short frames like an aura's.
   const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
   const withFx = fxCopies.some(o => o?.fx);
-  // Lucky guys and chase eyes move too, unless a still is asked for.
-  const lucky = !!config.lucky && options.rarity !== false && !options.small;
+  // Lucky guys and chase eyes move too. Lucky is the guy's own, not a copy's: it shows with `rarity` off too.
+  const lucky = !!config.lucky && !options.small;
   const liveEye = options.small ? undefined : LIVE_EYES.get(config.eyes);
   // Some shapes and skins have nowhere to put an arm.
   const canWave = JSON.stringify(grid('wave')) !== JSON.stringify(grid('sides'));
   const plan = squashPlan(config, figure, grid);
 
   const layers = new Map<Pose, Layer>();
-  const layerOf = (pose: Pose) => {
-    if (!layers.has(pose)) layers.set(pose, painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null, W));
+  const layerOf = (pose: Pose): Layer => {
+    if (!layers.has(pose)) {
+      const layer = painted(grid(pose), config, palette, !!options.small, liveEye ? faceOf(figure) : null, W), looks = GLANCES[pose];
+      if (looks) keepShine(layer, layerOf(looks[0]), grid(looks[0]), config, looks[1]);
+      layers.set(pose, layer);
+    }
     return layers.get(pose)!;
   };
   const buddyCells: [number, number, Cell][] = [];
@@ -868,6 +1188,14 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const buddyLife = !!alone && BUDDY_HOPS(move) && move !== 'dance';
   const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
   const spots = sparkleSpots(layerOf('base')), headSpots = sparkleSpots(layerOf('base'), 3);
+  const luckySpot = lucky ? starSpot(layerOf('base'), headSpots) : undefined;
+  // Mind blown and galaxy brain open his head; where his eyes are tells the lid where to stop.
+  const opens = opensHead(options.emote) ? options.emote : undefined;
+  const headTop = (layer: Layer) => layer.findIndex(row => row.slice(0, GRID_SIZE).some(Boolean));
+  const baseHead = opens ? headTop(layerOf('base')) : 0, baseEyes = faceOf(config).top + HEADROOM;
+  // The ring round the guy: a copy's grade from Prized up, or, in a small view, the aura in its own colours.
+  const ring = wornAura ? (options.glance ? ringColours(-1, wornAura, config.owned?.aura) : null) : ringColours(grade);
+  const ringPhase = wornAura ? (config.owned?.aura?.print ?? 0) * 37 : seed;
   // With effects on, long beats are cut into slices so the shine can move.
   const lapMs = beats.reduce((n, b) => n + b.ms, 0);
   const loop = options.loop && 'fit' in options.loop ? { ...fitLoop(lapMs), fine: options.loop.fine } : options.loop;
@@ -879,6 +1207,7 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
     let n = wornAura || withFx || lucky || liveEye || goldMark || buddyLife ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
     if (loop?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
+    if (opens) n = Math.max(n, Math.ceil(beat.ms / LID_STEP_MS));
     for (let i = 0; i < n; i++) {
       const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
       slices.push({ beat, ms, t: clock(t), lap });
@@ -900,6 +1229,11 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
     layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
     if (buddyCells.length) { layer = layer.map(row => [...row]); standBuddy(layer, buddyCells, buddyLift(move, beat, t, roll)); }
+    if (opens) {
+      const open = layer.map(row => [...row]), k = lidStep(t);
+      openHead(open, (x, y) => !!open[y][x]?.body, c => ({ c, item: false }), baseEyes + headTop(open) - baseHead, opens, LID_LIFT[opens][k], k, GRID_SIZE);
+      layer = open;
+    }
     const figure = layer;
     layer = layer.map(row => row.map(cell => (cell ? { ...cell } : null)));
     if (trailFrom.length && (beat.dy ?? 0) < 0) {
@@ -921,13 +1255,13 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       }));
     }
 
-    if (lucky) luckyShimmer(layer, t, seed);
-    if (liveEye) liveEyes(layer, liveEye, t, seed);
+    if (lucky) luckyShimmer(layer, tick(t, LUCKY_BEAT));
+    if (liveEye) liveEyes(layer, liveEye, t, seed, palette.colors[T.BODY]);
     // Sparkles, sparingly: a Lucky guy's gold star over his head, a Gold finish's mark.
-    if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t + seed * 7, 2300, 0.55, seed, GOLD_SPARKLE, starAt);
+    if (luckySpot && !wornAura && grade < 3 && !goldMark) luckyStar(layer, luckySpot, t);
     if (goldMark) sparkleRun(layer, headSpots, t + goldCopy!.print * 37, 2600, 0.55, goldCopy!.print, GOLD_SPARKLE, starAt);
 
-    const aura = grade >= 2 ? rim(layer) : [];
+    const around = ring ? rim(layer) : [];
     if (beat.stars) {
       // A cheer's stars: two glints over his head, opening by turns.
       const gold = sparkleIn(palette.colors[T.GOLD] ?? '#F2C230');
@@ -935,9 +1269,9 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
     }
     if (beat.drop) sweatDrop(layer, beat.slide ?? 0);
     if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
-    if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(wrap(t, fit(800)) / (fit(800) / 2)) % 2);
+    if (options.emote && !beat.emote && !opens) emote(layer, options.emote, false, Math.floor(wrap(t, fit(800)) / (fit(800) / 2)) % 2);
     const outside: [number, number, string][] = [];
-    if (wornAura) {
+    if (wornAura && !options.glance) {
       // The aura, round him as he stands in this frame, in its finish, which
       // shimmers on its print's own time as an effect does. A rare one's rings
       // run past the frame's sides; those cells ride along in `outside`.
@@ -947,11 +1281,10 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
         if (x < 0 || x >= W) outside.push([x, y, c]);
         else layer[y][x] = { c, item: false, slot: 5 };
       }
-    } else if (grade >= 2) {
-      // A ring in the grade's colour, breathing in and out.
-      const on = Math.floor(wrap(t + seed, fit(640)) / (fit(640) / 2)) % 2 === 0;
-      const ring = grade === 4 ? (on ? '#FFE27A' : '#E4AE39') : on ? gradeColor : mix(gradeColor, '#000000', 0.35);
-      for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = { c: ring, item: false };
+    } else if (ring) {
+      // A ring in the grade's colour, breathing in and out; in a small view, an aura's colours in bands that run round him.
+      const turn = ringTurn(ring, t + ringPhase);
+      for (const [x, y] of around) if (!layer[y][x]) layer[y][x] = { c: ringCell(ring, x, y, turn), item: false };
     }
     if (grade >= 3 && !wornAura) {
       // Mythic copies throw off a sparkle at a time in their colour, Grails two, staggered.

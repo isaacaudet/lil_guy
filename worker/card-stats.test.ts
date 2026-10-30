@@ -25,7 +25,8 @@ const call = (path: string, method = 'GET', body?: any, headers: any = {}) => ap
 const claim = async (key: string) => (await (await call('/names/' + key, 'POST')).json()) as any;
 const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
 // Stamps for a test that opens many capsules: a club day well after stamps began, as if read from the club.
-const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, ?, 0) ON CONFLICT(key, day) DO UPDATE SET n = n + excluded.n").run(key, n);
+// Stamps are the name's Google sign-in's when it has one, else the name's own.
+const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES ((SELECT COALESCE(account, key) FROM names WHERE key = ?), '2030-01-01', NULL, ?, 0) ON CONFLICT(holder, day) DO UPDATE SET n = n + excluded.n").run(key, n);
 
 
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);

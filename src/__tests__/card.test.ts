@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { cardFrames, cardStill, toCardGif, toCardPng, toGuyGif, CARD_WIDTH, CARD_HEIGHT, textWidth } from '../card';
+import { cardFrames, cardStill, toCardGif, toCardPng, toGuyGif, CARD_WIDTH, CARD_HEIGHT, textWidth, rankFit, rankRoom } from '../card';
+import { guyRank } from '../rarity';
+import { resolve } from '../resolve';
 import { encodeGif, encodePng } from '../gif';
 import { roll } from '../owned';
 import { editionColor, editionField } from '../finish-shader';
@@ -71,4 +73,15 @@ describe('saving', () => {
     const tiny = await encodePng(new Uint8ClampedArray(4).fill(255), 1, 1);
     expect(tiny.length).toBeGreaterThan(50);
   });
+});
+
+test('a rank beside its badge is never cut: "Top 48%" whole, "Top" dropped before a digit', () => {
+  const ranks = [...Array.from({ length: 3000 }, (_, i) => guyRank(resolve(`rank ${i}`))),
+    { name: 'Uncommon', label: 'Top 50%' }, { name: 'Legendary', label: 'Top 0.055%' }, { name: 'Mythic', label: 'Top 0.0000055%' }];
+  for (const r of ranks) {
+    const fit = rankFit(r.label, rankRoom(r.name));
+    expect(fit.text).not.toContain('…');
+    expect(fit.text.replace(/\D/g, '')).toBe(r.label.replace(/\D/g, ''));
+    if (r.name === 'Uncommon' && r.label !== 'Common') expect(fit.text).toBe(r.label);
+  }
 });

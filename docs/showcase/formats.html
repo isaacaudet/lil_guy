@@ -10,6 +10,8 @@
 <meta name="description" content="Every way a DLE Club game can show a player's lil guy: each view at its real size, the sizes games use, and the address and HTML to copy.">
 <style>
   @font-face { font-family: "m6x11plus"; src: url("../fonts/m6x11plus.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+  /* The few marks m6x11plus lacks, in its pixels (docs/fonts/lilguys-punct.py). */
+  @font-face { font-family: "m6x11plus"; src: url("../fonts/lilguys-punct.ttf") format("truetype"); font-style: normal; font-weight: 400; font-display: swap; unicode-range: U+00B7, U+2019, U+201C-201D, U+2026, U+2192, U+2212, U+2605; }
   :root {
     color-scheme: dark;
     --bg: #131726; --panel: #232a40; --panel-2: #2e3752; --well: #0c0f1a; --edge: #05060c;

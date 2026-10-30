@@ -280,9 +280,11 @@ to a half again for nothing CSS can't do.
 
 For Twitch chat and anything bigger than a board (a stand of every chatter, the day's players),
 draw guys from crowd sprites on one canvas instead of an element each. `crowdSprite(spec, size)`
-gives a guy at 16, 10, 8, 6, 4 or 2 pixels square, standing on the cell's floor, made from his own
-drawing: at 16 his still, at 10 and 8 his shape, colours, eyes, mouth and outline, at 6 a face in his
-colours, at 4 and 2 his colours (hat or head over body). `crowdSheet(specs, size, columns)` puts many
+gives a guy at 16, 14, 12, 10, 8, 6, 5, 4, 3 or 2 pixels square, standing on the cell's floor, made
+from their own drawing: at 16 their still; at 14 and 12 the still with repeated rows and columns of the
+body taken out, so their eyes and mouth stay as drawn; at 10 and 8 their shape, colours, eyes, mouth and
+outline; at 6 a face in their colours; at 5 a far face and at 3 a head over shoulders, each topped with
+their outline (ears, a hat's point); at 4 and 2 their colours. `crowdSheet(specs, size, columns)` puts many
 on one sheet, guy `n` at column `n % columns`. Each takes about 0.3 ms with no canvas, so a game makes a
 chatter's sprite as they first type and draws the crowd as one copy per guy, near rows at the bigger
 sizes and far rows at the smaller. Seed a chatter from the lowercased name, as chat's faces already do.
@@ -290,19 +292,23 @@ They come with the headless build (below).
 
 Most games want the whole crowd, not the sprites: `createCrowd(canvas, { backdrop, wave })` lays the
 canvas out in rows (`crowdSeats`), seats each guy you `add(name, look)` from the front middle back,
-makes his sprite a few milliseconds a frame, sinks the far rows into a haze of `backdrop`, and draws
-only while something moves. `hop(name)` when a chatter guesses, `wave(true)` for a stadium wave,
-`spotlight(name, label)` to lift the round's winner out to the front, big, with a line under him.
+makes their sprite a few milliseconds a frame, sinks the far rows into a haze of `backdrop` (the page's
+own background by default), and draws only where something moves. Its scale follows the head count
+(big for a few, smaller as more come), so `seats` changes as people come and go. `hop(name)` when a
+chatter guesses, `wave(true)` for a stadium wave, `spotlight(name, label)` to lift the round's winner
+out to the front, big, with a line under them, `remove(name)` when one leaves. Past the seats, guys wait
+undrawn in the order they came and take seats as they free up or the canvas grows.
 A guy wearing a Prized copy or better is outlined in its grade's colour (`crowdShine`), so rare guys
 show from the back. Made-up guys in a crowd wear nothing: no pet shop items, no buddies.
 
 For a crowd that should feel like an event, `createStadium(canvas, { wave, onVenue })` takes the same
 `add`, `remove`, `hop` and `spotlight` and puts the crowd in a venue that grows with it: the porch (up to
 20), the bleachers (50), the gym (100), the hall (200), the arena (1,000), the stadium (5,000) and the
-bowl (beyond). Seats fill from the front row all the way round, and the venue changes as people come and
-go. Only who a game adds is there. A game that only draws crowds loads `/lilguys-stadium.mjs` (or
-`/lilguys-stadium.js`, `window.LilGuyStadium`): the crowd and stadium alone, about 63 KB gzipped, a third
-of the whole library.
+bowl (beyond). It is half a stadium seen from the floor, laid out for the canvas's shape, so it works as a
+backdrop: the stand runs off both sides, the roof or sky fills the top and the floor the bottom. The
+seats are the people present, filling from the front row's middle, and the venue changes as people come
+and go. A game that only draws crowds loads `/lilguys-stadium.mjs` (or `/lilguys-stadium.js`,
+`window.LilGuyStadium`): the crowd and stadium alone, about 86 KB gzipped.
 
 For a page that isn't a game, the Worker draws a still crowd: `GET /api/club/crowd.png?names=a,b,c`
 with `w` and `h` (world pixels, up to 480 × 240), `fill` (plain made-up guys behind, up to 4,000),
@@ -316,6 +322,10 @@ Oops), 14 pixels square so they scale by whole numbers: `emote-<id>` moves (six 
 Twitch's animated emotes), `emote-<id>-still` holds. Twitch takes `@2`, `@4` and `@8` (28, 56, 112),
 Discord `@9` (126). `/showcase/emotes.html?name=<name>` shows a player's set and zips it for either.
 In code: `emoteFrames(spec, id, moving)` and `EMOTE_SET`.
+
+`emote-galaxybrain` is earned: the Worker draws it only for a claimed guy whose player holds a Mythic or
+better copy, an aura, or eclipse, void, idea, thought or op art, and answers `404` for anyone else (a
+chatter's `~name` included). `GET /api/guys/<name>` lists the ones a guy may use in `emotes`.
 
 ## Limits, CORS and privacy
 
@@ -331,13 +341,19 @@ In code: `emoteFrames(spec, id, moving)` and `EMOTE_SET`.
 
 ## Drawing guys in the game itself
 
-A game that renders guys locally (Amountle's Twitch mode, the club's own boards) vendors the headless
-build instead: build it with `npx tsdown -c tsdown.headless.config.ts` and copy
-`dist-headless/headless.js` and `headless.d.ts` over the game's copy (Amountle's `src/lil-guy-club.js`,
-the club's `dist/club/faces.js`). Never hand-edit them. `bakeView(spec, view)` gives exactly the frames
-the Worker serves for a view (`bakeSquare` for `icon` and `face`, `cardInputOf` for the big card's
-words), and `encodeApng`, `encodeGif` and `sheetOf` encode them the same way. Part arrays are
-append-only, so a vendored build only ever adds.
+A game that renders guys locally (Amountle's Twitch mode) vendors the headless build instead: build it
+with `npx tsdown -c tsdown.headless.config.ts` and copy `dist-headless/headless.js` and `headless.d.ts`
+over the game's copy (Amountle's `src/lil-guy-club.js`). Never hand-edit them. `bakeView(spec, view)`
+gives exactly the frames the Worker serves for a view (`bakeSquare` for `icon` and `face`,
+`cardInputOf` for the big card's words), and `encodeApng`, `encodeGif` and `sheetOf` encode them the
+same way. Part arrays are append-only, so old looks and `g1:` codes keep drawing, but a build can still
+lack a name a game imports: the headless test in `src/__tests__/guy.test.ts` lists them, so add to it
+when a game imports something new.
+
+Don't copy the headless build over the club's `dist/club/faces.js`: it deals a different guy for
+nearly every name, so every face on dleclub.com would change. The same build step writes
+`dist-headless/faces.js`, only the parts, palettes, `resolve`, guy codes and `toSvgString`, minified,
+for the day that change is wanted.
 
 ## Moving a game over
 
@@ -349,7 +365,8 @@ append-only, so a vendored build only ever adds.
   needs pictures.
 - **dle-club** (`dist/club/look.js` draws SVGs with `toSvgString`; `api/_lib/lilguys.js` reads
   `/api/club/guys`): boards can show `~<board name>/face.png` with no library, or, for players whose
-  sign-in has a lilguys name (`lilguysOf` already returns `key`), `@<key>`. A club guy drawn from its
+  sign-in has a lilguys name (`lilguysOf` already returns `key`), `@<key>`. Either changes every face
+  on the boards, so it is Isaac's call. A club guy drawn from its
   `g1:` code has no seed the Worker can see; keep drawing those with `faces.js`, or hand the Worker a
   guy code built from the board name as seed and the `g1:` parts (never the club id as a seed).
 - **Engine games** (Puttsies, Weighsies, Cutsies, Trickshotle): party chips, scorecards and boards

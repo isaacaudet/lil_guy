@@ -257,13 +257,17 @@ export const bodies: Marking[] = [
   {
     name: 'kintsugi',
     draw: c => {
-      // Mended with gold: two cracks filled with it, like a treasured bowl.
-      const x = Math.floor(c.centre);
-      const cracks = [
-        [[1, c.crown], [2, c.crown + 1], [2, c.crown + 2], [3, c.crown + 3], [4, c.crown + 3], [5, c.crown + 4], [5, c.crown + 5]],
-        [[-6, c.bottom - 3], [-5, c.bottom - 2], [-4, c.bottom - 2], [-3, c.bottom - 1], [-3, c.bottom], [-2, c.bottom]],
-      ];
-      for (const crack of cracks) crack.forEach(([dx, y], i) => onBody(c, x + dx, y, i % 3 === 1 ? T.GOLD_SHADE : T.GOLD));
+      // Mended with gold, like a treasured bowl: two seams running in from the
+      // sides below the eyes, where a hat never covers them, each with a dark
+      // edge under it (fixed in PART_COLORS in ../paint) so it reads on a pale body.
+      const seam = (pts: [number, number][]) => pts.forEach(([x, y]) => {
+        if (!c.isBody(x, y)) return;
+        c.set(x, y, T.GOLD);
+        if (c.isBody(x, y + 1) && c.get(x, y + 1) !== T.GOLD) c.set(x, y + 1, T.LEAF_SHADE);
+      });
+      const ry = c.eyeLine + 1, r = c.rows[ry], ly = c.bottom - 2, l = c.rows[ly];
+      if (r) seam([[r.right, ry], [r.right - 1, ry], [r.right - 2, ry + 1], [r.right - 3, ry + 1], [r.right - 3, ry + 2]]);
+      if (l) seam([[l.left, ly], [l.left + 1, ly], [l.left + 2, ly + 1], [l.left + 3, ly + 1], [l.left + 4, ly], [l.left + 5, ly]]);
     },
   },
 
@@ -279,6 +283,21 @@ export const bodies: Marking[] = [
       }
       for (const dx of [-4, -1, 3]) onBody(c, x + dx, c.bottom - 3, T.GOLD);
       onBody(c, x - 4, c.bottom - 4, T.GOLD);
+    },
+  },
+
+  // Capsules only (CAPSULE_ONLY in ./weights), in fixed colours (PART_COLORS in ../paint).
+  {
+    name: 'op art',
+    draw: c => {
+      // The lower body in ink and ivory bands a cell deep, stepping down into a
+      // chevron every two columns out from the middle, as in an op art print,
+      // from a row under the eyes so the cheeks stay clear. Rings centred low
+      // read as a mouth full of teeth.
+      const cx = c.centre - 0.5;
+      for (let y = c.eyeLine + 2; y <= c.bottom; y++) for (let x = 0; x < 16; x++) {
+        onBody(c, x, y, (y + Math.floor(Math.abs(x - cx) / 2)) % 2 ? T.TRIM : T.LEAF_SHADE);
+      }
     },
   },
 ];

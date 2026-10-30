@@ -6,12 +6,13 @@ import { decode, encode, type Owned } from '../owned';
 import { PINS, MAX_PINS, tallyMarks } from '../pins';
 import { luckyPalette, palettes, paletteOf, shadePalette, SHADE_COUNT } from '../palette';
 import { guyOneIn, traitOdds } from '../rarity';
-import { animate, EMOTE_UNLOCKS } from '../animate';
+import { animate, closeEyes, EMOTE_UNLOCKS } from '../animate';
 import { T } from '../parts/art';
 import { hashNth } from '../hash';
 import { inSeason, items, gameItems, GAMES } from '../items';
 import { rollSeason, nameOf as nameCopy } from '../owned';
 import { toShareSvg } from '../share';
+import { paint } from '../paint';
 import { lookOf } from '../look';
 
 const ball: Owned = { item: 'puttsies.ball', finish: 'plain', scuff: 0.02, print: 40 };
@@ -60,9 +61,27 @@ describe('tally marks', () => {
     expect(white(100)).toBe(white(0) + 4);
   });
 
-  test('a year of days turns the outline round the item gold', () => {
-    const gold = (tally: number) => count(grid('bob', { ...ball, tally }), T.GOLD) + count(grid('bob', { ...ball, tally }), T.GOLD_SHADE);
-    expect(gold(365)).toBeGreaterThan(gold(364) + 10);
+  test('a year of days turns every other step of the outline round the item gold', () => {
+    const rim = (tally: number, t: number) => count(grid('bob', { ...ball, tally }), t);
+    expect(rim(365, T.GOLD)).toBeGreaterThan(rim(364, T.GOLD) + 5);
+    expect(rim(365, T.OUTLINE)).toBeGreaterThan(5);
+    // Nothing a face is made of: the rim leaves the eyes' and mouth's tokens as they were.
+    for (const t of [T.WHITE, T.EYE, T.MOUTH, T.TONGUE]) expect(rim(365, t)).toBe(rim(364, t));
+  });
+
+  test('the year rim leaves the blink and the squash as they were', () => {
+    const lit = (f: { colors: (string | null)[][] }) => f.colors.filter(row => row.some(Boolean)).length;
+    for (const [name, copy] of [['pip', { item: 'weighsies.piano', finish: 'plain', scuff: 0.02, print: 3 }], ['juno', { item: 'stackdle.bricks', finish: 'plain', scuff: 0.02, print: 3 }], ['maya', ball]] as const) {
+      const at = (tally: number) => dress(resolve(name), { equip: [encode({ ...copy, tally })] });
+      // The cells a blink changes are the same with and without the rim.
+      const shut = (tally: number) => { const g = compose(at(tally)), s = closeEyes(g, at(tally)); return g.flatMap((row, y) => row.flatMap((t, x) => (t !== s[y][x] ? [`${x},${y}`] : []))); };
+      expect(shut(400)).toEqual(shut(300));
+      // And every move squashes and stretches the same: as many rows lit, frame by frame.
+      for (const move of ['idle', 'hop', 'cheer', 'squish'] as const) {
+        const rows = (tally: number) => animate(name, move, { equip: [encode({ ...copy, tally })] }).frames.map(lit);
+        expect(rows(400)).toEqual(rows(300));
+      }
+    }
   });
 });
 
@@ -75,11 +94,14 @@ describe('Lucky', () => {
     expect(resolve('x').lucky).toBe(hashNth('x', 13) % LUCKY_ODDS === 0);
   });
 
-  test('changes the colours, keeps the face legible, and counts in rarity', () => {
+  test('keeps the colourway, rims the guy, keeps the face legible, and counts in rarity', () => {
     let name = '';
     for (let i = 0; !name; i++) if (resolve('n' + i).lucky) name = 'n' + i;
     const c = resolve(name);
-    expect(paletteOf(c).colors[1]).not.toBe(paletteOf({ ...c, lucky: false }).colors[1]);
+    // The colourway the card names; Lucky shows as the rim (`luckyRim` in ../paint) instead.
+    expect(paletteOf(c)).toEqual(paletteOf({ ...c, lucky: false }));
+    const g = compose(c), lucky = paint(g, c, paletteOf(c)), plain = paint(g, { ...c, lucky: false }, paletteOf(c));
+    expect(JSON.stringify(lucky)).not.toBe(JSON.stringify(plain));
     expect(traitOdds(c).find(t => t.slot === 'lucky')!.name).toBe('Lucky');
     expect(guyOneIn(c)).toBeGreaterThan(guyOneIn({ ...c, lucky: false }) * 300);
     const lum = (hex: string) => {

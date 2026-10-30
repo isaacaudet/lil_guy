@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { heads, eyes, mouths, cheeks, hair, bodies, accessories } from '../parts';
 import { stamp } from '../parts/art';
 import { ARM_STYLES, FOOT_STYLES } from '../compose';
-import { palettes, shadePalette, SHADE_COUNT } from '../palette';
+import { palettes, shadePalette, SHADE_COUNT, NIGHT_COLOURWAYS, CHASE_COLOURWAYS } from '../palette';
 import {
   headWeights, eyeWeights, mouthWeights, cheekWeights, hairWeights, bodyWeights,
   accessoryWeights, armWeights, footWeights, shadeWeights, paletteWeights, weightedPick,
@@ -105,6 +105,25 @@ describe('palettes', () => {
 
   it('have unique names', () => {
     expect(new Set(palettes.map(p => p.name)).size).toBe(palettes.length);
+  });
+
+  it('keep a night colourway deep in pastel, and a chase colourway as picked in every tone', () => {
+    const hsl = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+      return { l, s: max === min ? 0 : (max - min) / (l > 0.5 ? 2 - max - min : max + min) };
+    };
+    // Lifted about a tenth and as saturated as picked: mixed towards white, oxblood went mauve.
+    for (const name of NIGHT_COLOURWAYS) {
+      const picked = hsl(palettes.find(q => q.name === name)!.colors[1]!), pastel = hsl(shadePalette(palettes.find(q => q.name === name)!, 0).colors[1]!);
+      expect(pastel.l - picked.l).toBeGreaterThan(0.08);
+      expect(pastel.l - picked.l).toBeLessThan(0.12);
+      expect(pastel.s).toBeGreaterThan(picked.s * 0.95);
+    }
+    for (const name of CHASE_COLOURWAYS) {
+      const p = palettes.find(q => q.name === name)!;
+      for (let shade = 0; shade < SHADE_COUNT; shade++) expect(shadePalette(p, shade)).toEqual(p);
+    }
   });
 });
 

@@ -1,4 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { NAME_KEY } from '../src/index-headless.ts';
+import { linkStamps } from './stamps.js';
 
 export const GOOGLE_CLIENT_ID = '539145075316-qttn20ra5iu5gq2gjs05bil3cpfcf1jk.apps.googleusercontent.com';
 const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
@@ -113,13 +115,15 @@ export async function authApi(request, env, url, verify = googleAccount) {
   let name = await env.DB.prepare('SELECT key, seed, at FROM names WHERE account = ?').bind(account).first();
   if (body.key && name && name.key !== body.key) return reply({ error: `This Google account already keeps @${name.key}. Your current name has not changed.`, savedKey: name.key }, 409);
   if (body.key && !name) {
-    if (!/^[a-z0-9]{2,16}$/.test(body.key) || !/^[a-f0-9]{64}$/.test(body.ownerToken || '')) return reply({ error: 'Use the browser that claimed this name to link it.' }, 403);
+    if (typeof body.key !== 'string' || !NAME_KEY.test(body.key) || !/^[a-f0-9]{64}$/.test(body.ownerToken || '')) return reply({ error: 'Use the browser that claimed this name to link it.' }, 403);
     // Unique account index and conditional UPDATE make concurrent links fail closed.
     try {
       name = await env.DB.prepare('UPDATE names SET account = ? WHERE key = ? AND owner = ? AND account IS NULL RETURNING key, seed, at')
         .bind(account, body.key, await digest(body.ownerToken)).first();
     } catch { return reply({ error: 'That Google account or name was just linked. Reload and try again.' }, 409); }
     if (!name) return reply({ error: 'This name cannot be linked from this browser.' }, 403);
+    // What the name had as a name of its own (its starter, spends and luck) joins the account's.
+    await linkStamps(env, name.key, account);
   }
   const token = random();
   await env.DB.prepare('INSERT INTO auth_sessions(hash, account, expires, created) VALUES (?, ?, ?, ?)').bind(await digest(token), account, now + MONTH, now).run();

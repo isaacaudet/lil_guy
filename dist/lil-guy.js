@@ -109,6 +109,8 @@ const eyeWeights = [
 	0,
 	0,
 	0,
+	0,
+	0,
 	0
 ];
 const mouthWeights = [
@@ -197,7 +199,9 @@ const hairWeights = [
 	20,
 	2,
 	2,
-	2
+	2,
+	0,
+	0
 ];
 const bodyWeights = [
 	500,
@@ -218,7 +222,8 @@ const bodyWeights = [
 	30,
 	30,
 	1,
-	2
+	2,
+	0
 ];
 const accessoryWeights = [
 	450,
@@ -317,23 +322,32 @@ const paletteWeights = [
 /**
 * Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
 * and metal crafts them. Each weighs 0 in its table above, so every guy dealt
-* from any deal stays exactly as he was, and the weight here is its share
+* from any deal stays exactly as dealt, and the weight here is its share
 * among a slot's rare parts when a capsule picks one, as a dealt part's
-* weight is. The anime set, October 2026.
+* weight is. The starry, kitty, joy and puppy set, October 2026; then the
+* night set, the rarest to unlock: eclipse and void eyes, the idea and
+* thought toppers, op art markings.
 */
 const CAPSULE_ONLY = {
 	eyes: {
 		23: 6,
 		24: 6,
 		25: 8,
-		26: 8
+		26: 8,
+		27: 3,
+		28: 3
 	},
 	mouth: {
 		22: 8,
 		23: 8,
 		24: 6
 	},
-	cheeks: { 19: 8 }
+	cheeks: { 19: 8 },
+	hair: {
+		37: 4,
+		38: 4
+	},
+	body: { 19: 3 }
 };
 /** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */
 const unlockWeight = (slot, weights, i) => weights[i] || CAPSULE_ONLY[slot]?.[i] || 0;
@@ -1284,8 +1298,8 @@ const heads = [
 		".##############.",
 		".##############.",
 		"..############..",
-		".s.##########.s.",
-		".s.s.s....s.s.s.",
+		"...##########...",
+		"..s.s......s.s..",
 		"................",
 		"................"
 	]),
@@ -1399,20 +1413,20 @@ const heads = [
 	]),
 	head("clover", 7, false, [
 		"................",
-		"..####....####..",
-		".######..######.",
+		"..###......###..",
+		".#h###....###h#.",
 		".######..######.",
 		".######ss######.",
-		".##############.",
+		"..#####ss#####..",
 		"...##########...",
 		"...##########...",
-		".##############.",
-		".##############.",
+		"..#####ss#####..",
 		".######ss######.",
+		".#h####ss####h#.",
 		".######..######.",
-		"..####.##.####..",
+		"..###......###..",
+		".......##.......",
 		"........#.......",
-		".........#......",
 		"................"
 	]),
 	head("disco", 8, true, [
@@ -1502,9 +1516,9 @@ const eyes = [
 		".ey....ye."
 	]),
 	eyes_("laser", [
-		".ee....ee.",
-		"rey....yer",
-		".ee....ee."
+		".rr....rr.",
+		"rwwr..rwwr",
+		".rY....Yr."
 	]),
 	eyes_("cyclops", [
 		".ww.",
@@ -1523,9 +1537,9 @@ const eyes = [
 		".aA....Aa."
 	]),
 	eyes_("galaxy", [
-		".ew....we.",
-		"eAye..eyAe",
-		".Ae....eA."
+		".aaA..aaA.",
+		"aewA..aewA",
+		"AAA....AAA"
 	]),
 	eyes_("diamond", [
 		".wa....wa.",
@@ -1552,6 +1566,16 @@ const eyes = [
 		".ee....ee.",
 		"wee....wee",
 		"eew....eew"
+	]),
+	eyes_("eclipse", [
+		".yw....yw.",
+		"yeey..yeey",
+		".yy....yy."
+	]),
+	eyes_("void", [
+		".ee....ee.",
+		"eeee..ewee",
+		".ee....ee."
 	])
 ];
 
@@ -1715,6 +1739,13 @@ function seat(c, s, x, sink = 1) {
 	c.draw(s, x, y);
 }
 const mirror = (s) => s.map((row) => [...row].reverse());
+const GRID$1 = 16;
+/**
+* The thought topper's cloud: two white puffs over a shaded foot, so it holds
+* apart from a white body. Two rows, so on a round head it floats clear of the
+* crown with only its outline between.
+*/
+const THOUGHT = stamp([".ww.ww", "wxxxxx"]);
 /** A drawing centred on the crown, nudged `dx` columns to the right. */
 const centre = (name, rows, dx = 0, sink = 1) => {
 	const s = stamp(rows);
@@ -1744,11 +1775,11 @@ const pair = (name, rows, inset$1 = 0, sink = 1) => {
 * Paints the top `n` rows of the head, shading the right-hand edge. A point
 * above them is painted too, so on a pointed head a beanie is pointed.
 */
-function capRows(c, n, fill, shade) {
+function capRows(c, n, fill, shade$1) {
 	for (let y = Math.min(c.tip, c.crown); y < Math.min(c.crown + n, c.floor + 1); y++) {
 		c.paintRow(y, fill);
 		const r = c.rows[y];
-		if (r) c.set(r.right, y, shade);
+		if (r) c.set(r.right, y, shade$1);
 	}
 }
 /** The first row from the crown down at least `min` wide: where a hat's band goes. Never past the floor. */
@@ -2123,19 +2154,62 @@ const hair = [
 		".xyxxyx."
 	]], 1),
 	hat("on fire", [[
-		".....r....",
-		"....rr..r.",
-		".r..ryr.rr",
-		".rr.ryyrry",
-		"rryrryyyyr",
-		"ryyyywwyyr"
+		"....r.....",
+		"...rYr..r.",
+		".r.rYr.rYr",
+		".rYrYyrrYr",
+		"rYyYyyyYyr",
+		"rYyywwyyYr"
 	], [
-		"....r...",
-		"...rr.r.",
-		".r.ryrrr",
-		"rrrryyyr",
-		"ryyywwyr"
-	]], 2)
+		"...r....",
+		"..rYr.r.",
+		".rrYyrYr",
+		"rYyyYyYr",
+		"rYywwyYr"
+	]], 2),
+	centre("idea", [
+		"a..yyy..a",
+		"..yywyy..",
+		"a.ywyyY.a",
+		"...yyY...",
+		"...xGx..."
+	], 0, 1),
+	{
+		name: "thought",
+		draw: (c) => {
+			const w = width(THOUGHT), near = [
+				[0, 0],
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			];
+			const cells = (x0$1, y0$1) => THOUGHT.flatMap((row, dy) => row.flatMap((t, dx) => t ? [[
+				x0$1 + dx,
+				y0$1 + dy,
+				t
+			]] : []));
+			const touches$1 = (x$1, y$1) => near.some(([dx, dy]) => c.isBody(x$1 + dx, y$1 + dy));
+			const spots = [];
+			for (let y0$1 = 1; y0$1 <= 2; y0$1++) for (let x0$1 = GRID$1 - 1 - w; x0$1 >= 7; x0$1--) spots.push([x0$1, y0$1]);
+			const covered = ([x0$1, y0$1]) => cells(x0$1, y0$1).filter(([x$1, y$1]) => c.isBody(x$1, y$1)).length;
+			const [x0, y0] = spots.find(([a, b$1]) => cells(a, b$1).every(([x$1, y$1]) => !touches$1(x$1, y$1))) ?? spots.filter(([, y$1]) => y$1 === 1).reduce((a, b$1) => covered(b$1) < covered(a) ? b$1 : a);
+			const taken = new Set();
+			for (const [x$1, y$1, t] of cells(x0, y0)) {
+				c.set(x$1, y$1, t);
+				taken.add(y$1 * GRID$1 + x$1);
+			}
+			const clear = (x$1, y$1) => !c.isBody(x$1, y$1) && near.every(([dx, dy]) => !taken.has((y$1 + dy) * GRID$1 + x$1 + dx));
+			let x = x0, y = y0 + THOUGHT.length - 1;
+			for (const [dx, dy] of [[-2, 0], [-1, 1]]) {
+				x += dx;
+				y += dy;
+				if (x < 1 || y > GRID$1 - 2 || !clear(x, y)) break;
+				c.set(x, y, T.WHITE);
+				taken.add(y * GRID$1 + x);
+			}
+		}
+	}
 ];
 
 //#endregion
@@ -2466,24 +2540,27 @@ const bodies = [
 	{
 		name: "kintsugi",
 		draw: (c) => {
-			const x = Math.floor(c.centre);
-			const cracks = [[
-				[1, c.crown],
-				[2, c.crown + 1],
-				[2, c.crown + 2],
-				[3, c.crown + 3],
-				[4, c.crown + 3],
-				[5, c.crown + 4],
-				[5, c.crown + 5]
-			], [
-				[-6, c.bottom - 3],
-				[-5, c.bottom - 2],
-				[-4, c.bottom - 2],
-				[-3, c.bottom - 1],
-				[-3, c.bottom],
-				[-2, c.bottom]
-			]];
-			for (const crack of cracks) crack.forEach(([dx, y], i) => onBody(c, x + dx, y, i % 3 === 1 ? T.GOLD_SHADE : T.GOLD));
+			const seam = (pts) => pts.forEach(([x, y]) => {
+				if (!c.isBody(x, y)) return;
+				c.set(x, y, T.GOLD);
+				if (c.isBody(x, y + 1) && c.get(x, y + 1) !== T.GOLD) c.set(x, y + 1, T.LEAF_SHADE);
+			});
+			const ry = c.eyeLine + 1, r = c.rows[ry], ly = c.bottom - 2, l = c.rows[ly];
+			if (r) seam([
+				[r.right, ry],
+				[r.right - 1, ry],
+				[r.right - 2, ry + 1],
+				[r.right - 3, ry + 1],
+				[r.right - 3, ry + 2]
+			]);
+			if (l) seam([
+				[l.left, ly],
+				[l.left + 1, ly],
+				[l.left + 2, ly + 1],
+				[l.left + 3, ly + 1],
+				[l.left + 4, ly],
+				[l.left + 5, ly]
+			]);
 		}
 	},
 	{
@@ -2500,6 +2577,13 @@ const bodies = [
 				3
 			]) onBody(c, x + dx, c.bottom - 3, T.GOLD);
 			onBody(c, x - 4, c.bottom - 4, T.GOLD);
+		}
+	},
+	{
+		name: "op art",
+		draw: (c) => {
+			const cx = c.centre - .5;
+			for (let y = c.eyeLine + 2; y <= c.bottom; y++) for (let x = 0; x < 16; x++) onBody(c, x, y, (y + Math.floor(Math.abs(x - cx) / 2)) % 2 ? T.TRIM : T.LEAF_SHADE);
 		}
 	}
 ];
@@ -2533,16 +2617,16 @@ function rim$1(c, b$1, token, fill) {
 function fittedGlasses(c, frame, glass, glint$1) {
 	const f = c.face;
 	if (!f || !f.eyes.length) return;
-	const boxes = f.eyes.map((_, k) => lensBox(c, k));
-	boxes.forEach((b$1) => {
+	const boxes$1 = f.eyes.map((_, k) => lensBox(c, k));
+	boxes$1.forEach((b$1) => {
 		rim$1(c, b$1, frame, glass);
 		c.set(b$1.left + 1, b$1.top + 1, glint$1);
 	});
-	if (boxes.length === 2) for (let x = boxes[0].right + 1; x < boxes[1].left; x++) c.set(x, f.top, frame);
+	if (boxes$1.length === 2) for (let x = boxes$1[0].right + 1; x < boxes$1[1].left; x++) c.set(x, f.top, frame);
 	const r = c.rows[f.top];
 	if (r) {
-		for (let x = r.left; x < boxes[0].left; x++) c.set(x, f.top, frame);
-		for (let x = boxes[boxes.length - 1].right + 1; x <= r.right; x++) c.set(x, f.top, frame);
+		for (let x = r.left; x < boxes$1[0].left; x++) c.set(x, f.top, frame);
+		for (let x = boxes$1[boxes$1.length - 1].right + 1; x <= r.right; x++) c.set(x, f.top, frame);
 	}
 }
 const bowtie = stamp([
@@ -2933,21 +3017,23 @@ const accessories = [
 			if (!f || !f.eyes.length) return;
 			const L = f.eyes[0].left - 2, R = f.eyes[f.eyes.length - 1].right + 2, mid = Math.floor(c.centre);
 			for (let y = f.top - 1; y <= f.line; y++) for (let x = L; x <= R; x++) {
-				if (y === f.line && (x === mid - 1 || x === mid)) continue;
-				if (c.isBody(x, y)) c.set(x, y, y === f.line ? T.GOLD_SHADE : T.GOLD);
+				if (y === f.line && (x === L || x === R || x === mid - 1 || x === mid)) continue;
+				if (c.isBody(x, y)) c.set(x, y, y === f.top - 1 ? T.TRIM : y === f.top && x === L + 1 ? T.LEAF : T.LEAF_SHADE);
 			}
-			c.set(L, f.top - 2, T.GOLD);
-			c.set(L - 1, f.top - 3, T.GOLD);
-			c.set(R, f.top - 2, T.GOLD);
-			c.set(R + 1, f.top - 3, T.GOLD);
-			c.set(L + 1, f.top - 1, T.WHITE);
+			for (const [x, out] of [[L, -1], [R, 1]]) {
+				c.set(x, f.top - 1, T.TRIM);
+				c.set(x, f.top - 2, T.GOLD);
+				c.set(x + out, f.top - 1, T.GOLD);
+				c.set(x + out, f.top - 2, T.GOLD);
+				c.set(x + out, f.top - 3, T.GOLD);
+			}
 			if (f.eyes.length === 2) {
 				c.set(mid - 1, f.top - 1, T.RED);
 				c.set(mid, f.top - 1, T.RED);
 			}
-			c.set(R, f.top - 3, T.ACCENT);
-			c.set(R, f.top - 4, T.ACCENT);
-			c.set(R - 1, f.top - 5, T.ACCENT_SHADE);
+			c.set(R + 1, f.top - 4, T.ACCENT);
+			c.set(R + 1, f.top - 5, T.ACCENT);
+			c.set(R, f.top - 6, T.ACCENT);
 		}
 	}
 ];
@@ -3246,12 +3332,26 @@ const COLOURWAYS = [
 ];
 /** Hand-set token colours by colourway name, applied over the derived ones. */
 const TONES = new Map(COLOURWAYS.filter((w) => w.tones).map((w) => [w.name, w.tones]));
-function hexToRgb(hex$4) {
+/** The night colourways: deep bodies that a pastel tone softens but keeps deep. */
+const NIGHT_COLOURWAYS = new Set([
+	"Charcoal",
+	"Cobalt",
+	"Midnight",
+	"Oxblood",
+	"Forest",
+	"Grape Soda"
+]);
+/**
+* The chase colourways: each is a material painted cell by cell (`chaseSkin` in ./paint), in fixed
+* colours, so a tone never washes one out and it looks the same on every guy who has it.
+*/
+const CHASE_COLOURWAYS = new Set(COLOURWAYS.filter((w) => w.tones).map((w) => w.name));
+function hexToRgb(hex$3) {
 	return [
 		1,
 		3,
 		5
-	].map((i) => parseInt(hex$4.slice(i, i + 2), 16));
+	].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
 }
 function rgbToHex(r, g, b$1) {
 	return "#" + [
@@ -3260,8 +3360,8 @@ function rgbToHex(r, g, b$1) {
 		b$1
 	].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
 }
-function toHsl$1(hex$4) {
-	const [r, g, b$1] = hexToRgb(hex$4).map((v) => v / 255);
+function toHsl$1(hex$3) {
+	const [r, g, b$1] = hexToRgb(hex$3).map((v) => v / 255);
 	const max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
 	const l = (max + min) / 2;
 	if (max === min) return [
@@ -3312,7 +3412,7 @@ function fromHsl([h, s, l]) {
 	];
 	return rgbToHex((r + m) * 255, (g + m) * 255, (b$1 + m) * 255);
 }
-function mix$7(a, b$1, amount) {
+function mix$6(a, b$1, amount) {
 	const [ar, ag, ab] = hexToRgb(a);
 	const [br, bg, bb] = hexToRgb(b$1);
 	return rgbToHex(ar + (br - ar) * amount, ag + (bg - ag) * amount, ab + (bb - ab) * amount);
@@ -3322,24 +3422,48 @@ function towards(hue$2, target, amount) {
 	const diff = (target - hue$2 + 540) % 360 - 180;
 	return hue$2 + Math.sign(diff) * Math.min(Math.abs(diff), amount);
 }
-function luminance(hex$4) {
+function luminance$1(hex$3) {
 	const channel = (v) => {
 		v /= 255;
 		return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
 	};
-	const [r, g, b$1] = hexToRgb(hex$4);
+	const [r, g, b$1] = hexToRgb(hex$3);
 	return .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b$1);
 }
 function contrast$1(a, b$1) {
-	const [hi, lo] = [luminance(a), luminance(b$1)].sort((x, y) => y - x);
+	const [hi, lo] = [luminance$1(a), luminance$1(b$1)].sort((x, y) => y - x);
 	return (hi + .05) / (lo + .05);
+}
+function toLab(hex$3) {
+	const lin = hexToRgb(hex$3).map((v) => {
+		v /= 255;
+		return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+	});
+	const [x, y, z] = [
+		(.4124 * lin[0] + .3576 * lin[1] + .1805 * lin[2]) / .95047,
+		.2126 * lin[0] + .7152 * lin[1] + .0722 * lin[2],
+		(.0193 * lin[0] + .1192 * lin[1] + .9505 * lin[2]) / 1.08883
+	].map((v) => v > .008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
+	return [
+		116 * y - 16,
+		500 * (x - y),
+		200 * (y - z)
+	];
+}
+/**
+* How far apart two colours look (CIE76 in Lab): under about 20 a part in one
+* melts into a body in the other, however different their brightness.
+*/
+function deltaE(a, b$1) {
+	const p = toLab(a), q = toLab(b$1);
+	return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
 }
 /**
 * Shade a colour by hand: darker and leaning towards violet, but never richer.
 * Adding saturation in the shadow is what turned a green body's shade neon.
 */
-function shadeOf(hex$4, depth = .12) {
-	const [h, s, l] = toHsl$1(hex$4);
+function shadeOf(hex$3, depth = .12) {
+	const [h, s, l] = toHsl$1(hex$3);
 	return fromHsl([
 		towards(h, 265, 12),
 		s * .85,
@@ -3377,7 +3501,7 @@ function derive(name, body, accent, trim) {
 		colors: {
 			1: body,
 			2: shadeOf(body),
-			3: mix$7(body, "#FFFFFF", .55),
+			3: mix$6(body, "#FFFFFF", .55),
 			4: outline$1,
 			5: ink,
 			6: "#FFFFFF",
@@ -3387,7 +3511,7 @@ function derive(name, body, accent, trim) {
 			10: accent,
 			11: shadeOf(accent),
 			12: trim,
-			13: mix$7(body, "#FFFBF0", .6),
+			13: mix$6(body, "#FFFBF0", .6),
 			14: "#7DD87A",
 			15: "#4FAE5C",
 			16: gold,
@@ -3414,12 +3538,22 @@ const SHADE_COUNT = 3;
 * adds saturation — saturating an already-bright lime turns it acid. Either way
 * the outline, shading and blush are worked out again from the result, so a
 * toned palette is as coherent as the original.
+*
+* A night colourway's pastel lifts its body a little and keeps its
+* saturation, so it stays a night colour: mixed towards white, oxblood went
+* mauve and forest grey-green. A chase colourway is a material in fixed
+* colours, so it looks as picked in every tone.
 */
-function shadePalette(palette$1, shade) {
-	if (shade === 1) return palette$1;
-	const tone = (hex$4) => {
-		if (shade === 0) return mix$7(hex$4, "#FFFFFF", .3);
-		const [h, s, l] = toHsl$1(hex$4);
+function shadePalette(palette$1, shade$1) {
+	if (shade$1 === 1 || CHASE_COLOURWAYS.has(palette$1.name)) return palette$1;
+	const night = NIGHT_COLOURWAYS.has(palette$1.name);
+	const tone = (hex$3, body = false) => {
+		const [h, s, l] = toHsl$1(hex$3);
+		if (shade$1 === 0) return night && body ? fromHsl([
+			h,
+			s,
+			l + .1
+		]) : mix$6(hex$3, "#FFFFFF", .3);
 		return fromHsl([
 			h,
 			Math.min(.8, s + .04),
@@ -3427,28 +3561,18 @@ function shadePalette(palette$1, shade) {
 		]);
 	};
 	const c = palette$1.colors;
-	return derive(palette$1.name, tone(c[1]), tone(c[10]), c[12]);
+	return derive(palette$1.name, tone(c[1], true), tone(c[10]), c[12]);
 }
 /**
-* The Lucky variant: the same colourway turned round the colour wheel, with
-* gold trim. Derived again, so the face and outline read as well as ever.
+* The Lucky palette: the guy's own. Lucky used to turn a colourway round the
+* colour wheel, which hid the colourway the card names (a Lucky Opal came out
+* plain yellow) and turned night colours neon. Now a Lucky guy keeps their
+* colours, and Lucky shows as a stepped rim (`luckyRim` in ./paint) and a gold
+* star. Kept so code that calls it still runs.
 */
 function luckyPalette(palette$1) {
-	const turn = (hex$4) => {
-		const [h, s, l] = toHsl$1(hex$4);
-		let hue$2 = (h + 150) % 360;
-		const dark = l < .45;
-		if (dark && hue$2 >= 10 && hue$2 <= 110) hue$2 += 130;
-		return fromHsl([
-			hue$2,
-			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.max(.7, Math.min(.92, s + .25)),
-			dark ? Math.min(Math.max(l, .22), .28) : Math.min(Math.max(l, .6), .68)
-		]);
-	};
-	const c = palette$1.colors;
-	return derive(`${palette$1.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
+	return palette$1;
 }
-/** The palette a guy is drawn in: his colourway, in his tone, Lucky if he is. */
 const POINTED = [
 	3,
 	4,
@@ -3463,9 +3587,9 @@ const NOT_BROWN = {
 };
 /** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
 const shownPalette = (config) => POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
+/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
 function paletteOf(config) {
-	const toned$1 = shadePalette(getPalette(shownPalette(config)), config.shade);
-	return config.lucky ? luckyPalette(toned$1) : toned$1;
+	return shadePalette(getPalette(shownPalette(config)), config.shade);
 }
 
 //#endregion
@@ -8546,23 +8670,23 @@ const SETS = {
 * per step or per generation draws the same noise again each LOOP_MS.
 */
 const LOOP_MS = 6e3;
-const TAU$3 = Math.PI * 2;
+const TAU$4 = Math.PI * 2;
 /** `v` brought into 0 to `n`, negative numbers too. */
 const wrap$1 = (v, n) => (v % n + n) % n;
 /** `period` ms, nudged so a whole number of them fill LOOP_MS. */
-const fit = (period) => LOOP_MS / Math.max(1, Math.round(LOOP_MS / Math.abs(period)));
+const fit$1 = (period) => LOOP_MS / Math.max(1, Math.round(LOOP_MS / Math.abs(period)));
 /** The `d` in `sin(t / d)`, nudged so the wave (2πd ms) comes round in LOOP_MS. */
-const wave = (d) => fit(TAU$3 * d) / TAU$3;
+const wave = (d) => fit$1(TAU$4 * d) / TAU$4;
 /** A step's length in a pattern `n` steps long, nudged so the pattern comes round in LOOP_MS. */
-const steps = (step$1, n) => fit(step$1 * Math.max(1, n)) / Math.max(1, n);
+const steps = (step$1, n) => fit$1(step$1 * Math.max(1, n)) / Math.max(1, n);
 /** A count of `step` ms that starts again every LOOP_MS: for noise drawn fresh each step or generation. */
 function tick(t, step$1) {
-	const s = fit(step$1);
+	const s = fit$1(step$1);
 	return wrap$1(Math.floor(t / s), Math.round(LOOP_MS / s));
 }
 /** How far through a cycle of about `period` ms, 0 to 1, coming round in LOOP_MS. */
 const cycle = (t, period) => {
-	const p = fit(period);
+	const p = fit$1(period);
 	return wrap$1(t, p) / p;
 };
 /**
@@ -8801,6 +8925,61 @@ const plus = (x, y, k, arm = 1) => [
 	]
 ];
 const wrap = (v, n) => (v % n + n) % n;
+/**
+* A still piece every frame shows, so even an aura of a few moving specks
+* always has something there: a picture (rows of `0`–`3` for its colours,
+* `.` empty) of at least eight cells, in the empty spot nearest one of the
+* top corners beside the guy's head, the print choosing which, a cell clear
+* of the guy on every side. The first of `arts` that fits is drawn: a big one
+* where there is room, a small one over the head of a guy who nearly fills
+* the frame. The last is three cells wide at most: for a guy who leaves no
+* room at all, it goes just past the frame's edge beside the head, in the
+* columns a padded picture keeps for an aura (`auraCells`' `pad`). It bobs a
+* cell every `bob` ms when given.
+*/
+function anchor(mask, t, print, arts, bob = 0) {
+	const H = mask.length, W = mask[0].length, s = shape(mask), right = print % 2 === 1;
+	const on$1 = (x, y) => !!mask[y]?.[x];
+	const draw = (art$1, x0, y0$1) => {
+		const out = [];
+		art$1.forEach((row, dy) => [...row].forEach((ch, dx) => {
+			if (ch !== ".") out.push([
+				x0 + dx,
+				y0$1 + dy,
+				Number(ch)
+			]);
+		}));
+		return out;
+	};
+	for (const art$1 of arts) {
+		const bobs = bob && art$1 === arts[0], h$1 = art$1.length + (bobs ? 1 : 0), w$1 = art$1[0].length, tx = right ? W - w$1 : 0, ty = Math.max(0, s.top - h$1);
+		let best = null, far$2 = Infinity;
+		for (let y = 0; y + h$1 <= H; y++) for (let x = 0; x + w$1 <= W; x++) {
+			let clear = true;
+			for (let dy = 0; dy < h$1 && clear; dy++) for (let dx = 0; dx < w$1 && clear; dx++) {
+				const X = x + dx, Y = y + dy;
+				if (on$1(X, Y) || on$1(X - 1, Y) || on$1(X + 1, Y) || on$1(X, Y - 1) || on$1(X, Y + 1)) clear = false;
+			}
+			const d = Math.abs(x - tx) + Math.abs(y - ty) * 1.5;
+			if (clear && d < far$2) {
+				far$2 = d;
+				best = [x, y];
+			}
+		}
+		if (best) return draw(art$1, best[0], best[1] + (bobs && Math.floor(t / steps(bob, 2)) % 2 ? 1 : 0));
+	}
+	const art = arts[arts.length - 1], w = art[0].length, h = art.length, edge = right ? W - 1 : 0;
+	let y0 = Math.max(0, Math.min(H - h, s.top)), far$1 = Infinity;
+	for (let y = 0; y + h <= H; y++) {
+		let clear = true;
+		for (let Y = y - 1; Y <= y + h && clear; Y++) if (on$1(edge, Y)) clear = false;
+		if (clear && Math.abs(y - s.top) < far$1) {
+			far$1 = Math.abs(y - s.top);
+			y0 = y;
+		}
+	}
+	return draw(art, right ? W : -w, y0);
+}
 const AURAS = [
 	{
 		id: "aura.flames",
@@ -8810,7 +8989,7 @@ const AURAS = [
 			"#FF8A2B",
 			"#E5484D"
 		],
-		still: 300,
+		still: 2510,
 		cells: (mask, t, print) => {
 			const s = shape(mask), step$1 = tick(t, 110) + print, out = [];
 			s.tops.forEach((top, x) => {
@@ -8842,14 +9021,32 @@ const AURAS = [
 			"#FFD45C",
 			"#C98A1A"
 		],
-		still: 900,
+		still: 330,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], turn = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+			const s = shape(mask), out = [], turn$1 = print % 2 ? -1 : 1, rx = Math.min(6.5, s.w / 2 - 1.5);
+			for (let k = 0; k < 28; k += 2) {
+				const a = k / 28 * Math.PI * 2;
+				out.push([
+					Math.round(s.w / 2 - .5 + Math.cos(a) * rx),
+					Math.round(s.top + 1 + Math.sin(a) * 1.6),
+					2
+				]);
+			}
 			for (let i = 0; i < 3; i++) {
-				const a = turn * t / wave(560) + i * 2.094 + print;
+				const a = turn$1 * t / wave(560) + i * 2.094 + print;
 				out.push(...plus(Math.round(s.w / 2 - .5 + Math.cos(a) * rx), Math.round(s.top + 1 + Math.sin(a) * 1.6), 1));
 			}
-			return out;
+			return [...out, ...anchor(mask, t, print, [[
+				".111.",
+				"21012",
+				".111."
+			], [
+				".1.",
+				"111",
+				"202",
+				"111",
+				".1."
+			]])];
 		}
 	},
 	{
@@ -8884,7 +9081,7 @@ const AURAS = [
 			"#FFF3B0",
 			"#8FD8FF"
 		],
-		still: 500,
+		still: 5660,
 		cells: (mask, t, print) => {
 			const near = ring(mask, 3), out = [];
 			for (let i = 0; i < 5; i++) {
@@ -8892,7 +9089,48 @@ const AURAS = [
 				const [x, y] = near[Math.floor(noise$2(i, life, print) * near.length)] ?? [0, 0];
 				out.push(...glint(x, y, phase));
 			}
-			return out;
+			const on$1 = Math.floor(t / steps(260, 2)) % 2 === 0;
+			return [...out, ...anchor(mask, t, print, on$1 ? [
+				[
+					"..2..",
+					"..1..",
+					"21012",
+					"..1..",
+					"..2.."
+				],
+				[
+					".2.2.",
+					"21012",
+					".2.2."
+				],
+				[
+					"2.2",
+					".1.",
+					"101",
+					".1.",
+					"2.2"
+				]
+			] : [
+				[
+					".2.2.",
+					"2.1.2",
+					".101.",
+					"2.1.2",
+					".2.2."
+				],
+				[
+					"2.1.2",
+					".101.",
+					"2.1.2"
+				],
+				[
+					".1.",
+					"212",
+					".0.",
+					"212",
+					".1."
+				]
+			])];
 		}
 	},
 	{
@@ -8903,7 +9141,7 @@ const AURAS = [
 			"#FF5C8A",
 			"#C2335F"
 		],
-		still: 700,
+		still: 4670,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [], lanes = [
 				0,
@@ -8939,7 +9177,46 @@ const AURAS = [
 					2
 				]);
 			}
-			return out;
+			const beat = cycle(t + print * 13, 700) < .2;
+			return [...out, ...anchor(mask, t, print, beat ? [
+				[
+					".1.1.",
+					"10111",
+					"11111",
+					".111.",
+					"..2.."
+				],
+				[
+					"11.11",
+					"10111",
+					".121."
+				],
+				[
+					"1.1",
+					"101",
+					"111",
+					".1.",
+					".2."
+				]
+			] : [
+				[
+					".1.1.",
+					"10111",
+					".111.",
+					"..2.."
+				],
+				[
+					".1.1.",
+					"10111",
+					".121."
+				],
+				[
+					"1.1",
+					"101",
+					"111",
+					".2."
+				]
+			])];
 		}
 	},
 	{
@@ -8950,7 +9227,7 @@ const AURAS = [
 			"#A9E4FF",
 			"#3E9BE0"
 		],
-		still: 400,
+		still: 4740,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 4; i++) {
@@ -9000,7 +9277,25 @@ const AURAS = [
 					1
 				]);
 			}
-			return out.filter((c) => c[2] >= 0);
+			return [...out.filter((c) => c[2] >= 0), ...anchor(mask, t, print, [
+				[
+					".11.",
+					"10.2",
+					"1..2",
+					".22."
+				],
+				[
+					".11.",
+					"1002",
+					".22."
+				],
+				[
+					"11.",
+					"102",
+					"1.2",
+					".22"
+				]
+			], 300)];
 		}
 	},
 	{
@@ -9011,7 +9306,7 @@ const AURAS = [
 			"#B9C3D6",
 			"#4F8BE8"
 		],
-		still: 600,
+		still: 1120,
 		cells: (mask, t, print) => {
 			const s = shape(mask), cy = Math.max(1, s.top - 3), x0 = Math.round(s.cx) - 3, out = [];
 			for (let x = x0 + 1; x <= x0 + 2; x++) out.push([
@@ -9048,19 +9343,18 @@ const AURAS = [
 			"#8FD8FF",
 			"#7C5CFF"
 		],
-		still: 200,
+		still: 0,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [], beat = Math.floor((t + print * 31) / steps(110, 15)), flash = beat % 5;
-			if (flash === 4) return out;
 			for (const [side, x0] of [[0, 1], [1, s.w - 2]]) {
-				if ((beat + side) % 3 === 2) continue;
+				if ((beat + side) % 3 === 2 && flash !== 4) continue;
 				let x = x0;
 				for (let y = 0; y <= s.cy; y++) {
 					if (mask[y]?.[x]) break;
 					out.push([
 						x,
 						y,
-						flash === 0 ? 0 : 1
+						flash === 0 ? 0 : flash === 4 ? 2 : 1
 					]);
 					if ((y + beat + side) % 3 === 0) {
 						x += side ? -1 : 1;
@@ -9072,7 +9366,19 @@ const AURAS = [
 					}
 				}
 			}
-			return out;
+			return [...out, ...anchor(mask, t, print, [flash === 0 ? [
+				".11",
+				".1.",
+				"101",
+				".1.",
+				"11."
+			] : [
+				".22",
+				".2.",
+				"212",
+				".2.",
+				"22."
+			]])];
 		}
 	},
 	{
@@ -9083,7 +9389,7 @@ const AURAS = [
 			"#B9A4FF",
 			"#6A4BD8"
 		],
-		still: 500,
+		still: 4670,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
@@ -9115,7 +9421,28 @@ const AURAS = [
 					2
 				]);
 			}
-			return out;
+			return [...out, ...anchor(mask, t, print, [
+				[
+					"..11",
+					"..12",
+					"..1.",
+					"011.",
+					"12.."
+				],
+				[
+					"..11",
+					"..12",
+					"011.",
+					"11.."
+				],
+				[
+					".11",
+					".12",
+					".1.",
+					"11.",
+					"12."
+				]
+			], 340)];
 		}
 	},
 	{
@@ -9126,7 +9453,7 @@ const AURAS = [
 			"#DCEEFF",
 			"#8FBCE8"
 		],
-		still: 800,
+		still: 2740,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 12; i++) {
@@ -9137,7 +9464,48 @@ const AURAS = [
 					i % 3 === 0 ? 0 : i % 3
 				]);
 			}
-			return out;
+			const turn$1 = Math.floor(t / steps(500, 2)) % 2;
+			return [...out, ...anchor(mask, t, print, turn$1 ? [
+				[
+					"2.1.2",
+					".212.",
+					"11011",
+					".212.",
+					"2.1.2"
+				],
+				[
+					"2.1.2",
+					".101.",
+					"2.1.2"
+				],
+				[
+					"2.2",
+					".1.",
+					"101",
+					".1.",
+					"2.2"
+				]
+			] : [
+				[
+					"..1..",
+					"2.1.2",
+					"11011",
+					"2.1.2",
+					"..1.."
+				],
+				[
+					".212.",
+					"11011",
+					".212."
+				],
+				[
+					".1.",
+					"212",
+					"101",
+					"212",
+					".1."
+				]
+			])];
 		}
 	},
 	{
@@ -9148,7 +9516,7 @@ const AURAS = [
 			"#FF9EC2",
 			"#E0558E"
 		],
-		still: 800,
+		still: 5820,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 8; i++) {
@@ -9165,7 +9533,27 @@ const AURAS = [
 					i % 2 ? 2 : 0
 				]);
 			}
-			return out;
+			return [...out, ...anchor(mask, t, print, [
+				[
+					"2.1.2",
+					".111.",
+					"11011",
+					".111.",
+					"2.1.2"
+				],
+				[
+					"2.1.2",
+					"11011",
+					"2.1.2"
+				],
+				[
+					".2.",
+					"212",
+					"101",
+					"212",
+					".2."
+				]
+			])];
 		}
 	},
 	{
@@ -9176,9 +9564,9 @@ const AURAS = [
 			"#A88BFF",
 			"#5B3FC8"
 		],
-		still: 600,
+		still: 3670,
 		cells: (mask, t, print) => {
-			const s = shape(mask), out = [], turn = print % 2 ? -1 : 1;
+			const s = shape(mask), out = [], turn$1 = print % 2 ? -1 : 1;
 			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x, y]) => [
 				x,
 				y,
@@ -9186,7 +9574,7 @@ const AURAS = [
 			]).sort((a, b$1) => a[2] - b$1[2]);
 			const n = track.length;
 			for (let i = 0; i < 3 && n; i++) {
-				const [x, y] = track[wrap(turn * Math.floor(t / steps(120, n)) + Math.round(i * n / 3) + print * 5, n)];
+				const [x, y] = track[wrap(turn$1 * Math.floor(t / steps(120, n)) + Math.round(i * n / 3) + print * 5, n)];
 				for (const [dx, dy, k] of [
 					[
 						0,
@@ -9224,10 +9612,10 @@ const AURAS = [
 					k
 				]);
 			}
-			const far = ring(mask, 4).filter(([, , d]) => d >= 3);
+			const far$1 = ring(mask, 4).filter(([, , d]) => d >= 3);
 			for (let i = 0; i < 4; i++) {
-				const life = fit(900), at = t + i * (life / 4) + print * 31, gen = tick(at, 900), f = cycle(at, 900);
-				const [x, y] = far[Math.floor(noise$2(i, gen, print, 23) * far.length)] ?? [0, 0];
+				const life = fit$1(900), at = t + i * (life / 4) + print * 31, gen = tick(at, 900), f = cycle(at, 900);
+				const [x, y] = far$1[Math.floor(noise$2(i, gen, print, 23) * far$1.length)] ?? [0, 0];
 				if (f < .75) out.push(...glint(x, y, f / .75));
 			}
 			return out;
@@ -9281,27 +9669,41 @@ const AURAS = [
 			"#2EF2FF",
 			"#FF3DCB"
 		],
-		still: 260,
+		still: 1920,
 		cells: (mask, t, print) => {
 			const step$1 = tick(t + print * 13, 120), out = [];
-			mask.forEach((row, y) => {
-				if (noise$2(y, step$1, print) < .55) return;
-				const shove = noise$2(y, step$1, 2) < .5 ? 1 : 2;
+			const slipped = (y) => {
+				const row = mask[y], shove = noise$2(y, step$1, 2) < .5 ? 1 : 2, cells = [];
 				row.forEach((on$1, x) => {
 					if (!on$1) return;
-					if (!row[x - 1]) out.push([
+					if (!row[x - 1] && x - shove >= 0 && !row[x - shove]) cells.push([
 						x - shove,
 						y,
 						1
 					]);
-					if (!row[x + 1]) out.push([
+					if (!row[x + 1] && x + shove < row.length && !row[x + shove]) cells.push([
 						x + shove,
 						y,
 						2
 					]);
 				});
-			});
-			return out;
+				return cells;
+			};
+			const rows = mask.map((_, y) => [y, noise$2(y, step$1, print)]).sort((a, b$1) => b$1[1] - a[1]);
+			for (const [y, n] of rows) {
+				if (n < .55 && out.length >= 8) break;
+				out.push(...slipped(y));
+			}
+			const flip = noise$2(step$1, print, 4) > .5;
+			return [...out, ...anchor(mask, t, print, flip ? [["111.2", ".2221"], [
+				"112",
+				".21",
+				"221"
+			]] : [["1.222", "2111."], [
+				"122",
+				"21.",
+				"211"
+			]])];
 		}
 	},
 	{
@@ -9312,21 +9714,48 @@ const AURAS = [
 			"#FFE45C",
 			"#9ED45A"
 		],
-		still: 450,
+		still: 3540,
 		cells: (mask, t, print) => {
 			const near = ring(mask, 3), out = [];
 			for (let i = 0; i < 8; i++) {
 				const [ax, ay] = near[Math.floor(noise$2(i, print, 3) * near.length)] ?? [0, 0];
 				const x = ax + Math.round(Math.sin(t / wave(700) + i * 1.7) * 1.5), y = ay + Math.round(Math.cos(t / wave(900) + i * 2.3));
 				const phase = cycle(t + i * 397 + print * 29, 1600);
-				if (phase > .65) continue;
+				if (phase > .65 && i > 1) continue;
 				out.push(...phase > .15 && phase < .45 ? plus(x, y, 2) : [[
 					x,
 					y,
 					1
 				]]);
 			}
-			return out;
+			const glow = Math.floor(t / steps(400, 2)) % 2 === 0;
+			return [...out, ...anchor(mask, t, print, glow ? [[
+				".2...",
+				"202..",
+				".2.1.",
+				"..101",
+				"...1."
+			], [
+				".2.",
+				"202",
+				".2.",
+				".1.",
+				"101",
+				".1."
+			]] : [[
+				".1...",
+				"101..",
+				".1.2.",
+				"..202",
+				"...2."
+			], [
+				".1.",
+				"101",
+				".1.",
+				".2.",
+				"202",
+				".2."
+			]])];
 		}
 	},
 	{
@@ -9339,7 +9768,7 @@ const AURAS = [
 		],
 		still: 300,
 		cells: (mask, t, print) => {
-			const s = shape(mask), beat = tick(t + print * 53, 90), n = Math.round(LOOP_MS / fit(90));
+			const s = shape(mask), beat = tick(t + print * 53, 90), n = Math.round(LOOP_MS / fit$1(90));
 			const since = Math.min(...[1, 2].map((k) => wrap(beat - Math.floor(noise$2(print, k) * n), n)));
 			const off = since === 2 || since === 4, dim = since <= 5 && !off;
 			const stretch = Math.floor(noise$2(print, 3) * 4);
@@ -9349,7 +9778,7 @@ const AURAS = [
 					y,
 					2
 				]] : [];
-				const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU$2 + .5, 1) * 4);
+				const quarter = Math.floor(wrap(Math.atan2(y - s.cy, x - s.cx) / TAU$3 + .5, 1) * 4);
 				if (dim && quarter === stretch) return d === 1 ? [[
 					x,
 					y,
@@ -9398,18 +9827,18 @@ const AURAS = [
 			"#8FE3FF",
 			"#4A6BD8"
 		],
-		still: 300,
+		still: 4830,
 		cells: (mask, t, print) => {
-			const s = shape(mask), turn = print % 2 ? -1 : 1;
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1;
 			const track = ring(mask, 2).filter(([, , d]) => d === 2).map(([x$1, y$1]) => [
 				x$1,
 				y$1,
 				Math.atan2(y$1 - s.cy, x$1 - s.cx)
 			]).sort((p, q) => p[2] - q[2]);
 			if (!track.length) return [];
-			const n = track.length, head$1 = wrap(turn * Math.floor(t / steps(45, n)) + print * 7, n), out = [];
+			const n = track.length, head$1 = wrap(turn$1 * Math.floor(t / steps(45, n)) + print * 7, n), out = [];
 			for (let j = 10; j >= 1; j--) {
-				const [x$1, y$1] = track[wrap(head$1 - turn * j, n)];
+				const [x$1, y$1] = track[wrap(head$1 - turn$1 * j, n)];
 				out.push([
 					x$1,
 					y$1,
@@ -9429,7 +9858,7 @@ const AURAS = [
 			"#FF9F43",
 			"#8A4DFF"
 		],
-		still: 0,
+		still: 3720,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
@@ -9483,7 +9912,26 @@ const AURAS = [
 					2
 				]);
 			}
-			return out;
+			const open = Math.floor(t / steps(600, 2)) % 2 === 0;
+			return [...out, ...anchor(mask, t, print, open ? [[
+				"11.11",
+				"21012",
+				".2.2."
+			], [
+				"1.1",
+				"101",
+				"1.1",
+				"2.2"
+			]] : [[
+				".111.",
+				".101.",
+				".2.2."
+			], [
+				"1.1",
+				"101",
+				".1.",
+				"2.2"
+			]])];
 		}
 	},
 	{
@@ -9495,7 +9943,7 @@ const AURAS = [
 			"#2BB59A",
 			"#8A6BFF"
 		],
-		still: 700,
+		still: 2380,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [], d = print % 2 ? 1 : -1;
 			const fold = wrap((t + print * 90) / steps(90, s.w + 10), s.w + 10) - 5;
@@ -9532,19 +9980,19 @@ const AURAS = [
 			"#3CFF6B",
 			"#159A3C"
 		],
-		still: 500,
+		still: 5740,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
-			for (let x = 0; x < s.w; x++) {
+			for (let x = -3; x < s.w + 3; x++) {
 				if (noise$2(x, print, 11) < .15) continue;
 				const speed = 40 + Math.floor(noise$2(x, print, 12) * 50), len = 6 + Math.floor(noise$2(x, print, 13) * 4);
 				const head$1 = wrap(Math.floor((t + noise$2(x, print) * 3e3) / steps(speed, s.h + len + 2)), s.h + len + 2) - 1;
 				for (let j = 0; j < len; j++) {
-					const glyph$2 = noise$2(x, head$1 - j, tick(t, 160)) > .82;
+					const glyph$1 = noise$2(x, head$1 - j, tick(t, 160)) > .82;
 					out.push([
 						x,
 						head$1 - j,
-						j === 0 ? 0 : glyph$2 ? 0 : j < len / 2 ? 1 : 2
+						j === 0 ? 0 : glyph$1 ? 0 : j < len / 2 ? 1 : 2
 					]);
 				}
 			}
@@ -9559,12 +10007,12 @@ const AURAS = [
 			"#5FD3FF",
 			"#3A3FD9"
 		],
-		still: 300,
+		still: 1790,
 		cells: (mask, t, print) => {
-			const s = shape(mask), turn = print % 2 ? -1 : 1, out = [];
+			const s = shape(mask), turn$1 = print % 2 ? -1 : 1, out = [];
 			for (const [x, y, d] of ring(mask, 4)) {
 				const a = Math.atan2(y - s.cy, x - s.cx) / (2 * Math.PI), r = Math.hypot(x - s.cx, y - s.cy);
-				const v = wrap(a * 3 + r * .3 - turn * t / fit(700) + print * .1, 1);
+				const v = wrap(a * 3 + r * .3 - turn$1 * t / fit$1(700) + print * .1, 1);
 				if (v < .24) out.push([
 					x,
 					y,
@@ -9582,11 +10030,11 @@ const AURAS = [
 			"#FF5C8A",
 			"#FFD45C"
 		],
-		still: 650,
+		still: 4260,
 		cells: (mask, t, print) => {
 			const s = shape(mask), out = [];
 			for (let i = 0; i < 2; i++) {
-				const cycle$1 = fit(1500), local = wrap(t + i * 750 + print * 37, cycle$1), shot = tick(t + i * 750 + print * 37, 1500);
+				const cycle$1 = fit$1(1500), local = wrap(t + i * 750 + print * 37, cycle$1), shot = tick(t + i * 750 + print * 37, 1500);
 				const cx = i ? s.w - 3 - Math.floor(noise$2(shot, i) * 2) : 2 + Math.floor(noise$2(shot, i) * 2), cy = 2 + Math.floor(noise$2(shot, i, 2) * 3), p = local / cycle$1;
 				if (p < .2) {
 					const y = Math.round(cy + (1 - p / .2) * 6);
@@ -9601,7 +10049,7 @@ const AURAS = [
 					]);
 					continue;
 				}
-				if (p > .85) continue;
+				if (p > .92) continue;
 				const r = Math.min(3, 1 + Math.floor((p - .2) / .14)), k = p < .45 ? 0 : p < .65 ? 1 : 2;
 				out.push([
 					cx,
@@ -9630,7 +10078,20 @@ const AURAS = [
 					]] : []);
 				}
 			}
-			return out;
+			const lit$1 = Math.floor(t / steps(300, 2)) % 2 === 0;
+			return [...out, ...anchor(mask, t, print, [lit$1 ? [
+				"2.2",
+				".1.",
+				"101",
+				".1.",
+				"2.2"
+			] : [
+				".2.",
+				"212",
+				".0.",
+				"212",
+				".2."
+			]])];
 		}
 	},
 	{
@@ -9703,7 +10164,7 @@ function auraIntensity(id, finish) {
 	if (ONE_OF_ONE_AURAS.some((a) => a.id === id)) return 5;
 	return INTENSITY[finish ?? "classic"] ?? 0;
 }
-const TAU$2 = Math.PI * 2;
+const TAU$3 = Math.PI * 2;
 /**
 * Points round the guy on a squarish ellipse, `gx` cells clear of his sides
 * and `gy` of his top and foot, in order: where a rarer aura's pieces ride.
@@ -9712,7 +10173,7 @@ function loop(s, gx, gy) {
 	const rx = (s.right - s.left) / 2 + gx, ry = (s.bottom - s.top) / 2 + gy, steps$1 = 720;
 	const pts = [];
 	for (let i = 0; i < steps$1; i++) {
-		const a = i / steps$1 * TAU$2, c = Math.cos(a), sn = Math.sin(a);
+		const a = i / steps$1 * TAU$3, c = Math.cos(a), sn = Math.sin(a);
 		const x = Math.round(s.cx + rx * Math.sign(c) * Math.abs(c) ** .6), y = Math.round(s.cy + ry * Math.sign(sn) * Math.abs(sn) ** .6);
 		const last = pts[pts.length - 1];
 		if (!last || last[0] !== x || last[1] !== y) pts.push([x, y]);
@@ -9766,7 +10227,7 @@ function extras(mask, t, print, level) {
 		2,
 		2,
 		3
-	][level], life = fit(1300);
+	][level], life = fit$1(1300);
 	for (let i = 0; i < runs$1; i++) {
 		const at = t + i * life / runs$1 + print * 29, gen = tick(at, 1300), f = cycle(at, 1300) / .55;
 		const [x, y] = near[Math.floor(noise$2(i, gen, print, 41) * near.length)];
@@ -9798,12 +10259,12 @@ function auraCells(id, mask, t, copy, pad = 0) {
 	if (!aura) return [];
 	const h = mask.length, w = mask[0].length, print = copy?.print ?? 0, scuff = copy?.scuff ?? 0;
 	const seen = new Set(), step$1 = tick(t, 150);
-	const wide$1 = pad ? mask.map((row) => [
+	const wide = pad ? mask.map((row) => [
 		...new Array(pad).fill(false),
 		...row,
 		...new Array(pad).fill(false)
 	]) : mask;
-	const more = extras(wide$1, t, print, auraIntensity(id, copy?.finish)).map(([x, y, k]) => [
+	const more = extras(wide, t, print, auraIntensity(id, copy?.finish)).map(([x, y, k]) => [
 		x - pad,
 		y,
 		k
@@ -9852,6 +10313,12 @@ const RAMPS = {
 		"#9A86E0"
 	]
 };
+/** Black pearl, as its card is dressed: its nacre's pale sheen, then the teal and rose its highlights catch. */
+const PEARL = [
+	"#A995E8",
+	"#46B5A6",
+	"#C863A0"
+];
 const FADE = [
 	"#FFE07A",
 	"#FF6FB5",
@@ -9902,7 +10369,7 @@ function neonRamp(finish, print) {
 		to(25, .72)
 	];
 }
-const hsl$1 = (h, s, l) => {
+const hsl$2 = (h, s, l) => {
 	const f = (n) => {
 		const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
 		return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0");
@@ -9919,7 +10386,7 @@ function auraColor(id, k, finish, x, y, t, print = 0) {
 	if (id === "aura.neon") return neonRamp(finish, print)[Math.min(2, k)];
 	const sweep = wrap(x + y * .7 - t / steps(55, 26), 26) < 1.6;
 	if (ONE_OF_ONE_AURAS.includes(aura)) {
-		if (sweep) return hsl$1(wrap((x + y) * 18 + t * 360 / fit(2160), 360), .9, .78);
+		if (sweep) return hsl$2(wrap((x + y) * 18 + t * 360 / fit$1(2160), 360), .9, .78);
 		return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
 	}
 	if (finish === "fade") {
@@ -9928,11 +10395,19 @@ function auraColor(id, k, finish, x, y, t, print = 0) {
 	}
 	const ramp$1 = RAMPS[finish];
 	if (!ramp$1) return aura.colors[k] ?? aura.colors[aura.colors.length - 1];
-	if (finish === "pearl") return hsl$1(wrap(275 + 55 * Math.sin((x + y) * .35 + t / wave(520)), 360), .5, sweep ? .93 : [
-		.86,
-		.76,
-		.66
-	][Math.min(2, k % 3)]);
+	if (finish === "pearl") {
+		const hue$2 = [
+			168,
+			278,
+			328
+		][wrap(Math.floor((x + y * .7) / 3 + t / steps(420, 3)), 3)];
+		if (sweep) return hsl$2(hue$2, .5, .9);
+		return [
+			hsl$2(hue$2, .55, .84),
+			hsl$2(hue$2, .5, .66),
+			hsl$2(hue$2, .3, .34)
+		][Math.min(2, k)];
+	}
 	if (sweep && (finish === "sapphire" || finish === "ruby")) return ramp$1[0];
 	return ramp$1[Math.min(2, k % 3)];
 }
@@ -9942,13 +10417,14 @@ function auraColor(id, k, finish, x, y, t, print = 0) {
 * dressed in it.
 */
 function auraHue(id, finish, print = 0) {
+	if (finish === "pearl" && id !== "aura.neon" && !ONE_OF_ONE_AURAS.some((a) => a.id === id)) return PEARL[0];
 	const colors = auraColors(id, finish, print);
-	const vivid = (hex$4) => {
+	const vivid = (hex$3) => {
 		const [r, g, b$1] = [
 			1,
 			3,
 			5
-		].map((i) => parseInt(hex$4.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
+		].map((i) => parseInt(hex$3.slice(i, i + 2), 16) / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1);
 		return (max - min) * (1 - Math.abs(max + min - 1) * .3);
 	};
 	return colors.reduce((a, c) => vivid(c) > vivid(a) ? c : a, colors[0]);
@@ -9956,7 +10432,7 @@ function auraHue(id, finish, print = 0) {
 /** The colours an aura copy's card is dressed from, in its finish: the list `auraHue` picks the most vivid of. */
 function auraColors(id, finish, print = 0) {
 	const aura = auraById(id);
-	return id === "aura.neon" ? [neonRamp(finish, print)[0], NEON_TUBES$1[finish]?.[print % NEON_TUBES$1[finish].length] ?? "#FF3FA4"] : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors : finish === "fade" ? FADE : finish === "pearl" ? ["#B9A2FF"] : RAMPS[finish] ?? aura?.colors ?? ["#19D3C5"];
+	return id === "aura.neon" ? [neonRamp(finish, print)[0], NEON_TUBES$1[finish]?.[print % NEON_TUBES$1[finish].length] ?? "#FF3FA4"] : aura && ONE_OF_ONE_AURAS.includes(aura) ? aura.colors : finish === "fade" ? FADE : finish === "pearl" ? PEARL : RAMPS[finish] ?? aura?.colors ?? ["#19D3C5"];
 }
 
 //#endregion
@@ -10042,6 +10518,119 @@ const EFFECTS = {
 	}
 };
 const FX_IDS = Object.keys(EFFECTS);
+/**
+* Each effect's badge: a five-by-five picture of it in its own colours, for a
+* card's corner and anywhere a copy's effect is named. Each letter is a
+* colour in `BADGE_INKS`; `.` is empty.
+*/
+const FX_BADGES = {
+	shimmer: [
+		"..w..",
+		"..s..",
+		"wsWsw",
+		"..s..",
+		"..w.."
+	],
+	pulse: [
+		".vvv.",
+		"v...v",
+		"v.W.v",
+		"v...v",
+		".vvv."
+	],
+	holo: [
+		"r.y.g",
+		".y.g.",
+		"y.g.b",
+		".g.b.",
+		"g.b.v"
+	],
+	neon: [
+		".ppp.",
+		"p...p",
+		"p...p",
+		"p...p",
+		".ppp."
+	],
+	bubbles: [
+		".bb..",
+		"bWb..",
+		".bb..",
+		"...bb",
+		"...bW"
+	],
+	hearts: [
+		"pp.pp",
+		"pPPPp",
+		"pPPPp",
+		".pPp.",
+		"..p.."
+	],
+	chroma: [
+		"rrrrr",
+		"yyyyy",
+		"ggggg",
+		"bbbbb",
+		"vvvvv"
+	],
+	rime: [
+		"s.s.s",
+		".sWs.",
+		"sWWWs",
+		".sWs.",
+		"s.s.s"
+	],
+	embers: [
+		"..o..",
+		".oy..",
+		".oyo.",
+		"oyWyo",
+		".ooo."
+	],
+	static: [
+		"rrr..",
+		"..ccc",
+		"rrrr.",
+		".cccc",
+		"rr..."
+	],
+	lava: [
+		"..o..",
+		".oyo.",
+		"oyWyo",
+		"oyyyo",
+		".ooo."
+	],
+	starlight: [
+		"..W..",
+		"..v..",
+		"WvWvW",
+		"..v..",
+		"..W.."
+	],
+	electric: [
+		"..yy.",
+		".yy..",
+		"yyyyy",
+		"..yy.",
+		".yy.."
+	]
+};
+/** The colours a badge is drawn in. */
+const BADGE_INKS = {
+	W: "#FFFFFF",
+	w: "#E6F4FF",
+	s: "#9ED8FF",
+	v: "#A98BFF",
+	r: "#FF5A6E",
+	y: "#FFD23F",
+	g: "#5FD38A",
+	b: "#5FA8FF",
+	p: "#FF6FAE",
+	P: "#FFC2DB",
+	o: "#FF8A2B",
+	c: "#3DD8FF"
+};
 /** The effect a uniform number in [0, 1) gives, rarest checked first, or none. */
 function rollFx(u, aura) {
 	let edge = 0;
@@ -10056,8 +10645,8 @@ const rgb$6 = (h) => [
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
-const hex$3 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$6 = (a, b$1, t) => [
+const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$5 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -10121,16 +10710,49 @@ const NEON_TUBES = [
 	]
 ];
 const neonTube = (print) => NEON_TUBES[print % NEON_TUBES.length];
-/** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
-function fxColor(color, fx, x, y, t, print = 0) {
+/**
+* The finishes an effect repaints whole: Plain and Sunset, the commonest, so
+* a cheap copy with an effect changes a lot, and an aura's own, whose few
+* scattered cells the effect only marks. On every other finish an effect is a
+* layer over it (`layered`): the finish shows through and the effect runs
+* over it as a band, a sheen or a few cells, never as a new coat of paint, so
+* a Deep Blue with Chroma looks like both.
+*/
+const REPAINTS = new Set([
+	"plain",
+	"sunset",
+	"classic",
+	"fade",
+	"frost",
+	"toxic",
+	"shadow",
+	"sapphire",
+	"ruby",
+	"pearl"
+]);
+/** Whether an effect on a copy in `finish` is a layer over the finish rather than a repaint of it. */
+const layered = (finish) => !!finish && !REPAINTS.has(finish);
+/** A colour's lightness, 0 to 1. */
+const light$2 = (c) => (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
+/**
+* One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two
+* copies move together. Given the copy's `finish`, an effect that recolours
+* is laid over a finish other than Plain or Sunset instead of repainting it
+* (`layered`).
+*/
+function fxColor(color, fx, x, y, t, print = 0, finish) {
 	const c = rgb$6(color), tt = t + print * 37;
+	if (layered(finish)) {
+		const over = overFinish(c, fx, x, y, tt, print);
+		if (over) return hex$2(over);
+	}
 	switch (fx) {
 		case "shimmer": {
 			const at = cycle(tt, 900) * 34 - 8;
 			for (const band$1 of [at, at - 14]) {
 				const d = x + y - band$1;
 				if (d >= 0 && d < 1.5) return "#FFFFFF";
-				if (d >= -1.5 && d < 0) return hex$3(mix$6(c, [
+				if (d >= -1.5 && d < 0) return hex$2(mix$5(c, [
 					150,
 					220,
 					255
@@ -10140,19 +10762,19 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "pulse": {
 			const b$1 = Math.sin(tt / wave(260));
-			return hex$3(mix$6(c, b$1 > 0 ? WHITE$2 : [
+			return hex$2(mix$5(c, b$1 > 0 ? WHITE$2 : [
 				0,
 				0,
 				0
 			], (b$1 > 0 ? .45 : .14) * Math.abs(b$1)));
 		}
-		case "holo": return hex$3(mix$6(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit(1800)) % 360 + 360) % 360), .45));
+		case "holo": return hex$2(mix$5(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit$1(1800)) % 360 + 360) % 360), .45));
 		case "chroma": {
-			const h = ((tt * 360 / fit(2520) + (x + y) * 14) % 360 + 360) % 360, l = (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
-			return hex$3(mix$6(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
+			const h = ((tt * 360 / fit$1(2520) + (x + y) * 14) % 360 + 360) % 360, l = (c[0] * .3 + c[1] * .59 + c[2] * .11) / 255;
+			return hex$2(mix$5(c, hue$1(h, .95, Math.min(.78, Math.max(.32, l))), .78));
 		}
 		case "starlight": {
-			const night = mix$6(mix$6(c, [
+			const night = mix$5(mix$5(c, [
 				24,
 				18,
 				66
@@ -10161,24 +10783,24 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				70,
 				220
 			], .16 * (1 + Math.sin(tt / wave(700) + x * .5 + y * .3)));
-			return noise$1(x, y, print) > .93 ? hex$3(mix$6(night, [
+			return noise$1(x, y, print) > .93 ? hex$2(mix$5(night, [
 				210,
 				200,
 				255
-			], .55)) : hex$3(night);
+			], .55)) : hex$2(night);
 		}
-		case "embers": return hex$3(mix$6(c, [
+		case "embers": return hex$2(mix$5(c, [
 			255,
 			120,
 			40
 		], .16 + .14 * Math.max(0, Math.sin(tt / wave(140) + x * 1.3 - y * .8))));
-		case "neon": return hex$3(mix$6(c, neonTube(print), .16 + .06 * Math.sin(tt / wave(380))));
-		case "bubbles": return hex$3(mix$6(c, [
+		case "neon": return hex$2(mix$5(c, neonTube(print), .16 + .06 * Math.sin(tt / wave(380))));
+		case "bubbles": return hex$2(mix$5(c, [
 			190,
 			235,
 			255
 		], .1 + .08 * Math.sin(tt / wave(300) + y)));
-		case "hearts": return hex$3(mix$6(c, [
+		case "hearts": return hex$2(mix$5(c, [
 			255,
 			140,
 			190
@@ -10187,7 +10809,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const reach = .5 + .5 * Math.sin(tt / wave(900) - y * .35);
 			const n = noise$1(x, y, tick(tt, 400), print);
 			if (reach > .35 && n > .72) return n > .9 ? "#FFFFFF" : "#DDF4FF";
-			return hex$3(mix$6(c, [
+			return hex$2(mix$5(c, [
 				190,
 				228,
 				255
@@ -10197,7 +10819,7 @@ function fxColor(color, fx, x, y, t, print = 0) {
 			const roll$1 = cycle(tt, 70 * 24) * 24 - 4, burst = noise$1(tick(tt, 90), print, 7) > .62;
 			if (burst) {
 				const r = noise$1(x, y, tick(tt, 60));
-				return r > .8 ? "#FFFFFF" : hex$3(mix$6(c, r > .45 ? [
+				return r > .8 ? "#FFFFFF" : hex$2(mix$5(c, r > .45 ? [
 					255,
 					60,
 					90
@@ -10207,8 +10829,8 @@ function fxColor(color, fx, x, y, t, print = 0) {
 					255
 				], .55));
 			}
-			if (Math.abs(y - roll$1) < 1) return hex$3(mix$6(c, WHITE$2, .45));
-			return y % 2 ? hex$3(mix$6(c, [
+			if (Math.abs(y - roll$1) < 1) return hex$2(mix$5(c, WHITE$2, .45));
+			return y % 2 ? hex$2(mix$5(c, [
 				0,
 				0,
 				0
@@ -10216,12 +10838,12 @@ function fxColor(color, fx, x, y, t, print = 0) {
 		}
 		case "lava": {
 			const flow = Math.sin(y * 1.1 + tt / wave(220) + Math.sin(x * .9 + tt / wave(700)) * 2);
-			const crust = mix$6(c, [
+			const crust = mix$5(c, [
 				40,
 				18,
 				12
 			], .55);
-			return flow > .55 ? hex$3(mix$6([
+			return flow > .55 ? hex$2(mix$5([
 				255,
 				120,
 				30
@@ -10229,26 +10851,122 @@ function fxColor(color, fx, x, y, t, print = 0) {
 				255,
 				230,
 				120
-			], (flow - .55) * 2.2)) : flow > .25 ? hex$3(mix$6(crust, [
+			], (flow - .55) * 2.2)) : flow > .25 ? hex$2(mix$5(crust, [
 				220,
 				70,
 				20
-			], .6)) : hex$3(crust);
+			], .6)) : hex$2(crust);
 		}
 		case "electric": {
 			const flash = noise$1(tick(tt, 120), print, 11) > .8;
-			if (flash) return hex$3(mix$6(c, WHITE$2, .7));
+			if (flash) return hex$2(mix$5(c, WHITE$2, .7));
 			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / wave(90))) > .93;
-			return vein ? hex$3(mix$6(c, [
+			return vein ? hex$2(mix$5(c, [
 				200,
 				240,
 				255
-			], .75)) : hex$3(mix$6(c, [
+			], .75)) : hex$2(mix$5(c, [
 				110,
 				180,
 				255
 			], .22));
 		}
+	}
+}
+/**
+* An effect that would recolour a copy, as a layer over its finish instead
+* (`layered`), or null for one that already leaves the colour alone. Chroma is
+* a rainbow band crossing it, Holo a light foil sheen with a bright line, Lava
+* veins only in its darkest parts, Starlight a few stars and no night, Rime a
+* thin frost, Static a lighter glitch and Electric a weaker flash.
+*/
+function overFinish(c, fx, x, y, tt, print) {
+	switch (fx) {
+		case "chroma": {
+			const at = cycle(tt, 2520) * 40 - 8, d = x + y - at, h = ((tt * 360 / fit$1(2520) + (x + y) * 14) % 360 + 360) % 360;
+			if (d >= 0 && d < 4) return mix$5(c, hue$1((h + Math.floor(d) * 60) % 360, .95, Math.min(.72, Math.max(.4, light$2(c)))), .62);
+			return mix$5(c, hue$1(h, .9, Math.min(.7, Math.max(.35, light$2(c)))), .1);
+		}
+		case "holo": {
+			const d = x * .8 + y - (cycle(tt, 1800) * 40 - 8);
+			const foil = mix$5(c, hue$1(((x * 22 + y * 14 + tt * 360 / fit$1(1800)) % 360 + 360) % 360), .16);
+			return d >= 0 && d < 1.2 ? mix$5(foil, WHITE$2, .55) : foil;
+		}
+		case "lava": {
+			if (light$2(c) > .3) return c;
+			const flow = Math.sin(y * 1.1 + tt / wave(220) + Math.sin(x * .9 + tt / wave(700)) * 2);
+			return flow > .55 ? mix$5([
+				255,
+				120,
+				30
+			], [
+				255,
+				230,
+				120
+			], (flow - .55) * 2.2) : flow > .25 ? mix$5(c, [
+				220,
+				70,
+				20
+			], .45) : mix$5(c, [
+				40,
+				18,
+				12
+			], .25);
+		}
+		case "starlight": return noise$1(x, y, print) > .93 ? mix$5(c, [
+			236,
+			230,
+			255
+		], .75) : c;
+		case "rime": {
+			const reach = .5 + .5 * Math.sin(tt / wave(900) - y * .35), n = noise$1(x, y, tick(tt, 400), print);
+			if (reach > .45 && n > .93) return n > .97 ? WHITE$2 : [
+				221,
+				244,
+				255
+			];
+			return mix$5(c, [
+				200,
+				234,
+				255
+			], .22 * reach);
+		}
+		case "static": {
+			const roll$1 = cycle(tt, 70 * 24) * 24 - 4, burst = noise$1(tick(tt, 90), print, 7) > .62;
+			if (burst) {
+				const r = noise$1(x, y, tick(tt, 60));
+				return r > .9 ? WHITE$2 : mix$5(c, r > .45 ? [
+					255,
+					60,
+					90
+				] : [
+					60,
+					200,
+					255
+				], .3);
+			}
+			if (Math.abs(y - roll$1) < 1) return mix$5(c, WHITE$2, .4);
+			return y % 2 ? mix$5(c, [
+				0,
+				0,
+				0
+			], .08) : c;
+		}
+		case "electric": {
+			const flash = noise$1(tick(tt, 120), print, 11) > .8;
+			if (flash) return mix$5(c, WHITE$2, .3);
+			const vein = Math.abs(Math.sin(x * 1.7 + y * .9 + tt / wave(90))) > .93;
+			return vein ? mix$5(c, [
+				200,
+				240,
+				255
+			], .5) : mix$5(c, [
+				110,
+				180,
+				255
+			], .06);
+		}
+		default: return null;
 	}
 }
 /** Under this many cells a copy is small: its effect is pushed harder and glows round it. */
@@ -10316,7 +11034,7 @@ const cross = (a, b$1) => [
 * an effect look special at a glance, not only recoloured.
 */
 function signature(fx, f, t, i) {
-	const rainbow = (o) => hex$3(hue$1(((t * 360 / fit(2880) + i * 90 + o) % 360 + 360) % 360, 1, .62));
+	const rainbow = (o) => hex$2(hue$1(((t * 360 / fit$1(2880) + i * 90 + o) % 360 + 360) % 360, 1, .62));
 	switch (fx) {
 		case "shimmer": return {
 			cells: f < .3 || f > .7 ? [[
@@ -10581,9 +11299,9 @@ function signature(fx, f, t, i) {
 function applyFx(colors, slots, copies, t) {
 	if (!copies.some((o) => o?.fx)) return colors;
 	const out = colors.map((row) => [...row]);
-	const H$1 = out.length, W$1 = out[0].length;
-	const empty$1 = (x, y) => y >= 0 && y < H$1 && x >= 0 && x < W$1 && !out[y][x];
-	const put = (x, y, c) => {
+	const H = out.length, W = out[0].length;
+	const empty$1 = (x, y) => y >= 0 && y < H && x >= 0 && x < W && !out[y][x];
+	const put$1 = (x, y, c) => {
 		if (empty$1(x, y)) out[y][x] = c;
 	};
 	const size = copies.map((_, k) => slots.reduce((n, row) => n + row.filter((s) => s === k + 1).length, 0));
@@ -10591,17 +11309,17 @@ function applyFx(colors, slots, copies, t) {
 	slots.forEach((row, y) => row.forEach((s, x) => {
 		const o = copies[s - 1];
 		if (!s || !o?.fx || !colors[y][x]) return;
-		const fx = fxColor(colors[y][x], o.fx, x, y, t, o.print);
+		const fx = fxColor(colors[y][x], o.fx, x, y, t, o.print, o.finish);
 		const a = rgb$6(colors[y][x]), b$1 = rgb$6(fx);
 		if (s === AURA_SLOT) {
 			out[y][x] = fx;
 			return;
 		}
-		if (!small(s - 1)) {
+		if (!small(s - 1) || layered(o.finish)) {
 			out[y][x] = fx;
 			return;
 		}
-		out[y][x] = hex$3(DARKENS.includes(o.fx) ? mix$6(a, b$1, .42) : mix$6(a, b$1, 1.5));
+		out[y][x] = hex$2(DARKENS.includes(o.fx) ? mix$5(a, b$1, .42) : mix$5(a, b$1, 1.5));
 	}));
 	copies.forEach((o, k) => {
 		if (!o?.fx || !small(k) || OWN_EDGE.includes(o.fx)) return;
@@ -10610,7 +11328,7 @@ function applyFx(colors, slots, copies, t) {
 			if (s || colors[y][x]) return;
 			const from = NEAR2.find(([dx, dy]) => slots[y + dy]?.[x + dx] === k + 1);
 			if (!from || noise$1(x, y, beat, o.print, 17) > .4) return;
-			out[y][x] = hex$3(mix$6(rgb$6(out[y + from[1]][x + from[0]]), WHITE$2, .15));
+			out[y][x] = hex$2(mix$5(rgb$6(out[y + from[1]][x + from[0]]), WHITE$2, .15));
 		}));
 	});
 	const cellsOf = (k) => {
@@ -10623,7 +11341,7 @@ function applyFx(colors, slots, copies, t) {
 	const dark = (c) => !!c && rgb$6(c).reduce((a, v) => a + v, 0) < 240;
 	const edgeOf = (k) => {
 		const outside = slots.map((row) => row.map(() => false)), queue = [];
-		for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) if ((x === 0 || y === 0 || x === W$1 - 1 || y === H$1 - 1) && slots[y][x] !== k + 1) {
+		for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x === 0 || y === 0 || x === W - 1 || y === H - 1) && slots[y][x] !== k + 1) {
 			outside[y][x] = true;
 			queue.push([x, y]);
 		}
@@ -10636,7 +11354,7 @@ function applyFx(colors, slots, copies, t) {
 				[0, -1]
 			]) {
 				const nx = x + dx, ny = y + dy;
-				if (nx < 0 || ny < 0 || nx >= W$1 || ny >= H$1 || outside[ny][nx] || slots[ny][nx] === k + 1) continue;
+				if (nx < 0 || ny < 0 || nx >= W || ny >= H || outside[ny][nx] || slots[ny][nx] === k + 1) continue;
 				if (out[ny][nx] && slots[ny][nx] && !dark(colors[ny][nx])) continue;
 				outside[ny][nx] = true;
 				queue.push([nx, ny]);
@@ -10655,11 +11373,11 @@ function applyFx(colors, slots, copies, t) {
 		return cells;
 	};
 	const depth = (k) => {
-		const d = new Map(), own$1 = cellsOf(k), mine = new Set(own$1.map(([x, y]) => y * W$1 + x));
+		const d = new Map(), own$1 = cellsOf(k), mine = new Set(own$1.map(([x, y]) => y * W + x));
 		for (const [x, y] of own$1) {
 			let best = 9;
-			for (let r = 1; r < 9 && best === 9; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === r && !mine.has((y + dy) * W$1 + x + dx)) best = Math.min(best, r);
-			d.set(y * W$1 + x, best);
+			for (let r = 1; r < 9 && best === 9; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === r && !mine.has((y + dy) * W + x + dx)) best = Math.min(best, r);
+			d.set(y * W + x, best);
 		}
 		return d;
 	};
@@ -10684,17 +11402,17 @@ function applyFx(colors, slots, copies, t) {
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$3(mix$6(rgb$6(colors[y][x]), WHITE$2, .25 + .3 * breath)));
+			]) put$1(x + dx, y + dy, hex$2(mix$5(rgb$6(colors[y][x]), WHITE$2, .25 + .3 * breath)));
 		}
 		if (o.fx === "neon" && !aura) {
 			const tube = neonTube(o.print), glow = .3 + .12 * Math.sin(tt / wave(380)), rim$2 = edgeOf(k);
-			for (const [x, y] of rim$2) out[y][x] = hex$3(mix$6(tube, WHITE$2, glow));
+			for (const [x, y] of rim$2) out[y][x] = hex$2(mix$5(tube, WHITE$2, glow));
 			for (const [x, y] of rim$2) for (const [dx, dy] of [
 				[1, 0],
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			]) put(x + dx, y + dy, hex$3(mix$6(tube, [
+			]) put$1(x + dx, y + dy, hex$2(mix$5(tube, [
 				20,
 				12,
 				36
@@ -10703,14 +11421,14 @@ function applyFx(colors, slots, copies, t) {
 		if (o.fx === "rime") {
 			const reach = 1 + 1.6 * (.5 + .5 * Math.sin(tt / wave(900)));
 			for (const [key, d] of depth(k)) {
-				const x = key % W$1, y = Math.floor(key / W$1);
+				const x = key % W, y = Math.floor(key / W);
 				if (d > reach) continue;
-				const glint$1 = noise$1(x, y, tick(tt, 300), o.print) > .82;
-				out[y][x] = glint$1 ? "#FFFFFF" : hex$3(mix$6(rgb$6(out[y][x]), [
+				const glint$1 = noise$1(x, y, tick(tt, 300), o.print) > (layered(o.finish) ? .95 : .82);
+				out[y][x] = glint$1 ? "#FFFFFF" : hex$2(mix$5(rgb$6(out[y][x]), [
 					214,
 					240,
 					255
-				], aura ? .5 : d <= 1 ? .85 : .6));
+				], aura ? .5 : layered(o.finish) ? d <= 1 ? .3 : .15 : d <= 1 ? .85 : .6));
 			}
 			if (!aura) {
 				for (const [x, y] of edgeOf(k)) if (noise$1(x, y, tick(tt, 300), 3) > .7 && out[y][x] && dark(colors[y][x] ?? "#000000")) out[y][x] = "#BFE6FF";
@@ -10720,7 +11438,7 @@ function applyFx(colors, slots, copies, t) {
 			const deep = depth(k), inner = [...deep].filter(([, d]) => d >= 2).map(([key]) => key);
 			for (let i = 0; i < 3 && inner.length; i++) {
 				const at = tt + i * 333, gen = tick(at, 1e3), f = cycle(at, 1e3);
-				const key = inner[Math.floor(noise$1(i, gen, o.print, 9) * inner.length)], x = key % W$1, y = Math.floor(key / W$1);
+				const key = inner[Math.floor(noise$1(i, gen, o.print, 9) * inner.length)], x = key % W, y = Math.floor(key / W);
 				if (f > .8) continue;
 				out[y][x] = "#FFFFFF";
 				if (f > .25 && f < .6) {
@@ -10729,12 +11447,12 @@ function applyFx(colors, slots, copies, t) {
 						[-1, 0],
 						[0, 1],
 						[0, -1]
-					]) if (deep.has((y + dy) * W$1 + x + dx)) out[y + dy][x + dx] = "#C9BEFF";
+					]) if (deep.has((y + dy) * W + x + dx)) out[y + dy][x + dx] = "#C9BEFF";
 				}
 			}
 			const shot = cycle(tt, 2600);
 			if (shot < .25) for (const [key] of deep) {
-				const x = key % W$1, y = Math.floor(key / W$1);
+				const x = key % W, y = Math.floor(key / W);
 				const d = x - y - (shot * 40 - 12);
 				if (d >= 0 && d < 1) out[y][x] = "#FFFFFF";
 				else if (d >= 1 && d < 2.5) out[y][x] = "#B9A8FF";
@@ -10758,13 +11476,13 @@ function applyFx(colors, slots, copies, t) {
 		}
 		if (o.fx === "bubbles") risers(o, k, aura ? 200 : 150, 6, aura ? .3 : .55, (x, y, step$1) => {
 			if (step$1 >= 5) {
-				put(x, y, "#E8F8FF");
+				put$1(x, y, "#E8F8FF");
 				return;
 			}
-			put(x, y, "#FFFFFF");
-			put(x + 1, y, "#9ED8FF");
-			put(x, y + 1, "#9ED8FF");
-			put(x + 1, y + 1, "#5FB8F0");
+			put$1(x, y, "#FFFFFF");
+			put$1(x + 1, y, "#9ED8FF");
+			put$1(x, y + 1, "#9ED8FF");
+			put$1(x + 1, y + 1, "#5FB8F0");
 		});
 		if (o.fx === "hearts") risers(o, k, aura ? 260 : 210, 6, aura ? .25 : .45, (x, y) => {
 			for (const [dx, dy, c] of [
@@ -10798,16 +11516,16 @@ function applyFx(colors, slots, copies, t) {
 					1,
 					"#E0457F"
 				]
-			]) put(x + dx, y + dy, c);
+			]) put$1(x + dx, y + dy, c);
 		});
 		if (o.fx === "embers") risers(o, k, aura ? 120 : 100, 6, aura ? .35 : .6, (x, y, step$1) => {
 			const c = step$1 < 2 ? ["#FFF2A8", "#FFC53D"] : step$1 < 4 ? ["#FFC53D", "#FF7A1A"] : ["#FF7A1A", "#C2412E"];
-			put(x, y, c[0]);
-			put(x, y + 1, c[1]);
+			put$1(x, y, c[0]);
+			put$1(x, y + 1, c[1]);
 		});
 		if (aura) {
 			const spots = [];
-			for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+			for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 				if (out[y][x]) continue;
 				let near = 9;
 				for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
@@ -10822,18 +11540,18 @@ function applyFx(colors, slots, copies, t) {
 				if (f > .85) continue;
 				const [x, y] = spots[Math.floor(noise$1(i, gen, o.print, 51) * spots.length)], sg = signature(o.fx, f, tt, i);
 				const dy = -Math.round(f * sg.rise);
-				for (const [cx, cy, c] of sg.cells) put(x + cx, y + cy + dy, c);
+				for (const [cx, cy, c] of sg.cells) put$1(x + cx, y + cy + dy, c);
 			}
 		}
 		if (o.fx === "static" && noise$1(tick(tt, 90), o.print, 7) > .6) {
-			const yy = Math.floor(noise$1(tick(tt, 90), o.print, 9) * H$1), dir = noise$1(tick(tt, 90), 1) > .5 ? 1 : -1;
+			const yy = Math.floor(noise$1(tick(tt, 90), o.print, 9) * H), dir = noise$1(tick(tt, 90), 1) > .5 ? 1 : -1;
 			for (const r of [yy, yy + 1]) {
-				if (r >= H$1) continue;
+				if (r >= H) continue;
 				const row = out[r], copy = [...row];
 				slots[r].forEach((s, x) => {
 					if (s === k + 1 && copy[x]) {
 						const nx = x + dir;
-						if (nx >= 0 && nx < W$1) row[nx] = copy[x];
+						if (nx >= 0 && nx < W) row[nx] = copy[x];
 					}
 				});
 			}
@@ -11064,7 +11782,11 @@ function markItem(grid, slot, copy) {
 }
 /**
 * After a year of days, the outline around an item goes gold; a frame's edge
-* does. A pin's backing plate stays dark, so a gold pin still stands out.
+* does. Every other step of it stays ink, so it shows on any finish: on a
+* Gold or orange item the ink steps keep its edge, on a dark or pale one the
+* gold steps stand out. Only gold and outline cells, which the face's blink
+* and squash leave alone. A pin's backing plate stays dark, so a gold pin
+* still stands out.
 */
 function goldRim(grid, slot) {
 	const edge = (x, y) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
@@ -11083,7 +11805,7 @@ function goldRim(grid, slot) {
 			[0, -1]
 		].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set$10.push([x, y]);
 	}));
-	for (const [x, y] of set$10) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+	for (const [x, y] of set$10) if ((x + y) % 2) grid[y][x] = T.GOLD;
 }
 
 //#endregion
@@ -11220,14 +11942,14 @@ const paintsOnSale = (day) => PAINT_IDS.filter((id) => paintOnSale(id, day));
 const paintCost = (id, base$1) => paintMonth(id) ? LIMITED_PAINT_COST : base$1;
 /** What can be painted. */
 const PAINTABLE = ["hat", "buddy"];
-const rgb$5 = (hex$4) => [
+const rgb$5 = (hex$3) => [
 	1,
 	3,
 	5
-].map((i) => parseInt(hex$4.slice(i, i + 2), 16));
+].map((i) => parseInt(hex$3.slice(i, i + 2), 16));
 const toHex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
 const light$1 = (c) => (.2126 * c[0] + .7152 * c[1] + .0722 * c[2]) / 255;
-const mix$5 = (a, b$1, t) => a.map((v, i) => v + (b$1[i] - v) * t);
+const mix$4 = (a, b$1, t) => a.map((v, i) => v + (b$1[i] - v) * t);
 /**
 * An item's colours under a paint: the first colour (an item's main one)
 * becomes the paint, and every other colour sits as much lighter or darker
@@ -11237,13 +11959,13 @@ function painted(colors, paint$1) {
 	const p = paint$1 && PAINTS[paint$1];
 	if (!p || !colors.length) return colors;
 	const base$1 = rgb$5(p.hex), main = light$1(rgb$5(colors[0]));
-	return colors.map((hex$4) => {
-		const d = light$1(rgb$5(hex$4)) - main;
-		return toHex(d >= 0 ? mix$5(base$1, [
+	return colors.map((hex$3) => {
+		const d = light$1(rgb$5(hex$3)) - main;
+		return toHex(d >= 0 ? mix$4(base$1, [
 			255,
 			255,
 			255
-		], Math.min(1, d * 1.5)) : mix$5(base$1, [
+		], Math.min(1, d * 1.5)) : mix$4(base$1, [
 			0,
 			0,
 			0
@@ -11288,7 +12010,8 @@ const GRADES = [
 /**
 * Each finish: its grade, the chance a capsule rolls it, and the scuff range
 * it can come in. The flashy finishes only exist barely worn, so there is no
-* Battered Nebula.
+* Battered Nebula. Append only: a copy stores its finish's id, and a capsule
+* rolls them in this order.
 */
 const FINISHES = {
 	"plain": {
@@ -11300,7 +12023,7 @@ const FINISHES = {
 	"sunset": {
 		name: "Sunset",
 		grade: 1,
-		odds: 15.98,
+		odds: 15.87,
 		scuffs: [0, .08]
 	},
 	"tempered": {
@@ -11330,7 +12053,7 @@ const FINISHES = {
 	"gold": {
 		name: "Gold",
 		grade: 4,
-		odds: .25,
+		odds: .2,
 		scuffs: [0, .08]
 	},
 	"classic": {
@@ -11388,8 +12111,32 @@ const FINISHES = {
 		odds: 0,
 		aura: .3,
 		scuffs: [0, 1]
+	},
+	"op": {
+		name: "Op",
+		grade: 3,
+		odds: .06,
+		scuffs: [0, .08]
+	},
+	"impossible": {
+		name: "Impossible",
+		grade: 3,
+		odds: .05,
+		scuffs: [0, .08]
+	},
+	"grid": {
+		name: "Grid",
+		grade: 3,
+		odds: .05,
+		scuffs: [0, .08]
 	}
 };
+/** The graphic finishes: a pattern of their own across the item, in ink, ivory and coral. */
+const GRAPHIC_FINISHES = [
+	"op",
+	"impossible",
+	"grid"
+];
 /** Condition, by scuff, in the words toy collectors use. */
 const WEAR = [
 	{
@@ -11499,6 +12246,20 @@ function special(o) {
 function gradeOf(o) {
 	if (FINISHES[o.finish].grade === 5) return GRADES[5];
 	return GRADES[Math.min(4, FINISHES[o.finish].grade + (special(o) ? 1 : 0))];
+}
+/** An effect at least this rare (one copy in this many) makes its copy an Unusual (`unusual`). */
+const UNUSUAL_ONE_IN = 250;
+/**
+* Whether a copy is an Unusual: a showpiece, or a copy with an effect rarer
+* than about one in 250 that isn't its showpiece's own (rated on the aura
+* ladder for an aura). What its card, its reveal and a board celebrate,
+* whatever its grade; the grade itself (`gradeOf`) is unchanged.
+*/
+function unusual(o) {
+	const item = itemById(o.item);
+	if (item?.showpiece) return true;
+	if (!o.fx || o.fx === item?.signature || !EFFECTS[o.fx]) return false;
+	return EFFECTS[o.fx][FINISHES[o.finish]?.aura ? "aura" : "item"] >= UNUSUAL_ONE_IN;
 }
 /** The name as it would show on an inventory card. */
 function nameOf(o) {
@@ -11670,8 +12431,8 @@ const rgb$4 = (h) => [
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
-const hex$2 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$4 = (a, b$1, t) => [
+const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$3 = (a, b$1, t) => [
 	0,
 	1,
 	2
@@ -11695,11 +12456,11 @@ function cellNoise(...n) {
 */
 const shaded = (c, l) => {
 	const t = Math.max(0, Math.min(1, (l - .15) / .75));
-	return t < .5 ? mix$4(mix$4(c, [
+	return t < .5 ? mix$3(mix$3(c, [
 		0,
 		0,
 		0
-	], .5), c, t * 2) : mix$4(c, mix$4(c, [
+	], .5), c, t * 2) : mix$3(c, mix$3(c, [
 		255,
 		255,
 		255
@@ -11708,38 +12469,25 @@ const shaded = (c, l) => {
 /** A colour along a ramp of stops, `t` 0 to 1, blended smoothly between them. */
 const ramp = (stops, t) => {
 	const at = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(at));
-	return mix$4(stops[i], stops[i + 1], at - i);
+	return mix$3(stops[i], stops[i + 1], at - i);
 };
 /** A colour taken through its tone: `t` 0 its shadow, 0.5 itself, 1 its highlight. */
 const toned = (c, t, deep = [
 	16,
 	12,
 	34
-]) => t < .5 ? mix$4(mix$4(c, deep, .62), c, t * 2) : mix$4(c, mix$4(c, [
+]) => t < .5 ? mix$3(mix$3(c, deep, .62), c, t * 2) : mix$3(c, mix$3(c, [
 	255,
 	255,
 	255
 ], .72), (t - .5) * 2);
-const hsl = (h, s, l) => {
+const hsl$1 = (h, s, l) => {
 	const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
 	return [
 		0,
 		8,
 		4
 	].map((n) => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
-};
-const hueOf = (c) => {
-	const [r, g, b$1] = c.map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), d = max - min;
-	if (d < 1e-6) return {
-		h: 0,
-		s: 0
-	};
-	const l = (max + min) / 2, s = d / (1 - Math.abs(2 * l - 1));
-	const h = max === r ? (g - b$1) / d % 6 : max === g ? (b$1 - r) / d + 2 : (r - g) / d + 4;
-	return {
-		h: (h * 60 + 360) % 360,
-		s
-	};
 };
 /** Rich polished gold, from a deep amber shade through saturated warm yellows to a light highlight. */
 const GOLD$1 = [
@@ -11777,87 +12525,269 @@ const across = (x, y) => (x + y * .8) / 26;
 function toneOf(colors) {
 	const ls = colors.map((c) => lum$1(rgb$4(c))), main = ls[0] ?? .5;
 	const down = .47 / Math.max(.33, main - Math.min(...ls)), up = .47 / Math.max(.33, Math.max(...ls) - main);
-	const chroma = (c) => {
+	const chroma$1 = (c) => {
 		const g = (c[0] + c[1] + c[2]) / 3;
 		return c.map((v) => v - g);
 	};
-	const key = colors[0] ? chroma(rgb$4(colors[0])) : [
+	const key = colors[0] ? chroma$1(rgb$4(colors[0])) : [
 		0,
 		0,
 		0
 	];
 	return new Map(colors.map((c, i) => {
-		const k = chroma(rgb$4(c));
+		const k = chroma$1(rgb$4(c));
 		return [c.toUpperCase(), {
 			tone: .5 + (ls[i] - main) * (ls[i] < main ? down : up),
 			part: Math.min(1, Math.hypot(k[0] - key[0], k[1] - key[1], k[2] - key[2]) / 120)
 		}];
 	}));
 }
+const measured = (b$1, eyes$1) => {
+	const w = Math.max(1, b$1.right - b$1.left + 1), h = Math.max(1, b$1.bottom - b$1.top + 1);
+	return {
+		x0: b$1.left,
+		y0: b$1.top,
+		w,
+		h,
+		cx: b$1.left + (w - 1) / 2,
+		cy: b$1.top + (h - 1) / 2,
+		eyes: eyes$1
+	};
+};
+/**
+* Where a face sits on a skin, by row from its eyes' line: the columns its
+* eyes and mouth, and the cells touching them, take on nearly every guy (the
+* face is drawn centred on the grid). A finish that would bury the face in
+* ink or in a void keeps these cells light, so the face reads at any size.
+*/
+const FACE_WINDOW = {
+	[-3]: [4, 11],
+	[-2]: [3, 12],
+	[-1]: [3, 12],
+	0: [3, 12],
+	1: [4, 11],
+	2: [4, 11],
+	3: [5, 10],
+	4: [6, 9]
+};
+const inFace = (b$1, x, y) => {
+	const span$1 = b$1.eyes === void 0 ? void 0 : FACE_WINDOW[y - b$1.eyes];
+	return !!span$1 && x >= span$1[0] && x <= span$1[1];
+};
+/** A graphic finish's colour in a face's window: the same pattern, gone pale, so the face's ink reads on every cell of it. */
+const paled = (c, b$1, x, y) => inFace(b$1, x, y) ? mix$3(c, IVORY_RGB, .56) : c;
+/**
+* Where each worn item sits on a composed grid, read off its layer's tokens
+* (`LAYER` in ./parts/art: a skin's 20s, a hat's 30s, a frame's 40s, a
+* buddy's 50s): the boxes `paintCell` sweeps each copy's finish across.
+*/
+function boxesIn(grid) {
+	const out = {};
+	grid.forEach((row, y) => row.forEach((t, x) => {
+		const slot = [
+			"skin",
+			"hat",
+			"frame",
+			"buddy"
+		].find((k) => t >= LAYER[k] && t < LAYER[k] + 10);
+		if (!slot) return;
+		const b$1 = out[slot];
+		if (!b$1) out[slot] = {
+			left: x,
+			top: y,
+			right: x,
+			bottom: y
+		};
+		else {
+			b$1.left = Math.min(b$1.left, x);
+			b$1.right = Math.max(b$1.right, x);
+			b$1.top = Math.min(b$1.top, y);
+			b$1.bottom = Math.max(b$1.bottom, y);
+		}
+	}));
+	return out;
+}
+const boxes = new Map();
+/**
+* The box an item usually takes when nobody measured it: a skin's own art (it
+* is drawn on the whole grid), a frame's whole grid, a buddy's art where it
+* stands beside the guy (`buddyAlone`), and a hat over the middle of the head.
+*/
+function boxOf(itemId) {
+	let b$1 = boxes.get(itemId);
+	if (b$1) return b$1;
+	const item = itemById(itemId), art = item?.art;
+	const lit$1 = (rows) => {
+		let left = 99, right = -1, top = 99, bottom = -1;
+		rows.forEach((row, y) => row.forEach((v, x) => {
+			if (v) {
+				left = Math.min(left, x);
+				right = Math.max(right, x);
+				top = Math.min(top, y);
+				bottom = Math.max(bottom, y);
+			}
+		}));
+		return right < 0 ? null : {
+			left,
+			right,
+			top,
+			bottom
+		};
+	};
+	const own$1 = art ? lit$1(art) : null;
+	b$1 = item?.slot === "frame" ? {
+		left: 0,
+		top: 0,
+		right: 15,
+		bottom: 15
+	} : item?.slot === "skin" && own$1 ? own$1 : item?.slot === "buddy" && own$1 ? {
+		left: 19,
+		top: 15 - (own$1.bottom - own$1.top + 1),
+		right: 18 + (own$1.right - own$1.left + 1),
+		bottom: 14
+	} : {
+		left: 3,
+		top: 1,
+		right: 12,
+		bottom: 5
+	};
+	boxes.set(itemId, b$1);
+	return b$1;
+}
+/** Where a cell sits across its item's box, corner to corner, 0 to 1, along a slope (`dy` per column). */
+const sweepOf = (x, y, b$1, dy) => (x - b$1.x0 + (y - b$1.y0) * dy) / Math.max(1, b$1.w - 1 + (b$1.h - 1) * dy);
+/** The club's ink, ivory and coral, and the primaries a Grid finish fills its panes with. */
+const INK_RGB = rgb$4("#17131F"), IVORY_RGB = rgb$4("#F4EFE4"), CORAL = rgb$4("#EE6A50");
+const PRIMARIES = [
+	"#D9402E",
+	"#2C55C8",
+	"#F2C230"
+].map(rgb$4);
+/** The famous prints' own looks, drawn in place of their finish's: what makes a one in a million look it. */
+const FAMOUS = {
+	"Deep Blue": (x, y, tone, p, l, b$1) => {
+		const line = x - b$1.x0 + (y - b$1.y0) * .9 - (b$1.w - 1 + (b$1.h - 1) * .9) * (.3 + p % 5 * .1);
+		if (line >= 0 && line < 1) return rgb$4("#EEF6FF");
+		if (line >= -1 && line < 2) return mix$3(ramp(SAPPHIRE, lit(tone, l)), rgb$4("#9CC8FF"), .55);
+		return ramp(SAPPHIRE, .1 + lit(tone, l) * .75);
+	},
+	"Black Hole": (x, y, tone, p, l, b$1) => {
+		if (b$1.eyes !== void 0) {
+			const edge = b$1.eyes - 4, d = Math.hypot((x - b$1.cx) / Math.max(1.5, b$1.w * .3), (y - edge - .5) / Math.max(1, edge - b$1.y0 + .5));
+			if (y <= edge && d < 1) return mix$3(rgb$4("#07060B"), rgb$4("#231C33"), lit(tone, l) * .7);
+			if (y <= edge) return ramp([
+				"#FFF3D2",
+				"#FFB45C",
+				"#E2581F",
+				"#8A2A12"
+			].map(rgb$4), Math.min(1, (d - 1) * .8));
+			if (y === edge + 1) return mix$3(rgb$4("#FFF3D2"), rgb$4("#FF8A30"), Math.min(1, Math.abs(x - b$1.cx) / Math.max(1, b$1.w / 2)));
+			const t = (y - edge - 1) / Math.max(1, b$1.y0 + b$1.h - edge - 1) + (.5 - lit(tone, l)) * .25;
+			return ramp([
+				"#FFE6B0",
+				"#FFB45C",
+				"#E2581F",
+				"#8A2A12"
+			].map(rgb$4), Math.max(0, Math.min(inFace(b$1, x, y) ? .5 : 1, t)));
+		}
+		const dx = (x - b$1.cx) / Math.max(1, b$1.w / 2), dy = (y - b$1.cy) / Math.max(1, b$1.h / 2), tilt = ((p >> 2) % 3 - 1) * .25;
+		if (Math.abs(y - b$1.cy - (x - b$1.cx) * tilt) < .5) return mix$3(rgb$4("#FFF3D2"), rgb$4("#FF8A30"), Math.min(1, Math.abs(dx) * 1.1));
+		if (Math.hypot(dx, dy) > .8 || tone > .72) return mix$3(rgb$4("#FFE6B0"), rgb$4("#E2581F"), Math.max(0, Math.min(1, (dy + 1) / 2)));
+		return mix$3(rgb$4("#07060B"), rgb$4("#231C33"), lit(tone, l) * .7);
+	},
+	"Red Giant": (x, y, tone, _p, l, b$1) => {
+		const r = Math.hypot((x - b$1.cx) / Math.max(1, b$1.w / 2), (y - b$1.cy) / Math.max(1, b$1.h / 2));
+		return ramp([
+			"#FFF1C2",
+			"#FFB347",
+			"#F0602E",
+			"#C41E2C",
+			"#5E0A1A"
+		].map(rgb$4), Math.min(1, r * .78 + (.55 - lit(tone, l)) * .6));
+	},
+	"Blue Moon": (x, y, tone, p, l, b$1) => {
+		const shade$1 = (x - b$1.cx) * (p % 2 ? 1 : -1) / Math.max(1, b$1.w / 2);
+		const crater = cellNoise(p, x, y, 21) > .82 && tone < .7;
+		const t = Math.max(0, Math.min(1, .2 + lit(tone, l) * .75 - Math.max(0, shade$1 - .35) * .9 - (crater ? .18 : 0)));
+		return ramp([
+			"#1E2F78",
+			"#4E6CC8",
+			"#9DB4EE",
+			"#DCE6FF",
+			"#FFFFFF"
+		].map(rgb$4), t);
+	}
+};
+/** Deep Blue's sapphire, deep to light. */
+const SAPPHIRE = [
+	"#05124F",
+	"#0B2EA8",
+	"#1A50E6",
+	"#4C86FF",
+	"#A9CBFF"
+].map(rgb$4);
 /**
 * Each finish as a clean, premium version of the item: its colours mapped
 * through the finish's own ramp by tone, so the item's shading and parts all
-* still read, and any colour shift runs in smooth bands across the whole
-* item, never pixel by pixel. The shaders (./finish-shader) move a sheen over
-* it.
+* still read, and any colour shift runs in smooth bands across the item's own
+* box (`ItemBox`), never pixel by pixel: every Prism shows its whole rainbow
+* and every Sunset its three colours, on a hat as on a skin. The shaders
+* (./finish-shader) move a sheen over it.
 */
 const PAINT = {
 	"plain": (_x, _y, _t, _p, original) => original,
-	"sunset": (x, y, _t, p, _o, l) => {
-		const t = Math.max(0, Math.min(1, (x + y * .5 - 2 + p % 100 / 12) / 14));
-		const c = t < .5 ? mix$4(rgb$4("#F5C542"), rgb$4("#E55AA8"), t * 2) : mix$4(rgb$4("#E55AA8"), rgb$4("#7A4BE0"), (t - .5) * 2);
+	"sunset": (x, y, _t, p, _o, l, _part, b$1) => {
+		const t = Math.max(0, Math.min(1, sweepOf(x, y, b$1, .5) * 1.1 - .05 + (p % 100 / 100 - .5) * .2));
+		const c = t < .5 ? mix$3(rgb$4("#F5C542"), rgb$4("#E55AA8"), t * 2) : mix$3(rgb$4("#E55AA8"), rgb$4("#7A4BE0"), (t - .5) * 2);
 		return shaded(c, l);
 	},
-	"tempered": (x, y, tone, p, _o, l, part) => {
-		const [a, b$1, c] = TINTS[temperTint(p)].map(rgb$4);
+	"tempered": (x, y, tone, p, _o, l, part, b$1) => {
+		if (DEEP_BLUE_PRINTS.includes(p)) return FAMOUS["Deep Blue"](x, y, tone, p, l, b$1);
+		const [a, bb, c] = TINTS[temperTint(p)].map(rgb$4);
 		const s = (across(x, y) * 1.5 + p % 11 / 11 + part * .4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
-		const band$1 = s < .5 ? mix$4(a, b$1, k) : mix$4(c, b$1, 1 - k);
+		const band$1 = s < .5 ? mix$3(a, bb, k) : mix$3(c, bb, 1 - k);
 		return toned(band$1, .28 + lit(tone, l) * .5, [
 			10,
 			16,
 			40
 		]);
 	},
-	"nebula": (x, y, tone, p, _o, l, part) => {
+	"nebula": (x, y, tone, p, _o, l, part, b$1) => {
 		const phase = nebulaPhase(p);
-		const [a, b$1] = phase === "Red Giant" ? ["#C8102E", "#FF6A3D"] : phase === "Blue Moon" ? ["#1E4FE8", "#58B8FF"] : phase === "Black Hole" ? ["#2A1E3A", "#4A2A6A"] : [
+		if (FAMOUS[phase]) return FAMOUS[phase](x, y, tone, p, l, b$1);
+		const [a, c] = [
 			["#7A2AB8", "#3A3AD0"],
 			["#3A2AB0", "#8A3AC8"],
 			["#2A5AC0", "#6A2AB0"],
 			["#A82A8A", "#4A2AB8"]
 		][p % 4];
 		const cloud = Math.min(1, (.5 + .5 * Math.sin(x * .5 + p) * Math.cos(y * .42 - p * .7)) * (1 - part) + part * .95);
-		const t = .2 + lit(Math.pow(tone, 1.1), l) * .72, sky = mix$4(rgb$4(a), rgb$4(b$1), cloud);
+		const t = .2 + lit(Math.pow(tone, 1.1), l) * .72, sky = mix$3(rgb$4(a), rgb$4(c), cloud);
 		return ramp([
-			mix$4(sky, [
+			mix$3(sky, [
 				8,
 				6,
 				22
 			], .6),
 			sky,
-			mix$4(sky, rgb$4("#FFC4EC"), .5),
+			mix$3(sky, rgb$4("#FFC4EC"), .5),
 			rgb$4("#FFF0FA")
 		], t);
 	},
-	"prism": (x, y, tone, p) => {
-		const h = (across(x, y) * 300 + p * 7) % 360;
-		return mix$4(hsl(h, .6, .3 + .58 * tone), [
+	"prism": (x, y, tone, p, _o, _l, _part, b$1) => {
+		const h = (sweepOf(x, y, b$1, .8) * 300 + p * 7) % 360;
+		return mix$3(hsl$1(h, .6, .3 + .58 * tone), [
 			255,
 			255,
 			255
 		], .14);
 	},
-	"negative": (_x, _y, tone, _p, original) => {
-		const { h, s } = hueOf([
-			255 - original[0],
-			255 - original[1],
-			255 - original[2]
-		]);
-		return mix$4(hsl(h, Math.min(.7, s * .8 + .15), .26 + .6 * (1 - tone)), [
-			92,
-			52,
-			160
-		], .2);
+	"negative": (x, y, tone, p, _o, _l, part, b$1) => {
+		const d = x - b$1.cx - (y - b$1.cy) * .35 * (p % 2 ? 1 : -1), face = inFace(b$1, x, y), dark = d < 0 !== p % 4 >= 2 && !face;
+		if (d >= -1 && d < 0 && !face) return rgb$4("#D9468F");
+		if (d >= 0 && d < 1 && !face) return rgb$4("#3BB8CF");
+		if (dark) return tone < .35 ? rgb$4("#8E88A4") : part > .45 ? rgb$4("#3A3448") : tone > .62 ? rgb$4("#0C0A12") : rgb$4("#1C1826");
+		return tone > .62 ? rgb$4("#5C566E") : part > .45 ? rgb$4("#CFC8D8") : tone < .35 ? rgb$4("#FFFFFF") : rgb$4("#F3EDE0");
 	},
 	"classic": (_x, _y, _t, _p, original) => original,
 	"fade": (_x, _y, _t, _p, original) => original,
@@ -11869,9 +12799,41 @@ const PAINT = {
 	"pearl": (_x, _y, _t, _p, original) => original,
 	"gold": (x, y, tone, _p, _o, _l, part) => {
 		const t = .1 + tone * .82 + Math.max(0, 1 - Math.abs(across(x, y) - .42) / .16) * .12;
-		return mix$4(ramp(GOLD$1, t), ramp(WHITE_GOLD, t), part * .3);
+		return mix$3(ramp(GOLD$1, t), ramp(WHITE_GOLD, t), part * .3);
+	},
+	"op": (x, y, tone, p, _o, _l, _part, b$1) => {
+		const r = b$1.eyes === void 0 ? Math.hypot(x - b$1.cx, y - b$1.cy) : Math.hypot((x - 7.5) * .8, y - b$1.eyes - .5);
+		if (tone < .15 && !inFace(b$1, x, y)) return INK_RGB;
+		if (r < .75 && b$1.eyes === void 0) return CORAL;
+		return paled(Math.floor(r + .25 + p % 3 / 3) % 2 ? INK_RGB : IVORY_RGB, b$1, x, y);
+	},
+	"impossible": (x, y, tone, p, _o, _l, _part, b$1) => {
+		if (tone < .15 && !inFace(b$1, x, y)) return INK_RGB;
+		const left = x <= b$1.cx, s = y - b$1.y0 + (left ? x - b$1.cx : b$1.cx - x) + (left ? 0 : 1) + p % 6;
+		return paled([
+			INK_RGB,
+			IVORY_RGB,
+			CORAL
+		][(Math.floor(s / 2) % 3 + 3) % 3], b$1, x, y);
+	},
+	"grid": (x, y, tone, p, _o, _l, _part, b$1) => {
+		if (tone < .15 && !inFace(b$1, x, y)) return INK_RGB;
+		const v1 = b$1.x0 + Math.max(1, Math.round((b$1.w - 1) * (.3 + p % 3 * .06))), v2 = b$1.x0 + Math.round((b$1.w - 1) * (.64 + (p >> 2) % 3 * .06));
+		const h1 = b$1.y0 + Math.max(1, Math.round((b$1.h - 1) * (.42 + (p >> 4) % 3 * .08)));
+		if (x === v1 || x === v2 || y === h1) return paled(INK_RGB, b$1, x, y);
+		const pane = (x > v1 ? 1 : 0) + (x > v2 ? 1 : 0) + (y > h1 ? 3 : 0), at = (pane - p % 6 + 6) % 6;
+		return paled(at === 0 ? PRIMARIES[0] : at === 2 ? PRIMARIES[1] : at === 4 ? PRIMARIES[2] : IVORY_RGB, b$1, x, y);
 	}
 };
+/**
+* The ink a skin's face takes in a finish that keeps the cells round the face
+* light (`FACE_WINDOW`): the graphic finishes, Negative and a Black Hole. Undefined in
+* any other finish, where the face keeps the ink worked out from the skin's
+* own colour.
+*/
+function faceInk(o) {
+	return GRAPHIC_FINISHES.includes(o.finish) || o.finish === "negative" || o.finish === "nebula" && nebulaPhase(o.print) === "Black Hole" ? "#15111C" : void 0;
+}
 const PRIMER = rgb$4("#8B9097");
 /**
 * A finished skin's outline: the deepest colour of its finish, so a purple
@@ -11879,13 +12841,14 @@ const PRIMER = rgb$4("#8B9097");
 */
 function finishOutline(o) {
 	if (o.finish === "gold") return "#4A2400";
-	if (o.finish === "nebula") return "#160C30";
+	if (o.finish === "nebula") return nebulaPhase(o.print) === "Red Giant" ? "#3A0610" : nebulaPhase(o.print) === "Blue Moon" ? "#101A4A" : "#160C30";
 	if (o.finish === "prism") return "#2C2048";
-	if (o.finish === "tempered") return hex$2(mix$4(rgb$4(TINTS[temperTint(o.print)][0]), [
+	if (o.finish === "tempered") return DEEP_BLUE_PRINTS.includes(o.print) ? "#030A30" : hex$1(mix$3(rgb$4(TINTS[temperTint(o.print)][0]), [
 		8,
 		10,
 		26
 	], .72));
+	if (GRAPHIC_FINISHES.includes(o.finish)) return "#17131F";
 	return void 0;
 }
 /**
@@ -11893,13 +12856,15 @@ function finishOutline(o) {
 * places fixed by the print, so a copy always wears the same way, and how many
 * show is the scuff. `glint` is set once the first Box Fresh glint has been
 * placed. `tone` is the colour's place among the item's own (`toneOf`); left
-* out, its lightness stands in.
+* out, its lightness stands in. `box` is where the item sits on the grid
+* (`ItemBox`); left out, the box its slot usually takes (`boxOf`).
 */
-function paintCell(color, x, y, o, state, tone) {
+function paintCell(color, x, y, o, state, tone, box) {
 	const original = rgb$4(color), l = lum$1(original);
-	let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - .15) / .75)), o.print, original, l, tone?.part ?? 0);
-	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$4(c, PRIMER, Math.min(.75, .3 + o.scuff * .6));
-	c = mix$4(c, [
+	const item = itemById(o.item), b$1 = measured(box ?? boxOf(o.item), item?.slot === "skin" ? item.eyes : void 0);
+	let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - .15) / .75)), o.print, original, l, tone?.part ?? 0, b$1);
+	if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, .9) * .45) c = mix$3(c, PRIMER, Math.min(.75, .3 + o.scuff * .6));
+	c = mix$3(c, [
 		120,
 		116,
 		112
@@ -11912,7 +12877,7 @@ function paintCell(color, x, y, o, state, tone) {
 		];
 		state.glint = true;
 	}
-	return hex$2(c);
+	return hex$1(c);
 }
 
 //#endregion
@@ -15931,9 +16896,9 @@ function dress(config, options = {}, name) {
 	return out;
 }
 function contrast(a, b$1) {
-	const lum$2 = (hex$4) => {
+	const lum$2 = (hex$3) => {
 		const c = (i) => {
-			const v = parseInt(hex$4.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+			const v = parseInt(hex$3.slice(1 + i * 2, 3 + i * 2), 16) / 255;
 			return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
 		};
 		return .2126 * c(0) + .7152 * c(1) + .0722 * c(2);
@@ -15976,8 +16941,8 @@ function withItems(palette$1, config) {
 		const item = itemById(config[slot]);
 		if (!item) continue;
 		const paint$1 = PAINTABLE.includes(slot) ? config.owned?.[slot]?.paint : void 0;
-		painted(item.colors, paint$1).forEach((hex$4, i) => {
-			colors[LAYER[slot] + i] = hex$4;
+		painted(item.colors, paint$1).forEach((hex$3, i) => {
+			colors[LAYER[slot] + i] = hex$3;
 		});
 		if (slot === "hat" && ownFinishTokens(config)) OWN_TOKENS.forEach((t, j) => {
 			const n = item.colors.length + j;
@@ -15989,8 +16954,8 @@ function withItems(palette$1, config) {
 			const e = item.eyes ?? 0;
 			const own$1 = !!item.art && item.art.slice(e - 2, e + 2).every((row) => row.slice(4, 12).every((t) => t > 0 && t < LOCAL));
 			if (!own$1) {
-				const dark = "#15111C", light$2 = "#FFF1D6";
-				colors[T.EYE] = colors[T.MOUTH] = contrast(dark, item.colors[0]) >= contrast(light$2, item.colors[0]) ? dark : light$2;
+				const dark = "#15111C", light$3 = "#FFF1D6";
+				colors[T.EYE] = colors[T.MOUTH] = (owned && faceInk(owned)) ?? (contrast(dark, item.colors[0]) >= contrast(light$3, item.colors[0]) ? dark : light$3);
 			}
 		}
 	}
@@ -16411,7 +17376,7 @@ function clearFace(c, face, marked, worn) {
 * them; `scripts/buddy-room.ts` measures how many).
 */
 function buddySpot(art, taken) {
-	const H$1 = taken.length, W$1 = taken[0].length, h = art.length, w = width(art);
+	const H = taken.length, W = taken[0].length, h = art.length, w = width(art);
 	const at = (x0, y0$1) => {
 		const cells = [];
 		const on$1 = (x, y) => (art[y - y0$1]?.[x - x0] ?? 0) !== 0;
@@ -16428,12 +17393,12 @@ function buddySpot(art, taken) {
 		return cells;
 	};
 	const clear = (cells) => cells.every(([x, y]) => {
-		if (x < 0 || y < 0 || x >= W$1 || y >= H$1) return false;
+		if (x < 0 || y < 0 || x >= W || y >= H) return false;
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (taken[y + dy]?.[x + dx]) return false;
 		return true;
 	});
-	const y0 = H$1 - 1 - h;
-	for (let k = 0; k + w + 2 <= W$1; k++) for (const x0 of [W$1 - 1 - w - k, 1 + k]) {
+	const y0 = H - 1 - h;
+	for (let k = 0; k + w + 2 <= W; k++) for (const x0 of [W - 1 - w - k, 1 + k]) {
 		const cells = at(x0, y0);
 		if (clear(cells)) return {
 			cells,
@@ -16659,14 +17624,19 @@ function shows(config, slot) {
 /**
 * Turns a composed grid into colours. Most cells take their token's palette
 * colour; a cell belonging to an owned item is repainted with that copy's
-* finish and wear.
+* finish and wear. Before that, three things paint over the palette: a chase
+* part's own fixed colours (`PART_COLORS`), a Lucky guy's rim (`luckyRim`)
+* and a chase colourway's material (`chaseSkin`).
 */
-function paint(grid, config, palette$1, small = false, still = true) {
+function paint(grid, config, palette$1, small = false, still$1 = true) {
 	const state = { glint: false };
 	const slotOf$1 = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 	const aura = auraById(config.aura);
-	if (small) ({grid, palette: palette$1} = forSmall(grid, palette$1));
-	const chase = chaseEyes(grid, config);
+	if (small) ({grid, palette: palette$1} = forSmall(grid, palette$1, (eyes[config.eyes]?.name ?? "") in EYE_COLORS));
+	const fixed = partColors(grid, config, palette$1);
+	const rim$2 = config.lucky && hasGuy(grid) ? rimCells(grid) : null;
+	const skin = chaseSkin(grid, config, palette$1.name);
+	const boxes$1 = boxesIn(grid);
 	const tones = new Map();
 	const tonesOf = (slot) => {
 		let m = tones.get(slot);
@@ -16674,24 +17644,35 @@ function paint(grid, config, palette$1, small = false, still = true) {
 		return m;
 	};
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = chase?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token));
+		const color = fixed?.[y][x] ?? (rim$2?.[y][x] ? luckyRim(x, y) : void 0) ?? skin?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette$1) : resolveColor(palette$1, token));
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
-		const painted$2 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color : copy ? paintCell(color, x, y, copy, state, tonesOf(slot).get(color.toUpperCase())) : color;
-		return still && copy?.fx ? fxColor(painted$2, copy.fx, x, y, 0, copy.print) : painted$2;
+		const painted$2 = slot === "aura" ? aura && copy ? auraColor(aura.id, token - LAYER.aura, copy.finish, x, y, aura.still, copy.print) : color : copy ? paintCell(color, x, y, copy, state, tonesOf(slot).get(color.toUpperCase()), boxes$1[slot]) : color;
+		return still$1 && copy?.fx ? fxColor(painted$2, copy.fx, x, y, 0, copy.print, copy.finish) : painted$2;
 	}));
 }
+const GOLD = "#FFD45C";
+/**
+* A corona in gold; on a body gold melts into (Butter, Honey, Tangerine), whichever of a pale gold
+* and an amber stands off it best, both in hue and in lightness.
+*/
+const goldOn = (body) => {
+	if (deltaE(GOLD, body) >= 30) return GOLD;
+	const stands = (c) => Math.min(contrast$1(c, body) / 1.5, deltaE(c, body) / 30);
+	return stands("#FFF4CC") >= stands("#E8901A") ? "#FFF4CC" : "#E8901A";
+};
 /**
 * Chase eyes keep their own colours on every guy, so galaxy eyes are always a
-* galaxy: drawn in his accent they came out a different speck on each body.
+* galaxy: drawn in the accent they came out a different speck on each body.
+* Each is a token-to-colour map, painted only inside the eyes' box.
 */
-const CHASE_COLORS = {
+const EYE_COLORS = {
 	galaxy: {
-		[T.EYE]: "#1C0E3D",
+		[T.EYE]: "#0E0824",
 		[T.WHITE]: "#FFFFFF",
-		[T.ACCENT_SHADE]: "#8A5CFF",
-		[T.GOLD]: "#FF8BE0"
+		[T.ACCENT]: "#D9C2FF",
+		[T.ACCENT_SHADE]: "#6E3FE6"
 	},
 	diamond: {
 		[T.EYE]: "#0B2F4D",
@@ -16703,14 +17684,417 @@ const CHASE_COLORS = {
 		[T.EYE]: "#240800",
 		[T.GOLD]: "#FFD23A",
 		[T.GOLD_SHADE]: "#FF5A14"
+	},
+	laser: {
+		[T.WHITE]: "#FFFFFF",
+		[T.GOLD]: "#FFE7A0",
+		[T.RED]: "#E8262C",
+		[T.GOLD_SHADE]: "#A3101E"
+	},
+	eclipse: (body) => ({
+		[T.EYE]: "#07070C",
+		[T.WHITE]: "#FFFFFF",
+		[T.GOLD]: goldOn(body)
+	}),
+	void: {
+		[T.EYE]: "#05040A",
+		[T.WHITE]: "#FFFFFF"
 	}
 };
-function chaseEyes(grid, config) {
-	const colors = CHASE_COLORS[eyes[config.eyes]?.name ?? ""];
-	if (!colors) return null;
-	const f = faceOf(config);
-	const left = f.eyes[0].left - 1, right = f.eyes[f.eyes.length - 1].right + 1;
-	return grid.map((row, y) => row.map((t, x) => y >= f.top - 1 && y <= f.line && x >= left && x <= right ? colors[t] : void 0));
+/** Eyes whose pits a dark body would swallow: there the skin touching them is lit in the body's own light tone. */
+const VOID_RIM = new Set(["void"]);
+/**
+* The masquerade's violet and its highlight: deep, or pale on a body deep violet sinks into
+* (Midnight, Grape Soda), or near black on a violet body both melt into.
+*/
+const MASK_VIOLETS = [
+	["#5A2D9C", "#8657D6"],
+	["#A47CF2", "#CBB2FF"],
+	["#2A1250", "#4A2A86"]
+];
+const maskViolet = (body) => MASK_VIOLETS.slice(0, 2).find(([v]) => deltaE(v, body) >= 30 && contrast$1(v, body) >= 1.5) ?? MASK_VIOLETS.reduce((a, b$1) => deltaE(b$1[0], body) > deltaE(a[0], body) ? b$1 : a);
+/**
+* Toppers, accessories and markings with colours of their own, as the chase
+* eyes have, so each reads the same on every body: on fire in flame colours,
+* not the shared red that came out salmon pink, a violet mask with a gold rim,
+* gold seams with a dark edge that holds on a pale body. Painted only on the
+* part's own cells (`partMask`).
+*/
+const PART_COLORS = {
+	hair: {
+		"on fire": {
+			[T.RED]: "#C8281E",
+			[T.GOLD_SHADE]: "#F0661C",
+			[T.GOLD]: "#FFA62B",
+			[T.WHITE]: "#FFF0B0"
+		},
+		idea: {
+			[T.GOLD]: "#FFE27A",
+			[T.GOLD_SHADE]: "#F2B33D",
+			[T.WHITE]: "#FFFFFF",
+			[T.TRIM]: "#B9C0CE",
+			[T.LEAF_SHADE]: "#6E7689",
+			[T.ACCENT]: "#FFD45C"
+		},
+		thought: {
+			[T.WHITE]: "#FFFFFF",
+			[T.TRIM]: "#C5D2E8"
+		}
+	},
+	accessory: { masquerade: (body) => {
+		const [violet, light$3] = maskViolet(body);
+		return {
+			[T.LEAF_SHADE]: violet,
+			[T.LEAF]: light$3,
+			[T.TRIM]: GOLD,
+			[T.GOLD]: GOLD,
+			[T.RED]: "#E0245E",
+			[T.ACCENT]: "#FF6FA8"
+		};
+	} },
+	body: {
+		kintsugi: { [T.LEAF_SHADE]: "#3A2410" },
+		"op art": {
+			[T.LEAF_SHADE]: "#17131F",
+			[T.TRIM]: "#FFF1D6"
+		}
+	}
+};
+const LISTS = {
+	hair,
+	accessory: accessories,
+	body: bodies
+};
+const colorsOn = (colors, palette$1) => typeof colors === "function" ? colors(palette$1.colors[T.BODY] ?? "#FFFFFF") : colors;
+/** Every cell a chase part paints in its own colours, or null for a guy with none. */
+function partColors(grid, config, palette$1) {
+	let out = null;
+	const put$1 = (x, y, c) => {
+		if (!c) return;
+		out ??= grid.map((row) => row.map(() => void 0));
+		if (out[y]?.[x] === void 0 && out[y]) out[y][x] = c;
+	};
+	const eyeName = eyes[config.eyes]?.name ?? "", eyeMap = colorsOn(EYE_COLORS[eyeName], palette$1);
+	if (eyeMap) {
+		const f = faceOf(config);
+		const left = f.eyes[0].left - 1, right = f.eyes[f.eyes.length - 1].right + 1;
+		const inBox$1 = (x, y, below = 0) => y >= f.top - 1 && y <= f.line + below && x >= left && x <= right;
+		grid.forEach((row, y) => row.forEach((t, x) => {
+			if (inBox$1(x, y)) put$1(x, y, eyeMap[t]);
+		}));
+		const ink = palette$1.colors[T.EYE];
+		if (VOID_RIM.has(eyeName) && ink && contrast$1(ink, "#000000") > 10) {
+			const pit = (x, y) => grid[y]?.[x] === T.EYE;
+			grid.forEach((row, y) => row.forEach((t, x) => {
+				if (inBox$1(x, y, 1) && SKIN_TOKENS.has(t) && (pit(x - 1, y) || pit(x + 1, y) || pit(x, y - 1) || pit(x, y + 1))) put$1(x, y, palette$1.colors[T.LIGHT]);
+			}));
+		}
+	}
+	for (const slot of [
+		"hair",
+		"accessory",
+		"body"
+	]) {
+		const map = colorsOn(PART_COLORS[slot][LISTS[slot][config[slot]]?.name ?? ""], palette$1);
+		if (!map) continue;
+		const mask = partMask(config, slot);
+		const under = slot === "accessory" ? underEyes(config) : null;
+		const f = under && faceOf(config);
+		const iris = (t, x, y) => !!f && IRIS_TOKENS$1.has(t) && y >= f.top - 1 && y <= f.line && under?.[y]?.[x] !== t;
+		grid.forEach((row, y) => row.forEach((t, x) => {
+			if (mask[y]?.[x] && !iris(t, x, y) || under?.[y]?.[x] && under[y][x] === t) put$1(x, y, map[t]);
+		}));
+	}
+	return out;
+}
+const unders = new Map();
+/**
+* What a face accessory (a masquerade, a monocle, glasses) paints round the
+* eyes, as it lies under them: compose draws it before the eyes, so they
+* cover it, and a glance that moves them (./animate) shows it again. A glint
+* it puts in the eye rows moves with the eyes too, so where it paints one
+* over its own colour, that colour is what lies under. A token for each cell
+* it paints, 0 elsewhere, laid out as the finished guy is (mirrored with the
+* guy); null for a guy with no face accessory.
+*/
+function underEyes(config) {
+	const accessory = accessories[config.accessory];
+	if (accessory?.layer !== "face") return null;
+	const key = JSON.stringify([
+		config.head,
+		config.skin,
+		config.eyes,
+		config.mouth,
+		config.accessory,
+		config.body,
+		config.cheeks,
+		config.palette,
+		config.shade,
+		config.flip
+	]);
+	if (unders.has(key)) return unders.get(key);
+	const skin = itemById(config.skin), base$1 = composeBase(config);
+	const c = new Canvas(base$1.map((row) => [...row]), skin?.slot === "skin" ? skin.eyes : heads[config.head].eyes);
+	c.face = faceOf(config);
+	const lies = base$1.map((row) => row.map(() => 0)), set$10 = c.set.bind(c);
+	c.set = (x, y, t) => {
+		set$10(x, y, t);
+		if (c.get(x, y) === t && t && t !== T.EYE && t !== T.WHITE) lies[y][x] = t;
+	};
+	accessory.draw(c);
+	const any = lies.some((row) => row.some(Boolean));
+	if (config.flip) for (const row of lies) row.reverse();
+	if (unders.size > 2e3) unders.clear();
+	unders.set(key, any ? lies : null);
+	return any ? lies : null;
+}
+const BIG_BLUSH = cheeks.findIndex((c) => c.name === "big blush");
+const LAUGH = mouths.findIndex((m) => m.name === "laugh");
+/**
+* The guy as ./animate composes the poses: another mouth, arms up or out, a
+* big blush. A marking keeps clear of the mouth and cheeks, so it lands on
+* other cells in each, and a mask taken from the still alone left the cells a
+* laugh uncovers in the palette's own leaf green.
+*/
+const posed = (figure) => [
+	figure,
+	...mouths.map((_, mouth$1) => ({
+		...figure,
+		mouth: mouth$1
+	})),
+	{
+		...figure,
+		arms: 1
+	},
+	{
+		...figure,
+		arms: 2
+	},
+	{
+		...figure,
+		mouth: LAUGH,
+		arms: 2
+	},
+	{
+		...figure,
+		cheeks: BIG_BLUSH
+	}
+];
+const masks = new Map();
+/**
+* The cells a guy's topper, accessory or marking takes, in any pose: where the
+* guy differs from the same guy without it, still or posed (`posed`). Only the
+* part's own colour tokens are repainted there, so a cheek mark or pattern
+* that a crowded guy drops (and shows bare body instead) is left alone. A
+* topper never reaches the face, so its mask stops above the eyes and its
+* still is enough.
+*/
+function partMask(config, slot) {
+	const figure = {
+		...config,
+		frame: void 0,
+		aura: void 0,
+		buddy: void 0
+	};
+	const key = slot + JSON.stringify(figure);
+	let mask = masks.get(key);
+	if (!mask) {
+		const top = slot === "hair" ? faceOf(figure).top - 1 : Infinity;
+		const all = Array.from({ length: GRID }, () => new Array(GRID).fill(false));
+		for (const pose of slot === "hair" ? [figure] : posed(figure)) {
+			const on$1 = compose(pose), off = compose({
+				...pose,
+				[slot]: 0
+			});
+			on$1.forEach((row, y) => row.forEach((t, x) => {
+				if (y < top && t !== off[y][x]) all[y][x] = true;
+			}));
+		}
+		mask = all;
+		if (masks.size > 2e3) masks.clear();
+		masks.set(key, mask);
+	}
+	return mask;
+}
+const GRID = 16;
+const SKIN_TOKENS = new Set([
+	T.BODY,
+	T.SHADE,
+	T.LIGHT,
+	T.DEEP,
+	T.BELLY
+]);
+/** The colour low in an eye (shiny, sparkle, beans), as ./animate moves it with the eye. */
+const IRIS_TOKENS$1 = new Set([T.ACCENT, T.ACCENT_SHADE]);
+/** Opal's play of colour: pearl, pink, mint, lilac and sky in diagonal bands, each two cells wide, shaded to match. */
+const OPAL$1 = {
+	[T.BODY]: [
+		"#FBF7FF",
+		"#FFD9EE",
+		"#CFF8EA",
+		"#DDD2FF",
+		"#D3EEFF"
+	],
+	[T.SHADE]: [
+		"#CDBDF2",
+		"#EBAACF",
+		"#8ED9C5",
+		"#A99BEA",
+		"#93C6EE"
+	],
+	[T.DEEP]: [
+		"#A994E0",
+		"#C987B4",
+		"#6CB8A6",
+		"#8676D2",
+		"#6FA6D8"
+	],
+	[T.LIGHT]: ["#FFFFFF"],
+	[T.BELLY]: [
+		"#FFFFFF",
+		"#FFEEF7",
+		"#EAFCF6",
+		"#F1ECFF",
+		"#ECF8FF"
+	]
+};
+/** Aurora's curtains, left to right: green, teal, violet. */
+const CURTAIN = [
+	"#5CE6A4",
+	"#3FD0D6",
+	"#9C7CFF"
+];
+/** Aurora's teal night: well off Midnight's navy, so an Aurora under a hat is still its own colour. */
+const AURORA = {
+	[T.BODY]: "#2E5878",
+	[T.SHADE]: "#234763",
+	[T.DEEP]: "#17324A",
+	[T.LIGHT]: "#3E7493",
+	[T.BELLY]: "#386886"
+};
+const OBSIDIAN = {
+	[T.BODY]: "#2A2440",
+	[T.SHADE]: "#1C182C",
+	[T.DEEP]: "#120F1C",
+	[T.LIGHT]: "#3D3460",
+	[T.BELLY]: "#3A3256"
+};
+/** Each cell of a grid through `f`, skin only. */
+const overSkin = (grid, f) => grid.map((row, y) => row.map((t, x) => SKIN_TOKENS.has(t) ? f(t, x, y) : void 0));
+const FACE_TOKENS$1 = new Set([
+	T.EYE,
+	T.WHITE,
+	T.MOUTH,
+	T.TONGUE
+]);
+/** Whether a cell is touching an eye, its shine, the mouth or the tongue, on its sides or corners. */
+const byFace = (grid, x, y) => {
+	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (FACE_TOKENS$1.has(grid[y + dy]?.[x + dx] ?? 0)) return true;
+	return false;
+};
+const MATERIALS = {
+	Opal: (grid) => overSkin(grid, (t, x, y) => {
+		const ramp$1 = OPAL$1[t];
+		return ramp$1?.[Math.floor((x + y + 1) / 2) % ramp$1.length];
+	}),
+	Obsidian: (grid, face) => {
+		const out = overSkin(grid, (t) => OBSIDIAN[t]);
+		const skin = (x, y) => SKIN_TOKENS.has(grid[y]?.[x] ?? 0);
+		const inside$1 = (rows$1, side) => rows$1.flatMap((y) => {
+			const row = side > 0 ? grid[y] : [...grid[y]].reverse(), first = row.findIndex((t) => SKIN_TOKENS.has(t));
+			const edge = first < 0 || side > 0 ? first : row.length - 1 - first;
+			const x = [edge + side, edge].find((x$1) => edge >= 0 && skin(x$1, y) && !byFace(grid, x$1, y));
+			return x === void 0 ? [] : [[x, y]];
+		}).slice(0, 3);
+		const rows = (from, to) => Array.from({ length: Math.max(0, to - from) }, (_, k) => from + k);
+		const glint$1 = [
+			inside$1(rows(0, face.top - 1), 1),
+			inside$1(rows(face.mouthBottom + 1, GRID), -1),
+			inside$1(rows(face.line + 1, GRID), -1)
+		].find((cells) => cells.length >= 2) ?? [];
+		glint$1.forEach(([x, y], i) => {
+			out[y][x] = i === 1 || glint$1.length === 1 ? "#C9B2FF" : "#7E68C8";
+		});
+		return out;
+	},
+	Aurora: (grid, face) => {
+		const clear = (x, y) => SKIN_TOKENS.has(grid[y][x]) && !byFace(grid, x, y);
+		const from = (clearOnly) => grid[0].map((_, x) => grid.findIndex((row, y) => clearOnly ? clear(x, y) : SKIN_TOKENS.has(row[x])));
+		const curtains = (top, low) => overSkin(grid, (t, x, y) => {
+			const d = y - top[x], drop = [
+				2,
+				3,
+				4,
+				3,
+				2,
+				3,
+				4,
+				4
+			][x % 8];
+			const hangs = top[x] >= 0 && d >= 0 && d < drop && t !== T.DEEP && (low ? !byFace(grid, x, y) : y < face.top - 1);
+			return hangs ? CURTAIN[Math.floor(x / 2) % 3] : AURORA[t];
+		});
+		const lit$1 = (cells) => cells.flat().filter((c) => c && CURTAIN.includes(c)).length;
+		const high = curtains(from(false), false);
+		if (lit$1(high) >= 4) return high;
+		const under = curtains(from(false), true);
+		return lit$1(under) >= 4 ? under : curtains(from(true), true);
+	}
+};
+/**
+* A chase colourway (Opal, Obsidian, Aurora) as a material, cell by cell over
+* the skin: fixed colours, so a tone never washes one out and a 1-in-500
+* colour looks it in every still. Null for every other colourway.
+*/
+function chaseSkin(grid, config, name) {
+	const material = MATERIALS[name];
+	return material ? material(grid, faceOf(config)) : null;
+}
+/**
+* Lucky's rim: coral, amber, teal, blue and violet, each deep enough to keep
+* the guy's edge on a pale ground (ivory and pale gold steps left gaps in it
+* there) and none of them neon.
+*/
+const LUCKY_RIM = [
+	"#E8574F",
+	"#F0A030",
+	"#3DBFA8",
+	"#5B8CE8",
+	"#9466E0"
+];
+/**
+* The colour of a Lucky guy's rim at cell (`x`, `y`) of the sixteen-by-sixteen
+* grid, `beat` steps on: the outline stepped through `LUCKY_RIM` in diagonal
+* bands two cells wide, with no blending. A still is beat 0; ./animate moves
+* the bands one hue a beat. Grid coordinates, not a frame's: a frame's row
+* less its headroom.
+*/
+function luckyRim(x, y, beat = 0) {
+	const n = LUCKY_RIM.length;
+	return LUCKY_RIM[((Math.floor((x + y) / 2) + beat) % n + n) % n];
+}
+/**
+* Whether a cell is on the guy's outer edge: the outline, touching the outside (nothing, or a
+* frame, buddy or aura cell) and the guy's own drawing or what is worn on it, so a buddy's
+* outline beside them is left alone.
+*/
+function onRim(grid, x, y) {
+	if (grid[y]?.[x] !== T.OUTLINE) return false;
+	const near = [
+		grid[y - 1]?.[x],
+		grid[y + 1]?.[x],
+		grid[y][x - 1],
+		grid[y][x + 1]
+	];
+	const outside = (t) => t === void 0 || t === 0 || t >= LAYER.frame;
+	const guy = (t) => t !== void 0 && t > 0 && t !== T.OUTLINE && t < LAYER.frame;
+	return near.some(outside) && near.some(guy);
+}
+/** Whether a grid holds the guy: their skin, or a costume. A buddy painted on its own has neither, and no rim. */
+const hasGuy = (grid) => grid.some((row) => row.some((t) => SKIN_TOKENS.has(t) || t >= LAYER.skin && t < LAYER.hat));
+/** Every rim cell (`onRim`) of a grid. */
+function rimCells(grid) {
+	return grid.map((row, y) => row.map((_, x) => onRim(grid, x, y)));
 }
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 const SMALL_SIZE = 36;
@@ -16721,10 +18105,10 @@ const SMALL_SIZE = 36;
 * out. Small, each eye is solid, the highlight goes back to the body colour,
 * and dark ink goes darker still. Nothing moves, so he is the same guy.
 */
-function forSmall(grid, palette$1) {
+function forSmall(grid, palette$1, keepShine$1 = false) {
 	const eyeAt = (x, y) => grid[y]?.[x] === T.EYE;
 	const out = grid.map((row, y) => row.map((t, x) => {
-		if (t === T.WHITE && (eyeAt(x - 1, y) || eyeAt(x + 1, y) || eyeAt(x, y - 1) || eyeAt(x, y + 1))) return T.EYE;
+		if (t === T.WHITE && !keepShine$1 && (eyeAt(x - 1, y) || eyeAt(x + 1, y) || eyeAt(x, y - 1) || eyeAt(x, y + 1))) return T.EYE;
 		if (t === T.LIGHT) return T.BODY;
 		return t;
 	}));
@@ -16733,7 +18117,7 @@ function forSmall(grid, palette$1) {
 		grid: out,
 		palette: palette$1
 	};
-	const deep = mix$7(ink, "#000000", .45);
+	const deep = mix$6(ink, "#000000", .45);
 	return {
 		grid: out,
 		palette: {
@@ -16764,7 +18148,7 @@ function catchlight(grid, x, y, palette$1) {
 	if (ink && contrast$1(ink, "#000000") > 10) return resolveColor(palette$1, T.OUTLINE) ?? "#000000";
 	if (!ink || contrast$1(white, ink) < 3) return white;
 	const pale = near.some((t) => t !== T.EYE && t !== T.WHITE && t !== 0 && contrast$1(white, resolveColor(palette$1, t) ?? "#000000") < 1.6);
-	return pale ? mix$7(ink, white, .6) : white;
+	return pale ? mix$6(ink, white, .6) : white;
 }
 
 //#endregion
@@ -16819,7 +18203,8 @@ const FRAME_HEIGHT = GRID_SIZE + HEADROOM;
 const AURA_PAD = 3;
 /**
 * Emotes a player can show after a game, and how each is unlocked. The
-* moves use some on their own; `emote` in the options shows one over any move.
+* moves use some on their own; `emote` in the options shows one over any move
+* (mind blown and galaxy brain by opening the head, `openHead`).
 */
 const EMOTE_UNLOCKS = [
 	{
@@ -16871,6 +18256,26 @@ const EMOTE_UNLOCKS = [
 		id: "anger",
 		name: "Hmph",
 		how: "Everyone has it"
+	},
+	{
+		id: "bulb",
+		name: "Idea",
+		how: "Everyone has it"
+	},
+	{
+		id: "burst",
+		name: "Mind blown",
+		how: "Everyone has it"
+	},
+	{
+		id: "cloud",
+		name: "Daydream",
+		how: "Everyone has it"
+	},
+	{
+		id: "galaxy",
+		name: "Galaxy brain",
+		how: "A Mythic or Grail copy, an aura, or eclipse, void, idea, thought or op art"
 	}
 ];
 const b = (pose, ms, more = {}) => ({
@@ -17265,38 +18670,68 @@ function eyeCells(grid, config) {
 }
 /**
 * The same guy with his eyes shut: each eye drops to a line on its bottom row
-* and the cells it leaves show whatever the body has there. Derived, not
-* drawn, so it works for every eye part.
+* and the cells it leaves show what the guy wears there (a mask, a monocle's
+* glass: `underEyes`), else the body. Derived, not drawn, so it works for
+* every eye part.
 */
 function closeEyes(grid, config) {
 	const shut = grid.map((row) => [...row]);
-	const bare = bareOf(config);
+	const bare = bareOf(config), under = underEyes(config);
+	const cells = eyeCells(grid, config);
 	const lowest = new Map();
-	for (const [x, y] of eyeCells(grid, config)) lowest.set(x, Math.max(lowest.get(x) ?? -1, y));
-	for (const [x, y] of eyeCells(grid, config)) shut[y][x] = y === lowest.get(x) ? T.EYE : bare[y][x] ?? 0;
+	for (const [x, y] of cells) lowest.set(x, Math.max(lowest.get(x) ?? -1, y));
+	for (const [x, y] of cells) shut[y][x] = y === lowest.get(x) ? T.EYE : under?.[y][x] || (bare[y][x] ?? 0);
 	return shut;
 }
-/** The same guy glancing sideways: his eye pixels move one column, staying on his face. */
+/**
+* The same guy glancing sideways: the eye pixels move one column, staying on
+* the face. The cells they leave show what the guy wears there (a mask, a
+* monocle's glass: `underEyes`), else the body.
+*/
 function glance(grid, config, dx) {
 	const out = grid.map((row) => [...row]);
-	const bare = bareOf(config);
+	const bare = bareOf(config), under = underEyes(config);
 	const cells = eyeCells(grid, config);
-	for (const [x, y] of cells) out[y][x] = bare[y][x] ?? 0;
+	for (const [x, y] of cells) out[y][x] = under?.[y][x] || (bare[y][x] ?? 0);
 	for (const [x, y] of cells) {
 		const nx = x + dx;
 		if (nx >= 0 && nx < GRID_SIZE && bare[y][nx]) out[y][nx] = grid[y][x];
 	}
 	return out;
 }
+/** Each glance pose: the pose it looks from, and which way. */
+const GLANCES = {
+	left: ["base", -1],
+	right: ["base", 1],
+	blushLeft: ["blush", -1],
+	blushRight: ["blush", 1]
+};
+/**
+* A glance's shines keep the colour they have in the pose it looks from. ./paint
+* tints a shine by what is beside it, and a glance puts other things there (a
+* monocle's ring it uncovers), so painted afresh a white shine went grey for the
+* glance alone. `from` is that pose painted the same way, `grid` its tokens.
+*/
+function keepShine(layer, from, grid, config, dx) {
+	const bare = bareOf(config), source = new Map();
+	for (const [x, y] of eyeCells(grid, config)) {
+		const nx = x + dx;
+		if (nx >= 0 && nx < GRID_SIZE && bare[y][nx]) source.set(y * GRID_SIZE + nx, [x, y]);
+	}
+	for (const [at, [x, y]] of source) {
+		const to = layer[y + HEADROOM]?.[at % GRID_SIZE], was = from[y + HEADROOM]?.[x];
+		if (to && was && grid[y][x] === T.WHITE) to.c = was.c;
+	}
+}
 const rgb$3 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
-const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$3 = (a, b$1, t) => {
+const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$2 = (a, b$1, t) => {
 	const x = rgb$3(a), y = rgb$3(b$1);
-	return hex$1([
+	return hex([
 		0,
 		1,
 		2
@@ -17333,6 +18768,7 @@ function painted$1(grid, config, palette$1, small = false, face = null, width$1 
 		if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
 		if (FEATURE_TOKENS.has(t)) cell.feature = true;
 		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
+		if (config.lucky && t === T.OUTLINE && c.toUpperCase() === luckyRim(x, y, 0).toUpperCase()) cell.rim = [x, y];
 		out[y + HEADROOM][x] = cell;
 	}));
 	return out;
@@ -17368,33 +18804,79 @@ const hue = (h, s, l) => {
 		f(4)
 	].map((v) => v.toString(16).padStart(2, "0")).join("");
 };
-/** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
-function luckyShimmer(layer, t, seed) {
-	const at = cycle(t + seed, 2200) * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
-	layer.forEach((row, y) => row.forEach((cell, x) => {
-		if (!cell?.body) return;
-		const d = Math.abs(x + y * .8 - at);
-		if (d < 3) cell.c = mix$3(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, .95, .68), d < 1.2 ? .6 : .3);
-	}));
+/** A colour's HSL hue (degrees), saturation and lightness (0 to 1): what `hue` takes back. */
+const hsl = (c) => {
+	const [r, g, b$1] = rgb$3(c).map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), l = (max + min) / 2, d = max - min;
+	if (d === 0) return [
+		0,
+		0,
+		l
+	];
+	const h = max === r ? ((g - b$1) / d + 6) % 6 : max === g ? (b$1 - r) / d + 2 : (r - g) / d + 4;
+	return [
+		h * 60,
+		d / (1 - Math.abs(2 * l - 1)),
+		l
+	];
+};
+/**
+* The hues a galaxy eye's ring swirls through: blue round violet to magenta,
+* kept 50° clear of a body near them, so on Ocean or Cobalt the ring runs
+* violet to magenta and never takes the body's own blue.
+*/
+function galaxyBand(body) {
+	const chroma$1 = body ? Math.max(...rgb$3(body)) / 255 - Math.min(...rgb$3(body)) / 255 : 0, h = body ? hsl(body)[0] : 0;
+	if (chroma$1 < .3 || h < 170 || h > 340) return [210, 300];
+	if (h < 255) return [h + 50, Math.max(300, h + 80)];
+	return h < 300 ? [h + 50, h + 80] : [210, h - 50];
 }
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. */
-function liveEyes(layer, kind, t, seed) {
+/** How long a Lucky guy's rim holds each step of its hues: thirty steps a LOOP_MS, so five or six hues come round. */
+const LUCKY_BEAT = 200;
+/**
+* A Lucky guy's rim: the outline in Lucky's hues (./paint's `luckyRim`), moved on a hue every
+* beat. Whole colours, never blended, and only ever the outline, so it never crosses the face.
+*/
+function luckyShimmer(layer, beat) {
+	for (const row of layer) for (const cell of row) if (cell?.rim) cell.c = luckyRim(cell.rim[0], cell.rim[1], beat);
+}
+/** How far through its life a Lucky star is at its fullest: `starAt`'s long four points. */
+const STAR_OPEN = .57;
+const LUCKY_STAR = {
+	period: 2300,
+	life: .55
+};
+/** A Lucky guy's gold star at `spot`, twinkling every couple of seconds and wide open at the start of the loop, so a still shows it whole. */
+function luckyStar$1(layer, [x, y], t) {
+	const f = cycle(t + STAR_OPEN * LUCKY_STAR.life * fit$1(LUCKY_STAR.period), LUCKY_STAR.period) / LUCKY_STAR.life;
+	if (f < 1) sparkle(layer, x, y, f, GOLD_SPARKLE, starAt);
+}
+/** Where a Lucky star sits: the top-right-most spot over the head, where its whole four points fit if any does. */
+function starSpot$1(layer, spots) {
+	const whole = spots.filter(([x, y]) => starAt(STAR_OPEN).every(([dx, dy]) => x + dx >= 0 && x + dx < GRID_SIZE && y + dy >= 0 && y + dy < FRAME_HEIGHT && !layer[y + dy][x + dx]));
+	return (whole.length ? whole : spots).reduce((a, s) => !a || s[0] - s[1] > a[0] - a[1] ? s : a, void 0);
+}
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. `body` is the body's colour. */
+function liveEyes(layer, kind, t, seed, body) {
+	const [lo, hi] = kind === "galaxy" ? galaxyBand(body) : [0, 0];
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		if (!cell?.eye) return;
 		const k = cell.eye;
 		if (kind === "galaxy") {
 			if (k === T.WHITE) cell.c = wrap$1(t / steps(160, 5) + x * 3 + y * 2, 5) < 1.2 ? "#FFFFFF" : "#CBB8FF";
-			else if (k !== T.EYE) cell.c = hue(255 + 45 * Math.sin(t / wave(380) + x * .9 + y * .7), .8, .55);
+			else if (k !== T.EYE) {
+				const [, s, l] = hsl(cell.c);
+				cell.c = hue((lo + hi) / 2 + (hi - lo) / 2 * Math.sin(t / wave(380) + x * .9 + y * .7), s, l);
+			}
 		} else if (kind === "diamond") {
 			const at = cycle(t + seed, 1400) * 24 - 4, d = Math.abs(x - y * .5 - at);
-			if (k !== T.EYE) cell.c = mix$3(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / wave(250) + x));
-			if (d < 1.5) cell.c = mix$3(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
+			if (k !== T.EYE) cell.c = mix$2(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / wave(250) + x));
+			if (d < 1.5) cell.c = mix$2(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
 		} else if (kind === "dragon") {
-			const flash = cycle(t + seed, 2e3) * fit(2e3) < 160;
-			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$3(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
+			const flash = cycle(t + seed, 2e3) * fit$1(2e3) < 160;
+			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
 		} else if (kind === "starry") {
-			const ms = cycle(t + seed, 2400) * fit(2400);
-			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$3(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
+			const ms = cycle(t + seed, 2400) * fit$1(2400);
+			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$2(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
 		}
 	}));
 }
@@ -17456,14 +18938,14 @@ const hopOf = (roll$1) => [
 const buddyHop = (input) => hopOf(rollsOf(input));
 /** How many rows a buddy is up on its own hops `t` ms into the loop: 1 for a moment now and then, else 0. */
 function hopLift([period, phase, double], t) {
-	const f = cycle(t + phase, period) * fit(period);
+	const f = cycle(t + phase, period) * fit$1(period);
 	return f < 160 || double && f >= 260 && f < 400 ? 1 : 0;
 }
 function shift(layer, dx, dy) {
-	const W$1 = layer[0].length, out = empty(W$1);
+	const W = layer[0].length, out = empty(W);
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		const nx = x + dx, ny = y + dy;
-		if (cell && nx >= 0 && ny >= 0 && nx < W$1 && ny < FRAME_HEIGHT) out[ny][nx] = cell;
+		if (cell && nx >= 0 && ny >= 0 && nx < W && ny < FRAME_HEIGHT) out[ny][nx] = cell;
 	}));
 	return out;
 }
@@ -17533,7 +19015,7 @@ function sparkleRun(layer, spots, at, period, life, salt, colors, shape$1 = spar
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
 const sparkleIn = (color) => [
 	"#FFFFFF",
-	mix$3(color, "#FFFFFF", .45),
+	mix$2(color, "#FFFFFF", .45),
 	color
 ];
 /** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
@@ -17543,7 +19025,10 @@ const GOLD_SPARKLE = [
 	"#F5C342"
 ];
 const mouthIndex = (name) => Math.max(0, mouths.findIndex((m) => m.name === name));
-/** `#` is the emote's colour, `+` its second colour. `open`: outlined round its outside only, its gaps left clear. */
+/**
+* `#` is the emote's colour, `+` its second colour, any other letter one of `more`. `open`: outlined
+* round its outside only, its gaps left clear.
+*/
 const EMOTES = {
 	note: {
 		rows: [
@@ -17641,8 +19126,63 @@ const EMOTES = {
 			".#."
 		],
 		color: "#FF7AAE"
+	},
+	bulb: {
+		rows: [
+			".###.",
+			"#+###",
+			"#####",
+			".###.",
+			".===.",
+			".===."
+		],
+		color: "#FFE27A",
+		accent: "#FFFFFF",
+		more: { "=": "#9AA3B5" }
+	},
+	burst: {
+		rows: [
+			"#.#.#",
+			".###.",
+			"##+##",
+			".###.",
+			"#.#.#"
+		],
+		color: "#FF8A2B",
+		accent: "#FFF3B8",
+		open: true
+	},
+	cloud: {
+		rows: [
+			"..##.##.",
+			".#######",
+			".###+###",
+			"..#####.",
+			"........",
+			"##......",
+			"##......"
+		],
+		color: "#F4F2FF",
+		accent: "#FFC93D"
+	},
+	galaxy: {
+		rows: [
+			".####.",
+			"#+#==#",
+			"#==#+#",
+			".####."
+		],
+		color: "#4B2BA8",
+		accent: "#FFFFFF",
+		more: { "=": "#8F6BFF" }
 	}
 };
+/** An emote picture's colour for a character of its rows, or null for a clear cell. */
+function emoteInk(kind, ch) {
+	if (ch === void 0 || ch === ".") return null;
+	const { color, accent, more } = EMOTES[kind];
+	return ch === "#" ? color : ch === "+" ? accent ?? color : more?.[ch] ?? color;
+}
 /**
 * A manga sweat drop on his temple, `slide` rows down from the top of his
 * head: on the right of his head, over its edge where there is no room
@@ -17678,37 +19218,146 @@ function sweatDrop(layer, slide) {
 	};
 }
 /**
-* One still of him in a pose, his colours as rows (`FRAME_HEIGHT` by 16): what's worn on him, no frame,
-* buddy or aura, no shine. What his chat emotes are drawn from (./emotes).
+* `poseStill`, with which cells are the guy's own skin (`body`) and the frame row the eyes start on
+* (`eyes`): what an emote that opens the head needs to know.
 */
-function poseStill(input, pose, options = {}) {
+function poseCells(input, pose, options = {}) {
 	const { config, grid } = poser(input, options);
 	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
-	return painted$1(grid(pose), config, palette$1, false, null, FRAME_WIDTH).map((row) => row.map((cell) => cell?.c ?? null));
+	const layer = painted$1(grid(pose), config, palette$1, false, null, FRAME_WIDTH);
+	const looks = GLANCES[pose];
+	if (looks) keepShine(layer, painted$1(grid(looks[0]), config, palette$1, false, null, FRAME_WIDTH), grid(looks[0]), config, looks[1]);
+	const body = layer.map((row) => row.map((cell) => !!cell?.body)), eyes$1 = faceOf(config).top + HEADROOM;
+	if (!options.rare) return {
+		colors: layer.map((row) => row.map((cell) => cell?.c ?? null)),
+		body,
+		eyes: eyes$1
+	};
+	const { step: step$1, of } = options.rare;
+	luckyShimmer(layer, step$1);
+	const ring$1 = ringOf(config, options.rarity !== false);
+	if (ring$1) for (const [x, y] of rim(layer)) layer[y][x] = {
+		c: ringCell(ring$1, x, y, step$1),
+		item: false
+	};
+	const colors = layer.map((row) => row.map((cell) => cell?.c ?? null)), slots = layer.map((row) => row.map((cell) => cell?.slot ?? 0));
+	return {
+		colors: applyFx(colors, slots, FRAME_SLOTS.map((slot) => config.owned?.[slot]), step$1 * LOOP_MS / Math.max(1, of)),
+		body,
+		eyes: eyes$1
+	};
+}
+/** How long each of a ring's colours shows in turn: three a second, so two or three colours come round in LOOP_MS. */
+const RING_STEP = 1e3 / 3;
+/** How much colour there is in a colour, 0 for a grey or white to 1 for a pure hue. */
+const chroma = (h) => {
+	const c = rgb$3(h);
+	return (Math.max(...c) - Math.min(...c)) / 255;
+};
+/** A colour's relative luminance, as contrast ratios read it. */
+const luminance = (h) => {
+	const [r, g, b$1] = rgb$3(h).map((v) => (v /= 255) <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+	return .2126 * r + .7152 * g + .0722 * b$1;
+};
+/** The luminance an aura's ring keeps between: 2 to 1 or more against a dark page (#18181B) and against white. */
+const RING_DARKEST = .07, RING_LIGHTEST = .47;
+/** `c` taken darker or lighter, as little as it needs, into the luminance a ring reads at on any page. */
+function legible(c) {
+	const l = luminance(c), toward = l > RING_LIGHTEST ? "#000000" : l < RING_DARKEST ? "#FFFFFF" : null;
+	if (!toward) return c;
+	for (let i = 1; i <= 20; i++) {
+		const m = mix$2(c, toward, i / 20), lm = luminance(m);
+		if (lm >= RING_DARKEST && lm <= RING_LIGHTEST) return m;
+	}
+	return c;
+}
+/** A colour's hue, 0 to 360. */
+const hueOf = (h) => {
+	const [r, g, b$1] = rgb$3(h), max = Math.max(r, g, b$1), d = max - Math.min(r, g, b$1);
+	if (!d) return 0;
+	const k = max === r ? (g - b$1) / d + 6 : max === g ? (b$1 - r) / d + 2 : (r - g) / d + 4;
+	return k * 60 % 360;
+};
+/** How far apart two hues are round the wheel. */
+const hueGap = (a, b$1) => {
+	const d = Math.abs(hueOf(a) - hueOf(b$1)) % 360;
+	return Math.min(d, 360 - d);
+};
+/** Whether two colours are near enough to read as one at a glance. */
+const alike = (a, b$1) => {
+	const x = rgb$3(a), y = rgb$3(b$1);
+	return Math.max(...x.map((v, i) => Math.abs(v - y[i]))) < 28;
+};
+/**
+* The ring round a guy. A copy's grade's colour and a darker one (a Grail's two golds), the whole
+* ring a colour at a time. An aura's own colours, its most vivid first, two or three, none grey,
+* each taken into the luminance that reads on a dark page and on white, in bands round the guy,
+* so an aura never rings like a grade; one whose colours are all one hue (a gold aura beside a
+* Grail) takes the aura grade's teal among them.
+*/
+function ringColours(grade, aura, copy) {
+	if (aura) {
+		const all = copy ? auraColors(aura.id, copy.finish, copy.print) : aura.colors;
+		const lead = copy ? auraHue(aura.id, copy.finish, copy.print) : all.reduce((a, c) => chroma(c) > chroma(a) ? c : a, all[0]);
+		const vivid = [lead, ...all.filter((c) => c.toUpperCase() !== lead.toUpperCase()).sort((a, c) => chroma(c) - chroma(a))].filter((c) => chroma(c) >= .25);
+		const colors = [];
+		for (const c of (vivid.length ? vivid : [lead]).map(legible)) if (colors.length < 3 && !colors.some((k) => alike(k, c))) colors.push(c);
+		if (colors.every((c) => hueGap(c, colors[0]) < 45)) colors.splice(Math.min(colors.length, 2), 1, legible(GRADES[5].color));
+		return {
+			colors,
+			bands: true
+		};
+	}
+	if (grade < 2) return null;
+	const color = GRADES[grade].color;
+	return {
+		colors: grade === 4 ? ["#FFE27A", "#E4AE39"] : [color, mix$2(color, "#000000", .35)],
+		bands: false
+	};
+}
+/** The best grade among the copies a guy wears, an aura aside (-1 for none). */
+const bestGrade = (config) => Math.max(-1, ...Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => GRADES.findIndex((g) => g.id === gradeOf(o).id)));
+/** The aura a dressed guy wears, if any. */
+const auraOf = (config) => auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
+/** `ringColours` for a dressed guy: the aura's, else the best copy's when `rarity` shows. */
+function ringOf(config, rarity) {
+	const aura = auraOf(config);
+	return aura ? ringColours(-1, aura, config.owned?.aura) : rarity ? ringColours(bestGrade(config)) : null;
+}
+/** Which turn a ring is on `at` ms in: a turn every RING_STEP, round its colours. */
+function ringTurn(ring$1, at) {
+	const s = steps(RING_STEP, ring$1.colors.length);
+	return Math.floor(wrap$1(at, s * ring$1.colors.length) / s);
+}
+/** A ring cell's colour at (x, y) on turn `turn`: a grade's ring all one colour; an aura's in diagonal bands two cells wide, moved on a band a turn. */
+function ringCell(ring$1, x, y, turn$1) {
+	const n = ring$1.colors.length, band$1 = ring$1.bands ? Math.floor((x - y) / 2) : 0;
+	return ring$1.colors[((band$1 + turn$1) % n + n) % n];
 }
 /** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
 function emoteCells(kind) {
-	const { rows, color, accent, open } = EMOTES[kind];
+	const { rows, open } = EMOTES[kind];
 	const w = rows[0].length + 2, h = rows.length + 2;
 	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
-	const ink = (ch) => ch === "#" || ch === "+";
+	const ink = (ch) => emoteInk(kind, ch) !== null;
 	const cells = [];
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-		const ch = rows[y - 1]?.[x - 1], on$1 = ink(ch);
+		const ch = rows[y - 1]?.[x - 1], on$1 = emoteInk(kind, ch);
 		const near = !on$1 && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
 		if (on$1 || near) cells.push([
 			x,
 			y,
-			on$1 ? ch === "+" ? accent ?? color : color : "#1B1428"
+			on$1 ?? EMOTE_INK
 		]);
 	}
 	return cells;
 }
+/** The dark outline round every emote picture. */
+const EMOTE_INK = "#1B1428";
 /** Puts an emote, outlined, in a top corner that is clear of him. */
 function emote(layer, kind, left, lift = 0) {
-	const { rows, color, accent, open } = EMOTES[kind];
+	const { rows } = EMOTES[kind];
 	const w = rows[0].length + 2, h = rows.length + 2;
-	const inside$1 = (x, y) => x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
 	const spots = [
 		[FRAME_WIDTH - w, 0],
 		[0, 0],
@@ -17718,27 +19367,113 @@ function emote(layer, kind, left, lift = 0) {
 		[0, 2]
 	].map(([x, y]) => [x, Math.max(0, y + 1 - lift)]);
 	if (left) spots.sort((a, b$1) => a[0] - b$1[0]);
-	const ink = (ch) => ch === "#" || ch === "+";
-	const at = ([x0, y0]) => {
-		const cells = [];
-		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const ch = rows[y - 1]?.[x - 1];
-			const on$1 = ink(ch);
-			const near = !on$1 && !(open && inside$1(x, y)) && NEIGHBOURS.some(([dx, dy]) => ink(rows[y - 1 + dy]?.[x - 1 + dx]));
-			if (on$1 || near) cells.push([
-				x0 + x,
-				y0 + y,
-				on$1 ? ch === "+" ? accent ?? color : color : "#1B1428"
-			]);
-		}
-		return cells;
-	};
-	const clear = spots.map(at).find((cells) => cells.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x]));
+	const cells = emoteCells(kind);
+	const at = ([x0, y0]) => cells.map(([x, y, c]) => [
+		x0 + x,
+		y0 + y,
+		c
+	]);
+	const clear = spots.map(at).find((cells$1) => cells$1.every(([x, y]) => y < FRAME_HEIGHT && !layer[y][x]));
 	for (const [x, y, c] of clear ?? at([spots[0][0], 0])) if (y < FRAME_HEIGHT) layer[y][x] = {
 		c,
 		item: false
 	};
 }
+/** Whether a little picture is one that opens the head (`openHead`). */
+const opensHead = (kind) => kind === "burst" || kind === "galaxy";
+/** How many rows the lid of the head is up at each of six steps, and in a still. */
+const LID_LIFT = {
+	burst: [
+		2,
+		3,
+		4,
+		4,
+		4,
+		3
+	],
+	galaxy: [
+		2,
+		3,
+		4,
+		4,
+		4,
+		4
+	]
+};
+const LID_STILL = 4;
+/** How long each of the lid's six steps is in a moving guy. */
+const LID_STEP_MS = 200;
+/** A burst's flame and the spark in its middle. */
+const FLAME = "#FF8A2B", SPARK = "#FFE27A";
+/** A starfield's deep violet, its dust and its stars. */
+const VOID = "#4B2BA8", DUST = "#8F6BFF", STARS = ["#FFFFFF", "#E3D6FF"];
+/**
+* The top of the head lifted off as a lid, `lift` rows, at step `step` of six: every row over the
+* cut, a hat with it, its underside closed in ink. The cut is two rows into the skin (into the head,
+* for a costume, which covers all of it) and never as far as the eyes (row `eyes`). Under the lid,
+* mind blown has a jagged column of flame round a spark, throwing sparks out to the sides; galaxy
+* brain a dome of violet starfield bulging up out of the head, edged in ink, stars twinkling beside
+* it. Flat colours, whole cells. `cols` is how many of the grid's columns are the guy (a buddy beside
+* him stays put); `skin` says which cells are his own skin and `cell` makes a cell of a colour.
+*/
+function openHead(grid, skin, cell, eyes$1, kind, lift, step$1, cols = grid[0]?.length ?? 0) {
+	const height = grid.length, width$1 = grid[0]?.length ?? 0;
+	const lit$1 = (row) => row.slice(0, cols).some(Boolean);
+	const head$1 = grid.findIndex(lit$1);
+	if (head$1 < 0) return;
+	let skinTop = -1;
+	for (let y = 0; y < height && skinTop < 0; y++) for (let x = 0; x < cols; x++) if (skin(x, y)) {
+		skinTop = y;
+		break;
+	}
+	const cut = Math.max(head$1 + 1, Math.min((skinTop < 0 ? head$1 : skinTop) + 2, eyes$1 - 1));
+	const span$1 = (row) => {
+		const xs = (row ?? []).slice(0, cols).flatMap((c, x) => c ? [x] : []);
+		return xs.length ? [xs[0], xs[xs.length - 1]] : null;
+	};
+	const at = cut < height ? span$1(grid[cut]) : null;
+	if (!at || lift < 1) return;
+	const [left, right] = at, mid = (left + right) / 2;
+	const put$1 = (x, y, c) => {
+		if (x >= 0 && y >= 0 && x < width$1 && y < height && !grid[y][x]) grid[y][x] = cell(c);
+	};
+	const lid = grid.slice(0, cut).map((row) => row.slice(0, cols));
+	for (let y = 0; y < cut; y++) for (let x = 0; x < cols; x++) grid[y][x] = null;
+	lid.forEach((row, y) => row.forEach((c, x) => {
+		if (c && y - lift >= 0) grid[y - lift][x] = c;
+	}));
+	const [ul, ur] = span$1(lid[cut - 1]) ?? at;
+	for (let x = ul; x <= ur; x++) put$1(x, cut - lift, EMOTE_INK);
+	const top = cut - lift + 1;
+	if (kind === "burst") {
+		const half = Math.max(2, Math.round((right - left + 1) / 4));
+		for (let y = top; y < cut; y++) {
+			const w = half + (y + step$1) % 2, a = Math.ceil(mid - w), b$1 = Math.floor(mid + w);
+			for (let x = a; x <= b$1; x++) put$1(x, y, x === a || x === b$1 ? EMOTE_INK : Math.abs(x - mid) < 1 ? SPARK : FLAME);
+		}
+		const y0 = Math.max(top, cut - 2);
+		for (let i = 0; i < 2; i++) {
+			const s = (step$1 + i * 2) % 4, reach = Math.ceil(half + 1 + s);
+			put$1(Math.floor(mid - reach), y0 - Math.floor(s / 2), SPARK);
+			put$1(Math.ceil(mid + reach), y0 - Math.floor((s + 1) / 2), SPARK);
+		}
+	} else {
+		const room = right - left + 1, inset$1 = room >= 9 ? 2 : room >= 6 ? 1 : 0;
+		for (let y = top; y < cut; y++) {
+			const j = cut - 1 - y, d = Math.min(inset$1 + Math.max(0, j - 1), Math.floor((room - 3) / 2)), a = left + d, b$1 = right - d;
+			for (let x = a; x <= b$1; x++) {
+				const star$2 = (x * 5 + y * 3 + step$1) % 7 === 0, dust = (x * 3 + y * 7) % 5 === 0;
+				put$1(x, y, x === a || x === b$1 ? EMOTE_INK : star$2 ? STARS[(x + y) % 2] : dust ? DUST : VOID);
+			}
+		}
+		for (let i = 0; i < 2; i++) {
+			const s = (step$1 + i * 3) % 6, side = i ? 1 : -1;
+			put$1(Math.round(mid + side * ((right - left) / 2 - 1 + (s >> 1))), top + 1 - (s >> 1), STARS[i]);
+		}
+	}
+}
+/** The lid's step `at` ms into a move: six steps of LID_STEP_MS, round and round. */
+const lidStep = (at) => Math.floor(wrap$1(at, fit$1(LID_STEP_MS * 6)) / (fit$1(LID_STEP_MS * 6) / 6)) % 6;
 /** Mouths a guy keeps whatever he is doing, because they are who he is. */
 const SIGNATURE_MOUTHS = new Set([
 	"beak",
@@ -17821,16 +19556,16 @@ function poser(input, options) {
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
-			const base$1 = compose(figure), mouth$1 = poseMouth(pose, config.mouth);
+			const base$1 = compose(figure), mouth$1 = poseMouth(pose, config.mouth), looks = GLANCES[pose];
 			const worn = mouth$1 === void 0 ? base$1 : compose({
 				...figure,
 				mouth: mouth$1,
 				arms: pose === "laughWave" ? 2 : figure.arms
 			});
-			grids.set(pose, pose === "shut" ? closeEyes(base$1, config) : pose === "left" ? glance(base$1, config, -1) : pose === "right" ? glance(base$1, config, 1) : pose === "frown" || pose === "content" || pose === "huff" || pose === "oops" ? closeEyes(worn, config) : pose === "blush" ? compose({
+			grids.set(pose, pose === "shut" ? closeEyes(base$1, config) : looks ? glance(grid(looks[0]), config, looks[1]) : pose === "frown" || pose === "content" || pose === "huff" || pose === "oops" ? closeEyes(worn, config) : pose === "blush" ? compose({
 				...figure,
 				cheeks: MANGA_BLUSH
-			}) : pose === "blushLeft" || pose === "blushRight" ? glance(grid("blush"), config, pose === "blushLeft" ? -1 : 1) : pose === "wave" || pose === "sides" ? compose({
+			}) : pose === "wave" || pose === "sides" ? compose({
 				...figure,
 				arms: pose === "wave" ? 2 : 1
 			}) : worn);
@@ -17888,12 +19623,12 @@ function squashPlan(config, figure, grid) {
 		const below = Array.from({ length: Math.max(0, last - bottom) }, (_, i) => bottom + 1 + i).filter(fits).sort((p, q) => Math.abs(p - (last - 3)) - Math.abs(q - (last - 3)));
 		const above = Array.from({ length: Math.max(0, top - first) }, (_, i) => top - 1 - i).filter(fits);
 		const r = below[0] ?? above[0];
-		const plan = r !== void 0 ? {
+		const plan$1 = r !== void 0 ? {
 			n,
 			row: r + HEADROOM
 		} : at(n - Math.sign(n));
-		plans.set(n, plan);
-		return plan;
+		plans.set(n, plan$1);
+		return plan$1;
 	};
 	return {
 		at,
@@ -17907,18 +19642,18 @@ function squashPlan(config, figure, grid) {
 */
 function squashRows(input, options = {}) {
 	const { config, figure, grid } = poser(input, options);
-	const plan = squashPlan(config, figure, grid), rows = {};
+	const plan$1 = squashPlan(config, figure, grid), rows = {};
 	for (const n of [
 		-2,
 		-1,
 		1,
 		2
 	]) {
-		const s = plan.at(n);
+		const s = plan$1.at(n);
 		rows[n] = !s ? null : s.n > 0 ? Array.from({ length: s.n }, (_, i) => s.row - i) : [s.row];
 	}
 	return {
-		face: plan.face,
+		face: plan$1.face,
 		rows
 	};
 }
@@ -17929,28 +19664,32 @@ function squashRows(input, options = {}) {
 function animate(input, move, options = {}) {
 	const { config, figure, grid } = poser(input, options);
 	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
-	const alone = buddyAlone(config), W$1 = alone?.[0].length ?? FRAME_WIDTH;
-	const wornAura = auraById(itemById(config.aura)?.slot === "aura" ? config.aura : void 0);
+	const alone = buddyAlone(config), W = alone?.[0].length ?? FRAME_WIDTH;
+	const wornAura = auraOf(config);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
-	const lucky = !!config.lucky && options.rarity !== false && !options.small;
+	const lucky = !!config.lucky && !options.small;
 	const liveEye = options.small ? void 0 : LIVE_EYES.get(config.eyes);
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
-	const plan = squashPlan(config, figure, grid);
+	const plan$1 = squashPlan(config, figure, grid);
 	const layers = new Map();
 	const layerOf = (pose) => {
-		if (!layers.has(pose)) layers.set(pose, painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, W$1));
+		if (!layers.has(pose)) {
+			const layer = painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, W), looks = GLANCES[pose];
+			if (looks) keepShine(layer, layerOf(looks[0]), grid(looks[0]), config, looks[1]);
+			layers.set(pose, layer);
+		}
 		return layers.get(pose);
 	};
 	const buddyCells = [];
-	if (alone) painted$1(alone, config, palette$1, !!options.small, null, W$1).forEach((row, y) => row.forEach((cell, x) => {
+	if (alone) painted$1(alone, config, palette$1, !!options.small, null, W).forEach((row, y) => row.forEach((cell, x) => {
 		if (cell) buddyCells.push([
 			x,
 			y,
 			cell
 		]);
 	}));
-	const backdrop$1 = backdropColors(config, palette$1, 0, 0, W$1, FRAME_HEIGHT);
+	const backdrop$1 = backdropColors(config, palette$1, 0, 0, W, FRAME_HEIGHT);
 	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => GRADES.findIndex((g) => g.id === gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? GRADES[grade].color : "#FFFFFF";
@@ -17969,6 +19708,12 @@ function animate(input, move, options = {}) {
 	const buddyLife = !!alone && BUDDY_HOPS(move) && move !== "dance";
 	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
 	const spots = sparkleSpots(layerOf("base")), headSpots = sparkleSpots(layerOf("base"), 3);
+	const luckySpot = lucky ? starSpot$1(layerOf("base"), headSpots) : void 0;
+	const opens = opensHead(options.emote) ? options.emote : void 0;
+	const headTop = (layer) => layer.findIndex((row) => row.slice(0, GRID_SIZE).some(Boolean));
+	const baseHead = opens ? headTop(layerOf("base")) : 0, baseEyes = faceOf(config).top + HEADROOM;
+	const ring$1 = wornAura ? options.glance ? ringColours(-1, wornAura, config.owned?.aura) : null : ringColours(grade);
+	const ringPhase = wornAura ? (config.owned?.aura?.print ?? 0) * 37 : seed;
 	const lapMs = beats.reduce((n, b$1) => n + b$1.ms, 0);
 	const loop$1 = options.loop && "fit" in options.loop ? {
 		...fitLoop(lapMs),
@@ -17981,6 +19726,7 @@ function animate(input, move, options = {}) {
 	for (let lap = 0; lap < laps; lap++) for (const beat of beats) {
 		let n = wornAura || withFx || lucky || liveEye || goldMark || buddyLife ? Math.max(1, Math.ceil(beat.ms / 100)) : grade >= 1 ? Math.max(1, Math.ceil(beat.ms / 150)) : 1;
 		if (loop$1?.fine) n = Math.max(n, Math.ceil(beat.ms / 80));
+		if (opens) n = Math.max(n, Math.ceil(beat.ms / LID_STEP_MS));
 		for (let i = 0; i < n; i++) {
 			const ms = Math.round(beat.ms * (i + 1) / n) - Math.round(beat.ms * i / n);
 			slices.push({
@@ -17992,18 +19738,26 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 && !wornAura ? [mix$3(gradeColor, "#000000", .2), mix$3(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix$2(gradeColor, "#000000", .2), mix$2(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
 		if (beat.turn) layer = layer.map((row) => [...row.slice(0, GRID_SIZE).reverse(), ...row.slice(GRID_SIZE)]);
-		const squashed = plan.at(beat.squash ?? 0);
+		const squashed = plan$1.at(beat.squash ?? 0);
 		layer = squash(layer, squashed);
 		const bob = (beat.squash ?? 0) > 0 && !squashed && !beat.dy ? -1 : 0;
 		layer = shift(layer, beat.dx ?? 0, (beat.dy ?? 0) + bob);
 		if (buddyCells.length) {
 			layer = layer.map((row) => [...row]);
 			standBuddy(layer, buddyCells, buddyLift$1(move, beat, t$1, roll$1));
+		}
+		if (opens) {
+			const open = layer.map((row) => [...row]), k = lidStep(t$1);
+			openHead(open, (x, y) => !!open[y][x]?.body, (c) => ({
+				c,
+				item: false
+			}), baseEyes + headTop(open) - baseHead, opens, LID_LIFT[opens][k], k, GRID_SIZE);
+			layer = open;
 		}
 		const figure$1 = layer;
 		layer = layer.map((row) => row.map((cell) => cell ? { ...cell } : null));
@@ -18016,32 +19770,32 @@ function animate(input, move, options = {}) {
 		behind.unshift(figure$1);
 		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
-			const at = cycle(t$1 + phase, 1600) * (W$1 + FRAME_HEIGHT + 8) - 4;
+			const at = cycle(t$1 + phase, 1600) * (W + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
-				if (d < 1) cell.c = mix$3(cell.c, "#FFFFFF", .65);
-				else if (d < 2) cell.c = mix$3(cell.c, "#FFFFFF", .25);
+				if (d < 1) cell.c = mix$2(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix$2(cell.c, "#FFFFFF", .25);
 			}));
 		}
-		if (lucky) luckyShimmer(layer, t$1, seed);
-		if (liveEye) liveEyes(layer, liveEye, t$1, seed);
-		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t$1 + seed * 7, 2300, .55, seed, GOLD_SPARKLE, starAt);
+		if (lucky) luckyShimmer(layer, tick(t$1, LUCKY_BEAT));
+		if (liveEye) liveEyes(layer, liveEye, t$1, seed, palette$1.colors[T.BODY]);
+		if (luckySpot && !wornAura && grade < 3 && !goldMark) luckyStar$1(layer, luckySpot, t$1);
 		if (goldMark) sparkleRun(layer, headSpots, t$1 + goldCopy.print * 37, 2600, .55, goldCopy.print, GOLD_SPARKLE, starAt);
-		const aura = grade >= 2 ? rim(layer) : [];
+		const around = ring$1 ? rim(layer) : [];
 		if (beat.stars) {
 			const gold = sparkleIn(palette$1.colors[T.GOLD] ?? "#F2C230");
-			for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t$1 + i * fit(360) / 2 + seed, 360, 1, seed + i, gold);
+			for (let i = 0; i < 2; i++) sparkleRun(layer, headSpots, t$1 + i * fit$1(360) / 2 + seed, 360, 1, seed + i, gold);
 		}
 		if (beat.drop) sweatDrop(layer, beat.slide ?? 0);
 		if (beat.emote) emote(layer, beat.emote, !!beat.left, beat.rise ? 1 : 0);
-		if (options.emote && !beat.emote) emote(layer, options.emote, false, Math.floor(wrap$1(t$1, fit(800)) / (fit(800) / 2)) % 2);
+		if (options.emote && !beat.emote && !opens) emote(layer, options.emote, false, Math.floor(wrap$1(t$1, fit$1(800)) / (fit$1(800) / 2)) % 2);
 		const outside = [];
-		if (wornAura) {
+		if (wornAura && !options.glance) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
 			for (const [x, y, k] of auraCells(wornAura.id, mask, t$1, copy, AURA_PAD)) {
 				const c = copy ? auraColor(wornAura.id, k, copy.finish, x, y, t$1 + copy.print * 37, copy.print) : wornAura.colors[k];
-				if (x < 0 || x >= W$1) outside.push([
+				if (x < 0 || x >= W) outside.push([
 					x,
 					y,
 					c
@@ -18052,17 +19806,16 @@ function animate(input, move, options = {}) {
 					slot: 5
 				};
 			}
-		} else if (grade >= 2) {
-			const on$1 = Math.floor(wrap$1(t$1 + seed, fit(640)) / (fit(640) / 2)) % 2 === 0;
-			const ring$1 = grade === 4 ? on$1 ? "#FFE27A" : "#E4AE39" : on$1 ? gradeColor : mix$3(gradeColor, "#000000", .35);
-			for (const [x, y] of aura) if (!layer[y][x]) layer[y][x] = {
-				c: ring$1,
+		} else if (ring$1) {
+			const turn$1 = ringTurn(ring$1, t$1 + ringPhase);
+			for (const [x, y] of around) if (!layer[y][x]) layer[y][x] = {
+				c: ringCell(ring$1, x, y, turn$1),
 				item: false
 			};
 		}
 		if (grade >= 3 && !wornAura) {
 			const colors$1 = grade === 4 ? GOLD_SPARKLE : sparkleIn(gradeColor), count$1 = grade === 4 ? 2 : 1;
-			for (let i = 0; i < count$1; i++) sparkleRun(layer, spots, t$1 + phase + i * fit(1700) / count$1, 1700, .5, phase + i, colors$1);
+			for (let i = 0; i < count$1; i++) sparkleRun(layer, spots, t$1 + phase + i * fit$1(1700) / count$1, 1700, .5, phase + i, colors$1);
 		}
 		const flat = layer.map((row, y) => row.map((cell, x) => cell?.c ?? backdrop$1?.[y][x] ?? null));
 		const slots = layer.map((row, y) => row.map((cell, x) => cell ? cell.slot ?? 0 : backdrop$1?.[y][x] ? 3 : 0));
@@ -18083,7 +19836,7 @@ function animate(input, move, options = {}) {
 	const frames$1 = loop$1 ? all.filter((_, i) => slices[i].lap > 0) : all;
 	return {
 		move,
-		width: W$1,
+		width: W,
 		height: FRAME_HEIGHT,
 		frames: frames$1,
 		duration: frames$1.reduce((n, f) => n + f.ms, 0),
@@ -18429,7 +20182,7 @@ function traitOdds(config) {
 		{
 			slot: "shape",
 			name: heads[config.head].name,
-			chance: dealt("head", headWeights, config.head)
+			chance: dealt("head", headWeights, config.head, "head")
 		},
 		{
 			slot: "eyes",
@@ -18449,22 +20202,22 @@ function traitOdds(config) {
 		{
 			slot: "topper",
 			name: hair[config.hair].name,
-			chance: dealt("hair", hairWeights, config.hair)
+			chance: dealt("hair", hairWeights, config.hair, "hair")
 		},
 		{
 			slot: "markings",
 			name: bodies[body].name,
-			chance: dealt("body", bodyWeights, body)
+			chance: dealt("body", bodyWeights, body, "body")
 		},
 		{
 			slot: "accessory",
 			name: accessories[config.accessory].name,
-			chance: dealt("accessory", accessoryWeights, config.accessory)
+			chance: dealt("accessory", accessoryWeights, config.accessory, "accessory")
 		},
 		{
 			slot: "colour",
 			name: palettes[shownPalette(config)].name,
-			chance: dealt("palette", paletteWeights, config.palette)
+			chance: dealt("palette", paletteWeights, config.palette, "palette")
 		},
 		{
 			slot: "tone",
@@ -18494,15 +20247,29 @@ function guyOneIn(config) {
 }
 /** One in how many capsules for its game give a copy at least this good. */
 function copyOneIn(o) {
+	return oneIn(o, true);
+}
+/**
+* One in how many capsules give a copy that looks like this one: its item, its
+* finish, a famous print if it has one, its effect and, for an aura, which
+* aura. What the eye can see, so it is what a card leads with; the float and a
+* tally, which you can't see, are left out (`copyOneIn` has them).
+*/
+function visibleOneIn(o) {
+	return oneIn(o, false);
+}
+function oneIn(o, unseen) {
 	const item = itemById(o.item);
 	if (!item) return Infinity;
 	const f = FINISHES[o.finish];
 	let p = f.aura ? AURA_ODDS * (1 / AURAS.length) * (f.aura / 100) : itemWeight(item) / gameItems(item.game).filter((i) => !i.free && i.slot !== "aura").reduce((a, i) => a + itemWeight(i), 0) * (f.odds / 100) * (item.game === "club" ? 1 : 1 - AURA_ODDS);
 	if (special(o) === "Deep Blue") p *= DEEP_BLUE_PRINTS.length / 1e3;
 	else if (special(o)) p *= 1 / 20;
-	const [lo, hi] = f.scuffs;
-	p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
-	if (o.tally !== void 0) p *= .1;
+	if (unseen) {
+		const [lo, hi] = f.scuffs;
+		p *= Math.max(1e-7, (o.scuff - lo) / (hi - lo));
+		if (o.tally !== void 0) p *= .1;
+	}
 	if (o.fx && o.fx !== item.signature) p *= 1 / EFFECTS[o.fx][f.aura ? "aura" : "item"];
 	return 1 / p;
 }
@@ -19097,6 +20864,58 @@ function lookOf(seed, code = "", unlocks) {
 }
 
 //#endregion
+//#region src/guy.ts
+/**
+* A whole guy as a short code, for showing him where his seed must not go.
+*
+* A seed is private and kept for good: anyone holding it could draw every
+* guy the player will ever be dealt. A board shows other people's guys, so it
+* sends this instead: every visible field of the guy as he is, picked look
+* and all, and nothing that leads back to the seed. Codes are versioned
+* (`g1:`), so a later change to the fields can't misread an old one.
+*/
+/** The fields in a version-1 code, in order, with how many values each can take. */
+const FIELDS = [
+	["head", headWeights.length],
+	["eyes", eyeWeights.length],
+	["mouth", mouthWeights.length],
+	["cheeks", cheekWeights.length],
+	["hair", hairWeights.length],
+	["body", bodyWeights.length],
+	["accessory", accessoryWeights.length],
+	["palette", paletteWeights.length],
+	["shade", shadeWeights.length],
+	["feet", footWeights.length],
+	["arms", armWeights.length],
+	["rotation", 9],
+	["flip", 2],
+	["lucky", 2]
+];
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+function encodeGuy(config) {
+	return "g1:" + FIELDS.map(([key]) => Number(config[key] ?? 0).toString(36)).join(".");
+}
+/**
+* A code back into a guy, or null for anything that isn't a version-1 code
+* this library can draw: another version, a field missing, or one out of range.
+* He comes back bare: items are worn on top with `dress`.
+*/
+function decodeGuy(code) {
+	if (typeof code !== "string" || !code.startsWith("g1:")) return null;
+	const values = code.slice(3).split(".");
+	if (values.length !== FIELDS.length) return null;
+	const config = {};
+	for (let i = 0; i < FIELDS.length; i++) {
+		const [key, count$1] = FIELDS[i];
+		if (!/^[0-9a-z]{1,2}$/.test(values[i])) return null;
+		const n = parseInt(values[i], 36);
+		if (n >= count$1) return null;
+		config[key] = key === "flip" || key === "lucky" ? n === 1 : n;
+	}
+	return config;
+}
+
+//#endregion
 //#region src/share.ts
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
 	"&": "&amp;",
@@ -19212,7 +21031,7 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
   return c;
 }
 `;
-const TAU$1 = Math.PI * 2;
+const TAU$2 = Math.PI * 2;
 const fract = (x) => x - Math.floor(x);
 const mod = (x, y) => x - y * Math.floor(x / y);
 const clamp = (x, a, b$1) => Math.min(Math.max(x, a), b$1);
@@ -19222,7 +21041,7 @@ const smoothstep = (a, b$1, x) => {
 	return t * t * (3 - 2 * t);
 };
 const distance = (a, b$1) => Math.hypot(a[0] - b$1[0], a[1] - b$1[1]);
-const mix$2 = (a, b$1, t) => [
+const mix$1 = (a, b$1, t) => [
 	a[0] + (b$1[0] - a[0]) * t,
 	a[1] + (b$1[1] - a[1]) * t,
 	a[2] + (b$1[2] - a[2]) * t
@@ -19272,14 +21091,14 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	const coat = clamp(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
 	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
 	if (finish < 1.5) {
-		const s = .5 + .5 * Math.sin(d * .8 - time * TAU$1 / 2 + print);
-		return add(mix$2(c, add(scale(c, [
+		const s = .5 + .5 * Math.sin(d * .8 - time * TAU$2 / 2 + print);
+		return add(mix$1(c, add(scale(c, [
 			.86,
 			.96,
 			1.18
 		]), .08), .4 * s * coat), b$1 * .5 * coat);
 	}
-	if (finish < 2.5) return add(mix$2(c, add(scale(c, [
+	if (finish < 2.5) return add(mix$1(c, add(scale(c, [
 		.9,
 		.98,
 		1.1
@@ -19289,21 +21108,21 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.16
 	]), w * .5 * coat), b$1 * .2 * coat);
 	if (finish < 3.5) {
-		const shifted = hueShift(c, .32 * Math.sin(time * TAU$1 / 6 + d * .12 + fract(print * .618) * TAU$1) * coat);
-		const s = Math.max(0, Math.sin(time * TAU$1 / 3 + h * 97));
-		return mix$2(shifted, [
+		const shifted = hueShift(c, .32 * Math.sin(time * TAU$2 / 6 + d * .12 + fract(print * .618) * TAU$2) * coat);
+		const s = Math.max(0, Math.sin(time * TAU$2 / 3 + h * 97));
+		return mix$1(shifted, [
 			1,
 			.94,
 			1
 		], step(.972, h) * s * s * s * coat);
 	}
-	if (finish < 4.5) return add(hueShift(c, time * TAU$1 / 6 * coat), w * .14 * coat);
+	if (finish < 4.5) return add(hueShift(c, time * TAU$2 / 6 * coat), w * .14 * coat);
 	if (finish < 5.5) return add(add(c, scale([
 		.28,
 		.12,
 		.45
-	], b$1 * coat)), .07 * Math.sin(time * TAU$1 / 3 + d * .5 + fract(print * .618) * TAU$1) * coat);
-	return add(mix$2(c, [
+	], b$1 * coat)), .07 * Math.sin(time * TAU$2 / 3 + d * .5 + fract(print * .618) * TAU$2) * coat);
+	return add(mix$1(c, [
 		1,
 		.94,
 		.66
@@ -19317,10 +21136,26 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 const toByte = (v) => Math.round(clamp(v, 0, 1) * 255);
 /** Loop time in seconds: what the shaders are given. */
 const loopSeconds = (ms) => mod(ms, LOOP_MS) / 1e3;
-/** The edition a finish puts on its card: Sunset is foil, Tempered and Nebula holographic, an aura's finishes spectral. */
+/**
+* The graphic finishes (`GRAPHIC_FINISHES` in ./owned): a printed pattern, not
+* a shimmer, so they have no number here and their card's window is the
+* pattern itself.
+*/
+const GRAPHIC = [
+	"op",
+	"impossible",
+	"grid"
+];
+/**
+* The edition a finish puts on its card: Sunset is foil, Tempered and Nebula
+* holographic, an aura's finishes spectral. A graphic finish (Op, Impossible,
+* Grid) keeps the plain stock: its pattern is the card's window, and a sheen
+* over it would muddy the ink and ivory.
+*/
 function editionOf(finish) {
+	if (!finish || GRAPHIC.includes(finish)) return 0;
 	const i = SHADER_FINISHES.indexOf(finish);
-	return i < 0 ? finish ? 6 : 0 : [
+	return i < 0 ? 6 : [
 		0,
 		1,
 		2,
@@ -19373,9 +21208,9 @@ vec3 editionColor(vec3 c, float ed, float v, vec2 p, vec2 o, float region, float
 }
 `;
 /** A sine from a table, to a few millionths: the spectral swirl takes two a pixel every frame. */
-const SINES$1 = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU$1));
+const SINES$1 = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU$2));
 const sine = (x) => {
-	const u = x * (4096 / TAU$1), i = Math.floor(u), j = i & 4095;
+	const u = x * (4096 / TAU$2), i = Math.floor(u), j = i & 4095;
 	return SINES$1[j] + (SINES$1[j + 1] - SINES$1[j]) * (u - i);
 };
 /**
@@ -19408,7 +21243,7 @@ function editionField(ed, v, o, px, pixels) {
 			c2[k] = Math.cos(phase);
 		}
 		return (time, out) => {
-			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$1 / 2), sa = Math.sin(time * TAU$1 / 2);
+			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$2 / 2), sa = Math.sin(time * TAU$2 / 2);
 			for (let k = 0; k < n; k++) {
 				const w = .5 + .5 * (s[k] * ca - c2[k] * sa), w2 = w * w, m = w2 * w2 * w2 * .22 + band$1(k, T$1, 5) * .4;
 				out[k * 3] = a[k * 3] + .6 * m;
@@ -19426,7 +21261,7 @@ function editionField(ed, v, o, px, pixels) {
 			lift[k] = step(.5, fract(y[k] / (px * 2))) * .05 * (2 - region[k]);
 		}
 		return (time, out) => {
-			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$1 / 3), sa = Math.sin(time * TAU$1 / 3);
+			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$2 / 3), sa = Math.sin(time * TAU$2 / 3);
 			for (let k = 0; k < n; k++) {
 				const t = .5 + .5 * (s[k] * ca - c2[k] * sa), m = .55 * (region[k] > 1.5 ? .6 : 1), add$1 = lift[k] + band$1(k, T$1, 5) * .25;
 				const tr = 1 + -.72 * t, tg = .3 + .32 * t, tb = .42 + .5800000000000001 * t;
@@ -19453,7 +21288,7 @@ function editionField(ed, v, o, px, pixels) {
 			return 1 + ((p < 0 ? 0 : p > 1 ? 1 : p) - 1) * .6;
 		};
 		return (time, out) => {
-			const T$1 = mod(time * 10, 60), ct = Math.cos(time * TAU$1 / 6), st = Math.sin(time * TAU$1 / 6);
+			const T$1 = mod(time * 10, 60), ct = Math.cos(time * TAU$2 / 6), st = Math.sin(time * TAU$2 / 6);
 			for (let k = 0; k < n; k++) {
 				const I = s[k] * ct + c2[k] * st, Q = c2[k] * ct - s[k] * st, Y = lum$3[k];
 				const hh = fract(a[k] - time / 6), add$1 = band$1(k, T$1, 5) * .18;
@@ -19497,27 +21332,27 @@ function editionField(ed, v, o, px, pixels) {
 			out[k * 3 + 2] = rgb$7[k * 3 + 2] + (lb - rgb$7[k * 3 + 2]) * m;
 		}
 	};
-	const lum$2 = new Float32Array(n), hue$2 = new Float32Array(n), chroma = new Float32Array(n);
+	const lum$2 = new Float32Array(n), hue$2 = new Float32Array(n), chroma$1 = new Float32Array(n);
 	for (let k = 0; k < n; k++) {
 		const z = region[k] > 1.5 ? 7 : 12, qx = (x[k] - o[0]) / z, qy = (y[k] - o[1]) / z;
-		const r = Math.hypot(qx, qy), turn = Math.atan2(qy, qx) + r * 1.8;
-		s[k] = Math.cos(turn) * r;
-		c2[k] = Math.sin(turn) * r;
+		const r = Math.hypot(qx, qy), turn$1 = Math.atan2(qy, qx) + r * 1.8;
+		s[k] = Math.cos(turn$1) * r;
+		c2[k] = Math.sin(turn$1) * r;
 		const cr = rgb$7[k * 3], cg = rgb$7[k * 3 + 1], cb = rgb$7[k * 3 + 2];
 		const i = .596 * cr - .274 * cg - .322 * cb, q = .211 * cr - .523 * cg + .312 * cb;
 		lum$2[k] = .299 * cr + .587 * cg + .114 * cb;
 		hue$2[k] = Math.atan2(q, i);
-		chroma[k] = Math.hypot(i, q);
+		chroma$1[k] = Math.hypot(i, q);
 		a[k] = (x[k] - y[k]) * .16;
 	}
 	/** A glint opening on a pixel whose noise is high enough. */
 	const glint$1 = (k, time) => {
 		if (h[k] < .965) return 0;
-		const g = Math.max(0, Math.sin(time * TAU$1 / 2 + h[k] * 91)), g2 = g * g;
+		const g = Math.max(0, Math.sin(time * TAU$2 / 2 + h[k] * 91)), g2 = g * g;
 		return g2 * g2 * g2 * .6;
 	};
 	return (time, out) => {
-		const T$1 = mod(time * 10, 60), th = time * TAU$1 / 6, ct = Math.cos(th), st = Math.sin(th), B = time * TAU$1 / 3;
+		const T$1 = mod(time * 10, 60), th = time * TAU$2 / 6, ct = Math.cos(th), st = Math.sin(th), B = time * TAU$2 / 3;
 		for (let k = 0; k < n; k++) {
 			const wx = s[k] * ct + c2[k] * st, wy = c2[k] * ct - s[k] * st;
 			const f = Math.floor((.5 + .5 * sine(wx * 3.2 + sine(wy * 2.6 + B) * 1.5)) * 3.99);
@@ -19529,8 +21364,8 @@ function editionField(ed, v, o, px, pixels) {
 				out[k * 3 + 2] = b$1 * m$1 + add$2;
 				continue;
 			}
-			const m = .86 + .1 * f, turn = hue$2[k] + .4 * Math.sin(a[k] + th + v), ch = chroma[k] * m, Y = lum$2[k] * m;
-			const I = ch * Math.cos(turn), Q = ch * Math.sin(turn), add$1 = band$1(k, T$1, 5) * .35 + gl;
+			const m = .86 + .1 * f, turn$1 = hue$2[k] + .4 * Math.sin(a[k] + th + v), ch = chroma$1[k] * m, Y = lum$2[k] * m;
+			const I = ch * Math.cos(turn$1), Q = ch * Math.sin(turn$1), add$1 = band$1(k, T$1, 5) * .35 + gl;
 			out[k * 3] = Y + .956 * I + .621 * Q + add$1;
 			out[k * 3 + 1] = Y - .272 * I - .647 * Q + add$1;
 			out[k * 3 + 2] = Y - 1.106 * I + 1.703 * Q + add$1;
@@ -19557,13 +21392,13 @@ function editionField(ed, v, o, px, pixels) {
 * RGBA byte arrays, the frame's size (16×20, wider with a buddy).
 */
 function shineData(frame, owned = {}) {
-	const W$1 = frame.colors[0].length;
-	const colors = new Uint8Array(W$1 * FRAME_HEIGHT * 4);
-	const info = new Uint8Array(W$1 * FRAME_HEIGHT * 4);
-	const noise$3 = new Uint8Array(W$1 * FRAME_HEIGHT * 4);
+	const W = frame.colors[0].length;
+	const colors = new Uint8Array(W * FRAME_HEIGHT * 4);
+	const info = new Uint8Array(W * FRAME_HEIGHT * 4);
+	const noise$3 = new Uint8Array(W * FRAME_HEIGHT * 4);
 	frame.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
-		const i = (y * W$1 + x) * 4;
+		const i = (y * W + x) * 4;
 		colors.set([
 			parseInt(c.slice(1, 3), 16),
 			parseInt(c.slice(3, 5), 16),
@@ -19599,9 +21434,9 @@ const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) 
 function shineFrame(frame, owned, ms) {
 	const { colors, info, noise: noise$3 } = shineData(frame, owned);
 	const out = new Uint8ClampedArray(colors);
-	const time = loopSeconds(ms), W$1 = frame.colors[0].length;
-	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W$1; x++) {
-		const i = (y * W$1 + x) * 4;
+	const time = loopSeconds(ms), W = frame.colors[0].length;
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W; x++) {
+		const i = (y * W + x) * 4;
 		if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
 		const finish = Math.floor(info[i] / 32 + .5) - 1;
 		const c = finishColor([
@@ -19691,9 +21526,9 @@ function createShine(canvas) {
 	return {
 		canvas: target,
 		draw(frame, owned, ms) {
-			const { colors, info, noise: noise$3 } = shineData(frame, owned), W$1 = frame.colors[0].length;
-			if (target.width !== W$1) target.width = W$1;
-			gl.viewport(0, 0, W$1, FRAME_HEIGHT);
+			const { colors, info, noise: noise$3 } = shineData(frame, owned), W = frame.colors[0].length;
+			if (target.width !== W) target.width = W;
+			gl.viewport(0, 0, W, FRAME_HEIGHT);
 			[
 				colors,
 				info,
@@ -19701,10 +21536,10 @@ function createShine(canvas) {
 			].forEach((bytes, unit$1) => {
 				gl.activeTexture(gl.TEXTURE0 + unit$1);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit$1]);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W$1, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 			});
 			gl.uniform1f(time, loopSeconds(ms));
-			gl.uniform2f(res, W$1, FRAME_HEIGHT);
+			gl.uniform2f(res, W, FRAME_HEIGHT);
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -19858,6 +21693,33 @@ const SURFACES = {
 		iridescence: .6,
 		sheen: 0,
 		glow: .3
+	},
+	op: {
+		roughness: .5,
+		metalness: 0,
+		clearcoat: .3,
+		clearcoatRoughness: .4,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
+	},
+	impossible: {
+		roughness: .5,
+		metalness: 0,
+		clearcoat: .3,
+		clearcoatRoughness: .4,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
+	},
+	grid: {
+		roughness: .5,
+		metalness: 0,
+		clearcoat: .3,
+		clearcoatRoughness: .4,
+		iridescence: 0,
+		sheen: 0,
+		glow: 0
 	}
 };
 /** A finish's surface, worn: scuff roughens it and dulls its coat, in tenths so copies share materials. */
@@ -19870,12 +21732,12 @@ function surfaceOf(kind, scuff = 0) {
 		clearcoat: +(s.clearcoat * (1 - wear$3)).toFixed(3)
 	};
 }
-const lum = (hex$4) => {
-	const n = parseInt(hex$4.slice(1, 7), 16);
+const lum = (hex$3) => {
+	const n = parseInt(hex$3.slice(1, 7), 16);
 	return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255;
 };
-const darken = (hex$4, k) => {
-	const n = parseInt(hex$4.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
+const darken = (hex$3, k) => {
+	const n = parseInt(hex$3.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
 	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
 };
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
@@ -19887,25 +21749,25 @@ function inset(w, h, inside$1) {
 }
 /** A frame (an animation frame, or `itemFrame`) as columns, each worn copy's pixels on its finish's surface. */
 function voxelColumns(frame, owned = {}, options = {}) {
-	const C = frame.colors, S = frame.slots, H$1 = C.length, W$1 = C[0]?.length ?? 0, small = !!options.item;
+	const C = frame.colors, S = frame.slots, H = C.length, W = C[0]?.length ?? 0, small = !!options.item;
 	const slotName = (s) => [
 		"skin",
 		"hat",
 		"frame",
 		"buddy"
 	][s - 1];
-	const figure = inset(W$1, H$1, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
-	const buddy = inset(W$1, H$1, (x, y) => !!C[y][x] && S[y][x] === 4);
+	const figure = inset(W, H, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
+	const buddy = inset(W, H, (x, y) => !!C[y][x] && S[y][x] === 4);
 	const feature = (x, y) => {
 		const c = C[y][x];
 		if (!c || S[y][x] !== 0 || figure[y][x] < 2) return 0;
 		const l = lum(c);
 		return l < .22 ? .45 : l > .86 ? .3 : 0;
 	};
-	const front = Array.from({ length: H$1 }, () => new Array(W$1).fill(-Infinity));
-	const span$1 = Array.from({ length: H$1 }, () => new Array(W$1).fill(null));
+	const front = Array.from({ length: H }, () => new Array(W).fill(-Infinity));
+	const span$1 = Array.from({ length: H }, () => new Array(W).fill(null));
 	let deepest = 0;
-	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const c = C[y][x], s = S[y][x];
 		if (!c || s === 3) continue;
 		const d = s === 4 ? buddy[y][x] : figure[y][x];
@@ -19940,12 +21802,12 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		deepest *= squeeze$1;
 	}
 	const out = [];
-	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const c = C[y][x], s = S[y][x];
 		if (!c) continue;
 		const copy = s ? owned[slotName(s)] : void 0;
 		const surface = surfaceOf(copy ? copy.finish : "body", copy ? copy.scuff : 0);
-		const px = x - W$1 / 2 + .5, py = H$1 / 2 - y - .5;
+		const px = x - W / 2 + .5, py = H / 2 - y - .5;
 		if (s === 3) {
 			out.push({
 				x: px,
@@ -19962,8 +21824,8 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			continue;
 		}
 		const { z0, z1 } = span$1[y][x];
-		let shade = 0;
-		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (front[y + dy]?.[x + dx] ?? -Infinity) > z1 + .4) shade++;
+		let shade$1 = 0;
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && (front[y + dy]?.[x + dx] ?? -Infinity) > z1 + .4) shade$1++;
 		let back = c;
 		if (feature(x, y)) {
 			const around = [
@@ -19977,7 +21839,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 			});
 			if (around) back = C[y + around[1]][x + around[0]];
 		}
-		const color = shade ? darken(c, 1 - shade * .045) : c;
+		const color = shade$1 ? darken(c, 1 - shade$1 * .045) : c;
 		let side = color;
 		if (lum(c) < .3 && (s === 4 ? buddy[y][x] : figure[y][x]) === 1) {
 			const inside$1 = [
@@ -20055,8 +21917,8 @@ function ownedOf(codes) {
 	}
 	return out;
 }
-const linear = (hex$4) => {
-	const n = parseInt(hex$4.slice(1, 7), 16);
+const linear = (hex$3) => {
+	const n = parseInt(hex$3.slice(1, 7), 16);
 	return [
 		n >> 16 & 255,
 		n >> 8 & 255,
@@ -20110,7 +21972,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 	}
 	const pos = [], nor = [], col = [], groups = [];
 	let flat = false, wall = 0;
-	const shade = (p, n) => {
+	const shade$1 = (p, n) => {
 		if (!smooth || flat) return n;
 		const s = surfaceNormal(Math.round(p[0]), Math.round(p[1]), p[2] >= 0 ? 1 : -1);
 		if (!wall) return s;
@@ -20131,7 +21993,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			b$1,
 			c,
 			d
-		].map((p) => shade(p, n));
+		].map((p) => shade$1(p, n));
 		for (const i of [
 			0,
 			1,
@@ -20165,7 +22027,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			const face = linear(c.color), back = linear(c.back), side = linear(c.side ?? c.color);
 			flat = c.slot === 3;
 			wall = 0;
-			const RIM$1 = .4, rim$2 = z1 - RIM$1;
+			const RIM = .4, rim$2 = z1 - RIM;
 			const wallQuads = (spans, corners, n) => {
 				for (const [a, b$1] of spans) {
 					if (c.side === void 0 || c.side === c.color || b$1 <= rim$2) {
@@ -22333,10 +24195,10 @@ const GLYPHS = {
 /** Each pixel made a `scale` by `scale` block. */
 function upscale(rgba, width$1, height, scale$1) {
 	if (scale$1 === 1) return rgba;
-	const W$1 = width$1 * scale$1, out = new Uint8ClampedArray(W$1 * height * scale$1 * 4);
+	const W = width$1 * scale$1, out = new Uint8ClampedArray(W * height * scale$1 * 4);
 	for (let y = 0; y < height; y++) for (let x = 0; x < width$1; x++) {
 		const i = (y * width$1 + x) * 4;
-		for (let dy = 0; dy < scale$1; dy++) for (let dx = 0; dx < scale$1; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale$1 + dy) * W$1 + x * scale$1 + dx) * 4);
+		for (let dy = 0; dy < scale$1; dy++) for (let dx = 0; dx < scale$1; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale$1 + dy) * W + x * scale$1 + dx) * 4);
 	}
 	return out;
 }
@@ -22375,11 +24237,11 @@ function medianCut(all) {
 			2
 		].map((k) => range(box, k) * used);
 	};
-	let boxes = [all];
+	let boxes$1 = [all];
 	let weights = [weigh(all)];
-	while (boxes.length < 255) {
+	while (boxes$1.length < 255) {
 		let best = -1, bk = 0, bw = -1;
-		boxes.forEach((box$1, i) => {
+		boxes$1.forEach((box$1, i) => {
 			if (box$1.length < 2) return;
 			for (let k = 0; k < 3; k++) {
 				const w = weights[i][k];
@@ -22391,7 +24253,7 @@ function medianCut(all) {
 			}
 		});
 		if (best < 0) break;
-		const box = boxes[best].sort((a, b$1) => ch(a[0], bk) - ch(b$1[0], bk));
+		const box = boxes$1[best].sort((a, b$1) => ch(a[0], bk) - ch(b$1[0], bk));
 		const total = box.reduce((a, [, n]) => a + n, 0);
 		let run = 0, cut = 1;
 		for (let i = 0; i < box.length - 1; i++) {
@@ -22402,10 +24264,10 @@ function medianCut(all) {
 			}
 		}
 		const lo = box.slice(0, cut), hi = box.slice(cut);
-		boxes.splice(best, 1, lo, hi);
+		boxes$1.splice(best, 1, lo, hi);
 		weights.splice(best, 1, weigh(lo), weigh(hi));
 	}
-	return boxes.map((box) => {
+	return boxes$1.map((box) => {
 		let r = 0, g = 0, b$1 = 0, n = 0;
 		for (const [c, k] of box) {
 			r += ch(c, 0) * k;
@@ -22526,10 +24388,10 @@ function lzw(indices, minCode, out) {
 * The box of pixels that differ between two frames `W` wide, as `[x, y, w, h]`, or null when none do.
 * Two pixels both under half alpha count as the same (both transparent).
 */
-function changed(a, b$1, W$1, H$1) {
-	let x0 = W$1, y0 = H$1, x1 = -1, y1 = -1;
-	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
-		const i = (y * W$1 + x) * 4;
+function changed(a, b$1, W, H) {
+	let x0 = W, y0 = H, x1 = -1, y1 = -1;
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const i = (y * W + x) * 4;
 		if (a[i + 3] < 128 && b$1[i + 3] < 128) continue;
 		if (a[i] === b$1[i] && a[i + 1] === b$1[i + 1] && a[i + 2] === b$1[i + 2] && a[i + 3] === b$1[i + 3]) continue;
 		if (x < x0) x0 = x;
@@ -22557,7 +24419,7 @@ function clears(before, after) {
 * clear a pixel is written whole after a frame that clears itself away.
 */
 function encodeGif(input, scale$1 = 1) {
-	const W$1 = input.width * scale$1, H$1 = input.height * scale$1, n = input.frames.length;
+	const W = input.width * scale$1, H = input.height * scale$1, n = input.frames.length;
 	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
 	const colours = palette(frames$1);
 	const table = [0, ...colours];
@@ -22566,8 +24428,8 @@ function encodeGif(input, scale$1 = 1) {
 	const out = [];
 	const word = (n$1) => out.push(n$1 & 255, n$1 >> 8 & 255);
 	out.push(...[..."GIF89a"].map((c) => c.charCodeAt(0)));
-	word(W$1);
-	word(H$1);
+	word(W);
+	word(H);
 	out.push(128 | bitsPer - 1 << 4 | bitsPer - 1, 0, 0);
 	for (let i = 0; i < 1 << bitsPer; i++) {
 		const c = table[i] ?? 0;
@@ -22605,7 +24467,7 @@ function encodeGif(input, scale$1 = 1) {
 		const before = whole[k] ? null : frames$1[k - 1];
 		const idx = new Uint8Array(bw * bh);
 		for (let y = 0, p = 0; y < bh; y++) for (let x = 0; x < bw; x++, p++) {
-			const i = ((by + y) * W$1 + bx + x) * 4;
+			const i = ((by + y) * W + bx + x) * 4;
 			if (f[i + 3] < 128) {
 				idx[p] = 0;
 				continue;
@@ -22686,7 +24548,7 @@ function chunk(type, data) {
 * when they use 256 colours or fewer, which pixel art nearly always does and
 * which packs several times smaller, else full RGBA.
 */
-function layout$1(frames$1) {
+function layout(frames$1) {
 	const key = (px, i) => px[i + 3] < 128 ? -1 : px[i] << 16 | px[i + 1] << 8 | px[i + 2];
 	const index = new Map([[-1, 0]]);
 	for (const px of frames$1) for (let i = 0; i < px.length && index.size <= 256; i += 4) {
@@ -22696,36 +24558,36 @@ function layout$1(frames$1) {
 	if (index.size > 256) return {
 		indexed: false,
 		colours: [],
-		rows: (px, W$1, H$1) => {
-			const raw = new Uint8Array((W$1 * 4 + 1) * H$1);
-			for (let y = 0; y < H$1; y++) raw.set(px.subarray(y * W$1 * 4, (y + 1) * W$1 * 4), y * (W$1 * 4 + 1) + 1);
+		rows: (px, W, H) => {
+			const raw = new Uint8Array((W * 4 + 1) * H);
+			for (let y = 0; y < H; y++) raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
 			return raw;
 		}
 	};
 	return {
 		indexed: true,
 		colours: [...index.keys()],
-		rows: (px, W$1, H$1) => {
-			const raw = new Uint8Array((W$1 + 1) * H$1);
-			for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) raw[y * (W$1 + 1) + 1 + x] = index.get(key(px, (y * W$1 + x) * 4));
+		rows: (px, W, H) => {
+			const raw = new Uint8Array((W + 1) * H);
+			for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) raw[y * (W + 1) + 1 + x] = index.get(key(px, (y * W + x) * 4));
 			return raw;
 		}
 	};
 }
 /** The `w` by `h` box at `x`, `y` of a picture `W` wide. */
-function crop(rgba, W$1, x, y, w, h) {
-	if (x === 0 && w === W$1) return rgba.subarray(y * W$1 * 4, (y + h) * W$1 * 4);
+function crop(rgba, W, x, y, w, h) {
+	if (x === 0 && w === W) return rgba.subarray(y * W * 4, (y + h) * W * 4);
 	const out = new Uint8ClampedArray(w * h * 4);
-	for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W$1 + x) * 4, ((y + r) * W$1 + x + w) * 4), r * w * 4);
+	for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W + x) * 4, ((y + r) * W + x + w) * 4), r * w * 4);
 	return out;
 }
 async function png(input, scale$1, animated) {
-	const W$1 = input.width * scale$1, H$1 = input.height * scale$1;
+	const W = input.width * scale$1, H = input.height * scale$1;
 	const frames$1 = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
-	const { indexed, colours, rows } = layout$1(frames$1);
+	const { indexed, colours, rows } = layout(frames$1);
 	const head$1 = new Uint8Array([
-		...u32(W$1),
-		...u32(H$1),
+		...u32(W),
+		...u32(H),
 		8,
 		indexed ? 3 : 6,
 		0,
@@ -22761,8 +24623,8 @@ async function png(input, scale$1, animated) {
 		const [bx, by, bw, bh] = i === 0 ? [
 			0,
 			0,
-			W$1,
-			H$1
+			W,
+			H
 		] : (box ?? [
 			0,
 			0,
@@ -22779,7 +24641,7 @@ async function png(input, scale$1, animated) {
 			u16(1e3),
 			new Uint8Array([0, 0])
 		])));
-		const data = await zlib(rows(i === 0 ? frames$1[i] : crop(frames$1[i], W$1, bx, by, bw, bh), bw, bh));
+		const data = await zlib(rows(i === 0 ? frames$1[i] : crop(frames$1[i], W, bx, by, bw, bh), bw, bh));
 		parts.push(i === 0 ? chunk("IDAT", data) : chunk("fdAT", concat([u32(seq++), data])));
 		if (!animated) break;
 	}
@@ -22860,7 +24722,7 @@ function lookFor(ed, finish, look) {
 }
 /** The default hardness of `paint`'s bands. */
 const PAINT_CONTRAST = 7;
-const INK$3 = [
+const INK$2 = [
 	24 / 255,
 	20 / 255,
 	31 / 255
@@ -22889,9 +24751,9 @@ function paintColors(colors, hue$2) {
 		return s[1] > .3 && Math.min(d, 1 - d) > .08;
 	})[0];
 	return [
-		lerp(main, INK$3, .7),
-		lerp(main, INK$3, .42),
-		other ? lerp(other, INK$3, .3) : lerp(main, INK$3, .12)
+		lerp(main, INK$2, .7),
+		lerp(main, INK$2, .42),
+		other ? lerp(other, INK$2, .3) : lerp(main, INK$2, .12)
 	];
 }
 /** A colour as hue, saturation and lightness, each 0 to 1 (`toHsl` in GLSL). */
@@ -23001,11 +24863,11 @@ vec3 lookColor(vec3 c, float look, float ed, float v, vec2 p, vec2 o, float regi
   return editionColor(c, ed, v, p, o, region, h, px, time);
 }
 `;
-const TAU = Math.PI * 2;
+const TAU$1 = Math.PI * 2;
 /** A sine from a table, to well under a millionth of a colour step: the looks take several a block every frame. */
-const SINES = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU));
+const SINES = Float64Array.from({ length: 4097 }, (_, i) => Math.sin(i / 4096 * TAU$1));
 const sin = (x) => {
-	const u = x * (4096 / TAU), i = Math.floor(u), j = i & 4095;
+	const u = x * (4096 / TAU$1), i = Math.floor(u), j = i & 4095;
 	return SINES[j] + (SINES[j + 1] - SINES[j]) * (u - i);
 };
 const cos = (x) => sin(x + Math.PI / 2);
@@ -23292,7 +25154,7 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 			],
 			phase: 0
 		};
-		const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), aa = new Float32Array(nb), shade = new Float32Array(nb);
+		const qx = new Float32Array(nb), qy = new Float32Array(nb), rr = new Float32Array(nb), aa = new Float32Array(nb), shade$1 = new Float32Array(nb);
 		for (let b$1 = 0; b$1 < nb; b$1++) {
 			const px$1 = (bx[b$1] - ox) / 9, py = (by[b$1] - oy) / 9, r = Math.sqrt(px$1 * px$1 + py * py), a = .6 * r;
 			qx[b$1] = px$1;
@@ -23303,12 +25165,12 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 				qx[b$1] = px$1 * Math.cos(a) - py * Math.sin(a);
 				qy[b$1] = px$1 * Math.sin(a) + py * Math.cos(a);
 			}
-			shade[b$1] = 1 - .22 * clamp01(Math.sqrt(bx[b$1] * bx[b$1] + by[b$1] * by[b$1]) / 9 * .5 - .35);
+			shade$1[b$1] = 1 - .22 * clamp01(Math.sqrt(bx[b$1] * bx[b$1] + by[b$1] * by[b$1]) / 9 * .5 - .35);
 		}
-		const w = .5 / contrast$2, k1v = new Float32Array(nb), k2v = new Float32Array(nb), arms$1 = Math.abs(k), turn = Math.sign(k);
+		const w = .5 / contrast$2, k1v = new Float32Array(nb), k2v = new Float32Array(nb), arms$1 = Math.abs(k), turn$1 = Math.sign(k);
 		return (time, out) => {
-			const th = time * TAU / 6;
-			if (family === 0) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(arms$1 * aa[b$1] + turn * 5 * rr[b$1] - th + phase + .7 * sin(2.3 * rr[b$1] - th) + .5 * sin(qx[b$1] * 2 - qy[b$1] * 1.6 + th));
+			const th = time * TAU$1 / 6;
+			if (family === 0) for (let b$1 = 0; b$1 < nb; b$1++) val[b$1] = .5 + .5 * sin(arms$1 * aa[b$1] + turn$1 * 5 * rr[b$1] - th + phase + .7 * sin(2.3 * rr[b$1] - th) + .5 * sin(qx[b$1] * 2 - qy[b$1] * 1.6 + th));
 			else if (family === 1) for (let b$1 = 0; b$1 < nb; b$1++) {
 				const ux = qx[b$1] * 2, uy = qy[b$1] * 2;
 				val[b$1] = .5 + .5 * sin(uy * 2.2 * k + 1.3 * sin(ux * 1.4 + th + phase) + .7 * sin(ux * 3.1 - uy * .8 - th) + .6 * sin(uy * 1.1 + ux * .6 - 2 * th));
@@ -23345,7 +25207,7 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 					out[j + 2] = rgb$7[j + 2];
 					continue;
 				}
-				const b$1 = blockOf[k$1], k1 = k1v[b$1], k2 = k2v[b$1], s = shade[b$1];
+				const b$1 = blockOf[k$1], k1 = k1v[b$1], k2 = k2v[b$1], s = shade$1[b$1];
 				for (let i = 0; i < 3; i++) {
 					const lo = c1[i] + (c2[i] - c1[i]) * k1;
 					out[j + i] = (lo + (c3[i] - lo) * k2) * s;
@@ -23358,7 +25220,7 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 		for (let k = 0; k < n; k++) lum$2[k] = .42 + .5 * (.299 * rgb$7[k * 3] + .587 * rgb$7[k * 3 + 1] + .114 * rgb$7[k * 3 + 2]);
 		const ea = new Float32Array(nb), eb = new Float32Array(nb), ed2 = new Float32Array(nb);
 		return (time, out) => {
-			const th = time * TAU / 6;
+			const th = time * TAU$1 / 6;
 			for (let b$1 = 0; b$1 < nb; b$1++) {
 				let ux = ux0[b$1], uy = uy0[b$1], dx;
 				dx = .6 * sin(1.4 * uy + th);
@@ -23391,7 +25253,7 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 	const ax = Float32Array.from(bx, (d) => d + o[0]), ay = Float32Array.from(by, (d) => d + o[1]);
 	const col = new Float32Array(nb * 3), w1 = new Float32Array(nb), w2 = new Float32Array(nb), rim$2 = new Float32Array(nb * 3);
 	return (time, out) => {
-		const th = time * TAU / 6;
+		const th = time * TAU$1 / 6;
 		polyCentres(th, m);
 		for (let b$1 = 0; b$1 < nb; b$1++) {
 			const f = polyAt(bx[b$1], by[b$1], m, th);
@@ -23505,7 +25367,7 @@ const rgb$2 = (h) => {
 	]);
 	return c;
 };
-const mix$1 = (a, b$1, t) => [
+const mix = (a, b$1, t) => [
 	a[0] + (b$1[0] - a[0]) * t,
 	a[1] + (b$1[1] - a[1]) * t,
 	a[2] + (b$1[2] - a[2]) * t
@@ -23514,7 +25376,7 @@ const hash$1 = (x, y, p) => {
 	const s = Math.sin(x * 127.1 + y * 311.7 + p * .731) * 43758.5453;
 	return s - Math.floor(s);
 };
-const EXTRA$1 = {
+const EXTRA = {
 	"·": [5, [
 		0,
 		0,
@@ -23586,29 +25448,112 @@ const EXTRA$1 = {
 		0,
 		0,
 		0
+	]],
+	"’": [3, [
+		0,
+		0,
+		3,
+		3,
+		2,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"‘": [3, [
+		0,
+		0,
+		2,
+		1,
+		3,
+		3,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"“": [6, [
+		0,
+		0,
+		18,
+		9,
+		27,
+		27,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"”": [6, [
+		0,
+		0,
+		27,
+		27,
+		18,
+		9,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
 	]]
 };
-const glyph$1 = (ch) => EXTRA$1[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
+const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
+/** Whether the card's pixel type has a glyph for `ch` (anything else is written "?"). */
+const hasGlyph = (ch) => ch in EXTRA || ch in GLYPHS;
 /** How wide a line of text is, in pixels. */
-const textWidth = (s) => [...s].reduce((w, ch) => w + glyph$1(ch)[0], 0);
+const textWidth = (s) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
 /** A line of text made to fit `width` on one line: as it is, a pixel tighter between letters, or cut short with "…". */
 function fitLine(text, width$1) {
-	const wide$1 = (t, spacing) => textWidth(t) + spacing * ([...t].length - 1);
-	if (wide$1(text, 0) <= width$1) return {
+	const wide = (t, spacing) => textWidth(t) + spacing * ([...t].length - 1);
+	if (wide(text, 0) <= width$1) return {
 		text,
 		spacing: 0
 	};
-	if (wide$1(text, -1) <= width$1) return {
+	if (wide(text, -1) <= width$1) return {
 		text,
 		spacing: -1
 	};
 	const chars = [...text];
-	while (chars.length > 1 && wide$1(chars.join("").trimEnd() + "…", -1) > width$1) chars.pop();
+	while (chars.length > 1 && wide(chars.join("").trimEnd() + "…", -1) > width$1) chars.pop();
 	return {
 		text: chars.join("").trimEnd() + "…",
 		spacing: -1
 	};
 }
+/** The grade badge's room either side of its word, and the gap after it: tight, so a rank beside it fits whole. */
+const PILL_PAD = 6, PILL_GAP = 4;
+/** The line beside the badge, fitted to `width`; a rank ("Top 0.055%") drops its "Top" rather than be cut. */
+function rankFit(text, width$1) {
+	const fit$2 = fitLine(text, width$1);
+	return fit$2.text === text ? fit$2 : fitLine(text.replace(/^Top (?=\d)/, ""), width$1);
+}
+/** How wide the line beside a badge reading `pill` may be. */
+const rankRoom = (pill) => CARD_WIDTH - M * 2 - 10 - textWidth(pill) - PILL_PAD * 2 - PILL_GAP;
 /** Card words without the ★ glyph. */
 const unstarred = (t) => t.replace(/★\s*/g, "").trim();
 /** A drawing surface of RGBA card pixels, with what each pixel is for the card's edition: 0 nothing, 1 the face, 2 the window. */
@@ -23635,7 +25580,7 @@ var Surface = class {
 		const draw = (ox, oy, col) => {
 			let cx = ox;
 			for (const ch of s) {
-				const [adv, rows] = glyph$1(ch);
+				const [adv, rows] = glyph(ch);
 				rows.forEach((bits, dy) => {
 					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
 				});
@@ -23646,11 +25591,11 @@ var Surface = class {
 		draw(x, top, colour);
 	}
 };
-const INK$2 = [
+const INK$1 = [
 	24,
 	20,
 	31
-], IVORY$2 = [
+], IVORY$1 = [
 	246,
 	240,
 	227
@@ -23658,7 +25603,7 @@ const INK$2 = [
 	255,
 	255,
 	255
-], PLATE$2 = [
+], PLATE$1 = [
 	38,
 	34,
 	52
@@ -23788,32 +25733,32 @@ const inside = (x, y) => inBox(x, y, CARD_WIDTH, BODY_HEIGHT, 8);
 let theShape = null;
 function cardShape() {
 	if (theShape) return theShape;
-	const W$1 = CARD_WIDTH, H$1 = BODY_HEIGHT, depth = new Uint8Array(W$1 * H$1), bevel = new Uint8Array(W$1 * H$1);
-	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+	const W = CARD_WIDTH, H = BODY_HEIGHT, depth = new Uint8Array(W * H), bevel = new Uint8Array(W * H);
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		if (!inside(x, y)) continue;
 		let d = 1;
 		while (d < 9 && inside(x - d, y) && inside(x + d, y) && inside(x, y - d) && inside(x, y + d)) d++;
 		const lit$1 = !inside(x - 3, y) || !inside(x, y - 3), deep = !inside(x + 3, y) || !inside(x, y + 3);
-		depth[y * W$1 + x] = d;
-		bevel[y * W$1 + x] = deep ? 2 : lit$1 ? 1 : 0;
+		depth[y * W + x] = d;
+		bevel[y * W + x] = deep ? 2 : lit$1 ? 1 : 0;
 	}
-	const glint$1 = Float64Array.from({ length: W$1 * H$1 }, (_, i) => hash$1(i % W$1, Math.floor(i / W$1), 11));
-	const runs$1 = Array.from({ length: H$1 }, (_, y) => {
+	const glint$1 = Float64Array.from({ length: W * H }, (_, i) => hash$1(i % W, Math.floor(i / W), 11));
+	const runs$1 = Array.from({ length: H }, (_, y) => {
 		let a = -1, b$1 = -1;
-		for (let x = 0; x < W$1; x++) if (depth[y * W$1 + x]) {
+		for (let x = 0; x < W; x++) if (depth[y * W + x]) {
 			if (a < 0) a = x;
 			b$1 = x;
 		}
 		return [a, b$1];
 	});
-	const shadow = new Uint8ClampedArray(W$1 * CARD_HEIGHT * 4);
+	const shadow = new Uint8ClampedArray(W * CARD_HEIGHT * 4);
 	runs$1.forEach(([a, b$1], y) => {
 		for (let x = a; a >= 0 && x <= b$1; x++) shadow.set([
 			20,
 			16,
 			28,
 			150
-		], ((y + 5) * W$1 + x) * 4);
+		], ((y + 5) * W + x) * 4);
 	});
 	return theShape = {
 		depth,
@@ -23903,12 +25848,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const edge = looks.edge ?? "none", grid = edge === "none";
 	const zoom = ZOOM, nudge = buddyNudge(anim, grid);
 	const cellX = (gx, slot) => gx * zoom - (gx >= FRAME_WIDTH && slot !== 5 ? nudge : 0);
-	const fit$1 = cardFit(anim.frames, anim.width, cellX), shape$1 = cardShape();
+	const fit$2 = cardFit(anim.frames, anim.width, cellX), shape$1 = cardShape();
 	const lastCopy = input.copies?.[input.copies.length - 1];
 	const shift$1 = lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6e3, 0);
 	const v = lastCopy ? lastCopy.print % 4 : 0;
-	const W$1 = CARD_WIDTH, H$1 = BODY_HEIGHT, side = M;
-	const s = new Surface(W$1, H$1);
+	const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
+	const s = new Surface(W, H);
 	const gold = ed === 5, aura = ed === 6, neg = ed === 4;
 	const framed = gold && looks.gold !== "brushed", struck = gold && !framed;
 	const gc = g >= 0 ? rgb$2(GRADES[g].color) : [
@@ -23919,26 +25864,46 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const auraCopy = owned.aura;
 	const ah = aura && auraCopy ? rgb$2(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
 	const tone = aura ? ah : gc;
-	const textW = W$1 - M * 2 - 10, left = side + 5;
-	const pill$1 = input.lines?.[0] ? unstarred(input.lines[0]) : void 0;
-	const titleFit = fitLine(unstarred(input.title.split(" | ")[0]), textW);
+	const textW = W - M * 2 - 10, left = side + 5;
+	const copies = input.copies ?? [];
+	const topCopy = copies.filter((o) => GRADES.findIndex((x) => x.id === gradeOf(o).id) === g).pop();
+	const unusualCopy = [...copies].reverse().find((o) => unusual(o) && o.fx);
+	const pill = input.lines?.[0] ? unstarred(input.lines[0]) : void 0;
+	let titleText = unstarred(input.title.split(" | ")[0]);
+	const unusualItem = unusualCopy ? itemById(unusualCopy.item) : void 0;
+	const fxName = unusualCopy?.fx && unusualCopy.fx !== unusualItem?.signature && unusualItem && titleText.includes(unusualItem.name) ? EFFECTS[unusualCopy.fx].name : "";
+	if (fxName && !titleText.includes(fxName)) titleText = `${fxName} ${titleText}`;
+	const tooLong = (text) => textWidth(text) - [...text].length + 1 > textW;
+	for (const word of [
+		"Strange ",
+		"Souvenir ",
+		...fxName ? [`${fxName} `] : []
+	]) if (tooLong(titleText) && titleText.includes(word)) titleText = titleText.replace(word, "");
+	const titleFit = fitLine(titleText, textW);
 	const footLine = (input.footer ?? "").split(" · ").filter((part) => part && !part.startsWith("#")).join(" · ");
-	const footFit = footLine ? fitLine(footLine, textW) : void 0;
-	const footH = footFit ? 11 : 0;
-	const pillW = pill$1 ? textWidth(pill$1) + 14 : 0;
-	const sub = input.lines?.[1] ? fitLine(unstarred(input.lines[1]), pill$1 ? textW - pillW - 6 : textW) : void 0;
-	const plateBottom = H$1 - 1 - 6;
+	const sealed = /\b1st edition\b/i.test(input.footer ?? "");
+	const footFit = footLine ? fitLine(footLine, textW - (sealed ? 18 : 0)) : void 0;
+	const footH = footFit || sealed ? 11 : 0;
+	const plateText = unstarred(input.plate?.text ?? ""), plateBare = plateText.replace(/^[^·]*·\s*/, "");
+	const plateRow = plateText ? fitLine(textWidth(plateText) - [...plateText].length + 1 > textW - 10 && plateBare ? plateBare : plateText, textW - 10) : void 0;
+	const plateGrade = Math.max(0, Math.min(GRADES.length - 1, input.plate?.grade ?? 0));
+	const pillW = pill ? textWidth(pill) + PILL_PAD * 2 : 0;
+	const subW = pill ? rankRoom(pill) : textW;
+	const sub = input.lines?.[1] ? rankFit(unstarred(input.lines[1]), subW) : void 0;
+	const plateBottom = H - 1 - 6;
 	let y = plateBottom - 3 - footH;
 	const footTop = y;
 	if (footH) y -= 2;
-	const pillTop = pill$1 || sub ? y -= 15 : y;
-	if (pill$1 || sub) y -= 3;
+	const plateRowTop = plateRow ? y -= 14 : y;
+	if (plateRow) y -= 2;
+	const pillTop = pill || sub ? y -= 15 : y;
+	if (pill || sub) y -= 3;
 	y -= 12;
 	const titleTop = y;
 	const plateTop = y - 3;
 	const WIN = {
 		left: side,
-		right: W$1 - 1 - side,
+		right: W - 1 - side,
 		top: 6,
 		bottom: plateTop - 4
 	};
@@ -23950,67 +25915,69 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		size: side2
 	};
 	const stock = (x, yy) => {
-		if (framed) return mix$1(DARK_HI, DARK_LO, yy / H$1);
+		if (framed) return mix(DARK_HI, DARK_LO, yy / H);
 		if (gold) {
-			const base$1 = mix$1(GOLD_HI, GOLD_LO, yy / H$1 * .9 + .08 * Math.sin(x * .05 + yy * .02));
-			return yy % 3 === 0 ? mix$1(base$1, GOLD_LO, .12) : base$1;
+			const base$1 = mix(GOLD_HI, GOLD_LO, yy / H * .9 + .08 * Math.sin(x * .05 + yy * .02));
+			return yy % 3 === 0 ? mix(base$1, GOLD_LO, .12) : base$1;
 		}
-		if (neg) return mix$1(mix$1(IVORY$2, tone, .35), mix$1(IVORY$2, tone, .6), yy / H$1);
-		return mix$1(mix$1(tone, WHITE$1, .08), mix$1(tone, INK$2, .25), yy / H$1);
+		if (neg) return mix(mix(IVORY$1, tone, .35), mix(IVORY$1, tone, .6), yy / H);
+		return mix(mix(tone, WHITE$1, .08), mix(tone, INK$1, .25), yy / H);
 	};
-	const rows = Array.from({ length: H$1 }, (_, yy) => gold ? null : stock(0, yy));
-	const auraDeep = mix$1(ah, INK$2, .62), auraLight = mix$1(ah, INK$2, .3), inlay = mix$1(ah, WHITE$1, .7);
-	const trim = new Uint8Array(W$1 * H$1);
-	for (let yy = 0; yy < H$1; yy++) for (let x = 0; x < W$1; x++) {
-		const d = shape$1.depth[yy * W$1 + x], bevel = shape$1.bevel[yy * W$1 + x];
+	const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
+	const auraDeep = mix(ah, INK$1, .62), auraLight = mix(ah, INK$1, .3), inlay = mix(ah, WHITE$1, .7);
+	const trim = new Uint8Array(W * H);
+	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
+		const d = shape$1.depth[yy * W + x], bevel = shape$1.bevel[yy * W + x];
 		if (!d) continue;
 		if (d <= 2) {
-			s.set(x, yy, INK$2);
+			s.set(x, yy, INK$1);
 			continue;
 		}
 		let c = rows[yy] ?? stock(x, yy);
 		if (framed && bevel && d === 3) {
 			c = bevel === 1 ? GOLD_LIGHT : GOLD_DEEP;
-			trim[yy * W$1 + x] = 1;
-		} else if (struck && bevel) c = mix$1(mix$1([
+			trim[yy * W + x] = 1;
+		} else if (struck && bevel) c = mix(mix([
 			255,
 			238,
 			168
-		], BRUSHED.bevelLo, (x + yy * 1.4) / (W$1 + H$1 * 1.4)), bevel === 1 ? WHITE$1 : INK$2, .2);
-		else if (bevel === 1) c = mix$1(c, WHITE$1, .35);
-		else if (bevel) c = mix$1(c, INK$2, .3);
+		], BRUSHED.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE$1 : INK$1, .2);
+		else if (bevel === 1) c = mix(c, WHITE$1, .35);
+		else if (bevel) c = mix(c, INK$1, .3);
 		else if (aura && d <= 5) c = inlay;
 		if (aura && d > 6) {
 			const r = Math.hypot((x - wcx) / 80, (yy - wcy) / 100);
-			s.set(x, yy, mix$1(auraDeep, auraLight, Math.max(0, 1 - r) ** 1.2), 2);
+			s.set(x, yy, mix(auraDeep, auraLight, Math.max(0, 1 - r) ** 1.2), 2);
 			continue;
 		}
 		s.set(x, yy, c, 1);
 	}
-	const light$2 = g >= 0 ? mix$1(IVORY$2, gc, .22) : mix$1(IVORY$2, gc, .12);
+	const light$3 = g >= 0 ? mix(IVORY$1, gc, .22) : mix(IVORY$1, gc, .12);
 	/** A framed Grail's window: a few large soft bands of three golds, on blocks of two card pixels, holding still. */
 	const fieldGold = (x, yy) => {
 		const qx = ((x >> 1) * 2 - wcx) / 40, qy = ((yy >> 1) * 2 - wcy) / 40;
 		const t = .5 + .5 * Math.sin(qy * 3.2 + 1.3 * Math.sin(qx * 2.4 + .6) + .6 * Math.sin(qx * 4.1 - qy * 1.7));
 		const k1 = Math.min(1, Math.max(0, (t - .35) / .12 + .5)), k2 = Math.min(1, Math.max(0, (t - .72) / .12 + .5));
-		return mix$1(mix$1(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
+		return mix(mix(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
 	};
+	const own$1 = !aura && !gold && topCopy ? windowArt(topCopy, WIN, wcx, wcy) : null;
 	if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
 		const rim$2 = x - WIN.left < 2 || WIN.right - x < 2 || yy - WIN.top < 2 || WIN.bottom - yy < 2;
 		if (rim$2) {
 			const inner = x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1;
-			if (framed && inner) trim[yy * W$1 + x] = 1;
+			if (framed && inner) trim[yy * W + x] = 1;
 			s.set(x, yy, framed && inner ? BRIGHT_GOLD : struck && inner ? [
 				255,
 				226,
 				140
-			] : struck ? BRUSHED.rim : INK$2);
+			] : struck ? BRUSHED.rim : INK$1);
 			continue;
 		}
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-		let c = framed ? fieldGold(x, yy) : !gold ? mix$1(light$2, mix$1(light$2, gc, .35), depth * .6) : mix$1(mix$1(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix$1(AMBER, INK$2, .3), depth * .3);
-		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix$1(c, INK$2, .35);
-		s.set(x, yy, c, 2);
+		let c = framed ? fieldGold(x, yy) : !gold ? mix(light$3, mix(light$3, gc, .35), depth * .6) : mix(mix(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix(AMBER, INK$1, .3), depth * .3);
+		if (own$1) c = own$1(x, yy, 0);
+		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK$1, .35);
+		s.set(x, yy, c, own$1 ? 3 : 2);
 	}
 	if (struck) for (const [sx, sy] of [
 		[WIN.left + 1, WIN.top + 1],
@@ -24019,8 +25986,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		[WIN.right - 1, WIN.bottom - 1]
 	]) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
 		const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
-		if (d > 10 || shape$1.depth[yy * W$1 + x] <= 2) continue;
-		s.set(x, yy, d > 6 ? BRUSHED.quiet : mix$1([
+		if (d > 10 || shape$1.depth[yy * W + x] <= 2) continue;
+		s.set(x, yy, d > 6 ? BRUSHED.quiet : mix([
 			255,
 			244,
 			196
@@ -24030,69 +25997,115 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			26
 		], (dx + dy + 4) / 8));
 	}
-	const onPlate = new Uint8Array(W$1 * H$1);
-	if (!struck) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W$1 - 1 - side; x++) {
-		const pw = W$1 - side * 2, ph = plateBottom - plateTop + 1;
+	const onPlate = new Uint8Array(W * H);
+	if (!struck) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
+		const pw = W - side * 2, ph = plateBottom - plateTop + 1;
 		if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
 		const edge$1 = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
-		const base$1 = aura ? mix$1(mix$1(ah, INK$2, .6), INK$2, .45) : PLATE$2;
-		onPlate[yy * W$1 + x] = 1;
-		s.set(x, yy, edge$1 ? INK$2 : yy === plateTop + 1 ? mix$1(base$1, WHITE$1, .16) : yy >= plateBottom - 2 ? mix$1(base$1, INK$2, .45) : base$1);
+		const base$1 = aura ? mix(mix(ah, INK$1, .6), INK$1, .45) : PLATE$1;
+		onPlate[yy * W + x] = 1;
+		s.set(x, yy, edge$1 ? INK$1 : yy === plateTop + 1 ? mix(base$1, WHITE$1, .16) : yy >= plateBottom - 2 ? mix(base$1, INK$1, .45) : base$1);
 	}
-	const quiet = struck ? BRUSHED.quiet : aura ? mix$1(ah, WHITE$1, .6) : [
+	const quiet = struck ? BRUSHED.quiet : aura ? mix(ah, WHITE$1, .6) : [
 		184,
 		176,
 		206
 	];
-	const titleInk = (x, yy, tm) => mix$1(mix$1(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / wave(1e3 / 2) + yy * .1));
+	const titleInk = (x, yy, tm) => mix(mix(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / wave(1e3 / 2) + yy * .1));
 	const titlePixels = [];
 	s.text(titleFit.text, left, titleTop - 2, (x, yy) => {
 		if (struck) return GOLD_INK;
 		if (!aura) return WHITE$1;
 		titlePixels.push(x, yy);
 		return titleInk(x, yy, 0);
-	}, struck ? GOLD_CUT : INK$2, titleFit.spacing);
-	if (pill$1) {
+	}, struck ? GOLD_CUT : INK$1, titleFit.spacing);
+	if (pill) {
 		const w = pillW, x0 = left;
 		const fill = struck ? BRUSHED.pill : framed ? BRIGHT_GOLD : tone;
 		for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
 			const edge$1 = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
-			s.set(x, yy, edge$1 ? INK$2 : yy >= pillTop + 12 ? mix$1(fill, INK$2, .45) : yy === pillTop + 1 ? mix$1(fill, WHITE$1, .4) : fill);
+			s.set(x, yy, edge$1 ? INK$1 : yy >= pillTop + 12 ? mix(fill, INK$1, .45) : yy === pillTop + 1 ? mix(fill, WHITE$1, .4) : fill);
 		}
-		s.text(pill$1, x0 + 7, pillTop - 1, () => struck ? [
+		s.text(pill, x0 + PILL_PAD, pillTop - 1, () => struck ? [
 			255,
 			222,
 			130
-		] : framed ? PILL_INK : WHITE$1, framed ? GOLD_LIGHT : mix$1(fill, INK$2, .6));
+		] : framed ? PILL_INK : WHITE$1, framed ? GOLD_LIGHT : mix(fill, INK$1, .6));
 	}
-	if (sub) s.text(sub.text, pill$1 ? left + pillW + 6 : left, pillTop - 1, () => quiet, void 0, sub.spacing);
+	if (sub) s.text(sub.text, pill ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, void 0, sub.spacing);
 	if (footFit) s.text(footFit.text, left, footTop - 2, () => quiet, void 0, footFit.spacing);
-	const tag = new Surface(input.corner ? W$1 : 0, input.corner ? H$1 : 0);
+	if (plateRow) {
+		const w = Math.min(textW, textWidth(plateRow.text) + plateRow.spacing * ([...plateRow.text].length - 1) + 10), x0 = left, fill = rgb$2(GRADES[plateGrade].color);
+		const ink = plateGrade === 4 ? PILL_INK : WHITE$1;
+		for (let yy = plateRowTop; yy < plateRowTop + 14; yy++) for (let x = x0; x < x0 + w; x++) {
+			if (!inBox(x - x0, yy - plateRowTop, w, 14, 3)) continue;
+			const edge$1 = !inBox(x - x0 - 1, yy - plateRowTop, w, 14, 3) || !inBox(x - x0 + 1, yy - plateRowTop, w, 14, 3) || yy === plateRowTop || yy === plateRowTop + 13;
+			s.set(x, yy, edge$1 ? INK$1 : yy >= plateRowTop + 11 ? mix(fill, INK$1, .45) : yy === plateRowTop + 1 ? mix(fill, WHITE$1, .4) : fill);
+		}
+		s.text(plateRow.text, x0 + 5, plateRowTop - 2, () => ink, plateGrade === 4 ? GOLD_LIGHT : mix(fill, INK$1, .6), plateRow.spacing);
+	}
+	if (sealed) {
+		const cx = W - 1 - side - 10, cy = footTop + 3;
+		for (let dy = -7; dy <= 7; dy++) for (let dx = -7; dx <= 7; dx++) {
+			const d = dx * dx + dy * dy;
+			if (d > 52) continue;
+			const rim$2 = d > 38, notch = rim$2 && Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) % 2 === 0;
+			s.set(cx + dx, cy + dy, notch && d > 46 ? struck ? BRUSHED.pill : PLATE$1 : rim$2 ? INK$1 : d < 14 && dx + dy < 0 ? [
+				246,
+				138,
+				112
+			] : [
+				232,
+				100,
+				78
+			]);
+		}
+		s.text("1", cx - 2, cy - 7, () => IVORY$1, INK$1);
+	}
+	const strange = topCopy?.tally !== void 0 ? topCopy : copies.find((o) => o.tally !== void 0);
+	const badge = unusualCopy?.fx ? FX_BADGES[unusualCopy.fx] : void 0;
+	const tagged = !!(input.corner || strange || badge);
+	const tag = new Surface(tagged ? W : 0, tagged ? H : 0);
+	let tagX = WIN.left + 4;
+	if (strange) {
+		const digits = String(Math.min(99999, strange.tally ?? 0)).padStart(4, "0"), w = digits.length * 7 - 2 + 6, y0 = WIN.top + 4;
+		plateAt(tag, tagX, y0, w, 15);
+		[...digits].forEach((d, i) => segments(tag, tagX + 3 + i * 7, y0 + 3, Number(d)));
+		tagX += w + 2;
+	}
+	if (badge) {
+		const y0 = WIN.top + 4;
+		plateAt(tag, tagX, y0, 15, 15);
+		badge.forEach((row, by) => [...row].forEach((ch, bx) => {
+			const ink = BADGE_INKS[ch];
+			if (ink) for (let k = 0; k < 4; k++) tag.set(tagX + 3 + bx * 2 + (k & 1), y0 + 3 + by * 2 + (k >> 1), rgb$2(ink));
+		}));
+	}
 	if (input.corner) {
 		const w = textWidth(input.corner) + 6, x0 = WIN.right - 4 - w, y0 = WIN.top + 4;
 		for (let yy = y0; yy < y0 + 14; yy++) for (let x = x0; x < x0 + w; x++) if (!((x === x0 || x === x0 + w - 1) && (yy === y0 || yy === y0 + 13))) tag.set(x, yy, yy >= y0 + 12 ? [
 			0,
 			0,
 			0
-		] : INK$2);
+		] : INK$1);
 		tag.text(input.corner, x0 + 3, y0 - 2, () => WHITE$1);
 	}
 	const tagIdx = [];
-	if (input.corner) {
-		for (let i = 0; i < W$1 * H$1; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
+	if (tagged) {
+		for (let i = 0; i < W * H; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
 	}
 	const soul = aura;
-	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit$1.mid);
-	const stand = soul ? Math.max(5 - fit$1.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - (fit$1.topAll + fit$1.footAll + 1) * zoom / 2) - 10) : Math.round((WIN.top + WIN.bottom + 1) / 2 - (fit$1.rest + fit$1.foot + 1) * zoom / 2) + 4;
+	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit$2.mid);
+	const stand = soul ? Math.max(5 - fit$2.topAll * zoom, Math.round((WIN.top + WIN.bottom) / 2 - (fit$2.topAll + fit$2.footAll + 1) * zoom / 2) - 10) : Math.round((WIN.top + WIN.bottom + 1) / 2 - (fit$2.rest + fit$2.foot + 1) * zoom / 2) + 4;
 	const roomTop = soul ? 3 : WIN.top + 2, roomFoot = WIN.bottom - 2;
-	const highest = roomTop - fit$1.topAll * zoom, lowest = roomFoot + 1 - (fit$1.footAll + 1) * zoom;
+	const highest = roomTop - fit$2.topAll * zoom, lowest = roomFoot + 1 - (fit$2.footAll + 1) * zoom;
 	const oy0 = !grid ? stand : highest > lowest ? highest : Math.min(lowest, Math.max(highest, stand));
-	const floor = Uint8Array.from(s.region, (r) => r === 2 ? 1 : 0);
+	const floor = Uint8Array.from(s.region, (r) => r === 2 || r === 3 ? 1 : 0);
 	const ground = input.copies?.some((o) => itemById(o.item)?.slot === "frame") ? (() => {
-		let x0 = W$1, y0 = H$1, x1 = -1, y1 = -1;
-		for (let i = 0; i < W$1 * H$1; i++) if (floor[i]) {
-			const x = i % W$1, yy = (i - x) / W$1;
+		let x0 = W, y0 = H, x1 = -1, y1 = -1;
+		for (let i = 0; i < W * H; i++) if (floor[i]) {
+			const x = i % W, yy = (i - x) / W;
 			x0 = Math.min(x0, x);
 			x1 = Math.max(x1, x);
 			y0 = Math.min(y0, yy);
@@ -24107,13 +26120,13 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}, gx0, gy0, gw, gh);
 		if (!colors) return null;
 		const cells = new Float32Array(gw * gh * 3), pix = [], cellOf = [], diag = [];
-		colors.forEach((row, j) => row.forEach((hex$4, i) => {
-			const c = hex$4 ? rgb$2(hex$4) : INK$2;
+		colors.forEach((row, j) => row.forEach((hex$3, i) => {
+			const c = hex$3 ? rgb$2(hex$3) : INK$1;
 			for (let k = 0; k < 3; k++) cells[(j * gw + i) * 3 + k] = c[k] / 255;
 		}));
-		for (let i = 0; i < W$1 * H$1; i++) {
+		for (let i = 0; i < W * H; i++) {
 			if (!floor[i]) continue;
-			const x = i % W$1, yy = (i - x) / W$1, cx = Math.floor((x - ox) / zoom), cy = Math.floor((yy - oy0) / zoom), cell = (cy - gy0) * gw + cx - gx0;
+			const x = i % W, yy = (i - x) / W, cx = Math.floor((x - ox) / zoom), cy = Math.floor((yy - oy0) / zoom), cell = (cy - gy0) * gw + cx - gx0;
 			pix.push(i);
 			cellOf.push(cell);
 			diag.push(x - ox - cx * zoom + yy - oy0 - cy * zoom);
@@ -24134,19 +26147,25 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			count: gw * gh
 		};
 	})() : null;
-	const topCopy = (input.copies ?? []).filter((o) => GRADES.findIndex((x) => x.id === gradeOf(o).id) === g).pop();
 	const look = struck ? 0 : lookFor(ed, topCopy?.finish, looks.look);
-	const plays = (i) => framed ? s.region[i] === 2 || trim[i] === 1 : s.region[i] > 0;
+	const plays = (i) => framed ? s.region[i] === 2 || trim[i] === 1 : s.region[i] > 0 && s.region[i] < 3;
+	const ownIdx = [];
+	if (own$1?.moves) {
+		for (let i = 0; i < W * H; i++) if (s.region[i] === 3) {
+			const x = i % W, yy = (i - x) / W;
+			if (yy - WIN.top !== 2 && x - WIN.left !== 2) ownIdx.push(i);
+		}
+	}
 	const edIdx = [];
-	for (let i = 0; i < W$1 * H$1; i++) if (plays(i)) edIdx.push(i);
+	for (let i = 0; i < W * H; i++) if (plays(i)) edIdx.push(i);
 	const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
 	const raised = new Float32Array(n);
 	edIdx.forEach((i, k) => {
-		const x = i % W$1, yy = (i - x) / W$1;
+		const x = i % W, yy = (i - x) / W;
 		ex[k] = x / 5;
 		ey[k] = yy / 5;
 		er[k] = s.region[i] || 1;
-		eh[k] = shape$1.glint[(yy >> 1) * W$1 + (x >> 1)];
+		eh[k] = shape$1.glint[(yy >> 1) * W + (x >> 1)];
 		raised[k] = trim[i];
 		for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
 	});
@@ -24165,15 +26184,15 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		raised
 	}, paint$1);
 	const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
-	const pop = soul || !grid && oy0 + fit$1.top * zoom < WIN.top + 3;
-	const clip = (cx, cy) => pop ? inside(cx, cy) && cx > 2 && cx < W$1 - 3 && cy > 2 && cy < WIN.bottom - 1 : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
-	const edgeC = aura ? mix$1(ah, WHITE$1, .55) : struck ? [
+	const pop = soul || !grid && oy0 + fit$2.top * zoom < WIN.top + 3;
+	const clip = (cx, cy) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1 : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
+	const edgeC = aura ? mix(ah, WHITE$1, .55) : struck ? [
 		255,
 		236,
 		170
 	] : WHITE$1;
-	const room = new Uint8Array(W$1 * H$1);
-	for (let yy = 0; yy < H$1; yy++) for (let x = 0; x < W$1; x++) if (clip(x, yy)) room[yy * W$1 + x] = pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? 2 : 1;
+	const room = new Uint8Array(W * H);
+	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) if (clip(x, yy)) room[yy * W + x] = pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? 2 : 1;
 	const mask = new Uint8Array((anim.width * zoom + 4) * (FRAME_HEIGHT * zoom + 4));
 	const lit$1 = new Float32Array((zoom * 2 - 1) * 3), litDone = new Uint8Array(zoom * 2 - 1);
 	/**
@@ -24190,13 +26209,13 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		got = [];
 		for (const buddy of [false, true]) {
 			let lo = -1, l = Infinity, r = -Infinity;
-			const own$1 = (gx, gy) => !!colors[gy][gx] && slots[gy][gx] !== 5 && slots[gy][gx] !== 3 && slots[gy][gx] === 4 === buddy;
+			const own$2 = (gx, gy) => !!colors[gy][gx] && slots[gy][gx] !== 5 && slots[gy][gx] !== 3 && slots[gy][gx] === 4 === buddy;
 			colors.forEach((row, gy) => row.forEach((_, gx) => {
-				if (own$1(gx, gy)) lo = gy;
+				if (own$2(gx, gy)) lo = gy;
 			}));
 			if (lo < 0) continue;
 			for (let gy = Math.max(0, lo - 1); gy <= lo; gy++) colors[gy].forEach((_, gx) => {
-				if (own$1(gx, gy)) {
+				if (own$2(gx, gy)) {
 					l = Math.min(l, cellX(gx, slots[gy][gx]));
 					r = Math.max(r, cellX(gx, slots[gy][gx]) + zoom);
 				}
@@ -24230,12 +26249,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}
 		for (let j = 0; j < bh; j++) {
 			const yy = by + j;
-			if (yy < 0 || yy >= H$1) continue;
+			if (yy < 0 || yy >= H) continue;
 			for (let k = 0; k < bw; k++) {
 				const m = j * bw + k, x = bx + k;
-				if (mask[m] || x < 0 || x >= W$1) continue;
-				const r = room[yy * W$1 + x];
-				if (r && (mask[m + 2] || mask[m - 2] || mask[m + bw * 2] || mask[m - bw * 2] || mask[m + bw + 1] || mask[m + bw - 1] || mask[m - bw + 1] || mask[m - bw - 1])) out.push((yy * W$1 + x) * 2 + (r === 2 ? 1 : 0));
+				if (mask[m] || x < 0 || x >= W) continue;
+				const r = room[yy * W + x];
+				if (r && (mask[m + 2] || mask[m - 2] || mask[m + bw * 2] || mask[m - bw * 2] || mask[m + bw + 1] || mask[m + bw - 1] || mask[m - bw + 1] || mask[m - bw - 1])) out.push((yy * W + x) * 2 + (r === 2 ? 1 : 0));
 			}
 		}
 		byY.set(oy, got = Int32Array.from(out));
@@ -24246,7 +26265,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const groundDone = new Uint8Array(ground && groundShine >= 0 ? ground.count * DIAGS : 0), groundLit = new Float32Array(groundDone.length * 3);
 	const drawGuy = (frame, oy, body$1, shineTime) => {
 		const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0;
-		const put = (i, r, g$1, b$1) => {
+		const put$1 = (i, r, g$1, b$1) => {
 			body$1[i * 4] = r;
 			body$1[i * 4 + 1] = g$1;
 			body$1[i * 4 + 2] = b$1;
@@ -24267,7 +26286,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 					groundLit[j * 3 + 1] = out[1] * 255;
 					groundLit[j * 3 + 2] = out[2] * 255;
 				}
-				put(ground.pix[k], groundLit[j * 3], groundLit[j * 3 + 1], groundLit[j * 3 + 2]);
+				put$1(ground.pix[k], groundLit[j * 3], groundLit[j * 3 + 1], groundLit[j * 3 + 2]);
 			}
 		}
 		const fl = aura ? [] : floorsOf(frame, oy);
@@ -24275,11 +26294,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			const sx = fl[f], sy = fl[f + 1], rx = fl[f + 2];
 			const gy = grid ? sy + zoom : sy, reach = grid ? zoom : 0;
 			for (let yy = Math.ceil(gy - 4 - reach); yy <= gy + 4 + reach; yy++) for (let x = Math.ceil(sx - rx - reach); x <= sx + rx + reach; x++) {
-				if (x < 0 || yy < 0 || x >= W$1 || yy >= H$1 || !floor[yy * W$1 + x]) continue;
+				if (x < 0 || yy < 0 || x >= W || yy >= H || !floor[yy * W + x]) continue;
 				const px = grid ? ox + Math.floor((x - ox) / zoom) * zoom + zoom / 2 : x, py = grid ? oy + Math.floor((yy - oy) / zoom) * zoom + zoom / 2 : yy;
 				const fx = (px - sx) / rx, fy = (py - gy) / 4, d = fx * fx + fy * fy;
 				if (d >= 1) continue;
-				const i = (yy * W$1 + x) * 4, k = 1 - .16 * (1 - d);
+				const i = (yy * W + x) * 4, k = 1 - .16 * (1 - d);
 				body$1[i] *= k;
 				body$1[i + 1] *= k;
 				body$1[i + 2] *= k;
@@ -24287,19 +26306,19 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}
 		for (const e of edgesOf(frame, oy)) {
 			const c = e & 1 ? WHITE$1 : edgeC;
-			put(e >> 1, c[0], c[1], c[2]);
+			put$1(e >> 1, c[0], c[1], c[2]);
 		}
 		for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
-			const hex$4 = colors[gy][gx];
-			if (!hex$4 || slots[gy][gx] === 3) continue;
+			const hex$3 = colors[gy][gx];
+			if (!hex$3 || slots[gy][gx] === 3) continue;
 			const slot = slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0, x0 = ox + cellX(gx, slot);
-			const f = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1, c = rgb$2(hex$4);
+			const f = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1, c = rgb$2(hex$3);
 			if (copy && f >= 0) litDone.fill(0);
 			for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
 				const cx = x0 + dx, cy = oy + gy * zoom + dy;
-				if (cx < 0 || cy < 0 || cx >= W$1 || cy >= H$1 || !room[cy * W$1 + cx]) continue;
+				if (cx < 0 || cy < 0 || cx >= W || cy >= H || !room[cy * W + cx]) continue;
 				if (!copy || f < 0) {
-					put(cy * W$1 + cx, c[0], c[1], c[2]);
+					put$1(cy * W + cx, c[0], c[1], c[2]);
 					continue;
 				}
 				const k = dx + dy;
@@ -24314,19 +26333,19 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 					lit$1[k * 3 + 1] = out[1] * 255;
 					lit$1[k * 3 + 2] = out[2] * 255;
 				}
-				put(cy * W$1 + cx, lit$1[k * 3], lit$1[k * 3 + 1], lit$1[k * 3 + 2]);
+				put$1(cy * W + cx, lit$1[k * 3], lit$1[k * 3 + 1], lit$1[k * 3 + 2]);
 			}
 		}
-		for (const [gx, gy, hex$4] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
-			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy, c = rgb$2(hex$4);
-			if (cx >= 0 && cy >= 0 && cx < W$1 && cy < H$1 && room[cy * W$1 + cx]) put(cy * W$1 + cx, c[0], c[1], c[2]);
+		for (const [gx, gy, hex$3] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy, c = rgb$2(hex$3);
+			if (cx >= 0 && cy >= 0 && cx < W && cy < H && room[cy * W + cx]) put$1(cy * W + cx, c[0], c[1], c[2]);
 		}
 	};
 	const body = s.px.slice();
 	let whole = null;
 	return {
 		square,
-		moves: ed > 0 || Object.values(owned).some((o) => o && shines$1(o)),
+		moves: ed > 0 || !!own$1?.moves || Object.values(owned).some((o) => o && shines$1(o)),
 		pose(t) {
 			const tm = t * 1e3 + shift$1;
 			return {
@@ -24344,24 +26363,30 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				body[i + 1] = edOut[k * 3 + 1] * 255;
 				body[i + 2] = edOut[k * 3 + 2] * 255;
 			}
+			for (const i of ownIdx) {
+				const x = i % W, c = own$1(x, (i - x) / W, tm);
+				body[i * 4] = c[0];
+				body[i * 4 + 1] = c[1];
+				body[i * 4 + 2] = c[2];
+			}
 			drawGuy(frame, oy0 + bob, body, loopSeconds(t * 1e3));
 			for (const i of tagIdx) body.set(tag.px.subarray(i * 4, i * 4 + 3), i * 4);
 			for (let k = 0; k < titlePixels.length; k += 2) {
-				const c = titleInk(titlePixels[k], titlePixels[k + 1], tm), i = (titlePixels[k + 1] * W$1 + titlePixels[k]) * 4;
+				const c = titleInk(titlePixels[k], titlePixels[k + 1], tm), i = (titlePixels[k + 1] * W + titlePixels[k]) * 4;
 				body[i] = c[0];
 				body[i + 1] = c[1];
 				body[i + 2] = c[2];
 			}
 			out.set(shape$1.shadow);
-			for (let yy = 0; yy < H$1; yy++) {
+			for (let yy = 0; yy < H; yy++) {
 				const [a, b$1] = shape$1.runs[yy];
-				if (a >= 0) out.set(body.subarray((yy * W$1 + a) * 4, (yy * W$1 + b$1 + 1) * 4), ((yy + 2 - lift) * W$1 + a) * 4);
+				if (a >= 0) out.set(body.subarray((yy * W + a) * 4, (yy * W + b$1 + 1) * 4), ((yy + 2 - lift) * W + a) * 4);
 			}
 			return out;
 		},
 		drawSquare(frame, t, out) {
 			this.draw(frame, t, whole ??= new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
-			for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W$1 + square.x) * 4, ((square.y + yy) * W$1 + square.x + square.size) * 4), yy * square.size * 4);
+			for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W + square.x) * 4, ((square.y + yy) * W + square.x + square.size) * 4), yy * square.size * 4);
 			return out;
 		}
 	};
@@ -24376,6 +26401,7 @@ const cardGrade = (input) => input.grade ?? (input.copies?.length ? Math.max(...
 */
 function cardEdition(input, g) {
 	const top = (input.copies ?? []).filter((o) => GRADES.findIndex((x) => x.id === gradeOf(o).id) === g).pop();
+	if (top && GRAPHIC_FINISHES.includes(top.finish)) return 0;
 	return top ? editionOf(top.finish) : g < 0 ? 0 : [
 		0,
 		1,
@@ -24385,19 +26411,314 @@ function cardEdition(input, g) {
 		6
 	][g];
 }
+const TAU = Math.PI * 2;
+/** Steps a value into `n` flat bands, so a glow reads as pixel art, not a blur. */
+const banded = (v, n) => Math.round(Math.max(0, Math.min(1, v)) * n) / n;
+/**
+* The window a famous print or a graphic finish brings to its card, in place
+* of its grade's: Deep Blue a deep sea with caustic light moving over it,
+* Black Hole a void with an accretion ring, Red Giant a swollen star behind
+* the guy, Blue Moon a night with a pale moon, and Op, Impossible and Grid their
+* own patterns at the card's size. Worked out on blocks of two card pixels,
+* so it stays crisp. Null for any other copy.
+*/
+function windowArt(o, win, cx, cy) {
+	const look = special(o) ?? (GRAPHIC_FINISHES.includes(o.finish) ? o.finish : void 0);
+	const depth = (y) => (y - win.top) / (win.bottom - win.top), p = o.print;
+	const star$2 = (x, y) => hash$1(x >> 1, y >> 1, p) > .985;
+	let art;
+	switch (look) {
+		case "Deep Blue": {
+			art = (x, y, tm) => {
+				const bx = (x >> 1) * 2, by = (y >> 1) * 2, d = depth(by), a = TAU_MS(tm, 4e3);
+				const q = Math.sin(bx * .19 + Math.sin(by * .15 + a) * 1.7) + Math.sin(by * .21 - bx * .09 - a * 2 + p);
+				const sea = mix([
+					46,
+					92,
+					214
+				], [
+					6,
+					16,
+					58
+				], banded(d, 5));
+				return Math.abs(q) < .11 ? mix(sea, [
+					150,
+					196,
+					255
+				], .75 * (1 - d) + .1) : sea;
+			};
+			art.moves = true;
+			return art;
+		}
+		case "Black Hole": {
+			art = (x, y, tm) => {
+				const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, dx = bx - cx, dy = by - cy;
+				const disc = Math.hypot(dx / 58, dy / 15), ring$1 = Math.hypot(dx, dy * 1.05) / 34;
+				if (Math.abs(disc - 1) < .09) {
+					const knot = Math.abs(((Math.atan2(dy * 3.9, dx) / TAU - cycle(tm, 3e3)) % 1 + 1) % 1 - .5) < .07;
+					return knot ? [
+						255,
+						248,
+						224
+					] : mix([
+						255,
+						226,
+						160
+					], [
+						226,
+						92,
+						32
+					], banded((dy / 15 + 1) / 2, 3));
+				}
+				if (Math.abs(ring$1 - 1) < .07 && dy < 0) return mix([
+					255,
+					210,
+					140
+				], [
+					200,
+					80,
+					30
+				], banded(-dy / 34, 2));
+				if (disc < 1.35 && disc > .8) return mix([
+					5,
+					4,
+					9
+				], [
+					96,
+					34,
+					14
+				], banded(1 - Math.abs(disc - 1) / .35, 3) * .6);
+				return star$2(x, y) ? [
+					210,
+					200,
+					230
+				] : [
+					5,
+					4,
+					9
+				];
+			};
+			art.moves = true;
+			return art;
+		}
+		case "Red Giant": return (x, y) => {
+			const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, r = Math.hypot(bx - cx, by - cy + 6) / 58;
+			if (r < 1) return mix([
+				255,
+				196,
+				92
+			], [
+				196,
+				32,
+				40
+			], banded(r, 4));
+			return mix([
+				92,
+				14,
+				26
+			], [
+				30,
+				4,
+				12
+			], banded(depth(by), 4));
+		};
+		case "Blue Moon": return (x, y) => {
+			const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, mx = win.right - 34, my = win.top + 32, r = Math.hypot(bx - mx, by - my) / 26;
+			if (r < 1) return hash$1(bx >> 3, by >> 3, p + 5) > .72 && r < .85 ? [
+				168,
+				188,
+				236
+			] : mix([
+				236,
+				242,
+				255
+			], [
+				176,
+				198,
+				246
+			], banded(r, 3));
+			return star$2(x, y) ? [
+				220,
+				230,
+				255
+			] : mix([
+				30,
+				48,
+				108
+			], [
+				10,
+				18,
+				48
+			], banded(depth(by), 4));
+		};
+		case "op": {
+			art = (x, y, tm) => {
+				const r = Math.hypot((x >> 1) * 2 + 1 - cx, (y >> 1) * 2 + 1 - cy) / 7 - cycle(tm, 2400) * 2;
+				return Math.floor(r) % 2 ? [
+					118,
+					108,
+					130
+				] : [
+					241,
+					235,
+					221
+				];
+			};
+			art.moves = true;
+			return art;
+		}
+		case "impossible": {
+			art = (x, y, tm) => {
+				const left = x < cx, s = y + (left ? x - cx : cx - x) * .9 + (left ? 0 : 5) - cycle(tm, 3e3) * 30;
+				return [
+					[
+						96,
+						86,
+						110
+					],
+					[
+						241,
+						235,
+						221
+					],
+					[
+						238,
+						106,
+						80
+					]
+				][(Math.floor(s / 10) % 3 + 3) % 3];
+			};
+			art.moves = true;
+			return art;
+		}
+		case "grid": {
+			const v1 = Math.round(win.left + (win.right - win.left) * (.24 + p % 3 * .04)), v2 = Math.round(win.left + (win.right - win.left) * (.74 + (p >> 2) % 3 * .04));
+			const h1 = Math.round(win.top + (win.bottom - win.top) * (.26 + (p >> 4) % 3 * .05)), h2 = Math.round(win.top + (win.bottom - win.top) * .8);
+			return (x, y) => {
+				if (Math.abs(x - v1) < 2 || Math.abs(x - v2) < 2 || Math.abs(y - h1) < 2 || Math.abs(y - h2) < 2 && x > v2) return [
+					28,
+					24,
+					36
+				];
+				const pane = (x > v1 ? 1 : 0) + (x > v2 ? 1 : 0) + (y > h1 ? 3 : 0) + (y > h2 && x > v2 ? 3 : 0), at = (pane - p % 6 + 9) % 9;
+				return at === 0 ? [
+					217,
+					64,
+					46
+				] : at === 4 ? [
+					44,
+					85,
+					200
+				] : at === 8 ? [
+					242,
+					194,
+					48
+				] : [
+					241,
+					235,
+					221
+				];
+			};
+		}
+	}
+	return null;
+}
+/** A dark plate for a tag over the window, `w` by `h` with its corners cut. */
+function plateAt(s, x0, y0, w, h) {
+	for (let yy = y0; yy < y0 + h; yy++) for (let x = x0; x < x0 + w; x++) {
+		if ((x === x0 || x === x0 + w - 1) && (yy === y0 || yy === y0 + h - 1)) continue;
+		s.set(x, yy, yy >= y0 + h - 2 ? [
+			0,
+			0,
+			0
+		] : INK$1);
+	}
+}
+/** Which of a seven-segment digit's segments are lit, a to g. */
+const SEGMENTS = [
+	63,
+	6,
+	91,
+	79,
+	102,
+	109,
+	125,
+	7,
+	127,
+	111
+];
+/** A counter's digit, five card pixels wide and nine tall, its lit segments amber and the rest a dim ghost, as a real one's. */
+function segments(s, x0, y0, digit) {
+	const on$1 = SEGMENTS[digit] ?? 0, lit$1 = [
+		255,
+		178,
+		62
+	], dim = [
+		74,
+		48,
+		26
+	];
+	const seg = [
+		[
+			1,
+			0,
+			3,
+			1
+		],
+		[
+			4,
+			1,
+			1,
+			3
+		],
+		[
+			4,
+			5,
+			1,
+			3
+		],
+		[
+			1,
+			8,
+			3,
+			1
+		],
+		[
+			0,
+			5,
+			1,
+			3
+		],
+		[
+			0,
+			1,
+			1,
+			3
+		],
+		[
+			1,
+			4,
+			3,
+			1
+		]
+	];
+	seg.forEach(([x, y, w, h], k) => {
+		for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) s.set(x0 + x + dx, y0 + y + dy, on$1 & 1 << k ? lit$1 : dim);
+	});
+}
 /**
 * The card as frames, `ms` apart, covering one loop of his move (at least two
 * seconds, so a shine gets across). Every frame is the whole card in RGBA;
 * the corners are transparent.
 */
 function cardFrames(input, ms = 80) {
-	const card$1 = cardPlayer(input, ms), frames$1 = [];
-	for (let i = 0; i < card$1.count; i++) frames$1.push(card$1.frame(i));
+	const card = cardPlayer(input, ms), frames$1 = [];
+	for (let i = 0; i < card.count; i++) frames$1.push(card.frame(i));
 	return {
 		width: CARD_WIDTH,
 		height: CARD_HEIGHT,
 		frames: frames$1,
-		delays: card$1.delays
+		delays: card.delays
 	};
 }
 /**
@@ -24519,16 +26840,16 @@ function toCardPng(input, scale$1 = 4) {
 */
 function toGuyGif(seed, move, options = {}, scale$1 = 12) {
 	const anim = animateLoop(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
-	const W$1 = anim.width, frames$1 = anim.frames.map((f) => {
-		const px = new Uint8ClampedArray(W$1 * FRAME_HEIGHT * 4);
+	const W = anim.width, frames$1 = anim.frames.map((f) => {
+		const px = new Uint8ClampedArray(W * FRAME_HEIGHT * 4);
 		f.colors.forEach((row, y) => row.forEach((c, x) => {
 			const v = c ? rgb$2(c) : bg;
-			if (v) px.set([...v, 255], (y * W$1 + x) * 4);
+			if (v) px.set([...v, 255], (y * W + x) * 4);
 		}));
 		return px;
 	});
 	return encodeGif({
-		width: W$1,
+		width: W,
 		height: FRAME_HEIGHT,
 		frames: frames$1,
 		delays: anim.frames.map((f) => f.ms)
@@ -24576,7 +26897,7 @@ const rgb$1 = (s) => [
 ];
 const blend = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
 const gradeIndex = (o) => GRADES.findIndex((g) => g.id === gradeOf(o).id);
-const INK$1 = [
+const INK = [
 	24,
 	20,
 	31
@@ -24584,32 +26905,42 @@ const INK$1 = [
 	255,
 	255,
 	255
-], IVORY$1 = [
+], IVORY = [
 	246,
 	240,
 	227
-], PLATE$1 = [
+], PLATE = [
 	38,
 	34,
 	52
 ];
 /** Kinds of pixel, as the shader reads them. */
 const CARD = 1, WINDOW = 2, GUY = 3, ITEM = 4, FIXED = 5;
+/** Which worn slot a grid token belongs to, as ./paint reads it. */
+const slotOfToken = (t) => t >= LAYER.aura ? "aura" : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
+/** A grid's still colours, each copy's effect as it stands at the start, laid over its finish (./effects `fxColor`). */
+function still(grid, config, palette$1) {
+	const colors = paint(grid, config, palette$1, false, false);
+	return colors.map((row, y) => row.map((c, x) => {
+		const slot = slotOfToken(grid[y][x]), o = slot ? config.owned?.[slot] : void 0;
+		return c && o?.fx ? fxColor(c, o.fx, x, y, 0, o.print, o.finish) : c;
+	}));
+}
 /** The card's face, ready to draw at any time. */
 function cardFace(spec) {
-	const W$1 = FACE_WIDTH, H$1 = FACE_HEIGHT;
+	const W = FACE_WIDTH, H = FACE_HEIGHT;
 	const copies = spec.copies ?? [];
 	const r = resolve(spec.name, spec.parts);
 	if (spec.palette !== void 0) r.palette = spec.palette;
 	const config = dress(r, { equip: copies.map(encode) });
 	const grid = compose(config);
-	const palette$1 = withItems(paletteOf(config), config), colors = paint(grid, config, palette$1);
+	const palette$1 = withItems(paletteOf(config), config), colors = still(grid, config, palette$1);
 	const owned = config.owned ?? {};
 	const g = spec.grade ?? (copies.length ? Math.max(...copies.map(gradeIndex)) : -1);
 	const last = copies[copies.length - 1];
 	const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish)) : 0;
 	const top = copies.filter((o) => gradeIndex(o) === g).pop();
-	const edition = top ? editionOf(top.finish) : g < 0 ? 0 : [
+	const edition = top ? GRAPHIC_FINISHES.includes(top.finish) ? 3 : editionOf(top.finish) : g < 0 ? 0 : [
 		0,
 		1,
 		2,
@@ -24617,9 +26948,9 @@ function cardFace(spec) {
 		5,
 		6
 	][Math.min(g, 5)];
-	const base$1 = new Uint8Array(W$1 * H$1 * 4), kind = new Uint8Array(W$1 * H$1 * 4), noise$3 = new Uint8Array(W$1 * H$1 * 4);
-	const put = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
-		const i = (y * W$1 + x) * 4, print = Math.floor(pr / 4);
+	const base$1 = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$3 = new Uint8Array(W * H * 4);
+	const put$1 = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
+		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
 		base$1.set([
 			c[0],
 			c[1],
@@ -24642,7 +26973,7 @@ function cardFace(spec) {
 	const aura = edition === 6, gold = edition === 5, neg = edition === 4;
 	const auraCopy = copies.find((o) => itemById(o.item)?.slot === "aura");
 	const tone = aura && auraCopy ? rgb$1(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
-	const gx0 = Math.floor((W$1 - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W$1 - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
+	const gx0 = Math.floor((W - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
 	const origin = [(left + right) / 2, (wTop + wBottom) / 2];
 	const stock = (x, y) => gold ? blend([
 		46,
@@ -24652,9 +26983,9 @@ function cardFace(spec) {
 		28,
 		24,
 		40
-	], y / H$1) : neg ? blend(blend(IVORY$1, tone, .35), blend(IVORY$1, tone, .6), y / H$1) : blend(blend(tone, WHITE, .08), blend(tone, INK$1, .25), y / H$1);
-	const plate = aura ? blend(blend(tone, INK$1, .6), INK$1, .45) : PLATE$1;
-	const light$2 = blend(IVORY$1, gc, g >= 0 ? .22 : spec.tint ? .3 : .12), glow = blend(light$2, gc, .2);
+	], y / H) : neg ? blend(blend(IVORY, tone, .35), blend(IVORY, tone, .6), y / H) : blend(blend(tone, WHITE, .08), blend(tone, INK, .25), y / H);
+	const plate = aura ? blend(blend(tone, INK, .6), INK, .45) : PLATE;
+	const light$3 = blend(IVORY, gc, g >= 0 ? .22 : spec.tint ? .3 : .12), glow = blend(light$3, gc, .2);
 	/** A Grail's window: a few large soft bands of three golds, as the big card's. */
 	const fieldGold = (x, y) => {
 		const qx = (x - origin[0]) / 8, qy = (y - origin[1]) / 8;
@@ -24674,17 +27005,17 @@ function cardFace(spec) {
 			110
 		], k2);
 	};
-	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
-		const cx = Math.min(x, W$1 - 1 - x), cy = Math.min(y, H$1 - 1 - y);
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
 		if (cx + cy < 2) continue;
 		if (cx === 0 || cy === 0 || cx + cy === 2) {
-			put(x, y, INK$1, FIXED);
+			put$1(x, y, INK, FIXED);
 			continue;
 		}
 		const bevel = cx === 1 || cy === 1 || cx + cy === 3;
-		const deep = x > W$1 / 2 && cx === 1 || y > H$1 / 2 && cy === 1;
+		const deep = x > W / 2 && cx === 1 || y > H / 2 && cy === 1;
 		if (gold) {
-			put(x, y, bevel ? deep ? [
+			put$1(x, y, bevel ? deep ? [
 				201,
 				146,
 				30
@@ -24696,51 +27027,51 @@ function cardFace(spec) {
 			continue;
 		}
 		let c = stock(x, y);
-		if (bevel) c = deep ? blend(c, INK$1, .3) : blend(c, WHITE, .35);
+		if (bevel) c = deep ? blend(c, INK, .3) : blend(c, WHITE, .35);
 		if (aura && !bevel) {
 			const d = Math.hypot((x - origin[0]) / 15, (y - origin[1]) / 19);
-			put(x, y, blend(blend(tone, INK$1, .62), blend(tone, INK$1, .3), Math.max(0, 1 - d) ** 1.2), WINDOW);
+			put$1(x, y, blend(blend(tone, INK, .62), blend(tone, INK, .3), Math.max(0, 1 - d) ** 1.2), WINDOW);
 			continue;
 		}
-		put(x, y, c, CARD);
+		put$1(x, y, c, CARD);
 	}
-	for (let y = 2; y <= 7; y++) for (let x = 2; x <= W$1 - 3; x++) {
-		if ((x === 2 || x === W$1 - 3) && (y === 2 || y === 7)) continue;
-		put(x, y, y === 2 ? blend(plate, WHITE, .16) : y === 7 ? INK$1 : plate, FIXED);
+	for (let y = 2; y <= 7; y++) for (let x = 2; x <= W - 3; x++) {
+		if ((x === 2 || x === W - 3) && (y === 2 || y === 7)) continue;
+		put$1(x, y, y === 2 ? blend(plate, WHITE, .16) : y === 7 ? INK : plate, FIXED);
 	}
 	if (!aura) for (let y = wTop; y <= wBottom; y++) for (let x = left; x <= right; x++) {
 		const d = Math.hypot((x - origin[0]) / 10, (y - origin[1]) / 11);
-		if (x === left || y === wTop || x === right || y === wBottom) put(x, y, INK$1, FIXED);
-		else put(x, y, gold ? fieldGold(x, y) : blend(light$2, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
+		if (x === left || y === wTop || x === right || y === wBottom) put$1(x, y, INK, FIXED);
+		else put$1(x, y, gold ? fieldGold(x, y) : blend(light$3, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
 	}
-	const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W$1 - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
+	const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
 	const ground = backdropColors(config, palette$1, fx0 - gx0, fy0 - 11 + HEADROOM, fx1 - fx0 + 1, fy1 - fy0 + 1);
 	if (ground) {
 		const fi = frameCopy ? SHADER_FINISHES.indexOf(frameCopy.finish) : -1;
-		ground.forEach((row, j) => row.forEach((hex$4, i) => {
-			if (hex$4) put(fx0 + i, fy0 + j, rgb$1(hex$4), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0);
+		ground.forEach((row, j) => row.forEach((hex$3, i) => {
+			if (hex$3) put$1(fx0 + i, fy0 + j, rgb$1(hex$3), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0);
 		}));
 	}
 	grid.forEach((row, y) => row.forEach((t, x) => {
-		const hex$4 = colors[y][x];
-		if (!hex$4 || ground && t >= LAYER.frame && t < LAYER.buddy) return;
+		const hex$3 = colors[y][x];
+		if (!hex$3 || ground && t >= LAYER.frame && t < LAYER.buddy) return;
 		const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 		const o = slot ? owned[slot] : void 0;
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
-		if (x + gx0 > 1 && x + gx0 < W$1 - 2) put(x + gx0, y + 11, rgb$1(hex$4), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
+		if (x + gx0 > 1 && x + gx0 < W - 2) put$1(x + gx0, y + 11, rgb$1(hex$3), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
-	for (let y = 30; y <= H$1 - 3; y++) for (let x = 2; x <= W$1 - 3; x++) {
-		if ((x === 2 || x === W$1 - 3) && (y === 30 || y === H$1 - 3)) continue;
-		put(x, y, y === 30 ? INK$1 : plate, FIXED);
+	for (let y = 30; y <= H - 3; y++) for (let x = 2; x <= W - 3; x++) {
+		if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
+		put$1(x, y, y === 30 ? INK : plate, FIXED);
 	}
-	const buddy = new Uint8Array(W$1 * H$1 * 4), alone = buddyAlone(config), buddyOwned = owned.buddy;
+	const buddy = new Uint8Array(W * H * 4), alone = buddyAlone(config), buddyOwned = owned.buddy;
 	const buddyCopy = [
 		buddyOwned ? SHADER_FINISHES.indexOf(buddyOwned.finish) : -1,
 		buddyOwned?.scuff ?? 0,
 		Math.floor((buddyOwned?.print ?? 0) / 4) * 4
 	];
 	if (alone) {
-		const tint = paint(alone, config, palette$1), cells = [];
+		const tint = still(alone, config, palette$1), cells = [];
 		alone.forEach((row, y) => row.forEach((t, x) => {
 			if (tint[y][x]) cells.push([
 				x,
@@ -24750,9 +27081,9 @@ function cardFace(spec) {
 			]);
 		}));
 		const ox = BUDDY_RIGHT - Math.max(...cells.map(([x]) => x)), oy = BUDDY_FOOT[spec.buddy ?? "peek"] - Math.max(...cells.map(([, y]) => y));
-		for (const [x, y, hex$4, art] of cells) {
-			const i = ((y + oy) * W$1 + x + ox) * 4;
-			buddy.set([...rgb$1(hex$4), art ? 255 : 128], i);
+		for (const [x, y, hex$3, art] of cells) {
+			const i = ((y + oy) * W + x + ox) * 4;
+			buddy.set([...rgb$1(hex$3), art ? 255 : 128], i);
 			noise$3[i + 1] = noiseOf(x + ox, y + oy, buddyCopy[2]);
 		}
 	}
@@ -24797,16 +27128,16 @@ const fields = new WeakMap();
 function faceField(f) {
 	let got = fields.get(f);
 	if (got) return got;
-	const W$1 = FACE_WIDTH, H$1 = FACE_HEIGHT, at = new Int32Array(W$1 * H$1).fill(-1), cells = [];
-	for (let i = 0; i < W$1 * H$1; i++) {
+	const W = FACE_WIDTH, H = FACE_HEIGHT, at = new Int32Array(W * H).fill(-1), cells = [];
+	for (let i = 0; i < W * H; i++) {
 		if (f.base[i * 4 + 3] < 128 || Math.floor(f.kind[i * 4] / 32 + .5) > WINDOW) continue;
 		at[i] = cells.length;
 		cells.push(i);
 	}
 	const n = cells.length, x = new Float32Array(n), y = new Float32Array(n), region = new Uint8Array(n), h = new Float32Array(n), rgb$7 = new Float32Array(n * 3);
 	cells.forEach((i, k) => {
-		x[k] = i % W$1;
-		y[k] = Math.floor(i / W$1);
+		x[k] = i % W;
+		y[k] = Math.floor(i / W);
 		region[k] = Math.floor(f.kind[i * 4] / 32 + .5);
 		h[k] = f.noise[i * 4] / 255;
 		for (let j = 0; j < 3; j++) rgb$7[k * 3 + j] = f.base[i * 4 + j] / 255;
@@ -24830,14 +27161,14 @@ function faceField(f) {
 }
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 function cardFaceAt(f, ms, hover) {
-	const W$1 = FACE_WIDTH, H$1 = FACE_HEIGHT, out = new Uint8ClampedArray(W$1 * H$1 * 4);
+	const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
 	const time = loopSeconds(ms), { at, field, out: ed } = faceField(f), lift = buddyLift(f, ms);
 	field(time, ed);
-	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
-		const i = (y * W$1 + x) * 4;
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const i = (y * W + x) * 4;
 		if (f.base[i + 3] < 128) continue;
 		let c;
-		const e = at[i >> 2], s = ((y + lift) * W$1 + x) * 4, b$1 = y + lift < H$1 ? f.buddy[s + 3] : 0;
+		const e = at[i >> 2], s = ((y + lift) * W + x) * 4, b$1 = y + lift < H ? f.buddy[s + 3] : 0;
 		if (b$1 >= 64) {
 			c = [
 				f.buddy[s] / 255,
@@ -24860,11 +27191,11 @@ function cardFaceAt(f, ms, hover) {
 			if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
 		}
 		if (hover && hover.strength > 0) {
-			const light$2 = (1 - smoothstep(0, .34, distance([(x + .5) / W$1, (y + .5) / H$1], [hover.x, hover.y]))) * .35 * hover.strength;
+			const light$3 = (1 - smoothstep(0, .34, distance([(x + .5) / W, (y + .5) / H], [hover.x, hover.y]))) * .35 * hover.strength;
 			c = [
-				c[0] + light$2,
-				c[1] + light$2,
-				c[2] + light$2
+				c[0] + light$3,
+				c[1] + light$3,
+				c[2] + light$3
 			];
 		}
 		out[i] = toByte(c[0]);
@@ -25127,6 +27458,38 @@ const EMOTE_SET = [
 		poses: ["oops"],
 		symbol: "sweat",
 		motion: "shake"
+	},
+	{
+		id: "idea",
+		name: "Idea",
+		poses: ["ooh"],
+		symbol: "bulb",
+		motion: "flick",
+		room: 1
+	},
+	{
+		id: "mindblown",
+		name: "Mindblown",
+		poses: ["ooh"],
+		motion: "open",
+		room: 3,
+		unlock: "burst"
+	},
+	{
+		id: "daydream",
+		name: "Daydream",
+		poses: ["content"],
+		symbol: "cloud",
+		motion: "dream",
+		room: 2
+	},
+	{
+		id: "galaxybrain",
+		name: "Galaxybrain",
+		poses: ["smile"],
+		motion: "open",
+		room: 3,
+		unlock: "galaxy"
 	}
 ];
 /** Whether `id` names an emote in the set. */
@@ -25140,45 +27503,57 @@ const STEPS = 6;
 function emoteFrames(spec, id, moving = true) {
 	const def = EMOTE_SET.find((e) => e.id === id);
 	if (!def) return null;
-	const options = {
-		...animateOptions(spec),
-		rarity: false
-	};
-	const stills = new Map();
-	const still = (pose) => {
-		if (!stills.has(pose)) stills.set(pose, poseStill(spec.seed, pose, options));
-		return stills.get(pose);
-	};
-	const first = still(def.poses[0]);
-	const top = Math.max(0, first.findIndex((row) => row.some(Boolean)) - 1);
-	const symbol = def.symbol ? emoteCells(def.symbol) : [];
-	const sw = symbol.reduce((w, [x]) => Math.max(w, x + 1), 0);
-	const frames$1 = [];
+	const options = animateOptions(spec), lucky = !!resolve(spec.seed, spec.parts).lucky;
 	const steps$1 = moving ? STEPS : 1;
+	const posed$1 = new Map();
+	const cellsOf = (pose, k) => {
+		const key = `${pose} ${k}`;
+		if (!posed$1.has(key)) posed$1.set(key, poseCells(spec.seed, pose, {
+			...options,
+			rare: {
+				step: k,
+				of: steps$1
+			}
+		}));
+		return posed$1.get(key);
+	};
+	const first = cellsOf(def.poses[0], 0);
+	const head$1 = first.colors.findIndex((row) => row.some(Boolean));
+	const top = Math.max(0, head$1 - 1 - (def.room ?? 0));
+	const frames$1 = [];
+	let star$2;
 	for (let k = 0; k < steps$1; k++) {
-		const pose = def.poses[k % def.poses.length];
-		const rows = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
+		const pose = def.poses[k % def.poses.length], { colors: rows, body, eyes: eyes$1 } = cellsOf(pose, k);
 		const beat = moving ? k % 2 : 0;
 		const dy = def.motion === "bounce" ? -beat : 0, dx = def.motion === "shake" ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
-		const lift = def.motion === "rise" && moving ? k % 3 : 0;
-		const put = (x, y, c) => {
-			if (x < 0 || y < 0 || x >= EMOTE_SIZE || y >= EMOTE_SIZE) return;
-			px.set([
+		const lift = !moving ? 0 : def.motion === "rise" ? k % 3 : def.motion === "dream" ? k % 2 : 0;
+		const grid = Array.from({ length: EMOTE_SIZE }, () => new Array(EMOTE_SIZE).fill(null));
+		const skin = grid.map((row) => row.map(() => false));
+		for (let y = 0; y < EMOTE_SIZE; y++) {
+			const from = top + y - dy;
+			if (from < 0 || from >= FRAME_HEIGHT) continue;
+			for (let x = 0; x < EMOTE_SIZE; x++) {
+				grid[y][x] = rows[from]?.[x + 1 + dx] ?? null;
+				skin[y][x] = !!body[from]?.[x + 1 + dx];
+			}
+		}
+		const at = moving ? k : -1;
+		if (def.unlock) openHead(grid, (x, y) => skin[y][x], (c) => c, eyes$1 - top + dy, def.unlock, at < 0 ? LID_STILL : LID_LIFT[def.unlock][at], Math.max(0, at));
+		if (lucky && star$2 === void 0) star$2 = starSpot(grid);
+		if (star$2) luckyStar(grid, star$2, at);
+		if (def.symbol) {
+			const symbol = symbolAt(def, at), sw = symbol.reduce((w, [x]) => Math.max(w, x + 1), 0);
+			for (const [x, y, c] of symbol) put(grid, EMOTE_SIZE - sw + x, y - lift, c);
+		}
+		const px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
+		grid.forEach((row, y) => row.forEach((c, x) => {
+			if (c) px.set([
 				parseInt(c.slice(1, 3), 16),
 				parseInt(c.slice(3, 5), 16),
 				parseInt(c.slice(5, 7), 16),
 				255
 			], (y * EMOTE_SIZE + x) * 4);
-		};
-		for (let y = 0; y < EMOTE_SIZE; y++) {
-			const from = top + y - dy;
-			if (from < 0 || from >= FRAME_HEIGHT) continue;
-			for (let x = 0; x < EMOTE_SIZE; x++) {
-				const c = rows[from]?.[x + 1 + dx];
-				if (c) put(x, y, c);
-			}
-		}
-		for (const [x, y, c] of symbol) put(EMOTE_SIZE - sw + x, y - lift, c);
+		}));
 		frames$1.push(px);
 	}
 	return {
@@ -25187,6 +27562,71 @@ function emoteFrames(spec, id, moving = true) {
 		frames: frames$1,
 		delays: frames$1.map(() => STEP_MS$1)
 	};
+}
+const put = (grid, x, y, c) => {
+	if (x >= 0 && y >= 0 && x < EMOTE_SIZE && y < EMOTE_SIZE) grid[y][x] = c;
+};
+/** The bulb dark, then switched on: its glass grey, its glint dim. */
+const BULB_OFF = {
+	"#FFE27A": "#C9CED8",
+	"#FFFFFF": "#E9ECF2"
+};
+/** The steps an idea's bulb is lit in, of the six. */
+const BULB_ON = [
+	false,
+	false,
+	true,
+	true,
+	true,
+	true
+];
+/** A daydream's star, turning through three colours a step at a time. */
+const DREAM_STAR = [
+	"#FFC93D",
+	"#FF8FC8",
+	"#7FE0FF"
+];
+/** The emote's picture at step `k` (-1 for the still): an idea's bulb lights, a daydream's star turns colour. */
+function symbolAt(def, k) {
+	const cells = emoteCells(def.symbol);
+	if (def.motion === "flick" && k >= 0 && !BULB_ON[k]) return cells.map(([x, y, c]) => [
+		x,
+		y,
+		BULB_OFF[c] ?? c
+	]);
+	if (def.motion === "dream" && k >= 0) return cells.map(([x, y, c]) => [
+		x,
+		y,
+		c === DREAM_STAR[0] ? DREAM_STAR[Math.floor(k / 2) % 3] : c
+	]);
+	return cells;
+}
+/** How a Lucky guy's star twinkles over the six steps (`starAt`'s life): wide open first, so the still shows it whole. */
+const STAR_STEPS = [
+	.57,
+	.78,
+	.9,
+	1,
+	.2,
+	.35
+];
+const clearAt = (grid, x, y) => x >= 0 && y >= 0 && x < EMOTE_SIZE && y < EMOTE_SIZE && !grid[y][x];
+/** Where a Lucky guy's star goes in an emote: the top-left corner, where the most of it is clear of the guy; null if there's no room. */
+function starSpot(grid) {
+	const open = starAt(STAR_STEPS[0]);
+	let best = null, most = 0;
+	for (let y = 1; y <= 3; y++) for (let x = 1; x <= 3; x++) {
+		const n = open.filter(([dx, dy]) => clearAt(grid, x + dx, y + dy)).length;
+		if (clearAt(grid, x, y) && n > most) {
+			most = n;
+			best = [x, y];
+		}
+	}
+	return most >= 3 ? best : null;
+}
+/** A Lucky guy's gold star at `spot`, at step `k` of its twinkle (-1 for the still), as the moving picture throws it off over the head: never over the guy. */
+function luckyStar(grid, [x, y], k) {
+	for (const [dx, dy, c] of starAt(STAR_STEPS[Math.max(0, k)])) if (clearAt(grid, x + dx, y + dy)) put(grid, x + dx, y + dy, GOLD_SPARKLE[c]);
 }
 
 //#endregion
@@ -25201,7 +27641,7 @@ function emoteFrames(spec, id, moving = true) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 14;
+const ART_VERSION = 15;
 /** The longest name a big card's code carries. */
 const TITLE_MAX = 24;
 const PART_KEYS = [
@@ -25366,13 +27806,13 @@ function lilGuyUrl(who, view = "idle", { scale: scale$1 = 1, format = "png", hos
 	const at = s > 1 ? `@${s}` : "";
 	const file = format === "gif" ? `${v}${at}.gif` : format === "sheet" ? `${v}.sheet${at}.png` : format === "json" ? `${v}.sheet${at}.json` : `${v}${at}.png`;
 	if (isInfo(who) && (v === "card-full" || v === "card-full-still")) {
-		const card$1 = who.urls.cardFull.split("/").slice(-2)[0];
-		return `${host.replace(/\/+$/, "")}/g/${version}/${card$1}/${file}`;
+		const card = who.urls.cardFull.split("/").slice(-2)[0];
+		return `${host.replace(/\/+$/, "")}/g/${version}/${card}/${file}`;
 	}
 	return `${host.replace(/\/+$/, "")}/g/${version}/${guyPart(who)}/${file}`;
 }
 /** A view's box at `scale`, in CSS pixels: null for the width of a move, which a buddy widens, when nothing says. */
-function lilGuySize(view, scale$1 = 1, wide$1) {
+function lilGuySize(view, scale$1 = 1, wide) {
 	const v = viewOf(view), size = viewSize(v);
 	if (size) return {
 		width: size.width * scale$1,
@@ -25383,7 +27823,7 @@ function lilGuySize(view, scale$1 = 1, wide$1) {
 		height: PFP_BOX * scale$1
 	};
 	return {
-		width: wide$1 === void 0 ? null : (wide$1 ? BAKED_SIZE.buddy.width : BAKED_SIZE.guy.width) * scale$1,
+		width: wide === void 0 ? null : (wide ? BAKED_SIZE.buddy.width : BAKED_SIZE.guy.width) * scale$1,
 		height: BAKED_SIZE.guy.height * scale$1
 	};
 }
@@ -25400,8 +27840,8 @@ function lilGuyImg(who, view = "row", options = {}) {
 	const preset = view in LIL_GUY_PRESETS ? LIL_GUY_PRESETS[view] : null;
 	const v = viewOf(view);
 	const scale$1 = typeof options.size === "string" ? LIL_GUY_PRESETS[options.size].scale : options.size ?? preset?.scale ?? 3;
-	const wide$1 = options.wide ?? (isInfo(who) ? who.wide : void 0);
-	const box = lilGuySize(v, scale$1, wide$1);
+	const wide = options.wide ?? (isInfo(who) ? who.wide : void 0);
+	const box = lilGuySize(v, scale$1, wide);
 	const host = options.host ?? defaultHost;
 	const img = document.createElement("img");
 	img.src = lilGuyUrl(who, v, { host });
@@ -25665,7 +28105,7 @@ const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
 const BUDDY_GUY_WIDTH = WIDE_FRAME_WIDTH + AURA_PAD * 2;
 const GUY_HEIGHT = FRAME_HEIGHT;
 /** Where a frame `width` wide starts on a baked picture `W` wide: centred, room for an aura's rings either side. */
-const leftOf = (width$1, W$1) => AURA_PAD + Math.floor((W$1 - AURA_PAD * 2 - width$1) / 2);
+const leftOf = (width$1, W) => AURA_PAD + Math.floor((W - AURA_PAD * 2 - width$1) / 2);
 /** How long each frame of a card's shimmer shows. */
 const STEP_MS = 80;
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
@@ -25690,10 +28130,10 @@ const rgb = (s) => [
 	parseInt(s.slice(5, 7), 16)
 ];
 /** A frame on the padded canvas `W` wide, from column `left`: the guy's pixels (shone, if given) and the aura cells past his sides. */
-function place(frame, W$1, left, shone) {
-	const out = new Uint8ClampedArray(W$1 * GUY_HEIGHT * 4), fw = frame.colors[0].length;
+function place(frame, W, left, shone) {
+	const out = new Uint8ClampedArray(W * GUY_HEIGHT * 4), fw = frame.colors[0].length;
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
-		const o = (y * W$1 + x + left) * 4;
+		const o = (y * W + x + left) * 4;
 		if (shone) {
 			const i = (y * fw + x) * 4;
 			if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o);
@@ -25702,7 +28142,7 @@ function place(frame, W$1, left, shone) {
 		const c = frame.colors[y][x];
 		if (c) out.set([...rgb(c), 255], o);
 	}
-	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W$1) out.set([...rgb(c), 255], (y * W$1 + x + left) * 4);
+	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) out.set([...rgb(c), 255], (y * W + x + left) * 4);
 	return out;
 }
 const same = (a, b$1) => a.length === b$1.length && a.every((v, i) => v === b$1[i]);
@@ -25744,12 +28184,15 @@ function bakeAt(spec, move) {
 		left: raw.left
 	};
 }
-/** Every frame `bakeGuy` bakes, before identical ones are merged, and the column his frame starts at. */
-function rawFrames(spec, move) {
-	const options = animateOptions(spec), owned = ownedOf$1(spec);
+/** Every frame `bakeGuy` bakes, before identical ones are merged, and the column the guy's frame starts at. `more` goes to `animate` too. */
+function rawFrames(spec, move, more = {}) {
+	const options = {
+		...animateOptions(spec),
+		...more
+	}, owned = ownedOf$1(spec);
 	const plain = animate(spec.seed, move, options);
-	const W$1 = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W$1);
-	const ground = backdropOf(spec.seed, options, -left, 0, W$1, FRAME_HEIGHT);
+	const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
+	const ground = backdropOf(spec.seed, options, -left, 0, W, FRAME_HEIGHT);
 	const lay = (f) => ground ? {
 		frame: grounded(f, ground, left),
 		left: 0
@@ -25759,11 +28202,11 @@ function rawFrames(spec, move) {
 	};
 	const shining = plain.frames.some((f) => shines(f, owned));
 	if (!plain.timed && !shining) return {
-		width: W$1,
+		width: W,
 		left,
 		frames: plain.frames.map((f) => {
 			const l = lay(f);
-			return place(l.frame, W$1, l.left);
+			return place(l.frame, W, l.left);
 		}),
 		delays: plain.frames.map((f) => f.ms)
 	};
@@ -25777,11 +28220,11 @@ function rawFrames(spec, move) {
 		}
 	});
 	return {
-		width: W$1,
+		width: W,
 		left,
 		frames: anim.frames.map((f) => {
 			const l = lay(f);
-			return place(l.frame, W$1, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : void 0);
+			return place(l.frame, W, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : void 0);
 		}),
 		delays: anim.frames.map((f) => f.ms)
 	};
@@ -25810,17 +28253,27 @@ function rowsLit(f) {
 	return [top, bottom];
 }
 /**
-* A small square of the guy, for a menu, a chat line or a board's row: `icon` his whole sixteen by
-* sixteen, `face` a square of his head and shoulders, hat and all. Played as `bakeGuy` plays him,
-* blinking, breathing, his copies shining and his aura round him, but always on the ground: a move's
-* hops are taken out, so nothing he does leaves the square. No buddy and no backdrop: the square is
-* his alone, on nothing.
+* A small square of the guy, for a menu, a chat line or a board's row: `icon` the whole sixteen by
+* sixteen, `face` a square of the head and shoulders, hat and all. Played as `bakeGuy` plays the
+* guy, blinking, breathing and copies shining, but always on the ground: a move's hops are taken
+* out, so nothing the guy does leaves the square. What marks a guy rare shows at a glance: the ring a
+* copy of Prized or better puts round them, and an aura as a ring in its own colours by turns
+* (`glanceRing`), as the chat emotes show them. No buddy and no backdrop: the square is the guy's
+* alone, on nothing.
 */
 function bakeSquare(spec, view, move = "idle") {
 	const bare = without(spec, ["frame", "buddy"]);
-	const raw = rawFrames(bare, move);
+	const raw = rawFrames(bare, move, { glance: true });
+	const unworn = without(bare, ["aura"]), plainOptions = animateOptions({
+		...unworn,
+		equip: unworn.equip?.map((code) => decode(code)?.item ?? code)
+	});
 	const plain = animate(bare.seed, move, {
-		...animateOptions(without(bare, ["aura"])),
+		...plainOptions,
+		parts: {
+			...plainOptions.parts,
+			lucky: false
+		},
 		rarity: false
 	});
 	const lit$1 = plain.frames.map(rowsLit), ends = [];
@@ -25836,7 +28289,7 @@ function bakeSquare(spec, view, move = "idle") {
 	const side = view === "icon" ? ICON_SIZE : FACE_SIZE;
 	const rest = lit$1[0][0] + Math.max(0, ground - lit$1[0][1]);
 	const top = view === "icon" ? HEADROOM : Math.min(FRAME_HEIGHT - side, Math.max(0, rest));
-	const left = raw.left + (FRAME_WIDTH - side) / 2, W$1 = raw.width;
+	const left = raw.left + (FRAME_WIDTH - side) / 2, W = raw.width;
 	let t = 0;
 	const frames$1 = raw.frames.map((px, k) => {
 		const lift = liftAt(t);
@@ -25844,7 +28297,7 @@ function bakeSquare(spec, view, move = "idle") {
 		const out = new Uint8ClampedArray(side * side * 4);
 		for (let y = 0; y < side; y++) {
 			const from = top + y - lift;
-			if (from >= 0 && from < FRAME_HEIGHT) out.set(px.subarray((from * W$1 + left) * 4, (from * W$1 + left + side) * 4), y * side * 4);
+			if (from >= 0 && from < FRAME_HEIGHT) out.set(px.subarray((from * W + left) * 4, (from * W + left + side) * 4), y * side * 4);
 		}
 		return out;
 	});
@@ -25862,22 +28315,45 @@ const CARD_FULL_MS = 160;
 * gives one.
 */
 function cardInputOf(spec, move = "idle") {
-	const base$1 = resolve(spec.seed), rank = guyRank(base$1);
+	const base$1 = resolve(spec.seed), rank = guyRank(base$1), copies = faceSpec(spec).copies ?? [];
 	const rarest = traitOdds(base$1).sort((a, b$1) => a.chance - b$1.chance)[0]?.name ?? "";
+	const plate = plateOf(copies);
 	return {
 		seed: spec.seed,
 		parts: spec.parts,
 		palette: animateOptions(spec).palette,
-		copies: faceSpec(spec).copies,
+		copies,
 		title: spec.title ?? "",
 		lines: [rank.name, rank.label === rank.name ? rarest : rank.label],
 		grade: spec.grade ?? rank.tier,
-		move
+		move,
+		...plate ? { plate } : {}
+	};
+}
+/**
+* The second plate on a big card: the best copy the guy wears, Prized or better, by its grade and
+* what it is (`★ Grail · Gold Goldfish`, `★ Aura · Shadow Galaxy`, `Mythic · Electric Prism Top hat`),
+* so what a player wears shows on the card they share. The guy's rank stays the card's own line.
+*/
+function plateOf(copies) {
+	const gradeIn = (o) => GRADES.findIndex((g) => g.id === gradeOf(o).id);
+	const best = copies.reduce((a, o) => !a || gradeIn(o) > gradeIn(a) ? o : a, void 0);
+	if (!best || gradeIn(best) < 2) return void 0;
+	const item = itemById(best.item), finish = FINISHES[best.finish];
+	const look = finish.aura ? best.finish === "classic" ? "" : finish.name.split(" · ").pop() : best.finish === "nebula" ? nebulaPhase(best.print) : best.finish === "tempered" ? special(best) ?? `${temperTint(best.print)} Tempered` : finish.name;
+	const fx = best.fx && best.fx !== item?.signature ? EFFECTS[best.fx].name : "";
+	return {
+		text: `${GRADES[gradeIn(best)].name} · ${[
+			fx,
+			look,
+			item?.name ?? best.item
+		].filter(Boolean).join(" ")}`,
+		grade: gradeIn(best)
 	};
 }
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
 function grounded(frame, ground, left) {
-	const W$1 = ground[0].length, fw = frame.colors[0].length;
+	const W = ground[0].length, fw = frame.colors[0].length;
 	const colors = ground.map((row) => row.slice()), slots = ground.map((row) => row.map((c) => c ? 3 : 0));
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
 		const c = frame.colors[y][x];
@@ -25886,7 +28362,7 @@ function grounded(frame, ground, left) {
 			slots[y][x + left] = frame.slots[y][x];
 		}
 	}
-	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W$1) {
+	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) {
 		colors[y][x + left] = c;
 		slots[y][x + left] = 0;
 	}
@@ -25909,10 +28385,10 @@ function profileFrames(spec, move = "idle") {
 	const baked = bakeAt(backdrop$1 ? {
 		...spec,
 		equip: spec.equip.filter((code) => code !== backdrop$1)
-	} : spec, move), g = baked.frames, W$1 = g.width, H$1 = g.height;
-	const lit$1 = (px, x, y) => px[(y * W$1 + x) * 4 + 3] >= 128;
-	let left = W$1, right = -1, top = H$1, bottom = -1;
-	for (const px of g.frames) for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+	} : spec, move), g = baked.frames, W = g.width, H = g.height;
+	const lit$1 = (px, x, y) => px[(y * W + x) * 4 + 3] >= 128;
+	let left = W, right = -1, top = H, bottom = -1;
+	for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		if (!lit$1(px, x, y)) continue;
 		left = Math.min(left, x);
 		right = Math.max(right, x);
@@ -25923,11 +28399,15 @@ function profileFrames(spec, move = "idle") {
 	let reach = 0;
 	for (const px of g.frames) for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit$1(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
 	const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-	const ground = backdrop$1 ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W$1, H$1);
+	const colors = paletteOf({
+		...resolve(spec.seed, spec.parts),
+		...spec.palette !== void 0 ? { palette: spec.palette } : {}
+	}).colors;
+	const ground = backdrop$1 ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H, colors[T.BODY], colors[T.ACCENT]);
 	const frames$1 = g.frames.map((px) => {
 		const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
 		if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
-		for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit$1(px, x, y)) out.set(px.subarray((y * W$1 + x) * 4, (y * W$1 + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
+		for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit$1(px, x, y)) out.set(px.subarray((y * W + x) * 4, (y * W + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
 		return out;
 	});
 	return {
@@ -25956,22 +28436,28 @@ function backdropGround(spec, side, ox, oy) {
 	}));
 	return out;
 }
-/** His commonest colour that isn't an outline, most of the way to white. */
-function groundOf(px, W$1, H$1) {
+/** Under this contrast a guy melts into a ground taken from their own colour; on their accent's they stand off it at `STAND_OFF` or more. */
+const PALE = 1.3, STAND_OFF = 1.6;
+/**
+* A profile picture's ground: the guy's commonest colour that isn't an outline, most of the way to
+* white. A pale guy (Snow, Opal, Ice, Cream, Lemon) would melt into that and read as a blank, so
+* theirs is a tint of their `accent` instead, deepened toward night until their `body` stands off it.
+*/
+function groundOf(px, W, H, body, accent) {
 	const counts = new Map();
-	for (let i = 0; i < W$1 * H$1; i++) {
+	for (let i = 0; i < W * H; i++) {
 		const [r, g, b$1, a] = px.subarray(i * 4, i * 4 + 4);
 		if (a < 128 || .2126 * r + .7152 * g + .0722 * b$1 < 60) continue;
 		const key = r << 16 | g << 8 | b$1;
 		counts.set(key, (counts.get(key) ?? 0) + 1);
 	}
 	const top = [...counts].sort((a, b$1) => b$1[1] - a[1])[0]?.[0] ?? 14540253;
-	const c = [
-		top >> 16,
-		top >> 8 & 255,
-		top & 255
-	];
-	return [...c.map((v) => Math.round(v + (255 - v) * .72)), 255];
+	let ground = mix$6("#" + top.toString(16).padStart(6, "0"), "#FFFFFF", .72);
+	if (contrast$1(ground, body) < PALE) {
+		ground = mix$6(accent, "#FFFFFF", .25);
+		for (let i = 0; i < 12 && contrast$1(ground, body) < STAND_OFF; i++) ground = mix$6(ground, "#11151B", .12);
+	}
+	return [...rgb(ground), 255];
 }
 /** The scale that brings a profile picture nearest `size` without going over. */
 const profileScale = (f, size) => Math.max(1, Math.floor(size / f.width));
@@ -26007,13 +28493,13 @@ function bakeCard(spec) {
 */
 function sheetOf(f, columns = f.frames.length) {
 	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows = Math.ceil(f.frames.length / cols);
-	const W$1 = f.width * cols, rgba = new Uint8ClampedArray(W$1 * f.height * rows * 4);
+	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows * 4);
 	f.frames.forEach((px, k) => {
 		const ox = k % cols * f.width, oy = Math.floor(k / cols) * f.height;
-		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W$1 + ox) * 4);
+		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W + ox) * 4);
 	});
 	return {
-		width: W$1,
+		width: W,
 		height: f.height * rows,
 		rgba,
 		delays: f.delays,
@@ -26124,11 +28610,11 @@ function bakeView(spec, view) {
 		return fewerColours(merged(f.width, f.height, f.frames, f.delays));
 	}
 	if (view === "card-full-still") {
-		const card$1 = cardPlayer(cardInputOf(spec));
+		const card = cardPlayer(cardInputOf(spec));
 		return {
-			width: card$1.width,
-			height: card$1.height,
-			frames: [card$1.frame(0)],
+			width: card.width,
+			height: card.height,
+			frames: [card.frame(0)],
 			delays: [LOOP_MS]
 		};
 	}
@@ -26148,14 +28634,13 @@ function bakeView(spec, view) {
 		};
 	}
 	if (view === "card" || view === "card-still") {
-		const card$1 = bakeCard(faceSpec(spec));
-		return view === "card" ? card$1 : {
-			...card$1,
-			frames: card$1.frames.slice(0, 1),
+		const card = bakeCard(faceSpec(spec));
+		return view === "card" ? card : {
+			...card,
+			frames: card.frames.slice(0, 1),
 			delays: [LOOP_MS]
 		};
 	}
-	if (view === "og") return ogFrames(spec);
 	if (view === "pfp" || view === "pfp-still") {
 		const p = profileFrames(spec);
 		return view === "pfp" ? p : {
@@ -26185,307 +28670,6 @@ function defineLilGuyHere(options = {}) {
 			return spec ? bakeView(spec, view) : null;
 		}
 	});
-}
-
-//#endregion
-//#region src/og.ts
-/**
-* Link previews: what Discord, iMessage, X and the rest show for a shared link, 1200 × 630 and still.
-* Each is drawn on a 400 × 210 grid of pixels and scaled up three times, so the guy, the frame and the
-* words are one pixel size and stay sharp. The words are m6x11plus, the site's and the card's pixel type.
-*
-* A guy's preview is his big card turned on its side: a wide window on his own backdrop with him big in
-* it, aura and all, and under it a tall panel with his name, his rank in its colour and his rarest trait.
-* The site's preview is the same card with a few guys in the window and what lil guys is under them.
-*/
-/** A link preview's width. */
-const OG_WIDTH = 1200;
-/** A link preview's height. */
-const OG_HEIGHT = 630;
-const SCALE = 3, W = OG_WIDTH / SCALE, H = OG_HEIGHT / SCALE;
-const hex = (h) => [
-	parseInt(h.slice(1, 3), 16),
-	parseInt(h.slice(3, 5), 16),
-	parseInt(h.slice(5, 7), 16)
-];
-const mix = (a, b$1, t) => [
-	a[0] + (b$1[0] - a[0]) * t,
-	a[1] + (b$1[1] - a[1]) * t,
-	a[2] + (b$1[2] - a[2]) * t
-];
-const TABLE = [
-	19,
-	23,
-	38
-], PLATE = [
-	38,
-	34,
-	52
-], INK = [
-	24,
-	20,
-	31
-], IVORY = [
-	246,
-	240,
-	227
-];
-const QUIET = [
-	170,
-	166,
-	190
-], GOLD = [
-	245,
-	177,
-	67
-], PLAIN = [
-	104,
-	118,
-	146
-];
-const SITE = "lilguys.dleclub.com";
-const EXTRA = {
-	"·": [5, [
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		6,
-		6,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0
-	]],
-	"’": [3, [
-		0,
-		0,
-		3,
-		3,
-		2,
-		1,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0
-	]]
-};
-const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
-const wide = (s, size = 1) => ([...s].reduce((w, ch) => w + glyph(ch)[0], 0) - 1) * size;
-/** The 400 × 210 grid a preview is drawn on. */
-var Grid = class {
-	px = new Uint8ClampedArray(W * H * 4);
-	set(x, y, c) {
-		if (x < 0 || y < 0 || x >= W || y >= H) return;
-		const i = (y * W + x) * 4;
-		this.px[i] = c[0];
-		this.px[i + 1] = c[1];
-		this.px[i + 2] = c[2];
-		this.px[i + 3] = 255;
-	}
-	rect(x, y, w, h, c) {
-		for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, c);
-	}
-	/** A box with its corners cut `r` pixels in, the way the card's pixel corners go. */
-	box(x, y, w, h, r, c) {
-		for (let j = 0; j < h; j++) {
-			const k = j < r ? r - j : j >= h - r ? j - (h - r) + 1 : 0;
-			for (let i = k; i < w - k; i++) this.set(x + i, y + j, c);
-		}
-	}
-	/** Pixels from a frame (RGBA, w × h), each `s` across; see-through ones left as they are. */
-	blit(src, w, h, x, y, s = 1) {
-		for (let sy = 0; sy < h; sy++) for (let sx = 0; sx < w; sx++) {
-			const i = (sy * w + sx) * 4;
-			if (src[i + 3] < 128) continue;
-			for (let dy = 0; dy < s; dy++) for (let dx = 0; dx < s; dx++) this.set(x + sx * s + dx, y + sy * s + dy, [
-				src[i],
-				src[i + 1],
-				src[i + 2]
-			]);
-		}
-	}
-	/** Words in the pixel type, each font pixel `size` across, over a hard shadow a pixel down. */
-	text(s, x, top, c, size = 1, shadow = INK) {
-		const draw = (ox, oy, col) => {
-			let cx = ox;
-			for (const ch of s) {
-				const [adv, rows] = glyph(ch);
-				rows.forEach((bits, dy) => {
-					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) for (let a = 0; a < size; a++) for (let b$1 = 0; b$1 < size; b$1++) this.set(cx + dx * size + a, oy + dy * size + b$1, col);
-				});
-				cx += adv * size;
-			}
-		};
-		if (shadow) draw(x, top + size, shadow);
-		draw(x, top, c);
-	}
-	frames() {
-		const out = new Uint8ClampedArray(OG_WIDTH * OG_HEIGHT * 4);
-		for (let y = 0; y < OG_HEIGHT; y++) {
-			const row = (y / SCALE | 0) * W;
-			for (let x = 0; x < OG_WIDTH; x++) {
-				const i = (row + (x / SCALE | 0)) * 4, o = (y * OG_WIDTH + x) * 4;
-				out[o] = this.px[i];
-				out[o + 1] = this.px[i + 1];
-				out[o + 2] = this.px[i + 2];
-				out[o + 3] = 255;
-			}
-		}
-		return {
-			width: OG_WIDTH,
-			height: OG_HEIGHT,
-			frames: [out],
-			delays: [1e3]
-		};
-	}
-};
-const RIM = 4, WIN_TOP = 8, WIN_H = 128, PANEL_TOP = WIN_TOP + WIN_H + 3;
-/** The frame round everything: the table, the card's rim in `rim`, its dark plate, and the window's dark edge. */
-function card(g, rim$2) {
-	g.rect(0, 0, W, H, TABLE);
-	g.box(RIM - 2, RIM - 2, W - (RIM - 2) * 2, H - (RIM - 2) * 2, 4, INK);
-	g.box(RIM - 1, RIM - 1, W - (RIM - 1) * 2, H - (RIM - 1) * 2, 3, rim$2);
-	g.box(RIM + 1, RIM + 1, W - (RIM + 1) * 2, H - (RIM + 1) * 2, 2, PLATE);
-	g.rect(RIM + 2, RIM - 1, W - (RIM + 2) * 2, 1, mix(rim$2, IVORY, .45));
-	g.rect(7, WIN_TOP - 1, W - 14, WIN_H + 2, INK);
-}
-/**
-* A window `WIN_H` tall across the card, on his backdrop: each row the colour the card's window `art` has
-* just inside its edges, so the window reads as his card's. Him five times his size in the middle,
-* standing on a soft shadow.
-*/
-function window(g, art, guy) {
-	const f = art.frames[0];
-	const band$1 = (from, to) => {
-		const sum = [
-			0,
-			0,
-			0
-		];
-		let n = 0;
-		for (let y$1 = from; y$1 < to; y$1++) for (const x$1 of [
-			4,
-			5,
-			6,
-			art.width - 7,
-			art.width - 6,
-			art.width - 5
-		]) {
-			const i = (y$1 * art.width + x$1) * 4;
-			sum[0] += f[i];
-			sum[1] += f[i + 1];
-			sum[2] += f[i + 2];
-			n++;
-		}
-		return [
-			sum[0] / n,
-			sum[1] / n,
-			sum[2] / n
-		];
-	};
-	const top = band$1(3, 14), bottom = band$1(art.height - 14, art.height - 3);
-	for (let y$1 = 0; y$1 < WIN_H; y$1++) g.rect(8, WIN_TOP + y$1, W - 16, 1, mix(top, bottom, y$1 / (WIN_H - 1)));
-	const s = 5, x = Math.round((W - guy.width * s) / 2), y = WIN_TOP + WIN_H - 10 - guy.height * s;
-	const feet$1 = y + guy.height * s - 2;
-	for (let dy = -2; dy <= 2; dy++) for (let dx = -42; dx <= 42; dx++) {
-		if ((dx / 42) ** 2 + (dy / 2.5) ** 2 > 1) continue;
-		const px = W / 2 + dx, py = feet$1 + dy, i = (py * W + px) * 4;
-		g.set(px, py, [
-			g.px[i] * .8,
-			g.px[i + 1] * .8,
-			g.px[i + 2] * .84
-		]);
-	}
-	g.blit(guy.frames[0], guy.width, guy.height, x, y, s);
-}
-/** A pill in `c` with dark words, as the card's rank pill is; returns where it ends. */
-function pill(g, s, x, top, c) {
-	const w = wide(s) + 10;
-	g.box(x, top + 1, w, 15, 3, INK);
-	g.box(x, top, w, 15, 3, c);
-	g.text(s, x + 5, top - 1, INK, 1, null);
-	return x + w;
-}
-/** A guy's link preview: his big card on its side, his name, rank and rarest trait under him. */
-function ogFrames(spec) {
-	const input = cardInputOf(spec), grade = input.grade ?? -1;
-	const rim$2 = grade >= 0 ? hex(GRADES[grade].color) : PLAIN;
-	const g = new Grid();
-	card(g, rim$2);
-	window(g, cardArtFrames({
-		seed: spec.seed,
-		parts: spec.parts,
-		palette: animateOptions(spec).palette,
-		copies: faceSpec(spec).copies,
-		grade,
-		title: ""
-	}), bakeGuy(spec, "idle"));
-	const [rank = "", trait = ""] = input.lines ?? [];
-	const name = (input.title || spec.seed).replace(/^~/, "");
-	const size = wide(name, 2) <= W - 48 - wide(SITE) ? 2 : 1;
-	g.text(name, 16, PANEL_TOP + 2, IVORY, size);
-	g.text(SITE, W - 16 - wide(SITE), PANEL_TOP + (size === 2 ? 14 : 2), GOLD);
-	const below = PANEL_TOP + (size === 2 ? 37 : 22);
-	const end = rank ? pill(g, rank.replace(/★\s*/, ""), 16, below, rim$2) : 16;
-	if (trait) g.text(trait, end + 8, below - 1, QUIET);
-	return g.frames();
-}
-/** The site's link preview: the card with `guys` in its window, small guys in their best, and what lil guys is under them. */
-function siteOgFrames(guys, line) {
-	const g = new Grid();
-	card(g, GOLD);
-	for (let y = 0; y < WIN_H; y++) g.rect(8, WIN_TOP + y, W - 16, 1, mix([
-		30,
-		36,
-		66
-	], [
-		70,
-		62,
-		96
-	], y / WIN_H));
-	const floor = WIN_TOP + WIN_H - 14;
-	g.rect(8, floor, W - 16, WIN_TOP + WIN_H - floor, [
-		46,
-		40,
-		66
-	]);
-	g.rect(8, floor, W - 16, 1, [
-		96,
-		86,
-		128
-	]);
-	const baked = guys.map((s) => bakeGuy(s, "idle"));
-	const sizes = baked.map((_, i) => i === baked.length >> 1 ? 4 : 3);
-	const total = baked.reduce((w, b$1, i) => w + b$1.width * sizes[i], 0), gap = Math.floor((W - 40 - total) / Math.max(1, baked.length - 1));
-	let x = 20;
-	baked.forEach((b$1, i) => {
-		const s = sizes[i];
-		for (let dx = -b$1.width * s * .35; dx <= b$1.width * s * .35; dx++) g.set(Math.round(x + b$1.width * s / 2 + dx), floor + 2, [
-			32,
-			28,
-			46
-		]);
-		g.blit(b$1.frames[0], b$1.width, b$1.height, x, floor + 2 - b$1.height * s, s);
-		x += b$1.width * s + gap;
-	});
-	g.text("Lil Guys", 16, PANEL_TOP + 2, IVORY, 2);
-	g.text(SITE, W - 16 - wide(SITE), PANEL_TOP + 14, GOLD);
-	if (wide(line) > W - 32) throw new Error(`The site's line is too long for its preview: ${line}`);
-	g.text(line, 16, PANEL_TOP + 36, QUIET);
-	return g.frames();
 }
 
 //#endregion
@@ -26571,17 +28755,33 @@ const nameSkeleton = (key) => key.replace(/_/g, "");
 
 //#endregion
 //#region src/crowd.ts
-/** The sizes a crowd sprite comes in, in pixels square. */
+/** The sizes a crowd sprite comes in, in pixels square. Appended to, never reordered. */
 const CROWD_SIZES = [
 	16,
 	10,
 	8,
 	6,
 	4,
-	2
+	2,
+	14,
+	12,
+	5,
+	3
 ];
-/** How each size is made: the inside's longer side, and whether the outline, eyes and mouth go back. */
+/** How each shrunk size is made: the inside's longer side, and whether the outline, eyes and mouth go back. */
 const MAKE = {
+	14: {
+		inner: 12,
+		ring: true,
+		eyes: true,
+		mouth: true
+	},
+	12: {
+		inner: 10,
+		ring: true,
+		eyes: true,
+		mouth: true
+	},
 	10: {
 		inner: 8,
 		ring: true,
@@ -26621,6 +28821,13 @@ const FACE = new Set([
 	T.TONGUE,
 	T.BLUSH
 ]);
+/** The face's features, which 14 and 12 keep cell for cell. */
+const FEATURE = new Set([
+	T.EYE,
+	T.WHITE,
+	T.MOUTH,
+	T.TONGUE
+]);
 const SIDES = [
 	[1, 0],
 	[-1, 0],
@@ -26634,12 +28841,7 @@ const ROUND = [
 	[1, -1],
 	[-1, -1]
 ];
-/**
-* Whether a guy stands out in a crowd, and in what colour: the grade of the best copy he wears, from
-* Prized up, or Grail gold for the founder. Everyday and Special copies, and nothing worn, don't.
-*/
-function crowdShine(spec) {
-	const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
+function shineOf(config) {
 	const grades = Object.values(config.owned ?? {}).filter(Boolean).map((o) => GRADES.findIndex((g) => g.id === gradeOf(o).id));
 	const grade = Math.max(-1, ...grades, config.founder ? 4 : -1);
 	return grade >= 2 ? {
@@ -26648,11 +28850,32 @@ function crowdShine(spec) {
 	} : null;
 }
 /**
-* The guy as he stands in a crowd, `size` pixels square, bottom-centred. A guy who stands out
-* (`crowdShine`) is outlined in his grade's colour where he has an outline, and further back, where he
-* is only his colours, his top cell takes it. `shine: false` leaves that off.
+* Whether a guy stands out in a crowd, and in what colour: the grade of the best copy they wear, from
+* Prized up, or Grail gold for the founder. Everyday and Special copies, and nothing worn, don't.
 */
-function crowdSprite(spec, size, options = {}) {
+function crowdShine(spec) {
+	return shineOf(dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed));
+}
+/**
+* A guy's crowd colours without composing them (cheap): body, eyes and outline from their palette,
+* and whether they stand out. A crowd draws a stand-in from these until the real sprite is made.
+*/
+function crowdBase(spec) {
+	const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
+	const base$1 = spec.palette !== void 0 ? paletteOf({
+		...config,
+		palette: spec.palette
+	}) : paletteOf(config);
+	const colors = base$1.colors;
+	return {
+		body: colors[T.BODY],
+		eye: colors[T.EYE],
+		ink: colors[T.OUTLINE],
+		shine: shineOf(config)
+	};
+}
+/** A guy's crowd look: composed and painted once, for any number of sprites after. */
+function crowdLook(spec) {
 	const config = dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed);
 	const grid = compose({
 		...config,
@@ -26669,19 +28892,78 @@ function crowdSprite(spec, size, options = {}) {
 		...config,
 		aura: void 0
 	}, palette$1, false, true);
-	const drawn = size === 16 ? painted$2.map((row) => [...row]) : shrink(grid, colors, MAKE[size], painted$2);
+	const side = grid.length, n = side * side, ink = colors[T.OUTLINE];
+	const inks = [""], index = new Map();
+	const at = (c) => {
+		if (!c) return 0;
+		let i = index.get(c);
+		if (i === void 0) {
+			i = inks.length;
+			inks.push(c);
+			index.set(c, i);
+		}
+		return i;
+	};
+	const look = {
+		side,
+		tokens: new Uint8Array(n),
+		outline: new Uint8Array(n),
+		painted: new Uint8Array(n),
+		shrunk: new Uint8Array(n),
+		face: new Uint8Array(n),
+		inks,
+		ink,
+		eye: colors[T.EYE],
+		mouth: colors[T.MOUTH],
+		body: colors[T.BODY],
+		shine: shineOf(config),
+		aura: auraById(config.aura)?.colors ?? null
+	};
+	for (let y = 0; y < side; y++) for (let x = 0; x < side; x++) {
+		const t = grid[y][x], i = y * side + x;
+		look.tokens[i] = t;
+		look.outline[i] = t && (t === T.OUTLINE || colors[t] !== void 0 && colors[t] === ink) ? 1 : 0;
+		look.painted[i] = at(painted$2[y][x]);
+		look.shrunk[i] = at(painted$2[y][x] ?? colors[t]);
+		if (FEATURE.has(t)) look.face[i] = t === T.MOUTH || t === T.TONGUE ? 2 : 1;
+	}
+	const f = faceOf(config), mark$1 = (x, y, v) => {
+		if (x >= 0 && y >= 0 && x < side && y < side && grid[y][x] && !look.face[y * side + x]) look.face[y * side + x] = v;
+	};
+	for (const e of f.eyes) for (let y = f.top; y <= f.line; y++) for (let x = e.left; x <= e.right; x++) mark$1(x, y, 1);
+	if (f.eyes.length) {
+		const centre$1 = (f.eyes[0].left + f.eyes[f.eyes.length - 1].right + 1) / 2, w = f.mouth.reduce((m, r) => Math.max(m, r.length), 0), mx = Math.floor(centre$1 - w / 2);
+		f.mouth.forEach((row, dy) => row.forEach((t, dx) => {
+			if (t) mark$1(mx + dx, f.mouthTop + dy, 2);
+		}));
+	}
+	return look;
+}
+/**
+* The guy as they stand in a crowd, `size` pixels square, bottom-centred. A guy who stands out
+* (`crowdShine`) is outlined in their grade's colour where they have an outline, and further back,
+* where they are only colours, their top cell takes it. `shine: false` leaves that off.
+*/
+function crowdSprite(spec, size, options = {}) {
+	return crowdSpriteOf(crowdLook(spec), size, options);
+}
+/** `crowdSprite` from a look already worked out (`crowdLook`), for many sizes of one guy. */
+function crowdSpriteOf(look, size, options = {}) {
+	const S = look.side;
+	const full = () => Array.from({ length: S }, (_, y) => Array.from({ length: S }, (_$1, x) => look.inks[look.painted[y * S + x]] || null));
+	const drawn = size === 16 ? full() : size === 5 || size === 3 ? far(look, size) : (size === 14 || size === 12 ? carve(look, full(), size) : null) ?? shrink(look, MAKE[size]);
 	const lit$1 = drawn.map((row) => row.some(Boolean)), first = lit$1.indexOf(true), last = lit$1.lastIndexOf(true);
 	const cells = first < 0 ? [] : drawn.slice(first, last + 1);
-	const shine = options.shine === false ? null : crowdShine(spec);
+	const shine = options.shine === false ? null : look.shine;
 	if (shine && cells.length) {
-		const ink = colors[T.OUTLINE], aura = auraById(config.aura);
-		const edge = (i, j) => aura ? aura.colors[(i + j) % aura.colors.length] : shine.color;
-		if (size === 16 || size >= 6) cells.forEach((row, j) => {
-			for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = edge(i, j);
+		const aura = look.aura;
+		const edge = (i, j) => aura ? aura[(i + j) % aura.length] : shine.color;
+		if (size >= 6) cells.forEach((row, j) => {
+			for (let i = 0; i < row.length; i++) if (row[i] === look.ink && isEdge(cells, j, i)) row[i] = edge(i, j);
 		});
 		else {
 			const top = cells[0], mid = top.findIndex(Boolean) + Math.floor(top.filter(Boolean).length / 2);
-			top[Math.max(0, mid)] = aura ? aura.colors[0] : shine.color;
+			top[Math.max(0, mid)] = aura ? aura[0] : shine.color;
 		}
 	}
 	const rgba = new Uint8ClampedArray(size * size * 4);
@@ -26720,29 +29002,251 @@ function crowdSheet(specs, size, columns = 64, options = {}) {
 		rgba
 	};
 }
-/** Whether an outline cell is on his outside edge (beside nothing), so lines inside him keep their ink. */
-function isEdge(cells, row, i) {
-	const j = cells.indexOf(row);
+/** Whether an outline cell is on the outside edge (beside nothing), so lines inside keep their ink. */
+function isEdge(cells, j, i) {
 	return SIDES.some(([dx, dy]) => !cells[j + dy]?.[i + dx]);
 }
-function shrink(grid, colors, make, painted$2) {
-	const S = grid.length, ink = colors[T.OUTLINE];
-	const isOutline = (t) => t === T.OUTLINE || colors[t] !== void 0 && colors[t] === ink;
+/** A colour `amount` of the way to black. */
+function darker(c, amount) {
+	const n = parseInt(c.slice(1, 7), 16), f = 1 - amount;
+	return "#" + [
+		n >> 16 & 255,
+		n >> 8 & 255,
+		n & 255
+	].map((v) => Math.round(v * f).toString(16).padStart(2, "0")).join("");
+}
+/** The inside's bounds (everything but outline), or null for an empty guy. */
+function insideOf(look) {
+	const S = look.side;
 	let x0 = S, x1 = -1, y0 = S, y1 = -1;
 	for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-		const t = grid[y][x];
-		if (t && !isOutline(t)) {
+		const i = y * S + x;
+		if (look.tokens[i] && !look.outline[i]) {
 			x0 = Math.min(x0, x);
 			x1 = Math.max(x1, x);
 			y0 = Math.min(y0, y);
 			y1 = Math.max(y1, y);
 		}
 	}
-	if (x1 < 0) return [[]];
-	const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = Math.max(bw, bh) / make.inner;
+	return x1 < 0 ? null : {
+		x0,
+		x1,
+		y0,
+		y1
+	};
+}
+/** The commonest non-face colour of the inside between rows `from` and `to` (fractions of its height). */
+function commonest(look, box, from, to) {
+	const S = look.side, h = box.y1 - box.y0 + 1, count$1 = new Map();
+	for (let y = box.y0 + Math.floor(h * from); y <= Math.min(box.y1, box.y0 + Math.ceil(h * to) - 1); y++) for (let x = box.x0; x <= box.x1; x++) {
+		const i = y * S + x, t = look.tokens[i];
+		if (!t || look.outline[i] || FACE.has(t) || !look.shrunk[i]) continue;
+		count$1.set(look.shrunk[i], (count$1.get(look.shrunk[i]) ?? 0) + 1);
+	}
+	let best = 0, most = 0;
+	for (const [c, v] of count$1) if (v > most) {
+		best = c;
+		most = v;
+	}
+	return best ? look.inks[best] : void 0;
+}
+/**
+* A far guy, for the back of a big crowd: a small shape in the guy's own colours, so a packed row
+* reads as a line of heads. At 5: their top in the colour of their top (a hat when it covers most of
+* it), their body below with two eyes a cell apart, and a band in a darker shade of the body
+* underneath. At 3: their top over a row of body and a row of the darker shade. The top row follows
+* their outline (ears at the corners, a hat's point in the middle, a flat head across), so no two
+* rows of them are the same.
+*/
+function far(look, size) {
+	const box = insideOf(look);
+	if (!box) return [[]];
+	const body = commonest(look, box, .35, .85) ?? look.body;
+	const top = commonest(look, box, 0, .3) ?? body, shade$1 = darker(body, .35);
+	const crown = crownOf(look, size), head$1 = crown.some(Boolean) ? crown.map((on$1) => on$1 ? top : null) : size === 3 ? [
+		null,
+		top,
+		null
+	] : [
+		null,
+		top,
+		top,
+		top,
+		null
+	];
+	if (size === 3) return [
+		head$1,
+		[
+			body,
+			body,
+			body
+		],
+		[
+			shade$1,
+			shade$1,
+			shade$1
+		]
+	];
+	return [
+		head$1,
+		[
+			top,
+			top,
+			top,
+			top,
+			top
+		],
+		[
+			body,
+			look.eye,
+			body,
+			look.eye,
+			body
+		],
+		[
+			body,
+			body,
+			body,
+			body,
+			body
+		],
+		[
+			null,
+			shade$1,
+			shade$1,
+			shade$1,
+			null
+		]
+	];
+}
+/** Which of `n` columns across the guy their top fills: the drawn cells in their top fifth, by column band. */
+function crownOf(look, n) {
+	const S = look.side;
+	let x0 = S, x1 = -1, y0 = S;
+	for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (look.painted[y * S + x]) {
+		x0 = Math.min(x0, x);
+		x1 = Math.max(x1, x);
+		y0 = Math.min(y0, y);
+	}
+	if (x1 < 0) return Array(n).fill(false);
+	const w = x1 - x0 + 1, rows = 3;
+	return Array.from({ length: n }, (_, i) => {
+		const a = x0 + Math.floor(w * i / n), b$1 = x0 + Math.floor(w * (i + 1) / n);
+		let on$1 = 0;
+		for (let y = y0; y < y0 + rows; y++) for (let x = a; x < Math.max(b$1, a + 1); x++) if (look.painted[y * S + x]) on$1++;
+		return on$1 >= Math.max(b$1 - a, 1) * rows * .5;
+	});
+}
+/**
+* A guy at 14 or 12 with their face as drawn at 16: rows and columns of the rest of them that most
+* repeat a neighbour are taken out until they fit (columns in mirrored pairs, so a guy drawn
+* symmetric stays so), never one through the eyes or mouth, nor one that would close the gap between
+* two features. Null when the face leaves too little to take out.
+*/
+function carve(look, cells, size) {
+	const S = look.side;
+	let feature = Array.from({ length: S }, (_, y) => Array.from({ length: S }, (_$1, x) => look.face[y * S + x] > 0));
+	const lit$1 = cells.map((r) => r.some(Boolean)), y0 = lit$1.indexOf(true), y1 = lit$1.lastIndexOf(true);
+	if (y0 < 0) return null;
+	let x0 = S, x1 = -1;
+	for (const row of cells) row.forEach((c, x) => {
+		if (c) {
+			x0 = Math.min(x0, x);
+			x1 = Math.max(x1, x);
+		}
+	});
+	cells = cells.slice(y0, y1 + 1).map((r) => r.slice(x0, x1 + 1));
+	feature = feature.slice(y0, y1 + 1).map((r) => r.slice(x0, x1 + 1));
+	const faceRows = feature.map((r) => r.some(Boolean)), f0 = faceRows.indexOf(true);
+	const tall = narrow(turn(cells), turn(feature), size, (x) => f0 >= 0 && x < f0 ? .6 : 0, false);
+	if (!tall) return null;
+	return narrow(turn(tall[0]), turn(tall[1]), size, () => 0, true)?.[0] ?? null;
+}
+const turn = (grid) => (grid[0] ?? []).map((_, x) => grid.map((r) => r[x]));
+/**
+* Takes seams down `cells` (one cell a row, moving at most one across from row to row) until it is
+* `size` wide, the cheapest first: a cell costs nothing where it repeats a neighbour, and a seam that
+* steps sideways costs what it puts out of line. Never through a feature, nor the last cell between
+* two. `pairs` takes them a seam each side of the middle where it can, so a symmetric guy stays so;
+* `extra(x)` adds to a column's cost.
+*/
+function narrow(cells, feature, size, extra, pairs) {
+	const h = cells.length;
+	while (cells[0].length > size) {
+		const w = cells[0].length, at = (y, x) => x < 0 || x >= w ? null : cells[y][x];
+		const rowsWith = feature.map((r) => r.some(Boolean)), r0 = rowsWith.indexOf(true), r1 = rowsWith.lastIndexOf(true);
+		const clear = Array.from({ length: w }, (_, x) => {
+			for (let y = r0; y <= r1; y++) if (feature[y][x]) return false;
+			return true;
+		});
+		const c0 = clear.indexOf(false), c1 = clear.lastIndexOf(false);
+		const open = clear.map((c, x) => c && (x < c0 || x > c1 || clear[x - 1] || clear[x + 1]));
+		const blocked = (y, x) => r0 >= 0 && y >= r0 && y <= r1 && !open[x];
+		const seam = (lo, hi) => {
+			const n = hi - lo + 1, M$1 = new Float64Array(h * n).fill(Infinity), from = new Int8Array(h * n);
+			for (let y = 0; y < h; y++) for (let x$1 = lo; x$1 <= hi; x$1++) {
+				if (blocked(y, x$1)) continue;
+				const c = cells[y][x$1], e = (c === at(y, x$1 - 1) || c === at(y, x$1 + 1) ? 0 : 1) + extra(x$1);
+				if (!y) {
+					M$1[x$1 - lo] = e;
+					continue;
+				}
+				let best$1 = M$1[(y - 1) * n + x$1 - lo], step$1 = 0;
+				if (x$1 + 1 <= hi) {
+					const v = M$1[(y - 1) * n + x$1 + 1 - lo] + (cells[y - 1][x$1] !== at(y, x$1 + 1) ? 1 : .25);
+					if (v < best$1) {
+						best$1 = v;
+						step$1 = 1;
+					}
+				}
+				if (x$1 - 1 >= lo) {
+					const v = M$1[(y - 1) * n + x$1 - 1 - lo] + (cells[y - 1][x$1] !== at(y, x$1 - 1) ? 1 : .25);
+					if (v < best$1) {
+						best$1 = v;
+						step$1 = -1;
+					}
+				}
+				M$1[y * n + x$1 - lo] = best$1 + e;
+				from[y * n + x$1 - lo] = step$1;
+			}
+			let x = -1, best = Infinity;
+			for (let i = 0; i < n; i++) if (M$1[(h - 1) * n + i] < best) {
+				best = M$1[(h - 1) * n + i];
+				x = i;
+			}
+			if (x < 0) return null;
+			const path = Array(h);
+			for (let y = h - 1; y >= 0; y--) {
+				path[y] = x + lo;
+				x += from[y * n + x];
+			}
+			return path;
+		};
+		const half = Math.floor(w / 2), cut = [];
+		if (pairs && w - size >= 2) {
+			const right = seam(w - half, w - 1), left = seam(0, half - 1);
+			if (left && right) cut.push(right, left);
+		}
+		if (!cut.length) {
+			const one = seam(0, w - 1);
+			if (!one) return null;
+			cut.push(one);
+		}
+		for (const path of cut) for (let y = 0; y < h; y++) {
+			cells[y].splice(path[y], 1);
+			feature[y].splice(path[y], 1);
+		}
+	}
+	return [cells, feature];
+}
+function shrink(look, make) {
+	const S = look.side, ink = look.ink, tok = (x, y) => x >= 0 && y >= 0 && x < S && y < S ? look.tokens[y * S + x] : 0;
+	const box = insideOf(look);
+	if (!box) return [[]];
+	const { x0, y0 } = box, bw = box.x1 - x0 + 1, bh = box.y1 - y0 + 1, k = Math.max(bw, bh) / make.inner;
 	const w = Math.max(1, Math.round(bw / k)), h = Math.max(1, Math.round(bh / k));
-	const P = make.ring ? 1 : 0, W$1 = w + 2 * P, H$1 = h + 2 * P;
-	const out = Array.from({ length: H$1 }, () => Array(W$1).fill(null));
+	const P = make.ring ? 1 : 0, W = w + 2 * P, H = h + 2 * P;
+	const out = Array.from({ length: H }, () => Array(W).fill(null));
 	const ox = x0 + (bw - w * k) / 2, oy = y0 + (bh - h * k) / 2;
 	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
 		const sx0 = ox + i * k, sx1 = sx0 + k, sy0 = oy + j * k, sy1 = sy0 + k;
@@ -26750,14 +29254,14 @@ function shrink(grid, colors, make, painted$2) {
 		let cover = 0;
 		for (let y = Math.floor(sy0); y < Math.ceil(sy1); y++) for (let x = Math.floor(sx0); x < Math.ceil(sx1); x++) {
 			const a = (Math.min(x + 1, sx1) - Math.max(x, sx0)) * (Math.min(y + 1, sy1) - Math.max(y, sy0));
-			const t = grid[y]?.[x];
-			if (a <= 0 || !t || isOutline(t)) continue;
+			const t = tok(x, y);
+			if (a <= 0 || !t || look.outline[y * S + x]) continue;
 			cover += a;
-			const c = painted$2[y]?.[x] ?? colors[t];
+			const c = look.inks[look.shrunk[y * S + x]];
 			if (!FACE.has(t) && c) weight.set(c, (weight.get(c) ?? 0) + a);
 		}
 		if (cover < k * k * .45) continue;
-		let best = colors[T.BODY], most = -1;
+		let best = look.body, most = -1;
 		for (const [c, v] of weight) if (v > most) {
 			best = c;
 			most = v;
@@ -26772,7 +29276,7 @@ function shrink(grid, colors, make, painted$2) {
 	const parts = (want) => {
 		const seen = new Set(), found = [];
 		for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-			if (!want(grid[y][x]) || seen.has(y * S + x)) continue;
+			if (!want(tok(x, y), y * S + x) || seen.has(y * S + x)) continue;
 			const stack = [[x, y]], cells = [];
 			seen.add(y * S + x);
 			while (stack.length) {
@@ -26780,7 +29284,7 @@ function shrink(grid, colors, make, painted$2) {
 				cells.push([cx, cy]);
 				for (const [dx, dy] of ROUND) {
 					const nx = cx + dx, ny = cy + dy;
-					if (nx >= 0 && ny >= 0 && nx < S && ny < S && want(grid[ny][nx]) && !seen.has(ny * S + nx)) {
+					if (nx >= 0 && ny >= 0 && nx < S && ny < S && want(tok(nx, ny), ny * S + nx) && !seen.has(ny * S + nx)) {
 						seen.add(ny * S + nx);
 						stack.push([nx, ny]);
 					}
@@ -26792,66 +29296,1680 @@ function shrink(grid, colors, make, painted$2) {
 	};
 	const taken = new Set();
 	if (make.eyes) {
-		const spots = parts((t) => t === T.EYE).sort((a, b$1) => b$1.length - a.length).slice(0, 2).map(spot).sort((a, b$1) => a[0] - b$1[0]);
-		if (spots.length === 2 && spots[0][0] === spots[1][0] && spots[0][1] === spots[1][1]) {
-			spots[0][0] = Math.max(P, spots[0][0] - 1);
-			spots[1][0] = Math.min(W$1 - 1 - P, spots[1][0] + 1);
+		let eye = look.eye, found = parts((t) => t === T.EYE);
+		if (!found.length) {
+			const drawn = (i) => look.face[i] === 1 && !!look.painted[i] && look.inks[look.painted[i]] !== look.body;
+			found = parts((_, i) => drawn(i));
+			const count$1 = new Map();
+			for (const cells of found) for (const [x, y] of cells) count$1.set(look.painted[y * S + x], (count$1.get(look.painted[y * S + x]) ?? 0) + 1);
+			let most = 0;
+			for (const [c, n] of count$1) if (n > most) {
+				most = n;
+				eye = look.inks[c];
+			}
+		}
+		const spots = found.sort((a, b$1) => b$1.length - a.length).slice(0, 2).map(spot).sort((a, b$1) => a[0] - b$1[0]);
+		if (spots.length === 2 && Math.abs(spots[0][1] - spots[1][1]) <= 1 && spots[1][0] - spots[0][0] < 2) {
+			const width$1 = (j) => inside$1[j] ? inside$1[j].lastIndexOf(true) - inside$1[j].indexOf(true) + 1 : 0;
+			let row = Math.max(spots[0][1], spots[1][1]);
+			if (width$1(row) < 3) row = [row + 1, row - 1].find((j) => width$1(j) >= 3) ?? row;
+			spots[0][1] = spots[1][1] = row;
+			const lo = inside$1[row].indexOf(true), hi = inside$1[row].lastIndexOf(true);
+			while (spots[1][0] - spots[0][0] < 2) if (spots[0][0] - 1 >= lo && spots[0][0] - lo >= hi - spots[1][0]) spots[0][0]--;
+			else if (spots[1][0] + 1 <= hi) spots[1][0]++;
+			else if (spots[0][0] - 1 >= lo) spots[0][0]--;
+			else break;
 		}
 		for (const [i, j] of spots) if (inside$1[j]?.[i]) {
-			out[j][i] = colors[T.EYE];
+			out[j][i] = eye;
 			taken.add(`${i},${j}`);
 		}
 	}
 	if (make.mouth) {
 		const mouth$1 = parts((t) => t === T.MOUTH || t === T.TONGUE).sort((a, b$1) => b$1.length - a.length)[0];
+		const near = (i, j) => [...taken].some((t) => {
+			const [a, b$1] = t.split(",").map(Number);
+			return Math.abs(a - i) <= 1 && Math.abs(b$1 - j) <= 1;
+		});
 		if (mouth$1) {
-			const [i, j] = spot(mouth$1);
-			if (inside$1[j]?.[i] && !taken.has(`${i},${j}`)) out[j][i] = colors[T.MOUTH];
+			let [i, j] = spot(mouth$1);
+			if (near(i, j)) j++;
+			if (inside$1[j]?.[i] && !near(i, j)) out[j][i] = look.mouth;
 		}
 	}
 	if (make.ring) {
-		for (let j = 0; j < H$1; j++) for (let i = 0; i < W$1; i++) if (!inside$1[j][i] && SIDES.some(([dx, dy]) => inside$1[j + dy]?.[i + dx])) out[j][i] = ink;
+		for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (!inside$1[j][i] && SIDES.some(([dx, dy]) => inside$1[j + dy]?.[i + dx])) out[j][i] = ink;
 	}
 	return out;
 }
 
 //#endregion
+//#region src/crowd-render.ts
+/** Every crowd sprite sheet, so a test can tell them from other canvases. */
+const sheetCanvases = new WeakSet();
+const COLS = 64, MAX_ROWS = 64, CELLS = COLS * MAX_ROWS;
+const TILE = 96, WAVE_MS = 5600, HOP_MS = 400, ARRIVE_MS = 500, SLIDE_MS = 420, FADE_MS = 600;
+/** Hops at once, past which a big crowd's chatter waits its turn (a spotlight's and arrivals still go). */
+const HOP_CAP = 24;
+const BAYER$1 = [
+	0,
+	8,
+	2,
+	10,
+	12,
+	4,
+	14,
+	6,
+	3,
+	11,
+	1,
+	9,
+	15,
+	7,
+	13,
+	5
+];
+const rgbOf = (c) => {
+	const n = parseInt(c.slice(1, 7), 16);
+	return [
+		n >> 16 & 255,
+		n >> 8 & 255,
+		n & 255
+	];
+};
+const hexOf = (r, g, b$1) => "#" + [
+	r,
+	g,
+	b$1
+].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+/** How light a colour is, 0 to 1. */
+const lightness = (c) => {
+	const [r, g, b$1] = rgbOf(c);
+	return (.299 * r + .587 * g + .114 * b$1) / 255;
+};
+/** A colour through a tint. */
+function tinted(c, t) {
+	if (!t || !t.amount && !t.shade) return c;
+	const [r, g, b$1] = rgbOf(c), [hr, hg, hb] = rgbOf(t.toward), a = t.amount, f = 1 - t.shade;
+	return hexOf((r + (hr - r) * a) * f, (g + (hg - g) * a) * f, (b$1 + (hb - b$1) * a) * f);
+}
+const meets = (a, b$1) => a[0] < b$1[0] + b$1[2] && b$1[0] < a[0] + a[2] && a[1] < b$1[1] + b$1[3] && b$1[1] < a[1] + a[3];
+/**
+* A stand-in for a guy whose sprite isn't made yet: a round shape in their body colour, outlined from
+* 6 up, two eyes a cell apart, and the far shapes' darker band underneath.
+*/
+function standIn(size, base$1) {
+	const shade$1 = tinted(base$1.body, {
+		toward: "#000000",
+		amount: 0,
+		shade: .35
+	}), b$1 = base$1.body, e = base$1.eye;
+	if (size <= 2) return [[b$1, b$1], [shade$1, shade$1]];
+	if (size === 3) return [
+		[
+			null,
+			b$1,
+			null
+		],
+		[
+			b$1,
+			b$1,
+			b$1
+		],
+		[
+			shade$1,
+			shade$1,
+			shade$1
+		]
+	];
+	if (size <= 5) return [
+		[
+			null,
+			b$1,
+			b$1,
+			b$1,
+			null
+		],
+		[
+			b$1,
+			b$1,
+			b$1,
+			b$1,
+			b$1
+		],
+		[
+			b$1,
+			e,
+			b$1,
+			e,
+			b$1
+		],
+		[
+			b$1,
+			b$1,
+			b$1,
+			b$1,
+			b$1
+		],
+		[
+			null,
+			shade$1,
+			shade$1,
+			shade$1,
+			null
+		]
+	];
+	const w = Math.max(4, Math.round(size * .8)), h = Math.max(4, Math.round(size * .78));
+	const out = Array.from({ length: h }, () => Array(w).fill(null));
+	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+		const u = (i + .5) / w * 2 - 1, v = (j + .5) / h * 2 - 1;
+		if (u * u + v * v * .8 <= 1.05) out[j][i] = b$1;
+	}
+	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (out[j][i] && [
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1]
+	].some(([dx, dy]) => !out[j + dy]?.[i + dx])) out[j][i] = base$1.ink;
+	const ey = Math.round(h * .42), gap = Math.max(1, Math.round(w * .2)), mid = Math.floor(w / 2);
+	if (out[ey]) {
+		out[ey][mid - 1 - Math.floor(gap / 2)] = e;
+		out[ey][mid + Math.ceil(gap / 2)] = e;
+	}
+	return out;
+}
+/** The renderer: guys, their sprites, the baked picture and the frame loop. */
+function createRender(canvas, options) {
+	const ctx = canvas.getContext("2d");
+	const guys = new Map();
+	let devW = 1, devH = 1, dpr = 1;
+	let scene;
+	let bySeat = [];
+	let biggest = 1, standTop = 0, standBottom = 0, farBig = 0, farBottom = 0, nearTop = Infinity, rowOf = new Int32Array(0), placeOf = new Int32Array(0), rowTop = [], rowBottom = [], rowXs = [], rowBig = [];
+	let still$1 = document.createElement("canvas"), stillCtx = still$1.getContext("2d"), stillPainted = false;
+	let stale = "all", whole = true;
+	let building = null, wanted = null;
+	let fade = null;
+	let tintKey = "";
+	let slide = null;
+	let waving = !!options.wave, waveStart = 0, frame = 0, gone = false, lastFrame = 0;
+	let lit$1 = null;
+	const moving = new Set(), rare = new Set();
+	const sheets = new Map(), stand = new Map();
+	const restless = new Set();
+	let shown = [];
+	let queue = [], made = 0;
+	const queued = new Set();
+	const code = (size, band$2) => size * 64 + band$2;
+	function sheetsOf(size) {
+		let l = sheets.get(size);
+		if (!l) sheets.set(size, l = []);
+		return l;
+	}
+	function newSheet(size, rows) {
+		const c = document.createElement("canvas");
+		c.width = COLS * size;
+		c.height = rows * size;
+		sheetCanvases.add(c);
+		const data = new Uint8ClampedArray(c.width * c.height * 4);
+		return {
+			canvas: c,
+			ctx: c.getContext("2d"),
+			size,
+			data,
+			image: new ImageData(data, c.width, c.height),
+			rows,
+			next: 0,
+			free: [],
+			used: 0,
+			ext: new Uint16Array(CELLS),
+			arm: new Uint16Array(CELLS),
+			dirty: [
+				Infinity,
+				Infinity,
+				-1,
+				-1
+			]
+		};
+	}
+	/** A sheet with room for more rows of cells (it starts small; a crowd of one size fills more). */
+	function grow(s) {
+		const rows = Math.min(MAX_ROWS, s.rows * 2), data = new Uint8ClampedArray(s.canvas.width * rows * s.size * 4);
+		data.set(s.data);
+		s.canvas.height = rows * s.size;
+		s.data = data;
+		s.image = new ImageData(data, s.canvas.width, s.canvas.height);
+		s.rows = rows;
+		s.dirty = [
+			0,
+			0,
+			s.canvas.width,
+			s.canvas.height
+		];
+	}
+	function alloc(size) {
+		const list = sheetsOf(size);
+		for (let n$1 = 0; n$1 < list.length; n$1++) {
+			const s$1 = list[n$1];
+			if (!s$1) continue;
+			if (s$1.free.length) {
+				s$1.used++;
+				return n$1 * CELLS + s$1.free.pop();
+			}
+			if (s$1.next < CELLS) {
+				if (s$1.next >= s$1.rows * COLS) grow(s$1);
+				s$1.used++;
+				return n$1 * CELLS + s$1.next++;
+			}
+		}
+		let n = list.indexOf(null);
+		if (n < 0) n = list.length;
+		const s = list[n] = newSheet(size, 2);
+		s.used = 1;
+		s.next = 1;
+		return n * CELLS;
+	}
+	/** Gives a cell back; a sheet nobody draws from any more goes. */
+	function release(size, id) {
+		const list = sheetsOf(size), n = Math.floor(id / CELLS), s = list[n];
+		if (!s) return;
+		s.free.push(id % CELLS);
+		if (--s.used <= 0) list[n] = null;
+	}
+	/** Writes a sprite into its cell, tinted, and notes its extent and where its arms go. */
+	function put$1(size, id, rgba, tint) {
+		const s = sheetsOf(size)[Math.floor(id / CELLS)], cell = id % CELLS, cx = cell % COLS * size, cy = Math.floor(cell / COLS) * size, W = s.canvas.width;
+		let left = size, right = -1, top = size;
+		const [hr, hg, hb] = tint ? rgbOf(tint.toward) : [
+			0,
+			0,
+			0
+		], a = tint?.amount ?? 0, f = 1 - (tint?.shade ?? 0), d = s.data;
+		const lefts = new Int8Array(size).fill(-1), rights = new Int8Array(size).fill(-1);
+		for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+			const o = (y * size + x) * 4, p = ((cy + y) * W + cx + x) * 4;
+			if (!rgba[o + 3]) {
+				d[p + 3] = 0;
+				continue;
+			}
+			if (x < left) left = x;
+			if (x > right) right = x;
+			if (y < top) top = y;
+			if (lefts[y] < 0) lefts[y] = x;
+			rights[y] = x;
+			d[p] = (rgba[o] + (hr - rgba[o]) * a) * f;
+			d[p + 1] = (rgba[o + 1] + (hg - rgba[o + 1]) * a) * f;
+			d[p + 2] = (rgba[o + 2] + (hb - rgba[o + 2]) * a) * f;
+			d[p + 3] = 255;
+		}
+		s.ext[cell] = right < 0 ? 0 : left | right << 4 | top << 8 | 4096;
+		if (right >= 0 && size >= 6) {
+			const sy = Math.min(size - 1, top + Math.round((size - top) * .45));
+			let l = size, r = -1;
+			for (let y = top; y <= sy; y++) if (lefts[y] >= 0) {
+				l = Math.min(l, lefts[y]);
+				r = Math.max(r, rights[y]);
+			}
+			s.arm[cell] = l | r << 4 | sy << 8 | 4096;
+		} else s.arm[cell] = 0;
+		const dirty = s.dirty;
+		dirty[0] = Math.min(dirty[0], cx);
+		dirty[1] = Math.min(dirty[1], cy);
+		dirty[2] = Math.max(dirty[2], cx + size);
+		dirty[3] = Math.max(dirty[3], cy + size);
+	}
+	/** Sends a sheet's changed pixels to its canvas, once, before anything draws from it. */
+	function upload(s) {
+		const [x0, y0, x1, y1] = s.dirty;
+		if (x1 <= x0) return;
+		s.ctx.putImageData(s.image, 0, 0, x0, y0, x1 - x0, y1 - y0);
+		s.dirty = [
+			Infinity,
+			Infinity,
+			-1,
+			-1
+		];
+	}
+	function uploadAll() {
+		for (const list of sheets.values()) for (const s of list) if (s) upload(s);
+	}
+	function rgbaOf(cells, size) {
+		const rgba = new Uint8ClampedArray(size * size * 4), h = cells.length, w = cells[0]?.length ?? 0, ox = Math.floor((size - w) / 2), oy = size - h;
+		cells.forEach((row, j) => row.forEach((c, i) => {
+			if (c) rgba.set([...rgbOf(c), 255], ((oy + j) * size + ox + i) * 4);
+		}));
+		return rgba;
+	}
+	/** The sheet cell a guy is drawn from in a seat: their own sprite, else a stand-in in their colours. */
+	function cellOf(g, seat$1) {
+		const s = scene.seats[seat$1], band$2 = scene.bands[seat$1], c = code(s.size, band$2), own$1 = g.cells.get(c);
+		if (own$1 !== void 0) return own$1;
+		const key = `${c}${g.base.body}${g.base.eye}${g.base.ink}`;
+		let at = stand.get(key);
+		if (!at) {
+			at = [s.size, alloc(s.size)];
+			put$1(s.size, at[1], rgbaOf(standIn(s.size, g.base), s.size), scene.tints[band$2]);
+			stand.set(key, at);
+		}
+		return at[1];
+	}
+	function want(g) {
+		if (g.seat < 0 || g.seat >= scene.seats.length || queued.has(g)) return;
+		const s = scene.seats[g.seat];
+		if (!g.cells.has(code(s.size, scene.bands[g.seat]))) {
+			queued.add(g);
+			queue.push(g);
+		}
+	}
+	function make(g) {
+		queued.delete(g);
+		if (guys.get(g.key) !== g || g.seat < 0 || g.seat >= scene.seats.length) return;
+		const s = scene.seats[g.seat], band$2 = scene.bands[g.seat], c = code(s.size, band$2);
+		if (g.cells.has(c)) return;
+		g.look ??= crowdLook(g.spec);
+		const id = alloc(s.size);
+		put$1(s.size, id, crowdSpriteOf(g.look, s.size).rgba, scene.tints[band$2]);
+		g.cells.set(c, id);
+		if (!moving.has(g)) restIn(g.seat);
+	}
+	function forget(g, keep) {
+		for (const [c, id] of g.cells) if (c !== keep) {
+			release(Math.floor(c / 64), id);
+			g.cells.delete(c);
+		}
+	}
+	function sheetOf$1(size, id) {
+		const s = sheetsOf(size)[Math.floor(id / CELLS)];
+		if (s.dirty[2] > s.dirty[0]) upload(s);
+		return s;
+	}
+	function blit(target, size, id, x, y, w = size) {
+		const cell = id % CELLS;
+		target.drawImage(sheetOf$1(size, id).canvas, cell % COLS * size, Math.floor(cell / COLS) * size, size, size, x, y, w, w);
+	}
+	const extOf = (size, id) => sheetsOf(size)[Math.floor(id / CELLS)].ext[id % CELLS];
+	const armOf = (size, id) => sheetsOf(size)[Math.floor(id / CELLS)].arm[id % CELLS];
+	function index() {
+		const n = scene.seats.length;
+		rowOf = new Int32Array(n).fill(-1);
+		placeOf = new Int32Array(n);
+		rowTop = [];
+		rowBottom = [];
+		rowXs = [];
+		rowBig = [];
+		scene.rows.forEach((row, r) => {
+			let top = Infinity, bottom = -Infinity, big = 0;
+			const xs = new Float64Array(row.length);
+			row.forEach((i, p) => {
+				const s = scene.seats[i];
+				rowOf[i] = r;
+				placeOf[i] = p;
+				xs[p] = s.x;
+				top = Math.min(top, s.y);
+				bottom = Math.max(bottom, s.y + s.size);
+				big = Math.max(big, s.size);
+			});
+			rowTop.push(top);
+			rowBottom.push(bottom);
+			rowXs.push(xs);
+			rowBig.push(big);
+		});
+		bySeat = Array(n);
+		for (const g of guys.values()) if (g.seat >= 0 && g.seat < n) bySeat[g.seat] = g;
+		biggest = Math.max(1, ...rowBig);
+		standTop = Math.min(scene.height, ...rowTop);
+		standBottom = Math.max(0, ...rowBottom);
+		farBig = 0;
+		farBottom = 0;
+		nearTop = Infinity;
+		rowBig.forEach((b$1, r) => {
+			if (!rowXs[r].length) return;
+			if (b$1 <= 8) {
+				farBig = Math.max(farBig, b$1);
+				farBottom = Math.max(farBottom, rowBottom[r]);
+			} else nearTop = Math.min(nearTop, rowTop[r]);
+		});
+		glintsDue = true;
+	}
+	/**
+	* Lays the scene out again now: `slide` moves guys to their new seats, `fade` holds the old picture
+	* while the new one is put together over a few frames, then cross-fades it out; `cut` swaps at once.
+	*/
+	function relayout(how = "cut", reseat) {
+		const before = scene, now = performance.now();
+		if (!stillPainted && !fade) how = "cut";
+		if (how === "slide") for (const g of guys.values()) {
+			if (g.seat < 0 || g.seat >= before.seats.length) {
+				delete g.from;
+				continue;
+			}
+			const s = before.seats[g.seat];
+			g.from = {
+				x: before.ox + s.x * before.k,
+				y: before.oy + s.y * before.k,
+				side: s.size * before.k
+			};
+		}
+		if (!(how === "fade" && building && fade)) {
+			const old = how === "slide" ? before.backdrop : how === "fade" && stillPainted ? still$1 : null;
+			fade = old ? {
+				canvas: old,
+				k: before.k,
+				ox: before.ox,
+				oy: before.oy,
+				until: how === "fade" ? Infinity : now + SLIDE_MS,
+				ms: how === "fade" ? FADE_MS : SLIDE_MS
+			} : null;
+		}
+		reseat?.();
+		scene = options.build(devW, devH, dpr);
+		index();
+		if (how !== "fade") ensureBackdrop();
+		const key = JSON.stringify(scene.tints);
+		for (const [size, id] of stand.values()) release(size, id);
+		stand.clear();
+		if (key !== tintKey) {
+			tintKey = key;
+			for (const g of guys.values()) forget(g);
+		}
+		still$1 = document.createElement("canvas");
+		still$1.width = scene.width;
+		still$1.height = scene.height;
+		stillCtx = still$1.getContext("2d");
+		stillPainted = false;
+		stale = "all";
+		layTiles();
+		building = {
+			next: 0,
+			all: how !== "fade"
+		};
+		slide = how === "slide" ? { until: now + SLIDE_MS } : null;
+		if (lit$1) {
+			lit$1.overlay = null;
+			lit$1.aim = "";
+			lit$1.drawn = null;
+		}
+		queue = [];
+		made = 0;
+		queued.clear();
+		restless.clear();
+		shown = [];
+		waveCrest = NaN;
+		glintStep = -1;
+		const seated = [...guys.values()].filter((g) => g.seat >= 0 && g.seat < scene.seats.length).sort((a, b$1) => a.seat - b$1.seat);
+		for (const g of seated) {
+			want(g);
+			if (how !== "slide") delete g.from;
+		}
+		if (how === "cut") tidy();
+		whole = true;
+		options.onLayout?.();
+		wake();
+	}
+	/** Paints the scene's backdrop if it waits to be. */
+	function ensureBackdrop() {
+		const paint$1 = scene.later;
+		if (paint$1) {
+			scene.later = void 0;
+			scene.backdrop = paint$1();
+		}
+	}
+	/** Lays the scene out again at the next frame, however many times it's asked for before then. */
+	function request(how) {
+		wanted = wanted === "cut" || how === "cut" ? "cut" : how;
+		wake();
+	}
+	/** Sprites for sizes no seat calls for any more go back to their sheets. */
+	function tidy() {
+		for (const g of guys.values()) forget(g, g.seat >= 0 && g.seat < scene.seats.length ? code(scene.seats[g.seat].size, scene.bands[g.seat]) : -1);
+	}
+	let tiles = [], atlas = null, atlasCtx = null;
+	const rectOf = (seat$1, lift = 0) => {
+		const s = scene.seats[seat$1];
+		return [
+			s.x - 3,
+			s.y - lift - 3,
+			s.size + 6,
+			s.size + lift + 4
+		];
+	};
+	/** Whether a guy is part of the baked picture: seated, made or standing in, and not moving. */
+	const atRest = (g) => lit$1?.guy !== g && !moving.has(g) && !slide;
+	/** Seats of row `r` whose cells reach across world x `from` to `to`, as places in the row. */
+	function span$1(r, from, to) {
+		const xs = rowXs[r];
+		let lo = 0, hi = xs.length;
+		while (lo < hi) {
+			const m = lo + hi >> 1;
+			if (xs[m] + rowBig[r] <= from) lo = m + 1;
+			else hi = m;
+		}
+		let end = lo;
+		while (end < xs.length && xs[end] < to) end++;
+		return [lo, end];
+	}
+	/** Where every row's tiles go on the atlas; their guys are drawn into them as the layout is built. */
+	function layTiles() {
+		tiles = [];
+		const AW = 2048, n = Math.ceil(scene.width / TILE);
+		let ax = 0, ay = 0, shelf = 0;
+		scene.rows.forEach((row, r) => {
+			const list = [];
+			for (let i = 0; i < n; i++) {
+				const x = i * TILE, [a, b$1] = span$1(r, x, x + TILE);
+				let top = Infinity, bottom = -Infinity;
+				for (let p = a; p < b$1; p++) {
+					const s = scene.seats[row[p]];
+					top = Math.min(top, s.y);
+					bottom = Math.max(bottom, s.y + s.size);
+				}
+				if (a >= b$1) {
+					list.push(null);
+					continue;
+				}
+				if (ax + TILE > AW) {
+					ax = 0;
+					ay += shelf;
+					shelf = 0;
+				}
+				list.push({
+					x,
+					top,
+					h: bottom - top,
+					ax,
+					ay
+				});
+				ax += TILE;
+				shelf = Math.max(shelf, bottom - top);
+			}
+			tiles.push(list);
+		});
+		atlas = document.createElement("canvas");
+		atlas.width = AW;
+		atlas.height = Math.max(1, ay + shelf);
+		atlasCtx = atlas.getContext("2d");
+	}
+	/** Draws row `r`'s guys at rest between world x `from` and `to` into its tiles, afresh. */
+	function retile(r, from, to) {
+		const g = atlasCtx, row = scene.rows[r];
+		for (let i = Math.max(0, Math.floor(from / TILE)); i <= Math.min(tiles[r].length - 1, Math.floor((to - 1) / TILE)); i++) {
+			const t = tiles[r][i];
+			if (!t) continue;
+			const x0 = Math.max(from, t.x), x1 = Math.min(to, t.x + TILE), [a, b$1] = span$1(r, x0, x1);
+			g.save();
+			g.beginPath();
+			g.rect(t.ax + x0 - t.x, t.ay, x1 - x0, t.h);
+			g.clip();
+			g.clearRect(t.ax + x0 - t.x, t.ay, x1 - x0, t.h);
+			g.setTransform(1, 0, 0, 1, t.ax - t.x, t.ay - t.top);
+			for (let p = a; p < b$1; p++) {
+				const i2 = row[p], guy = bySeat[i2];
+				if (guy && atRest(guy)) blit(g, scene.seats[i2].size, cellOf(guy, i2), scene.seats[i2].x, scene.seats[i2].y);
+			}
+			g.restore();
+		}
+	}
+	/** Makes the stand-ins a set of rows will draw, so they reach their sheets in one go. */
+	function standInsFor(rows) {
+		for (const r of rows) for (const i of scene.rows[r]) {
+			const g = bySeat[i];
+			if (g && atRest(g)) cellOf(g, i);
+		}
+		uploadAll();
+	}
+	/** A seat's guy changed how they look at rest (made, gone, moving or still again): the next frame redraws them there. */
+	function restIn(seat$1) {
+		if (seat$1 >= 0 && seat$1 < scene.seats.length && !(building && rowOf[seat$1] >= building.next)) restless.add(seat$1);
+		wake();
+	}
+	/** Copies row `r`'s guys at rest from `from` to `to`, `dy` up or down. */
+	function blitRow(target, r, from, to, dy) {
+		for (let i = Math.max(0, Math.floor(from / TILE)); i <= Math.min(tiles[r].length - 1, Math.floor((to - 1) / TILE)); i++) {
+			const t = tiles[r][i];
+			if (!t || !t.h) continue;
+			const x0 = Math.max(from, t.x), x1 = Math.min(to, t.x + TILE);
+			if (x1 > x0) target.drawImage(atlas, t.ax + x0 - t.x, t.ay, x1 - x0, t.h, x0, t.top + dy, x1 - x0, t.h);
+		}
+	}
+	/**
+	* Puts the layout's rows together, all at once or (a big crowd's re-seat) a few milliseconds a frame, and the
+	* baked picture with them: the scene, then each row as it is made, back to front. True when done.
+	*/
+	function buildRows(until) {
+		const b$1 = building, n = scene.rows.length;
+		if (!b$1.next) {
+			stillCtx.setTransform(1, 0, 0, 1, 0, 0);
+			stillCtx.clearRect(0, 0, still$1.width, still$1.height);
+			if (scene.backdrop) stillCtx.drawImage(scene.backdrop, 0, 0);
+		}
+		while (b$1.next < n) {
+			const r = b$1.next++;
+			standInsFor([r]);
+			retile(r, 0, scene.width);
+			blitRow(stillCtx, r, 0, scene.width, 0);
+			if (!b$1.all && performance.now() > until) return b$1.next >= n;
+		}
+		return true;
+	}
+	/** The baked picture: all of it after a new layout, else the patches whose guys changed. */
+	function paintStill() {
+		if (stale === "all") {
+			stillCtx.setTransform(1, 0, 0, 1, 0, 0);
+			stillCtx.clearRect(0, 0, still$1.width, still$1.height);
+			if (scene.backdrop) stillCtx.drawImage(scene.backdrop, 0, 0);
+			scene.rows.forEach((_, r) => blitRow(stillCtx, r, 0, scene.width, 0));
+			stale = [];
+			stillPainted = true;
+			whole = true;
+			return [];
+		}
+		const out = stale;
+		for (const r of out) patch(stillCtx, r, -1);
+		stale = [];
+		return out;
+	}
+	/** Seats whose guy changed: their rows' tiles, then the still, follow. Returns what changed in the still. */
+	function settleRests() {
+		if (!restless.size) return paintStill();
+		const seats = [...restless].filter((seat$1) => rowOf[seat$1] >= 0);
+		restless.clear();
+		for (const seat$1 of seats) {
+			const r = rowOf[seat$1], s = scene.seats[seat$1], [a, b$1] = span$1(r, s.x - 1, s.x + s.size + 1), row = scene.rows[r];
+			for (let p = a; p < b$1; p++) {
+				const g = bySeat[row[p]];
+				if (g && atRest(g)) cellOf(g, row[p]);
+			}
+		}
+		uploadAll();
+		const rects = [];
+		for (const seat$1 of seats) {
+			const s = scene.seats[seat$1];
+			retile(rowOf[seat$1], s.x - 1, s.x + s.size + 1);
+			rects.push(rectOf(seat$1, 2));
+		}
+		if (stale !== "all") {
+			stale.push(...merge(rects));
+			if (stale.length > 300) stale = "all";
+		}
+		return paintStill();
+	}
+	/** Repaints world rects: the scene under them, then every row touching them, back to front, moved as at `t` (-1: at rest). */
+	function patch(target, rect, t, dimmed = t >= 0) {
+		const rects = typeof rect[0] === "number" ? [rect] : rect;
+		let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+		target.save();
+		target.beginPath();
+		for (const [x, y, w, h] of rects) {
+			const a = Math.floor(x), b$1 = Math.floor(y), c = Math.ceil(x + w), d = Math.ceil(y + h);
+			target.rect(a, b$1, c - a, d - b$1);
+			x0 = Math.min(x0, a);
+			y0 = Math.min(y0, b$1);
+			x1 = Math.max(x1, c);
+			y1 = Math.max(y1, d);
+		}
+		target.clip();
+		x0 = Math.max(0, x0);
+		y0 = Math.max(0, y0);
+		x1 = Math.min(scene.width, x1);
+		y1 = Math.min(scene.height, y1);
+		if (x1 > x0 && y1 > y0) if (scene.backdrop) target.drawImage(scene.backdrop, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+		else target.clearRect(x0, y0, x1 - x0, y1 - y0);
+		const reach = t >= 0 && waving ? biggest + 2 : 8;
+		for (let r = 0; r < scene.rows.length; r++) {
+			if (rowBottom[r] < y0 || rowTop[r] - reach > y1) continue;
+			let from = Infinity, to = -Infinity;
+			for (const [x, y, w, h] of rects) if (rowBottom[r] >= y && rowTop[r] - reach <= y + h) {
+				from = Math.min(from, Math.floor(x));
+				to = Math.max(to, Math.ceil(x + w));
+			}
+			if (from >= to) continue;
+			if (t >= 0 && waving) waveRow(target, r, from, to);
+			else blitRow(target, r, from, to, 0);
+			if (t < 0) continue;
+			const [a, b$1] = span$1(r, from, to), row = scene.rows[r];
+			for (let p = a; p < b$1; p++) {
+				const g = bySeat[row[p]];
+				if (g && moving.has(g) && lit$1?.guy !== g) drawLive(target, g, row[p], t);
+			}
+		}
+		if (t >= 0 && waving) swathe(target);
+		if (dimmed && lit$1?.overlay) dim(target, x0, y0, x1 - x0, y1 - y0);
+		target.restore();
+	}
+	const band$1 = () => scene.wave ?? scene.pitch * 9.5;
+	const waveX = (t) => {
+		const b$1 = band$1(), span$2 = scene.width + 2.5 * b$1;
+		return (t - waveStart) / WAVE_MS % 1 * span$2 - 1.3 * b$1;
+	};
+	let crest = 0, waveCrest = NaN;
+	/** How far up the wave has a seat at `x`. */
+	function waveUp(x) {
+		const d = (x - crest) / (band$1() / 9.5);
+		return d > 0 ? Math.max(0, 1 - d / 1.5) : d > -8 ? Math.pow(1 + d / 8, 1.5) : 0;
+	}
+	const liftOf = (e, size) => {
+		if (size <= 8) return e < .45 ? 0 : Math.round(size * (size <= 5 ? 1 : .6));
+		const q = e <= .15 ? 0 : e < .45 ? 1 / 3 : e < .75 ? 2 / 3 : 1;
+		return q && Math.max(1, Math.round(q * size * .4));
+	};
+	/**
+	* Where the far rows stand, a lighter swathe over them: standing up a row's height alone looks the same in a
+	* packed stand, so the wave shows as light running through it, brightest in its middle, from the back row's
+	* heads to the front far row's feet there (only over guys and stand, never a see-through canvas).
+	*/
+	function swathe(target) {
+		const far$1 = [];
+		rowBig.forEach((b$1, r) => {
+			if (b$1 <= 8 && rowXs[r].length) far$1.push(r);
+		});
+		if (!far$1.length) return;
+		const u = band$1() / 9.5, at = (r) => {
+			const [a] = span$1(r, crest, crest + 1), s = scene.seats[scene.rows[r][Math.min(a, scene.rows[r].length - 1)]];
+			return s;
+		};
+		const back = at(far$1[0]), front = at(far$1[far$1.length - 1]), top = back.y - back.size, bottom = front.y + front.size;
+		if (bottom <= top) return;
+		target.globalCompositeOperation = "source-atop";
+		target.fillStyle = "#ffffff";
+		target.globalAlpha = .1;
+		target.fillRect(Math.floor(crest - 3.3 * u), top, Math.ceil(4.1 * u), bottom - top);
+		target.globalAlpha = .08;
+		target.fillRect(Math.floor(crest - 2.2 * u), top, Math.ceil(2.6 * u), bottom - top);
+		target.globalCompositeOperation = "source-over";
+		target.globalAlpha = 1;
+	}
+	/** The wave's band at crest `c`, from the top row's raised heads to the front row's feet (one plain rect is quicker to clip to than a rect a row). */
+	function waveRect(c = crest) {
+		const u = band$1() / 9.5, top = Math.max(0, standTop - biggest - 4);
+		return [
+			c - 8 * u - biggest - 4,
+			top,
+			9.5 * u + 2 * biggest + 8,
+			Math.max(1, standBottom + 2 - top)
+		];
+	}
+	/**
+	* What the wave changed as its crest went from `from` to `to`: the near rows' whole band (they rise in steps and
+	* put their arms up), and for the far rows, which only stand or sit under one swathe, just where its edges passed.
+	*/
+	function waveMoved(from, to) {
+		const u = band$1() / 9.5;
+		if (Number.isNaN(from)) return [waveRect(to)];
+		if (!farBig || to < from || to - from > u) return [waveRect(from), waveRect(to)];
+		const out = [], [x, , w] = waveRect(from);
+		if (nearTop < Infinity) {
+			const top$1 = Math.max(0, nearTop - Math.ceil(biggest * .4) - 4);
+			out.push([
+				x,
+				top$1,
+				w + to - from,
+				standBottom + 2 - top$1
+			]);
+		}
+		const top = Math.max(0, standTop - biggest - 4), h = farBottom + 2 - top, pad = farBig + 3;
+		for (const [a, b$1] of [[-3.31, -2.2], [.4, .83]]) out.push([
+			from + a * u - pad,
+			top,
+			to - from + (b$1 - a) * u + 2 * pad,
+			h
+		]);
+		return out;
+	}
+	/** Row `r` from `from` to `to` in the wave: runs of seats lifted alike copied in one go, arms up and lighter at the crest. */
+	const runs$1 = [], up = [];
+	function waveRow(target, r, from, to) {
+		const row = scene.rows[r], u = band$1() / 9.5;
+		const [a, b$1] = span$1(r, Math.max(from, crest - 8 * u - rowBig[r]), Math.min(to, crest + 1.5 * u + 1));
+		let start = from, key = 0;
+		runs$1.length = 0;
+		up.length = 0;
+		for (let p = a; p < b$1; p++) {
+			const s = scene.seats[row[p]], e = waveUp(s.x + s.size / 2), l = liftOf(e, s.size), k = l * 2 + (e >= .75 && s.size >= 10 ? 1 : 0);
+			if (k !== key) {
+				if (s.x > start) runs$1.push(start, s.x, key);
+				start = Math.max(start, s.x);
+				key = k;
+			}
+			if (e >= .75 && s.size >= 12) up.push(row[p]);
+		}
+		runs$1.push(start, to, key);
+		for (let n = 0; n < runs$1.length; n += 3) blitRow(target, r, runs$1[n], runs$1[n + 1], -(runs$1[n + 2] >> 1));
+		target.globalCompositeOperation = "lighter";
+		target.globalAlpha = .28;
+		for (let n = 0; n < runs$1.length; n += 3) if (runs$1[n + 2] & 1) blitRow(target, r, runs$1[n], runs$1[n + 1], -(runs$1[n + 2] >> 1));
+		target.globalCompositeOperation = "source-over";
+		target.globalAlpha = 1;
+		for (const i of up) {
+			const g = bySeat[i];
+			if (!g || !atRest(g)) continue;
+			const s = scene.seats[i], id = cellOf(g, i);
+			arms$1(target, g, i, s.x, s.y - liftOf(waveUp(s.x + s.size / 2), s.size), s.size, id);
+		}
+	}
+	/**
+	* Arms up for the wave (the front rows' guys, 12 and up), out of their sides at the shoulder: in their
+	* body colour just clear of their head, bending out a pixel halfway, to a hand just over it, in their ink.
+	*/
+	function arms$1(target, g, i, x, y, size, id) {
+		const info = armOf(size, id), ext = extOf(size, id);
+		if (!info || !ext) return;
+		const bandI = scene.bands[i], left = x + (info & 15) - 1, right = x + (info >> 4 & 15) + 1, shoulder = y + (info >> 8 & 15), top = y + (ext >> 8 & 15);
+		if (g.arm?.[0] !== bandI || g.arm[1] !== scene) g.arm = [
+			bandI,
+			scene,
+			tinted(g.base.body, scene.tints[bandI]),
+			tinted(g.base.ink, scene.tints[bandI])
+		];
+		const hand = top - (size >= 12 ? 1 : 0), bend = Math.round((shoulder + hand) / 2), wide = size >= 12, [, , body, ink] = g.arm;
+		for (const [ax, out] of [[left, -1], [right, 1]]) {
+			const up$1 = ax + out;
+			target.fillStyle = body;
+			target.fillRect(ax, bend, 1, shoulder - bend + 1);
+			target.fillRect(up$1, hand, 1, bend - hand + 1);
+			target.fillStyle = ink;
+			target.fillRect(up$1, hand - 1, 1, 1);
+			if (wide) {
+				target.fillRect(ax + out, bend + 1, 1, shoulder - bend);
+				target.fillRect(up$1 + out, hand, 1, bend - hand + 1);
+			}
+		}
+	}
+	/** How a moving guy is drawn at `t`: lifted by the wave or a hop, flashing, fading in, arms up. */
+	function liveOf(g, s, t) {
+		let dy = 0, bright = 0, up$1 = false;
+		if (waving) {
+			const e = waveUp(s.x + s.size / 2);
+			dy -= liftOf(e, s.size);
+			bright = e >= .75 && s.size >= 10 ? .28 : 0;
+			up$1 = e >= .75;
+		}
+		const since = t - g.hopAt;
+		if (since >= 0 && since < g.hopFor) {
+			const lift = g.hopFor < HOP_MS ? 1 : Math.max(1, s.size / 4);
+			dy -= Math.max(1, Math.round(Math.sin(since / g.hopFor * Math.PI) * lift));
+			if (s.size <= 6 && since < 120) bright = Math.max(bright, .3);
+		}
+		let alpha = 1;
+		if (g.arriving) {
+			const a = Math.min(1, (t - g.joined) / ARRIVE_MS);
+			alpha = a;
+			dy -= Math.round((1 - a) * s.size * .6);
+		}
+		return {
+			dy,
+			bright,
+			up: up$1,
+			alpha,
+			key: (dy + 64) * 4 + (bright ? 2 : 0) + (up$1 ? 1 : 0) + (alpha < 1 ? Math.round(alpha * 64) * 1024 : 0)
+		};
+	}
+	function drawLive(target, g, i, t) {
+		const s = scene.seats[i], id = cellOf(g, i), { dy, bright, up: up$1, alpha } = liveOf(g, s, t);
+		if (alpha < 1) target.globalAlpha = alpha;
+		if (up$1 && s.size >= 12) arms$1(target, g, i, s.x, s.y + dy, s.size, id);
+		blit(target, s.size, id, s.x, s.y + dy);
+		if (bright) {
+			target.globalCompositeOperation = "lighter";
+			target.globalAlpha = bright;
+			blit(target, s.size, id, s.x, s.y + dy);
+			target.globalCompositeOperation = "source-over";
+		}
+		target.globalAlpha = 1;
+	}
+	const SLOTS$1 = 40;
+	let glintsDue = true, beats = [], glintStep = -1, glintNow = [];
+	function sortGlints() {
+		glintsDue = false;
+		const far$1 = {
+			period: 4e3,
+			dur: 260,
+			slots: Array.from({ length: SLOTS$1 }, () => [])
+		}, near = {
+			period: 5400,
+			dur: 180,
+			slots: Array.from({ length: SLOTS$1 }, () => [])
+		};
+		for (const g of rare) {
+			if (g.seat < 0 || g.seat >= scene.seats.length || !g.shine) continue;
+			const small = scene.seats[g.seat].size <= 5;
+			if (!small && !g.glint) continue;
+			const b$1 = small ? far$1 : near, at = startOf(g, small);
+			b$1.slots[Math.floor(at / b$1.period * SLOTS$1) % SLOTS$1].push(g);
+		}
+		beats = [far$1, near];
+	}
+	const startOf = (g, small) => small ? (4e3 - g.hash % 4e3) % 4e3 : 90 * ((60 - g.hash % 97 % 60) % 60);
+	/** The glints showing at `t`, as [guy, rect]. */
+	function glintsAt(t) {
+		if (glintsDue) sortGlints();
+		const out = [];
+		for (const b$1 of beats) {
+			const now = t % b$1.period, first = Math.floor((now - b$1.dur) / b$1.period * SLOTS$1), last = Math.floor(now / b$1.period * SLOTS$1);
+			for (let k = first; k <= last; k++) for (const g of b$1.slots[(k % SLOTS$1 + SLOTS$1) % SLOTS$1]) {
+				if (g.seat < 0 || g.seat >= scene.seats.length || lit$1?.guy === g || moving.has(g) || bySeat[g.seat] !== g) continue;
+				const small = b$1.period === 4e3, since = ((now - startOf(g, small)) % b$1.period + b$1.period) % b$1.period;
+				if (since >= b$1.dur) continue;
+				const s = scene.seats[g.seat];
+				out.push([g, small ? [
+					s.x + (s.size >> 1),
+					s.y - 2,
+					1,
+					1
+				] : [
+					s.x + s.size - 1,
+					s.y - 1,
+					1,
+					1
+				]]);
+			}
+		}
+		return out;
+	}
+	function draw(t) {
+		frame = 0;
+		if (gone) return;
+		const dt = lastFrame ? Math.min(100, t - lastFrame) : 16;
+		lastFrame = t;
+		const before = scene;
+		options.beforeFrame?.();
+		if (wanted) {
+			const how = wanted;
+			wanted = null;
+			relayout(how);
+		}
+		if (scene !== before && building && !building.all) {
+			wake();
+			return;
+		}
+		const budget = building && !building.all ? 0 : performance.now() + (moving.size || waving || lit$1 ? 4 : 7);
+		while (made < queue.length && performance.now() < budget) make(queue[made++]);
+		if (made >= queue.length) {
+			queue = [];
+			made = 0;
+		} else if (made > 4096) {
+			queue = queue.slice(made);
+			made = 0;
+		}
+		if (slide && t >= slide.until) {
+			slide = null;
+			for (const g of guys.values()) delete g.from;
+			tidy();
+			building = {
+				next: 0,
+				all: true
+			};
+		}
+		if (building) {
+			if (scene.later) {
+				ensureBackdrop();
+				if (!building.all && !slide) {
+					wake();
+					return;
+				}
+			}
+			if (!slide && !buildRows(performance.now() + 6)) {
+				wake();
+				return;
+			}
+			building = null;
+			if (slide) stale = "all";
+			else {
+				stale = [];
+				stillPainted = true;
+				whole = true;
+			}
+			if (fade && fade.until === Infinity) fade.until = t + fade.ms;
+		}
+		if (fade && t >= fade.until) {
+			fade = null;
+			tidy();
+			whole = true;
+		}
+		if (options.idle) idleHops(dt, t);
+		crest = waveX(Math.floor(t / 33.3) * 33.3);
+		const live = [], held = [];
+		for (const g of moving) {
+			const done = t - g.hopAt >= g.hopFor && !(g.arriving && t - g.joined < ARRIVE_MS);
+			if (done) {
+				moving.delete(g);
+				g.arriving = false;
+				restIn(g.seat);
+				continue;
+			}
+			if (slide || g.seat < 0 || g.seat >= scene.seats.length) continue;
+			const key = liveOf(g, scene.seats[g.seat], t).key, r = rectOf(g.seat, Math.ceil(scene.seats[g.seat].size * .7));
+			if (key !== g.shown) {
+				g.shown = key;
+				live.push(r);
+			} else held.push(r);
+		}
+		const changed$1 = settleRests();
+		const step$1 = Math.floor(t / 33.3);
+		if (step$1 !== glintStep) {
+			glintStep = step$1;
+			glintNow = slide || !busy() ? [] : glintsAt(step$1 * 33.3);
+		}
+		const glints = glintNow, glowing = new Set(glints.map(([, r]) => `${r[0]},${r[1]}`));
+		const dark = shown.filter((r) => !glowing.has(`${r[0]},${r[1]}`));
+		const sweep = waving && !slide ? waveRect() : null, swept = sweep && crest !== waveCrest ? waveMoved(waveCrest, crest) : [];
+		waveCrest = sweep ? crest : NaN;
+		const spotNow = lit$1 ? spotFrame(t) : null;
+		const { k, ox, oy } = scene;
+		ctx.imageSmoothingEnabled = false;
+		let painted$2 = true, spotPaint = true;
+		if (whole || fade || slide || spotNow?.whole) {
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
+			if (!scene.backdrop) ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.setTransform(k, 0, 0, k, ox, oy);
+			ctx.drawImage(still$1, 0, 0);
+			if (fade) {
+				ctx.setTransform(fade.k, 0, 0, fade.k, fade.ox, fade.oy);
+				ctx.globalAlpha = Math.max(0, Math.min(1, (fade.until - t) / fade.ms));
+				ctx.drawImage(fade.canvas, 0, 0);
+				ctx.globalAlpha = 1;
+				ctx.setTransform(k, 0, 0, k, ox, oy);
+			}
+			if (slide) drawSlide(t);
+			else {
+				for (const r of merge([
+					...live,
+					...held,
+					...sweep ? [sweep] : []
+				])) patch(ctx, r, t, false);
+				if (lit$1?.overlay) dim(ctx, 0, 0, scene.width, scene.height);
+			}
+			whole = false;
+		} else {
+			const dirty = merge([
+				...dark,
+				...live,
+				...changed$1
+			]);
+			spotPaint = !!spotNow && (!lit$1.drawn || spotNow.moved || [...dirty, ...swept].some((r) => meets(r, lit$1.drawn)));
+			if (spotPaint && lit$1.drawn) dirty.push(lit$1.drawn);
+			ctx.setTransform(k, 0, 0, k, ox, oy);
+			painted$2 = dirty.length + swept.length > 0;
+			for (const r of merge(dirty)) patch(ctx, r, t);
+			if (swept.length) patch(ctx, swept, t);
+		}
+		const was = new Set(shown.map((r) => `${r[0]},${r[1]}`));
+		for (const [g, [x, y, w, h]] of glints) {
+			if (!painted$2 && was.has(`${x},${y}`) || lit$1?.drawn && meets([
+				x,
+				y,
+				w,
+				h
+			], lit$1.drawn)) continue;
+			ctx.fillStyle = scene.seats[g.seat].size <= 5 ? g.shine : "#ffffff";
+			ctx.fillRect(x, y, w, h);
+		}
+		shown = glints.map(([, r]) => r);
+		if (lit$1) spot(t, spotNow, spotPaint);
+		if (busy() || whole || shown.length) wake();
+	}
+	const busy = () => !!(waving || lit$1 || fade || slide || building || wanted || restless.size || made < queue.length || moving.size || options.idle);
+	function drawSlide(t) {
+		const e = 1 - Math.pow(1 - Math.min(1, 1 - (slide.until - t) / SLIDE_MS), 3), { k, ox, oy } = scene;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		for (const row of scene.rows) for (const i of row) {
+			const g = bySeat[i];
+			if (!g || lit$1?.guy === g) continue;
+			const s = scene.seats[i], tx = ox + s.x * k, ty = oy + s.y * k, side = s.size * k, f = g.from ?? {
+				x: tx,
+				y: ty + side,
+				side: 0
+			};
+			const x = Math.round(f.x + (tx - f.x) * e), y = Math.round(f.y + f.side - (f.y + f.side - ty - side) * e - side);
+			if (!g.from) ctx.globalAlpha = e;
+			blit(ctx, s.size, cellOf(g, i), x, y, side);
+			ctx.globalAlpha = 1;
+		}
+		ctx.setTransform(k, 0, 0, k, ox, oy);
+	}
+	/** Rects that touch become one, so neighbours hopping together are drawn once. */
+	function merge(rects) {
+		const out = [];
+		for (const r of rects) {
+			let [x, y, w, h] = r;
+			for (let i = 0; i < out.length; i++) {
+				const [a, b$1, c, d] = out[i];
+				if (x <= a + c && a <= x + w && y <= b$1 + d && b$1 <= y + h) {
+					const nx = Math.min(x, a), ny = Math.min(y, b$1);
+					w = Math.max(x + w, a + c) - nx;
+					h = Math.max(y + h, b$1 + d) - ny;
+					x = nx;
+					y = ny;
+					out.splice(i, 1);
+					i = -1;
+				}
+			}
+			out.push([
+				x,
+				y,
+				w,
+				h
+			]);
+		}
+		return out;
+	}
+	function idleHops(dt, t) {
+		const n = scene.seats.length;
+		if (!n) return;
+		let picks = Math.min(30, Math.round(guys.size * dt / 3e3 + Math.random() * .5));
+		for (let tries = 0; picks > 0 && tries < 60; tries++) {
+			const i = Math.floor(Math.random() * n), g = bySeat[i];
+			if (!g || scene.seats[i].size < 6 || moving.has(g)) continue;
+			hopGuy(g, t, 160);
+			picks--;
+		}
+	}
+	let spotSprite = null, spotFor$1 = null;
+	/** Where the spotlit guy is at `t`, in device pixels, and whether the canvas must be drawn whole for it. */
+	function spotFrame(now) {
+		const t = Math.floor(now / 33.3) * 33.3;
+		const { guy, from, until } = lit$1, seated = guy.seat >= 0 && guy.seat < scene.seats.length;
+		const s = seated ? scene.seats[guy.seat] : null, { k, ox, oy } = scene;
+		const rise = Math.max(0, Math.min(1, (t - from) / 450, (until - t) / 350));
+		const lineH = lit$1.label ? Math.round(30 * dpr) : 0, pad = Math.round(8 * dpr);
+		const seatSide = s ? s.size * k : 16;
+		const F = Math.max(1, Math.min(Math.floor(Math.min(devH * .6, devH - lineH - pad * 2) / 16), Math.max(Math.floor(Math.min(devH * .36, devW * .3) / 16), Math.ceil(seatSide * 2 / 16))));
+		const ex = devW / 2, eb = devH - pad - lineH;
+		const sx = s ? ox + (s.x + s.size / 2) * k : ex, sb = s ? oy + (s.y + s.size) * k : devH + 16 * F;
+		const lift = s ? Math.max(0, Math.min(1, (t - from - 250) / 450)) : 1, e2 = 1 - Math.pow(1 - Math.min(lift, rise), 3);
+		const startSide = s ? seatSide : 16 * F, side = startSide + (16 * F - startSide) * e2, cx = sx + (ex - sx) * e2, bottom = sb + (eb - sb) * e2;
+		const [tx, tb, ts] = !s || e2 >= .5 ? [
+			ex,
+			eb,
+			16 * F
+		] : [
+			sx,
+			sb,
+			seatSide
+		];
+		const aim = `${Math.round((tx - ox) / k)},${Math.round((tb - oy) / k)},${Math.round(ts / k)}`, swung = aim !== lit$1.aim;
+		if (swung || !lit$1.overlay) {
+			lit$1.overlay = overlayFor((tx - ox) / k, (tb - oy) / k, ts / k);
+			lit$1.aim = aim;
+		}
+		const pose = `${Math.round(cx)},${Math.round(bottom)},${Math.round(side)},${Math.round(rise * 32)}`, moved = pose !== lit$1.pose;
+		lit$1.pose = pose;
+		const level = Math.round(4 * Math.max(0, Math.min(1, (now - from) / 250, (until - now) / 250))) / 4, stepped = level !== lit$1.level;
+		lit$1.level = level;
+		return {
+			cx,
+			bottom,
+			side,
+			F,
+			lineH,
+			pad,
+			rise,
+			e2,
+			seatSide,
+			whole: stepped || swung,
+			moved
+		};
+	}
+	/** Dims a world rect for the spotlight: its overlay, at the step it has faded to. */
+	function dim(target, x, y, w, h) {
+		const { level, overlay: o } = lit$1;
+		if (!o || w <= 0 || h <= 0 || !level) return;
+		target.globalCompositeOperation = "source-atop";
+		target.globalAlpha = .62 * level;
+		target.fillStyle = scene.shadow;
+		const ix0 = Math.max(x, o.x), iy0 = Math.max(y, o.y), ix1 = Math.min(x + w, o.x + o.canvas.width), iy1 = Math.min(y + h, o.y + o.canvas.height);
+		if (ix1 <= ix0 || iy1 <= iy0) target.fillRect(x, y, w, h);
+		else {
+			if (iy0 > y) target.fillRect(x, y, w, iy0 - y);
+			if (y + h > iy1) target.fillRect(x, iy1, w, y + h - iy1);
+			if (ix0 > x) target.fillRect(x, iy0, ix0 - x, iy1 - iy0);
+			if (x + w > ix1) target.fillRect(ix1, iy0, x + w - ix1, iy1 - iy0);
+			target.drawImage(o.canvas, ix0 - o.x, iy0 - o.y, ix1 - ix0, iy1 - iy0, ix0, iy0, ix1 - ix0, iy1 - iy0);
+		}
+		target.globalAlpha = 1;
+		target.globalCompositeOperation = "source-over";
+	}
+	/**
+	* The spotlight's dimming round its light, at world pixels: a box holding a beam from the light
+	* nearest `cx` down onto a pool round a guy `side` wide standing at `bottom`, dithered at its edge,
+	* in the shadow colour everywhere else (as everything outside the box is).
+	*/
+	function overlayFor(cx, bottom, side) {
+		const W = scene.width, H = scene.height, c = lit$1?.overlay?.canvas ?? document.createElement("canvas");
+		const lights = scene.lights ?? [], light$3 = lights.length ? lights.reduce((best, l) => Math.abs(l.x - cx) < Math.abs(best.x - cx) ? l : best) : null;
+		const wTop = Math.max(2, side * .3), wBottom = side * .85, poolW = side * 1.25, poolH = side * .55, poolY = bottom - side * .1;
+		const top = Math.max(0, Math.floor(light$3 ? Math.min(light$3.y, bottom - side * 1.6) : bottom - side * 1.6)), end = Math.min(H, Math.ceil(poolY + poolH + 2));
+		const left = Math.max(0, Math.floor(Math.min(light$3?.x ?? cx, cx - poolW) - wTop - 3)), right = Math.min(W, Math.ceil(Math.max(light$3?.x ?? cx, cx + poolW) + wTop + 3));
+		if (end <= top || right <= left) {
+			c.width = c.height = 0;
+			return {
+				canvas: c,
+				x: 0,
+				y: 0
+			};
+		}
+		const bw = right - left, bh = end - top;
+		if (c.width !== bw || c.height !== bh) {
+			c.width = bw;
+			c.height = bh;
+		}
+		const g = c.getContext("2d"), img = g.createImageData(bw, bh), px = new Uint32Array(img.data.buffer);
+		const [r, gg, b$1] = rgbOf(scene.shadow), dimC = (255 << 24 | b$1 << 16 | gg << 8 | r) >>> 0;
+		px.fill(dimC);
+		for (let y = top; y < end; y++) {
+			const u = light$3 ? Math.max(0, Math.min(1, (y - light$3.y) / Math.max(1, bottom - side * .5 - light$3.y))) : 0;
+			const mid = light$3 ? light$3.x + (cx - light$3.x) * u : cx, half = light$3 && y >= light$3.y && y <= bottom ? wTop + (wBottom - wTop) * u : -1;
+			const reach = (h) => {
+				const v = 1 - ((y - poolY) / h) ** 2;
+				return v > 0 ? poolW * Math.sqrt(v) : -1;
+			};
+			const pw = Math.max(reach(poolH), light$3 ? -1 : reach(side * 1.4));
+			let lo = Infinity, hi = -Infinity;
+			if (half >= 0) {
+				lo = mid - half;
+				hi = mid + half;
+			}
+			if (pw >= 0) {
+				lo = Math.min(lo, cx - pw);
+				hi = Math.max(hi, cx + pw);
+			}
+			if (hi < lo) continue;
+			const row = (y - top) * bw - left, a0 = half >= 0 ? Math.ceil(mid - half + 2) : 0, a1 = half >= 0 ? Math.floor(mid + half - 2) : -1;
+			const vp = .5 - ((y - poolY) / poolH) ** 2, inPool = vp > 0 ? poolW * Math.sqrt(vp) : -1;
+			const b0 = inPool >= 0 ? Math.ceil(cx - inPool) : 0, b1 = inPool >= 0 ? Math.floor(cx + inPool) : -1;
+			for (const [p0, p1] of [[a0, a1], [b0, b1]]) if (p1 >= p0) px.fill(0, row + Math.max(left, p0), row + Math.min(right - 1, p1) + 1);
+			for (let x = Math.max(left, Math.floor(lo)); x < Math.min(right, Math.ceil(hi) + 1); x++) {
+				if (x >= a0 && x <= a1 || x >= b0 && x <= b1) continue;
+				const beam = half < 0 ? 9 : Math.abs(x - mid) - half;
+				const pool = ((x - cx) / poolW) ** 2 + ((y - poolY) / poolH) ** 2 - 1, glow = light$3 ? 9 : ((x - cx) / poolW) ** 2 + ((y - poolY) / (side * 1.4)) ** 2 - 1;
+				const edge = Math.min(beam / 2, pool * 2, glow * 3);
+				px[(y - top) * bw + x - left] = edge <= -1 ? 0 : edge >= 0 ? dimC : -edge * 16 > BAYER$1[(y & 3) * 4 + (x & 3)] ? 0 : dimC;
+			}
+		}
+		g.putImageData(img, 0, 0);
+		return {
+			canvas: c,
+			x: left,
+			y: top
+		};
+	}
+	/** The spotlight's turn of a frame: it ends, the neighbours hop, and (when `paint`) the guy and their line are drawn. */
+	function spot(t, f, paint$1) {
+		const { guy, label, from, until } = lit$1;
+		if (t >= until || guys.get(guy.key) !== guy) {
+			lit$1 = null;
+			restIn(guy.seat);
+			whole = true;
+			return;
+		}
+		const seated = guy.seat >= 0 && guy.seat < scene.seats.length, { k, ox, oy } = scene;
+		if (!lit$1.landed && t - from > 300) {
+			lit$1.landed = true;
+			if (seated) {
+				const r = rowOf[guy.seat], p = placeOf[guy.seat], row = scene.rows[r] ?? [];
+				[
+					-1,
+					1,
+					-2,
+					2,
+					-3,
+					3
+				].forEach((d, n) => {
+					const g = bySeat[row[p + d]];
+					if (g) hopGuy(g, t + 40 * n, HOP_MS, true);
+				});
+			}
+		}
+		if (!paint$1) return;
+		if (spotFor$1 !== guy) {
+			guy.look ??= crowdLook(guy.spec);
+			spotSprite ??= document.createElement("canvas");
+			spotSprite.width = spotSprite.height = 16;
+			spotSprite.getContext("2d").putImageData(new ImageData(crowdSpriteOf(guy.look, 16).rgba, 16, 16), 0, 0);
+			spotFor$1 = guy;
+		}
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		const { cx, bottom, side, rise } = f, ease = 1 - Math.pow(1 - rise, 3);
+		let gx, gy, gs;
+		if (seated && (side < 16 || f.e2 <= 0)) {
+			const s = scene.seats[guy.seat];
+			gs = s.size * k;
+			gx = Math.round(cx - gs / 2);
+			gy = Math.round(bottom - gs);
+			blit(ctx, s.size, cellOf(guy, guy.seat), gx, gy, gs);
+		} else {
+			const sc = Math.max(1, Math.round(side / 16));
+			gs = 16 * sc;
+			gx = Math.round(cx - 8 * sc);
+			gy = Math.round(bottom - 16 * sc);
+			ctx.drawImage(spotSprite, 0, 0, 16, 16, gx, gy, gs, gs);
+		}
+		let lx0 = gx, lx1 = gx + gs, ly1 = gy + gs;
+		if (label && ease > .05) {
+			const [x, y, w, h] = drawLabel(label, cx, Math.min(devH - f.lineH / 2 - 2 * dpr, bottom + f.lineH / 2 + 2 * dpr), ease);
+			lx0 = Math.min(lx0, x);
+			lx1 = Math.max(lx1, x + w);
+			ly1 = Math.max(ly1, y + h);
+		}
+		const wx = Math.floor((lx0 - ox) / k) - 1, wy = Math.floor((gy - oy) / k) - 1;
+		lit$1.drawn = [
+			wx,
+			wy,
+			Math.ceil((lx1 - ox) / k) + 1 - wx,
+			Math.ceil((ly1 - oy) / k) + 1 - wy
+		];
+		ctx.setTransform(k, 0, 0, k, ox, oy);
+	}
+	/** The spotlit guy's line, in a pill that fits the canvas: smaller type first, then a shorter name, the score kept. Returns its box in device pixels. */
+	function drawLabel(text, dcx, dcy, alpha) {
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		const W = devW / dpr, cy = dcy / dpr, maxW = W - 16;
+		let px = 15, line = text;
+		const font = (size) => options.font ?? `700 ${size}px system-ui, sans-serif`;
+		ctx.font = font(px);
+		while (!options.font && px > 11 && ctx.measureText(line).width + 20 > maxW) ctx.font = font(--px);
+		const cut = line.lastIndexOf(" · "), tail = cut > 0 ? line.slice(cut) : "";
+		let head$1 = cut > 0 ? line.slice(0, cut) : line;
+		while (head$1.length > 1 && ctx.measureText(line).width + 20 > maxW) {
+			head$1 = head$1.slice(0, -1);
+			line = head$1.trimEnd() + "…" + tail;
+		}
+		const tw = Math.min(maxW, Math.ceil(ctx.measureText(line).width) + 20);
+		const x = Math.max(8 + tw / 2, Math.min(W - 8 - tw / 2, dcx / dpr));
+		ctx.globalAlpha = alpha;
+		ctx.fillStyle = scene.shadow;
+		ctx.beginPath();
+		ctx.roundRect(x - tw / 2, cy - 13, tw, 26, 13);
+		ctx.fill();
+		ctx.fillStyle = lightness(scene.shadow) > .5 ? "#141414" : "#ffffff";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(line, x, cy + 1);
+		ctx.globalAlpha = 1;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		return [
+			(x - tw / 2) * dpr - 2,
+			(cy - 13) * dpr - 2,
+			tw * dpr + 4,
+			26 * dpr + 4
+		];
+	}
+	let cssBefore = [0, 0], justSet = false;
+	function measure(entry) {
+		dpr = globalThis.devicePixelRatio || 1;
+		let cssW = entry?.contentRect.width || canvas.clientWidth || 300, cssH = entry?.contentRect.height || canvas.clientHeight || 150;
+		if (justSet && dpr !== 1 && cssBefore[0] && Math.abs(cssW - canvas.width) < 1 && Math.abs(cssH - canvas.height) < 1 && (Math.abs(cssW - cssBefore[0]) >= 1 || Math.abs(cssH - cssBefore[1]) >= 1)) {
+			[cssW, cssH] = cssBefore;
+			if (canvas.style) {
+				canvas.style.width = `${cssW}px`;
+				canvas.style.height = `${cssH}px`;
+			}
+			entry = void 0;
+		}
+		justSet = false;
+		const box = entry?.devicePixelContentBoxSize?.[0];
+		const exact = box && Math.abs(box.inlineSize - cssW * dpr) <= 2 && Math.abs(box.blockSize - cssH * dpr) <= 2;
+		const w = Math.max(1, exact ? box.inlineSize : Math.round(cssW * dpr)), h = Math.max(1, exact ? box.blockSize : Math.round(cssH * dpr));
+		const changed$1 = w !== devW || h !== devH;
+		devW = w;
+		devH = h;
+		if (canvas.width !== devW) {
+			canvas.width = devW;
+			justSet = true;
+		}
+		if (canvas.height !== devH) {
+			canvas.height = devH;
+			justSet = true;
+		}
+		cssBefore = [cssW, cssH];
+		if (changed$1) whole = true;
+		return changed$1;
+	}
+	let watch = null, media = null;
+	const onMedia = () => {
+		listenDpr();
+		measure();
+		request("cut");
+	};
+	function listenDpr() {
+		media?.removeEventListener?.("change", onMedia);
+		media = typeof matchMedia === "function" ? matchMedia(`(resolution: ${globalThis.devicePixelRatio || 1}dppx)`) : null;
+		media?.addEventListener?.("change", onMedia);
+	}
+	function wake() {
+		if (!frame && !gone) frame = requestAnimationFrame(draw);
+	}
+	function hopGuy(g, at, ms = HOP_MS, force = false) {
+		if (moving.has(g) && at - g.hopAt < g.hopFor) return;
+		if (!force && !moving.has(g) && moving.size >= HOP_CAP && guys.size > 2e3) return;
+		g.hopAt = at;
+		g.hopFor = ms;
+		if (!moving.has(g)) {
+			moving.add(g);
+			restIn(g.seat);
+		}
+	}
+	measure();
+	scene = options.build(devW, devH, dpr);
+	ensureBackdrop();
+	tintKey = JSON.stringify(scene.tints);
+	index();
+	still$1.width = scene.width;
+	still$1.height = scene.height;
+	layTiles();
+	building = {
+		next: 0,
+		all: true
+	};
+	if (typeof ResizeObserver === "function") {
+		watch = new ResizeObserver((entries) => {
+			if (measure(entries[entries.length - 1])) request("cut");
+		});
+		try {
+			watch.observe(canvas, { box: "device-pixel-content-box" });
+		} catch {
+			watch.observe(canvas);
+		}
+	}
+	listenDpr();
+	wake();
+	return {
+		guys,
+		get scene() {
+			return scene;
+		},
+		get dpr() {
+			return dpr;
+		},
+		get size() {
+			return [devW, devH];
+		},
+		relayout,
+		request,
+		join(key, spec, seat$1, arrive = true) {
+			const b$1 = crowdBase(spec), now = performance.now();
+			const g = {
+				key,
+				spec,
+				seat: seat$1,
+				joined: now,
+				hopAt: -1e9,
+				hopFor: HOP_MS,
+				look: null,
+				base: {
+					body: b$1.body,
+					eye: b$1.eye,
+					ink: b$1.ink
+				},
+				shine: b$1.shine?.color ?? null,
+				glint: (b$1.shine?.grade ?? 0) >= 3,
+				cells: new Map(),
+				arriving: false,
+				hash: hash(key)
+			};
+			guys.set(key, g);
+			if (b$1.shine) {
+				rare.add(g);
+				glintsDue = true;
+			}
+			if (seat$1 >= 0 && seat$1 < scene.seats.length) {
+				bySeat[seat$1] = g;
+				if (arrive && scene.seats[seat$1].size >= 6 && moving.size < 160) {
+					g.arriving = true;
+					moving.add(g);
+				}
+				restIn(seat$1);
+				want(g);
+			}
+			wake();
+			return g;
+		},
+		leave(g) {
+			guys.delete(g.key);
+			moving.delete(g);
+			queued.delete(g);
+			if (rare.delete(g)) glintsDue = true;
+			if (lit$1?.guy === g) {
+				lit$1 = null;
+				whole = true;
+			}
+			if (g.seat >= 0 && bySeat[g.seat] === g) {
+				bySeat[g.seat] = void 0;
+				restIn(g.seat);
+			}
+			forget(g);
+			wake();
+		},
+		move(g, seat$1) {
+			if (g.seat >= 0 && bySeat[g.seat] === g) {
+				bySeat[g.seat] = void 0;
+				restIn(g.seat);
+			}
+			g.seat = seat$1;
+			if (rare.has(g)) glintsDue = true;
+			if (seat$1 >= 0 && seat$1 < scene.seats.length) {
+				bySeat[seat$1] = g;
+				restIn(seat$1);
+				want(g);
+			}
+			wake();
+		},
+		hop(g) {
+			const now = performance.now();
+			hopGuy(g, now, g.seat >= 0 && g.seat < scene.seats.length && scene.seats[g.seat].size <= 5 ? 300 : HOP_MS);
+			if (moving.has(g) && g.seat >= 0 && g.seat < scene.seats.length && scene.seats[g.seat].size <= 6) {
+				const row = scene.rows[rowOf[g.seat]] ?? [], p = placeOf[g.seat];
+				[[1, 80], [-1, 110]].forEach(([d, ms]) => {
+					const n = bySeat[row[p + d]];
+					if (n) hopGuy(n, now + ms, 300);
+				});
+			}
+			wake();
+		},
+		wave(on$1) {
+			if (on$1 && !waving) waveStart = performance.now();
+			if (!on$1 && waving) whole = true;
+			waving = on$1;
+			wake();
+		},
+		spotlight(g, label, ms) {
+			const now = performance.now();
+			const was = lit$1?.guy;
+			lit$1 = {
+				guy: g,
+				label,
+				from: now,
+				until: now + ms,
+				overlay: lit$1?.overlay ?? null,
+				aim: "",
+				level: -1,
+				landed: false,
+				drawn: null
+			};
+			if (was) restIn(was.seat);
+			restIn(g.seat);
+			whole = true;
+			wake();
+		},
+		resize() {
+			measure();
+			request("cut");
+		},
+		wake,
+		destroy() {
+			gone = true;
+			if (frame) cancelAnimationFrame(frame);
+			watch?.disconnect();
+			media?.removeEventListener?.("change", onMedia);
+			sheets.clear();
+			stand.clear();
+			guys.clear();
+			moving.clear();
+			rare.clear();
+		}
+	};
+}
+
+//#endregion
 //#region src/crowd-stage.ts
-/** How much haze lies over everything further back than each size, once that size is drawn. */
+/** Sizes rows step through, nearest first; neighbouring rows differ by one at most. */
+const LADDER$1 = [
+	16,
+	14,
+	12,
+	10,
+	8,
+	6,
+	5,
+	3,
+	2
+];
+/** How far toward the backdrop each size is tinted: the further back, the more. */
 const HAZE = {
-	2: .38,
-	4: .3,
-	6: .2,
-	8: .12,
-	10: .06,
-	16: 0
+	16: 0,
+	14: .03,
+	12: .06,
+	10: .1,
+	8: .16,
+	6: .24,
+	5: .3,
+	4: .34,
+	3: .4,
+	2: .48
 };
 /**
-* The seats of a crowd filling `width` × `height` world pixels: rows from the back (top) to the
-* front (bottom), each row's size growing with nearness, jittered a cell so far rows never line up.
-* In the order a crowd fills them: the front row first, from the middle out, then the row behind.
-* `density` above 1 packs more in (smaller guys sooner); the same arguments give the same seats.
+* The seats of a crowd filling `width` × `height` world pixels: rows from the front (the bottom edge,
+* where the front row's feet are) back to the top, each row's size shrinking with distance, jittered a
+* cell so far rows never line up. In the order a crowd fills them: the front row first, from the middle
+* out, then the row behind. Seats less than three quarters on the canvas are left out. `density` above
+* 1 packs more in (smaller guys sooner); the same arguments give the same seats.
 */
 function crowdSeats(width$1, height, density = 1, seed = "crowd") {
 	const rows = [];
-	for (let y = 6; y < height + 4;) {
-		const d = Math.min(1, y / height), want = 2 + 15 * Math.pow(d, 2.1) / Math.sqrt(density);
-		const size = want < 3 ? 2 : want < 5 ? 4 : want < 7 ? 6 : want < 9 ? 8 : want < 12.5 ? 10 : 16;
+	let at = -1;
+	for (let feet$1 = height;;) {
+		const d = Math.max(0, feet$1 / height), want = 2 + 15 * Math.pow(d, 2.1) / Math.sqrt(density);
+		let best = LADDER$1.reduce((b$1, s, i) => Math.abs(Math.log(s / want)) < Math.abs(Math.log(LADDER$1[b$1] / want)) ? i : b$1, 0);
+		if (at >= 0) best = Math.min(at + 1, Math.max(at, best));
+		at = best;
+		const size = LADDER$1[at];
+		if (feet$1 - size < -size / 4) break;
 		rows.push({
-			y,
+			y: feet$1 - size,
 			size
 		});
-		y += Math.max(2, Math.round(size * (size <= 2 ? 1 : size <= 4 ? .75 : .6)));
+		feet$1 -= Math.max(2, Math.round(size * (size <= 3 ? .67 : .6)));
 	}
+	rows.reverse();
 	const seats = [];
 	rows.forEach(({ y, size }, row) => {
-		const step$1 = size <= 2 ? 3 : size <= 4 ? size : Math.round(size * .92);
+		const step$1 = size <= 2 ? 3 : size <= 5 ? size : Math.round(size * .92);
 		const r = (k$1) => hash(`${seed}:${row}:${k$1}`) % 1e3 / 1e3;
 		let x = -size + Math.floor(r(-1) * step$1) - (row % 2 * step$1 >> 1), k = 0;
 		while (x < width$1 + size) {
-			seats.push({
+			const sy = y - (size <= 6 ? Math.floor(r(k * 2) * 2) : 0);
+			if (x >= -size / 4 && x + size <= width$1 + size / 4 && sy >= -size / 4) seats.push({
 				x,
-				y: y + (size <= 6 ? Math.floor(r(k * 2) * 2) : 0),
+				y: sy,
 				size,
 				row
 			});
@@ -26862,212 +30980,171 @@ function crowdSeats(width$1, height, density = 1, seed = "crowd") {
 	const mid = width$1 / 2;
 	return seats.sort((a, b$1) => b$1.row - a.row || Math.abs(a.x + a.size / 2 - mid) - Math.abs(b$1.x + b$1.size / 2 - mid));
 }
-const SHEET_COLUMNS = 64, SHEET_ROWS = 64;
+/** The page's background under an element, as #rrggbb, or undefined where none shows. */
+function pageBehind(el) {
+	for (let e = el; e && typeof getComputedStyle === "function"; e = e.parentElement) {
+		const m = getComputedStyle(e).backgroundColor.match(/rgba?\(([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:[ ,/]+([\d.]+))?/);
+		if (m && (m[4] === void 0 || +m[4] > .5)) return "#" + [
+			m[1],
+			m[2],
+			m[3]
+		].map((v) => Math.round(+v).toString(16).padStart(2, "0")).join("");
+	}
+	return void 0;
+}
 /**
 * A crowd on `canvas`, which the page sizes with CSS. It draws at the screen's own pixels, each world
-* pixel a whole number of them with smoothing off, so guys stay sharp at any size, zoom or density;
-* call `resize()` when the canvas's size or the zoom changes. Draws only while something moves.
+* pixel a whole number of them with smoothing off, so guys stay sharp at any size, zoom or density; it
+* follows the canvas's size and the screen's pixel density by itself (`resize()` still works). The canvas
+* stays see-through where nobody stands. Draws only while something moves.
 */
 function createCrowd(canvas, options = {}) {
-	const ctx = canvas.getContext("2d");
-	const backdrop$1 = options.backdrop ?? "#1d2030";
-	const haze = (a) => {
-		const n = parseInt(backdrop$1.slice(1, 7), 16);
-		return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
-	};
-	const members = [], byKey = new Map(), queue = [];
-	const sheets = new Map();
-	let order = null;
-	let worldW = 1, worldH = 1, k = 1, dpr = 1;
-	let seats = [], waving = !!options.wave, frame = 0, start = 0, gone = false;
-	let lit$1 = null;
-	function sheetFor(size) {
-		const list = sheets.get(size) ?? [];
-		sheets.set(size, list);
-		let s = list[list.length - 1];
-		if (!s || s.next >= SHEET_COLUMNS * SHEET_ROWS) {
-			const c = document.createElement("canvas");
-			c.width = SHEET_COLUMNS * size;
-			c.height = SHEET_ROWS * size;
-			s = {
-				canvas: c,
-				ctx: c.getContext("2d"),
-				next: 0
-			};
-			list.push(s);
-		}
-		return [s, list.length - 1];
+	const behind = () => options.backdrop ?? pageBehind(canvas.parentElement) ?? "#1d2030";
+	const free = [], arrived = new Map();
+	let next = 0, arrivals = 0, zoom = 0, seatCount = 0, laidCss = "";
+	const counted = new Map();
+	let render;
+	/** CSS pixels to a world pixel for `count` guys: as big as leaves a third more seats than guys. */
+	function zoomFor(cssW, cssH, count$1, now) {
+		if (options.scale) return options.scale;
+		const least = cssW >= 900 ? 3 : 2, most = Math.max(least, Math.floor(cssH * .45 / 16));
+		const seatsAt$1 = (z$1) => {
+			const key = `${Math.ceil(cssW / z$1)}x${Math.ceil(cssH / z$1)}`;
+			let n = counted.get(key);
+			if (n === void 0) counted.set(key, n = crowdSeats(Math.ceil(cssW / z$1), Math.ceil(cssH / z$1), options.density ?? 1).length);
+			return n;
+		};
+		let z = least;
+		while (z < most && seatsAt$1(z + 1) >= count$1 * 1.3) z++;
+		if (now > z && now <= most && seatsAt$1(now) >= count$1 * 1.1) return now;
+		if (now && z > now && seatsAt$1(z) < count$1 * 1.6) return Math.max(now, least);
+		return z;
 	}
-	function make(m, size) {
-		if (m.cells.has(size)) return;
-		const [sheet, which] = sheetFor(size), cell = sheet.next++;
-		const sprite = crowdSprite(m.spec, size);
-		sheet.ctx.putImageData(new ImageData(sprite.rgba, size, size), cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size);
-		m.cells.set(size, which * SHEET_COLUMNS * SHEET_ROWS + cell);
+	function build$1(devW, devH, dpr) {
+		const css$1 = `${devW / dpr}x${devH / dpr}`;
+		if (laidCss && css$1 !== laidCss) zoom = zoomFor(devW / dpr, devH / dpr, render?.guys.size ?? 0, zoom);
+		laidCss = css$1;
+		const backdrop$1 = behind(), tints = LADDER$1.map((s) => ({
+			toward: backdrop$1,
+			amount: HAZE[s],
+			shade: 0
+		}));
+		const k = Math.max(1, Math.round(zoom * dpr)), W = Math.ceil(devW / k), H = Math.ceil(devH / k);
+		const seats = crowdSeats(W, H, options.density ?? 1);
+		seatCount = seats.length;
+		const rows = [];
+		seats.forEach((s, i) => {
+			(rows[s.row] ??= []).push(i);
+		});
+		return {
+			width: W,
+			height: H,
+			k,
+			ox: 0,
+			oy: devH - H * k,
+			seats,
+			rows: Array.from(rows, (r) => (r ?? []).sort((a, b$1) => seats[a].x - seats[b$1].x)),
+			bands: Uint8Array.from(seats, (s) => LADDER$1.indexOf(s.size)),
+			tints,
+			backdrop: null,
+			pitch: Math.max(4, seats[0]?.size ?? 8),
+			shadow: lightness(backdrop$1) > .5 ? "#141820" : backdrop$1
+		};
 	}
-	function blit(m, size, x, y, scale$1 = 1) {
-		const at = m.cells.get(size);
-		if (at === void 0) return;
-		const sheet = sheets.get(size)[Math.floor(at / (SHEET_COLUMNS * SHEET_ROWS))], cell = at % (SHEET_COLUMNS * SHEET_ROWS);
-		ctx.drawImage(sheet.canvas, cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size, size, size, x, y, size * scale$1, size * scale$1);
-	}
-	function layout$2() {
-		const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
-		const z = options.scale ?? (w >= 900 ? 3 : 2);
-		dpr = globalThis.devicePixelRatio || 1;
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
-		k = Math.max(1, Math.round(z * dpr));
-		worldW = Math.ceil(canvas.width / k);
-		worldH = Math.ceil(canvas.height / k);
-		seats = crowdSeats(worldW, worldH, options.density ?? 1);
-		order = null;
-		for (const m of members) if (m.seat < seats.length) queue.push([m, seats[m.seat].size]);
-	}
-	function moving(t) {
-		return waving || options.idle || !!lit$1 || queue.length > 0 || members.some((m) => t - m.hopAt < 400);
-	}
-	function draw(t) {
-		frame = 0;
-		if (gone) return;
-		if (!start) start = t;
-		const budget = performance.now() + 4;
-		while (queue.length && performance.now() < budget) {
-			const [m, size] = queue.shift();
-			make(m, size);
-		}
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.setTransform(k, 0, 0, k, 0, 0);
-		ctx.imageSmoothingEnabled = false;
-		const shown = order ??= members.filter((m) => m.seat < seats.length).sort((a, b$1) => seats[a.seat].row - seats[b$1.seat].row);
-		const W$1 = worldW, wx = (t - start) / 4200 % 1 * (W$1 + 120) - 60;
-		let group;
-		for (const m of shown) {
-			if (lit$1?.member === m) continue;
-			const seat$1 = seats[m.seat];
-			if (group !== void 0 && seat$1.size !== group && HAZE[group]) {
-				ctx.fillStyle = haze(HAZE[group]);
-				ctx.fillRect(0, 0, W$1, seat$1.y + seat$1.size);
-			}
-			group = seat$1.size;
-			let dy = 0;
-			if (waving) {
-				const d = Math.abs(seat$1.x - wx + seat$1.row * .6);
-				if (d < 26) dy -= Math.round((1 - d / 26) * Math.max(1, seat$1.size * .45));
-			}
-			const since = t - m.hopAt;
-			if (since < 400) dy -= Math.round(Math.sin(since / 400 * Math.PI) * Math.max(1, seat$1.size / 4));
-			else if (options.idle && seat$1.size >= 6 && (t + m.phase) % 3e3 < 160) dy -= 1;
-			blit(m, seat$1.size, seat$1.x, seat$1.y + dy);
-		}
-		if (lit$1) spot(t);
-		if (moving(t)) frame = requestAnimationFrame(draw);
-	}
-	function spot(t) {
-		const { member, label, from, until } = lit$1;
-		if (t >= until) {
-			lit$1 = null;
-			return;
-		}
-		if (!member.cells.has(16)) make(member, 16);
-		const rise = Math.min(1, (t - from) / 350, (until - t) / 350), ease = 1 - Math.pow(1 - rise, 3);
-		const scale$1 = Math.max(2, Math.min(4, Math.floor(worldH / 40))), side = 16 * scale$1;
-		const css = k / dpr, lineH = Math.ceil(26 / css);
-		const x = Math.round((worldW - side) / 2), y = Math.round(worldH - (side + lineH + 2) * ease);
-		ctx.fillStyle = haze(.55 * ease);
-		ctx.fillRect(0, 0, worldW, worldH);
-		blit(member, 16, x, y, scale$1);
-		if (label) {
-			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-			ctx.font = options.font ?? "700 15px system-ui, sans-serif";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			const cx = worldW * css / 2, cy = (y + side + 2) * css + 13, tw = Math.ceil(ctx.measureText(label).width) + 20;
-			ctx.fillStyle = haze(.92);
-			ctx.beginPath();
-			ctx.roundRect(cx - tw / 2, cy - 13, tw, 26, 13);
-			ctx.fill();
-			ctx.fillStyle = "#ffffff";
-			ctx.fillText(label, cx, cy + 1);
-			ctx.setTransform(k, 0, 0, k, 0, 0);
+	const css = () => [canvas.clientWidth || 300, canvas.clientHeight || 150];
+	zoom = zoomFor(css()[0], css()[1], 0, 0);
+	render = createRender(canvas, {
+		build: build$1,
+		font: options.font,
+		wave: options.wave,
+		idle: options.idle,
+		onLayout: () => settle()
+	});
+	const rendered = render;
+	const scheme = !options.backdrop && typeof matchMedia === "function" ? matchMedia("(prefers-color-scheme: dark)") : null;
+	const onScheme = () => rendered.request("cut");
+	scheme?.addEventListener?.("change", onScheme);
+	function settle() {
+		if (!render) return;
+		while (free.length && free[0] < seatCount) {
+			let waiting;
+			for (const g$1 of render.guys.values()) if (g$1.seat >= seatCount && (!waiting || arrived.get(g$1.key) < arrived.get(waiting))) waiting = g$1.key;
+			if (!waiting) return;
+			const g = render.guys.get(waiting), seat$1 = free.shift();
+			release(g.seat);
+			render.move(g, seat$1);
 		}
 	}
-	const wake = () => {
-		if (!frame && !gone) frame = requestAnimationFrame(draw);
-	};
-	layout$2();
+	function release(seat$1) {
+		let i = 0;
+		while (i < free.length && free[i] < seat$1) i++;
+		free.splice(i, 0, seat$1);
+	}
+	/** Picks the scale again for the crowd now, laying it out again when it changes. */
+	function rescale() {
+		const [w, h] = css(), z = zoomFor(w, h, rendered.guys.size, zoom);
+		if (z === zoom) return;
+		zoom = z;
+		rendered.relayout(rendered.guys.size > 300 ? "fade" : "slide");
+	}
 	return {
 		add(name, guy = {}) {
 			const key = name.toLowerCase();
-			if (byKey.has(key)) return;
-			const m = {
-				key,
-				spec: {
-					...guy,
-					seed: guy.seed ?? key
-				},
-				seat: members.length,
-				hopAt: -1e9,
-				phase: hash(key) % 3e3,
-				cells: new Map()
-			};
-			members.push(m);
-			byKey.set(key, m);
-			order = null;
-			if (m.seat < seats.length) {
-				queue.push([m, seats[m.seat].size]);
-				wake();
-			}
+			if (rendered.guys.has(key)) return;
+			const seat$1 = free.length && free[0] < seatCount ? free.shift() : next++;
+			arrived.set(key, arrivals++);
+			rendered.join(key, {
+				...guy,
+				seed: guy.seed ?? key
+			}, seat$1);
+			rescale();
 		},
-		has: (name) => byKey.has(name.toLowerCase()),
+		remove(name) {
+			const g = rendered.guys.get(name.toLowerCase());
+			if (!g) return;
+			rendered.leave(g);
+			arrived.delete(g.key);
+			release(g.seat);
+			settle();
+			rescale();
+		},
+		has: (name) => rendered.guys.has(name.toLowerCase()),
 		hop(name) {
-			const m = byKey.get(name.toLowerCase());
-			if (m) {
-				m.hopAt = performance.now();
-				wake();
-			}
+			const g = rendered.guys.get(name.toLowerCase());
+			if (g) rendered.hop(g);
 		},
 		wave(on$1) {
-			waving = on$1;
-			wake();
+			rendered.wave(on$1);
 		},
 		spotlight(name, label, ms = 2600) {
-			const m = byKey.get(name.toLowerCase());
-			if (!m) return;
-			const now = performance.now();
-			lit$1 = {
-				member: m,
-				label: label ?? name,
-				from: now,
-				until: now + ms
-			};
-			wake();
+			const g = rendered.guys.get(name.toLowerCase());
+			if (g) rendered.spotlight(g, label ?? name, ms);
 		},
 		resize() {
-			layout$2();
-			wake();
+			const [w, h] = css();
+			zoom = zoomFor(w, h, rendered.guys.size, zoom);
+			laidCss = "";
+			rendered.resize();
 		},
 		destroy() {
-			gone = true;
-			if (frame) cancelAnimationFrame(frame);
-			sheets.clear();
-			members.length = 0;
-			byKey.clear();
+			rendered.destroy();
+			scheme?.removeEventListener?.("change", onScheme);
+			free.length = 0;
+			arrived.clear();
 		},
 		get count() {
-			return members.length;
+			return rendered.guys.size;
 		},
 		get seats() {
-			return seats.length;
+			return seatCount;
 		}
 	};
 }
 /**
 * A still crowd as one picture, with no canvas: `guys` take the seats from the front middle back, and
 * `fill` more fill the rest with made-up guys, dealt from `seed` with nothing on (no pet shop items, no
-* buddies), so a short board still stands in a full stand. Opaque on `backdrop`, haze and all, as
-* `createCrowd` draws it. `width` × `height` world pixels, RGBA.
+* buddies), so a short board still stands in a full stand. Opaque on `backdrop`, far rows tinted toward
+* it as `createCrowd` draws them. `width` × `height` world pixels, RGBA.
 */
 function crowdPicture(guys, width$1, height, options = {}) {
 	const seats = crowdSeats(width$1, height, options.density ?? 1);
@@ -27085,15 +31162,9 @@ function crowdPicture(guys, width$1, height, options = {}) {
 		rgba[i + 2] = bg[2];
 		rgba[i + 3] = 255;
 	}
-	const sat = Array.from({ length: count$1 }, (_, k) => k).sort((a, b$1) => seats[a].row - seats[b$1].row);
-	let group;
+	const sat = Array.from({ length: count$1 }, (_, k) => k).sort((a, b$1) => seats[a].row - seats[b$1].row || seats[a].x - seats[b$1].x);
 	for (const k of sat) {
-		const seat$1 = seats[k];
-		if (group !== void 0 && seat$1.size !== group && HAZE[group]) {
-			const a = HAZE[group], bottom = Math.min(height, seat$1.y + seat$1.size);
-			for (let i = 0; i < bottom * width$1 * 4; i += 4) for (let c = 0; c < 3; c++) rgba[i + c] = Math.round(rgba[i + c] * (1 - a) + bg[c] * a);
-		}
-		group = seat$1.size;
+		const seat$1 = seats[k], a = HAZE[seat$1.size];
 		const spec = k < guys.length ? {
 			...guys[k],
 			seed: guys[k].seed ?? `${seed}:${k}`
@@ -27102,7 +31173,8 @@ function crowdPicture(guys, width$1, height, options = {}) {
 		for (let y = 0; y < seat$1.size; y++) for (let x = 0; x < seat$1.size; x++) {
 			const px = seat$1.x + x, py = seat$1.y + y, o = (y * seat$1.size + x) * 4;
 			if (!sprite.rgba[o + 3] || px < 0 || py < 0 || px >= width$1 || py >= height) continue;
-			rgba.set(sprite.rgba.subarray(o, o + 4), (py * width$1 + px) * 4);
+			const at = (py * width$1 + px) * 4;
+			for (let c = 0; c < 3; c++) rgba[at + c] = Math.round(sprite.rgba[o + c] * (1 - a) + bg[c] * a);
 		}
 	}
 	return rgba;
@@ -27110,7 +31182,7 @@ function crowdPicture(guys, width$1, height, options = {}) {
 
 //#endregion
 //#region src/stadium.ts
-/** The venues, smallest first: who fits, and how big the picture of it is in world pixels. */
+/** The venues, smallest first: who fits. */
 const VENUES = [
 	{
 		id: "porch",
@@ -27150,458 +31222,1193 @@ const VENUES = [
 ];
 /** The venue for `count` people: the smallest that seats them all (the bowl past its size). */
 const venueFor = (count$1) => (VENUES.find((v) => count$1 <= v.upTo) ?? VENUES[VENUES.length - 1]).id;
-const SIZES = [
-	2,
-	4,
-	6,
-	8,
+/** Sizes a stand's rows step through, nearest first; neighbouring rows differ by one at most. */
+const LADDER = [
+	16,
+	14,
+	12,
 	10,
-	16
+	8,
+	6,
+	5,
+	3,
+	2
 ];
-const sizeNear = (px) => SIZES.reduce((best, s) => Math.abs(s - px) < Math.abs(best - px) ? s : best, SIZES[0]);
-/**
-* Every venue: one grandstand round the far side of a floor, a backdrop a game stands in front of. All
-* 16:9; the bigger the crowd, the more rows and the further back the camera, so the guys are smaller.
-* Rows bow away from you in the middle and come round toward you at the ends; `breaks` are the
-* walkways between tiers.
-*/
-const STANDS = {
+if (LADDER.some((s) => !CROWD_SIZES.includes(s))) throw new Error("crowd size missing");
+const STYLES = {
 	porch: {
-		W: 200,
-		rows: 2,
-		a: 150,
-		da: 0,
-		b: 4,
-		db: 0,
-		rise: 13,
-		front: 16,
-		back: 16,
-		breaks: [],
-		floor: "#6b4a33",
-		sky: "#1c2238",
-		concrete: "#5a3d2a",
-		rail: "#8a5f3e",
-		lights: 0
+		floor: .14,
+		stand: .6,
+		bow: 0,
+		cap: .22,
+		fronts: [16],
+		depth: 0,
+		rise: .66,
+		pitch: 1.16,
+		section: 0,
+		tiers: [],
+		arches: 0,
+		centred: 3,
+		boards: false,
+		haze: "#1c2238",
+		hazeMax: 0,
+		seats: ["#a0714a"]
 	},
 	bleachers: {
-		W: 256,
-		rows: 5,
-		a: 150,
-		da: 4,
-		b: 12,
-		db: 1,
-		rise: 9,
-		front: 16,
-		back: 10,
-		breaks: [],
-		floor: "#2f7a43",
-		sky: "#1e2a44",
-		concrete: "#4c566b",
-		rail: "#9aa6b8",
-		lights: 0
+		floor: .15,
+		stand: .6,
+		bow: 0,
+		cap: .14,
+		fronts: [
+			16,
+			14,
+			12,
+			10
+		],
+		depth: 4,
+		rise: .8,
+		pitch: 1.05,
+		section: 0,
+		tiers: [],
+		arches: 0,
+		boards: false,
+		haze: "#3b3358",
+		hazeMax: .12,
+		seats: ["#9aa6b8"]
 	},
 	gym: {
-		W: 320,
-		rows: 8,
-		a: 170,
-		da: 5,
-		b: 26,
-		db: 2,
-		rise: 7,
-		front: 10,
-		back: 8,
-		breaks: [],
-		floor: "#c58b4f",
-		sky: "#2a2433",
-		concrete: "#3d3548",
-		rail: "#7a6a8e",
-		lights: 0
+		floor: .22,
+		stand: .52,
+		bow: 0,
+		cap: .115,
+		fronts: [
+			16,
+			14,
+			12,
+			10,
+			8
+		],
+		depth: 2.5,
+		rise: .78,
+		pitch: 1,
+		section: 0,
+		tiers: [],
+		arches: 0,
+		boards: false,
+		haze: "#3d3548",
+		hazeMax: .15,
+		seats: ["#c58b4f"]
 	},
 	hall: {
-		W: 384,
-		rows: 12,
-		a: 190,
-		da: 6,
-		b: 46,
-		db: 3,
-		rise: 6,
-		front: 10,
-		back: 8,
-		breaks: [],
-		floor: "#3b2f4f",
-		sky: "#181d2e",
-		concrete: "#2c2a40",
-		rail: "#ff7a5c",
-		lights: 0
+		floor: .12,
+		stand: .74,
+		bow: 0,
+		cap: .095,
+		fronts: [
+			16,
+			14,
+			12,
+			10,
+			8,
+			6
+		],
+		depth: 1.6,
+		rise: .75,
+		pitch: 1,
+		section: 13,
+		tiers: [.48],
+		arches: 0,
+		boards: false,
+		haze: "#1d1222",
+		hazeMax: .25,
+		seats: ["#7a1f35", "#6a1a30"]
 	},
 	arena: {
-		W: 512,
-		rows: 22,
-		a: 230,
-		da: 7,
-		b: 78,
-		db: 3,
-		rise: 4.6,
-		front: 8,
-		back: 6,
-		breaks: [13],
-		floor: "#1d4f8a",
-		sky: "#141826",
-		concrete: "#29314a",
-		rail: "#5b6478",
-		lights: 2
+		floor: .13,
+		stand: .6,
+		bow: .035,
+		cap: .07,
+		fronts: [
+			16,
+			14,
+			12,
+			10,
+			8,
+			6,
+			5
+		],
+		depth: 1,
+		rise: .8,
+		pitch: 1,
+		section: 14,
+		tiers: [.56],
+		arches: 3,
+		boards: true,
+		haze: "#141826",
+		hazeMax: .3,
+		seats: ["#2a3a5e", "#30345a"]
 	},
 	stadium: {
-		W: 768,
-		rows: 36,
-		a: 320,
-		da: 8,
-		b: 120,
-		db: 3.4,
-		rise: 3.7,
-		front: 6,
-		back: 4,
-		breaks: [16],
-		floor: "#1f6b3e",
-		sky: "#10131f",
-		concrete: "#262d42",
-		rail: "#5b6478",
-		lights: 4
+		floor: .13,
+		stand: .66,
+		bow: .05,
+		cap: .045,
+		fronts: [
+			16,
+			14,
+			12,
+			10,
+			8,
+			6,
+			5,
+			3
+		],
+		depth: .7,
+		rise: .82,
+		pitch: 1,
+		section: 26,
+		tiers: [.5],
+		arches: 4,
+		boards: true,
+		haze: "#141a2a",
+		hazeMax: .36,
+		seats: ["#2b3e66", "#34305a"]
 	},
 	bowl: {
-		W: 1024,
-		rows: 56,
-		a: 400,
-		da: 9,
-		b: 160,
-		db: 3.2,
-		rise: 3.1,
-		front: 6,
-		back: 2,
-		breaks: [18, 37],
-		floor: "#1f6b3e",
-		sky: "#0d1019",
-		concrete: "#232a3e",
-		rail: "#5b6478",
-		lights: 6
+		floor: .12,
+		stand: .7,
+		bow: .06,
+		cap: .035,
+		fronts: [
+			12,
+			10,
+			8,
+			6,
+			5,
+			3,
+			2
+		],
+		depth: .5,
+		rise: .85,
+		pitch: 1,
+		section: 28,
+		tiers: [.34, .68],
+		arches: 5,
+		boards: true,
+		haze: "#121726",
+		hazeMax: .44,
+		seats: [
+			"#2b3e66",
+			"#34305a",
+			"#2a4552"
+		]
 	}
 };
-/** How far up row `r` sits: its rise, and a walkway's worth more past each break. */
-const liftOf = (g, r) => r * g.rise + g.breaks.filter((k) => k <= r).length * g.rise * 2.5;
-/** How far back the curve bows at `x` for row `r`: 1 in the middle, 0 at its ends and past them. */
-const bowOf = (g, cx, r, x) => {
-	const u = Math.min(1, Math.abs(x - cx) / (g.a + r * g.da));
-	return Math.sqrt(1 - u * u);
+/** The club's colours, for boards, banners and fascias. */
+const CLUB = [
+	"#e8792f",
+	"#2e8c8a",
+	"#4e7fb3",
+	"#c2403f",
+	"#3fa35b",
+	"#7d4fa6",
+	"#e36a8e",
+	"#e7b53b",
+	"#8a93a0"
+];
+/** The roof or ceiling, as a fraction of height, over the venues that have one. */
+const ROOF = {
+	arena: .2,
+	stadium: .13,
+	bowl: .17
 };
-/** Every venue's seats and its picture, in world pixels. */
-function layout(id) {
-	const g = STANDS[id], W$1 = g.W, H$1 = Math.round(W$1 * 9 / 16), cx = W$1 / 2;
-	const floorY = Math.round(H$1 * .84), wall = Math.max(3, Math.round(H$1 * .025)), baseY = floorY - wall;
+const riseOf = (st, s) => s <= 5 ? s : Math.max(s - 3, Math.round(s * st.rise));
+const pitchOf = (st, s) => Math.max(s, Math.round(s * st.pitch));
+function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = STYLES[id].depth) {
+	const st = spill >= 3 ? {
+		...STYLES[id],
+		tiers: [],
+		section: 0,
+		bow: 0,
+		arches: 0
+	} : STYLES[id], cx = W / 2;
+	const floorTop = spill >= 2 ? H : H - Math.round(H * st.floor), board = st.boards ? Math.max(2, Math.round(front * .35)) : 0;
+	const standMax = H * st.stand, bowH = st.bow * Math.min(H, W * 9 / 16);
+	const bowAt = (x) => {
+		const u = (x - cx) / (W / 2);
+		return bowH * Math.max(0, 1 - u * u);
+	};
+	const rows = [], breaks = [];
+	let lift = 0, at = LADDER.indexOf(front), tier = 0;
+	const roof = spill ? 0 : (ROOF[id] ?? 0) * H, room = floorTop - board - bowH - roof - 2;
+	for (let r = 0; r < (st.centred || 400); r++) {
+		const want = depth ? front / (1 + lift / (depth * H)) : front;
+		if (r > 0 && at < LADDER.length - 1 && Math.abs(Math.log(LADDER[at + 1] / want)) < Math.abs(Math.log(LADDER[at] / want))) at++;
+		const size = LADDER[at];
+		if (lift + size > Math.max(standMax, 0) && lift + size > room) break;
+		if (lift + size > standMax && countOnly) break;
+		const pitch = pitchOf(st, size), rise = riseOf(st, size);
+		rows.push({
+			size,
+			pitch,
+			rise,
+			lift,
+			tier,
+			shadow: false,
+			aisle: Math.min(2, Math.max(1, Math.round(size * .25))),
+			section: st.section
+		});
+		lift += rise;
+		if (tier < st.tiers.length && lift >= st.tiers[tier] * standMax) {
+			const h = Math.max(3, Math.round(size * .6));
+			breaks.push({
+				lift,
+				h
+			});
+			rows.slice(-2).forEach((row) => {
+				row.shadow = true;
+			});
+			lift += h;
+			tier++;
+		}
+	}
+	const feet$1 = (r, x) => floorTop - board - bowAt(x) - rows[r].lift;
+	const arches = [];
+	const lower = rows.filter((r) => r.tier === 0).length;
+	if (st.arches && lower >= 6 && !countOnly && rows[Math.max(1, Math.round(lower * .35))].size >= 6) {
+		const row = Math.max(1, Math.round(lower * .35)), r0 = rows[row], secW = st.section * r0.pitch + r0.aisle;
+		for (let v = 0; v < st.arches; v++) {
+			const j = Math.round((W * (v + .5) / st.arches - cx) / secW);
+			if (arches.some((a) => a.x === j)) continue;
+			arches.push({
+				x: j,
+				w: 3,
+				row
+			});
+		}
+	}
 	const seats = [];
-	const shrink$1 = .3 * Math.min(1, g.b / (H$1 * .3));
-	const yOf = (r, x) => baseY - (g.b + r * g.db) * bowOf(g, cx, r, x) - liftOf(g, r);
-	for (let r = 0; r < g.rows; r++) {
-		const px = g.front + (g.back - g.front) * (g.rows > 1 ? r / (g.rows - 1) : 0);
-		for (let x = r * 3 % 5; x < W$1;) {
-			const size = sizeNear(px * (1 - shrink$1 * bowOf(g, cx, r, x)));
-			const y = Math.round(yOf(r, x + size / 2) - size);
-			if (x + size <= W$1 && y >= 0) seats.push({
+	let n = 0;
+	rows.forEach((row, r) => {
+		if (n >= count$1 && !countOnly) return;
+		const s = row.size, p = row.pitch, odd = r % 2 === 1;
+		const xs = [];
+		if (st.centred) {
+			const per = Math.max(1, Math.floor((W - 4) / p)), left = Math.max(0, count$1 - n), rowsLeft = Math.max(1, Math.ceil(left / per));
+			const here = Math.min(per, Math.ceil(left / rowsLeft));
+			const prev = seats.filter((q) => q.row === r - 1).length;
+			const shift$1 = r > 0 && (prev - here) % 2 === 0 ? r % 2 ? p / 2 : -p / 2 : 0;
+			for (let i = 0; i < here; i++) xs.push(Math.round(cx + (i - (here - 1) / 2) * p - s / 2 + shift$1));
+		} else if (row.section) {
+			const secW = row.section * p + row.aisle, inSec = odd ? row.section - 1 : row.section;
+			const j0 = Math.floor(-cx / secW) - 1, j1 = Math.ceil((W - cx) / secW) + 1;
+			for (let j = j0; j <= j1; j++) {
+				const left = cx + (j - .5) * secW + row.aisle / 2 + (odd ? p / 2 : 0);
+				const arch = arches.find((a) => a.x === j && r >= a.row && r < a.row + 2);
+				for (let i = 0; i < inSec; i++) {
+					if (arch && Math.abs(i - (inSec - 1) / 2) < arch.w / 2) continue;
+					xs.push(Math.round(left + i * p + (p - s) / 2));
+				}
+			}
+		} else {
+			const start = cx - s / 2 + (odd ? p / 2 : 0), i0 = Math.ceil(-start / p), i1 = Math.floor((W - s - start) / p);
+			for (let i = i0; i <= i1; i++) xs.push(Math.round(start + i * p));
+		}
+		for (const x0 of xs) {
+			const j = s <= 5 ? (r * 73856093 ^ x0 * 19349663) >>> 0 : 0, x = x0 + (j % 7 === 0 ? 1 : j % 7 === 1 ? -1 : 0);
+			if (x < 0 || x + s > W) continue;
+			const y = Math.round(feet$1(r, x0 + s / 2)) - s + (j % 5 === 2 ? 1 : j % 5 === 3 ? -1 : 0);
+			if (y < 0) continue;
+			n++;
+			if (!countOnly) seats.push({
 				x,
 				y,
-				size,
+				size: s,
 				row: r
 			});
-			x += Math.max(2, Math.round(size * .92));
 		}
-	}
-	const colours = [
-		"#e8792f",
-		"#2e8c8a",
-		"#4e7fb3",
-		"#c2403f",
-		"#3fa35b",
-		"#7d4fa6",
-		"#e36a8e",
-		"#e7b53b",
-		"#8a93a0"
-	];
+	});
+	if (countOnly) return n;
+	if (seats.length < count$1 && spill < 3) return plan(id, W, H, front, count$1, false, !spill && (ROOF[id] ?? 0) > 0 ? 1 : Math.max(2, spill + 1), depth);
+	seats.sort((p, q) => p.row - q.row || Math.abs(p.x + p.size / 2 - cx) - Math.abs(q.x + q.size / 2 - cx) || p.x - q.x);
+	const used = seats.length ? Math.min(rows.length, seats[Math.min(seats.length, count$1) - 1].row + 1) : 0;
 	return {
-		width: W$1,
-		height: H$1,
+		id,
+		W,
+		H,
+		cx,
+		floorTop,
+		board,
+		standMax,
+		rows,
 		seats,
-		paint: (p) => {
-			p.rect(0, 0, W$1, H$1, g.sky);
-			const top = g.rows - 1, back = (x) => Math.round(yOf(top, x) - g.back * 1.5);
-			for (let x = 0; x < W$1; x++) {
-				const y0 = Math.max(0, back(x));
-				p.rect(x, y0, 1, floorY - y0, g.concrete);
-				for (const k of g.breaks) p.rect(x, Math.round(yOf(k, x) + 1), 1, 1, g.rail);
-				const yw = Math.round(yOf(0, x)) + 1;
-				p.rect(x, yw, 1, 1, g.rail);
-				p.rect(x, yw + 1, 1, wall, colours[Math.floor(x / Math.max(16, W$1 / 12)) % colours.length]);
-				p.rect(x, yw + 1 + wall, 1, H$1 - yw - 1 - wall, g.floor);
-				if (g.floor === "#1f6b3e" && Math.floor(x / Math.max(12, W$1 / 24)) % 2) p.rect(x, yw + 1 + wall, 1, H$1 - yw - 1 - wall, "#237646");
-			}
-			for (let i = 0; i < g.lights; i++) {
-				const x = Math.round(W$1 * (i + .5) / g.lights), y = Math.max(4, back(x) - 30);
-				p.rect(x, y, 2, 30, "#3a4258");
-				p.rect(x - 6, y - 2, 14, 4, "#fff3c4");
-			}
-			if (id === "porch") for (let i = 0; i < 12; i++) p.rect(8 + i * 16, 10 + i % 2 * 2, 2, 2, [
-				"#ffd45c",
-				"#ff8a8a",
-				"#8fd8ff"
-			][i % 3]);
-		}
+		used,
+		breaks,
+		arches,
+		bowAt,
+		feet: feet$1
 	};
 }
-/**
-* The seats of venue `id`, in the order they fill: the front row first, all the way round, from the
-* middle of the near side out, then the row behind, so a part-full venue is full at the front.
-*/
-function stadiumSeats(id) {
-	const l = layout(id);
-	const mid = l.width / 2;
-	return [...l.seats].sort((p, q) => p.row - q.row || q.size - p.size || Math.abs(p.x - mid) - Math.abs(q.x - mid));
+/** How many seats a venue has on a world at a front size: the same whatever the head count (but on the porch, whose rows centre on who's there), so a growing crowd works each out once. */
+const seatCounts = new Map();
+function seatsAt(id, W, H, front, count$1, depth = STYLES[id].depth) {
+	if (STYLES[id].centred) return plan(id, W, H, front, count$1, true, 0, depth);
+	const key = `${id} ${W} ${H} ${front} ${depth}`;
+	let n = seatCounts.get(key);
+	if (n === void 0) {
+		if (seatCounts.size > 4e3) seatCounts.clear();
+		seatCounts.set(key, n = plan(id, W, H, front, count$1, true, 0, depth));
+	}
+	return n;
 }
 /**
-* A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; when
-* the venue changes they take their places in the new one, the old venue fading out under it.
+* How a venue sits on a canvas `devW` × `devH` device pixels for `count` people: whole device pixels to a
+* world pixel (never under one CSS pixel to one world pixel), and the front-row size, as big as the
+* venue allows while everyone still fits.
 */
-function createStadium(canvas, options = {}) {
-	const ctx = canvas.getContext("2d");
-	const fans = [], byKey = new Map();
-	let venue = "porch", seats = stadiumSeats(venue), lay = layout(venue), backdrop$1 = paintVenue(lay);
-	let fading = null;
-	let waving = !!options.wave, frame = 0, gone = false, dpr = 1, k = 1, ox = 0, oy = 0;
-	let lit$1 = null;
-	let order = null;
-	const sprites = new Map(), queue = [], queued = new Set();
-	function paintVenue(l) {
-		const c = document.createElement("canvas");
-		c.width = l.width;
-		c.height = l.height;
-		const g = c.getContext("2d");
-		const span$1 = (a, b$1, y) => Math.round(a * Math.sqrt(Math.max(0, 1 - (y / b$1) ** 2)));
-		l.paint({
-			rect: (x, y, w, h, col) => {
-				g.fillStyle = col;
-				g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
-			},
-			oval: (cx, cy, a, b$1, col) => {
-				g.fillStyle = col;
-				for (let y = -b$1; y <= b$1; y++) {
-					const w = span$1(a, b$1, y);
-					g.fillRect(Math.round(cx - w), Math.round(cy + y), w * 2, 1);
-				}
-			},
-			stripes: (cx, cy, a, b$1, w, col) => {
-				g.fillStyle = col;
-				for (let y = -b$1; y <= b$1; y++) {
-					const half = span$1(a, b$1, y);
-					for (let x = -half; x < half; x++) if (Math.floor((x + 1e4 * w) / w) % 2) g.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1);
-				}
+function fit(id, devW, devH, dpr, count$1) {
+	const st = STYLES[id], cap = st.cap * devH / dpr, kCss = Math.max(1, Math.ceil(dpr - 1e-6));
+	const fronts = [...st.fronts, ...LADDER.filter((s) => s < st.fronts[st.fronts.length - 1])];
+	const found = [];
+	for (let k = 1; k < kCss + 80; k++) {
+		const W$1 = Math.ceil(devW / k), H$1 = Math.ceil(devH / k);
+		if (H$1 < 20 || fronts[fronts.length - 1] * k / dpr > cap) break;
+		for (const front of fronts) {
+			const css$1 = front * k / dpr;
+			if (css$1 > cap) continue;
+			if (seatsAt(id, W$1, H$1, front, count$1) >= count$1) {
+				found.push({
+					k,
+					front,
+					css: css$1
+				});
+				break;
 			}
-		});
+		}
+	}
+	const css = found.filter((f) => f.k >= kCss), faces = found.filter((f) => f.front >= 5);
+	const pool = css.some((f) => f.front >= 5) ? css : faces.length ? faces : found;
+	if (!pool.length) return {
+		k: 1,
+		front: fronts[fronts.length - 1],
+		css: 0,
+		depth: st.depth
+	};
+	const score = (f) => f.css * Math.pow(f.front / 16, 1.5);
+	const best = pool.reduce((b$1, f) => score(f) > score(b$1) ? f : b$1);
+	const W = Math.ceil(devW / best.k), H = Math.ceil(devH / best.k);
+	let lo = st.depth, hi = st.depth * 24;
+	if (st.depth) for (let i = 0; i < 7; i++) {
+		const mid = (lo + hi) / 2;
+		if (seatsAt(id, W, H, best.front, count$1, mid) >= count$1) lo = mid;
+		else hi = mid;
+	}
+	return {
+		...best,
+		depth: lo
+	};
+}
+/** How many people a venue is laid out for while `count` are in: in steps of about 15%, so a growing crowd re-seats now and then. */
+function stepFor(count$1) {
+	const i = VENUES.findIndex((v$1) => count$1 <= v$1.upTo), v = VENUES[i < 0 ? VENUES.length - 1 : i];
+	if (i >= 0 && i <= 1) return Math.max(1, count$1);
+	const lo = i < 0 ? VENUES[VENUES.length - 1].upTo : VENUES[i - 1].upTo + 1;
+	let s = lo;
+	while (s < count$1) s = Math.ceil(s * 1.15);
+	return i < 0 ? s : Math.min(s, v.upTo);
+}
+/**
+* The seats of venue `id`, in the order they fill: the front row first, from the middle out, then the row
+* behind, so a part-full venue is full at the front. Laid out for a canvas (`width` × `height` CSS pixels
+* at `dpr`, 1280 × 720 at 1 unless given) and `count` people (the venue's size unless given), as a
+* stadium on that canvas lays it out.
+*/
+function stadiumSeats(id, options = {}) {
+	const dpr = options.dpr ?? 1, w = Math.round((options.width ?? 1280) * dpr), h = Math.round((options.height ?? 720) * dpr);
+	const people = options.count ?? VENUES.find((v) => v.id === id).upTo, count$1 = venueFor(people) === id ? stepFor(people) : people;
+	const f = fit(id, w, h, dpr, count$1);
+	return plan(id, Math.ceil(w / f.k), Math.ceil(h / f.k), f.front, count$1, false, 0, f.depth).seats;
+}
+const BAYER = [
+	0,
+	8,
+	2,
+	10,
+	12,
+	4,
+	14,
+	6,
+	3,
+	11,
+	1,
+	9,
+	15,
+	7,
+	13,
+	5
+];
+/** A picture at world pixels, painted by hand: rects, dithered washes and blends, all on whole pixels. */
+var Pic = class Pic {
+	px;
+	constructor(W, H) {
+		this.W = W;
+		this.H = H;
+		this.px = new Uint32Array(W * H);
+	}
+	static seen = new Map();
+	static c(hex$3) {
+		let c = Pic.seen.get(hex$3);
+		if (c === void 0) {
+			const n = parseInt(hex$3.slice(1, 7), 16);
+			Pic.seen.set(hex$3, c = (255 << 24 | (n & 255) << 16 | (n >> 8 & 255) << 8 | n >> 16) >>> 0);
+		}
 		return c;
 	}
-	function layoutCanvas() {
-		const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
-		dpr = globalThis.devicePixelRatio || 1;
-		canvas.width = Math.max(1, Math.round(w * dpr));
-		canvas.height = Math.max(1, Math.round(h * dpr));
-		k = Math.max(1, Math.floor(Math.min(canvas.width / lay.width, canvas.height / lay.height)));
-		ox = Math.round((canvas.width - lay.width * k) / 2);
-		oy = Math.round((canvas.height - lay.height * k) / 2);
-	}
-	function reseat() {
-		const next = venueFor(fans.length);
-		if (next === venue) return;
-		fading = {
-			picture: backdrop$1,
-			until: performance.now() + 900
-		};
-		venue = next;
-		seats = stadiumSeats(venue);
-		lay = layout(venue);
-		backdrop$1 = paintVenue(lay);
-		order = null;
-		layoutCanvas();
-		options.onVenue?.(venue);
-	}
-	function sprite(f, size) {
-		const key = f.key + ":" + size, have = sprites.get(key);
-		if (!have && !queued.has(key)) {
-			queued.add(key);
-			queue.push([f, size]);
-		}
-		return have;
-	}
-	function make(f, size) {
-		const key = f.key + ":" + size;
-		queued.delete(key);
-		if (sprites.has(key) || !byKey.has(f.key)) return;
-		const s = crowdSprite(f.spec, size), c = document.createElement("canvas");
-		c.width = c.height = size;
-		c.getContext("2d").putImageData(new ImageData(s.rgba, size, size), 0, 0);
-		sprites.set(key, c);
-	}
-	function draw(now) {
-		frame = 0;
-		if (gone) return;
-		const budget = performance.now() + 5;
-		while (queue.length && performance.now() < budget) {
-			const [f, size] = queue.shift();
-			make(f, size);
-		}
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.fillStyle = "#0b0e18";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		ctx.setTransform(k, 0, 0, k, ox, oy);
-		ctx.imageSmoothingEnabled = false;
-		ctx.drawImage(backdrop$1, 0, 0);
-		if (fading) {
-			const left = (fading.until - now) / 900;
-			if (left <= 0) fading = null;
-			else {
-				ctx.globalAlpha = left;
-				ctx.drawImage(fading.picture, 0, 0, lay.width, lay.height);
-				ctx.globalAlpha = 1;
+	rect(x, y, w, h, hex$3, level = 16) {
+		const c = Pic.c(hex$3), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
+		if (x1 <= x0) return;
+		for (let j = y0; j < y1; j++) {
+			if (level >= 16) {
+				this.px.fill(c, j * this.W + x0, j * this.W + x1);
+				continue;
 			}
-		}
-		const shown = order ??= fans.slice(0, seats.length).map((f, i) => [f, seats[i]]).sort((p, q) => p[1].y + p[1].size - (q[1].y + q[1].size));
-		const wave$1 = now / 7e3 % 1 * (lay.width + 80) - 40;
-		for (const [f, seat$1] of shown) {
-			if (lit$1?.fan === f) continue;
-			const s = sprite(f, seat$1.size) ?? smaller(f, seat$1.size);
-			if (!s) continue;
-			let dy = 0;
-			if (waving) {
-				const d = Math.abs(seat$1.x - wave$1);
-				if (d < 30) dy -= Math.round((1 - d / 30) * Math.max(1, seat$1.size * .45));
-			}
-			const since = now - f.hopAt;
-			if (since < 400) dy -= Math.round(Math.sin(since / 400 * Math.PI) * Math.max(1, seat$1.size / 4));
-			const arrive = Math.min(1, (now - f.joined) / 500);
-			if (arrive < 1) {
-				ctx.globalAlpha = arrive;
-				dy -= Math.round((1 - arrive) * seat$1.size * .6);
-			}
-			ctx.drawImage(s, seat$1.x, seat$1.y + dy, seat$1.size, seat$1.size);
-			ctx.globalAlpha = 1;
-			if (f.glint && (now / 90 + hash(f.key) % 97) % 60 < 2) {
-				ctx.fillStyle = "#ffffff";
-				ctx.fillRect(seat$1.x + seat$1.size - 1, seat$1.y + dy - 1, 1, 1);
-			}
-		}
-		if (lit$1) spot(now);
-		if (waving || lit$1 || fading || queue.length || fans.some((f) => now - f.hopAt < 400 || now - f.joined < 500)) frame = requestAnimationFrame(draw);
-	}
-	function smaller(f, size) {
-		for (const s of [...SIZES].reverse()) if (s < size && sprites.has(f.key + ":" + s)) return sprites.get(f.key + ":" + s);
-		return void 0;
-	}
-	function spot(now) {
-		const { fan, label, from, until } = lit$1;
-		if (now >= until) {
-			lit$1 = null;
-			return;
-		}
-		const big = sprite(fan, 16);
-		if (!big) return;
-		const rise = Math.min(1, (now - from) / 350, (until - now) / 350), ease = 1 - Math.pow(1 - rise, 3);
-		const scale$1 = Math.max(2, Math.min(5, Math.floor(lay.height / 40))), side = 16 * scale$1;
-		ctx.fillStyle = `rgba(11,14,24,${.55 * ease})`;
-		ctx.fillRect(0, 0, lay.width, lay.height);
-		const x = Math.round((lay.width - side) / 2), y = Math.round(lay.height - (side + 14) * ease);
-		ctx.drawImage(big, x, y, side, side);
-		if (label) {
-			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-			const css = k / dpr, cx = ox / dpr + lay.width * css / 2, cy = oy / dpr + (y + side + 1) * css + 12;
-			ctx.font = options.font ?? "700 15px system-ui, sans-serif";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			const tw = Math.ceil(ctx.measureText(label).width) + 20;
-			ctx.fillStyle = "rgba(11,14,24,.92)";
-			ctx.beginPath();
-			ctx.roundRect(cx - tw / 2, cy - 13, tw, 26, 13);
-			ctx.fill();
-			ctx.fillStyle = "#ffffff";
-			ctx.fillText(label, cx, cy + 1);
+			for (let r = 0; r < 4; r++) if (BAYER[(j & 3) * 4 + r] < level) for (let i = x0 + (r - x0 & 3); i < x1; i += 4) this.px[j * this.W + i] = c;
 		}
 	}
-	const wake = () => {
-		if (!frame && !gone) frame = requestAnimationFrame(draw);
+	dot(x, y, hex$3) {
+		this.rect(x, y, 1, 1, hex$3);
+	}
+	/** Blends a rect toward a colour by `a`, for lines painted on a floor. */
+	mix(x, y, w, h, hex$3, a) {
+		const c = Pic.c(hex$3), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
+		for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) {
+			const o = this.px[j * this.W + i];
+			let out = 255 << 24;
+			for (let s = 0; s < 24; s += 8) out |= Math.round((o >> s & 255) * (1 - a) + (c >> s & 255) * a) << s;
+			this.px[j * this.W + i] = out >>> 0;
+		}
+	}
+	/** Bands from `top` to `bottom` of colours, each dithered into the next. */
+	bands(top, bottom, colours) {
+		const h = bottom - top, n = colours.length;
+		for (let j = Math.max(0, Math.floor(top)); j < Math.min(this.H, bottom); j++) {
+			const u = (j - top) / h * (n - 1), i = Math.min(n - 2, Math.floor(u)), f = u - i;
+			this.rect(0, j, this.W, 1, colours[i]);
+			this.rect(0, j, this.W, 1, colours[i + 1], Math.round(f * 16));
+		}
+	}
+	canvas() {
+		const c = document.createElement("canvas");
+		c.width = this.W;
+		c.height = this.H;
+		const g = c.getContext("2d"), img = g.createImageData(this.W, this.H);
+		img.data.set(new Uint8ClampedArray(this.px.buffer));
+		g.putImageData(img, 0, 0);
+		return c;
+	}
+};
+const shades = new Map();
+/** A colour `f` of the way to white (or, below 0, to black), worked out once. */
+const shade = (hex$3, f) => {
+	const key = hex$3 + f;
+	let out = shades.get(key);
+	if (out === void 0) {
+		const n = parseInt(hex$3.slice(1, 7), 16);
+		shades.set(key, out = "#" + [
+			n >> 16 & 255,
+			n >> 8 & 255,
+			n & 255
+		].map((v) => Math.max(0, Math.min(255, Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f)))).toString(16).padStart(2, "0")).join(""));
+	}
+	return out;
+};
+/** The stand under the seats: a tread per row in the seat colour, a riser line under it, a seat back per seat, aisles and arches. */
+function paintStand(pic, p, top) {
+	const st = STYLES[p.id], { W } = p;
+	const runs$1 = [];
+	for (let x = 0; x < W;) {
+		const up = Math.round(-p.bowAt(x + .5));
+		let e = x + 1;
+		while (e < W && Math.round(-p.bowAt(e + .5)) === up) e++;
+		runs$1.push(x, e, up);
+		x = e;
+	}
+	for (let r = top - 1; r >= 0; r--) {
+		const row = p.rows[r], seat$1 = st.seats[Math.min(row.tier, st.seats.length - 1)], tread = shade(seat$1, -.25), edge = shade(seat$1, -.5), base$1 = Math.round(p.feet(r, 0) + p.bowAt(0));
+		for (let i = 0; i < runs$1.length; i += 3) {
+			const x = runs$1[i], w = runs$1[i + 1] - x, feet$1 = base$1 + runs$1[i + 2];
+			pic.rect(x, feet$1 - row.rise, w, row.rise, tread);
+			pic.rect(x, feet$1 - 1, w, 1, edge);
+		}
+	}
+	for (const s of p.seats) if (s.row < top) {
+		const row = p.rows[s.row], seat$1 = st.seats[Math.min(row.tier, st.seats.length - 1)], h = Math.max(1, Math.round(s.size * .45));
+		pic.rect(s.x + (s.size > 4 ? 1 : 0), s.y + s.size - h - 1, Math.max(1, s.size - (s.size > 4 ? 2 : 0)), h, seat$1);
+		if (s.size >= 6) pic.rect(s.x + 1, s.y + s.size - h - 1, s.size - 2, 1, shade(seat$1, .25));
+	}
+	for (let r = 0; r < top; r++) {
+		const row = p.rows[r], secW = row.section * row.pitch + row.aisle;
+		if (!row.section) continue;
+		for (let j = Math.floor(-p.cx / secW) - 1; j <= Math.ceil((W - p.cx) / secW) + 1; j++) {
+			const x = Math.round(p.cx + (j - .5) * secW - row.aisle / 2), feet$1 = Math.round(p.feet(r, x));
+			pic.rect(x, feet$1 - row.rise, row.aisle, row.rise, shade(st.seats[0], .12));
+			pic.rect(x, feet$1 - 1, row.aisle, 1, shade(st.seats[0], -.35));
+			if (r % 3 === 1) pic.dot(x + row.aisle, feet$1 - row.rise, "#aeb6c6");
+		}
+	}
+	for (const a of p.arches) {
+		if (a.row + 1 >= top) continue;
+		const r0 = p.rows[a.row], secW = r0.section * r0.pitch + r0.aisle, mid = Math.round(p.cx + a.x * secW), w = Math.round(a.w * r0.pitch) + 1;
+		const bottom = Math.round(p.feet(a.row, mid)), topY = Math.round(p.feet(a.row + 1, mid) - p.rows[a.row + 1].rise), x = mid - (w >> 1), rim$2 = shade(st.seats[0], .25);
+		pic.rect(x - 1, topY - 1, w + 2, bottom - topY + 1, rim$2);
+		pic.rect(x, topY, w, bottom - topY, "#0b0e18");
+		pic.rect(x, topY, w, 1, "#141a28");
+		pic.dot(x, topY, rim$2);
+		pic.dot(x + w - 1, topY, rim$2);
+	}
+}
+/** Tier fascias across the stand: a band in the club's colours with a light top edge, and its shadow on the rows under it. */
+function paintBreaks(pic, p, top, dark) {
+	p.breaks.forEach((b$1) => {
+		if (!p.rows.some((r, i) => i < top && r.lift > b$1.lift)) return;
+		const bw = Math.max(16, Math.round(p.W / 14));
+		for (let x = 0; x < p.W; x++) {
+			const y = Math.round(p.floorTop - p.board - p.bowAt(x + .5) - b$1.lift - b$1.h);
+			pic.rect(x, y, 1, b$1.h, dark);
+			pic.rect(x, y, 1, 1, "#c9d1de");
+			if (b$1.h >= 4) pic.rect(x, y + 2, 1, b$1.h - 3, CLUB[Math.floor(x / bw) % CLUB.length], 9);
+		}
+	});
+}
+/** Boards along the front in the club's colours, a straight segment each, and the floor under them. */
+function paintBoards(pic, p, floor) {
+	const bw = Math.max(16, Math.round(p.W / 12));
+	for (let x0 = -((p.cx - bw / 2) % bw + bw) % bw; x0 < p.W; x0 += bw) {
+		const y = Math.round(p.floorTop - p.board - p.bowAt(x0 + bw / 2));
+		pic.rect(x0, y, bw, 1, "#c9d1de");
+		pic.rect(x0, y + 1, bw, p.board - 1, CLUB[Math.floor((x0 + 4 * bw) / bw) % CLUB.length]);
+		pic.rect(x0, y + p.board - 1, bw, 1, "#0b0e18");
+		floor(x0, y + p.board, bw);
+	}
+}
+/** Light hung along the top: a bank of bright cells, a dithered wash under it. */
+function lightBank(pic, x, y, cell, cols, rows, wash, washTo, sky) {
+	const w = cols * (cell + 1) + 1, h = rows * (cell + 1) + 1;
+	for (let b$1 = 0; b$1 < 3; b$1++) {
+		const spread = (b$1 + 1) * .5, level = [
+			7,
+			4,
+			2
+		][b$1];
+		for (let j = y + h; j < washTo; j++) {
+			const u = (j - y) / Math.max(1, washTo - y), half = w / 2 + wash * spread * u;
+			pic.rect(x - half, j, half * 2, 1, shade(sky, .18), level);
+		}
+	}
+	pic.rect(x - w / 2 - 1, y - 1, w + 2, h + 2, "#232838");
+	for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+		const cx = Math.round(x - w / 2 + 1 + i * (cell + 1)), cy = y + 1 + j * (cell + 1);
+		pic.rect(cx, cy, cell, cell, "#fff3c4");
+		if (cell >= 3) pic.dot(cx + (cell >> 1), cy + (cell >> 1), "#ffffff");
+	}
+	return {
+		x,
+		y: y + h
 	};
-	layoutCanvas();
+}
+/**
+* A scoreboard centred on `cx` from `y`, at most `w` wide and `h` tall: a frame round two numbers in
+* blocky segments, sized from the digit (3 wide at least), two digits where four don't fit, none where
+* two don't. Returns the board's left edge and width.
+*/
+function scoreboard(pic, cx, y, w, h, c, frame) {
+	const dh = Math.max(5, Math.min(h - 4, 11)), t = dh >= 9 ? 2 : 1;
+	const fits = (n$1) => Math.min(Math.floor(dh * .6), Math.floor((w - 4 - (n$1 - 1) - (n$1 > 2 ? 1 : 0)) / n$1));
+	const n = fits(4) >= 3 ? 4 : fits(2) >= 3 ? 2 : 0, dw = n ? fits(n) : 0;
+	const bw = n ? n * dw + (n - 1) + (n > 2 ? 1 : 0) + 4 : Math.min(w, 8), bh = dh + 4, x = Math.round(cx - bw / 2);
+	pic.rect(x - 1, y - 1, bw + 2, bh + 2, frame);
+	pic.rect(x, y, bw, bh, "#151a26");
+	for (let i = 0; i < n; i++) {
+		const dx = x + 2 + i * (dw + 1) + (n > 2 && i > 1 ? 1 : 0), on$1 = [
+			119,
+			18,
+			93,
+			91
+		][(i * 3 + 1) % 4], half = Math.floor(dh / 2);
+		const seg = [
+			[
+				0,
+				0,
+				dw,
+				t
+			],
+			[
+				0,
+				0,
+				t,
+				half + 1
+			],
+			[
+				dw - t,
+				0,
+				t,
+				half + 1
+			],
+			[
+				0,
+				half,
+				dw,
+				t
+			],
+			[
+				0,
+				half,
+				t,
+				dh - half
+			],
+			[
+				dw - t,
+				half,
+				t,
+				dh - half
+			],
+			[
+				0,
+				dh - t,
+				dw,
+				t
+			]
+		];
+		seg.forEach(([sx, sy, sw, sh], k) => pic.rect(dx + sx, y + 2 + sy, sw, sh, on$1 >> 6 - k & 1 ? c : shade(c, -.75)));
+	}
+	return [x, bw];
+}
+/** A sagging string of bulbs from `x0` to `x1`, each with a dithered glow; where each bulb hangs. */
+function bulbs(pic, x0, x1, y, sag, every) {
+	const at = [];
+	for (let x = Math.floor(x0); x <= x1; x++) {
+		const u = (x - x0) / (x1 - x0);
+		pic.dot(x, Math.round(y + 4 * sag * u * (1 - u)), "#14111a");
+	}
+	let n = 0;
+	for (let x = x0 + every / 2; x < x1; x += every, n++) {
+		const u = (x - x0) / (x1 - x0), by = Math.round(y + 4 * sag * u * (1 - u)) + 1, c = [
+			"#ffd45c",
+			"#ff8a8a",
+			"#8fd8ff",
+			"#b7f28a"
+		][n % 4];
+		pic.rect(x - 1, by, 3, 2, shade(c, -.5));
+		pic.rect(x, by - 1, 1, 4, shade(c, -.5));
+		pic.rect(x, by, 1, 2, c);
+		at.push({
+			x,
+			y: by + 2
+		});
+	}
+	return at;
+}
+/** Paints a venue's picture for its plan (everything behind the guys), and where its lights hang, for a spotlight. */
+function paintVenue(p) {
+	const { W, H, id } = p, pic = new Pic(W, H), st = STYLES[id], lights = [];
+	if (!p.rows.length) {
+		pic.rect(0, 0, W, H, "#1d2333");
+		return {
+			canvas: pic.canvas(),
+			lights
+		};
+	}
+	let top = Math.max(1, Math.min(p.rows.length, p.used));
+	for (let extra = id === "bleachers" ? 2 : id === "gym" ? 1 : 0; extra > 0 && top < p.rows.length && p.rows[top].lift + p.rows[top].size <= p.standMax; extra--) top++;
+	const r = top - 1, standTop = (x) => Math.round(p.feet(r, x) - p.rows[r].rise - (p.rows[r].size - p.rows[r].rise));
+	const fr = Math.max(1, Math.round(H / 90));
+	if (id === "porch") {
+		pic.rect(0, 0, W, H, "#3b4a5e");
+		for (let y = 0; y < H; y += Math.max(3, fr * 3)) {
+			pic.rect(0, y, W, 1, "#2f3c4f");
+			pic.rect(0, y + 1, W, 1, "#45566c");
+		}
+		const eave = Math.round(H * .11), winW = Math.round(W * .18), winH = Math.round(H * .22), wx = Math.round(W * .16), wy = Math.round(H * .24);
+		pic.rect(wx - 4, wy - 4, winW + 8, winH + 8, "#4f5560");
+		pic.rect(wx - 2, wy - 2, winW + 4, winH + 4, "#6b6862");
+		pic.rect(wx - 1, wy - 1, winW + 2, winH + 2, "#2a2230");
+		pic.rect(wx, wy, winW, winH, "#ffd27a");
+		pic.rect(wx, wy + winH - Math.round(winH * .3), winW, Math.round(winH * .3), "#f2b45a");
+		pic.rect(wx + Math.round(winW / 2), wy, 1, winH, "#2a2230");
+		pic.rect(wx, wy + Math.round(winH / 2), winW, 1, "#2a2230");
+		const dw = Math.round(W * .12), dx = Math.round(W * .68), dy = Math.round(H * .2);
+		pic.rect(dx - 2, dy - 2, dw + 4, H, "#2b2433");
+		pic.rect(dx, dy, dw, H, "#6b4a33");
+		pic.rect(dx + 2, dy + 3, dw - 4, Math.round(H * .18), "#5a3d2a");
+		pic.rect(dx + dw - 4, Math.round(H * .42), 2, 2, "#e7b53b");
+		pic.rect(0, 0, W, eave, "#1c2238");
+		pic.rect(0, eave - 2, W, 2, "#2a2230");
+		pic.rect(0, eave, W, 1, "#5a4a3a");
+		for (const px of [0, W - Math.max(3, Math.round(W * .025))]) {
+			const pw = Math.max(3, Math.round(W * .025));
+			pic.rect(px, eave, pw, H, "#8a5f3e");
+			pic.rect(px + 1, eave, 1, H, "#a8794f");
+		}
+		lights.push(...bulbs(pic, W * .03, W * .97, eave + 1, H * .05, Math.max(8, Math.round(W / 14))));
+	} else if (id === "bleachers") {
+		const horizon = Math.round(standTop(p.cx) + H * .03);
+		pic.bands(0, horizon, [
+			"#26284a",
+			"#4a3a68",
+			"#8a4f6e",
+			"#e0876a"
+		]);
+		for (let x = 0; x < W; x++) {
+			const t = Math.round(H * .07 + hash("tree" + Math.floor(x / 5)) % 7 + 3 * Math.sin(x / 9));
+			pic.rect(x, horizon - t, 1, H, "#1d2a2a");
+		}
+		const sbx = Math.round(W * .87), sby = Math.round(H * .12);
+		pic.rect(sbx - 1, sby, 2, horizon, "#2a2f3d");
+		scoreboard(pic, sbx, sby, Math.round(W * .14), Math.round(H * .09), "#ff7a3c", "#2a2f3d");
+	} else if (id === "gym") {
+		pic.rect(0, 0, W, H, "#b3a891");
+		for (let y = 0; y < H; y += 3 * fr) {
+			pic.rect(0, y, W, 1, "#a39883");
+			for (let x = y / (3 * fr) % 2 * 4 * fr; x < W; x += 8 * fr) pic.rect(x, y, 1, 3 * fr, "#a39883");
+		}
+		const wallTop = Math.round(H * .04);
+		pic.rect(0, 0, W, wallTop, "#2a2630");
+		const winY = Math.round(H * .07), winH = Math.round(H * .1), n = Math.max(3, Math.round(W / 80)), ww = Math.round(W / n * .55);
+		for (let i = 0; i < n; i++) {
+			const x = Math.round((i + .5) * W / n - ww / 2);
+			pic.rect(x - 1, winY - 1, ww + 2, winH + 2, "#4a4f5c");
+			pic.rect(x, winY, ww, winH, "#9ec3e6");
+			pic.rect(x, winY, ww, Math.round(winH / 3), "#b9d6f0");
+			for (let m = 1; m < 3; m++) pic.rect(x + Math.round(ww * m / 3), winY, 1, winH, "#4a4f5c");
+		}
+		pic.rect(0, Math.round(H * .24), W, Math.max(2, fr * 2), "#2c3a5e");
+		for (const u of [.35, .65]) {
+			const x = Math.round(W * u), lw = Math.max(5, Math.round(W * .03)) | 1, ly = wallTop + Math.max(3, Math.round(H * .06)), lh = Math.max(2, lw >> 1);
+			pic.rect(x, 0, 1, ly, "#3a3640");
+			for (let j = 0; j < lh; j++) {
+				const half = (lw >> 1) - (lh - 1 - j);
+				pic.rect(x - Math.max(1, half), ly + j, Math.max(1, half) * 2 + 1, 1, j ? "#3d4452" : "#5a6272");
+			}
+			pic.rect(x - 1, ly + lh, 3, 1, "#fff3c4");
+			for (let j = 1; j < 6; j++) pic.rect(x - j * 2, ly + lh + j, j * 4 + 1, 1, "#e7d9a8", 2);
+			lights.push({
+				x,
+				y: ly + lh + 1
+			});
+		}
+		[
+			.2,
+			.5,
+			.8
+		].forEach((u, i) => {
+			if (i === 1) {
+				scoreboard(pic, Math.round(W * u), Math.round(H * .06), Math.round(W * .2), Math.round(H * .1), "#ff5a4a", "#0d0f16");
+				return;
+			}
+			const bw = Math.round(W * .07), bh = Math.round(H * .17), bx = Math.round(W * u - bw / 2), c = CLUB[i * 2];
+			pic.rect(bx, wallTop, bw, bh, c);
+			pic.rect(bx, wallTop + Math.round(bh * .25), bw, Math.max(1, fr), shade(c, .45));
+			for (let k = 0; k < bw / 2; k++) pic.rect(bx + k, wallTop + bh + k * 0, 1, Math.round(bw / 2 - k) * .6 + 1, c), pic.rect(bx + bw - 1 - k, wallTop + bh, 1, Math.round(bw / 2 - k) * .6 + 1, c);
+			pic.rect(bx + bw / 2 - 1, wallTop + bh, 2, Math.round(bw * .3), "#b3a891");
+		});
+	} else if (id === "hall") {
+		pic.rect(0, 0, W, H, "#2e1c33");
+		const ceil = Math.round(H * .08), cw = Math.max(6, Math.round(W / 18)), ch = Math.max(2, Math.round(ceil / 3));
+		pic.rect(0, 0, W, ceil, "#1d1222");
+		for (let x = Math.round(cw / 4); x < W; x += cw) for (let y = 2; y + ch <= ceil - 2; y += ch + 2) {
+			pic.rect(x, y, cw - 3, ch, "#281830");
+			pic.rect(x, y + ch - 1, cw - 3, 1, "#35223c");
+		}
+		pic.rect(0, ceil, W, Math.max(1, fr), "#b58a3a");
+		pic.rect(0, ceil + Math.max(1, fr), W, 1, "#6e5022");
+		const n = Math.max(4, Math.round(W / 60)), wall = standTop(p.cx);
+		for (let i = 0; i <= n; i++) {
+			const x = Math.round(i * W / n), pw = Math.max(3, Math.round(W * .025));
+			pic.rect(x - pw / 2, ceil + 2, pw, H, "#3a2440");
+			pic.rect(x - pw / 2, ceil + 2, 1, H, "#4a2f50");
+			const sy = Math.round(ceil + (wall - ceil) * .62);
+			if (sy + 4 < wall) {
+				pic.rect(x - 3, sy - 2, 7, 6, "#4d3040");
+				pic.rect(x - 2, sy - 1, 5, 4, "#6a4045");
+				pic.rect(x - 1, sy, 3, 2, "#ffcf6b");
+				pic.dot(x, sy, "#fff6d8");
+			}
+		}
+		const room = wall - ceil - 4, cn = W > 260 ? 3 : 1;
+		for (let i = 0; i < cn && room >= 6; i++) {
+			const x = Math.round(W * (i + .5) / cn), cwid = Math.max(7, Math.min(Math.round(W * .07), room * 2)) | 1, drop = Math.max(2, Math.round(room * .3));
+			const y = ceil + 2 + drop, half = cwid >> 1, th = Math.max(3, Math.round(cwid * .35));
+			for (let j = -th * 2; j <= th * 2; j++) {
+				const span$1 = Math.round(cwid * Math.sqrt(Math.max(0, 1 - (j / (th * 2)) ** 2)));
+				pic.rect(x - span$1, y + j, span$1 * 2 + 1, 1, "#5a3a40", 3);
+			}
+			pic.rect(x, ceil + 2, 1, drop, "#8a6a2a");
+			pic.rect(x - half, y, cwid, 1, "#d9a441");
+			pic.rect(x - half + 1, y + 1, cwid - 2, 1, "#8a6a2a");
+			for (let c = -half; c <= half; c += 2) {
+				pic.rect(x + c, y - 2, 1, 2, "#f2e6c8");
+				pic.dot(x + c, y - 3, "#ffd27a");
+			}
+			for (let r$1 = 0; r$1 < th; r$1++) {
+				const w2 = Math.max(1, half - r$1 * 2);
+				pic.rect(x - w2, y + 2 + r$1, w2 * 2 + 1, 1, r$1 % 2 ? "#b58a3a" : "#e8d8b0");
+			}
+			lights.push({
+				x,
+				y: y + 2 + th
+			});
+		}
+	} else {
+		const roof = Math.round((ROOF[id] ?? .15) * H), sky = id === "arena" ? "#0f121c" : "#0d1019";
+		pic.bands(0, H, id === "arena" ? [
+			"#0c0f18",
+			"#141826",
+			"#161b2a"
+		] : [
+			"#0a0d16",
+			"#111727",
+			"#1a2033"
+		]);
+		if (id === "arena") {
+			pic.rect(0, 0, W, roof, "#0c0f18");
+			for (let x = 0; x < W; x++) {
+				const u = x % 12;
+				pic.dot(x, Math.round(roof * .3) + Math.abs(u - 6), "#1e2434");
+				pic.dot(x, Math.round(roof * .3), "#232a3b");
+				pic.dot(x, Math.round(roof * .3) + 6, "#232a3b");
+			}
+			const sw = Math.round(W * .2), sh = Math.round(roof * .62), sx = Math.round(p.cx - sw / 2), sy = Math.round(roof * .18);
+			pic.rect(sx + 3, 0, 1, sy, "#2a3042");
+			pic.rect(sx + sw - 4, 0, 1, sy, "#2a3042");
+			pic.rect(sx, sy, sw, sh, "#232838");
+			for (let i = 0; i < 2; i++) {
+				const qx = sx + 2 + i * Math.floor((sw - 2) / 2), qw = Math.floor((sw - 2) / 2) - 2;
+				pic.rect(qx, sy + 2, qw, sh - 4, "#0f2a4a");
+				pic.rect(qx, sy + 2, qw, 1, "#5fb4ff");
+				pic.rect(qx + 2, sy + 4, qw * .4, Math.max(2, sh * .25), "#ff7a5c", 10);
+				pic.rect(qx + qw * .55, sy + 4, qw * .35, Math.max(2, sh * .25), "#ffd45c", 10);
+			}
+			pic.rect(sx, sy + sh, sw, 1, "#5fb4ff");
+			[.18, .82].forEach((u) => lights.push(lightBank(pic, Math.round(W * u), Math.round(roof * .45), Math.max(1, Math.round(Math.min(H, W * 9 / 16) * .008)), 3, 1, W * .05, standTop(W * u), sky)));
+		} else {
+			const banks = id === "bowl" ? 6 : 4, cell = Math.max(1, Math.round(Math.min(H, W * 9 / 16) * .009)), bh = 2 * (cell + 1) + 1;
+			const from = id === "stadium" ? Math.round(roof * .45) : 0;
+			const bankY = (x) => Math.max(from + 1, Math.min(roof + 1, standTop(x) - Math.max(2, fr * 2) - bh - 2));
+			const bankAt = Array.from({ length: banks }, (_, i) => {
+				const x = Math.round(W * (i + .5) / banks);
+				return {
+					x,
+					y: bankY(x)
+				};
+			});
+			for (const b$1 of bankAt) lights.push(lightBank(pic, b$1.x, b$1.y, cell, 4, 2, W * .06, standTop(b$1.x), sky));
+			if (from) for (let i = 0; i < W * from / 40; i++) {
+				const h = hash("star" + i);
+				pic.dot(h % W, (h >> 12) % from, i % 5 ? "#3a4466" : "#c9d1de");
+			}
+			pic.rect(0, from, W, roof - from, "#151a28");
+			for (let y = from + 3; y < roof - 4; y += 5) pic.rect(0, y, W, 1, "#1a2030");
+			for (let x = Math.round(W / 48); x < W; x += Math.max(4, Math.round(W / 24))) pic.rect(x, from, 1, roof - 3 - from, "#1e2536");
+			if (id === "bowl") for (const u of [.035, .785]) {
+				const sw = Math.round(W * .18), sh = Math.round(Math.min(roof * .5, W * .06)), sx = Math.round(W * u), sy = Math.round(roof * .18);
+				pic.rect(sx - 1, sy - 1, sw + 2, sh + 2, "#2a3042");
+				pic.rect(sx, sy, sw, sh, "#0f2a4a");
+				pic.rect(sx, sy, sw, 1, "#5fb4ff");
+				for (let i = 0; i < 6; i++) pic.rect(sx + 2 + i * Math.floor((sw - 4) / 6), sy + 3, Math.floor((sw - 4) / 6) - 1, sh - 6, CLUB[(i + (u > .5 ? 3 : 0)) % CLUB.length], 10);
+			}
+			for (let x = 0; x < W; x++) {
+				const u = x % 8;
+				pic.dot(x, roof - 3 + (u < 4 ? 0 : 0), "#2d3448");
+				pic.dot(x, roof - 1, "#3a4258");
+				pic.dot(x, roof - 3 + Math.round(Math.abs(u - 4) / 2), "#3d4560");
+			}
+			for (const { x, y } of bankAt) {
+				const w = 4 * (cell + 1) + 1;
+				pic.rect(x - w / 2 - 1, y - 2, w + 2, bh + 2, "#232838");
+				for (let j = 0; j < 2; j++) for (let q = 0; q < 4; q++) {
+					const bx = Math.round(x - w / 2 + 1 + q * (cell + 1)), by = y - 1 + j * (cell + 1);
+					pic.rect(bx, by, cell, cell, "#fff3c4");
+					if (cell >= 3) pic.dot(bx + (cell >> 1), by + (cell >> 1), "#ffffff");
+				}
+			}
+		}
+	}
+	const wallC = id === "porch" ? "#4a3a32" : id === "bleachers" ? "#3a4152" : id === "gym" ? "#7a5634" : id === "hall" ? "#3a1c2a" : "#1d2333";
+	const wallTopC = shade(wallC, .3);
+	if (!st.centred && id !== "bleachers") for (let x = 0; x < W; x++) {
+		const y = standTop(x) - Math.max(2, fr * 2), y1 = Math.round(p.feet(r, x + .5)) - p.rows[r].rise;
+		pic.rect(x, y, 1, y1 - y, wallC);
+		pic.dot(x, y, wallTopC);
+	}
+	if (id === "porch") {
+		const steps$1 = Math.max(2, p.used);
+		for (let s = steps$1 - 1; s >= 0; s--) {
+			const row = p.rows[Math.min(s, p.rows.length - 1)], feet$1 = Math.round(p.feet(Math.min(s, p.rows.length - 1), p.cx)), tread = Math.max(2, Math.round(row.size * .18));
+			pic.rect(0, feet$1 - tread, W, H, "#7a5234");
+			pic.rect(0, feet$1 - tread, W, tread, "#a0714a");
+			pic.rect(0, feet$1 - tread, W, 1, "#c08a5c");
+			pic.rect(0, feet$1, W, H, "#6b4a33");
+		}
+		const ground = p.floorTop;
+		pic.rect(0, ground, W, H - ground, "#24301f");
+		for (let x = 0; x < W; x++) if (hash("g" + x) % 3 === 0) pic.dot(x, ground, "#2f3d28");
+		pic.rect(p.cx - W * .12, ground, W * .24, H - ground, "#5a5550");
+		pic.rect(p.cx - W * .12, ground, W * .24, 1, "#6e6862");
+		return {
+			canvas: pic.canvas(),
+			lights
+		};
+	}
+	if (id === "bleachers") {
+		for (let r$1 = top - 1; r$1 >= 0; r$1--) {
+			const row = p.rows[r$1], feet$1 = Math.round(p.feet(r$1, p.cx)), plank = Math.max(2, Math.round(row.size * .2));
+			pic.rect(0, feet$1 - row.rise, W, row.rise, "#262b38");
+			pic.rect(0, feet$1 - plank, W, plank, "#9aa6b8");
+			pic.rect(0, feet$1 - plank, W, 1, "#d7dde6");
+			pic.rect(0, feet$1 - 1, W, 1, "#5d6778");
+		}
+		const front = Math.round(p.feet(0, p.cx)), leg = Math.max(8, Math.round(W / 10));
+		for (let x = Math.round(leg / 2); x < W; x += leg) {
+			pic.rect(x, front, 2, p.floorTop - front, "#5d6778");
+			for (let j = 0; j < p.floorTop - front; j++) pic.dot(x + 2 + Math.round(j * .8), front + j, "#4c566b");
+		}
+		pic.rect(0, p.floorTop, W, H - p.floorTop, "#2f7a43");
+		for (let x = 0; x < W; x++) if (Math.floor(x / Math.max(10, W / 16)) % 2) pic.rect(x, p.floorTop, 1, H, "#2a7040");
+		pic.mix(0, p.floorTop + Math.round((H - p.floorTop) * .4), W, 1, "#ffffff", .7);
+		return {
+			canvas: pic.canvas(),
+			lights
+		};
+	}
+	if (id === "gym") {
+		for (let r$1 = top - 1; r$1 >= 0; r$1--) {
+			const row = p.rows[r$1], feet$1 = Math.round(p.feet(r$1, p.cx)), plank = Math.max(2, Math.round(row.size * .22));
+			pic.rect(0, feet$1 - row.rise, W, row.rise, "#8f5f33");
+			pic.rect(0, feet$1 - plank, W, plank, "#c58b4f");
+			pic.rect(0, feet$1 - plank, W, 1, "#e0b07a");
+		}
+		const front = Math.round(p.feet(0, p.cx));
+		pic.rect(0, front, W, p.floorTop - front, "#5a3b22");
+		for (let y = p.floorTop; y < H; y++) pic.rect(0, y, W, 1, Math.floor((y - p.floorTop) / Math.max(2, fr * 2)) % 2 ? "#c08950" : "#c9925a");
+		for (let y = p.floorTop; y < H; y += Math.max(2, fr * 2)) for (let x = hash("s" + y) % 40; x < W; x += 40) pic.dot(x, y, "#a8743f");
+		const line = (x, y, w, h) => pic.mix(x, y, w, h, "#ffffff", .6);
+		const sy = p.floorTop + Math.max(2, fr * 2);
+		line(0, sy, W, 1);
+		line(p.cx, sy, 1, H - sy);
+		const rx$1 = Math.round(W * .1), ry$1 = Math.max(4, Math.round((H - sy) * .45));
+		for (let a = 0; a <= 180; a += .5) {
+			const t = a * Math.PI / 180;
+			line(Math.round(p.cx + Math.cos(t) * rx$1), Math.round(sy + Math.sin(t) * ry$1), 1, 1);
+		}
+		for (const kx of [Math.round(W * .06), Math.round(W * .82)]) {
+			line(kx, sy, Math.round(W * .12), 1);
+			line(kx, sy, 1, H - sy);
+			line(kx + Math.round(W * .12), sy, 1, H - sy);
+		}
+		return {
+			canvas: pic.canvas(),
+			lights
+		};
+	}
+	paintStand(pic, p, top);
+	if (id === "hall") {
+		for (let r$1 = 0; r$1 < top; r$1++) {
+			const row = p.rows[r$1], feet$1 = Math.round(p.feet(r$1, p.cx));
+			pic.rect(0, feet$1 - row.rise, W, 1, "#e0675a");
+			pic.rect(0, feet$1 - row.rise + 1, W, Math.max(1, Math.round(row.size * .15)), "#8c2a3c");
+		}
+		p.breaks.forEach((b$1) => {
+			if (!p.rows.some((r$1, i) => i < top && r$1.lift > b$1.lift)) return;
+			const y = Math.round(p.floorTop - p.board - b$1.lift - b$1.h);
+			pic.rect(0, y, W, b$1.h, "#4a1f2e");
+			pic.rect(0, y, W, 1, "#d9a441");
+			pic.rect(0, y + b$1.h - 1, W, 1, "#8a6a2a");
+			for (let x = 2; x < W; x += 6) pic.dot(x, y + (b$1.h >> 1), "#d9a441");
+			pic.rect(0, y + b$1.h, W, Math.max(1, Math.round(b$1.h * .5)), "#2a1220");
+		});
+		for (let r$1 = 0; r$1 < top; r$1++) {
+			const row = p.rows[r$1], secW = row.section * row.pitch + row.aisle;
+			if (row.section) for (let j = Math.floor(-p.cx / secW) - 1; j <= Math.ceil((W - p.cx) / secW) + 1; j++) {
+				const x = Math.round(p.cx + (j - .5) * secW - row.aisle / 2), feet$1 = Math.round(p.feet(r$1, x));
+				pic.rect(x, feet$1 - row.rise, row.aisle, row.rise, "#3a2a30");
+				pic.dot(x, feet$1 - 1, "#ffd27a");
+			}
+		}
+		const lip = p.floorTop;
+		pic.rect(0, lip, W, H - lip, "#3a2a22");
+		for (let y = lip + 2; y < H; y += Math.max(2, fr * 2)) pic.rect(0, y, W, 1, "#33241d");
+		pic.rect(0, lip, W, 1, "#f2d6a0");
+		for (let x = Math.round(W / 32); x < W; x += Math.max(4, Math.round(W / 16))) {
+			pic.rect(x - 3, lip - 2, 7, 4, "#ffd27a", 4);
+			pic.rect(x - 1, lip, 3, 1, "#ffd27a");
+			pic.dot(x, lip, "#fff6d8");
+		}
+		return {
+			canvas: pic.canvas(),
+			lights
+		};
+	}
+	paintBreaks(pic, p, top, "#161b29");
+	const pitch = id === "arena" ? "#1d4f8a" : "#1f6b3e", stripe = id === "arena" ? "#1b4a82" : "#237646";
+	paintBoards(pic, p, (x, y, w) => {
+		const sw = Math.max(12, W / 24);
+		for (let i = x; i < x + w;) {
+			const band$1 = Math.floor(i / sw), e = Math.min(x + w, Math.ceil((band$1 + 1) * sw));
+			pic.rect(i, y, e - i, H - y, band$1 % 2 ? stripe : pitch);
+			i = e;
+		}
+	});
+	const touch = Math.round(p.floorTop + (H - p.floorTop) * .3);
+	pic.mix(0, touch, W, 1, "#ffffff", .7);
+	pic.mix(p.cx, touch, 1, H - touch, "#ffffff", .7);
+	const rx = Math.round(W * .09), ry = Math.max(3, Math.round((H - touch) * .6));
+	for (let a = 0; a <= 180; a += .4) {
+		const t = a * Math.PI / 180;
+		pic.mix(Math.round(p.cx + Math.cos(t) * rx), Math.round(touch + Math.sin(t) * ry), 1, 1, "#ffffff", .7);
+	}
+	if (id !== "arena") {
+		const banks = id === "bowl" ? 6 : 4, cy = (p.floorTop + H) / 2, ry$1 = (H - p.floorTop) / 2;
+		for (let i = 0; i < banks; i++) for (let y = Math.ceil(p.floorTop); y < H; y++) {
+			const half = W * .06 * Math.sqrt(Math.max(0, 1 - ((y - cy) / ry$1) ** 2));
+			pic.rect(W * (i + .5) / banks - half, y, half * 2, 1, "#3a9a58", 4);
+		}
+	}
+	return {
+		canvas: pic.canvas(),
+		lights
+	};
+}
+/**
+* A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; as
+* the crowd grows the venue is laid out again for it (and changes when it outgrows one), guys sliding to
+* their new seats, or in a big crowd the old picture fading out under the new.
+*/
+function createStadium(canvas, options = {}) {
+	let venue = "porch", laidFor = 1;
+	const free = [];
+	let next = 0;
+	function build$1(devW, devH, dpr) {
+		const id = venueFor(laidFor), f = fit(id, devW, devH, dpr, laidFor), W = Math.ceil(devW / f.k), H = Math.ceil(devH / f.k);
+		const p = plan(id, W, H, f.front, laidFor, false, 0, f.depth), st = STYLES[id];
+		const rows = [];
+		p.seats.forEach((s, i) => {
+			(rows[s.row] ??= []).push(i);
+		});
+		const order = Array.from(rows, (r) => (r ?? []).sort((a, b$1) => p.seats[a].x - p.seats[b$1].x)).reverse();
+		const tints = [];
+		for (let b$1 = 0; b$1 < 8; b$1++) tints.push({
+			toward: st.haze,
+			amount: st.hazeMax * (b$1 % 4) / 3,
+			shade: b$1 >= 4 ? .2 : 0
+		});
+		const bands = new Uint8Array(p.seats.length);
+		p.seats.forEach((s, i) => {
+			const row = p.rows[s.row];
+			bands[i] = Math.min(3, Math.floor(row.lift / Math.max(1, p.standMax) * 4)) + (row.shadow ? 4 : 0);
+		});
+		const scene = {
+			width: W,
+			height: H,
+			k: f.k,
+			ox: Math.floor((devW - W * f.k) / 2),
+			oy: devH - H * f.k,
+			seats: p.seats,
+			rows: order,
+			bands,
+			tints,
+			backdrop: null,
+			lights: [],
+			later: () => {
+				const venue$1 = paintVenue(p);
+				scene.lights = venue$1.lights;
+				return venue$1.canvas;
+			},
+			pitch: p.rows[0]?.pitch ?? 8,
+			shadow: "#0b0e18",
+			wave: id === "arena" || id === "stadium" || id === "bowl" ? W * .1 : void 0
+		};
+		return scene;
+	}
+	const render = createRender(canvas, {
+		build: build$1,
+		font: options.font,
+		wave: options.wave,
+		beforeFrame: () => {
+			if (due) regrow();
+		}
+	});
+	/** Lays the venue out again when the crowd has grown or shrunk past a step, everyone re-seated in the order they sit. */
+	let due = false;
+	function regrow() {
+		due = false;
+		const n = render.guys.size, want = stepFor(n);
+		if (want === laidFor) return;
+		render.relayout(n > 300 ? "fade" : "slide", () => {
+			laidFor = want;
+			const seated = [...render.guys.values()].sort((a, b$1) => (a.seat < 0 ? 1e9 : a.seat) - (b$1.seat < 0 ? 1e9 : b$1.seat) || a.joined - b$1.joined);
+			seated.forEach((g, i) => {
+				g.seat = i;
+			});
+			free.length = 0;
+			next = seated.length;
+		});
+	}
+	/** The crowd passed a step: the venue is laid out again at the next frame, once however many come before it; the venue's name changes now. */
+	function grown() {
+		due = true;
+		render.wake();
+		const now = venueFor(Math.max(1, render.guys.size));
+		if (now !== venue) {
+			venue = now;
+			options.onVenue?.(venue);
+		}
+	}
 	return {
 		add(name, guy = {}) {
 			const key = name.toLowerCase();
-			if (byKey.has(key)) return;
+			if (render.guys.has(key)) return;
 			const spec = {
 				...guy,
 				seed: guy.seed ?? key
 			};
-			const f = {
-				key,
-				spec,
-				joined: performance.now(),
-				hopAt: -1e9,
-				glint: (crowdShine(spec)?.grade ?? 0) >= 3
-			};
-			fans.push(f);
-			byKey.set(key, f);
-			order = null;
-			reseat();
-			wake();
-		},
-		remove(name) {
-			const f = byKey.get(name.toLowerCase());
-			if (!f) return;
-			byKey.delete(f.key);
-			fans.splice(fans.indexOf(f), 1);
-			order = null;
-			for (const s of SIZES) sprites.delete(f.key + ":" + s);
-			reseat();
-			wake();
-		},
-		has: (name) => byKey.has(name.toLowerCase()),
-		hop(name) {
-			const f = byKey.get(name.toLowerCase());
-			if (f) {
-				f.hopAt = performance.now();
-				wake();
+			const before = stepFor(render.guys.size + 1) !== laidFor;
+			render.join(key, spec, before ? next : free.length ? free.shift() : next++, !before);
+			if (before) {
+				next++;
+				grown();
 			}
 		},
+		remove(name) {
+			const g = render.guys.get(name.toLowerCase());
+			if (!g) return;
+			render.leave(g);
+			if (g.seat >= 0) {
+				let i = 0;
+				while (i < free.length && free[i] < g.seat) i++;
+				free.splice(i, 0, g.seat);
+			}
+			if (stepFor(render.guys.size) !== laidFor) grown();
+		},
+		has: (name) => render.guys.has(name.toLowerCase()),
+		hop(name) {
+			const g = render.guys.get(name.toLowerCase());
+			if (g) render.hop(g);
+		},
 		wave(on$1) {
-			waving = on$1;
-			wake();
+			render.wave(on$1);
 		},
 		spotlight(name, label, ms = 2600) {
-			const f = byKey.get(name.toLowerCase());
-			if (!f) return;
-			const now = performance.now();
-			lit$1 = {
-				fan: f,
-				label: label ?? name,
-				from: now,
-				until: now + ms
-			};
-			wake();
+			const g = render.guys.get(name.toLowerCase());
+			if (g) render.spotlight(g, label ?? name, ms);
 		},
 		resize() {
-			layoutCanvas();
-			wake();
+			render.resize();
 		},
 		destroy() {
-			gone = true;
-			if (frame) cancelAnimationFrame(frame);
-			sprites.clear();
-			fans.length = 0;
-			byKey.clear();
+			render.destroy();
 		},
 		get count() {
-			return fans.length;
+			return render.guys.size;
 		},
 		get venue() {
 			return venue;
@@ -27614,6 +32421,7 @@ exports.ARM_NAMES = ARM_NAMES
 exports.ART_VERSION = ART_VERSION
 exports.AURAS = AURAS
 exports.AURA_ODDS = AURA_ODDS
+exports.BADGE_INKS = BADGE_INKS
 exports.BAKED_SIZE = BAKED_SIZE
 exports.BATCH_MAX = BATCH_MAX
 exports.BUDDY_GUY_WIDTH = BUDDY_GUY_WIDTH
@@ -27650,12 +32458,14 @@ exports.FOUNDER_SEED = FOUNDER_SEED
 exports.FRAME_HEIGHT = FRAME_HEIGHT
 exports.FRAME_SLOTS = FRAME_SLOTS
 exports.FRAME_WIDTH = FRAME_WIDTH
+exports.FX_BADGES = FX_BADGES
 exports.FX_IDS = FX_IDS
 exports.GAMES = GAMES
 exports.GLSL_COMMON = GLSL_COMMON
 exports.GLSL_LOOKS = GLSL_LOOKS
 exports.GOLD_RIM_DAYS = GOLD_RIM_DAYS
 exports.GRADES = GRADES
+exports.GRAPHIC_FINISHES = GRAPHIC_FINISHES
 exports.GRID_SIZE = GRID_SIZE
 exports.GUY_HEIGHT = GUY_HEIGHT
 exports.GUY_TIERS = GUY_TIERS
@@ -27671,8 +32481,6 @@ exports.LUCKY_ODDS = LUCKY_ODDS
 exports.MAX_PINS = MAX_PINS
 exports.MOVES = MOVES
 exports.NAME_KEY = NAME_KEY
-exports.OG_HEIGHT = OG_HEIGHT
-exports.OG_WIDTH = OG_WIDTH
 exports.ONE_OF_ONE_AURAS = ONE_OF_ONE_AURAS
 exports.PAINTABLE = PAINTABLE
 exports.PAINTS = PAINTS
@@ -27699,6 +32507,7 @@ exports.TITLE_MAX = TITLE_MAX
 exports.TONE_NAMES = TONE_NAMES
 exports.TRAIT_ICONS = TRAIT_ICONS
 exports.TRAIT_SLOTS = TRAIT_SLOTS
+exports.UNUSUAL_ONE_IN = UNUSUAL_ONE_IN
 exports.VENUES = VENUES
 exports.WEAR = WEAR
 exports.WIDE_FRAME_WIDTH = WIDE_FRAME_WIDTH
@@ -27718,6 +32527,7 @@ exports.bakeSquare = bakeSquare
 exports.bakeView = bakeView
 exports.bakedImage = bakedImage
 exports.bodies = bodies
+exports.boxOf = boxOf
 exports.buddyAlone = buddyAlone
 exports.buddyLift = buddyLift
 exports.cardArtFrames = cardArtFrames
@@ -27748,6 +32558,7 @@ exports.crowdShine = crowdShine
 exports.crowdSprite = crowdSprite
 exports.dealOf = dealOf
 exports.decode = decode
+exports.decodeGuy = decodeGuy
 exports.decodeLook = decodeLook
 exports.defineLilGuy = defineLilGuyHere
 exports.drawFrame = drawFrame
@@ -27756,6 +32567,7 @@ exports.emoteFrames = emoteFrames
 exports.encode = encode
 exports.encodeApng = encodeApng
 exports.encodeGif = encodeGif
+exports.encodeGuy = encodeGuy
 exports.encodeLook = encodeLook
 exports.encodePng = encodePng
 exports.eyes = eyes
@@ -27776,6 +32588,7 @@ exports.guyOneIn = guyOneIn
 exports.guyRank = guyRank
 exports.guyScore = guyScore
 exports.hair = hair
+exports.hasGlyph = hasGlyph
 exports.hash = hash
 exports.hashNth = hashNth
 exports.heads = heads
@@ -27788,6 +32601,7 @@ exports.itemById = itemById
 exports.itemFrame = itemFrame
 exports.itemWeight = itemWeight
 exports.items = items
+exports.layered = layered
 exports.lilGuyImg = lilGuyImg
 exports.lilGuySize = lilGuySize
 exports.lilGuyUrl = lilGuyUrl
@@ -27808,7 +32622,6 @@ exports.nameOf = nameOf
 exports.nameSkeleton = nameSkeleton
 exports.nebulaPhase = nebulaPhase
 exports.noiseOf = noiseOf
-exports.ogFrames = ogFrames
 exports.ownedOf = ownedOf
 exports.paint = paint
 exports.paintCost = paintCost
@@ -27843,7 +32656,6 @@ exports.shineFit = shineFit
 exports.shineFrame = shineFrame
 exports.shines = shines
 exports.shows = shows
-exports.siteOgFrames = siteOgFrames
 exports.slotOf = slotOf
 exports.smeltValue = smeltValue
 exports.special = special
@@ -27869,9 +32681,11 @@ exports.tradeFloat = tradeFloat
 exports.tradeGames = tradeGames
 exports.traitOdds = traitOdds
 exports.unlocksOf = unlocksOf
+exports.unusual = unusual
 exports.upscale = upscale
 exports.venueFor = venueFor
 exports.viewSize = viewSize
+exports.visibleOneIn = visibleOneIn
 exports.voxelColumns = voxelColumns
 exports.voxelItem = voxelItem
 exports.voxelMesh = voxelMesh

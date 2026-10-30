@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { AURA_PAD } from '../animate';
+import { glanceRing } from '../animate';
+import { cardInputOf, bakeSquare } from '../bake';
+import { contrast, palettes, paletteOf } from '../palette';
+import { T } from '../parts/art';
 import { animate, AURAS, BAKED_SIZE, BUDDY_GUY_WIDTH, GUY_HEIGHT, GUY_WIDTH, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode, decode, faceMoves, buddyLift, FACE_BUDDY_SPOTS, FACE_WIDTH, FACE_HEIGHT, FRAME_HEIGHT } from '../index-headless';
 
 const aura = `${AURAS[0].id}~gold~0.0123456~20`;
@@ -112,6 +116,8 @@ describe('baked guys', () => {
   });
 });
 
+const aura0 = encode({ item: 'aura.aurora', finish: 'classic', scuff: 0.1, print: 9 });
+
 describe('profile pictures', () => {
   const specs = [
     { seed: 'mia' },
@@ -139,6 +145,16 @@ describe('profile pictures', () => {
     expect(px.every((v, i) => i % 4 !== 3 || v === 255)).toBe(true);
   });
 
+  test('a pale guy stands off the ground; the rest keep the tint of their own colour', () => {
+    for (const name of ['Snow', 'Opal', 'Ice', 'Cream', 'Lemon', 'Butter', 'Midnight', 'Peach', 'Oxblood']) {
+      const palette = palettes.findIndex(p => p.name === name);
+      for (const seed of ['mia', 'zed', 'Theo1']) {
+        const px = profileFrames({ seed, palette }).frames[0], ground = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+        expect(contrast(ground, paletteOf({ ...resolve(seed), palette }).colors[T.BODY])).toBeGreaterThanOrEqual(1.3);
+      }
+    }
+  });
+
   test('come out near 512 px, still as a PNG and moving as a GIF', async () => {
     const png = await toProfilePng(specs[1]), gif = toProfileGif(specs[1]);
     const side = (b: Uint8Array, at: number, le = false) => le ? b[at] | (b[at + 1] << 8) : (b[at] << 24) | (b[at + 1] << 16) | (b[at + 2] << 8) | b[at + 3];
@@ -146,5 +162,45 @@ describe('profile pictures', () => {
     expect(side(gif, 6, true)).toBeGreaterThan(400); expect(side(gif, 6, true)).toBeLessThanOrEqual(512);
     expect(gif.length).toBeLessThan(10 * 1024 * 1024);
     expect(bakeView(specs[1], 'pfp-still')!.frames.length).toBe(1);
+  });
+});
+
+describe('rare at a glance', () => {
+  // A face or icon is cut to 255 colours, so a ring's colour may come out a step off.
+  const near = (f: Uint8ClampedArray, i: number, c: string) => [1, 3, 5].every((k, j) => Math.abs(f[i + j] - parseInt(c.slice(k, k + 2), 16)) <= 4);
+  const count = (frames: Uint8ClampedArray[], c: string) => Math.max(...frames.map(f => { let n = 0; for (let i = 0; i < f.length; i += 4) if (f[i + 3] && near(f, i, c)) n++; return n; }));
+
+  test('faces and icons ring an aura in its own colours, and a rare copy in its grade', () => {
+    const aura = encode({ item: 'aura.aurora', finish: 'frost', scuff: 0.1, print: 9 }), grail = encode({ item: items.find(i => i.slot === 'hat' && !i.free)!.id, finish: 'gold', scuff: 0.01, print: 4 });
+    for (const view of ['face', 'icon'] as const) {
+      const ring = glanceRing('Lux7', { equip: [aura] })!;
+      const f = bakeSquare({ seed: 'Lux7', equip: [aura] }, view).frames;
+      for (const c of ring) expect(count(f, c)).toBeGreaterThan(view === 'face' ? 8 : 15);
+      expect(count(bakeSquare({ seed: 'Lux7', equip: [grail] }, view).frames, '#FFE27A')).toBeGreaterThan(8);
+    }
+  });
+
+  test('a face starts at the head (or hat) whatever sparkles over it: a Lucky star, a Gold copy\'s mark', () => {
+    // The face's lower rows, as a mask: the same when the square is cut from the same row.
+    const low = (spec: Parameters<typeof bakeSquare>[0]) => { const f = bakeSquare(spec, 'face').frames[0]; return Array.from(f.slice(f.length / 2)).filter((_, i) => i % 4 === 3).map(Boolean).join(); };
+    let lucky = 0;
+    for (let i = 0; lucky < 12 && i < 20000; i++) {
+      const seed = `face-lucky-${i}`;
+      if (!resolve(seed).lucky) continue;
+      lucky++;
+      expect(low({ seed })).toBe(low({ seed, parts: { lucky: false } }));
+    }
+    // A Gold copy rings the guy, so compare his own middle columns' colours above the bottom row, which neither ring nor sparkle touches.
+    const middle = (spec: Parameters<typeof bakeSquare>[0]) => { const f = bakeSquare(spec, 'face'), s = f.width; return Array.from({ length: s / 2 - 1 }, (_, y) => Array.from({ length: s - 6 }, (_, x) => f.frames[0].slice(((y + s / 2) * s + x + 3) * 4, ((y + s / 2) * s + x + 3) * 4 + 4).join('.')).join()).join('/'); };
+    const crown = items.find(i => i.slot === 'hat' && !i.free)!.id;
+    for (const seed of ['luna', 'xqc', 'mia']) expect(middle({ seed, equip: [encode({ item: crown, finish: 'gold', scuff: 0.01, print: 12 })] })).toBe(middle({ seed, equip: [encode({ item: crown, finish: 'plain', scuff: 0.3, print: 12 })] }));
+  });
+
+  test('a big card carries the best worn copy, Prized and better, on a second plate', () => {
+    const fish = items.find(i => /goldfish/i.test(i.name))!;
+    expect(cardInputOf({ seed: 'Maya0', equip: [encode({ item: fish.id, finish: 'gold', scuff: 0.01, print: 4 })] }).plate).toEqual({ text: `★ Grail · Gold ${fish.name}`, grade: 4 });
+    expect(cardInputOf({ seed: 'Maya0', equip: [aura0, encode({ item: fish.id, finish: 'gold', scuff: 0.01, print: 4 })] }).plate?.grade).toBe(5);
+    expect(cardInputOf({ seed: 'Maya0', equip: [encode({ item: fish.id, finish: 'sunset', scuff: 0.01, print: 4 })] }).plate).toBeUndefined();
+    expect(cardInputOf({ seed: 'Maya0' }).plate).toBeUndefined();
   });
 });

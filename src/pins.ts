@@ -10,7 +10,7 @@ import { GRID_SIZE } from './types';
  *
  * - 30 days: two marks along its bottom edge
  * - 100 days: four
- * - 365 days: and its outline turns gold
+ * - 365 days: and its outline turns gold and ink by turns
  *
  * Neither is rolled. The club grants pins and counts the days; the library
  * only draws them, on the item's own pixels, so they move with it.
@@ -145,7 +145,11 @@ export function markItem(grid: PixelGrid, slot: Slot, copy: Owned): void {
 
 /**
  * After a year of days, the outline around an item goes gold; a frame's edge
- * does. A pin's backing plate stays dark, so a gold pin still stands out.
+ * does. Every other step of it stays ink, so it shows on any finish: on a
+ * Gold or orange item the ink steps keep its edge, on a dark or pale one the
+ * gold steps stand out. Only gold and outline cells, which the face's blink
+ * and squash leave alone. A pin's backing plate stays dark, so a gold pin
+ * still stands out.
  */
 export function goldRim(grid: PixelGrid, slot: Slot): void {
   const edge = (x: number, y: number) => x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1;
@@ -157,5 +161,5 @@ export function goldRim(grid: PixelGrid, slot: Slot): void {
     if (!edge(x, y) && N4.every(([dx, dy]) => grid[y + dy][x + dx] !== 0)) return;
     if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => own(slot, grid[y + dy]?.[x + dx] ?? 0))) set.push([x, y]);
   }));
-  for (const [x, y] of set) grid[y][x] = (x + y) % 2 ? T.GOLD : T.GOLD_SHADE;
+  for (const [x, y] of set) if ((x + y) % 2) grid[y][x] = T.GOLD;
 }

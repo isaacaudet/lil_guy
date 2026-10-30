@@ -406,22 +406,28 @@ export const accessories: Accessory[] = [
     name: 'masquerade',
     layer: 'face',
     draw: c => {
-      // A gold ball mask round the eyes, its tips swept up at the sides, a
-      // ruby between the eyes and a feather rising from one side. Drawn before
-      // the eyes, which look out through it.
+      // A violet ball mask round the eyes, a gold rim along its top that sweeps
+      // up and out into gold wedges at its corners, a ruby at the bridge and a
+      // pink feather rising from one corner. Drawn before the eyes, which look
+      // out through it. Its colours are fixed (PART_COLORS in ../paint): a gold
+      // band in the guy's own colours read as a headband and vanished on a gold
+      // body. The mask is in leaf tokens and the rim in trim, never the accent:
+      // ./animate takes accent in the eyes' columns for the colour in an eye,
+      // and a blink punched holes in a mask drawn in it.
       const f = c.face;
       if (!f || !f.eyes.length) return;
       const L = f.eyes[0].left - 2, R = f.eyes[f.eyes.length - 1].right + 2, mid = Math.floor(c.centre);
       for (let y = f.top - 1; y <= f.line; y++) for (let x = L; x <= R; x++) {
-        // A dip in its lower edge over the nose.
-        if (y === f.line && (x === mid - 1 || x === mid)) continue;
-        if (c.isBody(x, y)) c.set(x, y, y === f.line ? T.GOLD_SHADE : T.GOLD);
+        // Its lower corners rounded off, and a dip in its lower edge over the nose.
+        if (y === f.line && (x === L || x === R || x === mid - 1 || x === mid)) continue;
+        if (c.isBody(x, y)) c.set(x, y, y === f.top - 1 ? T.TRIM : y === f.top && x === L + 1 ? T.LEAF : T.LEAF_SHADE);
       }
-      c.set(L, f.top - 2, T.GOLD); c.set(L - 1, f.top - 3, T.GOLD);
-      c.set(R, f.top - 2, T.GOLD); c.set(R + 1, f.top - 3, T.GOLD);
-      c.set(L + 1, f.top - 1, T.WHITE);
+      for (const [x, out] of [[L, -1], [R, 1]] as const) {
+        c.set(x, f.top - 1, T.TRIM);
+        c.set(x, f.top - 2, T.GOLD); c.set(x + out, f.top - 1, T.GOLD); c.set(x + out, f.top - 2, T.GOLD); c.set(x + out, f.top - 3, T.GOLD);
+      }
       if (f.eyes.length === 2) { c.set(mid - 1, f.top - 1, T.RED); c.set(mid, f.top - 1, T.RED); }
-      c.set(R, f.top - 3, T.ACCENT); c.set(R, f.top - 4, T.ACCENT); c.set(R - 1, f.top - 5, T.ACCENT_SHADE);
+      c.set(R + 1, f.top - 4, T.ACCENT); c.set(R + 1, f.top - 5, T.ACCENT); c.set(R, f.top - 6, T.ACCENT);
     },
   },
 ];

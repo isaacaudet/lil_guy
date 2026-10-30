@@ -1,13 +1,17 @@
 import { describe, expect, test } from 'bun:test';
-import { animate, animateLoop, closeEyes, drawFrame, frameAt, toAnimatedSvg, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM, WIDE_FRAME_WIDTH } from '../animate';
-import { LOOP_MS } from '../loop';
+import { animate, animateLoop, closeEyes, drawFrame, frameAt, glanceRing, toAnimatedSvg, GOLD_SPARKLE, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM, WIDE_FRAME_WIDTH, type Emote } from '../animate';
+import { LUCKY_RIM } from '../paint';
+import { starAt } from '../sparkle';
+import { fitLoop, LOOP_MS } from '../loop';
 import { buddyAlone, compose } from '../compose';
 import { T } from '../parts/art';
 import { resolve } from '../resolve';
 import { dress, withItems } from '../items';
 import { paint } from '../paint';
-import { getPalette, shadePalette } from '../palette';
-import { encode, type Owned } from '../owned';
+import { contrast, deltaE, getPalette, paletteOf, palettes, shadePalette } from '../palette';
+import { eyes as EYE_PARTS } from '../parts';
+import { encode, FINISHES, type Finish, type Owned } from '../owned';
+import { AURAS } from '../auras';
 import { GRID_SIZE } from '../types';
 
 const NAMES = ['alice', 'bob', 'luna', 'max35', 'iris20', 'p123'];
@@ -168,5 +172,142 @@ describe('animate', () => {
     expect(svg.match(/@keyframes/g)!.length).toBe(a.frames.length);
     expect(svg).not.toContain('prefers-reduced-motion');
     expect(toAnimatedSvg('alice', 'wave', { stillWhenReduced: true })).toContain('prefers-reduced-motion');
+  });
+});
+
+describe('Lucky', () => {
+  const LUCKY = 'lucky-rim-test';
+  const parts = { lucky: true };
+  const STAR = new Set(GOLD_SPARKLE);
+  const RIM = new Set<string>(LUCKY_RIM);
+
+  test('the star is wide open in the still, with rarity off too (cards, emotes)', () => {
+    const plain = animate(LUCKY, 'idle', { parts: { lucky: false } }).frames[0];
+    for (const rarity of [true, false]) {
+      const f = animate(LUCKY, 'idle', { parts, rarity, loop: { fit: true } }).frames[0];
+      const star = f.colors.flatMap((row, y) => row.flatMap((c, x) => (c && STAR.has(c) && !plain.colors[y][x] ? [c] : [])));
+      expect(star.length).toBe(starAt(0.57).length);
+    }
+  });
+
+  test('the rim steps through its hues a beat at a time: whole colours, the outline only, never the face', () => {
+    const plain = animate(LUCKY, 'blink', { parts: { lucky: false } });
+    const lucky = animateLoop(LUCKY, 'blink', { parts });
+    const hues = new Map<string, Set<string>>();
+    let t = 0;
+    for (const f of lucky.frames) {
+      const was = frameAt(plain, t % plain.duration);
+      f.colors.forEach((row, y) => row.forEach((c, x) => {
+        if (c === was.colors[y][x]) return;
+        // Anything new is a rim hue on the outline, or the star where there was nothing.
+        if (c && RIM.has(c)) { expect(was.colors[y][x]).not.toBeNull(); hues.set(`${x},${y}`, (hues.get(`${x},${y}`) ?? new Set()).add(c)); }
+        else { expect(c !== null && STAR.has(c) && was.colors[y][x] === null).toBe(true); }
+      }));
+      t += f.ms;
+    }
+    // Every rim cell moves through Lucky's hues over the loop.
+    expect(hues.size).toBeGreaterThan(10);
+    for (const seen of hues.values()) expect(seen.size).toBe(LUCKY_RIM.length);
+  });
+});
+
+describe('rare at a glance', () => {
+  const ring = (a: ReturnType<typeof animate>, colors: string[]) => a.frames.some(f => f.colors.some(row => row.some(c => c !== null && colors.includes(c))));
+  const aura = encode({ item: 'aura.aurora', finish: 'frost', scuff: 0.1, print: 9 });
+
+  test('a small view rings an aura in bands of its own colours that run round the guy; a big one draws the aura', () => {
+    const colors = glanceRing('luna', { equip: [aura] })!;
+    expect(colors.length).toBeGreaterThan(1);
+    const small = animate('luna', 'idle', { equip: [aura], glance: true, loop: { fit: true } });
+    // Every frame has the ring in two colours or more at once, unlike a grade's ring, and each cell changes colour as the bands move.
+    for (const f of small.frames) expect(colors.filter(c => f.colors.flat().filter(x => x === c).length >= 4).length).toBeGreaterThan(1);
+    const cellAt = (f: (typeof small.frames)[0]) => f.colors.flatMap((row, y) => row.flatMap((c, x) => (c && colors.includes(c) ? [`${x},${y}`] : [])));
+    const spot = cellAt(small.frames[0])[0];
+    expect(new Set(small.frames.map(f => f.colors[+spot.split(',')[1]][+spot.split(',')[0]])).size).toBeGreaterThan(1);
+    expect(small.frames.every(f => !f.outside)).toBe(true);
+    expect(animate('luna', 'idle', { equip: [aura], loop: { fit: true } }).frames.some(f => f.outside?.length)).toBe(true);
+  });
+
+  test('a small view\'s ring comes round with the loop, in two colours or three', () => {
+    for (const finish of ['frost', 'fade'] as const) {
+      const opts = { equip: [encode({ item: 'aura.aurora', finish, scuff: 0.1, print: 9 })], glance: true };
+      const { repeats, turns } = fitLoop(animate('luna', 'idle', opts).duration);
+      const once = animate('luna', 'idle', { ...opts, loop: { repeats, turns } }), twice = animate('luna', 'idle', { ...opts, loop: { repeats: repeats * 2, turns: turns * 2 } });
+      expect(twice.frames.slice(once.frames.length).map(f => JSON.stringify(f.colors))).toEqual(once.frames.map(f => JSON.stringify(f.colors)));
+    }
+    expect(glanceRing('luna', { equip: [encode({ item: 'aura.aurora', finish: 'fade', scuff: 0.1, print: 9 })] })!.length).toBe(3);
+  });
+
+  test('an aura\'s ring reads on a dark page and on white, in two colours or three, none grey', () => {
+    const fins = Object.entries(FINISHES).filter(([, f]) => (f as { aura?: boolean }).aura).map(([k]) => k as Finish);
+    const vivid = (c: string) => { const v = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)); return (Math.max(...v) - Math.min(...v)) / 255; };
+    for (const finish of fins) for (const a of AURAS) for (const print of [0, 500, 999]) {
+      const colors = glanceRing('luna', { equip: [encode({ item: a.id, finish, scuff: 0.1, print })] })!;
+      expect(colors.length).toBeGreaterThanOrEqual(2);
+      expect(colors.length).toBeLessThanOrEqual(3);
+      for (const c of colors) {
+        expect(contrast(c, '#18181B')).toBeGreaterThanOrEqual(2);
+        expect(contrast(c, '#FFFFFF')).toBeGreaterThanOrEqual(2);
+        expect(vivid(c)).toBeGreaterThanOrEqual(0.2);
+      }
+    }
+  });
+
+  test('a gold aura never rings like a Grail: one hue takes the aura grade\'s teal', () => {
+    for (const name of ['Halo', 'Orbit']) {
+      const a = AURAS.find(x => x.name === name)!;
+      const colors = glanceRing('luna', { equip: [encode({ item: a.id, finish: 'classic', scuff: 0.1, print: 9 })] })!;
+      // A teal: green and blue well over red, near each other.
+      expect(colors.some(c => { const [r, g, b] = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)); return g - r > 100 && b - r > 100 && Math.abs(g - b) < 40; })).toBe(true);
+      expect(colors).not.toEqual(['#FFE27A', '#E4AE39']);
+    }
+  });
+
+  test('mind blown and galaxy brain open the head of a big guy; the other pictures sit in a corner', () => {
+    const at = (emote?: Emote) => frameAt(animate('xqc', 'idle', emote ? { emote } : {}), 600).colors;
+    const column = (c: (string | null)[][]) => c.map(row => row[7]).join();
+    expect(column(at('heart'))).toBe(column(at()));
+    expect(column(at('galaxy'))).not.toBe(column(at()));
+    expect(at('galaxy').flat()).toContain('#4B2BA8');
+    expect(column(at('burst'))).not.toBe(column(at()));
+    expect(at('burst').flat()).toContain('#FF8A2B');
+  });
+
+  test('a copy of Prized or better rings the guy in its grade, a lesser one and none do not', () => {
+    expect(glanceRing('luna', { equip: [encode(gold)] })).toEqual(['#FFE27A', '#E4AE39']);
+    expect(glanceRing('luna', { equip: [encode({ ...gold, finish: 'sunset' })] })).toBeNull();
+    expect(glanceRing('luna')).toBeNull();
+    expect(ring(animate('luna', 'idle', { equip: [encode(gold)], glance: true }), ['#FFE27A', '#E4AE39'])).toBe(true);
+  });
+});
+
+describe('galaxy eyes', () => {
+  const G = EYE_PARTS.findIndex(e => e.name === 'galaxy');
+  const plain = { head: 0, eyes: G, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, flip: false, rotation: 0, lucky: false };
+  const light = (c: string) => { const [r, g, b] = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16) / 255); return (Math.max(r, g, b) + Math.min(r, g, b)) / 2; };
+  /** The ring's colours over an idle loop: every colour a frame has that the still guy hasn't, but the star's. */
+  const ring = (palette: number, shade: number) => {
+    const config = { ...resolve('galaxy', plain), palette, shade }, opts = { parts: { ...plain, shade }, palette: paletteOf(config) };
+    const base = new Set(animate('galaxy', 'idle', { ...opts, parts: { ...opts.parts, eyes: 1 } }).frames.flatMap(f => f.colors.flat()));
+    const seen = new Set(animate('galaxy', 'idle', opts).frames.flatMap(f => f.colors.flat()));
+    return { body: paletteOf(config).colors[T.BODY]!, colors: [...seen].filter((c): c is string => !!c && !base.has(c) && !['#FFFFFF', '#CBB8FF', '#0E0824'].includes(c.toUpperCase())) };
+  };
+
+  test('swirl only their hue: the pale ring stays over the deep one', () => {
+    for (const name of ['Snow', 'Peach', 'Ocean', 'Cobalt', 'Midnight']) for (const shade of [0, 1, 2]) {
+      const { colors } = ring(palettes.findIndex(p => p.name === name), shade);
+      const pale = colors.filter(c => light(c) > 0.75), deep = colors.filter(c => light(c) < 0.65);
+      expect(pale.length).toBeGreaterThan(2);
+      expect(deep.length).toBeGreaterThan(2);
+    }
+  });
+
+  test('never take the body\'s own blue on Ocean or Cobalt', () => {
+    for (const name of ['Ocean', 'Cobalt', 'Denim', 'Sky']) for (const shade of [0, 1, 2]) {
+      const { body, colors } = ring(palettes.findIndex(p => p.name === name), shade);
+      expect(colors.length).toBeGreaterThan(4);
+      // It swirled through the body's own blue before, and merged with it (3 apart on Cobalt).
+      for (const c of colors) expect(deltaE(c, body)).toBeGreaterThan(20);
+    }
   });
 });

@@ -1,7 +1,8 @@
 import { animate, animateLoop, backdropOf, frameAt, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, type Animation, type AnimationFrame, type AnimateOptions, type Move } from './animate';
 import { editionOf, finishColor, loopSeconds, SHADER_FINISHES } from './finish-shader';
 import { cycle, LOOP_MS, wave } from './loop';
-import { encode, GRADES, gradeOf, type Owned } from './owned';
+import { encode, GRADES, gradeOf, GRAPHIC_FINISHES, special, unusual, type Owned } from './owned';
+import { BADGE_INKS, EFFECTS, FX_BADGES } from './effects';
 import { GLYPHS } from './font';
 import { encodeGif, encodePng, type Frames } from './gif';
 import { itemById } from './items';
@@ -35,8 +36,13 @@ export interface CardInput {
   corner?: string;
   /** The grade's badge, then a short line beside it (his @name). Any ★ is left off. */
   lines?: string[];
-  /** The small line at the foot, as "1st edition", on one line; a part starting with "#" (a print number) is left off. */
+  /** The small line at the foot, as "1st edition", on one line; a part starting with "#" (a print number) is left off. A 1st edition also gets a seal. */
   footer?: string;
+  /**
+   * A second, smaller plate under the badge's line, in the colour of `grade`
+   * (0 Everyday to 5 Aura): the best copy they wear, as "★ Grail · Gold Goldfish".
+   */
+  plate?: { text: string; grade: number };
   /** 0 Everyday to 5 Aura; -1 for a plain card. */
   grade?: number;
   /** How he moves on the card. Default `idle`. */
@@ -54,14 +60,20 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] 
 const hash = (x: number, y: number, p: number) => { const s = Math.sin(x * 127.1 + y * 311.7 + p * 0.731) * 43758.5453; return s - Math.floor(s); };
 
 
-// Glyphs the font's ASCII lacks, in its own style.
+// Glyphs the font's ASCII lacks, in its own style: curly quotes are its straight ones, turned.
 const EXTRA: Record<string, [number, number[]]> = {
   '·': [5, [0, 0, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0]],
   '★': [9, [0, 0, 0, 8, 8, 28, 127, 62, 28, 54, 34, 0, 0, 0, 0, 0]],
   '#': [8, [0, 0, 0, 0, 18, 18, 63, 18, 18, 63, 18, 18, 0, 0, 0, 0]],
   '…': [9, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 219, 219, 0, 0, 0]],
+  '’': [3, [0, 0, 3, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+  '‘': [3, [0, 0, 2, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+  '“': [6, [0, 0, 18, 9, 27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+  '”': [6, [0, 0, 27, 27, 18, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
 };
 const glyph = (ch: string) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS['?'];
+/** Whether the card's pixel type has a glyph for `ch` (anything else is written "?"). */
+export const hasGlyph = (ch: string): boolean => ch in EXTRA || ch in GLYPHS;
 /** How wide a line of text is, in pixels. */
 export const textWidth = (s: string) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
 
@@ -74,6 +86,15 @@ function fitLine(text: string, width: number): { text: string; spacing: number }
   while (chars.length > 1 && wide(chars.join('').trimEnd() + '…', -1) > width) chars.pop();
   return { text: chars.join('').trimEnd() + '…', spacing: -1 };
 }
+/** The grade badge's room either side of its word, and the gap after it: tight, so a rank beside it fits whole. */
+const PILL_PAD = 6, PILL_GAP = 4;
+/** The line beside the badge, fitted to `width`; a rank ("Top 0.055%") drops its "Top" rather than be cut. */
+export function rankFit(text: string, width: number): { text: string; spacing: number } {
+  const fit = fitLine(text, width);
+  return fit.text === text ? fit : fitLine(text.replace(/^Top (?=\d)/, ''), width);
+}
+/** How wide the line beside a badge reading `pill` may be. */
+export const rankRoom = (pill: string) => CARD_WIDTH - M * 2 - 10 - textWidth(pill) - PILL_PAD * 2 - PILL_GAP;
 /** Card words without the ★ glyph. */
 const unstarred = (t: string) => t.replace(/★\s*/g, '').trim();
 /** A drawing surface of RGBA card pixels, with what each pixel is for the card's edition: 0 nothing, 1 the face, 2 the window. */
@@ -271,19 +292,44 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // line on one line without a print number, all from one left edge; a line too long for its room
   // is set a pixel tighter, or cut short.
   const textW = W - M * 2 - 10, left = side + 5;
+  const copies = input.copies ?? [];
+  // The copy that sets the card's grade and edition (the last such), and the copy whose effect it names.
+  const topCopy = copies.filter(o => GRADES.findIndex(x => x.id === gradeOf(o).id) === g).pop();
+  const unusualCopy = [...copies].reverse().find(o => unusual(o) && o.fx);
   const pill = input.lines?.[0] ? unstarred(input.lines[0]) : undefined;
-  const titleFit = fitLine(unstarred(input.title.split(' | ')[0]), textW);
+  // An Unusual's effect is in its title ("Electric Top hat"). A title too long for its line drops a
+  // Strange or Souvenir word first, since the card shows the count on its own plate, then the
+  // effect's name, which the badge in the window carries: the item's own name is never cut for them.
+  let titleText = unstarred(input.title.split(' | ')[0]);
+  // Only on the copy's own card (its title names the item), and never a showpiece's own effect, which is part of the item.
+  const unusualItem = unusualCopy ? itemById(unusualCopy.item) : undefined;
+  const fxName = unusualCopy?.fx && unusualCopy.fx !== unusualItem?.signature && unusualItem && titleText.includes(unusualItem.name) ? EFFECTS[unusualCopy.fx].name : '';
+  if (fxName && !titleText.includes(fxName)) titleText = `${fxName} ${titleText}`;
+  const tooLong = (text: string) => textWidth(text) - [...text].length + 1 > textW;
+  for (const word of ['Strange ', 'Souvenir ', ...(fxName ? [`${fxName} `] : [])]) if (tooLong(titleText) && titleText.includes(word)) titleText = titleText.replace(word, '');
+  const titleFit = fitLine(titleText, textW);
   const footLine = (input.footer ?? '').split(' · ').filter(part => part && !part.startsWith('#')).join(' · ');
-  const footFit = footLine ? fitLine(footLine, textW) : undefined;
-  const footH = footFit ? 11 : 0;
-  // The grade's badge shares its row with a short line, as "Everyday  @mochi".
-  const pillW = pill ? textWidth(pill) + 14 : 0;
-  const sub = input.lines?.[1] ? fitLine(unstarred(input.lines[1]), pill ? textW - pillW - 6 : textW) : undefined;
+  // A 1st edition carries a seal at the foot line's end, so the line leaves it room.
+  const sealed = /\b1st edition\b/i.test(input.footer ?? '');
+  const footFit = footLine ? fitLine(footLine, textW - (sealed ? 18 : 0)) : undefined;
+  const footH = footFit || sealed ? 11 : 0;
+  // Its colour says the grade, so a line too long for it drops the grade's word before it is cut.
+  const plateText = unstarred(input.plate?.text ?? ''), plateBare = plateText.replace(/^[^·]*·\s*/, '');
+  const plateRow = plateText ? fitLine(textWidth(plateText) - [...plateText].length + 1 > textW - 10 && plateBare ? plateBare : plateText, textW - 10) : undefined;
+  const plateGrade = Math.max(0, Math.min(GRADES.length - 1, input.plate?.grade ?? 0));
+  // The grade's badge shares its row with a short line, as "Everyday  @mochi", or his rank, "Uncommon
+  // Top 48%". A rank too long for the room beside the badge drops its "Top" before it loses a digit.
+  const pillW = pill ? textWidth(pill) + PILL_PAD * 2 : 0;
+  const subW = pill ? rankRoom(pill) : textW;
+  const sub = input.lines?.[1] ? rankFit(unstarred(input.lines[1]), subW) : undefined;
   // From the foot up: the plate holds the title, the badge and the lines, and the set line.
   const plateBottom = H - 1 - 6;
   let y = plateBottom - 3 - footH;
   const footTop = y;
   if (footH) y -= 2;
+  // The second plate, under the badge's line.
+  const plateRowTop = plateRow ? (y -= 14) : y;
+  if (plateRow) y -= 2;
   const pillTop = pill || sub ? (y -= 15) : y;
   if (pill || sub) y -= 3;
   y -= 12;
@@ -346,6 +392,8 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     const k1 = Math.min(1, Math.max(0, (t - 0.35) / 0.12 + 0.5)), k2 = Math.min(1, Math.max(0, (t - 0.72) / 0.12 + 0.5));
     return mix(mix(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
   };
+  // A famous print or a graphic finish has a window of its own (`windowArt`), which the edition leaves alone.
+  const own = !aura && !gold && topCopy ? windowArt(topCopy, WIN, wcx, wcy) : null;
   if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
     const rim = x - WIN.left < 2 || WIN.right - x < 2 || yy - WIN.top < 2 || WIN.bottom - yy < 2;
     // A Grail's window is set in a dark line with a gold line inside it.
@@ -358,9 +406,10 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
     const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
     let c: RGB = framed ? fieldGold(x, yy) : !gold ? mix(light, mix(light, gc, 0.35), depth * 0.6)
       : mix(mix(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix(AMBER, INK, 0.3), depth * 0.3);
+    if (own) c = own(x, yy, 0);
     // A shaded lip under the rim, so the window reads as set into the card.
     if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK, 0.35);
-    s.set(x, yy, c, 2);
+    s.set(x, yy, c, own ? 3 : 2);
   }
   // A brushed Grail's window is held by four raised gold studs at its corners.
   if (struck) for (const [sx, sy] of [[WIN.left + 1, WIN.top + 1], [WIN.right - 1, WIN.top + 1], [WIN.left + 1, WIN.bottom - 1], [WIN.right - 1, WIN.bottom - 1]]) {
@@ -402,20 +451,63 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
       const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
       s.set(x, yy, edge ? INK : yy >= pillTop + 12 ? mix(fill, INK, 0.45) : yy === pillTop + 1 ? mix(fill, WHITE, 0.4) : fill);
     }
-    s.text(pill, x0 + 7, pillTop - 1, () => (struck ? [255, 222, 130] : framed ? PILL_INK : WHITE), framed ? GOLD_LIGHT : mix(fill, INK, 0.6));
+    s.text(pill, x0 + PILL_PAD, pillTop - 1, () => (struck ? [255, 222, 130] : framed ? PILL_INK : WHITE), framed ? GOLD_LIGHT : mix(fill, INK, 0.6));
   }
-  if (sub) s.text(sub.text, pill ? left + pillW + 6 : left, pillTop - 1, () => quiet, undefined, sub.spacing);
+  if (sub) s.text(sub.text, pill ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, undefined, sub.spacing);
   if (footFit) s.text(footFit.text, left, footTop - 2, () => quiet, undefined, footFit.spacing);
+  // The second plate: a smaller pill in its grade's colour, under the badge's line.
+  if (plateRow) {
+    const w = Math.min(textW, textWidth(plateRow.text) + plateRow.spacing * ([...plateRow.text].length - 1) + 10), x0 = left, fill = rgb(GRADES[plateGrade].color);
+    const ink: RGB = plateGrade === 4 ? PILL_INK : WHITE;
+    for (let yy = plateRowTop; yy < plateRowTop + 14; yy++) for (let x = x0; x < x0 + w; x++) {
+      if (!inBox(x - x0, yy - plateRowTop, w, 14, 3)) continue;
+      const edge = !inBox(x - x0 - 1, yy - plateRowTop, w, 14, 3) || !inBox(x - x0 + 1, yy - plateRowTop, w, 14, 3) || yy === plateRowTop || yy === plateRowTop + 13;
+      s.set(x, yy, edge ? INK : yy >= plateRowTop + 11 ? mix(fill, INK, 0.45) : yy === plateRowTop + 1 ? mix(fill, WHITE, 0.4) : fill);
+    }
+    s.text(plateRow.text, x0 + 5, plateRowTop - 2, () => ink, plateGrade === 4 ? GOLD_LIGHT : mix(fill, INK, 0.6), plateRow.spacing);
+  }
+  // A 1st edition's seal: a coral disc stamped with a 1, at the foot line's end.
+  if (sealed) {
+    const cx = W - 1 - side - 10, cy = footTop + 3;
+    for (let dy = -7; dy <= 7; dy++) for (let dx = -7; dx <= 7; dx++) {
+      const d = dx * dx + dy * dy;
+      if (d > 52) continue;
+      // A notched rim, every other step round it, as a stamp's.
+      const rim = d > 38, notch = rim && (Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) % 2 === 0);
+      s.set(cx + dx, cy + dy, notch && d > 46 ? (struck ? BRUSHED.pill : PLATE) : rim ? INK : d < 14 && dx + dy < 0 ? [246, 138, 112] : [232, 100, 78]);
+    }
+    s.text('1', cx - 2, cy - 7, () => IVORY, INK);
+  }
 
   // ---------------------------------------------------------------- the corner tag, over him
-  const tag = new Surface(input.corner ? W : 0, input.corner ? H : 0);
+  const strange = topCopy?.tally !== undefined ? topCopy : copies.find(o => o.tally !== undefined);
+  const badge = unusualCopy?.fx ? FX_BADGES[unusualCopy.fx] : undefined;
+  const tagged = !!(input.corner || strange || badge);
+  const tag = new Surface(tagged ? W : 0, tagged ? H : 0);
+  // A Strange copy's count, top left of the window: amber segments on a dark plate, as a counter's.
+  let tagX = WIN.left + 4;
+  if (strange) {
+    const digits = String(Math.min(99999, strange.tally ?? 0)).padStart(4, '0'), w = digits.length * 7 - 2 + 6, y0 = WIN.top + 4;
+    plateAt(tag, tagX, y0, w, 15);
+    [...digits].forEach((d, i) => segments(tag, tagX + 3 + i * 7, y0 + 3, Number(d)));
+    tagX += w + 2;
+  }
+  // An Unusual's badge beside it: its effect's picture on a dark plate.
+  if (badge) {
+    const y0 = WIN.top + 4;
+    plateAt(tag, tagX, y0, 15, 15);
+    badge.forEach((row, by) => [...row].forEach((ch, bx) => {
+      const ink = BADGE_INKS[ch];
+      if (ink) for (let k = 0; k < 4; k++) tag.set(tagX + 3 + bx * 2 + (k & 1), y0 + 3 + by * 2 + (k >> 1), rgb(ink));
+    }));
+  }
   if (input.corner) {
     const w = textWidth(input.corner) + 6, x0 = WIN.right - 4 - w, y0 = WIN.top + 4;
     for (let yy = y0; yy < y0 + 14; yy++) for (let x = x0; x < x0 + w; x++) if (!((x === x0 || x === x0 + w - 1) && (yy === y0 || yy === y0 + 13))) tag.set(x, yy, yy >= y0 + 12 ? [0, 0, 0] : INK);
     tag.text(input.corner, x0 + 3, y0 - 2, () => WHITE);
   }
   const tagIdx: number[] = [];
-  if (input.corner) for (let i = 0; i < W * H; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
+  if (tagged) for (let i = 0; i < W * H; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
 
   // ---------------------------------------------------------------- where he stands
   // Standing in the middle of the window, on its floor; on an aura card he rises and floats, bobbing (Balatro's soul layer).
@@ -434,7 +526,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // A frame item's backdrop fills the whole window (an aura card's art), edge to edge under its rim, so
   // nothing drawn over it ever sticks out past a smaller box. It is painted once, outside the edition;
   // a copy whose finish shines is lit again each frame (`drawGuy`).
-  const floor = Uint8Array.from(s.region, r => (r === 2 ? 1 : 0));
+  const floor = Uint8Array.from(s.region, r => (r === 2 || r === 3 ? 1 : 0));
   const ground = input.copies?.some(o => itemById(o.item)?.slot === 'frame') ? (() => {
     let x0 = W, y0 = H, x1 = -1, y1 = -1;
     for (let i = 0; i < W * H; i++) if (floor[i]) { const x = i % W, yy = (i - x) / W; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, yy); y1 = Math.max(y1, yy); }
@@ -459,9 +551,11 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   // window and its gold lines, the lines counted as raised. Its look (./card-looks) works its field out
   // on blocks of two card pixels: crisp, and a quarter of the work. The sheen and `classic` go pixel
   // by pixel.
-  const topCopy = (input.copies ?? []).filter(o => GRADES.findIndex(x => x.id === gradeOf(o).id) === g).pop();
   const look = struck ? 0 : lookFor(ed, topCopy?.finish, looks.look);
-  const plays = (i: number) => (framed ? s.region[i] === 2 || trim[i] === 1 : s.region[i] > 0);
+  const plays = (i: number) => (framed ? s.region[i] === 2 || trim[i] === 1 : s.region[i] > 0 && s.region[i] < 3);
+  // A window of its own moves on its own (`windowArt`): its pixels, redrawn each frame where it moves.
+  const ownIdx: number[] = [];
+  if (own?.moves) for (let i = 0; i < W * H; i++) if (s.region[i] === 3) { const x = i % W, yy = (i - x) / W; if (yy - WIN.top !== 2 && x - WIN.left !== 2) ownIdx.push(i); }
   const edIdx: number[] = [];
   for (let i = 0; i < W * H; i++) if (plays(i)) edIdx.push(i);
   const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
@@ -617,7 +711,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   return {
     square,
     /** Whether the card changes over time, apart from his move and its lift. */
-    moves: ed > 0 || Object.values(owned).some(o => o && shines(o)),
+    moves: ed > 0 || !!own?.moves || Object.values(owned).some(o => o && shines(o)),
     /** How far the card lifts off its shadow and how far he bobs at `t` seconds: with his frame, all a still card's picture depends on. */
     pose(t: number) {
       const tm = t * 1000 + shift;
@@ -630,6 +724,7 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
       // The edition over the face and the window.
       field(time, edOut);
       for (let k = 0; k < n; k++) { const i = edAt[k] * 4; body[i] = edOut[k * 3] * 255; body[i + 1] = edOut[k * 3 + 1] * 255; body[i + 2] = edOut[k * 3 + 2] * 255; }
+      for (const i of ownIdx) { const x = i % W, c = own!(x, (i - x) / W, tm); body[i * 4] = c[0]; body[i * 4 + 1] = c[1]; body[i * 4 + 2] = c[2]; }
       drawGuy(frame, oy0 + bob, body, loopSeconds(t * 1000));
       for (const i of tagIdx) body.set(tag.px.subarray(i * 4, i * 4 + 3), i * 4);
       for (let k = 0; k < titlePixels.length; k += 2) {
@@ -665,7 +760,120 @@ const cardGrade = (input: CardInput) => input.grade ?? (input.copies?.length ? M
  */
 function cardEdition(input: CardInput, g: number): number {
   const top = (input.copies ?? []).filter(o => GRADES.findIndex(x => x.id === gradeOf(o).id) === g).pop();
+  // A graphic finish's card is plain stock round its own window (`windowArt`).
+  if (top && GRAPHIC_FINISHES.includes(top.finish)) return 0;
   return top ? editionOf(top.finish) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][g];
+}
+
+// ---------------------------------------------------------------- windows of their own
+
+const TAU = Math.PI * 2;
+
+/** A window's art: a card pixel's colour at `tm` ms, and whether it moves. */
+type WindowArt = ((x: number, y: number, tm: number) => RGB) & { moves?: boolean };
+
+/** Steps a value into `n` flat bands, so a glow reads as pixel art, not a blur. */
+const banded = (v: number, n: number) => Math.round(Math.max(0, Math.min(1, v)) * n) / n;
+
+/**
+ * The window a famous print or a graphic finish brings to its card, in place
+ * of its grade's: Deep Blue a deep sea with caustic light moving over it,
+ * Black Hole a void with an accretion ring, Red Giant a swollen star behind
+ * the guy, Blue Moon a night with a pale moon, and Op, Impossible and Grid their
+ * own patterns at the card's size. Worked out on blocks of two card pixels,
+ * so it stays crisp. Null for any other copy.
+ */
+function windowArt(o: Owned, win: { left: number; right: number; top: number; bottom: number }, cx: number, cy: number): WindowArt | null {
+  const look = special(o) ?? (GRAPHIC_FINISHES.includes(o.finish) ? o.finish : undefined);
+  const depth = (y: number) => (y - win.top) / (win.bottom - win.top), p = o.print;
+  const star = (x: number, y: number) => hash(x >> 1, y >> 1, p) > 0.985;
+  let art: WindowArt;
+  switch (look) {
+    case 'Deep Blue': {
+      art = (x, y, tm) => {
+        const bx = (x >> 1) * 2, by = (y >> 1) * 2, d = depth(by), a = TAU_MS(tm, 4000);
+        const q = Math.sin(bx * 0.19 + Math.sin(by * 0.15 + a) * 1.7) + Math.sin(by * 0.21 - bx * 0.09 - a * 2 + p);
+        const sea = mix([46, 92, 214], [6, 16, 58], banded(d, 5));
+        return Math.abs(q) < 0.11 ? mix(sea, [150, 196, 255], 0.75 * (1 - d) + 0.1) : sea;
+      };
+      art.moves = true;
+      return art;
+    }
+    case 'Black Hole': {
+      art = (x, y, tm) => {
+        const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, dx = bx - cx, dy = by - cy;
+        // The disc seen nearly edge on, a bright knot running round it; the lensed ring of its far side over the guy's head.
+        const disc = Math.hypot(dx / 58, dy / 15), ring = Math.hypot(dx, dy * 1.05) / 34;
+        if (Math.abs(disc - 1) < 0.09) {
+          const knot = Math.abs(((Math.atan2(dy * 3.9, dx) / TAU - cycle(tm, 3000)) % 1 + 1) % 1 - 0.5) < 0.07;
+          return knot ? [255, 248, 224] : mix([255, 226, 160], [226, 92, 32], banded((dy / 15 + 1) / 2, 3));
+        }
+        if (Math.abs(ring - 1) < 0.07 && dy < 0) return mix([255, 210, 140], [200, 80, 30], banded(-dy / 34, 2));
+        if (disc < 1.35 && disc > 0.8) return mix([5, 4, 9], [96, 34, 14], banded(1 - Math.abs(disc - 1) / 0.35, 3) * 0.6);
+        return star(x, y) ? [210, 200, 230] : [5, 4, 9];
+      };
+      art.moves = true;
+      return art;
+    }
+    case 'Red Giant':
+      return (x, y) => {
+        const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, r = Math.hypot(bx - cx, by - cy + 6) / 58;
+        if (r < 1) return mix([255, 196, 92], [196, 32, 40], banded(r, 4));
+        return mix([92, 14, 26], [30, 4, 12], banded(depth(by), 4));
+      };
+    case 'Blue Moon':
+      return (x, y) => {
+        const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, mx = win.right - 34, my = win.top + 32, r = Math.hypot(bx - mx, by - my) / 26;
+        if (r < 1) return hash(bx >> 3, by >> 3, p + 5) > 0.72 && r < 0.85 ? [168, 188, 236] : mix([236, 242, 255], [176, 198, 246], banded(r, 3));
+        return star(x, y) ? [220, 230, 255] : mix([30, 48, 108], [10, 18, 48], banded(depth(by), 4));
+      };
+    case 'op': {
+      // Rings of ivory and slate breathing out from behind the guy.
+      art = (x, y, tm) => {
+        const r = Math.hypot(((x >> 1) * 2 + 1) - cx, ((y >> 1) * 2 + 1) - cy) / 7 - cycle(tm, 2400) * 2;
+        return Math.floor(r) % 2 ? [118, 108, 130] : [241, 235, 221];
+      };
+      art.moves = true;
+      return art;
+    }
+    case 'impossible': {
+      // Bands of ink, ivory and coral that slope apart at the middle, half a band out of step, sliding down.
+      art = (x, y, tm) => {
+        const left = x < cx, s = y + (left ? x - cx : cx - x) * 0.9 + (left ? 0 : 5) - cycle(tm, 3000) * 30;
+        return [[96, 86, 110], [241, 235, 221], [238, 106, 80]][((Math.floor(s / 10) % 3) + 3) % 3] as RGB;
+      };
+      art.moves = true;
+      return art;
+    }
+    case 'grid': {
+      // Ivory panes cut by ink lines, three filled with a primary.
+      const v1 = Math.round(win.left + (win.right - win.left) * (0.24 + (p % 3) * 0.04)), v2 = Math.round(win.left + (win.right - win.left) * (0.74 + ((p >> 2) % 3) * 0.04));
+      const h1 = Math.round(win.top + (win.bottom - win.top) * (0.26 + ((p >> 4) % 3) * 0.05)), h2 = Math.round(win.top + (win.bottom - win.top) * 0.8);
+      return (x, y) => {
+        if (Math.abs(x - v1) < 2 || Math.abs(x - v2) < 2 || Math.abs(y - h1) < 2 || (Math.abs(y - h2) < 2 && x > v2)) return [28, 24, 36];
+        const pane = (x > v1 ? 1 : 0) + (x > v2 ? 1 : 0) + (y > h1 ? 3 : 0) + (y > h2 && x > v2 ? 3 : 0), at = (pane - (p % 6) + 9) % 9;
+        return at === 0 ? [217, 64, 46] : at === 4 ? [44, 85, 200] : at === 8 ? [242, 194, 48] : [241, 235, 221];
+      };
+    }
+  }
+  return null;
+}
+
+/** A dark plate for a tag over the window, `w` by `h` with its corners cut. */
+function plateAt(s: Surface, x0: number, y0: number, w: number, h: number): void {
+  for (let yy = y0; yy < y0 + h; yy++) for (let x = x0; x < x0 + w; x++) {
+    if ((x === x0 || x === x0 + w - 1) && (yy === y0 || yy === y0 + h - 1)) continue;
+    s.set(x, yy, yy >= y0 + h - 2 ? [0, 0, 0] : INK);
+  }
+}
+
+/** Which of a seven-segment digit's segments are lit, a to g. */
+const SEGMENTS = [0b0111111, 0b0000110, 0b1011011, 0b1001111, 0b1100110, 0b1101101, 0b1111101, 0b0000111, 0b1111111, 0b1101111];
+/** A counter's digit, five card pixels wide and nine tall, its lit segments amber and the rest a dim ghost, as a real one's. */
+function segments(s: Surface, x0: number, y0: number, digit: number): void {
+  const on = SEGMENTS[digit] ?? 0, lit: RGB = [255, 178, 62], dim: RGB = [74, 48, 26];
+  const seg: [number, number, number, number][] = [[1, 0, 3, 1], [4, 1, 1, 3], [4, 5, 1, 3], [1, 8, 3, 1], [0, 5, 1, 3], [0, 1, 1, 3], [1, 4, 3, 1]];
+  seg.forEach(([x, y, w, h], k) => { for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) s.set(x0 + x + dx, y0 + y + dy, on & (1 << k) ? lit : dim); });
 }
 
 /**

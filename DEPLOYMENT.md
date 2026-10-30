@@ -12,18 +12,135 @@ https://lilguys.isaac-audet.workers.dev. Only the
 bun install
 bun run showcase
 bash scripts/build-site.sh
-npx wrangler d1 migrations apply lilguys-names --remote   # through 0010_stamps
+npx wrangler d1 migrations apply lilguys-names --remote   # through 0014_names_seed
 npx wrangler deploy
 ```
 
 `site/` is ignored. The root page uses `/lil-guy.js`; the showcase pages
 keep their relative `../lil-guy.js` reference. Static requests go directly to
-Cloudflare assets. The Worker script runs for `/api/*` to provide shared claims.
+Cloudflare assets. The Worker script runs for `/api/*` to provide shared claims,
+for `/g/*` and the kit, and for the share links `/u/*` and `/p/*` (`run_worker_first`).
 
 The D1 database is dedicated to this promo. Two Worker secrets must be set:
 `CLAIM_SALT` (a random private salt) and `FOUNDER_SECRET` (the private founder
 reservation key). Neither belongs in this repository. Local testing uses an
 ignored `.dev.vars` file. Production secrets were uploaded with Wrangler.
+
+## Going live with stamps (Isaac's steps, in this order)
+
+Automatic deploys (AUTOMATIC-DEPLOYS.md) ship the Worker but never run migrations
+or set secrets. Until these are done, paid and mystery capsules answer 503 and the
+free capsule is open to every name.
+
+1. Apply 0010: `npx wrangler d1 migrations apply lilguys-names --remote`.
+   Check: `npx wrangler d1 migrations list lilguys-names --remote` shows nothing
+   pending, and a signed-in player's `GET /api/me/<key>/state` has `stamps.ready: true`.
+2. Then the shared secret (below, DLE Club sign-in): one random value of at least 32
+   characters, as `CLUB_SSO_SECRET` here (`npx wrangler secret put CLUB_SSO_SECRET`)
+   and as `LILGUYS_SSO_SECRET` in dle-club's Vercel project (Production).
+   Check: `GET /api/auth/session` returns `club: true`.
+3. Add `https://lilguys.dleclub.com` to the Google OAuth client's Authorized
+   JavaScript origins. Check: Google sign-in works on lilguys.dleclub.com.
+4. Optional: turn on Workers Logs with invocation logs off (request URLs carry names).
+   The Worker logs only a failure's route (names as `:key`) and message, and the
+   club's HTTP status when it isn't 200, so a wrong secret shows as a 401 there.
+
+## Going live with the Top 100, copy histories and shelves (Isaac's steps, in this order)
+
+Automatic deploys ship the Worker but never run migrations. Every new read works before its
+migration (below), so the deploy can come first; the migrations are best applied before it.
+
+1. Note the time in UTC (`date -u +%FT%H:%M`), then apply 0011, 0012 and 0013:
+   `npx wrangler d1 migrations apply lilguys-names --remote`.
+   Check: `npx wrangler d1 migrations list lilguys-names --remote` shows nothing pending, and
+   `npx wrangler d1 execute lilguys-names --remote --command "SELECT COUNT(*) AS missing FROM copies c WHERE c.at < '<that time>' AND NOT EXISTS (SELECT 1 FROM copy_owners o WHERE o.copy_id = c.id)"`
+   says 0 (0011 gives every copy made before it its first owner). Don't compare the totals: a
+   starter or the founder's own copy never gets a row (they never change hands, so their holder is
+   their history), nor does a copy the old Worker makes before the deploy, until it first moves.
+2. Deploy (or let the merge deploy). Check, with any claimed name:
+   - `curl -s https://lilguys.dleclub.com/u/isaac | grep og:image` prints a
+     `/g/<version>/…/card-full-still@4.png` address, and that address is a 560 × 816 PNG.
+     Pasting `https://lilguys.dleclub.com/u/isaac` in Discord shows the founder's card.
+   - `GET /api/top?kind=guys` and `GET /api/top?kind=copies` answer 100 places (or every claimed
+     guy and listed copy, if fewer). Each read while the boards are new also writes back a few
+     hundred ranks; after a few minutes of reads,
+     `SELECT COUNT(*) FROM players p JOIN names n ON n.key = p.key WHERE p.top_seed <> n.seed`
+     is 0, or only the names claimed or picked since the last read.
+   - `GET /api/guys/<name>` carries `pins: []`.
+3. Nothing else: no secret, no variable.
+
+## Going live with earned emotes (Isaac's step)
+
+1. Apply 0014 (one index, `names_seed`): `npx wrangler d1 migrations apply lilguys-names --remote`.
+   It can come before or after the deploy: without it the Worker gives the same answers, reading
+   all of `names` to find a code's guy. Check: `npx wrangler d1 migrations list lilguys-names --remote`
+   shows nothing pending, and `curl -sI https://lilguys.dleclub.com/g/latest/@isaac/emote-galaxybrain.png`
+   is a 302 while `…/@<a name with no Mythic, aura or night part>/emote-galaxybrain.png` is a 404.
+
+## The Top 100, copy histories and shelves (migrations 0011 to 0013)
+
+Public reads, cached a minute at the edge (the query is cut down to the parameters each reads,
+so made-up parameters always hit the cache):
+
+- `GET /api/top?kind=guys`: `{ guys: [{ place, key, seed, look, top, since }] }`, the 100 rarest
+  claimed guys by `guyRank` (the deal's rank, never a picked look's; `top` its share, 0 to 1).
+  The founder's guy is first, as on every list (its `top` is 0); a tie goes to the earlier claim.
+  `since` is when a guy took its place: the latest claim among it and everyone above it. A name
+  let go above it isn't seen, so after one a guy has really held its place a little less long.
+- `GET /api/top?kind=copies`: `{ copies: [{ place, id, key, code, no, at }] }`, the 100 rarest
+  copies anyone holds, by what the eye can see (`visibleOneIn`: item, finish, famous print,
+  effect and aura, not float), the cleaner float then the earlier pull on a tie. `no` is its
+  number in its item's run (`copies.pull`), null for one with none. Never a starter, never a copy
+  the founder still holds (as on the Pulls page); one he gave away is listed.
+- `GET /api/top?kind=place&key=<name>`: `{ place, of }`, one claimed guy's place in the guys
+  board's order over every claimed guy (the founder first, then by rank, the earlier claim on a
+  tie), out of how many are claimed; 404 for a name nobody holds. Counted in D1 from the kept
+  ranks (`players_top`); only guys claimed since the board last kept them are worked out on the
+  read, and only the board writes ranks back. Before 0013 every guy is worked out on each read.
+- `GET /api/pulls/rarest?days=7&limit=12`: `{ pulls: [{ id, key, code, no, at, seed, look }] }`,
+  the rarest copies capsules gave in the last `days` (1 to 30), rarest first as above: capsules,
+  mystery capsules, today's free one and seasonals, never a crafted copy, a starter or one the
+  founder holds. `key` is who holds it now, `seed` and `look` their guy. `limit` is 1 to 100.
+- `GET /api/copies/<id>`: `{ copy, owners: [{ key, at, how }] }`, the copy as the profile lists it
+  and its owners in turn, first first. `how` is `pulled`, `daily`, `mystery`, `season`, `swapped`,
+  `gift` or `crafted`. Names and moments only.
+- `GET /u/<name>` and `GET /p/<copy id>`: the site's page, unchanged but for og: and twitter: tags
+  in its head (`worker/share.js`), so a shared link shows the guy's big card
+  (`card-full-still@4.png`, the name on it), its rank and its standout trait, or the copy on its
+  holder's card in its slot, its grade and number, and who pulled it. A name nobody holds or a
+  copy that's gone is the plain page with a 404; if D1 fails, the plain page. Cached a minute.
+
+A guy's rank and a copy's visible odds are worked out by the library (a rank takes about a third
+of a millisecond), so 0013 keeps each in a column once worked out (`players.guy_top`,
+`copies.seen_in`), for the database to sort by. Each board read works out what isn't kept yet (new
+claims and pulls) and writes back up to 200 ranks and 500 copies' odds. A place or a Pulls page
+that finds some not kept asks for that board after answering, at most once a minute per Worker
+instance, so a backlog clears without anyone opening the boards; neither writes anything itself. `top_rule` and
+`seen_rule` say which rules worked a figure out: a hash of the library's figures for a set of
+probes that between them take in every part, item, finish, aura, effect and famous print, every
+step of the rank table, the chase parts and past the table's end (`guyProbes`, `copyProbes`;
+about 40 ms once per Worker instance). So when an update changes the ranks or the odds anywhere,
+the kept figures are worked out again over the next reads, and the boards are right meanwhile.
+`top_seed` is the seed a rank was worked out for, so a pick in a new name's first hour is ranked
+again. Before 0013, every read works the boards out in full and writes nothing.
+
+Copy histories (0011, `copy_owners`): a capsule, today's free capsule, a mystery or seasonal
+capsule and a craft keep the copy's first owner as it's made; an accepted swap or gift keeps who
+each copy went to, in the same transaction as the move (a copy with nothing kept yet gets its
+first owner as it stood). 0011 gives every copy there is its first owner (whoever gave it in its
+first finished swap, else its holder, from when it was made) and each finished swap and gift (as
+of when it was offered). Starters, the founder's flag and Origin never move, so they keep one owner.
+Letting a name go or smelting a copy takes its owners with it. Before 0011, a copy's owners are
+its holder since it was made, and swaps go on as ever.
+
+Shelves (0012, `players.pins`): `POST /api/me/:key/pin {ids}` pins up to three of your own copies
+in that order (`[]` takes them down; 400 for more than three, 404 for one that isn't yours). The
+profile (`GET /api/guys/:key`) and `GET …/state` carry `pins`, the ids still yours. Changes are
+capped at 200 a day from one address (`claim_limits`, as renders are). Before 0012, pinning
+answers 503 (`Pins aren’t open yet`) and `pins` is `[]`.
+
+The founder's capsules all say `luck: 'founder'` (`open` and `season`) unless he rolls at fair
+odds (`fair: true`).
 
 ## DLE Club sign-in
 
@@ -46,20 +163,15 @@ Signing out here stops it until the next sign-in in this browser. A club player
 with no Google sign-in (a guest, or Apple only) stays signed out here. Without the
 secret, `GET /api/auth/session` says `club: false` and nothing is framed.
 
-To turn it on:
-
-- One random secret of at least 32 characters, set twice and never committed:
-  `npx wrangler secret put CLUB_SSO_SECRET` here, and `LILGUYS_SSO_SECRET` in the
-  dle-club Vercel project (Production). The club's half is a dle-club pull request.
-- Add `https://lilguys.dleclub.com` to the Google OAuth client's Authorized
-  JavaScript origins, so the Google button keeps working on the new host.
+To turn it on, steps 2 and 3 of Going live with stamps, above. The secret is never committed.
 
 ## Finished guys: `/g/`
 
 The Worker serves baked guys and cards at `/g/<art version>/<guy>/<view>`
 (GAMES.md has every view; `worker/baked.js`), the standalone element at
-`/lil-guy-element.js`, and the games' kit at `/lilguys.js` and `/lilguys.mjs`
-(through the Worker, `run_worker_first`, for CORS and a five-minute cache). A
+`/lil-guy-element.js`, and the games' kit at `/lilguys.js`, `/lilguys.mjs`,
+`/lilguys-stadium.js` and `/lilguys-stadium.mjs` (through the Worker,
+`run_worker_first`, for CORS and a five-minute cache). A
 code's pictures are immutable and kept in Cloudflare's cache; `@name` and
 `~name` redirect to the current code for a minute at a time (each Worker
 remembers a name for that minute, so a board's redirects ask D1 once), and
@@ -78,20 +190,36 @@ reads that miss the cache 2,000 a day, in `claim_limits` (with `CLAIM_SALT`),
 so made-up codes can't run up the bill. No migration is needed. Before
 deploying a change to the art, bump `ART_VERSION` in `src/guy-code.ts`.
 
-Checks: `bun test` (worker/baked.test.ts serves exactly the library's bytes),
+Galaxybrain (`emote-galaxybrain`, `-still`, its sheets) is drawn only for a claimed guy whose
+player has earned it (`worker/emotes.js`): by name, or by any code whose seed is that guy's
+(found with 0014's `names_seed`). Anyone else's, a chatter's dealt from their name or a code
+nobody claimed, is a 404 (`Not earned`, never cached); the answer is kept a minute per Worker.
+It's asked before the cache, so one let go stops being served there.
+
+Checks: `bun test` (worker/baked.test.ts serves exactly the library's bytes;
+`bun test worker` is the Worker's own tests),
 `bun run verify:shaders` and `node scripts/verify-site.mjs` (both need a
 `bun run showcase` and, for the site check, `bash scripts/build-site.sh`).
 
 ## Name claims
 
-- `POST /api/names/:key`: atomically claims a 2–16 character lowercase
-  alphanumeric handle; returns its generated seed and a random owner token.
-  Conflicts return 409. No client-supplied seed or owner is accepted.
+- `POST /api/names/:key`: atomically claims a handle of 2–16 lowercase letters
+  and digits, with single underscores between them (`NAME_KEY`; a name whose
+  skeleton, its underscores taken out, is already held is taken). Returns its
+  generated seed and a random owner token. Conflicts return 409. No
+  client-supplied seed or owner is accepted.
+- Names show on public pages: one holding a word from the tags' blocked list
+  whole, or at the start of a word, is refused (403), so `grape` passes
+  (`nameRefused` in `worker/name-lookup.js`).
 - `GET /api/names/:key` and `GET /api/names?recent=12`: return public
   handle, seed and timestamp only.
-- `DELETE /api/names/:key`: requires `Authorization: Bearer <owner token>`.
+- `DELETE /api/names/:key`: the owner's session, or `Authorization: Bearer <owner
+  token>` for an unlinked name. With `X-Founder-Secret` it takes any name down,
+  in the same release.
 - `isaac` requires `X-Founder-Secret` matching the server secret. It stays
   reserved even before being claimed; the regular public form cannot claim it.
+  Every other name starting with `isaac`, and `dleclub`, `lilguys` and `founder`,
+  are reserved, read with digits as letters (`1saac`, `l1lguys`).
 - Claims permit ten attempts per IP per UTC day, including conflicts. Only a
   secret-salted daily digest is retained in D1. Old digest rows are removed on
   the next accepted claim attempt. Owner tokens are hashed before storage.
@@ -102,13 +230,17 @@ Every copy is rolled and stored by the Worker, so what the Pulls page shows is w
 capsules really gave. Apply `migrations/0002_collections.sql` (the deploy commands
 above apply every pending migration) before deploying a Worker that reads it.
 
+- A claim deals three guys (`choices` in the answer, a keyed hash of the name and the moment, so
+  nothing new is stored) and holds the first; `POST /api/me/<key>/pick {seed}` keeps another of the
+  three, within the hour and before any capsule. The founder's is picked by hand.
 - A claim (`POST /api/names/<key> {game?}`) creates the player record and one starter,
   worn: the free item of the game they came from, else today's machine. Each machine
   gives its own free item with the first capsule opened from it (`starter` in the open
   answer). Players from before keep the starters they were given. The founder also gets
   the one-of-one Gold flag and Origin. Capsules are paid in stamps (migration 0010, below).
-- Owner-only (`Authorization: Bearer <owner token>`, same-origin writes):
-  - `GET /api/me/:key/state`: stamps, today's free day, the look and every copy.
+- Owner-only (the owner's session, or `Authorization: Bearer <owner token>` for an unlinked name; same-origin writes):
+  - `GET /api/me/:key/state`: stamps, today's free day, the look and every copy, and
+    `pick: { choices, until }` while the pick is open (else null), so any device can offer it.
   - `POST /api/me/:key/open {game, free}` or `{mystery: true}`: one capsule, rolled on the
     server from a random seed. Today's machine is free once a UTC day for a player who has
     finished a DLE Club game that day (below); otherwise 8 stamps for a picked machine, or 5 for
@@ -118,19 +250,25 @@ above apply every pending migration) before deploying a Worker that reads it.
   - `POST /api/me/:key/look {look}`: only parts `decodeLook` allows for your dealt guy.
 - Public, never with owner tokens:
   - `GET /api/guys?sort=rarest|recent&q=`: every guy with what it wears and its best copy.
-  - `GET /api/guys/:key`: one player's guy and collection.
+  - `GET /api/guys/:key`: one player's guy and collection, the copies pinned on their shelf (`pins`),
+    and the chat emotes it may use (`emotes`, ids from `EMOTE_SET`): all but Galaxybrain until the
+    player holds a Mythic or better copy, an aura, or a night set part (eclipse or void eyes, the
+    idea or thought topper, op art; `worker/emotes.js`). Hype and Gg (fire, crown) are everyone's.
   - `POST /api/club/guys {a, t}`: for dleclub.com only, signed with `CLUB_SSO_SECRET` (`X-Club-Signature`, HMAC-SHA256 of `guys.<t>.<a joined by commas>`, at most five minutes old): each linked Google sign-in's name, his parts as drawn and the codes of the copies he has on, so the club draws him as he is here.
   - `GET /api/club/named?n=<names>`: public, any origin, cached a minute: up to 100 claimed names' parts as drawn and the codes of the copies each has on, so Twitch chat in the club's gauntlet, parties, Amountle and Weighsies draws a chatter with a name here as he is here.
   - `GET /api/market?grade=&game=&slot=&finish=&key=&sort=rarest|float|newest`: every
-    copy from a capsule (starters aside).
+    copy from a capsule (starters aside). Rarest is what the eye can see (`visibleOneIn`, as the
+    copies board ranks them: the cleaner float, then the earlier pull, on a tie), sorted in D1 by
+    the odds 0013 keeps, with up to 1,000 not kept yet worked out on the read. Past that (after
+    the rules change, or before 0013 on a bigger collection) it lists by the odds each copy was
+    pulled with (`one_in`) until the copies board catches up. The founder's one-of-ones lead his
+    own page. `grade` is 0 to 5 (5, auras).
   - `GET /api/stats`: claims, copies and counts by grade.
-- Releasing a name (`DELETE /api/names/:key`) deletes its player record and copies.
+- Releasing a name (`DELETE /api/names/:key`) deletes, in one transaction, its player
+  record, copies, face parts and those copies' card stats, and lapses its open offers
+  both ways, so whoever claims it next starts fresh. A Google account keeps its stamps
+  (below); a name with no sign-in loses its own.
 - Nothing is bought or sold. Dev drops (the `rarest` easter egg) only work in the demo.
-
-Validated locally with `wrangler dev --local` and both migrations applied:
-- two players claimed and opened free and paid capsules;
-- the Guys, profile and Pulls pages listed both, and a reload restored state from D1;
-- `bun test`: 142 pass, including the Worker's ten API tests.
 
 ## Luck, name tags, swaps and sets (migrations 0005 and 0006)
 
@@ -146,7 +284,12 @@ swaps fail. `0005_luck.sql` adds the beginner's-luck and pity counters to
   swap and smelt like any other.
 - `POST /api/me/:key/swap {to, give, want|null}`: offer one of your copies for one
   of theirs, or as a gift (`want: null`). Starters, the founder's copies and worn
-  copies can't be offered. At most 10 open offers each.
+  copies can't be offered. At most 10 open offers each. Only a name with a Google
+  sign-in can offer, or accept an offer that asks for one of its copies (403
+  otherwise), and not while its stamps are below zero (a name linked after spending
+  its own starter brings those spends with it); before 0010, a name with no sign-in
+  must be a week old.
+- Painting a copy a new paint, or giving it a new tag, lapses its open offers both ways.
 - `POST /api/me/:key/swap-accept {id}`: only the player it was made to. Both copies
   move in one transaction, and only if both are still where the offer found them, the
   one offered still unworn; otherwise the offer lapses (409). The copy asked for may be
@@ -161,7 +304,8 @@ swaps fail. `0005_luck.sql` adds the beginner's-luck and pity counters to
 ## Google sign-in (migration 0003)
 
 The live promo supports Google sign-in using Google Identity Services, as the club does.
-These are separate Lil Guys accounts: this does not merge Club scores or collections.
+A Google account here is the same one as on DLE Club (DLE Club sign-in, above); the
+collection stays here and club scores stay on the club.
 The default OAuth client is DLE Club Web's public client ID. `https://lilguys.isaac-audet.workers.dev` was added to that client's **Authorized JavaScript origins**
 in Google Cloud Console on October 24, 2026 (Pacific), then read back after saving. No redirect URI or client secret is needed for this popup flow.
 A separate web client can be selected with the Worker variable `GOOGLE_CLIENT_ID`.
@@ -199,33 +343,10 @@ Releasing a name removes its collection and account link in one D1 transaction. 
 account can then claim a new name. Claude artifact sessions keep their existing
 artifact database path and never load Google sign-in.
 
-Local validation: 19 Worker tests pass (including nine account/security tests). They
-verify real locally signed JWTs, existing-owner linking, second-device restoration,
-nonce replay/expiry, account conflicts, session expiry/logout, founder reservation,
-public-response privacy, origin rejection and preserved collections. The local browser fixture also passed claim/link/reload/sign-out/sign-in with the same
-name and nine copies restored. The full library suite has 150 passes and one pre-existing
-golden-art snapshot failure. A single low-effort Codex autoreview was attempted with
-web search off; its installed CLI binary is missing, so direct inspection and focused
-validation were used. Wrangler deploy dry-run passes. Real Google browser acceptance
-is recorded separately after deployment.
-
-## Validation (October 24, 2026, Pacific)
-
-`bun test`: 134 pass / 1 fail (131 library tests plus four API tests).
-The existing golden-art composition snapshot fails identically in a pristine
-archive of the starting branch. No library source or snapshots were changed.
-`bun run showcase` and deploy-folder build pass.
-
-After merging the promo's sound, open and scoring pass (ff64ad1): `bun test` 136 pass,
-0 fail (the snapshot passes here). The deploy needs a fresh `scripts/build-site.sh` and
-`npx wrangler deploy` to pick it up.
-
-Browser acceptance at 390×844 checks light/dark layout, claiming, the free
-capsule, `rarest` dev drops, mute and owner-only deletion. API tests cover
-conflicts, public response privacy, founder reservation and claim throttling.
-Autoreview was attempted once at low effort on the API boundary, but could not
-start because the installed Codex CLI binary is missing. Direct inspection and
-focused tests were used instead.
+The account tests (`worker/auth.test.ts`) cover locally signed JWTs, existing-owner
+linking (underscore names too), second-device restoration, nonce replay and expiry,
+account conflicts, session expiry and logout, founder reservation, public-response
+privacy and origin rejection. Run them with the rest (Checks, under Finished guys).
 
 ## Face parts from capsules (migration 0007)
 
@@ -286,15 +407,24 @@ The card stats' read of `lilguys-stats` (above) keeps each day in `club_days`
 answered read (`players.stamps_read`). A day only ever gains stamps. The ten to start
 (`+10`, `starter`) and every spend (negative) are rows in `stamp_ledger`; a spend is one
 guarded insert that only goes in while the balance covers it, so two at once never take
-the same stamps. Releasing a name deletes both tables' rows.
+the same stamps.
+
+Stamps belong to a holder: a name's Google sign-in (its account hash) when it has one,
+else the name. Letting a name go and claiming another with the same Google account keeps
+the balance, spends and the one starter, and the account's capsule luck (beginner's
+luck, pity) and today's free capsule carry over (`account_luck`, written as it lets a
+name go; its capsule count adds to the new name's own in the roll, so the new name's
+keep-one pick stays open until its own first capsule): nothing is paid out twice. A name with no sign-in keeps its stamps to itself
+and loses them when let go. Linking a name to Google moves its spends to the account,
+and its starter only if the account has none.
 `GET …/state` carries `stamps: { ready, balance, unlimited, linked, carried, games,
 gold, other, earned, spent, starter, from, cost }`: `games` counts each game's stamps
 (the club's `slicies` is Cutsies), `other` those from a club that only sent a count.
 
-The club adds `played` and `cleared` to each day in dle-club's
-`claude/lilguys-card-stats` branch. Until that ships, each day gives a stamp for
-each game counted (`games`, eight at most) and no gold. A name without a Google
-sign-in only has its ten; the page says to sign in to DLE Club and play.
+The club sends `played` and `cleared` for each day (dle-club's `lilguys-stats`, on its
+`main`). A day from a club that only sends `games` gives a stamp for each game counted,
+eight at most, and no gold. A name without a Google sign-in only has its ten; the page
+says to sign in to DLE Club and play.
 
 Players who claimed before stamps (`carried`) keep every copy, part, bit of metal and
 luck counter; their tickets are gone and they get the same ten as a new player, once,
@@ -324,4 +454,4 @@ shows the button locked with that line and asks again when it's tapped.
 The rule only shuts the capsule when it can be checked. Before 0010, without
 `CLUB_SSO_SECRET` (DLE Club sign-in, above), or when the club didn't answer the last
 time it was asked (dle-club's `lilguys-stats` not deployed yet, or down), the free
-capsule stays open to every signed-in name, as it was before the rule.
+capsule stays open to every name, signed in or not, as it was before the rule.

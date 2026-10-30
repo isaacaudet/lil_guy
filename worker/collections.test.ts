@@ -8,6 +8,7 @@ import { decode, encode, gradeOf, GRADES, guyRank, resolve } from '../src/index-
 
 let env: any;
 beforeEach(() => {
+  tokens.clear(); signedIn.clear();
   const db = new Database(':memory:');
   for (const m of ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql']) db.exec(readFileSync(new URL(`../migrations/${m}`, import.meta.url), 'utf8'));
   env = { CLAIM_SALT: 'test-only-salt', FOUNDER_SECRET: 'test-only-founder', db, DB: { async batch(statements: any[]) { db.exec('BEGIN'); try { const results = []; for (const statement of statements) results.push(await statement.run()); db.exec('COMMIT'); return results; } catch (e) { db.exec('ROLLBACK'); throw e; } }, prepare(sql: string) {
@@ -21,11 +22,17 @@ beforeEach(() => {
 const call = (path: string, method = 'GET', body?: any, headers: any = {}) => api(new Request('https://example.test/api' + path, {
   method, headers: { 'CF-Connecting-IP': '192.0.2.1', 'Content-Type': 'application/json', ...headers }, body: body ? JSON.stringify(body) : undefined,
 }), env);
-const claim = async (key: string) => (await (await call('/names/' + key, 'POST')).json()) as any;
-const auth = (t: string) => ({ Authorization: 'Bearer ' + t });
+// Each claim's browser token, and the session that stands in for it once the name is signed in (players).
+const tokens = new Map<string, string>(), signedIn = new Map<string, any>();
+const claim = async (key: string) => { const c = (await (await call('/names/' + key, 'POST')).json()) as any; tokens.set(key, c.owner); return c; };
+const auth = (t: string) => signedIn.get(t) ?? { Authorization: 'Bearer ' + t };
 // Stamps for a test that opens many capsules: a club day well after stamps began, as if read from the club.
-const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, ?, 0) ON CONFLICT(key, day) DO UPDATE SET n = n + excluded.n").run(key, n);
+// Stamps are the name's Google sign-in's when it has one, else the name's own.
+const give = (key: string, n: number) => env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES ((SELECT COALESCE(account, key) FROM names WHERE key = ?), '2030-01-01', NULL, ?, 0) ON CONFLICT(holder, day) DO UPDATE SET n = n + excluded.n").run(key, n);
 const utcToday = () => new Date().toISOString().slice(0, 10);
+// Names signed in to DLE Club that have played a game, so they can give and swap copies. Their tokens then
+// stand for their sessions in `auth`.
+const players = (...keys: string[]) => keys.forEach(k => signedIn.set(tokens.get(k)!, playToday(k)));
 // A name signed in to DLE Club (a Google sign-in) that has finished one club game today, as if read from the
 // club. Linked, its browser token no longer works: it is signed in with a session, whose headers this returns.
 let sessions = 0;
@@ -33,7 +40,7 @@ const playToday = (key: string) => {
   const account = createHash('sha256').update('google:' + key).digest('hex'), session = (++sessions).toString(16).padStart(64, '0');
   env.db.prepare('UPDATE names SET account = ? WHERE key = ?').run(account, key);
   env.db.prepare('INSERT INTO auth_sessions(hash, account, expires, created) VALUES (?, ?, ?, 0)').run(createHash('sha256').update(session).digest('hex'), account, Math.floor(Date.now() / 1000) + 3600);
-  env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES (?, ?, 'amountle', 1, 0) ON CONFLICT(key, day) DO NOTHING").run(key, utcToday());
+  env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, ?, 'amountle', 1, 0) ON CONFLICT(holder, day) DO NOTHING").run(account, utcToday());
   return { Cookie: '__Host-lilguys-session=' + session };
 };
 
@@ -276,6 +283,7 @@ test('a name tag stays on its copy, only its owner can set it, and bad tags are 
 
 test('a swap moves both copies only when accepted, and a gift moves one', async () => {
   const c = await claim('mia'), b = await claim('bo');
+  players('mia', 'bo');
   const mine = put('mia'), theirs = put('bo');
   const offer: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: mine, want: theirs }, auth(c.owner))).json();
   expect(offer.id).toBeTruthy();
@@ -295,6 +303,7 @@ test('a swap moves both copies only when accepted, and a gift moves one', async 
 
 test('swaps refuse starters, worn copies and stale offers, and either side can call one off', async () => {
   const c = await claim('mia'), b = await claim('bo');
+  players('mia');
   const starter = (await stateOf('mia', c.owner)).copies.find((x: any) => x.source === 'starter').id;
   expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: starter }, auth(c.owner))).status).toBe(400);
   expect((await call('/me/mia/swap', 'POST', { to: 'mia', give: put('mia') }, auth(c.owner))).status).toBe(400);
@@ -320,6 +329,7 @@ test('swaps refuse starters, worn copies and stale offers, and either side can c
 
 test('a player can only have so many offers out', async () => {
   const c = await claim('mia'); await claim('bo');
+  players('mia');
   for (let i = 0; i < RULES.swaps; i++) expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).status).toBe(201);
   expect((await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia') }, auth(c.owner))).status).toBe(429);
 });
@@ -435,6 +445,7 @@ test('before migration 0008, crafting says it isn’t open and nothing else chan
 // ------------------------------------------------------------ trade-ups, gone
 test('trade-ups are gone; a copy one made stays, and still smelts and swaps', async () => {
   const c = await claim('mia'), b = await claim('bo');
+  players('mia');
   const five = [0, 1, 2, 3, 4].map(() => put('mia'));
   const r = await call('/me/mia/trade', 'POST', { ids: five }, auth(c.owner));
   expect(r.status).toBe(410);
@@ -451,6 +462,7 @@ test('trade-ups are gone; a copy one made stays, and still smelts and swaps', as
 
 test('a swap for the copy a player has on goes through when they accept: it comes off them, its days banked', async () => {
   const c = await claim('mia'), b = await claim('bo');
+  players('mia', 'bo');
   const theirs = put('bo'), mine = put('mia');
   await call('/me/bo/wear', 'POST', { slot: 'hat', id: theirs }, auth(b.owner));
   // Worn a day already.
@@ -552,4 +564,89 @@ test('the founder can roll at fair odds, and open any season’s capsule out of 
     give('bo', 8);
     expect((await call('/me/bo/season', 'POST', { item: 'club.snowcap' }, auth(b.owner))).status).toBe(409);
   } finally { setSystemTime(); }
+});
+
+test('a claim deals three guys; the player keeps one of them, while the name is new', async () => {
+  const c: any = await (await call('/names/mia', 'POST')).json();
+  expect(c.choices).toHaveLength(3);
+  expect(new Set(c.choices).size).toBe(3);
+  expect(c.seed).toBe(c.choices[0]);
+  const pick = (seed: string) => call('/me/mia/pick', 'POST', { seed }, auth(c.owner));
+  expect((await pick('4-notmine000000')).status).toBe(400);
+  expect((await pick(c.choices[2])).status).toBe(200);
+  expect(((await (await call('/guys/mia')).json()) as any).seed).toBe(c.choices[2]);
+  // Changing their mind among the three is fine until a capsule is opened.
+  expect((await pick(c.choices[1])).status).toBe(200);
+  env.db.exec("UPDATE players SET opened = 1 WHERE key = 'mia'");
+  expect((await pick(c.choices[0])).status).toBe(409);
+  // The founder's is picked by hand.
+  const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
+  expect(f.choices).toBeNull();
+});
+
+test('letting a name go lapses its open offers both ways and takes its face parts and card stats, so the next owner starts fresh', async () => {
+  const a = await claim('ann'), b = await claim('bob');
+  players('ann', 'bob');
+  // Ann gifts bob a copy; bob offers ann one of his for one of hers.
+  const gift: any = await (await call('/me/ann/swap', 'POST', { to: 'bob', give: put('ann') }, auth(a.owner))).json();
+  const hers = put('ann'), his = put('bob');
+  const ask: any = await (await call('/me/bob/swap', 'POST', { to: 'ann', give: his, want: hers }, auth(b.owner))).json();
+  env.db.prepare("INSERT INTO parts(key, code, at) VALUES ('bob', 'e12', '2026-10-30')").run();
+  env.db.prepare("INSERT INTO copy_days(copy_id, day, games, score) VALUES (?, '2026-10-30', 3, 200)").run(his);
+  // A copy bob gave away keeps its stats.
+  const gone = put('bob');
+  env.db.prepare("INSERT INTO copy_days(copy_id, day, games, score) VALUES (?, '2026-10-30', 1, 90)").run(gone);
+  env.db.prepare("UPDATE copies SET key = 'ann' WHERE id = ?").run(gone);
+  expect((await call('/names/bob', 'DELETE', undefined, auth(b.owner))).status).toBe(200);
+  expect(env.db.query('SELECT id, state FROM swaps ORDER BY id').all()).toEqual([{ id: gift.id, state: 'void' }, { id: ask.id, state: 'void' }]);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM parts WHERE key = 'bob'").get().n).toBe(0);
+  expect(env.db.query('SELECT copy_id FROM copy_days').all()).toEqual([{ copy_id: gone }]);
+  // Whoever claims bob next sees no offers, no parts, and can't take the gift meant for the last bob.
+  const eve = await claim('bob');
+  const s = await stateOf('bob', eve.owner);
+  expect(s.swaps).toHaveLength(0);
+  expect(s.parts).toHaveLength(0);
+  expect((await call('/me/bob/swap-accept', 'POST', { id: gift.id }, auth(eve.owner))).status).toBe(404);
+  // Ann's copies stayed hers, and the offer to her is gone from her side too.
+  expect((await stateOf('ann', a.owner)).swaps).toHaveLength(0);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'ann' AND source = 'capsule'").get().n).toBe(3);
+});
+
+test('painting or tagging a copy lapses its open offers, so nobody accepts a copy that changed after it was offered', async () => {
+  const c = await claim('mia'), b = await claim('bo');
+  players('mia', 'bo');
+  env.db.exec("UPDATE players SET metal = 40 WHERE key = 'mia'");
+  const made: any = await (await call('/me/mia/craft', 'POST', { item: 'puttsies.flag' }, auth(c.owner))).json();
+  const id = made.copy.id;
+  const offer = async () => ((await (await call('/me/mia/swap', 'POST', { to: 'bo', give: id }, auth(c.owner))).json()) as any).id;
+  const o1 = await offer();
+  expect((await call('/me/mia/paint', 'POST', { id, paint: 'pink-as-heck' }, auth(c.owner))).status).toBe(200);
+  expect((await call('/me/bo/swap-accept', 'POST', { id: o1 }, auth(b.owner))).status).toBe(404);
+  const o2 = await offer();
+  expect((await call('/me/mia/tag', 'POST', { id, tag: 'Not that one' }, auth(c.owner))).status).toBe(200);
+  expect((await call('/me/bo/swap-accept', 'POST', { id: o2 }, auth(b.owner))).status).toBe(404);
+  // Painting it the paint it has, or saving the tag it has, changes nothing, and the offer stands.
+  const o3 = await offer();
+  await call('/me/mia/paint', 'POST', { id, paint: 'pink-as-heck' }, auth(c.owner));
+  expect((await call('/me/mia/tag', 'POST', { id, tag: 'Not that one' }, auth(c.owner))).status).toBe(200);
+  // So does an offer the other way: bo retagging the copy mia asked for lapses it.
+  const theirs = put('bo');
+  const o4: any = await (await call('/me/mia/swap', 'POST', { to: 'bo', give: put('mia'), want: theirs }, auth(c.owner))).json();
+  await call('/me/bo/tag', 'POST', { id: theirs, tag: 'Mine' }, auth(b.owner));
+  expect((await call('/me/bo/swap-accept', 'POST', { id: o4.id }, auth(b.owner))).status).toBe(404);
+  expect((await call('/me/bo/swap-accept', 'POST', { id: o3 }, auth(b.owner))).status).toBe(200);
+});
+
+test('while the pick is open the state carries the three and when it closes, so another device can offer it', async () => {
+  const c: any = await (await call('/names/mia', 'POST')).json();
+  const s = await stateOf('mia', c.owner);
+  expect(s.pick.choices).toEqual(c.choices);
+  expect(Date.parse(s.pick.until) - Date.parse(c.at)).toBe(60 * 60 * 1000);
+  give('mia', 8);
+  await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner));
+  expect((await stateOf('mia', c.owner)).pick).toBeNull();
+  // An hour on, it's closed too.
+  const b: any = await (await call('/names/bo', 'POST')).json();
+  env.db.prepare("UPDATE names SET at = ? WHERE key = 'bo'").run(new Date(Date.now() - 61 * 60 * 1000).toISOString());
+  expect((await stateOf('bo', b.owner)).pick).toBeNull();
 });

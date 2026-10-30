@@ -38,6 +38,17 @@ export function seat(c: Canvas, s: Stamp, x: number, sink = 1): void {
 
 export const mirror = (s: Stamp): Stamp => s.map(row => [...row].reverse());
 
+const GRID = 16;
+/**
+ * The thought topper's cloud: two white puffs over a shaded foot, so it holds
+ * apart from a white body. Two rows, so on a round head it floats clear of the
+ * crown with only its outline between.
+ */
+const THOUGHT = stamp([
+  '.ww.ww',
+  'wxxxxx',
+]);
+
 /** A drawing centred on the crown, nudged `dx` columns to the right. */
 export const centre = (name: string, rows: string[], dx = 0, sink = 1): Topper => {
   const s = stamp(rows);
@@ -426,9 +437,52 @@ export const hair: Topper[] = [
     ['...yy...', '..ywyy..', '.yyyyyy.', '..yyyy..', '.xyxxyx.'],
   ], 1),
 
-  // Flames licking up off the head: red outside, gold within, white-hot at the heart.
+  // Three flames licking up off the head, the middle one tallest: deep red
+  // outside, orange then gold within, pale gold at the heart. In fixed fire
+  // colours (PART_COLORS in ../paint): the shared red came out salmon pink.
   hat('on fire', [
-    ['.....r....', '....rr..r.', '.r..ryr.rr', '.rr.ryyrry', 'rryrryyyyr', 'ryyyywwyyr'],
-    ['....r...', '...rr.r.', '.r.ryrrr', 'rrrryyyr', 'ryyywwyr'],
+    ['....r.....', '...rYr..r.', '.r.rYr.rYr', '.rYrYyrrYr', 'rYyYyyyYyr', 'rYyywwyyYr'],
+    ['...r....', '..rYr.r.', '.rrYyrYr', 'rYyyYyYr', 'rYywwyYr'],
   ], 2),
+
+  // The night set: capsules only (CAPSULE_ONLY in ./weights), in fixed colours (PART_COLORS in ../paint).
+  // Idea: a lit bulb screwed into the head, a white glint on its glass and two
+  // short rays either side. Small and on a stub of a base, on a round dark guy
+  // it read as a bomb's fuse; big, round and shining, it reads as a bulb.
+  centre('idea', [
+    'a..yyy..a',
+    '..yywyy..',
+    'a.ywyyY.a',
+    '...yyY...',
+    '...xGx...',
+  ], 0, 1),
+
+  {
+    name: 'thought',
+    draw: c => {
+      // A thought bubble: a cloud up over one shoulder, and dots stepping down
+      // from its foot towards the head. The cloud goes as high and far right
+      // as it can without touching the head; on a head with no such room, in
+      // front of it where it covers the least. Trailing off its right end
+      // instead, the dots read as smoke.
+      const w = width(THOUGHT), near = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
+      const cells = (x0: number, y0: number) => THOUGHT.flatMap((row, dy) => row.flatMap((t, dx) => (t ? [[x0 + dx, y0 + dy, t]] : [])));
+      const touches = (x: number, y: number) => near.some(([dx, dy]) => c.isBody(x + dx, y + dy));
+      const spots: [number, number][] = [];
+      for (let y0 = 1; y0 <= 2; y0++) for (let x0 = GRID - 1 - w; x0 >= 7; x0--) spots.push([x0, y0]);
+      const covered = ([x0, y0]: [number, number]) => cells(x0, y0).filter(([x, y]) => c.isBody(x, y)).length;
+      const [x0, y0] = spots.find(([a, b]) => cells(a, b).every(([x, y]) => !touches(x, y)))
+        ?? spots.filter(([, y]) => y === 1).reduce((a, b) => (covered(b) < covered(a) ? b : a));
+      const taken = new Set<number>();
+      for (const [x, y, t] of cells(x0, y0)) { c.set(x, y, t); taken.add(y * GRID + x); }
+      // Each dot keeps a clear pixel from the cloud and the dot before; the last may meet the head.
+      const clear = (x: number, y: number) => !c.isBody(x, y) && near.every(([dx, dy]) => !taken.has((y + dy) * GRID + x + dx));
+      let x = x0, y = y0 + THOUGHT.length - 1;
+      for (const [dx, dy] of [[-2, 0], [-1, 1]]) {
+        x += dx; y += dy;
+        if (x < 1 || y > GRID - 2 || !clear(x, y)) break;
+        c.set(x, y, T.WHITE); taken.add(y * GRID + x);
+      }
+    },
+  },
 ];

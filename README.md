@@ -294,10 +294,11 @@ renderer does it, in plain code (`bakeGuy`, `bakeCard`, `bakeView`), so a
 server, a page and a game all get the same picture.
 
 For crowds of thousands (Twitch chat, a stand of the day's players), `crowdSprite(spec, size)` and
-`crowdSheet(specs, size)` (`src/crowd.ts`) give each guy at 16, 10, 8, 6, 4 or 2 pixels, shrunk from
-his own drawing with his eyes, mouth and outline kept while there's room, and `createCrowd(canvas)`
-(`src/crowd-stage.ts`) is the whole crowd: seats, haze, hops, a wave and a spotlit winner (GAMES.md, A
-crowd of thousands).
+`crowdSheet(specs, size)` (`src/crowd.ts`) give each guy at 16, 14, 12, 10, 8, 6, 5, 4, 3 or 2 pixels,
+made from their own drawing with their eyes, mouth and outline kept while there's room, and
+`createCrowd(canvas)` (`src/crowd-stage.ts`) is the whole crowd: seats, haze, hops, a wave and a
+spotlit winner; `createStadium(canvas)` (`src/stadium.ts`) puts it in a venue that grows with it
+(GAMES.md, A crowd of thousands).
 
 A card is a trading card, after Balatro's: printed in its grade's colour with a
 dark outline and a chunky bevel, the guy in a window (at the same size on every
@@ -507,7 +508,7 @@ An item is a design. A copy someone owns is the item plus:
 
 | | |
 |---|---|
-| **Finish** | Plain (79.87%), Sunset (15.98%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Gold (0.25%), Negative (0.2%). Everything but Plain and Tempered only comes Box Fresh or Like New |
+| **Finish** | Plain (79.87%), Sunset (15.87%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Negative (0.2%), Gold (0.2%), Op (0.06%), Impossible (0.05%), Grid (0.05%). Everything but Plain and Tempered only comes Box Fresh or Like New |
 | **Scuff** | 0–1, how worn it is. Box Fresh < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Box Fresh copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered comes in five tints the print picks (Steel, Rose, Emerald, Copper, Violet), and prints 661, 670, 321, 387 and 955 come out all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |
@@ -647,6 +648,9 @@ A rare guy only means something if nobody can choose one. So:
   `2:e1`; `decodeLook` refuses old seven-number codes, out-of-range parts and
   rare parts the player didn't roll, and `lookOf(seed, code)` draws the
   result.
+- **Show other people's guys by code, never their seed.** `encodeGuy(guy)`
+  gives a `g1:` code of every visible field; `decodeGuy(code)` gives him back
+  to draw, or null for anything that isn't one.
 - **Names are letters and digits, with underscores only between them.**
   `nameKey(typed)` makes a key (`Cool__Guy_` is `cool_guy`) and `NAME_KEY`
   checks one: no `_` at either end and never two together, 2 to 16 long.

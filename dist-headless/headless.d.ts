@@ -22,10 +22,25 @@ interface Effect {
 }
 declare const EFFECTS: Record<Fx, Effect>;
 declare const FX_IDS: Fx[];
+/**
+ * Each effect's badge: a five-by-five picture of it in its own colours, for a
+ * card's corner and anywhere a copy's effect is named. Each letter is a
+ * colour in `BADGE_INKS`; `.` is empty.
+ */
+declare const FX_BADGES: Record<Fx, string[]>;
+/** The colours a badge is drawn in. */
+declare const BADGE_INKS: Record<string, string>;
 /** The effect a uniform number in [0, 1) gives, rarest checked first, or none. */
 declare function rollFx(u: number, aura: boolean): Fx | undefined;
-/** One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two copies move together. */
-declare function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print?: number): string;
+/** Whether an effect on a copy in `finish` is a layer over the finish rather than a repaint of it. */
+declare const layered: (finish: string | undefined) => boolean;
+/**
+ * One pixel of a copy with an effect, at `t` ms; `print` offsets it so no two
+ * copies move together. Given the copy's `finish`, an effect that recolours
+ * is laid over a finish other than Plain or Sunset instead of repainting it
+ * (`layered`).
+ */
+declare function fxColor(color: string, fx: Fx, x: number, y: number, t: number, print?: number, finish?: string): string;
 /**
  * Applies the effects of the copies a frame shows: `slots` says which slot
  * each pixel belongs to (1 skin, 2 hat, 3 frame, 4 buddy, 5 aura, as in
@@ -40,11 +55,13 @@ declare function fxColor(color: string, fx: Fx, x: number, y: number, t: number,
 declare function applyFx(colors: (string | null)[][], slots: number[][], copies: (({
   fx?: Fx;
   print: number;
+  finish?: string;
 }) | undefined)[], t: number): (string | null)[][]; //#endregion
 //#region src/parts/art.d.ts
-
 /** A small drawing: rows of tokens, not necessarily 16 wide. */
-type Stamp = number[][]; //#endregion
+type Stamp = number[][];
+
+//#endregion
 //#region src/parts/canvas.d.ts
 interface RowExtent {
   left: number;
@@ -415,7 +432,8 @@ declare function painted(colors: string[], paint: PaintId | undefined): string[]
  * An item (`puttsies.ball`) is a design. A copy someone owns adds:
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
- *   Prism, Negative and Gold are progressively rarer
+ *   Prism, Negative and Gold are progressively rarer, and three graphic ones,
+ *   Op, Impossible and Grid, sit beside Prism and Negative
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -431,7 +449,7 @@ declare function painted(colors: string[], paint: PaintId | undefined): string[]
  * millions of values. Everything is deterministic from the stored numbers, so
  * a copy looks the same everywhere it is drawn.
  */
-type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold' | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl';
+type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold' | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl' | 'op' | 'impossible' | 'grid';
 interface Owned {
   item: string;
   finish: Finish;
@@ -483,7 +501,8 @@ type Grade = (typeof GRADES)[number];
 /**
  * Each finish: its grade, the chance a capsule rolls it, and the scuff range
  * it can come in. The flashy finishes only exist barely worn, so there is no
- * Battered Nebula.
+ * Battered Nebula. Append only: a copy stores its finish's id, and a capsule
+ * rolls them in this order.
  */
 declare const FINISHES: Record<Finish, {
   name: string;
@@ -492,6 +511,8 @@ declare const FINISHES: Record<Finish, {
   scuffs: [number, number];
   aura?: number;
 }>;
+/** The graphic finishes: a pattern of their own across the item, in ink, ivory and coral. */
+declare const GRAPHIC_FINISHES: readonly Finish[];
 /** Condition, by scuff, in the words toy collectors use. */
 declare const WEAR: readonly [{
   readonly name: "Box Fresh";
@@ -544,6 +565,15 @@ declare function nebulaPhase(print: number): string;
 /** What makes this copy special beyond its finish, if anything. */
 declare function special(o: Owned): string | undefined;
 declare function gradeOf(o: Owned): Grade;
+/** An effect at least this rare (one copy in this many) makes its copy an Unusual (`unusual`). */
+declare const UNUSUAL_ONE_IN = 250;
+/**
+ * Whether a copy is an Unusual: a showpiece, or a copy with an effect rarer
+ * than about one in 250 that isn't its showpiece's own (rated on the aura
+ * ladder for an aura). What its card, its reveal and a board celebrate,
+ * whatever its grade; the grade itself (`gradeOf`) is unchanged.
+ */
+declare function unusual(o: Owned): boolean;
 /** The name as it would show on an inventory card. */
 declare function nameOf(o: Owned): string;
 /**
@@ -582,10 +612,41 @@ declare function mysteryMachine(seed: string): GameId;
 declare function rollSeason(seed: string, day: string): Owned | null;
 /** Which slot a copy goes in. */
 declare function slotOf(o: Owned): Slot | undefined;
+/** Where one of an item's own colours sits for a finish (`toneOf`). */
+
+/**
+ * Where an item sits on the grid it is painted on: its first and last column
+ * and row. A finish runs its sweep across this box, so a small hat shows a
+ * whole rainbow and a skin no more than one. `paintCell` is given it; without
+ * it, the box the item's slot usually takes stands in (`boxOf`).
+ */
+interface ItemBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+/**
+ * Where each worn item sits on a composed grid, read off its layer's tokens
+ * (`LAYER` in ./parts/art: a skin's 20s, a hat's 30s, a frame's 40s, a
+ * buddy's 50s): the boxes `paintCell` sweeps each copy's finish across.
+ */
+
+/**
+ * The box an item usually takes when nobody measured it: a skin's own art (it
+ * is drawn on the whole grid), a frame's whole grid, a buddy's art where it
+ * stands beside the guy (`buddyAlone`), and a hat over the middle of the head.
+ */
+declare function boxOf(itemId: string): ItemBox;
 
 //#endregion
 //#region src/types.d.ts
-/** Where one of an item's own colours sits for a finish (`toneOf`). */
+/**
+ * The ink a skin's face takes in a finish that keeps the cells round the face
+ * light (`FACE_WINDOW`): the graphic finishes, Negative and a Black Hole. Undefined in
+ * any other finish, where the face keeps the ink worked out from the skin's
+ * own colour.
+ */
 /**
  * A 16x16 grid where each cell is a colour token. Tokens are roles, not
  * colours — "body", "blush", "hat" — and a palette decides what each looks
@@ -757,11 +818,13 @@ declare const isFounderCopy: (o: Owned) => boolean;
 /**
  * Parts no deal gives: only a capsule unlocks them (`rollPart` in ../look),
  * and metal crafts them. Each weighs 0 in its table above, so every guy dealt
- * from any deal stays exactly as he was, and the weight here is its share
+ * from any deal stays exactly as dealt, and the weight here is its share
  * among a slot's rare parts when a capsule picks one, as a dealt part's
- * weight is. The anime set, October 2026.
+ * weight is. The starry, kitty, joy and puppy set, October 2026; then the
+ * night set, the rarest to unlock: eclipse and void eyes, the idea and
+ * thought toppers, op art markings.
  */
-declare const CAPSULE_ONLY: Partial<Record<'eyes' | 'mouth' | 'cheeks', Record<number, number>>>;
+declare const CAPSULE_ONLY: Partial<Record<'eyes' | 'mouth' | 'cheeks' | 'hair' | 'body', Record<number, number>>>;
 /** A part's weight when a capsule unlocks one: its deal weight, or its capsule-only weight. */
 
 /**
@@ -844,15 +907,24 @@ declare const SHADE_COUNT = 3;
  * adds saturation — saturating an already-bright lime turns it acid. Either way
  * the outline, shading and blush are worked out again from the result, so a
  * toned palette is as coherent as the original.
+ *
+ * A night colourway's pastel lifts its body a little and keeps its
+ * saturation, so it stays a night colour: mixed towards white, oxblood went
+ * mauve and forest grey-green. A chase colourway is a material in fixed
+ * colours, so it looks as picked in every tone.
  */
 declare function shadePalette(palette: Palette, shade: number): Palette;
 /**
- * The Lucky variant: the same colourway turned round the colour wheel, with
- * gold trim. Derived again, so the face and outline read as well as ever.
+ * The Lucky palette: the guy's own. Lucky used to turn a colourway round the
+ * colour wheel, which hid the colourway the card names (a Lucky Opal came out
+ * plain yellow) and turned night colours neon. Now a Lucky guy keeps their
+ * colours, and Lucky shows as a stepped rim (`luckyRim` in ./paint) and a gold
+ * star. Kept so code that calls it still runs.
  */
 declare function luckyPalette(palette: Palette): Palette;
 /** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
 
+/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
 declare function paletteOf(config: AvatarConfig): Palette;
 
 //#endregion
@@ -987,9 +1059,21 @@ declare const accessories: Accessory[];
 /**
  * Turns a composed grid into colours. Most cells take their token's palette
  * colour; a cell belonging to an owned item is repainted with that copy's
- * finish and wear.
+ * finish and wear. Before that, three things paint over the palette: a chase
+ * part's own fixed colours (`PART_COLORS`), a Lucky guy's rim (`luckyRim`)
+ * and a chase colourway's material (`chaseSkin`).
  */
 declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean, still?: boolean): (string | null)[][];
+/**
+ * What a face accessory (a masquerade, a monocle, glasses) paints round the
+ * eyes, as it lies under them: compose draws it before the eyes, so they
+ * cover it, and a glance that moves them (./animate) shows it again. A glint
+ * it puts in the eye rows moves with the eyes too, so where it paints one
+ * over its own colour, that colour is what lies under. A token for each cell
+ * it paints, 0 elsewhere, laid out as the finished guy is (mirrored with the
+ * guy); null for a guy with no face accessory.
+ */
+
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 declare const SMALL_SIZE = 36;
 
@@ -1066,7 +1150,7 @@ interface Animation {
 interface AnimateOptions extends RenderOptions {
   /** Show the best equipped copy's grade: shine, aura, sparkles and a trail. Default true. */
   rarity?: boolean;
-  /** An emote to show over the whole move, bobbing beside his head. */
+  /** An emote to show over the whole move, bobbing beside his head; mind blown and galaxy brain open the head instead (`openHead`). */
   emote?: Emote;
   /**
    * Play the move `repeats` times with everything on its own clock (auras,
@@ -1087,6 +1171,12 @@ interface AnimateOptions extends RenderOptions {
     fit: true;
     fine?: boolean;
   };
+  /**
+   * Drawn for a small view (an icon, a face), where an aura's pieces are a stray pixel or two: the
+   * aura shows as one ring round the guy in bands of its own colours (`glanceRing`), as a copy of
+   * Prized or better already rings the guy in its grade's colour.
+   */
+  glance?: boolean;
 }
 /**
  * Poses: the guy as he is, with eyes shut or glancing, with an arm up or
@@ -1095,13 +1185,15 @@ interface AnimateOptions extends RenderOptions {
  */
 type Pose = 'base' | 'shut' | 'left' | 'right' | 'wave' | 'sides' | 'laugh' | 'laughWave' | 'frown' | 'ooh' | 'smile' | 'content' | 'blep' | 'blush' | 'blushLeft' | 'blushRight' | 'huff' | 'oops';
 /**
- * Little pictures that pop up beside his head. The last three are manga's
- * own: a sweat drop, the cross-shaped anger vein and a little floating heart.
+ * Little pictures that pop up beside the head. Three are manga's own: a sweat
+ * drop, the cross-shaped anger vein and a little floating heart. The last four
+ * are thoughts: a light bulb, a burst, a daydream's cloud and a galaxy.
  */
-type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire' | 'sweat' | 'anger' | 'hearts';
+type Emote = 'note' | 'question' | 'bang' | 'heart' | 'zzz' | 'crown' | 'fire' | 'sweat' | 'anger' | 'hearts' | 'bulb' | 'burst' | 'cloud' | 'galaxy';
 /**
  * Emotes a player can show after a game, and how each is unlocked. The
- * moves use some on their own; `emote` in the options shows one over any move.
+ * moves use some on their own; `emote` in the options shows one over any move
+ * (mind blown and galaxy brain by opening the head, `openHead`).
  */
 declare const EMOTE_UNLOCKS: {
   id: Emote;
@@ -1110,8 +1202,9 @@ declare const EMOTE_UNLOCKS: {
 }[];
 /**
  * The same guy with his eyes shut: each eye drops to a line on its bottom row
- * and the cells it leaves show whatever the body has there. Derived, not
- * drawn, so it works for every eye part.
+ * and the cells it leaves show what the guy wears there (a mask, a monocle's
+ * glass: `underEyes`), else the body. Derived, not drawn, so it works for
+ * every eye part.
  */
 declare function closeEyes(grid: PixelGrid, config: AvatarConfig): PixelGrid;
 /** The order of `AnimationFrame.slots`, from 1. */
@@ -1119,6 +1212,10 @@ declare const FRAME_SLOTS: readonly ["skin", "hat", "frame", "buddy", "aura"];
 /** A buddy's own little hops, dealt from his name: how often (ms), where in LOOP_MS they start, and whether each is a double hop. */
 type BuddyHop = [period: number, phase: number, double: number];
 /** The buddy's own hops for the guy `input` would render as, the same ones his moving pictures play. */
+
+/** The two thoughts that open the head rather than sit in a corner: mind blown's burst and galaxy brain's starfield. */
+type OpenThought = 'burst' | 'galaxy';
+/** Whether a little picture is one that opens the head (`openHead`). */
 
 /**
  * What each squash in his moves does to the guy `input` would render as: the
@@ -1175,7 +1272,7 @@ declare function toAnimatedSvg(input: string, move: Move, options?: AnimatedSvgO
  *
  * - 30 days: two marks along its bottom edge
  * - 100 days: four
- * - 365 days: and its outline turns gold
+ * - 365 days: and its outline turns gold and ink by turns
  *
  * Neither is rolled. The club grants pins and counts the days; the library
  * only draws them, on the item's own pixels, so they move with it.
@@ -1255,6 +1352,13 @@ declare function traitOdds(config: AvatarConfig): TraitOdds[];
 declare function guyOneIn(config: AvatarConfig): number;
 /** One in how many capsules for its game give a copy at least this good. */
 declare function copyOneIn(o: Owned): number;
+/**
+ * One in how many capsules give a copy that looks like this one: its item, its
+ * finish, a famous print if it has one, its effect and, for an aura, which
+ * aura. What the eye can see, so it is what a card leads with; the float and a
+ * tally, which you can't see, are left out (`copyOneIn` has them).
+ */
+declare function visibleOneIn(o: Owned): number;
 /** A guy's tiers, commonest first: each is the share of guys at least that rare. */
 declare const GUY_TIERS: readonly [{
   readonly id: "common";
@@ -1401,6 +1505,17 @@ declare function encodeLook(look: Look): string;
 declare function decodeLook(code: string, own?: AvatarConfig, unlocks?: Unlocks): Look | null;
 /** A player's guy: from their seed, with their picked look laid over it. */
 declare function lookOf(seed: string, code?: string, unlocks?: Unlocks): AvatarConfig;
+
+//#endregion
+//#region src/guy.d.ts
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+declare function encodeGuy(config: AvatarConfig): string;
+/**
+ * A code back into a guy, or null for anything that isn't a version-1 code
+ * this library can draw: another version, a field missing, or one out of range.
+ * He comes back bare: items are worn on top with `dress`.
+ */
+declare function decodeGuy(code: string): AvatarConfig | null;
 
 //#endregion
 //#region src/share.d.ts
@@ -1576,9 +1691,9 @@ type AuraCell = [x: number, y: number, k: number];
 /** Where the guy is: `true` for each pixel he covers. */
 type Mask = boolean[][];
 interface Aura extends Pick<Item, 'id' | 'name' | 'colors'> {
-  /** The cells to light at `t` ms, round the guy in `mask`. */
+  /** The cells to light at `t` ms, round the guy in `mask`: never fewer than about eight in any frame. */
   cells: (mask: Mask, t: number, print: number) => AuraCell[];
-  /** The moment a still picture shows. */
+  /** The moment a still picture shows: the aura at its fullest. */
   still: number;
 }
 declare const AURAS: Aura[];
@@ -1868,15 +1983,27 @@ interface CardInput {
   corner?: string;
   /** The grade's badge, then a short line beside it (his @name). Any ★ is left off. */
   lines?: string[];
-  /** The small line at the foot, as "1st edition", on one line; a part starting with "#" (a print number) is left off. */
+  /** The small line at the foot, as "1st edition", on one line; a part starting with "#" (a print number) is left off. A 1st edition also gets a seal. */
   footer?: string;
+  /**
+   * A second, smaller plate under the badge's line, in the colour of `grade`
+   * (0 Everyday to 5 Aura): the best copy they wear, as "★ Grail · Gold Goldfish".
+   */
+  plate?: {
+    text: string;
+    grade: number;
+  };
   /** 0 Everyday to 5 Aura; -1 for a plain card. */
   grade?: number;
   /** How he moves on the card. Default `idle`. */
   move?: Move;
 }
+/** Whether the card's pixel type has a glyph for `ch` (anything else is written "?"). */
+declare const hasGlyph: (ch: string) => boolean;
 /** How wide a line of text is, in pixels. */
 declare const textWidth: (s: string) => number;
+/** The line beside the badge, fitted to `width`; a rank ("Top 0.055%") drops its "Top" rather than be cut. */
+
 /**
  * A Grail: `framed` (the default) a dark card round a window of gold in a few large soft bands, a thin
  * bright gold line along its bevel and inside the window's rim, on the dark plate every card has;
@@ -2088,7 +2215,7 @@ declare function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas):
  * Bumped whenever the art changes. It is part of every baked image's address,
  * so a redraw reaches every board at once and an old address keeps its picture.
  */
-declare const ART_VERSION = 14;
+declare const ART_VERSION = 15;
 /** Everything that makes a guy look the way he does. */
 interface GuySpec {
   /** His seed, or the name or text he is drawn from. */
@@ -2228,11 +2355,13 @@ declare const ICON_SIZE: 16;
 /** A face's side: his head and shoulders, hat and all. */
 declare const FACE_SIZE: 14;
 /**
- * A small square of the guy, for a menu, a chat line or a board's row: `icon` his whole sixteen by
- * sixteen, `face` a square of his head and shoulders, hat and all. Played as `bakeGuy` plays him,
- * blinking, breathing, his copies shining and his aura round him, but always on the ground: a move's
- * hops are taken out, so nothing he does leaves the square. No buddy and no backdrop: the square is
- * his alone, on nothing.
+ * A small square of the guy, for a menu, a chat line or a board's row: `icon` the whole sixteen by
+ * sixteen, `face` a square of the head and shoulders, hat and all. Played as `bakeGuy` plays the
+ * guy, blinking, breathing and copies shining, but always on the ground: a move's hops are taken
+ * out, so nothing the guy does leaves the square. What marks a guy rare shows at a glance: the ring a
+ * copy of Prized or better puts round them, and an aura as a ring in its own colours by turns
+ * (`glanceRing`), as the chat emotes show them. No buddy and no backdrop: the square is the guy's
+ * alone, on nothing.
  */
 declare function bakeSquare(spec: GuySpec, view: 'icon' | 'face', move?: Move): Frames;
 /**
@@ -2247,6 +2376,12 @@ declare const CARD_FULL_MS = 160;
  * gives one.
  */
 declare function cardInputOf(spec: CardSpec, move?: Move): CardInput;
+/**
+ * The second plate on a big card: the best copy the guy wears, Prized or better, by its grade and
+ * what it is (`★ Grail · Gold Goldfish`, `★ Aura · Shadow Galaxy`, `Mythic · Electric Prism Top hat`),
+ * so what a player wears shows on the card they share. The guy's rank stays the card's own line.
+ */
+
 /** The size Discord shows a profile picture at, and asks for at least 128 of. */
 declare const PROFILE_SIZE = 512;
 /**
@@ -2521,32 +2656,44 @@ declare const nameSkeleton: (key: string) => string;
 
 //#endregion
 //#region src/crowd.d.ts
-/** The sizes a crowd sprite comes in, in pixels square. */
-declare const CROWD_SIZES: readonly [16, 10, 8, 6, 4, 2];
+/** The sizes a crowd sprite comes in, in pixels square. Appended to, never reordered. */
+declare const CROWD_SIZES: readonly [16, 10, 8, 6, 4, 2, 14, 12, 5, 3];
 type CrowdSize = (typeof CROWD_SIZES)[number];
 /** A crowd sprite: `size` square, RGBA. */
 interface CrowdSprite {
   size: CrowdSize;
   rgba: Uint8ClampedArray;
 }
-/** How a guy stands out in a crowd: his best copy's grade from Prized up (an aura counts), or the founder's gold. */
+/** How a guy stands out in a crowd: their best copy's grade from Prized up (an aura counts), or the founder's gold. */
 interface CrowdShine {
   grade: number;
   color: string;
 }
 /**
- * Whether a guy stands out in a crowd, and in what colour: the grade of the best copy he wears, from
+ * Everything a guy's crowd sprites are made from, worked out once (the costly part is composing
+ * the guy), kept small: a crowd of ten thousand holds one each.
+ */
+
+/**
+ * Whether a guy stands out in a crowd, and in what colour: the grade of the best copy they wear, from
  * Prized up, or Grail gold for the founder. Everyday and Special copies, and nothing worn, don't.
  */
 declare function crowdShine(spec: GuySpec): CrowdShine | null;
 /**
- * The guy as he stands in a crowd, `size` pixels square, bottom-centred. A guy who stands out
- * (`crowdShine`) is outlined in his grade's colour where he has an outline, and further back, where he
- * is only his colours, his top cell takes it. `shine: false` leaves that off.
+ * A guy's crowd colours without composing them (cheap): body, eyes and outline from their palette,
+ * and whether they stand out. A crowd draws a stand-in from these until the real sprite is made.
+ */
+
+/**
+ * The guy as they stand in a crowd, `size` pixels square, bottom-centred. A guy who stands out
+ * (`crowdShine`) is outlined in their grade's colour where they have an outline, and further back,
+ * where they are only colours, their top cell takes it. `shine: false` leaves that off.
  */
 declare function crowdSprite(spec: GuySpec, size: CrowdSize, options?: {
   shine?: boolean;
 }): CrowdSprite;
+/** `crowdSprite` from a look already worked out (`crowdLook`), for many sizes of one guy. */
+
 /**
  * Many guys at one size on one sheet, `columns` to a row, in the order given: guy `n` is the cell at
  * column `n % columns`, row `floor(n / columns)`. A crowd draws each from it with one copy.
@@ -2562,7 +2709,7 @@ declare function crowdSheet(specs: GuySpec[], size: CrowdSize, columns?: number,
 
 //#endregion
 //#region src/crowd-stage.d.ts
-/** A seat in the crowd: where a guy stands (his cell's top-left), at what size, in which row (0 is the back). */
+/** A seat in the crowd: where a guy stands (their cell's top-left), at what size, in which row (0 is the back). */
 interface CrowdSeat {
   x: number;
   y: number;
@@ -2570,18 +2717,19 @@ interface CrowdSeat {
   row: number;
 }
 /**
- * The seats of a crowd filling `width` × `height` world pixels: rows from the back (top) to the
- * front (bottom), each row's size growing with nearness, jittered a cell so far rows never line up.
- * In the order a crowd fills them: the front row first, from the middle out, then the row behind.
- * `density` above 1 packs more in (smaller guys sooner); the same arguments give the same seats.
+ * The seats of a crowd filling `width` × `height` world pixels: rows from the front (the bottom edge,
+ * where the front row's feet are) back to the top, each row's size shrinking with distance, jittered a
+ * cell so far rows never line up. In the order a crowd fills them: the front row first, from the middle
+ * out, then the row behind. Seats less than three quarters on the canvas are left out. `density` above
+ * 1 packs more in (smaller guys sooner); the same arguments give the same seats.
  */
 declare function crowdSeats(width: number, height: number, density?: number, seed?: string): CrowdSeat[];
-/** What a game passes for each guy: his name, and his club look when he has one (`seed`, `parts`, `palette`, `equip`). */
+/** What a game passes for each guy: their name, and their club look when they have one (`seed`, `parts`, `palette`, `equip`). */
 type CrowdGuy = Partial<GuySpec>;
 interface CrowdOptions {
-  /** The colour behind the crowd: the haze over far rows is drawn in it. Default the club's navy. */
+  /** The colour behind the crowd: far rows are tinted toward it. Default the page's background under the canvas (read again as the page changes), else the club's navy. */
   backdrop?: string;
-  /** CSS pixels to a world pixel (made a whole number of screen pixels). Default 3 from 900 CSS pixels wide, else 2. */
+  /** CSS pixels to a world pixel (made a whole number of screen pixels). Default: as big as the crowd allows, never under 3 from 900 CSS pixels wide, else 2. */
   scale?: number;
   /** Above 1 packs the crowd tighter, below 1 looser. */
   density?: number;
@@ -2593,36 +2741,39 @@ interface CrowdOptions {
   font?: string;
 }
 interface Crowd {
-  /** Seats a guy (by the lowercased name, so a name seats once) in the next seat from the front. */
+  /** Seats a guy (by the lowercased name, so a name seats once) in the best free seat. */
   add(name: string, guy?: CrowdGuy): void;
+  /** Takes a guy out. Their seat goes to whoever has waited longest past the seats, or the next to come. */
+  remove(name: string): void;
   /** Whether a name is in the crowd. */
   has(name: string): boolean;
-  /** Makes a guy hop, as when he guesses. */
+  /** Makes a guy hop, as when they guess. */
   hop(name: string): void;
   /** Turns the wave on or off. */
   wave(on: boolean): void;
-  /** Lifts a guy out to the front, big, with a line under him (his name by default), for `ms`. */
+  /** Lifts a guy out to the front, big, with a line under them (their name by default), for `ms`. */
   spotlight(name: string, label?: string, ms?: number): void;
   /** Lays the seats out again for the canvas's size now (keeping who sits where in order). */
   resize(): void;
   /** Stops drawing and lets go of the sprites. */
   destroy(): void;
-  /** How many guys have been added; past the seats there are, the rest aren't drawn. */
+  /** How many guys are in; past the seats there are, the rest wait undrawn for a seat to free. */
   readonly count: number;
   /** How many seats the crowd has at its size. */
   readonly seats: number;
 }
 /**
  * A crowd on `canvas`, which the page sizes with CSS. It draws at the screen's own pixels, each world
- * pixel a whole number of them with smoothing off, so guys stay sharp at any size, zoom or density;
- * call `resize()` when the canvas's size or the zoom changes. Draws only while something moves.
+ * pixel a whole number of them with smoothing off, so guys stay sharp at any size, zoom or density; it
+ * follows the canvas's size and the screen's pixel density by itself (`resize()` still works). The canvas
+ * stays see-through where nobody stands. Draws only while something moves.
  */
 declare function createCrowd(canvas: HTMLCanvasElement, options?: CrowdOptions): Crowd;
 /**
  * A still crowd as one picture, with no canvas: `guys` take the seats from the front middle back, and
  * `fill` more fill the rest with made-up guys, dealt from `seed` with nothing on (no pet shop items, no
- * buddies), so a short board still stands in a full stand. Opaque on `backdrop`, haze and all, as
- * `createCrowd` draws it. `width` × `height` world pixels, RGBA.
+ * buddies), so a short board still stands in a full stand. Opaque on `backdrop`, far rows tinted toward
+ * it as `createCrowd` draws them. `width` × `height` world pixels, RGBA.
  */
 declare function crowdPicture(guys: CrowdGuy[], width: number, height: number, options?: {
   backdrop?: string;
@@ -2635,13 +2786,21 @@ declare function crowdPicture(guys: CrowdGuy[], width: number, height: number, o
 //#region src/emotes.d.ts
 /** An emote's side, in pixels. */
 declare const EMOTE_SIZE = 14;
-type Motion = 'bounce' | 'shake' | 'rise' | 'sway';
+/**
+ * How an emote moves. The thoughts have their own: `flick` switches its bulb on, `dream` floats its
+ * cloud, and `open` lifts the top of the head (on a burst or a starfield, its `unlock`'s).
+ */
+type Motion = 'bounce' | 'shake' | 'rise' | 'sway' | 'flick' | 'dream' | 'open';
 interface EmoteDef {
   id: string;
   name: string;
   poses: Pose[];
   symbol?: Emote;
   motion: Motion;
+  /** Rows of room over the head, for a big picture or a head that opens. */
+  room?: number;
+  /** For one that opens the head: what is under the lid, and the unlock (`EMOTE_UNLOCKS`) it takes. */
+  unlock?: OpenThought;
 }
 /** The set, in the order a channel would upload them. `name` is the suffix a channel puts after its prefix. */
 declare const EMOTE_SET: readonly EmoteDef[];
@@ -2655,14 +2814,14 @@ declare function emoteFrames(spec: GuySpec, id: string, moving?: boolean): Frame
 
 //#endregion
 //#region src/stadium.d.ts
-/** A seat: where a guy stands (his cell's top-left), at what crowd size, and which row he is in (0 nearest). */
+/** A seat: where a guy stands (their cell's top-left), at what crowd size, and which row they are in (0 nearest). */
 interface StadiumSeat {
   x: number;
   y: number;
   size: CrowdSize;
   row: number;
 }
-/** The venues, smallest first: who fits, and how big the picture of it is in world pixels. */
+/** The venues, smallest first: who fits. */
 declare const VENUES: readonly [{
   readonly id: "porch";
   readonly name: "The porch";
@@ -2696,10 +2855,17 @@ type VenueId = (typeof VENUES)[number]['id'];
 /** The venue for `count` people: the smallest that seats them all (the bowl past its size). */
 declare const venueFor: (count: number) => VenueId;
 /**
- * The seats of venue `id`, in the order they fill: the front row first, all the way round, from the
- * middle of the near side out, then the row behind, so a part-full venue is full at the front.
+ * The seats of venue `id`, in the order they fill: the front row first, from the middle out, then the row
+ * behind, so a part-full venue is full at the front. Laid out for a canvas (`width` × `height` CSS pixels
+ * at `dpr`, 1280 × 720 at 1 unless given) and `count` people (the venue's size unless given), as a
+ * stadium on that canvas lays it out.
  */
-declare function stadiumSeats(id: VenueId): StadiumSeat[];
+declare function stadiumSeats(id: VenueId, options?: {
+  width?: number;
+  height?: number;
+  dpr?: number;
+  count?: number;
+}): StadiumSeat[];
 interface StadiumOptions {
   /** A slow wave round the stands. */
   wave?: boolean;
@@ -2709,15 +2875,15 @@ interface StadiumOptions {
   font?: string;
 }
 interface Stadium {
-  /** Seats a guy by name (lowercased, once), in his club look when given. The venue grows to fit. */
+  /** Seats a guy by name (lowercased, once), in their club look when given. The venue grows to fit. */
   add(name: string, guy?: Partial<GuySpec>): void;
   /** Takes a guy out; the venue shrinks again if it can. */
   remove(name: string): void;
   has(name: string): boolean;
-  /** Makes a guy hop, as when he guesses. */
+  /** Makes a guy hop, as when they guess. */
   hop(name: string): void;
   wave(on: boolean): void;
-  /** Lifts a guy out of his seat, big, with a line under him, for `ms`. */
+  /** Lifts a guy out of their seat, big, with a line under them, for `ms`. */
   spotlight(name: string, label?: string, ms?: number): void;
   resize(): void;
   destroy(): void;
@@ -2725,10 +2891,11 @@ interface Stadium {
   readonly venue: VenueId;
 }
 /**
- * A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; when
- * the venue changes they take their places in the new one, the old venue fading out under it.
+ * A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; as
+ * the crowd grows the venue is laid out again for it (and changes when it outgrows one), guys sliding to
+ * their new seats, or in a big crowd the old picture fading out under the new.
  */
 declare function createStadium(canvas: HTMLCanvasElement, options?: StadiumOptions): Stadium;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, venueFor, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, BADGE_INKS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_BADGES, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemBox, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, UNUSUAL_ONE_IN, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, boxOf, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeGuy, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeGuy, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hasGlyph, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, layered, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, unusual, upscale, venueFor, viewSize, visibleOneIn, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };

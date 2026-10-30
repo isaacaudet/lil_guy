@@ -4,6 +4,7 @@ import { EFFECTS, FX_IDS, rollFx, type Fx } from './effects';
 import { GAMES, gameItems, freeItem, inSeason, itemById, itemWeight, type Item, type Slot } from './items';
 import { MAX_PINS, pinById } from './pins';
 import { PAINT_IDS, type PaintId } from './paints';
+import { LAYER } from './parts/art';
 import type { GameId } from './types';
 
 /**
@@ -12,7 +13,8 @@ import type { GameId } from './types';
  * An item (`puttsies.ball`) is a design. A copy someone owns adds:
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
- *   Prism, Negative and Gold are progressively rarer
+ *   Prism, Negative and Gold are progressively rarer, and three graphic ones,
+ *   Op, Impossible and Grid, sit beside Prism and Negative
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -30,7 +32,8 @@ import type { GameId } from './types';
  */
 
 export type Finish = 'plain' | 'sunset' | 'tempered' | 'nebula' | 'prism' | 'negative' | 'gold'
-  | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl';
+  | 'classic' | 'fade' | 'frost' | 'toxic' | 'shadow' | 'sapphire' | 'ruby' | 'pearl'
+  | 'op' | 'impossible' | 'grid';
 
 export interface Owned {
   item: string;
@@ -68,16 +71,17 @@ export type Grade = (typeof GRADES)[number];
 /**
  * Each finish: its grade, the chance a capsule rolls it, and the scuff range
  * it can come in. The flashy finishes only exist barely worn, so there is no
- * Battered Nebula.
+ * Battered Nebula. Append only: a copy stores its finish's id, and a capsule
+ * rolls them in this order.
  */
 export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number]; aura?: number }> = {
   'plain':    { name: 'Plain',    grade: 0, odds: 79.87, scuffs: [0, 1] },
-  'sunset':   { name: 'Sunset',   grade: 1, odds: 15.98, scuffs: [0, 0.08] },
+  'sunset':   { name: 'Sunset',   grade: 1, odds: 15.87, scuffs: [0, 0.08] },
   'tempered': { name: 'Tempered', grade: 2, odds: 1.6,   scuffs: [0, 1] },
   'nebula':   { name: 'Nebula',   grade: 2, odds: 1.6,   scuffs: [0, 0.08] },
   'prism':    { name: 'Prism',    grade: 3, odds: 0.5,   scuffs: [0, 0.08] },
   'negative': { name: 'Negative', grade: 3, odds: 0.2,   scuffs: [0, 0.08] },
-  'gold':     { name: 'Gold',     grade: 4, odds: 0.25,  scuffs: [0, 0.08] },
+  'gold':     { name: 'Gold',     grade: 4, odds: 0.2,   scuffs: [0, 0.08] },
   // An aura's own finishes (./auras): never rolled on an item; `aura` is each
   // one's share of auras, in percent. Any float, since a worn aura shows it.
   'classic':  { name: 'Classic',  grade: 5, odds: 0, aura: 50,  scuffs: [0, 1] },
@@ -88,7 +92,16 @@ export const FINISHES: Record<Finish, { name: string; grade: number; odds: numbe
   'sapphire': { name: 'Deep sea · Sapphire', grade: 5, odds: 0, aura: 1.5, scuffs: [0, 1] },
   'ruby':     { name: 'Deep sea · Ruby', grade: 5, odds: 0, aura: 1.2, scuffs: [0, 1] },
   'pearl':    { name: 'Deep sea · Black pearl', grade: 5, odds: 0, aura: 0.3, scuffs: [0, 1] },
+  // ---------------------------------------------------------------- added Oct 30, 2026 (append only)
+  // Graphic finishes in the club's ink, ivory and coral: concentric rings, bands that turn at the middle, panes.
+  // Their 0.16% came out of Sunset (15.98 to 15.87) and Gold (0.25 to 0.2).
+  'op':         { name: 'Op',         grade: 3, odds: 0.06, scuffs: [0, 0.08] },
+  'impossible': { name: 'Impossible', grade: 3, odds: 0.05, scuffs: [0, 0.08] },
+  'grid':       { name: 'Grid',       grade: 3, odds: 0.05, scuffs: [0, 0.08] },
 };
+
+/** The graphic finishes: a pattern of their own across the item, in ink, ivory and coral. */
+export const GRAPHIC_FINISHES: readonly Finish[] = ['op', 'impossible', 'grid'];
 
 /** Condition, by scuff, in the words toy collectors use. */
 export const WEAR = [
@@ -143,6 +156,22 @@ export function gradeOf(o: Owned): Grade {
   if (FINISHES[o.finish].grade === 5) return GRADES[5];
   // A famous print lifts a copy one grade, as far as Grail.
   return GRADES[Math.min(4, FINISHES[o.finish].grade + (special(o) ? 1 : 0))];
+}
+
+/** An effect at least this rare (one copy in this many) makes its copy an Unusual (`unusual`). */
+export const UNUSUAL_ONE_IN = 250;
+
+/**
+ * Whether a copy is an Unusual: a showpiece, or a copy with an effect rarer
+ * than about one in 250 that isn't its showpiece's own (rated on the aura
+ * ladder for an aura). What its card, its reveal and a board celebrate,
+ * whatever its grade; the grade itself (`gradeOf`) is unchanged.
+ */
+export function unusual(o: Owned): boolean {
+  const item = itemById(o.item);
+  if (item?.showpiece) return true;
+  if (!o.fx || o.fx === item?.signature || !EFFECTS[o.fx]) return false;
+  return EFFECTS[o.fx][FINISHES[o.finish]?.aura ? 'aura' : 'item'] >= UNUSUAL_ONE_IN;
 }
 
 /** The name as it would show on an inventory card. */
@@ -393,52 +422,179 @@ export function toneOf(colors: string[]): Map<string, Tone> {
 }
 
 /**
+ * Where an item sits on the grid it is painted on: its first and last column
+ * and row. A finish runs its sweep across this box, so a small hat shows a
+ * whole rainbow and a skin no more than one. `paintCell` is given it; without
+ * it, the box the item's slot usually takes stands in (`boxOf`).
+ */
+export interface ItemBox { left: number; top: number; right: number; bottom: number }
+
+/** An item's box, measured: its corner, size and middle, and on a skin the row its eyes sit on (`Item.eyes`). */
+interface Box { x0: number; y0: number; w: number; h: number; cx: number; cy: number; eyes?: number }
+
+const measured = (b: ItemBox, eyes?: number): Box => {
+  const w = Math.max(1, b.right - b.left + 1), h = Math.max(1, b.bottom - b.top + 1);
+  return { x0: b.left, y0: b.top, w, h, cx: b.left + (w - 1) / 2, cy: b.top + (h - 1) / 2, eyes };
+};
+
+/**
+ * Where a face sits on a skin, by row from its eyes' line: the columns its
+ * eyes and mouth, and the cells touching them, take on nearly every guy (the
+ * face is drawn centred on the grid). A finish that would bury the face in
+ * ink or in a void keeps these cells light, so the face reads at any size.
+ */
+const FACE_WINDOW: Record<number, [number, number]> = { [-3]: [4, 11], [-2]: [3, 12], [-1]: [3, 12], 0: [3, 12], 1: [4, 11], 2: [4, 11], 3: [5, 10], 4: [6, 9] };
+const inFace = (b: Box, x: number, y: number) => {
+  const span = b.eyes === undefined ? undefined : FACE_WINDOW[y - b.eyes];
+  return !!span && x >= span[0] && x <= span[1];
+};
+/** A graphic finish's colour in a face's window: the same pattern, gone pale, so the face's ink reads on every cell of it. */
+const paled = (c: RGB, b: Box, x: number, y: number): RGB => (inFace(b, x, y) ? mix(c, IVORY_RGB, 0.56) : c);
+
+/**
+ * Where each worn item sits on a composed grid, read off its layer's tokens
+ * (`LAYER` in ./parts/art: a skin's 20s, a hat's 30s, a frame's 40s, a
+ * buddy's 50s): the boxes `paintCell` sweeps each copy's finish across.
+ */
+export function boxesIn(grid: number[][]): Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', ItemBox>> {
+  const out: Partial<Record<'skin' | 'hat' | 'frame' | 'buddy', ItemBox>> = {};
+  grid.forEach((row, y) => row.forEach((t, x) => {
+    const slot = (['skin', 'hat', 'frame', 'buddy'] as const).find(k => t >= LAYER[k] && t < LAYER[k] + 10);
+    if (!slot) return;
+    const b = out[slot];
+    if (!b) out[slot] = { left: x, top: y, right: x, bottom: y };
+    else { b.left = Math.min(b.left, x); b.right = Math.max(b.right, x); b.top = Math.min(b.top, y); b.bottom = Math.max(b.bottom, y); }
+  }));
+  return out;
+}
+
+const boxes = new Map<string, ItemBox>();
+/**
+ * The box an item usually takes when nobody measured it: a skin's own art (it
+ * is drawn on the whole grid), a frame's whole grid, a buddy's art where it
+ * stands beside the guy (`buddyAlone`), and a hat over the middle of the head.
+ */
+export function boxOf(itemId: string): ItemBox {
+  let b = boxes.get(itemId);
+  if (b) return b;
+  const item = itemById(itemId), art = item?.art;
+  const lit = (rows: number[][]) => {
+    let left = 99, right = -1, top = 99, bottom = -1;
+    rows.forEach((row, y) => row.forEach((v, x) => { if (v) { left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y); } }));
+    return right < 0 ? null : { left, right, top, bottom };
+  };
+  const own = art ? lit(art) : null;
+  b = item?.slot === 'frame' ? { left: 0, top: 0, right: 15, bottom: 15 }
+    : item?.slot === 'skin' && own ? own
+      : item?.slot === 'buddy' && own ? { left: 19, top: 15 - (own.bottom - own.top + 1), right: 18 + (own.right - own.left + 1), bottom: 14 }
+        : { left: 3, top: 1, right: 12, bottom: 5 };
+  boxes.set(itemId, b);
+  return b;
+}
+
+/** Where a cell sits across its item's box, corner to corner, 0 to 1, along a slope (`dy` per column). */
+const sweepOf = (x: number, y: number, b: Box, dy: number) => ((x - b.x0) + (y - b.y0) * dy) / Math.max(1, (b.w - 1) + (b.h - 1) * dy);
+
+/** The club's ink, ivory and coral, and the primaries a Grid finish fills its panes with. */
+const INK_RGB = rgb('#17131F'), IVORY_RGB = rgb('#F4EFE4'), CORAL = rgb('#EE6A50');
+const PRIMARIES = ['#D9402E', '#2C55C8', '#F2C230'].map(rgb);
+
+/** The famous prints' own looks, drawn in place of their finish's: what makes a one in a million look it. */
+const FAMOUS: Record<string, (x: number, y: number, tone: number, p: number, l: number, b: Box) => RGB> = {
+  // Saturated sapphire with one white caustic line across it, a soft blue either side.
+  'Deep Blue': (x, y, tone, p, l, b) => {
+    // It lies the way the finish's moving sheen does, so the sheen runs along it rather than across it.
+    const line = (x - b.x0) + (y - b.y0) * 0.9 - ((b.w - 1) + (b.h - 1) * 0.9) * (0.3 + (p % 5) * 0.1);
+    if (line >= 0 && line < 1) return rgb('#EEF6FF');
+    if (line >= -1 && line < 2) return mix(ramp(SAPPHIRE, lit(tone, l)), rgb('#9CC8FF'), 0.55);
+    return ramp(SAPPHIRE, 0.1 + lit(tone, l) * 0.75);
+  },
+  // A void: near-black, its rim lit like an accretion disc (ivory above, orange below), one hot band across it.
+  'Black Hole': (x, y, tone, p, l, b) => {
+    if (b.eyes !== undefined) {
+      // On a skin the void is a dome over the face, the disc's hot edge a line across just above the
+      // eyes, and below it the face in the disc's light, warm going down: as an eclipse rising.
+      const edge = b.eyes - 4, d = Math.hypot((x - b.cx) / Math.max(1.5, b.w * 0.3), (y - edge - 0.5) / Math.max(1, edge - b.y0 + 0.5));
+      if (y <= edge && d < 1) return mix(rgb('#07060B'), rgb('#231C33'), lit(tone, l) * 0.7);
+      if (y <= edge) return ramp(['#FFF3D2', '#FFB45C', '#E2581F', '#8A2A12'].map(rgb), Math.min(1, (d - 1) * 0.8));
+      if (y === edge + 1) return mix(rgb('#FFF3D2'), rgb('#FF8A30'), Math.min(1, Math.abs(x - b.cx) / Math.max(1, b.w / 2)));
+      const t = (y - edge - 1) / Math.max(1, b.y0 + b.h - edge - 1) + (0.5 - lit(tone, l)) * 0.25;
+      return ramp(['#FFE6B0', '#FFB45C', '#E2581F', '#8A2A12'].map(rgb), Math.max(0, Math.min(inFace(b, x, y) ? 0.5 : 1, t)));
+    }
+    const dx = (x - b.cx) / Math.max(1, b.w / 2), dy = (y - b.cy) / Math.max(1, b.h / 2), tilt = ((p >> 2) % 3 - 1) * 0.25;
+    if (Math.abs((y - b.cy) - (x - b.cx) * tilt) < 0.5) return mix(rgb('#FFF3D2'), rgb('#FF8A30'), Math.min(1, Math.abs(dx) * 1.1));
+    if (Math.hypot(dx, dy) > 0.8 || tone > 0.72) return mix(rgb('#FFE6B0'), rgb('#E2581F'), Math.max(0, Math.min(1, (dy + 1) / 2)));
+    return mix(rgb('#07060B'), rgb('#231C33'), lit(tone, l) * 0.7);
+  },
+  // A swollen star: a white-gold core through orange to deep red at its edge.
+  'Red Giant': (x, y, tone, _p, l, b) => {
+    const r = Math.hypot((x - b.cx) / Math.max(1, b.w / 2), (y - b.cy) / Math.max(1, b.h / 2));
+    return ramp(['#FFF1C2', '#FFB347', '#F0602E', '#C41E2C', '#5E0A1A'].map(rgb), Math.min(1, r * 0.78 + (0.55 - lit(tone, l)) * 0.6));
+  },
+  // A pale moon: silver blue, a few craters the print sets, its far side in shadow.
+  'Blue Moon': (x, y, tone, p, l, b) => {
+    const shade = ((x - b.cx) * (p % 2 ? 1 : -1)) / Math.max(1, b.w / 2);
+    const crater = cellNoise(p, x, y, 21) > 0.82 && tone < 0.7;
+    const t = Math.max(0, Math.min(1, 0.2 + lit(tone, l) * 0.75 - Math.max(0, shade - 0.35) * 0.9 - (crater ? 0.18 : 0)));
+    return ramp(['#1E2F78', '#4E6CC8', '#9DB4EE', '#DCE6FF', '#FFFFFF'].map(rgb), t);
+  },
+};
+/** Deep Blue's sapphire, deep to light. */
+const SAPPHIRE = ['#05124F', '#0B2EA8', '#1A50E6', '#4C86FF', '#A9CBFF'].map(rgb);
+
+/**
  * Each finish as a clean, premium version of the item: its colours mapped
  * through the finish's own ramp by tone, so the item's shading and parts all
- * still read, and any colour shift runs in smooth bands across the whole
- * item, never pixel by pixel. The shaders (./finish-shader) move a sheen over
- * it.
+ * still read, and any colour shift runs in smooth bands across the item's own
+ * box (`ItemBox`), never pixel by pixel: every Prism shows its whole rainbow
+ * and every Sunset its three colours, on a hat as on a skin. The shaders
+ * (./finish-shader) move a sheen over it.
  */
-const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, original: RGB, l: number, part: number) => RGB> = {
+const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, original: RGB, l: number, part: number, b: Box) => RGB> = {
   'plain': (_x, _y, _t, _p, original) => original,
-  'sunset': (x, y, _t, p, _o, l) => {
-    const t = Math.max(0, Math.min(1, (x + y * 0.5 - 2 + (p % 100) / 12) / 14));
+  'sunset': (x, y, _t, p, _o, l, _part, b) => {
+    const t = Math.max(0, Math.min(1, sweepOf(x, y, b, 0.5) * 1.1 - 0.05 + ((p % 100) / 100 - 0.5) * 0.2));
     const c = t < 0.5 ? mix(rgb('#F5C542'), rgb('#E55AA8'), t * 2) : mix(rgb('#E55AA8'), rgb('#7A4BE0'), (t - 0.5) * 2);
     return shaded(c, l);
   },
-  'tempered': (x, y, tone, p, _o, l, part) => {
+  'tempered': (x, y, tone, p, _o, l, part, b) => {
+    if (DEEP_BLUE_PRINTS.includes(p)) return FAMOUS['Deep Blue'](x, y, tone, p, l, b);
     // Case-hardened steel: soft bands of heat tint running across the item,
     // through the print's tint (blue, its pale, straw gold, its pale again).
-    const [a, b, c] = TINTS[temperTint(p)].map(rgb);
+    const [a, bb, c] = TINTS[temperTint(p)].map(rgb);
     // Its darkest parts stay well off black, so a big item keeps its light and dark and never sinks into one blob.
     const s = (across(x, y) * 1.5 + (p % 11) / 11 + part * 0.4) % 1, k = (1 - Math.cos(s * Math.PI * 2)) / 2;
-    const band = s < 0.5 ? mix(a, b, k) : mix(c, b, 1 - k);
+    const band = s < 0.5 ? mix(a, bb, k) : mix(c, bb, 1 - k);
     return toned(band, 0.28 + lit(tone, l) * 0.5, [10, 16, 40]);
   },
-  'nebula': (x, y, tone, p, _o, l, part) => {
+  'nebula': (x, y, tone, p, _o, l, part, b) => {
+    const phase = nebulaPhase(p);
+    if (FAMOUS[phase]) return FAMOUS[phase](x, y, tone, p, l, b);
     // Deep space: two of the phase's colours drifting into each other in soft
     // clouds across the item, dark in its shadows and lit pink in its lights.
     // A part drawn in another colour takes the second one, so it still stands apart.
-    const phase = nebulaPhase(p);
-    const [a, b] = phase === 'Red Giant' ? ['#C8102E', '#FF6A3D'] : phase === 'Blue Moon' ? ['#1E4FE8', '#58B8FF']
-      : phase === 'Black Hole' ? ['#2A1E3A', '#4A2A6A'] : [['#7A2AB8', '#3A3AD0'], ['#3A2AB0', '#8A3AC8'], ['#2A5AC0', '#6A2AB0'], ['#A82A8A', '#4A2AB8']][p % 4];
+    const [a, c] = [['#7A2AB8', '#3A3AD0'], ['#3A2AB0', '#8A3AC8'], ['#2A5AC0', '#6A2AB0'], ['#A82A8A', '#4A2AB8']][p % 4];
     const cloud = Math.min(1, (0.5 + 0.5 * Math.sin(x * 0.5 + p) * Math.cos(y * 0.42 - p * 0.7)) * (1 - part) + part * 0.95);
     // Its darkest parts are the cloud's deep, not black, so a big item keeps its light and dark and never sinks into one blob.
-    const t = 0.2 + lit(Math.pow(tone, 1.1), l) * 0.72, sky = mix(rgb(a), rgb(b), cloud);
+    const t = 0.2 + lit(Math.pow(tone, 1.1), l) * 0.72, sky = mix(rgb(a), rgb(c), cloud);
     return ramp([mix(sky, [8, 6, 22], 0.6), sky, mix(sky, rgb('#FFC4EC'), 0.5), rgb('#FFF0FA')], t);
   },
-  'prism': (x, y, tone, p) => {
-    // One smooth rainbow sweeping corner to corner, the item's own tones
-    // from its shadows to near white, pearly.
-    const h = (across(x, y) * 300 + p * 7) % 360;
+  'prism': (x, y, tone, p, _o, _l, _part, b) => {
+    // One smooth rainbow sweeping corner to corner of the item, the item's own
+    // tones from its shadows to near white, pearly.
+    const h = (sweepOf(x, y, b, 0.8) * 300 + p * 7) % 360;
     return mix(hsl(h, 0.6, 0.3 + 0.58 * tone), [255, 255, 255], 0.14);
   },
-  'negative': (_x, _y, tone, _p, original) => {
-    // A photographic negative: light parts go dark and dark go light, each
-    // in its colour's opposite, pulled towards violet. Kept off the extremes,
-    // so the item still stands clear of its own outline.
-    const { h, s } = hueOf([255 - original[0], 255 - original[1], 255 - original[2]]);
-    return mix(hsl(h, Math.min(0.7, s * 0.8 + 0.15), 0.26 + 0.6 * (1 - tone)), [92, 52, 160], 0.2);
+  'negative': (x, y, tone, p, _o, _l, part, b) => {
+    // A photographic negative, split hard down the item: one side ink, the
+    // other ivory, each with the item's lights and darks swapped, and where
+    // they meet a cyan and a magenta edge, as a print slipped out of register.
+    // A skin's face sits on the ivory side, the split running on above and below it.
+    const d = (x - b.cx) - (y - b.cy) * 0.35 * (p % 2 ? 1 : -1), face = inFace(b, x, y), dark = (d < 0) !== (p % 4 >= 2) && !face;
+    if (d >= -1 && d < 0 && !face) return rgb('#D9468F');
+    if (d >= 0 && d < 1 && !face) return rgb('#3BB8CF');
+    if (dark) return tone < 0.35 ? rgb('#8E88A4') : part > 0.45 ? rgb('#3A3448') : tone > 0.62 ? rgb('#0C0A12') : rgb('#1C1826');
+    return tone > 0.62 ? rgb('#5C566E') : part > 0.45 ? rgb('#CFC8D8') : tone < 0.35 ? rgb('#FFFFFF') : rgb('#F3EDE0');
   },
   // Auras are coloured by ./auras, not here.
   'classic': (_x, _y, _t, _p, original) => original,
@@ -456,7 +612,42 @@ const PAINT: Record<Finish, (x: number, y: number, tone: number, p: number, orig
     const t = 0.1 + tone * 0.82 + Math.max(0, 1 - Math.abs(across(x, y) - 0.42) / 0.16) * 0.12;
     return mix(ramp(GOLD, t), ramp(WHITE_GOLD, t), part * 0.3);
   },
+  // The graphic finishes keep the item's darkest lines in ink, so its drawing still reads under the
+  // pattern, and go pale round a skin's face (`paled`), so the face reads on them.
+  'op': (x, y, tone, p, _o, _l, _part, b) => {
+    // Concentric rings of ink and ivory round the item's middle, a coral dot at its heart; on a skin, round its face.
+    const r = b.eyes === undefined ? Math.hypot(x - b.cx, y - b.cy) : Math.hypot((x - 7.5) * 0.8, y - b.eyes - 0.5);
+    if (tone < 0.15 && !inFace(b, x, y)) return INK_RGB;
+    if (r < 0.75 && b.eyes === undefined) return CORAL;
+    return paled(Math.floor(r + 0.25 + (p % 3) / 3) % 2 ? INK_RGB : IVORY_RGB, b, x, y);
+  },
+  'impossible': (x, y, tone, p, _o, _l, _part, b) => {
+    // Bands of ink, ivory and coral that slope one way on the left and the other
+    // way on the right, half a band out of step where they meet: no one surface could be striped so.
+    if (tone < 0.15 && !inFace(b, x, y)) return INK_RGB;
+    const left = x <= b.cx, s = (y - b.y0) + (left ? x - b.cx : b.cx - x) + (left ? 0 : 1) + (p % 6);
+    return paled([INK_RGB, IVORY_RGB, CORAL][((Math.floor(s / 2) % 3) + 3) % 3], b, x, y);
+  },
+  'grid': (x, y, tone, p, _o, _l, _part, b) => {
+    // Ivory panes cut by ink lines, three of them filled with a primary each; the print sets where.
+    if (tone < 0.15 && !inFace(b, x, y)) return INK_RGB;
+    const v1 = b.x0 + Math.max(1, Math.round((b.w - 1) * (0.3 + (p % 3) * 0.06))), v2 = b.x0 + Math.round((b.w - 1) * (0.64 + ((p >> 2) % 3) * 0.06));
+    const h1 = b.y0 + Math.max(1, Math.round((b.h - 1) * (0.42 + ((p >> 4) % 3) * 0.08)));
+    if (x === v1 || x === v2 || y === h1) return paled(INK_RGB, b, x, y);
+    const pane = (x > v1 ? 1 : 0) + (x > v2 ? 1 : 0) + (y > h1 ? 3 : 0), at = (pane - (p % 6) + 6) % 6;
+    return paled(at === 0 ? PRIMARIES[0] : at === 2 ? PRIMARIES[1] : at === 4 ? PRIMARIES[2] : IVORY_RGB, b, x, y);
+  },
 };
+
+/**
+ * The ink a skin's face takes in a finish that keeps the cells round the face
+ * light (`FACE_WINDOW`): the graphic finishes, Negative and a Black Hole. Undefined in
+ * any other finish, where the face keeps the ink worked out from the skin's
+ * own colour.
+ */
+export function faceInk(o: Owned): string | undefined {
+  return GRAPHIC_FINISHES.includes(o.finish) || o.finish === 'negative' || (o.finish === 'nebula' && nebulaPhase(o.print) === 'Black Hole') ? '#15111C' : undefined;
+}
 
 const PRIMER = rgb('#8B9097');
 
@@ -466,9 +657,10 @@ const PRIMER = rgb('#8B9097');
  */
 export function finishOutline(o: Owned): string | undefined {
   if (o.finish === 'gold') return '#4A2400';
-  if (o.finish === 'nebula') return '#160C30';
+  if (o.finish === 'nebula') return nebulaPhase(o.print) === 'Red Giant' ? '#3A0610' : nebulaPhase(o.print) === 'Blue Moon' ? '#101A4A' : '#160C30';
   if (o.finish === 'prism') return '#2C2048';
-  if (o.finish === 'tempered') return hex(mix(rgb(TINTS[temperTint(o.print)][0]), [8, 10, 26], 0.72));
+  if (o.finish === 'tempered') return DEEP_BLUE_PRINTS.includes(o.print) ? '#030A30' : hex(mix(rgb(TINTS[temperTint(o.print)][0]), [8, 10, 26], 0.72));
+  if (GRAPHIC_FINISHES.includes(o.finish)) return '#17131F';
   return undefined;
 }
 
@@ -477,11 +669,13 @@ export function finishOutline(o: Owned): string | undefined {
  * places fixed by the print, so a copy always wears the same way, and how many
  * show is the scuff. `glint` is set once the first Box Fresh glint has been
  * placed. `tone` is the colour's place among the item's own (`toneOf`); left
- * out, its lightness stands in.
+ * out, its lightness stands in. `box` is where the item sits on the grid
+ * (`ItemBox`); left out, the box its slot usually takes (`boxOf`).
  */
-export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }, tone?: Tone): string {
+export function paintCell(color: string, x: number, y: number, o: Owned, state: { glint: boolean }, tone?: Tone, box?: ItemBox): string {
   const original = rgb(color), l = lum(original);
-  let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - 0.15) / 0.75)), o.print, original, l, tone?.part ?? 0);
+  const item = itemById(o.item), b = measured(box ?? boxOf(o.item), item?.slot === 'skin' ? item.eyes : undefined);
+  let c = PAINT[o.finish](x, y, tone?.tone ?? Math.max(0, Math.min(1, (l - 0.15) / 0.75)), o.print, original, l, tone?.part ?? 0, b);
   // A chip shows more of the primer the more worn the copy is, so a nearly new one is barely flecked.
   if (cellNoise(o.print, x, y, 3) < Math.pow(o.scuff, 0.9) * 0.45) c = mix(c, PRIMER, Math.min(0.75, 0.3 + o.scuff * 0.6));
   c = mix(c, [120, 116, 112], Math.min(0.25, o.scuff * 0.3));

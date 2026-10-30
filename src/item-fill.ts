@@ -41,7 +41,7 @@ export const FILL_FLOORS: Record<FillSlot, { pixels: number; short: number; long
 
 /** The heads a hat is measured on: round, tall, wide, pointed and the ghost, as the item sheet shows them. */
 const HAT_HEADS = ['round', 'tower', 'chonk', 'gumdrop', 'ghost'].map(n => heads.findIndex(h => h.name === n));
-const BARE: AvatarConfig = { head: 0, eyes: 0, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, palette: 0, shade: 1, flip: false };
+const BARE: AvatarConfig = { head: 0, eyes: 0, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, palette: 0, shade: 1, flip: false, rotation: 0 };
 
 const measure = (cells: [number, number][]): Fill => {
   if (!cells.length) return { width: 0, height: 0, pixels: 0 };
