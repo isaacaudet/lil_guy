@@ -296,6 +296,14 @@ only while something moves. `hop(name)` when a chatter guesses, `wave(true)` for
 A guy wearing a Prized copy or better is outlined in its grade's colour (`crowdShine`), so rare guys
 show from the back. Made-up guys in a crowd wear nothing: no pet shop items, no buddies.
 
+For a crowd that should feel like an event, `createStadium(canvas, { wave, onVenue })` takes the same
+`add`, `remove`, `hop` and `spotlight` and puts the crowd in a venue that grows with it: the porch (up to
+20), the bleachers (50), the gym (100), the hall (200), the arena (1,000), the stadium (5,000) and the
+bowl (beyond). Seats fill from the front row all the way round, and the venue changes as people come and
+go. Only who a game adds is there. A game that only draws crowds loads `/lilguys-stadium.mjs` (or
+`/lilguys-stadium.js`, `window.LilGuyStadium`): the crowd and stadium alone, about 63 KB gzipped, a third
+of the whole library.
+
 For a page that isn't a game, the Worker draws a still crowd: `GET /api/club/crowd.png?names=a,b,c`
 with `w` and `h` (world pixels, up to 480 × 240), `fill` (plain made-up guys behind, up to 4,000),
 `scale` (1 to 4) and `bg` (a hex colour). Named guys stand at the front middle as they are on the

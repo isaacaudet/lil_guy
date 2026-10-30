@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-P7QiUd6I.js";
+import { AURAS, AURA_ODDS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, unlockWeight, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-CulyJ1Ta.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -591,12 +591,12 @@ const LIVE_EYE_TOKENS = [
 	T.GOLD,
 	T.GOLD_SHADE
 ];
-/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and shoujo eyes, which glisten. */
+/** Eyes that move: the chase eyes, one guy in hundreds, so they should look it; and starry eyes, which glisten. */
 const LIVE_EYES = new Map([
 	"galaxy",
 	"diamond",
 	"dragon",
-	"shoujo"
+	"starry"
 ].map((n) => [eyes.findIndex((e) => e.name === n), n]));
 const hue = (h, s, l) => {
 	const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -616,7 +616,7 @@ function luckyShimmer(layer, t, seed) {
 		if (d < 3) cell.c = mix$3(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, .95, .68), d < 1.2 ? .6 : .3);
 	}));
 }
-/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, shoujo eyes glisten. */
+/** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. */
 function liveEyes(layer, kind, t, seed) {
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		if (!cell?.eye) return;
@@ -631,7 +631,7 @@ function liveEyes(layer, kind, t, seed) {
 		} else if (kind === "dragon") {
 			const flash = cycle(t + seed, 2e3) * fit(2e3) < 160;
 			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$3(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
-		} else if (kind === "shoujo") {
+		} else if (kind === "starry") {
 			const ms = cycle(t + seed, 2400) * fit(2400);
 			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$3(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
 		}
@@ -1020,7 +1020,7 @@ const POSES = [
 	"huff",
 	"oops"
 ];
-const MANGA_BLUSH = cheeks.findIndex((c) => c.name === "manga blush");
+const MANGA_BLUSH = cheeks.findIndex((c) => c.name === "big blush");
 /**
 * The guy as he is drawn into his poses: dressed, without the frame and aura
 * (drawn round him per frame) or a Gold finish's mark (a sparkle, drawn per
@@ -2142,7 +2142,7 @@ const FOOT_NAMES = [
 	"tucked"
 ];
 /**
-* A part's chance. A part no deal gives (the capsule-only anime set) counts
+* A part's chance. A part no deal gives (the capsule-only set) counts
 * as if it were dealt at its capsule weight, so a look wearing one stays a
 * number; every dealt part's chance is as it was.
 */
@@ -2725,7 +2725,7 @@ const SLOT_WORD = {
 };
 /**
 * The rare parts in a slot, the ones a picker locks: what a capsule can
-* unlock. The parts no deal gives (`CAPSULE_ONLY`, the anime set) are among them.
+* unlock. The parts no deal gives (`CAPSULE_ONLY`, the capsule-only set) are among them.
 */
 function rareParts(slot) {
 	const weights = SLOTS.find((s) => s[1] === slot)[2];
@@ -6464,7 +6464,7 @@ function chunk(type, data) {
 * when they use 256 colours or fewer, which pixel art nearly always does and
 * which packs several times smaller, else full RGBA.
 */
-function layout(frames) {
+function layout$1(frames) {
 	const key = (px, i) => px[i + 3] < 128 ? -1 : px[i] << 16 | px[i + 1] << 8 | px[i + 2];
 	const index = new Map([[-1, 0]]);
 	for (const px of frames) for (let i = 0; i < px.length && index.size <= 256; i += 4) {
@@ -6500,7 +6500,7 @@ function crop(rgba, W$1, x, y, w, h) {
 async function png(input, scale$1, animated) {
 	const W$1 = input.width * scale$1, H$1 = input.height * scale$1;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
-	const { indexed, colours, rows } = layout(frames);
+	const { indexed, colours, rows } = layout$1(frames);
 	const head = new Uint8Array([
 		...u32(W$1),
 		...u32(H$1),
@@ -10361,18 +10361,24 @@ function crowdSprite(spec, size, options = {}) {
 		...config,
 		palette: spec.palette
 	}) : paletteOf(config);
-	const colors = withItems(base, config).colors;
-	const drawn = size === 16 ? grid.map((row) => row.map((t) => t ? colors[t] ?? null : null)) : shrink(grid, colors, MAKE[size]);
+	const palette$1 = withItems(base, config), colors = palette$1.colors;
+	const painted$2 = paint(grid, {
+		...config,
+		aura: void 0
+	}, palette$1, false, true);
+	const drawn = size === 16 ? painted$2.map((row) => [...row]) : shrink(grid, colors, MAKE[size], painted$2);
 	const lit = drawn.map((row) => row.some(Boolean)), first = lit.indexOf(true), last = lit.lastIndexOf(true);
 	const cells = first < 0 ? [] : drawn.slice(first, last + 1);
 	const shine = options.shine === false ? null : crowdShine(spec);
 	if (shine && cells.length) {
-		const ink = colors[T.OUTLINE];
-		if (size === 16 || size >= 6) {
-			for (const row of cells) for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = shine.color;
-		} else {
+		const ink = colors[T.OUTLINE], aura = auraById(config.aura);
+		const edge = (i, j) => aura ? aura.colors[(i + j) % aura.colors.length] : shine.color;
+		if (size === 16 || size >= 6) cells.forEach((row, j) => {
+			for (let i = 0; i < row.length; i++) if (row[i] === ink && isEdge(cells, row, i)) row[i] = edge(i, j);
+		});
+		else {
 			const top = cells[0], mid = top.findIndex(Boolean) + Math.floor(top.filter(Boolean).length / 2);
-			top[Math.max(0, mid)] = shine.color;
+			top[Math.max(0, mid)] = aura ? aura.colors[0] : shine.color;
 		}
 	}
 	const rgba = new Uint8ClampedArray(size * size * 4);
@@ -10416,7 +10422,7 @@ function isEdge(cells, row, i) {
 	const j = cells.indexOf(row);
 	return SIDES.some(([dx, dy]) => !cells[j + dy]?.[i + dx]);
 }
-function shrink(grid, colors, make) {
+function shrink(grid, colors, make, painted$2) {
 	const S = grid.length, ink = colors[T.OUTLINE];
 	const isOutline = (t) => t === T.OUTLINE || colors[t] !== void 0 && colors[t] === ink;
 	let x0 = S, x1 = -1, y0 = S, y1 = -1;
@@ -10444,7 +10450,7 @@ function shrink(grid, colors, make) {
 			const t = grid[y]?.[x];
 			if (a <= 0 || !t || isOutline(t)) continue;
 			cover += a;
-			const c = colors[t];
+			const c = painted$2[y]?.[x] ?? colors[t];
 			if (!FACE.has(t) && c) weight.set(c, (weight.get(c) ?? 0) + a);
 		}
 		if (cover < k * k * .45) continue;
@@ -10602,7 +10608,7 @@ function createCrowd(canvas, options = {}) {
 		const sheet = sheets.get(size)[Math.floor(at / (SHEET_COLUMNS * SHEET_ROWS))], cell = at % (SHEET_COLUMNS * SHEET_ROWS);
 		ctx.drawImage(sheet.canvas, cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size, size, size, x, y, size * scale$1, size * scale$1);
 	}
-	function layout$1() {
+	function layout$2() {
 		const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
 		const z = options.scale ?? (w >= 900 ? 3 : 2);
 		dpr = globalThis.devicePixelRatio || 1;
@@ -10687,7 +10693,7 @@ function createCrowd(canvas, options = {}) {
 	const wake = () => {
 		if (!frame && !gone) frame = requestAnimationFrame(draw);
 	};
-	layout$1();
+	layout$2();
 	return {
 		add(name, guy = {}) {
 			const key = name.toLowerCase();
@@ -10736,7 +10742,7 @@ function createCrowd(canvas, options = {}) {
 			wake();
 		},
 		resize() {
-			layout$1();
+			layout$2();
 			wake();
 		},
 		destroy() {
@@ -10797,6 +10803,507 @@ function crowdPicture(guys, width, height, options = {}) {
 		}
 	}
 	return rgba;
+}
+
+//#endregion
+//#region src/stadium.ts
+/** The venues, smallest first: who fits, and how big the picture of it is in world pixels. */
+const VENUES = [
+	{
+		id: "porch",
+		name: "The porch",
+		upTo: 20
+	},
+	{
+		id: "bleachers",
+		name: "The bleachers",
+		upTo: 50
+	},
+	{
+		id: "gym",
+		name: "The gym",
+		upTo: 100
+	},
+	{
+		id: "hall",
+		name: "The hall",
+		upTo: 200
+	},
+	{
+		id: "arena",
+		name: "The arena",
+		upTo: 1e3
+	},
+	{
+		id: "stadium",
+		name: "The stadium",
+		upTo: 5e3
+	},
+	{
+		id: "bowl",
+		name: "The bowl",
+		upTo: 12e3
+	}
+];
+/** The venue for `count` people: the smallest that seats them all (the bowl past its size). */
+const venueFor = (count$1) => (VENUES.find((v) => count$1 <= v.upTo) ?? VENUES[VENUES.length - 1]).id;
+const SIZES = [
+	2,
+	4,
+	6,
+	8,
+	10,
+	16
+];
+const sizeNear = (px) => SIZES.reduce((best, s) => Math.abs(s - px) < Math.abs(best - px) ? s : best, SIZES[0]);
+/**
+* Every venue: one grandstand round the far side of a floor, a backdrop a game stands in front of. All
+* 16:9; the bigger the crowd, the more rows and the further back the camera, so the guys are smaller.
+* Rows bow away from you in the middle and come round toward you at the ends; `breaks` are the
+* walkways between tiers.
+*/
+const STANDS = {
+	porch: {
+		W: 200,
+		rows: 2,
+		a: 150,
+		da: 0,
+		b: 4,
+		db: 0,
+		rise: 13,
+		front: 16,
+		back: 16,
+		breaks: [],
+		floor: "#6b4a33",
+		sky: "#1c2238",
+		concrete: "#5a3d2a",
+		rail: "#8a5f3e",
+		lights: 0
+	},
+	bleachers: {
+		W: 256,
+		rows: 5,
+		a: 150,
+		da: 4,
+		b: 12,
+		db: 1,
+		rise: 9,
+		front: 16,
+		back: 10,
+		breaks: [],
+		floor: "#2f7a43",
+		sky: "#1e2a44",
+		concrete: "#4c566b",
+		rail: "#9aa6b8",
+		lights: 0
+	},
+	gym: {
+		W: 320,
+		rows: 8,
+		a: 170,
+		da: 5,
+		b: 26,
+		db: 2,
+		rise: 7,
+		front: 10,
+		back: 8,
+		breaks: [],
+		floor: "#c58b4f",
+		sky: "#2a2433",
+		concrete: "#3d3548",
+		rail: "#7a6a8e",
+		lights: 0
+	},
+	hall: {
+		W: 384,
+		rows: 12,
+		a: 190,
+		da: 6,
+		b: 46,
+		db: 3,
+		rise: 6,
+		front: 10,
+		back: 8,
+		breaks: [],
+		floor: "#3b2f4f",
+		sky: "#181d2e",
+		concrete: "#2c2a40",
+		rail: "#ff7a5c",
+		lights: 0
+	},
+	arena: {
+		W: 512,
+		rows: 22,
+		a: 230,
+		da: 7,
+		b: 78,
+		db: 3,
+		rise: 4.6,
+		front: 8,
+		back: 6,
+		breaks: [13],
+		floor: "#1d4f8a",
+		sky: "#141826",
+		concrete: "#29314a",
+		rail: "#5b6478",
+		lights: 2
+	},
+	stadium: {
+		W: 768,
+		rows: 36,
+		a: 320,
+		da: 8,
+		b: 120,
+		db: 3.4,
+		rise: 3.7,
+		front: 6,
+		back: 4,
+		breaks: [16],
+		floor: "#1f6b3e",
+		sky: "#10131f",
+		concrete: "#262d42",
+		rail: "#5b6478",
+		lights: 4
+	},
+	bowl: {
+		W: 1024,
+		rows: 56,
+		a: 400,
+		da: 9,
+		b: 160,
+		db: 3.2,
+		rise: 3.1,
+		front: 6,
+		back: 2,
+		breaks: [18, 37],
+		floor: "#1f6b3e",
+		sky: "#0d1019",
+		concrete: "#232a3e",
+		rail: "#5b6478",
+		lights: 6
+	}
+};
+/** How far up row `r` sits: its rise, and a walkway's worth more past each break. */
+const liftOf = (g, r) => r * g.rise + g.breaks.filter((k) => k <= r).length * g.rise * 2.5;
+/** How far back the curve bows at `x` for row `r`: 1 in the middle, 0 at its ends and past them. */
+const bowOf = (g, cx, r, x) => {
+	const u = Math.min(1, Math.abs(x - cx) / (g.a + r * g.da));
+	return Math.sqrt(1 - u * u);
+};
+/** Every venue's seats and its picture, in world pixels. */
+function layout(id) {
+	const g = STANDS[id], W$1 = g.W, H$1 = Math.round(W$1 * 9 / 16), cx = W$1 / 2;
+	const floorY = Math.round(H$1 * .84), wall = Math.max(3, Math.round(H$1 * .025)), baseY = floorY - wall;
+	const seats = [];
+	const shrink$1 = .3 * Math.min(1, g.b / (H$1 * .3));
+	const yOf = (r, x) => baseY - (g.b + r * g.db) * bowOf(g, cx, r, x) - liftOf(g, r);
+	for (let r = 0; r < g.rows; r++) {
+		const px = g.front + (g.back - g.front) * (g.rows > 1 ? r / (g.rows - 1) : 0);
+		for (let x = r * 3 % 5; x < W$1;) {
+			const size = sizeNear(px * (1 - shrink$1 * bowOf(g, cx, r, x)));
+			const y = Math.round(yOf(r, x + size / 2) - size);
+			if (x + size <= W$1 && y >= 0) seats.push({
+				x,
+				y,
+				size,
+				row: r
+			});
+			x += Math.max(2, Math.round(size * .92));
+		}
+	}
+	const colours = [
+		"#e8792f",
+		"#2e8c8a",
+		"#4e7fb3",
+		"#c2403f",
+		"#3fa35b",
+		"#7d4fa6",
+		"#e36a8e",
+		"#e7b53b",
+		"#8a93a0"
+	];
+	return {
+		width: W$1,
+		height: H$1,
+		seats,
+		paint: (p) => {
+			p.rect(0, 0, W$1, H$1, g.sky);
+			const top = g.rows - 1, back = (x) => Math.round(yOf(top, x) - g.back * 1.5);
+			for (let x = 0; x < W$1; x++) {
+				const y0 = Math.max(0, back(x));
+				p.rect(x, y0, 1, floorY - y0, g.concrete);
+				for (const k of g.breaks) p.rect(x, Math.round(yOf(k, x) + 1), 1, 1, g.rail);
+				const yw = Math.round(yOf(0, x)) + 1;
+				p.rect(x, yw, 1, 1, g.rail);
+				p.rect(x, yw + 1, 1, wall, colours[Math.floor(x / Math.max(16, W$1 / 12)) % colours.length]);
+				p.rect(x, yw + 1 + wall, 1, H$1 - yw - 1 - wall, g.floor);
+				if (g.floor === "#1f6b3e" && Math.floor(x / Math.max(12, W$1 / 24)) % 2) p.rect(x, yw + 1 + wall, 1, H$1 - yw - 1 - wall, "#237646");
+			}
+			for (let i = 0; i < g.lights; i++) {
+				const x = Math.round(W$1 * (i + .5) / g.lights), y = Math.max(4, back(x) - 30);
+				p.rect(x, y, 2, 30, "#3a4258");
+				p.rect(x - 6, y - 2, 14, 4, "#fff3c4");
+			}
+			if (id === "porch") for (let i = 0; i < 12; i++) p.rect(8 + i * 16, 10 + i % 2 * 2, 2, 2, [
+				"#ffd45c",
+				"#ff8a8a",
+				"#8fd8ff"
+			][i % 3]);
+		}
+	};
+}
+/**
+* The seats of venue `id`, in the order they fill: the front row first, all the way round, from the
+* middle of the near side out, then the row behind, so a part-full venue is full at the front.
+*/
+function stadiumSeats(id) {
+	const l = layout(id);
+	const mid = l.width / 2;
+	return [...l.seats].sort((p, q) => p.row - q.row || q.size - p.size || Math.abs(p.x - mid) - Math.abs(q.x - mid));
+}
+/**
+* A stadium on `canvas` (sized with CSS). Guys are seated best seats first in the order they arrive; when
+* the venue changes they take their places in the new one, the old venue fading out under it.
+*/
+function createStadium(canvas, options = {}) {
+	const ctx = canvas.getContext("2d");
+	const fans = [], byKey = new Map();
+	let venue = "porch", seats = stadiumSeats(venue), lay = layout(venue), backdrop = paintVenue(lay);
+	let fading = null;
+	let waving = !!options.wave, frame = 0, gone = false, dpr = 1, k = 1, ox = 0, oy = 0;
+	let lit = null;
+	let order = null;
+	const sprites = new Map(), queue = [], queued = new Set();
+	function paintVenue(l) {
+		const c = document.createElement("canvas");
+		c.width = l.width;
+		c.height = l.height;
+		const g = c.getContext("2d");
+		const span = (a, b$1, y) => Math.round(a * Math.sqrt(Math.max(0, 1 - (y / b$1) ** 2)));
+		l.paint({
+			rect: (x, y, w, h, col) => {
+				g.fillStyle = col;
+				g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+			},
+			oval: (cx, cy, a, b$1, col) => {
+				g.fillStyle = col;
+				for (let y = -b$1; y <= b$1; y++) {
+					const w = span(a, b$1, y);
+					g.fillRect(Math.round(cx - w), Math.round(cy + y), w * 2, 1);
+				}
+			},
+			stripes: (cx, cy, a, b$1, w, col) => {
+				g.fillStyle = col;
+				for (let y = -b$1; y <= b$1; y++) {
+					const half = span(a, b$1, y);
+					for (let x = -half; x < half; x++) if (Math.floor((x + 1e4 * w) / w) % 2) g.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1);
+				}
+			}
+		});
+		return c;
+	}
+	function layoutCanvas() {
+		const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
+		dpr = globalThis.devicePixelRatio || 1;
+		canvas.width = Math.max(1, Math.round(w * dpr));
+		canvas.height = Math.max(1, Math.round(h * dpr));
+		k = Math.max(1, Math.floor(Math.min(canvas.width / lay.width, canvas.height / lay.height)));
+		ox = Math.round((canvas.width - lay.width * k) / 2);
+		oy = Math.round((canvas.height - lay.height * k) / 2);
+	}
+	function reseat() {
+		const next = venueFor(fans.length);
+		if (next === venue) return;
+		fading = {
+			picture: backdrop,
+			until: performance.now() + 900
+		};
+		venue = next;
+		seats = stadiumSeats(venue);
+		lay = layout(venue);
+		backdrop = paintVenue(lay);
+		order = null;
+		layoutCanvas();
+		options.onVenue?.(venue);
+	}
+	function sprite(f, size) {
+		const key = f.key + ":" + size, have = sprites.get(key);
+		if (!have && !queued.has(key)) {
+			queued.add(key);
+			queue.push([f, size]);
+		}
+		return have;
+	}
+	function make(f, size) {
+		const key = f.key + ":" + size;
+		queued.delete(key);
+		if (sprites.has(key) || !byKey.has(f.key)) return;
+		const s = crowdSprite(f.spec, size), c = document.createElement("canvas");
+		c.width = c.height = size;
+		c.getContext("2d").putImageData(new ImageData(s.rgba, size, size), 0, 0);
+		sprites.set(key, c);
+	}
+	function draw(now) {
+		frame = 0;
+		if (gone) return;
+		const budget = performance.now() + 5;
+		while (queue.length && performance.now() < budget) {
+			const [f, size] = queue.shift();
+			make(f, size);
+		}
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.fillStyle = "#0b0e18";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.setTransform(k, 0, 0, k, ox, oy);
+		ctx.imageSmoothingEnabled = false;
+		ctx.drawImage(backdrop, 0, 0);
+		if (fading) {
+			const left = (fading.until - now) / 900;
+			if (left <= 0) fading = null;
+			else {
+				ctx.globalAlpha = left;
+				ctx.drawImage(fading.picture, 0, 0, lay.width, lay.height);
+				ctx.globalAlpha = 1;
+			}
+		}
+		const shown = order ??= fans.slice(0, seats.length).map((f, i) => [f, seats[i]]).sort((p, q) => p[1].y + p[1].size - (q[1].y + q[1].size));
+		const wave$1 = now / 7e3 % 1 * (lay.width + 80) - 40;
+		for (const [f, seat] of shown) {
+			if (lit?.fan === f) continue;
+			const s = sprite(f, seat.size) ?? smaller(f, seat.size);
+			if (!s) continue;
+			let dy = 0;
+			if (waving) {
+				const d = Math.abs(seat.x - wave$1);
+				if (d < 30) dy -= Math.round((1 - d / 30) * Math.max(1, seat.size * .45));
+			}
+			const since = now - f.hopAt;
+			if (since < 400) dy -= Math.round(Math.sin(since / 400 * Math.PI) * Math.max(1, seat.size / 4));
+			const arrive = Math.min(1, (now - f.joined) / 500);
+			if (arrive < 1) {
+				ctx.globalAlpha = arrive;
+				dy -= Math.round((1 - arrive) * seat.size * .6);
+			}
+			ctx.drawImage(s, seat.x, seat.y + dy, seat.size, seat.size);
+			ctx.globalAlpha = 1;
+			if (f.glint && (now / 90 + hash(f.key) % 97) % 60 < 2) {
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect(seat.x + seat.size - 1, seat.y + dy - 1, 1, 1);
+			}
+		}
+		if (lit) spot(now);
+		if (waving || lit || fading || queue.length || fans.some((f) => now - f.hopAt < 400 || now - f.joined < 500)) frame = requestAnimationFrame(draw);
+	}
+	function smaller(f, size) {
+		for (const s of [...SIZES].reverse()) if (s < size && sprites.has(f.key + ":" + s)) return sprites.get(f.key + ":" + s);
+		return void 0;
+	}
+	function spot(now) {
+		const { fan, label, from, until } = lit;
+		if (now >= until) {
+			lit = null;
+			return;
+		}
+		const big = sprite(fan, 16);
+		if (!big) return;
+		const rise = Math.min(1, (now - from) / 350, (until - now) / 350), ease = 1 - Math.pow(1 - rise, 3);
+		const scale$1 = Math.max(2, Math.min(5, Math.floor(lay.height / 40))), side = 16 * scale$1;
+		ctx.fillStyle = `rgba(11,14,24,${.55 * ease})`;
+		ctx.fillRect(0, 0, lay.width, lay.height);
+		const x = Math.round((lay.width - side) / 2), y = Math.round(lay.height - (side + 14) * ease);
+		ctx.drawImage(big, x, y, side, side);
+		if (label) {
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			const css = k / dpr, cx = ox / dpr + lay.width * css / 2, cy = oy / dpr + (y + side + 1) * css + 12;
+			ctx.font = options.font ?? "700 15px system-ui, sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			const tw = Math.ceil(ctx.measureText(label).width) + 20;
+			ctx.fillStyle = "rgba(11,14,24,.92)";
+			ctx.beginPath();
+			ctx.roundRect(cx - tw / 2, cy - 13, tw, 26, 13);
+			ctx.fill();
+			ctx.fillStyle = "#ffffff";
+			ctx.fillText(label, cx, cy + 1);
+		}
+	}
+	const wake = () => {
+		if (!frame && !gone) frame = requestAnimationFrame(draw);
+	};
+	layoutCanvas();
+	return {
+		add(name, guy = {}) {
+			const key = name.toLowerCase();
+			if (byKey.has(key)) return;
+			const spec = {
+				...guy,
+				seed: guy.seed ?? key
+			};
+			const f = {
+				key,
+				spec,
+				joined: performance.now(),
+				hopAt: -1e9,
+				glint: (crowdShine(spec)?.grade ?? 0) >= 3
+			};
+			fans.push(f);
+			byKey.set(key, f);
+			order = null;
+			reseat();
+			wake();
+		},
+		remove(name) {
+			const f = byKey.get(name.toLowerCase());
+			if (!f) return;
+			byKey.delete(f.key);
+			fans.splice(fans.indexOf(f), 1);
+			order = null;
+			for (const s of SIZES) sprites.delete(f.key + ":" + s);
+			reseat();
+			wake();
+		},
+		has: (name) => byKey.has(name.toLowerCase()),
+		hop(name) {
+			const f = byKey.get(name.toLowerCase());
+			if (f) {
+				f.hopAt = performance.now();
+				wake();
+			}
+		},
+		wave(on) {
+			waving = on;
+			wake();
+		},
+		spotlight(name, label, ms = 2600) {
+			const f = byKey.get(name.toLowerCase());
+			if (!f) return;
+			const now = performance.now();
+			lit = {
+				fan: f,
+				label: label ?? name,
+				from: now,
+				until: now + ms
+			};
+			wake();
+		},
+		resize() {
+			layoutCanvas();
+			wake();
+		},
+		destroy() {
+			gone = true;
+			if (frame) cancelAnimationFrame(frame);
+			sprites.clear();
+			fans.length = 0;
+			byKey.clear();
+		},
+		get count() {
+			return fans.length;
+		},
+		get venue() {
+			return venue;
+		}
+	};
 }
 
 //#endregion
@@ -10881,5 +11388,5 @@ function nameKey(typed) {
 const nameSkeleton = (key) => key.replace(/_/g, "");
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, OG_HEIGHT, OG_WIDTH, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ogFrames, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, siteOgFrames, slotOf, smeltValue, special, squashRows, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, OG_HEIGHT, OG_WIDTH, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, VENUES, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ogFrames, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, siteOgFrames, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, useAvatarContext, useMergeRefs, venueFor, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

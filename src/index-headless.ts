@@ -60,3 +60,4 @@ export { NAME_KEY, nameKey, nameSkeleton } from './name-key';
 export { crowdSprite, crowdSheet, crowdShine, CROWD_SIZES, type CrowdSize, type CrowdSprite, type CrowdShine } from './crowd';
 export { createCrowd, crowdSeats, crowdPicture, type Crowd, type CrowdOptions, type CrowdGuy, type CrowdSeat } from './crowd-stage';
 export { emoteFrames, EMOTE_SET, EMOTE_SIZE, isEmote } from './emotes';
+export { createStadium, stadiumSeats, venueFor, VENUES, type Stadium, type StadiumOptions, type StadiumSeat, type VenueId } from './stadium';
