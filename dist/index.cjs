@@ -579,10 +579,10 @@ const rgb$3 = (h) => [
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
-const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$3 = (a, b$1, t) => {
+const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$4 = (a, b$1, t) => {
 	const x = rgb$3(a), y = rgb$3(b$1);
-	return hex([
+	return hex$1([
 		0,
 		1,
 		2
@@ -720,14 +720,14 @@ function liveEyes(layer, kind, t, seed, body) {
 			}
 		} else if (kind === "diamond") {
 			const at = require_paint.cycle(t + seed, 1400) * 24 - 4, d = Math.abs(x - y * .5 - at);
-			if (k !== require_paint.T.EYE) cell.c = mix$3(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / require_paint.wave(250) + x));
-			if (d < 1.5) cell.c = mix$3(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
+			if (k !== require_paint.T.EYE) cell.c = mix$4(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / require_paint.wave(250) + x));
+			if (d < 1.5) cell.c = mix$4(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
 		} else if (kind === "dragon") {
 			const flash = require_paint.cycle(t + seed, 2e3) * require_paint.fit(2e3) < 160;
-			if (k === require_paint.T.GOLD || k === require_paint.T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$3(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / require_paint.wave(260))));
+			if (k === require_paint.T.GOLD || k === require_paint.T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$4(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / require_paint.wave(260))));
 		} else if (kind === "starry") {
 			const ms = require_paint.cycle(t + seed, 2400) * require_paint.fit(2400);
-			if ((k === require_paint.T.ACCENT || k === require_paint.T.ACCENT_SHADE) && ms < 360) cell.c = mix$3(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
+			if ((k === require_paint.T.ACCENT || k === require_paint.T.ACCENT_SHADE) && ms < 360) cell.c = mix$4(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
 		}
 	}));
 }
@@ -793,10 +793,10 @@ function hopLift([period, phase, double], t) {
 	return f < 160 || double && f >= 260 && f < 400 ? 1 : 0;
 }
 function shift(layer, dx, dy) {
-	const W = layer[0].length, out = empty(W);
+	const W$1 = layer[0].length, out = empty(W$1);
 	layer.forEach((row, y) => row.forEach((cell, x) => {
 		const nx = x + dx, ny = y + dy;
-		if (cell && nx >= 0 && ny >= 0 && nx < W && ny < FRAME_HEIGHT) out[ny][nx] = cell;
+		if (cell && nx >= 0 && ny >= 0 && nx < W$1 && ny < FRAME_HEIGHT) out[ny][nx] = cell;
 	}));
 	return out;
 }
@@ -866,7 +866,7 @@ function sparkleRun(layer, spots, at, period, life, salt, colors, shape = requir
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
 const sparkleIn = (color) => [
 	"#FFFFFF",
-	mix$3(color, "#FFFFFF", .45),
+	mix$4(color, "#FFFFFF", .45),
 	color
 ];
 /** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
@@ -1117,7 +1117,7 @@ function legible(c) {
 	const l = luminance(c), toward = l > RING_LIGHTEST ? "#000000" : l < RING_DARKEST ? "#FFFFFF" : null;
 	if (!toward) return c;
 	for (let i = 1; i <= 20; i++) {
-		const m = mix$3(c, toward, i / 20), lm = luminance(m);
+		const m = mix$4(c, toward, i / 20), lm = luminance(m);
 		if (lm >= RING_DARKEST && lm <= RING_LIGHTEST) return m;
 	}
 	return c;
@@ -1162,7 +1162,7 @@ function ringColours(grade, aura, copy) {
 	if (grade < 2) return null;
 	const color = require_paint.GRADES[grade].color;
 	return {
-		colors: grade === 4 ? ["#FFE27A", "#E4AE39"] : [color, mix$3(color, "#000000", .35)],
+		colors: grade === 4 ? ["#FFE27A", "#E4AE39"] : [color, mix$4(color, "#000000", .35)],
 		bands: false
 	};
 }
@@ -1515,7 +1515,7 @@ function squashRows(input, options = {}) {
 function animate(input, move, options = {}) {
 	const { config, figure, grid } = poser(input, options);
 	const palette$1 = require_paint.withItems(options.palette ?? require_paint.paletteOf(config), config);
-	const alone = require_paint.buddyAlone(config), W = alone?.[0].length ?? FRAME_WIDTH;
+	const alone = require_paint.buddyAlone(config), W$1 = alone?.[0].length ?? FRAME_WIDTH;
 	const wornAura = auraOf(config);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
@@ -1526,21 +1526,21 @@ function animate(input, move, options = {}) {
 	const layers = new Map();
 	const layerOf = (pose) => {
 		if (!layers.has(pose)) {
-			const layer = painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null, W), looks = GLANCES[pose];
+			const layer = painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? require_paint.faceOf(figure) : null, W$1), looks = GLANCES[pose];
 			if (looks) keepShine(layer, layerOf(looks[0]), grid(looks[0]), config, looks[1]);
 			layers.set(pose, layer);
 		}
 		return layers.get(pose);
 	};
 	const buddyCells = [];
-	if (alone) painted$1(alone, config, palette$1, !!options.small, null, W).forEach((row, y) => row.forEach((cell, x) => {
+	if (alone) painted$1(alone, config, palette$1, !!options.small, null, W$1).forEach((row, y) => row.forEach((cell, x) => {
 		if (cell) buddyCells.push([
 			x,
 			y,
 			cell
 		]);
 	}));
-	const backdrop = backdropColors(config, palette$1, 0, 0, W, FRAME_HEIGHT);
+	const backdrop = backdropColors(config, palette$1, 0, 0, W$1, FRAME_HEIGHT);
 	const copies = Object.entries(config.owned ?? {}).filter(([slot, o]) => o && slot !== "aura").map(([, o]) => o);
 	const grade = options.rarity === false || !copies.length ? -1 : Math.max(...copies.map((o) => require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id)));
 	const gradeColor = grade >= 0 ? require_paint.GRADES[grade].color : "#FFFFFF";
@@ -1589,7 +1589,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 && !wornAura ? [mix$3(gradeColor, "#000000", .2), mix$3(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix$4(gradeColor, "#000000", .2), mix$4(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -1621,12 +1621,12 @@ function animate(input, move, options = {}) {
 		behind.unshift(figure$1);
 		behind.length = Math.min(behind.length, 2);
 		if (grade >= 1) {
-			const at = require_paint.cycle(t$1 + phase, 1600) * (W + FRAME_HEIGHT + 8) - 4;
+			const at = require_paint.cycle(t$1 + phase, 1600) * (W$1 + FRAME_HEIGHT + 8) - 4;
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
-				if (d < 1) cell.c = mix$3(cell.c, "#FFFFFF", .65);
-				else if (d < 2) cell.c = mix$3(cell.c, "#FFFFFF", .25);
+				if (d < 1) cell.c = mix$4(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix$4(cell.c, "#FFFFFF", .25);
 			}));
 		}
 		if (lucky) luckyShimmer(layer, require_paint.tick(t$1, LUCKY_BEAT));
@@ -1646,7 +1646,7 @@ function animate(input, move, options = {}) {
 			const copy = config.owned?.aura, mask = layer.map((row) => row.map(Boolean));
 			for (const [x, y, k] of require_paint.auraCells(wornAura.id, mask, t$1, copy, AURA_PAD)) {
 				const c = copy ? require_paint.auraColor(wornAura.id, k, copy.finish, x, y, t$1 + copy.print * 37, copy.print) : wornAura.colors[k];
-				if (x < 0 || x >= W) outside.push([
+				if (x < 0 || x >= W$1) outside.push([
 					x,
 					y,
 					c
@@ -1687,7 +1687,7 @@ function animate(input, move, options = {}) {
 	const frames = loop ? all.filter((_, i) => slices[i].lap > 0) : all;
 	return {
 		move,
-		width: W,
+		width: W$1,
 		height: FRAME_HEIGHT,
 		frames,
 		duration: frames.reduce((n, f) => n + f.ms, 0),
@@ -3431,7 +3431,7 @@ const smoothstep = (a, b$1, x) => {
 	return t * t * (3 - 2 * t);
 };
 const distance = (a, b$1) => Math.hypot(a[0] - b$1[0], a[1] - b$1[1]);
-const mix$2 = (a, b$1, t) => [
+const mix$3 = (a, b$1, t) => [
 	a[0] + (b$1[0] - a[0]) * t,
 	a[1] + (b$1[1] - a[1]) * t,
 	a[2] + (b$1[2] - a[2]) * t
@@ -3482,13 +3482,13 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
 	if (finish < 1.5) {
 		const s = .5 + .5 * Math.sin(d * .8 - time * TAU$2 / 2 + print);
-		return add(mix$2(c, add(scale(c, [
+		return add(mix$3(c, add(scale(c, [
 			.86,
 			.96,
 			1.18
 		]), .08), .4 * s * coat), b$1 * .5 * coat);
 	}
-	if (finish < 2.5) return add(mix$2(c, add(scale(c, [
+	if (finish < 2.5) return add(mix$3(c, add(scale(c, [
 		.9,
 		.98,
 		1.1
@@ -3500,7 +3500,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	if (finish < 3.5) {
 		const shifted = hueShift(c, .32 * Math.sin(time * TAU$2 / 6 + d * .12 + fract(print * .618) * TAU$2) * coat);
 		const s = Math.max(0, Math.sin(time * TAU$2 / 3 + h * 97));
-		return mix$2(shifted, [
+		return mix$3(shifted, [
 			1,
 			.94,
 			1
@@ -3512,7 +3512,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.12,
 		.45
 	], b$1 * coat)), .07 * Math.sin(time * TAU$2 / 3 + d * .5 + fract(print * .618) * TAU$2) * coat);
-	return add(mix$2(c, [
+	return add(mix$3(c, [
 		1,
 		.94,
 		.66
@@ -3782,13 +3782,13 @@ function editionField(ed, v, o, px, pixels) {
 * RGBA byte arrays, the frame's size (16×20, wider with a buddy).
 */
 function shineData(frame, owned = {}) {
-	const W = frame.colors[0].length;
-	const colors = new Uint8Array(W * FRAME_HEIGHT * 4);
-	const info = new Uint8Array(W * FRAME_HEIGHT * 4);
-	const noise$1 = new Uint8Array(W * FRAME_HEIGHT * 4);
+	const W$1 = frame.colors[0].length;
+	const colors = new Uint8Array(W$1 * FRAME_HEIGHT * 4);
+	const info = new Uint8Array(W$1 * FRAME_HEIGHT * 4);
+	const noise$1 = new Uint8Array(W$1 * FRAME_HEIGHT * 4);
 	frame.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
-		const i = (y * W + x) * 4;
+		const i = (y * W$1 + x) * 4;
 		colors.set([
 			parseInt(c.slice(1, 3), 16),
 			parseInt(c.slice(3, 5), 16),
@@ -3824,9 +3824,9 @@ const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) 
 function shineFrame(frame, owned, ms) {
 	const { colors, info, noise: noise$1 } = shineData(frame, owned);
 	const out = new Uint8ClampedArray(colors);
-	const time = loopSeconds(ms), W = frame.colors[0].length;
-	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W; x++) {
-		const i = (y * W + x) * 4;
+	const time = loopSeconds(ms), W$1 = frame.colors[0].length;
+	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W$1; x++) {
+		const i = (y * W$1 + x) * 4;
 		if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
 		const finish = Math.floor(info[i] / 32 + .5) - 1;
 		const c = finishColor([
@@ -3916,9 +3916,9 @@ function createShine(canvas) {
 	return {
 		canvas: target,
 		draw(frame, owned, ms) {
-			const { colors, info, noise: noise$1 } = shineData(frame, owned), W = frame.colors[0].length;
-			if (target.width !== W) target.width = W;
-			gl.viewport(0, 0, W, FRAME_HEIGHT);
+			const { colors, info, noise: noise$1 } = shineData(frame, owned), W$1 = frame.colors[0].length;
+			if (target.width !== W$1) target.width = W$1;
+			gl.viewport(0, 0, W$1, FRAME_HEIGHT);
 			[
 				colors,
 				info,
@@ -3926,10 +3926,10 @@ function createShine(canvas) {
 			].forEach((bytes, unit) => {
 				gl.activeTexture(gl.TEXTURE0 + unit);
 				gl.bindTexture(gl.TEXTURE_2D, textures[unit]);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W$1, FRAME_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 			});
 			gl.uniform1f(time, loopSeconds(ms));
-			gl.uniform2f(res, W, FRAME_HEIGHT);
+			gl.uniform2f(res, W$1, FRAME_HEIGHT);
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -4122,12 +4122,12 @@ function surfaceOf(kind, scuff = 0) {
 		clearcoat: +(s.clearcoat * (1 - wear)).toFixed(3)
 	};
 }
-const lum = (hex$1) => {
-	const n = parseInt(hex$1.slice(1, 7), 16);
+const lum = (hex$2) => {
+	const n = parseInt(hex$2.slice(1, 7), 16);
 	return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255;
 };
-const darken = (hex$1, k) => {
-	const n = parseInt(hex$1.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
+const darken = (hex$2, k) => {
+	const n = parseInt(hex$2.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
 	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
 };
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
@@ -4139,25 +4139,25 @@ function inset(w, h, inside$1) {
 }
 /** A frame (an animation frame, or `itemFrame`) as columns, each worn copy's pixels on its finish's surface. */
 function voxelColumns(frame, owned = {}, options = {}) {
-	const C = frame.colors, S = frame.slots, H = C.length, W = C[0]?.length ?? 0, small = !!options.item;
+	const C = frame.colors, S = frame.slots, H$1 = C.length, W$1 = C[0]?.length ?? 0, small = !!options.item;
 	const slotName = (s) => [
 		"skin",
 		"hat",
 		"frame",
 		"buddy"
 	][s - 1];
-	const figure = inset(W, H, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
-	const buddy = inset(W, H, (x, y) => !!C[y][x] && S[y][x] === 4);
+	const figure = inset(W$1, H$1, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
+	const buddy = inset(W$1, H$1, (x, y) => !!C[y][x] && S[y][x] === 4);
 	const feature = (x, y) => {
 		const c = C[y][x];
 		if (!c || S[y][x] !== 0 || figure[y][x] < 2) return 0;
 		const l = lum(c);
 		return l < .22 ? .45 : l > .86 ? .3 : 0;
 	};
-	const front = Array.from({ length: H }, () => new Array(W).fill(-Infinity));
-	const span = Array.from({ length: H }, () => new Array(W).fill(null));
+	const front = Array.from({ length: H$1 }, () => new Array(W$1).fill(-Infinity));
+	const span = Array.from({ length: H$1 }, () => new Array(W$1).fill(null));
 	let deepest = 0;
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
 		const c = C[y][x], s = S[y][x];
 		if (!c || s === 3) continue;
 		const d = s === 4 ? buddy[y][x] : figure[y][x];
@@ -4192,12 +4192,12 @@ function voxelColumns(frame, owned = {}, options = {}) {
 		deepest *= squeeze;
 	}
 	const out = [];
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
 		const c = C[y][x], s = S[y][x];
 		if (!c) continue;
 		const copy = s ? owned[slotName(s)] : void 0;
 		const surface = surfaceOf(copy ? copy.finish : "body", copy ? copy.scuff : 0);
-		const px = x - W / 2 + .5, py = H / 2 - y - .5;
+		const px = x - W$1 / 2 + .5, py = H$1 / 2 - y - .5;
 		if (s === 3) {
 			out.push({
 				x: px,
@@ -4307,8 +4307,8 @@ function ownedOf(codes) {
 	}
 	return out;
 }
-const linear = (hex$1) => {
-	const n = parseInt(hex$1.slice(1, 7), 16);
+const linear = (hex$2) => {
+	const n = parseInt(hex$2.slice(1, 7), 16);
 	return [
 		n >> 16 & 255,
 		n >> 8 & 255,
@@ -4417,7 +4417,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			const face = linear(c.color), back = linear(c.back), side = linear(c.side ?? c.color);
 			flat = c.slot === 3;
 			wall = 0;
-			const RIM = .4, rim$1 = z1 - RIM;
+			const RIM$1 = .4, rim$1 = z1 - RIM$1;
 			const wallQuads = (spans, corners, n) => {
 				for (const [a, b$1] of spans) {
 					if (c.side === void 0 || c.side === c.color || b$1 <= rim$1) {
@@ -6585,10 +6585,10 @@ const GLYPHS = {
 /** Each pixel made a `scale` by `scale` block. */
 function upscale(rgba, width, height, scale$1) {
 	if (scale$1 === 1) return rgba;
-	const W = width * scale$1, out = new Uint8ClampedArray(W * height * scale$1 * 4);
+	const W$1 = width * scale$1, out = new Uint8ClampedArray(W$1 * height * scale$1 * 4);
 	for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
 		const i = (y * width + x) * 4;
-		for (let dy = 0; dy < scale$1; dy++) for (let dx = 0; dx < scale$1; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale$1 + dy) * W + x * scale$1 + dx) * 4);
+		for (let dy = 0; dy < scale$1; dy++) for (let dx = 0; dx < scale$1; dx++) out.set(rgba.subarray(i, i + 4), ((y * scale$1 + dy) * W$1 + x * scale$1 + dx) * 4);
 	}
 	return out;
 }
@@ -6778,10 +6778,10 @@ function lzw(indices, minCode, out) {
 * The box of pixels that differ between two frames `W` wide, as `[x, y, w, h]`, or null when none do.
 * Two pixels both under half alpha count as the same (both transparent).
 */
-function changed(a, b$1, W, H) {
-	let x0 = W, y0 = H, x1 = -1, y1 = -1;
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-		const i = (y * W + x) * 4;
+function changed(a, b$1, W$1, H$1) {
+	let x0 = W$1, y0 = H$1, x1 = -1, y1 = -1;
+	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+		const i = (y * W$1 + x) * 4;
 		if (a[i + 3] < 128 && b$1[i + 3] < 128) continue;
 		if (a[i] === b$1[i] && a[i + 1] === b$1[i + 1] && a[i + 2] === b$1[i + 2] && a[i + 3] === b$1[i + 3]) continue;
 		if (x < x0) x0 = x;
@@ -6809,7 +6809,7 @@ function clears(before, after) {
 * clear a pixel is written whole after a frame that clears itself away.
 */
 function encodeGif(input, scale$1 = 1) {
-	const W = input.width * scale$1, H = input.height * scale$1, n = input.frames.length;
+	const W$1 = input.width * scale$1, H$1 = input.height * scale$1, n = input.frames.length;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
 	const colours = palette(frames);
 	const table = [0, ...colours];
@@ -6818,8 +6818,8 @@ function encodeGif(input, scale$1 = 1) {
 	const out = [];
 	const word = (n$1) => out.push(n$1 & 255, n$1 >> 8 & 255);
 	out.push(...[..."GIF89a"].map((c) => c.charCodeAt(0)));
-	word(W);
-	word(H);
+	word(W$1);
+	word(H$1);
 	out.push(128 | bitsPer - 1 << 4 | bitsPer - 1, 0, 0);
 	for (let i = 0; i < 1 << bitsPer; i++) {
 		const c = table[i] ?? 0;
@@ -6857,7 +6857,7 @@ function encodeGif(input, scale$1 = 1) {
 		const before = whole[k] ? null : frames[k - 1];
 		const idx = new Uint8Array(bw * bh);
 		for (let y = 0, p = 0; y < bh; y++) for (let x = 0; x < bw; x++, p++) {
-			const i = ((by + y) * W + bx + x) * 4;
+			const i = ((by + y) * W$1 + bx + x) * 4;
 			if (f[i + 3] < 128) {
 				idx[p] = 0;
 				continue;
@@ -6948,36 +6948,36 @@ function layout(frames) {
 	if (index.size > 256) return {
 		indexed: false,
 		colours: [],
-		rows: (px, W, H) => {
-			const raw = new Uint8Array((W * 4 + 1) * H);
-			for (let y = 0; y < H; y++) raw.set(px.subarray(y * W * 4, (y + 1) * W * 4), y * (W * 4 + 1) + 1);
+		rows: (px, W$1, H$1) => {
+			const raw = new Uint8Array((W$1 * 4 + 1) * H$1);
+			for (let y = 0; y < H$1; y++) raw.set(px.subarray(y * W$1 * 4, (y + 1) * W$1 * 4), y * (W$1 * 4 + 1) + 1);
 			return raw;
 		}
 	};
 	return {
 		indexed: true,
 		colours: [...index.keys()],
-		rows: (px, W, H) => {
-			const raw = new Uint8Array((W + 1) * H);
-			for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) raw[y * (W + 1) + 1 + x] = index.get(key(px, (y * W + x) * 4));
+		rows: (px, W$1, H$1) => {
+			const raw = new Uint8Array((W$1 + 1) * H$1);
+			for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) raw[y * (W$1 + 1) + 1 + x] = index.get(key(px, (y * W$1 + x) * 4));
 			return raw;
 		}
 	};
 }
 /** The `w` by `h` box at `x`, `y` of a picture `W` wide. */
-function crop(rgba, W, x, y, w, h) {
-	if (x === 0 && w === W) return rgba.subarray(y * W * 4, (y + h) * W * 4);
+function crop(rgba, W$1, x, y, w, h) {
+	if (x === 0 && w === W$1) return rgba.subarray(y * W$1 * 4, (y + h) * W$1 * 4);
 	const out = new Uint8ClampedArray(w * h * 4);
-	for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W + x) * 4, ((y + r) * W + x + w) * 4), r * w * 4);
+	for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W$1 + x) * 4, ((y + r) * W$1 + x + w) * 4), r * w * 4);
 	return out;
 }
 async function png(input, scale$1, animated) {
-	const W = input.width * scale$1, H = input.height * scale$1;
+	const W$1 = input.width * scale$1, H$1 = input.height * scale$1;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
 	const { indexed, colours, rows } = layout(frames);
 	const head = new Uint8Array([
-		...u32(W),
-		...u32(H),
+		...u32(W$1),
+		...u32(H$1),
 		8,
 		indexed ? 3 : 6,
 		0,
@@ -7013,8 +7013,8 @@ async function png(input, scale$1, animated) {
 		const [bx, by, bw, bh] = i === 0 ? [
 			0,
 			0,
-			W,
-			H
+			W$1,
+			H$1
 		] : (box ?? [
 			0,
 			0,
@@ -7031,7 +7031,7 @@ async function png(input, scale$1, animated) {
 			u16(1e3),
 			new Uint8Array([0, 0])
 		])));
-		const data = await zlib(rows(i === 0 ? frames[i] : crop(frames[i], W, bx, by, bw, bh), bw, bh));
+		const data = await zlib(rows(i === 0 ? frames[i] : crop(frames[i], W$1, bx, by, bw, bh), bw, bh));
 		parts.push(i === 0 ? chunk("IDAT", data) : chunk("fdAT", concat([u32(seq++), data])));
 		if (!animated) break;
 	}
@@ -7112,7 +7112,7 @@ function lookFor(ed, finish, look) {
 }
 /** The default hardness of `paint`'s bands. */
 const PAINT_CONTRAST = 7;
-const INK$2 = [
+const INK$3 = [
 	24 / 255,
 	20 / 255,
 	31 / 255
@@ -7141,9 +7141,9 @@ function paintColors(colors, hue$1) {
 		return s[1] > .3 && Math.min(d, 1 - d) > .08;
 	})[0];
 	return [
-		lerp(main, INK$2, .7),
-		lerp(main, INK$2, .42),
-		other ? lerp(other, INK$2, .3) : lerp(main, INK$2, .12)
+		lerp(main, INK$3, .7),
+		lerp(main, INK$3, .42),
+		other ? lerp(other, INK$3, .3) : lerp(main, INK$3, .12)
 	];
 }
 /** A colour as hue, saturation and lightness, each 0 to 1 (`toHsl` in GLSL). */
@@ -7757,7 +7757,7 @@ const rgb$2 = (h) => {
 	]);
 	return c;
 };
-const mix$1 = (a, b$1, t) => [
+const mix$2 = (a, b$1, t) => [
 	a[0] + (b$1[0] - a[0]) * t,
 	a[1] + (b$1[1] - a[1]) * t,
 	a[2] + (b$1[2] - a[2]) * t
@@ -7766,7 +7766,7 @@ const hash$1 = (x, y, p) => {
 	const s = Math.sin(x * 127.1 + y * 311.7 + p * .731) * 43758.5453;
 	return s - Math.floor(s);
 };
-const EXTRA = {
+const EXTRA$1 = {
 	"·": [5, [
 		0,
 		0,
@@ -7912,24 +7912,24 @@ const EXTRA = {
 		0
 	]]
 };
-const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
+const glyph$1 = (ch) => EXTRA$1[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
 /** Whether the card's pixel type has a glyph for `ch` (anything else is written "?"). */
-const hasGlyph = (ch) => ch in EXTRA || ch in GLYPHS;
+const hasGlyph = (ch) => ch in EXTRA$1 || ch in GLYPHS;
 /** How wide a line of text is, in pixels. */
-const textWidth = (s) => [...s].reduce((w, ch) => w + glyph(ch)[0], 0);
+const textWidth = (s) => [...s].reduce((w, ch) => w + glyph$1(ch)[0], 0);
 /** A line of text made to fit `width` on one line: as it is, a pixel tighter between letters, or cut short with "…". */
 function fitLine(text, width) {
-	const wide = (t, spacing) => textWidth(t) + spacing * ([...t].length - 1);
-	if (wide(text, 0) <= width) return {
+	const wide$1 = (t, spacing) => textWidth(t) + spacing * ([...t].length - 1);
+	if (wide$1(text, 0) <= width) return {
 		text,
 		spacing: 0
 	};
-	if (wide(text, -1) <= width) return {
+	if (wide$1(text, -1) <= width) return {
 		text,
 		spacing: -1
 	};
 	const chars = [...text];
-	while (chars.length > 1 && wide(chars.join("").trimEnd() + "…", -1) > width) chars.pop();
+	while (chars.length > 1 && wide$1(chars.join("").trimEnd() + "…", -1) > width) chars.pop();
 	return {
 		text: chars.join("").trimEnd() + "…",
 		spacing: -1
@@ -7943,7 +7943,7 @@ function rankFit(text, width) {
 	return fit$2.text === text ? fit$2 : fitLine(text.replace(/^Top (?=\d)/, ""), width);
 }
 /** How wide the line beside a badge reading `pill` may be. */
-const rankRoom = (pill) => CARD_WIDTH - M * 2 - 10 - textWidth(pill) - PILL_PAD * 2 - PILL_GAP;
+const rankRoom = (pill$1) => CARD_WIDTH - M * 2 - 10 - textWidth(pill$1) - PILL_PAD * 2 - PILL_GAP;
 /** Card words without the ★ glyph. */
 const unstarred = (t) => t.replace(/★\s*/g, "").trim();
 /** A drawing surface of RGBA card pixels, with what each pixel is for the card's edition: 0 nothing, 1 the face, 2 the window. */
@@ -7970,7 +7970,7 @@ var Surface = class {
 		const draw = (ox, oy, col) => {
 			let cx = ox;
 			for (const ch of s) {
-				const [adv, rows] = glyph(ch);
+				const [adv, rows] = glyph$1(ch);
 				rows.forEach((bits, dy) => {
 					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) this.set(cx + dx, oy + dy, col(cx + dx, oy + dy));
 				});
@@ -7981,11 +7981,11 @@ var Surface = class {
 		draw(x, top, colour);
 	}
 };
-const INK$1 = [
+const INK$2 = [
 	24,
 	20,
 	31
-], IVORY$1 = [
+], IVORY$2 = [
 	246,
 	240,
 	227
@@ -7993,7 +7993,7 @@ const INK$1 = [
 	255,
 	255,
 	255
-], PLATE$1 = [
+], PLATE$2 = [
 	38,
 	34,
 	52
@@ -8123,32 +8123,32 @@ const inside = (x, y) => inBox(x, y, CARD_WIDTH, BODY_HEIGHT, 8);
 let theShape = null;
 function cardShape() {
 	if (theShape) return theShape;
-	const W = CARD_WIDTH, H = BODY_HEIGHT, depth = new Uint8Array(W * H), bevel = new Uint8Array(W * H);
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+	const W$1 = CARD_WIDTH, H$1 = BODY_HEIGHT, depth = new Uint8Array(W$1 * H$1), bevel = new Uint8Array(W$1 * H$1);
+	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
 		if (!inside(x, y)) continue;
 		let d = 1;
 		while (d < 9 && inside(x - d, y) && inside(x + d, y) && inside(x, y - d) && inside(x, y + d)) d++;
 		const lit = !inside(x - 3, y) || !inside(x, y - 3), deep = !inside(x + 3, y) || !inside(x, y + 3);
-		depth[y * W + x] = d;
-		bevel[y * W + x] = deep ? 2 : lit ? 1 : 0;
+		depth[y * W$1 + x] = d;
+		bevel[y * W$1 + x] = deep ? 2 : lit ? 1 : 0;
 	}
-	const glint = Float64Array.from({ length: W * H }, (_, i) => hash$1(i % W, Math.floor(i / W), 11));
-	const runs$1 = Array.from({ length: H }, (_, y) => {
+	const glint = Float64Array.from({ length: W$1 * H$1 }, (_, i) => hash$1(i % W$1, Math.floor(i / W$1), 11));
+	const runs$1 = Array.from({ length: H$1 }, (_, y) => {
 		let a = -1, b$1 = -1;
-		for (let x = 0; x < W; x++) if (depth[y * W + x]) {
+		for (let x = 0; x < W$1; x++) if (depth[y * W$1 + x]) {
 			if (a < 0) a = x;
 			b$1 = x;
 		}
 		return [a, b$1];
 	});
-	const shadow = new Uint8ClampedArray(W * CARD_HEIGHT * 4);
+	const shadow = new Uint8ClampedArray(W$1 * CARD_HEIGHT * 4);
 	runs$1.forEach(([a, b$1], y) => {
 		for (let x = a; a >= 0 && x <= b$1; x++) shadow.set([
 			20,
 			16,
 			28,
 			150
-		], ((y + 5) * W + x) * 4);
+		], ((y + 5) * W$1 + x) * 4);
 	});
 	return theShape = {
 		depth,
@@ -8242,8 +8242,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const lastCopy = input.copies?.[input.copies.length - 1];
 	const shift$1 = lastCopy ? lastCopy.print * 37 : [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 6e3, 0);
 	const v = lastCopy ? lastCopy.print % 4 : 0;
-	const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
-	const s = new Surface(W, H);
+	const W$1 = CARD_WIDTH, H$1 = BODY_HEIGHT, side = M;
+	const s = new Surface(W$1, H$1);
 	const gold = ed === 5, aura = ed === 6, neg = ed === 4;
 	const framed = gold && looks.gold !== "brushed", struck = gold && !framed;
 	const gc = g >= 0 ? rgb$2(require_paint.GRADES[g].color) : [
@@ -8254,11 +8254,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const auraCopy = owned.aura;
 	const ah = aura && auraCopy ? rgb$2(require_paint.auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
 	const tone = aura ? ah : gc;
-	const textW = W - M * 2 - 10, left = side + 5;
+	const textW = W$1 - M * 2 - 10, left = side + 5;
 	const copies = input.copies ?? [];
 	const topCopy = copies.filter((o) => require_paint.GRADES.findIndex((x) => x.id === require_paint.gradeOf(o).id) === g).pop();
 	const unusualCopy = [...copies].reverse().find((o) => require_paint.unusual(o) && o.fx);
-	const pill = input.lines?.[0] ? unstarred(input.lines[0]) : void 0;
+	const pill$1 = input.lines?.[0] ? unstarred(input.lines[0]) : void 0;
 	let titleText = unstarred(input.title.split(" | ")[0]);
 	const unusualItem = unusualCopy ? require_paint.itemById(unusualCopy.item) : void 0;
 	const fxName = unusualCopy?.fx && unusualCopy.fx !== unusualItem?.signature && unusualItem && titleText.includes(unusualItem.name) ? require_paint.EFFECTS[unusualCopy.fx].name : "";
@@ -8277,23 +8277,23 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const plateText = unstarred(input.plate?.text ?? ""), plateBare = plateText.replace(/^[^·]*·\s*/, "");
 	const plateRow = plateText ? fitLine(textWidth(plateText) - [...plateText].length + 1 > textW - 10 && plateBare ? plateBare : plateText, textW - 10) : void 0;
 	const plateGrade = Math.max(0, Math.min(require_paint.GRADES.length - 1, input.plate?.grade ?? 0));
-	const pillW = pill ? textWidth(pill) + PILL_PAD * 2 : 0;
-	const subW = pill ? rankRoom(pill) : textW;
+	const pillW = pill$1 ? textWidth(pill$1) + PILL_PAD * 2 : 0;
+	const subW = pill$1 ? rankRoom(pill$1) : textW;
 	const sub = input.lines?.[1] ? rankFit(unstarred(input.lines[1]), subW) : void 0;
-	const plateBottom = H - 1 - 6;
+	const plateBottom = H$1 - 1 - 6;
 	let y = plateBottom - 3 - footH;
 	const footTop = y;
 	if (footH) y -= 2;
 	const plateRowTop = plateRow ? y -= 14 : y;
 	if (plateRow) y -= 2;
-	const pillTop = pill || sub ? y -= 15 : y;
-	if (pill || sub) y -= 3;
+	const pillTop = pill$1 || sub ? y -= 15 : y;
+	if (pill$1 || sub) y -= 3;
 	y -= 12;
 	const titleTop = y;
 	const plateTop = y - 3;
 	const WIN = {
 		left: side,
-		right: W - 1 - side,
+		right: W$1 - 1 - side,
 		top: 6,
 		bottom: plateTop - 4
 	};
@@ -8305,68 +8305,68 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		size: side2
 	};
 	const stock = (x, yy) => {
-		if (framed) return mix$1(DARK_HI, DARK_LO, yy / H);
+		if (framed) return mix$2(DARK_HI, DARK_LO, yy / H$1);
 		if (gold) {
-			const base = mix$1(GOLD_HI, GOLD_LO, yy / H * .9 + .08 * Math.sin(x * .05 + yy * .02));
-			return yy % 3 === 0 ? mix$1(base, GOLD_LO, .12) : base;
+			const base = mix$2(GOLD_HI, GOLD_LO, yy / H$1 * .9 + .08 * Math.sin(x * .05 + yy * .02));
+			return yy % 3 === 0 ? mix$2(base, GOLD_LO, .12) : base;
 		}
-		if (neg) return mix$1(mix$1(IVORY$1, tone, .35), mix$1(IVORY$1, tone, .6), yy / H);
-		return mix$1(mix$1(tone, WHITE$1, .08), mix$1(tone, INK$1, .25), yy / H);
+		if (neg) return mix$2(mix$2(IVORY$2, tone, .35), mix$2(IVORY$2, tone, .6), yy / H$1);
+		return mix$2(mix$2(tone, WHITE$1, .08), mix$2(tone, INK$2, .25), yy / H$1);
 	};
-	const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
-	const auraDeep = mix$1(ah, INK$1, .62), auraLight = mix$1(ah, INK$1, .3), inlay = mix$1(ah, WHITE$1, .7);
-	const trim = new Uint8Array(W * H);
-	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
-		const d = shape.depth[yy * W + x], bevel = shape.bevel[yy * W + x];
+	const rows = Array.from({ length: H$1 }, (_, yy) => gold ? null : stock(0, yy));
+	const auraDeep = mix$2(ah, INK$2, .62), auraLight = mix$2(ah, INK$2, .3), inlay = mix$2(ah, WHITE$1, .7);
+	const trim = new Uint8Array(W$1 * H$1);
+	for (let yy = 0; yy < H$1; yy++) for (let x = 0; x < W$1; x++) {
+		const d = shape.depth[yy * W$1 + x], bevel = shape.bevel[yy * W$1 + x];
 		if (!d) continue;
 		if (d <= 2) {
-			s.set(x, yy, INK$1);
+			s.set(x, yy, INK$2);
 			continue;
 		}
 		let c = rows[yy] ?? stock(x, yy);
 		if (framed && bevel && d === 3) {
 			c = bevel === 1 ? GOLD_LIGHT : GOLD_DEEP;
-			trim[yy * W + x] = 1;
-		} else if (struck && bevel) c = mix$1(mix$1([
+			trim[yy * W$1 + x] = 1;
+		} else if (struck && bevel) c = mix$2(mix$2([
 			255,
 			238,
 			168
-		], BRUSHED.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE$1 : INK$1, .2);
-		else if (bevel === 1) c = mix$1(c, WHITE$1, .35);
-		else if (bevel) c = mix$1(c, INK$1, .3);
+		], BRUSHED.bevelLo, (x + yy * 1.4) / (W$1 + H$1 * 1.4)), bevel === 1 ? WHITE$1 : INK$2, .2);
+		else if (bevel === 1) c = mix$2(c, WHITE$1, .35);
+		else if (bevel) c = mix$2(c, INK$2, .3);
 		else if (aura && d <= 5) c = inlay;
 		if (aura && d > 6) {
 			const r = Math.hypot((x - wcx) / 80, (yy - wcy) / 100);
-			s.set(x, yy, mix$1(auraDeep, auraLight, Math.max(0, 1 - r) ** 1.2), 2);
+			s.set(x, yy, mix$2(auraDeep, auraLight, Math.max(0, 1 - r) ** 1.2), 2);
 			continue;
 		}
 		s.set(x, yy, c, 1);
 	}
-	const light = g >= 0 ? mix$1(IVORY$1, gc, .22) : mix$1(IVORY$1, gc, .12);
+	const light = g >= 0 ? mix$2(IVORY$2, gc, .22) : mix$2(IVORY$2, gc, .12);
 	/** A framed Grail's window: a few large soft bands of three golds, on blocks of two card pixels, holding still. */
 	const fieldGold = (x, yy) => {
 		const qx = ((x >> 1) * 2 - wcx) / 40, qy = ((yy >> 1) * 2 - wcy) / 40;
 		const t = .5 + .5 * Math.sin(qy * 3.2 + 1.3 * Math.sin(qx * 2.4 + .6) + .6 * Math.sin(qx * 4.1 - qy * 1.7));
 		const k1 = Math.min(1, Math.max(0, (t - .35) / .12 + .5)), k2 = Math.min(1, Math.max(0, (t - .72) / .12 + .5));
-		return mix$1(mix$1(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
+		return mix$2(mix$2(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
 	};
 	const own = !aura && !gold && topCopy ? windowArt(topCopy, WIN, wcx, wcy) : null;
 	if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
 		const rim$1 = x - WIN.left < 2 || WIN.right - x < 2 || yy - WIN.top < 2 || WIN.bottom - yy < 2;
 		if (rim$1) {
 			const inner = x - WIN.left === 1 || WIN.right - x === 1 || yy - WIN.top === 1 || WIN.bottom - yy === 1;
-			if (framed && inner) trim[yy * W + x] = 1;
+			if (framed && inner) trim[yy * W$1 + x] = 1;
 			s.set(x, yy, framed && inner ? BRIGHT_GOLD : struck && inner ? [
 				255,
 				226,
 				140
-			] : struck ? BRUSHED.rim : INK$1);
+			] : struck ? BRUSHED.rim : INK$2);
 			continue;
 		}
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-		let c = framed ? fieldGold(x, yy) : !gold ? mix$1(light, mix$1(light, gc, .35), depth * .6) : mix$1(mix$1(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix$1(AMBER, INK$1, .3), depth * .3);
+		let c = framed ? fieldGold(x, yy) : !gold ? mix$2(light, mix$2(light, gc, .35), depth * .6) : mix$2(mix$2(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix$2(AMBER, INK$2, .3), depth * .3);
 		if (own) c = own(x, yy, 0);
-		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix$1(c, INK$1, .35);
+		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix$2(c, INK$2, .35);
 		s.set(x, yy, c, own ? 3 : 2);
 	}
 	if (struck) for (const [sx, sy] of [
@@ -8376,8 +8376,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		[WIN.right - 1, WIN.bottom - 1]
 	]) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
 		const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
-		if (d > 10 || shape.depth[yy * W + x] <= 2) continue;
-		s.set(x, yy, d > 6 ? BRUSHED.quiet : mix$1([
+		if (d > 10 || shape.depth[yy * W$1 + x] <= 2) continue;
+		s.set(x, yy, d > 6 ? BRUSHED.quiet : mix$2([
 			255,
 			244,
 			196
@@ -8387,43 +8387,43 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			26
 		], (dx + dy + 4) / 8));
 	}
-	const onPlate = new Uint8Array(W * H);
-	if (!struck) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W - 1 - side; x++) {
-		const pw = W - side * 2, ph = plateBottom - plateTop + 1;
+	const onPlate = new Uint8Array(W$1 * H$1);
+	if (!struck) for (let yy = plateTop; yy <= plateBottom; yy++) for (let x = side; x <= W$1 - 1 - side; x++) {
+		const pw = W$1 - side * 2, ph = plateBottom - plateTop + 1;
 		if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
 		const edge$1 = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
-		const base = aura ? mix$1(mix$1(ah, INK$1, .6), INK$1, .45) : PLATE$1;
-		onPlate[yy * W + x] = 1;
-		s.set(x, yy, edge$1 ? INK$1 : yy === plateTop + 1 ? mix$1(base, WHITE$1, .16) : yy >= plateBottom - 2 ? mix$1(base, INK$1, .45) : base);
+		const base = aura ? mix$2(mix$2(ah, INK$2, .6), INK$2, .45) : PLATE$2;
+		onPlate[yy * W$1 + x] = 1;
+		s.set(x, yy, edge$1 ? INK$2 : yy === plateTop + 1 ? mix$2(base, WHITE$1, .16) : yy >= plateBottom - 2 ? mix$2(base, INK$2, .45) : base);
 	}
-	const quiet = struck ? BRUSHED.quiet : aura ? mix$1(ah, WHITE$1, .6) : [
+	const quiet = struck ? BRUSHED.quiet : aura ? mix$2(ah, WHITE$1, .6) : [
 		184,
 		176,
 		206
 	];
-	const titleInk = (x, yy, tm) => mix$1(mix$1(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / require_paint.wave(1e3 / 2) + yy * .1));
+	const titleInk = (x, yy, tm) => mix$2(mix$2(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / require_paint.wave(1e3 / 2) + yy * .1));
 	const titlePixels = [];
 	s.text(titleFit.text, left, titleTop - 2, (x, yy) => {
 		if (struck) return GOLD_INK;
 		if (!aura) return WHITE$1;
 		titlePixels.push(x, yy);
 		return titleInk(x, yy, 0);
-	}, struck ? GOLD_CUT : INK$1, titleFit.spacing);
-	if (pill) {
+	}, struck ? GOLD_CUT : INK$2, titleFit.spacing);
+	if (pill$1) {
 		const w = pillW, x0 = left;
 		const fill = struck ? BRUSHED.pill : framed ? BRIGHT_GOLD : tone;
 		for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
 			const edge$1 = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
-			s.set(x, yy, edge$1 ? INK$1 : yy >= pillTop + 12 ? mix$1(fill, INK$1, .45) : yy === pillTop + 1 ? mix$1(fill, WHITE$1, .4) : fill);
+			s.set(x, yy, edge$1 ? INK$2 : yy >= pillTop + 12 ? mix$2(fill, INK$2, .45) : yy === pillTop + 1 ? mix$2(fill, WHITE$1, .4) : fill);
 		}
-		s.text(pill, x0 + PILL_PAD, pillTop - 1, () => struck ? [
+		s.text(pill$1, x0 + PILL_PAD, pillTop - 1, () => struck ? [
 			255,
 			222,
 			130
-		] : framed ? PILL_INK : WHITE$1, framed ? GOLD_LIGHT : mix$1(fill, INK$1, .6));
+		] : framed ? PILL_INK : WHITE$1, framed ? GOLD_LIGHT : mix$2(fill, INK$2, .6));
 	}
-	if (sub) s.text(sub.text, pill ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, void 0, sub.spacing);
+	if (sub) s.text(sub.text, pill$1 ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, void 0, sub.spacing);
 	if (footFit) s.text(footFit.text, left, footTop - 2, () => quiet, void 0, footFit.spacing);
 	if (plateRow) {
 		const w = Math.min(textW, textWidth(plateRow.text) + plateRow.spacing * ([...plateRow.text].length - 1) + 10), x0 = left, fill = rgb$2(require_paint.GRADES[plateGrade].color);
@@ -8431,17 +8431,17 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		for (let yy = plateRowTop; yy < plateRowTop + 14; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - plateRowTop, w, 14, 3)) continue;
 			const edge$1 = !inBox(x - x0 - 1, yy - plateRowTop, w, 14, 3) || !inBox(x - x0 + 1, yy - plateRowTop, w, 14, 3) || yy === plateRowTop || yy === plateRowTop + 13;
-			s.set(x, yy, edge$1 ? INK$1 : yy >= plateRowTop + 11 ? mix$1(fill, INK$1, .45) : yy === plateRowTop + 1 ? mix$1(fill, WHITE$1, .4) : fill);
+			s.set(x, yy, edge$1 ? INK$2 : yy >= plateRowTop + 11 ? mix$2(fill, INK$2, .45) : yy === plateRowTop + 1 ? mix$2(fill, WHITE$1, .4) : fill);
 		}
-		s.text(plateRow.text, x0 + 5, plateRowTop - 2, () => ink, plateGrade === 4 ? GOLD_LIGHT : mix$1(fill, INK$1, .6), plateRow.spacing);
+		s.text(plateRow.text, x0 + 5, plateRowTop - 2, () => ink, plateGrade === 4 ? GOLD_LIGHT : mix$2(fill, INK$2, .6), plateRow.spacing);
 	}
 	if (sealed) {
-		const cx = W - 1 - side - 10, cy = footTop + 3;
+		const cx = W$1 - 1 - side - 10, cy = footTop + 3;
 		for (let dy = -7; dy <= 7; dy++) for (let dx = -7; dx <= 7; dx++) {
 			const d = dx * dx + dy * dy;
 			if (d > 52) continue;
 			const rim$1 = d > 38, notch = rim$1 && Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) % 2 === 0;
-			s.set(cx + dx, cy + dy, notch && d > 46 ? struck ? BRUSHED.pill : PLATE$1 : rim$1 ? INK$1 : d < 14 && dx + dy < 0 ? [
+			s.set(cx + dx, cy + dy, notch && d > 46 ? struck ? BRUSHED.pill : PLATE$2 : rim$1 ? INK$2 : d < 14 && dx + dy < 0 ? [
 				246,
 				138,
 				112
@@ -8451,12 +8451,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				78
 			]);
 		}
-		s.text("1", cx - 2, cy - 7, () => IVORY$1, INK$1);
+		s.text("1", cx - 2, cy - 7, () => IVORY$2, INK$2);
 	}
 	const strange = topCopy?.tally !== void 0 ? topCopy : copies.find((o) => o.tally !== void 0);
 	const badge = unusualCopy?.fx ? require_paint.FX_BADGES[unusualCopy.fx] : void 0;
 	const tagged = !!(input.corner || strange || badge);
-	const tag = new Surface(tagged ? W : 0, tagged ? H : 0);
+	const tag = new Surface(tagged ? W$1 : 0, tagged ? H$1 : 0);
 	let tagX = WIN.left + 4;
 	if (strange) {
 		const digits = String(Math.min(99999, strange.tally ?? 0)).padStart(4, "0"), w = digits.length * 7 - 2 + 6, y0 = WIN.top + 4;
@@ -8478,12 +8478,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			0,
 			0,
 			0
-		] : INK$1);
+		] : INK$2);
 		tag.text(input.corner, x0 + 3, y0 - 2, () => WHITE$1);
 	}
 	const tagIdx = [];
 	if (tagged) {
-		for (let i = 0; i < W * H; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
+		for (let i = 0; i < W$1 * H$1; i++) if (tag.px[i * 4 + 3]) tagIdx.push(i);
 	}
 	const soul = aura;
 	const ox = Math.round((WIN.left + WIN.right + 1) / 2 - fit$2.mid);
@@ -8493,9 +8493,9 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const oy0 = !grid ? stand : highest > lowest ? highest : Math.min(lowest, Math.max(highest, stand));
 	const floor = Uint8Array.from(s.region, (r) => r === 2 || r === 3 ? 1 : 0);
 	const ground = input.copies?.some((o) => require_paint.itemById(o.item)?.slot === "frame") ? (() => {
-		let x0 = W, y0 = H, x1 = -1, y1 = -1;
-		for (let i = 0; i < W * H; i++) if (floor[i]) {
-			const x = i % W, yy = (i - x) / W;
+		let x0 = W$1, y0 = H$1, x1 = -1, y1 = -1;
+		for (let i = 0; i < W$1 * H$1; i++) if (floor[i]) {
+			const x = i % W$1, yy = (i - x) / W$1;
 			x0 = Math.min(x0, x);
 			x1 = Math.max(x1, x);
 			y0 = Math.min(y0, yy);
@@ -8510,13 +8510,13 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}, gx0, gy0, gw, gh);
 		if (!colors) return null;
 		const cells = new Float32Array(gw * gh * 3), pix = [], cellOf = [], diag = [];
-		colors.forEach((row, j) => row.forEach((hex$1, i) => {
-			const c = hex$1 ? rgb$2(hex$1) : INK$1;
+		colors.forEach((row, j) => row.forEach((hex$2, i) => {
+			const c = hex$2 ? rgb$2(hex$2) : INK$2;
 			for (let k = 0; k < 3; k++) cells[(j * gw + i) * 3 + k] = c[k] / 255;
 		}));
-		for (let i = 0; i < W * H; i++) {
+		for (let i = 0; i < W$1 * H$1; i++) {
 			if (!floor[i]) continue;
-			const x = i % W, yy = (i - x) / W, cx = Math.floor((x - ox) / zoom), cy = Math.floor((yy - oy0) / zoom), cell = (cy - gy0) * gw + cx - gx0;
+			const x = i % W$1, yy = (i - x) / W$1, cx = Math.floor((x - ox) / zoom), cy = Math.floor((yy - oy0) / zoom), cell = (cy - gy0) * gw + cx - gx0;
 			pix.push(i);
 			cellOf.push(cell);
 			diag.push(x - ox - cx * zoom + yy - oy0 - cy * zoom);
@@ -8541,21 +8541,21 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const plays = (i) => framed ? s.region[i] === 2 || trim[i] === 1 : s.region[i] > 0 && s.region[i] < 3;
 	const ownIdx = [];
 	if (own?.moves) {
-		for (let i = 0; i < W * H; i++) if (s.region[i] === 3) {
-			const x = i % W, yy = (i - x) / W;
+		for (let i = 0; i < W$1 * H$1; i++) if (s.region[i] === 3) {
+			const x = i % W$1, yy = (i - x) / W$1;
 			if (yy - WIN.top !== 2 && x - WIN.left !== 2) ownIdx.push(i);
 		}
 	}
 	const edIdx = [];
-	for (let i = 0; i < W * H; i++) if (plays(i)) edIdx.push(i);
+	for (let i = 0; i < W$1 * H$1; i++) if (plays(i)) edIdx.push(i);
 	const n = edIdx.length, ex = new Float32Array(n), ey = new Float32Array(n), er = new Uint8Array(n), eh = new Float32Array(n), ergb = new Float32Array(n * 3);
 	const raised = new Float32Array(n);
 	edIdx.forEach((i, k) => {
-		const x = i % W, yy = (i - x) / W;
+		const x = i % W$1, yy = (i - x) / W$1;
 		ex[k] = x / 5;
 		ey[k] = yy / 5;
 		er[k] = s.region[i] || 1;
-		eh[k] = shape.glint[(yy >> 1) * W + (x >> 1)];
+		eh[k] = shape.glint[(yy >> 1) * W$1 + (x >> 1)];
 		raised[k] = trim[i];
 		for (let j = 0; j < 3; j++) ergb[k * 3 + j] = s.px[i * 4 + j] / 255;
 	});
@@ -8575,14 +8575,14 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	}, paint$1);
 	const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
 	const pop = soul || !grid && oy0 + fit$2.top * zoom < WIN.top + 3;
-	const clip = (cx, cy) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1 : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
-	const edgeC = aura ? mix$1(ah, WHITE$1, .55) : struck ? [
+	const clip = (cx, cy) => pop ? inside(cx, cy) && cx > 2 && cx < W$1 - 3 && cy > 2 && cy < WIN.bottom - 1 : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
+	const edgeC = aura ? mix$2(ah, WHITE$1, .55) : struck ? [
 		255,
 		236,
 		170
 	] : WHITE$1;
-	const room = new Uint8Array(W * H);
-	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) if (clip(x, yy)) room[yy * W + x] = pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? 2 : 1;
+	const room = new Uint8Array(W$1 * H$1);
+	for (let yy = 0; yy < H$1; yy++) for (let x = 0; x < W$1; x++) if (clip(x, yy)) room[yy * W$1 + x] = pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? 2 : 1;
 	const mask = new Uint8Array((anim.width * zoom + 4) * (FRAME_HEIGHT * zoom + 4));
 	const lit = new Float32Array((zoom * 2 - 1) * 3), litDone = new Uint8Array(zoom * 2 - 1);
 	/**
@@ -8639,12 +8639,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}
 		for (let j = 0; j < bh; j++) {
 			const yy = by + j;
-			if (yy < 0 || yy >= H) continue;
+			if (yy < 0 || yy >= H$1) continue;
 			for (let k = 0; k < bw; k++) {
 				const m = j * bw + k, x = bx + k;
-				if (mask[m] || x < 0 || x >= W) continue;
-				const r = room[yy * W + x];
-				if (r && (mask[m + 2] || mask[m - 2] || mask[m + bw * 2] || mask[m - bw * 2] || mask[m + bw + 1] || mask[m + bw - 1] || mask[m - bw + 1] || mask[m - bw - 1])) out.push((yy * W + x) * 2 + (r === 2 ? 1 : 0));
+				if (mask[m] || x < 0 || x >= W$1) continue;
+				const r = room[yy * W$1 + x];
+				if (r && (mask[m + 2] || mask[m - 2] || mask[m + bw * 2] || mask[m - bw * 2] || mask[m + bw + 1] || mask[m + bw - 1] || mask[m - bw + 1] || mask[m - bw - 1])) out.push((yy * W$1 + x) * 2 + (r === 2 ? 1 : 0));
 			}
 		}
 		byY.set(oy, got = Int32Array.from(out));
@@ -8684,11 +8684,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			const sx = fl[f], sy = fl[f + 1], rx = fl[f + 2];
 			const gy = grid ? sy + zoom : sy, reach = grid ? zoom : 0;
 			for (let yy = Math.ceil(gy - 4 - reach); yy <= gy + 4 + reach; yy++) for (let x = Math.ceil(sx - rx - reach); x <= sx + rx + reach; x++) {
-				if (x < 0 || yy < 0 || x >= W || yy >= H || !floor[yy * W + x]) continue;
+				if (x < 0 || yy < 0 || x >= W$1 || yy >= H$1 || !floor[yy * W$1 + x]) continue;
 				const px = grid ? ox + Math.floor((x - ox) / zoom) * zoom + zoom / 2 : x, py = grid ? oy + Math.floor((yy - oy) / zoom) * zoom + zoom / 2 : yy;
 				const fx = (px - sx) / rx, fy = (py - gy) / 4, d = fx * fx + fy * fy;
 				if (d >= 1) continue;
-				const i = (yy * W + x) * 4, k = 1 - .16 * (1 - d);
+				const i = (yy * W$1 + x) * 4, k = 1 - .16 * (1 - d);
 				body$1[i] *= k;
 				body$1[i + 1] *= k;
 				body$1[i + 2] *= k;
@@ -8699,16 +8699,16 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			put$1(e >> 1, c[0], c[1], c[2]);
 		}
 		for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
-			const hex$1 = colors[gy][gx];
-			if (!hex$1 || slots[gy][gx] === 3) continue;
+			const hex$2 = colors[gy][gx];
+			if (!hex$2 || slots[gy][gx] === 3) continue;
 			const slot = slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0, x0 = ox + cellX(gx, slot);
-			const f = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1, c = rgb$2(hex$1);
+			const f = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1, c = rgb$2(hex$2);
 			if (copy && f >= 0) litDone.fill(0);
 			for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
 				const cx = x0 + dx, cy = oy + gy * zoom + dy;
-				if (cx < 0 || cy < 0 || cx >= W || cy >= H || !room[cy * W + cx]) continue;
+				if (cx < 0 || cy < 0 || cx >= W$1 || cy >= H$1 || !room[cy * W$1 + cx]) continue;
 				if (!copy || f < 0) {
-					put$1(cy * W + cx, c[0], c[1], c[2]);
+					put$1(cy * W$1 + cx, c[0], c[1], c[2]);
 					continue;
 				}
 				const k = dx + dy;
@@ -8723,12 +8723,12 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 					lit[k * 3 + 1] = out[1] * 255;
 					lit[k * 3 + 2] = out[2] * 255;
 				}
-				put$1(cy * W + cx, lit[k * 3], lit[k * 3 + 1], lit[k * 3 + 2]);
+				put$1(cy * W$1 + cx, lit[k * 3], lit[k * 3 + 1], lit[k * 3 + 2]);
 			}
 		}
-		for (const [gx, gy, hex$1] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
-			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy, c = rgb$2(hex$1);
-			if (cx >= 0 && cy >= 0 && cx < W && cy < H && room[cy * W + cx]) put$1(cy * W + cx, c[0], c[1], c[2]);
+		for (const [gx, gy, hex$2] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy, c = rgb$2(hex$2);
+			if (cx >= 0 && cy >= 0 && cx < W$1 && cy < H$1 && room[cy * W$1 + cx]) put$1(cy * W$1 + cx, c[0], c[1], c[2]);
 		}
 	};
 	const body = s.px.slice();
@@ -8754,7 +8754,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				body[i + 2] = edOut[k * 3 + 2] * 255;
 			}
 			for (const i of ownIdx) {
-				const x = i % W, c = own(x, (i - x) / W, tm);
+				const x = i % W$1, c = own(x, (i - x) / W$1, tm);
 				body[i * 4] = c[0];
 				body[i * 4 + 1] = c[1];
 				body[i * 4 + 2] = c[2];
@@ -8762,21 +8762,21 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			drawGuy(frame, oy0 + bob, body, loopSeconds(t * 1e3));
 			for (const i of tagIdx) body.set(tag.px.subarray(i * 4, i * 4 + 3), i * 4);
 			for (let k = 0; k < titlePixels.length; k += 2) {
-				const c = titleInk(titlePixels[k], titlePixels[k + 1], tm), i = (titlePixels[k + 1] * W + titlePixels[k]) * 4;
+				const c = titleInk(titlePixels[k], titlePixels[k + 1], tm), i = (titlePixels[k + 1] * W$1 + titlePixels[k]) * 4;
 				body[i] = c[0];
 				body[i + 1] = c[1];
 				body[i + 2] = c[2];
 			}
 			out.set(shape.shadow);
-			for (let yy = 0; yy < H; yy++) {
+			for (let yy = 0; yy < H$1; yy++) {
 				const [a, b$1] = shape.runs[yy];
-				if (a >= 0) out.set(body.subarray((yy * W + a) * 4, (yy * W + b$1 + 1) * 4), ((yy + 2 - lift) * W + a) * 4);
+				if (a >= 0) out.set(body.subarray((yy * W$1 + a) * 4, (yy * W$1 + b$1 + 1) * 4), ((yy + 2 - lift) * W$1 + a) * 4);
 			}
 			return out;
 		},
 		drawSquare(frame, t, out) {
 			this.draw(frame, t, whole ??= new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
-			for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W + square.x) * 4, ((square.y + yy) * W + square.x + square.size) * 4), yy * square.size * 4);
+			for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W$1 + square.x) * 4, ((square.y + yy) * W$1 + square.x + square.size) * 4), yy * square.size * 4);
 			return out;
 		}
 	};
@@ -8822,7 +8822,7 @@ function windowArt(o, win, cx, cy) {
 			art = (x, y, tm) => {
 				const bx = (x >> 1) * 2, by = (y >> 1) * 2, d = depth(by), a = TAU_MS(tm, 4e3);
 				const q = Math.sin(bx * .19 + Math.sin(by * .15 + a) * 1.7) + Math.sin(by * .21 - bx * .09 - a * 2 + p);
-				const sea = mix$1([
+				const sea = mix$2([
 					46,
 					92,
 					214
@@ -8831,7 +8831,7 @@ function windowArt(o, win, cx, cy) {
 					16,
 					58
 				], banded(d, 5));
-				return Math.abs(q) < .11 ? mix$1(sea, [
+				return Math.abs(q) < .11 ? mix$2(sea, [
 					150,
 					196,
 					255
@@ -8850,7 +8850,7 @@ function windowArt(o, win, cx, cy) {
 						255,
 						248,
 						224
-					] : mix$1([
+					] : mix$2([
 						255,
 						226,
 						160
@@ -8860,7 +8860,7 @@ function windowArt(o, win, cx, cy) {
 						32
 					], banded((dy / 15 + 1) / 2, 3));
 				}
-				if (Math.abs(ring - 1) < .07 && dy < 0) return mix$1([
+				if (Math.abs(ring - 1) < .07 && dy < 0) return mix$2([
 					255,
 					210,
 					140
@@ -8869,7 +8869,7 @@ function windowArt(o, win, cx, cy) {
 					80,
 					30
 				], banded(-dy / 34, 2));
-				if (disc < 1.35 && disc > .8) return mix$1([
+				if (disc < 1.35 && disc > .8) return mix$2([
 					5,
 					4,
 					9
@@ -8893,7 +8893,7 @@ function windowArt(o, win, cx, cy) {
 		}
 		case "Red Giant": return (x, y) => {
 			const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, r = Math.hypot(bx - cx, by - cy + 6) / 58;
-			if (r < 1) return mix$1([
+			if (r < 1) return mix$2([
 				255,
 				196,
 				92
@@ -8902,7 +8902,7 @@ function windowArt(o, win, cx, cy) {
 				32,
 				40
 			], banded(r, 4));
-			return mix$1([
+			return mix$2([
 				92,
 				14,
 				26
@@ -8918,7 +8918,7 @@ function windowArt(o, win, cx, cy) {
 				168,
 				188,
 				236
-			] : mix$1([
+			] : mix$2([
 				236,
 				242,
 				255
@@ -8931,7 +8931,7 @@ function windowArt(o, win, cx, cy) {
 				220,
 				230,
 				255
-			] : mix$1([
+			] : mix$2([
 				30,
 				48,
 				108
@@ -9021,7 +9021,7 @@ function plateAt(s, x0, y0, w, h) {
 			0,
 			0,
 			0
-		] : INK$1);
+		] : INK$2);
 	}
 }
 /** Which of a seven-segment digit's segments are lit, a to g. */
@@ -9102,13 +9102,13 @@ function segments(s, x0, y0, digit) {
 * the corners are transparent.
 */
 function cardFrames(input, ms = 80) {
-	const card = cardPlayer(input, ms), frames = [];
-	for (let i = 0; i < card.count; i++) frames.push(card.frame(i));
+	const card$1 = cardPlayer(input, ms), frames = [];
+	for (let i = 0; i < card$1.count; i++) frames.push(card$1.frame(i));
 	return {
 		width: CARD_WIDTH,
 		height: CARD_HEIGHT,
 		frames,
-		delays: card.delays
+		delays: card$1.delays
 	};
 }
 /**
@@ -9230,16 +9230,16 @@ function toCardPng(input, scale$1 = 4) {
 */
 function toGuyGif(seed, move, options = {}, scale$1 = 12) {
 	const anim = animateLoop(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
-	const W = anim.width, frames = anim.frames.map((f) => {
-		const px = new Uint8ClampedArray(W * FRAME_HEIGHT * 4);
+	const W$1 = anim.width, frames = anim.frames.map((f) => {
+		const px = new Uint8ClampedArray(W$1 * FRAME_HEIGHT * 4);
 		f.colors.forEach((row, y) => row.forEach((c, x) => {
 			const v = c ? rgb$2(c) : bg;
-			if (v) px.set([...v, 255], (y * W + x) * 4);
+			if (v) px.set([...v, 255], (y * W$1 + x) * 4);
 		}));
 		return px;
 	});
 	return encodeGif({
-		width: W,
+		width: W$1,
 		height: FRAME_HEIGHT,
 		frames,
 		delays: anim.frames.map((f) => f.ms)
@@ -9287,7 +9287,7 @@ const rgb$1 = (s) => [
 ];
 const blend = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
 const gradeIndex = (o) => require_paint.GRADES.findIndex((g) => g.id === require_paint.gradeOf(o).id);
-const INK = [
+const INK$1 = [
 	24,
 	20,
 	31
@@ -9295,11 +9295,11 @@ const INK = [
 	255,
 	255,
 	255
-], IVORY = [
+], IVORY$1 = [
 	246,
 	240,
 	227
-], PLATE = [
+], PLATE$1 = [
 	38,
 	34,
 	52
@@ -9318,7 +9318,7 @@ function still(grid, config, palette$1) {
 }
 /** The card's face, ready to draw at any time. */
 function cardFace(spec) {
-	const W = FACE_WIDTH, H = FACE_HEIGHT;
+	const W$1 = FACE_WIDTH, H$1 = FACE_HEIGHT;
 	const copies = spec.copies ?? [];
 	const r = require_paint.resolve(spec.name, spec.parts);
 	if (spec.palette !== void 0) r.palette = spec.palette;
@@ -9338,9 +9338,9 @@ function cardFace(spec) {
 		5,
 		6
 	][Math.min(g, 5)];
-	const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise$1 = new Uint8Array(W * H * 4);
+	const base = new Uint8Array(W$1 * H$1 * 4), kind = new Uint8Array(W$1 * H$1 * 4), noise$1 = new Uint8Array(W$1 * H$1 * 4);
 	const put$1 = (x, y, c, k, fi = -1, sc = 0, pr = 0) => {
-		const i = (y * W + x) * 4, print = Math.floor(pr / 4);
+		const i = (y * W$1 + x) * 4, print = Math.floor(pr / 4);
 		base.set([
 			c[0],
 			c[1],
@@ -9363,7 +9363,7 @@ function cardFace(spec) {
 	const aura = edition === 6, gold = edition === 5, neg = edition === 4;
 	const auraCopy = copies.find((o) => require_paint.itemById(o.item)?.slot === "aura");
 	const tone = aura && auraCopy ? rgb$1(require_paint.auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
-	const gx0 = Math.floor((W - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
+	const gx0 = Math.floor((W$1 - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W$1 - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
 	const origin = [(left + right) / 2, (wTop + wBottom) / 2];
 	const stock = (x, y) => gold ? blend([
 		46,
@@ -9373,9 +9373,9 @@ function cardFace(spec) {
 		28,
 		24,
 		40
-	], y / H) : neg ? blend(blend(IVORY, tone, .35), blend(IVORY, tone, .6), y / H) : blend(blend(tone, WHITE, .08), blend(tone, INK, .25), y / H);
-	const plate = aura ? blend(blend(tone, INK, .6), INK, .45) : PLATE;
-	const light = blend(IVORY, gc, g >= 0 ? .22 : spec.tint ? .3 : .12), glow = blend(light, gc, .2);
+	], y / H$1) : neg ? blend(blend(IVORY$1, tone, .35), blend(IVORY$1, tone, .6), y / H$1) : blend(blend(tone, WHITE, .08), blend(tone, INK$1, .25), y / H$1);
+	const plate = aura ? blend(blend(tone, INK$1, .6), INK$1, .45) : PLATE$1;
+	const light = blend(IVORY$1, gc, g >= 0 ? .22 : spec.tint ? .3 : .12), glow = blend(light, gc, .2);
 	/** A Grail's window: a few large soft bands of three golds, as the big card's. */
 	const fieldGold = (x, y) => {
 		const qx = (x - origin[0]) / 8, qy = (y - origin[1]) / 8;
@@ -9395,15 +9395,15 @@ function cardFace(spec) {
 			110
 		], k2);
 	};
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
+	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+		const cx = Math.min(x, W$1 - 1 - x), cy = Math.min(y, H$1 - 1 - y);
 		if (cx + cy < 2) continue;
 		if (cx === 0 || cy === 0 || cx + cy === 2) {
-			put$1(x, y, INK, FIXED);
+			put$1(x, y, INK$1, FIXED);
 			continue;
 		}
 		const bevel = cx === 1 || cy === 1 || cx + cy === 3;
-		const deep = x > W / 2 && cx === 1 || y > H / 2 && cy === 1;
+		const deep = x > W$1 / 2 && cx === 1 || y > H$1 / 2 && cy === 1;
 		if (gold) {
 			put$1(x, y, bevel ? deep ? [
 				201,
@@ -9417,44 +9417,44 @@ function cardFace(spec) {
 			continue;
 		}
 		let c = stock(x, y);
-		if (bevel) c = deep ? blend(c, INK, .3) : blend(c, WHITE, .35);
+		if (bevel) c = deep ? blend(c, INK$1, .3) : blend(c, WHITE, .35);
 		if (aura && !bevel) {
 			const d = Math.hypot((x - origin[0]) / 15, (y - origin[1]) / 19);
-			put$1(x, y, blend(blend(tone, INK, .62), blend(tone, INK, .3), Math.max(0, 1 - d) ** 1.2), WINDOW);
+			put$1(x, y, blend(blend(tone, INK$1, .62), blend(tone, INK$1, .3), Math.max(0, 1 - d) ** 1.2), WINDOW);
 			continue;
 		}
 		put$1(x, y, c, CARD);
 	}
-	for (let y = 2; y <= 7; y++) for (let x = 2; x <= W - 3; x++) {
-		if ((x === 2 || x === W - 3) && (y === 2 || y === 7)) continue;
-		put$1(x, y, y === 2 ? blend(plate, WHITE, .16) : y === 7 ? INK : plate, FIXED);
+	for (let y = 2; y <= 7; y++) for (let x = 2; x <= W$1 - 3; x++) {
+		if ((x === 2 || x === W$1 - 3) && (y === 2 || y === 7)) continue;
+		put$1(x, y, y === 2 ? blend(plate, WHITE, .16) : y === 7 ? INK$1 : plate, FIXED);
 	}
 	if (!aura) for (let y = wTop; y <= wBottom; y++) for (let x = left; x <= right; x++) {
 		const d = Math.hypot((x - origin[0]) / 10, (y - origin[1]) / 11);
-		if (x === left || y === wTop || x === right || y === wBottom) put$1(x, y, INK, FIXED);
+		if (x === left || y === wTop || x === right || y === wBottom) put$1(x, y, INK$1, FIXED);
 		else put$1(x, y, gold ? fieldGold(x, y) : blend(light, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
 	}
-	const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
+	const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W$1 - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
 	const ground = backdropColors(config, palette$1, fx0 - gx0, fy0 - 11 + HEADROOM, fx1 - fx0 + 1, fy1 - fy0 + 1);
 	if (ground) {
 		const fi = frameCopy ? SHADER_FINISHES.indexOf(frameCopy.finish) : -1;
-		ground.forEach((row, j) => row.forEach((hex$1, i) => {
-			if (hex$1) put$1(fx0 + i, fy0 + j, rgb$1(hex$1), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0);
+		ground.forEach((row, j) => row.forEach((hex$2, i) => {
+			if (hex$2) put$1(fx0 + i, fy0 + j, rgb$1(hex$2), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0);
 		}));
 	}
 	grid.forEach((row, y) => row.forEach((t, x) => {
-		const hex$1 = colors[y][x];
-		if (!hex$1 || ground && t >= require_paint.LAYER.frame && t < require_paint.LAYER.buddy) return;
+		const hex$2 = colors[y][x];
+		if (!hex$2 || ground && t >= require_paint.LAYER.frame && t < require_paint.LAYER.buddy) return;
 		const slot = t >= require_paint.LAYER.aura ? null : t >= require_paint.LAYER.buddy ? "buddy" : t >= require_paint.LAYER.frame ? "frame" : t >= require_paint.LAYER.hat ? "hat" : t >= require_paint.LAYER.skin ? "skin" : null;
 		const o = slot ? owned[slot] : void 0;
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
-		if (x + gx0 > 1 && x + gx0 < W - 2) put$1(x + gx0, y + 11, rgb$1(hex$1), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
+		if (x + gx0 > 1 && x + gx0 < W$1 - 2) put$1(x + gx0, y + 11, rgb$1(hex$2), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
-	for (let y = 30; y <= H - 3; y++) for (let x = 2; x <= W - 3; x++) {
-		if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
-		put$1(x, y, y === 30 ? INK : plate, FIXED);
+	for (let y = 30; y <= H$1 - 3; y++) for (let x = 2; x <= W$1 - 3; x++) {
+		if ((x === 2 || x === W$1 - 3) && (y === 30 || y === H$1 - 3)) continue;
+		put$1(x, y, y === 30 ? INK$1 : plate, FIXED);
 	}
-	const buddy = new Uint8Array(W * H * 4), alone = require_paint.buddyAlone(config), buddyOwned = owned.buddy;
+	const buddy = new Uint8Array(W$1 * H$1 * 4), alone = require_paint.buddyAlone(config), buddyOwned = owned.buddy;
 	const buddyCopy = [
 		buddyOwned ? SHADER_FINISHES.indexOf(buddyOwned.finish) : -1,
 		buddyOwned?.scuff ?? 0,
@@ -9471,9 +9471,9 @@ function cardFace(spec) {
 			]);
 		}));
 		const ox = BUDDY_RIGHT - Math.max(...cells.map(([x]) => x)), oy = BUDDY_FOOT[spec.buddy ?? "peek"] - Math.max(...cells.map(([, y]) => y));
-		for (const [x, y, hex$1, art] of cells) {
-			const i = ((y + oy) * W + x + ox) * 4;
-			buddy.set([...rgb$1(hex$1), art ? 255 : 128], i);
+		for (const [x, y, hex$2, art] of cells) {
+			const i = ((y + oy) * W$1 + x + ox) * 4;
+			buddy.set([...rgb$1(hex$2), art ? 255 : 128], i);
 			noise$1[i + 1] = noiseOf(x + ox, y + oy, buddyCopy[2]);
 		}
 	}
@@ -9518,16 +9518,16 @@ const fields = new WeakMap();
 function faceField(f) {
 	let got = fields.get(f);
 	if (got) return got;
-	const W = FACE_WIDTH, H = FACE_HEIGHT, at = new Int32Array(W * H).fill(-1), cells = [];
-	for (let i = 0; i < W * H; i++) {
+	const W$1 = FACE_WIDTH, H$1 = FACE_HEIGHT, at = new Int32Array(W$1 * H$1).fill(-1), cells = [];
+	for (let i = 0; i < W$1 * H$1; i++) {
 		if (f.base[i * 4 + 3] < 128 || Math.floor(f.kind[i * 4] / 32 + .5) > WINDOW) continue;
 		at[i] = cells.length;
 		cells.push(i);
 	}
 	const n = cells.length, x = new Float32Array(n), y = new Float32Array(n), region = new Uint8Array(n), h = new Float32Array(n), rgb$4 = new Float32Array(n * 3);
 	cells.forEach((i, k) => {
-		x[k] = i % W;
-		y[k] = Math.floor(i / W);
+		x[k] = i % W$1;
+		y[k] = Math.floor(i / W$1);
 		region[k] = Math.floor(f.kind[i * 4] / 32 + .5);
 		h[k] = f.noise[i * 4] / 255;
 		for (let j = 0; j < 3; j++) rgb$4[k * 3 + j] = f.base[i * 4 + j] / 255;
@@ -9551,14 +9551,14 @@ function faceField(f) {
 }
 /** The face `ms` into its loop, in plain code: RGBA bytes, the same the GPU draws. */
 function cardFaceAt(f, ms, hover) {
-	const W = FACE_WIDTH, H = FACE_HEIGHT, out = new Uint8ClampedArray(W * H * 4);
+	const W$1 = FACE_WIDTH, H$1 = FACE_HEIGHT, out = new Uint8ClampedArray(W$1 * H$1 * 4);
 	const time = loopSeconds(ms), { at, field, out: ed } = faceField(f), lift = buddyLift(f, ms);
 	field(time, ed);
-	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-		const i = (y * W + x) * 4;
+	for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
+		const i = (y * W$1 + x) * 4;
 		if (f.base[i + 3] < 128) continue;
 		let c;
-		const e = at[i >> 2], s = ((y + lift) * W + x) * 4, b$1 = y + lift < H ? f.buddy[s + 3] : 0;
+		const e = at[i >> 2], s = ((y + lift) * W$1 + x) * 4, b$1 = y + lift < H$1 ? f.buddy[s + 3] : 0;
 		if (b$1 >= 64) {
 			c = [
 				f.buddy[s] / 255,
@@ -9581,7 +9581,7 @@ function cardFaceAt(f, ms, hover) {
 			if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
 		}
 		if (hover && hover.strength > 0) {
-			const light = (1 - smoothstep(0, .34, distance([(x + .5) / W, (y + .5) / H], [hover.x, hover.y]))) * .35 * hover.strength;
+			const light = (1 - smoothstep(0, .34, distance([(x + .5) / W$1, (y + .5) / H$1], [hover.x, hover.y]))) * .35 * hover.strength;
 			c = [
 				c[0] + light,
 				c[1] + light,
@@ -10196,13 +10196,13 @@ function lilGuyUrl(who, view = "idle", { scale: scale$1 = 1, format = "png", hos
 	const at = s > 1 ? `@${s}` : "";
 	const file = format === "gif" ? `${v}${at}.gif` : format === "sheet" ? `${v}.sheet${at}.png` : format === "json" ? `${v}.sheet${at}.json` : `${v}${at}.png`;
 	if (isInfo(who) && (v === "card-full" || v === "card-full-still")) {
-		const card = who.urls.cardFull.split("/").slice(-2)[0];
-		return `${host.replace(/\/+$/, "")}/g/${version}/${card}/${file}`;
+		const card$1 = who.urls.cardFull.split("/").slice(-2)[0];
+		return `${host.replace(/\/+$/, "")}/g/${version}/${card$1}/${file}`;
 	}
 	return `${host.replace(/\/+$/, "")}/g/${version}/${guyPart(who)}/${file}`;
 }
 /** A view's box at `scale`, in CSS pixels: null for the width of a move, which a buddy widens, when nothing says. */
-function lilGuySize(view, scale$1 = 1, wide) {
+function lilGuySize(view, scale$1 = 1, wide$1) {
 	const v = viewOf(view), size = viewSize(v);
 	if (size) return {
 		width: size.width * scale$1,
@@ -10213,7 +10213,7 @@ function lilGuySize(view, scale$1 = 1, wide) {
 		height: PFP_BOX * scale$1
 	};
 	return {
-		width: wide === void 0 ? null : (wide ? BAKED_SIZE.buddy.width : BAKED_SIZE.guy.width) * scale$1,
+		width: wide$1 === void 0 ? null : (wide$1 ? BAKED_SIZE.buddy.width : BAKED_SIZE.guy.width) * scale$1,
 		height: BAKED_SIZE.guy.height * scale$1
 	};
 }
@@ -10230,8 +10230,8 @@ function lilGuyImg(who, view = "row", options = {}) {
 	const preset = view in LIL_GUY_PRESETS ? LIL_GUY_PRESETS[view] : null;
 	const v = viewOf(view);
 	const scale$1 = typeof options.size === "string" ? LIL_GUY_PRESETS[options.size].scale : options.size ?? preset?.scale ?? 3;
-	const wide = options.wide ?? (isInfo(who) ? who.wide : void 0);
-	const box = lilGuySize(v, scale$1, wide);
+	const wide$1 = options.wide ?? (isInfo(who) ? who.wide : void 0);
+	const box = lilGuySize(v, scale$1, wide$1);
 	const host = options.host ?? defaultHost;
 	const img = document.createElement("img");
 	img.src = lilGuyUrl(who, v, { host });
@@ -10495,7 +10495,7 @@ const GUY_WIDTH = FRAME_WIDTH + AURA_PAD * 2;
 const BUDDY_GUY_WIDTH = WIDE_FRAME_WIDTH + AURA_PAD * 2;
 const GUY_HEIGHT = FRAME_HEIGHT;
 /** Where a frame `width` wide starts on a baked picture `W` wide: centred, room for an aura's rings either side. */
-const leftOf = (width, W) => AURA_PAD + Math.floor((W - AURA_PAD * 2 - width) / 2);
+const leftOf = (width, W$1) => AURA_PAD + Math.floor((W$1 - AURA_PAD * 2 - width) / 2);
 /** How long each frame of a card's shimmer shows. */
 const STEP_MS = 80;
 /** A spec as `animate` takes it: what `<lil-guy>`, the Worker and the site all draw from. */
@@ -10520,10 +10520,10 @@ const rgb = (s) => [
 	parseInt(s.slice(5, 7), 16)
 ];
 /** A frame on the padded canvas `W` wide, from column `left`: the guy's pixels (shone, if given) and the aura cells past his sides. */
-function place(frame, W, left, shone) {
-	const out = new Uint8ClampedArray(W * GUY_HEIGHT * 4), fw = frame.colors[0].length;
+function place(frame, W$1, left, shone) {
+	const out = new Uint8ClampedArray(W$1 * GUY_HEIGHT * 4), fw = frame.colors[0].length;
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
-		const o = (y * W + x + left) * 4;
+		const o = (y * W$1 + x + left) * 4;
 		if (shone) {
 			const i = (y * fw + x) * 4;
 			if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o);
@@ -10532,7 +10532,7 @@ function place(frame, W, left, shone) {
 		const c = frame.colors[y][x];
 		if (c) out.set([...rgb(c), 255], o);
 	}
-	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) out.set([...rgb(c), 255], (y * W + x + left) * 4);
+	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W$1) out.set([...rgb(c), 255], (y * W$1 + x + left) * 4);
 	return out;
 }
 const same = (a, b$1) => a.length === b$1.length && a.every((v, i) => v === b$1[i]);
@@ -10581,8 +10581,8 @@ function rawFrames(spec, move, more = {}) {
 		...more
 	}, owned = ownedOf$1(spec);
 	const plain = animate(spec.seed, move, options);
-	const W = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W);
-	const ground = backdropOf(spec.seed, options, -left, 0, W, FRAME_HEIGHT);
+	const W$1 = plain.width > FRAME_WIDTH ? BUDDY_GUY_WIDTH : GUY_WIDTH, left = leftOf(plain.width, W$1);
+	const ground = backdropOf(spec.seed, options, -left, 0, W$1, FRAME_HEIGHT);
 	const lay = (f) => ground ? {
 		frame: grounded(f, ground, left),
 		left: 0
@@ -10592,11 +10592,11 @@ function rawFrames(spec, move, more = {}) {
 	};
 	const shining = plain.frames.some((f) => shines(f, owned));
 	if (!plain.timed && !shining) return {
-		width: W,
+		width: W$1,
 		left,
 		frames: plain.frames.map((f) => {
 			const l = lay(f);
-			return place(l.frame, W, l.left);
+			return place(l.frame, W$1, l.left);
 		}),
 		delays: plain.frames.map((f) => f.ms)
 	};
@@ -10610,11 +10610,11 @@ function rawFrames(spec, move, more = {}) {
 		}
 	});
 	return {
-		width: W,
+		width: W$1,
 		left,
 		frames: anim.frames.map((f) => {
 			const l = lay(f);
-			return place(l.frame, W, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : void 0);
+			return place(l.frame, W$1, l.left, shining ? shineFrame(l.frame, owned, f.at ?? 0) : void 0);
 		}),
 		delays: anim.frames.map((f) => f.ms)
 	};
@@ -10679,7 +10679,7 @@ function bakeSquare(spec, view, move = "idle") {
 	const side = view === "icon" ? ICON_SIZE : FACE_SIZE;
 	const rest = lit[0][0] + Math.max(0, ground - lit[0][1]);
 	const top = view === "icon" ? HEADROOM : Math.min(FRAME_HEIGHT - side, Math.max(0, rest));
-	const left = raw.left + (FRAME_WIDTH - side) / 2, W = raw.width;
+	const left = raw.left + (FRAME_WIDTH - side) / 2, W$1 = raw.width;
 	let t = 0;
 	const frames = raw.frames.map((px, k) => {
 		const lift = liftAt(t);
@@ -10687,7 +10687,7 @@ function bakeSquare(spec, view, move = "idle") {
 		const out = new Uint8ClampedArray(side * side * 4);
 		for (let y = 0; y < side; y++) {
 			const from = top + y - lift;
-			if (from >= 0 && from < FRAME_HEIGHT) out.set(px.subarray((from * W + left) * 4, (from * W + left + side) * 4), y * side * 4);
+			if (from >= 0 && from < FRAME_HEIGHT) out.set(px.subarray((from * W$1 + left) * 4, (from * W$1 + left + side) * 4), y * side * 4);
 		}
 		return out;
 	});
@@ -10743,7 +10743,7 @@ function plateOf(copies) {
 }
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
 function grounded(frame, ground, left) {
-	const W = ground[0].length, fw = frame.colors[0].length;
+	const W$1 = ground[0].length, fw = frame.colors[0].length;
 	const colors = ground.map((row) => row.slice()), slots = ground.map((row) => row.map((c) => c ? 3 : 0));
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
 		const c = frame.colors[y][x];
@@ -10752,7 +10752,7 @@ function grounded(frame, ground, left) {
 			slots[y][x + left] = frame.slots[y][x];
 		}
 	}
-	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) {
+	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W$1) {
 		colors[y][x + left] = c;
 		slots[y][x + left] = 0;
 	}
@@ -10775,10 +10775,10 @@ function profileFrames(spec, move = "idle") {
 	const baked = bakeAt(backdrop ? {
 		...spec,
 		equip: spec.equip.filter((code) => code !== backdrop)
-	} : spec, move), g = baked.frames, W = g.width, H = g.height;
-	const lit = (px, x, y) => px[(y * W + x) * 4 + 3] >= 128;
-	let left = W, right = -1, top = H, bottom = -1;
-	for (const px of g.frames) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+	} : spec, move), g = baked.frames, W$1 = g.width, H$1 = g.height;
+	const lit = (px, x, y) => px[(y * W$1 + x) * 4 + 3] >= 128;
+	let left = W$1, right = -1, top = H$1, bottom = -1;
+	for (const px of g.frames) for (let y = 0; y < H$1; y++) for (let x = 0; x < W$1; x++) {
 		if (!lit(px, x, y)) continue;
 		left = Math.min(left, x);
 		right = Math.max(right, x);
@@ -10793,11 +10793,11 @@ function profileFrames(spec, move = "idle") {
 		...require_paint.resolve(spec.seed, spec.parts),
 		...spec.palette !== void 0 ? { palette: spec.palette } : {}
 	}).colors;
-	const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H, colors[require_paint.T.BODY], colors[require_paint.T.ACCENT]);
+	const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W$1, H$1, colors[require_paint.T.BODY], colors[require_paint.T.ACCENT]);
 	const frames = g.frames.map((px) => {
 		const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
 		if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
-		for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit(px, x, y)) out.set(px.subarray((y * W + x) * 4, (y * W + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
+		for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit(px, x, y)) out.set(px.subarray((y * W$1 + x) * 4, (y * W$1 + x) * 4 + 4), ((y + oy) * side + x + ox) * 4);
 		return out;
 	});
 	return {
@@ -10833,9 +10833,9 @@ const PALE = 1.3, STAND_OFF = 1.6;
 * white. A pale guy (Snow, Opal, Ice, Cream, Lemon) would melt into that and read as a blank, so
 * theirs is a tint of their `accent` instead, deepened toward night until their `body` stands off it.
 */
-function groundOf(px, W, H, body, accent) {
+function groundOf(px, W$1, H$1, body, accent) {
 	const counts = new Map();
-	for (let i = 0; i < W * H; i++) {
+	for (let i = 0; i < W$1 * H$1; i++) {
 		const [r, g, b$1, a] = px.subarray(i * 4, i * 4 + 4);
 		if (a < 128 || .2126 * r + .7152 * g + .0722 * b$1 < 60) continue;
 		const key = r << 16 | g << 8 | b$1;
@@ -10883,13 +10883,13 @@ function bakeCard(spec) {
 */
 function sheetOf(f, columns = f.frames.length) {
 	const cols = Math.max(1, Math.min(columns, f.frames.length)), rows = Math.ceil(f.frames.length / cols);
-	const W = f.width * cols, rgba = new Uint8ClampedArray(W * f.height * rows * 4);
+	const W$1 = f.width * cols, rgba = new Uint8ClampedArray(W$1 * f.height * rows * 4);
 	f.frames.forEach((px, k) => {
 		const ox = k % cols * f.width, oy = Math.floor(k / cols) * f.height;
-		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W + ox) * 4);
+		for (let y = 0; y < f.height; y++) rgba.set(px.subarray(y * f.width * 4, (y + 1) * f.width * 4), ((oy + y) * W$1 + ox) * 4);
 	});
 	return {
-		width: W,
+		width: W$1,
 		height: f.height * rows,
 		rgba,
 		delays: f.delays,
@@ -11000,11 +11000,11 @@ function bakeView(spec, view) {
 		return fewerColours(merged(f.width, f.height, f.frames, f.delays));
 	}
 	if (view === "card-full-still") {
-		const card = cardPlayer(cardInputOf(spec));
+		const card$1 = cardPlayer(cardInputOf(spec));
 		return {
-			width: card.width,
-			height: card.height,
-			frames: [card.frame(0)],
+			width: card$1.width,
+			height: card$1.height,
+			frames: [card$1.frame(0)],
 			delays: [require_paint.LOOP_MS]
 		};
 	}
@@ -11024,13 +11024,14 @@ function bakeView(spec, view) {
 		};
 	}
 	if (view === "card" || view === "card-still") {
-		const card = bakeCard(faceSpec(spec));
-		return view === "card" ? card : {
-			...card,
-			frames: card.frames.slice(0, 1),
+		const card$1 = bakeCard(faceSpec(spec));
+		return view === "card" ? card$1 : {
+			...card$1,
+			frames: card$1.frames.slice(0, 1),
 			delays: [require_paint.LOOP_MS]
 		};
 	}
+	if (view === "og") return ogFrames(spec);
 	if (view === "pfp" || view === "pfp-still") {
 		const p = profileFrames(spec);
 		return view === "pfp" ? p : {
@@ -11060,6 +11061,307 @@ function defineLilGuyHere(options = {}) {
 			return spec ? bakeView(spec, view) : null;
 		}
 	});
+}
+
+//#endregion
+//#region src/og.ts
+/**
+* Link previews: what Discord, iMessage, X and the rest show for a shared link, 1200 × 630 and still.
+* Each is drawn on a 400 × 210 grid of pixels and scaled up three times, so the guy, the frame and the
+* words are one pixel size and stay sharp. The words are m6x11plus, the site's and the card's pixel type.
+*
+* A guy's preview is his big card turned on its side: a wide window on his own backdrop with him big in
+* it, aura and all, and under it a tall panel with his name, his rank in its colour and his rarest trait.
+* The site's preview is the same card with a few guys in the window and what lil guys is under them.
+*/
+/** A link preview's width. */
+const OG_WIDTH = 1200;
+/** A link preview's height. */
+const OG_HEIGHT = 630;
+const SCALE = 3, W = OG_WIDTH / SCALE, H = OG_HEIGHT / SCALE;
+const hex = (h) => [
+	parseInt(h.slice(1, 3), 16),
+	parseInt(h.slice(3, 5), 16),
+	parseInt(h.slice(5, 7), 16)
+];
+const mix$1 = (a, b$1, t) => [
+	a[0] + (b$1[0] - a[0]) * t,
+	a[1] + (b$1[1] - a[1]) * t,
+	a[2] + (b$1[2] - a[2]) * t
+];
+const TABLE = [
+	19,
+	23,
+	38
+], PLATE = [
+	38,
+	34,
+	52
+], INK = [
+	24,
+	20,
+	31
+], IVORY = [
+	246,
+	240,
+	227
+];
+const QUIET = [
+	170,
+	166,
+	190
+], GOLD = [
+	245,
+	177,
+	67
+], PLAIN = [
+	104,
+	118,
+	146
+];
+const SITE = "lilguys.dleclub.com";
+const EXTRA = {
+	"·": [5, [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		6,
+		6,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]],
+	"’": [3, [
+		0,
+		0,
+		3,
+		3,
+		2,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	]]
+};
+const glyph = (ch) => EXTRA[ch] ?? GLYPHS[ch] ?? GLYPHS["?"];
+const wide = (s, size = 1) => ([...s].reduce((w, ch) => w + glyph(ch)[0], 0) - 1) * size;
+/** The 400 × 210 grid a preview is drawn on. */
+var Grid = class {
+	px = new Uint8ClampedArray(W * H * 4);
+	set(x, y, c) {
+		if (x < 0 || y < 0 || x >= W || y >= H) return;
+		const i = (y * W + x) * 4;
+		this.px[i] = c[0];
+		this.px[i + 1] = c[1];
+		this.px[i + 2] = c[2];
+		this.px[i + 3] = 255;
+	}
+	rect(x, y, w, h, c) {
+		for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, c);
+	}
+	/** A box with its corners cut `r` pixels in, the way the card's pixel corners go. */
+	box(x, y, w, h, r, c) {
+		for (let j = 0; j < h; j++) {
+			const k = j < r ? r - j : j >= h - r ? j - (h - r) + 1 : 0;
+			for (let i = k; i < w - k; i++) this.set(x + i, y + j, c);
+		}
+	}
+	/** Pixels from a frame (RGBA, w × h), each `s` across; see-through ones left as they are. */
+	blit(src, w, h, x, y, s = 1) {
+		for (let sy = 0; sy < h; sy++) for (let sx = 0; sx < w; sx++) {
+			const i = (sy * w + sx) * 4;
+			if (src[i + 3] < 128) continue;
+			for (let dy = 0; dy < s; dy++) for (let dx = 0; dx < s; dx++) this.set(x + sx * s + dx, y + sy * s + dy, [
+				src[i],
+				src[i + 1],
+				src[i + 2]
+			]);
+		}
+	}
+	/** Words in the pixel type, each font pixel `size` across, over a hard shadow a pixel down. */
+	text(s, x, top, c, size = 1, shadow = INK) {
+		const draw = (ox, oy, col) => {
+			let cx = ox;
+			for (const ch of s) {
+				const [adv, rows] = glyph(ch);
+				rows.forEach((bits, dy) => {
+					for (let dx = 0; bits >> dx; dx++) if (bits & 1 << dx) for (let a = 0; a < size; a++) for (let b$1 = 0; b$1 < size; b$1++) this.set(cx + dx * size + a, oy + dy * size + b$1, col);
+				});
+				cx += adv * size;
+			}
+		};
+		if (shadow) draw(x, top + size, shadow);
+		draw(x, top, c);
+	}
+	frames() {
+		const out = new Uint8ClampedArray(OG_WIDTH * OG_HEIGHT * 4);
+		for (let y = 0; y < OG_HEIGHT; y++) {
+			const row = (y / SCALE | 0) * W;
+			for (let x = 0; x < OG_WIDTH; x++) {
+				const i = (row + (x / SCALE | 0)) * 4, o = (y * OG_WIDTH + x) * 4;
+				out[o] = this.px[i];
+				out[o + 1] = this.px[i + 1];
+				out[o + 2] = this.px[i + 2];
+				out[o + 3] = 255;
+			}
+		}
+		return {
+			width: OG_WIDTH,
+			height: OG_HEIGHT,
+			frames: [out],
+			delays: [1e3]
+		};
+	}
+};
+const RIM = 4, WIN_TOP = 8, WIN_H = 128, PANEL_TOP = WIN_TOP + WIN_H + 3;
+/** The frame round everything: the table, the card's rim in `rim`, its dark plate, and the window's dark edge. */
+function card(g, rim$1) {
+	g.rect(0, 0, W, H, TABLE);
+	g.box(RIM - 2, RIM - 2, W - (RIM - 2) * 2, H - (RIM - 2) * 2, 4, INK);
+	g.box(RIM - 1, RIM - 1, W - (RIM - 1) * 2, H - (RIM - 1) * 2, 3, rim$1);
+	g.box(RIM + 1, RIM + 1, W - (RIM + 1) * 2, H - (RIM + 1) * 2, 2, PLATE);
+	g.rect(RIM + 2, RIM - 1, W - (RIM + 2) * 2, 1, mix$1(rim$1, IVORY, .45));
+	g.rect(7, WIN_TOP - 1, W - 14, WIN_H + 2, INK);
+}
+/**
+* A window `WIN_H` tall across the card, on his backdrop: each row the colour the card's window `art` has
+* just inside its edges, so the window reads as his card's. Him five times his size in the middle,
+* standing on a soft shadow.
+*/
+function window$1(g, art, guy) {
+	const f = art.frames[0];
+	const band$1 = (from, to) => {
+		const sum = [
+			0,
+			0,
+			0
+		];
+		let n = 0;
+		for (let y$1 = from; y$1 < to; y$1++) for (const x$1 of [
+			4,
+			5,
+			6,
+			art.width - 7,
+			art.width - 6,
+			art.width - 5
+		]) {
+			const i = (y$1 * art.width + x$1) * 4;
+			sum[0] += f[i];
+			sum[1] += f[i + 1];
+			sum[2] += f[i + 2];
+			n++;
+		}
+		return [
+			sum[0] / n,
+			sum[1] / n,
+			sum[2] / n
+		];
+	};
+	const top = band$1(3, 14), bottom = band$1(art.height - 14, art.height - 3);
+	for (let y$1 = 0; y$1 < WIN_H; y$1++) g.rect(8, WIN_TOP + y$1, W - 16, 1, mix$1(top, bottom, y$1 / (WIN_H - 1)));
+	const s = 5, x = Math.round((W - guy.width * s) / 2), y = WIN_TOP + WIN_H - 10 - guy.height * s;
+	const feet = y + guy.height * s - 2;
+	for (let dy = -2; dy <= 2; dy++) for (let dx = -42; dx <= 42; dx++) {
+		if ((dx / 42) ** 2 + (dy / 2.5) ** 2 > 1) continue;
+		const px = W / 2 + dx, py = feet + dy, i = (py * W + px) * 4;
+		g.set(px, py, [
+			g.px[i] * .8,
+			g.px[i + 1] * .8,
+			g.px[i + 2] * .84
+		]);
+	}
+	g.blit(guy.frames[0], guy.width, guy.height, x, y, s);
+}
+/** A pill in `c` with dark words, as the card's rank pill is; returns where it ends. */
+function pill(g, s, x, top, c) {
+	const w = wide(s) + 10;
+	g.box(x, top + 1, w, 15, 3, INK);
+	g.box(x, top, w, 15, 3, c);
+	g.text(s, x + 5, top - 1, INK, 1, null);
+	return x + w;
+}
+/** A guy's link preview: his big card on its side, his name, rank and rarest trait under him. */
+function ogFrames(spec) {
+	const input = cardInputOf(spec), grade = input.grade ?? -1;
+	const rim$1 = grade >= 0 ? hex(require_paint.GRADES[grade].color) : PLAIN;
+	const g = new Grid();
+	card(g, rim$1);
+	window$1(g, cardArtFrames({
+		seed: spec.seed,
+		parts: spec.parts,
+		palette: animateOptions(spec).palette,
+		copies: faceSpec(spec).copies,
+		grade,
+		title: ""
+	}), bakeGuy(spec, "idle"));
+	const [rank = "", trait = ""] = input.lines ?? [];
+	const name = (input.title || spec.seed).replace(/^~/, "");
+	const size = wide(name, 2) <= W - 48 - wide(SITE) ? 2 : 1;
+	g.text(name, 16, PANEL_TOP + 2, IVORY, size);
+	g.text(SITE, W - 16 - wide(SITE), PANEL_TOP + (size === 2 ? 14 : 2), GOLD);
+	const below = PANEL_TOP + (size === 2 ? 37 : 22);
+	const end = rank ? pill(g, rank.replace(/★\s*/, ""), 16, below, rim$1) : 16;
+	if (trait) g.text(trait, end + 8, below - 1, QUIET);
+	return g.frames();
+}
+/** The site's link preview: the card with `guys` in its window, small guys in their best, and what lil guys is under them. */
+function siteOgFrames(guys, line) {
+	const g = new Grid();
+	card(g, GOLD);
+	for (let y = 0; y < WIN_H; y++) g.rect(8, WIN_TOP + y, W - 16, 1, mix$1([
+		30,
+		36,
+		66
+	], [
+		70,
+		62,
+		96
+	], y / WIN_H));
+	const floor = WIN_TOP + WIN_H - 14;
+	g.rect(8, floor, W - 16, WIN_TOP + WIN_H - floor, [
+		46,
+		40,
+		66
+	]);
+	g.rect(8, floor, W - 16, 1, [
+		96,
+		86,
+		128
+	]);
+	const baked = guys.map((s) => bakeGuy(s, "idle"));
+	const sizes = baked.map((_, i) => i === baked.length >> 1 ? 4 : 3);
+	const total = baked.reduce((w, b$1, i) => w + b$1.width * sizes[i], 0), gap = Math.floor((W - 40 - total) / Math.max(1, baked.length - 1));
+	let x = 20;
+	baked.forEach((b$1, i) => {
+		const s = sizes[i];
+		for (let dx = -b$1.width * s * .35; dx <= b$1.width * s * .35; dx++) g.set(Math.round(x + b$1.width * s / 2 + dx), floor + 2, [
+			32,
+			28,
+			46
+		]);
+		g.blit(b$1.frames[0], b$1.width, b$1.height, x, floor + 2 - b$1.height * s, s);
+		x += b$1.width * s + gap;
+	});
+	g.text("Lil Guys", 16, PANEL_TOP + 2, IVORY, 2);
+	g.text(SITE, W - 16 - wide(SITE), PANEL_TOP + 14, GOLD);
+	if (wide(line) > W - 32) throw new Error(`The site's line is too long for its preview: ${line}`);
+	g.text(line, 16, PANEL_TOP + 36, QUIET);
+	return g.frames();
 }
 
 //#endregion
@@ -11554,8 +11856,8 @@ function shrink(look, make) {
 	if (!box) return [[]];
 	const { x0, y0 } = box, bw = box.x1 - x0 + 1, bh = box.y1 - y0 + 1, k = Math.max(bw, bh) / make.inner;
 	const w = Math.max(1, Math.round(bw / k)), h = Math.max(1, Math.round(bh / k));
-	const P = make.ring ? 1 : 0, W = w + 2 * P, H = h + 2 * P;
-	const out = Array.from({ length: H }, () => Array(W).fill(null));
+	const P = make.ring ? 1 : 0, W$1 = w + 2 * P, H$1 = h + 2 * P;
+	const out = Array.from({ length: H$1 }, () => Array(W$1).fill(null));
 	const ox = x0 + (bw - w * k) / 2, oy = y0 + (bh - h * k) / 2;
 	for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
 		const sx0 = ox + i * k, sx1 = sx0 + k, sy0 = oy + j * k, sy1 = sy0 + k;
@@ -11647,7 +11949,7 @@ function shrink(look, make) {
 		}
 	}
 	if (make.ring) {
-		for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (!inside$1[j][i] && SIDES.some(([dx, dy]) => inside$1[j + dy]?.[i + dx])) out[j][i] = ink;
+		for (let j = 0; j < H$1; j++) for (let i = 0; i < W$1; i++) if (!inside$1[j][i] && SIDES.some(([dx, dy]) => inside$1[j + dy]?.[i + dx])) out[j][i] = ink;
 	}
 	return out;
 }
@@ -11887,7 +12189,7 @@ function createRender(canvas, options) {
 	}
 	/** Writes a sprite into its cell, tinted, and notes its extent and where its arms go. */
 	function put$1(size, id, rgba, tint) {
-		const s = sheetsOf(size)[Math.floor(id / CELLS)], cell = id % CELLS, cx = cell % COLS * size, cy = Math.floor(cell / COLS) * size, W = s.canvas.width;
+		const s = sheetsOf(size)[Math.floor(id / CELLS)], cell = id % CELLS, cx = cell % COLS * size, cy = Math.floor(cell / COLS) * size, W$1 = s.canvas.width;
 		let left = size, right = -1, top = size;
 		const [hr, hg, hb] = tint ? rgbOf(tint.toward) : [
 			0,
@@ -11896,7 +12198,7 @@ function createRender(canvas, options) {
 		], a = tint?.amount ?? 0, f = 1 - (tint?.shade ?? 0), d = s.data;
 		const lefts = new Int8Array(size).fill(-1), rights = new Int8Array(size).fill(-1);
 		for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-			const o = (y * size + x) * 4, p = ((cy + y) * W + cx + x) * 4;
+			const o = (y * size + x) * 4, p = ((cy + y) * W$1 + cx + x) * 4;
 			if (!rgba[o + 3]) {
 				d[p + 3] = 0;
 				continue;
@@ -12469,7 +12771,7 @@ function createRender(canvas, options) {
 			tinted(g.base.body, scene.tints[bandI]),
 			tinted(g.base.ink, scene.tints[bandI])
 		];
-		const hand = top - (size >= 12 ? 1 : 0), bend = Math.round((shoulder + hand) / 2), wide = size >= 12, [, , body, ink] = g.arm;
+		const hand = top - (size >= 12 ? 1 : 0), bend = Math.round((shoulder + hand) / 2), wide$1 = size >= 12, [, , body, ink] = g.arm;
 		for (const [ax, out] of [[left, -1], [right, 1]]) {
 			const up$1 = ax + out;
 			target.fillStyle = body;
@@ -12477,7 +12779,7 @@ function createRender(canvas, options) {
 			target.fillRect(up$1, hand, 1, bend - hand + 1);
 			target.fillStyle = ink;
 			target.fillRect(up$1, hand - 1, 1, 1);
-			if (wide) {
+			if (wide$1) {
 				target.fillRect(ax + out, bend + 1, 1, shoulder - bend);
 				target.fillRect(up$1 + out, hand, 1, bend - hand + 1);
 			}
@@ -12843,11 +13145,11 @@ function createRender(canvas, options) {
 	* in the shadow colour everywhere else (as everything outside the box is).
 	*/
 	function overlayFor(cx, bottom, side) {
-		const W = scene.width, H = scene.height, c = lit?.overlay?.canvas ?? document.createElement("canvas");
+		const W$1 = scene.width, H$1 = scene.height, c = lit?.overlay?.canvas ?? document.createElement("canvas");
 		const lights = scene.lights ?? [], light = lights.length ? lights.reduce((best, l) => Math.abs(l.x - cx) < Math.abs(best.x - cx) ? l : best) : null;
 		const wTop = Math.max(2, side * .3), wBottom = side * .85, poolW = side * 1.25, poolH = side * .55, poolY = bottom - side * .1;
-		const top = Math.max(0, Math.floor(light ? Math.min(light.y, bottom - side * 1.6) : bottom - side * 1.6)), end = Math.min(H, Math.ceil(poolY + poolH + 2));
-		const left = Math.max(0, Math.floor(Math.min(light?.x ?? cx, cx - poolW) - wTop - 3)), right = Math.min(W, Math.ceil(Math.max(light?.x ?? cx, cx + poolW) + wTop + 3));
+		const top = Math.max(0, Math.floor(light ? Math.min(light.y, bottom - side * 1.6) : bottom - side * 1.6)), end = Math.min(H$1, Math.ceil(poolY + poolH + 2));
+		const left = Math.max(0, Math.floor(Math.min(light?.x ?? cx, cx - poolW) - wTop - 3)), right = Math.min(W$1, Math.ceil(Math.max(light?.x ?? cx, cx + poolW) + wTop + 3));
 		if (end <= top || right <= left) {
 			c.width = c.height = 0;
 			return {
@@ -12971,7 +13273,7 @@ function createRender(canvas, options) {
 	/** The spotlit guy's line, in a pill that fits the canvas: smaller type first, then a shorter name, the score kept. Returns its box in device pixels. */
 	function drawLabel(text, dcx, dcy, alpha) {
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		const W = devW / dpr, cy = dcy / dpr, maxW = W - 16;
+		const W$1 = devW / dpr, cy = dcy / dpr, maxW = W$1 - 16;
 		let px = 15, line = text;
 		const font = (size) => options.font ?? `700 ${size}px system-ui, sans-serif`;
 		ctx.font = font(px);
@@ -12983,7 +13285,7 @@ function createRender(canvas, options) {
 			line = head.trimEnd() + "…" + tail;
 		}
 		const tw = Math.min(maxW, Math.ceil(ctx.measureText(line).width) + 20);
-		const x = Math.max(8 + tw / 2, Math.min(W - 8 - tw / 2, dcx / dpr));
+		const x = Math.max(8 + tw / 2, Math.min(W$1 - 8 - tw / 2, dcx / dpr));
 		ctx.globalAlpha = alpha;
 		ctx.fillStyle = scene.shadow;
 		ctx.beginPath();
@@ -13338,19 +13640,19 @@ function createCrowd(canvas, options = {}) {
 			amount: HAZE[s],
 			shade: 0
 		}));
-		const k = Math.max(1, Math.round(zoom * dpr)), W = Math.ceil(devW / k), H = Math.ceil(devH / k);
-		const seats = crowdSeats(W, H, options.density ?? 1);
+		const k = Math.max(1, Math.round(zoom * dpr)), W$1 = Math.ceil(devW / k), H$1 = Math.ceil(devH / k);
+		const seats = crowdSeats(W$1, H$1, options.density ?? 1);
 		seatCount = seats.length;
 		const rows = [];
 		seats.forEach((s, i) => {
 			(rows[s.row] ??= []).push(i);
 		});
 		return {
-			width: W,
-			height: H,
+			width: W$1,
+			height: H$1,
 			k,
 			ox: 0,
-			oy: devH - H * k,
+			oy: devH - H$1 * k,
 			seats,
 			rows: Array.from(rows, (r) => (r ?? []).sort((a, b$1) => seats[a].x - seats[b$1].x)),
 			bands: Uint8Array.from(seats, (s) => LADDER$1.indexOf(s.size)),
@@ -13733,25 +14035,25 @@ const ROOF = {
 };
 const riseOf = (st, s) => s <= 5 ? s : Math.max(s - 3, Math.round(s * st.rise));
 const pitchOf = (st, s) => Math.max(s, Math.round(s * st.pitch));
-function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = STYLES[id].depth) {
+function plan(id, W$1, H$1, front, count$1, countOnly = false, spill = 0, depth = STYLES[id].depth) {
 	const st = spill >= 3 ? {
 		...STYLES[id],
 		tiers: [],
 		section: 0,
 		bow: 0,
 		arches: 0
-	} : STYLES[id], cx = W / 2;
-	const floorTop = spill >= 2 ? H : H - Math.round(H * st.floor), board = st.boards ? Math.max(2, Math.round(front * .35)) : 0;
-	const standMax = H * st.stand, bowH = st.bow * Math.min(H, W * 9 / 16);
+	} : STYLES[id], cx = W$1 / 2;
+	const floorTop = spill >= 2 ? H$1 : H$1 - Math.round(H$1 * st.floor), board = st.boards ? Math.max(2, Math.round(front * .35)) : 0;
+	const standMax = H$1 * st.stand, bowH = st.bow * Math.min(H$1, W$1 * 9 / 16);
 	const bowAt = (x) => {
-		const u = (x - cx) / (W / 2);
+		const u = (x - cx) / (W$1 / 2);
 		return bowH * Math.max(0, 1 - u * u);
 	};
 	const rows = [], breaks = [];
 	let lift = 0, at = LADDER.indexOf(front), tier = 0;
-	const roof = spill ? 0 : (ROOF[id] ?? 0) * H, room = floorTop - board - bowH - roof - 2;
+	const roof = spill ? 0 : (ROOF[id] ?? 0) * H$1, room = floorTop - board - bowH - roof - 2;
 	for (let r = 0; r < (st.centred || 400); r++) {
-		const want = depth ? front / (1 + lift / (depth * H)) : front;
+		const want = depth ? front / (1 + lift / (depth * H$1)) : front;
 		if (r > 0 && at < LADDER.length - 1 && Math.abs(Math.log(LADDER[at + 1] / want)) < Math.abs(Math.log(LADDER[at] / want))) at++;
 		const size = LADDER[at];
 		if (lift + size > Math.max(standMax, 0) && lift + size > room) break;
@@ -13787,7 +14089,7 @@ function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = ST
 	if (st.arches && lower >= 6 && !countOnly && rows[Math.max(1, Math.round(lower * .35))].size >= 6) {
 		const row = Math.max(1, Math.round(lower * .35)), r0 = rows[row], secW = st.section * r0.pitch + r0.aisle;
 		for (let v = 0; v < st.arches; v++) {
-			const j = Math.round((W * (v + .5) / st.arches - cx) / secW);
+			const j = Math.round((W$1 * (v + .5) / st.arches - cx) / secW);
 			if (arches.some((a) => a.x === j)) continue;
 			arches.push({
 				x: j,
@@ -13803,14 +14105,14 @@ function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = ST
 		const s = row.size, p = row.pitch, odd = r % 2 === 1;
 		const xs = [];
 		if (st.centred) {
-			const per = Math.max(1, Math.floor((W - 4) / p)), left = Math.max(0, count$1 - n), rowsLeft = Math.max(1, Math.ceil(left / per));
+			const per = Math.max(1, Math.floor((W$1 - 4) / p)), left = Math.max(0, count$1 - n), rowsLeft = Math.max(1, Math.ceil(left / per));
 			const here = Math.min(per, Math.ceil(left / rowsLeft));
 			const prev = seats.filter((q) => q.row === r - 1).length;
 			const shift$1 = r > 0 && (prev - here) % 2 === 0 ? r % 2 ? p / 2 : -p / 2 : 0;
 			for (let i = 0; i < here; i++) xs.push(Math.round(cx + (i - (here - 1) / 2) * p - s / 2 + shift$1));
 		} else if (row.section) {
 			const secW = row.section * p + row.aisle, inSec = odd ? row.section - 1 : row.section;
-			const j0 = Math.floor(-cx / secW) - 1, j1 = Math.ceil((W - cx) / secW) + 1;
+			const j0 = Math.floor(-cx / secW) - 1, j1 = Math.ceil((W$1 - cx) / secW) + 1;
 			for (let j = j0; j <= j1; j++) {
 				const left = cx + (j - .5) * secW + row.aisle / 2 + (odd ? p / 2 : 0);
 				const arch = arches.find((a) => a.x === j && r >= a.row && r < a.row + 2);
@@ -13820,12 +14122,12 @@ function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = ST
 				}
 			}
 		} else {
-			const start = cx - s / 2 + (odd ? p / 2 : 0), i0 = Math.ceil(-start / p), i1 = Math.floor((W - s - start) / p);
+			const start = cx - s / 2 + (odd ? p / 2 : 0), i0 = Math.ceil(-start / p), i1 = Math.floor((W$1 - s - start) / p);
 			for (let i = i0; i <= i1; i++) xs.push(Math.round(start + i * p));
 		}
 		for (const x0 of xs) {
 			const j = s <= 5 ? (r * 73856093 ^ x0 * 19349663) >>> 0 : 0, x = x0 + (j % 7 === 0 ? 1 : j % 7 === 1 ? -1 : 0);
-			if (x < 0 || x + s > W) continue;
+			if (x < 0 || x + s > W$1) continue;
 			const y = Math.round(feet(r, x0 + s / 2)) - s + (j % 5 === 2 ? 1 : j % 5 === 3 ? -1 : 0);
 			if (y < 0) continue;
 			n++;
@@ -13838,13 +14140,13 @@ function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = ST
 		}
 	});
 	if (countOnly) return n;
-	if (seats.length < count$1 && spill < 3) return plan(id, W, H, front, count$1, false, !spill && (ROOF[id] ?? 0) > 0 ? 1 : Math.max(2, spill + 1), depth);
+	if (seats.length < count$1 && spill < 3) return plan(id, W$1, H$1, front, count$1, false, !spill && (ROOF[id] ?? 0) > 0 ? 1 : Math.max(2, spill + 1), depth);
 	seats.sort((p, q) => p.row - q.row || Math.abs(p.x + p.size / 2 - cx) - Math.abs(q.x + q.size / 2 - cx) || p.x - q.x);
 	const used = seats.length ? Math.min(rows.length, seats[Math.min(seats.length, count$1) - 1].row + 1) : 0;
 	return {
 		id,
-		W,
-		H,
+		W: W$1,
+		H: H$1,
 		cx,
 		floorTop,
 		board,
@@ -13860,13 +14162,13 @@ function plan(id, W, H, front, count$1, countOnly = false, spill = 0, depth = ST
 }
 /** How many seats a venue has on a world at a front size: the same whatever the head count (but on the porch, whose rows centre on who's there), so a growing crowd works each out once. */
 const seatCounts = new Map();
-function seatsAt(id, W, H, front, count$1, depth = STYLES[id].depth) {
-	if (STYLES[id].centred) return plan(id, W, H, front, count$1, true, 0, depth);
-	const key = `${id} ${W} ${H} ${front} ${depth}`;
+function seatsAt(id, W$1, H$1, front, count$1, depth = STYLES[id].depth) {
+	if (STYLES[id].centred) return plan(id, W$1, H$1, front, count$1, true, 0, depth);
+	const key = `${id} ${W$1} ${H$1} ${front} ${depth}`;
 	let n = seatCounts.get(key);
 	if (n === void 0) {
 		if (seatCounts.size > 4e3) seatCounts.clear();
-		seatCounts.set(key, n = plan(id, W, H, front, count$1, true, 0, depth));
+		seatCounts.set(key, n = plan(id, W$1, H$1, front, count$1, true, 0, depth));
 	}
 	return n;
 }
@@ -13880,12 +14182,12 @@ function fit$1(id, devW, devH, dpr, count$1) {
 	const fronts = [...st.fronts, ...LADDER.filter((s) => s < st.fronts[st.fronts.length - 1])];
 	const found = [];
 	for (let k = 1; k < kCss + 80; k++) {
-		const W$1 = Math.ceil(devW / k), H$1 = Math.ceil(devH / k);
-		if (H$1 < 20 || fronts[fronts.length - 1] * k / dpr > cap) break;
+		const W$2 = Math.ceil(devW / k), H$2 = Math.ceil(devH / k);
+		if (H$2 < 20 || fronts[fronts.length - 1] * k / dpr > cap) break;
 		for (const front of fronts) {
 			const css$1 = front * k / dpr;
 			if (css$1 > cap) continue;
-			if (seatsAt(id, W$1, H$1, front, count$1) >= count$1) {
+			if (seatsAt(id, W$2, H$2, front, count$1) >= count$1) {
 				found.push({
 					k,
 					front,
@@ -13905,11 +14207,11 @@ function fit$1(id, devW, devH, dpr, count$1) {
 	};
 	const score = (f) => f.css * Math.pow(f.front / 16, 1.5);
 	const best = pool.reduce((b$1, f) => score(f) > score(b$1) ? f : b$1);
-	const W = Math.ceil(devW / best.k), H = Math.ceil(devH / best.k);
+	const W$1 = Math.ceil(devW / best.k), H$1 = Math.ceil(devH / best.k);
 	let lo = st.depth, hi = st.depth * 24;
 	if (st.depth) for (let i = 0; i < 7; i++) {
 		const mid = (lo + hi) / 2;
-		if (seatsAt(id, W, H, best.front, count$1, mid) >= count$1) lo = mid;
+		if (seatsAt(id, W$1, H$1, best.front, count$1, mid) >= count$1) lo = mid;
 		else hi = mid;
 	}
 	return {
@@ -13959,22 +14261,22 @@ const BAYER = [
 /** A picture at world pixels, painted by hand: rects, dithered washes and blends, all on whole pixels. */
 var Pic = class Pic {
 	px;
-	constructor(W, H) {
-		this.W = W;
-		this.H = H;
-		this.px = new Uint32Array(W * H);
+	constructor(W$1, H$1) {
+		this.W = W$1;
+		this.H = H$1;
+		this.px = new Uint32Array(W$1 * H$1);
 	}
 	static seen = new Map();
-	static c(hex$1) {
-		let c = Pic.seen.get(hex$1);
+	static c(hex$2) {
+		let c = Pic.seen.get(hex$2);
 		if (c === void 0) {
-			const n = parseInt(hex$1.slice(1, 7), 16);
-			Pic.seen.set(hex$1, c = (255 << 24 | (n & 255) << 16 | (n >> 8 & 255) << 8 | n >> 16) >>> 0);
+			const n = parseInt(hex$2.slice(1, 7), 16);
+			Pic.seen.set(hex$2, c = (255 << 24 | (n & 255) << 16 | (n >> 8 & 255) << 8 | n >> 16) >>> 0);
 		}
 		return c;
 	}
-	rect(x, y, w, h, hex$1, level = 16) {
-		const c = Pic.c(hex$1), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
+	rect(x, y, w, h, hex$2, level = 16) {
+		const c = Pic.c(hex$2), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
 		if (x1 <= x0) return;
 		for (let j = y0; j < y1; j++) {
 			if (level >= 16) {
@@ -13984,12 +14286,12 @@ var Pic = class Pic {
 			for (let r = 0; r < 4; r++) if (BAYER[(j & 3) * 4 + r] < level) for (let i = x0 + (r - x0 & 3); i < x1; i += 4) this.px[j * this.W + i] = c;
 		}
 	}
-	dot(x, y, hex$1) {
-		this.rect(x, y, 1, 1, hex$1);
+	dot(x, y, hex$2) {
+		this.rect(x, y, 1, 1, hex$2);
 	}
 	/** Blends a rect toward a colour by `a`, for lines painted on a floor. */
-	mix(x, y, w, h, hex$1, a) {
-		const c = Pic.c(hex$1), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
+	mix(x, y, w, h, hex$2, a) {
+		const c = Pic.c(hex$2), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
 		for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) {
 			const o = this.px[j * this.W + i];
 			let out = 255 << 24;
@@ -14018,11 +14320,11 @@ var Pic = class Pic {
 };
 const shades = new Map();
 /** A colour `f` of the way to white (or, below 0, to black), worked out once. */
-const shade = (hex$1, f) => {
-	const key = hex$1 + f;
+const shade = (hex$2, f) => {
+	const key = hex$2 + f;
 	let out = shades.get(key);
 	if (out === void 0) {
-		const n = parseInt(hex$1.slice(1, 7), 16);
+		const n = parseInt(hex$2.slice(1, 7), 16);
 		shades.set(key, out = "#" + [
 			n >> 16 & 255,
 			n >> 8 & 255,
@@ -14033,12 +14335,12 @@ const shade = (hex$1, f) => {
 };
 /** The stand under the seats: a tread per row in the seat colour, a riser line under it, a seat back per seat, aisles and arches. */
 function paintStand(pic, p, top) {
-	const st = STYLES[p.id], { W } = p;
+	const st = STYLES[p.id], { W: W$1 } = p;
 	const runs$1 = [];
-	for (let x = 0; x < W;) {
+	for (let x = 0; x < W$1;) {
 		const up = Math.round(-p.bowAt(x + .5));
 		let e = x + 1;
-		while (e < W && Math.round(-p.bowAt(e + .5)) === up) e++;
+		while (e < W$1 && Math.round(-p.bowAt(e + .5)) === up) e++;
 		runs$1.push(x, e, up);
 		x = e;
 	}
@@ -14058,7 +14360,7 @@ function paintStand(pic, p, top) {
 	for (let r = 0; r < top; r++) {
 		const row = p.rows[r], secW = row.section * row.pitch + row.aisle;
 		if (!row.section) continue;
-		for (let j = Math.floor(-p.cx / secW) - 1; j <= Math.ceil((W - p.cx) / secW) + 1; j++) {
+		for (let j = Math.floor(-p.cx / secW) - 1; j <= Math.ceil((W$1 - p.cx) / secW) + 1; j++) {
 			const x = Math.round(p.cx + (j - .5) * secW - row.aisle / 2), feet = Math.round(p.feet(r, x));
 			pic.rect(x, feet - row.rise, row.aisle, row.rise, shade(st.seats[0], .12));
 			pic.rect(x, feet - 1, row.aisle, 1, shade(st.seats[0], -.35));
@@ -14219,9 +14521,9 @@ function bulbs(pic, x0, x1, y, sag, every) {
 }
 /** Paints a venue's picture for its plan (everything behind the guys), and where its lights hang, for a spotlight. */
 function paintVenue(p) {
-	const { W, H, id } = p, pic = new Pic(W, H), st = STYLES[id], lights = [];
+	const { W: W$1, H: H$1, id } = p, pic = new Pic(W$1, H$1), st = STYLES[id], lights = [];
 	if (!p.rows.length) {
-		pic.rect(0, 0, W, H, "#1d2333");
+		pic.rect(0, 0, W$1, H$1, "#1d2333");
 		return {
 			canvas: pic.canvas(),
 			lights
@@ -14230,14 +14532,14 @@ function paintVenue(p) {
 	let top = Math.max(1, Math.min(p.rows.length, p.used));
 	for (let extra = id === "bleachers" ? 2 : id === "gym" ? 1 : 0; extra > 0 && top < p.rows.length && p.rows[top].lift + p.rows[top].size <= p.standMax; extra--) top++;
 	const r = top - 1, standTop = (x) => Math.round(p.feet(r, x) - p.rows[r].rise - (p.rows[r].size - p.rows[r].rise));
-	const fr = Math.max(1, Math.round(H / 90));
+	const fr = Math.max(1, Math.round(H$1 / 90));
 	if (id === "porch") {
-		pic.rect(0, 0, W, H, "#3b4a5e");
-		for (let y = 0; y < H; y += Math.max(3, fr * 3)) {
-			pic.rect(0, y, W, 1, "#2f3c4f");
-			pic.rect(0, y + 1, W, 1, "#45566c");
+		pic.rect(0, 0, W$1, H$1, "#3b4a5e");
+		for (let y = 0; y < H$1; y += Math.max(3, fr * 3)) {
+			pic.rect(0, y, W$1, 1, "#2f3c4f");
+			pic.rect(0, y + 1, W$1, 1, "#45566c");
 		}
-		const eave = Math.round(H * .11), winW = Math.round(W * .18), winH = Math.round(H * .22), wx = Math.round(W * .16), wy = Math.round(H * .24);
+		const eave = Math.round(H$1 * .11), winW = Math.round(W$1 * .18), winH = Math.round(H$1 * .22), wx = Math.round(W$1 * .16), wy = Math.round(H$1 * .24);
 		pic.rect(wx - 4, wy - 4, winW + 8, winH + 8, "#4f5560");
 		pic.rect(wx - 2, wy - 2, winW + 4, winH + 4, "#6b6862");
 		pic.rect(wx - 1, wy - 1, winW + 2, winH + 2, "#2a2230");
@@ -14245,54 +14547,54 @@ function paintVenue(p) {
 		pic.rect(wx, wy + winH - Math.round(winH * .3), winW, Math.round(winH * .3), "#f2b45a");
 		pic.rect(wx + Math.round(winW / 2), wy, 1, winH, "#2a2230");
 		pic.rect(wx, wy + Math.round(winH / 2), winW, 1, "#2a2230");
-		const dw = Math.round(W * .12), dx = Math.round(W * .68), dy = Math.round(H * .2);
-		pic.rect(dx - 2, dy - 2, dw + 4, H, "#2b2433");
-		pic.rect(dx, dy, dw, H, "#6b4a33");
-		pic.rect(dx + 2, dy + 3, dw - 4, Math.round(H * .18), "#5a3d2a");
-		pic.rect(dx + dw - 4, Math.round(H * .42), 2, 2, "#e7b53b");
-		pic.rect(0, 0, W, eave, "#1c2238");
-		pic.rect(0, eave - 2, W, 2, "#2a2230");
-		pic.rect(0, eave, W, 1, "#5a4a3a");
-		for (const px of [0, W - Math.max(3, Math.round(W * .025))]) {
-			const pw = Math.max(3, Math.round(W * .025));
-			pic.rect(px, eave, pw, H, "#8a5f3e");
-			pic.rect(px + 1, eave, 1, H, "#a8794f");
+		const dw = Math.round(W$1 * .12), dx = Math.round(W$1 * .68), dy = Math.round(H$1 * .2);
+		pic.rect(dx - 2, dy - 2, dw + 4, H$1, "#2b2433");
+		pic.rect(dx, dy, dw, H$1, "#6b4a33");
+		pic.rect(dx + 2, dy + 3, dw - 4, Math.round(H$1 * .18), "#5a3d2a");
+		pic.rect(dx + dw - 4, Math.round(H$1 * .42), 2, 2, "#e7b53b");
+		pic.rect(0, 0, W$1, eave, "#1c2238");
+		pic.rect(0, eave - 2, W$1, 2, "#2a2230");
+		pic.rect(0, eave, W$1, 1, "#5a4a3a");
+		for (const px of [0, W$1 - Math.max(3, Math.round(W$1 * .025))]) {
+			const pw = Math.max(3, Math.round(W$1 * .025));
+			pic.rect(px, eave, pw, H$1, "#8a5f3e");
+			pic.rect(px + 1, eave, 1, H$1, "#a8794f");
 		}
-		lights.push(...bulbs(pic, W * .03, W * .97, eave + 1, H * .05, Math.max(8, Math.round(W / 14))));
+		lights.push(...bulbs(pic, W$1 * .03, W$1 * .97, eave + 1, H$1 * .05, Math.max(8, Math.round(W$1 / 14))));
 	} else if (id === "bleachers") {
-		const horizon = Math.round(standTop(p.cx) + H * .03);
+		const horizon = Math.round(standTop(p.cx) + H$1 * .03);
 		pic.bands(0, horizon, [
 			"#26284a",
 			"#4a3a68",
 			"#8a4f6e",
 			"#e0876a"
 		]);
-		for (let x = 0; x < W; x++) {
-			const t = Math.round(H * .07 + require_paint.hash("tree" + Math.floor(x / 5)) % 7 + 3 * Math.sin(x / 9));
-			pic.rect(x, horizon - t, 1, H, "#1d2a2a");
+		for (let x = 0; x < W$1; x++) {
+			const t = Math.round(H$1 * .07 + require_paint.hash("tree" + Math.floor(x / 5)) % 7 + 3 * Math.sin(x / 9));
+			pic.rect(x, horizon - t, 1, H$1, "#1d2a2a");
 		}
-		const sbx = Math.round(W * .87), sby = Math.round(H * .12);
+		const sbx = Math.round(W$1 * .87), sby = Math.round(H$1 * .12);
 		pic.rect(sbx - 1, sby, 2, horizon, "#2a2f3d");
-		scoreboard(pic, sbx, sby, Math.round(W * .14), Math.round(H * .09), "#ff7a3c", "#2a2f3d");
+		scoreboard(pic, sbx, sby, Math.round(W$1 * .14), Math.round(H$1 * .09), "#ff7a3c", "#2a2f3d");
 	} else if (id === "gym") {
-		pic.rect(0, 0, W, H, "#b3a891");
-		for (let y = 0; y < H; y += 3 * fr) {
-			pic.rect(0, y, W, 1, "#a39883");
-			for (let x = y / (3 * fr) % 2 * 4 * fr; x < W; x += 8 * fr) pic.rect(x, y, 1, 3 * fr, "#a39883");
+		pic.rect(0, 0, W$1, H$1, "#b3a891");
+		for (let y = 0; y < H$1; y += 3 * fr) {
+			pic.rect(0, y, W$1, 1, "#a39883");
+			for (let x = y / (3 * fr) % 2 * 4 * fr; x < W$1; x += 8 * fr) pic.rect(x, y, 1, 3 * fr, "#a39883");
 		}
-		const wallTop = Math.round(H * .04);
-		pic.rect(0, 0, W, wallTop, "#2a2630");
-		const winY = Math.round(H * .07), winH = Math.round(H * .1), n = Math.max(3, Math.round(W / 80)), ww = Math.round(W / n * .55);
+		const wallTop = Math.round(H$1 * .04);
+		pic.rect(0, 0, W$1, wallTop, "#2a2630");
+		const winY = Math.round(H$1 * .07), winH = Math.round(H$1 * .1), n = Math.max(3, Math.round(W$1 / 80)), ww = Math.round(W$1 / n * .55);
 		for (let i = 0; i < n; i++) {
-			const x = Math.round((i + .5) * W / n - ww / 2);
+			const x = Math.round((i + .5) * W$1 / n - ww / 2);
 			pic.rect(x - 1, winY - 1, ww + 2, winH + 2, "#4a4f5c");
 			pic.rect(x, winY, ww, winH, "#9ec3e6");
 			pic.rect(x, winY, ww, Math.round(winH / 3), "#b9d6f0");
 			for (let m = 1; m < 3; m++) pic.rect(x + Math.round(ww * m / 3), winY, 1, winH, "#4a4f5c");
 		}
-		pic.rect(0, Math.round(H * .24), W, Math.max(2, fr * 2), "#2c3a5e");
+		pic.rect(0, Math.round(H$1 * .24), W$1, Math.max(2, fr * 2), "#2c3a5e");
 		for (const u of [.35, .65]) {
-			const x = Math.round(W * u), lw = Math.max(5, Math.round(W * .03)) | 1, ly = wallTop + Math.max(3, Math.round(H * .06)), lh = Math.max(2, lw >> 1);
+			const x = Math.round(W$1 * u), lw = Math.max(5, Math.round(W$1 * .03)) | 1, ly = wallTop + Math.max(3, Math.round(H$1 * .06)), lh = Math.max(2, lw >> 1);
 			pic.rect(x, 0, 1, ly, "#3a3640");
 			for (let j = 0; j < lh; j++) {
 				const half = (lw >> 1) - (lh - 1 - j);
@@ -14311,30 +14613,30 @@ function paintVenue(p) {
 			.8
 		].forEach((u, i) => {
 			if (i === 1) {
-				scoreboard(pic, Math.round(W * u), Math.round(H * .06), Math.round(W * .2), Math.round(H * .1), "#ff5a4a", "#0d0f16");
+				scoreboard(pic, Math.round(W$1 * u), Math.round(H$1 * .06), Math.round(W$1 * .2), Math.round(H$1 * .1), "#ff5a4a", "#0d0f16");
 				return;
 			}
-			const bw = Math.round(W * .07), bh = Math.round(H * .17), bx = Math.round(W * u - bw / 2), c = CLUB[i * 2];
+			const bw = Math.round(W$1 * .07), bh = Math.round(H$1 * .17), bx = Math.round(W$1 * u - bw / 2), c = CLUB[i * 2];
 			pic.rect(bx, wallTop, bw, bh, c);
 			pic.rect(bx, wallTop + Math.round(bh * .25), bw, Math.max(1, fr), shade(c, .45));
 			for (let k = 0; k < bw / 2; k++) pic.rect(bx + k, wallTop + bh + k * 0, 1, Math.round(bw / 2 - k) * .6 + 1, c), pic.rect(bx + bw - 1 - k, wallTop + bh, 1, Math.round(bw / 2 - k) * .6 + 1, c);
 			pic.rect(bx + bw / 2 - 1, wallTop + bh, 2, Math.round(bw * .3), "#b3a891");
 		});
 	} else if (id === "hall") {
-		pic.rect(0, 0, W, H, "#2e1c33");
-		const ceil = Math.round(H * .08), cw = Math.max(6, Math.round(W / 18)), ch = Math.max(2, Math.round(ceil / 3));
-		pic.rect(0, 0, W, ceil, "#1d1222");
-		for (let x = Math.round(cw / 4); x < W; x += cw) for (let y = 2; y + ch <= ceil - 2; y += ch + 2) {
+		pic.rect(0, 0, W$1, H$1, "#2e1c33");
+		const ceil = Math.round(H$1 * .08), cw = Math.max(6, Math.round(W$1 / 18)), ch = Math.max(2, Math.round(ceil / 3));
+		pic.rect(0, 0, W$1, ceil, "#1d1222");
+		for (let x = Math.round(cw / 4); x < W$1; x += cw) for (let y = 2; y + ch <= ceil - 2; y += ch + 2) {
 			pic.rect(x, y, cw - 3, ch, "#281830");
 			pic.rect(x, y + ch - 1, cw - 3, 1, "#35223c");
 		}
-		pic.rect(0, ceil, W, Math.max(1, fr), "#b58a3a");
-		pic.rect(0, ceil + Math.max(1, fr), W, 1, "#6e5022");
-		const n = Math.max(4, Math.round(W / 60)), wall = standTop(p.cx);
+		pic.rect(0, ceil, W$1, Math.max(1, fr), "#b58a3a");
+		pic.rect(0, ceil + Math.max(1, fr), W$1, 1, "#6e5022");
+		const n = Math.max(4, Math.round(W$1 / 60)), wall = standTop(p.cx);
 		for (let i = 0; i <= n; i++) {
-			const x = Math.round(i * W / n), pw = Math.max(3, Math.round(W * .025));
-			pic.rect(x - pw / 2, ceil + 2, pw, H, "#3a2440");
-			pic.rect(x - pw / 2, ceil + 2, 1, H, "#4a2f50");
+			const x = Math.round(i * W$1 / n), pw = Math.max(3, Math.round(W$1 * .025));
+			pic.rect(x - pw / 2, ceil + 2, pw, H$1, "#3a2440");
+			pic.rect(x - pw / 2, ceil + 2, 1, H$1, "#4a2f50");
 			const sy = Math.round(ceil + (wall - ceil) * .62);
 			if (sy + 4 < wall) {
 				pic.rect(x - 3, sy - 2, 7, 6, "#4d3040");
@@ -14343,9 +14645,9 @@ function paintVenue(p) {
 				pic.dot(x, sy, "#fff6d8");
 			}
 		}
-		const room = wall - ceil - 4, cn = W > 260 ? 3 : 1;
+		const room = wall - ceil - 4, cn = W$1 > 260 ? 3 : 1;
 		for (let i = 0; i < cn && room >= 6; i++) {
-			const x = Math.round(W * (i + .5) / cn), cwid = Math.max(7, Math.min(Math.round(W * .07), room * 2)) | 1, drop = Math.max(2, Math.round(room * .3));
+			const x = Math.round(W$1 * (i + .5) / cn), cwid = Math.max(7, Math.min(Math.round(W$1 * .07), room * 2)) | 1, drop = Math.max(2, Math.round(room * .3));
 			const y = ceil + 2 + drop, half = cwid >> 1, th = Math.max(3, Math.round(cwid * .35));
 			for (let j = -th * 2; j <= th * 2; j++) {
 				const span = Math.round(cwid * Math.sqrt(Math.max(0, 1 - (j / (th * 2)) ** 2)));
@@ -14368,8 +14670,8 @@ function paintVenue(p) {
 			});
 		}
 	} else {
-		const roof = Math.round((ROOF[id] ?? .15) * H), sky = id === "arena" ? "#0f121c" : "#0d1019";
-		pic.bands(0, H, id === "arena" ? [
+		const roof = Math.round((ROOF[id] ?? .15) * H$1), sky = id === "arena" ? "#0f121c" : "#0d1019";
+		pic.bands(0, H$1, id === "arena" ? [
 			"#0c0f18",
 			"#141826",
 			"#161b2a"
@@ -14379,14 +14681,14 @@ function paintVenue(p) {
 			"#1a2033"
 		]);
 		if (id === "arena") {
-			pic.rect(0, 0, W, roof, "#0c0f18");
-			for (let x = 0; x < W; x++) {
+			pic.rect(0, 0, W$1, roof, "#0c0f18");
+			for (let x = 0; x < W$1; x++) {
 				const u = x % 12;
 				pic.dot(x, Math.round(roof * .3) + Math.abs(u - 6), "#1e2434");
 				pic.dot(x, Math.round(roof * .3), "#232a3b");
 				pic.dot(x, Math.round(roof * .3) + 6, "#232a3b");
 			}
-			const sw = Math.round(W * .2), sh = Math.round(roof * .62), sx = Math.round(p.cx - sw / 2), sy = Math.round(roof * .18);
+			const sw = Math.round(W$1 * .2), sh = Math.round(roof * .62), sx = Math.round(p.cx - sw / 2), sy = Math.round(roof * .18);
 			pic.rect(sx + 3, 0, 1, sy, "#2a3042");
 			pic.rect(sx + sw - 4, 0, 1, sy, "#2a3042");
 			pic.rect(sx, sy, sw, sh, "#232838");
@@ -14398,34 +14700,34 @@ function paintVenue(p) {
 				pic.rect(qx + qw * .55, sy + 4, qw * .35, Math.max(2, sh * .25), "#ffd45c", 10);
 			}
 			pic.rect(sx, sy + sh, sw, 1, "#5fb4ff");
-			[.18, .82].forEach((u) => lights.push(lightBank(pic, Math.round(W * u), Math.round(roof * .45), Math.max(1, Math.round(Math.min(H, W * 9 / 16) * .008)), 3, 1, W * .05, standTop(W * u), sky)));
+			[.18, .82].forEach((u) => lights.push(lightBank(pic, Math.round(W$1 * u), Math.round(roof * .45), Math.max(1, Math.round(Math.min(H$1, W$1 * 9 / 16) * .008)), 3, 1, W$1 * .05, standTop(W$1 * u), sky)));
 		} else {
-			const banks = id === "bowl" ? 6 : 4, cell = Math.max(1, Math.round(Math.min(H, W * 9 / 16) * .009)), bh = 2 * (cell + 1) + 1;
+			const banks = id === "bowl" ? 6 : 4, cell = Math.max(1, Math.round(Math.min(H$1, W$1 * 9 / 16) * .009)), bh = 2 * (cell + 1) + 1;
 			const from = id === "stadium" ? Math.round(roof * .45) : 0;
 			const bankY = (x) => Math.max(from + 1, Math.min(roof + 1, standTop(x) - Math.max(2, fr * 2) - bh - 2));
 			const bankAt = Array.from({ length: banks }, (_, i) => {
-				const x = Math.round(W * (i + .5) / banks);
+				const x = Math.round(W$1 * (i + .5) / banks);
 				return {
 					x,
 					y: bankY(x)
 				};
 			});
-			for (const b$1 of bankAt) lights.push(lightBank(pic, b$1.x, b$1.y, cell, 4, 2, W * .06, standTop(b$1.x), sky));
-			if (from) for (let i = 0; i < W * from / 40; i++) {
+			for (const b$1 of bankAt) lights.push(lightBank(pic, b$1.x, b$1.y, cell, 4, 2, W$1 * .06, standTop(b$1.x), sky));
+			if (from) for (let i = 0; i < W$1 * from / 40; i++) {
 				const h = require_paint.hash("star" + i);
-				pic.dot(h % W, (h >> 12) % from, i % 5 ? "#3a4466" : "#c9d1de");
+				pic.dot(h % W$1, (h >> 12) % from, i % 5 ? "#3a4466" : "#c9d1de");
 			}
-			pic.rect(0, from, W, roof - from, "#151a28");
-			for (let y = from + 3; y < roof - 4; y += 5) pic.rect(0, y, W, 1, "#1a2030");
-			for (let x = Math.round(W / 48); x < W; x += Math.max(4, Math.round(W / 24))) pic.rect(x, from, 1, roof - 3 - from, "#1e2536");
+			pic.rect(0, from, W$1, roof - from, "#151a28");
+			for (let y = from + 3; y < roof - 4; y += 5) pic.rect(0, y, W$1, 1, "#1a2030");
+			for (let x = Math.round(W$1 / 48); x < W$1; x += Math.max(4, Math.round(W$1 / 24))) pic.rect(x, from, 1, roof - 3 - from, "#1e2536");
 			if (id === "bowl") for (const u of [.035, .785]) {
-				const sw = Math.round(W * .18), sh = Math.round(Math.min(roof * .5, W * .06)), sx = Math.round(W * u), sy = Math.round(roof * .18);
+				const sw = Math.round(W$1 * .18), sh = Math.round(Math.min(roof * .5, W$1 * .06)), sx = Math.round(W$1 * u), sy = Math.round(roof * .18);
 				pic.rect(sx - 1, sy - 1, sw + 2, sh + 2, "#2a3042");
 				pic.rect(sx, sy, sw, sh, "#0f2a4a");
 				pic.rect(sx, sy, sw, 1, "#5fb4ff");
 				for (let i = 0; i < 6; i++) pic.rect(sx + 2 + i * Math.floor((sw - 4) / 6), sy + 3, Math.floor((sw - 4) / 6) - 1, sh - 6, CLUB[(i + (u > .5 ? 3 : 0)) % CLUB.length], 10);
 			}
-			for (let x = 0; x < W; x++) {
+			for (let x = 0; x < W$1; x++) {
 				const u = x % 8;
 				pic.dot(x, roof - 3 + (u < 4 ? 0 : 0), "#2d3448");
 				pic.dot(x, roof - 1, "#3a4258");
@@ -14444,7 +14746,7 @@ function paintVenue(p) {
 	}
 	const wallC = id === "porch" ? "#4a3a32" : id === "bleachers" ? "#3a4152" : id === "gym" ? "#7a5634" : id === "hall" ? "#3a1c2a" : "#1d2333";
 	const wallTopC = shade(wallC, .3);
-	if (!st.centred && id !== "bleachers") for (let x = 0; x < W; x++) {
+	if (!st.centred && id !== "bleachers") for (let x = 0; x < W$1; x++) {
 		const y = standTop(x) - Math.max(2, fr * 2), y1 = Math.round(p.feet(r, x + .5)) - p.rows[r].rise;
 		pic.rect(x, y, 1, y1 - y, wallC);
 		pic.dot(x, y, wallTopC);
@@ -14453,16 +14755,16 @@ function paintVenue(p) {
 		const steps$1 = Math.max(2, p.used);
 		for (let s = steps$1 - 1; s >= 0; s--) {
 			const row = p.rows[Math.min(s, p.rows.length - 1)], feet = Math.round(p.feet(Math.min(s, p.rows.length - 1), p.cx)), tread = Math.max(2, Math.round(row.size * .18));
-			pic.rect(0, feet - tread, W, H, "#7a5234");
-			pic.rect(0, feet - tread, W, tread, "#a0714a");
-			pic.rect(0, feet - tread, W, 1, "#c08a5c");
-			pic.rect(0, feet, W, H, "#6b4a33");
+			pic.rect(0, feet - tread, W$1, H$1, "#7a5234");
+			pic.rect(0, feet - tread, W$1, tread, "#a0714a");
+			pic.rect(0, feet - tread, W$1, 1, "#c08a5c");
+			pic.rect(0, feet, W$1, H$1, "#6b4a33");
 		}
 		const ground = p.floorTop;
-		pic.rect(0, ground, W, H - ground, "#24301f");
-		for (let x = 0; x < W; x++) if (require_paint.hash("g" + x) % 3 === 0) pic.dot(x, ground, "#2f3d28");
-		pic.rect(p.cx - W * .12, ground, W * .24, H - ground, "#5a5550");
-		pic.rect(p.cx - W * .12, ground, W * .24, 1, "#6e6862");
+		pic.rect(0, ground, W$1, H$1 - ground, "#24301f");
+		for (let x = 0; x < W$1; x++) if (require_paint.hash("g" + x) % 3 === 0) pic.dot(x, ground, "#2f3d28");
+		pic.rect(p.cx - W$1 * .12, ground, W$1 * .24, H$1 - ground, "#5a5550");
+		pic.rect(p.cx - W$1 * .12, ground, W$1 * .24, 1, "#6e6862");
 		return {
 			canvas: pic.canvas(),
 			lights
@@ -14471,19 +14773,19 @@ function paintVenue(p) {
 	if (id === "bleachers") {
 		for (let r$1 = top - 1; r$1 >= 0; r$1--) {
 			const row = p.rows[r$1], feet = Math.round(p.feet(r$1, p.cx)), plank = Math.max(2, Math.round(row.size * .2));
-			pic.rect(0, feet - row.rise, W, row.rise, "#262b38");
-			pic.rect(0, feet - plank, W, plank, "#9aa6b8");
-			pic.rect(0, feet - plank, W, 1, "#d7dde6");
-			pic.rect(0, feet - 1, W, 1, "#5d6778");
+			pic.rect(0, feet - row.rise, W$1, row.rise, "#262b38");
+			pic.rect(0, feet - plank, W$1, plank, "#9aa6b8");
+			pic.rect(0, feet - plank, W$1, 1, "#d7dde6");
+			pic.rect(0, feet - 1, W$1, 1, "#5d6778");
 		}
-		const front = Math.round(p.feet(0, p.cx)), leg = Math.max(8, Math.round(W / 10));
-		for (let x = Math.round(leg / 2); x < W; x += leg) {
+		const front = Math.round(p.feet(0, p.cx)), leg = Math.max(8, Math.round(W$1 / 10));
+		for (let x = Math.round(leg / 2); x < W$1; x += leg) {
 			pic.rect(x, front, 2, p.floorTop - front, "#5d6778");
 			for (let j = 0; j < p.floorTop - front; j++) pic.dot(x + 2 + Math.round(j * .8), front + j, "#4c566b");
 		}
-		pic.rect(0, p.floorTop, W, H - p.floorTop, "#2f7a43");
-		for (let x = 0; x < W; x++) if (Math.floor(x / Math.max(10, W / 16)) % 2) pic.rect(x, p.floorTop, 1, H, "#2a7040");
-		pic.mix(0, p.floorTop + Math.round((H - p.floorTop) * .4), W, 1, "#ffffff", .7);
+		pic.rect(0, p.floorTop, W$1, H$1 - p.floorTop, "#2f7a43");
+		for (let x = 0; x < W$1; x++) if (Math.floor(x / Math.max(10, W$1 / 16)) % 2) pic.rect(x, p.floorTop, 1, H$1, "#2a7040");
+		pic.mix(0, p.floorTop + Math.round((H$1 - p.floorTop) * .4), W$1, 1, "#ffffff", .7);
 		return {
 			canvas: pic.canvas(),
 			lights
@@ -14492,27 +14794,27 @@ function paintVenue(p) {
 	if (id === "gym") {
 		for (let r$1 = top - 1; r$1 >= 0; r$1--) {
 			const row = p.rows[r$1], feet = Math.round(p.feet(r$1, p.cx)), plank = Math.max(2, Math.round(row.size * .22));
-			pic.rect(0, feet - row.rise, W, row.rise, "#8f5f33");
-			pic.rect(0, feet - plank, W, plank, "#c58b4f");
-			pic.rect(0, feet - plank, W, 1, "#e0b07a");
+			pic.rect(0, feet - row.rise, W$1, row.rise, "#8f5f33");
+			pic.rect(0, feet - plank, W$1, plank, "#c58b4f");
+			pic.rect(0, feet - plank, W$1, 1, "#e0b07a");
 		}
 		const front = Math.round(p.feet(0, p.cx));
-		pic.rect(0, front, W, p.floorTop - front, "#5a3b22");
-		for (let y = p.floorTop; y < H; y++) pic.rect(0, y, W, 1, Math.floor((y - p.floorTop) / Math.max(2, fr * 2)) % 2 ? "#c08950" : "#c9925a");
-		for (let y = p.floorTop; y < H; y += Math.max(2, fr * 2)) for (let x = require_paint.hash("s" + y) % 40; x < W; x += 40) pic.dot(x, y, "#a8743f");
+		pic.rect(0, front, W$1, p.floorTop - front, "#5a3b22");
+		for (let y = p.floorTop; y < H$1; y++) pic.rect(0, y, W$1, 1, Math.floor((y - p.floorTop) / Math.max(2, fr * 2)) % 2 ? "#c08950" : "#c9925a");
+		for (let y = p.floorTop; y < H$1; y += Math.max(2, fr * 2)) for (let x = require_paint.hash("s" + y) % 40; x < W$1; x += 40) pic.dot(x, y, "#a8743f");
 		const line = (x, y, w, h) => pic.mix(x, y, w, h, "#ffffff", .6);
 		const sy = p.floorTop + Math.max(2, fr * 2);
-		line(0, sy, W, 1);
-		line(p.cx, sy, 1, H - sy);
-		const rx$1 = Math.round(W * .1), ry$1 = Math.max(4, Math.round((H - sy) * .45));
+		line(0, sy, W$1, 1);
+		line(p.cx, sy, 1, H$1 - sy);
+		const rx$1 = Math.round(W$1 * .1), ry$1 = Math.max(4, Math.round((H$1 - sy) * .45));
 		for (let a = 0; a <= 180; a += .5) {
 			const t = a * Math.PI / 180;
 			line(Math.round(p.cx + Math.cos(t) * rx$1), Math.round(sy + Math.sin(t) * ry$1), 1, 1);
 		}
-		for (const kx of [Math.round(W * .06), Math.round(W * .82)]) {
-			line(kx, sy, Math.round(W * .12), 1);
-			line(kx, sy, 1, H - sy);
-			line(kx + Math.round(W * .12), sy, 1, H - sy);
+		for (const kx of [Math.round(W$1 * .06), Math.round(W$1 * .82)]) {
+			line(kx, sy, Math.round(W$1 * .12), 1);
+			line(kx, sy, 1, H$1 - sy);
+			line(kx + Math.round(W$1 * .12), sy, 1, H$1 - sy);
 		}
 		return {
 			canvas: pic.canvas(),
@@ -14523,31 +14825,31 @@ function paintVenue(p) {
 	if (id === "hall") {
 		for (let r$1 = 0; r$1 < top; r$1++) {
 			const row = p.rows[r$1], feet = Math.round(p.feet(r$1, p.cx));
-			pic.rect(0, feet - row.rise, W, 1, "#e0675a");
-			pic.rect(0, feet - row.rise + 1, W, Math.max(1, Math.round(row.size * .15)), "#8c2a3c");
+			pic.rect(0, feet - row.rise, W$1, 1, "#e0675a");
+			pic.rect(0, feet - row.rise + 1, W$1, Math.max(1, Math.round(row.size * .15)), "#8c2a3c");
 		}
 		p.breaks.forEach((b$1) => {
 			if (!p.rows.some((r$1, i) => i < top && r$1.lift > b$1.lift)) return;
 			const y = Math.round(p.floorTop - p.board - b$1.lift - b$1.h);
-			pic.rect(0, y, W, b$1.h, "#4a1f2e");
-			pic.rect(0, y, W, 1, "#d9a441");
-			pic.rect(0, y + b$1.h - 1, W, 1, "#8a6a2a");
-			for (let x = 2; x < W; x += 6) pic.dot(x, y + (b$1.h >> 1), "#d9a441");
-			pic.rect(0, y + b$1.h, W, Math.max(1, Math.round(b$1.h * .5)), "#2a1220");
+			pic.rect(0, y, W$1, b$1.h, "#4a1f2e");
+			pic.rect(0, y, W$1, 1, "#d9a441");
+			pic.rect(0, y + b$1.h - 1, W$1, 1, "#8a6a2a");
+			for (let x = 2; x < W$1; x += 6) pic.dot(x, y + (b$1.h >> 1), "#d9a441");
+			pic.rect(0, y + b$1.h, W$1, Math.max(1, Math.round(b$1.h * .5)), "#2a1220");
 		});
 		for (let r$1 = 0; r$1 < top; r$1++) {
 			const row = p.rows[r$1], secW = row.section * row.pitch + row.aisle;
-			if (row.section) for (let j = Math.floor(-p.cx / secW) - 1; j <= Math.ceil((W - p.cx) / secW) + 1; j++) {
+			if (row.section) for (let j = Math.floor(-p.cx / secW) - 1; j <= Math.ceil((W$1 - p.cx) / secW) + 1; j++) {
 				const x = Math.round(p.cx + (j - .5) * secW - row.aisle / 2), feet = Math.round(p.feet(r$1, x));
 				pic.rect(x, feet - row.rise, row.aisle, row.rise, "#3a2a30");
 				pic.dot(x, feet - 1, "#ffd27a");
 			}
 		}
 		const lip = p.floorTop;
-		pic.rect(0, lip, W, H - lip, "#3a2a22");
-		for (let y = lip + 2; y < H; y += Math.max(2, fr * 2)) pic.rect(0, y, W, 1, "#33241d");
-		pic.rect(0, lip, W, 1, "#f2d6a0");
-		for (let x = Math.round(W / 32); x < W; x += Math.max(4, Math.round(W / 16))) {
+		pic.rect(0, lip, W$1, H$1 - lip, "#3a2a22");
+		for (let y = lip + 2; y < H$1; y += Math.max(2, fr * 2)) pic.rect(0, y, W$1, 1, "#33241d");
+		pic.rect(0, lip, W$1, 1, "#f2d6a0");
+		for (let x = Math.round(W$1 / 32); x < W$1; x += Math.max(4, Math.round(W$1 / 16))) {
 			pic.rect(x - 3, lip - 2, 7, 4, "#ffd27a", 4);
 			pic.rect(x - 1, lip, 3, 1, "#ffd27a");
 			pic.dot(x, lip, "#fff6d8");
@@ -14560,26 +14862,26 @@ function paintVenue(p) {
 	paintBreaks(pic, p, top, "#161b29");
 	const pitch = id === "arena" ? "#1d4f8a" : "#1f6b3e", stripe = id === "arena" ? "#1b4a82" : "#237646";
 	paintBoards(pic, p, (x, y, w) => {
-		const sw = Math.max(12, W / 24);
+		const sw = Math.max(12, W$1 / 24);
 		for (let i = x; i < x + w;) {
 			const band$1 = Math.floor(i / sw), e = Math.min(x + w, Math.ceil((band$1 + 1) * sw));
-			pic.rect(i, y, e - i, H - y, band$1 % 2 ? stripe : pitch);
+			pic.rect(i, y, e - i, H$1 - y, band$1 % 2 ? stripe : pitch);
 			i = e;
 		}
 	});
-	const touch = Math.round(p.floorTop + (H - p.floorTop) * .3);
-	pic.mix(0, touch, W, 1, "#ffffff", .7);
-	pic.mix(p.cx, touch, 1, H - touch, "#ffffff", .7);
-	const rx = Math.round(W * .09), ry = Math.max(3, Math.round((H - touch) * .6));
+	const touch = Math.round(p.floorTop + (H$1 - p.floorTop) * .3);
+	pic.mix(0, touch, W$1, 1, "#ffffff", .7);
+	pic.mix(p.cx, touch, 1, H$1 - touch, "#ffffff", .7);
+	const rx = Math.round(W$1 * .09), ry = Math.max(3, Math.round((H$1 - touch) * .6));
 	for (let a = 0; a <= 180; a += .4) {
 		const t = a * Math.PI / 180;
 		pic.mix(Math.round(p.cx + Math.cos(t) * rx), Math.round(touch + Math.sin(t) * ry), 1, 1, "#ffffff", .7);
 	}
 	if (id !== "arena") {
-		const banks = id === "bowl" ? 6 : 4, cy = (p.floorTop + H) / 2, ry$1 = (H - p.floorTop) / 2;
-		for (let i = 0; i < banks; i++) for (let y = Math.ceil(p.floorTop); y < H; y++) {
-			const half = W * .06 * Math.sqrt(Math.max(0, 1 - ((y - cy) / ry$1) ** 2));
-			pic.rect(W * (i + .5) / banks - half, y, half * 2, 1, "#3a9a58", 4);
+		const banks = id === "bowl" ? 6 : 4, cy = (p.floorTop + H$1) / 2, ry$1 = (H$1 - p.floorTop) / 2;
+		for (let i = 0; i < banks; i++) for (let y = Math.ceil(p.floorTop); y < H$1; y++) {
+			const half = W$1 * .06 * Math.sqrt(Math.max(0, 1 - ((y - cy) / ry$1) ** 2));
+			pic.rect(W$1 * (i + .5) / banks - half, y, half * 2, 1, "#3a9a58", 4);
 		}
 	}
 	return {
@@ -14597,8 +14899,8 @@ function createStadium(canvas, options = {}) {
 	const free = [];
 	let next = 0;
 	function build(devW, devH, dpr) {
-		const id = venueFor(laidFor), f = fit$1(id, devW, devH, dpr, laidFor), W = Math.ceil(devW / f.k), H = Math.ceil(devH / f.k);
-		const p = plan(id, W, H, f.front, laidFor, false, 0, f.depth), st = STYLES[id];
+		const id = venueFor(laidFor), f = fit$1(id, devW, devH, dpr, laidFor), W$1 = Math.ceil(devW / f.k), H$1 = Math.ceil(devH / f.k);
+		const p = plan(id, W$1, H$1, f.front, laidFor, false, 0, f.depth), st = STYLES[id];
 		const rows = [];
 		p.seats.forEach((s, i) => {
 			(rows[s.row] ??= []).push(i);
@@ -14616,11 +14918,11 @@ function createStadium(canvas, options = {}) {
 			bands[i] = Math.min(3, Math.floor(row.lift / Math.max(1, p.standMax) * 4)) + (row.shadow ? 4 : 0);
 		});
 		const scene = {
-			width: W,
-			height: H,
+			width: W$1,
+			height: H$1,
 			k: f.k,
-			ox: Math.floor((devW - W * f.k) / 2),
-			oy: devH - H * f.k,
+			ox: Math.floor((devW - W$1 * f.k) / 2),
+			oy: devH - H$1 * f.k,
 			seats: p.seats,
 			rows: order,
 			bands,
@@ -14634,7 +14936,7 @@ function createStadium(canvas, options = {}) {
 			},
 			pitch: p.rows[0]?.pitch ?? 8,
 			shadow: "#0b0e18",
-			wave: id === "arena" || id === "stadium" || id === "bowl" ? W * .1 : void 0
+			wave: id === "arena" || id === "stadium" || id === "bowl" ? W$1 * .1 : void 0
 		};
 		return scene;
 	}
@@ -14876,6 +15178,8 @@ exports.LilGuyAnimated = LilGuyAnimated
 exports.MAX_PINS = require_paint.MAX_PINS
 exports.MOVES = MOVES
 exports.NAME_KEY = NAME_KEY
+exports.OG_HEIGHT = OG_HEIGHT
+exports.OG_WIDTH = OG_WIDTH
 exports.ONE_OF_ONE_AURAS = require_paint.ONE_OF_ONE_AURAS
 exports.PAINTABLE = require_paint.PAINTABLE
 exports.PAINTS = require_paint.PAINTS
@@ -15018,6 +15322,7 @@ exports.nameOf = require_paint.nameOf
 exports.nameSkeleton = nameSkeleton
 exports.nebulaPhase = require_paint.nebulaPhase
 exports.noiseOf = noiseOf
+exports.ogFrames = ogFrames
 exports.ownedOf = ownedOf
 exports.paint = require_paint.paint
 exports.paintCost = require_paint.paintCost
@@ -15052,6 +15357,7 @@ exports.shineFit = shineFit
 exports.shineFrame = shineFrame
 exports.shines = shines
 exports.shows = require_paint.shows
+exports.siteOgFrames = siteOgFrames
 exports.slotOf = require_paint.slotOf
 exports.smeltValue = smeltValue
 exports.special = require_paint.special

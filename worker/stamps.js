@@ -29,7 +29,8 @@ export const DAY_MAX = 8;
 const MACHINE = { slicies: 'cutsies' };
 const GAME_ID = /^[a-z]{2,16}$/;
 
-const earnedSql = `COALESCE((SELECT SUM(n + ${GOLD} * cleared) FROM club_days WHERE holder = ? AND day >= ?), 0)`;
+// `cleared` is 1 for a day the five were finished and 2 when its extras were too; gold counts either once.
+const earnedSql = `COALESCE((SELECT SUM(n + ${GOLD} * MIN(cleared, 1)) FROM club_days WHERE holder = ? AND day >= ?), 0)`;
 const ledgerSql = 'COALESCE((SELECT SUM(stamps) FROM stamp_ledger WHERE holder = ?), 0)';
 
 /** Whether 0010 has been applied. Anything but its tables missing is a real error, and logged. */
@@ -108,14 +109,14 @@ export function keepLuck(env, key, guard, ...guardArgs) {
 }
 
 /**
- * A club day as stamps: `{ played, n, cleared }`. An endpoint from before `played` and `cleared` gives a
- * stamp for each game it counted, eight at most, and no gold. Null for a day that isn't one.
+ * A club day as stamps: `{ played, n, cleared }`, `cleared` 2 when the day's extras were all finished too.
+ * An endpoint from before `played` and `cleared` gives a stamp for each game it counted, eight at most, and no gold. Null for a day that isn't one.
  */
 export function stampDay(d) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d?.day)) return null;
   if (Array.isArray(d.played)) {
     const played = [...new Set(d.played.filter(g => typeof g === 'string' && GAME_ID.test(g)))].slice(0, DAY_MAX);
-    return { played, n: played.length, cleared: d.cleared === true && played.length > 0 ? 1 : 0 };
+    return { played, n: played.length, cleared: d.cleared === true && played.length > 0 ? (d.extras === true ? 2 : 1) : 0 };
   }
   if (!Number.isInteger(d.games)) return null;
   return { played: null, n: Math.max(0, Math.min(DAY_MAX, d.games)), cleared: 0 };
@@ -143,8 +144,8 @@ export async function stampState(env, holder, { founder = false, linked = false,
   const games = {};
   let other = 0, gold = 0, earned = 0;
   for (const d of days) {
-    earned += d.n + GOLD * d.cleared;
-    gold += GOLD * d.cleared;
+    earned += d.n + GOLD * Math.min(d.cleared, 1);
+    gold += GOLD * Math.min(d.cleared, 1);
     if (d.played == null) { other += d.n; continue; }
     for (const g of d.played.split(',').filter(Boolean)) games[MACHINE[g] || g] = (games[MACHINE[g] || g] || 0) + 1;
   }
@@ -164,6 +165,15 @@ export async function spendStamps(env, holder, cost, what) {
       WHERE ${earnedSql} + ${ledgerSql} >= ?`).bind(holder, -cost, what, new Date().toISOString(), holder, STAMPS_FROM, holder, cost).run();
     return r.meta.changes === 1;
   } catch (e) { await beforeStamps(env, e, 'spend'); return null; }
+}
+
+/**
+ * The free capsules a day's club games give (Isaac, October 30): one for the five of the gauntlet finished,
+ * two when the day's extras are finished as well. None before 0010.
+ */
+export async function capsulesOn(env, holder, day) {
+  try { return Math.min(2, (await env.DB.prepare('SELECT cleared FROM club_days WHERE holder = ? AND day = ?').bind(holder, day).first())?.cleared ?? 0); }
+  catch { return 0; }
 }
 
 /** Whether the player finished a DLE Club game on `day` (UTC), as the club's days kept here say. False before 0010. */

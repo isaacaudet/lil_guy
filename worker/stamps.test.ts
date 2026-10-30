@@ -207,34 +207,49 @@ const openFree = async (key: string, owner: string) => {
   return call(`/me/${key}/open`, 'POST', { game: s.todayGame, free: true }, auth(owner));
 };
 
-test('today’s free capsule opens once the player has finished a DLE Club game today', async () => {
-  const { c } = await linked('mia', [{ day: utcToday(), games: 1, score: 80, played: ['puttsies'], cleared: false }]);
+test('today’s gauntlet cleared opens one free capsule, and its extras a second', async () => {
+  const { c } = await linked('mia', [{ day: utcToday(), games: 5, score: 400, played: CORE, cleared: true, extras: false }]);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-  expect(s.freeCapsule).toEqual({ open: true, why: '' });
+  expect(s.freeCapsule).toEqual({ open: true, why: '', earned: 1, used: 0 });
   const r = await openFree('mia', c.owner);
   expect(r.status).toBe(201);
-  expect(((await r.json()) as any).freeDay).toBe(utcToday());
-  // Still once a day.
-  expect((await openFree('mia', c.owner)).status).toBe(409);
+  const body: any = await r.json();
+  expect(body.freeDay).toBe(utcToday());
+  expect(body.freeCapsule).toEqual({ open: false, why: 'Finish today’s extras on DLE Club for a second.', earned: 1, used: 1 });
+  expect((await openFree('mia', c.owner)).status).toBe(403);
+  // The extras finished: the club says so, and the second opens; never a third.
+  await readClub(env, 'mia', Date.now() + 11 * 60 * 1000, (async () => new Response(JSON.stringify({ days: [{ day: utcToday(), games: 8, score: 600, played: [...CORE, 'slicies', 'flipsies', 'tiltsies'], cleared: true, extras: true }] }))) as any);
+  const second = await openFree('mia', c.owner);
+  expect(second.status).toBe(201);
+  expect(((await second.json()) as any).freeCapsule).toEqual({ open: false, why: '', earned: 2, used: 2 });
+  expect((await openFree('mia', c.owner)).status).toBe(403);
+  // Gold is still two for the day, extras or not.
+  expect((await stamps('mia', c.owner)).gold).toBe(2);
 });
 
-test('without a club game today it stays shut, and a game finished since opens it', async () => {
-  // A game yesterday doesn't count.
+test('a club game today without the gauntlet cleared opens nothing', async () => {
+  const { c } = await linked('mia', [{ day: utcToday(), games: 1, score: 80, played: ['puttsies'], cleared: false }]);
+  const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
+  expect(s.freeCapsule).toEqual({ open: false, why: 'Finish today’s gauntlet on DLE Club to open it.', earned: 0, used: 0 });
+});
+
+test('without today’s gauntlet it stays shut, and one cleared since opens it', async () => {
+  // Yesterday's doesn't count.
   const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
   const { c } = await linked('mia', []);
-  env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, ?, 'puttsies', 1, 0)").run(ACCOUNT, yesterday);
+  env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, ?, 'puttsies', 5, 1)").run(ACCOUNT, yesterday);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-  expect(s.freeCapsule).toEqual({ open: false, why: 'Finish a DLE Club game today to open it.' });
+  expect(s.freeCapsule).toEqual({ open: false, why: 'Finish today’s gauntlet on DLE Club to open it.', earned: 0, used: 0 });
   const shut = await openFree('mia', c.owner);
   expect(shut.status).toBe(403);
-  expect(((await shut.json()) as any).error).toBe('Finish a DLE Club game today to open it.');
+  expect(((await shut.json()) as any).error).toBe('Finish today’s gauntlet on DLE Club to open it.');
   // Nothing was taken: no copy, and today's free capsule is still to come.
   expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'mia' AND source <> 'starter'").get().n).toBe(0);
   expect(env.db.query("SELECT free_day FROM players WHERE key = 'mia'").get().free_day).toBe('');
   // A minute on, the club is asked again before deciding, so a game just finished counts.
   const asked: string[] = [];
   const real = globalThis.fetch;
-  globalThis.fetch = (async (url: string) => { asked.push(url); return new Response(JSON.stringify({ days: [{ day: utcToday(), games: 1, score: 80, played: ['amountle'], cleared: false }] })); }) as any;
+  globalThis.fetch = (async (url: string) => { asked.push(url); return new Response(JSON.stringify({ days: [{ day: utcToday(), games: 5, score: 400, played: CORE, cleared: true }] })); }) as any;
   try {
     env.db.prepare("UPDATE players SET club_read = ? WHERE key = 'mia'").run(Date.now() - 61 * 1000);
     expect((await openFree('mia', c.owner)).status).toBe(201);
@@ -249,7 +264,7 @@ test('when the club doesn’t answer, today’s free capsule stays open', async 
   try {
     env.db.prepare("UPDATE players SET club_read = ? WHERE key = 'mia'").run(Date.now() - 61 * 1000);
     const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-    expect(s.freeCapsule).toEqual({ open: true, why: '' });
+    expect(s.freeCapsule).toEqual({ open: true, why: '', earned: 1, used: 0 });
     expect((await openFree('mia', c.owner)).status).toBe(201);
   } finally { globalThis.fetch = real; }
 });
@@ -257,43 +272,44 @@ test('when the club doesn’t answer, today’s free capsule stays open', async 
 test('a name with no DLE Club sign-in can’t open it, and is told to sign in', async () => {
   const c = await claim('mia');
   // Without the shared secret the rule can't be checked, so it stays open even to a name with no sign-in.
-  expect(((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).freeCapsule).toEqual({ open: true, why: '' });
+  expect(((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).freeCapsule).toEqual({ open: true, why: '', earned: 1, used: 0 });
   env.CLUB_SSO_SECRET = 'x'.repeat(40);
   // Even with a day on the books, the club can't be asked about a name it can't read.
   env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(utcToday());
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
-  expect(s.freeCapsule).toEqual({ open: false, why: 'Sign in to DLE Club and finish a game today to open it.' });
+  expect(s.freeCapsule).toEqual({ open: false, why: 'Sign in to DLE Club and finish today’s gauntlet to open it.', earned: 0, used: 0 });
   const r = await openFree('mia', c.owner);
   expect(r.status).toBe(403);
-  expect(((await r.json()) as any).error).toBe('Sign in to DLE Club and finish a game today to open it.');
+  expect(((await r.json()) as any).error).toBe('Sign in to DLE Club and finish today’s gauntlet to open it.');
 });
 
-test('the founder’s free capsule is always open', async () => {
+test('the founder always has both free capsules', async () => {
   const f: any = await (await call('/names/isaac', 'POST', undefined, { 'X-Founder-Secret': 'test-only-founder' })).json();
   const s: any = await (await call('/me/isaac/state', 'GET', undefined, auth(f.owner))).json();
   expect(s.freeCapsule.open).toBe(true);
   expect((await openFree('isaac', f.owner)).status).toBe(201);
-  expect((await openFree('isaac', f.owner)).status).toBe(409);
+  expect((await openFree('isaac', f.owner)).status).toBe(201);
+  expect((await openFree('isaac', f.owner)).status).toBe(403);
 });
 
 // ------------------------------------------------------------ one Google account, one set of stamps
 test('letting a name go and claiming another with the same Google account pays nothing out twice', async () => {
-  const days = [{ day: STAMPS_FROM, games: 5, score: 400, played: CORE, cleared: true }, { day: utcToday(), games: 1, score: 80, played: ['puttsies'], cleared: false }];
+  const days = [{ day: STAMPS_FROM, games: 5, score: 400, played: CORE, cleared: true }, { day: utcToday(), games: 5, score: 400, played: CORE, cleared: true }];
   const { c } = await linked('mia', days);
   const me = auth(c.owner);
-  // 10 to start and 8 earned: the free capsule, then three mystery capsules, leave three.
+  // 10 to start and 14 earned: the free capsule, then three mystery capsules, leave nine.
   expect((await openFree('mia', c.owner)).status).toBe(201);
   for (let i = 0; i < 3; i++) expect((await call('/me/mia/open', 'POST', { mystery: true }, me)).status).toBe(201);
-  expect(await stamps('mia', c.owner)).toMatchObject({ balance: 3, spent: 15 });
+  expect(await stamps('mia', c.owner)).toMatchObject({ balance: 9, spent: 15 });
   expect((await call('/names/mia', 'DELETE', undefined, me)).status).toBe(200);
   // Signed in, the account claims a new name, and the club is read again from the first day.
   const z: any = await (await call('/names/zed', 'POST', undefined, me)).json();
   expect(z.linked).toBe(true);
   await readClub(env, 'zed', Date.now(), (async () => new Response(JSON.stringify({ days }))) as any);
-  expect(await stamps('zed', c.owner)).toMatchObject({ balance: 3, spent: 15, earned: 18 });
+  expect(await stamps('zed', c.owner)).toMatchObject({ balance: 9, spent: 15, earned: 24 });
   expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE what = 'starter'").get().n).toBe(1);
   // Today's free capsule was the account's, and so was beginner's luck.
-  expect((await openFree('zed', c.owner)).status).toBe(409);
+  expect((await openFree('zed', c.owner)).status).toBe(403);
   env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, 8, 0)").run(ACCOUNT);
   const next: any = await (await call('/me/zed/open', 'POST', { mystery: true }, me)).json();
   expect(next.luck).toBeNull();
@@ -301,7 +317,7 @@ test('letting a name go and claiming another with the same Google account pays n
   expect((await call('/names/zed', 'DELETE', undefined, me)).status).toBe(200);
   const third: any = await (await call('/names/kit', 'POST', undefined, me)).json();
   expect(third.linked).toBe(true);
-  expect(await stamps('kit', c.owner)).toMatchObject({ balance: 6, spent: 20 });
+  expect(await stamps('kit', c.owner)).toMatchObject({ balance: 12, spent: 20 });
   // The capsule count is the account's, kept apart from the new name's own.
   expect(env.db.query('SELECT opened FROM account_luck WHERE account = ?').get(ACCOUNT).opened).toBe(5);
   expect(env.db.query('SELECT opened FROM players WHERE key = ?').get('kit').opened).toBe(0);
