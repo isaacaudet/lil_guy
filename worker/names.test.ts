@@ -55,3 +55,39 @@ test('underscores only between letters, one at a time, and grandfathered names k
   expect((await call('/snowpea', 'POST')).status).toBe(409);
   expect((await call('/i_saac', 'POST')).status).toBe(403);
 });
+test('names that hold a blocked word whole or at a word’s start are refused; ones that merely contain one pass', async () => {
+  let ip = 10;
+  const claim = (key: string) => call('/' + key, 'POST', { 'CF-Connecting-IP': `198.51.100.${ip++}` });
+  for (const bad of ['fuck', 'fuckface', 'big_fuck', 'sh1thead', 'n4zi', 'cool_dick', 'spic']) expect((await claim(bad)).status).toBe(403);
+  for (const fine of ['grape', 'peacock', 'spicy', 'dickens', 'scrape', 'cocktail']) expect((await claim(fine)).status).toBe(201);
+});
+test('isaac and every name starting with it, dleclub, lilguys and founder are reserved', async () => {
+  let ip = 40;
+  const claim = (key: string) => call('/' + key, 'POST', { 'CF-Connecting-IP': `198.51.100.${ip++}` });
+  for (const key of ['isaac1', 'isaacaudet', 'isaac_audet', '1saac', 'is4ac', 'dleclub', 'dle_club', 'lilguys', 'lil_guys', 'l1lguys', 'founder']) {
+    const r = await claim(key);
+    expect(r.status).toBe(403);
+    expect((await r.json()).error).toBe('This name is reserved');
+  }
+  expect((await claim('isa')).status).toBe(201);
+});
+test('the founder can take any name down with the founder secret, as its owner would let it go', async () => {
+  const body = await (await call('/tester', 'POST')).json();
+  env.db.prepare("INSERT INTO parts(key, code, at) VALUES ('tester', 'e12', '2026-10-30')").run();
+  expect((await call('/tester', 'DELETE', { 'X-Founder-Secret': 'wrong' })).status).toBe(403);
+  expect((await call('/tester')).status).toBe(200);
+  expect((await call('/tester', 'DELETE', { 'X-Founder-Secret': 'test-only-founder' })).status).toBe(200);
+  expect((await call('/tester')).status).toBe(404);
+  expect(env.db.query("SELECT (SELECT COUNT(*) FROM copies WHERE key = 'tester') + (SELECT COUNT(*) FROM players WHERE key = 'tester') + (SELECT COUNT(*) FROM parts WHERE key = 'tester') AS n").get().n).toBe(0);
+  expect((await call('/tester', 'DELETE', { 'X-Founder-Secret': 'test-only-founder' })).status).toBe(404);
+  // The old owner's token holds nothing now.
+  expect((await call('/tester', 'DELETE', { Authorization: 'Bearer ' + body.owner })).status).toBe(403);
+});
+test('a failure is logged by its route, never a name', async () => {
+  const { routeOf } = await import('./index.js');
+  expect(routeOf('/api/me/snow_pea/open')).toBe('/api/me/:key/open');
+  expect(routeOf('/api/names/mia')).toBe('/api/names/:key');
+  expect(routeOf('/api/guys/mia')).toBe('/api/guys/:key');
+  expect(routeOf('/g/7/@mia/card')).toBe('/g/');
+  expect(routeOf('/api/club/named')).toBe('/api/club/named');
+});

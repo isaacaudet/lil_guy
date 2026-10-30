@@ -1403,6 +1403,17 @@ declare function decodeLook(code: string, own?: AvatarConfig, unlocks?: Unlocks)
 declare function lookOf(seed: string, code?: string, unlocks?: Unlocks): AvatarConfig;
 
 //#endregion
+//#region src/guy.d.ts
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+declare function encodeGuy(config: AvatarConfig): string;
+/**
+ * A code back into a guy, or null for anything that isn't a version-1 code
+ * this library can draw: another version, a field missing, or one out of range.
+ * He comes back bare: items are worn on top with `dress`.
+ */
+declare function decodeGuy(code: string): AvatarConfig | null;
+
+//#endregion
 //#region src/share.d.ts
 /**
  * A card to share a copy: the guy wearing it, big, and what makes it rare.
@@ -1877,6 +1888,8 @@ interface CardInput {
 }
 /** How wide a line of text is, in pixels. */
 declare const textWidth: (s: string) => number;
+/** The line beside the badge, fitted to `width`; a rank ("Top 0.055%") drops its "Top" rather than be cut. */
+
 /**
  * A Grail: `framed` (the default) a dark card round a window of gold in a few large soft bands, a thin
  * bright gold line along its bevel and inside the window's rim, on the dark plate every card has;
@@ -2593,8 +2606,10 @@ interface CrowdOptions {
   font?: string;
 }
 interface Crowd {
-  /** Seats a guy (by the lowercased name, so a name seats once) in the next seat from the front. */
+  /** Seats a guy (by the lowercased name, so a name seats once) in the best free seat. */
   add(name: string, guy?: CrowdGuy): void;
+  /** Takes a guy out. His seat goes to whoever has waited longest past the seats, or the next to come. */
+  remove(name: string): void;
   /** Whether a name is in the crowd. */
   has(name: string): boolean;
   /** Makes a guy hop, as when he guesses. */
@@ -2607,7 +2622,7 @@ interface Crowd {
   resize(): void;
   /** Stops drawing and lets go of the sprites. */
   destroy(): void;
-  /** How many guys have been added; past the seats there are, the rest aren't drawn. */
+  /** How many guys are in; past the seats there are, the rest wait undrawn for a seat to free. */
   readonly count: number;
   /** How many seats the crowd has at its size. */
   readonly seats: number;
@@ -2731,4 +2746,4 @@ interface Stadium {
 declare function createStadium(canvas: HTMLCanvasElement, options?: StadiumOptions): Stadium;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, venueFor, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, AvatarConfig, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeGuy, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeGuy, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, upscale, venueFor, viewSize, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };

@@ -2,6 +2,8 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
   @font-face { font-family: "m6x11plus"; src: url("../fonts/m6x11plus.ttf") format("truetype"); font-style: normal; font-weight: 400; font-display: swap; }
+  /* The few marks m6x11plus lacks, in its pixels (docs/fonts/lilguys-punct.py). */
+  @font-face { font-family: "m6x11plus"; src: url("../fonts/lilguys-punct.ttf") format("truetype"); font-style: normal; font-weight: 400; font-display: swap; unicode-range: U+00B7, U+2019, U+201C-201D, U+2026, U+2192, U+2212, U+2605; }
   /* Balatro's way: one pixel font everywhere, only at sizes where its pixels land whole (16, 24, 32, 48, 64),
      flat dark panels lifted on a hard shadow, coloured buttons with a darker foot, white type with a drop. */
   :root {
@@ -122,6 +124,7 @@
   .mine-actions .btn.shut { --c: var(--panel-2); --d: var(--edge); color: var(--ink-2); }
   .mine-actions .btn .lock, .mcard p .lock { margin-right: 6px; vertical-align: -1px; }
   .free-why { margin: 10px 0 0; font-size: 16px; line-height: 1.35; color: var(--ink-2); }
+  .free-why a, .pp-spend p a { text-underline-offset: 4px; }
   .claim-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; }
 
   /* the hand: the rarest drops fanned like cards, each the library's card at 140 px, its own width, so its words are pixel for pixel */
@@ -150,17 +153,19 @@
   .card:hover .art.still .ov .t, .card:focus-visible .art.still .ov .t { animation-play-state: running; }
   canvas.px { display: block; width: 100%; height: auto; aspect-ratio: 26 / 42; image-rendering: pixelated; filter: drop-shadow(var(--sx, 0px) 8px 0 rgba(5, 7, 16, .5)); }
   .ov { position: absolute; inset: 0; pointer-events: none; font-family: var(--pixel); }
+  /* The card's words in whole pixels of the font (an eighth of its size): the nearest size the card's width
+     gives, never past what fits a long name. */
   .ov .t { position: absolute; left: 11%; right: 11%; top: 6.2%; height: 12%; display: flex; align-items: center; justify-content: center;
-    font-size: min(8.6cqw, calc(78cqw / (var(--n, 1) * .46))); line-height: 1.25; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
+    font-size: min(8.6cqw, calc(78cqw / (var(--n, 1) * .46))); font-size: max(8px, min(round(8.6cqw, 8px), round(down, calc(78cqw / (var(--n, 1) * .46)), 8px))); line-height: 1.25; color: #fff; text-shadow: 0 .6cqw 0 rgba(10, 8, 24, .7); white-space: nowrap; overflow: hidden; }
   .ov .t.foil, .ov .t.gold { color: transparent; -webkit-background-clip: text; background-clip: text; text-shadow: none; background-size: 300% 100%; animation: foil 2.4s linear infinite; filter: drop-shadow(0 .6cqw 0 rgba(10, 8, 24, .7)); }
   .ov .t.foil { background-image: linear-gradient(90deg, #ff8fb1, #ffe27a, #8fffd2, #8fb8ff, #d79bff, #ff8fb1); }
   .ov .t.gold { background-image: linear-gradient(90deg, #b8801c, #ffe9a8, #f2c230, #fffbe6, #c8901e, #b8801c); }
   @keyframes foil { to { background-position: 300% 0; } }
-  .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
-  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: min(6.6cqw, calc(84cqw / (var(--n, 1) * .46))); line-height: 1.25; color: #3a3352; white-space: nowrap; overflow: hidden; }
+  .ov .c { position: absolute; right: 15%; top: 23.5%; font-size: 6cqw; font-size: max(8px, round(6cqw, 8px)); line-height: 1; padding: .8cqw 1.4cqw; border-radius: 1cqw; background: rgba(12, 10, 28, .62); color: #fff; }
+  .ov .b { position: absolute; left: 8%; right: 8%; top: 80%; height: 10%; display: flex; align-items: center; justify-content: center; font-size: min(6.6cqw, calc(84cqw / (var(--n, 1) * .46))); font-size: max(8px, min(round(6.6cqw, 8px), round(down, calc(84cqw / (var(--n, 1) * .46)), 8px))); line-height: 1.25; color: #3a3352; white-space: nowrap; overflow: hidden; }
   .ov .t.on-light:not(.foil):not(.gold) { color: #2a2340; text-shadow: 0 .6cqw 0 rgba(255, 255, 255, .45); }
   .ov .t.on-light.foil, .ov .t.on-light.gold { filter: drop-shadow(.4cqw 0 0 #1a1530) drop-shadow(-.4cqw 0 0 #1a1530) drop-shadow(0 .4cqw 0 #1a1530) drop-shadow(0 -.4cqw 0 #1a1530); }
-  .ov .n { position: absolute; left: 9%; right: 22%; top: 88.3%; height: 6.6%; display: flex; align-items: center; font-size: 4.2cqw; line-height: 1; color: #6a6284; white-space: nowrap; overflow: hidden; }
+  .ov .n { position: absolute; left: 9%; right: 22%; top: 88.3%; height: 6.6%; display: flex; align-items: center; font-size: 4.2cqw; font-size: max(8px, round(4.2cqw, 8px)); line-height: 1; color: #6a6284; white-space: nowrap; overflow: hidden; }
   .ov .n.on-dark { color: #d9d2f0; text-shadow: 0 .4cqw 0 rgba(10, 8, 24, .6); }
   .ov .b.on-dark { color: #f4efff; text-shadow: 0 .5cqw 0 rgba(10, 8, 24, .6); }
 
@@ -213,8 +218,8 @@
   .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   /* A copy's stats, as on the back of a sports card: days worn, club games finished in it, best club day. */
   .ins-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
-  .ins-stats span { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 10px; background: rgba(12, 10, 28, .45); font-size: 12px; color: var(--muted, #b9b2d6); text-align: center; }
-  .ins-stats b { font-family: var(--pixel); font-size: 22px; line-height: 1.1; color: #fff; }
+  .ins-stats span { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 10px; background: rgba(12, 10, 28, .45); font-size: 16px; color: var(--muted, #b9b2d6); text-align: center; }
+  .ins-stats b { font-family: var(--pixel); font-size: 24px; line-height: 1.1; color: #fff; }
   .guy-card { display: grid; justify-items: center; gap: 14px; align-content: start; }
   .guy-card > div:first-child { width: 100%; max-width: 280px; }
   .guy-card .badges { justify-content: center; }
@@ -224,8 +229,9 @@
   canvas.libcard { display: block; width: 100%; height: auto; aspect-ratio: 140 / 204; image-rendering: pixelated; transition: transform .12s ease-out; }
   .libslot { display: block; }
   .art.lifted canvas.libcard { filter: drop-shadow(var(--sx, 0px) 8px 0 rgba(5, 7, 16, .5)); }
-  .saves { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 280px; }
-  .saves-h { grid-column: 1 / -1; font-size: 16px; color: var(--ink-3); text-align: center; }
+  .saves { display: grid; gap: 6px; width: 100%; max-width: 280px; }
+  .saves .saves-more summary { cursor: pointer; font-size: 16px; color: var(--ink-3); text-align: center; text-decoration: underline; text-underline-offset: 4px; }
+  .saves-more > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
   .saves .btn { height: 36px; font-size: 16px; padding: 0 6px; border-radius: 8px; white-space: nowrap; }
   .tt .ti { display: inline-flex; align-items: center; gap: 4px; filter: brightness(.8) saturate(1.2); }
   .tt .ti svg { width: 12px; height: 12px; }
@@ -256,14 +262,17 @@
   .mcard .pic canvas { height: 86%; width: auto; aspect-ratio: 40 / 56; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); }
   .mcard .body { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; }
   .mcard .body div { flex: 1; min-width: 0; }
-  .mcard h3 { font-size: 24px; }
-  .mcard p { margin: 2px 0 0; font-size: 16px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+  .mcard h3 { font-size: 24px; display: flex; align-items: center; gap: 8px; }
+  .mcard h3 img, #mach-h img { width: 1.25em; height: 1.25em; flex: none; object-fit: contain; }
+  #mach-h { display: flex; align-items: center; gap: 10px; }
+  .mcard p { margin: 2px 0 0; font-size: 16px; color: var(--ink-3); display: block; }
+  .mcard p .tk { width: 16px; height: 16px; vertical-align: -3px; }
   .mcard[aria-disabled="true"] { opacity: .5; }
   .mwrap { position: relative; display: grid; }
   /* A press that can't open anything says why right where it was pressed. */
   .nope { animation: nope .32s; }
   @keyframes nope { 0%, 100% { transform: none } 25% { transform: translateX(-5px) } 50% { transform: translateX(4px) } 75% { transform: translateX(-2px) } }
-  .why-note { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); z-index: 6; width: max-content; max-width: min(280px, 90vw); background: var(--paper); color: var(--paper-ink); padding: 8px 12px; border-radius: 10px; font-size: 15px; line-height: 1.3; text-align: center; box-shadow: var(--lift), 0 10px 24px rgba(0,0,0,.35); pointer-events: none; }
+  .why-note { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); z-index: 6; width: max-content; max-width: min(280px, 90vw); background: var(--paper); color: var(--paper-ink); padding: 8px 12px; border-radius: 10px; font-size: 16px; line-height: 1.3; text-align: center; box-shadow: var(--lift), 0 10px 24px rgba(0,0,0,.35); pointer-events: none; }
   .why-host { position: relative; }
   .mwrap.today, .mwrap.big { grid-column: span 2; grid-row: span 2; }
   .m-inside { position: absolute; top: 10px; right: 10px; z-index: 2; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 16px; color: var(--ink); background: rgba(12, 10, 28, .62); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
@@ -280,15 +289,15 @@
   .mach-it { display: grid; gap: 2px; padding: 8px; border-radius: 10px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); }
   .mach-it .pic { display: grid; place-items: center; height: 80px; border-radius: 8px; background: var(--well); margin-bottom: 4px; }
   .mach-it canvas { image-rendering: pixelated; }
-  .mach-it b { font-size: 18px; line-height: 1.2; }
-  .mach-it small { font-size: 14px; color: var(--ink-3); }
+  .mach-it b { font-size: 16px; line-height: 1.2; }
+  .mach-it small { font-size: 16px; color: var(--ink-3); }
   .mach-it.have small:last-child { color: var(--green, #5fd38d); }
   .mach-it.star { grid-column: span 2; background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 26%, var(--panel-2)), var(--panel-2)); box-shadow: 0 0 0 2px var(--gold), 0 3px 0 var(--edge); }
   .mach-it.star .pic { height: 150px; }
   .mach-it.star b { font-size: 24px; }
   .showp-h { color: var(--gold); }
   .bal.showp { --b: var(--gold); color: #2a1c00; text-shadow: none; }
-  .m-star { color: var(--gold); }
+  .m-star { color: var(--gold); white-space: nowrap; }
   .mcard.today .pic, .mcard.big .pic { aspect-ratio: auto; flex: 1; min-height: 300px; }
   .mcard.today h3, .mcard.big h3 { font-size: 32px; }
   .mcard .flag { position: absolute; left: 12px; top: 12px; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-d); text-shadow: var(--ts); }
@@ -413,26 +422,27 @@
   .it-more:hover { color: #fff; }
 
   /* the workshop */
-  .metal { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+  .metal { display: flex; align-items: center; gap: 8px; font-size: 16px; }
   .metal b { margin-left: 6px; font-size: 24px; }
   .ingot { display: inline-grid; place-items: center; min-width: 40px; height: 28px; padding: 0 6px; border-radius: 4px; font-size: 16px; color: #1b1626; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25), inset 0 3px 0 rgba(255,255,255,.45); }
   .ingot.ref { background: #d8dde6; } .ingot.rec { background: #b9a37e; } .ingot.scrap { background: #8a7b6a; color: #fff; }
   .ws { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; align-items: start; }
   .ws > div { padding: 18px; border-radius: 14px; background: var(--panel); box-shadow: var(--lift); display: grid; gap: 12px; }
-  .ws h3 { font-size: 28px; margin: 0; }
+  .ws h3 { font-size: 32px; margin: 0; }
   .ws p, .ws small { margin: 0; color: var(--ink-3); font-size: 16px; }
   .ws-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
   .ws-it { display: grid; gap: 2px; padding: 6px; border-radius: 10px; background: var(--panel-2); box-shadow: 0 3px 0 var(--edge); text-align: left; }
   .ws-it .pic { display: grid; place-items: center; height: 64px; border-radius: 8px; background: var(--well); }
   .ws-it canvas { image-rendering: pixelated; }
-  .ws-it b { font-size: 16px; line-height: 1.2; } .ws-it small { font-size: 14px; }
+  .ws-it b { font-size: 16px; line-height: 1.2; } .ws-it small { font-size: 16px; }
   .ws-it[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--gold), 0 3px 0 var(--edge); }
   .ws-go { display: grid; gap: 6px; justify-items: start; }
   .paints { display: grid; gap: 6px; margin-top: 10px; font-size: 16px; color: var(--ink-2); }
   .swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .swatches [data-paint] { width: 28px; height: 28px; border-radius: 6px; background: var(--p); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25), 0 2px 0 var(--edge); }
   .swatches [data-paint][aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 1px; }
-  .swatches .scrape { width: auto; padding: 0 10px; background: var(--panel-2); color: var(--ink-2); font-size: 14px; }
+  .paints .warn { color: #ff9b8a; }
+  .swatches .scrape { width: auto; padding: 0 10px; background: var(--panel-2); color: var(--ink-2); font-size: 16px; }
   .smelt-one { margin-top: 10px; }
 
 
@@ -443,7 +453,7 @@
   .mbc .tchips { justify-content: center; }
   .tchips { display: flex; flex-wrap: wrap; gap: 6px; }
   .tchip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border-radius: 6px; font-size: 16px; color: #fff; background: color-mix(in srgb, var(--tier) 30%, var(--panel-2)); white-space: nowrap; }
-  .tchip i { font-style: normal; color: color-mix(in srgb, var(--tier) 45%, #fff); }
+  .tchip i { font-style: normal; color: color-mix(in srgb, var(--tier) 45%, #fff); white-space: nowrap; }
   .mb { display: grid; justify-items: center; gap: 4px; padding: 10px 6px 8px; border-radius: 12px; background: var(--panel); box-shadow: var(--lift); }
   .mb canvas { width: 72px; height: 72px; image-rendering: pixelated; animation: mbob 2.4s ease-in-out infinite; animation-delay: var(--d); }
   .mb small { font-size: 16px; color: var(--ink-3); }
@@ -672,8 +682,8 @@
   .mkey div { display: grid; grid-template-columns: 12px minmax(0, 1fr); align-items: center; gap: 2px 8px; }
   .mkey i { width: 12px; height: 12px; border-radius: 3px; background: var(--g); grid-row: span 2; align-self: start; margin-top: 4px; }
   .mkey span { font-size: 16px; color: var(--ink-2); white-space: nowrap; }
-  .mkey b { font-size: 20px; line-height: 1; grid-column: 2; }
-  .mkey small { font-size: 14px; color: var(--ink-3); margin-left: 8px; }
+  .mkey b { font-size: 24px; line-height: 1; grid-column: 2; }
+  .mkey small { font-size: 16px; color: var(--ink-3); margin-left: 8px; }
   .mkey .zero { opacity: .45; }
   .mfilters { display: grid; gap: 10px; margin-bottom: 24px; }
   .selects { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -715,7 +725,7 @@
   .ed-prev { grid-area: prev; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 28px 18px 18px; border-radius: 12px; background: var(--well); overflow: auto; }
   .ed-card { width: min(100%, 272px); }
   .editable { cursor: pointer; position: relative; }
-  .editable::after { content: 'Edit'; position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; font-size: 14px; background: rgba(5,7,16,.75); color: #fff; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .editable::after { content: 'Edit'; position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 999px; font-size: 16px; background: rgba(5,7,16,.75); color: #fff; opacity: 0; transition: opacity .15s; pointer-events: none; }
   .editable:hover::after, .editable:focus-visible::after { opacity: 1; }
   @media (hover: none) { .editable::after { opacity: .85; } }
   .founder-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; background: var(--well); font-size: 16px; color: var(--ink-2); }
@@ -731,7 +741,7 @@
   .ed-rare { display: grid; gap: 6px; width: 100%; max-width: 260px; font-size: 16px; color: var(--ink-2); }
   .ed-rare div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--panel); }
   .ed-rare b { color: var(--ink); font-weight: 400; }
-  .ed-rare small { display: block; font-size: 14px; color: var(--ink-3); }
+  .ed-rare small { display: block; font-size: 16px; color: var(--ink-3); }
   .ed-now { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 6px; min-height: 24px; }
   .ed-now .bal { --b: var(--panel-2); color: var(--ink); }
   .ed-now .bal i { font-style: normal; color: var(--ink-3); margin-right: 6px; }
@@ -780,7 +790,7 @@
   .ed-tagc .lcd { padding: 4px 10px; } .ed-tagc .lcd b { font-size: 24px; }
   .ed-dl { display: grid; gap: 8px; margin-top: 24px; }
   .ed-dl .saves { justify-self: start; max-width: 440px; }
-  .ed-dl .saves-h { margin-bottom: 4px; text-align: left; text-transform: uppercase; }
+  .ed-dl .saves-more summary { text-align: left; }
   .ed-foot { grid-area: foot; display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 2px solid var(--line); }
   .ed-msg { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 16px; line-height: 1.3; color: var(--ink-2); }
   .ed-msg.bad { color: #ff9b8a; }
@@ -918,7 +928,7 @@
   .rv-part.dupe { background: var(--panel); box-shadow: var(--lift); }
   .rv-part canvas { width: 64px; height: 64px; image-rendering: pixelated; }
   .rv-part > span { display: grid; gap: 2px; }
-  .rv-part small { font-size: 14px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+  .rv-part small { font-size: 16px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
   .rv-part b { font-size: 24px; line-height: 1.1; }
   .rv-part em { font-style: normal; font-size: 16px; color: var(--ink-2); }
   .rv-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
@@ -1025,9 +1035,9 @@
     .lk-guy { position: static; grid-template-columns: 140px minmax(0, 1fr); align-items: start; }
     .lk-stage { padding: 8px; }
     .ws { grid-template-columns: minmax(0, 1fr); } .ws-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .lk-eq { gap: 4px; margin-top: -12px; } .eq-op { font-size: 20px; }
+    .lk-eq { gap: 4px; margin-top: -12px; } .eq-op { font-size: 24px; }
     .lk-eq .eq { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 6px; padding: 10px 6px; min-height: 0; align-self: stretch; align-content: start; }
-    .lk-eq b { font-size: 18px; } .lk-eq small { font-size: 13px; } .lk-eq canvas { width: 40px; height: 40px; }
+    .lk-eq b { font-size: 16px; } .lk-eq small { font-size: 16px; } .lk-eq canvas { width: 40px; height: 40px; }
     .eq-slots { grid-template-columns: repeat(3, 18px); gap: 3px; } .eq-slots span { width: 18px; height: 16px; } .eq-slots .ci { width: 14px; height: 11px; }
     .lk-slot { grid-template-columns: 34px minmax(0, 1fr) 44px; gap: 8px; padding: 4px 4px 4px 6px; }
     .lk-slot .ico .ci { width: 30px; height: 24px; }
@@ -1229,7 +1239,7 @@
 
  <div class="view" id="v-guys" hidden>
   <section>
-    <div class="sec-h"><div><h2>Everyone's guys</h2></div><div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
+    <div class="sec-h"><div class="filters" id="guys-sort"><button type="button" data-s="rarest" aria-pressed="true">Rarest</button><button type="button" data-s="recent" aria-pressed="false">Newest</button></div></div>
     <label class="search"><span>@</span><input id="guys-q" placeholder="find a name" maxlength="16" spellcheck="false" aria-label="Find a name"></label>
     <div class="guys" id="guys-grid"></div>
   </section>
@@ -1490,8 +1500,12 @@
       pfp: () => offThread('call', 'toProfilePng', pfp).then(b => [b, '-discord.png', 'image/png']),
       'pfp-gif': () => offThread('call', 'toProfileGif', pfp).then(b => [b, '-discord.gif', 'image/gif']),
     };
-    el.innerHTML = `<span class="saves-h">${heading}</span>` + '<button class="btn small" type="button" data-save="gif">Card GIF</button><button class="btn small ghost" type="button" data-save="png" title="The card moving, as an animated PNG">Card PNG</button><button class="btn small ghost" type="button" data-save="art" title="The card\'s art alone, square and moving">Art GIF</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
-      + (pfp ? '<button class="btn small ghost" type="button" data-save="pfp" title="512 px, still, framed for Discord\'s round crop">Discord PNG</button><button class="btn small ghost" type="button" data-save="pfp-gif" title="Moving, for Nitro">Discord GIF</button>' : '');
+    // One button for the card most people want; the other files wait under More.
+    const more = !!el.querySelector('details')?.open;
+    el.innerHTML = `<button class="btn small" type="button" data-save="gif">${heading} card GIF</button><details class="saves-more"${more ? ' open' : ''}><summary>More</summary><div>`
+      + '<button class="btn small ghost" type="button" data-save="png" title="The card moving, as an animated PNG">Card PNG</button><button class="btn small ghost" type="button" data-save="art" title="The card\'s art alone, square and moving">Art GIF</button><button class="btn small ghost" type="button" data-save="guy">Guy GIF</button>'
+      + (pfp ? '<button class="btn small ghost" type="button" data-save="pfp" title="512 px, still, framed for Discord\'s round crop">Discord PNG</button><button class="btn small ghost" type="button" data-save="pfp-gif" title="Moving, for Nitro">Discord GIF</button>' : '')
+      + '</div></details>';
     el.onclick = async e => {
       const b = e.target.closest('[data-save]');
       if (!b || b.disabled) return;
@@ -1532,7 +1546,12 @@
     UNLIMITED = !!s.stamps?.unlimited;
     renderFounderBar();
     // `freeCapsule`: whether today's free capsule is open (a DLE Club game finished today), and if not, why.
-    state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, look: s.look || '', stamps: s.stamps, free: s.freeDay, freeCapsule: s.freeCapsule || { open: true, why: '' },
+    // The three a claim dealt, while their pick is open (`pick`, null once settled), so another device can pick
+    // too; a server from before `pick` leaves this browser's. One picked in this browser stays picked.
+    const mine = state?.key === s.key, server = 'pick' in s && !(mine && state.picked);
+    const choices = server ? s.pick?.choices : mine ? state.choices : undefined;
+    const pickUntil = server ? (s.pick ? Date.parse(s.pick.until) : undefined) : mine ? state.pickUntil : undefined;
+    state = { ...(state || {}), v: 2, live: true, key: s.key, seed: s.seed, choices, pickUntil, look: s.look || '', stamps: s.stamps, free: s.freeDay, freeCapsule: s.freeCapsule || { open: true, why: '' },
       copies: s.copies.map(c => c.code), ids: Object.fromEntries(s.copies.map(c => [c.code, c.id])),
       worn: Object.fromEntries(s.copies.filter(c => c.worn).map(c => [c.slot, c.code])), fresh: state?.fresh || [], dev: [],
       tags: Object.fromEntries(s.copies.filter(c => c.tag).map(c => [c.code, c.tag])), stats: Object.fromEntries(s.copies.filter(c => c.stats).map(c => [c.code, c.stats])), pulls: Object.fromEntries(s.copies.filter(c => c.pull).map(c => [c.code, c.pull])), swaps: s.swaps || [], parts: s.parts || [], metal: s.metal || 0 };
@@ -1577,8 +1596,9 @@
     return d;
   }
   async function signedInAs(result) {
+    const picked = state?.key === result.name?.key && state?.picked;
     signedIn = result.signedIn; accountKey = result.name?.key || null; state = null;
-    if (result.name) { state = { key: result.name.key, seed: result.name.seed, copies: [] }; fromServer(await meApi('state')); }
+    if (result.name) { state = { key: result.name.key, seed: result.name.seed, copies: [], picked }; fromServer(await meApi('state')); }
     save(); renderAll(); route();
   }
   // On lilguys.dleclub.com a browser signed in to DLE Club is signed in here too (dle-club
@@ -1757,10 +1777,10 @@
   async function claim(key) {
     let seed = RESERVED[key] ? LG.FOUNDER_SEED : LG.makeSeed(), ownerToken = null;
     // Three guys to choose from; the demo deals its own.
-    let choices = RESERVED[key] ? null : [seed, LG.makeSeed(), LG.makeSeed()];
+    let choices = RESERVED[key] ? null : [seed, LG.makeSeed(), LG.makeSeed()], claimedAt = Date.now();
     if (!backendReady) return;
     if (isLive()) {
-      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; choices = claimed.choices || null; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; }
+      try { const claimed = await namesApi('/' + key, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(RESERVED[key] && founderKey ? { 'X-Founder-Secret': founderKey } : {}) }, body: JSON.stringify({ game: cameFrom() }) }); seed = claimed.seed; choices = claimed.choices || null; ownerToken = claimed.owner; if (claimed.linked) accountKey = key; if (claimed.at) claimedAt = Date.parse(claimed.at) || claimedAt; }
       catch (e) { setAvail('no', e.message); SFX.bad(); return; }
     }
     if (db) {
@@ -1778,7 +1798,8 @@
         return;
       }
     }
-    state = { v: 2, key, seed, choices, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
+    // The choices are saved before the rolls play, so a reload during them comes back to the pick (`pickOpen`).
+    state = { v: 2, key, seed, choices, pickUntil: choices ? claimedAt + PICK_FOR_MS : undefined, ownerToken, stamps: demoStamps(), copies: [], worn: {}, free: '', opened: 0, fresh: [], dev: [] };
     // One starter, from the game they came from; each machine gives its own with the first capsule from it.
     const first = LG.encode(LG.starter(seed, cameFrom() || todayGame));
     state.copies.push(first);
@@ -1803,7 +1824,7 @@
     if (db) { try { const ref = db.doc(`names/${key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.delete(); } catch (e) {} }
     renderAll();
   });
-  $('go-free').addEventListener('click', () => { if (state.free !== today) openFree(todayGame); else $('roll').scrollIntoView({ behavior: 'smooth' }); });
+  $('go-free').addEventListener('click', () => { if (state.free !== today) openFree(todayGame); else { buildNow('roll'); $('roll').scrollIntoView({ behavior: 'smooth' }); } });
 
   // Who else has claimed: the latest dozen, live.
   function showRecent(list) {
@@ -1868,9 +1889,8 @@
     withDist(d => {
       if (host.dataset.n !== String(n)) return;
       // His rank's own share (`guyRank`, as his card says) when given, else where he falls among guys dealt.
-      const below = top !== null ? 1 - top : d.filter(v => v < Math.log10(n)).length / d.length, mid = 10 ** d[Math.floor(d.length / 2)];
-      // Every exact guy is a long shot, so "1 in 2.5 million" reads rare even when most guys are rarer: say which side.
-      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt. Half of all guys are rarer than 1 in ${words(mid)}, so that's ${below < 0.5 ? 'the <b>common side</b>' : 'the <b>rare side</b>'}.`;
+      const below = top !== null ? 1 - top : d.filter(v => v < Math.log10(n)).length / d.length;
+      host.lastElementChild.innerHTML = `Rarer than <b>${Math.min(99.9, below * 100).toFixed(below > 0.99 ? 1 : 0)}%</b> of guys dealt.`;
     });
   }
   // Every guy dealt, by how rare: a bar per step on a log scale, his bar lit.
@@ -1904,6 +1924,8 @@
 
   function renderGuy() {
     $('guy-sec').hidden = !state;
+    // Who you could get is for before a claim: once a guy is yours there is nobody else to get.
+    $('maybe-sec').hidden = !!state;
     if (!state) return;
     $('guy-title').textContent = `@${state.key}`;
     const cfg = guyConfig(state.seed);
@@ -2049,7 +2071,8 @@
     // Both counted the way his card's rank is (`guyRank`), so the numbers on the page agree.
     const cfg = edCfg(), look = LG.guyRank({ ...cfg }), rank = guyRank(cfg);
     const line = r => (r.label === r.name || r.label === 'Common' ? esc(r.name) : `${esc(r.name)} · ${esc(r.label.toLowerCase())}`);
-    $('ed-rare').innerHTML = `<div><span>His look<small>Changes as you pick parts</small></span><b>${line(look)}</b></div>`
+    // One row while the look says what the deal says; the look's own row only once it differs.
+    $('ed-rare').innerHTML = (line(look) === line(rank) ? '' : `<div><span>His look<small>Changes as you pick parts</small></span><b>${line(look)}</b></div>`)
       + `<div><span>His rank<small>As dealt, never changes</small></span><b>${line(rank)}</b></div>`;
   }
 
@@ -2263,7 +2286,7 @@
       state.copies.push(made.code); state.fresh = [...(state.fresh || []), made.code]; save();
       ed.worn[slot] = made.code;
       SFX.equip(); toast(`${LG.itemById(made.o.item).name} crafted · #${made.o.craft}`);
-      edRender(); renderColl();
+      edRender(); sectionNear('coll', renderColl);
     }
   });
   $('ed-save').addEventListener('click', async () => {
@@ -2369,7 +2392,7 @@
     const why = state.free === today ? '' : freeWhy();
     $('go-free').innerHTML = state.free === today ? 'Open a capsule' : why ? `${LOCK}Today's free capsule` : "Open today's free capsule";
     $('go-free').classList.toggle('shut', !!why);
-    $('free-why').hidden = !why; $('free-why').textContent = why;
+    $('free-why').hidden = !why; $('free-why').innerHTML = clubLinked(why);
   }
 
   /* ---------------------------------------------- machines */
@@ -2385,7 +2408,7 @@
     const slots = ['showpiece', 'skin', 'hat', 'frame', 'buddy'].filter(sl => its.some(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece));
     const inSlot = sl => its.filter(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece);
     $('mach-body').innerHTML = `<button class="close" type="button" aria-label="Close">×</button>
-      <div class="mach-head"><h3 id="mach-h">${cap(g)} machine</h3>
+      <div class="mach-head"><h3 id="mach-h">${clubIcon(g)}${cap(g)} machine</h3>
         <p>${its.length} items. Each is 1 in ${oneIn(plain)} capsules${star ? `, the showpiece 1 in ${oneIn(star)}` : ''}. ${set ? `You have ${set.got} of ${set.total}${set.complete ? ': set complete' : ''}.` : ''}</p></div>
       <div class="mach-fins">${order.map(f => { const fin = LG.FINISHES[f], gr = LG.GRADES[fin.grade]; return `<span style="--g:${gr.color}"><i></i>${fin.name}<b>${fin.odds >= 1 ? Math.round(fin.odds) : +fin.odds.toPrecision(2)}%</b></span>`; }).join('')}<span style="--g:${LG.GRADES[5].color}"><i></i>★ Any aura<b>${+(LG.AURA_ODDS * 100).toFixed(2)}%</b></span></div>
       ${slots.map(sl => `${sl === 'showpiece' ? `<h4 class="mach-sl showp-h">★ Showpiece</h4>` : `<h4 class="mach-sl" style="--cat:${catOf(sl).c}">${icon(sl)}${catOf(sl).name}</h4>`}<div class="mach-grid">${inSlot(sl).map(x => {
@@ -2396,7 +2419,12 @@
     $('machd').showModal();
   }
   $('machd').addEventListener('click', e => { if (e.target === $('machd') || e.target.closest('.close')) $('machd').close(); });
+  let machinesKey = null;
   function renderMachines() {
+    // Rebuilt only when what the cards say changes, so the ten machines aren't redrawn on every render.
+    const key = JSON.stringify([!!state, state?.free === today, freeWhy(), isLive() && !UNLIMITED && !stampsOf().ready]);
+    if (key === machinesKey) return;
+    machinesKey = key;
     // Each grade's share of capsules; an aura takes one capsule in a thousand off the top of the others.
     const odds = LG.GRADES.map((g, k) => k === 5 ? LG.AURA_ODDS * 100 : Object.values(LG.FINISHES).filter(f => f.grade === k).reduce((a, f) => a + f.odds, 0) * (1 - LG.AURA_ODDS));
     $('odds').innerHTML = LG.GRADES.map((g, k) => `<span style="--g:${g.color}"><i></i>${g.name} <b>${odds[k] >= 1 ? odds[k].toFixed(0) : +odds[k].toFixed(2)}%</b></span>`).join('') + '<a class="odds-more" href="#/rarity">How rarity works →</a>';
@@ -2409,7 +2437,7 @@
       const first = i === 0, free = first && state && state.free !== today, big = i === 1 ? ' big' : '';
       return `<div class="mwrap${first ? ' today' : big}"><button class="mcard${first ? ' today' : big}" type="button" data-g="${g}">
         <span class="pic" style="--tint:${tint(g)}">${first ? '<span class="pill flag">Today</span>' : g === newest ? '<span class="pill flag">New</span>' : ''}<canvas width="40" height="56" aria-hidden="true"></canvas></span>
-        <span class="body"><div><h3>${cap(g)}</h3><p>${first && (!state || state.free !== today) ? `${first && state && freeWhy() ? LOCK : ''}Free when you finish today` : `${isLive() && !UNLIMITED && !stampsOf().ready ? 'Opens soon' : `${tk} ${COST.machine}`} · ${n} items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
+        <span class="body"><div><h3>${clubIcon(g)}${cap(g)}</h3><p>${first && (!state || state.free !== today) ? `${first && state && freeWhy() ? LOCK : ''}Free when you finish today` : `${isLive() && !UNLIMITED && !stampsOf().ready ? 'Opens soon' : `${tk}&nbsp;${COST.machine}`} · ${n}&nbsp;items`}${star ? ` · <span class="m-star">★ ${esc(star.name)}</span>` : ''}</p></div><span class="play" aria-hidden="true">${tri}</span></span></button><button class="m-inside" type="button" data-inside="${g}">What's inside</button></div>`;
     }).join('');
     for (const b of [...balls]) if (!b.canvas.isConnected || b.canvas.closest('#machines')) balls.delete(b);
     $('machines').querySelectorAll('.mcard').forEach(c => addMachine(c.querySelector('canvas'), c.dataset.g, c));
@@ -2439,7 +2467,7 @@
    * cleared gauntlet, ten to start. The live site's come from the server; the demo's are pretend. */
   const STAMP_GAMES = ['amountle', 'puttsies', 'weighsies', 'stackdle', 'halfsies', 'cutsies', 'flipsies', 'tiltsies'];
   // The club's own game icons (dleclub.com/game-icons/, copied into ../club-icons/): the gauntlet's is its trophy.
-  const CLUB_ICONS = {"amountle": {"96": "amountle-96-c5e3c75fbf.webp", "192": "amountle-192-edcd73d720.webp"}, "halfsies": {"96": "halfsies-96-b37afa9367.webp", "192": "halfsies-192-cfa052fab8.webp"}, "stackdle": {"96": "stackdle-96-a56c21cf92.webp", "192": "stackdle-192-a96fe8a86c.webp"}, "flipsies": {"96": "flipsies-96-6bd01c58e1.webp", "192": "flipsies-192-1b74d3fcb7.webp"}, "puttsies": {"96": "puttsies-96-5b9c37b10e.webp", "192": "puttsies-192-74bc6b55dd.webp"}, "weighsies": {"96": "weighsies-96-2a98c6aa83.webp", "192": "weighsies-192-1a59e6239f.webp"}, "cutsies": {"96": "cutsies-toy-96-994b9f1c18.webp", "192": "cutsies-toy-192-69df5f300e.webp"}, "tiltsies": {"96": "tiltsies-96-7a6f20544f.webp", "192": "tiltsies-192-72724a2ca6.webp"}, "gauntlet": {"96": "club-board-96-356bde2953.webp", "192": "club-board-192-e73b8c39a2.webp"}};
+  const CLUB_ICONS = {"amountle": {"96": "amountle-96-c5e3c75fbf.webp", "192": "amountle-192-edcd73d720.webp"}, "halfsies": {"96": "halfsies-96-b37afa9367.webp", "192": "halfsies-192-cfa052fab8.webp"}, "stackdle": {"96": "stackdle-96-a56c21cf92.webp", "192": "stackdle-192-a96fe8a86c.webp"}, "flipsies": {"96": "flipsies-96-6bd01c58e1.webp", "192": "flipsies-192-1b74d3fcb7.webp"}, "puttsies": {"96": "puttsies-96-5b9c37b10e.webp", "192": "puttsies-192-74bc6b55dd.webp"}, "weighsies": {"96": "weighsies-96-2a98c6aa83.webp", "192": "weighsies-192-1a59e6239f.webp"}, "cutsies": {"96": "cutsies-toy-96-994b9f1c18.webp", "192": "cutsies-toy-192-69df5f300e.webp"}, "tiltsies": {"96": "tiltsies-96-7a6f20544f.webp", "192": "tiltsies-192-72724a2ca6.webp"}, "trackdle": {"96": "racedle-96-b800e5b56e.webp", "192": "racedle-192-d4db4fd76f.webp"}, "gauntlet": {"96": "club-board-96-356bde2953.webp", "192": "club-board-192-e73b8c39a2.webp"}};
   const clubIcon = id => CLUB_ICONS[id] ? `<img src="../club-icons/${CLUB_ICONS[id][96]}" srcset="../club-icons/${CLUB_ICONS[id][192]} 2x" alt="" loading="lazy" decoding="async">` : '';
   function demoStamps() { return { ready: true, balance: 10, games: {}, gold: 0, other: 0, unlimited: false, linked: true, demo: true }; }
   const stampsOf = () => state?.stamps || { ready: false, balance: 0, games: {}, gold: 0, other: 0 };
@@ -2448,7 +2476,8 @@
   function short(n, why) {
     const st = stampsOf(), msg = why || moreText(n, st.linked);
     $('pp-short').hidden = false;
-    $('pp-short').innerHTML = esc(msg).replace(/^(\d+ more stamps?)/, '<b>$1</b>');
+    $('pp-short').innerHTML = clubLinked(msg).replace(/^(\d+ more stamps?)/, '<b>$1</b>');
+    $('pp-earn').hidden = true;
     refuse(msg);
   }
   function renderStamps() {
@@ -2471,9 +2500,11 @@
     $('mystery').disabled = !st.ready && !UNLIMITED;
     $('mystery').classList.toggle('ghost', !enough);
     if (enough) $('pp-short').hidden = true;
-    else if (st.ready) { $('pp-short').hidden = false; $('pp-short').innerHTML = esc(moreText(COST.mystery - st.balance, st.linked)).replace(/^(\d+ more stamps?)/, '<b>$1</b>'); }
-    $('pp-earn').textContent = !st.ready ? 'Stamps open soon.' : UNLIMITED ? 'The founder\'s stamps never run out.' : isLive() && !st.linked ? 'Sign in to DLE Club and play to earn stamps.' : '';
-    $('pp-earn').hidden = !$('pp-earn').textContent;
+    else if (st.ready) { $('pp-short').hidden = false; $('pp-short').innerHTML = clubLinked(moreText(COST.mystery - st.balance, st.linked)).replace(/^(\d+ more stamps?)/, '<b>$1</b>'); }
+    const earn = !st.ready ? 'Stamps open soon.' : UNLIMITED ? 'The founder\'s stamps never run out.' : isLive() && !st.linked ? 'Sign in to DLE Club and play to earn stamps.' : '';
+    $('pp-earn').innerHTML = clubLinked(earn);
+    // The short line already says how to earn more, so the two never show together.
+    $('pp-earn').hidden = !earn || !$('pp-short').hidden;
     // The demo has no club to play, so a pretend gauntlet stands in.
     $('earn').hidden = isLive();
     $('earn').textContent = 'Clear a pretend gauntlet (+7)';
@@ -2573,13 +2604,21 @@
   const LUCK_WORDS = { beginner: 'Beginner\'s luck', pity: 'Lucky break' };
   // On the live site today's free capsule opens once the player has finished a DLE Club game today; the server
   // says whether they have (`state.freeCapsule`) and, while not, what to do. The demo can't know, so it's open there.
+  /** Up to the header's sign-in, open, saying why it is needed. */
+  function askSignIn(why) {
+    scrollTo({ top: 0, behavior: 'smooth' });
+    // After this click has bubbled, so the page's close-on-click-outside doesn't shut it at once.
+    setTimeout(() => { acctOpen(true); $('account-note').textContent = why; });
+  }
+  // Everything is earned by playing the club's games, so where the words say DLE Club they go there.
+  const clubLinked = text => esc(text).replace(/DLE Club/g, '<a href="https://dleclub.com" target="_blank" rel="noopener">DLE Club</a>');
   function freeWhy() { return isLive() && state?.freeCapsule && !state.freeCapsule.open ? state.freeCapsule.why : ''; }
   async function openFree(g) {
     if (freeWhy()) {
       // Ask again first: a game finished since the page loaded counts.
       try { fromServer(await meApi('state')); } catch (e) {}
       renderAll();
-      if (freeWhy()) { refuse(freeWhy()); return; }
+      if (freeWhy()) { if (/^sign in/i.test(freeWhy())) askSignIn(freeWhy()); else refuse(freeWhy()); return; }
     }
     state.free = today;
     open(g, 'Daily capsule');
@@ -3200,21 +3239,29 @@
     await new Promise(r => { closeHook = r; });
   }
   let closeHook = null;
+  // The server takes a pick for an hour after the claim, before any capsule is opened.
+  const PICK_FOR_MS = 60 * 60 * 1000;
+  const pickOpen = () => state?.choices?.length === 3 && !(state.pickUntil < Date.now());
   /** The three a claim dealt, side by side: the one picked becomes his guy (on the server first when live). */
   async function keepOne() {
+    if (!pickOpen()) return;
     $('reveal').hidden = false; $('gacha').hidden = true; $('skip').hidden = true; $('result').hidden = true;
     $('pick3').hidden = false;
     $('pick3-row').innerHTML = state.choices.map((seed, i) => { const cfg = guyConfig(seed), rank = guyRank(cfg);
       return `<div><div class="card">${libHtml(cardInput(cardSpec(seed, wornCopies(), guyLabel(cfg, '@' + state.key), false, rank.tier)), { sway: true, now: true })}</div><button class="btn cream" type="button" data-keep="${i}">Keep</button></div>`; }).join('');
     hydrate($('pick3-row')); mountLib($('pick3-row'));
     const seed = await new Promise(r => $('pick3-row').onclick = e => { const b = e.target.closest('[data-keep]'); if (b) r(state.choices[+b.dataset.keep]); });
-    let kept = seed;
-    if (isLive() && seed !== state.seed) {
-      try { await meApi('pick', { seed }); } catch (e) { toast(e.message); kept = state.seed; }
+    let kept = seed, settled = true;
+    // Sent even for the guy already held, to check the pick is still open (the server allows changes within the hour).
+    if (isLive()) {
+      // A 409: the hour is up or a capsule was opened, so the guy held is the one kept.
+      try { await meApi('pick', { seed }); } catch (e) { kept = state.seed; if (e.status !== 409) { toast(e.message); settled = false; } }
     }
-    state.seed = kept; delete state.choices; save();
+    // The demo's names list holds the claim's first roll; it shows the one kept.
+    if (db && kept !== state.seed) { try { const ref = db.doc(`names/${state.key}`); const s = await ref.get(); if (s.exists && s.data().by === uid) await ref.set({ ...s.data(), seed: kept }); } catch (e) {} }
+    state.seed = kept; if (settled) { delete state.choices; delete state.pickUntil; state.picked = true; } save();
     $('pick3').hidden = true; $('reveal').hidden = true;
-    renderAll();
+    renderAll(); watchNames();
     setTimeout(() => $('guy-sec').scrollIntoView({ behavior: 'smooth' }), 120);
   }
   function closeReveal() {
@@ -3722,7 +3769,7 @@
             const shelf = LG.paintsOnSale(today).filter(p => !LG.paintMonth(p)), month = LG.paintsOnSale(today).filter(p => LG.paintMonth(p));
             const extra = o.paint && !LG.paintsOnSale(today).includes(o.paint) ? [o.paint] : [];
             const sw = p => `<button type="button" data-paint="${p}" style="--p:${LG.PAINTS[p].hex}" title="${esc(LG.PAINTS[p].name)}${LG.paintMonth(p) ? ` · ${LG.metalText(LG.LIMITED_PAINT_COST)}` : ''}" aria-pressed="${o.paint === p}" aria-label="${esc(LG.PAINTS[p].name)}"></button>`;
-            return `<div class="paints"><span>Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${[...shelf, ...extra].map(sw).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div>${month.length ? `<span>This month only · ${LG.metalText(LG.LIMITED_PAINT_COST)}</span><div class="swatches">${month.map(sw).join('')}</div>` : ''}</div>`;
+            return `<div class="paints"><span id="insp-paint-h" aria-live="polite">Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${[...shelf, ...extra].map(sw).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div>${month.length ? `<span>This month only · ${LG.metalText(LG.LIMITED_PAINT_COST)}</span><div class="swatches">${month.map(sw).join('')}</div>` : ''}</div>`;
           })() : ''}
           ${!on && !one && !tag && LG.smeltValue(o) ? `<button class="btn ghost small smelt-one" type="button" id="insp-smelt">Smelt · +${LG.smeltValue(o)} scrap</button>` : ''}
           <form class="tagf" id="insp-tagf" autocomplete="off"><label class="field"><span>"</span><input id="insp-tag" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" aria-label="Name tag"></label><button class="btn small" type="submit">${tag ? 'Change tag' : 'Add tag'}</button>${tag ? '<button class="btn ghost small" type="button" id="insp-untag">Take off</button>' : ''}</form>`
@@ -3758,12 +3805,22 @@
         if (t === null) { toast('That tag can\'t be used. Letters, numbers and simple punctuation, up to 20.'); return; }
         if (isLive()) { try { await meApi('tag', { id: state.ids?.[code], tag: t }); } catch (err) { toast(err.message); return; } }
         state.tags = { ...(state.tags || {}) }; if (t) state.tags[code] = t; else delete state.tags[code];
-        save(); SFX.equip(); renderColl(); inspectCopy(o, ctx);
+        save(); SFX.equip(); sectionNear('coll', renderColl); inspectCopy(o, ctx);
       };
       $('insp-tagf').addEventListener('submit', e => { e.preventDefault(); setTag($('insp-tag').value); });
       $('insp-untag')?.addEventListener('click', () => setTag(''));
       $('insp-give')?.addEventListener('click', () => { $('insp').close(); swapDialog({ give: { id: state.ids?.[code], code } }); });
+      // A paint of the month that is over can't be bought again, so taking it off asks first, as smelting does.
+      const lastOf = o.paint && LG.paintMonth(o.paint) && !LG.paintOnSale(o.paint, today) ? LG.PAINTS[o.paint].name : '';
       $('insp-body').querySelectorAll('[data-paint]').forEach(b => b.addEventListener('click', async () => {
+        if (lastOf && (b.dataset.paint || null) !== o.paint && !b.dataset.sure) {
+          $('insp-body').querySelectorAll('[data-sure]').forEach(x => delete x.dataset.sure);
+          const scrape = $('insp-body').querySelector('.scrape'); if (scrape) scrape.textContent = 'Scrape off';
+          b.dataset.sure = '1';
+          $('insp-paint-h').textContent = `Sure? ${lastOf} is gone for good`; $('insp-paint-h').classList.add('warn');
+          if (b.classList.contains('scrape')) b.textContent = 'Sure? Scrape off';
+          return;
+        }
         const next = await paintCopy(code, b.dataset.paint || null);
         if (next !== code) inspectCopy(LG.decode(next), { ...ctx, code: next });
       }));
@@ -4163,7 +4220,7 @@
   $('fin-items').addEventListener('click', e => { const b = e.target.closest('[data-it]'); if (b) { finItem = b.dataset.it; renderFins(); } });
 
   $('insp').addEventListener('click', e => { if (e.target === $('insp')) $('insp').close(); });
-  $('insp').addEventListener('close', () => renderColl());
+  $('insp').addEventListener('close', () => sectionNear('coll', renderColl));
 
   /* ---------------------------------------------- the club's paint: the swirl from dle-club's twitch/backdrop.js,
    * drawn at half size so its pixels are big. Under the band in today's machine colour, deepened toward the
@@ -4260,9 +4317,26 @@
   };
   requestAnimationFrame(frame);
 
+  /*
+   * The machines, the finishes and the locker are built when they come near the screen, not on load: built
+   * at once they held a phone for about a second. Once a section has been near, it builds straight away.
+   */
+  const nearby = new Set(), waiting = new Map();
+  const nearIo = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) buildNow(e.target.id); }), { rootMargin: '800px 0px' });
+  function sectionNear(id, build) {
+    if (nearby.has(id)) return build();
+    if (!waiting.has(id)) nearIo.observe($(id));
+    waiting.set(id, build);
+  }
+  /** Builds a section that is waiting, before something scrolls to it. */
+  function buildNow(id) {
+    if (nearby.has(id)) return;
+    nearby.add(id); nearIo.unobserve($(id));
+    const build = waiting.get(id); waiting.delete(id); build?.();
+  }
   function renderAll() {
     $('nav-me').hidden = !state; if (state) $('nav-me').href = '#/u/' + state.key;
-    renderClaim(); renderGuy(); renderMachines(); renderWallet(); renderColl(); }
+    renderClaim(); renderGuy(); sectionNear('roll', renderMachines); renderWallet(); sectionNear('coll', renderColl); }
   // Small sounds under the pointer: a paper flick over a card, a tick over a machine, a click on any button.
   let overCard = null;
   addEventListener('pointerover', e => {
@@ -4275,7 +4349,7 @@
   addEventListener('click', e => { if (e.target.closest && e.target.closest('button')) SFX.click(); }, { capture: true });
 
   renderHand();
-  renderMaybe();
+  sectionNear('maybe-sec', renderMaybe);
   // A game sends a player here to claim the name they play under (?claim=<name>&from=amountle): the name
   // fills the box, and once it is theirs a button takes them back to the game.
   try {
@@ -4288,7 +4362,7 @@
       history.replaceState(null, '', location.pathname + (q.size ? '?' + q : '') + location.hash);
     }
   } catch (e) {}
-  renderFins();
+  sectionNear('fin-sec', renderFins);
   renderAll();
   route();
 
@@ -4304,7 +4378,8 @@
         const account = await getJSON('/auth/session'); signedIn = account.signedIn; accountKey = account.name?.key || null;
         if (account.name) {
           if (state?.ownerToken && state.key !== account.name.key) { try { localStorage.setItem(KEY + '-unlinked', JSON.stringify(state)); } catch {} }
-          state = { key: account.name.key, seed: account.name.seed, copies: [] };
+          // A pick made in this browser stays made: the server may still offer one for the hour.
+          state = { key: account.name.key, seed: account.name.seed, copies: [], picked: state?.key === account.name.key && state?.picked };
           fromServer(await meApi('state'));
         } else if (state?.ownerToken) {
           try { fromServer(await meApi('state')); } catch (e) { if (e.status === 401) { state = null; save(); } else throw e; }
@@ -4314,6 +4389,7 @@
       }
       restored = true;
       renderAll(); route();
+      keepOne();
       return;
     }
     backendReady = true;
@@ -4331,6 +4407,7 @@
     }
     restored = true;
     if (location.hash.startsWith('#/edit')) route();
+    keepOne();
     if ($('name').value) check();
   })();
 })();

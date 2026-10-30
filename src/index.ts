@@ -65,6 +65,7 @@ export { TRAIT_ICONS, TIER_ICONS } from "./icons";
 export type { Tier } from "./icons";
 export { makeSeed, pickable, allowed, encodeLook, decodeLook, lookOf, rollPart, rareParts, partName, partCode, readPart, unlocksOf, partCost, PART_SLOTS, PART_ODDS } from "./look";
 export type { Look, LookSlot, Unlocks, PartDrop } from "./look";
+export { encodeGuy, decodeGuy } from "./guy";
 export { toShareSvg } from "./share";
 export type { ShareOptions } from "./share";
 export { LilGuyAnimated, type LilGuyAnimatedProps } from "./lil-guy-animated";

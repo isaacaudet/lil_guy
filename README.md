@@ -647,6 +647,9 @@ A rare guy only means something if nobody can choose one. So:
   `2:e1`; `decodeLook` refuses old seven-number codes, out-of-range parts and
   rare parts the player didn't roll, and `lookOf(seed, code)` draws the
   result.
+- **Show other people's guys by code, never their seed.** `encodeGuy(guy)`
+  gives a `g1:` code of every visible field; `decodeGuy(code)` gives him back
+  to draw, or null for anything that isn't one.
 - **Names are letters and digits, with underscores only between them.**
   `nameKey(typed)` makes a key (`Cool__Guy_` is `cool_guy`) and `NAME_KEY`
   checks one: no `_` at either end and never two together, 2 to 16 long.

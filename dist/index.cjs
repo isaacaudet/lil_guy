@@ -2823,6 +2823,58 @@ function lookOf(seed, code = "", unlocks) {
 }
 
 //#endregion
+//#region src/guy.ts
+/**
+* A whole guy as a short code, for showing him where his seed must not go.
+*
+* A seed is private and kept for good: anyone holding it could draw every
+* guy the player will ever be dealt. A board shows other people's guys, so it
+* sends this instead: every visible field of the guy as he is, picked look
+* and all, and nothing that leads back to the seed. Codes are versioned
+* (`g1:`), so a later change to the fields can't misread an old one.
+*/
+/** The fields in a version-1 code, in order, with how many values each can take. */
+const FIELDS = [
+	["head", require_paint.headWeights.length],
+	["eyes", require_paint.eyeWeights.length],
+	["mouth", require_paint.mouthWeights.length],
+	["cheeks", require_paint.cheekWeights.length],
+	["hair", require_paint.hairWeights.length],
+	["body", require_paint.bodyWeights.length],
+	["accessory", require_paint.accessoryWeights.length],
+	["palette", require_paint.paletteWeights.length],
+	["shade", require_paint.shadeWeights.length],
+	["feet", require_paint.footWeights.length],
+	["arms", require_paint.armWeights.length],
+	["rotation", 9],
+	["flip", 2],
+	["lucky", 2]
+];
+/** A guy as a version-1 code: `g1:` and his fields in base 36, dot-separated. */
+function encodeGuy(config) {
+	return "g1:" + FIELDS.map(([key]) => Number(config[key] ?? 0).toString(36)).join(".");
+}
+/**
+* A code back into a guy, or null for anything that isn't a version-1 code
+* this library can draw: another version, a field missing, or one out of range.
+* He comes back bare: items are worn on top with `dress`.
+*/
+function decodeGuy(code) {
+	if (typeof code !== "string" || !code.startsWith("g1:")) return null;
+	const values = code.slice(3).split(".");
+	if (values.length !== FIELDS.length) return null;
+	const config = {};
+	for (let i = 0; i < FIELDS.length; i++) {
+		const [key, count$1] = FIELDS[i];
+		if (!/^[0-9a-z]{1,2}$/.test(values[i])) return null;
+		const n = parseInt(values[i], 36);
+		if (n >= count$1) return null;
+		config[key] = key === "flip" || key === "lucky" ? n === 1 : n;
+	}
+	return config;
+}
+
+//#endregion
 //#region src/share.ts
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({
 	"&": "&amp;",
@@ -7383,6 +7435,15 @@ function fitLine(text, width) {
 		spacing: -1
 	};
 }
+/** The grade badge's room either side of its word, and the gap after it: tight, so a rank beside it fits whole. */
+const PILL_PAD = 6, PILL_GAP = 4;
+/** The line beside the badge, fitted to `width`; a rank ("Top 0.055%") drops its "Top" rather than be cut. */
+function rankFit(text, width) {
+	const fit$1 = fitLine(text, width);
+	return fit$1.text === text ? fit$1 : fitLine(text.replace(/^Top (?=\d)/, ""), width);
+}
+/** How wide the line beside a badge reading `pill` may be. */
+const rankRoom = (pill) => CARD_WIDTH - M * 2 - 10 - textWidth(pill) - PILL_PAD * 2 - PILL_GAP;
 /** Card words without the ★ glyph. */
 const unstarred = (t) => t.replace(/★\s*/g, "").trim();
 /** A drawing surface of RGBA card pixels, with what each pixel is for the card's edition: 0 nothing, 1 the face, 2 the window. */
@@ -7699,8 +7760,9 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const footLine = (input.footer ?? "").split(" · ").filter((part) => part && !part.startsWith("#")).join(" · ");
 	const footFit = footLine ? fitLine(footLine, textW) : void 0;
 	const footH = footFit ? 11 : 0;
-	const pillW = pill ? textWidth(pill) + 14 : 0;
-	const sub = input.lines?.[1] ? fitLine(unstarred(input.lines[1]), pill ? textW - pillW - 6 : textW) : void 0;
+	const pillW = pill ? textWidth(pill) + PILL_PAD * 2 : 0;
+	const subW = pill ? rankRoom(pill) : textW;
+	const sub = input.lines?.[1] ? rankFit(unstarred(input.lines[1]), subW) : void 0;
 	const plateBottom = H - 1 - 6;
 	let y = plateBottom - 3 - footH;
 	const footTop = y;
@@ -7834,13 +7896,13 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			const edge$1 = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
 			s.set(x, yy, edge$1 ? INK$1 : yy >= pillTop + 12 ? mix(fill, INK$1, .45) : yy === pillTop + 1 ? mix(fill, WHITE$1, .4) : fill);
 		}
-		s.text(pill, x0 + 7, pillTop - 1, () => struck ? [
+		s.text(pill, x0 + PILL_PAD, pillTop - 1, () => struck ? [
 			255,
 			222,
 			130
 		] : framed ? PILL_INK : WHITE$1, framed ? GOLD_LIGHT : mix(fill, INK$1, .6));
 	}
-	if (sub) s.text(sub.text, pill ? left + pillW + 6 : left, pillTop - 1, () => quiet, void 0, sub.spacing);
+	if (sub) s.text(sub.text, pill ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, void 0, sub.spacing);
 	if (footFit) s.text(footFit.text, left, footTop - 2, () => quiet, void 0, footFit.spacing);
 	const tag = new Surface(input.corner ? W : 0, input.corner ? H : 0);
 	if (input.corner) {
@@ -10267,6 +10329,8 @@ function createCrowd(canvas, options = {}) {
 		return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
 	};
 	const members = [], byKey = new Map(), queue = [];
+	const free = [];
+	let next = 0, arrivals = 0;
 	const sheets = new Map();
 	let order = null;
 	let worldW = 1, worldH = 1, k = 1, dpr = 1;
@@ -10290,7 +10354,7 @@ function createCrowd(canvas, options = {}) {
 		return [s, list.length - 1];
 	}
 	function make(m, size) {
-		if (m.cells.has(size)) return;
+		if (m.cells.has(size) || byKey.get(m.key) !== m) return;
 		const [sheet, which] = sheetFor(size), cell = sheet.next++;
 		const sprite = crowdSprite(m.spec, size);
 		sheet.ctx.putImageData(new ImageData(sprite.rgba, size, size), cell % SHEET_COLUMNS * size, Math.floor(cell / SHEET_COLUMNS) * size);
@@ -10313,7 +10377,25 @@ function createCrowd(canvas, options = {}) {
 		worldH = Math.ceil(canvas.height / k);
 		seats = crowdSeats(worldW, worldH, options.density ?? 1);
 		order = null;
+		settle();
 		for (const m of members) if (m.seat < seats.length) queue.push([m, seats[m.seat].size]);
+	}
+	function settle() {
+		while (free.length && free[0] < seats.length) {
+			let waiting;
+			for (const m of members) if (m.seat >= seats.length && (!waiting || m.arrived < waiting.arrived)) waiting = m;
+			if (!waiting) return;
+			const seat = free.shift();
+			release(waiting.seat);
+			waiting.seat = seat;
+			order = null;
+			queue.push([waiting, seats[seat].size]);
+		}
+	}
+	function release(seat) {
+		let i = 0;
+		while (i < free.length && free[i] < seat) i++;
+		free.splice(i, 0, seat);
 	}
 	function moving(t) {
 		return waving || options.idle || !!lit || queue.length > 0 || members.some((m) => t - m.hopAt < 400);
@@ -10392,13 +10474,15 @@ function createCrowd(canvas, options = {}) {
 		add(name, guy = {}) {
 			const key = name.toLowerCase();
 			if (byKey.has(key)) return;
+			const seat = free.length && free[0] < seats.length ? free.shift() : next++;
 			const m = {
 				key,
 				spec: {
 					...guy,
 					seed: guy.seed ?? key
 				},
-				seat: members.length,
+				seat,
+				arrived: arrivals++,
 				hopAt: -1e9,
 				phase: require_paint.hash(key) % 3e3,
 				cells: new Map()
@@ -10410,6 +10494,17 @@ function createCrowd(canvas, options = {}) {
 				queue.push([m, seats[m.seat].size]);
 				wake();
 			}
+		},
+		remove(name) {
+			const m = byKey.get(name.toLowerCase());
+			if (!m) return;
+			byKey.delete(m.key);
+			members.splice(members.indexOf(m), 1);
+			order = null;
+			if (lit?.member === m) lit = null;
+			release(m.seat);
+			settle();
+			wake();
 		},
 		has: (name) => byKey.has(name.toLowerCase()),
 		hop(name) {
@@ -10445,6 +10540,7 @@ function createCrowd(canvas, options = {}) {
 			sheets.clear();
 			members.length = 0;
 			byKey.clear();
+			free.length = 0;
 		},
 		get count() {
 			return members.length;
@@ -10801,7 +10897,8 @@ function createStadium(canvas, options = {}) {
 		dpr = globalThis.devicePixelRatio || 1;
 		canvas.width = Math.max(1, Math.round(w * dpr));
 		canvas.height = Math.max(1, Math.round(h * dpr));
-		k = Math.max(1, Math.floor(Math.min(canvas.width / lay.width, canvas.height / lay.height)));
+		const fit$1 = Math.min(canvas.width / lay.width, canvas.height / lay.height);
+		k = fit$1 < 1 ? fit$1 : Math.floor(fit$1);
 		ox = Math.round((canvas.width - lay.width * k) / 2);
 		oy = Math.round((canvas.height - lay.height * k) / 2);
 	}
@@ -10817,6 +10914,8 @@ function createStadium(canvas, options = {}) {
 		lay = layout(venue);
 		backdrop = paintVenue(lay);
 		order = null;
+		queue.length = 0;
+		queued.clear();
 		layoutCanvas();
 		options.onVenue?.(venue);
 	}
@@ -10831,7 +10930,7 @@ function createStadium(canvas, options = {}) {
 	function make(f, size) {
 		const key = f.key + ":" + size;
 		queued.delete(key);
-		if (sprites.has(key) || !byKey.has(f.key)) return;
+		if (sprites.has(key) || byKey.get(f.key) !== f) return;
 		const s = crowdSprite(f.spec, size), c = document.createElement("canvas");
 		c.width = c.height = size;
 		c.getContext("2d").putImageData(new ImageData(s.rgba, size, size), 0, 0);
@@ -10840,6 +10939,7 @@ function createStadium(canvas, options = {}) {
 	function draw(now) {
 		frame = 0;
 		if (gone) return;
+		if (!order) for (let i = 0; i < Math.min(fans.length, seats.length); i++) sprite(fans[i], seats[i].size);
 		const budget = performance.now() + 5;
 		while (queue.length && performance.now() < budget) {
 			const [f, size] = queue.shift();
@@ -10898,7 +10998,8 @@ function createStadium(canvas, options = {}) {
 			lit = null;
 			return;
 		}
-		const big = sprite(fan, 16);
+		make(fan, 16);
+		const big = sprites.get(fan.key + ":16");
 		if (!big) return;
 		const rise = Math.min(1, (now - from) / 350, (until - now) / 350), ease = 1 - Math.pow(1 - rise, 3);
 		const scale$1 = Math.max(2, Math.min(5, Math.floor(lay.height / 40))), side = 16 * scale$1;
@@ -10952,6 +11053,7 @@ function createStadium(canvas, options = {}) {
 			byKey.delete(f.key);
 			fans.splice(fans.indexOf(f), 1);
 			order = null;
+			if (lit?.fan === f) lit = null;
 			for (const s of SIZES) sprites.delete(f.key + ":" + s);
 			reseat();
 			wake();
@@ -11223,6 +11325,7 @@ exports.crowdShine = crowdShine
 exports.crowdSprite = crowdSprite
 exports.dealOf = require_paint.dealOf
 exports.decode = require_paint.decode
+exports.decodeGuy = decodeGuy
 exports.decodeLook = decodeLook
 exports.defineLilGuy = defineLilGuyHere
 exports.drawFrame = drawFrame
@@ -11231,6 +11334,7 @@ exports.emoteFrames = emoteFrames
 exports.encode = require_paint.encode
 exports.encodeApng = encodeApng
 exports.encodeGif = encodeGif
+exports.encodeGuy = encodeGuy
 exports.encodeLook = encodeLook
 exports.encodePng = encodePng
 exports.eyes = require_paint.eyes

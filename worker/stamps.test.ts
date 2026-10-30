@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { api, RULES } from './index.js';
 import { readClub } from './card-stats.js';
-import { giveStarter, stampDay, STAMPS_FROM, STARTER_STAMPS } from './stamps.js';
+import { giveStarter, linkStamps, stampDay, STAMPS_FROM, STARTER_STAMPS } from './stamps.js';
 
 const MIGRATIONS = ['0001_names.sql', '0002_collections.sql', '0003_google_accounts.sql', '0004_float_rank.sql', '0005_luck.sql', '0006_tags_swaps.sql', '0007_parts.sql', '0008_craft.sql', '0009_card_stats.sql', '0010_stamps.sql'];
 let env: any;
@@ -29,11 +29,10 @@ const auth = (t: string) => t.startsWith('session:') ? { Cookie: '__Host-lilguys
 const stamps = async (key: string, owner: string) => ((await (await call(`/me/${key}/state`, 'GET', undefined, auth(owner))).json()) as any).stamps;
 const ACCOUNT = 'ab'.repeat(32);
 // Links a name to a Google sign-in, signed in.
-function link(key: string) {
-  const session = 'cd'.repeat(32);
+function link(key: string, account = ACCOUNT, session = 'cd'.repeat(32)) {
   env.CLUB_SSO_SECRET = 'x'.repeat(40);
-  env.db.exec(`UPDATE names SET account = '${ACCOUNT}' WHERE key = '${key}'`);
-  env.db.prepare('INSERT INTO auth_sessions(hash, account, expires, created) VALUES (?, ?, ?, 0)').run(createHash('sha256').update(session).digest('hex'), ACCOUNT, Math.floor(Date.now() / 1000) + 3600);
+  env.db.exec(`UPDATE names SET account = '${account}' WHERE key = '${key}'`);
+  env.db.prepare('INSERT OR IGNORE INTO auth_sessions(hash, account, expires, created) VALUES (?, ?, ?, 0)').run(createHash('sha256').update(session).digest('hex'), account, Math.floor(Date.now() / 1000) + 3600);
   return { owner: 'session:' + session };
 }
 // A name with a Google sign-in, and the club's answer for it.
@@ -98,7 +97,7 @@ test('spending: a mystery capsule takes five, a picked machine eight, and short 
   const short = await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner));
   expect(short.status).toBe(402);
   expect(await short.json()).toMatchObject({ error: '1 more stamp: play a game on DLE Club.', need: 1 });
-  expect(env.db.query("SELECT what, stamps FROM stamp_ledger WHERE key = 'mia' ORDER BY id").all()).toEqual([{ what: 'starter', stamps: 10 }, { what: 'mystery', stamps: -5 }, { what: 'machine:stackdle', stamps: -8 }]);
+  expect(env.db.query(`SELECT what, stamps FROM stamp_ledger WHERE holder = '${ACCOUNT}' ORDER BY id`).all()).toEqual([{ what: 'starter', stamps: 10 }, { what: 'mystery', stamps: -5 }, { what: 'machine:stackdle', stamps: -8 }]);
 });
 
 test('two spends at once never take the same stamps', async () => {
@@ -132,9 +131,9 @@ test('the founder has unlimited stamps and never spends any', async () => {
 test('letting a name go takes its stamps with it', async () => {
   const c = await claim('mia');
   await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner));
-  env.db.exec(`INSERT INTO club_days(key, day, played, n, cleared) VALUES ('mia', '${STAMPS_FROM}', 'amountle', 1, 0)`);
+  env.db.exec(`INSERT INTO club_days(holder, day, played, n, cleared) VALUES ('mia', '${STAMPS_FROM}', 'amountle', 1, 0)`);
   expect((await call('/names/mia', 'DELETE', undefined, auth(c.owner))).status).toBe(200);
-  expect(env.db.query("SELECT (SELECT COUNT(*) FROM club_days) + (SELECT COUNT(*) FROM stamp_ledger WHERE key = 'mia') AS n").get().n).toBe(0);
+  expect(env.db.query("SELECT (SELECT COUNT(*) FROM club_days) + (SELECT COUNT(*) FROM stamp_ledger WHERE holder = 'mia') AS n").get().n).toBe(0);
   const again = await claim('mia');
   expect((await stamps('mia', again.owner)).balance).toBe(10);
 });
@@ -168,18 +167,18 @@ test('players from before stamps keep everything and are given the same ten once
   // As they were before stamps: claimed in October, tickets, metal, luck counters, a copy, and no starter yet.
   env.db.exec("UPDATE names SET at = '2026-10-20T10:00:00.000Z' WHERE key = 'old'");
   env.db.exec("UPDATE players SET tickets = 4321, metal = 7, opened = 12, dry = 9 WHERE key = 'old'");
-  env.db.exec("DELETE FROM stamp_ledger WHERE key = 'old'");
+  env.db.exec("DELETE FROM stamp_ledger WHERE holder = 'old'");
   env.db.prepare("INSERT INTO copies(key, code, item, game, slot, finish, grade, one_in, scuff, source, worn, at) VALUES ('old', 'amountle.crown~plain~0.5000000~1', 'amountle.crown', 'amountle', 'hat', 'plain', 0, 100, 0.5, 'capsule', 0, ?)").run(at);
   const before = env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'old'").get().n;
   // Club games before stamps began are not backdated.
-  env.db.exec("INSERT INTO club_days(key, day, played, n, cleared) VALUES ('old', '2026-10-27', 'amountle,puttsies,weighsies,stackdle,halfsies', 5, 1)");
+  env.db.exec("INSERT INTO club_days(holder, day, played, n, cleared) VALUES ('old', '2026-10-27', 'amountle,puttsies,weighsies,stackdle,halfsies', 5, 1)");
   const s = await stamps('old', c.owner);
   expect(s).toMatchObject({ balance: 10, carried: true, gold: 0 });
   // Loading again, or many loads at once, never gives it twice.
   await Promise.all([0, 1, 2].map(() => call('/me/old/state', 'GET', undefined, auth(c.owner))));
   await giveStarter(env, 'old');
   expect((await stamps('old', c.owner)).balance).toBe(10);
-  expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE key = 'old' AND what = 'starter'").get().n).toBe(1);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE holder = 'old' AND what = 'starter'").get().n).toBe(1);
   const state: any = await (await call('/me/old/state', 'GET', undefined, auth(c.owner))).json();
   expect(state.copies).toHaveLength(before);
   expect(state.metal).toBe(7);
@@ -189,7 +188,7 @@ test('players from before stamps keep everything and are given the same ten once
   env.db.exec("UPDATE names SET at = '2026-11-02T10:00:00.000Z' WHERE key = 'newbie'");
   await call('/me/newbie/state', 'GET', undefined, auth(n.owner));
   expect(await stamps('newbie', n.owner)).toMatchObject({ balance: 10, carried: false });
-  expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE key = 'newbie' AND what = 'starter'").get().n).toBe(1);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE holder = 'newbie' AND what = 'starter'").get().n).toBe(1);
 });
 
 test('a player who loaded before 0010 is given the ten once it is applied', async () => {
@@ -223,7 +222,7 @@ test('without a club game today it stays shut, and a game finished since opens i
   // A game yesterday doesn't count.
   const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
   const { c } = await linked('mia', []);
-  env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(yesterday);
+  env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, ?, 'puttsies', 1, 0)").run(ACCOUNT, yesterday);
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.freeCapsule).toEqual({ open: false, why: 'Finish a DLE Club game today to open it.' });
   const shut = await openFree('mia', c.owner);
@@ -261,7 +260,7 @@ test('a name with no DLE Club sign-in can’t open it, and is told to sign in', 
   expect(((await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json()) as any).freeCapsule).toEqual({ open: true, why: '' });
   env.CLUB_SSO_SECRET = 'x'.repeat(40);
   // Even with a day on the books, the club can't be asked about a name it can't read.
-  env.db.prepare("INSERT INTO club_days(key, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(utcToday());
+  env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES ('mia', ?, 'puttsies', 1, 0)").run(utcToday());
   const s: any = await (await call('/me/mia/state', 'GET', undefined, auth(c.owner))).json();
   expect(s.freeCapsule).toEqual({ open: false, why: 'Sign in to DLE Club and finish a game today to open it.' });
   const r = await openFree('mia', c.owner);
@@ -275,4 +274,130 @@ test('the founder’s free capsule is always open', async () => {
   expect(s.freeCapsule.open).toBe(true);
   expect((await openFree('isaac', f.owner)).status).toBe(201);
   expect((await openFree('isaac', f.owner)).status).toBe(409);
+});
+
+// ------------------------------------------------------------ one Google account, one set of stamps
+test('letting a name go and claiming another with the same Google account pays nothing out twice', async () => {
+  const days = [{ day: STAMPS_FROM, games: 5, score: 400, played: CORE, cleared: true }, { day: utcToday(), games: 1, score: 80, played: ['puttsies'], cleared: false }];
+  const { c } = await linked('mia', days);
+  const me = auth(c.owner);
+  // 10 to start and 8 earned: the free capsule, then three mystery capsules, leave three.
+  expect((await openFree('mia', c.owner)).status).toBe(201);
+  for (let i = 0; i < 3; i++) expect((await call('/me/mia/open', 'POST', { mystery: true }, me)).status).toBe(201);
+  expect(await stamps('mia', c.owner)).toMatchObject({ balance: 3, spent: 15 });
+  expect((await call('/names/mia', 'DELETE', undefined, me)).status).toBe(200);
+  // Signed in, the account claims a new name, and the club is read again from the first day.
+  const z: any = await (await call('/names/zed', 'POST', undefined, me)).json();
+  expect(z.linked).toBe(true);
+  await readClub(env, 'zed', Date.now(), (async () => new Response(JSON.stringify({ days }))) as any);
+  expect(await stamps('zed', c.owner)).toMatchObject({ balance: 3, spent: 15, earned: 18 });
+  expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE what = 'starter'").get().n).toBe(1);
+  // Today's free capsule was the account's, and so was beginner's luck.
+  expect((await openFree('zed', c.owner)).status).toBe(409);
+  env.db.prepare("INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, '2030-01-01', NULL, 8, 0)").run(ACCOUNT);
+  const next: any = await (await call('/me/zed/open', 'POST', { mystery: true }, me)).json();
+  expect(next.luck).toBeNull();
+  // And it all carries on the same way the next time round.
+  expect((await call('/names/zed', 'DELETE', undefined, me)).status).toBe(200);
+  const third: any = await (await call('/names/kit', 'POST', undefined, me)).json();
+  expect(third.linked).toBe(true);
+  expect(await stamps('kit', c.owner)).toMatchObject({ balance: 6, spent: 20 });
+  // The capsule count is the account's, kept apart from the new name's own.
+  expect(env.db.query('SELECT opened FROM account_luck WHERE account = ?').get(ACCOUNT).opened).toBe(5);
+  expect(env.db.query('SELECT opened FROM players WHERE key = ?').get('kit').opened).toBe(0);
+});
+
+test('a name claimed again by the same Google account can still keep one of its three', async () => {
+  const { c } = await linked('mia', []);
+  const me = auth(c.owner);
+  expect((await call('/me/mia/open', 'POST', { mystery: true }, me)).status).toBe(201);
+  expect((await call('/names/mia', 'DELETE', undefined, me)).status).toBe(200);
+  const z: any = await (await call('/names/zed', 'POST', undefined, me)).json();
+  const s: any = await (await call('/me/zed/state', 'GET', undefined, me)).json();
+  expect(s.pick.choices).toEqual(z.choices);
+  expect((await call('/me/zed/pick', 'POST', { seed: z.choices[1] }, me)).status).toBe(200);
+  // Its first capsule settles it; the account has two of its three lucky capsules left.
+  const o: any = await (await call('/me/zed/open', 'POST', { mystery: true }, me)).json();
+  expect(o.luck).toBe('beginner');
+  expect((await call('/me/zed/pick', 'POST', { seed: z.choices[2] }, me)).status).toBe(409);
+});
+
+test('a name with no Google sign-in keeps its stamps to itself: letting it go takes them', async () => {
+  const c = await claim('mia');
+  await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner));
+  expect((await call('/names/mia', 'DELETE', undefined, auth(c.owner))).status).toBe(200);
+  const again = await claim('mia');
+  expect(await stamps('mia', again.owner)).toMatchObject({ balance: 10, spent: 0 });
+  expect(env.db.query("SELECT opened FROM players WHERE key = 'mia'").get().opened).toBe(0);
+});
+
+// ------------------------------------------------------------ who can give
+test('a name with no Google sign-in can’t give or swap copies away: claim, open, gift, release, reclaim', async () => {
+  const main = await claim('main');
+  const alt = await claim('alt');
+  const o: any = await (await call('/me/alt/open', 'POST', { mystery: true }, auth(alt.owner))).json();
+  const gift = await call('/me/alt/swap', 'POST', { to: 'main', give: o.copy.id }, auth(alt.owner));
+  expect(gift.status).toBe(403);
+  expect(((await gift.json()) as any).error).toBe('Sign in to DLE Club to give or swap copies.');
+  // Let go and claimed again, it's no better off.
+  expect((await call('/names/alt', 'DELETE', undefined, auth(alt.owner))).status).toBe(200);
+  const again = await claim('alt');
+  const o2: any = await (await call('/me/alt/open', 'POST', { mystery: true }, auth(again.owner))).json();
+  expect((await call('/me/alt/swap', 'POST', { to: 'main', give: o2.copy.id }, auth(again.owner))).status).toBe(403);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'main' AND source <> 'starter'").get().n).toBe(0);
+  // Nor can it give one away by taking an offer that asks for it.
+  const m = link('main', 'ef'.repeat(32), '12'.repeat(32));
+  const mainCopy: any = await (await call('/me/main/open', 'POST', { mystery: true }, auth(m.owner))).json();
+  const ask: any = await (await call('/me/main/swap', 'POST', { to: 'alt', give: mainCopy.copy.id, want: o2.copy.id }, auth(m.owner))).json();
+  expect((await call('/me/alt/swap-accept', 'POST', { id: ask.id }, auth(again.owner))).status).toBe(403);
+  // Signed in, a name gives as it likes.
+  const { c } = await linked('mia', []);
+  const mc: any = await (await call('/me/mia/open', 'POST', { mystery: true }, auth(c.owner))).json();
+  expect((await call('/me/mia/swap', 'POST', { to: 'main', give: mc.copy.id }, auth(c.owner))).status).toBe(201);
+});
+
+test('a name that spent its own starter and then linked can’t give until its account has earned the stamps back', async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify({ days: [] }))) as any;
+  try { await laundered(); } finally { globalThis.fetch = real; }
+});
+async function laundered() {
+  await claim('main');
+  // The account has already spent its own starter, on a name it let go.
+  const { c } = await linked('mia', []);
+  const me = auth(c.owner);
+  for (let i = 0; i < 2; i++) expect((await call('/me/mia/open', 'POST', { mystery: true }, me)).status).toBe(201);
+  expect((await call('/names/mia', 'DELETE', undefined, me)).status).toBe(200);
+  // A new name with no sign-in gets its own ten, spends them, and is linked to the same account.
+  const alt = await claim('alt');
+  const opened: any[] = [];
+  for (let i = 0; i < 2; i++) opened.push(await (await call('/me/alt/open', 'POST', { mystery: true }, auth(alt.owner))).json());
+  link('alt');
+  await linkStamps(env, 'alt', ACCOUNT);
+  expect(await stamps('alt', c.owner)).toMatchObject({ balance: -10 });
+  const gift = await call('/me/alt/swap', 'POST', { to: 'main', give: opened[0].copy.id }, me);
+  expect(gift.status).toBe(403);
+  expect(((await gift.json()) as any).error).toBe('You owe stamps. Earn them back on DLE Club to give or swap copies.');
+  expect(env.db.query("SELECT COUNT(*) AS n FROM copies WHERE key = 'main' AND source <> 'starter'").get().n).toBe(0);
+  // Earned back, it gives again.
+  env.db.prepare(`INSERT INTO club_days(holder, day, played, n, cleared) VALUES (?, ?, NULL, 8, 1)`).run(ACCOUNT, STAMPS_FROM);
+  expect((await call('/me/alt/swap', 'POST', { to: 'main', give: opened[0].copy.id }, me)).status).toBe(201);
+}
+
+test('before 0010, a name with no Google sign-in can give once it is a week old', async () => {
+  env = makeEnv(MIGRATIONS.slice(0, -1));
+  await claim('main');
+  const alt = await claim('alt');
+  const s: any = await (await call('/me/alt/state', 'GET', undefined, auth(alt.owner))).json();
+  const o: any = await (await call('/me/alt/open', 'POST', { game: s.todayGame, free: true }, auth(alt.owner))).json();
+  expect((await call('/me/alt/swap', 'POST', { to: 'main', give: o.copy.id }, auth(alt.owner))).status).toBe(403);
+  env.db.prepare("UPDATE names SET at = ? WHERE key = 'alt'").run(new Date(Date.now() - 8 * 864e5).toISOString());
+  expect((await call('/me/alt/swap', 'POST', { to: 'main', give: o.copy.id }, auth(alt.owner))).status).toBe(201);
+});
+
+test('letting a name go works before the swaps, parts and card stats tables are made', async () => {
+  env = makeEnv(MIGRATIONS.slice(0, 5));
+  const c = await claim('mia');
+  expect((await call('/names/mia', 'DELETE', undefined, auth(c.owner))).status).toBe(200);
+  expect(env.db.query("SELECT (SELECT COUNT(*) FROM names) + (SELECT COUNT(*) FROM players) + (SELECT COUNT(*) FROM copies) AS n").get().n).toBe(0);
 });

@@ -74,6 +74,15 @@ function fitLine(text: string, width: number): { text: string; spacing: number }
   while (chars.length > 1 && wide(chars.join('').trimEnd() + '…', -1) > width) chars.pop();
   return { text: chars.join('').trimEnd() + '…', spacing: -1 };
 }
+/** The grade badge's room either side of its word, and the gap after it: tight, so a rank beside it fits whole. */
+const PILL_PAD = 6, PILL_GAP = 4;
+/** The line beside the badge, fitted to `width`; a rank ("Top 0.055%") drops its "Top" rather than be cut. */
+export function rankFit(text: string, width: number): { text: string; spacing: number } {
+  const fit = fitLine(text, width);
+  return fit.text === text ? fit : fitLine(text.replace(/^Top (?=\d)/, ''), width);
+}
+/** How wide the line beside a badge reading `pill` may be. */
+export const rankRoom = (pill: string) => CARD_WIDTH - M * 2 - 10 - textWidth(pill) - PILL_PAD * 2 - PILL_GAP;
 /** Card words without the ★ glyph. */
 const unstarred = (t: string) => t.replace(/★\s*/g, '').trim();
 /** A drawing surface of RGBA card pixels, with what each pixel is for the card's edition: 0 nothing, 1 the face, 2 the window. */
@@ -276,9 +285,11 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
   const footLine = (input.footer ?? '').split(' · ').filter(part => part && !part.startsWith('#')).join(' · ');
   const footFit = footLine ? fitLine(footLine, textW) : undefined;
   const footH = footFit ? 11 : 0;
-  // The grade's badge shares its row with a short line, as "Everyday  @mochi".
-  const pillW = pill ? textWidth(pill) + 14 : 0;
-  const sub = input.lines?.[1] ? fitLine(unstarred(input.lines[1]), pill ? textW - pillW - 6 : textW) : undefined;
+  // The grade's badge shares its row with a short line, as "Everyday  @mochi", or his rank, "Uncommon
+  // Top 48%". A rank too long for the room beside the badge drops its "Top" before it loses a digit.
+  const pillW = pill ? textWidth(pill) + PILL_PAD * 2 : 0;
+  const subW = pill ? rankRoom(pill) : textW;
+  const sub = input.lines?.[1] ? rankFit(unstarred(input.lines[1]), subW) : undefined;
   // From the foot up: the plate holds the title, the badge and the lines, and the set line.
   const plateBottom = H - 1 - 6;
   let y = plateBottom - 3 - footH;
@@ -402,9 +413,9 @@ function cardArt(input: CardInput, anim: Animation, owned: OwnedBySlot, g: numbe
       const edge = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
       s.set(x, yy, edge ? INK : yy >= pillTop + 12 ? mix(fill, INK, 0.45) : yy === pillTop + 1 ? mix(fill, WHITE, 0.4) : fill);
     }
-    s.text(pill, x0 + 7, pillTop - 1, () => (struck ? [255, 222, 130] : framed ? PILL_INK : WHITE), framed ? GOLD_LIGHT : mix(fill, INK, 0.6));
+    s.text(pill, x0 + PILL_PAD, pillTop - 1, () => (struck ? [255, 222, 130] : framed ? PILL_INK : WHITE), framed ? GOLD_LIGHT : mix(fill, INK, 0.6));
   }
-  if (sub) s.text(sub.text, pill ? left + pillW + 6 : left, pillTop - 1, () => quiet, undefined, sub.spacing);
+  if (sub) s.text(sub.text, pill ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, undefined, sub.spacing);
   if (footFit) s.text(footFit.text, left, footTop - 2, () => quiet, undefined, footFit.spacing);
 
   // ---------------------------------------------------------------- the corner tag, over him

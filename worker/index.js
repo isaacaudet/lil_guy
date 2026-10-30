@@ -2,8 +2,8 @@ import { authApi, ownedName, sessionAccount } from './auth.js';
 import { baked, overBudget } from './baked.js';
 import { batchGuys, clubGuys, crowdImage, namedGuys } from './club-guys.js';
 import { BANK_DAYS, putOn, readClub, statsReady, takeOff, withStats, TODAY_EVERY } from './card-stats.js';
-import { heldKey, skeletonTaken } from './name-lookup.js';
-import { giveStarter, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
+import { heldKey, nameRefused, skeletonTaken } from './name-lookup.js';
+import { accountOpened, carryLuck, giveStarter, holderOf, keepLuck, playedOn, shortOf, spendStamps, stampState, stampsReady, STAMP_COST, STARTER_STAMPS } from './stamps.js';
 import {
   roll, rollSeason, mysteryMachine, starter, encode, decode, gradeOf, copyOneIn, itemById, slotOf, GRADES, GAMES, inSeason,
   decodeLook, resolve, guyOneIn, FOUNDER_SEED, FOUNDER_COPIES, isFounder, DEAL_PREFIX,
@@ -30,17 +30,21 @@ async function kit(request, env) {
   return new Response(file.body, { status: file.status, headers });
 }
 
+/** A request's route for the logs: names and guys stand in as `:key`, so no player's name is logged. */
+export const routeOf = path => path.startsWith('/g/') ? '/g/' : path.replace(/^\/api\/(names|guys|me)\/[^/]+/, '/api/$1/:key');
+const failed = (url, e) => console.error(`${routeOf(url.pathname)} failed:`, e?.message);
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/g/')) {
       try { return await baked(request, env, url, ctx, guyOf); }
-      catch { return Response.json({ error: 'Pictures are temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
+      catch (e) { failed(url, e); return Response.json({ error: 'Pictures are temporarily unavailable.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
     }
     if (KIT.has(url.pathname)) return kit(request, env);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try { return await api(request, env, url, ctx); }
-    catch { return json({ error: 'Names are temporarily unavailable. Please try again.' }, 503); }
+    catch (e) { failed(url, e); return json({ error: 'Names are temporarily unavailable. Please try again.' }, 503); }
   },
 };
 
@@ -174,6 +178,8 @@ async function numberCopy(env, row, id) {
 const publicCopy = c => ({ id: c.id, key: c.key, code: c.code, slot: c.slot, grade: c.grade, oneIn: c.one_in >= ONE_OF_ONE ? null : c.one_in, one: c.one_in >= ONE_OF_ONE, worn: !!c.worn, source: c.source, at: c.at, tag: c.tag || '', ...(c.pull ? { pull: c.pull } : {}), ...(c.stats ? { stats: c.stats } : {}) });
 // Copies that can change hands: not a starter, not the founder's.
 const MOVABLE = "source NOT IN ('starter', 'founder')";
+/** A copy painted or tagged since it was offered lapses its open offers, so nobody accepts a copy that has changed. */
+const voidSwaps = (env, id) => env.DB.prepare("UPDATE swaps SET state = 'void' WHERE state = 'open' AND (give = ? OR want = ?)").bind(id, id).run();
 
 /** The machine a new player's one starter comes from: the game they came from, else today's. */
 export const starterGame = game => (typeof game === 'string' && GAMES.includes(game) && game !== 'pets' ? game : todayGame());
@@ -187,7 +193,7 @@ async function ensurePlayer(env, name, game) {
   const found = await env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
   if (found) {
     // A player from before stamps is given the ten to start once, as a new one is (their tickets are gone).
-    await giveStarter(env, name.key);
+    await giveStarter(env, await holderOf(env, name.key));
     // A founder made before Origin existed is given it once.
     if (isFounder(name.seed) && !(await env.DB.prepare("SELECT 1 FROM copies WHERE key = ? AND item = 'aura.origin'").bind(name.key).first())) {
       await insertCopy(env, copyRow(FOUNDER_COPIES.aura, name.key, 'founder'), 1);
@@ -207,13 +213,15 @@ async function ensurePlayer(env, name, game) {
   if (made.meta.changes) {
     const founder = isFounder(name.seed);
     await insertCopy(env, copyRow(starter(name.seed, starterGame(game)), name.key, 'starter'), founder ? 0 : 1);
+    // A Google account that let a name go carries its dry run and free day on to this one.
+    await carryLuck(env, name.key);
     if (founder) {
       // He wears Origin on a clean background; the Gold flag is his to put on.
       await insertCopy(env, copyRow(FOUNDER_COPIES.flag, name.key, 'founder'), 0);
       await insertCopy(env, copyRow(FOUNDER_COPIES.aura, name.key, 'founder'), 1);
     }
   }
-  await giveStarter(env, name.key);
+  await giveStarter(env, await holderOf(env, name.key));
   return env.DB.prepare('SELECT * FROM players WHERE key = ?').bind(name.key).first();
 }
 
@@ -234,7 +242,35 @@ export async function claimChoices(env, key, at) {
   return out;
 }
 
+/** The three to pick from, and until when, while a name's pick is open: within the hour, before any capsule. Null once settled. */
+async function pickOpen(env, key) {
+  if (free(key) || !env.CLAIM_SALT) return null;
+  const n = await env.DB.prepare('SELECT at FROM names WHERE key = ?').bind(key).first();
+  const p = await env.DB.prepare('SELECT opened FROM players WHERE key = ?').bind(key).first();
+  const until = Date.parse(n.at) + PICK_FOR_MS;
+  if (Date.now() > until || (p?.opened ?? 0) > 0) return null;
+  return { choices: await claimChoices(env, key, n.at), until: new Date(until).toISOString() };
+}
+
 const owner = ownedName;
+
+// A copy only leaves a name with a Google sign-in whose stamps aren't below zero. So throwaway names can't
+// farm starter stamps and beginner's luck for a main name: a name linked after spending its own starter
+// brings those spends to the account, which can't give again until it has earned them back. Before 0010
+// there are no stamps to go on, so a name with no sign-in must be a week old.
+export const GIVE_AFTER_DAYS = 7;
+const CANT_GIVE = { signin: 'Sign in to DLE Club to give or swap copies.', owed: 'You owe stamps. Earn them back on DLE Club to give or swap copies.' };
+/** Why this name can't give a copy away, or '' when it can. */
+async function cantGive(env, key) {
+  if (free(key)) return '';
+  const n = await env.DB.prepare('SELECT account, at FROM names WHERE key = ?').bind(key).first();
+  if (!(await stampsReady(env))) return n.account || Date.now() - Date.parse(n.at) >= GIVE_AFTER_DAYS * 864e5 ? '' : CANT_GIVE.signin;
+  if (!n.account) return CANT_GIVE.signin;
+  if ((await stampState(env, n.account)).balance >= 0) return '';
+  // A game just finished may have paid it off.
+  await readClub(env, key);
+  return (await stampState(env, n.account)).balance >= 0 ? '' : CANT_GIVE.owed;
+}
 
 /**
  * Takes a capsule's stamps, or answers why not: none to take before 0010, or how many more the player
@@ -243,7 +279,7 @@ const owner = ownedName;
 async function pay(env, key, cost, what) {
   if (free(key)) return null;
   await readClub(env, key);
-  const paid = await spendStamps(env, key, cost, what);
+  const paid = await spendStamps(env, await holderOf(env, key), cost, what);
   if (paid === null) return json({ error: 'Stamps aren’t open yet' }, 503);
   if (paid) return null;
   const s = await stampsOf(env, key);
@@ -266,9 +302,9 @@ async function freeCapsule(env, key) {
   const name = await env.DB.prepare('SELECT account FROM names WHERE key = ?').bind(key).first();
   if (!name?.account) return { open: false, why: FREE_SHUT.signin };
   const day = today();
-  if (await playedOn(env, key, day)) return { open: true, why: '' };
+  if (await playedOn(env, name.account, day)) return { open: true, why: '' };
   await readClub(env, key, undefined, undefined, TODAY_EVERY);
-  if (await playedOn(env, key, day)) return { open: true, why: '' };
+  if (await playedOn(env, name.account, day)) return { open: true, why: '' };
   const read = await env.DB.prepare('SELECT club_read, stamps_read FROM players WHERE key = ?').bind(key).first();
   if (read && read.stamps_read < read.club_read) return { open: true, why: '' };
   return { open: false, why: FREE_SHUT.play };
@@ -278,7 +314,7 @@ const FREE_SHUT = { signin: 'Sign in to DLE Club and finish a game today to open
 /** A player's stamps, with whether their name has a Google sign-in for the club to read and when it was claimed. */
 async function stampsOf(env, key) {
   const name = await env.DB.prepare('SELECT account, at FROM names WHERE key = ?').bind(key).first();
-  return stampState(env, key, { founder: free(key), linked: !!name?.account, claimed: name?.at || '' });
+  return stampState(env, name?.account || key, { founder: free(key), linked: !!name?.account, claimed: name?.at || '' });
 }
 
 async function meState(env, name) {
@@ -289,7 +325,7 @@ async function meState(env, name) {
   const results = await withStats(env, (await env.DB.prepare('SELECT * FROM copies WHERE key = ? ORDER BY id').bind(name.key).all()).results, today());
   const { results: swaps } = await env.DB.prepare(`SELECT s.id, s.from_key, s.to_key, s.give, s.want, s.at, g.code AS give_code, g.tag AS give_tag, w.code AS want_code, w.tag AS want_tag
     FROM swaps s LEFT JOIN copies g ON g.id = s.give LEFT JOIN copies w ON w.id = s.want WHERE s.state = 'open' AND (s.from_key = ? OR s.to_key = ?) ORDER BY s.id DESC`).bind(name.key, name.key).all();
-  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, stamps: await stampsOf(env, name.key), freeDay: p.free_day, freeCapsule: await freeCapsule(env, name.key), todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
+  return { key: name.key, seed: name.seed, look: p.look, parts: await partsOf(env, name.key), metal: p.metal ?? 0, stamps: await stampsOf(env, name.key), freeDay: p.free_day, freeCapsule: await freeCapsule(env, name.key), pick: await pickOpen(env, name.key), todayGame: todayGame(), rules: RULES, copies: results.map(publicCopy),
     swaps: swaps.map(x => ({ id: x.id, from: x.from_key, to: x.to_key, give: { id: x.give, code: x.give_code, tag: x.give_tag || '' }, want: x.want ? { id: x.want, code: x.want_code, tag: x.want_tag || '' } : null, at: x.at })) };
 }
 
@@ -321,11 +357,12 @@ async function me(request, env, key, action) {
       const short = await pay(env, key, mystery ? RULES.mystery : RULES.capsule, mystery ? 'mystery' : `machine:${game}`);
       if (short) return short;
     }
-    // Count the capsule before rolling it, so two opened at once never share a beginner's roll.
+    // Count the capsule before rolling it, so two opened at once never share a beginner's roll. Capsules the
+    // account opened on names it let go count too, so its beginner's luck comes once.
     const count = await env.DB.prepare('UPDATE players SET opened = opened + 1 WHERE key = ? RETURNING opened, dry').bind(key).first();
     // The founder can turn his odds off (`fair`) and roll as anyone does.
     const rigged = free(key) && body.fair !== true;
-    const { o, luck } = rigged ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1, count.dry);
+    const { o, luck } = rigged ? { o: founderRoll(() => roll(crypto.randomUUID(), game)), luck: 'founder' } : luckyRoll(game, count.opened - 1 + await accountOpened(env, key), count.dry);
     await env.DB.prepare('UPDATE players SET dry = CASE WHEN ? THEN 0 ELSE dry + 1 END WHERE key = ?').bind(gradeIndex(o) >= PRIZED ? 1 : 0, key).run();
     // The day's free capsule is a souvenir of that day: no other capsule can be one.
     const copy = await insertCopy(env, copyRow(body.free ? { ...o, souvenir: day } : o, key, body.free ? 'daily' : 'capsule'));
@@ -362,12 +399,18 @@ async function me(request, env, key, action) {
     // A name tag on one of your copies; it stays with the copy wherever it goes. An empty tag takes it off.
     const tag = cleanTag(typeof body.tag === 'string' ? body.tag : '');
     if (tag === null) return json({ error: 'That tag can’t be used. Letters, numbers and simple punctuation, up to 20.' }, 400);
+    const was = await env.DB.prepare('SELECT tag FROM copies WHERE id = ? AND key = ?').bind(Number(body.id), key).first();
+    if (!was) return json({ error: 'Not your copy' }, 404);
+    if ((was.tag || '') === tag) return json({ id: Number(body.id), tag });
     const r = await env.DB.prepare('UPDATE copies SET tag = ? WHERE id = ? AND key = ?').bind(tag, Number(body.id), key).run();
     if (!r.meta.changes) return json({ error: 'Not your copy' }, 404);
+    await voidSwaps(env, Number(body.id));
     return json({ id: Number(body.id), tag });
   }
   if (action === 'swap') {
     // Offer one of your copies to another player, for one of theirs or as a gift. Nothing moves until they accept.
+    const why = await cantGive(env, key);
+    if (why) return json({ error: why }, 403);
     const to = await heldKey(env, nameKey(String(body.to || '')));
     if (to === key) return json({ error: 'Pick another player' }, 400);
     if (!to) return json({ error: 'No one has claimed that name' }, 404);
@@ -391,6 +434,9 @@ async function me(request, env, key, action) {
     const id = Number(body.id), nonce = crypto.randomUUID();
     const s = await env.DB.prepare("SELECT * FROM swaps WHERE id = ? AND to_key = ? AND state = 'open'").bind(id, key).first();
     if (!s) return json({ error: 'That offer is gone' }, 404);
+    // Taking an offer that asks for one of your copies gives that copy away.
+    const why = s.want ? await cantGive(env, key) : '';
+    if (why) return json({ error: why }, 403);
     const ok = `EXISTS (SELECT 1 FROM copies WHERE id = swaps.give AND key = swaps.from_key AND worn = 0) AND (swaps.want IS NULL OR EXISTS (SELECT 1 FROM copies WHERE id = swaps.want AND key = swaps.to_key))`;
     const won = 'EXISTS (SELECT 1 FROM swaps WHERE id = ? AND nonce = ?)';
     const moved = s.want ? [s.give, s.want] : [s.give];
@@ -493,6 +539,7 @@ async function me(request, env, key, action) {
       o.paint = paint;
     } else delete o.paint;
     await env.DB.prepare('UPDATE copies SET code = ? WHERE id = ? AND key = ?').bind(encode(o), c.id, key).run();
+    await voidSwaps(env, c.id);
     const p = await env.DB.prepare('SELECT metal FROM players WHERE key = ?').bind(key).first();
     return json({ copy: publicCopy({ ...c, code: encode(o) }), metal: p.metal });
   }
@@ -502,8 +549,7 @@ async function me(request, env, key, action) {
     const n = await env.DB.prepare('SELECT seed, at FROM names WHERE key = ?').bind(key).first();
     const choices = await claimChoices(env, key, n.at);
     if (!choices.includes(body.seed)) return json({ error: 'That isn’t one of yours' }, 400);
-    const p = await env.DB.prepare('SELECT opened FROM players WHERE key = ?').bind(key).first();
-    if (Date.now() - Date.parse(n.at) > PICK_FOR_MS || (p?.opened ?? 0) > 0) return json({ error: 'Your guy is settled now' }, 409);
+    if (!(await pickOpen(env, key))) return json({ error: 'Your guy is settled now' }, 409);
     await env.DB.prepare('UPDATE names SET seed = ? WHERE key = ?').bind(body.seed, key).run();
     await env.DB.prepare("UPDATE players SET guy_one_in = ?, look = '' WHERE key = ?").bind(guyOneIn(dealt(body.seed)), key).run();
     return json({ seed: body.seed });
@@ -568,6 +614,41 @@ async function stats(env) {
   return json({ players: players.n, copies: grades.reduce((a, b) => a + b, 0), grades, counts, todayGame: todayGame(), rules: RULES });
 }
 
+/** Whether each table a release clears has been made yet (they come with later migrations). */
+async function tablesHere(env, names) {
+  const have = new Set();
+  for (const t of names) {
+    try { await env.DB.prepare(`SELECT 1 FROM ${t} LIMIT 1`).first(); have.add(t); }
+    catch { /* not made yet */ }
+  }
+  return have;
+}
+
+/**
+ * Lets a name go, in one transaction guarded by the same current owner (`proof`), so a concurrent
+ * release and reclaim never touches a new owner's name. Its collection, player record, face parts and
+ * card stats go, and its open offers both ways lapse, so whoever claims it next starts fresh and can't
+ * take a gift meant for the last owner. A Google account keeps its stamps and carries its luck and free
+ * day to its next name (stamps.js); a name with no sign-in loses its own. False when the guard failed.
+ */
+async function release(env, key, proof) {
+  const guard = `EXISTS (SELECT 1 FROM names WHERE key = ? AND ${proof.clause})`;
+  const guarded = (sql, ...args) => env.DB.prepare(`${sql} AND ${guard}`).bind(...args, key, proof.value);
+  const have = await tablesHere(env, ['swaps', 'parts', 'copy_days', 'account_luck']);
+  const stamps = await stampsReady(env);
+  const results = await env.DB.batch([
+    ...(have.has('account_luck') ? [keepLuck(env, key, guard, key, proof.value)] : []),
+    ...(have.has('swaps') ? [guarded("UPDATE swaps SET state = 'void' WHERE state = 'open' AND (from_key = ? OR to_key = ?)", key, key)] : []),
+    ...(have.has('parts') ? [guarded('DELETE FROM parts WHERE key = ?', key)] : []),
+    ...(have.has('copy_days') ? [guarded('DELETE FROM copy_days WHERE copy_id IN (SELECT id FROM copies WHERE key = ?)', key)] : []),
+    guarded('DELETE FROM copies WHERE key = ?', key),
+    guarded('DELETE FROM players WHERE key = ?', key),
+    ...(stamps ? ['club_days', 'stamp_ledger'].map(t => guarded(`DELETE FROM ${t} WHERE holder = ?`, key)) : []),
+    env.DB.prepare(`DELETE FROM names WHERE key = ? AND ${proof.clause}`).bind(key, proof.value),
+  ]);
+  return results.at(-1).meta.changes > 0;
+}
+
 export async function api(request, env, url = new URL(request.url), ctx) {
   if (url.pathname.startsWith('/api/auth/')) return authApi(request, env, url);
   if (url.pathname === '/api/club/guys') return clubGuys(request, env, guyOf);
@@ -607,6 +688,11 @@ export async function api(request, env, url = new URL(request.url), ctx) {
   const origin = request.headers.get('Origin');
   if (origin && origin !== url.origin) return json({ error: 'Cross-origin writes are not allowed' }, 403);
   if (request.method === 'DELETE') {
+    // The founder can take any name down (X-Founder-Secret), as its owner would let it go.
+    if (request.headers.has('X-Founder-Secret')) {
+      if (!env.FOUNDER_SECRET || !await equal(request.headers.get('X-Founder-Secret'), env.FOUNDER_SECRET)) return json({ error: 'Founder authentication required' }, 403);
+      return (await release(env, key, { clause: 'key = ?', value: key })) ? json({ deleted: true }) : json({ error: 'Not claimed' }, 404);
+    }
     const name = await owner(request, env, key);
     if (!name) return json({ error: 'Owner authentication required' }, request.headers.has('Authorization') ? 403 : 401);
     // Recheck ownership in the write: a concurrent release/reclaim must not delete a new owner's name.
@@ -615,17 +701,7 @@ export async function api(request, env, url = new URL(request.url), ctx) {
     const proof = session && (await env.DB.prepare('SELECT key FROM names WHERE key = ? AND account = ?').bind(key, session.account).first())
       ? { clause: 'account = ?', value: session.account }
       : { clause: 'owner = ? AND account IS NULL', value: token ? await digest(token) : '' };
-    // Delete the collection and name in one transaction, guarded by the same current owner.
-    const guard = `EXISTS (SELECT 1 FROM names WHERE key = ? AND ${proof.clause})`;
-    // Its stamps go too (from 0010), so whoever claims the name next starts fresh.
-    const stamps = await stampsReady(env) ? ['club_days', 'stamp_ledger'].map(t => env.DB.prepare(`DELETE FROM ${t} WHERE key = ? AND ${guard}`).bind(key, key, proof.value)) : [];
-    const results = await env.DB.batch([
-      env.DB.prepare(`DELETE FROM copies WHERE key = ? AND ${guard}`).bind(key, key, proof.value),
-      env.DB.prepare(`DELETE FROM players WHERE key = ? AND ${guard}`).bind(key, key, proof.value),
-      ...stamps,
-      env.DB.prepare(`DELETE FROM names WHERE key = ? AND ${proof.clause}`).bind(key, proof.value),
-    ]);
-    if (!results.at(-1).meta.changes) return json({ error: 'Owner authentication changed. Reload and try again.' }, 403);
+    if (!(await release(env, key, proof))) return json({ error: 'Owner authentication changed. Reload and try again.' }, 403);
     return json({ deleted: true });
   }
   if (!env.CLAIM_SALT) return json({ error: 'Name claims are not configured' }, 503);
@@ -638,7 +714,8 @@ export async function api(request, env, url = new URL(request.url), ctx) {
     ON CONFLICT(hash) DO UPDATE SET attempts = attempts + 1 RETURNING attempts`).bind(hash, day).first();
   if (count.attempts > 10) return json({ error: 'Daily claim limit reached. Try tomorrow.' }, 429);
   await env.DB.prepare('DELETE FROM claim_limits WHERE day < ?').bind(day).run();
-  if (nameSkeleton(key) === 'isaac' && key !== 'isaac') return json({ error: 'This name is reserved' }, 403);
+  const refused = nameRefused(key);
+  if (refused) return json({ error: refused === 'reserved' ? 'This name is reserved' : 'That name can’t be used' }, 403);
   if (await skeletonTaken(env, key)) return json({ error: 'That name was just taken' }, 409);
   if (key === 'isaac' && (!env.FOUNDER_SECRET || !await equal(request.headers.get('X-Founder-Secret') || '', env.FOUNDER_SECRET))) {
     return json({ error: 'This name is reserved' }, 403);

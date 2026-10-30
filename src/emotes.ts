@@ -59,7 +59,7 @@ export function emoteFrames(spec: GuySpec, id: string, moving = true): Frames | 
     const rows = still(pose), px = new Uint8ClampedArray(EMOTE_SIZE * EMOTE_SIZE * 4);
     // How this step moves him and the picture.
     const beat = moving ? k % 2 : 0;
-    const dy = def.motion === 'bounce' ? -beat : 0, dx = def.motion === 'shake' ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
+    const dy: number = def.motion === 'bounce' ? -beat : 0, dx = def.motion === 'shake' ? (k % 2 ? 1 : -1) * (moving ? 1 : 0) : 0;
     const lift = def.motion === 'rise' && moving ? k % 3 : 0;
     const put = (x: number, y: number, c: string) => {
       if (x < 0 || y < 0 || x >= EMOTE_SIZE || y >= EMOTE_SIZE) return;

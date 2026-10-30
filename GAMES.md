@@ -292,7 +292,9 @@ Most games want the whole crowd, not the sprites: `createCrowd(canvas, { backdro
 canvas out in rows (`crowdSeats`), seats each guy you `add(name, look)` from the front middle back,
 makes his sprite a few milliseconds a frame, sinks the far rows into a haze of `backdrop`, and draws
 only while something moves. `hop(name)` when a chatter guesses, `wave(true)` for a stadium wave,
-`spotlight(name, label)` to lift the round's winner out to the front, big, with a line under him.
+`spotlight(name, label)` to lift the round's winner out to the front, big, with a line under him,
+`remove(name)` when one leaves. Past the seats, guys wait undrawn in the order they came and take
+seats as they free up or the canvas grows.
 A guy wearing a Prized copy or better is outlined in its grade's colour (`crowdShine`), so rare guys
 show from the back. Made-up guys in a crowd wear nothing: no pet shop items, no buddies.
 
@@ -331,13 +333,19 @@ In code: `emoteFrames(spec, id, moving)` and `EMOTE_SET`.
 
 ## Drawing guys in the game itself
 
-A game that renders guys locally (Amountle's Twitch mode, the club's own boards) vendors the headless
-build instead: build it with `npx tsdown -c tsdown.headless.config.ts` and copy
-`dist-headless/headless.js` and `headless.d.ts` over the game's copy (Amountle's `src/lil-guy-club.js`,
-the club's `dist/club/faces.js`). Never hand-edit them. `bakeView(spec, view)` gives exactly the frames
-the Worker serves for a view (`bakeSquare` for `icon` and `face`, `cardInputOf` for the big card's
-words), and `encodeApng`, `encodeGif` and `sheetOf` encode them the same way. Part arrays are
-append-only, so a vendored build only ever adds.
+A game that renders guys locally (Amountle's Twitch mode) vendors the headless build instead: build it
+with `npx tsdown -c tsdown.headless.config.ts` and copy `dist-headless/headless.js` and `headless.d.ts`
+over the game's copy (Amountle's `src/lil-guy-club.js`). Never hand-edit them. `bakeView(spec, view)`
+gives exactly the frames the Worker serves for a view (`bakeSquare` for `icon` and `face`,
+`cardInputOf` for the big card's words), and `encodeApng`, `encodeGif` and `sheetOf` encode them the
+same way. Part arrays are append-only, so old looks and `g1:` codes keep drawing, but a build can still
+lack a name a game imports: the headless test in `src/__tests__/guy.test.ts` lists them, so add to it
+when a game imports something new.
+
+Don't copy the headless build over the club's `dist/club/faces.js`: it deals a different guy for
+nearly every name, so every face on dleclub.com would change. The same build step writes
+`dist-headless/faces.js`, only the parts, palettes, `resolve`, guy codes and `toSvgString`, minified,
+for the day that change is wanted.
 
 ## Moving a game over
 
@@ -349,7 +357,8 @@ append-only, so a vendored build only ever adds.
   needs pictures.
 - **dle-club** (`dist/club/look.js` draws SVGs with `toSvgString`; `api/_lib/lilguys.js` reads
   `/api/club/guys`): boards can show `~<board name>/face.png` with no library, or, for players whose
-  sign-in has a lilguys name (`lilguysOf` already returns `key`), `@<key>`. A club guy drawn from its
+  sign-in has a lilguys name (`lilguysOf` already returns `key`), `@<key>`. Either changes every face
+  on the boards, so it is Isaac's call. A club guy drawn from its
   `g1:` code has no seed the Worker can see; keep drawing those with `faces.js`, or hand the Worker a
   guy code built from the board name as seed and the `g1:` parts (never the club id as a seed).
 - **Engine games** (Puttsies, Weighsies, Cutsies, Trickshotle): party chips, scorecards and boards

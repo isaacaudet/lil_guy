@@ -199,3 +199,26 @@ test('without the shared secret, DLE Club sign-in is off', async () => {
   env.CLUB_SSO_SECRET = 'short';
   expect((await call('/auth/club', 'POST', { note: 'x.y' }, s.cookie)).status).toBe(503);
 });
+
+test('a name with an underscore links to Google like any other', async () => {
+  const guest = await claim('snow_pea');
+  expect(guest.owner).toHaveLength(64);
+  const linked = await login('account-a', { key: 'snow_pea', ownerToken: guest.owner });
+  expect(linked.status).toBe(200);
+  expect((await linked.json()).name.key).toBe('snow_pea');
+  expect((await call('/me/snow_pea/state', 'GET', undefined, sessionCookie(linked))).status).toBe(200);
+  // A key that isn't a name is still refused.
+  expect((await login('account-b', { key: 'Snow_Pea', ownerToken: guest.owner })).status).toBe(403);
+});
+
+test('a name linked to Google brings its starter and spends to the account, and never gets a second starter', async () => {
+  const guest = await claim('mia');
+  const auth = { Authorization: 'Bearer ' + guest.owner };
+  expect((await call('/me/mia/open', 'POST', { mystery: true }, '', auth)).status).toBe(201);
+  const linked = await login('account-a', { key: 'mia', ownerToken: guest.owner });
+  const state = await (await call('/me/mia/state', 'GET', undefined, sessionCookie(linked))).json();
+  expect(state.stamps).toMatchObject({ linked: true, balance: 5, spent: 5 });
+  const account = await digest('google:account-a');
+  expect(env.db.query('SELECT COUNT(*) AS n FROM stamp_ledger WHERE holder = ?').get('mia').n).toBe(0);
+  expect(env.db.query("SELECT COUNT(*) AS n FROM stamp_ledger WHERE holder = ? AND what = 'starter'").get(account).n).toBe(1);
+});

@@ -1,4 +1,5 @@
-import { test, expect } from 'bun:test';
+import { afterEach, beforeEach, describe, test, expect } from 'bun:test';
+import { fakeCanvas, installPage, runFrame } from './fake-canvas';
 import { crowdSprite, crowdSheet, CROWD_SIZES } from '../crowd';
 import { resolve } from '../resolve';
 import { paletteOf } from '../palette';
@@ -49,7 +50,7 @@ test('a sheet puts guy n at column n % columns', () => {
 });
 
 import { crowdShine } from '../crowd';
-import { crowdSeats } from '../crowd-stage';
+import { createCrowd, crowdSeats } from '../crowd-stage';
 
 test('a guy wearing a Prized copy or better stands out in its grade colour; plain ones and the deal alone don\'t', () => {
   const hat = items.find(i => i.slot === 'hat' && !i.retired && !i.free)!;
@@ -77,4 +78,81 @@ test('seats fill from the front middle, grow with nearness, and come out the sam
   expect(sizes).toEqual([...sizes].sort((a, b) => a - b));
   expect(sizes[0]).toBe(2);
   expect(crowdSeats(400, 200, 2).length).toBeGreaterThan(seats.length);
+});
+
+describe('createCrowd', () => {
+  let undo = () => {};
+  beforeEach(() => { undo = installPage(); });
+  afterEach(() => undo());
+
+  test('remove frees a seat for whoever waited longest past the seats, else the next to come', () => {
+    const canvas = fakeCanvas(40, 20), crowd = createCrowd(canvas as unknown as HTMLCanvasElement, { scale: 1 });
+    const seats = crowdSeats(40, 20), n = crowd.seats;
+    expect(n).toBe(seats.length);
+    // Every guy drawn once all the sprites are made, as the screen spot he's drawn at.
+    const drawn = () => {
+      for (let i = 0; i < 500 && runFrame(performance.now()); i++);
+      canvas.calls.length = 0;
+      crowd.resize();
+      runFrame(performance.now());
+      return canvas.calls.filter(c => c.name === 'drawImage' && c.args.length === 9).map(c => `${c.args[5]},${c.args[6]}`);
+    };
+    const at = (seat: number) => `${seats[seat].x},${seats[seat].y}`;
+    for (let i = 0; i < n + 2; i++) crowd.add(`guy ${i}`);
+    expect(crowd.count).toBe(n + 2);
+    expect(drawn().length).toBe(n);
+
+    crowd.remove('Guy 3');
+    expect(crowd.has('guy 3')).toBe(false);
+    expect(crowd.count).toBe(n + 1);
+    crowd.remove('guy 0');
+    expect(drawn().length).toBe(n);
+    crowd.remove('guy 1');
+    expect(crowd.count).toBe(n - 1);
+    expect(drawn()).not.toContain(at(1));
+    crowd.add('late');
+    expect(drawn()).toContain(at(1));
+
+    crowd.add('waits a');
+    crowd.add('waits b');
+    crowd.remove('waits a');
+    crowd.remove('guy 5');
+    expect(crowd.has('waits b')).toBe(true);
+    expect(drawn().length).toBe(n);
+    expect(drawn()).toContain(at(5));
+  });
+
+  test('a newcomer never takes a seat ahead of a guy already waiting', () => {
+    const seats = new Set(crowdSeats(40, 20).map(s => `${s.x},${s.y}`));
+    // Whether `name` is drawn once `steps` have run on a fresh crowd: a hop lifts him off his seat's spot.
+    const seated = (name: string, steps: (crowd: ReturnType<typeof createCrowd>, n: number) => void) => {
+      const canvas = fakeCanvas(40, 20), crowd = createCrowd(canvas as unknown as HTMLCanvasElement, { scale: 1 });
+      steps(crowd, crowd.seats);
+      for (let i = 0; i < 500 && runFrame(performance.now() + 2000); i++);
+      crowd.hop(name);
+      canvas.calls.length = 0;
+      runFrame(performance.now() + 150);
+      return canvas.calls.some(c => c.name === 'drawImage' && c.args.length === 9 && !seats.has(`${c.args[5]},${c.args[6]}`));
+    };
+    let n = 0;
+    const once = (crowd: ReturnType<typeof createCrowd>, seatCount: number) => {
+      n = seatCount;
+      for (let i = 0; i < n + 2; i++) crowd.add(`guy ${i}`);
+      crowd.remove('guy 0');
+      crowd.add('newcomer');
+      crowd.remove('guy 1');
+    };
+    expect(seated('newcomer', once)).toBe(false);
+    expect(seated(`guy ${n + 1}`, once)).toBe(true);
+    // A guy who leaves while waiting doesn't let a later one jump the line either.
+    const twice = (crowd: ReturnType<typeof createCrowd>, seatCount: number) => {
+      once(crowd, seatCount);
+      crowd.add('later');
+      crowd.remove('newcomer');
+      crowd.add('last');
+      crowd.remove('guy 2');
+    };
+    expect(seated('later', twice)).toBe(true);
+    expect(seated('last', twice)).toBe(false);
+  });
 });

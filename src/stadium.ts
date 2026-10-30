@@ -171,8 +171,10 @@ export function createStadium(canvas: HTMLCanvasElement, options: StadiumOptions
     const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
     dpr = globalThis.devicePixelRatio || 1;
     canvas.width = Math.max(1, Math.round(w * dpr)); canvas.height = Math.max(1, Math.round(h * dpr));
-    // Whole screen pixels to a world pixel, as big as the venue fits.
-    k = Math.max(1, Math.floor(Math.min(canvas.width / lay.width, canvas.height / lay.height)));
+    // Whole screen pixels to a world pixel, as big as the venue fits; only a canvas smaller than the
+    // venue takes a fraction, so the whole venue still shows rather than its middle.
+    const fit = Math.min(canvas.width / lay.width, canvas.height / lay.height);
+    k = fit < 1 ? fit : Math.floor(fit);
     ox = Math.round((canvas.width - lay.width * k) / 2); oy = Math.round((canvas.height - lay.height * k) / 2);
   }
   function reseat() {
@@ -180,6 +182,8 @@ export function createStadium(canvas: HTMLCanvasElement, options: StadiumOptions
     if (next === venue) return;
     fading = { picture: backdrop, until: performance.now() + 900 };
     venue = next; seats = stadiumSeats(venue); lay = layout(venue); backdrop = paintVenue(lay); order = null;
+    // Sprites still waiting were for the old venue's sizes.
+    queue.length = 0; queued.clear();
     layoutCanvas();
     options.onVenue?.(venue);
   }
@@ -191,16 +195,18 @@ export function createStadium(canvas: HTMLCanvasElement, options: StadiumOptions
   function make(f: Fan, size: CrowdSize) {
     const key = f.key + ':' + size;
     queued.delete(key);
-    if (sprites.has(key) || !byKey.has(f.key)) return;
+    if (sprites.has(key) || byKey.get(f.key) !== f) return;
     const s = crowdSprite(f.spec, size), c = document.createElement('canvas');
     c.width = c.height = size;
-    c.getContext('2d')!.putImageData(new ImageData(s.rgba, size, size), 0, 0);
+    c.getContext('2d')!.putImageData(new ImageData(s.rgba as Uint8ClampedArray<ArrayBuffer>, size, size), 0, 0);
     sprites.set(key, c);
   }
 
   function draw(now: number) {
     frame = 0;
     if (gone) return;
+    // Sprites are asked for best seat first, so the front stands fill before the back.
+    if (!order) for (let i = 0; i < Math.min(fans.length, seats.length); i++) sprite(fans[i], seats[i].size);
     const budget = performance.now() + 5;
     while (queue.length && performance.now() < budget) { const [f, size] = queue.shift()!; make(f, size); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -240,7 +246,9 @@ export function createStadium(canvas: HTMLCanvasElement, options: StadiumOptions
   function spot(now: number) {
     const { fan, label, from, until } = lit!;
     if (now >= until) { lit = null; return; }
-    const big = sprite(fan, 16);
+    // His big sprite is made at once, so he never leaves his seat for nothing.
+    make(fan, 16);
+    const big = sprites.get(fan.key + ':16');
     if (!big) return;
     const rise = Math.min(1, (now - from) / 350, (until - now) / 350), ease = 1 - Math.pow(1 - rise, 3);
     const scale = Math.max(2, Math.min(5, Math.floor(lay.height / 40))), side = 16 * scale;
@@ -272,6 +280,7 @@ export function createStadium(canvas: HTMLCanvasElement, options: StadiumOptions
       const f = byKey.get(name.toLowerCase());
       if (!f) return;
       byKey.delete(f.key); fans.splice(fans.indexOf(f), 1); order = null;
+      if (lit?.fan === f) lit = null;
       for (const s of SIZES) sprites.delete(f.key + ':' + s);
       reseat(); wake();
     },

@@ -204,7 +204,7 @@ export function cardInputOf(spec: CardSpec, move: Move = 'idle'): CardInput {
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
 function grounded(frame: AnimationFrame, ground: (string | null)[][], left: number): AnimationFrame {
   const W = ground[0].length, fw = frame.colors[0].length;
-  const colors = ground.map(row => row.slice()), slots = ground.map(row => row.map(c => (c ? 3 : 0)));
+  const colors = ground.map(row => row.slice()), slots: number[][] = ground.map(row => row.map(c => (c ? 3 : 0)));
   for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
     const c = frame.colors[y][x];
     if (c && frame.slots[y][x] !== 3) { colors[y][x + left] = c; slots[y][x + left] = frame.slots[y][x]; }

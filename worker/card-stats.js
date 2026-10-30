@@ -84,10 +84,13 @@ export async function readClub(env, key, now = Date.now(), fetcher = fetch, ever
     const t = Math.floor(now / 1000);
     const url = `${env.CLUB_STATS || CLUB_STATS}?a=${name.account}&since=${since}&t=${t}&sig=${await statsSignature(secret, name.account, since, t)}`;
     const r = await fetcher(url, { signal: AbortSignal.timeout(3000) });
+    // A wrong shared secret shows here as a 401 from the club, so say so; never the account or signature.
+    if (r.status !== 200) console.error('club stats: answered', r.status);
     if (!r.ok) return;
     const { days } = await r.json();
     if (!Array.isArray(days)) return;
-    const put = stamps ? keepDays(env, key, days) : [];
+    // Stamps are the Google account's, so a name let go and claimed again keeps them (stamps.js).
+    const put = stamps ? keepDays(env, name.account, days) : [];
     for (const d of days) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d?.day) || !Number.isInteger(d.games) || !Number.isInteger(d.score)) continue;
       for (const c of worn) if (c.worn_since <= d.day) put.push(env.DB.prepare(`INSERT INTO copy_days(copy_id, day, games, score) VALUES (?, ?, ?, ?)
@@ -103,7 +106,10 @@ export async function readClub(env, key, now = Date.now(), fetcher = fetch, ever
       const n = (await env.DB.prepare('SELECT COUNT(*) AS n FROM copy_days WHERE copy_id = ? AND games > 0').bind(c.id).first()).n;
       if (n > o.tally) await env.DB.prepare('UPDATE copies SET code = ? WHERE id = ?').bind(encode({ ...o, tally: n }), c.id).run();
     }
-  } catch { /* before 0009, or the club didn't answer */ }
+  } catch (e) {
+    // Before 0009 nothing here can run; anything else (the club timing out, a D1 error) is worth knowing.
+    if (await statsReady(env)) console.error('club stats: read failed:', e?.message);
+  }
 }
 
 /** Each copy with its stats: `{ worn, games, best }`, or none before 0009. */

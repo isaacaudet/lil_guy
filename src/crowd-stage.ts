@@ -63,8 +63,10 @@ export interface CrowdOptions {
 }
 
 export interface Crowd {
-  /** Seats a guy (by the lowercased name, so a name seats once) in the next seat from the front. */
+  /** Seats a guy (by the lowercased name, so a name seats once) in the best free seat. */
   add(name: string, guy?: CrowdGuy): void;
+  /** Takes a guy out. His seat goes to whoever has waited longest past the seats, or the next to come. */
+  remove(name: string): void;
   /** Whether a name is in the crowd. */
   has(name: string): boolean;
   /** Makes a guy hop, as when he guesses. */
@@ -77,13 +79,13 @@ export interface Crowd {
   resize(): void;
   /** Stops drawing and lets go of the sprites. */
   destroy(): void;
-  /** How many guys have been added; past the seats there are, the rest aren't drawn. */
+  /** How many guys are in; past the seats there are, the rest wait undrawn for a seat to free. */
   readonly count: number;
   /** How many seats the crowd has at its size. */
   readonly seats: number;
 }
 
-interface Member { key: string; spec: GuySpec; seat: number; hopAt: number; phase: number; cells: Map<CrowdSize, number> }
+interface Member { key: string; spec: GuySpec; seat: number; arrived: number; hopAt: number; phase: number; cells: Map<CrowdSize, number> }
 
 /** A sheet canvas of one size's sprites, a cell per guy as he first needs it. */
 interface Sheet { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; next: number }
@@ -102,6 +104,10 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
     return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
   };
   const members: Member[] = [], byKey = new Map<string, Member>(), queue: [Member, CrowdSize][] = [];
+  // Seat numbers let go of, lowest (best) first; past them, the next guy gets the next number.
+  // `arrivals` counts guys in, so whoever waits is seated in the order they came.
+  const free: number[] = [];
+  let next = 0, arrivals = 0;
   const sheets = new Map<CrowdSize, Sheet[]>();
   let order: Member[] | null = null;
   // The world is drawn at whole screen pixels per world pixel (`k`), with smoothing off, so a guy is
@@ -123,10 +129,10 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
     return [s, list.length - 1];
   }
   function make(m: Member, size: CrowdSize) {
-    if (m.cells.has(size)) return;
+    if (m.cells.has(size) || byKey.get(m.key) !== m) return;
     const [sheet, which] = sheetFor(size), cell = sheet.next++;
     const sprite = crowdSprite(m.spec, size);
-    sheet.ctx.putImageData(new ImageData(sprite.rgba, size, size), (cell % SHEET_COLUMNS) * size, Math.floor(cell / SHEET_COLUMNS) * size);
+    sheet.ctx.putImageData(new ImageData(sprite.rgba as Uint8ClampedArray<ArrayBuffer>, size, size), (cell % SHEET_COLUMNS) * size, Math.floor(cell / SHEET_COLUMNS) * size);
     m.cells.set(size, which * SHEET_COLUMNS * SHEET_ROWS + cell);
   }
   function blit(m: Member, size: CrowdSize, x: number, y: number, scale = 1) {
@@ -147,7 +153,25 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
     worldH = Math.ceil(canvas.height / k);
     seats = crowdSeats(worldW, worldH, options.density ?? 1);
     order = null;
+    settle();
     for (const m of members) if (m.seat < seats.length) queue.push([m, seats[m.seat].size]);
+  }
+  // Whoever waits past the seats takes a free one, longest waiting first.
+  function settle() {
+    while (free.length && free[0] < seats.length) {
+      let waiting: Member | undefined;
+      for (const m of members) if (m.seat >= seats.length && (!waiting || m.arrived < waiting.arrived)) waiting = m;
+      if (!waiting) return;
+      const seat = free.shift()!;
+      release(waiting.seat);
+      waiting.seat = seat; order = null;
+      queue.push([waiting, seats[seat].size]);
+    }
+  }
+  function release(seat: number) {
+    let i = 0;
+    while (i < free.length && free[i] < seat) i++;
+    free.splice(i, 0, seat);
   }
 
   function moving(t: number) {
@@ -218,9 +242,20 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
     add(name, guy = {}) {
       const key = name.toLowerCase();
       if (byKey.has(key)) return;
-      const m: Member = { key, spec: { ...guy, seed: guy.seed ?? key } as GuySpec, seat: members.length, hopAt: -1e9, phase: hash(key) % 3000, cells: new Map() };
+      // A freed number past the seats would put him ahead of guys already waiting.
+      const seat = free.length && free[0] < seats.length ? free.shift()! : next++;
+      const m: Member = { key, spec: { ...guy, seed: guy.seed ?? key } as GuySpec, seat, arrived: arrivals++, hopAt: -1e9, phase: hash(key) % 3000, cells: new Map() };
       members.push(m); byKey.set(key, m); order = null;
       if (m.seat < seats.length) { queue.push([m, seats[m.seat].size]); wake(); }
+    },
+    remove(name) {
+      const m = byKey.get(name.toLowerCase());
+      if (!m) return;
+      byKey.delete(m.key); members.splice(members.indexOf(m), 1); order = null;
+      if (lit?.member === m) lit = null;
+      release(m.seat);
+      settle();
+      wake();
     },
     has: name => byKey.has(name.toLowerCase()),
     hop(name) { const m = byKey.get(name.toLowerCase()); if (m) { m.hopAt = performance.now(); wake(); } },
@@ -233,7 +268,7 @@ export function createCrowd(canvas: HTMLCanvasElement, options: CrowdOptions = {
       wake();
     },
     resize() { layout(); wake(); },
-    destroy() { gone = true; if (frame) cancelAnimationFrame(frame); sheets.clear(); members.length = 0; byKey.clear(); },
+    destroy() { gone = true; if (frame) cancelAnimationFrame(frame); sheets.clear(); members.length = 0; byKey.clear(); free.length = 0; },
     get count() { return members.length; },
     get seats() { return seats.length; },
   };
