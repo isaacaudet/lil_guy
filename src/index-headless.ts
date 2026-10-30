@@ -4,7 +4,7 @@ export { GRID_SIZE } from './types';
 
 export { hash, hashNth } from './hash';
 export { resolve, LUCKY_ODDS, DEAL_PREFIX, dealOf } from './resolve';
-export { FOUNDER_SEED, FOUNDER_LOOK, FOUNDER_COPIES, isFounder, isFounderCopy } from './founder';
+export { FOUNDER_SEED, FOUNDER_LOOK, FOUNDER_COPIES, isFounder, isFounderCopy, testerCopy } from './founder';
 export { RETIRED_EYES, CAPSULE_ONLY } from './parts/weights';
 export { compose, composeBase, buddyAlone, FOOT_STYLES, shows } from './compose';
 
@@ -36,7 +36,7 @@ export { createShine, shineData, type Shine } from './shine';
 export { voxelColumns, voxelItem, voxelMesh, itemFrame, ownedOf, surfaceOf } from './voxel';
 export type { VoxelColumn, VoxelMesh, VoxelSource, VoxelOptions, Surface, SurfaceKind } from './voxel';
 export { FRAME_SLOTS } from './animate';
-export { AURAS, ONE_OF_ONE_AURAS, AURA_ODDS, auraById, auraCells, auraColor, auraColors } from './auras';
+export { AURAS, ONE_OF_ONE_AURAS, TESTER_AURAS, AURA_ODDS, auraById, auraCells, auraColor, auraColors } from './auras';
 export { collectorNotes, type Note } from './collector';
 export { EFFECTS, FX_IDS, rollFx, fxColor, applyFx, type Fx, type Effect } from './effects';
 export { TAG_MAX, cleanTag, floatShare, tradeFloat, tradeGames, machineSet, setProgress } from './collect';

@@ -4,7 +4,7 @@ import { capRows, mirror, seat } from './parts/hair';
 import { elastic, grid16, L, on, onPair, pet, span, wear } from './item-art';
 import { SETS } from './sets';
 import { decode, finishOutline, starter } from './owned';
-import { AURAS, ONE_OF_ONE_AURAS } from './auras';
+import { AURAS, ONE_OF_ONE_AURAS, TESTER_AURAS } from './auras';
 import type { Fx } from './effects';
 import { painted, PAINTABLE } from './paints';
 import type { AvatarConfig, GameId, Palette, RenderOptions } from './types';
@@ -2372,7 +2372,7 @@ const base: Item[] = [
   ...buddies.map(i => ({ ...i, slot: 'buddy' as const })),
   ...seasonal.map(i => ({ ...i, slot: 'hat' as const })),
   // Auras belong to no machine: any capsule can be one (see ./auras).
-  ...[...AURAS, ...ONE_OF_ONE_AURAS].map(({ id, name, colors }) => ({ id, name, colors, game: 'club' as const, slot: 'aura' as const })),
+  ...[...AURAS, ...ONE_OF_ONE_AURAS, ...TESTER_AURAS].map(({ id, name, colors }) => ({ id, name, colors, game: 'club' as const, slot: 'aura' as const })),
 ];
 
 /** Every item: the first lists, each machine's set laid over them (redraws, retirements), then its new items. */

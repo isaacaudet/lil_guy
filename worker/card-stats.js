@@ -59,7 +59,8 @@ export async function statsSignature(secret, a, since, t) {
 /**
  * Reads the owner's club days, gives each to the copies worn then and keeps it as stamps. Quiet on any
  * failure: the club being down, sign-in off, a name with no Google sign-in, no 0009 (nothing is read) or
- * no 0010 (no stamps are kept) all leave things as they were. At most once every `every` ms.
+ * no 0010 (no stamps are kept) all leave things as they were. At most once every `every` ms. Answers the
+ * owner's beta tester number when the club sends one (the club's betas, its docs/accounts.md, Beta).
  */
 export async function readClub(env, key, now = Date.now(), fetcher = fetch, every = READ_EVERY) {
   const secret = env.CLUB_SSO_SECRET;
@@ -85,8 +86,9 @@ export async function readClub(env, key, now = Date.now(), fetcher = fetch, ever
     const url = `${env.CLUB_STATS || CLUB_STATS}?a=${name.account}&since=${since}&t=${t}&sig=${await statsSignature(secret, name.account, since, t)}`;
     const r = await fetcher(url, { signal: AbortSignal.timeout(3000) });
     if (!r.ok) return;
-    const { days } = await r.json();
-    if (!Array.isArray(days)) return;
+    const { days, beta } = await r.json();
+    const tester = Number.isInteger(beta) && beta > 0 ? beta : undefined;
+    if (!Array.isArray(days)) return tester;
     const put = stamps ? keepDays(env, key, days) : [];
     for (const d of days) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d?.day) || !Number.isInteger(d.games) || !Number.isInteger(d.score)) continue;
@@ -103,6 +105,7 @@ export async function readClub(env, key, now = Date.now(), fetcher = fetch, ever
       const n = (await env.DB.prepare('SELECT COUNT(*) AS n FROM copy_days WHERE copy_id = ? AND games > 0').bind(c.id).first()).n;
       if (n > o.tally) await env.DB.prepare('UPDATE copies SET code = ? WHERE id = ?').bind(encode({ ...o, tally: n }), c.id).run();
     }
+    return tester;
   } catch { /* before 0009, or the club didn't answer */ }
 }
 
