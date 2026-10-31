@@ -3524,6 +3524,14 @@ const FOUNDER_COPIES = {
 const isFounder = (seed) => seed === FOUNDER_SEED;
 /** Whether a copy is one of the founder's own, which no capsule gives (in his locker, nobody else's). */
 const isFounderCopy = (o) => o.item === FOUNDER_COPIES.aura.item || o.item === FOUNDER_COPIES.flag.item && o.finish === "gold" && o.tally === 999 && o.print === 1;
+/** A beta tester's Beta aura, no capsule's, its print their tester number (the club's betas). */
+const testerCopy = (number) => ({
+	item: "aura.beta",
+	finish: "classic",
+	scuff: 0,
+	print: number,
+	fx: "shimmer"
+});
 
 //#endregion
 //#region src/resolve.ts
@@ -9682,12 +9690,32 @@ const ONE_OF_ONE_AURAS = [{
 	still: 900,
 	cells: (mask, t, print) => [...AURAS.find((a) => a.id === "aura.halo").cells(mask, t, print), ...AURAS.find((a) => a.id === "aura.orbit").cells(mask, t, print)]
 }];
-const byId$1 = new Map([...AURAS, ...ONE_OF_ONE_AURAS].map((a) => [a.id, a]));
+/**
+* Auras no capsule gives that more than one player holds: Beta, for everyone Isaac lets into the
+* games' betas, in the club's coral and ivory, sparkles inside two orbs going round. Each copy's
+* print is its tester's number. Append only.
+*/
+const TESTER_AURAS = [{
+	id: "aura.beta",
+	name: "Beta",
+	colors: [
+		"#FBF8F2",
+		"#FF7A5C",
+		"#C2462E"
+	],
+	still: 600,
+	cells: (mask, t, print) => [...AURAS.find((a) => a.id === "aura.sparkles").cells(mask, t, print), ...AURAS.find((a) => a.id === "aura.orbit").cells(mask, t, print)]
+}];
+const byId$1 = new Map([
+	...AURAS,
+	...ONE_OF_ONE_AURAS,
+	...TESTER_AURAS
+].map((a) => [a.id, a]));
 const auraById = (id) => id ? byId$1.get(id) : void 0;
 /**
 * How much an aura copy does on top of its aura, by how rare its finish is
 * among auras: 0 for Classic (half of all auras) up to 4 for Black pearl
-* (three in a thousand); Origin, one of one, is 5 whatever its finish.
+* (three in a thousand); Origin, one of one, is 5 whatever its finish, and Beta 3.
 */
 const INTENSITY = {
 	classic: 0,
@@ -9701,6 +9729,7 @@ const INTENSITY = {
 };
 function auraIntensity(id, finish) {
 	if (ONE_OF_ONE_AURAS.some((a) => a.id === id)) return 5;
+	if (TESTER_AURAS.some((a) => a.id === id)) return 3;
 	return INTENSITY[finish ?? "classic"] ?? 0;
 }
 const TAU$2 = Math.PI * 2;
@@ -15854,7 +15883,11 @@ const base = [
 		...i,
 		slot: "hat"
 	})),
-	...[...AURAS, ...ONE_OF_ONE_AURAS].map(({ id, name, colors }) => ({
+	...[
+		...AURAS,
+		...ONE_OF_ONE_AURAS,
+		...TESTER_AURAS
+	].map(({ id, name, colors }) => ({
 		id,
 		name,
 		colors,
@@ -19129,7 +19162,7 @@ function toShareSvg(input, copy, options = {}) {
 	const lines = [
 		`${wearOf(copy.scuff).name} · scuff ${copy.scuff.toFixed(4)} · print #${copy.print}`,
 		copy.tally !== void 0 ? `${copy.tally} days on its tally` : "",
-		item?.free ? "Everyone has one; no two are alike" : `1 in ${count(odds)} capsules`
+		copy.item === "aura.beta" ? "Awarded to DLE Club beta testers" : item?.free ? "Everyone has one; no two are alike" : `1 in ${count(odds)} capsules`
 	].filter(Boolean);
 	const font = "font-family=\"system-ui, -apple-system, Segoe UI, sans-serif\"";
 	return [
@@ -27390,6 +27423,7 @@ exports.SHINE_FRAGMENT = SHINE_FRAGMENT
 exports.SHOWPIECE_WEIGHT = SHOWPIECE_WEIGHT
 exports.SMALL_SIZE = SMALL_SIZE
 exports.TAG_MAX = TAG_MAX
+exports.TESTER_AURAS = TESTER_AURAS
 exports.TIER_ICONS = TIER_ICONS
 exports.TITLE_MAX = TITLE_MAX
 exports.TONE_NAMES = TONE_NAMES
@@ -27547,6 +27581,7 @@ exports.starter = starter
 exports.surfaceOf = surfaceOf
 exports.tallyMarks = tallyMarks
 exports.temperTint = temperTint
+exports.testerCopy = testerCopy
 exports.textWidth = textWidth
 exports.toAnimatedSvg = toAnimatedSvg
 exports.toCardArtGif = toCardArtGif

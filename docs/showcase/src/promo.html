@@ -3698,8 +3698,10 @@
     const st = ctx.stats ?? (ctx.mine ? state.stats?.[code] : null), pull = ctx.pull ?? (ctx.mine ? state.pulls?.[code] : null);
     const ownerLine = `<p class="owner-line">In the locker of <a href="#/u/${esc(ctx.key)}" id="insp-owner">@${esc(ctx.key)}</a></p>`;
     const one = founderOf(ctx.seed) && LG.isFounderCopy(o);
+    const betaReward = o.item === 'aura.beta';
     const others = ctx.mine ? wornCopies() : (ctx.worn || []).map(LG.decode).filter(Boolean);
-    const caption = `@${ctx.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', the only one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
+    const caption = betaReward ? `@${ctx.key} earned the Beta aura as a DLE Club beta tester.`
+      : `@${ctx.key} pulled ${LG.nameOf(o).replace(' | ', ', ')}: ${g.name.replace('★ ', '')}${one ? ', the only one' : item.free ? '' : `, 1 in ${words(odds)} capsules`}.`;
     $('insp-body').className = 'insp insp2';
     $('insp-body').style.setProperty('--g', g.color);
     $('insp-body').innerHTML = `<button class="close" type="button" id="insp-close" aria-label="Close">×</button>
@@ -3714,9 +3716,9 @@
         <div class="badges"><span class="bal" style="--b:${g.color}">${one ? '★ Only one' : esc(g.name)}</span>${LG.special(o) ? `<span class="bal poly">${esc(LG.special(o))}</span>` : ''}${o.tally !== undefined ? `<span class="bal" style="--b:#5d6b8a">Tally ${o.tally}</span>` : ''}${pull ? `<span class="bal" style="--b:${pull <= FIRST_EDITION ? '#c8901e' : '#5d6b8a'}">${pull <= FIRST_EDITION ? '1st edition · ' : ''}#${pull.toLocaleString('en-US')} of this item</span>` : ''}${ctx.mine && (state.dev || []).includes(code) ? '<span class="bal" style="--b:#ff6fa0">Dev</span>' : ''}</div>
         ${st ? `<div class="ins-stats"><span><b>${st.worn}</b>day${st.worn === 1 ? '' : 's'} worn</span><span><b>${st.games}</b>club game${st.games === 1 ? '' : 's'}</span><span><b>${st.best || '—'}</b>best club day</span></div>` : ''}
         ${floatPanel(o)}
-        ${collectorPanel(o, g)}
-        ${oddsBox(o, one)}
-        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Try it on'}</button>${isLive() && !item.free && !one ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
+        ${betaReward ? '<div class="cn"><p>A reward for DLE Club beta testers. This aura stays with you and cannot be traded.</p></div>' : collectorPanel(o, g)}
+        ${betaReward ? '' : oddsBox(o, one)}
+        ${ctx.mine ? `<div class="ins-actions"><button class="btn" type="button" id="insp-wear">${on ? 'Take it off' : 'Try it on'}</button>${isLive() && !item.free && !one && !betaReward ? `<button class="btn ghost" type="button" id="insp-give"${on ? ' disabled title="Take it off first"' : ''}>Give to a friend</button>` : ''}</div>
           ${LG.PAINTABLE.includes(slot) ? (() => {
             // The shelf, then this month's paints (dearer, gone next month); a paint already on stays shown.
             const shelf = LG.paintsOnSale(today).filter(p => !LG.paintMonth(p)), month = LG.paintsOnSale(today).filter(p => LG.paintMonth(p));
@@ -3724,9 +3726,9 @@
             const sw = p => `<button type="button" data-paint="${p}" style="--p:${LG.PAINTS[p].hex}" title="${esc(LG.PAINTS[p].name)}${LG.paintMonth(p) ? ` · ${LG.metalText(LG.LIMITED_PAINT_COST)}` : ''}" aria-pressed="${o.paint === p}" aria-label="${esc(LG.PAINTS[p].name)}"></button>`;
             return `<div class="paints"><span>Paint · ${LG.metalText(LG.PAINT_COST)}${o.paint ? ` · <b>${esc(LG.PAINTS[o.paint].name)}</b>` : ''}</span><div class="swatches">${[...shelf, ...extra].map(sw).join('')}${o.paint ? '<button type="button" class="scrape" data-paint="">Scrape off</button>' : ''}</div>${month.length ? `<span>This month only · ${LG.metalText(LG.LIMITED_PAINT_COST)}</span><div class="swatches">${month.map(sw).join('')}</div>` : ''}</div>`;
           })() : ''}
-          ${!on && !one && !tag && LG.smeltValue(o) ? `<button class="btn ghost small smelt-one" type="button" id="insp-smelt">Smelt · +${LG.smeltValue(o)} scrap</button>` : ''}
+          ${!on && !one && !betaReward && !tag && LG.smeltValue(o) ? `<button class="btn ghost small smelt-one" type="button" id="insp-smelt">Smelt · +${LG.smeltValue(o)} scrap</button>` : ''}
           <form class="tagf" id="insp-tagf" autocomplete="off"><label class="field"><span>"</span><input id="insp-tag" maxlength="${LG.TAG_MAX}" value="${esc(tag)}" placeholder="Name tag" aria-label="Name tag"></label><button class="btn small" type="submit">${tag ? 'Change tag' : 'Add tag'}</button>${tag ? '<button class="btn ghost small" type="button" id="insp-untag">Take off</button>' : ''}</form>`
-          : state && isLive() && ctx.id && ctx.key !== state.key && !item.free && !one ? `<div class="ins-actions"><button class="btn" type="button" id="insp-ask">Offer a swap</button></div>${ownerLine}` : ownerLine}
+          : state && isLive() && ctx.id && ctx.key !== state.key && !item.free && !one && !betaReward ? `<div class="ins-actions"><button class="btn" type="button" id="insp-ask">Offer a swap</button></div>${ownerLine}` : ownerLine}
         <details><summary>Share card</summary>
           <div class="share">
             <div class="svg">${LG.toShareSvg(ctx.seed, o, { name: '@' + ctx.key, config: guyConfig(ctx.seed) })}</div>

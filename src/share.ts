@@ -52,7 +52,7 @@ export function toShareSvg(input: string, copy: Owned, options: ShareOptions = {
   const lines = [
     `${wearOf(copy.scuff).name} · scuff ${copy.scuff.toFixed(4)} · print #${copy.print}`,
     copy.tally !== undefined ? `${copy.tally} days on its tally` : '',
-    item?.free ? 'Everyone has one; no two are alike' : `1 in ${count(odds)} capsules`,
+    copy.item === 'aura.beta' ? 'Awarded to DLE Club beta testers' : item?.free ? 'Everyone has one; no two are alike' : `1 in ${count(odds)} capsules`,
   ].filter(Boolean);
   const font = 'font-family="system-ui, -apple-system, Segoe UI, sans-serif"';
 
