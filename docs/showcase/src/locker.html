@@ -546,7 +546,7 @@ void main() {
   /** The words on an item's card: its name, its grade and how rare it is. */
   const itemLabel = (o, starter, one, about = aboutFor(o)) => {
     const it = LG.itemById(o.item), g = LG.gradeOf(o);
-    return { title: it.name, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? 'Only one' : starter ? 'Starter · free' : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
+    return { title: it.name, g: one ? 4 : gradeIdx(o), set: setLine(o, about), bottom: one ? 'Only one' : starter ? 'Starter · free' : o.item === 'aura.beta' ? `${g.name} · Beta tester` : `${g.name} · 1 in ${fmt(LG.copyOneIn(o))}` };
   };
 
   // A face is built the first time it is drawn, and the loop builds at most this many a frame, so a long
