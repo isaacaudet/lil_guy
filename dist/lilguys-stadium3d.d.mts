@@ -508,7 +508,23 @@ declare function nearSeats(seats: readonly Seat3D[], count: number, devH: number
 declare function tileFor(px: number): number;
 
 //#endregion
+//#region src/stadium3d-front.d.ts
+/** A sign's colours: the plain card, gold for an exact guess, or the game's own colour (the round's closest). */
+type SignTone = 'plain' | 'gold' | 'accent';
+/** A box on the canvas in CSS pixels from its top left. */
+interface Rect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+//#endregion
 //#region src/stadium3d.d.ts
+/** A sign that wants holding up: the top of the guy's head on the canvas and how tall they are there, and the sign's size, all CSS px. */
+
+/** How a guy takes a result: an exact guess, a close one, or a long way off. */
+type Reaction = 'exact' | 'close' | 'far';
 interface Stadium3DOptions {
   /** A slow wave round the stands. */
   wave?: boolean;
@@ -524,6 +540,17 @@ interface Stadium3DOptions {
   antialias?: boolean;
   /** Soft shadows from the venue's main light (on by default). */
   shadows?: boolean;
+  /**
+   * A transparent canvas laid exactly over `canvas`, for what is drawn in front of the stands: the signs guys
+   * hold up, their sparks, and the spotlit winner with their line. It draws at the device's full resolution
+   * (up to 2× CSS), so all of that stays sharp when the stands draw at fewer pixels (`maxPixelRatio`).
+   * Without it, they are drawn into `canvas` after the stands.
+   */
+  front?: HTMLCanvasElement;
+  /** The font signs are lettered in, as a CSS font (its size is set to fit each guy). */
+  signFont?: string;
+  /** The colour of a sign in the game's own colour (`sign(..., 'accent')`): the club's coral by default. */
+  signAccent?: string;
 }
 /** What a frame cost and holds, for a game that watches its budget. */
 interface Stadium3DInfo {
@@ -535,6 +562,8 @@ interface Stadium3DInfo {
   pictures: number;
   waiting: number;
   pixelRatio: number;
+  signs: number;
+  frontPixelRatio: number;
 }
 interface Stadium3D {
   /** Seats a guy by name (lowercased, once), in their club look when given. The venue grows to fit. */
@@ -545,8 +574,41 @@ interface Stadium3D {
   /** Makes a guy hop, as when they guess. */
   hop(name: string): void;
   wave(on: boolean): void;
-  /** Swings a spotlight onto a guy, lifts them to the front with a line under them for `ms`, and throws confetti. */
-  spotlight(name: string, label?: string, ms?: number): void;
+  /**
+   * Swings a spotlight onto a guy, who leaps out of their seat to the front with their line under them for
+   * `ms`: light rays behind them, confetti falling round them. `at` is where across the frame they would
+   * rather land, -1 the left edge to 1 the right (the middle by default); they land as near it as keeps clear
+   * of what `keepOut` names, a little smaller if they must.
+   */
+  spotlight(name: string, label?: string, ms?: number, at?: number): void;
+  /**
+   * How many frames a second it draws at most: 0 holds the last frame and makes nothing until it is paced
+   * again (a game's busy moment), 60 or more every frame.
+   */
+  pace(fps: number): void;
+  /**
+   * Holds `text` (a guess, say) up on a sign over a guy's head, or puts it down with null. Signs go up only
+   * where they have clear room, gold ones first, then the accent's, then the newest; the rest stay down
+   * while their guys still hop, and guys too far back to read hold up a dot. A new number pops; a new tone
+   * flips the card.
+   */
+  sign(name: string, text: string | null, tone?: SignTone): void;
+  /** Puts every sign down. */
+  clearSigns(): void;
+  /**
+   * A guy takes a result, after `delay` ms: 'exact' leaps high with a turn in the air and sparks and
+   * confetti over them (a sign they hold flips to gold), 'close' cheers with a sparkle, 'far' slumps or shrugs.
+   */
+  react(name: string, how: Reaction, delay?: number): void;
+  /** A quick ripple through everyone, left to right; anyone reacting carries on with that. */
+  ripple(): void;
+  /**
+   * Boxes of the canvas the game covers with its own things (CSS px from the canvas's top left): no sign
+   * goes up there, and the spotlit winner lands clear of them. `soon`: more the winner alone keeps clear
+   * of, such as room the game's own things are about to grow into, so the winner needn't move, unless that
+   * would leave them tiny (then they glide aside if it comes).
+   */
+  keepOut(rects: Rect[], soon?: Rect[]): void;
   resize(): void;
   /** Frees everything it made on the GPU and stops drawing. */
   destroy(): void;
@@ -563,4 +625,4 @@ declare function createStadium3D(canvas: HTMLCanvasElement, options?: Stadium3DO
 //#endregion
 /** A soft round fall-off, for pools of light and glows. */
 
-export { ART_VERSION, Layout3D, SPECS, Seat3D, Spec3D, Stadium3D, Stadium3DInfo, Stadium3DOptions, VENUES, VenueId, createStadium3D, layout3d, nearSeats, stepFor, tileFor, venueFor };
+export { ART_VERSION, Layout3D, Reaction, Rect, SPECS, Seat3D, SignTone, Spec3D, Stadium3D, Stadium3DInfo, Stadium3DOptions, VENUES, VenueId, createStadium3D, layout3d, nearSeats, stepFor, tileFor, venueFor };

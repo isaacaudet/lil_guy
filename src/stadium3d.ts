@@ -20,11 +20,15 @@ import { animate, frameAt, type Animation } from './animate';
 import { ownedOf, surfaceOf, voxelColumns } from './voxel';
 import { crowdColumns, paletteFor, roundToy, type ToyMesh } from './stadium3d-mesh';
 import { layout3d, nearSeats, stepWith, tileFor, venueFor, TILES, VENUES, type Layout3D, type VenueId } from './stadium3d-layout';
-import { MODE, POSE_GLSL, ROW, SurfaceMaterials, glowChunk, patchToy, pictureMaterial, quadGeometry, shaftMesh, type GuyUniforms } from './stadium3d-gl';
+import { MODE, MOVE, MOVE_S, POSE_GLSL, ROW, SurfaceMaterials, glowChunk, patchToy, pictureMaterial, quadGeometry, shaftMesh, type GuyUniforms } from './stadium3d-gl';
+import { BURST, fitWinner, makeBursts, makeSigns, makeWinnerGlow, type Rect, type SignTone } from './stadium3d-front';
 import { buildVenue, freeEnvironments, type VenueBuild } from './stadium3d-venues';
 import { hash } from './hash';
 
-export { VENUES, venueFor, type VenueId };
+export { VENUES, venueFor, type VenueId, type Rect, type SignTone };
+
+/** How a guy takes a result: an exact guess, a close one, or a long way off. */
+export type Reaction = 'exact' | 'close' | 'far';
 
 export interface Stadium3DOptions {
   /** A slow wave round the stands. */
@@ -41,10 +45,21 @@ export interface Stadium3DOptions {
   antialias?: boolean;
   /** Soft shadows from the venue's main light (on by default). */
   shadows?: boolean;
+  /**
+   * A transparent canvas laid exactly over `canvas`, for what is drawn in front of the stands: the signs guys
+   * hold up, their sparks, and the spotlit winner with their line. It draws at the device's full resolution
+   * (up to 2× CSS), so all of that stays sharp when the stands draw at fewer pixels (`maxPixelRatio`).
+   * Without it, they are drawn into `canvas` after the stands.
+   */
+  front?: HTMLCanvasElement;
+  /** The font signs are lettered in, as a CSS font (its size is set to fit each guy). */
+  signFont?: string;
+  /** The colour of a sign in the game's own colour (`sign(..., 'accent')`): the club's coral by default. */
+  signAccent?: string;
 }
 
 /** What a frame cost and holds, for a game that watches its budget. */
-export interface Stadium3DInfo { calls: number; triangles: number; geometries: number; textures: number; toys: number; pictures: number; waiting: number; pixelRatio: number }
+export interface Stadium3DInfo { calls: number; triangles: number; geometries: number; textures: number; toys: number; pictures: number; waiting: number; pixelRatio: number; signs: number; frontPixelRatio: number }
 
 export interface Stadium3D {
   /** Seats a guy by name (lowercased, once), in their club look when given. The venue grows to fit. */
@@ -55,8 +70,41 @@ export interface Stadium3D {
   /** Makes a guy hop, as when they guess. */
   hop(name: string): void;
   wave(on: boolean): void;
-  /** Swings a spotlight onto a guy, lifts them to the front with a line under them for `ms`, and throws confetti. */
-  spotlight(name: string, label?: string, ms?: number): void;
+  /**
+   * Swings a spotlight onto a guy, who leaps out of their seat to the front with their line under them for
+   * `ms`: light rays behind them, confetti falling round them. `at` is where across the frame they would
+   * rather land, -1 the left edge to 1 the right (the middle by default); they land as near it as keeps clear
+   * of what `keepOut` names, a little smaller if they must.
+   */
+  spotlight(name: string, label?: string, ms?: number, at?: number): void;
+  /**
+   * How many frames a second it draws at most: 0 holds the last frame and makes nothing until it is paced
+   * again (a game's busy moment), 60 or more every frame.
+   */
+  pace(fps: number): void;
+  /**
+   * Holds `text` (a guess, say) up on a sign over a guy's head, or puts it down with null. Signs go up only
+   * where they have clear room, gold ones first, then the accent's, then the newest; the rest stay down
+   * while their guys still hop, and guys too far back to read hold up a dot. A new number pops; a new tone
+   * flips the card.
+   */
+  sign(name: string, text: string | null, tone?: SignTone): void;
+  /** Puts every sign down. */
+  clearSigns(): void;
+  /**
+   * A guy takes a result, after `delay` ms: 'exact' leaps high with a turn in the air and sparks and
+   * confetti over them (a sign they hold flips to gold), 'close' cheers with a sparkle, 'far' slumps or shrugs.
+   */
+  react(name: string, how: Reaction, delay?: number): void;
+  /** A quick ripple through everyone, left to right; anyone reacting carries on with that. */
+  ripple(): void;
+  /**
+   * Boxes of the canvas the game covers with its own things (CSS px from the canvas's top left): no sign
+   * goes up there, and the spotlit winner lands clear of them. `soon`: more the winner alone keeps clear
+   * of, such as room the game's own things are about to grow into, so the winner needn't move, unless that
+   * would leave them tiny (then they glide aside if it comes).
+   */
+  keepOut(rects: Rect[], soon?: Rect[]): void;
   resize(): void;
   /** Frees everything it made on the GPU and stops drawing. */
   destroy(): void;
@@ -128,6 +176,7 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
   const uniforms: GuyUniforms = {
     uSeat: { value: blank() }, uState: { value: blank() }, uFrom: { value: blank() }, uLook: { value: blank() },
     uTime: { value: 0 }, uSlideAt: { value: -100 }, uWave: { value: new THREE.Vector4(0, 0, 1, 0) }, uArcZ: { value: 0 }, uDim: { value: 0 }, uSpot: { value: new THREE.Vector4() },
+    uRipple: { value: new THREE.Vector2(-100, 0) },
   };
   let dirty = { seat: false, state: false, from: false, look: false };
   function dataTexture(data: Float32Array<ArrayBuffer>, rows: number) {
@@ -540,8 +589,20 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
     };
   })();
 
+  // ------------------------------------------------------------ the front: signs, bursts and the winner
+  // On a canvas of its own at the device's pixels when the game gives one (`front`), else drawn into this
+  // one after the stands. Its pieces read the guys' poses from the same textures, so it follows them exactly.
+  const frontCanvas = options.front ?? null;
+  const front = frontCanvas ? new THREE.WebGLRenderer({ canvas: frontCanvas, antialias: true, alpha: true, premultipliedAlpha: true, powerPreference: 'high-performance' }) : renderer;
+  if (frontCanvas) { front.toneMapping = THREE.NeutralToneMapping; front.setClearColor(0x000000, 0); }
+  const signs = makeSigns(uniforms, { font: options.signFont, accent: options.signAccent });
+  const bursts = makeBursts(uniforms);
+  let keptOut: Rect[] = [], keptSoon: Rect[] = [], placedAt = -1, placeDue = true, frontShown = false, frontAt = 0;
+  /** Signs to flip to gold at the top of an exact guess's leap. */
+  let flips: { slot: number; at: number }[] = [];
+
   // ------------------------------------------------------------ the spotlight
-  const spot = makeSpotlight(scene, renderer, options.font);
+  const spot = makeSpotlight(scene, renderer, front, !!frontCanvas, options.font);
   const flashes = makeFlashes(pictureGroup, uniforms);
   let lit: { guy: Guy3; label: string; from: number; until: number; landed: boolean } | null = null;
 
@@ -551,10 +612,17 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
     const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
     const most = coarse ? 1.6e6 : 4.2e6;
     const ratio = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, options.maxPixelRatio ?? 2, Math.sqrt(most / (w * h))));
+    if (frontCanvas) {
+      // The front at the device's own pixels (up to 2×): it is mostly empty, and what it draws is small.
+      const fr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 2, Math.sqrt((coarse ? 3.2e6 : 9e6) / (w * h))));
+      if (front.getPixelRatio() !== fr || frontCanvas.width !== Math.floor(w * fr) || frontCanvas.height !== Math.floor(h * fr)) { front.setPixelRatio(fr); front.setSize(w, h, false); placeDue = true; spot.refit(); }
+    }
     if (w === cssW && h === cssH && renderer.getPixelRatio() === ratio) return false;
     cssW = w; cssH = h;
     renderer.setPixelRatio(ratio);
     renderer.setSize(w, h, false);
+    placeDue = true;
+    spot.refit();
     return true;
   }
   const remeasure = () => { if (!gone && measure() && layout) relayout('cut'); };
@@ -596,7 +664,40 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
 
   // ------------------------------------------------------------ the frame
   let frame = 0, gone = false, waving = false, waveAmp = 0, drawMs = 4;
-  const drift = new THREE.Vector3();
+  // Paced (`pace`): frames a second at most, and when the last was drawn.
+  let fps = 60, drawnAt = -Infinity;
+  const drift = new THREE.Vector3(), headAt = new THREE.Vector3();
+  /** The top of a guy's head on the canvas and how tall they are there (CSS px), for their sign; null if they can't hold one. */
+  function headOf(slot: number): { x: number; y: number; h: number } | null {
+    const g = bySlot[slot];
+    if (!g || !layout || g.hidden || g.seat < 0 || g.seat >= layout.seats.length) return null;
+    const seat = layout.seats[g.seat];
+    headAt.set(seat.x, seat.y + 1.04, seat.z).project(camera);
+    if (headAt.z > 1) return null;
+    return { x: (headAt.x + 1) / 2 * cssW, y: (1 - headAt.y) / 2 * cssH, h: seat.h * cssH };
+  }
+  /** Signs, bursts and the winner, over the stands. */
+  function drawFront(t: number) {
+    const dt = Math.min(0.1, Math.max(0, t - frontAt));
+    frontAt = t;
+    if (flips.length) flips = flips.filter(f => { if (t < f.at) return true; signs.retone(f.slot, 'gold', t); placeDue = true; return false; });
+    // Where signs go: again whenever they change, and a few times a second as the camera drifts.
+    if (placeDue || t - placedAt > 0.3) { placeDue = false; placedAt = t; signs.place(headOf, { w: cssW, h: cssH }, keptOut, front.getPixelRatio(), t); }
+    const view = { w: front.domElement.width, h: front.domElement.height };
+    const any = signs.frame(t, dt, view) || bursts.active(t) || spot.showing();
+    if (frontCanvas) {
+      // Nothing to show, and nothing shown last frame: the canvas is left as it is (clear).
+      if (!any && !frontShown) return;
+      front.setRenderTarget(null);
+      front.clear();
+    }
+    frontShown = any;
+    front.autoClear = false;
+    signs.draw(front, camera);
+    bursts.draw(front, camera, view, front.getPixelRatio(), t);
+    spot.drawStage(camera);
+    front.autoClear = true;
+  }
   function draw(still = false) {
     if (!layout) return;
     const t = now();
@@ -620,11 +721,14 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
     renderer.setRenderTarget(null);
     if (!still) renderer.info.reset();
     renderer.render(scene, camera);
-    if (!still) { fade.draw(); spot.drawStage(camera); }
+    if (!still) { fade.draw(); drawFront(t); }
   }
-  function loop() {
+  function loop(ms: number) {
     frame = 0;
     if (gone) return;
+    // Held (0) or between paced frames: nothing made, nothing drawn, the canvas keeps its last frame.
+    if (fps <= 0 || (fps < 60 && ms - drawnAt < 1000 / fps - 2)) { frame = requestAnimationFrame(loop); return; }
+    drawnAt = ms;
     if (!lost) {
       if (due) regrow();
       // Making toys and pictures in what the frame has left after drawing: more while many wait, less while
@@ -661,10 +765,15 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
       // The neighbours jump as the light lands.
       if (seat && s.guy.seat < placeOf.length) {
         const row = rowOrder[seat.row] ?? [], p = placeOf[s.guy.seat];
-        [-1, 1, -2, 2, -3, 3].forEach((d, k) => { const n = bySeat[row[p + d]]; if (n) animateGuy(n, 3, t + 0.04 * k); });
+        [-1, 1, -2, 2, -3, 3].forEach((d, k) => { const n = bySeat[row[p + d]]; if (n && !reacting(n, t)) animateGuy(n, MOVE.jump, t + 0.04 * k); });
       }
     }
-    spot.frame(t, seat, camera, layout!, venueBuild!, scene);
+    spot.frame(t, seat, camera, layout!, venueBuild!, scene, { w: cssW, h: cssH }, keptOut, keptSoon);
+  }
+  /** Whether a guy is taking a result (`react`) at `t`, which a neighbour's jump shouldn't cut short. */
+  function reacting(g: Guy3, t: number) {
+    const s = g.slot * 4, kind = stateData[s + 1];
+    return kind >= MOVE.exact && t - stateData[s] < (MOVE_S[kind] ?? 0);
   }
   function endSpot() {
     if (!lit) return;
@@ -673,6 +782,8 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
     g.hidden = false;
     if (guys.has(g.key)) writeMode(g);
     uniforms.uDim.value = 0;
+    // Back in their seat, their sign (if they hold one) can go up again.
+    placeDue = true;
     spot.end();
   }
 
@@ -715,6 +826,7 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
       const g = guys.get(name.toLowerCase());
       if (gone || !g) return;
       if (lit?.guy === g) endSpot();
+      signs.forget(g.slot); bursts.forget(g.slot); flips = flips.filter(f => f.slot !== g.slot); placeDue = true;
       guys.delete(g.key);
       removeToy(g); freeTile(g);
       g.toy = null;
@@ -728,11 +840,11 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
       const g = guys.get(name.toLowerCase());
       if (gone || !g) return;
       const t = now(), s = g.slot * 4;
-      if (stateData[s + 1] > 0.5 && t - stateData[s] < HOP_S) return;
+      if (stateData[s + 1] > 0.5 && t - stateData[s] < HOP_S || reacting(g, t)) return;
       animateGuy(g, 1, t);
     },
     wave(on) { if (gone) return; if (on && !waving) uniforms.uWave.value.y = now(); waving = on; },
-    spotlight(name, label, ms = SPOT_DEFAULT) {
+    spotlight(name, label, ms = SPOT_DEFAULT, at = 0) {
       const g = guys.get(name.toLowerCase());
       if (gone || !g || !layout) return;
       if (lit) endSpot();
@@ -740,7 +852,34 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
       lit = { guy: g, label: label ?? name, from: t, until: t + ms / 1000, landed: false };
       g.hidden = true;
       writeMode(g);
-      spot.start(g.spec, g.toy, lit.label, t, lit.until);
+      placeDue = true;
+      spot.start(g.spec, g.toy, lit.label, t, lit.until, at);
+    },
+    pace(n) { fps = Math.max(0, n); },
+    sign(name, text, tone = 'plain') {
+      const g = guys.get(name.toLowerCase());
+      if (gone || !g) return;
+      if (text === null) signs.drop(g.slot); else signs.set(g.slot, text, tone, now());
+      placeDue = true;
+    },
+    clearSigns() { signs.clear(); placeDue = true; },
+    react(name, how, delay = 0) {
+      const g = guys.get(name.toLowerCase());
+      if (gone || !g) return;
+      const at = now() + Math.max(0, delay) / 1000;
+      animateGuy(g, MOVE[how], at);
+      // Sparks as they leave the ground, and the sign they hold flips to gold at the top of the leap; a close one's sparkle as they cheer.
+      if (how === 'exact') { bursts.burst(g.slot, BURST.exact, at + 0.22); flips.push({ slot: g.slot, at: at + 0.4 }); }
+      else if (how === 'close') bursts.burst(g.slot, BURST.sparkle, at + 0.15);
+    },
+    ripple() { if (!gone) uniforms.uRipple.value.set(now(), 1); },
+    keepOut(rects, soon = []) {
+      const copy = (list: Rect[]) => list.map(r => ({ left: r.left, top: r.top, right: r.right, bottom: r.bottom }));
+      const same = (a: Rect[], b: Rect[]) => a.length === b.length && a.every((r, i) => ['left', 'top', 'right', 'bottom'].every(k => Math.abs(r[k as keyof Rect] - b[i][k as keyof Rect]) < 2));
+      const signsSame = same(rects, keptOut), allSame = signsSame && same(soon, keptSoon);
+      keptOut = copy(rects); keptSoon = copy(soon);
+      if (!signsSame) placeDue = true;
+      if (!allSame) spot.refit();
     },
     resize() { remeasure(); },
     destroy() {
@@ -753,6 +892,8 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
       canvas.removeEventListener('webglcontextrestored', onRestored);
       endSpot();
       spot.dispose();
+      signs.dispose();
+      bursts.dispose();
       flashes.dispose();
       fade.dispose();
       for (const v of retired) v.dispose();
@@ -772,12 +913,19 @@ export function createStadium3D(canvas: HTMLCanvasElement, options: Stadium3DOpt
       const gl = renderer.getContext();
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
       renderer.dispose();
+      if (frontCanvas) {
+        // The front left clear, its context as fresh as the stands'.
+        front.setRenderTarget(null); front.clear();
+        const fg = front.getContext();
+        fg.pixelStorei(fg.UNPACK_FLIP_Y_WEBGL, false); fg.pixelStorei(fg.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); fg.pixelStorei(fg.UNPACK_ALIGNMENT, 4);
+        front.dispose();
+      }
     },
     info() {
       const i = renderer.info;
       let pictures = 0, toys = 0;
       for (const g of guys.values()) { if (g.tile) pictures++; if (g.inChunks) toys++; }
-      return { calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, toys, pictures, waiting: queue.length - qHead, pixelRatio: renderer.getPixelRatio() };
+      return { calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, toys, pictures, waiting: queue.length - qHead, pixelRatio: renderer.getPixelRatio(), signs: signs.count, frontPixelRatio: front.getPixelRatio() };
     },
     get count() { return guys.size; },
     get venue() { return venue; },
@@ -966,24 +1114,40 @@ function studio(): THREE.Scene {
 
 // ------------------------------------------------------------ the spotlight
 
+/** The winner's height, as a share of the frame's at the floor where they land, before it is fitted round the game's things. */
+const WINNER_H = 0.32;
+/** How far up their figure their line sits, from their feet (a share of their height), and how big its lettering is. */
+const LINE_UP = 0.1, LINE_LETTERS = 0.085;
+
 /**
- * The winner's moment: a beam swings onto their seat, the stand dims, the neighbours jump, and the
- * winner (their whole self, cheering) leaps out of their seat to the front with a line under them;
- * confetti bursts as they land.
+ * The winner's moment: a beam swings onto their seat, the stand dims, the neighbours jump, and the winner
+ * (their whole self, cheering) leaps out of their seat to the front, lands with a squash and a pop, and
+ * stands in light: rays turning slowly behind them, confetti falling round them and stars winking on
+ * them, their line sliding in under their feet. Then the line slides out and they leap back to their seat.
+ * They are drawn in their own pass, lit as on a stage (a key from the front, the spotlight's warm rim and a
+ * cool one opposite), on `front`, which is a canvas of their own at the device's pixels when `own`.
  */
-function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?: string) {
+function makeSpotlight(scene: THREE.Scene, main: THREE.WebGLRenderer, front: THREE.WebGLRenderer, own: boolean, font?: string) {
   const group = new THREE.Group();
   scene.add(group);
   const materials = new SurfaceMaterials((m, s) => { if (s.glow) { m.onBeforeCompile = sh => glowChunk(sh, s.glow); m.customProgramCacheKey = () => `win${s.glow}`; } });
-  // The winner stands in their own pass over the venue, lit as on a stage whatever the venue's lights do
-  // (dimmed for the moment, or behind them): a key from the front, the spotlight's warm rim, a soft fill.
   const stage3 = new THREE.Scene();
-  const key = new THREE.DirectionalLight('#fff6ea', 2.3), rim = new THREE.DirectionalLight('#ffe2b0', 2.2);
-  stage3.add(key, key.target, rim, rim.target, new THREE.HemisphereLight('#e8eeff', '#3a3028', 0.9));
+  const key = new THREE.DirectionalLight('#fff6ea', 2.1), rim = new THREE.DirectionalLight('#ffe2b0', 2.4), cool = new THREE.DirectionalLight('#bcd2ff', 1.3);
+  stage3.add(key, key.target, rim, rim.target, cool, cool.target, new THREE.HemisphereLight('#e8eeff', '#3a3028', 0.85));
+  // On a canvas of its own, the venue's reflections can't be borrowed: a soft studio of its own.
+  let studioEnv: THREE.WebGLRenderTarget | null = null;
+  if (own) {
+    const pm = new THREE.PMREMGenerator(front), room = studio();
+    studioEnv = pm.fromScene(room, 0.04);
+    room.traverse(o => { const m = o as THREE.Mesh; if (m.isMesh) { m.geometry.dispose(); (m.material as THREE.Material).dispose(); } });
+    pm.dispose();
+  }
   // The beam: a shaft from the light down onto the winner, and a real spotlight to light them.
   const beam = shaftMesh('#fff2d6');
   beam.visible = false;
   beam.renderOrder = 5;
+  // Light in the air: drawn over the rows it passes, not cut into stripes by the benches between it and the lamp.
+  beam.material.depthTest = false;
   group.add(beam);
   const light = new THREE.SpotLight('#fff1d8', 0, 0, 0.32, 0.5, 0);
   light.castShadow = false;
@@ -994,13 +1158,14 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
   pool.rotation.x = -Math.PI / 2;
   pool.visible = false;
   group.add(pool);
-  // Confetti is drawn with the winner, against the venue's depth, so it falls round them and behind the rows in front.
+  // Confetti thrown as they land, the rays and falling paper round them: drawn with them.
   const confetti = makeConfetti(stage3);
-  // The line under them, drawn on a canvas at the device's pixels, shown over the frame.
-  const label = makeLabel(renderer, font);
+  const glow = makeWinnerGlow(stage3);
+  const banner = makeBanner(front, font);
 
   /** A winner, built: their seated toy straight away, their cheer a few frames at a time; kept for the next few spotlights. */
-  interface Winner { key: string; spec: GuySpec; root: THREE.Group; still: THREE.Mesh; anim: Animation | null; frames: THREE.Mesh[]; made: number; bySig: Map<string, THREE.Mesh> }
+  /** `tall` and `wide`: their seated toy's size, in guys, which their size on stage and the room they need are worked out from. */
+  interface Winner { key: string; spec: GuySpec; root: THREE.Group; still: THREE.Mesh; anim: Animation | null; frames: THREE.Mesh[]; made: number; bySig: Map<string, THREE.Mesh>; tall: number; wide: number }
   const kept: Winner[] = [];
   let figure: Winner | null = null, shown: THREE.Mesh | null = null;
   const meshOf = (toy: ToyMesh) => {
@@ -1023,21 +1188,96 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
   const show = (m: THREE.Mesh) => { if (shown === m) return; if (shown) shown.visible = false; m.visible = true; shown = m; };
 
   const at = new THREE.Vector3(), seatAt = new THREE.Vector3(), stage = new THREE.Vector3(), lightAt = new THREE.Vector3(), ray = new THREE.Vector3(), fwd = new THREE.Vector3();
-  const up = new THREE.Vector3(), side = new THREE.Vector3(), top = new THREE.Vector3();
-  let from = 0, until = 0, confettiAt = -1, scale = 1, fixture: THREE.Vector3 | null = null;
+  const up = new THREE.Vector3(), side = new THREE.Vector3(), top = new THREE.Vector3(), probeAt = new THREE.Vector3(), feetPx = new THREE.Vector3();
+  let from = 0, until = 0, confettiAt = -1, fixture: THREE.Vector3 | null = null, lastT = 0;
+  /** Where they stand and how tall, as drawn: eased toward a new landing if the game's things move while they stand. */
+  const standAt = new THREE.Vector3(), aim = new THREE.Vector3();
+  let standH = 0, placed = false;
+  /** Where they land: across the frame (-1 to 1) and a share of their full size, fitted round `keepOut`; null until fitted. */
+  let landing: { across: number; size: number; down: number; clear: boolean; stacked: boolean } | null = null, prefer = 0;
   const ease = (x: number) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
+  const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+  /**
+   * The floor point the winner stands on at `across`: as high up the frame as the floor in front of the stand
+   * (or a theatre's stage) shows there, or `down` steps (a twentieth of the frame each) further toward the
+   * camera, or up the frame over the stand's front rows for a negative `down`.
+   */
+  function floorAt(out: THREE.Vector3, across: number, cam: THREE.PerspectiveCamera, L: Layout3D, venue: VenueBuild, down = 0): boolean {
+    const front = L.spec.shape === 'arc' ? 0 : -(L.rows[0]?.back ?? 0), raised = venue.raised, floorY = raised ? raised.y : 0;
+    let hit = false, below = NaN;
+    for (let ny = -0.42; ny >= -0.98; ny -= 0.02) {
+      ray.set(across, ny, 0.5).unproject(cam).sub(cam.position).normalize();
+      if (ray.y > -0.01) continue;
+      out.copy(cam.position).addScaledVector(ray, (floorY - cam.position.y) / ray.y);
+      hit = true;
+      if (Number.isNaN(below) && (raised ? out.z >= raised.z + 0.6 : out.z >= front + 0.9)) below = ny;
+      if (ny <= below - down * 0.1 + 1e-6) break;
+    }
+    if (down < 0 && !Number.isNaN(below)) {
+      // Up over the stand: on the floor's plane behind its front, which the front rows stand on.
+      ray.set(across, below - down * 0.1, 0.5).unproject(cam).sub(cam.position).normalize();
+      if (ray.y > -0.01) return false;
+      out.copy(cam.position).addScaledVector(ray, (floorY - cam.position.y) / ray.y);
+    }
+    return hit;
+  }
+  /** How tall (world units) the winner stands at a floor point, at full size. */
+  function fullSize(p: THREE.Vector3, cam: THREE.PerspectiveCamera): number {
+    cam.getWorldDirection(fwd);
+    const depth = p.clone().sub(cam.position).dot(fwd);
+    return WINNER_H * 2 * depth * Math.tan(cam.fov * Math.PI / 360);
+  }
+  /**
+   * Where they land, fitted round the game's things on a canvas `w` × `h` CSS px, and round what they are about
+   * to grow into (`soon`) unless keeping clear of that too would leave them tiny (then they glide aside if it
+   * comes).
+   */
+  function fit(cam: THREE.PerspectiveCamera, L: Layout3D, venue: VenueBuild, w: number, h: number, keepOut: Rect[], soon: Rect[]) {
+    const fig = figure!, wide = fig.wide / fig.tall;
+    let stacked = false;
+    const probe = (across: number, size: number, down: number): Rect[] | null => {
+      // Their line is lettered to suit their size (`LINE_LETTERS` of their height).
+      if (!floorAt(probeAt, across, cam, L, venue, down)) return null;
+      const tall = fullSize(probeAt, cam) * size;
+      feetPx.copy(probeAt).project(cam);
+      const fx = (feetPx.x + 1) / 2 * w, fy = (1 - feetPx.y) / 2 * h;
+      // Room over their head for the cheer's arms and the landing's pop.
+      top.copy(probeAt).y += tall * 1.14;
+      top.project(cam);
+      // Their figure as wide as their toy, with room for the cheer, the three-quarter turn and the squash; their line across their feet.
+      const ty = (1 - top.y) / 2 * h, half = (fy - ty) / 1.14 * wide * 0.7, lineTop = fy - (fy - ty) / 1.14 * LINE_UP;
+      const line = banner.size((fy - ty) / 1.14 * LINE_LETTERS, stacked);
+      // Their front edge, turned toward the camera, comes a little below their feet.
+      return [{ left: fx - half, right: fx + half, top: ty, bottom: fy + (fy - ty) * 0.1 }, { left: fx - line.w / 2, right: fx + line.w / 2, top: lineTop, bottom: lineTop + line.h }];
+    };
+    // Their line on one line, or, where that is too wide to fit beside them, their name over their points.
+    const fitBoth = (rects: Rect[]) => {
+      stacked = false;
+      const one = fitWinner(prefer, probe, { w, h }, rects);
+      if (one.clear && one.size >= 0.7) return { ...one, stacked: false };
+      stacked = true;
+      const two = fitWinner(prefer, probe, { w, h }, rects);
+      return two.clear && (!one.clear || two.size >= one.size + 0.1) ? { ...two, stacked: true } : { ...one, stacked: false };
+    };
+    const firm = fitBoth([...keepOut, ...soon]);
+    const loose = soon.length && (!firm.clear || firm.size < 0.45) ? fitBoth(keepOut) : firm;
+    landing = loose.clear && (!firm.clear || loose.size >= firm.size + 0.3) ? loose : firm;
+    banner.stack(landing.stacked);
+  }
   return {
-    /** The winner's moment from `t` to `end`: `seated` is their crowd toy if it is already made. */
-    start(spec: GuySpec, seated: ToyMesh | null, line: string, t: number, end: number) {
+    /** The winner's moment from `t` to `end`: `seated` is their crowd toy if it is already made; `across` where they would rather land. */
+    start(spec: GuySpec, seated: ToyMesh | null, line: string, t: number, end: number, across: number) {
       this.clear();
       const k = JSON.stringify([spec.seed, spec.parts ?? null, spec.equip ?? null, spec.palette ?? null]);
       let w = kept.find(x => x.key === k);
       if (w) kept.splice(kept.indexOf(w), 1);
       else {
-        const still = meshOf(seated ?? roundToy(crowdColumns(spec), CELL, { backs: true }));
+        const toy = seated ?? roundToy(crowdColumns(spec), CELL, { backs: true });
+        const still = meshOf(toy);
         const root = new THREE.Group();
         root.add(still);
-        w = { key: k, spec, root, still, anim: null, frames: [], made: 0, bySig: new Map() };
+        w = { key: k, spec, root, still, anim: null, frames: [], made: 0, bySig: new Map(), tall: Math.max(0.5, toy.max[1] - toy.min[1]), wide: Math.max(0.5, toy.max[0] - toy.min[0]) };
       }
       kept.push(w);
       while (kept.length > 4) free(kept.shift()!);
@@ -1045,8 +1285,12 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
       figure = w;
       shown = null;
       from = t; until = end; confettiAt = -1; fixture = null;
-      label.set(line);
+      prefer = across; landing = null; placed = false;
+      banner.set(line);
     },
+    /** The game's things moved, or the canvas changed size: they land again, clear of them. */
+    refit() { landing = null; },
+    showing: () => !!figure,
     /** Makes the winner's cheer, a little a frame: the moves first (once), then each new pose's toy. */
     work(budget: number) {
       const w = figure;
@@ -1055,6 +1299,15 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
       if (!w.anim) {
         // In their own colours, as their toy in the crowd is.
         w.anim = animate(w.spec.seed, 'cheer', { parts: w.spec.parts, equip: w.spec.equip, palette: paletteFor(w.spec), rarity: false });
+        // The cheer stands taller and wider than they sit (arms up, a jump): their size on stage and the room
+        // they need are its, so they land as big as fits and no bigger (a frame they wear left out, as below).
+        let rows = 0, cols = 0;
+        for (const f of w.anim.frames) {
+          let top = Infinity, bottom = -1, left = Infinity, right = -1;
+          f.colors.forEach((row, y) => row.forEach((c, x) => { if (c && f.slots[y]?.[x] !== 3) { top = Math.min(top, y); bottom = Math.max(bottom, y); left = Math.min(left, x); right = Math.max(right, x); } }));
+          if (bottom >= 0) { rows = Math.max(rows, bottom - top + 1); cols = Math.max(cols, right - left + 1); }
+        }
+        if (rows) { w.tall = Math.max(w.tall, rows * CELL); w.wide = Math.max(w.wide, cols * CELL); landing = null; }
         return;
       }
       const owned = ownedOf(w.spec.equip ?? []);
@@ -1065,35 +1318,36 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
         w.frames.push(m);
       }
     },
-    frame(t: number, seat: { x: number; y: number; z: number; yaw: number } | null, cam: THREE.PerspectiveCamera, L: Layout3D, venue: VenueBuild, scene: THREE.Scene) {
+    frame(t: number, seat: { x: number; y: number; z: number; yaw: number } | null, cam: THREE.PerspectiveCamera, L: Layout3D, venue: VenueBuild, scene: THREE.Scene, view: { w: number; h: number }, keepOut: Rect[], soon: Rect[]) {
       const w = figure;
       if (!w) return;
       const k = t - from, back = until - t;
-      // Where they land: low in the frame, on the floor in front of the stand, or up on a theatre's stage in front of its lip.
-      const front = L.spec.shape === 'arc' ? 0 : -(L.rows[0]?.back ?? 0), raised = venue.raised, floorY = raised ? raised.y : 0;
-      for (let ny = -0.5; ny >= -0.96; ny -= 0.02) {
-        ray.set(0, ny, 0.5).unproject(cam).sub(cam.position).normalize();
-        if (ray.y > -0.01) continue;
-        stage.copy(cam.position).addScaledVector(ray, (floorY - cam.position.y) / ray.y);
-        if (raised ? stage.z >= raised.z + 0.6 : stage.z >= front + 0.9) break;
-      }
-      cam.getWorldDirection(fwd);
-      const depth = stage.clone().sub(cam.position).dot(fwd), frameH = 2 * depth * Math.tan(cam.fov * Math.PI / 360);
-      // About a fifth of the frame, and never more than about 9 CSS pixels a pixel of them: the moment is the
-      // light, their line and their cheer, not a blown-up toy.
-      const cssH = renderer.domElement.height / renderer.getPixelRatio();
-      const want = Math.min(0.32 * frameH, 16 * 9 * frameH / Math.max(1, cssH));
-      scale = want;
+      if (!landing) fit(cam, L, venue, view.w, view.h, keepOut, soon);
+      floorAt(aim, landing!.across, cam, L, venue, landing!.down);
+      const aimH = fullSize(aim, cam) * landing!.size;
+      // A new landing while they stand (the game's things moved): they glide there rather than jump.
+      const dt = Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      if (!placed) { standAt.copy(aim); standH = aimH; placed = true; }
+      else { const f = 1 - Math.exp(-dt * 6); standAt.lerp(aim, f); standH += (aimH - standH) * f; }
+      stage.copy(standAt);
+      // `want`: their height in the world; their toy is `tall` guys tall, so it is drawn at want / tall.
+      const want = standH, toyScale = want / w.tall;
       if (seat) seatAt.set(seat.x, seat.y, seat.z); else seatAt.copy(stage).add(new THREE.Vector3(0, -2, 0));
-      const rise = seat ? ease((k - 0.25) / 0.45) * ease(back / 0.35) : ease(k / 0.3) * ease(back / 0.35);
+      // The leap out (and, at the end, back): from their seat to the floor in an arc, growing as they come.
+      const rise = seat ? ease((k - 0.25) / 0.45) * ease(back / 0.4) : ease(k / 0.3) * ease(back / 0.4);
       at.lerpVectors(seatAt, stage, rise);
-      // A hop in the arc between, so it reads as a leap, not a slide.
       const hop = Math.sin(Math.PI * rise) * want * 0.5;
       at.y += hop;
-      const sc = 1 + (want - 1) * rise;
+      const sc = 1 + (toyScale - 1) * rise;
+      // Landing: a squash, a stretch and a little pop, settling.
+      const land = k - 0.7, wob = land > 0 && back > 0.45 ? Math.exp(-land * 6) * Math.sin(land * 17) : 0;
+      const pop = land > 0 && back > 0.45 ? 1 + 0.07 * Math.exp(-land * 5) * Math.max(0, Math.sin(land * 9)) : 1;
       w.root.position.copy(at);
-      w.root.scale.setScalar(sc);
-      w.root.rotation.y = seat ? seat.yaw * (1 - rise) : 0;
+      w.root.scale.set(sc * pop * (1 + 0.12 * wob), sc * pop * (1 - 0.18 * wob), sc * pop * (1 + 0.12 * wob));
+      // Turned three-quarters toward the middle of the frame once down, swaying a little, so they read as a toy, not a cut-out.
+      const turn = (landing!.across < 0 ? 0.5 : -0.5) * rise + Math.sin(k * 1.7) * 0.08 * rise;
+      w.root.rotation.y = (seat ? seat.yaw * (1 - rise) : 0) + turn;
       // Their cheer once it is made; their seated self until then.
       if (w.anim && w.made >= w.anim.frames.length) show(w.frames[w.anim.frames.indexOf(frameAt(w.anim, k * 1000))]);
       else show(w.still);
@@ -1103,7 +1357,7 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
         fixture = fixtures.length ? fixtures.reduce((a, b) => (Math.abs(b.x - at.x) < Math.abs(a.x - at.x) ? b : a)).clone() : new THREE.Vector3(at.x, at.y + 30, at.z);
       }
       lightAt.copy(fixture);
-      const on = Math.max(0, Math.min(1, k / 0.25, back / 0.3));
+      const on = clamp01(Math.min(k / 0.25, back / 0.3));
       top.copy(at).y += sc * 0.55;
       const len = lightAt.distanceTo(top) + sc * 0.6;
       beam.visible = on > 0;
@@ -1119,26 +1373,28 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
       pool.position.set(at.x, at.y - hop + 0.02, at.z);
       pool.scale.setScalar(sc * 0.7);
       poolMaterial.opacity = 0.32 * on;
-      // Confetti as they land, from about their chest.
-      if (confettiAt < 0 && k > 0.72) { confettiAt = t; confetti.burst(stage.clone().add(new THREE.Vector3(0, want * 0.55, 0)), want, t); }
+      // Confetti as they land, from about their chest; then the rays and the falling paper while they stand.
+      if (confettiAt < 0 && k > 0.72) { confettiAt = t; confetti.burst(stage.clone().add(new THREE.Vector3(0, want * 0.55, 0)), want * 0.6, t); }
       confetti.update(t);
-      // The stage's lights: the key from over the camera's shoulder, the rim from the spotlight's fixture.
+      const lit = clamp01(Math.min((k - 0.66) / 0.4, (back - 0.35) / 0.4));
+      glow.frame(stage, want, lit * lit * (3 - 2 * lit), t, cam);
+      // The stage's lights: the key from over the camera's shoulder, the rim from the spotlight's fixture, a cool one opposite.
       up.set(0, 1, 0).applyQuaternion(cam.quaternion); side.set(1, 0, 0).applyQuaternion(cam.quaternion);
       key.position.copy(cam.position).addScaledVector(up, sc * 4).addScaledVector(side, -sc * 2.5); key.target.position.copy(at);
-      rim.position.copy(lightAt); rim.target.position.copy(at); rim.intensity = 2.2 * on;
-      stage3.environment = scene.environment; stage3.environmentIntensity = scene.environmentIntensity;
-      // Their line, under their feet.
-      const feet = at.clone().project(cam);
-      label.place((feet.x + 1) / 2, (1 - feet.y) / 2, Math.max(0, Math.min(1, (k - 0.45) / 0.3, back / 0.3)));
+      rim.position.copy(lightAt); rim.target.position.copy(at); rim.intensity = 2.6 * on;
+      cool.position.copy(at).addScaledVector(side, (lightAt.x > at.x ? -1 : 1) * sc * 3).add(new THREE.Vector3(0, sc * 1.5, -sc * 3)); cool.target.position.copy(at); cool.intensity = 1.4 * on;
+      stage3.environment = studioEnv ? studioEnv.texture : scene.environment;
+      stage3.environmentIntensity = studioEnv ? 0.75 : scene.environmentIntensity;
+      // Their line across their feet, as a broadcast's name is, sliding in once they have landed and out before they go.
+      const feet = stage.clone().project(cam), head = stage.clone().setY(stage.y + want).project(cam);
+      banner.letter((head.y - feet.y) / 2 * view.h * LINE_LETTERS);
+      const inK = clamp01((k - 0.82) / 0.35), outK = clamp01((back - 0.45) / 0.3);
+      banner.place((feet.x + 1) / 2, (1 - feet.y) / 2 - (head.y - feet.y) / 2 * LINE_UP, Math.min(inK, outK), ease(inK) * (outK < 1 ? ease(outK) : 1), outK < 1 ? 1 : -1);
     },
-    /** Draws the winner into the frame just drawn (behind the rows in front of their seat as they rise), then their line. */
+    /** Draws the winner into the frame just drawn (behind the rows in front of their seat as they rise, when they share its canvas), then their line. */
     drawStage(cam: THREE.PerspectiveCamera) {
-      if (figure) {
-        renderer.autoClear = false;
-        renderer.render(stage3, cam);
-        renderer.autoClear = true;
-      }
-      label.draw();
+      if (figure) front.render(stage3, cam);
+      banner.draw();
     },
     /** Compiles the winner's pass ahead of the first win, so it doesn't stall the moment. */
     warm(cam: THREE.PerspectiveCamera, scene: THREE.Scene) {
@@ -1147,27 +1403,27 @@ function makeSpotlight(scene: THREE.Scene, renderer: THREE.WebGLRenderer, font?:
       dummy.geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(9), 3));
       dummy.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(9), 3));
       stage3.add(dummy);
-      stage3.environment = scene.environment;
+      stage3.environment = studioEnv ? studioEnv.texture : scene.environment;
       const shown = [beam.visible, pool.visible];
       beam.visible = pool.visible = true;
       const done = () => { stage3.remove(dummy); dummy.geometry.dispose(); };
-      const compile = (renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera, t?: THREE.Scene) => Promise<unknown> }).compileAsync;
-      if (compile) {
-        compile.call(renderer, stage3, cam).then(done, done);
-        compile.call(renderer, group, cam, scene).catch(() => {});
-      } else done();
+      const compile = (r: THREE.WebGLRenderer) => (r as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera, t?: THREE.Scene) => Promise<unknown> }).compileAsync;
+      const c3 = compile(front), cg = compile(main);
+      if (c3) c3.call(front, stage3, cam).then(done, done); else done();
+      cg?.call(main, group, cam, scene).catch(() => {});
       [beam.visible, pool.visible] = shown;
     },
     clear() {
       if (figure) { stage3.remove(figure.root); if (shown) shown.visible = false; figure = null; shown = null; }
+      glow.hide();
     },
-    end() { this.clear(); beam.visible = false; pool.visible = false; light.intensity = 0; label.place(0, 0, 0); confetti.stop(); },
+    end() { this.clear(); beam.visible = false; pool.visible = false; light.intensity = 0; banner.place(0, 0, 0, 0, -1); confetti.stop(); },
     dispose() {
       this.end();
       for (const w of kept) free(w);
       kept.length = 0;
       beam.geometry.dispose(); beam.material.dispose(); pool.geometry.dispose(); poolMaterial.map?.dispose(); poolMaterial.dispose();
-      materials.dispose(); confetti.dispose(); label.dispose(); scene.remove(group);
+      materials.dispose(); confetti.dispose(); glow.dispose(); banner.dispose(); studioEnv?.dispose(); scene.remove(group);
     },
   };
 }
@@ -1325,8 +1581,12 @@ function makeFlashes(group: THREE.Group, uniforms: GuyUniforms) {
   };
 }
 
-/** The spotlit guy's line: a pill drawn on a canvas at the device's pixels, laid over the frame. */
-function makeLabel(renderer: THREE.WebGLRenderer, font?: string) {
+/**
+ * The spotlit guy's line as a banner under their feet: their name, then what they won (the part after the
+ * last " · ") on a gold chip, drawn on a canvas at the device's pixels and laid over the frame. It slides
+ * in from the side as they land and out again before they go.
+ */
+function makeBanner(renderer: THREE.WebGLRenderer, font?: string) {
   const canvas = document.createElement('canvas');
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -1337,51 +1597,94 @@ function makeLabel(renderer: THREE.WebGLRenderer, font?: string) {
   const scene = new THREE.Scene();
   scene.add(quad);
   const camera = new THREE.OrthographicCamera(0, 1, 0, -1, -1, 1);
-  let text = '', shown = 0, x = 0, y = 0, drawnFor = '';
+  let text = '', shown = 0, slid = 1, dir = -1, x = 0, y = 0, drawnFor = '', cssW = 0, cssH = 0;
+  const sizeOf = (f: string) => Number(/(\d+(?:\.\d+)?)px/.exec(f)?.[1] ?? 18);
+  const fontAt = (px: number) => font ? font.replace(/\d+(\.\d+)?px/, `${px}px`) : `700 ${px}px system-ui, -apple-system, sans-serif`;
+  /** Its lettering's size (CSS px): the font's at most, smaller under a smaller winner. */
+  const most = font ? sizeOf(font) : 20;
+  let lettering = most, stacked = false;
+  const letteringFor = (p: number) => Math.max(12, Math.min(most, Math.round(p)));
+  /** Its name and its chip, at the CSS size it would be drawn with lettering `want` px, on one line or `stack`ed. */
+  function lay(g: CanvasRenderingContext2D, W: number, want = lettering, stack = stacked) {
+    const cut = text.lastIndexOf(' · ');
+    let name = cut > 0 ? text.slice(0, cut) : text;
+    const chip = cut > 0 ? text.slice(cut + 3) : '';
+    let px = want;
+    const fit = () => {
+      g.font = fontAt(px);
+      const nw = g.measureText(name).width, cw = chip ? g.measureText(chip).width : 0;
+      const pad = Math.round(px * 0.7), chipPad = Math.round(px * 0.5);
+      const chipW = chip ? Math.ceil(cw) + 2 * chipPad : 0, gap = Math.round(px * 0.45), inset = Math.round(px * 0.25);
+      // Stacked: the name over the chip, both in the middle, as narrow as the wider of them.
+      if (stack && chip) return { nw, cw, pad, chipPad, chipW, w: Math.ceil(Math.max(nw + pad * 2, chipW + inset * 2)), h: Math.round(px * 1.6) + Math.round(px * 1.5) + inset * 2 };
+      return { nw, cw, pad, chipPad, chipW, w: Math.ceil(pad + nw + (chip ? gap + chipW + inset : pad)), h: Math.round(px * 2) };
+    };
+    let m = fit();
+    while (px > 12 && m.w > W - 16) { px--; m = fit(); }
+    while (name.length > 1 && m.w > W - 16) { name = name.slice(0, -2) + '…'; m = fit(); }
+    return { ...m, px, name, chip };
+  }
   function paint() {
     const dpr = renderer.getPixelRatio(), W = renderer.domElement.width / dpr;
     const g = canvas.getContext('2d')!;
-    let px = 16, line = text;
-    const fontOf = (size: number) => font ?? `700 ${size}px system-ui, -apple-system, sans-serif`;
-    g.font = fontOf(px);
-    const maxW = W - 16;
-    while (!font && px > 11 && g.measureText(line).width + 24 > maxW) g.font = fontOf(--px);
-    const cut = line.lastIndexOf(' · '), tail = cut > 0 ? line.slice(cut) : '';
-    let head = cut > 0 ? line.slice(0, cut) : line;
-    while (head.length > 1 && g.measureText(line).width + 24 > maxW) { head = head.slice(0, -1); line = head.trimEnd() + '…' + tail; }
-    const w = Math.ceil(Math.min(maxW, g.measureText(line).width + 24)), h = 30;
-    const cw = Math.ceil(w * dpr) + 4, ch = Math.ceil(h * dpr) + 4;
+    const m = lay(g, W);
+    cssW = m.w; cssH = m.h;
+    const cw = Math.ceil(m.w * dpr) + 4, ch = Math.ceil((m.h + 3) * dpr) + 4;
     // A texture's storage is fixed once made: a new size needs a new one.
     if (cw !== canvas.width || ch !== canvas.height) { canvas.width = cw; canvas.height = ch; texture.dispose(); }
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, cw, ch);
     g.setTransform(dpr, 0, 0, dpr, 2, 2);
-    g.font = fontOf(px);
-    g.fillStyle = 'rgba(12, 15, 24, 0.82)';
-    g.beginPath(); g.roundRect(0, 0, w, h, h / 2); g.fill();
-    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(line, w / 2, h / 2 + 1);
+    const two = stacked && !!m.chip, inset = Math.round(m.px * 0.25), r = two ? Math.round(m.px * 0.8) : m.h / 2;
+    // A lip under the card, the card, the name, and the chip at its end (or under the name).
+    g.fillStyle = 'rgba(0, 0, 0, 0.35)'; g.beginPath(); g.roundRect(0, 3, m.w, m.h, r); g.fill();
+    g.fillStyle = '#11151b'; g.beginPath(); g.roundRect(0, 0, m.w, m.h, r); g.fill();
+    g.font = fontAt(m.px); g.textBaseline = 'middle';
+    g.fillStyle = '#f3eee4';
+    if (two) {
+      const nameH = Math.round(m.px * 1.6), chipH = Math.round(m.px * 1.5), cx = Math.round((m.w - m.chipW) / 2);
+      g.textAlign = 'center'; g.fillText(m.name, m.w / 2, inset + nameH / 2 + 1);
+      g.fillStyle = '#f2c94c'; g.beginPath(); g.roundRect(cx, inset + nameH, m.chipW, chipH, chipH / 2); g.fill();
+      g.fillStyle = '#2a1d00'; g.fillText(m.chip, m.w / 2, inset + nameH + chipH / 2 + 1);
+    } else {
+      g.textAlign = 'left';
+      g.fillText(m.name, m.pad, m.h / 2 + 1);
+      if (m.chip) {
+        const chipH = m.h - inset * 2, cx = m.w - inset - m.chipW;
+        g.fillStyle = '#f2c94c'; g.beginPath(); g.roundRect(cx, inset, m.chipW, chipH, chipH / 2); g.fill();
+        g.fillStyle = '#2a1d00'; g.fillText(m.chip, cx + m.chipPad, m.h / 2 + 1);
+      }
+    }
     texture.needsUpdate = true;
-    drawnFor = `${text}|${dpr}|${W}`;
+    drawnFor = `${text}|${dpr}|${W}|${lettering}|${stacked}`;
   }
+  const fresh = () => { const dpr = renderer.getPixelRatio(); if (drawnFor !== `${text}|${dpr}|${renderer.domElement.width / dpr}|${lettering}|${stacked}`) paint(); };
   return {
-    set(t: string) { text = t; drawnFor = ''; },
-    /** Puts it at (u, v) of the canvas (0 to 1 from the top left), at `alpha`. */
-    place(u: number, v: number, alpha: number) { x = u; y = v; shown = alpha; },
+    set(t: string) { text = t; drawnFor = ''; lettering = most; stacked = false; },
+    /** Letters it at about `px` CSS px (12 at least, the font's size at most), for a winner of its size. */
+    letter(px: number) { lettering = letteringFor(px); },
+    /** Puts the name over the points (narrower), or both on one line. */
+    stack(on: boolean) { stacked = on; },
+    /** Its size in CSS px lettered at about `px`, on one line or stacked, for fitting the winner round the game's things. */
+    size(px = lettering, stack = stacked) {
+      if (!text) return { w: 0, h: 0 };
+      const m = lay(canvas.getContext('2d')!, renderer.domElement.width / renderer.getPixelRatio(), letteringFor(px), stack);
+      return { w: m.w, h: m.h + 3 };
+    },
+    /** Its middle at `u` across and its top at `v` down (0 to 1, the canvas's), at `alpha`, `slide` of the way in from the side `dir` (-1 left, 1 right). */
+    place(u: number, v: number, alpha: number, slide = 1, side = -1) { x = u; y = v; shown = alpha; slid = slide; dir = side; },
     draw() {
       if (!text || shown <= 0.01) return;
+      fresh();
       const dpr = renderer.getPixelRatio(), W = renderer.domElement.width, H = renderer.domElement.height;
-      if (drawnFor !== `${text}|${dpr}|${W / dpr}`) paint();
-      // Whole device pixels, so the text stays as sharp as it was drawn.
-      const w = canvas.width, h = canvas.height;
-      const cx = Math.round(Math.max(w / 2 + 8 * dpr, Math.min(W - w / 2 - 8 * dpr, x * W)) - w / 2), cy = Math.round(Math.min(H - h - 6 * dpr, y * H + 8 * dpr));
+      // Whole device pixels, so the lettering stays as sharp as it was drawn.
+      const w = canvas.width, h = canvas.height, off = (1 - slid) * 36 * dpr * dir;
+      const cx = Math.round(Math.max(8 * dpr, Math.min(W - w - 8 * dpr, x * W - w / 2)) + off), cy = Math.round(Math.min(H - h - 6 * dpr, y * H));
       camera.left = 0; camera.right = W; camera.top = 0; camera.bottom = -H; camera.updateProjectionMatrix();
       quad.scale.set(w, h, 1);
       quad.position.set(cx + w / 2, -(cy + h / 2), 0);
       material.opacity = shown;
-      renderer.autoClear = false;
       renderer.render(scene, camera);
-      renderer.autoClear = true;
     },
     dispose() { texture.dispose(); material.dispose(); quad.geometry.dispose(); },
   };

@@ -4,6 +4,8 @@ import { layout3d, nearSeats, profile, projector, stepFor, stepWith, tileFor, ve
 import { crowdColumns, crowdSource, paletteFor, roundToy, toyMesh } from '../stadium3d-mesh';
 import { animate } from '../animate';
 import { voxelColumns, voxelMesh } from '../voxel';
+import { dotSize, fitWinner, placeSigns, signParts, signSize, SIGN_MIN_H, SIGN_SIZES, type Rect, type SignAsk } from '../stadium3d-front';
+import { MOVE, MOVE_S } from '../stadium3d-gl';
 import { ownedOf } from '../voxel';
 
 /** Canvases a game might give it: a 16:9 overlay, a 640 × 240 strip, a phone. */
@@ -295,4 +297,99 @@ test("a spotlit winner cheers in their own colours, the ones their toy in the cr
   expect(share(cheer, seated)).toBeGreaterThan(share(dealt, seated));
   expect(share(cheer, seated)).toBeGreaterThan(0.8);
   expect(paletteFor({ seed: 'mochiku' })).toBeUndefined();
+});
+
+// ------------------------------------------------------------ signs, reactions and the winner's spot
+
+const touches = (a: Rect, b: Rect) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+/** The box a placed sign covers. */
+const signBox = (a: SignAsk, dx: number): Rect => ({ left: a.x + dx - a.w / 2, right: a.x + dx + a.w / 2, top: a.y - a.sh, bottom: a.y });
+
+test('held-up signs never cover each other or what the game keeps clear, and the first asked go up first', () => {
+  const view = { w: 1280, h: 720 };
+  const board: Rect = { left: 12, top: 60, right: 230, bottom: 440 };
+  // A packed row: forty guys 30 px apart, each sign 36 px wide.
+  const asks: SignAsk[] = Array.from({ length: 40 }, (_, i) => ({ x: 20 + i * 30, y: 400 + (i % 3) * 22, h: 60, w: 36, sh: 30 }));
+  const spots = placeSigns(asks, view, [board]);
+  const up = spots.map((s, i) => ({ s, a: asks[i] })).filter(({ s }) => s.show === 'sign');
+  expect(up.length).toBeGreaterThan(8);
+  expect(up.length).toBeLessThan(40);
+  for (const { s, a } of up) {
+    const r = signBox(a, s.dx);
+    expect(touches(r, board)).toBe(false);
+    expect(r.left).toBeGreaterThanOrEqual(0);
+    expect(r.right).toBeLessThanOrEqual(view.w);
+    for (const o of up) if (o.a !== a) expect(touches(r, signBox(o.a, o.s.dx))).toBe(false);
+  }
+  // The first one clear of the board goes up whatever comes after it.
+  const first = asks.findIndex(a => a.x - a.w / 2 > board.right);
+  expect(spots[first].show).toBe('sign');
+  // Turned round, the other end wins the room.
+  const back = placeSigns([...asks].reverse(), view, [board]);
+  expect(back[0].show).toBe('sign');
+});
+
+test('a sign at the canvas edge is nudged in; a guy too small to read holds up a dot; off the frame, nothing', () => {
+  const view = { w: 800, h: 600 };
+  const [edge, far, off] = placeSigns([
+    { x: 6, y: 300, h: 60, w: 40, sh: 30 },
+    { x: 400, y: 200, h: SIGN_MIN_H - 6, w: 30, sh: 22 },
+    { x: -20, y: 300, h: 60, w: 40, sh: 30 },
+  ], view);
+  expect(edge.show).toBe('sign');
+  expect(6 + edge.dx - 20).toBeGreaterThanOrEqual(4);
+  expect(far.show).toBe('dot');
+  expect(off.show).toBe('none');
+});
+
+test("a sign's lettering grows with the guy holding it, in a few steps, and every step is legible", () => {
+  let last = 0;
+  for (let h = 10; h < 400; h += 3) {
+    const f = signSize(h);
+    expect(SIGN_SIZES as readonly number[]).toContain(f);
+    expect(f).toBeGreaterThanOrEqual(last);
+    last = f;
+  }
+  expect(signSize(18)).toBe(12);
+  expect(signSize(200)).toBe(23);
+  for (const f of SIGN_SIZES) { const p = signParts(f); expect(p.card).toBeGreaterThan(f); expect(p.stick).toBeGreaterThan(0); }
+  expect(dotSize(6)).toBeLessThanOrEqual(dotSize(16));
+});
+
+test("the spotlit winner lands where asked when it is clear, and otherwise as near as keeps clear of the game's things", () => {
+  const view = { w: 1280, h: 720 };
+  // A winner 240 px tall standing at `across`, their line (200 px wide) under them.
+  const probe = (across: number, size: number, down: number): Rect[] => {
+    const x = (across + 1) / 2 * view.w, tall = 240 * size, feet = 520 + down * 30;
+    return [{ left: x - tall * 0.45, right: x + tall * 0.45, top: feet - tall, bottom: feet }, { left: x - 100, right: x + 100, top: feet, bottom: feet + 50 }];
+  };
+  const box = (across: number, size: number, down: number): Rect => { const [a, b] = probe(across, size, down); return { left: Math.min(a.left, b.left), right: Math.max(a.right, b.right), top: a.top, bottom: b.bottom }; };
+  expect(fitWinner(-0.5, probe, view, [])).toEqual({ across: -0.5, size: 1, down: 0, clear: true });
+  const board: Rect = { left: 12, top: 60, right: 230, bottom: 440 }, jar: Rect = { left: 460, top: 90, right: 820, bottom: 620 };
+  const spot = fitWinner(-0.7, probe, view, [board, jar]);
+  const r = box(spot.across, spot.size, spot.down);
+  expect(touches(r, board)).toBe(false);
+  expect(touches(r, jar)).toBe(false);
+  expect(Math.abs(spot.across + 0.7)).toBeLessThan(0.5);
+  // Under a board that reaches down the left side, they stand further down the floor rather than shrink.
+  const low = fitWinner(-0.7, probe, view, [{ left: 12, top: 60, right: 380, bottom: 300 }, jar]);
+  expect(low.down).toBeGreaterThan(0);
+  expect(low.size).toBe(1);
+  // Squeezed between the two: smaller, still clear.
+  const tight = fitWinner(-0.4, probe, view, [{ left: 0, top: 0, right: 300, bottom: 720 }, { left: 540, top: 0, right: 1280, bottom: 720 }]);
+  expect(tight.size).toBeLessThan(1);
+  const t = box(tight.across, tight.size, tight.down);
+  expect(tight.clear).toBe(true);
+  expect(t.left).toBeGreaterThanOrEqual(300);
+  expect(t.right).toBeLessThanOrEqual(540);
+  // Nowhere clear: it says so, and covers as little as it can.
+  const none = fitWinner(-0.4, probe, view, [{ left: 0, top: 0, right: 1280, bottom: 720 }]);
+  expect(none.clear).toBe(false);
+});
+
+test('reactions are moves of their own, each over in under two seconds', () => {
+  const kinds = Object.values(MOVE);
+  expect(new Set(kinds).size).toBe(kinds.length);
+  for (const k of kinds) { expect(MOVE_S[k]).toBeGreaterThan(0.3); expect(MOVE_S[k]).toBeLessThan(2); }
+  expect(MOVE_S[MOVE.exact]).toBeGreaterThan(MOVE_S[MOVE.hop]);
 });

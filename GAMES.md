@@ -332,6 +332,13 @@ made on the GPU, and the canvas can take a new stadium after.
 </script>
 ```
 
+For a guessing round: `sign(name, '42')` holds a guess up over that chatter (`null` takes it down,
+`clearSigns()` takes them all), `react(name, 'exact' | 'close' | 'far')` when the answer lands and
+`ripple()` for everyone else, `keepOut([{ x, y, w, h }])` keeps signs and the spotlit winner off the
+game's own panels (CSS pixels of the canvas), `spotlight(name, label, ms, at)` can land the winner at
+a spot of the game's choosing, and `pace(fps)` slows or holds the drawing (0) while the game needs the
+frame time, e.g. while a pile pours.
+
 For a page that isn't a game, the Worker draws a still crowd: `GET /api/club/crowd.png?names=a,b,c`
 with `w` and `h` (world pixels, up to 480 × 240), `fill` (plain made-up guys behind, up to 4,000),
 `scale` (1 to 4) and `bg` (a hex colour). Named guys stand at the front middle as they are on the
