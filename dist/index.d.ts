@@ -454,7 +454,7 @@ declare function painted(colors: string[], paint: PaintId | undefined): string[]
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
  *   Prism, Negative and Gold are progressively rarer, and three graphic ones,
- *   Op, Impossible and Grid, sit beside Prism and Negative
+ *   Op, Impossible and Grid, are Grails beside Gold
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -1194,21 +1194,17 @@ declare const SHADE_COUNT = 3;
  *
  * A night colourway's pastel lifts its body a little and keeps its
  * saturation, so it stays a night colour: mixed towards white, oxblood went
- * mauve and forest grey-green. A chase colourway is a material in fixed
- * colours, so it looks as picked in every tone.
+ * mauve and forest grey-green.
  */
 declare function shadePalette(palette: Palette, shade: number): Palette;
 /**
- * The Lucky palette: the guy's own. Lucky used to turn a colourway round the
- * colour wheel, which hid the colourway the card names (a Lucky Opal came out
- * plain yellow) and turned night colours neon. Now a Lucky guy keeps their
- * colours, and Lucky shows as a stepped rim (`luckyRim` in ./paint) and a gold
- * star. Kept so code that calls it still runs.
+ * The Lucky variant: the same colourway turned round the colour wheel, with
+ * gold trim. Derived again, so the face and outline read as well as ever.
  */
 declare function luckyPalette(palette: Palette): Palette;
 /** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
 
-/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
+/** The palette a guy is drawn in: their colourway, in their tone, Lucky if they are. */
 declare function paletteOf(config: AvatarConfig): Palette;
 
 //#endregion
@@ -1343,9 +1339,8 @@ declare const accessories: Accessory[];
 /**
  * Turns a composed grid into colours. Most cells take their token's palette
  * colour; a cell belonging to an owned item is repainted with that copy's
- * finish and wear. Before that, three things paint over the palette: a chase
- * part's own fixed colours (`PART_COLORS`), a Lucky guy's rim (`luckyRim`)
- * and a chase colourway's material (`chaseSkin`).
+ * finish and wear. Before that, a chase part's own fixed colours
+ * (`PART_COLORS`) paint over the palette.
  */
 declare function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small?: boolean, still?: boolean): (string | null)[][];
 /**
@@ -2155,12 +2150,13 @@ declare function encodeGif(input: Frames, scale?: number): Uint8Array;
 /** A PNG of one RGBA frame, scaled up by whole pixels. */
 declare function encodePng(rgba: Uint8ClampedArray, width: number, height: number, scale?: number): Promise<Uint8Array>;
 /**
- * An animated PNG of the frames, looping for ever. Browsers play it in a plain
- * `<img>` with no script, keep its transparency whole, and a still viewer
+ * An animated PNG of the frames, looping for ever, or played `plays` times and
+ * left on its last frame (a capsule's open plays once). Browsers play it in a
+ * plain `<img>` with no script, keep its transparency whole, and a still viewer
  * shows its first frame. Scale it up by whole pixels here, or in CSS with
  * `image-rendering: pixelated`.
  */
-declare function encodeApng(input: Frames, scale?: number): Promise<Uint8Array>;
+declare function encodeApng(input: Frames, scale?: number, plays?: number): Promise<Uint8Array>;
 
 //#endregion
 //#region src/loop.d.ts
@@ -2548,7 +2544,7 @@ declare function createCardShader(canvas?: HTMLCanvasElement | OffscreenCanvas):
  * Bumped whenever the art changes. It is part of every baked image's address,
  * so a redraw reaches every board at once and an old address keeps its picture.
  */
-declare const ART_VERSION = 15;
+declare const ART_VERSION = 16;
 /** Everything that makes a guy look the way he does. */
 interface GuySpec {
   /** His seed, or the name or text he is drawn from. */
@@ -3231,5 +3227,187 @@ declare function nameKey(typed: string): string;
 declare const nameSkeleton: (key: string) => string;
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BADGE_INKS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_BADGES, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemBox, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, UNUSUAL_ONE_IN, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, boxOf, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeGuy, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeGuy, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hasGlyph, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, layered, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, unusual, upscale, useAvatarContext, useMergeRefs, venueFor, viewSize, visibleOneIn, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/capsule.d.ts
+/** How a capsule is showing: shut, wobbling (about to open), or cracked open with light leaking out. */
+type CapsuleState = 'closed' | 'wobble' | 'open';
+declare const CAPSULE_STATES: readonly CapsuleState[];
+/** The grids a capsule is drawn on. 64 is the master; the small ones have their own simpler drawing. */
+declare const CAPSULE_GRIDS: readonly [16, 24, 32, 64];
+type CapsuleGrid = typeof CAPSULE_GRIDS[number];
+/** One kind of capsule: a machine's, or one of the club's own. */
+interface Capsule {
+  /** Its id in an address and the manifest: a game id, `mystery`, `free` or `season.<name>`. */
+  id: string;
+  name: string;
+  kind: 'machine' | 'mystery' | 'free' | 'season';
+  /** The colour that marks it, to tint a chip with: its candy's (a machine's or a season's), or the club's coral for the club's own. */
+  colour: string;
+  /** A machine's game. */
+  game?: GameId;
+  /** A season's hat, and the days it drops (`MM-DD`, in UTC). */
+  item?: string;
+  from?: string;
+  to?: string;
+}
+/** Every capsule: the machines in the order they joined, then mystery, free, and each season's. */
+declare const CAPSULES: readonly Capsule[];
+/**
+ * A capsule by its id (`puttsies`, `mystery`, `free`, `season.pumpkin`), or by `season` and a
+ * seasonal item's id (`club.pumpkin` or `pumpkin`). Undefined for anything else.
+ */
+declare function capsuleById(id: string, season?: string): Capsule | undefined;
+/**
+ * How it's standing. `turn` rocks the whole capsule (the seam and pattern tilt, the toy moves by whole
+ * pixels, the light stays). Cracked open, the dome tips back by `lid` and rises `lift` pixels while the
+ * toy stays put in the candy, which sinks `drop` pixels.
+ */
+
+/** What `capsuleFrames` takes. */
+interface CapsuleOptions {
+  /** A capsule's id (`puttsies`, `pets`, `mystery`, `free`, `season.pumpkin`), or `season` with `season`. */
+  machine: string;
+  state?: CapsuleState;
+  /** Its side in pixels: 16, 24, 32 or 64 draws that grid; a whole multiple of one scales it up (64 first). 64 if not given. */
+  size?: number;
+  /** The grid to draw it on, when a size could be more than one (48 is 24 or 16 scaled). */
+  grid?: CapsuleGrid;
+  /** A seasonal hat's id (`club.pumpkin`, or `pumpkin`) for `machine: 'season'`. */
+  season?: string;
+}
+/**
+ * A capsule as frames: one still frame `closed` or `open`, or the `wobble`'s loop (a rest, then two
+ * quick rocks either way, back where it started). Null for a machine, state or size there isn't.
+ */
+declare function capsuleFrames(options: CapsuleOptions): Frames | null;
+/**
+ * A shut capsule's two halves apart, each `grid` square and outlined on its own, for a page that
+ * moves them itself (the site twists the dome off and drops the candy away). The dome is drawn over
+ * the candy. Null for a capsule there isn't.
+ */
+declare function capsuleHalves(machine: string, options?: {
+  season?: string;
+  grid?: CapsuleGrid;
+}): {
+  top: Uint8ClampedArray;
+  bottom: Uint8ClampedArray;
+  size: number;
+} | null;
+/**
+ * A capsule's halves in any pose, each `grid` square and outlined on its own, the toy and the dome's
+ * glass drawn or left out (`show`): what ./capsule-open plays its open from. Not in the library's
+ * index; a page plays the open, or moves `capsuleHalves` itself.
+ */
+
+/**
+ * A capsule's picture from the lil guys Worker (`setLilGuysHost` moves it): `/g/<art version>/capsule/<id>-<state>-<grid>@<scale>.png`,
+ * an animated PNG for the wobble. Only PNG: a GIF has no see-through glass.
+ */
+declare function capsuleUrl(id: string, state?: CapsuleState, grid?: CapsuleGrid, options?: {
+  scale?: number;
+  host?: string;
+}): string;
+/** The plain files of the capsule pack (`/capsules/`): every capsule shut, at 16, 32, 64 and 128. */
+declare const CAPSULE_FILE_SIZES: readonly [16, 32, 64, 128];
+declare const capsuleFile: (id: string, size: number) => string;
+/** What `/capsules/manifest.json` says: every capsule, its name and colour, and where each picture is. */
+interface CapsuleManifest {
+  version: number;
+  grids: readonly number[];
+  states: readonly CapsuleState[];
+  /** Any capsule's picture: fill in `{id}`, `{state}`, `{grid}` and `{scale}` (`@2`, or nothing for 1). */
+  url: string;
+  capsules: (Capsule & {
+    files: Record<string, string>;
+    closed: Record<string, string>;
+    wobble: Record<string, string>;
+    open: Record<string, string>;
+  })[];
+}
+/**
+ * The manifest a game reads to show capsules: each one's plain files (shut, 16 to 128) and its Worker
+ * pictures in every state on each grid, 128 being the master at 2×. Wobble's are animated PNGs.
+ */
+declare function capsuleManifest(host?: string): CapsuleManifest;
+
+//#endregion
+//#region src/capsule-open.d.ts
+/** The open's stage at 1×, square: the capsule's 64 master at its foot, room above for the burst and what comes out. */
+declare const CAPSULE_OPEN_SIZE = 96;
+/** How big an open plays for a copy: its grade (0 Everyday to 5 Aura), a showpiece or an unusual effect at least Prized; null with nothing inside. */
+declare function capsuleOpenTier(copy?: Owned): number | null;
+/** What `capsuleOpenFrames` takes. */
+interface CapsuleOpenOptions {
+  /** The capsule's id: a machine's (`puttsies`, `pets`), `mystery`, `free` or a season's (`season.pumpkin`). */
+  capsule: string;
+  /** What's inside. Left out, it opens to the capsule's own light, its toy standing in the candy. */
+  copy?: Owned;
+  /** The stage's side in pixels: 96, or a whole multiple of it. 96 if not given. */
+  size?: number;
+  /** `drop`: it falls in and bounces first. `still`: it's already standing there (a capsule a game showed waiting). */
+  from?: 'drop' | 'still';
+  /** Whose guy a skin, a hat or an aura comes out on (the player's seed); the capsule's own toy guy if not given. */
+  guy?: string;
+}
+/** The moments a game can hang a sound on. */
+type CapsuleOpenBeat = 'land' | 'rock' | 'crack' | 'pop' | 'hold';
+/** An open's frames, with when each moment lands and where what came out stands in the hold. */
+interface CapsuleOpen extends Frames {
+  /** In ms from the start: the landing (a drop's), each rock, the crack, the pop and the hold frame. */
+  beats: {
+    land?: number;
+    rocks: number[];
+    crack: number;
+    pop: number;
+    hold: number;
+  };
+  /** 0 Everyday to 5 Aura, as it played; null with nothing inside. */
+  tier: number | null;
+  /** Where what came out stands in the hold frame, in the frames' pixels. */
+  item?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+/**
+ * A capsule opening, as frames: what's inside's grade sets how long it builds and how big it bursts.
+ * It plays once; the last frame is the hold, what came out standing over the open half. Null for a
+ * capsule there isn't, a copy of an item there isn't, or a size that isn't a whole multiple of 96.
+ */
+declare function capsuleOpenFrames(options: CapsuleOpenOptions): CapsuleOpen | null;
+/** What `playCapsuleOpen` takes: the open, and how it's drawn. */
+interface CapsuleOpenPlayOptions extends Omit<CapsuleOpenOptions, 'size'> {
+  /** Device pixels to a stage pixel, a whole number. Left out, the most that fit the canvas's CSS box (give it one). */
+  scale?: number;
+  /** Called as each moment shows, for a game's sounds; a skip calls `hold` alone. */
+  onBeat?: (beat: CapsuleOpenBeat) => void;
+}
+/** A playing open: `done` once the hold frame shows (or it's skipped or destroyed), `skip` to the hold, `destroy` to stop drawing. */
+interface CapsuleOpenPlayer {
+  done: Promise<void>;
+  skip(): void;
+  destroy(): void;
+}
+/**
+ * Plays an open on a canvas, once, at whole device pixels with smoothing off, centred in the canvas,
+ * and leaves the hold frame showing. A canvas the page gives a CSS size is filled at the most whole
+ * pixels that fit; give `scale` for a set size. Throws for a capsule or copy there isn't.
+ */
+declare function playCapsuleOpen(canvas: HTMLCanvasElement | OffscreenCanvas, options: CapsuleOpenPlayOptions): CapsuleOpenPlayer;
+/**
+ * An open's picture from the lil guys Worker (`setLilGuysHost` moves it):
+ * `/g/<art version>/capsule-open/<capsule>-<copy or none>[-still]@<scale>.png`, an animated PNG that plays
+ * once and stays on its hold frame. `sheet` gives the sprite sheet's `.sheet.png`, or its `.sheet.json`
+ * with each frame's time and the beats.
+ */
+declare function capsuleOpenUrl(capsule: string, copy?: Owned | null, options?: {
+  scale?: number;
+  from?: 'drop' | 'still';
+  sheet?: 'png' | 'json';
+  host?: string;
+}): string;
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, AnimateOptions, AnimatedSvgOptions, Animation, AnimationFrame, Avatar, AvatarConfig, AvatarContextValue, AvatarFallback, AvatarFallbackProps, AvatarImage, AvatarImageProps, AvatarProps, BADGE_INKS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, BakedKind, CAPSULES, CAPSULE_FILE_SIZES, CAPSULE_GRIDS, CAPSULE_ONLY, CAPSULE_OPEN_SIZE, CAPSULE_STATES, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, Capsule, CapsuleGrid, CapsuleManifest, CapsuleOpen, CapsuleOpenBeat, CapsuleOpenOptions, CapsuleOpenPlayOptions, CapsuleOpenPlayer, CapsuleOptions, CapsuleState, CardEdge, CardFace, CardGold, CardInput, CardLook, CardPlayerOptions, CardShader, CardSpec, CardStyle, ColorToken, Crowd, CrowdGuy, CrowdOptions, CrowdSeat, CrowdShine, CrowdSize, CrowdSprite, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, Effect, Emote, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_BADGES, FX_IDS, FaceBuddySpot, FaceSpec, Finish, Frames, Fx, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, GameId, Grade, GuyRank, GuySpec, HEADROOM, Hover, ICON_SIZE, Intensity3D, Item, ItemBox, ItemGame, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, LilGuyAnimatedProps, LilGuyFormat, LilGuyImgOptions, LilGuyInfo, LilGuyOptions, LilGuyPreset, LilGuyPresetName, LilGuyProps, LilGuyUrlOptions, Look, LookOptions, LookSlot, MAX_PINS, MOVES, Move, NAME_KEY, Note, ONE_OF_ONE_AURAS, Owned, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, PaintId, Palette, PartDrop, Pin, PixelGrid, PixelTarget, RECLAIMED, REFINED, RETIRED_EYES, RenderOptions, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, ShareOptions, Shine, Slot, Stadium, StadiumOptions, StadiumSeat, Surface, SurfaceKind, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, Tier, TraitOdds, TraitSlot, UNUSUAL_ONE_IN, Unlocks, VENUES, VenueId, View, VoxelColumn, VoxelMesh, VoxelOptions, VoxelSource, WEAR, WIDE_FRAME_WIDTH, Who, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, boxOf, buddyAlone, buddyLift, capsuleById, capsuleFile, capsuleFrames, capsuleHalves, capsuleManifest, capsuleOpenFrames, capsuleOpenTier, capsuleOpenUrl, capsuleUrl, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeGuy, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeGuy, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hasGlyph, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, layered, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, playCapsuleOpen, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, unusual, upscale, useAvatarContext, useMergeRefs, venueFor, viewSize, visibleOneIn, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.d.ts.map

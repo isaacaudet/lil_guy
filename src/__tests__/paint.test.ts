@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from '../resolve';
 import { compose, faceOf } from '../compose';
-import { paint, luckyRim, onRim, underEyes, LUCKY_RIM } from '../paint';
+import { paint, underEyes } from '../paint';
 import { dress, withItems } from '../items';
 import { encode } from '../owned';
 import { fxColor } from '../effects';
@@ -47,90 +47,6 @@ describe('small', () => {
     }
     // At 37px and up the full drawing stays.
     expect(toSvgString('alice', { size: 40 })).toBe(toSvgString('alice', { size: 40, small: false }));
-  });
-});
-
-describe('Lucky', () => {
-  const parts = { head: 0, eyes: 1, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, shade: 1, flip: false, rotation: 0 };
-  const named = (name: string) => palettes.findIndex(p => p.name === name);
-
-  test('keeps the colourway the card names, chase colourways included', () => {
-    for (const palette of [0, named('Midnight'), named('Opal'), named('Obsidian'), named('Aurora')]) for (const shade of [0, 1, 2]) {
-      const plain = { ...parts, palette, shade, lucky: false };
-      expect(paletteOf({ ...plain, lucky: true })).toEqual(paletteOf(plain));
-    }
-  });
-
-  test('steps through the rim on the outer outline only, never on the face', () => {
-    for (const palette of [0, named('Snow'), named('Midnight')]) {
-      const config = { ...parts, palette, lucky: true }, grid = compose(config);
-      const lucky = paint(grid, config, paletteOf(config)), plain = paint(grid, { ...config, lucky: false }, paletteOf(config));
-      let rim = 0;
-      grid.forEach((row, y) => row.forEach((t, x) => {
-        if (onRim(grid, x, y)) { rim++; expect(lucky[y][x]).toBe(luckyRim(x, y)); }
-        else expect(lucky[y][x]).toBe(plain[y][x]);
-      }));
-      expect(rim).toBeGreaterThan(20);
-    }
-  });
-
-  test('moves the rim a step a beat, round the whole ramp', () => {
-    expect(new Set(Array.from({ length: LUCKY_RIM.length }, (_, beat) => luckyRim(3, 4, beat))).size).toBe(LUCKY_RIM.length);
-    expect(luckyRim(3, 4, LUCKY_RIM.length)).toBe(luckyRim(3, 4));
-  });
-});
-
-describe('chase colourways', () => {
-  const parts = { head: 1, eyes: 1, mouth: 0, cheeks: 0, hair: 0, body: 0, accessory: 0, arms: 0, feet: 0, flip: false, rotation: 0, lucky: false };
-  const skin = new Set<number>([T.BODY, T.SHADE, T.DEEP, T.BELLY]);
-  const skinColours = (palette: number, shade: number) => {
-    const config = { ...parts, palette, shade }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
-    return grid.flatMap((row, y) => row.flatMap((t, x) => (skin.has(t) ? [colors[y][x]] : [])));
-  };
-
-  test('are a material, the same in every tone', () => {
-    for (const name of ['Opal', 'Obsidian', 'Aurora']) {
-      const i = palettes.findIndex(p => p.name === name), picked = skinColours(i, 1);
-      expect(skinColours(i, 0)).toEqual(picked);
-      expect(skinColours(i, 2)).toEqual(picked);
-      // A material, not one flat colour.
-      expect(new Set(picked).size).toBeGreaterThan(3);
-    }
-  });
-
-  test('Aurora is its own colour, off Midnight\'s navy, and always shows its curtains', () => {
-    const aurora = palettes.findIndex(p => p.name === 'Aurora'), midnight = palettes.findIndex(p => p.name === 'Midnight');
-    const body = (palette: number) => {
-      const config = { ...parts, palette, shade: 1 }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
-      return colors[grid.findLastIndex(row => row.includes(T.BODY))][grid[grid.findLastIndex(row => row.includes(T.BODY))].indexOf(T.BODY)]!;
-    };
-    expect(deltaE(body(aurora), body(midnight))).toBeGreaterThan(15);
-    // Under a beanie, a cap or a star sticker, the curtains hang lower instead of hiding.
-    const curtain = new Set(['#5CE6A4', '#3FD0D6', '#9C7CFF']);
-    for (let n = 0; n < 400; n++) {
-      const config = { ...resolve(`4-aurora${n}`), palette: aurora }, colors = paint(compose(config), config, paletteOf(config));
-      expect(colors.flat().filter(c => c && curtain.has(c)).length).toBeGreaterThanOrEqual(2);
-    }
-  });
-
-  test('Obsidian\'s glint keeps off the face', () => {
-    const obsidian = palettes.findIndex(p => p.name === 'Obsidian'), glint = new Set(['#C9B2FF', '#7E68C8']);
-    const face = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
-    let seen = 0;
-    for (let n = 0; n < 200; n++) {
-      const config = { ...resolve(`obsidian${n}`), palette: obsidian }, grid = compose(config), colors = paint(grid, config, paletteOf(config));
-      colors.forEach((row, y) => row.forEach((c, x) => {
-        if (!c || !glint.has(c) || !grid[y][x] || grid[y][x] >= 20) return;
-        seen++;
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) expect(face.has(grid[y + dy]?.[x + dx] ?? 0)).toBe(false);
-      }));
-    }
-    expect(seen).toBeGreaterThan(200);
-  });
-
-  test('Opal no longer looks like Snow', () => {
-    const opal = skinColours(palettes.findIndex(p => p.name === 'Opal'), 1), snow = skinColours(palettes.findIndex(p => p.name === 'Snow'), 1);
-    expect(new Set(opal).size).toBeGreaterThan(new Set(snow).size);
   });
 });
 

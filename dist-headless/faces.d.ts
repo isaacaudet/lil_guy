@@ -265,7 +265,7 @@ type PaintId = keyof typeof PAINTS; //#endregion
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
  *   Prism, Negative and Gold are progressively rarer, and three graphic ones,
- *   Op, Impossible and Grid, sit beside Prism and Negative
+ *   Op, Impossible and Grid, are Grails beside Gold
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -530,7 +530,7 @@ declare const accessories: Accessory[];
 //#region src/palette.d.ts
 declare const palettes: Palette[];
 declare function getPalette(index: number): Palette;
-/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
+/** The palette a guy is drawn in: their colourway, in their tone, Lucky if they are. */
 declare function paletteOf(config: AvatarConfig): Palette;
 
 //#endregion

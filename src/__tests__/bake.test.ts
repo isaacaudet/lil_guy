@@ -2,8 +2,6 @@ import { describe, expect, test } from 'bun:test';
 import { AURA_PAD } from '../animate';
 import { glanceRing } from '../animate';
 import { cardInputOf, bakeSquare } from '../bake';
-import { contrast, palettes, paletteOf } from '../palette';
-import { T } from '../parts/art';
 import { animate, AURAS, BAKED_SIZE, BUDDY_GUY_WIDTH, GUY_HEIGHT, GUY_WIDTH, items, LOOP_MS, bakeGuy, bakeCard, bakeView, bakedImage, cardFace, cardFaceAt, faceSpec, shineFit, shineFrame, dress, resolve, guyCode, readGuyCode, encodeApng, profileFrames, toProfilePng, toProfileGif, encode, decode, faceMoves, buddyLift, FACE_BUDDY_SPOTS, FACE_WIDTH, FACE_HEIGHT, FRAME_HEIGHT } from '../index-headless';
 
 const aura = `${AURAS[0].id}~gold~0.0123456~20`;
@@ -143,16 +141,6 @@ describe('profile pictures', () => {
     // A checkered flag: neighbouring cells differ along the top edge, not one flat colour.
     expect(new Set(Array.from({ length: p.width }, (_, x) => at(x, 0))).size).toBeGreaterThan(1);
     expect(px.every((v, i) => i % 4 !== 3 || v === 255)).toBe(true);
-  });
-
-  test('a pale guy stands off the ground; the rest keep the tint of their own colour', () => {
-    for (const name of ['Snow', 'Opal', 'Ice', 'Cream', 'Lemon', 'Butter', 'Midnight', 'Peach', 'Oxblood']) {
-      const palette = palettes.findIndex(p => p.name === name);
-      for (const seed of ['mia', 'zed', 'Theo1']) {
-        const px = profileFrames({ seed, palette }).frames[0], ground = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join('');
-        expect(contrast(ground, paletteOf({ ...resolve(seed), palette }).colors[T.BODY])).toBeGreaterThanOrEqual(1.3);
-      }
-    }
   });
 
   test('come out near 512 px, still as a PNG and moving as a GIF', async () => {

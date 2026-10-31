@@ -285,7 +285,7 @@ function crop(rgba: Uint8ClampedArray, W: number, x: number, y: number, w: numbe
   return out;
 }
 
-async function png(input: Frames, scale: number, animated: boolean): Promise<Uint8Array> {
+async function png(input: Frames, scale: number, animated: boolean, plays = 0): Promise<Uint8Array> {
   const W = input.width * scale, H = input.height * scale;
   const frames = input.frames.map(f => upscale(f, input.width, input.height, scale));
   const { indexed, colours, rows } = layout(frames);
@@ -296,7 +296,7 @@ async function png(input: Frames, scale: number, animated: boolean): Promise<Uin
     parts.push(chunk('tRNS', new Uint8Array([0])));
   }
   let seq = 0;
-  if (animated) parts.push(chunk('acTL', concat([u32(frames.length), u32(0)])));
+  if (animated) parts.push(chunk('acTL', concat([u32(frames.length), u32(plays)])));
   for (let i = 0; i < frames.length; i++) {
     // The first frame whole; after it only the box that changed, replacing what was there (no
     // disposal, source blend, so a pixel can turn transparent too), each shown its own time.
@@ -317,11 +317,12 @@ export function encodePng(rgba: Uint8ClampedArray, width: number, height: number
 }
 
 /**
- * An animated PNG of the frames, looping for ever. Browsers play it in a plain
- * `<img>` with no script, keep its transparency whole, and a still viewer
+ * An animated PNG of the frames, looping for ever, or played `plays` times and
+ * left on its last frame (a capsule's open plays once). Browsers play it in a
+ * plain `<img>` with no script, keep its transparency whole, and a still viewer
  * shows its first frame. Scale it up by whole pixels here, or in CSS with
  * `image-rendering: pixelated`.
  */
-export function encodeApng(input: Frames, scale = 1): Promise<Uint8Array> {
-  return png(input, scale, true);
+export function encodeApng(input: Frames, scale = 1, plays = 0): Promise<Uint8Array> {
+  return png(input, scale, true, plays);
 }

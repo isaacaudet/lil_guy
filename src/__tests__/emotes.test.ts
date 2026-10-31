@@ -4,7 +4,6 @@ import { bakeView } from '../bake';
 import { EMOTE_UNLOCKS, GOLD_SPARKLE, glanceRing } from '../animate';
 import { encode } from '../owned';
 import { items } from '../items';
-import { LUCKY_RIM } from '../paint';
 
 const lit = (f: Uint8ClampedArray) => { let n = 0; for (let i = 3; i < f.length; i += 4) if (f[i]) n++; return n; };
 const hex = (f: Uint8ClampedArray, i: number) => '#' + [f[i], f[i + 1], f[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
@@ -81,12 +80,8 @@ test('a moving emote runs a copy\'s effect over its steps', () => {
   expect(still([encode({ item: hat, finish: 'plain', scuff: 0.3, print: 12, fx: 'hearts' })])).toBeGreaterThan(1);
 });
 
-test('a Lucky guy keeps the rim and the star in every emote', () => {
+test('a Lucky guy keeps the star in an emote', () => {
   const seed = 'lucky-emote';
-  for (const e of EMOTE_SET) {
-    const c = colours(emoteFrames({ seed, parts: { lucky: true } }, e.id, false)!.frames[0]);
-    expect(LUCKY_RIM.filter(h => c.has(h)).length).toBeGreaterThan(1);
-  }
   const star = (lucky: boolean) => [...colours(emoteFrames({ seed, parts: { lucky } }, 'blep', false)!.frames[0])].filter(c => GOLD_SPARKLE.includes(c)).length;
   expect(star(true)).toBeGreaterThan(star(false));
 });

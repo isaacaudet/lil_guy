@@ -6,7 +6,7 @@
   "workers_dev": true,
   "routes": [{ "pattern": "lilguys.dleclub.com", "custom_domain": true }],
   "build": { "command": "bash scripts/build-site.sh" },
-  "assets": { "directory": "./site", "binding": "ASSETS", "run_worker_first": ["/api/*", "/g/*", "/u/*", "/p/*", "/lilguys.js", "/lilguys.mjs", "/lilguys-stadium.js", "/lilguys-stadium.mjs"] },
+  "assets": { "directory": "./site", "binding": "ASSETS", "run_worker_first": ["/api/*", "/g/*", "/u/*", "/p/*", "/lilguys.js", "/lilguys.mjs", "/lilguys-stadium.js", "/lilguys-stadium.mjs", "/lilguys-stadium3d.mjs", "/capsules/manifest.json"] },
   "d1_databases": [{ "binding": "DB", "database_name": "lilguys-names", "database_id": "701cf305-f299-46c1-ac7c-fed456d8079c", "migrations_dir": "migrations" }],
   "observability": { "enabled": false }
 }

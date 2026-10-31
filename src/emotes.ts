@@ -3,7 +3,7 @@
  * so it scales by whole numbers to Twitch's 28, 56 and 112 (×2, ×4, ×8) and to 126 for Discord (×9).
  * Each comes still or moving, the moving one a short loop under Twitch's 60 frames. Drawn from the
  * guy's own poses, so it's them: their colours, hat and face, and what marks them rare (the ring the
- * best copy or an aura puts round them, a Lucky guy's rim and star, a copy's effect in the moving one).
+ * best copy or an aura puts round them, a Lucky guy's star, a copy's effect in the moving one).
  */
 import { poseCells, emoteCells, openHead, GOLD_SPARKLE, FRAME_HEIGHT, LID_LIFT, LID_STILL, type Emote, type OpenThought, type Pose } from './animate';
 import { animateOptions } from './bake';

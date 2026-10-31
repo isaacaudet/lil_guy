@@ -1,4 +1,4 @@
-import { AURAS, AURA_ODDS, BADGE_INKS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_BADGES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, UNUSUAL_ONE_IN, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, boxOf, buddyAlone, cheekWeights, cheeks, compose, composeBase, contrast, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, layered, luckyPalette, luckyRim, machineName, mix, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, underEyes, unlockWeight, unusual, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-CTPy-AeX.js";
+import { AURAS, AURA_ODDS, BADGE_INKS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_BADGES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, UNUSUAL_ONE_IN, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, boxOf, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, layered, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, underEyes, unlockWeight, unusual, wave, wearOf, withItems, withoutRetired, wrap } from "./paint-CJIcxW4q.js";
 import * as React$5 from "react";
 import * as React$4 from "react";
 import * as React$3 from "react";
@@ -578,15 +578,15 @@ function keepShine(layer, from, grid, config, dx) {
 		if (to && was && grid[y][x] === T.WHITE) to.c = was.c;
 	}
 }
-const rgb$3 = (h) => [
+const rgb$5 = (h) => [
 	1,
 	3,
 	5
 ].map((i) => parseInt(h.slice(i, i + 2), 16));
-const hex = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
-const mix$3 = (a, b$1, t) => {
-	const x = rgb$3(a), y = rgb$3(b$1);
-	return hex([
+const hex$1 = (c) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix$2 = (a, b$1, t) => {
+	const x = rgb$5(a), y = rgb$5(b$1);
+	return hex$1([
 		0,
 		1,
 		2
@@ -603,8 +603,8 @@ const FRAME_SLOTS = [
 const slotIndex = (t) => t >= LAYER.aura ? 5 : t >= LAYER.buddy ? 4 : t >= LAYER.frame ? 3 : t >= LAYER.hat ? 2 : t >= LAYER.skin ? 1 : 0;
 const empty = (width = FRAME_WIDTH) => Array.from({ length: FRAME_HEIGHT }, () => new Array(width).fill(null));
 /** Paints a pose and keeps track of which pixels belong to a worn item. */
-function painted$1(grid, config, palette$1, small = false, face = null, width = FRAME_WIDTH) {
-	const colors = paint(grid, config, palette$1, small, false);
+function painted$1(grid, config, palette$1, small$1 = false, face = null, width = FRAME_WIDTH) {
+	const colors = paint(grid, config, palette$1, small$1, false);
 	const out = empty(width);
 	const eyeBox = face && {
 		top: face.top - 1,
@@ -623,7 +623,6 @@ function painted$1(grid, config, palette$1, small = false, face = null, width = 
 		if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
 		if (FEATURE_TOKENS.has(t)) cell.feature = true;
 		if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
-		if (config.lucky && t === T.OUTLINE && c.toUpperCase() === luckyRim(x, y, 0).toUpperCase()) cell.rim = [x, y];
 		out[y + HEADROOM][x] = cell;
 	}));
 	return out;
@@ -661,7 +660,7 @@ const hue = (h, s, l) => {
 };
 /** A colour's HSL hue (degrees), saturation and lightness (0 to 1): what `hue` takes back. */
 const hsl = (c) => {
-	const [r, g, b$1] = rgb$3(c).map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), l = (max + min) / 2, d = max - min;
+	const [r, g, b$1] = rgb$5(c).map((v) => v / 255), max = Math.max(r, g, b$1), min = Math.min(r, g, b$1), l = (max + min) / 2, d = max - min;
 	if (d === 0) return [
 		0,
 		0,
@@ -680,35 +679,19 @@ const hsl = (c) => {
 * violet to magenta and never takes the body's own blue.
 */
 function galaxyBand(body) {
-	const chroma$1 = body ? Math.max(...rgb$3(body)) / 255 - Math.min(...rgb$3(body)) / 255 : 0, h = body ? hsl(body)[0] : 0;
+	const chroma$1 = body ? Math.max(...rgb$5(body)) / 255 - Math.min(...rgb$5(body)) / 255 : 0, h = body ? hsl(body)[0] : 0;
 	if (chroma$1 < .3 || h < 170 || h > 340) return [210, 300];
 	if (h < 255) return [h + 50, Math.max(300, h + 80)];
 	return h < 300 ? [h + 50, h + 80] : [210, h - 50];
 }
-/** How long a Lucky guy's rim holds each step of its hues: thirty steps a LOOP_MS, so five or six hues come round. */
-const LUCKY_BEAT = 200;
-/**
-* A Lucky guy's rim: the outline in Lucky's hues (./paint's `luckyRim`), moved on a hue every
-* beat. Whole colours, never blended, and only ever the outline, so it never crosses the face.
-*/
-function luckyShimmer(layer, beat) {
-	for (const row of layer) for (const cell of row) if (cell?.rim) cell.c = luckyRim(cell.rim[0], cell.rim[1], beat);
-}
-/** How far through its life a Lucky star is at its fullest: `starAt`'s long four points. */
-const STAR_OPEN = .57;
-const LUCKY_STAR = {
-	period: 2300,
-	life: .55
-};
-/** A Lucky guy's gold star at `spot`, twinkling every couple of seconds and wide open at the start of the loop, so a still shows it whole. */
-function luckyStar$1(layer, [x, y], t) {
-	const f = cycle(t + STAR_OPEN * LUCKY_STAR.life * fit(LUCKY_STAR.period), LUCKY_STAR.period) / LUCKY_STAR.life;
-	if (f < 1) sparkle(layer, x, y, f, GOLD_SPARKLE, starAt);
-}
-/** Where a Lucky star sits: the top-right-most spot over the head, where its whole four points fit if any does. */
-function starSpot$1(layer, spots) {
-	const whole = spots.filter(([x, y]) => starAt(STAR_OPEN).every(([dx, dy]) => x + dx >= 0 && x + dx < GRID_SIZE && y + dy >= 0 && y + dy < FRAME_HEIGHT && !layer[y + dy][x + dx]));
-	return (whole.length ? whole : spots).reduce((a, s) => !a || s[0] - s[1] > a[0] - a[1] ? s : a, void 0);
+/** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
+function luckyShimmer(layer, t, seed) {
+	const at = cycle(t + seed, 2200) * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
+	layer.forEach((row, y) => row.forEach((cell, x) => {
+		if (!cell?.body) return;
+		const d = Math.abs(x + y * .8 - at);
+		if (d < 3) cell.c = mix$2(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, .95, .68), d < 1.2 ? .6 : .3);
+	}));
 }
 /** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. `body` is the body's colour. */
 function liveEyes(layer, kind, t, seed, body) {
@@ -724,14 +707,14 @@ function liveEyes(layer, kind, t, seed, body) {
 			}
 		} else if (kind === "diamond") {
 			const at = cycle(t + seed, 1400) * 24 - 4, d = Math.abs(x - y * .5 - at);
-			if (k !== T.EYE) cell.c = mix$3(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / wave(250) + x));
-			if (d < 1.5) cell.c = mix$3(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
+			if (k !== T.EYE) cell.c = mix$2(cell.c, "#E6FCFF", .25 + .2 * Math.sin(t / wave(250) + x));
+			if (d < 1.5) cell.c = mix$2(cell.c, "#FFFFFF", d < .6 ? .9 : .5);
 		} else if (kind === "dragon") {
 			const flash = cycle(t + seed, 2e3) * fit(2e3) < 160;
-			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$3(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
+			if (k === T.GOLD || k === T.GOLD_SHADE) cell.c = flash ? "#FFF6B0" : mix$2(cell.c, "#FF4A1C", .25 + .3 * (.5 + .5 * Math.sin(t / wave(260))));
 		} else if (kind === "starry") {
 			const ms = cycle(t + seed, 2400) * fit(2400);
-			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$3(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
+			if ((k === T.ACCENT || k === T.ACCENT_SHADE) && ms < 360) cell.c = mix$2(cell.c, "#FFFFFF", .55 * Math.sin(Math.PI * ms / 360));
 		}
 	}));
 }
@@ -870,7 +853,7 @@ function sparkleRun(layer, spots, at, period, life, salt, colors, shape = sparkl
 /** A sparkle in a colour: white at its heart, the colour lightened on its arms, the colour at its edges. */
 const sparkleIn = (color) => [
 	"#FFFFFF",
-	mix$3(color, "#FFFFFF", .45),
+	mix$2(color, "#FFFFFF", .45),
 	color
 ];
 /** A Gold finish's sparkle. Kept off the Grail ring's two golds, so the ring alone says the grade. */
@@ -1080,8 +1063,8 @@ function poseCells(input, pose, options = {}) {
 	const { config, grid } = poser(input, options);
 	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
 	const layer = painted$1(grid(pose), config, palette$1, false, null, FRAME_WIDTH);
-	const looks = GLANCES[pose];
-	if (looks) keepShine(layer, painted$1(grid(looks[0]), config, palette$1, false, null, FRAME_WIDTH), grid(looks[0]), config, looks[1]);
+	const looks$1 = GLANCES[pose];
+	if (looks$1) keepShine(layer, painted$1(grid(looks$1[0]), config, palette$1, false, null, FRAME_WIDTH), grid(looks$1[0]), config, looks$1[1]);
 	const body = layer.map((row) => row.map((cell) => !!cell?.body)), eyes$1 = faceOf(config).top + HEADROOM;
 	if (!options.rare) return {
 		colors: layer.map((row) => row.map((cell) => cell?.c ?? null)),
@@ -1089,7 +1072,6 @@ function poseCells(input, pose, options = {}) {
 		eyes: eyes$1
 	};
 	const { step: step$1, of } = options.rare;
-	luckyShimmer(layer, step$1);
 	const ring = ringOf(config, options.rarity !== false);
 	if (ring) for (const [x, y] of rim(layer)) layer[y][x] = {
 		c: ringCell(ring, x, y, step$1),
@@ -1106,12 +1088,12 @@ function poseCells(input, pose, options = {}) {
 const RING_STEP = 1e3 / 3;
 /** How much colour there is in a colour, 0 for a grey or white to 1 for a pure hue. */
 const chroma = (h) => {
-	const c = rgb$3(h);
+	const c = rgb$5(h);
 	return (Math.max(...c) - Math.min(...c)) / 255;
 };
 /** A colour's relative luminance, as contrast ratios read it. */
 const luminance = (h) => {
-	const [r, g, b$1] = rgb$3(h).map((v) => (v /= 255) <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+	const [r, g, b$1] = rgb$5(h).map((v) => (v /= 255) <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
 	return .2126 * r + .7152 * g + .0722 * b$1;
 };
 /** The luminance an aura's ring keeps between: 2 to 1 or more against a dark page (#18181B) and against white. */
@@ -1121,14 +1103,14 @@ function legible(c) {
 	const l = luminance(c), toward = l > RING_LIGHTEST ? "#000000" : l < RING_DARKEST ? "#FFFFFF" : null;
 	if (!toward) return c;
 	for (let i = 1; i <= 20; i++) {
-		const m = mix$3(c, toward, i / 20), lm = luminance(m);
+		const m = mix$2(c, toward, i / 20), lm = luminance(m);
 		if (lm >= RING_DARKEST && lm <= RING_LIGHTEST) return m;
 	}
 	return c;
 }
 /** A colour's hue, 0 to 360. */
 const hueOf = (h) => {
-	const [r, g, b$1] = rgb$3(h), max = Math.max(r, g, b$1), d = max - Math.min(r, g, b$1);
+	const [r, g, b$1] = rgb$5(h), max = Math.max(r, g, b$1), d = max - Math.min(r, g, b$1);
 	if (!d) return 0;
 	const k = max === r ? (g - b$1) / d + 6 : max === g ? (b$1 - r) / d + 2 : (r - g) / d + 4;
 	return k * 60 % 360;
@@ -1140,7 +1122,7 @@ const hueGap = (a, b$1) => {
 };
 /** Whether two colours are near enough to read as one at a glance. */
 const alike = (a, b$1) => {
-	const x = rgb$3(a), y = rgb$3(b$1);
+	const x = rgb$5(a), y = rgb$5(b$1);
 	return Math.max(...x.map((v, i) => Math.abs(v - y[i]))) < 28;
 };
 /**
@@ -1166,7 +1148,7 @@ function ringColours(grade, aura, copy) {
 	if (grade < 2) return null;
 	const color = GRADES[grade].color;
 	return {
-		colors: grade === 4 ? ["#FFE27A", "#E4AE39"] : [color, mix$3(color, "#000000", .35)],
+		colors: grade === 4 ? ["#FFE27A", "#E4AE39"] : [color, mix$2(color, "#000000", .35)],
 		bands: false
 	};
 }
@@ -1186,8 +1168,8 @@ function ringTurn(ring, at) {
 }
 /** A ring cell's colour at (x, y) on turn `turn`: a grade's ring all one colour; an aura's in diagonal bands two cells wide, moved on a band a turn. */
 function ringCell(ring, x, y, turn$1) {
-	const n = ring.colors.length, band$1 = ring.bands ? Math.floor((x - y) / 2) : 0;
-	return ring.colors[((band$1 + turn$1) % n + n) % n];
+	const n = ring.colors.length, band$2 = ring.bands ? Math.floor((x - y) / 2) : 0;
+	return ring.colors[((band$2 + turn$1) % n + n) % n];
 }
 /** A little picture's cells with its dark outline, from its top-left: [x, y, colour]. */
 function emoteCells(kind) {
@@ -1411,13 +1393,13 @@ function poser(input, options) {
 	const grids = new Map();
 	const grid = (pose) => {
 		if (!grids.has(pose)) {
-			const base = compose(figure), mouth = poseMouth(pose, config.mouth), looks = GLANCES[pose];
+			const base = compose(figure), mouth = poseMouth(pose, config.mouth), looks$1 = GLANCES[pose];
 			const worn = mouth === void 0 ? base : compose({
 				...figure,
 				mouth,
 				arms: pose === "laughWave" ? 2 : figure.arms
 			});
-			grids.set(pose, pose === "shut" ? closeEyes(base, config) : looks ? glance(grid(looks[0]), config, looks[1]) : pose === "frown" || pose === "content" || pose === "huff" || pose === "oops" ? closeEyes(worn, config) : pose === "blush" ? compose({
+			grids.set(pose, pose === "shut" ? closeEyes(base, config) : looks$1 ? glance(grid(looks$1[0]), config, looks$1[1]) : pose === "frown" || pose === "content" || pose === "huff" || pose === "oops" ? closeEyes(worn, config) : pose === "blush" ? compose({
 				...figure,
 				cheeks: MANGA_BLUSH
 			}) : pose === "wave" || pose === "sides" ? compose({
@@ -1523,15 +1505,15 @@ function animate(input, move, options = {}) {
 	const wornAura = auraOf(config);
 	const fxCopies = FRAME_SLOTS.map((slot) => config.owned?.[slot]);
 	const withFx = fxCopies.some((o) => o?.fx);
-	const lucky = !!config.lucky && !options.small;
+	const lucky = !!config.lucky && options.rarity !== false && !options.small;
 	const liveEye = options.small ? void 0 : LIVE_EYES.get(config.eyes);
 	const canWave = JSON.stringify(grid("wave")) !== JSON.stringify(grid("sides"));
 	const plan$1 = squashPlan(config, figure, grid);
 	const layers = new Map();
 	const layerOf = (pose) => {
 		if (!layers.has(pose)) {
-			const layer = painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, W), looks = GLANCES[pose];
-			if (looks) keepShine(layer, layerOf(looks[0]), grid(looks[0]), config, looks[1]);
+			const layer = painted$1(grid(pose), config, palette$1, !!options.small, liveEye ? faceOf(figure) : null, W), looks$1 = GLANCES[pose];
+			if (looks$1) keepShine(layer, layerOf(looks$1[0]), grid(looks$1[0]), config, looks$1[1]);
 			layers.set(pose, layer);
 		}
 		return layers.get(pose);
@@ -1563,7 +1545,6 @@ function animate(input, move, options = {}) {
 	const buddyLife = !!alone && BUDDY_HOPS(move) && move !== "dance";
 	const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
 	const spots = sparkleSpots(layerOf("base")), headSpots = sparkleSpots(layerOf("base"), 3);
-	const luckySpot = lucky ? starSpot$1(layerOf("base"), headSpots) : void 0;
 	const opens = opensHead(options.emote) ? options.emote : void 0;
 	const headTop = (layer) => layer.findIndex((row) => row.slice(0, GRID_SIZE).some(Boolean));
 	const baseHead = opens ? headTop(layerOf("base")) : 0, baseEyes = faceOf(config).top + HEADROOM;
@@ -1593,7 +1574,7 @@ function animate(input, move, options = {}) {
 			t += ms;
 		}
 	}
-	const trailFrom = grade >= 3 && !wornAura ? [mix$3(gradeColor, "#000000", .2), mix$3(gradeColor, "#000000", .55)] : [];
+	const trailFrom = grade >= 3 && !wornAura ? [mix$2(gradeColor, "#000000", .2), mix$2(gradeColor, "#000000", .55)] : [];
 	const behind = [];
 	const all = slices.map(({ beat, ms, t: t$1 }) => {
 		let layer = layerOf(beat.pose);
@@ -1629,13 +1610,13 @@ function animate(input, move, options = {}) {
 			layer.forEach((row, y) => row.forEach((cell, x) => {
 				if (!cell?.item) return;
 				const d = Math.abs(x + y - at);
-				if (d < 1) cell.c = mix$3(cell.c, "#FFFFFF", .65);
-				else if (d < 2) cell.c = mix$3(cell.c, "#FFFFFF", .25);
+				if (d < 1) cell.c = mix$2(cell.c, "#FFFFFF", .65);
+				else if (d < 2) cell.c = mix$2(cell.c, "#FFFFFF", .25);
 			}));
 		}
-		if (lucky) luckyShimmer(layer, tick(t$1, LUCKY_BEAT));
+		if (lucky) luckyShimmer(layer, t$1, seed);
 		if (liveEye) liveEyes(layer, liveEye, t$1, seed, palette$1.colors[T.BODY]);
-		if (luckySpot && !wornAura && grade < 3 && !goldMark) luckyStar$1(layer, luckySpot, t$1);
+		if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t$1 + seed * 7, 2300, .55, seed, GOLD_SPARKLE, starAt);
 		if (goldMark) sparkleRun(layer, headSpots, t$1 + goldCopy.print * 37, 2600, .55, goldCopy.print, GOLD_SPARKLE, starAt);
 		const around = ring ? rim(layer) : [];
 		if (beat.stars) {
@@ -1720,15 +1701,15 @@ function animateLoop(input, move, options = {}) {
 function frameAt(animation, ms, once = false) {
 	const { frames, duration } = animation;
 	let t = once ? Math.min(ms, duration - 1) : (ms % duration + duration) % duration;
-	for (const frame of frames) {
-		if (t < frame.ms) return frame;
-		t -= frame.ms;
+	for (const frame$1 of frames) {
+		if (t < frame$1.ms) return frame$1;
+		t -= frame$1.ms;
 	}
 	return frames[frames.length - 1];
 }
 /** Draws a frame at (x, y), each pixel `scale` units square. */
-function drawFrame(ctx, frame, x = 0, y = 0, scale$1 = 1) {
-	frame.colors.forEach((row, py) => row.forEach((c, px) => {
+function drawFrame(ctx, frame$1, x = 0, y = 0, scale$1 = 1) {
+	frame$1.colors.forEach((row, py) => row.forEach((c, px) => {
 		if (!c) return;
 		ctx.fillStyle = c;
 		ctx.fillRect(x + px * scale$1, y + py * scale$1, scale$1, scale$1);
@@ -1764,13 +1745,13 @@ function toAnimatedSvg(input, move, options = {}) {
 	const pct = (ms) => +(ms / anim.duration * 100).toFixed(3);
 	let at = 0;
 	const css = [`.${id} g{visibility:hidden;animation-duration:${anim.duration}ms;animation-timing-function:step-end;animation-iteration-count:${options.once ? 1 : "infinite"};animation-fill-mode:${options.once ? "forwards" : "none"}}`];
-	const groups = anim.frames.map((frame, i) => {
-		const start = pct(at), end = pct(at + frame.ms);
-		at += frame.ms;
+	const groups = anim.frames.map((frame$1, i) => {
+		const start = pct(at), end = pct(at + frame$1.ms);
+		at += frame$1.ms;
 		const last = i === anim.frames.length - 1;
 		const keys = i === 0 ? `0%{visibility:visible}${end}%{visibility:hidden}${last ? "" : "100%{visibility:hidden}"}` : `0%{visibility:hidden}${start}%{visibility:visible}${last ? "100%{visibility:visible}" : `${end}%{visibility:hidden}100%{visibility:hidden}`}`;
 		css.push(`.${id} .f${i}{animation-name:${id}-${i}}@keyframes ${id}-${i}{${keys}}`);
-		const rects = frame.colors.flatMap((row, y) => runs(row).map((r) => `<rect x="${r.x}" y="${y}" width="${r.width}" height="1" fill="${r.color}"/>`));
+		const rects = frame$1.colors.flatMap((row, y) => runs(row).map((r) => `<rect x="${r.x}" y="${y}" width="${r.width}" height="1" fill="${r.color}"/>`));
 		return `<g class="f${i}">${rects.join("")}</g>`;
 	});
 	if (options.stillWhenReduced) css.push(`@media (prefers-reduced-motion: reduce){.${id} g{animation:none}.${id} .f0{visibility:visible}}`);
@@ -2311,9 +2292,9 @@ function toSvgString(input, options = {}) {
 	const config = dress(resolve(input, options.parts), options, input);
 	const palette$1 = withItems(options.palette ?? paletteOf(config), config);
 	const size = options.size ?? 128;
-	const small = options.small ?? size <= SMALL_SIZE;
-	const colors = paint(compose(config), config, palette$1, small);
-	const box = small ? bounds(colors, options.square ? 0 : 3) : {
+	const small$1 = options.small ?? size <= SMALL_SIZE;
+	const colors = paint(compose(config), config, palette$1, small$1);
+	const box = small$1 ? bounds(colors, options.square ? 0 : 3) : {
 		x: 0,
 		y: 0,
 		side: GRID_SIZE
@@ -3428,14 +3409,14 @@ vec3 finishColor(vec3 c, float finish, float scuff, float h, float d, float row,
 const TAU$2 = Math.PI * 2;
 const fract = (x) => x - Math.floor(x);
 const mod = (x, y) => x - y * Math.floor(x / y);
-const clamp = (x, a, b$1) => Math.min(Math.max(x, a), b$1);
+const clamp$1 = (x, a, b$1) => Math.min(Math.max(x, a), b$1);
 const step = (edge, x) => x < edge ? 0 : 1;
 const smoothstep = (a, b$1, x) => {
-	const t = clamp((x - a) / (b$1 - a), 0, 1);
+	const t = clamp$1((x - a) / (b$1 - a), 0, 1);
 	return t * t * (3 - 2 * t);
 };
 const distance = (a, b$1) => Math.hypot(a[0] - b$1[0], a[1] - b$1[1]);
-const mix$2 = (a, b$1, t) => [
+const mix$1 = (a, b$1, t) => [
 	a[0] + (b$1[0] - a[0]) * t,
 	a[1] + (b$1[1] - a[1]) * t,
 	a[2] + (b$1[2] - a[2]) * t
@@ -3470,9 +3451,9 @@ function hueShift(c, a) {
 		y - 1.106 * I + 1.703 * Q
 	];
 }
-const band = (d, time, print) => 1 - clamp(Math.abs(mod(d - time * 10 + print, 60) - 30) - .5, 0, 1);
+const band$1 = (d, time, print) => 1 - clamp$1(Math.abs(mod(d - time * 10 + print, 60) - 30) - .5, 0, 1);
 /** `soft` from GLSL_COMMON: a wide, soft band of light, three cells either side of its middle. */
-const soft = (d, time, print) => 1 - clamp(Math.abs(mod(d - time * 10 + print, 60) - 30) / 3, 0, 1);
+const soft = (d, time, print) => 1 - clamp$1(Math.abs(mod(d - time * 10 + print, 60) - 30) / 3, 0, 1);
 /**
 * `finishColor` from GLSL_COMMON. `finish` is an index in SHADER_FINISHES.
 * Each finish moves in smooth light across the whole item, never pixel by
@@ -3481,18 +3462,18 @@ const soft = (d, time, print) => 1 - clamp(Math.abs(mod(d - time * 10 + print, 6
 * round, Negative a slow pulse.
 */
 function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
-	const b$1 = band(d, time, print), w = soft(d, time, print);
-	const coat = clamp(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
+	const b$1 = band$1(d, time, print), w = soft(d, time, print);
+	const coat = clamp$1(1 - scuff * 1.4, 0, 1) * step(scuff * .55, h);
 	if (finish < .5) return add(c, b$1 * .45 * step(scuff, .07));
 	if (finish < 1.5) {
 		const s = .5 + .5 * Math.sin(d * .8 - time * TAU$2 / 2 + print);
-		return add(mix$2(c, add(scale(c, [
+		return add(mix$1(c, add(scale(c, [
 			.86,
 			.96,
 			1.18
 		]), .08), .4 * s * coat), b$1 * .5 * coat);
 	}
-	if (finish < 2.5) return add(mix$2(c, add(scale(c, [
+	if (finish < 2.5) return add(mix$1(c, add(scale(c, [
 		.9,
 		.98,
 		1.1
@@ -3504,7 +3485,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	if (finish < 3.5) {
 		const shifted = hueShift(c, .32 * Math.sin(time * TAU$2 / 6 + d * .12 + fract(print * .618) * TAU$2) * coat);
 		const s = Math.max(0, Math.sin(time * TAU$2 / 3 + h * 97));
-		return mix$2(shifted, [
+		return mix$1(shifted, [
 			1,
 			.94,
 			1
@@ -3516,7 +3497,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 		.12,
 		.45
 	], b$1 * coat)), .07 * Math.sin(time * TAU$2 / 3 + d * .5 + fract(print * .618) * TAU$2) * coat);
-	return add(mix$2(c, [
+	return add(mix$1(c, [
 		1,
 		.94,
 		.66
@@ -3527,7 +3508,7 @@ function finishColor(c, finish, scuff, h, d, row, print, time, scan) {
 	], b$1 * coat));
 }
 /** A colour channel as the GPU stores it. */
-const toByte = (v) => Math.round(clamp(v, 0, 1) * 255);
+const toByte = (v) => Math.round(clamp$1(v, 0, 1) * 255);
 /** Loop time in seconds: what the shaders are given. */
 const loopSeconds = (ms) => mod(ms, LOOP_MS) / 1e3;
 /**
@@ -3614,12 +3595,12 @@ const sine = (x) => {
 * `time` into `out` (0 to 1, unclamped, three a pixel), as `editionColor` gives it.
 */
 function editionField(ed, v, o, px, pixels) {
-	const { x, y, region, h, rgb: rgb$4 } = pixels, n = region.length;
-	if (ed < .5) return (_, out) => out.set(rgb$4);
+	const { x, y, region, h, rgb: rgb$6 } = pixels, n = region.length;
+	if (ed < .5) return (_, out) => out.set(rgb$6);
 	const at = new Float32Array(n);
 	for (let k = 0; k < n; k++) at[k] = mod(x[k] + y[k] * .6 + v * 13, 60);
 	/** `sweep(at, time, width)`, with T = time * 10 brought into 0 to 60. */
-	const band$1 = (k, T$1, width) => {
+	const band$2 = (k, T$1, width) => {
 		let u = at[k] - T$1;
 		if (u < 0) u += 60;
 		const d = Math.abs(u - 30) / width;
@@ -3628,7 +3609,7 @@ function editionField(ed, v, o, px, pixels) {
 	const a = new Float32Array(n * 3), s = new Float32Array(n), c2 = new Float32Array(n);
 	if (ed < 1.5) {
 		for (let k = 0; k < n; k++) {
-			const r = rgb$4[k * 3], g = rgb$4[k * 3 + 1], b$1 = rgb$4[k * 3 + 2], l = .299 * r + .587 * g + .114 * b$1;
+			const r = rgb$6[k * 3], g = rgb$6[k * 3 + 1], b$1 = rgb$6[k * 3 + 2], l = .299 * r + .587 * g + .114 * b$1;
 			a[k * 3] = r + (l * .8 + .05 - r) * .6;
 			a[k * 3 + 1] = g + (l * .92 + .08 - g) * .6;
 			a[k * 3 + 2] = b$1 + (l * 1.1 + .16 - b$1) * .6;
@@ -3639,7 +3620,7 @@ function editionField(ed, v, o, px, pixels) {
 		return (time, out) => {
 			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$2 / 2), sa = Math.sin(time * TAU$2 / 2);
 			for (let k = 0; k < n; k++) {
-				const w = .5 + .5 * (s[k] * ca - c2[k] * sa), w2 = w * w, m = w2 * w2 * w2 * .22 + band$1(k, T$1, 5) * .4;
+				const w = .5 + .5 * (s[k] * ca - c2[k] * sa), w2 = w * w, m = w2 * w2 * w2 * .22 + band$2(k, T$1, 5) * .4;
 				out[k * 3] = a[k * 3] + .6 * m;
 				out[k * 3 + 1] = a[k * 3 + 1] + .75 * m;
 				out[k * 3 + 2] = a[k * 3 + 2] + m;
@@ -3657,9 +3638,9 @@ function editionField(ed, v, o, px, pixels) {
 		return (time, out) => {
 			const T$1 = mod(time * 10, 60), ca = Math.cos(time * TAU$2 / 3), sa = Math.sin(time * TAU$2 / 3);
 			for (let k = 0; k < n; k++) {
-				const t = .5 + .5 * (s[k] * ca - c2[k] * sa), m = .55 * (region[k] > 1.5 ? .6 : 1), add$1 = lift[k] + band$1(k, T$1, 5) * .25;
+				const t = .5 + .5 * (s[k] * ca - c2[k] * sa), m = .55 * (region[k] > 1.5 ? .6 : 1), add$1 = lift[k] + band$2(k, T$1, 5) * .25;
 				const tr = 1 + -.72 * t, tg = .3 + .32 * t, tb = .42 + .5800000000000001 * t;
-				const r = rgb$4[k * 3], g = rgb$4[k * 3 + 1], b$1 = rgb$4[k * 3 + 2];
+				const r = rgb$6[k * 3], g = rgb$6[k * 3 + 1], b$1 = rgb$6[k * 3 + 2];
 				out[k * 3] = r + (r * .5 + tr * .55 - r) * m + add$1;
 				out[k * 3 + 1] = g + (g * .5 + tg * .55 - g) * m + add$1;
 				out[k * 3 + 2] = b$1 + (b$1 * .5 + tb * .55 - b$1) * m + add$1;
@@ -3669,7 +3650,7 @@ function editionField(ed, v, o, px, pixels) {
 	if (ed < 3.5) {
 		const lum$2 = new Float32Array(n);
 		for (let k = 0; k < n; k++) {
-			const r = rgb$4[k * 3], g = rgb$4[k * 3 + 1], b$1 = rgb$4[k * 3 + 2];
+			const r = rgb$6[k * 3], g = rgb$6[k * 3 + 1], b$1 = rgb$6[k * 3 + 2];
 			const i = .596 * r - .274 * g - .322 * b$1, q = .211 * r - .523 * g + .312 * b$1;
 			const hue$2 = Math.atan2(q, i) + (x[k] - y[k]) * .05, ch = Math.hypot(i, q);
 			lum$2[k] = .299 * r + .587 * g + .114 * b$1;
@@ -3685,17 +3666,17 @@ function editionField(ed, v, o, px, pixels) {
 			const T$1 = mod(time * 10, 60), ct = Math.cos(time * TAU$2 / 6), st = Math.sin(time * TAU$2 / 6);
 			for (let k = 0; k < n; k++) {
 				const I = s[k] * ct + c2[k] * st, Q = c2[k] * ct - s[k] * st, Y = lum$2[k];
-				const hh = fract(a[k] - time / 6), add$1 = band$1(k, T$1, 5) * .18;
+				const hh = fract(a[k] - time / 6), add$1 = band$2(k, T$1, 5) * .18;
 				const hr = Y + .956 * I + .621 * Q, hg = Y - .272 * I - .647 * Q, hb = Y - 1.106 * I + 1.703 * Q;
-				out[k * 3] = hr + (rgb$4[k * 3] * .45 + hsv1(hh, 1) * .6 - hr) * .5 + add$1;
-				out[k * 3 + 1] = hg + (rgb$4[k * 3 + 1] * .45 + hsv1(hh, 2 / 3) * .6 - hg) * .5 + add$1;
-				out[k * 3 + 2] = hb + (rgb$4[k * 3 + 2] * .45 + hsv1(hh, 1 / 3) * .6 - hb) * .5 + add$1;
+				out[k * 3] = hr + (rgb$6[k * 3] * .45 + hsv1(hh, 1) * .6 - hr) * .5 + add$1;
+				out[k * 3 + 1] = hg + (rgb$6[k * 3 + 1] * .45 + hsv1(hh, 2 / 3) * .6 - hg) * .5 + add$1;
+				out[k * 3 + 2] = hb + (rgb$6[k * 3 + 2] * .45 + hsv1(hh, 1 / 3) * .6 - hb) * .5 + add$1;
 			}
 		};
 	}
 	if (ed < 4.5) {
 		for (let k = 0; k < n; k++) for (let j = 0; j < 3; j++) {
-			const m = 1 - rgb$4[k * 3 + j];
+			const m = 1 - rgb$6[k * 3 + j];
 			a[k * 3 + j] = m + (m * [
 				.75,
 				.68,
@@ -3709,7 +3690,7 @@ function editionField(ed, v, o, px, pixels) {
 		return (time, out) => {
 			const T$1 = mod(time * 10, 60);
 			for (let k = 0; k < n; k++) {
-				const w = band$1(k, T$1, 5) * .6;
+				const w = band$2(k, T$1, 5) * .6;
 				out[k * 3] = a[k * 3] + .3 * w;
 				out[k * 3 + 1] = a[k * 3 + 1] + .16 * w;
 				out[k * 3 + 2] = a[k * 3 + 2] + .5 * w;
@@ -3719,11 +3700,11 @@ function editionField(ed, v, o, px, pixels) {
 	if (ed < 5.5) return (time, out) => {
 		const T$1 = mod(time * 10, 60);
 		for (let k = 0; k < n; k++) {
-			const win = region[k] > 1.5, m = win ? band$1(k, T$1, 9) * .16 : band$1(k, T$1, 5) * .6;
+			const win = region[k] > 1.5, m = win ? band$2(k, T$1, 9) * .16 : band$2(k, T$1, 5) * .6;
 			const lr = 1, lg = win ? .94 : .97, lb = win ? .78 : .84;
-			out[k * 3] = rgb$4[k * 3] + (lr - rgb$4[k * 3]) * m;
-			out[k * 3 + 1] = rgb$4[k * 3 + 1] + (lg - rgb$4[k * 3 + 1]) * m;
-			out[k * 3 + 2] = rgb$4[k * 3 + 2] + (lb - rgb$4[k * 3 + 2]) * m;
+			out[k * 3] = rgb$6[k * 3] + (lr - rgb$6[k * 3]) * m;
+			out[k * 3 + 1] = rgb$6[k * 3 + 1] + (lg - rgb$6[k * 3 + 1]) * m;
+			out[k * 3 + 2] = rgb$6[k * 3 + 2] + (lb - rgb$6[k * 3 + 2]) * m;
 		}
 	};
 	const lum$1 = new Float32Array(n), hue$1 = new Float32Array(n), chroma$1 = new Float32Array(n);
@@ -3732,7 +3713,7 @@ function editionField(ed, v, o, px, pixels) {
 		const r = Math.hypot(qx, qy), turn$1 = Math.atan2(qy, qx) + r * 1.8;
 		s[k] = Math.cos(turn$1) * r;
 		c2[k] = Math.sin(turn$1) * r;
-		const cr = rgb$4[k * 3], cg = rgb$4[k * 3 + 1], cb = rgb$4[k * 3 + 2];
+		const cr = rgb$6[k * 3], cg = rgb$6[k * 3 + 1], cb = rgb$6[k * 3 + 2];
 		const i = .596 * cr - .274 * cg - .322 * cb, q = .211 * cr - .523 * cg + .312 * cb;
 		lum$1[k] = .299 * cr + .587 * cg + .114 * cb;
 		hue$1[k] = Math.atan2(q, i);
@@ -3750,16 +3731,16 @@ function editionField(ed, v, o, px, pixels) {
 		for (let k = 0; k < n; k++) {
 			const wx = s[k] * ct + c2[k] * st, wy = c2[k] * ct - s[k] * st;
 			const f = Math.floor((.5 + .5 * sine(wx * 3.2 + sine(wy * 2.6 + B) * 1.5)) * 3.99);
-			const r = rgb$4[k * 3], g = rgb$4[k * 3 + 1], b$1 = rgb$4[k * 3 + 2], gl = glint(k, time);
+			const r = rgb$6[k * 3], g = rgb$6[k * 3 + 1], b$1 = rgb$6[k * 3 + 2], gl = glint(k, time);
 			if (region[k] > 1.5) {
-				const m$1 = .7 + .25 * f, add$2 = band$1(k, T$1, 5) * .12 + gl;
+				const m$1 = .7 + .25 * f, add$2 = band$2(k, T$1, 5) * .12 + gl;
 				out[k * 3] = r * m$1 + add$2;
 				out[k * 3 + 1] = g * m$1 + add$2;
 				out[k * 3 + 2] = b$1 * m$1 + add$2;
 				continue;
 			}
 			const m = .86 + .1 * f, turn$1 = hue$1[k] + .4 * Math.sin(a[k] + th + v), ch = chroma$1[k] * m, Y = lum$1[k] * m;
-			const I = ch * Math.cos(turn$1), Q = ch * Math.sin(turn$1), add$1 = band$1(k, T$1, 5) * .35 + gl;
+			const I = ch * Math.cos(turn$1), Q = ch * Math.sin(turn$1), add$1 = band$2(k, T$1, 5) * .35 + gl;
 			out[k * 3] = Y + .956 * I + .621 * Q + add$1;
 			out[k * 3 + 1] = Y - .272 * I - .647 * Q + add$1;
 			out[k * 3 + 2] = Y - 1.106 * I + 1.703 * Q + add$1;
@@ -3785,12 +3766,12 @@ function editionField(ed, v, o, px, pixels) {
 * scuff and print of the copy it belongs to; and each pixel's noise. Three
 * RGBA byte arrays, the frame's size (16×20, wider with a buddy).
 */
-function shineData(frame, owned = {}) {
-	const W = frame.colors[0].length;
+function shineData(frame$1, owned = {}) {
+	const W = frame$1.colors[0].length;
 	const colors = new Uint8Array(W * FRAME_HEIGHT * 4);
 	const info = new Uint8Array(W * FRAME_HEIGHT * 4);
 	const noise$1 = new Uint8Array(W * FRAME_HEIGHT * 4);
-	frame.colors.forEach((row, y) => row.forEach((c, x) => {
+	frame$1.colors.forEach((row, y) => row.forEach((c, x) => {
 		if (!c) return;
 		const i = (y * W + x) * 4;
 		colors.set([
@@ -3799,7 +3780,7 @@ function shineData(frame, owned = {}) {
 			parseInt(c.slice(5, 7), 16),
 			255
 		], i);
-		const slot = frame.slots[y][x];
+		const slot = frame$1.slots[y][x];
 		const copy = slot ? owned?.[FRAME_SLOTS[slot - 1]] : void 0;
 		const finish = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1;
 		if (copy && finish >= 0) {
@@ -3820,15 +3801,15 @@ function shineData(frame, owned = {}) {
 	};
 }
 /** Whether any pixel of the frame belongs to a copy with a finish that shimmers. */
-const shines = (frame, owned = {}) => frame.slots.some((row) => row.some((slot) => slot > 0 && SHADER_FINISHES.includes(owned?.[FRAME_SLOTS[slot - 1]]?.finish)));
+const shines = (frame$1, owned = {}) => frame$1.slots.some((row) => row.some((slot) => slot > 0 && SHADER_FINISHES.includes(owned?.[FRAME_SLOTS[slot - 1]]?.finish)));
 /**
 * The shader's picture, in plain code: the frame with each copy's finish
 * running `ms` into its loop, as RGBA bytes. The same colours the GPU draws.
 */
-function shineFrame(frame, owned, ms) {
-	const { colors, info, noise: noise$1 } = shineData(frame, owned);
+function shineFrame(frame$1, owned, ms) {
+	const { colors, info, noise: noise$1 } = shineData(frame$1, owned);
 	const out = new Uint8ClampedArray(colors);
-	const time = loopSeconds(ms), W = frame.colors[0].length;
+	const time = loopSeconds(ms), W = frame$1.colors[0].length;
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < W; x++) {
 		const i = (y * W + x) * 4;
 		if (colors[i + 3] < 128 || info[i + 3] < 128) continue;
@@ -3919,8 +3900,8 @@ function createShine(canvas) {
 	];
 	return {
 		canvas: target,
-		draw(frame, owned, ms) {
-			const { colors, info, noise: noise$1 } = shineData(frame, owned), W = frame.colors[0].length;
+		draw(frame$1, owned, ms) {
+			const { colors, info, noise: noise$1 } = shineData(frame$1, owned), W = frame$1.colors[0].length;
 			if (target.width !== W) target.width = W;
 			gl.viewport(0, 0, W, FRAME_HEIGHT);
 			[
@@ -4126,12 +4107,12 @@ function surfaceOf(kind, scuff = 0) {
 		clearcoat: +(s.clearcoat * (1 - wear)).toFixed(3)
 	};
 }
-const lum = (hex$1) => {
-	const n = parseInt(hex$1.slice(1, 7), 16);
+const lum = (hex$2) => {
+	const n = parseInt(hex$2.slice(1, 7), 16);
 	return ((n >> 16 & 255) * .299 + (n >> 8 & 255) * .587 + (n & 255) * .114) / 255;
 };
-const darken = (hex$1, k) => {
-	const n = parseInt(hex$1.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
+const darken = (hex$2, k) => {
+	const n = parseInt(hex$2.slice(1, 7), 16), f = (v) => Math.round(v * k).toString(16).padStart(2, "0");
 	return `#${f(n >> 16 & 255)}${f(n >> 8 & 255)}${f(n & 255)}`;
 };
 /** Steps to the nearest pixel outside, 4-way; the border counts as outside. */
@@ -4142,19 +4123,19 @@ function inset(w, h, inside$1) {
 	return d;
 }
 /** A frame (an animation frame, or `itemFrame`) as columns, each worn copy's pixels on its finish's surface. */
-function voxelColumns(frame, owned = {}, options = {}) {
-	const C = frame.colors, S = frame.slots, H = C.length, W = C[0]?.length ?? 0, small = !!options.item;
+function voxelColumns(frame$1, owned = {}, options = {}) {
+	const C$1 = frame$1.colors, S$1 = frame$1.slots, H = C$1.length, W = C$1[0]?.length ?? 0, small$1 = !!options.item;
 	const slotName = (s) => [
 		"skin",
 		"hat",
 		"frame",
 		"buddy"
 	][s - 1];
-	const figure = inset(W, H, (x, y) => !!C[y][x] && S[y][x] !== 3 && S[y][x] !== 4);
-	const buddy = inset(W, H, (x, y) => !!C[y][x] && S[y][x] === 4);
+	const figure = inset(W, H, (x, y) => !!C$1[y][x] && S$1[y][x] !== 3 && S$1[y][x] !== 4);
+	const buddy = inset(W, H, (x, y) => !!C$1[y][x] && S$1[y][x] === 4);
 	const feature = (x, y) => {
-		const c = C[y][x];
-		if (!c || S[y][x] !== 0 || figure[y][x] < 2) return 0;
+		const c = C$1[y][x];
+		if (!c || S$1[y][x] !== 0 || figure[y][x] < 2) return 0;
 		const l = lum(c);
 		return l < .22 ? .45 : l > .86 ? .3 : 0;
 	};
@@ -4162,12 +4143,12 @@ function voxelColumns(frame, owned = {}, options = {}) {
 	const span = Array.from({ length: H }, () => new Array(W).fill(null));
 	let deepest = 0;
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-		const c = C[y][x], s = S[y][x];
+		const c = C$1[y][x], s = S$1[y][x];
 		if (!c || s === 3) continue;
 		const d = s === 4 ? buddy[y][x] : figure[y][x];
-		let t = small ? 1 + .45 * Math.min(d, 3) : 1.3 + 1.05 * Math.min(d, 4);
-		if (s === 4 && !small) t *= .82;
-		if (s === 2 && !small) t += .5;
+		let t = small$1 ? 1 + .45 * Math.min(d, 3) : 1.3 + 1.05 * Math.min(d, 4);
+		if (s === 4 && !small$1) t *= .82;
+		if (s === 2 && !small$1) t += .5;
 		const lift = feature(x, y);
 		span[y][x] = {
 			z0: -t / 2,
@@ -4197,7 +4178,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 	}
 	const out = [];
 	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-		const c = C[y][x], s = S[y][x];
+		const c = C$1[y][x], s = S$1[y][x];
 		if (!c) continue;
 		const copy = s ? owned[slotName(s)] : void 0;
 		const surface = surfaceOf(copy ? copy.finish : "body", copy ? copy.scuff : 0);
@@ -4228,10 +4209,10 @@ function voxelColumns(frame, owned = {}, options = {}) {
 				[0, 1],
 				[0, -1]
 			].find(([dx, dy]) => {
-				const n = C[y + dy]?.[x + dx];
+				const n = C$1[y + dy]?.[x + dx];
 				return !!n && !feature(x + dx, y + dy) && lum(n) >= .22 && lum(n) <= .86;
 			});
-			if (around) back = C[y + around[1]][x + around[0]];
+			if (around) back = C$1[y + around[1]][x + around[0]];
 		}
 		const color = shade$1 ? darken(c, 1 - shade$1 * .045) : c;
 		let side = color;
@@ -4241,7 +4222,7 @@ function voxelColumns(frame, owned = {}, options = {}) {
 				[-1, 0],
 				[0, 1],
 				[0, -1]
-			].map(([dx, dy]) => C[y + dy]?.[x + dx]).filter((n) => !!n && lum(n) >= .3);
+			].map(([dx, dy]) => C$1[y + dy]?.[x + dx]).filter((n) => !!n && lum(n) >= .3);
 			if (inside$1.length) side = darken(inside$1[0], .92);
 		}
 		out.push({
@@ -4311,8 +4292,8 @@ function ownedOf(codes) {
 	}
 	return out;
 }
-const linear = (hex$1) => {
-	const n = parseInt(hex$1.slice(1, 7), 16);
+const linear = (hex$2) => {
+	const n = parseInt(hex$2.slice(1, 7), 16);
 	return [
 		n >> 16 & 255,
 		n >> 8 & 255,
@@ -4381,7 +4362,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			v[2] / l
 		];
 	};
-	const quad = (a, b$1, c, d, n, rgb$4) => {
+	const quad = (a, b$1, c, d, n, rgb$6) => {
 		const shaded = [
 			a,
 			b$1,
@@ -4404,7 +4385,7 @@ function voxelMesh(columns, cell = 1, options = {}) {
 			][i];
 			pos.push(p[0] * cell, p[1] * cell, p[2] * cell);
 			nor.push(...shaded[i]);
-			col.push(...rgb$4);
+			col.push(...rgb$6);
 		}
 	};
 	const open = (z0, z1, n) => {
@@ -6975,7 +6956,7 @@ function crop(rgba, W, x, y, w, h) {
 	for (let r = 0; r < h; r++) out.set(rgba.subarray(((y + r) * W + x) * 4, ((y + r) * W + x + w) * 4), r * w * 4);
 	return out;
 }
-async function png(input, scale$1, animated) {
+async function png(input, scale$1, animated, plays = 0) {
 	const W = input.width * scale$1, H = input.height * scale$1;
 	const frames = input.frames.map((f) => upscale(f, input.width, input.height, scale$1));
 	const { indexed, colours, rows } = layout(frames);
@@ -7011,7 +6992,7 @@ async function png(input, scale$1, animated) {
 		parts.push(chunk("tRNS", new Uint8Array([0])));
 	}
 	let seq = 0;
-	if (animated) parts.push(chunk("acTL", concat([u32(frames.length), u32(0)])));
+	if (animated) parts.push(chunk("acTL", concat([u32(frames.length), u32(plays)])));
 	for (let i = 0; i < frames.length; i++) {
 		const box = i === 0 ? null : changed(input.frames[i - 1], input.frames[i], input.width, input.height);
 		const [bx, by, bw, bh] = i === 0 ? [
@@ -7052,13 +7033,14 @@ function encodePng(rgba, width, height, scale$1 = 1) {
 	}, scale$1, false);
 }
 /**
-* An animated PNG of the frames, looping for ever. Browsers play it in a plain
-* `<img>` with no script, keep its transparency whole, and a still viewer
+* An animated PNG of the frames, looping for ever, or played `plays` times and
+* left on its last frame (a capsule's open plays once). Browsers play it in a
+* plain `<img>` with no script, keep its transparency whole, and a still viewer
 * shows its first frame. Scale it up by whole pixels here, or in CSS with
 * `image-rendering: pixelated`.
 */
-function encodeApng(input, scale$1 = 1) {
-	return png(input, scale$1, true);
+function encodeApng(input, scale$1 = 1, plays = 0) {
+	return png(input, scale$1, true, plays);
 }
 
 //#endregion
@@ -7116,7 +7098,7 @@ function lookFor(ed, finish, look) {
 }
 /** The default hardness of `paint`'s bands. */
 const PAINT_CONTRAST = 7;
-const INK$2 = [
+const INK$3 = [
 	24 / 255,
 	20 / 255,
 	31 / 255
@@ -7145,9 +7127,9 @@ function paintColors(colors, hue$1) {
 		return s[1] > .3 && Math.min(d, 1 - d) > .08;
 	})[0];
 	return [
-		lerp(main, INK$2, .7),
-		lerp(main, INK$2, .42),
-		other ? lerp(other, INK$2, .3) : lerp(main, INK$2, .12)
+		lerp(main, INK$3, .7),
+		lerp(main, INK$3, .42),
+		other ? lerp(other, INK$3, .3) : lerp(main, INK$3, .12)
 	];
 }
 /** A colour as hue, saturation and lightness, each 0 to 1 (`toHsl` in GLSL). */
@@ -7507,7 +7489,7 @@ function paintForm(id, print) {
 function cardField(look, ed, v, o, px, pixels, paint$1) {
 	if (look === 0) return editionField(ed, v, o, px, pixels);
 	if (look === 2) return sheenField(px, pixels);
-	const { x, y, region, rgb: rgb$4 } = pixels, n = region.length;
+	const { x, y, region, rgb: rgb$6 } = pixels, n = region.length;
 	const blockOf = new Int32Array(n), keys = new Map(), bx = [], by = [];
 	for (let k = 0; k < n; k++) {
 		const key = Math.round(x[k] * 10) * 100003 + Math.round(y[k] * 10);
@@ -7596,9 +7578,9 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 			for (let k$1 = 0; k$1 < n; k$1++) {
 				const j = k$1 * 3;
 				if (region[k$1] < 1.5) {
-					out[j] = rgb$4[j];
-					out[j + 1] = rgb$4[j + 1];
-					out[j + 2] = rgb$4[j + 2];
+					out[j] = rgb$6[j];
+					out[j + 1] = rgb$6[j + 1];
+					out[j + 2] = rgb$6[j + 2];
 					continue;
 				}
 				const b$1 = blockOf[k$1], k1 = k1v[b$1], k2 = k2v[b$1], s = shade$1[b$1];
@@ -7611,7 +7593,7 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 	}
 	if (look === 3) {
 		const ux0 = Float32Array.from(bx, (d) => d / 10 * 1.6), uy0 = Float32Array.from(by, (d) => d / 10 * 1.6), lum$1 = new Float32Array(n);
-		for (let k = 0; k < n; k++) lum$1[k] = .42 + .5 * (.299 * rgb$4[k * 3] + .587 * rgb$4[k * 3 + 1] + .114 * rgb$4[k * 3 + 2]);
+		for (let k = 0; k < n; k++) lum$1[k] = .42 + .5 * (.299 * rgb$6[k * 3] + .587 * rgb$6[k * 3 + 1] + .114 * rgb$6[k * 3 + 2]);
 		const ea = new Float32Array(nb), eb = new Float32Array(nb), ed2 = new Float32Array(nb);
 		return (time, out) => {
 			const th = time * TAU$1 / 6;
@@ -7657,15 +7639,15 @@ function cardField(look, ed, v, o, px, pixels, paint$1) {
 				continue;
 			}
 			hslInto(col, b$1 * 3, fract(.58 + .12 * f), .75, .66);
-			const v$1 = sin((ax[b$1] * .3 + ay[b$1] * .5) * .45 - th), band$1 = clamp01((v$1 - .6) / .3);
-			w1[b$1] = band$1 * .16;
-			w2[b$1] = band$1 * (1 - band$1) * 4 * .3;
+			const v$1 = sin((ax[b$1] * .3 + ay[b$1] * .5) * .45 - th), band$2 = clamp01((v$1 - .6) / .3);
+			w1[b$1] = band$2 * .16;
+			w2[b$1] = band$2 * (1 - band$2) * 4 * .3;
 			hslInto(rim$1, b$1 * 3, fract(.55 + .3 * v$1 + ay[b$1] * .01), .8, .7);
 		}
 		for (let k = 0; k < n; k++) {
 			const j = k * 3, b$1 = blockOf[k], win = region[k] > 1.5;
 			for (let i = 0; i < 3; i++) {
-				const c = rgb$4[j + i];
+				const c = rgb$6[j + i];
 				if (look === 4) {
 					const base = c + (OPAL[i] - c) * .5;
 					out[j + i] = base + (col[b$1 * 3 + i] - base) * (win ? .45 : .3) * w1[b$1];
@@ -7686,7 +7668,7 @@ const GLINTS = [[4.8, .8], [23, 38.8]];
 * diagonal and its glint are worked out once, and a pixel the band is
 * nowhere near is copied as it is.
 */
-function sheenField(px, { x, y, region, rgb: rgb$4, raised }) {
+function sheenField(px, { x, y, region, rgb: rgb$6, raised }) {
 	const n = region.length, s = new Float32Array(n), k = new Float32Array(n), star = new Float32Array(px < .5 ? n * 2 : 0), lit = new Float32Array(2);
 	for (let i = 0; i < n; i++) {
 		s[i] = x[i] + y[i];
@@ -7702,15 +7684,15 @@ function sheenField(px, { x, y, region, rgb: rgb$4, raised }) {
 		for (let i = 0; i < n; i++) {
 			const j = i * 3, d = Math.abs(s[i] - pos), g = star.length ? star[i * 2] * lit[0] + star[i * 2 + 1] * lit[1] : 0;
 			if (d >= 4.5 && !g) {
-				out[j] = rgb$4[j];
-				out[j + 1] = rgb$4[j + 1];
-				out[j + 2] = rgb$4[j + 2];
+				out[j] = rgb$6[j];
+				out[j + 1] = rgb$6[j + 1];
+				out[j + 2] = rgb$6[j + 2];
 				continue;
 			}
 			const halo = clamp01(1 - d / 4.5), glow = clamp01(1 - d / 2.2), core = clamp01(1 - d / .7), kk = k[i];
 			const a = halo * halo * .35 * kk, b$1 = glow * .55 * kk, c = core * .85 * kk;
 			for (let ch = 0; ch < 3; ch++) {
-				let v = rgb$4[j + ch];
+				let v = rgb$6[j + ch];
 				v += (SHEEN_HALO[ch] - v) * a;
 				v += (SHEEN_GLOW[ch] - v) * b$1;
 				v += (SHEEN_CORE[ch] - v) * c;
@@ -7752,7 +7734,7 @@ const SHEEN_HALO = [
 const CARD_WIDTH = 140;
 const CARD_HEIGHT = 204;
 const hexes = new Map();
-const rgb$2 = (h) => {
+const rgb$4 = (h) => {
 	let c = hexes.get(h);
 	if (!c) hexes.set(h, c = [
 		parseInt(h.slice(1, 3), 16),
@@ -7761,7 +7743,7 @@ const rgb$2 = (h) => {
 	]);
 	return c;
 };
-const mix$1 = (a, b$1, t) => [
+const mix = (a, b$1, t) => [
 	a[0] + (b$1[0] - a[0]) * t,
 	a[1] + (b$1[1] - a[1]) * t,
 	a[2] + (b$1[2] - a[2]) * t
@@ -7985,15 +7967,15 @@ var Surface = class {
 		draw(x, top, colour);
 	}
 };
-const INK$1 = [
+const INK$2 = [
 	24,
 	20,
 	31
-], IVORY$1 = [
+], IVORY$2 = [
 	246,
 	240,
 	227
-], WHITE$1 = [
+], WHITE$3 = [
 	255,
 	255,
 	255
@@ -8238,8 +8220,8 @@ const CARD_EDGES = ["none", "sticker"];
 * finish that sets its grade: Foil, Holographic, Polychrome, Negative, Gold,
 * and the aura card's Spectral.
 */
-function cardArt(input, anim, owned, g, ed, looks = {}) {
-	const edge = looks.edge ?? "none", grid = edge === "none";
+function cardArt(input, anim, owned, g, ed, looks$1 = {}) {
+	const edge = looks$1.edge ?? "none", grid = edge === "none";
 	const zoom = ZOOM, nudge = buddyNudge(anim, grid);
 	const cellX = (gx, slot) => gx * zoom - (gx >= FRAME_WIDTH && slot !== 5 ? nudge : 0);
 	const fit$2 = cardFit(anim.frames, anim.width, cellX), shape = cardShape();
@@ -8249,14 +8231,14 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const W = CARD_WIDTH, H = BODY_HEIGHT, side = M;
 	const s = new Surface(W, H);
 	const gold = ed === 5, aura = ed === 6, neg = ed === 4;
-	const framed = gold && looks.gold !== "brushed", struck = gold && !framed;
-	const gc = g >= 0 ? rgb$2(GRADES[g].color) : [
+	const framed = gold && looks$1.gold !== "brushed", struck = gold && !framed;
+	const gc = g >= 0 ? rgb$4(GRADES[g].color) : [
 		104,
 		118,
 		146
 	];
 	const auraCopy = owned.aura;
-	const ah = aura && auraCopy ? rgb$2(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
+	const ah = aura && auraCopy ? rgb$4(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
 	const tone = aura ? ah : gc;
 	const textW = W - M * 2 - 10, left = side + 5;
 	const copies = input.copies ?? [];
@@ -8309,50 +8291,50 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		size: side2
 	};
 	const stock = (x, yy) => {
-		if (framed) return mix$1(DARK_HI, DARK_LO, yy / H);
+		if (framed) return mix(DARK_HI, DARK_LO, yy / H);
 		if (gold) {
-			const base = mix$1(GOLD_HI, GOLD_LO, yy / H * .9 + .08 * Math.sin(x * .05 + yy * .02));
-			return yy % 3 === 0 ? mix$1(base, GOLD_LO, .12) : base;
+			const base = mix(GOLD_HI, GOLD_LO, yy / H * .9 + .08 * Math.sin(x * .05 + yy * .02));
+			return yy % 3 === 0 ? mix(base, GOLD_LO, .12) : base;
 		}
-		if (neg) return mix$1(mix$1(IVORY$1, tone, .35), mix$1(IVORY$1, tone, .6), yy / H);
-		return mix$1(mix$1(tone, WHITE$1, .08), mix$1(tone, INK$1, .25), yy / H);
+		if (neg) return mix(mix(IVORY$2, tone, .35), mix(IVORY$2, tone, .6), yy / H);
+		return mix(mix(tone, WHITE$3, .08), mix(tone, INK$2, .25), yy / H);
 	};
 	const rows = Array.from({ length: H }, (_, yy) => gold ? null : stock(0, yy));
-	const auraDeep = mix$1(ah, INK$1, .62), auraLight = mix$1(ah, INK$1, .3), inlay = mix$1(ah, WHITE$1, .7);
+	const auraDeep = mix(ah, INK$2, .62), auraLight = mix(ah, INK$2, .3), inlay = mix(ah, WHITE$3, .7);
 	const trim = new Uint8Array(W * H);
 	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) {
 		const d = shape.depth[yy * W + x], bevel = shape.bevel[yy * W + x];
 		if (!d) continue;
 		if (d <= 2) {
-			s.set(x, yy, INK$1);
+			s.set(x, yy, INK$2);
 			continue;
 		}
 		let c = rows[yy] ?? stock(x, yy);
 		if (framed && bevel && d === 3) {
 			c = bevel === 1 ? GOLD_LIGHT : GOLD_DEEP;
 			trim[yy * W + x] = 1;
-		} else if (struck && bevel) c = mix$1(mix$1([
+		} else if (struck && bevel) c = mix(mix([
 			255,
 			238,
 			168
-		], BRUSHED.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE$1 : INK$1, .2);
-		else if (bevel === 1) c = mix$1(c, WHITE$1, .35);
-		else if (bevel) c = mix$1(c, INK$1, .3);
+		], BRUSHED.bevelLo, (x + yy * 1.4) / (W + H * 1.4)), bevel === 1 ? WHITE$3 : INK$2, .2);
+		else if (bevel === 1) c = mix(c, WHITE$3, .35);
+		else if (bevel) c = mix(c, INK$2, .3);
 		else if (aura && d <= 5) c = inlay;
 		if (aura && d > 6) {
 			const r = Math.hypot((x - wcx) / 80, (yy - wcy) / 100);
-			s.set(x, yy, mix$1(auraDeep, auraLight, Math.max(0, 1 - r) ** 1.2), 2);
+			s.set(x, yy, mix(auraDeep, auraLight, Math.max(0, 1 - r) ** 1.2), 2);
 			continue;
 		}
 		s.set(x, yy, c, 1);
 	}
-	const light = g >= 0 ? mix$1(IVORY$1, gc, .22) : mix$1(IVORY$1, gc, .12);
+	const light$1 = g >= 0 ? mix(IVORY$2, gc, .22) : mix(IVORY$2, gc, .12);
 	/** A framed Grail's window: a few large soft bands of three golds, on blocks of two card pixels, holding still. */
 	const fieldGold = (x, yy) => {
 		const qx = ((x >> 1) * 2 - wcx) / 40, qy = ((yy >> 1) * 2 - wcy) / 40;
 		const t = .5 + .5 * Math.sin(qy * 3.2 + 1.3 * Math.sin(qx * 2.4 + .6) + .6 * Math.sin(qx * 4.1 - qy * 1.7));
 		const k1 = Math.min(1, Math.max(0, (t - .35) / .12 + .5)), k2 = Math.min(1, Math.max(0, (t - .72) / .12 + .5));
-		return mix$1(mix$1(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
+		return mix(mix(FIELD_GOLDS[0], FIELD_GOLDS[1], k1), FIELD_GOLDS[2], k2);
 	};
 	const own = !aura && !gold && topCopy ? windowArt(topCopy, WIN, wcx, wcy) : null;
 	if (!aura) for (let yy = WIN.top; yy <= WIN.bottom; yy++) for (let x = WIN.left; x <= WIN.right; x++) {
@@ -8364,13 +8346,13 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				255,
 				226,
 				140
-			] : struck ? BRUSHED.rim : INK$1);
+			] : struck ? BRUSHED.rim : INK$2);
 			continue;
 		}
 		const depth = (yy - WIN.top) / (WIN.bottom - WIN.top), r = Math.hypot((x - wcx) / 64, (yy - wcy) / 72);
-		let c = framed ? fieldGold(x, yy) : !gold ? mix$1(light, mix$1(light, gc, .35), depth * .6) : mix$1(mix$1(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix$1(AMBER, INK$1, .3), depth * .3);
+		let c = framed ? fieldGold(x, yy) : !gold ? mix(light$1, mix(light$1, gc, .35), depth * .6) : mix(mix(AMBER, AMBER_GLOW, Math.max(0, 1 - r) ** 1.3), mix(AMBER, INK$2, .3), depth * .3);
 		if (own) c = own(x, yy, 0);
-		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix$1(c, INK$1, .35);
+		if (yy - WIN.top === 2 || x - WIN.left === 2) c = mix(c, INK$2, .35);
 		s.set(x, yy, c, own ? 3 : 2);
 	}
 	if (struck) for (const [sx, sy] of [
@@ -8381,7 +8363,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	]) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
 		const d = dx * dx + dy * dy, x = sx + dx, yy = sy + dy;
 		if (d > 10 || shape.depth[yy * W + x] <= 2) continue;
-		s.set(x, yy, d > 6 ? BRUSHED.quiet : mix$1([
+		s.set(x, yy, d > 6 ? BRUSHED.quiet : mix([
 			255,
 			244,
 			196
@@ -8396,48 +8378,48 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		const pw = W - side * 2, ph = plateBottom - plateTop + 1;
 		if (!inBox(x - side, yy - plateTop, pw, ph, 4)) continue;
 		const edge$1 = !inBox(x - side - 1, yy - plateTop, pw, ph, 4) || !inBox(x - side + 1, yy - plateTop, pw, ph, 4) || yy === plateTop || yy === plateBottom;
-		const base = aura ? mix$1(mix$1(ah, INK$1, .6), INK$1, .45) : PLATE$1;
+		const base = aura ? mix(mix(ah, INK$2, .6), INK$2, .45) : PLATE$1;
 		onPlate[yy * W + x] = 1;
-		s.set(x, yy, edge$1 ? INK$1 : yy === plateTop + 1 ? mix$1(base, WHITE$1, .16) : yy >= plateBottom - 2 ? mix$1(base, INK$1, .45) : base);
+		s.set(x, yy, edge$1 ? INK$2 : yy === plateTop + 1 ? mix(base, WHITE$3, .16) : yy >= plateBottom - 2 ? mix(base, INK$2, .45) : base);
 	}
-	const quiet = struck ? BRUSHED.quiet : aura ? mix$1(ah, WHITE$1, .6) : [
+	const quiet = struck ? BRUSHED.quiet : aura ? mix(ah, WHITE$3, .6) : [
 		184,
 		176,
 		206
 	];
-	const titleInk = (x, yy, tm) => mix$1(mix$1(ah, WHITE$1, .5), WHITE$1, .5 + .5 * Math.sin(x * .12 - tm / wave(1e3 / 2) + yy * .1));
+	const titleInk = (x, yy, tm) => mix(mix(ah, WHITE$3, .5), WHITE$3, .5 + .5 * Math.sin(x * .12 - tm / wave(1e3 / 2) + yy * .1));
 	const titlePixels = [];
 	s.text(titleFit.text, left, titleTop - 2, (x, yy) => {
 		if (struck) return GOLD_INK;
-		if (!aura) return WHITE$1;
+		if (!aura) return WHITE$3;
 		titlePixels.push(x, yy);
 		return titleInk(x, yy, 0);
-	}, struck ? GOLD_CUT : INK$1, titleFit.spacing);
+	}, struck ? GOLD_CUT : INK$2, titleFit.spacing);
 	if (pill) {
 		const w = pillW, x0 = left;
 		const fill = struck ? BRUSHED.pill : framed ? BRIGHT_GOLD : tone;
 		for (let yy = pillTop; yy < pillTop + 15; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - pillTop, w, 15, 4)) continue;
 			const edge$1 = !inBox(x - x0 - 1, yy - pillTop, w, 15, 4) || !inBox(x - x0 + 1, yy - pillTop, w, 15, 4) || yy === pillTop || yy === pillTop + 14;
-			s.set(x, yy, edge$1 ? INK$1 : yy >= pillTop + 12 ? mix$1(fill, INK$1, .45) : yy === pillTop + 1 ? mix$1(fill, WHITE$1, .4) : fill);
+			s.set(x, yy, edge$1 ? INK$2 : yy >= pillTop + 12 ? mix(fill, INK$2, .45) : yy === pillTop + 1 ? mix(fill, WHITE$3, .4) : fill);
 		}
 		s.text(pill, x0 + PILL_PAD, pillTop - 1, () => struck ? [
 			255,
 			222,
 			130
-		] : framed ? PILL_INK : WHITE$1, framed ? GOLD_LIGHT : mix$1(fill, INK$1, .6));
+		] : framed ? PILL_INK : WHITE$3, framed ? GOLD_LIGHT : mix(fill, INK$2, .6));
 	}
 	if (sub) s.text(sub.text, pill ? left + pillW + PILL_GAP : left, pillTop - 1, () => quiet, void 0, sub.spacing);
 	if (footFit) s.text(footFit.text, left, footTop - 2, () => quiet, void 0, footFit.spacing);
 	if (plateRow) {
-		const w = Math.min(textW, textWidth(plateRow.text) + plateRow.spacing * ([...plateRow.text].length - 1) + 10), x0 = left, fill = rgb$2(GRADES[plateGrade].color);
-		const ink = plateGrade === 4 ? PILL_INK : WHITE$1;
+		const w = Math.min(textW, textWidth(plateRow.text) + plateRow.spacing * ([...plateRow.text].length - 1) + 10), x0 = left, fill = rgb$4(GRADES[plateGrade].color);
+		const ink = plateGrade === 4 ? PILL_INK : WHITE$3;
 		for (let yy = plateRowTop; yy < plateRowTop + 14; yy++) for (let x = x0; x < x0 + w; x++) {
 			if (!inBox(x - x0, yy - plateRowTop, w, 14, 3)) continue;
 			const edge$1 = !inBox(x - x0 - 1, yy - plateRowTop, w, 14, 3) || !inBox(x - x0 + 1, yy - plateRowTop, w, 14, 3) || yy === plateRowTop || yy === plateRowTop + 13;
-			s.set(x, yy, edge$1 ? INK$1 : yy >= plateRowTop + 11 ? mix$1(fill, INK$1, .45) : yy === plateRowTop + 1 ? mix$1(fill, WHITE$1, .4) : fill);
+			s.set(x, yy, edge$1 ? INK$2 : yy >= plateRowTop + 11 ? mix(fill, INK$2, .45) : yy === plateRowTop + 1 ? mix(fill, WHITE$3, .4) : fill);
 		}
-		s.text(plateRow.text, x0 + 5, plateRowTop - 2, () => ink, plateGrade === 4 ? GOLD_LIGHT : mix$1(fill, INK$1, .6), plateRow.spacing);
+		s.text(plateRow.text, x0 + 5, plateRowTop - 2, () => ink, plateGrade === 4 ? GOLD_LIGHT : mix(fill, INK$2, .6), plateRow.spacing);
 	}
 	if (sealed) {
 		const cx = W - 1 - side - 10, cy = footTop + 3;
@@ -8445,7 +8427,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			const d = dx * dx + dy * dy;
 			if (d > 52) continue;
 			const rim$1 = d > 38, notch = rim$1 && Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) % 2 === 0;
-			s.set(cx + dx, cy + dy, notch && d > 46 ? struck ? BRUSHED.pill : PLATE$1 : rim$1 ? INK$1 : d < 14 && dx + dy < 0 ? [
+			s.set(cx + dx, cy + dy, notch && d > 46 ? struck ? BRUSHED.pill : PLATE$1 : rim$1 ? INK$2 : d < 14 && dx + dy < 0 ? [
 				246,
 				138,
 				112
@@ -8455,7 +8437,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				78
 			]);
 		}
-		s.text("1", cx - 2, cy - 7, () => IVORY$1, INK$1);
+		s.text("1", cx - 2, cy - 7, () => IVORY$2, INK$2);
 	}
 	const strange = topCopy?.tally !== void 0 ? topCopy : copies.find((o) => o.tally !== void 0);
 	const badge = unusualCopy?.fx ? FX_BADGES[unusualCopy.fx] : void 0;
@@ -8473,7 +8455,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		plateAt(tag, tagX, y0, 15, 15);
 		badge.forEach((row, by) => [...row].forEach((ch, bx) => {
 			const ink = BADGE_INKS[ch];
-			if (ink) for (let k = 0; k < 4; k++) tag.set(tagX + 3 + bx * 2 + (k & 1), y0 + 3 + by * 2 + (k >> 1), rgb$2(ink));
+			if (ink) for (let k = 0; k < 4; k++) tag.set(tagX + 3 + bx * 2 + (k & 1), y0 + 3 + by * 2 + (k >> 1), rgb$4(ink));
 		}));
 	}
 	if (input.corner) {
@@ -8482,8 +8464,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			0,
 			0,
 			0
-		] : INK$1);
-		tag.text(input.corner, x0 + 3, y0 - 2, () => WHITE$1);
+		] : INK$2);
+		tag.text(input.corner, x0 + 3, y0 - 2, () => WHITE$3);
 	}
 	const tagIdx = [];
 	if (tagged) {
@@ -8514,8 +8496,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 		}, gx0, gy0, gw, gh);
 		if (!colors) return null;
 		const cells = new Float32Array(gw * gh * 3), pix = [], cellOf = [], diag = [];
-		colors.forEach((row, j) => row.forEach((hex$1, i) => {
-			const c = hex$1 ? rgb$2(hex$1) : INK$1;
+		colors.forEach((row, j) => row.forEach((hex$2, i) => {
+			const c = hex$2 ? rgb$4(hex$2) : INK$2;
 			for (let k = 0; k < 3; k++) cells[(j * gw + i) * 3 + k] = c[k] / 255;
 		}));
 		for (let i = 0; i < W * H; i++) {
@@ -8541,7 +8523,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			count: gw * gh
 		};
 	})() : null;
-	const look = struck ? 0 : lookFor(ed, topCopy?.finish, looks.look);
+	const look = struck ? 0 : lookFor(ed, topCopy?.finish, looks$1.look);
 	const plays = (i) => framed ? s.region[i] === 2 || trim[i] === 1 : s.region[i] > 0 && s.region[i] < 3;
 	const ownIdx = [];
 	if (own?.moves) {
@@ -8565,7 +8547,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	});
 	const paint$1 = look === 1 ? {
 		colors: paintColors(auraCopy ? auraColors(auraCopy.item, auraCopy.finish, auraCopy.print) : [GRADES[Math.max(0, g)].color], auraCopy ? auraHue(auraCopy.item, auraCopy.finish, auraCopy.print) : GRADES[Math.max(0, g)].color),
-		contrast: looks.contrast ?? PAINT_CONTRAST,
+		contrast: looks$1.contrast ?? PAINT_CONTRAST,
 		...paintForm(auraCopy?.item ?? "", auraCopy?.print ?? 0)
 	} : void 0;
 	const block = (k) => Math.floor(k * 2.5) * 2 / 5, perPixel = look === 0 || look === 2;
@@ -8580,11 +8562,11 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const edOut = new Float32Array(n * 3), edAt = Int32Array.from(edIdx);
 	const pop = soul || !grid && oy0 + fit$2.top * zoom < WIN.top + 3;
 	const clip = (cx, cy) => pop ? inside(cx, cy) && cx > 2 && cx < W - 3 && cy > 2 && cy < WIN.bottom - 1 : cy > WIN.top + 1 && cy < WIN.bottom - 1 && cx > WIN.left && cx < WIN.right;
-	const edgeC = aura ? mix$1(ah, WHITE$1, .55) : struck ? [
+	const edgeC = aura ? mix(ah, WHITE$3, .55) : struck ? [
 		255,
 		236,
 		170
-	] : WHITE$1;
+	] : WHITE$3;
 	const room = new Uint8Array(W * H);
 	for (let yy = 0; yy < H; yy++) for (let x = 0; x < W; x++) if (clip(x, yy)) room[yy * W + x] = pop && (yy <= WIN.top + 1 || x <= WIN.left + 1 || x >= WIN.right - 1) ? 2 : 1;
 	const mask = new Uint8Array((anim.width * zoom + 4) * (FRAME_HEIGHT * zoom + 4));
@@ -8596,10 +8578,10 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	* on the window's floor under him and his buddy.
 	*/
 	const floors = new Map();
-	const floorsOf = (frame, oy) => {
-		let got = floors.get(frame);
+	const floorsOf = (frame$1, oy) => {
+		let got = floors.get(frame$1);
 		if (got) return got;
-		const { colors, slots } = frame;
+		const { colors, slots } = frame$1;
 		got = [];
 		for (const buddy of [false, true]) {
 			let lo = -1, l = Infinity, r = -Infinity;
@@ -8616,7 +8598,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			});
 			got.push(ox + (l + r) / 2, Math.min(WIN.bottom - 7, oy + (lo + 1) * zoom - 3), Math.max(6, (r - l) * .38 + 2));
 		}
-		floors.set(frame, got);
+		floors.set(frame$1, got);
 		return got;
 	};
 	/**
@@ -8625,16 +8607,16 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	* doubled, plus one where it turns white against the window's rim; kept by frame.
 	*/
 	const edges = new Map();
-	const edgesOf = (frame, oy) => {
-		let byY = edges.get(frame);
-		if (!byY) edges.set(frame, byY = new Map());
+	const edgesOf = (frame$1, oy) => {
+		let byY = edges.get(frame$1);
+		if (!byY) edges.set(frame$1, byY = new Map());
 		let got = byY.get(oy);
 		if (got) return got;
 		if (grid) {
 			byY.set(oy, got = new Int32Array(0));
 			return got;
 		}
-		const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0;
+		const { colors, slots } = frame$1, fh = colors.length, fw = colors[0]?.length ?? 0;
 		const bx = ox - 2, by = oy - 2, bw = fw * zoom + 4, bh = fh * zoom + 4, out = [];
 		mask.fill(0, 0, bw * bh);
 		for (let gy = 0; gy < fh; gy++) {
@@ -8657,8 +8639,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 	const frameCopy = owned.frame, DIAGS = zoom * 2 - 1;
 	const groundShine = ground && frameCopy && shines$1(frameCopy) ? SHADER_FINISHES.indexOf(frameCopy.finish) : -1;
 	const groundDone = new Uint8Array(ground && groundShine >= 0 ? ground.count * DIAGS : 0), groundLit = new Float32Array(groundDone.length * 3);
-	const drawGuy = (frame, oy, body$1, shineTime) => {
-		const { colors, slots } = frame, fh = colors.length, fw = colors[0]?.length ?? 0;
+	const drawGuy = (frame$1, oy, body$1, shineTime) => {
+		const { colors, slots } = frame$1, fh = colors.length, fw = colors[0]?.length ?? 0;
 		const put$1 = (i, r, g$1, b$1) => {
 			body$1[i * 4] = r;
 			body$1[i * 4 + 1] = g$1;
@@ -8683,7 +8665,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				put$1(ground.pix[k], groundLit[j * 3], groundLit[j * 3 + 1], groundLit[j * 3 + 2]);
 			}
 		}
-		const fl = aura ? [] : floorsOf(frame, oy);
+		const fl = aura ? [] : floorsOf(frame$1, oy);
 		for (let f = 0; f < fl.length; f += 3) {
 			const sx = fl[f], sy = fl[f + 1], rx = fl[f + 2];
 			const gy = grid ? sy + zoom : sy, reach = grid ? zoom : 0;
@@ -8698,15 +8680,15 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				body$1[i + 2] *= k;
 			}
 		}
-		for (const e of edgesOf(frame, oy)) {
-			const c = e & 1 ? WHITE$1 : edgeC;
+		for (const e of edgesOf(frame$1, oy)) {
+			const c = e & 1 ? WHITE$3 : edgeC;
 			put$1(e >> 1, c[0], c[1], c[2]);
 		}
 		for (let gy = 0; gy < fh; gy++) for (let gx = 0; gx < fw; gx++) {
-			const hex$1 = colors[gy][gx];
-			if (!hex$1 || slots[gy][gx] === 3) continue;
+			const hex$2 = colors[gy][gx];
+			if (!hex$2 || slots[gy][gx] === 3) continue;
 			const slot = slots[gy][gx], copy = slot ? owned[FRAME_SLOTS[slot - 1]] : void 0, x0 = ox + cellX(gx, slot);
-			const f = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1, c = rgb$2(hex$1);
+			const f = copy ? SHADER_FINISHES.indexOf(copy.finish) : -1, c = rgb$4(hex$2);
 			if (copy && f >= 0) litDone.fill(0);
 			for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
 				const cx = x0 + dx, cy = oy + gy * zoom + dy;
@@ -8730,8 +8712,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				put$1(cy * W + cx, lit[k * 3], lit[k * 3 + 1], lit[k * 3 + 2]);
 			}
 		}
-		for (const [gx, gy, hex$1] of frame.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
-			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy, c = rgb$2(hex$1);
+		for (const [gx, gy, hex$2] of frame$1.outside ?? []) for (let dy = 0; dy < zoom; dy++) for (let dx = 0; dx < zoom; dx++) {
+			const cx = ox + gx * zoom + dx, cy = oy + gy * zoom + dy, c = rgb$4(hex$2);
 			if (cx >= 0 && cy >= 0 && cx < W && cy < H && room[cy * W + cx]) put$1(cy * W + cx, c[0], c[1], c[2]);
 		}
 	};
@@ -8747,7 +8729,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				bob: soul && !grid ? Math.round(Math.sin(tm / wave(1e3 / 2.6)) * 2) : 0
 			};
 		},
-		draw(frame, t, out) {
+		draw(frame$1, t, out) {
 			const tm = t * 1e3 + shift$1, time = loopSeconds(tm), { lift, bob } = this.pose(t);
 			body.set(s.px);
 			field(time, edOut);
@@ -8763,7 +8745,7 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 				body[i * 4 + 1] = c[1];
 				body[i * 4 + 2] = c[2];
 			}
-			drawGuy(frame, oy0 + bob, body, loopSeconds(t * 1e3));
+			drawGuy(frame$1, oy0 + bob, body, loopSeconds(t * 1e3));
 			for (const i of tagIdx) body.set(tag.px.subarray(i * 4, i * 4 + 3), i * 4);
 			for (let k = 0; k < titlePixels.length; k += 2) {
 				const c = titleInk(titlePixels[k], titlePixels[k + 1], tm), i = (titlePixels[k + 1] * W + titlePixels[k]) * 4;
@@ -8778,8 +8760,8 @@ function cardArt(input, anim, owned, g, ed, looks = {}) {
 			}
 			return out;
 		},
-		drawSquare(frame, t, out) {
-			this.draw(frame, t, whole ??= new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+		drawSquare(frame$1, t, out) {
+			this.draw(frame$1, t, whole ??= new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
 			for (let yy = 0; yy < square.size; yy++) out.set(body.subarray(((square.y + yy) * W + square.x) * 4, ((square.y + yy) * W + square.x + square.size) * 4), yy * square.size * 4);
 			return out;
 		}
@@ -8826,7 +8808,7 @@ function windowArt(o, win, cx, cy) {
 			art = (x, y, tm) => {
 				const bx = (x >> 1) * 2, by = (y >> 1) * 2, d = depth(by), a = TAU_MS(tm, 4e3);
 				const q = Math.sin(bx * .19 + Math.sin(by * .15 + a) * 1.7) + Math.sin(by * .21 - bx * .09 - a * 2 + p);
-				const sea = mix$1([
+				const sea = mix([
 					46,
 					92,
 					214
@@ -8835,7 +8817,7 @@ function windowArt(o, win, cx, cy) {
 					16,
 					58
 				], banded(d, 5));
-				return Math.abs(q) < .11 ? mix$1(sea, [
+				return Math.abs(q) < .11 ? mix(sea, [
 					150,
 					196,
 					255
@@ -8854,7 +8836,7 @@ function windowArt(o, win, cx, cy) {
 						255,
 						248,
 						224
-					] : mix$1([
+					] : mix([
 						255,
 						226,
 						160
@@ -8864,7 +8846,7 @@ function windowArt(o, win, cx, cy) {
 						32
 					], banded((dy / 15 + 1) / 2, 3));
 				}
-				if (Math.abs(ring - 1) < .07 && dy < 0) return mix$1([
+				if (Math.abs(ring - 1) < .07 && dy < 0) return mix([
 					255,
 					210,
 					140
@@ -8873,7 +8855,7 @@ function windowArt(o, win, cx, cy) {
 					80,
 					30
 				], banded(-dy / 34, 2));
-				if (disc < 1.35 && disc > .8) return mix$1([
+				if (disc < 1.35 && disc > .8) return mix([
 					5,
 					4,
 					9
@@ -8897,7 +8879,7 @@ function windowArt(o, win, cx, cy) {
 		}
 		case "Red Giant": return (x, y) => {
 			const bx = (x >> 1) * 2 + 1, by = (y >> 1) * 2 + 1, r = Math.hypot(bx - cx, by - cy + 6) / 58;
-			if (r < 1) return mix$1([
+			if (r < 1) return mix([
 				255,
 				196,
 				92
@@ -8906,7 +8888,7 @@ function windowArt(o, win, cx, cy) {
 				32,
 				40
 			], banded(r, 4));
-			return mix$1([
+			return mix([
 				92,
 				14,
 				26
@@ -8922,7 +8904,7 @@ function windowArt(o, win, cx, cy) {
 				168,
 				188,
 				236
-			] : mix$1([
+			] : mix([
 				236,
 				242,
 				255
@@ -8935,7 +8917,7 @@ function windowArt(o, win, cx, cy) {
 				220,
 				230,
 				255
-			] : mix$1([
+			] : mix([
 				30,
 				48,
 				108
@@ -9025,11 +9007,11 @@ function plateAt(s, x0, y0, w, h) {
 			0,
 			0,
 			0
-		] : INK$1);
+		] : INK$2);
 	}
 }
 /** Which of a seven-segment digit's segments are lit, a to g. */
-const SEGMENTS = [
+const SEGMENTS$1 = [
 	63,
 	6,
 	91,
@@ -9043,7 +9025,7 @@ const SEGMENTS = [
 ];
 /** A counter's digit, five card pixels wide and nine tall, its lit segments amber and the rest a dim ghost, as a real one's. */
 function segments(s, x0, y0, digit) {
-	const on = SEGMENTS[digit] ?? 0, lit = [
+	const on = SEGMENTS$1[digit] ?? 0, lit = [
 		255,
 		178,
 		62
@@ -9152,7 +9134,7 @@ function playCard(input, ms, { keep = true,...style }, square) {
 	const frameOf = new Map(anim.frames.map((f, k) => [f, k]));
 	const poses = new Map();
 	const width = square ? art.square.size : CARD_WIDTH, height = square ? art.square.size : CARD_HEIGHT;
-	const draw = (frame, t, out) => square ? art.drawSquare(frame, t, out) : art.draw(frame, t, out);
+	const draw = (frame$1, t, out) => square ? art.drawSquare(frame$1, t, out) : art.draw(frame$1, t, out);
 	const one = keep ? null : new Uint8ClampedArray(width * height * 4);
 	let shown = -1;
 	return {
@@ -9164,16 +9146,16 @@ function playCard(input, ms, { keep = true,...style }, square) {
 		frame(i) {
 			const k = (i % count$1 + count$1) % count$1;
 			if (cache[k]) return cache[k];
-			const frame = frameAt(anim, k * total / count$1), t = k * turns * LOOP_MS / count$1 % LOOP_MS / 1e3;
-			const { lift } = art.pose(t), pose = art.moves ? -1 : frameOf.get(frame) * 4 + lift;
+			const frame$1 = frameAt(anim, k * total / count$1), t = k * turns * LOOP_MS / count$1 % LOOP_MS / 1e3;
+			const { lift } = art.pose(t), pose = art.moves ? -1 : frameOf.get(frame$1) * 4 + lift;
 			if (!keep) {
-				if (pose < 0 || pose !== shown) draw(frame, t, one);
+				if (pose < 0 || pose !== shown) draw(frame$1, t, one);
 				shown = pose;
 				return one;
 			}
 			let px = pose >= 0 ? poses.get(pose) : void 0;
 			if (!px) {
-				px = draw(frame, t, new Uint8ClampedArray(width * height * 4));
+				px = draw(frame$1, t, new Uint8ClampedArray(width * height * 4));
 				if (pose >= 0) poses.set(pose, px);
 			}
 			return cache[k] = px;
@@ -9181,7 +9163,7 @@ function playCard(input, ms, { keep = true,...style }, square) {
 	};
 }
 /** The card standing still, for a picture. */
-function cardStill(input, t = .6, looks = {}) {
+function cardStill(input, t = .6, looks$1 = {}) {
 	const anim = animateLoop(input.seed, input.move ?? "idle", {
 		parts: input.parts,
 		palette: input.palette,
@@ -9189,7 +9171,7 @@ function cardStill(input, t = .6, looks = {}) {
 		rarity: false
 	});
 	const g = cardGrade(input);
-	return cardArt(input, anim, ownedBySlot(input.copies ?? []), g, cardEdition(input, g), looks).draw(frameAt(anim, 0), t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
+	return cardArt(input, anim, ownedBySlot(input.copies ?? []), g, cardEdition(input, g), looks$1).draw(frameAt(anim, 0), t, new Uint8ClampedArray(CARD_WIDTH * CARD_HEIGHT * 4));
 }
 /** The copies by the slot each is worn in (later ones win, as `dress` does). */
 function ownedBySlot(copies) {
@@ -9233,11 +9215,11 @@ function toCardPng(input, scale$1 = 4) {
 * effects and auras moving, on a transparent background or `background`.
 */
 function toGuyGif(seed, move, options = {}, scale$1 = 12) {
-	const anim = animateLoop(seed, move, options), bg = options.background ? rgb$2(options.background) : null;
+	const anim = animateLoop(seed, move, options), bg = options.background ? rgb$4(options.background) : null;
 	const W = anim.width, frames = anim.frames.map((f) => {
 		const px = new Uint8ClampedArray(W * FRAME_HEIGHT * 4);
 		f.colors.forEach((row, y) => row.forEach((c, x) => {
-			const v = c ? rgb$2(c) : bg;
+			const v = c ? rgb$4(c) : bg;
 			if (v) px.set([...v, 255], (y * W + x) * 4);
 		}));
 		return px;
@@ -9284,22 +9266,22 @@ const BUDDY_RIGHT = FACE_WIDTH - 3, BUDDY_FOOT = {
 	peek: 33,
 	floor: FACE_HEIGHT - 3
 };
-const rgb$1 = (s) => [
+const rgb$3 = (s) => [
 	parseInt(s.slice(1, 3), 16),
 	parseInt(s.slice(3, 5), 16),
 	parseInt(s.slice(5, 7), 16)
 ];
-const blend = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
+const blend$2 = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
 const gradeIndex = (o) => GRADES.findIndex((g) => g.id === gradeOf(o).id);
-const INK = [
+const INK$1 = [
 	24,
 	20,
 	31
-], WHITE = [
+], WHITE$2 = [
 	255,
 	255,
 	255
-], IVORY = [
+], IVORY$1 = [
 	246,
 	240,
 	227
@@ -9334,7 +9316,7 @@ function cardFace(spec) {
 	const last = copies[copies.length - 1];
 	const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish)) : 0;
 	const top = copies.filter((o) => gradeIndex(o) === g).pop();
-	const edition = top ? GRAPHIC_FINISHES.includes(top.finish) ? 3 : editionOf(top.finish) : g < 0 ? 0 : [
+	const edition = top ? GRAPHIC_FINISHES.includes(top.finish) ? 5 : editionOf(top.finish) : g < 0 ? 0 : [
 		0,
 		1,
 		2,
@@ -9359,17 +9341,17 @@ function cardFace(spec) {
 		], i);
 		noise$1[i] = noiseOf(x, y, print * 4);
 	};
-	const gc = g >= 0 ? rgb$1(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb$1(spec.tint) : [
+	const gc = g >= 0 ? rgb$3(GRADES[Math.min(g, GRADES.length - 1)].color) : spec.tint ? rgb$3(spec.tint) : [
 		104,
 		118,
 		146
 	];
 	const aura = edition === 6, gold = edition === 5, neg = edition === 4;
 	const auraCopy = copies.find((o) => itemById(o.item)?.slot === "aura");
-	const tone = aura && auraCopy ? rgb$1(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
+	const tone = aura && auraCopy ? rgb$3(auraHue(auraCopy.item, auraCopy.finish, auraCopy.print)) : gc;
 	const gx0 = Math.floor((W - FRAME_WIDTH) / 2), left = Math.max(2, gx0 - 2), right = Math.min(W - 3, gx0 + FRAME_WIDTH + 1), wTop = 9, wBottom = 28;
 	const origin = [(left + right) / 2, (wTop + wBottom) / 2];
-	const stock = (x, y) => gold ? blend([
+	const stock = (x, y) => gold ? blend$2([
 		46,
 		42,
 		64
@@ -9377,15 +9359,15 @@ function cardFace(spec) {
 		28,
 		24,
 		40
-	], y / H) : neg ? blend(blend(IVORY, tone, .35), blend(IVORY, tone, .6), y / H) : blend(blend(tone, WHITE, .08), blend(tone, INK, .25), y / H);
-	const plate = aura ? blend(blend(tone, INK, .6), INK, .45) : PLATE;
-	const light = blend(IVORY, gc, g >= 0 ? .22 : spec.tint ? .3 : .12), glow = blend(light, gc, .2);
+	], y / H) : neg ? blend$2(blend$2(IVORY$1, tone, .35), blend$2(IVORY$1, tone, .6), y / H) : blend$2(blend$2(tone, WHITE$2, .08), blend$2(tone, INK$1, .25), y / H);
+	const plate = aura ? blend$2(blend$2(tone, INK$1, .6), INK$1, .45) : PLATE;
+	const light$1 = blend$2(IVORY$1, gc, g >= 0 ? .22 : spec.tint ? .3 : .12), glow = blend$2(light$1, gc, .2);
 	/** A Grail's window: a few large soft bands of three golds, as the big card's. */
 	const fieldGold = (x, y) => {
 		const qx = (x - origin[0]) / 8, qy = (y - origin[1]) / 8;
 		const t = .5 + .5 * Math.sin(qy * 3.2 + 1.3 * Math.sin(qx * 2.4 + .6) + .6 * Math.sin(qx * 4.1 - qy * 1.7));
 		const k1 = Math.min(1, Math.max(0, (t - .35) / .12 + .5)), k2 = Math.min(1, Math.max(0, (t - .72) / .12 + .5));
-		return blend(blend([
+		return blend$2(blend$2([
 			176,
 			112,
 			24
@@ -9403,7 +9385,7 @@ function cardFace(spec) {
 		const cx = Math.min(x, W - 1 - x), cy = Math.min(y, H - 1 - y);
 		if (cx + cy < 2) continue;
 		if (cx === 0 || cy === 0 || cx + cy === 2) {
-			put$1(x, y, INK, FIXED);
+			put$1(x, y, INK$1, FIXED);
 			continue;
 		}
 		const bevel = cx === 1 || cy === 1 || cx + cy === 3;
@@ -9421,42 +9403,42 @@ function cardFace(spec) {
 			continue;
 		}
 		let c = stock(x, y);
-		if (bevel) c = deep ? blend(c, INK, .3) : blend(c, WHITE, .35);
+		if (bevel) c = deep ? blend$2(c, INK$1, .3) : blend$2(c, WHITE$2, .35);
 		if (aura && !bevel) {
 			const d = Math.hypot((x - origin[0]) / 15, (y - origin[1]) / 19);
-			put$1(x, y, blend(blend(tone, INK, .62), blend(tone, INK, .3), Math.max(0, 1 - d) ** 1.2), WINDOW);
+			put$1(x, y, blend$2(blend$2(tone, INK$1, .62), blend$2(tone, INK$1, .3), Math.max(0, 1 - d) ** 1.2), WINDOW);
 			continue;
 		}
 		put$1(x, y, c, CARD);
 	}
 	for (let y = 2; y <= 7; y++) for (let x = 2; x <= W - 3; x++) {
 		if ((x === 2 || x === W - 3) && (y === 2 || y === 7)) continue;
-		put$1(x, y, y === 2 ? blend(plate, WHITE, .16) : y === 7 ? INK : plate, FIXED);
+		put$1(x, y, y === 2 ? blend$2(plate, WHITE$2, .16) : y === 7 ? INK$1 : plate, FIXED);
 	}
 	if (!aura) for (let y = wTop; y <= wBottom; y++) for (let x = left; x <= right; x++) {
 		const d = Math.hypot((x - origin[0]) / 10, (y - origin[1]) / 11);
-		if (x === left || y === wTop || x === right || y === wBottom) put$1(x, y, INK, FIXED);
-		else put$1(x, y, gold ? fieldGold(x, y) : blend(light, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
+		if (x === left || y === wTop || x === right || y === wBottom) put$1(x, y, INK$1, FIXED);
+		else put$1(x, y, gold ? fieldGold(x, y) : blend$2(light$1, glow, Math.max(0, 1 - d) ** 1.4), WINDOW);
 	}
 	const frameCopy = owned.frame, fx0 = aura ? 2 : left + 1, fx1 = aura ? W - 3 : right - 1, fy0 = aura ? 8 : wTop + 1, fy1 = aura ? 29 : wBottom - 1;
 	const ground = backdropColors(config, palette$1, fx0 - gx0, fy0 - 11 + HEADROOM, fx1 - fx0 + 1, fy1 - fy0 + 1);
 	if (ground) {
 		const fi = frameCopy ? SHADER_FINISHES.indexOf(frameCopy.finish) : -1;
-		ground.forEach((row, j) => row.forEach((hex$1, i) => {
-			if (hex$1) put$1(fx0 + i, fy0 + j, rgb$1(hex$1), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0);
+		ground.forEach((row, j) => row.forEach((hex$2, i) => {
+			if (hex$2) put$1(fx0 + i, fy0 + j, rgb$3(hex$2), ITEM, fi, frameCopy?.scuff ?? 0, frameCopy?.print ?? 0);
 		}));
 	}
 	grid.forEach((row, y) => row.forEach((t, x) => {
-		const hex$1 = colors[y][x];
-		if (!hex$1 || ground && t >= LAYER.frame && t < LAYER.buddy) return;
+		const hex$2 = colors[y][x];
+		if (!hex$2 || ground && t >= LAYER.frame && t < LAYER.buddy) return;
 		const slot = t >= LAYER.aura ? null : t >= LAYER.buddy ? "buddy" : t >= LAYER.frame ? "frame" : t >= LAYER.hat ? "hat" : t >= LAYER.skin ? "skin" : null;
 		const o = slot ? owned[slot] : void 0;
 		const fi = o ? SHADER_FINISHES.indexOf(o.finish) : -1;
-		if (x + gx0 > 1 && x + gx0 < W - 2) put$1(x + gx0, y + 11, rgb$1(hex$1), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
+		if (x + gx0 > 1 && x + gx0 < W - 2) put$1(x + gx0, y + 11, rgb$3(hex$2), o ? ITEM : GUY, fi, o ? o.scuff : 0, o ? o.print : 0);
 	}));
 	for (let y = 30; y <= H - 3; y++) for (let x = 2; x <= W - 3; x++) {
 		if ((x === 2 || x === W - 3) && (y === 30 || y === H - 3)) continue;
-		put$1(x, y, y === 30 ? INK : plate, FIXED);
+		put$1(x, y, y === 30 ? INK$1 : plate, FIXED);
 	}
 	const buddy = new Uint8Array(W * H * 4), alone = buddyAlone(config), buddyOwned = owned.buddy;
 	const buddyCopy = [
@@ -9475,9 +9457,9 @@ function cardFace(spec) {
 			]);
 		}));
 		const ox = BUDDY_RIGHT - Math.max(...cells.map(([x]) => x)), oy = BUDDY_FOOT[spec.buddy ?? "peek"] - Math.max(...cells.map(([, y]) => y));
-		for (const [x, y, hex$1, art] of cells) {
+		for (const [x, y, hex$2, art] of cells) {
 			const i = ((y + oy) * W + x + ox) * 4;
-			buddy.set([...rgb$1(hex$1), art ? 255 : 128], i);
+			buddy.set([...rgb$3(hex$2), art ? 255 : 128], i);
 			noise$1[i + 1] = noiseOf(x + ox, y + oy, buddyCopy[2]);
 		}
 	}
@@ -9528,13 +9510,13 @@ function faceField(f) {
 		at[i] = cells.length;
 		cells.push(i);
 	}
-	const n = cells.length, x = new Float32Array(n), y = new Float32Array(n), region = new Uint8Array(n), h = new Float32Array(n), rgb$4 = new Float32Array(n * 3);
+	const n = cells.length, x = new Float32Array(n), y = new Float32Array(n), region = new Uint8Array(n), h = new Float32Array(n), rgb$6 = new Float32Array(n * 3);
 	cells.forEach((i, k) => {
 		x[k] = i % W;
 		y[k] = Math.floor(i / W);
 		region[k] = Math.floor(f.kind[i * 4] / 32 + .5);
 		h[k] = f.noise[i * 4] / 255;
-		for (let j = 0; j < 3; j++) rgb$4[k * 3 + j] = f.base[i * 4 + j] / 255;
+		for (let j = 0; j < 3; j++) rgb$6[k * 3 + j] = f.base[i * 4 + j] / 255;
 	});
 	const raised = Float32Array.from(x, (cx, k) => faceRaised(cx, y[k]));
 	const pixels = {
@@ -9542,7 +9524,7 @@ function faceField(f) {
 		y,
 		region,
 		h,
-		rgb: rgb$4,
+		rgb: rgb$6,
 		raised
 	};
 	got = {
@@ -9585,11 +9567,11 @@ function cardFaceAt(f, ms, hover) {
 			if (k === ITEM && finish >= 0) c = finishColor(c, finish, f.kind[i + 2] / 255, f.noise[i] / 255, x + y, y, f.kind[i + 3] * 4, time, 1);
 		}
 		if (hover && hover.strength > 0) {
-			const light = (1 - smoothstep(0, .34, distance([(x + .5) / W, (y + .5) / H], [hover.x, hover.y]))) * .35 * hover.strength;
+			const light$1 = (1 - smoothstep(0, .34, distance([(x + .5) / W, (y + .5) / H], [hover.x, hover.y]))) * .35 * hover.strength;
 			c = [
-				c[0] + light,
-				c[1] + light,
-				c[2] + light
+				c[0] + light$1,
+				c[1] + light$1,
+				c[2] + light$1
 			];
 		}
 		out[i] = toByte(c[0]);
@@ -10035,7 +10017,7 @@ function luckyStar(grid, [x, y], k) {
 * Bumped whenever the art changes. It is part of every baked image's address,
 * so a redraw reaches every board at once and an old address keeps its picture.
 */
-const ART_VERSION = 15;
+const ART_VERSION = 16;
 /** The longest name a big card's code carries. */
 const TITLE_MAX = 24;
 const PART_KEYS = [
@@ -10518,14 +10500,14 @@ function animateOptions(spec) {
 function ownedOf$1(spec) {
 	return dress(resolve(spec.seed, spec.parts), { equip: spec.equip }, spec.seed).owned;
 }
-const rgb = (s) => [
+const rgb$2 = (s) => [
 	parseInt(s.slice(1, 3), 16),
 	parseInt(s.slice(3, 5), 16),
 	parseInt(s.slice(5, 7), 16)
 ];
 /** A frame on the padded canvas `W` wide, from column `left`: the guy's pixels (shone, if given) and the aura cells past his sides. */
-function place(frame, W, left, shone) {
-	const out = new Uint8ClampedArray(W * GUY_HEIGHT * 4), fw = frame.colors[0].length;
+function place(frame$1, W, left, shone) {
+	const out = new Uint8ClampedArray(W * GUY_HEIGHT * 4), fw = frame$1.colors[0].length;
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
 		const o = (y * W + x + left) * 4;
 		if (shone) {
@@ -10533,10 +10515,10 @@ function place(frame, W, left, shone) {
 			if (shone[i + 3]) out.set(shone.subarray(i, i + 4), o);
 			continue;
 		}
-		const c = frame.colors[y][x];
-		if (c) out.set([...rgb(c), 255], o);
+		const c = frame$1.colors[y][x];
+		if (c) out.set([...rgb$2(c), 255], o);
 	}
-	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) out.set([...rgb(c), 255], (y * W + x + left) * 4);
+	for (const [x, y, c] of frame$1.outside ?? []) if (x + left >= 0 && x + left < W) out.set([...rgb$2(c), 255], (y * W + x + left) * 4);
 	return out;
 }
 const same = (a, b$1) => a.length === b$1.length && a.every((v, i) => v === b$1[i]);
@@ -10746,22 +10728,22 @@ function plateOf(copies) {
 	};
 }
 /** A frame laid on the whole picture `ground` is painted for, from column `left`: his pixels, an aura's cells past his sides, and the backdrop everywhere else. */
-function grounded(frame, ground, left) {
-	const W = ground[0].length, fw = frame.colors[0].length;
+function grounded(frame$1, ground, left) {
+	const W = ground[0].length, fw = frame$1.colors[0].length;
 	const colors = ground.map((row) => row.slice()), slots = ground.map((row) => row.map((c) => c ? 3 : 0));
 	for (let y = 0; y < FRAME_HEIGHT; y++) for (let x = 0; x < fw; x++) {
-		const c = frame.colors[y][x];
-		if (c && frame.slots[y][x] !== 3) {
+		const c = frame$1.colors[y][x];
+		if (c && frame$1.slots[y][x] !== 3) {
 			colors[y][x + left] = c;
-			slots[y][x + left] = frame.slots[y][x];
+			slots[y][x + left] = frame$1.slots[y][x];
 		}
 	}
-	for (const [x, y, c] of frame.outside ?? []) if (x + left >= 0 && x + left < W) {
+	for (const [x, y, c] of frame$1.outside ?? []) if (x + left >= 0 && x + left < W) {
 		colors[y][x + left] = c;
 		slots[y][x + left] = 0;
 	}
 	return {
-		...frame,
+		...frame$1,
 		colors,
 		slots,
 		outside: void 0
@@ -10793,11 +10775,7 @@ function profileFrames(spec, move = "idle") {
 	let reach = 0;
 	for (const px of g.frames) for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
 	const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-	const colors = paletteOf({
-		...resolve(spec.seed, spec.parts),
-		...spec.palette !== void 0 ? { palette: spec.palette } : {}
-	}).colors;
-	const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H, colors[T.BODY], colors[T.ACCENT]);
+	const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H);
 	const frames = g.frames.map((px) => {
 		const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
 		if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
@@ -10817,12 +10795,12 @@ function backdropGround(spec, side, ox, oy) {
 		...resolve(spec.seed, spec.parts),
 		...spec.palette !== void 0 ? { palette: spec.palette } : {}
 	}, { equip: spec.equip }, spec.seed);
-	const frame = itemById(config.frame);
-	const grid = Array.from({ length: side }, (_, y) => Array.from({ length: side }, (_$1, x) => LAYER.frame + frame.fill(x - ox + 48, y - oy - HEADROOM + 48) - 1));
+	const frame$1 = itemById(config.frame);
+	const grid = Array.from({ length: side }, (_, y) => Array.from({ length: side }, (_$1, x) => LAYER.frame + frame$1.fill(x - ox + 48, y - oy - HEADROOM + 48) - 1));
 	const colors = paint(grid, config, withItems(paletteOf(config), config), false, false);
 	const out = new Uint8ClampedArray(side * side * 4);
 	colors.forEach((row, y) => row.forEach((c, x) => {
-		if (c) out.set([...rgb(c).map((v, k) => Math.round(v * .55 + [
+		if (c) out.set([...rgb$2(c).map((v, k) => Math.round(v * .55 + [
 			20,
 			24,
 			36
@@ -10830,14 +10808,8 @@ function backdropGround(spec, side, ox, oy) {
 	}));
 	return out;
 }
-/** Under this contrast a guy melts into a ground taken from their own colour; on their accent's they stand off it at `STAND_OFF` or more. */
-const PALE = 1.3, STAND_OFF = 1.6;
-/**
-* A profile picture's ground: the guy's commonest colour that isn't an outline, most of the way to
-* white. A pale guy (Snow, Opal, Ice, Cream, Lemon) would melt into that and read as a blank, so
-* theirs is a tint of their `accent` instead, deepened toward night until their `body` stands off it.
-*/
-function groundOf(px, W, H, body, accent) {
+/** A profile picture's ground: the guy's commonest colour that isn't an outline, most of the way to white. */
+function groundOf(px, W, H) {
 	const counts = new Map();
 	for (let i = 0; i < W * H; i++) {
 		const [r, g, b$1, a] = px.subarray(i * 4, i * 4 + 4);
@@ -10846,12 +10818,12 @@ function groundOf(px, W, H, body, accent) {
 		counts.set(key, (counts.get(key) ?? 0) + 1);
 	}
 	const top = [...counts].sort((a, b$1) => b$1[1] - a[1])[0]?.[0] ?? 14540253;
-	let ground = mix("#" + top.toString(16).padStart(6, "0"), "#FFFFFF", .72);
-	if (contrast(ground, body) < PALE) {
-		ground = mix(accent, "#FFFFFF", .25);
-		for (let i = 0; i < 12 && contrast(ground, body) < STAND_OFF; i++) ground = mix(ground, "#11151B", .12);
-	}
-	return [...rgb(ground), 255];
+	const c = [
+		top >> 16,
+		top >> 8 & 255,
+		top & 255
+	];
+	return [...c.map((v) => Math.round(v + (255 - v) * .72)), 255];
 }
 /** The scale that brings a profile picture nearest `size` without going over. */
 const profileScale = (f, size) => Math.max(1, Math.floor(size / f.width));
@@ -11262,8 +11234,8 @@ function crowdSprite(spec, size, options = {}) {
 }
 /** `crowdSprite` from a look already worked out (`crowdLook`), for many sizes of one guy. */
 function crowdSpriteOf(look, size, options = {}) {
-	const S = look.side;
-	const full = () => Array.from({ length: S }, (_, y) => Array.from({ length: S }, (_$1, x) => look.inks[look.painted[y * S + x]] || null));
+	const S$1 = look.side;
+	const full = () => Array.from({ length: S$1 }, (_, y) => Array.from({ length: S$1 }, (_$1, x) => look.inks[look.painted[y * S$1 + x]] || null));
 	const drawn = size === 16 ? full() : size === 5 || size === 3 ? far(look, size) : (size === 14 || size === 12 ? carve(look, full(), size) : null) ?? shrink(look, MAKE[size]);
 	const lit = drawn.map((row) => row.some(Boolean)), first = lit.indexOf(true), last = lit.lastIndexOf(true);
 	const cells = first < 0 ? [] : drawn.slice(first, last + 1);
@@ -11330,10 +11302,10 @@ function darker(c, amount) {
 }
 /** The inside's bounds (everything but outline), or null for an empty guy. */
 function insideOf(look) {
-	const S = look.side;
-	let x0 = S, x1 = -1, y0 = S, y1 = -1;
-	for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-		const i = y * S + x;
+	const S$1 = look.side;
+	let x0 = S$1, x1 = -1, y0 = S$1, y1 = -1;
+	for (let y = 0; y < S$1; y++) for (let x = 0; x < S$1; x++) {
+		const i = y * S$1 + x;
 		if (look.tokens[i] && !look.outline[i]) {
 			x0 = Math.min(x0, x);
 			x1 = Math.max(x1, x);
@@ -11350,9 +11322,9 @@ function insideOf(look) {
 }
 /** The commonest non-face colour of the inside between rows `from` and `to` (fractions of its height). */
 function commonest(look, box, from, to) {
-	const S = look.side, h = box.y1 - box.y0 + 1, count$1 = new Map();
+	const S$1 = look.side, h = box.y1 - box.y0 + 1, count$1 = new Map();
 	for (let y = box.y0 + Math.floor(h * from); y <= Math.min(box.y1, box.y0 + Math.ceil(h * to) - 1); y++) for (let x = box.x0; x <= box.x1; x++) {
-		const i = y * S + x, t = look.tokens[i];
+		const i = y * S$1 + x, t = look.tokens[i];
 		if (!t || look.outline[i] || FACE.has(t) || !look.shrunk[i]) continue;
 		count$1.set(look.shrunk[i], (count$1.get(look.shrunk[i]) ?? 0) + 1);
 	}
@@ -11434,9 +11406,9 @@ function far(look, size) {
 }
 /** Which of `n` columns across the guy their top fills: the drawn cells in their top fifth, by column band. */
 function crownOf(look, n) {
-	const S = look.side;
-	let x0 = S, x1 = -1, y0 = S;
-	for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (look.painted[y * S + x]) {
+	const S$1 = look.side;
+	let x0 = S$1, x1 = -1, y0 = S$1;
+	for (let y = 0; y < S$1; y++) for (let x = 0; x < S$1; x++) if (look.painted[y * S$1 + x]) {
 		x0 = Math.min(x0, x);
 		x1 = Math.max(x1, x);
 		y0 = Math.min(y0, y);
@@ -11446,7 +11418,7 @@ function crownOf(look, n) {
 	return Array.from({ length: n }, (_, i) => {
 		const a = x0 + Math.floor(w * i / n), b$1 = x0 + Math.floor(w * (i + 1) / n);
 		let on = 0;
-		for (let y = y0; y < y0 + rows; y++) for (let x = a; x < Math.max(b$1, a + 1); x++) if (look.painted[y * S + x]) on++;
+		for (let y = y0; y < y0 + rows; y++) for (let x = a; x < Math.max(b$1, a + 1); x++) if (look.painted[y * S$1 + x]) on++;
 		return on >= Math.max(b$1 - a, 1) * rows * .5;
 	});
 }
@@ -11457,11 +11429,11 @@ function crownOf(look, n) {
 * two features. Null when the face leaves too little to take out.
 */
 function carve(look, cells, size) {
-	const S = look.side;
-	let feature = Array.from({ length: S }, (_, y) => Array.from({ length: S }, (_$1, x) => look.face[y * S + x] > 0));
+	const S$1 = look.side;
+	let feature = Array.from({ length: S$1 }, (_, y) => Array.from({ length: S$1 }, (_$1, x) => look.face[y * S$1 + x] > 0));
 	const lit = cells.map((r) => r.some(Boolean)), y0 = lit.indexOf(true), y1 = lit.lastIndexOf(true);
 	if (y0 < 0) return null;
-	let x0 = S, x1 = -1;
+	let x0 = S$1, x1 = -1;
 	for (const row of cells) row.forEach((c, x) => {
 		if (c) {
 			x0 = Math.min(x0, x);
@@ -11553,7 +11525,7 @@ function narrow(cells, feature, size, extra, pairs) {
 	return [cells, feature];
 }
 function shrink(look, make) {
-	const S = look.side, ink = look.ink, tok = (x, y) => x >= 0 && y >= 0 && x < S && y < S ? look.tokens[y * S + x] : 0;
+	const S$1 = look.side, ink = look.ink, tok = (x, y) => x >= 0 && y >= 0 && x < S$1 && y < S$1 ? look.tokens[y * S$1 + x] : 0;
 	const box = insideOf(look);
 	if (!box) return [[]];
 	const { x0, y0 } = box, bw = box.x1 - x0 + 1, bh = box.y1 - y0 + 1, k = Math.max(bw, bh) / make.inner;
@@ -11568,9 +11540,9 @@ function shrink(look, make) {
 		for (let y = Math.floor(sy0); y < Math.ceil(sy1); y++) for (let x = Math.floor(sx0); x < Math.ceil(sx1); x++) {
 			const a = (Math.min(x + 1, sx1) - Math.max(x, sx0)) * (Math.min(y + 1, sy1) - Math.max(y, sy0));
 			const t = tok(x, y);
-			if (a <= 0 || !t || look.outline[y * S + x]) continue;
+			if (a <= 0 || !t || look.outline[y * S$1 + x]) continue;
 			cover += a;
-			const c = look.inks[look.shrunk[y * S + x]];
+			const c = look.inks[look.shrunk[y * S$1 + x]];
 			if (!FACE.has(t) && c) weight.set(c, (weight.get(c) ?? 0) + a);
 		}
 		if (cover < k * k * .45) continue;
@@ -11588,18 +11560,18 @@ function shrink(look, make) {
 	};
 	const parts = (want) => {
 		const seen = new Set(), found = [];
-		for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-			if (!want(tok(x, y), y * S + x) || seen.has(y * S + x)) continue;
-			const stack = [[x, y]], cells = [];
-			seen.add(y * S + x);
-			while (stack.length) {
-				const [cx, cy] = stack.pop();
+		for (let y = 0; y < S$1; y++) for (let x = 0; x < S$1; x++) {
+			if (!want(tok(x, y), y * S$1 + x) || seen.has(y * S$1 + x)) continue;
+			const stack$1 = [[x, y]], cells = [];
+			seen.add(y * S$1 + x);
+			while (stack$1.length) {
+				const [cx, cy] = stack$1.pop();
 				cells.push([cx, cy]);
 				for (const [dx, dy] of ROUND) {
 					const nx = cx + dx, ny = cy + dy;
-					if (nx >= 0 && ny >= 0 && nx < S && ny < S && want(tok(nx, ny), ny * S + nx) && !seen.has(ny * S + nx)) {
-						seen.add(ny * S + nx);
-						stack.push([nx, ny]);
+					if (nx >= 0 && ny >= 0 && nx < S$1 && ny < S$1 && want(tok(nx, ny), ny * S$1 + nx) && !seen.has(ny * S$1 + nx)) {
+						seen.add(ny * S$1 + nx);
+						stack$1.push([nx, ny]);
 					}
 				}
 			}
@@ -11614,7 +11586,7 @@ function shrink(look, make) {
 			const drawn = (i) => look.face[i] === 1 && !!look.painted[i] && look.inks[look.painted[i]] !== look.body;
 			found = parts((_, i) => drawn(i));
 			const count$1 = new Map();
-			for (const cells of found) for (const [x, y] of cells) count$1.set(look.painted[y * S + x], (count$1.get(look.painted[y * S + x]) ?? 0) + 1);
+			for (const cells of found) for (const [x, y] of cells) count$1.set(look.painted[y * S$1 + x], (count$1.get(look.painted[y * S$1 + x]) ?? 0) + 1);
 			let most = 0;
 			for (const [c, n] of count$1) if (n > most) {
 				most = n;
@@ -11805,7 +11777,7 @@ function createRender(canvas, options) {
 	let fade = null;
 	let tintKey = "";
 	let slide = null;
-	let waving = !!options.wave, waveStart = 0, frame = 0, gone = false, lastFrame = 0;
+	let waving = !!options.wave, waveStart = 0, frame$1 = 0, gone = false, lastFrame = 0;
 	let lit = null;
 	const moving = new Set(), rare = new Set();
 	const sheets = new Map(), stand = new Map();
@@ -11813,7 +11785,7 @@ function createRender(canvas, options) {
 	let shown = [];
 	let queue = [], made = 0;
 	const queued = new Set();
-	const code = (size, band$2) => size * 64 + band$2;
+	const code = (size, band$3) => size * 64 + band$3;
 	function sheetsOf(size) {
 		let l = sheets.get(size);
 		if (!l) sheets.set(size, l = []);
@@ -11955,13 +11927,13 @@ function createRender(canvas, options) {
 	}
 	/** The sheet cell a guy is drawn from in a seat: their own sprite, else a stand-in in their colours. */
 	function cellOf(g, seat) {
-		const s = scene.seats[seat], band$2 = scene.bands[seat], c = code(s.size, band$2), own = g.cells.get(c);
+		const s = scene.seats[seat], band$3 = scene.bands[seat], c = code(s.size, band$3), own = g.cells.get(c);
 		if (own !== void 0) return own;
 		const key = `${c}${g.base.body}${g.base.eye}${g.base.ink}`;
 		let at = stand.get(key);
 		if (!at) {
 			at = [s.size, alloc(s.size)];
-			put$1(s.size, at[1], rgbaOf(standIn(s.size, g.base), s.size), scene.tints[band$2]);
+			put$1(s.size, at[1], rgbaOf(standIn(s.size, g.base), s.size), scene.tints[band$3]);
 			stand.set(key, at);
 		}
 		return at[1];
@@ -11977,11 +11949,11 @@ function createRender(canvas, options) {
 	function make(g) {
 		queued.delete(g);
 		if (guys.get(g.key) !== g || g.seat < 0 || g.seat >= scene.seats.length) return;
-		const s = scene.seats[g.seat], band$2 = scene.bands[g.seat], c = code(s.size, band$2);
+		const s = scene.seats[g.seat], band$3 = scene.bands[g.seat], c = code(s.size, band$3);
 		if (g.cells.has(c)) return;
 		g.look ??= crowdLook(g.spec);
 		const id = alloc(s.size);
-		put$1(s.size, id, crowdSpriteOf(g.look, s.size).rgba, scene.tints[band$2]);
+		put$1(s.size, id, crowdSpriteOf(g.look, s.size).rgba, scene.tints[band$3]);
 		g.cells.set(c, id);
 		if (!moving.has(g)) restIn(g.seat);
 	}
@@ -12349,15 +12321,15 @@ function createRender(canvas, options) {
 		if (dimmed && lit?.overlay) dim(target, x0, y0, x1 - x0, y1 - y0);
 		target.restore();
 	}
-	const band$1 = () => scene.wave ?? scene.pitch * 9.5;
+	const band$2 = () => scene.wave ?? scene.pitch * 9.5;
 	const waveX = (t) => {
-		const b$1 = band$1(), span$1 = scene.width + 2.5 * b$1;
+		const b$1 = band$2(), span$1 = scene.width + 2.5 * b$1;
 		return (t - waveStart) / WAVE_MS % 1 * span$1 - 1.3 * b$1;
 	};
 	let crest = 0, waveCrest = NaN;
 	/** How far up the wave has a seat at `x`. */
 	function waveUp(x) {
-		const d = (x - crest) / (band$1() / 9.5);
+		const d = (x - crest) / (band$2() / 9.5);
 		return d > 0 ? Math.max(0, 1 - d / 1.5) : d > -8 ? Math.pow(1 + d / 8, 1.5) : 0;
 	}
 	const liftOf = (e, size) => {
@@ -12376,7 +12348,7 @@ function createRender(canvas, options) {
 			if (b$1 <= 8 && rowXs[r].length) far$1.push(r);
 		});
 		if (!far$1.length) return;
-		const u = band$1() / 9.5, at = (r) => {
+		const u = band$2() / 9.5, at = (r) => {
 			const [a] = span(r, crest, crest + 1), s = scene.seats[scene.rows[r][Math.min(a, scene.rows[r].length - 1)]];
 			return s;
 		};
@@ -12393,7 +12365,7 @@ function createRender(canvas, options) {
 	}
 	/** The wave's band at crest `c`, from the top row's raised heads to the front row's feet (one plain rect is quicker to clip to than a rect a row). */
 	function waveRect(c = crest) {
-		const u = band$1() / 9.5, top = Math.max(0, standTop - biggest - 4);
+		const u = band$2() / 9.5, top = Math.max(0, standTop - biggest - 4);
 		return [
 			c - 8 * u - biggest - 4,
 			top,
@@ -12406,7 +12378,7 @@ function createRender(canvas, options) {
 	* put their arms up), and for the far rows, which only stand or sit under one swathe, just where its edges passed.
 	*/
 	function waveMoved(from, to) {
-		const u = band$1() / 9.5;
+		const u = band$2() / 9.5;
 		if (Number.isNaN(from)) return [waveRect(to)];
 		if (!farBig || to < from || to - from > u) return [waveRect(from), waveRect(to)];
 		const out = [], [x, , w] = waveRect(from);
@@ -12431,7 +12403,7 @@ function createRender(canvas, options) {
 	/** Row `r` from `from` to `to` in the wave: runs of seats lifted alike copied in one go, arms up and lighter at the crest. */
 	const runs$1 = [], up = [];
 	function waveRow(target, r, from, to) {
-		const row = scene.rows[r], u = band$1() / 9.5;
+		const row = scene.rows[r], u = band$2() / 9.5;
 		const [a, b$1] = span(r, Math.max(from, crest - 8 * u - rowBig[r]), Math.min(to, crest + 1.5 * u + 1));
 		let start = from, key = 0;
 		runs$1.length = 0;
@@ -12544,14 +12516,14 @@ function createRender(canvas, options) {
 		};
 		for (const g of rare) {
 			if (g.seat < 0 || g.seat >= scene.seats.length || !g.shine) continue;
-			const small = scene.seats[g.seat].size <= 5;
-			if (!small && !g.glint) continue;
-			const b$1 = small ? far$1 : near, at = startOf(g, small);
+			const small$1 = scene.seats[g.seat].size <= 5;
+			if (!small$1 && !g.glint) continue;
+			const b$1 = small$1 ? far$1 : near, at = startOf(g, small$1);
 			b$1.slots[Math.floor(at / b$1.period * SLOTS$1) % SLOTS$1].push(g);
 		}
 		beats = [far$1, near];
 	}
-	const startOf = (g, small) => small ? (4e3 - g.hash % 4e3) % 4e3 : 90 * ((60 - g.hash % 97 % 60) % 60);
+	const startOf = (g, small$1) => small$1 ? (4e3 - g.hash % 4e3) % 4e3 : 90 * ((60 - g.hash % 97 % 60) % 60);
 	/** The glints showing at `t`, as [guy, rect]. */
 	function glintsAt(t) {
 		if (glintsDue) sortGlints();
@@ -12560,10 +12532,10 @@ function createRender(canvas, options) {
 			const now = t % b$1.period, first = Math.floor((now - b$1.dur) / b$1.period * SLOTS$1), last = Math.floor(now / b$1.period * SLOTS$1);
 			for (let k = first; k <= last; k++) for (const g of b$1.slots[(k % SLOTS$1 + SLOTS$1) % SLOTS$1]) {
 				if (g.seat < 0 || g.seat >= scene.seats.length || lit?.guy === g || moving.has(g) || bySeat[g.seat] !== g) continue;
-				const small = b$1.period === 4e3, since = ((now - startOf(g, small)) % b$1.period + b$1.period) % b$1.period;
+				const small$1 = b$1.period === 4e3, since = ((now - startOf(g, small$1)) % b$1.period + b$1.period) % b$1.period;
 				if (since >= b$1.dur) continue;
 				const s = scene.seats[g.seat];
-				out.push([g, small ? [
+				out.push([g, small$1 ? [
 					s.x + (s.size >> 1),
 					s.y - 2,
 					1,
@@ -12579,7 +12551,7 @@ function createRender(canvas, options) {
 		return out;
 	}
 	function draw(t) {
-		frame = 0;
+		frame$1 = 0;
 		if (gone) return;
 		const dt = lastFrame ? Math.min(100, t - lastFrame) : 16;
 		lastFrame = t;
@@ -12848,10 +12820,10 @@ function createRender(canvas, options) {
 	*/
 	function overlayFor(cx, bottom, side) {
 		const W = scene.width, H = scene.height, c = lit?.overlay?.canvas ?? document.createElement("canvas");
-		const lights = scene.lights ?? [], light = lights.length ? lights.reduce((best, l) => Math.abs(l.x - cx) < Math.abs(best.x - cx) ? l : best) : null;
+		const lights = scene.lights ?? [], light$1 = lights.length ? lights.reduce((best, l) => Math.abs(l.x - cx) < Math.abs(best.x - cx) ? l : best) : null;
 		const wTop = Math.max(2, side * .3), wBottom = side * .85, poolW = side * 1.25, poolH = side * .55, poolY = bottom - side * .1;
-		const top = Math.max(0, Math.floor(light ? Math.min(light.y, bottom - side * 1.6) : bottom - side * 1.6)), end = Math.min(H, Math.ceil(poolY + poolH + 2));
-		const left = Math.max(0, Math.floor(Math.min(light?.x ?? cx, cx - poolW) - wTop - 3)), right = Math.min(W, Math.ceil(Math.max(light?.x ?? cx, cx + poolW) + wTop + 3));
+		const top = Math.max(0, Math.floor(light$1 ? Math.min(light$1.y, bottom - side * 1.6) : bottom - side * 1.6)), end = Math.min(H, Math.ceil(poolY + poolH + 2));
+		const left = Math.max(0, Math.floor(Math.min(light$1?.x ?? cx, cx - poolW) - wTop - 3)), right = Math.min(W, Math.ceil(Math.max(light$1?.x ?? cx, cx + poolW) + wTop + 3));
 		if (end <= top || right <= left) {
 			c.width = c.height = 0;
 			return {
@@ -12869,13 +12841,13 @@ function createRender(canvas, options) {
 		const [r, gg, b$1] = rgbOf(scene.shadow), dimC = (255 << 24 | b$1 << 16 | gg << 8 | r) >>> 0;
 		px.fill(dimC);
 		for (let y = top; y < end; y++) {
-			const u = light ? Math.max(0, Math.min(1, (y - light.y) / Math.max(1, bottom - side * .5 - light.y))) : 0;
-			const mid = light ? light.x + (cx - light.x) * u : cx, half = light && y >= light.y && y <= bottom ? wTop + (wBottom - wTop) * u : -1;
+			const u = light$1 ? Math.max(0, Math.min(1, (y - light$1.y) / Math.max(1, bottom - side * .5 - light$1.y))) : 0;
+			const mid = light$1 ? light$1.x + (cx - light$1.x) * u : cx, half = light$1 && y >= light$1.y && y <= bottom ? wTop + (wBottom - wTop) * u : -1;
 			const reach = (h) => {
 				const v = 1 - ((y - poolY) / h) ** 2;
 				return v > 0 ? poolW * Math.sqrt(v) : -1;
 			};
-			const pw = Math.max(reach(poolH), light ? -1 : reach(side * 1.4));
+			const pw = Math.max(reach(poolH), light$1 ? -1 : reach(side * 1.4));
 			let lo = Infinity, hi = -Infinity;
 			if (half >= 0) {
 				lo = mid - half;
@@ -12893,7 +12865,7 @@ function createRender(canvas, options) {
 			for (let x = Math.max(left, Math.floor(lo)); x < Math.min(right, Math.ceil(hi) + 1); x++) {
 				if (x >= a0 && x <= a1 || x >= b0 && x <= b1) continue;
 				const beam = half < 0 ? 9 : Math.abs(x - mid) - half;
-				const pool = ((x - cx) / poolW) ** 2 + ((y - poolY) / poolH) ** 2 - 1, glow = light ? 9 : ((x - cx) / poolW) ** 2 + ((y - poolY) / (side * 1.4)) ** 2 - 1;
+				const pool = ((x - cx) / poolW) ** 2 + ((y - poolY) / poolH) ** 2 - 1, glow = light$1 ? 9 : ((x - cx) / poolW) ** 2 + ((y - poolY) / (side * 1.4)) ** 2 - 1;
 				const edge = Math.min(beam / 2, pool * 2, glow * 3);
 				px[(y - top) * bw + x - left] = edge <= -1 ? 0 : edge >= 0 ? dimC : -edge * 16 > BAYER$1[(y & 3) * 4 + (x & 3)] ? 0 : dimC;
 			}
@@ -13049,7 +13021,7 @@ function createRender(canvas, options) {
 		media?.addEventListener?.("change", onMedia);
 	}
 	function wake() {
-		if (!frame && !gone) frame = requestAnimationFrame(draw);
+		if (!frame$1 && !gone) frame$1 = requestAnimationFrame(draw);
 	}
 	function hopGuy(g, at, ms = HOP_MS, force = false) {
 		if (moving.has(g) && at - g.hopAt < g.hopFor) return;
@@ -13210,7 +13182,7 @@ function createRender(canvas, options) {
 		wake,
 		destroy() {
 			gone = true;
-			if (frame) cancelAnimationFrame(frame);
+			if (frame$1) cancelAnimationFrame(frame$1);
 			watch?.disconnect();
 			media?.removeEventListener?.("change", onMedia);
 			sheets.clear();
@@ -13482,12 +13454,12 @@ function crowdPicture(guys, width, height, options = {}) {
 			...guys[k],
 			seed: guys[k].seed ?? `${seed}:${k}`
 		} : { seed: `${seed}:${k}` };
-		const sprite = crowdSprite(spec, seat.size);
+		const sprite$1 = crowdSprite(spec, seat.size);
 		for (let y = 0; y < seat.size; y++) for (let x = 0; x < seat.size; x++) {
 			const px = seat.x + x, py = seat.y + y, o = (y * seat.size + x) * 4;
-			if (!sprite.rgba[o + 3] || px < 0 || py < 0 || px >= width || py >= height) continue;
+			if (!sprite$1.rgba[o + 3] || px < 0 || py < 0 || px >= width || py >= height) continue;
 			const at = (py * width + px) * 4;
-			for (let c = 0; c < 3; c++) rgba[at + c] = Math.round(sprite.rgba[o + c] * (1 - a) + bg[c] * a);
+			for (let c = 0; c < 3; c++) rgba[at + c] = Math.round(sprite$1.rgba[o + c] * (1 - a) + bg[c] * a);
 		}
 	}
 	return rgba;
@@ -13969,16 +13941,16 @@ var Pic = class Pic {
 		this.px = new Uint32Array(W * H);
 	}
 	static seen = new Map();
-	static c(hex$1) {
-		let c = Pic.seen.get(hex$1);
+	static c(hex$2) {
+		let c = Pic.seen.get(hex$2);
 		if (c === void 0) {
-			const n = parseInt(hex$1.slice(1, 7), 16);
-			Pic.seen.set(hex$1, c = (255 << 24 | (n & 255) << 16 | (n >> 8 & 255) << 8 | n >> 16) >>> 0);
+			const n = parseInt(hex$2.slice(1, 7), 16);
+			Pic.seen.set(hex$2, c = (255 << 24 | (n & 255) << 16 | (n >> 8 & 255) << 8 | n >> 16) >>> 0);
 		}
 		return c;
 	}
-	rect(x, y, w, h, hex$1, level = 16) {
-		const c = Pic.c(hex$1), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
+	rect(x, y, w, h, hex$2, level = 16) {
+		const c = Pic.c(hex$2), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
 		if (x1 <= x0) return;
 		for (let j = y0; j < y1; j++) {
 			if (level >= 16) {
@@ -13988,12 +13960,12 @@ var Pic = class Pic {
 			for (let r = 0; r < 4; r++) if (BAYER[(j & 3) * 4 + r] < level) for (let i = x0 + (r - x0 & 3); i < x1; i += 4) this.px[j * this.W + i] = c;
 		}
 	}
-	dot(x, y, hex$1) {
-		this.rect(x, y, 1, 1, hex$1);
+	dot(x, y, hex$2) {
+		this.rect(x, y, 1, 1, hex$2);
 	}
 	/** Blends a rect toward a colour by `a`, for lines painted on a floor. */
-	mix(x, y, w, h, hex$1, a) {
-		const c = Pic.c(hex$1), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
+	mix(x, y, w, h, hex$2, a) {
+		const c = Pic.c(hex$2), x0 = Math.max(0, Math.round(x)), y0 = Math.max(0, Math.round(y)), x1 = Math.min(this.W, Math.round(x + w)), y1 = Math.min(this.H, Math.round(y + h));
 		for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) {
 			const o = this.px[j * this.W + i];
 			let out = 255 << 24;
@@ -14022,11 +13994,11 @@ var Pic = class Pic {
 };
 const shades = new Map();
 /** A colour `f` of the way to white (or, below 0, to black), worked out once. */
-const shade = (hex$1, f) => {
-	const key = hex$1 + f;
+const shade = (hex$2, f) => {
+	const key = hex$2 + f;
 	let out = shades.get(key);
 	if (out === void 0) {
-		const n = parseInt(hex$1.slice(1, 7), 16);
+		const n = parseInt(hex$2.slice(1, 7), 16);
 		shades.set(key, out = "#" + [
 			n >> 16 & 255,
 			n >> 8 & 255,
@@ -14134,12 +14106,12 @@ function lightBank(pic, x, y, cell, cols, rows, wash, washTo, sky) {
 * blocky segments, sized from the digit (3 wide at least), two digits where four don't fit, none where
 * two don't. Returns the board's left edge and width.
 */
-function scoreboard(pic, cx, y, w, h, c, frame) {
+function scoreboard(pic, cx, y, w, h, c, frame$1) {
 	const dh = Math.max(5, Math.min(h - 4, 11)), t = dh >= 9 ? 2 : 1;
 	const fits = (n$1) => Math.min(Math.floor(dh * .6), Math.floor((w - 4 - (n$1 - 1) - (n$1 > 2 ? 1 : 0)) / n$1));
 	const n = fits(4) >= 3 ? 4 : fits(2) >= 3 ? 2 : 0, dw = n ? fits(n) : 0;
 	const bw = n ? n * dw + (n - 1) + (n > 2 ? 1 : 0) + 4 : Math.min(w, 8), bh = dh + 4, x = Math.round(cx - bw / 2);
-	pic.rect(x - 1, y - 1, bw + 2, bh + 2, frame);
+	pic.rect(x - 1, y - 1, bw + 2, bh + 2, frame$1);
 	pic.rect(x, y, bw, bh, "#151a26");
 	for (let i = 0; i < n; i++) {
 		const dx = x + 2 + i * (dw + 1) + (n > 2 && i > 1 ? 1 : 0), on = [
@@ -14566,8 +14538,8 @@ function paintVenue(p) {
 	paintBoards(pic, p, (x, y, w) => {
 		const sw = Math.max(12, W / 24);
 		for (let i = x; i < x + w;) {
-			const band$1 = Math.floor(i / sw), e = Math.min(x + w, Math.ceil((band$1 + 1) * sw));
-			pic.rect(i, y, e - i, H - y, band$1 % 2 ? stripe : pitch);
+			const band$2 = Math.floor(i / sw), e = Math.min(x + w, Math.ceil((band$2 + 1) * sw));
+			pic.rect(i, y, e - i, H - y, band$2 % 2 ? stripe : pitch);
 			i = e;
 		}
 	});
@@ -14811,5 +14783,1902 @@ function nameKey(typed) {
 const nameSkeleton = (key) => key.replace(/_/g, "");
 
 //#endregion
-export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BADGE_INKS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULE_ONLY, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_BADGES, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, UNUSUAL_ONE_IN, VENUES, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, boxOf, buddyAlone, buddyLift, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeGuy, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeGuy, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hasGlyph, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, layered, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, unusual, upscale, useAvatarContext, useMergeRefs, venueFor, viewSize, visibleOneIn, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
+//#region src/capsule.ts
+const WHITE$1 = [
+	255,
+	255,
+	255
+], INK = [
+	22,
+	18,
+	34
+];
+const rgb$1 = (s) => [
+	parseInt(s.slice(1, 3), 16),
+	parseInt(s.slice(3, 5), 16),
+	parseInt(s.slice(5, 7), 16)
+];
+const blend$1 = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
+const CAPSULE_STATES = [
+	"closed",
+	"wobble",
+	"open"
+];
+/** The grids a capsule is drawn on. 64 is the master; the small ones have their own simpler drawing. */
+const CAPSULE_GRIDS = [
+	16,
+	24,
+	32,
+	64
+];
+const CORAL = "#fe5f55", IVORY = "#f3ead6", NAVY = "#11151b";
+const seasonal = items.filter((i) => i.season);
+/** How much lighter a colour is than another, as WCAG measures it (1 to 21). */
+function contrast(a, b$1) {
+	const lum$1 = (h) => {
+		const c = rgb$1(h).map((v) => v / 255).map((v) => v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+		return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+	};
+	const [x, y] = [lum$1(a), lum$1(b$1)].sort((p, q) => q - p);
+	return (x + .05) / (y + .05);
+}
+const hex = (c) => "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("");
+/** A season's candy: its hat's first colour, lifted toward white when it's too dark to read on the club's navy (New Year's black hat makes a silver capsule). */
+function seasonColour(i) {
+	let c = i.colors[0].toLowerCase();
+	for (let t = .05; contrast(c, NAVY) < 4 && t <= 1; t += .05) c = hex(blend$1(rgb$1(i.colors[0]), WHITE$1, t));
+	return c;
+}
+/** Every capsule: the machines in the order they joined, then mystery, free, and each season's. */
+const CAPSULES = [
+	...GAMES.map((g) => ({
+		id: g,
+		name: machineName(g),
+		kind: "machine",
+		colour: SET_COLORS[g],
+		game: g
+	})),
+	{
+		id: "mystery",
+		name: "Mystery",
+		kind: "mystery",
+		colour: CORAL
+	},
+	{
+		id: "free",
+		name: "Free daily",
+		kind: "free",
+		colour: CORAL
+	},
+	...seasonal.map((i) => ({
+		id: seasonId(i),
+		name: i.name,
+		kind: "season",
+		colour: seasonColour(i),
+		item: i.id,
+		from: i.season.from,
+		to: i.season.to
+	}))
+];
+function seasonId(i) {
+	return "season." + i.id.replace(/^club\./, "");
+}
+/**
+* A capsule by its id (`puttsies`, `mystery`, `free`, `season.pumpkin`), or by `season` and a
+* seasonal item's id (`club.pumpkin` or `pumpkin`). Undefined for anything else.
+*/
+function capsuleById(id, season) {
+	if (id === "season" && season) id = "season." + season.replace(/^(club|season)\./, "");
+	return CAPSULES.find((c) => c.id === id);
+}
+/** A square of RGBA pixels that blends what's set over what's there, as the site's capsule was drawn. */
+var Px = class Px {
+	d;
+	constructor(w) {
+		this.w = w;
+		this.d = new Uint8ClampedArray(w * w * 4);
+	}
+	set(x, y, c, a = 255) {
+		x = Math.round(x);
+		y = Math.round(y);
+		if (x < 0 || y < 0 || x >= this.w || y >= this.w) return;
+		const d = this.d, i = (y * this.w + x) * 4, k = a / 255;
+		if (a >= 255 || !d[i + 3]) {
+			d[i] = c[0];
+			d[i + 1] = c[1];
+			d[i + 2] = c[2];
+			d[i + 3] = a;
+			return;
+		}
+		d[i] += (c[0] - d[i]) * k;
+		d[i + 1] += (c[1] - d[i + 1]) * k;
+		d[i + 2] += (c[2] - d[i + 2]) * k;
+		d[i + 3] = Math.max(d[i + 3], a);
+	}
+	alpha(x, y) {
+		return x < 0 || y < 0 || x >= this.w || y >= this.w ? 0 : this.d[(y * this.w + x) * 4 + 3];
+	}
+	/** Ink round everything solid: each empty pixel beside one that's mostly there. */
+	outline(c) {
+		const add$1 = [];
+		for (let y = 0; y < this.w; y++) for (let x = 0; x < this.w; x++) {
+			if (this.alpha(x, y)) continue;
+			if ([
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			].some(([dx, dy]) => this.alpha(x + dx, y + dy) > 150)) add$1.push([x, y]);
+		}
+		for (const [x, y] of add$1) this.set(x, y, c);
+	}
+	/** Moved by whole pixels, what slides off the edge lost. */
+	shifted(dx, dy) {
+		const out = new Px(this.w);
+		for (let y = 0; y < this.w; y++) for (let x = 0; x < this.w; x++) {
+			const sx = x - dx, sy = y - dy;
+			if (sx < 0 || sy < 0 || sx >= this.w || sy >= this.w) continue;
+			out.d.set(this.d.subarray((sy * this.w + sx) * 4, (sy * this.w + sx) * 4 + 4), (y * this.w + x) * 4);
+		}
+		return out;
+	}
+};
+/** `layers` stacked, each over the one before, into one picture. */
+function stack(w, layers) {
+	const out = new Uint8ClampedArray(w * w * 4);
+	for (const l of layers) for (let i = 0; i < out.length; i += 4) {
+		const sa = l.d[i + 3] / 255;
+		if (!sa) continue;
+		const da = out[i + 3] / 255, a = sa + da * (1 - sa);
+		for (let k = 0; k < 3; k++) out[i + k] = Math.round((l.d[i + k] * sa + out[i + k] * da * (1 - sa)) / a);
+		out[i + 3] = Math.round(a * 255);
+	}
+	return out;
+}
+/** A grid of rows of letters, painted from `key`; '.' is see-through. */
+const sprite = (key, rows) => rows.map((r) => [...r].map((ch) => key[ch] ?? null));
+const toys = new Map();
+/** A guy as a toy: the 'mystery' guy (the same face in every capsule) in a machine's skin or a season's hat. */
+function guyToy(equip) {
+	if (!toys.has(equip)) {
+		const cfg = dress(resolve("mystery"), { equip: [equip] });
+		toys.set(equip, paint(compose(cfg), cfg, withItems(shadePalette(getPalette(cfg.palette), cfg.shade), cfg)));
+	}
+	return toys.get(equip);
+}
+/** A toy at half size for the 16 grid: each two by two the colour most of it is, the darker on a tie. */
+function halved(cells) {
+	const out = [];
+	for (let y = 0; y < cells.length; y += 2) {
+		const row = [];
+		for (let x = 0; x < cells[0].length; x += 2) {
+			const n = new Map();
+			for (const c of [
+				cells[y][x],
+				cells[y][x + 1],
+				cells[y + 1]?.[x],
+				cells[y + 1]?.[x + 1]
+			]) if (c) n.set(c, (n.get(c) ?? 0) + 1);
+			const lum$1 = (h) => {
+				const [r, g, b$1] = rgb$1(h);
+				return r * .3 + g * .59 + b$1 * .11;
+			};
+			const best = [...n].sort((a, b$1) => b$1[1] - a[1] || lum$1(a[0]) - lum$1(b$1[0]))[0];
+			row.push(best && best[1] >= 2 ? best[0] : null);
+		}
+		out.push(row);
+	}
+	return out;
+}
+const QKEY = {
+	k: "#161222",
+	c: CORAL,
+	l: "#ff9b8c",
+	s: "#c63f3a"
+};
+const QUESTION = sprite(QKEY, [
+	"................",
+	".....kkkkkk.....",
+	"....kllllcck....",
+	"...kllkkkkcsk...",
+	"...kckk..kcsk...",
+	"...kkk..kccsk...",
+	".......kccsk....",
+	"......kccsk.....",
+	"......kcsk......",
+	"......kkkk......",
+	"......kcsk......",
+	"......kkkk......",
+	"................",
+	"................",
+	"................",
+	"................"
+]);
+const QUESTION_24 = sprite(QKEY, [
+	"................",
+	".....kkkkkk.....",
+	"....kllllcck....",
+	"....kkkk.kcsk...",
+	"........kccsk...",
+	".......kcsk.....",
+	".......kkk......",
+	".......kcsk.....",
+	".......kkkk....."
+]);
+const QUESTION_16 = sprite(QKEY, [
+	"........",
+	"...ccc..",
+	".....s..",
+	"....c...",
+	"........",
+	"....c..."
+]);
+/** A sprite with ink round it: every empty cell beside a filled one. */
+function inked(cells, ink = "#161222") {
+	const at = (x, y) => cells[y]?.[x] ?? null;
+	return cells.map((row, y) => row.map((c, x) => c ?? ([
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1]
+	].some(([dx, dy]) => at(x + dx, y + dy) && at(x + dx, y + dy) !== ink) ? ink : null)));
+}
+const SKEY = {
+	e: IVORY,
+	c: CORAL,
+	s: "#d9473f",
+	w: "#fff6d8"
+};
+const STAMP = inked(sprite(SKEY, [
+	"................",
+	"...e.e.e.e.e....",
+	"....eeeeeeeee...",
+	"...eeccccccsee..",
+	"....ecccwccse...",
+	"...eeccwwwcsee..",
+	"....ecwwwwwse...",
+	"...eeccwcwcsee..",
+	"....eccccccse...",
+	"...eesssssssee..",
+	"....eeeeeeeee...",
+	"...e.e.e.e.e....",
+	"................",
+	"................",
+	"................",
+	"................"
+]));
+const STAMP_24 = inked(sprite(SKEY, [
+	"................",
+	"....e.e.e.e.....",
+	".....eeeeeee....",
+	"....eeccccsee...",
+	".....eccwcse....",
+	"....eecwwwsee...",
+	".....ecwcwse....",
+	"....eesssssee...",
+	".....eeeeeee....",
+	"....e.e.e.e....."
+]));
+const STAMP_16 = sprite(SKEY, [
+	"........",
+	"........",
+	"..eeee..",
+	"..ecwe..",
+	"..ecce..",
+	"..eeee.."
+]);
+const RAINBOW = [
+	"#ff6b6b",
+	"#ff8a3d",
+	"#ffd447",
+	"#74d97c",
+	"#4fd6c4",
+	"#5fb4ff",
+	"#a98bff",
+	"#ff7eb6"
+].map(rgb$1);
+const SEGMENTS = {
+	16: [
+		0,
+		2,
+		5,
+		7
+	],
+	24: [
+		0,
+		2,
+		3,
+		5,
+		6,
+		7
+	],
+	32: [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		7
+	],
+	64: [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		7
+	]
+};
+const RADIUS = {
+	16: 6.5,
+	24: 10.5,
+	32: 14.5,
+	64: 29.5
+};
+function segment(u, v, grid) {
+	const R$1 = RADIUS[grid], along = u / R$1 / Math.sqrt(Math.max(.05, 1 - (v / R$1) ** 2)), lon = Math.asin(Math.max(-1, Math.min(1, along)));
+	const of = SEGMENTS[grid], k = Math.min(of.length - 1, Math.floor((lon + Math.PI / 2) / Math.PI * of.length));
+	return RAINBOW[of[k]];
+}
+/** The band round the club's own capsules (a season's, the free one): rows below the seam, in pixels from the middle. */
+const BAND = {
+	16: [1.5, 3.5],
+	24: [2.5, 5.5],
+	32: [3.5, 7.5],
+	64: [6.5, 14.5]
+};
+const band = (v, grid) => v >= BAND[grid][0] && v < BAND[grid][1];
+/** Of a hat's colours, the one furthest from its first: the season's band. */
+function bandColour(colors) {
+	const a = rgb$1(colors[0]);
+	return colors.map(rgb$1).reduce((best, c) => Math.hypot(c[0] - a[0], c[1] - a[1], c[2] - a[2]) > Math.hypot(best[0] - a[0], best[1] - a[1], best[2] - a[2]) ? c : best, a);
+}
+const looks = new Map();
+function lookOf$1(c) {
+	if (looks.has(c.id)) return looks.get(c.id);
+	const toyOf = (equip) => (grid) => grid === 16 ? halved(guyToy(equip)) : guyToy(equip);
+	const candy = rgb$1(c.colour);
+	let look;
+	if (c.kind === "machine") look = {
+		candy: () => candy,
+		toy: toyOf(gameItems(c.game).find((i) => i.slot === "skin").id)
+	};
+	else if (c.kind === "season") {
+		const stripe = bandColour([c.colour, ...items.find((i) => i.id === c.item).colors.slice(1)]);
+		look = {
+			candy: (_, v, grid) => band(v, grid) ? stripe : candy,
+			toy: toyOf(c.item)
+		};
+	} else if (c.kind === "mystery") look = {
+		candy: segment,
+		toy: (grid) => grid === 16 ? QUESTION_16 : grid === 24 ? QUESTION_24 : QUESTION
+	};
+	else {
+		const ivory = rgb$1(IVORY);
+		look = {
+			candy: (_, v, grid) => band(v, grid) ? candy : ivory,
+			toy: (grid) => grid === 16 ? STAMP_16 : grid === 24 ? STAMP_24 : STAMP
+		};
+	}
+	looks.set(c.id, look);
+	return look;
+}
+const SHUT = {
+	turn: 0,
+	lid: 0,
+	lift: 0
+};
+const ALL$1 = {
+	toy: true,
+	dome: true
+};
+/** Where the toy's top left sits on each grid (at two pixels a cell on 64). */
+const TOY_AT = {
+	16: {
+		x: 4,
+		y: 1
+	},
+	24: {
+		x: 4,
+		y: 2
+	},
+	32: {
+		x: 8,
+		y: 3
+	},
+	64: {
+		x: 16,
+		y: 6
+	}
+};
+/** The middle of each grid's capsule. */
+const CENTRE = {
+	16: 7.5,
+	24: 11.5,
+	32: 15.5,
+	64: 31.5
+};
+/** Which part of the capsule a point is in, from how far below the middle it is along the capsule's own up. */
+const partAt = (v, grid) => v < -1 ? "dome" : v < 0 ? "seam" : v < 1 && grid !== 16 && grid !== 24 ? "seam2" : "candy";
+/**
+* How far the toy moves as the capsule rocks, in whole pixels: it rides along with the dome but stays
+* upright, so a face, a question mark or a stamp never breaks up into loose pixels mid-rock.
+*/
+function toyShift(grid, turn$1) {
+	const v = -RADIUS[grid] * .45, c = Math.cos(turn$1), s = Math.sin(turn$1);
+	return [Math.round(-s * v) || 0, Math.round(c * v - v) || 0];
+}
+/** A point on the body and on the dome, each turned back to the capsule's own upright: what the halves draw from. */
+function places(grid, pose, x, y) {
+	const C$1 = CENTRE[grid], turn$1 = (t, yy) => {
+		const c = Math.cos(t), s = Math.sin(t);
+		return [C$1 + (x - C$1) * c + (yy - C$1) * s, C$1 - (x - C$1) * s + (yy - C$1) * c];
+	};
+	const [bu, bv] = turn$1(pose.turn, y), [, dv] = turn$1(pose.turn + pose.lid, y + pose.lift);
+	return {
+		bu,
+		bv,
+		body: partAt(bv - C$1, grid),
+		dome: partAt(dv - C$1, grid) === "dome",
+		lip: pose.lid !== 0 && dv - C$1 >= (grid === 64 ? -3 : -2) && dv - C$1 < -1
+	};
+}
+/**
+* The master, at 64: the site's capsule exactly as it was drawn there, a clear dome over a candy half,
+* shaded as a sphere lit from the top left, with the toy showing through. The halves come back apart,
+* each outlined.
+*/
+function master(look, pose, show = ALL$1) {
+	const top = new Px(64), bot = new Px(64), R$1 = 29.5, C$1 = 31.5, L = [
+		-.48,
+		-.6,
+		.64
+	], toy = look.toy(64), [ox, oy] = toyShift(64, pose.turn);
+	for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+		const p = places(64, pose, x, y);
+		if (show.toy && p.body === "dome" && Math.hypot(x - C$1, y - C$1) < R$1 - 2) {
+			const hex$2 = toy[Math.floor((y - oy - 6) / 2)]?.[Math.floor((x - ox - 16) / 2)];
+			if (hex$2) top.set(x, y, blend$1(rgb$1(hex$2), [
+				228,
+				238,
+				255
+			], .16));
+		}
+		const ly = y + pose.lift, ldx = (x - C$1) / R$1, ldy = (ly - C$1) / R$1, lr2 = ldx * ldx + ldy * ldy;
+		if (show.dome && p.dome && lr2 <= 1) {
+			const rim$1 = Math.pow(lr2, 3), ang = Math.atan2(ldy, ldx);
+			top.set(x, y, blend$1([
+				214,
+				228,
+				250
+			], [
+				120,
+				140,
+				190
+			], rim$1 * .5), Math.round(28 + rim$1 * 175));
+			if (lr2 > .6 && lr2 < .78 && ang < -1.8 && ang > -2.75) top.set(x, y, WHITE$1, 215);
+			if (lr2 > .6 && lr2 < .7 && ang > -.6 && ang < -.25) top.set(x, y, WHITE$1, 90);
+			if (p.lip) top.set(x, y, [
+				167,
+				184,
+				220
+			], 220);
+		}
+		const dx = (x - C$1) / R$1, dy = (y - C$1) / R$1, r2 = dx * dx + dy * dy;
+		if (r2 > 1 || p.body === "dome") continue;
+		const candy = look.candy(p.bu - C$1, p.bv - C$1, 64);
+		if (p.body !== "candy") {
+			bot.set(x, y, blend$1(candy, WHITE$1, p.body === "seam" ? .55 : .18));
+			continue;
+		}
+		const nz = Math.sqrt(1 - r2), lit = Math.max(0, dx * L[0] + dy * L[1] + nz * L[2]);
+		let c = lit < .55 ? blend$1(candy, INK, (.55 - lit) * 1.1) : blend$1(candy, WHITE$1, (lit - .55) * .55);
+		if (r2 > .88) c = blend$1(c, INK, .3);
+		if (Math.hypot(dx + .5, dy - .2) < .09) c = blend$1(c, WHITE$1, .6);
+		bot.set(x, y, c);
+	}
+	if (show.dome) {
+		for (const [x, y, a] of [
+			[
+				17,
+				12,
+				255
+			],
+			[
+				18,
+				12,
+				255
+			],
+			[
+				17,
+				13,
+				255
+			],
+			[
+				22,
+				9,
+				170
+			]
+		]) if (places(64, pose, x, y - pose.lift).dome) top.set(x, y - pose.lift, WHITE$1, a);
+	}
+	top.outline(INK);
+	bot.outline(INK);
+	return {
+		top,
+		bot
+	};
+}
+const SMALL = {
+	16: [
+		"................",
+		".....######.....",
+		"...##eeeeee##...",
+		"..#eeHHllmmee#..",
+		"..#eHllllmmme#..",
+		".#eHllllmmmmde#.",
+		".#ellllmmmmdde#.",
+		".#elllmmmmmdde#.",
+		".#emmmmmmmddde#.",
+		".#emsmmmmdddde#.",
+		".#emmmmdddddde#.",
+		"..#edddddddde#..",
+		"..#eeddddddee#..",
+		"...##eeeeee##...",
+		".....######.....",
+		"................"
+	],
+	24: [
+		"........................",
+		"........########........",
+		"......##eeeeeeee##......",
+		".....#eeHHlllmmmee#.....",
+		"....#eHHHHlllmmmmme#....",
+		"...#eHHHlllllmmmmmde#...",
+		"..#eHHHllllllmmmmmdde#..",
+		"..#eHHlllllllmmmmmdde#..",
+		".#elllllllllmmmmmmddde#.",
+		".#ellllllllmmmmmmdddde#.",
+		".#elllllllmmmmmmmdddde#.",
+		".#emllllmmmmmmmmddddde#.",
+		".#emmmmmmmmmmmmdddddde#.",
+		".#emmmssmmmmmmddddddde#.",
+		".#emmmssmmmmmdddddddde#.",
+		".#emmmmmmmmmddddddddde#.",
+		"..#emmmmmddddddddddde#..",
+		"..#edddddddddddddddde#..",
+		"...#edddddddddddddde#...",
+		"....#edddddddddddde#....",
+		".....#eeddddddddee#.....",
+		"......##eeeeeeee##......",
+		"........########........",
+		"........................"
+	],
+	32: [
+		"................................",
+		"...........##########...........",
+		".........##eeeeeeeeee##.........",
+		".......##eeHlllllmmmmee##.......",
+		"......#eeHHHHlllllmmmmmee#......",
+		".....#elHHHHHlllllmmmmmmde#.....",
+		"....#elHHHHHllllllmmmmmmdde#....",
+		"...#elHHHHllllllllmmmmmmmdde#...",
+		"...#eHHHHlllllllllmmmmmmmdde#...",
+		"..#eHHHHlllllllllmmmmmmmdddde#..",
+		"..#eHHHllllllllllmmmmmmmdddde#..",
+		".#elllHlllllllllmmmmmmmmddddde#.",
+		".#ellllllllllllmmmmmmmmmddddde#.",
+		".#elllllllllllmmmmmmmmmdddddde#.",
+		".#emllllllllmmmmmmmmmmddddddde#.",
+		".#emmlllllmmmmmmmmmmmmddddddde#.",
+		".#emmmmmmmmmmmmmmmmmmdddddddde#.",
+		".#emmmmmssmmmmmmmmmmddddddddde#.",
+		".#emmmmsssmmmmmmmmmdddddddddde#.",
+		".#emmmmsssmmmmmmmmddddddddddde#.",
+		".#emmmmmmmmmmmmmddddddddddddde#.",
+		"..#emmmmmmmmmmdddddddddddddde#..",
+		"..#eddmmmmmddddddddddddddddde#..",
+		"...#edddddddddddddddddddddde#...",
+		"...#edddddddddddddddddddddde#...",
+		"....#edddddddddddddddddddde#....",
+		".....#edddddddddddddddddde#.....",
+		"......#eeddddddddddddddee#......",
+		".......##eeddddddddddee##.......",
+		".........##eeeeeeeeee##.........",
+		"...........##########...........",
+		"................................"
+	]
+};
+/** A small grid, from its letters: the toy, the glass, the seam and the candy, then each half outlined. */
+function small(look, grid, pose, show = ALL$1) {
+	const rows = SMALL[grid], C$1 = CENTRE[grid], R$1 = C$1 - 1, at = TOY_AT[grid], toy = look.toy(grid), [ox, oy] = toyShift(grid, pose.turn);
+	const top = new Px(grid), bot = new Px(grid), letter = (x, y) => rows[y]?.[x] ?? ".";
+	for (let y = 0; y < grid; y++) for (let x = 0; x < grid; x++) {
+		const p = places(grid, pose, x, y), body = letter(x, y), dome = letter(x, y + pose.lift);
+		if (show.toy && p.body === "dome" && (body === "e" ? grid === 16 && y > 1 : body !== "." && body !== "#")) {
+			const hex$2 = toy[y - oy - at.y]?.[x - ox - at.x];
+			if (hex$2) top.set(x, y, blend$1(rgb$1(hex$2), pose.lift && !pose.lid ? [
+				255,
+				226,
+				170
+			] : [
+				228,
+				238,
+				255
+			], .16));
+		}
+		if (show.dome && p.dome && dome !== ".") {
+			const r2 = ((x - C$1) ** 2 + (y + pose.lift - C$1) ** 2) / (R$1 * R$1), rim$1 = Math.min(1, r2) ** 3, toyHere = top.alpha(x, y) === 255;
+			if (dome === "#") continue;
+			if (dome === "e" && !toyHere) top.set(x, y, [
+				167,
+				184,
+				220
+			], 210);
+			else top.set(x, y, blend$1([
+				214,
+				228,
+				250
+			], [
+				120,
+				140,
+				190
+			], rim$1 * .5), Math.round(28 + rim$1 * 175));
+			if (dome === "H") top.set(x, y, WHITE$1, 215);
+			if (p.lip) top.set(x, y, [
+				167,
+				184,
+				220
+			], 220);
+		}
+		if (p.body === "dome" || body === "." || body === "#") continue;
+		const candy = look.candy(p.bu - C$1, p.bv - C$1, grid);
+		if (p.body !== "candy") {
+			bot.set(x, y, blend$1(candy, WHITE$1, p.body === "seam" ? .55 : .18));
+			continue;
+		}
+		bot.set(x, y, body === "e" ? blend$1(candy, INK, .38) : body === "d" ? blend$1(candy, INK, .2) : body === "l" || body === "H" ? blend$1(candy, WHITE$1, .22) : body === "s" ? blend$1(candy, WHITE$1, .6) : candy);
+	}
+	top.outline(INK);
+	bot.outline(INK);
+	return {
+		top,
+		bot
+	};
+}
+const halvesAt = (look, grid, pose, show = ALL$1) => grid === 64 ? master(look, pose, show) : small(look, grid, pose, show);
+/**
+* Warm light from a capsule cracked open, drawn behind both halves and only where light can come from:
+* a glow behind the dome's glass (brightest by the crack, so the toy stands dark against it), white-hot
+* in the gap between dome and candy, and out of the crack past the side on 32 and 64. On 16 and 24 the
+* dome lifts straight off, so it glows all over, like a bulb, over a white-hot line.
+*/
+function light(grid, pose, top, bot) {
+	const g = new Px(grid), C$1 = CENTRE[grid], R$1 = RADIUS[grid] + 1;
+	const hot = [
+		255,
+		248,
+		222
+	], warm = [
+		255,
+		210,
+		112
+	];
+	const tilt = pose.lid ? pose.lid < 0 ? 1 : -1 : 0;
+	const mouth = {
+		x: C$1 + tilt * (R$1 - 1),
+		y: C$1 - 1 - pose.lift - Math.abs(Math.sin(pose.lid)) * R$1 * .5
+	};
+	for (let y = 0; y < grid; y++) for (let x = 0; x < grid; x++) {
+		if (top.alpha(x, y)) {
+			const t = Math.min(1, Math.max(0, tilt ? (C$1 - y) / (R$1 * 2) + .12 - .3 * tilt * (x - C$1) / R$1 : (C$1 - 1 - pose.lift - y) / (R$1 * 1.4)));
+			g.set(x, y, tilt ? blend$1(hot, [
+				255,
+				186,
+				84
+			], t) : blend$1([
+				255,
+				236,
+				170
+			], [
+				255,
+				194,
+				80
+			], t), Math.round(250 - (tilt ? 50 : 40) * t));
+			continue;
+		}
+		if (bot.alpha(x, y) || !tilt) continue;
+		const p = places(grid, pose, x, y);
+		if (Math.hypot(x - C$1, y - C$1) <= R$1 || Math.hypot(x - C$1, y + pose.lift - C$1) <= R$1) {
+			if (!p.dome && p.body === "dome" && y < C$1 + 1) g.set(x, y, hot);
+			continue;
+		}
+		const d = Math.hypot(x - mouth.x, y - mouth.y), ang = Math.atan2(mouth.y - y, (x - mouth.x) * tilt);
+		const ray = ang > -.2 && [
+			.15,
+			.6,
+			1.1
+		].some((a) => Math.abs(ang - a) * d < (grid === 64 ? 1.4 : .7)) && d < R$1 * .75;
+		if (ray || d < (grid === 64 ? 4 : 1.5)) g.set(x, y, blend$1(hot, warm, d / R$1), Math.round(240 * Math.max(.25, 1 - d / (R$1 * .75))));
+	}
+	if (!tilt) for (let x = 0; x < grid; x++) {
+		let under = -1, over = grid;
+		for (let y = 0; y < grid; y++) {
+			if (top.alpha(x, y)) under = y;
+			if (bot.alpha(x, y) && over === grid) over = y;
+		}
+		if (under >= 0 && over < grid) for (let y = under + 1; y < over; y++) g.set(x, y, hot);
+	}
+	const near = (x, y) => [
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1],
+		[1, 1],
+		[-1, -1],
+		[1, -1],
+		[-1, 1]
+	].filter(([dx, dy]) => g.alpha(x + dx, y + dy) || top.alpha(x + dx, y + dy) || bot.alpha(x + dx, y + dy)).length;
+	for (let y = 0; y < grid; y++) for (let x = 0; x < grid; x++) if (g.alpha(x, y) && !top.alpha(x, y) && !bot.alpha(x, y) && near(x, y) <= 1) g.d.fill(0, (y * grid + x) * 4, (y * grid + x) * 4 + 4);
+	return g;
+}
+/** One frame: the halves in a pose, stacked, shifted by `dx`, with the light behind them when it's open. */
+function frame(look, grid, pose, dx = 0) {
+	const { top, bot } = halvesAt(look, grid, pose);
+	if (!pose.lift) return stack(grid, [bot.shifted(dx, 0), top.shifted(dx, 0)]);
+	if (!pose.lid) for (let y = 0; y < Math.ceil(CENTRE[grid] - 1); y++) bot.d.fill(0, y * grid * 4, (y + 1) * grid * 4);
+	const candy = pose.drop ? bot.shifted(0, pose.drop) : bot;
+	return stack(grid, [
+		light(grid, pose, top, candy),
+		candy,
+		top
+	]);
+}
+/**
+* Cracked open: on 32 and 64 the dome tips back on its left edge, light pouring out on the right; on 16
+* and 24, too small for that to read, the halves part a pixel each way round a line of light and the
+* dome glows.
+*/
+const openPose = (grid) => grid >= 32 ? {
+	turn: 0,
+	lid: -14 * Math.PI / 180,
+	lift: 1
+} : {
+	turn: 0,
+	lid: 0,
+	lift: 1,
+	drop: 1
+};
+const ROCK$1 = [
+	0,
+	.5,
+	1,
+	.5,
+	0,
+	-.5,
+	-1,
+	-.5,
+	0,
+	.5,
+	1,
+	.5,
+	0,
+	-.5,
+	-1,
+	-.5
+];
+const ROCK_DEGREES = {
+	16: 9,
+	24: 6,
+	32: 13,
+	64: 13
+};
+const REST_MS = 700, ROCK_MS = 50;
+/** The base grid and whole-number scale for a size: 16, 24, 32 or 64, or a whole multiple of one (64 first). */
+function gridFor(size, grid) {
+	if (!Number.isInteger(size) || size < 16) return null;
+	if (grid) return CAPSULE_GRIDS.includes(grid) && size % grid === 0 ? {
+		grid,
+		scale: size / grid
+	} : null;
+	const fit$2 = [
+		64,
+		32,
+		24,
+		16
+	].find((g) => size % g === 0);
+	return fit$2 ? {
+		grid: fit$2,
+		scale: size / fit$2
+	} : null;
+}
+/**
+* A capsule as frames: one still frame `closed` or `open`, or the `wobble`'s loop (a rest, then two
+* quick rocks either way, back where it started). Null for a machine, state or size there isn't.
+*/
+function capsuleFrames(options) {
+	const c = capsuleById(options.machine, options.season), state = options.state ?? "closed", fit$2 = gridFor(options.size ?? options.grid ?? 64, options.grid);
+	if (!c || !fit$2 || !CAPSULE_STATES.includes(state)) return null;
+	const look = lookOf$1(c), { grid, scale: scale$1 } = fit$2;
+	const frames = state === "wobble" ? ROCK$1.map((f) => frame(look, grid, {
+		...SHUT,
+		turn: f * ROCK_DEGREES[grid] * Math.PI / 180
+	}, grid < 32 && Math.abs(f) === 1 ? f : 0)) : [frame(look, grid, state === "open" ? openPose(grid) : SHUT)];
+	return {
+		width: grid * scale$1,
+		height: grid * scale$1,
+		frames: frames.map((f) => upscale(f, grid, grid, scale$1)),
+		delays: state === "wobble" ? ROCK$1.map((_, k) => k === 0 ? REST_MS : ROCK_MS) : [1e3]
+	};
+}
+/**
+* A shut capsule's two halves apart, each `grid` square and outlined on its own, for a page that
+* moves them itself (the site twists the dome off and drops the candy away). The dome is drawn over
+* the candy. Null for a capsule there isn't.
+*/
+function capsuleHalves(machine, options = {}) {
+	const c = capsuleById(machine, options.season), grid = options.grid ?? 64;
+	if (!c || !CAPSULE_GRIDS.includes(grid)) return null;
+	const { top, bot } = halvesAt(lookOf$1(c), grid, SHUT);
+	return {
+		top: top.d,
+		bottom: bot.d,
+		size: grid
+	};
+}
+/**
+* A capsule's halves in any pose, each `grid` square and outlined on its own, the toy and the dome's
+* glass drawn or left out (`show`): what ./capsule-open plays its open from. Not in the library's
+* index; a page plays the open, or moves `capsuleHalves` itself.
+*/
+function capsuleLayers(id, pose, show = ALL$1, grid = 64) {
+	const c = capsuleById(id);
+	if (!c || !CAPSULE_GRIDS.includes(grid)) return null;
+	const { top, bot } = halvesAt(lookOf$1(c), grid, pose, show);
+	return {
+		top: top.d,
+		bottom: bot.d
+	};
+}
+/**
+* A capsule's picture from the lil guys Worker (`setLilGuysHost` moves it): `/g/<art version>/capsule/<id>-<state>-<grid>@<scale>.png`,
+* an animated PNG for the wobble. Only PNG: a GIF has no see-through glass.
+*/
+function capsuleUrl(id, state = "closed", grid = 64, options = {}) {
+	const { scale: scale$1 = 1, host = lilGuysHost() } = options;
+	return `${host}/g/${ART_VERSION}/capsule/${id}-${state}-${grid}${scale$1 > 1 ? "@" + scale$1 : ""}.png`;
+}
+/** The plain files of the capsule pack (`/capsules/`): every capsule shut, at 16, 32, 64 and 128. */
+const CAPSULE_FILE_SIZES = [
+	16,
+	32,
+	64,
+	128
+];
+const capsuleFile = (id, size) => `${id}-${size}.png`;
+/**
+* The manifest a game reads to show capsules: each one's plain files (shut, 16 to 128) and its Worker
+* pictures in every state on each grid, 128 being the master at 2×. Wobble's are animated PNGs.
+*/
+function capsuleManifest(host = lilGuysHost()) {
+	const sizes = (id, state) => Object.fromEntries([...CAPSULE_GRIDS.map((g) => [String(g), capsuleUrl(id, state, g, { host })]), ["128", capsuleUrl(id, state, 64, {
+		host,
+		scale: 2
+	})]]);
+	return {
+		version: ART_VERSION,
+		grids: CAPSULE_GRIDS,
+		states: CAPSULE_STATES,
+		url: `${host}/g/${ART_VERSION}/capsule/{id}-{state}-{grid}{scale}.png`,
+		capsules: CAPSULES.map((c) => ({
+			...c,
+			files: Object.fromEntries(CAPSULE_FILE_SIZES.map((s) => [String(s), `${host}/capsules/${capsuleFile(c.id, s)}`])),
+			closed: sizes(c.id, "closed"),
+			wobble: sizes(c.id, "wobble"),
+			open: sizes(c.id, "open")
+		}))
+	};
+}
+
+//#endregion
+//#region src/capsule-open.ts
+const WHITE = [
+	255,
+	255,
+	255
+];
+const rgb = (s) => [
+	parseInt(s.slice(1, 3), 16),
+	parseInt(s.slice(3, 5), 16),
+	parseInt(s.slice(5, 7), 16)
+];
+const blend = (a, b$1, t) => a.map((v, i) => Math.round(v + (b$1[i] - v) * t));
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const DEG = Math.PI / 180;
+/** The open's stage at 1×, square: the capsule's 64 master at its foot, room above for the burst and what comes out. */
+const CAPSULE_OPEN_SIZE = 96;
+const S = CAPSULE_OPEN_SIZE;
+/** The capsule's 64 square on the stage, its foot on the stage's; its middle, its round, and the middle of the candy's rim. */
+const AT_X = 16, AT_Y = 32, C = 31.5, R = 29.5, MOUTH_X = 48, MOUTH_Y = 62;
+/** The light and sparks are drawn in the toy's cells, two pixels square, so nothing is ever a lone pixel. */
+const CELL = 2;
+/** Where what comes out stands over the open half: the bottom of the item itself, sitting just over the rim. */
+const HOVER = 58;
+/** A stage's pixels, each layer laid over what's there as the capsule's halves are stacked. */
+var Stage = class {
+	d = new Uint8ClampedArray(S * S * 4);
+	put(x, y, r, g, b$1, a) {
+		if (x < 0 || y < 0 || x >= S || y >= S || !a) return;
+		const d = this.d, i = (y * S + x) * 4, sa = a / 255, da = d[i + 3] / 255, out = sa + da * (1 - sa);
+		d[i] = Math.round((r * sa + d[i] * da * (1 - sa)) / out);
+		d[i + 1] = Math.round((g * sa + d[i + 1] * da * (1 - sa)) / out);
+		d[i + 2] = Math.round((b$1 * sa + d[i + 2] * da * (1 - sa)) / out);
+		d[i + 3] = Math.round(out * 255);
+	}
+	/** A `w` by `h` picture with its top left at `x`, `y`; rows from `below` down left out (what's still inside the candy). */
+	over(src, w, h, x, y, below = Infinity) {
+		for (let sy = 0; sy < h; sy++) {
+			const ty = y + sy;
+			if (ty < 0 || ty >= S || ty >= below) continue;
+			for (let sx = 0; sx < w; sx++) {
+				const i = (sy * w + sx) * 4;
+				if (src[i + 3]) this.put(x + sx, ty, src[i], src[i + 1], src[i + 2], src[i + 3]);
+			}
+		}
+	}
+	/** One cell of light, solid, on the stage's grid of cells. */
+	cell(x, y, c) {
+		const cx = Math.floor(x / CELL) * CELL, cy = Math.floor(y / CELL) * CELL;
+		for (let dy = 0; dy < CELL; dy++) for (let dx = 0; dx < CELL; dx++) this.put(cx + dx, cy + dy, c[0], c[1], c[2], 255);
+	}
+	/** A spark: a cell, or a plus of five. */
+	spark(x, y, c, big) {
+		this.cell(x, y, c);
+		if (big) for (const [dx, dy] of [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		]) this.cell(x + dx * CELL, y + dy * CELL, c);
+	}
+	/** A line of cells from `r0` to `r1` out from `x`, `y` at angle `a`, coloured by how far along `length` it is. */
+	ray(x, y, a, r0, r1, length, colours) {
+		const seen = new Set();
+		for (let r = Math.max(0, r0); r <= r1; r += 1) {
+			const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r, key = Math.floor(px / CELL) * 1e3 + Math.floor(py / CELL);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			this.cell(px, py, colours[Math.min(colours.length - 1, Math.floor(r / Math.max(1, length) * colours.length))]);
+		}
+	}
+};
+/** Pixels left with one neighbour or none (a dome's sliver at the stage's edge) are taken out, so nothing reads as a speck. */
+function despeckle(d) {
+	const lit = (x, y) => x >= 0 && y >= 0 && x < S && y < S && d[(y * S + x) * 4 + 3] > 0;
+	for (let pass = 0; pass < 12; pass++) {
+		const gone = [];
+		for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+			if (!lit(x, y)) continue;
+			let n = 0;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1],
+				[1, 1],
+				[-1, -1],
+				[1, -1],
+				[-1, 1]
+			]) if (lit(x + dx, y + dy)) n++;
+			if (n <= 1) gone.push((y * S + x) * 4);
+		}
+		if (!gone.length) return;
+		for (const i of gone) d.fill(0, i, i + 4);
+	}
+}
+/** A seeded run of numbers in [0, 1), so an open plays the same every time it's drawn. */
+function seeded(seed) {
+	let s = seed >>> 0;
+	return () => {
+		s = s + 1831565813 >>> 0;
+		let t = s;
+		t = Math.imul(t ^ t >>> 15, t | 1);
+		t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+		return ((t ^ t >>> 14) >>> 0) / 4294967296;
+	};
+}
+/** How big an open plays for a copy: its grade (0 Everyday to 5 Aura), a showpiece or an unusual effect at least Prized; null with nothing inside. */
+function capsuleOpenTier(copy) {
+	if (!copy) return null;
+	const grade = GRADES.findIndex((g) => g.id === gradeOf(copy).id);
+	return Math.max(grade, unusual(copy) ? 2 : 0);
+}
+const BUILDS = [
+	{
+		rest: 220,
+		rocks: [[
+			10,
+			40,
+			0
+		]],
+		beat: 0,
+		tremble: 0,
+		crack: [90, 110],
+		rays: 6,
+		reach: 20,
+		sparks: 6,
+		rings: 0,
+		rain: 0,
+		fan: 0,
+		stars: 0,
+		rise: 300
+	},
+	{
+		rest: 240,
+		rocks: [[
+			11,
+			40,
+			0
+		], [
+			12,
+			40,
+			.25
+		]],
+		beat: 80,
+		tremble: 0,
+		crack: [100, 120],
+		rays: 8,
+		reach: 26,
+		sparks: 10,
+		rings: 0,
+		rain: 0,
+		fan: 0,
+		stars: 0,
+		rise: 320
+	},
+	{
+		rest: 250,
+		rocks: [
+			[
+				11,
+				40,
+				.15
+			],
+			[
+				13,
+				40,
+				.35
+			],
+			[
+				14,
+				40,
+				.55
+			]
+		],
+		beat: 120,
+		tremble: 0,
+		crack: [
+			100,
+			110,
+			130
+		],
+		rays: 10,
+		reach: 32,
+		sparks: 16,
+		rings: 1,
+		rain: 0,
+		fan: 6,
+		stars: 2,
+		rise: 340
+	},
+	{
+		rest: 260,
+		rocks: [
+			[
+				12,
+				40,
+				.2
+			],
+			[
+				13,
+				40,
+				.4
+			],
+			[
+				14,
+				30,
+				.6
+			],
+			[
+				14,
+				30,
+				.75
+			]
+		],
+		beat: 140,
+		tremble: 6,
+		crack: [
+			110,
+			120,
+			140
+		],
+		rays: 12,
+		reach: 38,
+		sparks: 22,
+		rings: 1,
+		rain: 0,
+		fan: 8,
+		stars: 3,
+		rise: 360
+	},
+	{
+		rest: 270,
+		rocks: [
+			[
+				12,
+				40,
+				.2
+			],
+			[
+				13,
+				40,
+				.35
+			],
+			[
+				14,
+				30,
+				.5
+			],
+			[
+				15,
+				30,
+				.65
+			],
+			[
+				15,
+				30,
+				.8
+			]
+		],
+		beat: 150,
+		tremble: 8,
+		crack: [
+			120,
+			130,
+			150,
+			170
+		],
+		rays: 14,
+		reach: 44,
+		sparks: 28,
+		rings: 2,
+		rain: 14,
+		fan: 10,
+		stars: 4,
+		rise: 400
+	},
+	{
+		rest: 280,
+		rocks: [
+			[
+				12,
+				40,
+				.2
+			],
+			[
+				13,
+				40,
+				.35
+			],
+			[
+				14,
+				30,
+				.5
+			],
+			[
+				15,
+				30,
+				.65
+			],
+			[
+				16,
+				30,
+				.8
+			],
+			[
+				16,
+				30,
+				.9
+			]
+		],
+		beat: 160,
+		tremble: 10,
+		crack: [
+			130,
+			140,
+			160,
+			180
+		],
+		rays: 16,
+		reach: 46,
+		sparks: 32,
+		rings: 2,
+		rain: 18,
+		fan: 12,
+		stars: 5,
+		rise: 440
+	}
+];
+const WARM = {
+	hot: [
+		255,
+		248,
+		222
+	],
+	mid: [
+		255,
+		210,
+		112
+	],
+	deep: [
+		255,
+		178,
+		72
+	],
+	sparks: []
+};
+const GOLD = {
+	hot: rgb("#fff3c4"),
+	mid: rgb("#f7c23e"),
+	deep: rgb("#d4961f"),
+	sparks: [
+		"#fff3c4",
+		"#ffd45a",
+		"#e4ae39",
+		"#b07818"
+	].map(rgb)
+};
+function lightOf(capsule, copy, tier) {
+	if (tier === null) {
+		const own = rgb(capsule.colour);
+		return {
+			...WARM,
+			deep: blend(own, WARM.deep, .35),
+			sparks: [
+				WARM.hot,
+				WARM.mid,
+				own,
+				blend(own, WHITE, .4)
+			]
+		};
+	}
+	if (tier === 4) return GOLD;
+	if (tier === 5 && copy && slotOf(copy) === "aura") {
+		const own = auraColors(copy.item, copy.finish, copy.print).map(rgb), teal = rgb(GRADES[5].color);
+		const mid$1 = own[0], deep = own[1] ?? teal;
+		return {
+			hot: blend(mid$1, WHITE, .6),
+			mid: mid$1,
+			deep,
+			sparks: [
+				...own,
+				teal,
+				blend(mid$1, WHITE, .6)
+			]
+		};
+	}
+	const g = rgb(GRADES[tier].color), hot = blend(g, WHITE, .8), mid = blend(g, WHITE, .42);
+	return {
+		hot,
+		mid,
+		deep: g,
+		sparks: [
+			hot,
+			mid,
+			g,
+			WHITE
+		]
+	};
+}
+const OUTLINE = "#1a1626";
+/**
+* A copy on its own, as the lil guys site shows one: the pixels that are the item (by layer, or by
+* what changes when a guy puts it on), outlined, its finish moving and its effect playing, scaled up
+* by whole cells to a size that reads over the capsule. An aura has nothing to show on its own, so
+* it comes out round the guy who wears it.
+*/
+function itemArt(copy, seed) {
+	const slot = slotOf(copy);
+	if (!slot) return null;
+	if (slot === "aura") return auraArt(copy, seed);
+	const base = resolve(seed), code = encode(copy), want = FRAME_SLOTS.indexOf(slot) + 1, lo = LAYER[slot];
+	const draw = (equip) => {
+		const cfg = dress(base, { equip });
+		const grid = slot === "buddy" && buddyAlone(cfg) || compose(cfg);
+		return {
+			grid,
+			colors: paint(grid, cfg, withItems(paletteOf(cfg), cfg), false, false)
+		};
+	};
+	const worn = draw([code]);
+	let mask = worn.grid.map((row) => row.map((t) => t >= lo && t < lo + 10));
+	if (!mask.some((r) => r.some(Boolean))) {
+		const bare = draw([]);
+		mask = worn.colors.map((row, y) => row.map((c, x) => !!c && c !== bare.colors[y][x]));
+	}
+	const W = worn.grid[0].length, H = FRAME_HEIGHT, top = H - worn.grid.length;
+	const colors = Array.from({ length: H }, () => new Array(W).fill(null));
+	const slots = Array.from({ length: H }, () => new Array(W).fill(0));
+	worn.colors.forEach((row, y) => row.forEach((c, x) => {
+		if (mask[y][x] && c) {
+			colors[y + top][x] = c;
+			slots[y + top][x] = want;
+		}
+	}));
+	const edge = [];
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!colors[y][x] && [
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1]
+	].some(([dx, dy]) => slots[y + dy]?.[x + dx])) edge.push([x, y]);
+	for (const [x, y] of edge) colors[y][x] = OUTLINE;
+	let x0 = W, y0 = H, x1 = -1, y1 = -1;
+	colors.forEach((row, y) => row.forEach((c, x) => {
+		if (c) {
+			x0 = Math.min(x0, x);
+			y0 = Math.min(y0, y);
+			x1 = Math.max(x1, x);
+			y1 = Math.max(y1, y);
+		}
+	}));
+	if (x1 < 0) return null;
+	const k = clamp(Math.floor(Math.min(40 / (x1 - x0 + 1), 34 / (y1 - y0 + 1))), 2, 4);
+	const ownBottom = y1;
+	if (copy.fx) {
+		const up = [
+			"embers",
+			"bubbles",
+			"hearts"
+		].includes(copy.fx) ? 7 : copy.fx === "electric" ? 3 : 1;
+		y0 = Math.max(0, y0 - up);
+		x0 = Math.max(0, x0 - 1);
+		x1 = Math.min(W - 1, x1 + 1);
+		y1 = Math.min(H - 1, y1 + 1);
+	}
+	const owned = { [slot]: copy };
+	const copies = FRAME_SLOTS.map((s) => owned[s]);
+	const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+	return {
+		w: bw * k,
+		h: bh * k,
+		foot: (y1 - ownBottom) * k,
+		at(ms) {
+			const frame$1 = {
+				colors: copy.fx ? applyFx(colors, slots, copies, ms) : colors,
+				slots,
+				ms: 0
+			};
+			const shone = shineFrame(frame$1, owned, ms), out = new Uint8ClampedArray(bw * bh * 4);
+			for (let y = 0; y < bh; y++) out.set(shone.subarray(((y0 + y) * W + x0) * 4, ((y0 + y) * W + x1 + 1) * 4), y * bw * 4);
+			return upscale(out, bw, bh, k);
+		}
+	};
+}
+/** An aura round the guy who wears it, playing as his baked picture does, cropped to everything it ever lights. */
+function auraArt(copy, seed) {
+	const f = bakeGuy({
+		seed,
+		equip: [encode(copy)]
+	}, "idle");
+	let x0 = f.width, y0 = f.height, x1 = -1, y1 = -1;
+	for (const px of f.frames) for (let y = 0; y < f.height; y++) for (let x = 0; x < f.width; x++) if (px[(y * f.width + x) * 4 + 3]) {
+		x0 = Math.min(x0, x);
+		x1 = Math.max(x1, x);
+		y0 = Math.min(y0, y);
+		y1 = Math.max(y1, y);
+	}
+	const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = 2, total = f.delays.reduce((a, b$1) => a + b$1, 0);
+	return {
+		w: bw * k,
+		h: bh * k,
+		foot: 0,
+		at(ms) {
+			let t = (ms % total + total) % total, i = 0;
+			while (t >= f.delays[i] && i < f.frames.length - 1) t -= f.delays[i++];
+			const out = new Uint8ClampedArray(bw * bh * 4);
+			for (let y = 0; y < bh; y++) out.set(f.frames[i].subarray(((y0 + y) * f.width + x0) * 4, ((y0 + y) * f.width + x1 + 1) * 4), y * bw * 4);
+			return upscale(out, bw, bh, k);
+		}
+	};
+}
+/** The rock: a half lean, all the way, half, upright, then the same the other way. */
+const ROCK = [
+	.5,
+	1,
+	.5,
+	0,
+	-.5,
+	-1,
+	-.5,
+	0
+];
+/** How long the hold frame shows: it's the last, so it stays. */
+const HOLD_MS = 1e3;
+const SHUT_POSE = {
+	turn: 0,
+	lid: 0,
+	lift: 0
+};
+const ALL = {
+	toy: true,
+	dome: true
+};
+/**
+* A capsule opening, as frames: what's inside's grade sets how long it builds and how big it bursts.
+* It plays once; the last frame is the hold, what came out standing over the open half. Null for a
+* capsule there isn't, a copy of an item there isn't, or a size that isn't a whole multiple of 96.
+*/
+function capsuleOpenFrames(options) {
+	const capsule = capsuleById(options.capsule), size = options.size ?? S, copy = options.copy;
+	if (!capsule || !Number.isInteger(size) || size < S || size % S) return null;
+	if (copy && !itemById(copy.item)) return null;
+	const art = copy ? itemArt(copy, options.guy ?? "mystery") : null;
+	if (copy && !art) return null;
+	const tier = capsuleOpenTier(copy), light$1 = lightOf(capsule, copy, tier);
+	const build = tier === null ? {
+		...BUILDS[0],
+		fan: 4
+	} : BUILDS[tier];
+	const random = seeded(hash(`${capsule.id}|${copy ? encode(copy) : "none"}`));
+	const kept = new Map();
+	const layers = (pose, show = ALL) => {
+		const key = `${pose.turn.toFixed(4)},${pose.lid.toFixed(4)},${pose.lift},${show.toy},${show.dome}`;
+		let l = kept.get(key);
+		if (!l) kept.set(key, l = capsuleLayers(capsule.id, pose, show));
+		return l;
+	};
+	/**
+	* Light inside the capsule, behind both halves: the glass filling with it from the seam up as far as
+	* `leak` reaches (in three bands, hot by the seam), and white-hot in any gap between the halves.
+	*/
+	const glow = (pose, top, bottom, leak) => {
+		const g = new Uint8ClampedArray(64 * 64 * 4), sn = Math.sin(pose.turn), cs = Math.cos(pose.turn), reach = leak * 2 * R;
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			const i = (y * 64 + x) * 4, above = -(-(x - C) * sn + (y - C) * cs) - 1;
+			let c = null;
+			if (top[i + 3]) {
+				if (above >= -1 && above <= reach) c = above < reach / 3 ? light$1.hot : above < reach * 2 / 3 ? light$1.mid : light$1.deep;
+			} else if (pose.lift && !bottom[i + 3] && Math.hypot(x - C, y - C) <= R + .5 && above > -2) c = light$1.hot;
+			if (c) g.set([...c, 255], i);
+		}
+		return g;
+	};
+	/** The capsule shut or cracked, rocked `turn`, `leak` of its light showing, moved `dx`, `dy` on the stage. */
+	const capsuleFrame = (pose, leak, dx = 0, dy = 0, more) => {
+		const st = new Stage(), { top, bottom } = layers(pose), x = AT_X + dx, y = AT_Y + dy;
+		if (leak > 0 || pose.lift) st.over(glow(pose, top, bottom, pose.lift ? 1 : leak), 64, 64, x, y);
+		st.over(bottom, 64, 64, x, y);
+		if (leak > 0 && !pose.lift) seamLight(st, pose.turn, leak, x, y);
+		st.over(top, 64, 64, x, y);
+		more?.(st);
+		return st.d;
+	};
+	/** The seam lit from the middle out as far as `leak`, and past the sides once it's bright, light leaking out of the crack. */
+	const seamLight = (st, turn$1, leak, x, y) => {
+		const sn = Math.sin(turn$1), cs = Math.cos(turn$1), half = leak * (R - 1);
+		for (let u = -half; u <= half; u += .5) for (const v of [-.5, .5]) {
+			const px = Math.round(x + C + u * cs - v * sn), py = Math.round(y + C + u * sn + v * cs);
+			st.put(px, py, ...light$1.hot, 255);
+		}
+		if (leak < .3) return;
+		for (const side of [-1, 1]) {
+			const ex = x + C + side * (R + 2) * cs + .5 * sn, ey = y + C + side * (R + 2) * sn - .5 * cs;
+			const along = Math.atan2(side * sn, side * cs), up = side > 0 ? -1 : 1, len = Math.round(leak * 12);
+			st.ray(ex, ey, along, 0, len, len, [light$1.hot, light$1.mid]);
+			if (leak >= .6) st.ray(ex, ey, along + up * .5, 0, len - 4, len, [
+				light$1.hot,
+				light$1.mid,
+				light$1.deep
+			]);
+		}
+	};
+	const frames = [], delays = [];
+	const beats = {
+		rocks: [],
+		crack: 0,
+		pop: 0,
+		hold: 0
+	};
+	let clock = 0;
+	const push = (px, ms) => {
+		despeckle(px);
+		frames.push(px);
+		delays.push(ms);
+		clock += ms;
+	};
+	if ((options.from ?? "drop") === "drop") {
+		for (const dy of [
+			-80,
+			-66,
+			-48,
+			-26
+		]) push(capsuleFrame(SHUT_POSE, 0, 0, dy), 30);
+		beats.land = clock;
+		const dust = (st, k$1) => {
+			for (const side of [-1, 1]) {
+				const x = MOUTH_X + side * (22 + k$1 * 5), y = 90 - k$1 * 2;
+				st.cell(x, y, [
+					214,
+					206,
+					190
+				]);
+				if (k$1 < 2) st.cell(x + side * CELL, y + CELL, [
+					158,
+					150,
+					136
+				]);
+				if (k$1 < 2) st.cell(x, y + CELL, [
+					214,
+					206,
+					190
+				]);
+				if (k$1 < 1) st.cell(x - side * CELL, y + CELL, [
+					158,
+					150,
+					136
+				]);
+			}
+		};
+		[
+			[0, 60],
+			[-6, 40],
+			[-8, 40],
+			[-6, 40],
+			[0, 50],
+			[-2, 40],
+			[0, 40]
+		].forEach(([dy, ms], k$1) => push(capsuleFrame(SHUT_POSE, 0, 0, dy, k$1 < 3 ? (st) => dust(st, k$1) : void 0), ms));
+	}
+	push(capsuleFrame(SHUT_POSE, 0), build.rest);
+	build.rocks.forEach(([deg, step$1, leak], r) => {
+		beats.rocks.push(clock);
+		for (const f of ROCK) push(capsuleFrame({
+			turn: f * deg * DEG,
+			lid: 0,
+			lift: 0
+		}, leak), step$1);
+		const next = build.rocks[r + 1];
+		if (next && build.beat) push(capsuleFrame(SHUT_POSE, (leak + next[2]) / 2), build.beat);
+	});
+	const lastLeak = build.rocks[build.rocks.length - 1][2];
+	for (let k$1 = 0; k$1 < build.tremble; k$1++) {
+		const leak = lastLeak + (.95 - lastLeak) * (k$1 + 1) / build.tremble;
+		push(capsuleFrame({
+			turn: (k$1 % 2 ? -2 : 2) * DEG,
+			lid: 0,
+			lift: 0
+		}, leak, k$1 % 2 ? -1 : 1), 40);
+	}
+	beats.crack = clock;
+	const crackLids = build.crack.map((_, k$1) => -((k$1 + 1) * 14) / build.crack.length);
+	build.crack.forEach((ms, k$1) => {
+		const pose = {
+			turn: 0,
+			lid: crackLids[k$1] * DEG,
+			lift: 1
+		};
+		push(capsuleFrame(pose, 1, 0, 0, (st) => {
+			const len = 6 + k$1 * 4 + (tier ?? 0) * 2;
+			for (const a of [
+				-.15,
+				-.6,
+				-1.1
+			]) st.ray(AT_X + C + R, AT_Y + C - 2, a, 1, len, len, [
+				light$1.hot,
+				light$1.mid,
+				light$1.deep
+			]);
+		}), ms);
+	});
+	beats.pop = clock;
+	const t5 = tier ?? 0, lid0 = crackLids[crackLids.length - 1] * DEG;
+	const rayLife = 240 + 40 * t5, riseAt = 80, riseEnd = riseAt + build.rise;
+	const rays = Array.from({ length: build.rays }, (_, i) => {
+		const a = t5 >= 3 ? -Math.PI / 2 + 2 * Math.PI * (i + .5) / build.rays : -Math.PI * .9 + Math.PI * .8 * i / Math.max(1, build.rays - 1);
+		return {
+			a,
+			length: build.reach * (i % 2 ? .62 : 1)
+		};
+	});
+	const sparks = Array.from({ length: build.sparks }, (_, i) => ({
+		a: -Math.PI / 2 + (random() - .5) * (t5 >= 3 ? Math.PI * 1.7 : Math.PI * 1.1),
+		v: .07 + random() * .09 + t5 * .01,
+		life: 220 + random() * (140 + 60 * t5),
+		colour: light$1.sparks[i % light$1.sparks.length],
+		big: i % 3 === 0
+	}));
+	const rain = Array.from({ length: build.rain }, (_, i) => ({
+		x: 8 + random() * 80,
+		from: 140 + random() * 360,
+		v: .08 + random() * .04,
+		colour: light$1.sparks[i % light$1.sparks.length]
+	}));
+	const sparkEnd = Math.max(0, ...sparks.map((s) => s.life));
+	const rainEnd = rain.length ? Math.max(...rain.map((d) => d.from + 100 / d.v)) : 0;
+	const settle = copy ? riseEnd : 0;
+	const end = Math.max(rayLife, sparkEnd, settle, Math.min(rainEnd, riseEnd + 320), 260);
+	const itemX = art ? Math.round(MOUTH_X - art.w / 2) : 0;
+	const hoverTop = art ? HOVER + art.foot - art.h : 0;
+	const itemTop = (t) => {
+		const p = clamp((t - riseAt) / build.rise, 0, 1), s = 1.7, e = 1 + (s + 1) * (p - 1) ** 3 + s * (p - 1) ** 2;
+		return Math.round(MOUTH_Y + (hoverTop - MOUTH_Y) * e);
+	};
+	const { bottom: candy, top: toy } = layers(SHUT_POSE, {
+		toy: !copy,
+		dome: false
+	});
+	const fanAt = (st, grow) => {
+		for (let i = 0; i < build.fan; i++) {
+			const a = -Math.PI * .86 + Math.PI * .72 * i / Math.max(1, build.fan - 1), len = (16 + 3 * t5) * (i % 2 ? .7 : 1) * grow;
+			if (len >= CELL) st.ray(MOUTH_X, MOUTH_Y - 2, a, 12, 12 + len, 12 + len, i % 2 ? [light$1.mid] : [light$1.deep]);
+		}
+	};
+	const pool = (st, grow) => {
+		const rows = t5 >= 3 ? 3 : t5 >= 1 ? 2 : 1;
+		for (let r = 0; r < rows; r++) {
+			const half = Math.round((34 + 2 * t5) / 2 * grow * (1 - r * .3));
+			for (let x = -half; x < half; x += CELL) st.cell(MOUTH_X + x, MOUTH_Y - CELL * (r + 1), r === rows - 1 && rows > 1 ? light$1.mid : light$1.hot);
+		}
+	};
+	/** The flash as the dome pops: a star of light out of the mouth, hot in the middle to a deep edge, its rows from `below` down left out. */
+	const flash = (st, below) => {
+		const outer = 24 + 4 * t5, inner = 12 + t5;
+		for (let y = MOUTH_Y - outer; y <= MOUTH_Y + outer && y < below; y += CELL) for (let x = MOUTH_X - outer; x <= MOUTH_X + outer; x += CELL) {
+			const dx = x + 1 - MOUTH_X, dy = y + 1 - MOUTH_Y, r = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+			const edge = inner + (outer - inner) * Math.abs(Math.cos(4 * a)) ** 4;
+			if (r <= edge) st.cell(x, y, r < edge - 3 * CELL ? light$1.hot : r < edge - CELL ? light$1.mid : light$1.deep);
+		}
+	};
+	const popFrame = (t) => {
+		const st = new Stage();
+		if (t === 0) flash(st, MOUTH_Y + 64);
+		for (const ray of rays) {
+			if (t === 0 || t > rayLife) continue;
+			const head = 10 + ray.length * Math.min(1, (t + 80) / 200), tail = 10 + ray.length * clamp((t - 100) / (rayLife - 100), 0, 1);
+			if (head - tail >= CELL) st.ray(MOUTH_X, MOUTH_Y, ray.a, tail, head, 10 + ray.length, [
+				light$1.hot,
+				light$1.mid,
+				light$1.deep
+			]);
+		}
+		for (let j = 0; j < build.rings; j++) {
+			const at = t - 40 - 110 * j;
+			if (at < 0 || at > 260) continue;
+			const r = 10 + at * .16, colour = j ? light$1.hot : light$1.mid;
+			for (let a = 0; a < Math.PI * 2; a += CELL / r / 1.6) if (!j || Math.floor(a * r / (CELL * 3)) % 2 === 0) st.cell(MOUTH_X + Math.cos(a) * r, MOUTH_Y + Math.sin(a) * r, colour);
+		}
+		if (build.fan && t >= riseAt) fanAt(st, clamp((t - riseAt) / build.rise, 0, 1));
+		pool(st, clamp(t / 80, .5, 1));
+		if (art && t >= riseAt) st.over(art.at(beats.pop + t), art.w, art.h, itemX, itemTop(t), MOUTH_Y);
+		st.over(candy, 64, 64, AT_X, AT_Y);
+		if (!copy) st.over(toy, 64, 64, AT_X, AT_Y);
+		const p = (t + 30) / 230;
+		if (p < 1) {
+			const dome = layers({
+				turn: 0,
+				lid: lid0 - 2.6 * p,
+				lift: 0
+			}, {
+				toy: false,
+				dome: true
+			}).top;
+			st.over(dome, 64, 64, AT_X + Math.round(-38 * p), AT_Y - 1 + Math.round(-(120 * p - 36 * p * p)));
+		}
+		if (t === 0) flash(st, MOUTH_Y);
+		for (const s of sparks) {
+			if (t === 0 || t > s.life) continue;
+			const out = 12 + s.v * t, x = MOUTH_X + Math.cos(s.a) * out, y = MOUTH_Y + Math.sin(s.a) * out + 35e-5 * t * t;
+			st.spark(x, y, s.colour, s.big && t < s.life / 2);
+		}
+		for (const d of rain) {
+			if (t < d.from) continue;
+			const y = -2 + (t - d.from) * d.v;
+			if (y < 88) st.cell(d.x + Math.sin((t - d.from) / 90) * 2, y, d.colour);
+		}
+		return st.d;
+	};
+	push(popFrame(0), 60);
+	for (let t = 60; t < end; t += 40) push(popFrame(t), 40);
+	const hold = new Stage();
+	if (build.fan) fanAt(hold, 1);
+	pool(hold, 1);
+	if (art) hold.over(art.at(clock), art.w, art.h, itemX, hoverTop);
+	hold.over(candy, 64, 64, AT_X, AT_Y);
+	if (!copy) hold.over(toy, 64, 64, AT_X, AT_Y);
+	const box = art ? {
+		x: itemX,
+		y: hoverTop,
+		w: art.w,
+		h: art.h
+	} : {
+		x: MOUTH_X - 14,
+		y: 30,
+		w: 28,
+		h: 30
+	};
+	for (let k$1 = 0, tries = 0; k$1 < build.stars && tries < 200; tries++) {
+		const x = 6 + random() * (S - 12), y = 6 + random() * (MOUTH_Y - 14);
+		if (x > box.x - 8 && x < box.x + box.w + 8 && y > box.y - 8 && y < box.y + box.h + 8) continue;
+		hold.spark(x, y, k$1 % 2 ? light$1.deep : light$1.mid, true);
+		k$1++;
+	}
+	push(hold.d, HOLD_MS);
+	const merged$1 = {
+		width: S,
+		height: S,
+		frames: [],
+		delays: []
+	};
+	const same$1 = (a, b$1) => {
+		for (let j = 0; j < a.length; j++) if (a[j] !== b$1[j]) return false;
+		return true;
+	};
+	frames.forEach((f, i) => {
+		const last = merged$1.frames.length - 1;
+		if (last >= 0 && same$1(merged$1.frames[last], f)) merged$1.delays[last] += delays[i];
+		else {
+			merged$1.frames.push(f);
+			merged$1.delays.push(delays[i]);
+		}
+	});
+	merged$1.delays[merged$1.delays.length - 1] = HOLD_MS;
+	beats.hold = merged$1.delays.slice(0, -1).reduce((a, b$1) => a + b$1, 0);
+	const k = size / S;
+	return {
+		width: size,
+		height: size,
+		frames: merged$1.frames.map((f) => upscale(f, S, S, k)),
+		delays: merged$1.delays,
+		beats,
+		tier,
+		item: art ? {
+			x: itemX * k,
+			y: hoverTop * k,
+			width: art.w * k,
+			height: art.h * k
+		} : void 0
+	};
+}
+/**
+* Plays an open on a canvas, once, at whole device pixels with smoothing off, centred in the canvas,
+* and leaves the hold frame showing. A canvas the page gives a CSS size is filled at the most whole
+* pixels that fit; give `scale` for a set size. Throws for a capsule or copy there isn't.
+*/
+function playCapsuleOpen(canvas, options) {
+	const open = capsuleOpenFrames({
+		...options,
+		size: S
+	});
+	if (!open) throw new Error(`No capsule open for "${options.capsule}"${options.copy ? ` with ${encode(options.copy)}` : ""}`);
+	const ctx = canvas.getContext("2d");
+	if (!ctx) throw new Error("No 2D context on that canvas");
+	const dpr = globalThis.devicePixelRatio || 1;
+	const el = canvas;
+	const cssW = el.clientWidth || 0, cssH = el.clientHeight || 0;
+	let k;
+	if (options.scale !== void 0) {
+		k = Math.max(1, Math.floor(options.scale));
+		canvas.width = S * k;
+		canvas.height = S * k;
+		if (el.style) {
+			el.style.width = `${S * k / dpr}px`;
+			el.style.height = `${S * k / dpr}px`;
+		}
+	} else if (cssW && cssH) {
+		if (el.style && dpr !== 1 && cssW === canvas.width && cssH === canvas.height) {
+			el.style.width = `${cssW}px`;
+			el.style.height = `${cssH}px`;
+		}
+		canvas.width = Math.max(1, Math.round(cssW * dpr));
+		canvas.height = Math.max(1, Math.round(cssH * dpr));
+		k = Math.max(1, Math.floor(Math.min(canvas.width / S, canvas.height / S)));
+	} else {
+		k = Math.max(1, Math.round(dpr));
+		canvas.width = S * k;
+		canvas.height = S * k;
+	}
+	const ox = Math.floor((canvas.width - S * k) / 2), oy = Math.floor((canvas.height - S * k) / 2);
+	ctx.imageSmoothingEnabled = false;
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	const starts = [];
+	open.delays.reduce((t, d) => {
+		starts.push(t);
+		return t + d;
+	}, 0);
+	const last = open.frames.length - 1;
+	const order = [
+		...open.beats.land !== void 0 ? [["land", open.beats.land]] : [],
+		...open.beats.rocks.map((t) => ["rock", t]),
+		["crack", open.beats.crack],
+		["pop", open.beats.pop],
+		["hold", open.beats.hold]
+	];
+	let shown = -1, fired = 0, began = -1, handle = null, over = false, finish;
+	const done = new Promise((r) => {
+		finish = r;
+	});
+	const raf = globalThis.requestAnimationFrame;
+	const caf = globalThis.cancelAnimationFrame;
+	const later = (cb) => raf ? raf(cb) : setTimeout(() => cb(performance.now()), 16);
+	const cancel = () => {
+		if (handle === null) return;
+		if (raf && caf) caf(handle);
+		else clearTimeout(handle);
+		handle = null;
+	};
+	const show = (i) => {
+		if (i === shown) return;
+		shown = i;
+		const px = upscale(open.frames[i], S, S, k), w = S * k;
+		let image;
+		if (typeof ImageData === "function") image = new ImageData(px, w, w);
+		else {
+			image = ctx.createImageData(w, w);
+			image.data.set(px);
+		}
+		ctx.putImageData(image, ox, oy);
+	};
+	const end = () => {
+		if (over) return;
+		over = true;
+		cancel();
+		finish();
+	};
+	const tick$1 = (now) => {
+		handle = null;
+		if (over) return;
+		if (began < 0) began = now;
+		const t = now - began;
+		let i = shown < 0 ? 0 : shown;
+		while (i < last && t >= starts[i + 1]) i++;
+		show(i);
+		while (fired < order.length && t >= order[fired][1]) options.onBeat?.(order[fired++][0]);
+		if (i === last) {
+			end();
+			return;
+		}
+		handle = later(tick$1);
+	};
+	handle = later(tick$1);
+	return {
+		done,
+		skip() {
+			if (over) return;
+			show(last);
+			fired = order.length;
+			options.onBeat?.("hold");
+			end();
+		},
+		destroy() {
+			end();
+		}
+	};
+}
+/**
+* An open's picture from the lil guys Worker (`setLilGuysHost` moves it):
+* `/g/<art version>/capsule-open/<capsule>-<copy or none>[-still]@<scale>.png`, an animated PNG that plays
+* once and stays on its hold frame. `sheet` gives the sprite sheet's `.sheet.png`, or its `.sheet.json`
+* with each frame's time and the beats.
+*/
+function capsuleOpenUrl(capsule, copy, options = {}) {
+	const { scale: scale$1 = 1, host = lilGuysHost(), from = "drop", sheet } = options;
+	return `${host}/g/${ART_VERSION}/capsule-open/${capsule}-${copy ? encode(copy) : "none"}${from === "still" ? "-still" : ""}${sheet ? ".sheet" : ""}${scale$1 > 1 ? "@" + scale$1 : ""}.${sheet === "json" ? "json" : "png"}`;
+}
+
+//#endregion
+export { ARM_NAMES, ART_VERSION, AURAS, AURA_ODDS, Avatar, AvatarFallback, AvatarImage, BADGE_INKS, BAKED_SIZE, BATCH_MAX, BUDDY_GUY_WIDTH, CAPSULES, CAPSULE_FILE_SIZES, CAPSULE_GRIDS, CAPSULE_ONLY, CAPSULE_OPEN_SIZE, CAPSULE_STATES, CARD_EDGES, CARD_FRAGMENT, CARD_FULL_MS, CARD_GOLDS, CARD_HEIGHT, CARD_LOOKS, CARD_WIDTH, CRAFT_COST, CROWD_SIZES, DEAL_PREFIX, DEEP_BLUE_PRINTS, DEFAULT_COLORS, DEFAULT_COLORS_DARK, DEFAULT_COLORS_LIGHT, EFFECTS, EMOTE_SET, EMOTE_SIZE, EMOTE_UNLOCKS, FACE_BUDDY_SPOTS, FACE_HEIGHT, FACE_SIZE, FACE_WIDTH, FINISHES, FOOT_NAMES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_RANK, FOUNDER_SEED, FRAME_HEIGHT, FRAME_SLOTS, FRAME_WIDTH, FX_BADGES, FX_IDS, GAMES, GLSL_COMMON, GLSL_LOOKS, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, GUY_HEIGHT, GUY_TIERS, GUY_WIDTH, HEADROOM, ICON_SIZE, LILGUYS_HOST, LIL_GUY_PLACEHOLDER, LIL_GUY_PRESETS, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, LilGuy, LilGuyAnimated, MAX_PINS, MOVES, NAME_KEY, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_COST, PAINT_IDS, PART_ODDS, PART_SLOTS, PICTURE_VIEWS, PINS, PROFILE_SIZE, RECLAIMED, REFINED, RETIRED_EYES, SCRAP, SHADER_FINISHES, SHADE_COUNT, SHEET_MAX, SHINE_FRAGMENT, SHOWPIECE_WEIGHT, SMALL_SIZE, TAG_MAX, TIER_ICONS, TITLE_MAX, TONE_NAMES, TRAIT_ICONS, TRAIT_SLOTS, UNUSUAL_ONE_IN, VENUES, WEAR, WIDE_FRAME_WIDTH, accessories, allowed, animate, animateLoop, animateOptions, applyFx, auraById, auraCells, auraColor, auraColors, bakeCard, bakeGuy, bakeSquare, bakeView, bakedImage, bodies, boxOf, buddyAlone, buddyLift, capsuleById, capsuleFile, capsuleFrames, capsuleHalves, capsuleManifest, capsuleOpenFrames, capsuleOpenTier, capsuleOpenUrl, capsuleUrl, cardArtFrames, cardArtPlayer, cardFace, cardFaceAt, cardFrames, cardInputOf, cardPlayer, cardStill, cheeks, cleanTag, closeEyes, collectorNotes, compose, composeBase, copyOneIn, craftCopy, craftable, createCardShader, createCrowd, createShine, createStadium, crowdPicture, crowdSeats, crowdSheet, crowdShine, crowdSprite, dealOf, decode, decodeGuy, decodeLook, defineLilGuyHere as defineLilGuy, drawFrame, dress, emoteFrames, encode, encodeApng, encodeGif, encodeGuy, encodeLook, encodePng, eyes, faceMoves, faceSpec, fewerColours, finishColor, floatShare, frameAt, freeItem, fxColor, gameItems, getColor, getPalette, gradeOf, guyCode, guyOneIn, guyRank, guyScore, hair, hasGlyph, hash, hashNth, heads, inSeason, isEmote, isFounder, isFounderCopy, isMove, itemById, itemFrame, itemWeight, items, layered, lilGuyImg, lilGuySize, lilGuyUrl, lilGuysFor, lilGuysHost, lookFor, lookOf, luckyPalette, machineName, machineSet, makeSeed, mergeRefs, metalCoins, metalText, mouths, mysteryMachine, nameKey, nameOf, nameSkeleton, nebulaPhase, noiseOf, ownedOf, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, palettes, partCode, partCost, partName, pickable, pinById, playCapsuleOpen, profileFrames, rareParts, readGuyCode, readPart, resolve, resolveColor, roll, rollFx, rollPart, rollSeason, setLilGuysHost, setProgress, shadePalette, sheetColumns, sheetOf, shineData, shineFit, shineFrame, shines, shows, slotOf, smeltValue, special, squashRows, stadiumSeats, starter, surfaceOf, tallyMarks, temperTint, textWidth, toAnimatedSvg, toCardArtGif, toCardArtPng, toCardGif, toCardPng, toGuyGif, toPng, toProfileGif, toProfilePng, toShareSvg, toSvgString, tradeFloat, tradeGames, traitOdds, unlocksOf, unusual, upscale, useAvatarContext, useMergeRefs, venueFor, viewSize, visibleOneIn, voxelColumns, voxelItem, voxelMesh, wearOf, withItems };
 //# sourceMappingURL=index.js.map

@@ -4,7 +4,7 @@ import { dress, itemById, withItems } from './items';
 import { BUDDY_ROOM, buddyAlone, compose, composeBase, faceOf } from './compose';
 import { mouths, cheeks, eyes as EYES } from './parts';
 import type { Face } from './parts/canvas';
-import { luckyRim, paint, underEyes } from './paint';
+import { paint, underEyes } from './paint';
 import { paletteOf } from './palette';
 import { GRADES, gradeOf, type Owned } from './owned';
 import { LAYER, T } from './parts/art';
@@ -431,11 +431,8 @@ const mix = (a: string, b: string, t: number) => {
 
 // ---------------------------------------------------------------- frames
 
-/**
- * `body`: the guy's own skin. `eye`: the token of an eye pixel, for eyes that move. `rim`: a Lucky
- * guy's outline cell, at its place on the guy's grid, which steps through the rim's hues (`luckyShimmer`).
- */
-interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; feature?: boolean; rim?: [number, number] }
+/** `body`: the guy's own skin, which a Lucky shimmer crosses. `eye`: the token of an eye pixel, for eyes that move. */
+interface Cell { c: string; item: boolean; slot?: number; body?: boolean; eye?: number; feature?: boolean }
 type Layer = (Cell | null)[][];
 
 /** The order of `AnimationFrame.slots`, from 1. */
@@ -456,8 +453,6 @@ function painted(grid: PixelGrid, config: AvatarConfig, palette: Palette, small 
     if (t === T.BODY || t === T.SHADE || t === T.LIGHT) cell.body = true;
     if (FEATURE_TOKENS.has(t)) cell.feature = true;
     if (eyeBox && y >= eyeBox.top && y <= eyeBox.bottom && x >= eyeBox.left && x <= eyeBox.right && LIVE_EYE_TOKENS.includes(t)) cell.eye = t;
-    // The rim is the outline where ./paint drew it in Lucky's hues.
-    if (config.lucky && t === T.OUTLINE && c.toUpperCase() === luckyRim(x, y, 0).toUpperCase()) cell.rim = [x, y];
     out[y + HEADROOM][x] = cell;
   }));
   return out;
@@ -496,31 +491,14 @@ function galaxyBand(body: string | undefined): [number, number] {
   return h < 300 ? [h + 50, h + 80] : [210, h - 50];
 }
 
-/** How long a Lucky guy's rim holds each step of its hues: thirty steps a LOOP_MS, so five or six hues come round. */
-const LUCKY_BEAT = 200;
-
-/**
- * A Lucky guy's rim: the outline in Lucky's hues (./paint's `luckyRim`), moved on a hue every
- * beat. Whole colours, never blended, and only ever the outline, so it never crosses the face.
- */
-function luckyShimmer(layer: Layer, beat: number): void {
-  for (const row of layer) for (const cell of row) if (cell?.rim) cell.c = luckyRim(cell.rim[0], cell.rim[1], beat);
-}
-
-/** How far through its life a Lucky star is at its fullest: `starAt`'s long four points. */
-const STAR_OPEN = 0.57;
-const LUCKY_STAR = { period: 2300, life: 0.55 };
-
-/** A Lucky guy's gold star at `spot`, twinkling every couple of seconds and wide open at the start of the loop, so a still shows it whole. */
-function luckyStar(layer: Layer, [x, y]: [number, number], t: number): void {
-  const f = cycle(t + STAR_OPEN * LUCKY_STAR.life * fit(LUCKY_STAR.period), LUCKY_STAR.period) / LUCKY_STAR.life;
-  if (f < 1) sparkle(layer, x, y, f, GOLD_SPARKLE, starAt);
-}
-
-/** Where a Lucky star sits: the top-right-most spot over the head, where its whole four points fit if any does. */
-function starSpot(layer: Layer, spots: [number, number][]): [number, number] | undefined {
-  const whole = spots.filter(([x, y]) => starAt(STAR_OPEN).every(([dx, dy]) => x + dx >= 0 && x + dx < GRID_SIZE && y + dy >= 0 && y + dy < FRAME_HEIGHT && !layer[y + dy][x + dx]));
-  return (whole.length ? whole : spots).reduce<[number, number] | undefined>((a, s) => (!a || s[0] - s[1] > a[0] - a[1] ? s : a), undefined);
+/** A Lucky guy: a rainbow sheen sweeping across his skin every couple of seconds. */
+function luckyShimmer(layer: Layer, t: number, seed: number): void {
+  const at = cycle(t + seed, 2200) * (FRAME_WIDTH + FRAME_HEIGHT + 14) - 7;
+  layer.forEach((row, y) => row.forEach((cell, x) => {
+    if (!cell?.body) return;
+    const d = Math.abs(x + y * 0.8 - at);
+    if (d < 3) cell.c = mix(cell.c, hue(((t * 360 / fit(1800) + (x - y) * 22) % 360 + 360) % 360, 0.95, 0.68), d < 1.2 ? 0.6 : 0.3);
+  }));
 }
 
 /** Galaxy eyes swirl, diamond eyes catch the light, dragon eyes smoulder, starry eyes glisten. `body` is the body's colour. */
@@ -747,9 +725,8 @@ function sweatDrop(layer: Layer, slide: number): void {
 export interface PoseOptions extends AnimateOptions {
   /**
    * Keep what marks the guy rare at a glance, as step `step` of `of` round a little loop shows it:
-   * the ring the best worn copy or an aura puts round them (`glanceRing`, a turn a step), a Lucky
-   * guy's rim a hue on each step, and the worn copies' effects `step / of` of
-   * the way round LOOP_MS, so a loop of `of` steps closes.
+   * the ring the best worn copy or an aura puts round them (`glanceRing`, a turn a step), and the
+   * worn copies' effects `step / of` of the way round LOOP_MS, so a loop of `of` steps closes.
    */
   rare?: { step: number; of: number };
 }
@@ -775,7 +752,6 @@ export function poseCells(input: string, pose: Pose, options: PoseOptions = {}):
   const body = layer.map(row => row.map(cell => !!cell?.body)), eyes = faceOf(config).top + HEADROOM;
   if (!options.rare) return { colors: layer.map(row => row.map(cell => cell?.c ?? null)), body, eyes };
   const { step, of } = options.rare;
-  luckyShimmer(layer, step);
   const ring = ringOf(config, options.rarity !== false);
   if (ring) for (const [x, y] of rim(layer)) layer[y][x] = { c: ringCell(ring, x, y, step), item: false };
   const colors = layer.map(row => row.map(cell => cell?.c ?? null)), slots = layer.map(row => row.map(cell => cell?.slot ?? 0));
@@ -1146,8 +1122,8 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   // Effects move, so a guy wearing one gets short frames like an aura's.
   const fxCopies = FRAME_SLOTS.map(slot => config.owned?.[slot]);
   const withFx = fxCopies.some(o => o?.fx);
-  // Lucky guys and chase eyes move too. Lucky is the guy's own, not a copy's: it shows with `rarity` off too.
-  const lucky = !!config.lucky && !options.small;
+  // Lucky guys and chase eyes move too, unless a still is asked for.
+  const lucky = !!config.lucky && options.rarity !== false && !options.small;
   const liveEye = options.small ? undefined : LIVE_EYES.get(config.eyes);
   // Some shapes and skins have nowhere to put an arm.
   const canWave = JSON.stringify(grid('wave')) !== JSON.stringify(grid('sides'));
@@ -1188,7 +1164,6 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
   const buddyLife = !!alone && BUDDY_HOPS(move) && move !== 'dance';
   const timed = !!(wornAura || withFx || lucky || liveEye || grade >= 1 || goldMark || options.emote || buddyLife);
   const spots = sparkleSpots(layerOf('base')), headSpots = sparkleSpots(layerOf('base'), 3);
-  const luckySpot = lucky ? starSpot(layerOf('base'), headSpots) : undefined;
   // Mind blown and galaxy brain open his head; where his eyes are tells the lid where to stop.
   const opens = opensHead(options.emote) ? options.emote : undefined;
   const headTop = (layer: Layer) => layer.findIndex(row => row.slice(0, GRID_SIZE).some(Boolean));
@@ -1255,10 +1230,10 @@ export function animate(input: string, move: Move, options: AnimateOptions = {})
       }));
     }
 
-    if (lucky) luckyShimmer(layer, tick(t, LUCKY_BEAT));
+    if (lucky) luckyShimmer(layer, t, seed);
     if (liveEye) liveEyes(layer, liveEye, t, seed, palette.colors[T.BODY]);
     // Sparkles, sparingly: a Lucky guy's gold star over his head, a Gold finish's mark.
-    if (luckySpot && !wornAura && grade < 3 && !goldMark) luckyStar(layer, luckySpot, t);
+    if (lucky && !wornAura && grade < 3 && !goldMark) sparkleRun(layer, headSpots, t + seed * 7, 2300, 0.55, seed, GOLD_SPARKLE, starAt);
     if (goldMark) sparkleRun(layer, headSpots, t + goldCopy!.print * 37, 2600, 0.55, goldCopy!.print, GOLD_SPARKLE, starAt);
 
     const around = ring ? rim(layer) : [];

@@ -298,7 +298,14 @@ For crowds of thousands (Twitch chat, a stand of the day's players), `crowdSprit
 made from their own drawing with their eyes, mouth and outline kept while there's room, and
 `createCrowd(canvas)` (`src/crowd-stage.ts`) is the whole crowd: seats, haze, hops, a wave and a
 spotlit winner; `createStadium(canvas)` (`src/stadium.ts`) puts it in a venue that grows with it
-(GAMES.md, A crowd of thousands).
+(GAMES.md, A crowd of thousands). `createStadium3D(canvas)` (`src/stadium3d.ts`, its own bundle,
+`dist/lilguys-stadium3d.mjs`, with three.js as a peer) is the same stadium drawn as 3D lil guys.
+
+Capsules look the same in every game: `capsuleFrames({ machine, state, size })` (`src/capsule.ts`) draws
+any machine's, mystery, the free daily or a season's, shut, wobbling or open, and the Worker serves them
+with a manifest at `/capsules/manifest.json` (GAMES.md, Capsules).
+`playCapsuleOpen(canvas, { capsule, copy })` (`src/capsule-open.ts`) plays one opening, its build-up
+telling the grade inside, and the Worker serves it at `/g/<version>/capsule-open/` (GAMES.md, Opening one).
 
 A card is a trading card, after Balatro's: printed in its grade's colour with a
 dark outline and a chunky bevel, the guy in a window (at the same size on every
@@ -508,7 +515,7 @@ An item is a design. A copy someone owns is the item plus:
 
 | | |
 |---|---|
-| **Finish** | Plain (79.87%), Sunset (15.87%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Negative (0.2%), Gold (0.2%), Op (0.06%), Impossible (0.05%), Grid (0.05%). Everything but Plain and Tempered only comes Box Fresh or Like New |
+| **Finish** | Plain (79.87%), Sunset (15.97%), Tempered (1.6%), Nebula (1.6%), Prism (0.5%), Negative (0.2%), Gold (0.1%), Op (0.06%), Impossible (0.05%), Grid (0.05%). Everything but Plain and Tempered only comes Box Fresh or Like New |
 | **Scuff** | 0–1, how worn it is. Box Fresh < 0.07 < Like New < 0.15 < Played With < 0.38 < Well Loved < 0.45 < Battered. The wear really shows: paint chips off as it rises, and a Box Fresh copy keeps a glint |
 | **Print** | 0–999, where the finish lands, and where the chips go. A few are famous: Tempered comes in five tints the print picks (Steel, Rose, Emerald, Copper, Violet), and prints 661, 670, 321, 387 and 955 come out all blue (Deep Blue); a Nebula's print picks its look, and Red Giant, Blue Moon and Black Hole are the rare ones |
 | **Tally** | on 1 drop in 10: a counter of the days its owner finished the game while wearing it. It only goes up, and stays with the copy. It shows: two marks scratched into the item at 30 days, four at 100, and at 365 its outline turns gold |

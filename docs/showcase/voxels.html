@@ -279,7 +279,7 @@
     tileR = makeRenderer(document.createElement('canvas'));
     tileR.setSize(TILE, TILE, false);
     tileEnv = envFor(tileR);
-    const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
+    const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold', 'op', 'impossible', 'grid'];
     FIN.forEach((f, i) => { const o = { item: 'amountle.crown', finish: f, scuff: f === 'plain' || f === 'tempered' ? .05 : .02, print: f === 'tempered' ? 387 : 100 + i };
       tile($('fins'), o, LG.FINISHES[f].name, LG.gradeOf(o).name); });
     [['plain', .003], ['plain', .3], ['plain', .93], ['tempered', .004], ['tempered', .88]].forEach(([f, s]) => {

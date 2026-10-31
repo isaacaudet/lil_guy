@@ -1,0 +1,999 @@
+{
+  "version": 16,
+  "grids": [
+    16,
+    24,
+    32,
+    64
+  ],
+  "states": [
+    "closed",
+    "wobble",
+    "open"
+  ],
+  "url": "https://lilguys.dleclub.com/g/16/capsule/{id}-{state}-{grid}{scale}.png",
+  "capsules": [
+    {
+      "id": "amountle",
+      "name": "Amountle",
+      "kind": "machine",
+      "colour": "#ff7eb6",
+      "game": "amountle",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/amountle-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/amountle-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/amountle-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/amountle-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/amountle-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/amountle-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/amountle-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/amountle-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/amountle-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/amountle-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/amountle-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/amountle-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/amountle-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/amountle-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/amountle-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/amountle-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/amountle-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/amountle-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/amountle-open-64@2.png"
+      }
+    },
+    {
+      "id": "halfsies",
+      "name": "Halfsies",
+      "kind": "machine",
+      "colour": "#f2b066",
+      "game": "halfsies",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/halfsies-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/halfsies-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/halfsies-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/halfsies-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/halfsies-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/halfsies-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/halfsies-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/halfsies-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/halfsies-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/halfsies-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/halfsies-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/halfsies-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/halfsies-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/halfsies-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/halfsies-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/halfsies-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/halfsies-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/halfsies-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/halfsies-open-64@2.png"
+      }
+    },
+    {
+      "id": "stackdle",
+      "name": "Stackdle",
+      "kind": "machine",
+      "colour": "#ffd447",
+      "game": "stackdle",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/stackdle-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/stackdle-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/stackdle-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/stackdle-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/stackdle-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/stackdle-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/stackdle-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/stackdle-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/stackdle-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/stackdle-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/stackdle-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/stackdle-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/stackdle-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/stackdle-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/stackdle-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/stackdle-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/stackdle-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/stackdle-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/stackdle-open-64@2.png"
+      }
+    },
+    {
+      "id": "flipsies",
+      "name": "Flipsies",
+      "kind": "machine",
+      "colour": "#5fb4ff",
+      "game": "flipsies",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/flipsies-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/flipsies-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/flipsies-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/flipsies-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/flipsies-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/flipsies-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/flipsies-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/flipsies-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/flipsies-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/flipsies-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/flipsies-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/flipsies-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/flipsies-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/flipsies-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/flipsies-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/flipsies-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/flipsies-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/flipsies-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/flipsies-open-64@2.png"
+      }
+    },
+    {
+      "id": "puttsies",
+      "name": "Puttsies",
+      "kind": "machine",
+      "colour": "#74d97c",
+      "game": "puttsies",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/puttsies-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/puttsies-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/puttsies-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/puttsies-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/puttsies-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/puttsies-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/puttsies-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/puttsies-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/puttsies-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/puttsies-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/puttsies-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/puttsies-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/puttsies-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/puttsies-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/puttsies-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/puttsies-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/puttsies-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/puttsies-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/puttsies-open-64@2.png"
+      }
+    },
+    {
+      "id": "weighsies",
+      "name": "Weighsies",
+      "kind": "machine",
+      "colour": "#a98bff",
+      "game": "weighsies",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/weighsies-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/weighsies-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/weighsies-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/weighsies-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/weighsies-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/weighsies-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/weighsies-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/weighsies-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/weighsies-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/weighsies-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/weighsies-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/weighsies-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/weighsies-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/weighsies-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/weighsies-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/weighsies-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/weighsies-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/weighsies-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/weighsies-open-64@2.png"
+      }
+    },
+    {
+      "id": "cutsies",
+      "name": "Cutsies",
+      "kind": "machine",
+      "colour": "#ff6b6b",
+      "game": "cutsies",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/cutsies-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/cutsies-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/cutsies-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/cutsies-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/cutsies-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/cutsies-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/cutsies-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/cutsies-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/cutsies-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/cutsies-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/cutsies-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/cutsies-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/cutsies-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/cutsies-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/cutsies-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/cutsies-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/cutsies-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/cutsies-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/cutsies-open-64@2.png"
+      }
+    },
+    {
+      "id": "tiltsies",
+      "name": "Tiltsies",
+      "kind": "machine",
+      "colour": "#4fd6c4",
+      "game": "tiltsies",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/tiltsies-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/tiltsies-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/tiltsies-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/tiltsies-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/tiltsies-open-64@2.png"
+      }
+    },
+    {
+      "id": "trackdle",
+      "name": "Trackdle",
+      "kind": "machine",
+      "colour": "#ff8a3d",
+      "game": "trackdle",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/trackdle-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/trackdle-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/trackdle-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/trackdle-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/trackdle-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/trackdle-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/trackdle-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/trackdle-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/trackdle-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/trackdle-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/trackdle-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/trackdle-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/trackdle-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/trackdle-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/trackdle-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/trackdle-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/trackdle-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/trackdle-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/trackdle-open-64@2.png"
+      }
+    },
+    {
+      "id": "pets",
+      "name": "Pet shop",
+      "kind": "machine",
+      "colour": "#e48cf2",
+      "game": "pets",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/pets-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/pets-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/pets-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/pets-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/pets-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/pets-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/pets-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/pets-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/pets-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/pets-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/pets-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/pets-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/pets-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/pets-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/pets-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/pets-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/pets-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/pets-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/pets-open-64@2.png"
+      }
+    },
+    {
+      "id": "mystery",
+      "name": "Mystery",
+      "kind": "mystery",
+      "colour": "#fe5f55",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/mystery-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/mystery-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/mystery-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/mystery-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/mystery-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/mystery-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/mystery-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/mystery-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/mystery-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/mystery-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/mystery-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/mystery-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/mystery-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/mystery-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/mystery-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/mystery-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/mystery-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/mystery-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/mystery-open-64@2.png"
+      }
+    },
+    {
+      "id": "free",
+      "name": "Free daily",
+      "kind": "free",
+      "colour": "#fe5f55",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/free-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/free-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/free-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/free-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/free-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/free-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/free-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/free-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/free-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/free-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/free-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/free-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/free-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/free-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/free-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/free-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/free-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/free-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/free-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.birthday",
+      "name": "Club birthday",
+      "kind": "season",
+      "colour": "#5fb4ff",
+      "item": "club.birthday",
+      "from": "10-12",
+      "to": "10-16",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.birthday-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.birthday-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.birthday-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.birthday-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.birthday-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.pumpkin",
+      "name": "Pumpkin",
+      "kind": "season",
+      "colour": "#ff8a2b",
+      "item": "club.pumpkin",
+      "from": "10-20",
+      "to": "11-02",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.pumpkin-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.pumpkin-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.pumpkin-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.pumpkin-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.pumpkin-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.snowcap",
+      "name": "Snow cap",
+      "kind": "season",
+      "colour": "#e5484d",
+      "item": "club.snowcap",
+      "from": "12-15",
+      "to": "01-06",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.snowcap-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.snowcap-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.snowcap-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.snowcap-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.snowcap-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.sweetheart",
+      "name": "Sweetheart",
+      "kind": "season",
+      "colour": "#ff5c8a",
+      "item": "club.sweetheart",
+      "from": "02-10",
+      "to": "02-16",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.sweetheart-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.sweetheart-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.sweetheart-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.sweetheart-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sweetheart-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.newyear",
+      "name": "New Year top hat",
+      "kind": "season",
+      "colour": "#75787e",
+      "item": "club.newyear",
+      "from": "12-29",
+      "to": "01-02",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.newyear-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.newyear-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.newyear-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.newyear-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.newyear-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.lantern",
+      "name": "Red lantern",
+      "kind": "season",
+      "colour": "#e5363d",
+      "item": "club.lantern",
+      "from": "01-20",
+      "to": "02-12",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.lantern-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.lantern-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.lantern-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.lantern-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.lantern-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.shamrock",
+      "name": "Leprechaun hat",
+      "kind": "season",
+      "colour": "#4fbf5c",
+      "item": "club.shamrock",
+      "from": "03-10",
+      "to": "03-18",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.shamrock-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.shamrock-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.shamrock-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.shamrock-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.shamrock-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.blossom",
+      "name": "Cherry blossom",
+      "kind": "season",
+      "colour": "#ffb3d1",
+      "item": "club.blossom",
+      "from": "03-19",
+      "to": "04-14",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.blossom-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.blossom-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.blossom-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.blossom-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.blossom-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.egg",
+      "name": "Painted egg",
+      "kind": "season",
+      "colour": "#b9a3f0",
+      "item": "club.egg",
+      "from": "03-22",
+      "to": "04-25",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.egg-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.egg-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.egg-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.egg-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.egg-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.egg-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.egg-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.egg-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.egg-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.egg-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.egg-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.egg-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.egg-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.egg-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.egg-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.egg-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.egg-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.egg-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.egg-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.daisy",
+      "name": "Daisy chain",
+      "kind": "season",
+      "colour": "#ffffff",
+      "item": "club.daisy",
+      "from": "05-01",
+      "to": "05-31",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.daisy-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.daisy-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.daisy-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.daisy-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.daisy-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.sunhat",
+      "name": "Sun hat",
+      "kind": "season",
+      "colour": "#f2d58a",
+      "item": "club.sunhat",
+      "from": "06-14",
+      "to": "07-20",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.sunhat-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.sunhat-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.sunhat-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.sunhat-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sunhat-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.sparkler",
+      "name": "Fireworks",
+      "kind": "season",
+      "colour": "#ffe066",
+      "item": "club.sparkler",
+      "from": "07-01",
+      "to": "07-07",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.sparkler-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.sparkler-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.sparkler-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.sparkler-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.sparkler-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.icecream",
+      "name": "Ice cream",
+      "kind": "season",
+      "colour": "#ffb3d1",
+      "item": "club.icecream",
+      "from": "08-01",
+      "to": "08-25",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.icecream-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.icecream-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.icecream-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.icecream-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.icecream-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.maple",
+      "name": "Maple leaf",
+      "kind": "season",
+      "colour": "#e8572e",
+      "item": "club.maple",
+      "from": "09-20",
+      "to": "11-30",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.maple-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.maple-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.maple-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.maple-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.maple-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.maple-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.maple-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.maple-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.maple-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.maple-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.maple-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.maple-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.maple-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.maple-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.maple-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.maple-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.maple-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.maple-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.maple-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.turkey",
+      "name": "Turkey feathers",
+      "kind": "season",
+      "colour": "#e5484d",
+      "item": "club.turkey",
+      "from": "11-18",
+      "to": "11-30",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.turkey-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.turkey-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.turkey-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.turkey-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.turkey-open-64@2.png"
+      }
+    },
+    {
+      "id": "season.antlers",
+      "name": "Reindeer antlers",
+      "kind": "season",
+      "colour": "#a8743f",
+      "item": "club.antlers",
+      "from": "12-01",
+      "to": "12-24",
+      "files": {
+        "16": "https://lilguys.dleclub.com/capsules/season.antlers-16.png",
+        "32": "https://lilguys.dleclub.com/capsules/season.antlers-32.png",
+        "64": "https://lilguys.dleclub.com/capsules/season.antlers-64.png",
+        "128": "https://lilguys.dleclub.com/capsules/season.antlers-128.png"
+      },
+      "closed": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-closed-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-closed-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-closed-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-closed-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-closed-64@2.png"
+      },
+      "wobble": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-wobble-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-wobble-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-wobble-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-wobble-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-wobble-64@2.png"
+      },
+      "open": {
+        "16": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-open-16.png",
+        "24": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-open-24.png",
+        "32": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-open-32.png",
+        "64": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-open-64.png",
+        "128": "https://lilguys.dleclub.com/g/16/capsule/season.antlers-open-64@2.png"
+      }
+    }
+  ]
+}

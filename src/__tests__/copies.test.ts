@@ -33,18 +33,20 @@ function paintBox(o: Owned, box = { left: 0, top: 0, right: 7, bottom: 4 }, colo
 }
 
 describe('graphic finishes', () => {
-  test('are appended and Mythic, and capsules roll them at 0.06, 0.05 and 0.05', () => {
+  test('are appended Grails, and capsules roll them at 0.06, 0.05 and 0.05', () => {
     expect(Object.keys(FINISHES).slice(-3)).toEqual(['op', 'impossible', 'grid']);
     const total = Object.values(FINISHES).reduce((a, f) => a + f.odds, 0);
     expect(Math.round(total * 100) / 100).toBe(100);
     expect(GRAPHIC_FINISHES.map(f => FINISHES[f].odds)).toEqual([0.06, 0.05, 0.05]);
-    // Their 0.16% came out of Sunset and Gold.
-    expect(FINISHES.sunset.odds).toBe(15.87);
-    expect(FINISHES.gold.odds).toBe(0.2);
+    expect(FINISHES.sunset.odds).toBe(15.97);
+    expect(FINISHES.gold.odds).toBe(0.1);
+    // Every Grail finish is rarer than every Mythic one.
+    const of = (g: number) => Object.values(FINISHES).filter(x => x.grade === g && x.odds > 0).map(x => x.odds);
+    expect(Math.max(...of(4))).toBeLessThan(Math.min(...of(3)));
     for (const f of GRAPHIC_FINISHES) {
       const o: Owned = { item: 'puttsies.ball', finish: f, scuff: 0.01, print: 3 };
       expect(decode(encode(o))).toEqual(o);
-      expect(gradeOf(o).name).toBe('Mythic');
+      expect(gradeOf(o).name).toBe('★ Grail');
       expect(nameOf(o)).toBe(`Golf ball | ${FINISHES[f].name}`);
     }
     const n: Partial<Record<Finish, number>> = {};

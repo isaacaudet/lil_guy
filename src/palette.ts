@@ -87,11 +87,6 @@ const TONES = new Map(COLOURWAYS.filter(w => w.tones).map(w => [w.name, w.tones!
 
 /** The night colourways: deep bodies that a pastel tone softens but keeps deep. */
 export const NIGHT_COLOURWAYS: ReadonlySet<string> = new Set(['Charcoal', 'Cobalt', 'Midnight', 'Oxblood', 'Forest', 'Grape Soda']);
-/**
- * The chase colourways: each is a material painted cell by cell (`chaseSkin` in ./paint), in fixed
- * colours, so a tone never washes one out and it looks the same on every guy who has it.
- */
-export const CHASE_COLOURWAYS: ReadonlySet<string> = new Set(COLOURWAYS.filter(w => w.tones).map(w => w.name));
 
 // ---------------------------------------------------------------- colour math
 
@@ -267,11 +262,10 @@ export const SHADE_COUNT = 3;
  *
  * A night colourway's pastel lifts its body a little and keeps its
  * saturation, so it stays a night colour: mixed towards white, oxblood went
- * mauve and forest grey-green. A chase colourway is a material in fixed
- * colours, so it looks as picked in every tone.
+ * mauve and forest grey-green.
  */
 export function shadePalette(palette: Palette, shade: number): Palette {
-  if (shade === 1 || CHASE_COLOURWAYS.has(palette.name)) return palette;
+  if (shade === 1) return palette;
   const night = NIGHT_COLOURWAYS.has(palette.name);
   const tone = (hex: string, body = false) => {
     const [h, s, l] = toHsl(hex);
@@ -283,14 +277,23 @@ export function shadePalette(palette: Palette, shade: number): Palette {
 }
 
 /**
- * The Lucky palette: the guy's own. Lucky used to turn a colourway round the
- * colour wheel, which hid the colourway the card names (a Lucky Opal came out
- * plain yellow) and turned night colours neon. Now a Lucky guy keeps their
- * colours, and Lucky shows as a stepped rim (`luckyRim` in ./paint) and a gold
- * star. Kept so code that calls it still runs.
+ * The Lucky variant: the same colourway turned round the colour wheel, with
+ * gold trim. Derived again, so the face and outline read as well as ever.
  */
 export function luckyPalette(palette: Palette): Palette {
-  return palette;
+  // Lightness is pushed away from the middle, where neither dark nor cream
+  // eyes would read. A dark colour turned into the oranges and yellows comes
+  // out brown or olive, so dark ones skip on to jewel tones instead.
+  const turn = (hex: string) => {
+    const [h, s, l] = toHsl(hex);
+    let hue = (h + 150) % 360;
+    const dark = l < 0.45;
+    if (dark && hue >= 10 && hue <= 110) hue += 130;
+    // Light ones go vivid, never pastel: a Lucky guy has to look it from across a page.
+    return fromHsl([hue, dark ? Math.max(0.6, Math.min(0.85, s + 0.15)) : Math.max(0.7, Math.min(0.92, s + 0.25)), dark ? Math.min(Math.max(l, 0.22), 0.28) : Math.min(Math.max(l, 0.6), 0.68)]);
+  };
+  const c = palette.colors;
+  return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), '#FFE9A8');
 }
 
 // Gumdrop, onigiri, slime, gourd, flame and shard: heads that come to a point.
@@ -302,7 +305,8 @@ const NOT_BROWN: Record<number, number> = { 13: 0, 14: 20 };
 export const shownPalette = (config: Pick<AvatarConfig, 'head' | 'palette'>): number =>
   POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
 
-/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
+/** The palette a guy is drawn in: their colourway, in their tone, Lucky if they are. */
 export function paletteOf(config: AvatarConfig): Palette {
-  return shadePalette(getPalette(shownPalette(config)), config.shade);
+  const toned = shadePalette(getPalette(shownPalette(config)), config.shade);
+  return config.lucky ? luckyPalette(toned) : toned;
 }

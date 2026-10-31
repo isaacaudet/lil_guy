@@ -310,6 +310,28 @@ seats are the people present, filling from the front row's middle, and the venue
 and go. A game that only draws crowds loads `/lilguys-stadium.mjs` (or `/lilguys-stadium.js`,
 `window.LilGuyStadium`): the crowd and stadium alone, about 86 KB gzipped.
 
+A game that has three.js can use the same stadium in 3D: `createStadium3D(canvas, { wave, onVenue })`
+from `/lilguys-stadium3d.mjs` (about 108 KB gzipped, or `lil_guy/stadium3d` in a bundler). Everyone is
+their own 3D lil guy, hat, face and finishes included: whole toys in the near rows, and further back a
+picture of each one's toy made at the size their seat needs. The calls, venues and head counts are the
+2D stadium's, so a game can swap one for the other (it only moves down a venue once the crowd is a
+twentieth under, so one chatter at an edge doesn't swap it back and forth), and `info()` says what a
+frame costs. three.js (0.165 or later) isn't in the file: the page maps `three` to its own copy. It
+needs WebGL2 and throws without it, so fall back to `createStadium`. `destroy()` frees everything it
+made on the GPU, and the canvas can take a new stadium after.
+
+```html
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" } }</script>
+<script type="module">
+  import { createStadium3D } from 'https://lilguys.dleclub.com/lilguys-stadium3d.mjs';
+  const stadium = createStadium3D(document.querySelector('#crowd'), { onVenue: id => console.log(id) });
+  stadium.add('isaac', { seed: 'founder:isaac' });   // in their club look
+  stadium.add('mochiku');                             // a chatter turns up
+  stadium.hop('mochiku');                             // and guesses
+  stadium.spotlight('mochiku', 'mochiku · 92');       // the round's closest
+</script>
+```
+
 For a page that isn't a game, the Worker draws a still crowd: `GET /api/club/crowd.png?names=a,b,c`
 with `w` and `h` (world pixels, up to 480 × 240), `fill` (plain made-up guys behind, up to 4,000),
 `scale` (1 to 4) and `bg` (a hex colour). Named guys stand at the front middle as they are on the
@@ -326,6 +348,115 @@ In code: `emoteFrames(spec, id, moving)` and `EMOTE_SET`.
 `emote-galaxybrain` is earned: the Worker draws it only for a claimed guy whose player holds a Mythic or
 better copy, an aura, or eclipse, void, idea, thought or op art, and answers `404` for anyone else (a
 chatter's `~name` included). `GET /api/guys/<name>` lists the ones a guy may use in `emotes`.
+
+## Capsules
+
+Players earn capsules by playing the club's games: a stamp for each game finished, today's free
+capsule, a mystery capsule from any machine, a machine picked by name, a season's. Every game shows
+one the same way, drawn by the library: a clear dome over a candy half in its colour, its toy inside.
+
+| Capsule | `<id>` | Looks like |
+| --- | --- | --- |
+| A machine's | `amountle`, `halfsies` … `trackdle`, `pets` | the machine's colour, its game's toy inside |
+| Mystery | `mystery` | every machine's colour round the candy, a question mark inside |
+| Free daily | `free` | ivory with a coral band, the club's stamp inside |
+| A season's | `season.pumpkin`, `season.snowcap` … | the season's colour with a band, its hat inside |
+
+| State | Moves | For |
+| --- | --- | --- |
+| `closed` | no | a capsule waiting to be opened, in a list or a chip |
+| `wobble` | yes: a rest, then two quick rocks | one just earned, or ready to open |
+| `open` | no | opened: the dome cracked off, warm light leaking out |
+
+`16`, `24` and `32` are their own small drawings, made to read in a pill, a chip or a row; `64` is the
+master, for a card or a results screen. Pick the grid for the CSS size it shows at, then `@2` on a 2×
+screen (or scale it in CSS with `image-rendering: pixelated`).
+
+`/g/<version>/capsule/<id>-<state>-<grid><@scale>.<format>`
+
+```html
+<img src="https://lilguys.dleclub.com/g/latest/capsule/puttsies-wobble-32.png" width="32" height="32"
+     alt="Puttsies capsule" style="image-rendering:pixelated">
+```
+
+Scales and caching are a guy's: `@2` to `@16`, cached for good, `latest` redirecting for five minutes.
+The format is `.png` (an animated PNG for `wobble`), or `.sheet.png` and `.sheet.json`; there's no
+`.gif`, since a GIF can't keep the clear dome. Left without a grid it's the 64 master. New pictures
+count against the same daily limit as a guy's.
+
+`/capsules/manifest.json` lists every capsule, CORS open, cached five minutes:
+
+```json
+{ "version": 15, "grids": [16, 24, 32, 64], "states": ["closed", "wobble", "open"],
+  "url": "https://lilguys.dleclub.com/g/15/capsule/{id}-{state}-{grid}{scale}.png",
+  "capsules": [
+    { "id": "puttsies", "name": "Puttsies", "kind": "machine", "colour": "#74d97c", "game": "puttsies",
+      "files": { "16": "…/capsules/puttsies-16.png", "32": "…", "64": "…", "128": "…" },
+      "closed": { "16": "…/g/15/capsule/puttsies-closed-16.png", "24": "…", "32": "…", "64": "…", "128": "…-64@2.png" },
+      "wobble": { … }, "open": { … } },
+    { "id": "season.pumpkin", "name": "Pumpkin", "kind": "season", "colour": "#ff8a2b", "item": "club.pumpkin",
+      "from": "10-20", "to": "11-02", … } ] }
+```
+
+A season's capsule drops while today (`MM-DD`, UTC) is from `from` to `to`, which can wrap the new year
+(`12-15` to `01-06`); the library's `inSeason(day)` says the same. `files` are plain PNGs of each
+capsule shut, at 16, 32, 64 and 128: the same files are in this repo's `docs/capsules/` to copy into a
+game (`bun scripts/build-capsules.ts` writes them, and a test fails when they're stale). They carry no
+CORS header, so a canvas that reads pixels uses the `/g/` addresses.
+
+A game that vendors the library draws them itself: `capsuleFrames({ machine: 'puttsies', state:
+'wobble', size: 32 })` gives the frames (`encodePng`, `encodeApng`), any whole multiple of a grid
+scaled up by whole pixels; `capsuleHalves(id)` gives the dome and the candy apart, for a page that
+plays its own open as lilguys.dleclub.com does. `CAPSULES`, `capsuleUrl` and `capsuleManifest` are the
+list, the addresses and the manifest, at `setLilGuysHost`'s host like a guy's.
+
+### Opening one
+
+Every game plays a capsule's open the same way: it drops in and bounces, rocks, cracks with light in
+the colour of what's inside, pops, and what's inside rises out and stays over the open half. How long
+it builds tells the grade before anyone reads it:
+
+| Inside | From standing | |
+| --- | --- | --- |
+| Everyday | 1.1 s | one rock, a small pop |
+| Special | 1.6 s | a second rock that lets a little light out |
+| Prized | 2.3 s | light from the first rock, a ring, a fan of light behind it |
+| Mythic | 3 s | four rocks, a tremble, a burst all round |
+| Grail | 3.9 s | in gold, two rings, glitter coming down |
+| Aura | 4.6 s | in the aura's own colours, the longest |
+| nothing (`none`) | 1.1 s | the capsule's own light, its toy left standing: "you earned a capsule" |
+
+A showpiece or an unusual effect plays at least as a Prized. Dropping in adds 0.4 s.
+
+`/g/<version>/capsule-open/<id>-<copy>[-still]<@scale>.<format>`
+
+```html
+<img src="https://lilguys.dleclub.com/g/latest/capsule-open/puttsies-puttsies.ball~gold~0.0100000~120@2.png"
+     width="192" height="192" alt="" style="image-rendering:pixelated">
+```
+
+`<copy>` is the copy's code as `encode` writes it, or `none`. `-still` starts it standing rather than
+dropping in, for a capsule the game was already showing: the 96 stage has the 64 capsule at its foot,
+centred (`x` 16, `y` 32). `.png` is an animated PNG that plays once and stays on its last frame;
+`.sheet.png` and `.sheet.json` are for a game, the json with each frame's time, `beats` (in ms from the
+start: `land`, each of `rocks`, `crack`, `pop`, `hold`) to hang sounds on, `tier`, and `item`, where what
+came out stands. Scales are `@2` to `@4` (scale anything bigger in CSS); caching and the daily limit
+are a capsule's. No GIF.
+
+A game that vendors the library plays it on its own canvas, at whole device pixels with smoothing off:
+
+```js
+const open = playCapsuleOpen(canvas, { capsule: 'puttsies', copy, guy: seed, onBeat: b => sound(b) });
+canvas.onclick = () => open.skip();   // straight to the hold
+await open.done;                      // the hold is showing: name it, then Keep or Wear
+```
+
+It fills the canvas's CSS box at the most whole pixels that fit (or `scale`). `guy` is whose guy a skin,
+hat or aura comes out on. `capsuleOpenFrames(options)` gives the frames instead (`encodeApng(frames,
+scale, 1)` plays once), and `capsuleOpenUrl` the address.
+
+Play it once, as the capsule opens. Any tap skips it. A copy shown again later is its picture, not its
+open.
 
 ## Limits, CORS and privacy
 

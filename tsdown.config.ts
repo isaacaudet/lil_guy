@@ -45,6 +45,16 @@ export default defineConfig([
     minify: true,
   },
   {
+    // The 3D stadium (src/stadium3d-entry.ts): /lilguys-stadium3d.mjs, with three.js left to the page.
+    entry: { "lilguys-stadium3d": "src/stadium3d-entry.ts" },
+    format: ["esm"],
+    outDir: "dist",
+    minify: true,
+    external: ["three"],
+    dts: true,
+    outExtensions: () => ({ js: ".mjs", dts: ".mts" }),
+  },
+  {
     entry: { "lil-guy-element": "src/element-entry.ts" },
     format: ["iife"],
     globalName: "LilGuyElement",

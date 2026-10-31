@@ -8,9 +8,9 @@ import { encodeApng, encodeGif, encodePng, fewerColours, type Frames } from './g
 import { decode, FINISHES, GRADES, gradeOf, nebulaPhase, special, temperTint, type Owned } from './owned';
 import { EFFECTS } from './effects';
 import { dress, itemById, withItems } from './items';
-import { LAYER, T } from './parts/art';
+import { LAYER } from './parts/art';
 import { paint } from './paint';
-import { contrast, mix, paletteOf } from './palette';
+import { paletteOf } from './palette';
 import { resolve } from './resolve';
 import { guyRank, traitOdds } from './rarity';
 import { shineFrame, shines } from './shine';
@@ -262,8 +262,7 @@ export function profileFrames(spec: GuySpec, move: Move = 'idle'): Frames {
     if (lit(px, x, y)) reach = Math.max(reach, Math.hypot(Math.max(Math.abs(x - cx), Math.abs(x + 1 - cx)), Math.max(Math.abs(y - cy), Math.abs(y + 1 - cy))));
   }
   const side = Math.ceil(reach * 2) + 2, ox = Math.round(side / 2 - cx), oy = Math.round(side / 2 - cy);
-  const colors = paletteOf({ ...resolve(spec.seed, spec.parts), ...(spec.palette !== undefined ? { palette: spec.palette } : {}) }).colors;
-  const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H, colors[T.BODY], colors[T.ACCENT]);
+  const ground = backdrop ? backdropGround(spec, side, ox + baked.left, oy) : null, solid = groundOf(g.frames[0], W, H);
   const frames = g.frames.map(px => {
     const out = ground ? new Uint8ClampedArray(ground) : new Uint8ClampedArray(side * side * 4);
     if (!ground) for (let i = 0; i < side * side; i++) out.set(solid, i * 4);
@@ -288,15 +287,8 @@ function backdropGround(spec: GuySpec, side: number, ox: number, oy: number): Ui
   return out;
 }
 
-/** Under this contrast a guy melts into a ground taken from their own colour; on their accent's they stand off it at `STAND_OFF` or more. */
-const PALE = 1.3, STAND_OFF = 1.6;
-
-/**
- * A profile picture's ground: the guy's commonest colour that isn't an outline, most of the way to
- * white. A pale guy (Snow, Opal, Ice, Cream, Lemon) would melt into that and read as a blank, so
- * theirs is a tint of their `accent` instead, deepened toward night until their `body` stands off it.
- */
-function groundOf(px: Uint8ClampedArray, W: number, H: number, body: string, accent: string): number[] {
+/** A profile picture's ground: the guy's commonest colour that isn't an outline, most of the way to white. */
+function groundOf(px: Uint8ClampedArray, W: number, H: number): number[] {
   const counts = new Map<number, number>();
   for (let i = 0; i < W * H; i++) {
     const [r, g, b, a] = px.subarray(i * 4, i * 4 + 4);
@@ -305,12 +297,8 @@ function groundOf(px: Uint8ClampedArray, W: number, H: number, body: string, acc
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0xdddddd;
-  let ground = mix('#' + top.toString(16).padStart(6, '0'), '#FFFFFF', 0.72);
-  if (contrast(ground, body) < PALE) {
-    ground = mix(accent, '#FFFFFF', 0.25);
-    for (let i = 0; i < 12 && contrast(ground, body) < STAND_OFF; i++) ground = mix(ground, '#11151B', 0.12);
-  }
-  return [...rgb(ground), 255];
+  const c = [top >> 16, (top >> 8) & 255, top & 255];
+  return [...c.map(v => Math.round(v + (255 - v) * 0.72)), 255];
 }
 
 /** The scale that brings a profile picture nearest `size` without going over. */

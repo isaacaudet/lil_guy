@@ -61,3 +61,5 @@ export { crowdSprite, crowdSheet, crowdShine, CROWD_SIZES, type CrowdSize, type 
 export { createCrowd, crowdSeats, crowdPicture, type Crowd, type CrowdOptions, type CrowdGuy, type CrowdSeat } from './crowd-stage';
 export { emoteFrames, EMOTE_SET, EMOTE_SIZE, isEmote } from './emotes';
 export { createStadium, stadiumSeats, venueFor, VENUES, type Stadium, type StadiumOptions, type StadiumSeat, type VenueId } from './stadium';
+export { capsuleFrames, capsuleHalves, capsuleById, capsuleUrl, capsuleManifest, capsuleFile, CAPSULES, CAPSULE_STATES, CAPSULE_GRIDS, CAPSULE_FILE_SIZES, type Capsule, type CapsuleState, type CapsuleGrid, type CapsuleOptions, type CapsuleManifest } from './capsule';
+export { capsuleOpenFrames, capsuleOpenTier, capsuleOpenUrl, playCapsuleOpen, CAPSULE_OPEN_SIZE, type CapsuleOpen, type CapsuleOpenOptions, type CapsuleOpenBeat, type CapsuleOpenPlayer, type CapsuleOpenPlayOptions } from './capsule-open';

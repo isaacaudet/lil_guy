@@ -210,7 +210,7 @@ test('the rules change when the rare end of the library does', () => {
   const copyMoves = (change: () => () => void) => moves(() => ruleOf(copyFigures()), copies, change);
   const guyMoves = (change: () => () => void) => moves(() => ruleOf(guyFigures()), guys, change);
   const set = (o: any, k: string, v: any) => () => { const was = o[k]; o[k] = v; return () => { o[k] = was; }; };
-  expect(copyMoves(set(FINISHES.gold, 'odds', 0.1))).toBe(true);
+  expect(copyMoves(set(FINISHES.gold, 'odds', 0.15))).toBe(true);
   expect(copyMoves(set(FINISHES.pearl, 'aura', 0.1))).toBe(true);
   expect(copyMoves(set(FINISHES.op, 'odds', 0.07))).toBe(true);
   expect(copyMoves(set(EFFECTS.electric, 'item', 5000))).toBe(true);

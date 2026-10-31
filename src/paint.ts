@@ -12,9 +12,8 @@ import type { AvatarConfig, Palette, PixelGrid } from './types';
 /**
  * Turns a composed grid into colours. Most cells take their token's palette
  * colour; a cell belonging to an owned item is repainted with that copy's
- * finish and wear. Before that, three things paint over the palette: a chase
- * part's own fixed colours (`PART_COLORS`), a Lucky guy's rim (`luckyRim`)
- * and a chase colourway's material (`chaseSkin`).
+ * finish and wear. Before that, a chase part's own fixed colours
+ * (`PART_COLORS`) paint over the palette.
  */
 export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, small = false, still = true): (string | null)[][] {
   const state = { glint: false };
@@ -23,8 +22,6 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
   // A chase eye's white is drawn (a star, a bead on a corona), not a catchlight, so small keeps it.
   if (small) ({ grid, palette } = forSmall(grid, palette, (eyeParts[config.eyes]?.name ?? '') in EYE_COLORS));
   const fixed = partColors(grid, config, palette);
-  const rim = config.lucky && hasGuy(grid) ? rimCells(grid) : null;
-  const skin = chaseSkin(grid, config, palette.name);
   // Where each worn item sits, so its finish sweeps across the item itself (a small hat shows a whole Prism).
   const boxes = boxesIn(grid);
   // Each worn item's own colours, ranked, so a finish keeps its parts apart (`toneOf`).
@@ -35,8 +32,7 @@ export function paint(grid: PixelGrid, config: AvatarConfig, palette: Palette, s
     return m;
   };
   return grid.map((row, y) => row.map((token, x) => {
-    const color = fixed?.[y][x] ?? (rim?.[y][x] ? luckyRim(x, y) : undefined) ?? skin?.[y][x]
-      ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
+    const color = fixed?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
     if (!color) return null;
     const slot = slotOf(token);
     const copy = slot ? config.owned?.[slot] : undefined;
@@ -237,133 +233,10 @@ function partMask(config: AvatarConfig, slot: 'hair' | 'accessory' | 'body'): bo
 
 const GRID = 16;
 
-// ---------------------------------------------------------------- chase colourways
-
+/** The guy's own skin: what lights round a void eye's pits. */
 const SKIN_TOKENS = new Set<number>([T.BODY, T.SHADE, T.LIGHT, T.DEEP, T.BELLY]);
 /** The colour low in an eye (shiny, sparkle, beans), as ./animate moves it with the eye. */
 const IRIS_TOKENS = new Set<number>([T.ACCENT, T.ACCENT_SHADE]);
-/** A material: its colour for each skin cell of a grid, given the face it is painted round. */
-type Material = (grid: PixelGrid, face: { top: number; line: number; mouthBottom: number }) => (string | undefined)[][];
-
-/** Opal's play of colour: pearl, pink, mint, lilac and sky in diagonal bands, each two cells wide, shaded to match. */
-const OPAL: Partial<Record<number, string[]>> = {
-  [T.BODY]: ['#FBF7FF', '#FFD9EE', '#CFF8EA', '#DDD2FF', '#D3EEFF'],
-  [T.SHADE]: ['#CDBDF2', '#EBAACF', '#8ED9C5', '#A99BEA', '#93C6EE'],
-  [T.DEEP]: ['#A994E0', '#C987B4', '#6CB8A6', '#8676D2', '#6FA6D8'],
-  [T.LIGHT]: ['#FFFFFF'],
-  [T.BELLY]: ['#FFFFFF', '#FFEEF7', '#EAFCF6', '#F1ECFF', '#ECF8FF'],
-};
-
-/** Aurora's curtains, left to right: green, teal, violet. */
-const CURTAIN = ['#5CE6A4', '#3FD0D6', '#9C7CFF'];
-/** Aurora's teal night: well off Midnight's navy, so an Aurora under a hat is still its own colour. */
-const AURORA: Colors = { [T.BODY]: '#2E5878', [T.SHADE]: '#234763', [T.DEEP]: '#17324A', [T.LIGHT]: '#3E7493', [T.BELLY]: '#386886' };
-const OBSIDIAN: Colors = { [T.BODY]: '#2A2440', [T.SHADE]: '#1C182C', [T.DEEP]: '#120F1C', [T.LIGHT]: '#3D3460', [T.BELLY]: '#3A3256' };
-
-/** Each cell of a grid through `f`, skin only. */
-const overSkin = (grid: PixelGrid, f: (t: number, x: number, y: number) => string | undefined) =>
-  grid.map((row, y) => row.map((t, x) => (SKIN_TOKENS.has(t) ? f(t, x, y) : undefined)));
-
-const FACE_TOKENS = new Set<number>([T.EYE, T.WHITE, T.MOUTH, T.TONGUE]);
-/** Whether a cell is touching an eye, its shine, the mouth or the tongue, on its sides or corners. */
-const byFace = (grid: PixelGrid, x: number, y: number) => {
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (FACE_TOKENS.has(grid[y + dy]?.[x + dx] ?? 0)) return true;
-  return false;
-};
-
-const MATERIALS: Record<string, Material> = {
-  Opal: grid => overSkin(grid, (t, x, y) => { const ramp = OPAL[t]; return ramp?.[Math.floor((x + y + 1) / 2) % ramp.length]; }),
-  // Black glass with one violet glint, as a window shows in it: a short streak just inside the
-  // outline at the upper left, above the eyes; under a hat, where that is covered, low on the
-  // other side, under the mouth, or failing that beside it. Never across the face: a diagonal
-  // over the whole body read as a slash.
-  Obsidian: (grid, face) => {
-    const out = overSkin(grid, t => OBSIDIAN[t]);
-    const skin = (x: number, y: number) => SKIN_TOKENS.has(grid[y]?.[x] ?? 0);
-    // One cell in from the edge (or on it, where that touches the face), a row at a time, clear of the face.
-    const inside = (rows: number[], side: 1 | -1) => rows.flatMap(y => {
-      const row = side > 0 ? grid[y] : [...grid[y]].reverse(), first = row.findIndex(t => SKIN_TOKENS.has(t));
-      const edge = first < 0 || side > 0 ? first : row.length - 1 - first;
-      const x = [edge + side, edge].find(x => edge >= 0 && skin(x, y) && !byFace(grid, x, y));
-      return x === undefined ? [] : [[x, y] as [number, number]];
-    }).slice(0, 3);
-    const rows = (from: number, to: number) => Array.from({ length: Math.max(0, to - from) }, (_, k) => from + k);
-    const glint = [inside(rows(0, face.top - 1), 1), inside(rows(face.mouthBottom + 1, GRID), -1), inside(rows(face.line + 1, GRID), -1)]
-      .find(cells => cells.length >= 2) ?? [];
-    glint.forEach(([x, y], i) => { out[y][x] = i === 1 || glint.length === 1 ? '#C9B2FF' : '#7E68C8'; });
-    return out;
-  },
-  // Teal night hung with crisp curtains of green, teal and violet from the top of the head, stopping
-  // above the eyes. Where a hat covers that, they hang from the first skin under it instead, beside
-  // the face but never touching it; on a face that fills the body, from the first skin clear of it. So
-  // every Aurora shows its curtains, but only as low as it has to.
-  Aurora: (grid, face) => {
-    const clear = (x: number, y: number) => SKIN_TOKENS.has(grid[y][x]) && !byFace(grid, x, y);
-    const from = (clearOnly: boolean) => grid[0].map((_, x) => grid.findIndex((row, y) => (clearOnly ? clear(x, y) : SKIN_TOKENS.has(row[x]))));
-    const curtains = (top: number[], low: boolean) => overSkin(grid, (t, x, y) => {
-      const d = y - top[x], drop = [2, 3, 4, 3, 2, 3, 4, 4][x % 8];
-      const hangs = top[x] >= 0 && d >= 0 && d < drop && t !== T.DEEP && (low ? !byFace(grid, x, y) : y < face.top - 1);
-      return hangs ? CURTAIN[Math.floor(x / 2) % 3] : AURORA[t];
-    });
-    const lit = (cells: (string | undefined)[][]) => cells.flat().filter(c => c && CURTAIN.includes(c)).length;
-    const high = curtains(from(false), false);
-    if (lit(high) >= 4) return high;
-    const under = curtains(from(false), true);
-    return lit(under) >= 4 ? under : curtains(from(true), true);
-  },
-};
-
-/**
- * A chase colourway (Opal, Obsidian, Aurora) as a material, cell by cell over
- * the skin: fixed colours, so a tone never washes one out and a 1-in-500
- * colour looks it in every still. Null for every other colourway.
- */
-function chaseSkin(grid: PixelGrid, config: AvatarConfig, name: string): (string | undefined)[][] | null {
-  const material = MATERIALS[name];
-  return material ? material(grid, faceOf(config)) : null;
-}
-
-// ---------------------------------------------------------------- Lucky
-
-/**
- * Lucky's rim: coral, amber, teal, blue and violet, each deep enough to keep
- * the guy's edge on a pale ground (ivory and pale gold steps left gaps in it
- * there) and none of them neon.
- */
-export const LUCKY_RIM = ['#E8574F', '#F0A030', '#3DBFA8', '#5B8CE8', '#9466E0'] as const;
-
-/**
- * The colour of a Lucky guy's rim at cell (`x`, `y`) of the sixteen-by-sixteen
- * grid, `beat` steps on: the outline stepped through `LUCKY_RIM` in diagonal
- * bands two cells wide, with no blending. A still is beat 0; ./animate moves
- * the bands one hue a beat. Grid coordinates, not a frame's: a frame's row
- * less its headroom.
- */
-export function luckyRim(x: number, y: number, beat = 0): string {
-  const n = LUCKY_RIM.length;
-  return LUCKY_RIM[(((Math.floor((x + y) / 2) + beat) % n) + n) % n];
-}
-
-/**
- * Whether a cell is on the guy's outer edge: the outline, touching the outside (nothing, or a
- * frame, buddy or aura cell) and the guy's own drawing or what is worn on it, so a buddy's
- * outline beside them is left alone.
- */
-export function onRim(grid: PixelGrid, x: number, y: number): boolean {
-  if (grid[y]?.[x] !== T.OUTLINE) return false;
-  const near = [grid[y - 1]?.[x], grid[y + 1]?.[x], grid[y][x - 1], grid[y][x + 1]];
-  const outside = (t: number | undefined) => t === undefined || t === 0 || t >= LAYER.frame;
-  const guy = (t: number | undefined) => t !== undefined && t > 0 && t !== T.OUTLINE && t < LAYER.frame;
-  return near.some(outside) && near.some(guy);
-}
-
-/** Whether a grid holds the guy: their skin, or a costume. A buddy painted on its own has neither, and no rim. */
-const hasGuy = (grid: PixelGrid) => grid.some(row => row.some(t => SKIN_TOKENS.has(t) || (t >= LAYER.skin && t < LAYER.hat)));
-
-/** Every rim cell (`onRim`) of a grid. */
-function rimCells(grid: PixelGrid): boolean[][] {
-  return grid.map((row, y) => row.map((_, x) => onRim(grid, x, y)));
-}
 
 // ---------------------------------------------------------------- small and catchlights
 

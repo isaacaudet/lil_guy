@@ -132,8 +132,8 @@ export function cardFace(spec: FaceSpec): CardFace {
   const holo = last ? Math.max(0, SHADER_FINISHES.indexOf(last.finish as (typeof SHADER_FINISHES)[number])) : 0;
   // The edition: the finish of the copy that sets the grade, or the grade's own for a card given one.
   const top = copies.filter(o => gradeIndex(o) === g).pop();
-  // A graphic finish (Op, Impossible, Grid) is too fine a pattern for this small a card: it takes its grade's Polychrome.
-  const edition = top ? (GRAPHIC_FINISHES.includes(top.finish) ? 3 : editionOf(top.finish)) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][Math.min(g, 5)];
+  // A graphic finish (Op, Impossible, Grid) is too fine a pattern for this small a card: it takes its grade's Gold.
+  const edition = top ? (GRAPHIC_FINISHES.includes(top.finish) ? 5 : editionOf(top.finish)) : g < 0 ? 0 : [0, 1, 2, 3, 5, 6][Math.min(g, 5)];
   const base = new Uint8Array(W * H * 4), kind = new Uint8Array(W * H * 4), noise = new Uint8Array(W * H * 4);
   const put = (x: number, y: number, c: number[], k: number, fi = -1, sc = 0, pr = 0) => {
     const i = (y * W + x) * 4, print = Math.floor(pr / 4);

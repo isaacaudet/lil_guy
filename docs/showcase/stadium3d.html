@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
+</head>
+<body>
+<title>Lil guy stadium 3D</title>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" } }</script>
+<style>
+:root{--bg:#11151b;--panel:#1a2029;--ink:#f3eee4;--muted:#a3a9b5;--line:#2b3340;--accent:#ff7a5c}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f6f1e7;--panel:#fffaf1;--ink:#161a20;--muted:#5e6470;--line:#e2d9c8;--accent:#d4553a}}
+:root[data-theme="dark"]{--bg:#11151b;--panel:#1a2029;--ink:#f3eee4;--muted:#a3a9b5;--line:#2b3340;--accent:#ff7a5c}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em} p{margin:4px 0 12px;color:var(--muted);max-width:74ch}
+.stage{border-radius:14px;overflow:hidden;background:#0b0e18;border:1px solid var(--line);position:relative}
+#bowl{display:block;width:100%;aspect-ratio:16/9;height:auto}
+.stage .note{position:absolute;inset:0;display:grid;place-items:center;color:#f3eee4;font-size:15px;padding:16px;text-align:center}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 0}
+button{font:inherit;font-size:14px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.stat{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.venues{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.venues span{font-size:13px;padding:3px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.venues span.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.shapes{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+</style>
+<main>
+<h1>The lil guy stadium, in 3D</h1>
+<p>The same venues and calls as the 2D stadium, with everyone drawn as their own 3D lil guy (three.js). Pretend chat below: people turn up, hop when they guess, and the round’s closest is lifted out.</p>
+<div class="stage"><canvas id="bowl" aria-label="A venue full of lil guys"></canvas></div>
+<div class="bar">
+  <button data-to="20">20 people</button><button data-to="50">50</button><button data-to="100">100</button><button data-to="200">200</button><button data-to="1000">1,000</button><button data-to="5000">5,000</button><button data-to="10000">10,000</button>
+  <button id="b-win">Show the closest</button>
+  <button id="b-wave" aria-pressed="false">Wave</button>
+  <span class="stat" id="stat"></span>
+</div>
+<div class="venues" id="venues"></div>
+<div class="shapes"><button data-shape="16/9" aria-pressed="true">16:9</button><button data-shape="640/240">Strip</button><button data-shape="390/300">Phone</button></div>
+</main>
+<script type="module">
+import { createStadium3D, VENUES } from '../lilguys-stadium3d.mjs';
+// Pretend chat, for the demo only: names, and now and then a capsule copy in some finish (item ids from
+// the catalogue; nothing from the pet shop). A game passes its real chatters and their real copies.
+const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const SYL = ['mo','chi','ku','ra','yu','ki','to','fu','ne','ko','pi','su','ba','zu','po','ri','ya','hi','no','me','ta','lo','wa','ji','xo','bee','dan','sam','gg','lu','vi','pep'];
+const names = [], taken = new Set();
+const nameFor = i => {
+  while (names.length <= i) {
+    let h = hash('chat:' + names.length), s = '';
+    for (let k = 0; k < 2 + (h % 2); k++) { s += SYL[h % SYL.length]; h = Math.floor(h / SYL.length) + 7919 * (k + 1); }
+    s += h % 3 ? '' : h % 97;
+    let name = s, k = 2;
+    while (taken.has(name)) name = s + '_' + k++;
+    taken.add(name); names.push(name);
+  }
+  return names[i];
+};
+const WEAR = ["amountle.jar", "cutsies.kiwi", "puttsies.pillow", "halfsies.avocado", "flipsies.can", "amountle.crown", "tiltsies.buddy", "club.pumpkin", "club.newyear", "club.blossom", "club.sunhat", "club.maple", "amountle.bean", "amountle.gem-pile", "halfsies.trophy", "halfsies.stamp", "stackdle.wedge", "stackdle.big-l", "stackdle.bolt", "flipsies.die", "flipsies.toast", "puttsies.eight-ball", "puttsies.cat", "weighsies.basketball", "weighsies.apple", "weighsies.eiffel", "cutsies.watermelon", "cutsies.cupcake", "tiltsies.starry", "tiltsies.sprout", "trackdle.van", "trackdle.lights", "trackdle.finish"];
+const FIN = ['plain', 'plain', 'plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold'];
+const code = (item, finish, scuff, print) => `${item}~${finish}~${scuff.toFixed(7)}~${print}`;
+const lookFor = i => {
+  const h = hash('look:' + i), equip = [];
+  if (h % 100 < 25) { const f = FIN[(h >>> 8) % FIN.length]; equip.push(code(WEAR[h % WEAR.length], f, f === 'plain' || f === 'tempered' ? 0.3 : 0.03, h % 997)); }
+  return equip.length ? { equip } : {};
+};
+const canvas = document.getElementById('bowl');
+const venues = document.getElementById('venues');
+venues.innerHTML = VENUES.map(v => `<span data-v="${v.id}">${v.name} · up to ${v.upTo.toLocaleString()}</span>`).join('');
+const mark = id => venues.querySelectorAll('span').forEach(s => s.classList.toggle('on', s.dataset.v === id));
+let st;
+try { st = createStadium3D(canvas, { onVenue: mark }); }
+catch (e) { canvas.insertAdjacentHTML('afterend', '<div class="note">This needs WebGL2. The 2D stadium works everywhere.</div>'); throw e; }
+window.stadium = st;
+st.add('isaac', { seed: 'founder:isaac' }); mark(st.venue);
+let n = 0, target = 12;
+// People turn up a few at a time, faster the bigger the gap, as a busy chat does.
+setInterval(() => {
+  const gap = target - st.count;
+  if (gap > 0) for (let k = 0; k < Math.max(1, Math.ceil(gap / 25)); k++) { st.add(nameFor(n), lookFor(n)); n++; }
+  else if (gap < 0) for (let k = 0; k < Math.ceil(-gap / 25); k++) st.remove(nameFor(--n));
+  for (let k = 0; k < Math.min(6, st.count / 20 + 1); k++) st.hop(nameFor(Math.floor(Math.random() * n)));
+}, 120);
+document.querySelectorAll('[data-to]').forEach(b => b.onclick = () => { target = +b.dataset.to; document.querySelectorAll('[data-to]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+document.getElementById('b-wave').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== 'true'; st.wave(on); e.target.setAttribute('aria-pressed', on); };
+document.getElementById('b-win').onclick = () => { const who = n ? nameFor(Math.floor(Math.random() * n)) : 'isaac'; st.spotlight(who, `${who} · ${10 + hash(who) % 90}`); };
+// The canvas in other shapes a game might give it: a strip under a game, a phone.
+document.querySelectorAll('[data-shape]').forEach(b => b.onclick = () => {
+  canvas.style.aspectRatio = b.dataset.shape;
+  canvas.parentElement.style.maxWidth = b.dataset.shape === '390/300' ? '390px' : '';
+  document.querySelectorAll('[data-shape]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  st.resize();
+});
+addEventListener('resize', () => st.resize());
+setInterval(() => { document.getElementById('stat').textContent = `${st.count.toLocaleString()} here · ${VENUES.find(v => v.id === st.venue).name}`; }, 300);
+</script>
+
+</body>
+</html>

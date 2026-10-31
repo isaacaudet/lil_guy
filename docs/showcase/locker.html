@@ -455,7 +455,7 @@ drawFrame(ctx, frameAt(hop, elapsedMs), x, y, 4);</pre></div>
 <script>
 (() => {
   const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
+  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold', 'op', 'impossible', 'grid'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   const fmt = n => !isFinite(n) ? '∞' : n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'K' : Math.round(n).toLocaleString('en-US');
@@ -825,53 +825,11 @@ onmessage = e => {
       },
     };
   }
-  const toyCache = new Map();
-  function toyOf(game) {
-    if (!toyCache.has(game)) {
-      const skin = LG.gameItems(game).find(i => i.slot === 'skin');
-      const cfg = LG.dress(LG.resolve('mystery'), { equip: [skin.id] });
-      const grid = LG.compose(cfg);
-      toyCache.set(game, LG.paint(grid, cfg, LG.withItems(LG.shadePalette(LG.getPalette(cfg.palette), cfg.shade), cfg)));
-    }
-    return toyCache.get(game);
-  }
 
-  /** The two halves of a 32x32 capsule; `open` adds light spilling over the bottom's rim. */
+  /** The two halves of a 32x32 capsule, the one every game shows (LG.capsuleHalves); `open` adds light spilling over the bottom's rim. */
   function capsuleHalves(game, open, t) {
-    const candy = rgb(CANDY[game]), toy = toyOf(game);
-    const top = Px(32, 32), bot = Px(32, 32);
-    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
-      if (d > 14.7) continue;
-      if (y <= 15) {
-        if (d > 13.5) { top.set(x, y, [205, 222, 248], 235); continue; }
-        top.set(x, y, [225, 238, 255], 50);
-      } else {
-        let c = candy;
-        if (d > 13.5) c = blend(candy, INK, 0.62);
-        else if (dx > 7 || dy > 9.5) c = blend(candy, INK, 0.25);
-        else if (dx < -9) c = blend(candy, WHITE, 0.25);
-        if (d <= 13.5 && y === 16) c = blend(candy, WHITE, 0.4);
-        else if (d <= 13.5 && y === 17) c = blend(candy, INK, 0.12);
-        bot.set(x, y, c);
-      }
-    }
-    // the folded paper insert, tucked behind the toy
-    for (let y = 7; y <= 14; y++) for (let x = 19; x <= 24; x++) top.set(x, y, y === 9 || y === 10 ? [255, 160, 190] : x === 24 ? [214, 206, 190] : [250, 244, 228]);
-    // the toy: only the part above the seam shows, through the plastic
-    toy.forEach((row, ty) => row.forEach((hex, tx) => {
-      const x = tx + 8, y = ty + 4;
-      if (!hex || y > 15 || Math.hypot(x - 15.5, y - 15.5) > 13.4) return;
-      top.set(x, y, blend(rgb(hex), [235, 242, 255], 0.14));
-    }));
-    // the clear lip where the halves overlap, the big curved highlight, a glint
-    for (let x = 0; x < 32; x++) for (const y of [14, 15]) if (Math.hypot(x - 15.5, y - 15.5) <= 13.5) top.set(x, y, WHITE, y === 15 ? 90 : 60);
-    for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
-      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
-      if (d > 10.6 && d < 12.6 && dx < -1 && dy < -3) top.set(x, y, WHITE, 185);
-    }
-    for (const [x, y] of [[9, 7], [10, 7], [9, 8]]) top.set(x, y, WHITE, 255);
-    bot.set(7, 20, WHITE, 170); bot.set(7, 21, WHITE, 120);
+    const lib = LG.capsuleHalves(game, { grid: 32 }), top = Px(32, 32), bot = Px(32, 32);
+    top.d.set(lib.top); bot.d.set(lib.bottom);
     if (open) for (let k = 1; k <= 14; k++) {
       const y = 16 - k, a = 1 - (k - 1) / 14;
       for (let x = 4; x <= 27; x++) {

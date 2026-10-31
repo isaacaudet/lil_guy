@@ -1465,7 +1465,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const calm = { matches: false };                 // motion plays whatever the reduced-motion setting says (the club's rule)
-  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
+  const FIN = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold', 'op', 'impossible', 'grid'];
   const GRADE = LG.GRADES.map(g => g.color);
   const gradeIdx = o => LG.GRADES.findIndex(g => g.id === LG.gradeOf(o).id);
   // What a capsule costs in stamps: a mystery one, a picked machine (the price behind every pull cost) and a seasonal.
@@ -1771,53 +1771,11 @@ onmessage = e => {
       },
     };
   }
-  const toyCache = new Map();
-  function toyOf(game) {
-    if (!toyCache.has(game)) {
-      const skin = LG.gameItems(game).find(i => i.slot === 'skin');
-      const cfg = LG.dress(LG.resolve('mystery'), { equip: [skin.id] });
-      const grid = LG.compose(cfg);
-      toyCache.set(game, LG.paint(grid, cfg, LG.withItems(LG.shadePalette(LG.getPalette(cfg.palette), cfg.shade), cfg)));
-    }
-    return toyCache.get(game);
-  }
 
-  /** The two halves of a 32x32 capsule; `open` adds light spilling over the bottom's rim. */
+  /** The two halves of a 32x32 capsule, the one every game shows (LG.capsuleHalves); `open` adds light spilling over the bottom's rim. */
   function capsuleHalves(game, open, t) {
-    const candy = rgb(CANDY[game]), toy = toyOf(game);
-    const top = Px(32, 32), bot = Px(32, 32);
-    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
-      if (d > 14.7) continue;
-      if (y <= 15) {
-        if (d > 13.5) { top.set(x, y, [205, 222, 248], 235); continue; }
-        top.set(x, y, [225, 238, 255], 50);
-      } else {
-        let c = candy;
-        if (d > 13.5) c = blend(candy, INK, 0.62);
-        else if (dx > 7 || dy > 9.5) c = blend(candy, INK, 0.25);
-        else if (dx < -9) c = blend(candy, WHITE, 0.25);
-        if (d <= 13.5 && y === 16) c = blend(candy, WHITE, 0.4);
-        else if (d <= 13.5 && y === 17) c = blend(candy, INK, 0.12);
-        bot.set(x, y, c);
-      }
-    }
-    // the folded paper insert, tucked behind the toy
-    for (let y = 7; y <= 14; y++) for (let x = 19; x <= 24; x++) top.set(x, y, y === 9 || y === 10 ? [255, 160, 190] : x === 24 ? [214, 206, 190] : [250, 244, 228]);
-    // the toy: only the part above the seam shows, through the plastic
-    toy.forEach((row, ty) => row.forEach((hex, tx) => {
-      const x = tx + 8, y = ty + 4;
-      if (!hex || y > 15 || Math.hypot(x - 15.5, y - 15.5) > 13.4) return;
-      top.set(x, y, blend(rgb(hex), [235, 242, 255], 0.14));
-    }));
-    // the clear lip where the halves overlap, the big curved highlight, a glint
-    for (let x = 0; x < 32; x++) for (const y of [14, 15]) if (Math.hypot(x - 15.5, y - 15.5) <= 13.5) top.set(x, y, WHITE, y === 15 ? 90 : 60);
-    for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
-      const dx = x - 15.5, dy = y - 15.5, d = Math.hypot(dx, dy);
-      if (d > 10.6 && d < 12.6 && dx < -1 && dy < -3) top.set(x, y, WHITE, 185);
-    }
-    for (const [x, y] of [[9, 7], [10, 7], [9, 8]]) top.set(x, y, WHITE, 255);
-    bot.set(7, 20, WHITE, 170); bot.set(7, 21, WHITE, 120);
+    const lib = LG.capsuleHalves(game, { grid: 32 }), top = Px(32, 32), bot = Px(32, 32);
+    top.d.set(lib.top); bot.d.set(lib.bottom);
     if (open) for (let k = 1; k <= 14; k++) {
       const y = 16 - k, a = 1 - (k - 1) / 14;
       for (let x = 4; x <= 27; x++) {
@@ -3240,7 +3198,7 @@ onmessage = e => {
     const its = LG.gameItems(g).filter(x => !x.free), owned = state ? copies() : [];
     const total = its.reduce((a, x) => a + LG.itemWeight(x), 0), oneIn = x => Math.round(total / LG.itemWeight(x) / (1 - LG.AURA_ODDS));
     const star = its.find(x => x.showpiece), plain = its.find(x => !x.showpiece);
-    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
+    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold', 'op', 'impossible', 'grid'];
     const set = state ? LG.setProgress(g, owned.map(c => c.o)) : null;
     const slots = ['showpiece', 'skin', 'hat', 'frame', 'buddy'].filter(sl => its.some(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece));
     const inSlot = sl => its.filter(x => sl === 'showpiece' ? x.showpiece : x.slot === sl && !x.showpiece);
@@ -3367,9 +3325,9 @@ onmessage = e => {
     $('season-buy').addEventListener('click', () => {
       if (!state) { $('name').focus(); return; }
       if (!pay(COST.seasonal)) return;
-      if (isLive()) { meApi('season', UNLIMITED && fairOdds ? { fair: true } : {}).then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal', null, r.copy.pull); }).catch(e => { if (e.stamps) { state.stamps = e.stamps; renderWallet(); } e.status === 402 ? short(e.need, e.message) : toast(e.message); }); return; }
+      if (isLive()) { meApi('season', UNLIMITED && fairOdds ? { fair: true } : {}).then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; { const o = LG.decode(r.copy.code); reveal(o, null, 'Seasonal', null, r.copy.pull, seasonCapsule(o)); } }).catch(e => { if (e.stamps) { state.stamps = e.stamps; renderWallet(); } e.status === 402 ? short(e.need, e.message) : toast(e.message); }); return; }
       const o = dev ? best(i => LG.rollSeason(`${state.seed}:dev:${i}`, today)) : LG.rollSeason(`${state.seed}:season:${++state.opened}`, today);
-      reveal(o, null, 'Seasonal');
+      reveal(o, null, 'Seasonal', null, 0, seasonCapsule(o));
     });
   }
   /**
@@ -3435,7 +3393,7 @@ onmessage = e => {
   $('fb-odds').addEventListener('click', () => { fairOdds = !fairOdds; try { localStorage.setItem('lil-guys-fair', fairOdds ? '1' : '0'); } catch (e) {} renderFounderBar(); toast(fairOdds ? 'Rolling at fair odds, as anyone does.' : 'Founder odds back on.'); });
   $('fb-open').addEventListener('click', () => {
     meApi('season', { item: $('fb-season').value, ...(fairOdds ? { fair: true } : {}) })
-      .then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; reveal(LG.decode(r.copy.code), null, 'Seasonal', null, r.copy.pull); })
+      .then(r => { state.stamps = r.stamps; state.ids = { ...(state.ids || {}), [r.copy.code]: r.copy.id }; { const o = LG.decode(r.copy.code); reveal(o, null, 'Seasonal', null, r.copy.pull, seasonCapsule(o)); } })
       .catch(e => toast(e.message));
   });
   const LUCK_WORDS = { beginner: 'Beginner’s luck', pity: 'Lucky break', founder: 'Founder’s pick' };
@@ -3461,7 +3419,7 @@ onmessage = e => {
     open(g, 'Daily capsule');
   }
   async function open(g, how) {
-    const mystery = how === 'Mystery capsule';
+    const mystery = how === 'Mystery capsule', capsule = how === 'Daily capsule' ? 'free' : mystery ? 'mystery' : undefined;
     if (isLive()) {
       try {
         const r = await meApi('open', { ...(mystery ? { mystery: true } : { game: g, free: how === 'Daily capsule' }), ...(UNLIMITED && fairOdds ? { fair: true } : {}) });
@@ -3469,7 +3427,7 @@ onmessage = e => {
         if (r.part?.new) state.parts = [...(state.parts || []), r.part.code];
         // A machine's free item comes with the first capsule from it.
         if (r.starter && !state.copies.includes(r.starter)) { state.copies.push(r.starter); toast(`Plus ${LG.itemById(LG.decode(r.starter).item).name}, ${LG.machineName(r.game)}'s free one`); }
-        reveal(LG.decode(r.copy.code), r.game, LUCK_WORDS[r.luck] ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part, r.copy.pull);
+        reveal(LG.decode(r.copy.code), r.game, LUCK_WORDS[r.luck] ? `${how} · ${LUCK_WORDS[r.luck]}` : how, r.part, r.copy.pull, capsule);
       } catch (e) {
         if (e.stamps) state.stamps = e.stamps;
         // A free capsule the server kept shut is still to come today.
@@ -3499,7 +3457,7 @@ onmessage = e => {
       part = { code, new: !have };
     }
     state.opened++;
-    reveal(o, g, dev ? 'Dev drop' : how, part);
+    reveal(o, g, dev ? 'Dev drop' : how, part, 0, capsule);
   }
 
   /* ---------------------------------------------- sound: a small synth made on the spot after the first click.
@@ -3707,36 +3665,14 @@ onmessage = e => {
   const shake = (amp, ms = 380) => tween(ms, (e, p) => { const k = amp * (1 - p); $('stage').style.translate = p >= 1 ? '' : `${(Math.random() * 2 - 1) * k}px ${(Math.random() * 2 - 1) * k}px`; }, ease.lin);
   const flash = (v = 0.85) => { const f = $('flash'); f.style.setProperty('--v', v); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); };
 
-  /* A capsule at 64×64, to match the machine's fine grid: a clear dome over a candy half, shaded as a
-   * sphere lit from the top left, with the game's toy showing through the plastic. */
-  function drawCapsule(topCv, botCv, g) {
-    const candy = rgb(CANDY[g]), toy = toyOf(g);
-    const top = Px(64, 64), bot = Px(64, 64), R = 29.5, C = 31.5, L = [-0.48, -0.6, 0.64];
-    toy.forEach((row, ty) => row.forEach((hex, tx) => {
-      if (!hex) return;
-      for (let j = 0; j < 4; j++) { const x = 16 + tx * 2 + (j & 1), y = 6 + ty * 2 + (j >> 1); if (y < 31 && Math.hypot(x - C, y - C) < R - 2) top.set(x, y, blend(rgb(hex), [228, 238, 255], 0.16)); }
-    }));
-    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
-      const dx = (x - C) / R, dy = (y - C) / R, r2 = dx * dx + dy * dy;
-      if (r2 > 1) continue;
-      const nz = Math.sqrt(1 - r2), lit = Math.max(0, dx * L[0] + dy * L[1] + nz * L[2]);
-      if (y < 31) {
-        const rim = Math.pow(r2, 3), ang = Math.atan2(dy, dx);
-        top.set(x, y, blend([214, 228, 250], [120, 140, 190], rim * 0.5), Math.round(28 + rim * 175));
-        if (r2 > 0.6 && r2 < 0.78 && ang < -1.8 && ang > -2.75) top.set(x, y, WHITE, 215);
-        if (r2 > 0.6 && r2 < 0.7 && ang > -0.6 && ang < -0.25) top.set(x, y, WHITE, 90);
-      } else if (y <= 32) bot.set(x, y, blend(candy, WHITE, y === 31 ? 0.55 : 0.18));
-      else {
-        let c = lit < 0.55 ? blend(candy, INK, (0.55 - lit) * 1.1) : blend(candy, WHITE, (lit - 0.55) * 0.55);
-        if (r2 > 0.88) c = blend(c, INK, 0.3);
-        if (Math.hypot(dx + 0.5, dy - 0.2) < 0.09) c = blend(c, WHITE, 0.6);
-        bot.set(x, y, c);
-      }
-    }
-    for (const [x, y, a] of [[17, 12, 255], [18, 12, 255], [17, 13, 255], [22, 9, 170]]) top.set(x, y, WHITE, a);
-    top.outline(INK); bot.outline(INK);
-    topCv.getContext('2d').putImageData(new ImageData(top.d, 64, 64), 0, 0);
-    botCv.getContext('2d').putImageData(new ImageData(bot.d, 64, 64), 0, 0);
+  /* The capsule, the one every game shows (LG.capsuleHalves): a clear dome over a candy half at 64×64, to
+   * match the machine's fine grid, the halves apart so the open can twist the dome off and drop the candy away.
+   * `id`: a machine's, `mystery`, `free` (today's) or a season's (`season.pumpkin`). */
+  const seasonCapsule = o => LG.capsuleById('season', o.item)?.id;
+  function drawCapsule(topCv, botCv, id) {
+    const { top, bottom } = LG.capsuleHalves(id);
+    topCv.getContext('2d').putImageData(new ImageData(top, 64, 64), 0, 0);
+    botCv.getContext('2d').putImageData(new ImageData(bottom, 64, 64), 0, 0);
   }
   (function drawCoin(cv) {
     const m = Px(12, 12);
@@ -3755,63 +3691,67 @@ onmessage = e => {
    * toward you while the machine steps back, twists (the seam cracks and warm light leaks out)
    * and pops. Every step is a tween, so Skip lands each on its last frame.
    * `quick`: an Everyday or Special pop, three seconds or so: the machine is already standing, the crank
-   * turns once and everything is a little faster. Only Prized and better get the scroll after it. */
+   * turns once and everything is a little faster. Only Prized and better get the scroll after it.
+   * `capsule`: the one that drops, when it isn't the machine's own (mystery, today's free one). A season's
+   * capsule has no machine (`g` null): it drops in from above the stage and opens the same way. */
   const MW = 240, MH = 336, MX = 30, MY = 440 - 40 - MH, FLOOR = 400, RAD = 88.5;
   const inMach = (x, y) => [MX + x / 40 * MW, MY + y / 56 * MH];
-  async function gacha(g, quick = false) {
+  async function gacha(g, quick = false, capsule = g) {
     const box = $('gacha'), mc = $('bigmach'), cp = $('cap2'), ct = $('cap-top'), cb = $('cap-bot'), coin = $('coin'), floor = $('g-floor'), leak = $('leak');
     box.hidden = false; cp.hidden = true; coin.hidden = true;
     box.style.setProperty('--grade', '#ffe2a0');                 // the same warm light whatever is inside: the scroll tells
     dropColour(TABLES[g] || '#5f6a8c', 0.45, 300);
     for (const el of [ct, cb]) { el.style.transform = ''; el.style.opacity = 1; }
-    mc.style.opacity = 1;
-    const m = addMachine(mc, g);
+    mc.style.opacity = g ? 1 : 0;
+    const m = g ? addMachine(mc, g) : null;
     const setM = (y, sx, sy, r = 0, s = 1) => { mc.style.transform = `translateY(${y}px) rotate(${r}deg) scale(${sx * s}, ${sy * s})`; };
     const setC = (x, y, s, r) => { cp.style.transform = `translate(${x - 96}px, ${y - 96}px) scale(${s}) rotate(${r}deg)`; };
     const at = (x, y) => { const r = box.getBoundingClientRect(); return [r.left + x * r.width / 300, r.top + y * r.height / 440]; };
 
     const T = ms => (quick ? Math.round(ms * 0.7) : ms);
-    // 1. the drop and the landing; a quick pop's machine is just there
-    if (quick) {
-      await tween(200, e => { setM(0, 0.92 + 0.08 * e, 0.92 + 0.08 * e); mc.style.opacity = e; floor.style.opacity = e; floor.style.transform = 'translateX(-50%)'; }, ease.out);
-    } else {
-      SFX.whoosh(0.3, 250, 1600, 0.08);
-      await tween(340, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
-      SFX.land(); shake(7);
-      dust(...at(70, FLOOR), -1); dust(...at(230, FLOOR), 1);
-      await tween(440, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
+    if (m) {
+      // 1. the drop and the landing; a quick pop's machine is just there
+      if (quick) {
+        await tween(200, e => { setM(0, 0.92 + 0.08 * e, 0.92 + 0.08 * e); mc.style.opacity = e; floor.style.opacity = e; floor.style.transform = 'translateX(-50%)'; }, ease.out);
+      } else {
+        SFX.whoosh(0.3, 250, 1600, 0.08);
+        await tween(340, e => { setM(-560 * (1 - e), 0.95, 1.07); floor.style.opacity = e; floor.style.transform = `translateX(-50%) scale(${0.25 + 0.75 * e})`; }, ease.in);
+        SFX.land(); shake(7);
+        dust(...at(70, FLOOR), -1); dust(...at(230, FLOOR), 1);
+        await tween(440, (e, p) => { const s = 1 - Math.exp(-6.5 * p) * Math.cos(17 * p); setM(0, 1.13 - 0.13 * s, 0.84 + 0.16 * s); }, ease.lin);
+      }
+
+      // 2. a coin, into the slot
+      const [sx, sy] = inMach(27, 40);
+      coin.hidden = false; SFX.coin();
+      await tween(T(360), (e, p) => {
+        const x = 10 + (sx - 18 - 10) * e, y = 150 + (sy - 18 - 150) * e - Math.sin(p * Math.PI) * 120;
+        coin.style.transform = `translate(${x}px, ${y}px) scaleX(${Math.max(0.15, Math.abs(Math.cos(p * 14)))})`;
+      }, ease.inOut);
+      coin.hidden = true; SFX.slot();
+
+      // 3. two turns of the crank (one for a quick pop), the machine leaning into each
+      for (let k = 0; k < (quick ? 1 : 2); k++) {
+        const a0 = m.angle; m.jiggle(); SFX.crank();
+        await tween(T(300), (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
+        SFX.clunk();
+        await wait(60);
+      }
+      m.flap = 1;
     }
 
-    // 2. a coin, into the slot
-    const [sx, sy] = inMach(27, 40);
-    coin.hidden = false; SFX.coin();
-    await tween(T(360), (e, p) => {
-      const x = 10 + (sx - 18 - 10) * e, y = 150 + (sy - 18 - 150) * e - Math.sin(p * Math.PI) * 120;
-      coin.style.transform = `translate(${x}px, ${y}px) scaleX(${Math.max(0.15, Math.abs(Math.cos(p * 14)))})`;
-    }, ease.inOut);
-    coin.hidden = true; SFX.slot();
-
-    // 3. two turns of the crank (one for a quick pop), the machine leaning into each
-    for (let k = 0; k < (quick ? 1 : 2); k++) {
-      const a0 = m.angle; m.jiggle(); SFX.crank();
-      await tween(T(300), (e, p) => { m.angle = a0 + Math.PI / 2 * e; setM(0, 1, 1, Math.sin(p * Math.PI) * 1.3 * (k % 2 ? -1 : 1)); }, ease.inOut);
-      SFX.clunk();
-      await wait(60);
-    }
-
-    // 4. out of the chute: a fall, a bounce, then it rolls out toward you and the machine steps back
-    m.flap = 1;
-    drawCapsule(ct, cb, g);
+    // 4. out of the chute (or from above): a fall, a bounce, then it rolls out toward you and the machine steps back
+    drawCapsule(ct, cb, capsule);
     leak.style.opacity = 0;
-    const [cx, cy] = inMach(19.5, 49.5), s0 = 0.3, ground = FLOOR - RAD * s0;
+    const [cx, cy] = m ? inMach(19.5, 49.5) : [144, -60], s0 = 0.3, ground = FLOOR - RAD * s0;
     cp.hidden = false; SFX.drop();
-    await tween(T(220), e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
+    await tween(T(m ? 220 : 380), e => setC(cx, cy + (ground - cy) * e, s0, 0), ease.in);
     SFX.bounce(1);
     await tween(T(260), (e, p) => setC(cx + 6 * p, ground - Math.sin(p * Math.PI) * 30, s0, 40 * p), ease.lin);
     SFX.bounce(0.4); SFX.roll(0.55);
     await tween(T(560), e => {
       setC(cx + 6 + (150 - cx - 6) * e, ground + (232 - ground) * e - Math.sin(e * Math.PI) * 30, s0 + (1 - s0) * e, 40 + 680 * e);
-      setM(-24 * e, 1, 1, 0, 1 - 0.14 * e); mc.style.opacity = 1 - 0.78 * e; floor.style.opacity = 1 - e;
+      if (m) { setM(-24 * e, 1, 1, 0, 1 - 0.14 * e); mc.style.opacity = 1 - 0.78 * e; floor.style.opacity = 1 - e; }
     }, ease.inOut);
 
     // 5. one twist: the seam cracks and warm light leaks out
@@ -3826,7 +3766,7 @@ onmessage = e => {
 
     // 6. pop: the dome flies off, the candy half drops away, light pours out, and the scroll comes up out of it
     SFX.pop(1); flash(0.45); if (dropPaint) dropPaint.kick(0.8);
-    boom(1, ...at(150, 232), [CANDY[g], '#ffffff', '#ffe2a0', '#ffe9b0']);
+    boom(1, ...at(150, 232), [LG.capsuleById(capsule).colour, '#ffffff', '#ffe2a0', '#ffe9b0']);
     await tween(T(460), (e, p) => {
       ct.style.transform = `translate(${-70 * p}px, ${-280 * p + 320 * p * p}px) rotate(${-150 * p}deg)`; ct.style.opacity = 1 - p * p;
       cb.style.transform = `translate(${36 * p}px, ${220 * p * p}px) rotate(${50 * p}deg)`; cb.style.opacity = 1 - p;
@@ -3845,7 +3785,7 @@ onmessage = e => {
   function prepReel(o, g) {
     const wrap = $('reelwrap'), box = $('reel'), track = $('track');
     const N = 60, WIN = 42 + Math.floor(Math.random() * 8), CW = 112, STEP = CW + 12;
-    const list = Array.from({ length: N }, (_, i) => i === WIN ? o : LG.roll(`reel:${Math.random()}:${i}`, g));
+    const list = Array.from({ length: N }, (_, i) => i === WIN ? o : g ? LG.roll(`reel:${Math.random()}:${i}`, g) : LG.rollSeason(`reel:${Math.random()}:${i}`, today) || o);
     box.classList.remove('done', 'dim'); track.style.transform = '';
     track.innerHTML = list.map((x, i) => `<div class="rc${i === WIN ? ' win' : ''}" style="--grade:${LG.gradeOf(x).color}"><span class="glow"></span>${px(cardSpec(state.seed, [x], itemLabel(x), true))}<i class="g"></i></div>`).join('');
     hydrate(track);
@@ -4092,7 +4032,7 @@ onmessage = e => {
    * to the scroll, and a Mythic or better lifts out of it for a held breath. `pull`: its serial, where the Worker
    * numbered it; how many exist in its finish is asked for while the machine plays.
    */
-  async function reveal(o, g, how, part, pull) {
+  async function reveal(o, g, how, part, pull, capsule = g) {
     const code = LG.encode(o);
     state.copies.push(code); state.fresh = [...(state.fresh || []), code];
     if (how === 'Dev drop') state.dev = [...(state.dev || []), code];
@@ -4106,10 +4046,10 @@ onmessage = e => {
     $('rv-wear').hidden = false; $('rv-keep').textContent = 'Keep';
     const gr = gradeIdx(o), tier = dropTier(o), famous = LG.special(o), grade = LG.gradeOf(o), sp = !!LG.itemById(o.item)?.showpiece;
     $('reelwrap').hidden = true;
-    if (g) {
+    if (capsule) {
       // The scroll is the tell: only Prized and better (and an Unusual) get it.
       const run = tier >= 2 ? prepReel(o, g) : null;
-      await gacha(g, !run);
+      await gacha(g, !run, capsule);
       if (run) { await run(); await holdFor(tier); $('reelwrap').hidden = true; }
     }
     const [wonTitle, wonLook] = LG.nameOf(o).split(' | ');
@@ -4117,7 +4057,7 @@ onmessage = e => {
     const shout = sp ? '★ SHOWPIECE ★' : fx && gr < 3 && !famous ? `${fx}!` : (o.fx && o.fx !== LG.itemById(o.item)?.signature ? LG.EFFECTS[o.fx].name.toUpperCase() + ' ' : '') + (gr === 5 ? '★ AURA ★' : famous ? famous + '!' : gr === 4 ? '★ GRAIL ★' : gr === 3 ? 'MYTHIC!' : gr === 0 ? grade.name : grade.name + '!');
     await unveil(tier, `<div class="won-art"><div class="spin3d"><canvas class="alone" aria-label="${esc(LG.nameOf(o))}"></canvas></div></div>
       <p class="won-cap"><b>${esc(wonTitle)}</b><span>${sp ? '<span class="bal showp">★ Showpiece</span>' : ''}<span class="bal" style="--b:${grade.color}">${esc(grade.name)}</span><span class="bal" style="--b:#5d6b8a">${esc(wonLook || LG.FINISHES[o.finish].name)}</span>${o.fx ? `<span class="bal poly">${esc(LG.EFFECTS[o.fx].name)}</span>` : ''}</span></p>`,
-      shout, LG.nameOf(o), how, false, !!g, o);
+      shout, LG.nameOf(o), how, false, !!capsule, o);
     showPart(part);
     $('rv-again').hidden = !g;
     $('rv-again').innerHTML = `Another <span class="cost">${tk} ${COST.machine}</span>`;
@@ -5256,7 +5196,7 @@ onmessage = e => {
   $('m-grade').innerHTML = `<button type="button" data-g="" aria-pressed="true">All grades</button>` + LG.GRADES.map((g, k) => `<button type="button" data-g="${k}" style="--g:${g.color}" aria-pressed="false"><i></i>${esc(g.name)}</button>`).join('');
   $('m-slot').innerHTML = [['', 'Everything'], ['hat', 'Hats'], ['skin', 'Skins'], ['frame', 'Frames'], ['buddy', 'Buddies'], ['aura', '★ Auras']].map(([v, l]) => `<button type="button" data-sl="${v}" aria-pressed="${v === ''}">${l}</button>`).join('');
   $('m-game').innerHTML = '<option value="">Every game</option>' + LG.GAMES.map(g => `<option value="${g}">${cap(g)}</option>`).join('');
-  $('m-finish').innerHTML = '<option value="">Every finish</option>' + ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'].map(f => `<option value="${f}">${LG.FINISHES[f].name}</option>`).join('');
+  $('m-finish').innerHTML = '<option value="">Every finish</option>' + ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold', 'op', 'impossible', 'grid'].map(f => `<option value="${f}">${LG.FINISHES[f].name}</option>`).join('');
   $('m-grade').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b) return; mf.grade = b.dataset.g; $('m-grade').querySelectorAll('[data-g]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
   $('m-slot').addEventListener('click', e => { const b = e.target.closest('[data-sl]'); if (!b) return; mf.slot = b.dataset.sl; $('m-slot').querySelectorAll('[data-sl]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderMarket(true); });
   for (const [id, k] of [['m-game', 'game'], ['m-finish', 'finish'], ['m-sort', 'sort']]) $(id).addEventListener('change', () => { mf[k] = $(id).value; renderMarket(true); });
@@ -5320,7 +5260,7 @@ onmessage = e => {
     const pick = ['hat', 'skin', 'frame', 'buddy'].map(sl => its.find(x => x.slot === sl)).filter(Boolean);
     if (!finItem) finItem = pick[0].id;
     $('fin-items').innerHTML = pick.map(x => `<button type="button" data-it="${x.id}" aria-pressed="${x.id === finItem}">${esc(x.name)}</button>`).join('');
-    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'op', 'impossible', 'grid', 'gold'];
+    const order = ['plain', 'sunset', 'tempered', 'nebula', 'prism', 'negative', 'gold', 'op', 'impossible', 'grid'];
     const pool = its.length;
     $('fins').innerHTML = order.map(f => { const fin = LG.FINISHES[f], g = LG.GRADES[fin.grade]; return `<div class="fintile" style="--g:${g.color}"><div class="pic"><canvas aria-hidden="true"></canvas></div><b>${fin.name}</b><span class="bal" style="--b:${g.color}">${esc(g.name)}</span><small>1 in ${fmt(pool * 100 / fin.odds)} capsules</small></div>`; }).join('');
     $('fins').querySelectorAll('canvas').forEach((c, k) => { const f = order[k], [lo, hi] = LG.FINISHES[f].scuffs; showItem(c, { item: finItem, finish: f, scuff: lo + (hi - lo) * 0.03, print: f === 'tempered' ? 3 : 7 }, 'finishes', 112, 112); });

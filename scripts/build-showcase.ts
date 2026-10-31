@@ -22,6 +22,7 @@ const PAGES: Record<string, string> = {
   review: 'Every part and item on four test guys, with what to keep, cut and add.',
   catalog: 'Everything a guy can be dealt or pull, with its odds, what is thin, and a tier above Grail.',
   voxels: 'A prototype: the same pixels as 3D figures, each finish a real material.',
+  stadium3d: 'The stadium as 3D lil guys: seven venues from a porch to a bowl of ten thousand, with three.js.',
   formats: 'Every way a game can show a player\'s lil guy, live from the Worker, with the address and HTML to copy.',
   emotes: 'Any lil guy as Twitch and Discord emotes, still and moving, to download.',
 };

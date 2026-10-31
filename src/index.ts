@@ -97,3 +97,5 @@ export { PAINTS, PAINT_IDS, PAINTABLE, painted, LIMITED_PAINT_COST, paintMonth, 
 export type { PaintId } from "./paints";
 export { smeltValue, craftable, craftCopy, metalText, metalCoins, CRAFT_COST, PAINT_COST, SCRAP, RECLAIMED, REFINED } from "./craft";
 export { NAME_KEY, nameKey, nameSkeleton } from "./name-key";
+export { capsuleFrames, capsuleHalves, capsuleById, capsuleUrl, capsuleManifest, capsuleFile, CAPSULES, CAPSULE_STATES, CAPSULE_GRIDS, CAPSULE_FILE_SIZES, type Capsule, type CapsuleState, type CapsuleGrid, type CapsuleOptions, type CapsuleManifest } from "./capsule";
+export { capsuleOpenFrames, capsuleOpenTier, capsuleOpenUrl, playCapsuleOpen, CAPSULE_OPEN_SIZE, type CapsuleOpen, type CapsuleOpenOptions, type CapsuleOpenBeat, type CapsuleOpenPlayer, type CapsuleOpenPlayOptions } from "./capsule-open";

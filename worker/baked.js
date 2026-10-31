@@ -1,6 +1,6 @@
 import { anyName, claimedCode, claimedGuys } from './club-guys.js';
 import { mayShow } from './emotes.js';
-import { ART_VERSION, bakeView, bakedImage, guyCode, readGuyCode, sheetColumns } from '../src/index-headless.ts';
+import { ART_VERSION, CAPSULE_GRIDS, bakeView, bakedImage, capsuleById, capsuleFrames, capsuleManifest, capsuleOpenFrames, decode, encode, encodeApng, guyCode, readGuyCode, sheetColumns } from '../src/index-headless.ts';
 
 /**
  * Finished lil guys as images, for any page, board or game: `/g/<art version>/<guy>/<view>`
@@ -89,6 +89,8 @@ export async function baked(request, env, url, ctx, guyOf) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return fail(405, 'Method not allowed');
   const [, , version, who, view] = url.pathname.split('/');
   if (!version || !who || !view || url.pathname.split('/').length !== 5) return fail(404, 'Not found');
+  if (who === 'capsule') return capsule(request, env, url, ctx, version, view);
+  if (who === 'capsule-open') return capsuleOpen(request, env, url, ctx, version, view);
   const m = VIEW.exec(view);
   if (version === 'latest' && m && (who[0] === '@' || who[0] === '~')) {
     // One hop from a stable address to the picture: the name straight to its code at today's version.
@@ -130,4 +132,99 @@ export async function baked(request, env, url, ctx, guyOf) {
   if (!response) return fail(404, 'No such view');
   if (cache) ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
   return response;
+}
+
+/**
+ * A capsule, the same one every game and the site draw: `/g/<art version>/capsule/<id>-<state>-<grid><@scale>.<format>`
+ * (GAMES.md, Capsules). `<id>` a machine (`puttsies`, `pets`), `mystery`, `free` or a season's (`season.pumpkin`);
+ * `<state>` `closed`, `wobble` or `open`; `<grid>` 16, 24, 32 or 64. Cached for good, like a guy's picture; left
+ * without a grid it's the 64 master, and `.apng` is the `.png`, each a redirect to the one address. No GIF: a
+ * GIF's pixels are there or not, and the dome is see-through glass.
+ */
+const CAPSULE = /^([a-z]+(?:\.[a-z]+)?)-(closed|wobble|open)(?:-(\d{1,3}))?(\.sheet)?(?:@(\d{1,2}))?\.(png|json|apng)$/;
+async function capsule(request, env, url, ctx, version, file) {
+  if (version === 'latest') return redirect(302, `/g/${ART_VERSION}/capsule/${file}`, `public, max-age=${LATEST_TTL}`);
+  if (version !== String(ART_VERSION)) return redirect(301, `/g/${ART_VERSION}/capsule/${file}`, 'public, max-age=86400');
+  const m = CAPSULE.exec(file);
+  if (!m) return fail(404, 'Not found');
+  const [, id, state, grid, sheet, digits, ext] = m;
+  if (!capsuleById(id)) return fail(404, 'No such capsule');
+  if ((ext === 'json' && !sheet) || (sheet && ext === 'apng')) return fail(404, 'Not found');
+  if (!grid || ext === 'apng') return redirect(301, `/g/${ART_VERSION}/capsule/${id}-${state}-${grid || 64}${sheet || ''}${digits ? '@' + digits : ''}.${ext === 'apng' ? 'png' : ext}`, IMMUTABLE);
+  if (!CAPSULE_GRIDS.includes(Number(grid)) || grid.startsWith('0')) return fail(404, 'Grids are 16, 24, 32 and 64');
+  const scale = digits ? Number(digits) : 1;
+  if (scale < 1 || scale > 16 || (digits && digits.startsWith('0'))) return fail(404, 'Scale is 1 to 16');
+
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const cacheKey = new Request(url.origin + url.pathname);
+  const hit = cache && await cache.match(cacheKey);
+  if (hit) return hit;
+  if (await overBudget(request, env)) return fail(429, 'Too many new pictures from here today');
+
+  const frames = capsuleFrames({ machine: id, state, grid: Number(grid) });
+  let response;
+  if (ext === 'json') {
+    const image = `${id}-${state}-${grid}.sheet${scale > 1 ? '@' + scale : ''}.png`;
+    response = new Response(JSON.stringify({ image, frameWidth: frames.width * scale, frameHeight: frames.height * scale, frames: frames.frames.length, columns: frames.frames.length, rows: 1, delays: frames.delays }), { headers: head('application/json', IMMUTABLE) });
+  } else {
+    const kind = sheet ? 'sheet' : frames.frames.length > 1 ? 'loop' : 'still';
+    response = new Response(await bakedImage(frames, kind, scale), { headers: head('image/png', IMMUTABLE) });
+  }
+  if (cache) ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
+/**
+ * A capsule opening, the one every game plays: `/g/<art version>/capsule-open/<id>-<copy>[-still]<@scale>.<format>`
+ * (GAMES.md, Capsules). `<copy>` is what's inside as `encode` writes it, or `none` to open to the capsule's own light;
+ * `-still` starts it standing rather than dropping in. `.png` is an animated PNG that plays once and stays on its hold
+ * frame (`.apng` redirects to it); `.sheet.png` and `.sheet.json` (each frame's time, the beats to hang sounds on and
+ * where what came out stands) are for a game. Scales 1 to 4: an open is many frames on a stage half again a capsule's
+ * size, so anything bigger is scaled up in CSS. Cached for good like a capsule, one address per open: a copy written
+ * another way goes to its own code's.
+ */
+const OPEN = /^([a-z]+(?:\.[a-z]+)?)-(.+?)(-still)?(\.sheet)?(?:@(\d{1,2}))?\.(png|json|apng)$/;
+const OPEN_SCALE = 4;
+async function capsuleOpen(request, env, url, ctx, version, file) {
+  if (version === 'latest') return redirect(302, `/g/${ART_VERSION}/capsule-open/${file}`, `public, max-age=${LATEST_TTL}`);
+  if (version !== String(ART_VERSION)) return redirect(301, `/g/${ART_VERSION}/capsule-open/${file}`, 'public, max-age=86400');
+  let name;
+  try { name = decodeURIComponent(file); } catch { return fail(404, 'Not found'); }
+  const m = OPEN.exec(name);
+  if (!m) return fail(404, 'Not found');
+  const [, id, code, still = '', sheet = '', digits, ext] = m;
+  if (!capsuleById(id)) return fail(404, 'No such capsule');
+  const copy = code === 'none' ? null : decode(code);
+  if (code !== 'none' && !copy) return fail(404, 'No such copy');
+  if ((ext === 'json' && !sheet) || (sheet && ext === 'apng')) return fail(404, 'Not found');
+  const scale = digits ? Number(digits) : 1;
+  if (scale < 1 || scale > OPEN_SCALE || (digits && digits.startsWith('0'))) return fail(404, `Scale is 1 to ${OPEN_SCALE}`);
+  const canonical = `${id}-${copy ? encode(copy) : 'none'}${still}${sheet}${scale > 1 ? '@' + scale : ''}.${ext === 'apng' ? 'png' : ext}`;
+  if (canonical !== file) return redirect(301, `/g/${ART_VERSION}/capsule-open/${canonical}`, IMMUTABLE);
+
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const cacheKey = new Request(url.origin + url.pathname);
+  const hit = cache && await cache.match(cacheKey);
+  if (hit) return hit;
+  if (await overBudget(request, env)) return fail(429, 'Too many new pictures from here today');
+
+  const open = capsuleOpenFrames({ capsule: id, copy: copy ?? undefined, from: still ? 'still' : 'drop' });
+  if (!open) return fail(404, 'No such open');
+  const columns = sheetColumns('capsule-open', open);
+  let response;
+  if (ext === 'json') {
+    const image = `${id}-${copy ? encode(copy) : 'none'}${still}.sheet${scale > 1 ? '@' + scale : ''}.png`;
+    const item = open.item && Object.fromEntries(Object.entries(open.item).map(([k, v]) => [k, v * scale]));
+    response = new Response(JSON.stringify({ image, frameWidth: open.width * scale, frameHeight: open.height * scale, frames: open.frames.length, columns, rows: Math.ceil(open.frames.length / columns), delays: open.delays, beats: open.beats, tier: open.tier, ...(item ? { item } : {}) }), { headers: head('application/json', IMMUTABLE) });
+  } else {
+    response = new Response(sheet ? await bakedImage(open, 'sheet', scale, columns) : await encodeApng(open, scale, 1), { headers: head('image/png', IMMUTABLE) });
+  }
+  if (cache) ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
+/** `/capsules/manifest.json`: every capsule, its name and colour, and its pictures, for a game to read (CORS open). */
+export function capsules(request, url) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return fail(405, 'Method not allowed');
+  return Response.json(capsuleManifest(url.origin), { headers: head('application/json', 'public, max-age=300') });
 }

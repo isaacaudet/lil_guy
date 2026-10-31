@@ -14,7 +14,7 @@ import type { GameId } from './types';
  *
  * - a **finish**: the paint job. Plain is common; Sunset, Tempered, Nebula,
  *   Prism, Negative and Gold are progressively rarer, and three graphic ones,
- *   Op, Impossible and Grid, sit beside Prism and Negative
+ *   Op, Impossible and Grid, are Grails beside Gold
  * - a **scuff** between 0 and 1: how worn it is. Low is pristine, high is
  *   battered. The condition (Box Fresh … Battered) is a range of it, and
  *   the scuffs really show: paint chips off as it rises
@@ -76,12 +76,12 @@ export type Grade = (typeof GRADES)[number];
  */
 export const FINISHES: Record<Finish, { name: string; grade: number; odds: number; scuffs: [number, number]; aura?: number }> = {
   'plain':    { name: 'Plain',    grade: 0, odds: 79.87, scuffs: [0, 1] },
-  'sunset':   { name: 'Sunset',   grade: 1, odds: 15.87, scuffs: [0, 0.08] },
+  'sunset':   { name: 'Sunset',   grade: 1, odds: 15.97, scuffs: [0, 0.08] },
   'tempered': { name: 'Tempered', grade: 2, odds: 1.6,   scuffs: [0, 1] },
   'nebula':   { name: 'Nebula',   grade: 2, odds: 1.6,   scuffs: [0, 0.08] },
   'prism':    { name: 'Prism',    grade: 3, odds: 0.5,   scuffs: [0, 0.08] },
   'negative': { name: 'Negative', grade: 3, odds: 0.2,   scuffs: [0, 0.08] },
-  'gold':     { name: 'Gold',     grade: 4, odds: 0.2,   scuffs: [0, 0.08] },
+  'gold':     { name: 'Gold',     grade: 4, odds: 0.1,   scuffs: [0, 0.08] },
   // An aura's own finishes (./auras): never rolled on an item; `aura` is each
   // one's share of auras, in percent. Any float, since a worn aura shows it.
   'classic':  { name: 'Classic',  grade: 5, odds: 0, aura: 50,  scuffs: [0, 1] },
@@ -94,10 +94,11 @@ export const FINISHES: Record<Finish, { name: string; grade: number; odds: numbe
   'pearl':    { name: 'Deep sea · Black pearl', grade: 5, odds: 0, aura: 0.3, scuffs: [0, 1] },
   // ---------------------------------------------------------------- added Oct 30, 2026 (append only)
   // Graphic finishes in the club's ink, ivory and coral: concentric rings, bands that turn at the middle, panes.
-  // Their 0.16% came out of Sunset (15.98 to 15.87) and Gold (0.25 to 0.2).
-  'op':         { name: 'Op',         grade: 3, odds: 0.06, scuffs: [0, 0.08] },
-  'impossible': { name: 'Impossible', grade: 3, odds: 0.05, scuffs: [0, 0.08] },
-  'grid':       { name: 'Grid',       grade: 3, odds: 0.05, scuffs: [0, 0.08] },
+  // Grails beside Gold, each rarer than any Mythic finish. Gold went from 0.25 to 0.1 and Sunset from 15.98
+  // to 15.97, so every Grail is rarer than every Mythic.
+  'op':         { name: 'Op',         grade: 4, odds: 0.06, scuffs: [0, 0.08] },
+  'impossible': { name: 'Impossible', grade: 4, odds: 0.05, scuffs: [0, 0.08] },
+  'grid':       { name: 'Grid',       grade: 4, odds: 0.05, scuffs: [0, 0.08] },
 };
 
 /** The graphic finishes: a pattern of their own across the item, in ink, ivory and coral. */

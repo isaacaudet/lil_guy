@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { animate, animateLoop, closeEyes, drawFrame, frameAt, glanceRing, toAnimatedSvg, GOLD_SPARKLE, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM, WIDE_FRAME_WIDTH, type Emote } from '../animate';
-import { LUCKY_RIM } from '../paint';
-import { starAt } from '../sparkle';
+import { animate, animateLoop, closeEyes, drawFrame, frameAt, glanceRing, toAnimatedSvg, MOVES, FRAME_HEIGHT, FRAME_WIDTH, HEADROOM, WIDE_FRAME_WIDTH, type Emote } from '../animate';
 import { fitLoop, LOOP_MS } from '../loop';
 import { buddyAlone, compose } from '../compose';
 import { T } from '../parts/art';
@@ -172,42 +170,6 @@ describe('animate', () => {
     expect(svg.match(/@keyframes/g)!.length).toBe(a.frames.length);
     expect(svg).not.toContain('prefers-reduced-motion');
     expect(toAnimatedSvg('alice', 'wave', { stillWhenReduced: true })).toContain('prefers-reduced-motion');
-  });
-});
-
-describe('Lucky', () => {
-  const LUCKY = 'lucky-rim-test';
-  const parts = { lucky: true };
-  const STAR = new Set(GOLD_SPARKLE);
-  const RIM = new Set<string>(LUCKY_RIM);
-
-  test('the star is wide open in the still, with rarity off too (cards, emotes)', () => {
-    const plain = animate(LUCKY, 'idle', { parts: { lucky: false } }).frames[0];
-    for (const rarity of [true, false]) {
-      const f = animate(LUCKY, 'idle', { parts, rarity, loop: { fit: true } }).frames[0];
-      const star = f.colors.flatMap((row, y) => row.flatMap((c, x) => (c && STAR.has(c) && !plain.colors[y][x] ? [c] : [])));
-      expect(star.length).toBe(starAt(0.57).length);
-    }
-  });
-
-  test('the rim steps through its hues a beat at a time: whole colours, the outline only, never the face', () => {
-    const plain = animate(LUCKY, 'blink', { parts: { lucky: false } });
-    const lucky = animateLoop(LUCKY, 'blink', { parts });
-    const hues = new Map<string, Set<string>>();
-    let t = 0;
-    for (const f of lucky.frames) {
-      const was = frameAt(plain, t % plain.duration);
-      f.colors.forEach((row, y) => row.forEach((c, x) => {
-        if (c === was.colors[y][x]) return;
-        // Anything new is a rim hue on the outline, or the star where there was nothing.
-        if (c && RIM.has(c)) { expect(was.colors[y][x]).not.toBeNull(); hues.set(`${x},${y}`, (hues.get(`${x},${y}`) ?? new Set()).add(c)); }
-        else { expect(c !== null && STAR.has(c) && was.colors[y][x] === null).toBe(true); }
-      }));
-      t += f.ms;
-    }
-    // Every rim cell moves through Lucky's hues over the loop.
-    expect(hues.size).toBeGreaterThan(10);
-    for (const seen of hues.values()) expect(seen.size).toBe(LUCKY_RIM.length);
   });
 });
 

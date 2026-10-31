@@ -3333,11 +3333,6 @@ const NIGHT_COLOURWAYS = new Set([
 	"Forest",
 	"Grape Soda"
 ]);
-/**
-* The chase colourways: each is a material painted cell by cell (`chaseSkin` in ./paint), in fixed
-* colours, so a tone never washes one out and it looks the same on every guy who has it.
-*/
-const CHASE_COLOURWAYS = new Set(COLOURWAYS.filter((w) => w.tones).map((w) => w.name));
 function hexToRgb(hex$2) {
 	return [
 		1,
@@ -3533,11 +3528,10 @@ const SHADE_COUNT = 3;
 *
 * A night colourway's pastel lifts its body a little and keeps its
 * saturation, so it stays a night colour: mixed towards white, oxblood went
-* mauve and forest grey-green. A chase colourway is a material in fixed
-* colours, so it looks as picked in every tone.
+* mauve and forest grey-green.
 */
 function shadePalette(palette, shade) {
-	if (shade === 1 || CHASE_COLOURWAYS.has(palette.name)) return palette;
+	if (shade === 1) return palette;
 	const night = NIGHT_COLOURWAYS.has(palette.name);
 	const tone = (hex$2, body = false) => {
 		const [h, s, l] = toHsl(hex$2);
@@ -3556,14 +3550,23 @@ function shadePalette(palette, shade) {
 	return derive(palette.name, tone(c[1], true), tone(c[10]), c[12]);
 }
 /**
-* The Lucky palette: the guy's own. Lucky used to turn a colourway round the
-* colour wheel, which hid the colourway the card names (a Lucky Opal came out
-* plain yellow) and turned night colours neon. Now a Lucky guy keeps their
-* colours, and Lucky shows as a stepped rim (`luckyRim` in ./paint) and a gold
-* star. Kept so code that calls it still runs.
+* The Lucky variant: the same colourway turned round the colour wheel, with
+* gold trim. Derived again, so the face and outline read as well as ever.
 */
 function luckyPalette(palette) {
-	return palette;
+	const turn = (hex$2) => {
+		const [h, s, l] = toHsl(hex$2);
+		let hue$1 = (h + 150) % 360;
+		const dark = l < .45;
+		if (dark && hue$1 >= 10 && hue$1 <= 110) hue$1 += 130;
+		return fromHsl([
+			hue$1,
+			dark ? Math.max(.6, Math.min(.85, s + .15)) : Math.max(.7, Math.min(.92, s + .25)),
+			dark ? Math.min(Math.max(l, .22), .28) : Math.min(Math.max(l, .6), .68)
+		]);
+	};
+	const c = palette.colors;
+	return derive(`${palette.name} Lucky`, turn(c[1]), turn(c[10]), "#FFE9A8");
 }
 const POINTED = [
 	3,
@@ -3579,9 +3582,10 @@ const NOT_BROWN = {
 };
 /** The colourway a guy is drawn in: his own, unless a brown on a pointed head would read as a poo. */
 const shownPalette = (config) => POINTED.includes(config.head) && config.palette in NOT_BROWN ? NOT_BROWN[config.palette] : config.palette;
-/** The palette a guy is drawn in: their colourway, in their tone. Lucky keeps it (`luckyPalette`). */
+/** The palette a guy is drawn in: their colourway, in their tone, Lucky if they are. */
 function paletteOf(config) {
-	return shadePalette(getPalette(shownPalette(config)), config.shade);
+	const toned$1 = shadePalette(getPalette(shownPalette(config)), config.shade);
+	return config.lucky ? luckyPalette(toned$1) : toned$1;
 }
 
 //#endregion
@@ -11734,7 +11738,7 @@ const FINISHES = {
 	"sunset": {
 		name: "Sunset",
 		grade: 1,
-		odds: 15.87,
+		odds: 15.97,
 		scuffs: [0, .08]
 	},
 	"tempered": {
@@ -11764,7 +11768,7 @@ const FINISHES = {
 	"gold": {
 		name: "Gold",
 		grade: 4,
-		odds: .2,
+		odds: .1,
 		scuffs: [0, .08]
 	},
 	"classic": {
@@ -11825,19 +11829,19 @@ const FINISHES = {
 	},
 	"op": {
 		name: "Op",
-		grade: 3,
+		grade: 4,
 		odds: .06,
 		scuffs: [0, .08]
 	},
 	"impossible": {
 		name: "Impossible",
-		grade: 3,
+		grade: 4,
 		odds: .05,
 		scuffs: [0, .08]
 	},
 	"grid": {
 		name: "Grid",
-		grade: 3,
+		grade: 4,
 		odds: .05,
 		scuffs: [0, .08]
 	}
@@ -16555,6 +16559,19 @@ const byId = new Map(items.map((i) => [i.id, i]));
 function itemById(id) {
 	return id ? byId.get(id) : void 0;
 }
+/** Each machine's own colour: its set symbol on a card, as the site's machines are painted. */
+const SET_COLORS = {
+	amountle: "#ff7eb6",
+	halfsies: "#f2b066",
+	stackdle: "#ffd447",
+	flipsies: "#5fb4ff",
+	puttsies: "#74d97c",
+	weighsies: "#a98bff",
+	cutsies: "#ff6b6b",
+	tiltsies: "#4fd6c4",
+	trackdle: "#ff8a3d",
+	pets: "#e48cf2"
+};
 /** Every machine, in the order they joined: a new one goes on the end, so nothing else moves. */
 const GAMES = [
 	"amountle",
@@ -17620,9 +17637,8 @@ function shows(config, slot) {
 /**
 * Turns a composed grid into colours. Most cells take their token's palette
 * colour; a cell belonging to an owned item is repainted with that copy's
-* finish and wear. Before that, three things paint over the palette: a chase
-* part's own fixed colours (`PART_COLORS`), a Lucky guy's rim (`luckyRim`)
-* and a chase colourway's material (`chaseSkin`).
+* finish and wear. Before that, a chase part's own fixed colours
+* (`PART_COLORS`) paint over the palette.
 */
 function paint(grid, config, palette, small = false, still = true) {
 	const state = { glint: false };
@@ -17630,8 +17646,6 @@ function paint(grid, config, palette, small = false, still = true) {
 	const aura = auraById(config.aura);
 	if (small) ({grid, palette} = forSmall(grid, palette, (eyes[config.eyes]?.name ?? "") in EYE_COLORS));
 	const fixed = partColors(grid, config, palette);
-	const rim$1 = config.lucky && hasGuy(grid) ? rimCells(grid) : null;
-	const skin = chaseSkin(grid, config, palette.name);
 	const boxes$1 = boxesIn(grid);
 	const tones = new Map();
 	const tonesOf = (slot) => {
@@ -17640,7 +17654,7 @@ function paint(grid, config, palette, small = false, still = true) {
 		return m;
 	};
 	return grid.map((row, y) => row.map((token, x) => {
-		const color = fixed?.[y][x] ?? (rim$1?.[y][x] ? luckyRim(x, y) : void 0) ?? skin?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
+		const color = fixed?.[y][x] ?? (token === T.WHITE ? catchlight(grid, x, y, palette) : resolveColor(palette, token));
 		if (!color) return null;
 		const slot = slotOf$1(token);
 		const copy = slot ? config.owned?.[slot] : void 0;
@@ -17913,6 +17927,7 @@ function partMask(config, slot) {
 	return mask;
 }
 const GRID = 16;
+/** The guy's own skin: what lights round a void eye's pits. */
 const SKIN_TOKENS = new Set([
 	T.BODY,
 	T.SHADE,
@@ -17922,176 +17937,6 @@ const SKIN_TOKENS = new Set([
 ]);
 /** The colour low in an eye (shiny, sparkle, beans), as ./animate moves it with the eye. */
 const IRIS_TOKENS = new Set([T.ACCENT, T.ACCENT_SHADE]);
-/** Opal's play of colour: pearl, pink, mint, lilac and sky in diagonal bands, each two cells wide, shaded to match. */
-const OPAL = {
-	[T.BODY]: [
-		"#FBF7FF",
-		"#FFD9EE",
-		"#CFF8EA",
-		"#DDD2FF",
-		"#D3EEFF"
-	],
-	[T.SHADE]: [
-		"#CDBDF2",
-		"#EBAACF",
-		"#8ED9C5",
-		"#A99BEA",
-		"#93C6EE"
-	],
-	[T.DEEP]: [
-		"#A994E0",
-		"#C987B4",
-		"#6CB8A6",
-		"#8676D2",
-		"#6FA6D8"
-	],
-	[T.LIGHT]: ["#FFFFFF"],
-	[T.BELLY]: [
-		"#FFFFFF",
-		"#FFEEF7",
-		"#EAFCF6",
-		"#F1ECFF",
-		"#ECF8FF"
-	]
-};
-/** Aurora's curtains, left to right: green, teal, violet. */
-const CURTAIN = [
-	"#5CE6A4",
-	"#3FD0D6",
-	"#9C7CFF"
-];
-/** Aurora's teal night: well off Midnight's navy, so an Aurora under a hat is still its own colour. */
-const AURORA = {
-	[T.BODY]: "#2E5878",
-	[T.SHADE]: "#234763",
-	[T.DEEP]: "#17324A",
-	[T.LIGHT]: "#3E7493",
-	[T.BELLY]: "#386886"
-};
-const OBSIDIAN = {
-	[T.BODY]: "#2A2440",
-	[T.SHADE]: "#1C182C",
-	[T.DEEP]: "#120F1C",
-	[T.LIGHT]: "#3D3460",
-	[T.BELLY]: "#3A3256"
-};
-/** Each cell of a grid through `f`, skin only. */
-const overSkin = (grid, f) => grid.map((row, y) => row.map((t, x) => SKIN_TOKENS.has(t) ? f(t, x, y) : void 0));
-const FACE_TOKENS = new Set([
-	T.EYE,
-	T.WHITE,
-	T.MOUTH,
-	T.TONGUE
-]);
-/** Whether a cell is touching an eye, its shine, the mouth or the tongue, on its sides or corners. */
-const byFace = (grid, x, y) => {
-	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (FACE_TOKENS.has(grid[y + dy]?.[x + dx] ?? 0)) return true;
-	return false;
-};
-const MATERIALS = {
-	Opal: (grid) => overSkin(grid, (t, x, y) => {
-		const ramp$1 = OPAL[t];
-		return ramp$1?.[Math.floor((x + y + 1) / 2) % ramp$1.length];
-	}),
-	Obsidian: (grid, face) => {
-		const out = overSkin(grid, (t) => OBSIDIAN[t]);
-		const skin = (x, y) => SKIN_TOKENS.has(grid[y]?.[x] ?? 0);
-		const inside = (rows$1, side) => rows$1.flatMap((y) => {
-			const row = side > 0 ? grid[y] : [...grid[y]].reverse(), first = row.findIndex((t) => SKIN_TOKENS.has(t));
-			const edge = first < 0 || side > 0 ? first : row.length - 1 - first;
-			const x = [edge + side, edge].find((x$1) => edge >= 0 && skin(x$1, y) && !byFace(grid, x$1, y));
-			return x === void 0 ? [] : [[x, y]];
-		}).slice(0, 3);
-		const rows = (from, to) => Array.from({ length: Math.max(0, to - from) }, (_, k) => from + k);
-		const glint$1 = [
-			inside(rows(0, face.top - 1), 1),
-			inside(rows(face.mouthBottom + 1, GRID), -1),
-			inside(rows(face.line + 1, GRID), -1)
-		].find((cells) => cells.length >= 2) ?? [];
-		glint$1.forEach(([x, y], i) => {
-			out[y][x] = i === 1 || glint$1.length === 1 ? "#C9B2FF" : "#7E68C8";
-		});
-		return out;
-	},
-	Aurora: (grid, face) => {
-		const clear = (x, y) => SKIN_TOKENS.has(grid[y][x]) && !byFace(grid, x, y);
-		const from = (clearOnly) => grid[0].map((_, x) => grid.findIndex((row, y) => clearOnly ? clear(x, y) : SKIN_TOKENS.has(row[x])));
-		const curtains = (top, low) => overSkin(grid, (t, x, y) => {
-			const d = y - top[x], drop = [
-				2,
-				3,
-				4,
-				3,
-				2,
-				3,
-				4,
-				4
-			][x % 8];
-			const hangs = top[x] >= 0 && d >= 0 && d < drop && t !== T.DEEP && (low ? !byFace(grid, x, y) : y < face.top - 1);
-			return hangs ? CURTAIN[Math.floor(x / 2) % 3] : AURORA[t];
-		});
-		const lit$1 = (cells) => cells.flat().filter((c) => c && CURTAIN.includes(c)).length;
-		const high = curtains(from(false), false);
-		if (lit$1(high) >= 4) return high;
-		const under = curtains(from(false), true);
-		return lit$1(under) >= 4 ? under : curtains(from(true), true);
-	}
-};
-/**
-* A chase colourway (Opal, Obsidian, Aurora) as a material, cell by cell over
-* the skin: fixed colours, so a tone never washes one out and a 1-in-500
-* colour looks it in every still. Null for every other colourway.
-*/
-function chaseSkin(grid, config, name) {
-	const material = MATERIALS[name];
-	return material ? material(grid, faceOf(config)) : null;
-}
-/**
-* Lucky's rim: coral, amber, teal, blue and violet, each deep enough to keep
-* the guy's edge on a pale ground (ivory and pale gold steps left gaps in it
-* there) and none of them neon.
-*/
-const LUCKY_RIM = [
-	"#E8574F",
-	"#F0A030",
-	"#3DBFA8",
-	"#5B8CE8",
-	"#9466E0"
-];
-/**
-* The colour of a Lucky guy's rim at cell (`x`, `y`) of the sixteen-by-sixteen
-* grid, `beat` steps on: the outline stepped through `LUCKY_RIM` in diagonal
-* bands two cells wide, with no blending. A still is beat 0; ./animate moves
-* the bands one hue a beat. Grid coordinates, not a frame's: a frame's row
-* less its headroom.
-*/
-function luckyRim(x, y, beat = 0) {
-	const n = LUCKY_RIM.length;
-	return LUCKY_RIM[((Math.floor((x + y) / 2) + beat) % n + n) % n];
-}
-/**
-* Whether a cell is on the guy's outer edge: the outline, touching the outside (nothing, or a
-* frame, buddy or aura cell) and the guy's own drawing or what is worn on it, so a buddy's
-* outline beside them is left alone.
-*/
-function onRim(grid, x, y) {
-	if (grid[y]?.[x] !== T.OUTLINE) return false;
-	const near = [
-		grid[y - 1]?.[x],
-		grid[y + 1]?.[x],
-		grid[y][x - 1],
-		grid[y][x + 1]
-	];
-	const outside = (t) => t === void 0 || t === 0 || t >= LAYER.frame;
-	const guy = (t) => t !== void 0 && t > 0 && t !== T.OUTLINE && t < LAYER.frame;
-	return near.some(outside) && near.some(guy);
-}
-/** Whether a grid holds the guy: their skin, or a costume. A buddy painted on its own has neither, and no rim. */
-const hasGuy = (grid) => grid.some((row) => row.some((t) => SKIN_TOKENS.has(t) || t >= LAYER.skin && t < LAYER.hat));
-/** Every rim cell (`onRim`) of a grid. */
-function rimCells(grid) {
-	return grid.map((row, y) => row.map((_, x) => onRim(grid, x, y)));
-}
 /** At or under this many pixels across, a guy is drawn for a small size (`forSmall`). */
 const SMALL_SIZE = 36;
 /**
@@ -18148,5 +17993,5 @@ function catchlight(grid, x, y, palette) {
 }
 
 //#endregion
-export { AURAS, AURA_ODDS, BADGE_INKS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_BADGES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, UNUSUAL_ONE_IN, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, boxOf, buddyAlone, cheekWeights, cheeks, compose, composeBase, contrast$1 as contrast, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, layered, luckyPalette, luckyRim, machineName, mix$3 as mix, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, underEyes, unlockWeight, unusual, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
-//# sourceMappingURL=paint-CTPy-AeX.js.map
+export { AURAS, AURA_ODDS, BADGE_INKS, BUDDY_ROOM, CAPSULE_ONLY, DEAL_2, DEAL_3, DEAL_PREFIX, DEEP_BLUE_PRINTS, EFFECTS, FINISHES, FOOT_STYLES, FOUNDER_COPIES, FOUNDER_LOOK, FOUNDER_SEED, FX_BADGES, FX_IDS, GAMES, GOLD_RIM_DAYS, GRADES, GRAPHIC_FINISHES, GRID_SIZE, LAYER, LIMITED_PAINT_COST, LOOP_MS, LUCKY_ODDS, MAX_PINS, ONE_OF_ONE_AURAS, PAINTABLE, PAINTS, PAINT_IDS, PINS, RETIRED_EYES, SET_COLORS, SHADE_COUNT, SHOWPIECE_WEIGHT, SMALL_SIZE, SPARKLE_REACH, T, UNUSUAL_ONE_IN, WEAR, accessories, accessoryWeights, applyFx, armWeights, auraById, auraCells, auraColor, auraColors, auraHue, bodies, bodyWeights, boxOf, buddyAlone, cheekWeights, cheeks, compose, composeBase, cycle, dealOf, decode, dress, encode, eyeWeights, eyes, faceOf, fit, fitLoop, footWeights, freeItem, fxColor, gameItems, getPalette, gradeOf, hair, hairWeights, hash, hashNth, headWeights, heads, inSeason, isFounder, isFounderCopy, itemById, itemWeight, items, layered, luckyPalette, machineName, mouthWeights, mouths, mysteryMachine, nameOf, nebulaPhase, paint, paintCost, paintMonth, paintOnSale, painted, paintsOnSale, paletteOf, paletteWeights, palettes, pinById, resolve, resolveColor, roll, rollFx, rollSeason, shadePalette, shadeWeights, shownPalette, shows, slotOf, sparkleAt, special, starAt, starter, steps, tallyMarks, temperTint, tick, underEyes, unlockWeight, unusual, wave, wearOf, withItems, withoutRetired, wrap$1 as wrap };
+//# sourceMappingURL=paint-CJIcxW4q.js.map

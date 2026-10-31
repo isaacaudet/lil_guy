@@ -12,7 +12,6 @@ import { hashNth } from '../hash';
 import { inSeason, items, gameItems, GAMES } from '../items';
 import { rollSeason, nameOf as nameCopy } from '../owned';
 import { toShareSvg } from '../share';
-import { paint } from '../paint';
 import { lookOf } from '../look';
 
 const ball: Owned = { item: 'puttsies.ball', finish: 'plain', scuff: 0.02, print: 40 };
@@ -94,14 +93,11 @@ describe('Lucky', () => {
     expect(resolve('x').lucky).toBe(hashNth('x', 13) % LUCKY_ODDS === 0);
   });
 
-  test('keeps the colourway, rims the guy, keeps the face legible, and counts in rarity', () => {
+  test('changes the colours, keeps the face legible, and counts in rarity', () => {
     let name = '';
     for (let i = 0; !name; i++) if (resolve('n' + i).lucky) name = 'n' + i;
     const c = resolve(name);
-    // The colourway the card names; Lucky shows as the rim (`luckyRim` in ../paint) instead.
-    expect(paletteOf(c)).toEqual(paletteOf({ ...c, lucky: false }));
-    const g = compose(c), lucky = paint(g, c, paletteOf(c)), plain = paint(g, { ...c, lucky: false }, paletteOf(c));
-    expect(JSON.stringify(lucky)).not.toBe(JSON.stringify(plain));
+    expect(paletteOf(c).colors[1]).not.toBe(paletteOf({ ...c, lucky: false }).colors[1]);
     expect(traitOdds(c).find(t => t.slot === 'lucky')!.name).toBe('Lucky');
     expect(guyOneIn(c)).toBeGreaterThan(guyOneIn({ ...c, lucky: false }) * 300);
     const lum = (hex: string) => {
